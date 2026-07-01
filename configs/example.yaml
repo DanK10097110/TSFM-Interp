@@ -1,0 +1,173 @@
+# ============================================================================
+# TSFM Benchmark Configuration Reference
+# ============================================================================
+# Declarative benchmark composition. Each entry maps directly onto a TaskSpec:
+#   specs = [TaskSpec(**e) for e in yaml.safe_load(open("example.yaml"))["tasks"]]
+#
+# Tiers:
+#   - 'synthetic': Leakage-safe backbone using purely synthetic data
+#   - 'realism_stress': Real-derived data that must clear the leakage audit
+# ============================================================================
+
+tasks:
+  # -------------------------------------------------------------------------
+  # EXAMPLE 1: Synthetic task with seasonal and trend components
+  # -------------------------------------------------------------------------
+  - name: seasonal_trend_synthetic
+    # REQUIRED: Unique identifier for this task
+    generator: mixture
+    # REQUIRED: Which generator to use
+    # Options: 'parametric' (synthetic), 'mixture' (real-derived),
+    #          'block_bootstrap' (real resampling), 'sequential_par' (SDV)
+    count: 200
+    # REQUIRED: Number of series to generate for this task
+    tier: synthetic
+    # REQUIRED: Data tier - determines leakage safety level
+    # Options: 'synthetic' (leakage-safe, no real data)
+    #          'realism_stress' (real-derived, must pass audit)
+
+    # =====================================================================
+    # PARAMETRIC GENERATOR PARAMETERS
+    # =====================================================================
+    # Builds synthetic series from additive components with exact ground truth
+    generator_params:
+      length: 512
+      # Length of each generated time series (number of timesteps)
+
+      trend: {order: 2, scale: 0.5}
+      # Polynomial trend specification (optional, default: order=1, scale=0.0)
+      # - order: Degree of polynomial (0=constant, 1=linear, 2=quadratic, etc.)
+      # - scale: Standard deviation of polynomial coefficients
+      # Set scale=0.0 to disable trend entirely
+
+      seasonalities:
+        - {period: 24, amplitude: 1.0}
+        # Period: Number of timesteps in seasonal cycle (e.g., 24=daily)
+        # Amplitude: Peak magnitude of sinusoidal component
+        # phase (optional): Phase offset in radians (default: 0.0)
+        - {period: 168, amplitude: 0.4}
+        # Multiple seasonalities are summed together
+
+      ar_coeffs: [0.6, -0.2]
+      # AutoRegressive coefficients for colored noise (optional, default: none)
+      # Creates lag-dependent noise: AR(p) where p = length of list
+      # Each value multiplies the previous noise values (|coeff| < 1 for stability)
+
+      noise_scale: 0.15
+      # Standard deviation of Gaussian noise component
+      # Controls overall level of random perturbation
+
+      n_changepoints: 2
+      # Number of level-shift changepoints to introduce (optional, default: 0)
+      # Placed randomly with magnitude ~N(0, 1.0 + noise_scale)
+
+      n_anomalies: 3
+      # Number of point anomalies to inject (optional, default: 0)
+
+      anomaly_magnitude: 4.0
+      # Optional: Scaling factor for anomaly size (default: 4.0)
+      # Actual magnitude = factor * noise_scale * sign (randomly ±)
+
+    # =====================================================================
+    # CORRUPTION TRANSFORMS (applied after generation)
+    # =====================================================================
+    # Each corruption is recorded in provenance for reproducibility
+    corruptions:
+      - {op: jitter, sigma: 0.03}
+      # Corruption: Add zero-mean Gaussian noise
+      # - sigma: Scale factor for noise (multiplied by series std dev)
+      #   Actual noise std = sigma * (series.std() + 1e-8)
+
+      - {op: time_warp, strength: 0.1}
+      # Corruption: Smoothly warp the time axis with monotonic remapping
+      # - strength: Maximum relative warping (default: 0.2)
+      # - n_knots: Number of control points for warping (optional, default: 4)
+      # Useful for simulating temporal distortions
+
+  # -------------------------------------------------------------------------
+  # EXAMPLE 2: Simpler synthetic task focusing on regime changes
+  # -------------------------------------------------------------------------
+  - name: regime_switching_synthetic
+    generator: parametric
+    count: 200
+    tier: synthetic
+    generator_params:
+      length: 512
+      seasonalities: [{period: 50, amplitude: 1.5}]
+      # Single seasonality with period 50 and high amplitude
+      noise_scale: 0.25
+      # Higher noise for regime-switching effect
+      n_changepoints: 5
+      # Multiple changepoints create regime-like behavior
+      # (no trend, ar_coeffs, or anomalies in this example)
+
+    corruptions:
+      - {op: dropout, rate: 0.05}
+      # Corruption: Replace random points with forward-filled values
+      # - rate: Fraction of points to drop (0.0 to 1.0)
+      # Simulates missing data or sensor failures
+
+  # =========================================================================
+  # AVAILABLE CORRUPTIONS (use 'op' field to specify)
+  # =========================================================================
+  # Note: All corruptions record a ProvenanceStep for auditability
+  #
+  # jitter:
+  #   {op: jitter, sigma: 0.05}
+  #   Add zero-mean Gaussian noise scaled to series std dev
+  #
+  # scaling:
+  #   {op: scaling, sigma: 0.1}
+  #   Multiply entire series by random scalar near 1.0 (affects amplitude)
+  #
+  # time_warp:
+  #   {op: time_warp, strength: 0.2, n_knots: 4}
+  #   Smoothly warp time axis with monotonic remapping
+  #
+  # dropout:
+  #   {op: dropout, rate: 0.05}
+  #   Forward-fill random fraction of points (missing data simulation)
+
+  # -------------------------------------------------------------------------
+  # EXAMPLE 3: Real-derived mixture task (realism-stress tier)
+  # -------------------------------------------------------------------------
+  # Real-derived tier. Sources are injected by the driver, not the YAML,
+  # because they require loading and hashing the real corpus first.
+  - name: cross_domain_mixture
+    generator: mixture
+    # Mixture generator: Combines real source series with known weights
+    count: 100
+    tier: realism_stress
+    # Must pass leakage audit before inclusion in benchmark
+
+    # =====================================================================
+    # MIXTURE GENERATOR PARAMETERS
+    # =====================================================================
+    # Combines real source series with recorded weights for attribution ground truth
+    generator_params:
+      mode: multiplicative
+      # Mixture mode - determines how sources are combined
+      # Options:
+      #   - 'weighted_sum': Simple weighted sum of normalized sources
+      #   - 'multiplicative': weighted_sum + 0.5 * (source1 * source2)
+      #     Creates interaction terms simulating correlated domains
+
+      weight_concentration: 0.5
+      # Dirichlet concentration parameter for mixture weights (optional, default: 1.0)
+      # Higher values → more uniform distribution across sources
+      # Lower values → more skewed (some sources dominate)
+      # Weights are drawn from Dirichlet[weight_concentration, ...]
+
+      # NOTE: 'sources' parameter is NOT specified in YAML!
+      # It is injected by the build driver after loading and hashing the real corpus.
+      # This prevents leakage and ensures reproducibility via content hashing.
+      # You can also declare a Hugging Face source config directly in the task spec:
+      # source_config:
+      #   kind: huggingface
+      #   dataset: monash_tsf
+      #   config: tourism_monthly
+      #   split: train
+      #   field_name: target
+      #   limit: 50
+      # To activate this task from the CLI, run:
+      #   PYTHONPATH=. python3 tsfm_benchmark/example_runs/run_full.py --config configs/example.yaml --sources monash --references monash --source-limit 50 --reference-limit 50 --max-count 5

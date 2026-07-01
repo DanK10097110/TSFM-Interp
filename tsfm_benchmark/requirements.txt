@@ -1,0 +1,13 @@
+# Core (the leakage-safe synthetic path and audit run on these alone)
+numpy>=1.26
+scipy>=1.11
+dtaidistance>=2.3       # fast C DTW for the leakage gate; numpy fallback exists
+
+# Real-data sources and the realism tier (optional, install as needed)
+datasets>=2.18          # Monash via HuggingFace hub
+tsbootstrap>=0.1        # block bootstrap generator; verify API on pin
+sdv>=1.9                # PARSynthesizer for the sequential generator
+sktime>=0.27            # actively maintained augmentations
+# tsaug                 # augmentations; largely unmaintained, pin a commit
+# timesynth             # parametric signals; unmaintained, prefer numpy core
+PyYAML>=6.0

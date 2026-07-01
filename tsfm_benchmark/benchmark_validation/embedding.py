@@ -1,0 +1,40 @@
+"""Project the catch22 feature space to 3D for visual inspection.
+
+UMAP is the primary projector. The fallback (PCA, or t-SNE for a more clustered
+look) exists only so the pipeline still produces a plot where UMAP cannot be
+installed; it is flagged in the returned method name so a reader never mistakes
+one for the other.
+
+Important: this 3D embedding is for the eye only. UMAP preserves local
+neighbourhood structure but distorts global distances and densities, so cluster
+sizes and between-cluster gaps in the plot are not quantitative. All diversity
+numbers are computed in the original feature space in ``diversity.py``, never on
+these coordinates.
+"""
+
+from __future__ import annotations
+
+import numpy as np
+
+try:
+    import umap
+
+    _HAVE_UMAP = True
+except ImportError:
+    _HAVE_UMAP = False
+
+from sklearn.decomposition import PCA
+from sklearn.manifold import TSNE
+
+
+def embed_3d(features_scaled: np.ndarray, method: str = "umap", n_neighbors: int = 15, min_dist: float = 0.1, seed: int = 0) -> tuple[np.ndarray, str]:
+    """Return (n_sequences, 3) coordinates and the method actually used."""
+    n = len(features_scaled)
+    if method == "umap" and _HAVE_UMAP:
+        reducer = umap.UMAP(n_components=3, n_neighbors=min(n_neighbors, max(2, n - 1)), min_dist=min_dist, random_state=seed)
+        return reducer.fit_transform(features_scaled), "umap"
+    if method == "tsne" or (method == "umap" and not _HAVE_UMAP and n > 4):
+        perplexity = min(30, max(5, n // 4))
+        coords = TSNE(n_components=3, perplexity=perplexity, random_state=seed, init="pca").fit_transform(features_scaled)
+        return coords, "tsne_fallback" if method == "umap" else "tsne"
+    return PCA(n_components=3, random_state=seed).fit_transform(features_scaled), "pca_fallback"

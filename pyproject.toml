@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tsfm-benchmark"
+version = "0.1.0"
+description = "TSFM benchmark generation and validation pipeline"
+readme = "tsfm_benchmark/README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "numpy",
+  "scipy",
+  "pyyaml",
+]
+
+[tool.setuptools]
+packages = [
+  "tsfm_benchmark",
+  "tsfm_benchmark.build_pipeline",
+  "tsfm_benchmark.benchmark_validation",
+  "tsfm_benchmark.example_runs",
+]

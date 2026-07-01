@@ -1,0 +1,7 @@
+numpy>=1.26
+scipy>=1.11
+scikit-learn>=1.3
+pycatch22>=0.4          # catch22/catch24 canonical feature set
+umap-learn>=0.5         # 3D embedding for visual inspection
+plotly>=5.0             # interactive 3D scatter output
+dtaidistance>=2.3       # fast C DTW for the localized-DTW matcher; numpy fallback exists
