@@ -1,12 +1,80 @@
 # ============================================================================
 # TSFM Benchmark Configuration Reference
 # ============================================================================
-# Declarative benchmark composition. Each entry maps directly onto a TaskSpec:
+# Declarative benchmark composition. Each entry under `tasks:` maps directly
+# onto a TaskSpec (tsfm_benchmark/build_pipeline/builder.py):
 #   specs = [TaskSpec(**e) for e in yaml.safe_load(open("example.yaml"))["tasks"]]
 #
-# Tiers:
-#   - 'synthetic': Leakage-safe backbone using purely synthetic data
-#   - 'realism_stress': Real-derived data that must clear the leakage audit
+# This file is meant to be read, not just run: every non-obvious key below is
+# commented with what it means and what values it accepts. configs/
+# full_multidomain.yaml is a shorter, larger-scale config that assumes you've
+# read this one.
+#
+# ----------------------------------------------------------------------------
+# TaskSpec fields (top level of each list entry under `tasks:`)
+# ----------------------------------------------------------------------------
+#   name              REQUIRED. Unique string; used to derive this task's seed
+#                     offset, so renaming a task changes its exact output.
+#   generator         REQUIRED. Which registered generator produces each
+#                     series. Options:
+#                       - 'parametric'        synthetic, fixed recipe (Example 1/2)
+#                       - 'random_parametric' synthetic, randomized recipe per
+#                                             series (Example 4) -- prefer this
+#                                             one for a real benchmark; a fixed
+#                                             'parametric' task only varies its
+#                                             noise draw across `count` repeats,
+#                                             so every series shares one shape a
+#                                             model can shortcut on.
+#                       - 'mixture'           real-derived: blends real source
+#                                             series with Dirichlet weights
+#                                             (Example 3)
+#                       - 'block_bootstrap'   real-derived: moving-block
+#                                             bootstrap of one real series
+#                                             (requires the optional
+#                                             `tsbootstrap` package)
+#                       - 'sequential_par'    real-derived: SDV PARSynthesizer
+#                                             fit on a cohort of real series
+#                                             (not yet implemented upstream --
+#                                             calling it raises NotImplementedError)
+#   count             REQUIRED. Number of series this task contributes to
+#                     *each* split (public_dev and private_test are each built
+#                     with this many, independently seeded).
+#   tier              Free-form label only -- nothing in the pipeline branches
+#                     on it. By convention: 'synthetic' for leakage-safe
+#                     generators, 'realism_stress' for real-derived ones. Set
+#                     it for your own bookkeeping/downstream filtering.
+#   generator_params  Dict passed as **kwargs to the generator. Shape depends
+#                     on which `generator` you picked -- see the per-generator
+#                     sections below.
+#   corruptions       Fixed, ordered list of post-generation transforms
+#                     applied to every one of this task's `count` series (see
+#                     "AVAILABLE CORRUPTIONS" below). Any param value given as
+#                     a 2-item list `[low, high]` is resampled uniformly (or
+#                     as an integer, if both bounds are ints) per series
+#                     instead of being one fixed number for every series.
+#   corruption_pool   Alternative to `corruptions`: a larger list of candidate
+#                     corruptions from which a random subset (size and order
+#                     also randomized) is drawn independently for *each*
+#                     series -- see Example 4. If both are set, `corruption_pool`
+#                     wins for the count/order; use `n_corruptions` alongside it.
+#   n_corruptions     `[min, max]` -- how many corruptions from `corruption_pool`
+#                     to draw per series (drawn without replacement, then put
+#                     in random order). Ignored unless `corruption_pool` is set.
+#                     Omit to draw between 1 and the full pool size.
+#   source_config     Only meaningful for a real-derived generator (mixture /
+#                     block_bootstrap / sequential_par). Declares where to pull
+#                     real series from -- see the "SOURCE_CONFIG REFERENCE"
+#                     section below for every key it accepts.
+#   source_sample_size `[min, max]` -- for a real-derived generator, draw this
+#                     many sources at random from the loaded pool for *each*
+#                     series, instead of every series using the whole pool.
+#                     The pool itself is loaded from Hugging Face once and
+#                     cached, regardless of `count`. Strongly recommended
+#                     whenever `source_config` bootstraps across many domains
+#                     (the default -- see below): without it, every series in
+#                     the task blends the *same* fixed cross-domain pool
+#                     (just reweighted), rather than each series combining a
+#                     different random handful of domains.
 # ============================================================================
 
 tasks:
@@ -14,17 +82,9 @@ tasks:
   # EXAMPLE 1: Synthetic task with seasonal and trend components
   # -------------------------------------------------------------------------
   - name: seasonal_trend_synthetic
-    # REQUIRED: Unique identifier for this task
-    generator: mixture
-    # REQUIRED: Which generator to use
-    # Options: 'parametric' (synthetic), 'mixture' (real-derived),
-    #          'block_bootstrap' (real resampling), 'sequential_par' (SDV)
+    generator: parametric
     count: 200
-    # REQUIRED: Number of series to generate for this task
     tier: synthetic
-    # REQUIRED: Data tier - determines leakage safety level
-    # Options: 'synthetic' (leakage-safe, no real data)
-    #          'realism_stress' (real-derived, must pass audit)
 
     # =====================================================================
     # PARAMETRIC GENERATOR PARAMETERS
@@ -68,6 +128,11 @@ tasks:
       # Optional: Scaling factor for anomaly size (default: 4.0)
       # Actual magnitude = factor * noise_scale * sign (randomly ±)
 
+    # NOTE: every one of this task's 200 series uses this exact same trend
+    # order, these exact seasonal periods/amplitudes, and these exact AR
+    # coefficients -- only the noise draw differs per series (seeded by
+    # `name` + index). See Example 4 for the randomized alternative.
+
     # =====================================================================
     # CORRUPTION TRANSFORMS (applied after generation)
     # =====================================================================
@@ -110,7 +175,10 @@ tasks:
   # =========================================================================
   # AVAILABLE CORRUPTIONS (use 'op' field to specify)
   # =========================================================================
-  # Note: All corruptions record a ProvenanceStep for auditability
+  # Note: All corruptions record a ProvenanceStep for auditability. Any
+  # numeric param below can be given as `[low, high]` instead of one fixed
+  # number to resample it per series (see `corruptions`/`corruption_pool`
+  # above) -- e.g. `{op: jitter, sigma: [0.01, 0.08]}`.
   #
   # jitter:
   #   {op: jitter, sigma: 0.05}
@@ -131,14 +199,13 @@ tasks:
   # -------------------------------------------------------------------------
   # EXAMPLE 3: Real-derived mixture task (realism-stress tier)
   # -------------------------------------------------------------------------
-  # Real-derived tier. Sources are injected by the driver, not the YAML,
-  # because they require loading and hashing the real corpus first.
+  # Real source series are loaded (and hashed, for auditability) by the build
+  # driver / BenchmarkBuilder, not written directly into the YAML -- 'sources'
+  # never appears under generator_params by hand.
   - name: cross_domain_mixture
     generator: mixture
-    # Mixture generator: Combines real source series with known weights
     count: 100
     tier: realism_stress
-    # Must pass leakage audit before inclusion in benchmark
 
     # =====================================================================
     # MIXTURE GENERATOR PARAMETERS
@@ -158,16 +225,135 @@ tasks:
       # Lower values → more skewed (some sources dominate)
       # Weights are drawn from Dirichlet[weight_concentration, ...]
 
-      # NOTE: 'sources' parameter is NOT specified in YAML!
-      # It is injected by the build driver after loading and hashing the real corpus.
-      # This prevents leakage and ensures reproducibility via content hashing.
-      # You can also declare a Hugging Face source config directly in the task spec:
-      # source_config:
-      #   kind: huggingface
-      #   dataset: monash_tsf
-      #   config: tourism_monthly
-      #   split: train
-      #   field_name: target
-      #   limit: 50
-      # To activate this task from the CLI, run:
-      #   PYTHONPATH=. python3 tsfm_benchmark/example_runs/run_full.py --config configs/example.yaml --sources monash --references monash --source-limit 50 --reference-limit 50 --max-count 5
+    # Draw a different random handful of 3-8 real sources, from whichever
+    # domains source_config below ends up pooling, for *each* of the 100
+    # series -- see the TaskSpec field docs above.
+    source_sample_size: [3, 8]
+
+    # =====================================================================
+    # SOURCE_CONFIG REFERENCE (every key it accepts)
+    # =====================================================================
+    # No `subset`/`config` is given below, so this pulls from
+    # *every* config the dataset exposes (bootstrap_catalog), not one
+    # hand-picked domain -- hand-picking domains makes a benchmark only as
+    # generalizable as whoever curated the list. To pin one specific domain
+    # instead, add `subset: <name>` (see the commented alternative below).
+    source_config:
+      kind: huggingface
+      # REQUIRED. 'huggingface' / 'hf' (identical) or 'monash' (a convenience
+      # alias that just presets `dataset: Monash-University/monash_tsf`, so
+      # you can write `kind: monash` instead of naming the repo id yourself).
+      # Any Hugging Face dataset repo id works via 'huggingface' -- this is
+      # not Monash-specific machinery, e.g. `dataset: ETDataset/ett` works
+      # exactly the same way.
+
+      dataset: Monash-University/monash_tsf
+      # REQUIRED for kind: huggingface/hf (optional for kind: monash, where
+      # it defaults to Monash-University/monash_tsf). Any Hugging Face
+      # dataset repo id, e.g. 'ETDataset/ett', 'your-org/your-dataset'.
+      # ('dataset_name' / 'name' are accepted as synonyms.)
+
+      # subset: tourism_monthly
+      # OPTIONAL. Pin one specific config/domain of `dataset` by name (e.g.
+      # Monash's 'tourism_monthly', 'weather', 'bitcoin', ...; run
+      # `datasets.get_dataset_config_names(dataset)` to list them for any
+      # dataset). Leaving this unset (as this example does) is what triggers
+      # the auto-bootstrap-across-domains behavior described below.
+      # ('config' / 'config_name' are accepted as synonyms.)
+
+      split: train
+      # OPTIONAL, default 'train'. Which split of the dataset/config to read.
+
+      field_name: target
+      # OPTIONAL. Which field of each record holds the series values. Left
+      # unset, the loader prefers the 'target' field (the convention used by
+      # nearly every Hugging Face forecasting dataset -- Monash TSF, ETT,
+      # most GluonTS-style repos) and only falls back to scanning the whole
+      # record for numeric-looking fields if 'target' isn't present. Set this
+      # explicitly if your dataset uses a different field name.
+      # ('series_field' is accepted as a synonym.)
+
+      limit: 300
+      # OPTIONAL. When `subset` IS pinned: max series to load from that one
+      # config (default 100). When `subset` is NOT pinned (bootstrap mode, as
+      # here): total series to spread across however many domains get
+      # sampled (default 500) -- e.g. 300 split across 6 sampled domains is
+      # 50 series each.
+
+      n_domains: 6
+      # OPTIONAL, only used in bootstrap mode (no `subset` pinned). How many
+      # of the dataset's configs to randomly sample. Leaving this unset
+      # (the default) means "every config the dataset has" -- deliberately a
+      # large/unbounded default so an unconfigured task still gets broad
+      # domain coverage rather than one arbitrary domain. Set an explicit
+      # number to bound cost/runtime for a dataset with many configs, or
+      # the string "all" to be explicit about wanting every one of them.
+
+      seed: 1
+      # OPTIONAL, default 0. Controls which domains get randomly sampled in
+      # bootstrap mode (and, combined with `source_sample_size`, which
+      # sources end up in each generated series). Two tasks that should
+      # bootstrap *different* domain samples from the same dataset should use
+      # different seeds (see configs/full_multidomain.yaml).
+
+      domain_timeout_s: 30
+      # OPTIONAL, default 30. Only used in bootstrap mode. Some dataset
+      # configs are script-backed and not actually streamable -- they
+      # download a large archive up front, which can hang for minutes on a
+      # slow connection. A domain that doesn't finish loading within this
+      # many seconds is abandoned in favor of the next randomly drawn one,
+      # so one oversized domain can't stall the whole build.
+
+      trust_remote_code: true
+      # OPTIONAL, default true. Passed through to `datasets.load_dataset`;
+      # required by script-backed datasets like Monash TSF. Set false if your
+      # `datasets` version rejects the kwarg for a plain (non-script) dataset.
+
+      streaming: true
+      # OPTIONAL, default true. Passed through to `datasets.load_dataset`;
+      # avoids downloading a full dataset just to read `limit` rows from it.
+
+    # ---- Alternative: pin one specific domain instead of bootstrapping ----
+    # source_config:
+    #   kind: monash
+    #   subset: tourism_monthly
+    #   limit: 50
+    #
+    # ---- Alternative: let --sources/--source-subset on the CLI decide ----
+    # (omit source_config entirely from the task; see run_full.py --help)
+    #
+    # To build just this file from the CLI:
+    #   PYTHONPATH=. python3 tsfm_benchmark/example_runs/run_full.py \
+    #       --config configs/example.yaml --references monash --reference-limit 50 --max-count 5
+
+  # -------------------------------------------------------------------------
+  # EXAMPLE 4: Randomized synthetic backbone (recommended over Example 1/2)
+  # -------------------------------------------------------------------------
+  - name: diverse_synthetic
+    generator: random_parametric
+    count: 200
+    tier: synthetic
+    generator_params:
+      length: 512
+      # archetypes: [trend_dominant, seasonal_dominant]
+      # OPTIONAL. Restrict which structural archetypes get drawn from
+      # (default: all 8 -- trend_dominant, seasonal_dominant,
+      # multi_seasonal_complex, regime_switching, ar_colored_noise,
+      # anomaly_heavy, clean_low_noise, noisy_chaotic). Each archetype
+      # samples its own trend/seasonality/AR/changepoint/anomaly ranges
+      # independently per series -- see generators.py:_ARCHETYPES for the
+      # exact ranges each one uses.
+      # archetype_weights: [2, 1]
+      # OPTIONAL, same length as `archetypes` (or the full 8, if `archetypes`
+      # is omitted). Relative sampling weight per archetype; default uniform.
+
+    # Each of the 200 series gets a randomly chosen structural archetype AND
+    # a randomly sized/ordered/parameterized subset of these corruptions --
+    # no two series in this task need share the same shape or the same
+    # perturbation, unlike Example 1/2.
+    corruption_pool:
+      - {op: jitter, sigma: [0.01, 0.08]}
+      - {op: scaling, sigma: [0.05, 0.2]}
+      - {op: time_warp, strength: [0.05, 0.25], n_knots: [3, 6]}
+      - {op: dropout, rate: [0.02, 0.1]}
+    n_corruptions: [0, 3]

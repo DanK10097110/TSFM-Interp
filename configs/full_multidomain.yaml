@@ -1,0 +1,110 @@
+# ============================================================================
+# Full multi-domain benchmark configuration
+# ============================================================================
+# A larger, more diverse companion to configs/example.yaml -- read that file
+# first for a full field-by-field reference of every TaskSpec/source_config
+# key used here. This one is meant for a real "build the whole benchmark" run
+# rather than a quick smoke test. Both tiers are deliberately built to avoid
+# the two ways a fixed config quietly narrows a benchmark: reusing one
+# structural template, and hand-picking domains.
+#
+# Synthetic backbone (leakage-safe, tier: synthetic):
+#   Uses 'random_parametric', which redraws its entire structural recipe
+#   (trend, seasonality, AR order, changepoints, anomalies) from one of 8
+#   qualitatively different archetypes independently for every generated
+#   series, plus a randomly-sampled subset/order/magnitude of corruptions per
+#   series (corruption_pool + n_corruptions). A plain 'parametric' task run
+#   many times keeps every structural choice fixed and varies only the noise
+#   draw, so all its series share one shape a model can shortcut on; this
+#   generator instead makes the count repeats a genuinely varied population.
+#
+# Real-derived tier (tier: realism_stress):
+#   Deliberately restricted to the Monash TSF archive only (`kind: monash`,
+#   which is a convenience alias for `kind: huggingface, dataset:
+#   Monash-University/monash_tsf` -- the same source_config works against ANY
+#   Hugging Face dataset repo id, see configs/example.yaml, but this file
+#   intentionally keeps `dataset` unset so it always resolves to Monash).
+#   No domain is named, so sources.bootstrap_catalog discovers every config
+#   Monash exposes and draws a random sample of `n_domains` of them (skipping
+#   any whose loading script errors or hangs -- several Monash configs
+#   currently fail because the dataset's own script parses frequency strings
+#   like "H"/"min" with pandas aliases that changed upstream, and a couple of
+#   others turn out to be huge non-streamed downloads; that's a Monash-script
+#   issue, not this pipeline, and bootstrap_catalog just tries another domain
+#   after a bounded `domain_timeout_s` wait). Both tasks below pin
+#   `n_domains: 10` to bound cost/runtime; omit it to bootstrap across every
+#   Monash domain (the large default when unspecified -- see
+#   configs/example.yaml for the full source_config reference).
+#   `source_sample_size` then draws a different random handful of that pool
+#   for *each* generated series (via BenchmarkBuilder, which loads the pool
+#   once and caches it), so the task's `count` repeats each combine a
+#   different, randomly sized set of domains rather than one fixed blend.
+#
+# Synthetic:real ratio is 70:30 by sample count (35000 synthetic vs 7500 + 7500
+# real-derived, per split). Both splits (public_dev, private_test) are built
+# independently at these same counts, so the totals below are per split; the
+# full build (both splits) is 2x these numbers.
+#
+# Sizing: at these counts (35000 synthetic + 2 x 7500 real-derived per split,
+# 100000 series total across both splits) this lands at roughly 3.5 GB sealed
+# to corpus.jsonl, measured against this pipeline's actual per-sample JSON
+# size (~45 KB/synthetic series, ~12.5 KB/real-derived series with a small
+# source_sample_size). Scale every `count` by the same factor to hit a
+# different absolute size while keeping the 70:30 ratio; use --max-count for
+# a cheap dry run first (note --max-count only caps counts down, it can't
+# scale them up, and applies the same cap to every task so it does not
+# preserve the 70:30 ratio -- it's for smoke-testing the config, not sizing):
+#
+#   PYTHONPATH=. python3 tsfm_benchmark/example_runs/run_full.py \
+#       --config configs/full_multidomain.yaml --out ./benchmark_out \
+#       --max-count 20 --references monash --reference-limit 50
+#
+# Then drop --max-count for the real run. No --sources flag is needed here:
+# both real-derived tasks resolve their own sources via source_config.
+# ============================================================================
+
+tasks:
+  # ---------------------------------------------------------------------
+  # Synthetic backbone (70%): one task, but every repeat is structurally
+  # distinct -- see the module docstring above for why.
+  # ---------------------------------------------------------------------
+  - name: diverse_synthetic_backbone
+    generator: random_parametric
+    count: 35000
+    tier: synthetic
+    generator_params:
+      length: 512
+      # Uses all 8 built-in archetypes with equal weight by default. Narrow
+      # this with `archetypes: [...]` / `archetype_weights: [...]` if you
+      # want to bias the mix.
+    corruption_pool:
+      - {op: jitter, sigma: [0.01, 0.08]}
+      - {op: scaling, sigma: [0.05, 0.2]}
+      - {op: time_warp, strength: [0.05, 0.25], n_knots: [3, 6]}
+      - {op: dropout, rate: [0.02, 0.1]}
+    n_corruptions: [0, 3]
+    # Each series gets 0-3 randomly chosen corruptions, in random order, at a
+    # randomly sampled magnitude within each range above.
+
+  # ---------------------------------------------------------------------
+  # Real-derived (30% combined, 15% + 15%): bootstrapped across a random
+  # sample of Monash-only domains, with a different random cross-domain
+  # combination per generated series.
+  # ---------------------------------------------------------------------
+  - name: real_bootstrapped_weighted_sum
+    generator: mixture
+    count: 7500
+    tier: realism_stress
+    generator_params: {mode: weighted_sum, weight_concentration: 0.7}
+    source_sample_size: [3, 10]
+    source_config: {kind: monash, n_domains: 10, limit: 300, seed: 1}
+
+  - name: real_bootstrapped_multiplicative
+    generator: mixture
+    count: 7500
+    tier: realism_stress
+    generator_params: {mode: multiplicative, weight_concentration: 0.5}
+    source_sample_size: [2, 6]
+    # Different seed than the task above so the two tasks' bootstrapped
+    # domain samples aren't forced identical, widening overall coverage.
+    source_config: {kind: monash, n_domains: 10, limit: 300, seed: 2}

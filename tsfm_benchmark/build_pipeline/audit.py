@@ -137,15 +137,31 @@ class LeakageAuditor:
 
 
 def find_near_duplicates(samples: list[TimeSeriesSample], target_len: int = 256, threshold: float = 0.05) -> list[tuple[str, str, float]]:
-    """Return pairs of benchmark samples whose shapes are nearly identical."""
-    norms = [(_normalize(s.values, target_len), s.sample_id) for s in samples]
+    """Return pairs of benchmark samples whose shapes are nearly identical.
+
+    Uses a KD-tree radius search rather than an all-pairs scan: the naive
+    O(n^2) comparison becomes the dominant cost once a build produces tens of
+    thousands of samples (e.g. a multi-domain, gigabyte-scale run), while a
+    tree-based fixed-radius pair query stays tractable at that scale and
+    returns the exact same pairs.
+    """
+    if len(samples) < 2:
+        return []
+
+    from scipy.spatial import cKDTree
+
     denom = np.sqrt(target_len)
+    data = np.stack([_normalize(s.values, target_len) for s in samples])
+    ids = [s.sample_id for s in samples]
+
+    tree = cKDTree(data)
+    candidate_pairs = tree.query_pairs(r=threshold * denom, output_type="ndarray")
+
     dups: list[tuple[str, str, float]] = []
-    for i in range(len(norms)):
-        for j in range(i + 1, len(norms)):
-            d = float(np.linalg.norm(norms[i][0] - norms[j][0]) / denom)
-            if d < threshold:
-                dups.append((norms[i][1], norms[j][1], d))
+    for i, j in candidate_pairs:
+        d = float(np.linalg.norm(data[i] - data[j]) / denom)
+        if d < threshold:
+            dups.append((ids[i], ids[j], d))
     return dups
 
 

@@ -11,6 +11,8 @@ diversity metrics and the embedding both consume the scaled matrix.
 
 from __future__ import annotations
 
+import logging
+import time
 from dataclasses import dataclass
 
 import numpy as np
@@ -25,6 +27,8 @@ except ImportError:
 from sklearn.preprocessing import RobustScaler
 
 from .loaders import SeqRecord
+
+logger = logging.getLogger("tsfm_benchmark.benchmark_validation.features")
 
 
 @dataclass
@@ -47,12 +51,19 @@ def extract_features(records: list[SeqRecord], catch24: bool = False) -> Feature
     if not _HAVE_CATCH22:
         raise ImportError("install pycatch22 to extract catch22 features")
 
+    n = len(records)
+    logger.info("extract_features: computing catch%d features for %d sequences", 24 if catch24 else 22, n)
+    t0 = time.perf_counter()
+    log_every = max(1, n // 10)
+
     rows = []
     names: list[str] = []
-    for r in records:
+    for i, r in enumerate(records):
         out = pycatch22.catch22_all(r.values.tolist(), catch24=catch24)
         names = out["names"]
         rows.append(out["values"])
+        if (i + 1) % log_every == 0 or i + 1 == n:
+            logger.debug("extract_features: %d/%d sequences done", i + 1, n)
 
     raw = np.asarray(rows, dtype=float)
     finite = np.isfinite(raw)
@@ -63,6 +74,7 @@ def extract_features(records: list[SeqRecord], catch24: bool = False) -> Feature
 
     scaled = RobustScaler().fit_transform(filled)
     scaled = np.nan_to_num(scaled, nan=0.0, posinf=0.0, neginf=0.0)
+    logger.info("extract_features: done in %.2fs (%d/%d sequences needed imputation)", time.perf_counter() - t0, n_imputed, n)
 
     return FeatureMatrix(
         features_raw=raw,

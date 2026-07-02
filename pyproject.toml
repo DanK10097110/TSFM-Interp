@@ -14,6 +14,14 @@ dependencies = [
   "pyyaml",
 ]
 
+[project.optional-dependencies]
+real-data = [
+  "datasets>=2.18",      # Hugging Face hub access (Monash and other real corpora)
+  "dtaidistance>=2.3",   # fast C DTW for the leakage gate; numpy fallback exists
+  "tsbootstrap>=0.1",    # block bootstrap generator
+  "sdv>=1.9",            # PARSynthesizer for the sequential generator
+]
+
 [tool.setuptools]
 packages = [
   "tsfm_benchmark",

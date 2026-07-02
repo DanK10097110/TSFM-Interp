@@ -107,6 +107,178 @@ def parametric(
     return TimeSeriesSample(values=values, ground_truth=gt, provenance=prov)
 
 
+_ARCHETYPES: dict[str, dict[str, tuple[float, float]]] = {
+    # Each archetype is a qualitatively distinct structural regime. Ranges are
+    # (low, high) and are sampled fresh per generated series, so two series
+    # from the same archetype still differ in exact shape, and series across
+    # archetypes differ in kind, not just noise realization.
+    "trend_dominant": dict(
+        trend_order=(1, 3), trend_scale=(0.8, 2.5),
+        n_seasonal=(0, 1), period=(20, 60), amplitude=(0.05, 0.3),
+        ar_order=(0, 1), ar_coeff=(-0.2, 0.2),
+        noise_scale=(0.05, 0.15),
+        n_changepoints=(0, 1), n_anomalies=(0, 2), anomaly_magnitude=(2.0, 4.0),
+    ),
+    "seasonal_dominant": dict(
+        trend_order=(0, 1), trend_scale=(0.0, 0.3),
+        n_seasonal=(1, 2), period=(12, 48), amplitude=(0.8, 2.0),
+        ar_order=(0, 1), ar_coeff=(-0.2, 0.2),
+        noise_scale=(0.05, 0.15),
+        n_changepoints=(0, 0), n_anomalies=(0, 2), anomaly_magnitude=(2.0, 4.0),
+    ),
+    "multi_seasonal_complex": dict(
+        trend_order=(0, 2), trend_scale=(0.0, 0.6),
+        n_seasonal=(2, 4), period=(6, 200), amplitude=(0.3, 1.5),
+        ar_order=(0, 2), ar_coeff=(-0.3, 0.3),
+        noise_scale=(0.05, 0.2),
+        n_changepoints=(0, 1), n_anomalies=(0, 2), anomaly_magnitude=(2.0, 5.0),
+    ),
+    "regime_switching": dict(
+        trend_order=(0, 1), trend_scale=(0.0, 0.4),
+        n_seasonal=(0, 2), period=(10, 80), amplitude=(0.3, 1.2),
+        ar_order=(0, 1), ar_coeff=(-0.2, 0.2),
+        noise_scale=(0.1, 0.3),
+        n_changepoints=(3, 8), n_anomalies=(0, 2), anomaly_magnitude=(2.0, 4.0),
+    ),
+    "ar_colored_noise": dict(
+        trend_order=(0, 1), trend_scale=(0.0, 0.3),
+        n_seasonal=(0, 1), period=(12, 60), amplitude=(0.0, 0.5),
+        ar_order=(2, 4), ar_coeff=(-0.6, 0.6),
+        noise_scale=(0.1, 0.25),
+        n_changepoints=(0, 1), n_anomalies=(0, 1), anomaly_magnitude=(2.0, 4.0),
+    ),
+    "anomaly_heavy": dict(
+        trend_order=(0, 1), trend_scale=(0.0, 0.3),
+        n_seasonal=(0, 2), period=(12, 100), amplitude=(0.2, 1.0),
+        ar_order=(0, 1), ar_coeff=(-0.2, 0.2),
+        noise_scale=(0.05, 0.15),
+        n_changepoints=(0, 1), n_anomalies=(5, 12), anomaly_magnitude=(3.0, 8.0),
+    ),
+    "clean_low_noise": dict(
+        trend_order=(0, 2), trend_scale=(0.0, 1.0),
+        n_seasonal=(1, 3), period=(10, 150), amplitude=(0.3, 1.5),
+        ar_order=(0, 0), ar_coeff=(0.0, 0.0),
+        noise_scale=(0.01, 0.05),
+        n_changepoints=(0, 1), n_anomalies=(0, 1), anomaly_magnitude=(2.0, 3.0),
+    ),
+    "noisy_chaotic": dict(
+        trend_order=(0, 2), trend_scale=(0.0, 1.0),
+        n_seasonal=(0, 2), period=(10, 150), amplitude=(0.1, 1.0),
+        ar_order=(1, 3), ar_coeff=(-0.85, 0.85),
+        noise_scale=(0.3, 0.6),
+        n_changepoints=(0, 3), n_anomalies=(0, 4), anomaly_magnitude=(2.0, 6.0),
+    ),
+}
+
+
+def _ri(rng: np.random.Generator, lo: float, hi: float) -> int:
+    lo, hi = int(lo), int(hi)
+    return lo if hi <= lo else int(rng.integers(lo, hi + 1))
+
+
+def _ru(rng: np.random.Generator, lo: float, hi: float) -> float:
+    return float(lo) if hi <= lo else float(rng.uniform(lo, hi))
+
+
+def _stable_ar_coeffs(rng: np.random.Generator, order: int, max_reflection: float) -> list[float]:
+    """Sample AR(order) coefficients that are guaranteed stationary, for any order.
+
+    Sampling each coefficient independently within a fixed magnitude bound is
+    NOT safe once order >= 2: stationarity depends on every root of the AR
+    characteristic polynomial lying outside the unit circle, a joint
+    condition that per-coefficient bounds do not enforce. Two coefficients
+    each comfortably under 1 in magnitude can still combine into a process
+    that explodes exponentially (observed in practice here: an AR(3) draw
+    with |coeffs| <= 0.85 each produced values up to ~1e96 on a length-512
+    series). Sampling reflection coefficients in (-max_reflection,
+    max_reflection) and running the Levinson-Durbin recursion instead
+    guarantees a stationary process by construction, for any order, with no
+    rejection sampling needed.
+    """
+    if order <= 0:
+        return []
+    reflection = rng.uniform(-max_reflection, max_reflection, size=order)
+    a = np.zeros(order)
+    for m in range(order):
+        prev = a.copy()
+        k = reflection[m]
+        a[m] = k
+        for i in range(m):
+            a[i] = prev[i] - k * prev[m - 1 - i]
+    return [round(float(c), 4) for c in a]
+
+
+def _sample_archetype_params(rng: np.random.Generator, spec: dict[str, tuple[float, float]]) -> dict[str, Any]:
+    trend = {"order": _ri(rng, *spec["trend_order"]), "scale": _ru(rng, *spec["trend_scale"])}
+
+    seasonalities = []
+    for _ in range(_ri(rng, *spec["n_seasonal"])):
+        seasonalities.append({
+            "period": round(_ru(rng, *spec["period"]), 2),
+            "amplitude": round(_ru(rng, *spec["amplitude"]), 4),
+            "phase": round(float(rng.uniform(0, 2 * np.pi)), 4),
+        })
+
+    ar_order = _ri(rng, *spec["ar_order"])
+    max_reflection = max(abs(spec["ar_coeff"][0]), abs(spec["ar_coeff"][1]))
+    ar_coeffs = _stable_ar_coeffs(rng, ar_order, max_reflection) if ar_order else None
+
+    return dict(
+        trend=trend,
+        seasonalities=seasonalities or None,
+        ar_coeffs=ar_coeffs,
+        noise_scale=round(_ru(rng, *spec["noise_scale"]), 4),
+        n_changepoints=_ri(rng, *spec["n_changepoints"]),
+        n_anomalies=_ri(rng, *spec["n_anomalies"]),
+        anomaly_magnitude=round(_ru(rng, *spec["anomaly_magnitude"]), 4),
+    )
+
+
+@GENERATORS.register("random_parametric")
+def random_parametric(
+    seed: int = 0,
+    length: int = 512,
+    archetypes: list[str] | None = None,
+    archetype_weights: list[float] | None = None,
+) -> TimeSeriesSample:
+    """Pick a random structural archetype per call and sample its hyperparameters.
+
+    A plain ``parametric`` task run ``count`` times keeps every structural
+    choice (trend order, seasonal periods, AR coefficients, ...) fixed across
+    the whole task and only varies the noise draw, so all its series share one
+    shape family; a model can shortcut on that shape rather than learning to
+    read the interpretability structure generically. This generator instead
+    redraws the entire structural recipe from one of several qualitatively
+    different regimes (trend-dominant, seasonal, regime-switching, colored
+    noise, anomaly-heavy, clean, chaotic, ...) on every call, so a task's
+    ``count`` repeats span a genuinely varied population. Delegates the actual
+    composition to ``parametric`` so ground truth and provenance stay exact;
+    the chosen archetype and sampled recipe are recorded alongside it.
+    """
+    rng = np.random.default_rng(seed)
+    names = archetypes or list(_ARCHETYPES)
+    unknown = sorted(set(names) - set(_ARCHETYPES))
+    if unknown:
+        raise ValueError(f"unknown archetype(s) {unknown}; have {sorted(_ARCHETYPES)}")
+
+    weights = None
+    if archetype_weights is not None:
+        w = np.asarray(archetype_weights, dtype=float)
+        weights = w / w.sum()
+    archetype = names[int(rng.choice(len(names), p=weights))]
+
+    params = _sample_archetype_params(rng, _ARCHETYPES[archetype])
+    inner_seed = int(rng.integers(0, 2**31 - 1))
+    sample = parametric(length=length, seed=inner_seed, **params)
+
+    sample.ground_truth.generative_params["archetype"] = archetype
+    sample.ground_truth.notes = f"fully synthetic; leakage-safe tier; archetype={archetype}"
+    sample.provenance.generator = "random_parametric"
+    sample.provenance.generator_params = {"length": length, "archetype": archetype, "sampled_params": params, "inner_seed": inner_seed}
+    sample.provenance.seed = seed
+    return sample
+
+
 @GENERATORS.register("mixture")
 def mixture(
     sources: list[tuple[SourceRef, np.ndarray]],

@@ -9,16 +9,83 @@ flagged redundant pairs carry the actionable signal.
 from __future__ import annotations
 
 import json
+from collections import Counter
 from typing import Any
 
 from .diversity import DiversityReport
 from .features import FeatureMatrix
+from .loaders import SeqRecord
 from .matching import MatchReport
 
 
-def build_report(match: MatchReport, fm: FeatureMatrix, diversity: DiversityReport, embed_method: str) -> dict[str, Any]:
-    """Combine all stage outputs into one serialisable dictionary."""
+def _composition(records: list[SeqRecord]) -> dict[str, Any]:
+    """Actual counts realized in the corpus -- by tier, task, generator, and domain."""
+    total = len(records) or 1
+    tier_counts = Counter(r.tier for r in records)
+    task_counts = Counter(r.task for r in records)
+    group_counts = Counter(r.group for r in records)
+    domain_counts: Counter[str] = Counter()
+    for r in records:
+        domain_counts.update(r.domains)
+
     return {
+        "n_sequences": len(records),
+        "by_tier": {k: {"count": v, "fraction": round(v / total, 4)} for k, v in tier_counts.most_common()},
+        "by_task": {k: v for k, v in task_counts.most_common()},
+        "by_generator": {k: v for k, v in group_counts.most_common()},
+        "by_domain": dict(domain_counts.most_common()),
+    }
+
+
+def _by_group_summary(by_group: dict[str, DiversityReport]) -> dict[str, Any]:
+    """Per-group headline numbers, plus which feature(s) actually drive each group's variance.
+
+    ``diversity_metrics_by_group`` scales every group against one scaler fit
+    on the whole corpus (so groups stay comparable), which has a real
+    consequence worth surfacing directly: if one feature is nearly constant
+    across most of the corpus (tiny global IQR) but a minority group
+    legitimately varies on it, that single feature can dominate the group's
+    scaled variance and make it look collapsed in every *other* dimension by
+    comparison. ``top_variance_feature`` names the feature so that's
+    diagnosable instead of just a suspicious-looking number.
+    """
+    return {
+        g: {
+            "n_sequences": d.n_sequences,
+            "effective_dimensionality": d.effective_dimensionality,
+            "total_variance": d.total_variance,
+            "nn_distance_mean": d.nn_distance_mean,
+            "near_collision_fraction": d.near_collision_fraction,
+            "top_variance_feature": d.feature_variance_ranking[0] if d.feature_variance_ranking else None,
+        }
+        for g, d in by_group.items()
+    }
+
+
+def build_report(
+    match: MatchReport,
+    fm: FeatureMatrix,
+    diversity: DiversityReport,
+    embed_method: str,
+    records: list[SeqRecord] | None = None,
+    diversity_by_group: dict[str, DiversityReport] | None = None,
+    diversity_by_group_key: str | None = None,
+    redundancy_by_group_result: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Combine all stage outputs into one serialisable dictionary.
+
+    ``records`` (the same list passed to matching/feature extraction) is
+    optional only for backward compatibility; passing it fills in the
+    ``composition`` section with the ratios actually realized in the corpus,
+    which is the only place in this report that reflects the pipeline's
+    build-time labels (tier/task/generator/domain) rather than a downstream
+    metric derived from the raw values. ``diversity_by_group`` (see
+    ``diversity_metrics_by_group``) and ``redundancy_by_group_result`` (see
+    ``redundancy_by_group``) are the per-group counterparts of the global
+    ``diversity``/``matching`` numbers -- pass them to surface a subgroup that
+    has collapsed even though the corpus-wide numbers look fine.
+    """
+    report: dict[str, Any] = {
         "n_sequences": diversity.n_sequences,
         "matching": {
             "method": match.method,
@@ -44,6 +111,13 @@ def build_report(match: MatchReport, fm: FeatureMatrix, diversity: DiversityRepo
         },
         "embedding_method": embed_method,
     }
+    if records is not None:
+        report["composition"] = _composition(records)
+    if diversity_by_group is not None:
+        report["diversity_by_group"] = {"by": diversity_by_group_key or "unknown", "groups": _by_group_summary(diversity_by_group)}
+    if redundancy_by_group_result is not None:
+        report["redundancy_by_group"] = redundancy_by_group_result
+    return report
 
 
 def save_report(report: dict[str, Any], path: str) -> str:
@@ -54,6 +128,13 @@ def save_report(report: dict[str, Any], path: str) -> str:
 
 def print_summary(report: dict[str, Any]) -> None:
     m, f, d = report["matching"], report["features"], report["diversity"]
+    if "composition" in report:
+        c = report["composition"]
+        tier_str = ", ".join(f"{k}={v['count']} ({v['fraction']:.1%})" for k, v in c["by_tier"].items())
+        print(f"composition by tier  : {tier_str}")
+        print(f"composition by task  : {c['by_task']}")
+        if c["by_domain"]:
+            print(f"real domains used    : {c['by_domain']}")
     print(f"sequences            : {report['n_sequences']}")
     print(f"feature set          : {f['set']} ({f['n_features']} features), imputed {f['n_sequences_imputed']}")
     print(f"match method         : {m['method']}")
@@ -66,3 +147,13 @@ def print_summary(report: dict[str, Any]) -> None:
         print("top redundant pairs  :")
         for a, b, s in m["top_redundant_pairs"][:5]:
             print(f"   {a}  ~  {b}   sim={s:.4f}")
+    if "diversity_by_group" in report:
+        dg = report["diversity_by_group"]
+        print(f"diversity by {dg['by']:<8} : (effective_dim / total_var / near_collision_frac, n, top variance feature)")
+        for g, v in sorted(dg["groups"].items(), key=lambda kv: kv[1]["effective_dimensionality"]):
+            top_feat = f"{v['top_variance_feature'][0]}={v['top_variance_feature'][1]:.1f}" if v["top_variance_feature"] else "-"
+            print(f"   {g:<32} {v['effective_dimensionality']:>6.3f} / {v['total_variance']:>10.3f} / {v['near_collision_fraction']:.3f}   (n={v['n_sequences']:<4d} top={top_feat})")
+    if "redundancy_by_group" in report:
+        rg = report["redundancy_by_group"]
+        print(f"within-group similarity : {rg['within_group_mean_similarity']}")
+        print(f"across-group similarity : {rg['across_group_mean_similarity']}")

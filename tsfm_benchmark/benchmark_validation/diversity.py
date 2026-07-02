@@ -73,3 +73,37 @@ def diversity_metrics(fm: FeatureMatrix, near_collision_quantile: float = 0.05) 
         near_collision_fraction=round(near_collision, 4),
         feature_variance_ranking=[(name, round(v, 4)) for name, v in ranking],
     )
+
+
+def diversity_metrics_by_group(fm: FeatureMatrix, labels: list[str], min_group_size: int = 5, near_collision_quantile: float = 0.05) -> dict[str, DiversityReport]:
+    """Rerun ``diversity_metrics`` separately for each label's rows.
+
+    A single global number can average away the failure that actually
+    matters: one task or archetype collapsed onto a handful of shapes while
+    another is genuinely broad. ``labels`` must be aligned to ``fm.ids``
+    (e.g. ``[r.task for r in records]``, ``[r.tier for r in records]``, or
+    ``[r.archetype for r in records]``). Groups with fewer than
+    ``min_group_size`` members are skipped -- PCA and nearest-neighbour
+    metrics are not meaningful on a handful of points, and a silently
+    misleading number is worse than an omitted one.
+    """
+    if len(labels) != len(fm.ids):
+        raise ValueError(f"labels must align with fm.ids: got {len(labels)} labels for {len(fm.ids)} rows")
+
+    labels_arr = np.asarray(labels)
+    out: dict[str, DiversityReport] = {}
+    for g in sorted(set(labels)):
+        mask = labels_arr == g
+        if int(mask.sum()) < min_group_size:
+            continue
+        idx = np.where(mask)[0]
+        sub = FeatureMatrix(
+            features_raw=fm.features_raw[idx],
+            features_scaled=fm.features_scaled[idx],
+            feature_names=fm.feature_names,
+            ids=[fm.ids[i] for i in idx],
+            groups=[fm.groups[i] for i in idx],
+            n_imputed=0,
+        )
+        out[g] = diversity_metrics(sub, near_collision_quantile=near_collision_quantile)
+    return out

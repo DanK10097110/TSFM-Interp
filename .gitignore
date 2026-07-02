@@ -23,3 +23,6 @@ build/
 # OS generated files
 .DS_Store
 Thumbs.db
+
+# Debug logs (run_validation.py --debug, etc.)
+/logs/
