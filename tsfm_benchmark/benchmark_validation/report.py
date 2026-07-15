@@ -99,6 +99,7 @@ def build_report(
             "set": "catch24" if len(fm.feature_names) == 24 else "catch22",
             "n_features": len(fm.feature_names),
             "n_sequences_imputed": fm.n_imputed,
+            "n_values_winsorized": fm.n_clipped,
         },
         "diversity": {
             "effective_dimensionality": diversity.effective_dimensionality,
@@ -136,7 +137,7 @@ def print_summary(report: dict[str, Any]) -> None:
         if c["by_domain"]:
             print(f"real domains used    : {c['by_domain']}")
     print(f"sequences            : {report['n_sequences']}")
-    print(f"feature set          : {f['set']} ({f['n_features']} features), imputed {f['n_sequences_imputed']}")
+    print(f"feature set          : {f['set']} ({f['n_features']} features), imputed {f['n_sequences_imputed']}, winsorized {f.get('n_values_winsorized', 0)} values")
     print(f"match method         : {m['method']}")
     print(f"redundancy fraction  : {m['redundancy_fraction']}  ({m['n_redundant_pairs']} pairs >= threshold)")
     print(f"effective dimensions : {d['effective_dimensionality']} of {f['n_features']}")

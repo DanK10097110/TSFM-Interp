@@ -17,8 +17,17 @@ writes its own HTML file, so they can be opened independently:
                                   produces rather than trusting a shape label.
 - ``plot_feature_variance``    -- which catch22 properties carry the spread
                                   the diversity metrics summarise numerically.
+- ``plot_feature_anomalies``   -- the sequences whose most extreme catch22
+                                  feature value got winsorized hardest, so an
+                                  outlier flagged only as a number in
+                                  ``extract_features`` can be inspected as an
+                                  actual series.
 - ``plot_redundancy_histogram``-- the pairwise-similarity distribution behind
                                   the single redundancy-fraction number.
+- ``plot_top_redundant_pairs``  -- the highest-similarity pairs themselves,
+                                  overlaid (z-normalised) with full creation
+                                  provenance, so a flagged pair can be
+                                  eyeballed rather than trusted from a score.
 - ``plot_diversity_by_group``  -- compares effective dimensionality and total
                                   variance *per group* (task/tier/archetype)
                                   side by side, so a collapsed subgroup is
@@ -192,8 +201,51 @@ def plot_feature_variance(diversity: DiversityReport, output_path: str, top_n: i
     fig = go.Figure(go.Bar(x=values, y=names, orientation="h"))
     fig.update_layout(
         title=f"Top {len(ranking)} catch22 features by variance (of {len(diversity.feature_variance_ranking)} total)",
-        xaxis_title="variance (robust-scaled feature space)",
+        xaxis_title="variance (robust-scaled + winsorized feature space)",
         margin=dict(l=180),
+    )
+    fig.write_html(output_path, include_plotlyjs="cdn")
+    return output_path
+
+
+def plot_feature_anomalies(fm: FeatureMatrix, records: list[SeqRecord], output_path: str, top_n: int = 6) -> str:
+    """Grid of the raw series behind the most extreme catch22 feature values.
+
+    ``extract_features`` winsorizes scaled feature values beyond
+    +/-``clip_scaled`` so a single unstable statistic can't dominate every
+    downstream metric (see that module's docstring), but a value hitting the
+    clip boundary is still worth looking at -- it means that sequence is a
+    genuine outlier on some axis, clip or no clip. This ranks sequences by
+    their pre-winsorization anomaly score (``fm.anomaly_scores``, the largest
+    |scaled value| any single feature reached for that sequence) and plots
+    the actual raw series for the worst offenders, titled with which feature
+    triggered it and its raw/scaled value, so "this is an outlier" comes with
+    a picture of what the outlier actually looks like.
+    """
+    if len(fm.anomaly_scores) == 0:
+        raise ValueError("fm has no anomaly diagnostics -- pass a FeatureMatrix built by extract_features, not a hand-assembled slice")
+
+    by_id = {r.seq_id: r for r in records}
+    order = np.argsort(-fm.anomaly_scores)[:top_n]
+
+    n_cols = min(3, len(order)) or 1
+    n_rows = -(-len(order) // n_cols)
+    titles = []
+    for i in order:
+        rec = by_id.get(fm.ids[i])
+        label = rec.task if rec and rec.task != "unknown" else (rec.group if rec else fm.groups[i])
+        titles.append(f"{fm.ids[i][:12]} ({label})<br>{fm.anomaly_features[i]}: raw={fm.anomaly_raw_values[i]:.3g}, z={fm.anomaly_scores[i]:.1f}")
+
+    fig = make_subplots(rows=n_rows, cols=n_cols, subplot_titles=titles)
+    for rank, i in enumerate(order):
+        rec = by_id.get(fm.ids[i])
+        values = rec.values if rec is not None else np.array([])
+        row, col = rank // n_cols + 1, rank % n_cols + 1
+        fig.add_trace(go.Scatter(y=values, mode="lines", showlegend=False, line=dict(width=1.2, color="firebrick")), row=row, col=col)
+
+    fig.update_layout(
+        title=f"Top {len(order)} sequences by most extreme (pre-winsorization) catch22 feature value",
+        height=max(280, 260 * n_rows),
     )
     fig.write_html(output_path, include_plotlyjs="cdn")
     return output_path
@@ -213,6 +265,84 @@ def plot_redundancy_histogram(match: MatchReport, output_path: str) -> str:
         xaxis_title="similarity bucket",
         yaxis_title="pair count",
         xaxis_tickangle=-30,
+    )
+    fig.write_html(output_path, include_plotlyjs="cdn")
+    return output_path
+
+
+def _provenance_label(r: SeqRecord | None) -> str:
+    if r is None:
+        return "unknown"
+    parts = [f"group={r.group}", f"task={r.task}", f"tier={r.tier}"]
+    if r.archetype != "unknown":
+        parts.append(f"archetype={r.archetype}")
+    if r.domains:
+        parts.append(f"domains={','.join(r.domains)}")
+    return ", ".join(parts)
+
+
+def plot_top_redundant_pairs(match: MatchReport, records: list[SeqRecord], output_path: str, top_n: int = 3) -> str:
+    """Overlay the highest-similarity pairs, full creation provenance in the title.
+
+    Takes the top-``top_n`` pairs by raw similarity straight from
+    ``match.similarity_matrix``, *not* ``match.redundant_pairs`` -- that list
+    is filtered by ``redundancy_threshold``, and the two matchers' similarity
+    scores aren't on comparable scales (xcorr is a Pearson correlation that
+    reaches 1.0 for any perfectly-correlated shape; DTW's `1/(1+dist/sqrt(L))`
+    needs a near-zero warp distance to get close to 1.0, so a threshold tuned
+    for one can filter out everything under the other). Looking at "the
+    highest-similarity pairs that exist" rather than "pairs above a threshold"
+    keeps this plot meaningful regardless of that threshold or which method
+    produced the scores.
+
+    Each pair is drawn z-normalised (mean 0, std 1) on a 0-1 fraction-of-length
+    x-axis -- the same length/scale invariance the matcher itself uses -- so
+    two series that are flagged as near-duplicates despite different raw
+    lengths or amplitudes still overlay visibly. The title carries each
+    sequence's full provenance (generator, task, tier, archetype, real-domain
+    sources) rather than just its id, since "these two are similar" is only
+    actionable if you know *how* each one was made.
+    """
+    sim = match.similarity_matrix
+    n_seq = match.n_sequences
+    tri_i, tri_j = np.triu_indices(n_seq, k=1)
+    if len(tri_i) == 0:
+        pairs: list[tuple[str, str, float]] = []
+    else:
+        sims = sim[tri_i, tri_j]
+        order = np.argsort(-sims)[:top_n]
+        pairs = [(match.ids[tri_i[k]], match.ids[tri_j[k]], float(sims[k])) for k in order]
+
+    by_id = {r.seq_id: r for r in records}
+    n = max(1, len(pairs))
+
+    titles = []
+    for id_a, id_b, sim in pairs:
+        titles.append(f"sim={sim:.4f}<br>A {id_a[:12]}: {_provenance_label(by_id.get(id_a))}<br>B {id_b[:12]}: {_provenance_label(by_id.get(id_b))}")
+
+    fig = make_subplots(rows=n, cols=1, subplot_titles=titles if pairs else ["fewer than 2 sequences to compare"])
+
+    def _znorm(values: np.ndarray) -> np.ndarray:
+        v = np.asarray(values, dtype=float)
+        return (v - v.mean()) / (v.std() + 1e-8)
+
+    for row, (id_a, id_b, _sim) in enumerate(pairs, start=1):
+        rec_a, rec_b = by_id.get(id_a), by_id.get(id_b)
+        show_legend = row == 1
+        if rec_a is not None:
+            fig.add_trace(
+                go.Scatter(x=np.linspace(0, 1, len(rec_a.values)), y=_znorm(rec_a.values), mode="lines", name="sequence A", legendgroup="A", showlegend=show_legend, line=dict(width=1.3, color="steelblue")),
+                row=row, col=1,
+            )
+        if rec_b is not None:
+            fig.add_trace(
+                go.Scatter(x=np.linspace(0, 1, len(rec_b.values)), y=_znorm(rec_b.values), mode="lines", name="sequence B", legendgroup="B", showlegend=show_legend, line=dict(width=1.3, color="darkorange")),
+                row=row, col=1,
+            )
+
+    fig.update_layout(
+        title=f"Top {len(pairs)} highest-similarity pairs (z-normalised overlay, {match.method} similarity; not filtered by redundancy_threshold)",
+        height=max(280, 260 * n),
     )
     fig.write_html(output_path, include_plotlyjs="cdn")
     return output_path

@@ -56,24 +56,40 @@ Every sequence is first z-normalised and resampled to a common length — the
 "equal sized buckets" step — so the comparison is invariant to length and
 absolute scale. Then one of two matchers runs over all pairs:
 
-- **Rolling cross-correlation:** best Pearson correlation over a band of integer
-  lags. Captures linear shape similarity under small shifts; scale-invariant by
-  construction, blind to nonlinear warping.
-- **Localized DTW:** a Sakoe-Chiba banded dynamic time warp, distance mapped to
-  a similarity. Additionally tolerant of local time warping; more expensive.
+- **Localized DTW (default, `method="dtw"`):** a Sakoe-Chiba banded dynamic
+  time warp, distance mapped to a similarity. Tolerant of local time warping
+  (one regime lasting a bit longer, a seasonal period drifting), which is what
+  makes it the more robust redundancy check. Scores the whole n×n matrix in
+  one call to dtaidistance's parallel C `distance_matrix_fast` when installed
+  (falls back to a pure-Python banded implementation, with progress logging,
+  if it isn't) — batched rather than one Python-level call per pair, which is
+  what makes DTW affordable as the default instead of only a fallback for
+  small corpora.
+- **Rolling cross-correlation (`method="xcorr"`):** best Pearson correlation
+  over a band of integer lags, batched as one BLAS matmul per lag across all
+  pairs at once. Cheaper than DTW but only tolerant of a uniform shift, blind
+  to local warping — two sequences that are the same shape but locally
+  stretched score low even though DTW would (correctly) flag them.
 
 Outputs: the full similarity matrix, an **equal-frequency bucketed histogram** of
 all pairwise scores (the redundancy profile of the whole set), the redundancy
-fraction, and the explicit list of pairs above a redundancy threshold. The
-pairwise step is O(n^2); pass `max_sequences` to score a random subset on large
-benchmarks. `plot_redundancy_histogram` renders the bucketed histogram.
+fraction, and the explicit list of pairs above a redundancy threshold, sorted
+by similarity. The pairwise step is O(n^2); pass `max_sequences` to score a
+random subset on large benchmarks. `plot_redundancy_histogram` renders the
+bucketed histogram; `plot_top_redundant_pairs` overlays the highest-similarity
+pairs themselves (z-normalised) with each sequence's full creation provenance,
+so a flagged pair can be eyeballed rather than trusted from a score alone.
 
 ## Stage 2 — catch22 feature space (`features.py`, `embedding.py`, `diversity.py`)
 
 Each sequence is passed through **catch22** (or catch24, adding mean and std),
 the canonical low-redundancy feature set. Features are robustly scaled
-(median/IQR) and non-finite values from degenerate sequences are imputed and
-counted.
+(median/IQR); non-finite values from degenerate sequences are imputed to the
+per-feature median and counted, and *finite*-but-extreme scaled values are then
+winsorized to ±5 (also counted) -- see "Honest limitations" below for why the
+second step exists. `plot_feature_anomalies` plots the raw series behind
+whichever sequences hit that clip hardest, so a value flagged only as a number
+can be inspected as an actual shape.
 
 The single most important design rule here: **diversity is measured in the
 feature space, never on the UMAP coordinates.** UMAP preserves local
@@ -109,13 +125,18 @@ PYTHONPATH=. python3 tsfm_benchmark/example_runs/run_validation.py \
 PYTHONPATH=. python3 tsfm_benchmark/example_runs/run_validation.py --out outputs
 ```
 
-Either way this writes `validation_report.json` plus six standalone HTML plots
-to `--out`: `composition.html`, `domain_composition.html` (real-derived corpora
+Either way this writes `validation_report.json` plus standalone HTML plots to
+`--out`: `composition.html`, `domain_composition.html` (real-derived corpora
 only), `example_sequences.html`, `feature_space_3d.html`,
-`feature_variance.html`, and `redundancy_histogram.html`. For a corpus with
-more than a few thousand sequences, add `--max-sequences N` -- the pairwise
-matcher is O(n^2) and otherwise dominates runtime (catch22 extraction and the
-embedding are not subsampled by this flag and stay comparatively cheap).
+`feature_variance.html`, `feature_anomalies.html`, `redundancy_histogram.html`,
+`top_redundant_pairs.html`, `length_scale_distribution.html`, and
+`diversity_by_group.html` (only when some group has enough sequences to
+report). For a corpus with more than a few thousand sequences, add
+`--max-sequences N` -- the pairwise matcher is O(n^2) and otherwise dominates
+runtime (catch22 extraction and the embedding are not subsampled by this flag
+and stay comparatively cheap). Pass `--debug` to also write a full DEBUG-level
+log of the run to a timestamped file under `logs/` at the repo root; without
+it, the console still gets INFO-level progress for every stage.
 
 The demo builds a benchmark from five distinct generators plus five planted
 near-duplicates, then validates it. On a sample run the planted duplicates
@@ -148,11 +169,18 @@ anything from the raw values.
   a real consequence: if a feature is nearly constant across most of the
   corpus (a tiny global IQR) while a minority group genuinely varies on it,
   that single feature can dominate the group's scaled variance and make an
-  otherwise-fine group look collapsed by comparison. Observed in practice: a
-  small real-derived task showed `effective_dimensionality ~= 1.0` (of 22)
-  purely because `CO_trev_1_num` had a global IQR of 0.008 (the synthetic
-  majority barely varies on it) while the real-derived samples legitimately
-  spanned a much wider range on that one feature. This is why
+  otherwise-fine group look collapsed by comparison. Observed in practice on
+  the real corpus: `CO_trev_1_num` had a global IQR of ~0.008, so a handful of
+  sequences with raw values around ±10-40 (near-constant runs the statistic is
+  numerically unstable on) scaled to values in the *thousands* -- one column
+  alone accounted for over 99% of total variance and collapsed
+  `effective_dimensionality` to ~1.0 (of 22) corpus-wide, not just within one
+  group. `extract_features` now winsorizes scaled values to ±5 specifically to
+  cap this (see `plot_feature_anomalies` for which sequences triggered it), which
+  fixed the corpus-wide collapse in that run (`effective_dimensionality` moved
+  from ~1.0 to ~4.1). The clip is a mitigation, not a cure: a feature that is
+  genuinely a much better discriminator for one group than the rest can still
+  read as disproportionately important after clipping. This is why
   `_by_group_summary`/`plot_diversity_by_group` name the top-variance feature
   per group -- always check it before concluding a group has actually
   collapsed rather than just standing out on one feature.

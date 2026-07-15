@@ -10,9 +10,11 @@ from .plot import (
     plot_domain_composition,
     plot_embedding,
     plot_example_sequences,
+    plot_feature_anomalies,
     plot_feature_variance,
     plot_group_composition,
     plot_redundancy_histogram,
+    plot_top_redundant_pairs,
     plot_value_length_distribution,
 )
 from .report import build_report, print_summary, save_report
@@ -35,9 +37,11 @@ __all__ = [
     "plot_domain_composition",
     "plot_embedding",
     "plot_example_sequences",
+    "plot_feature_anomalies",
     "plot_feature_variance",
     "plot_group_composition",
     "plot_redundancy_histogram",
+    "plot_top_redundant_pairs",
     "plot_value_length_distribution",
     "print_summary",
     "redundancy_by_group",

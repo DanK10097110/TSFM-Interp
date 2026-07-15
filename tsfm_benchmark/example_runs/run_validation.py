@@ -10,13 +10,16 @@ rather than falling back to the demo, since that's what happens when
 "why does my report only show a couple hundred points" actually means
 "this validated the demo, not your benchmark."
 
-Runs algorithmic matching, catch22 features, a 3D UMAP embedding, corpus-wide
-and per-group diversity metrics, and per-group redundancy, then writes a JSON
-report plus eight standalone interactive HTML plots: the 3D feature embedding,
-corpus composition by task/tier, real-domain composition (when the corpus has
+Runs algorithmic matching (DTW by default -- see benchmark_validation.matching
+for why), catch22 features, a 3D UMAP embedding, corpus-wide and per-group
+diversity metrics, and per-group redundancy, then writes a JSON report plus
+ten standalone interactive HTML plots: the 3D feature embedding, corpus
+composition by task/tier, real-domain composition (when the corpus has
 real-derived provenance), example raw sequences per generator, raw
-length/scale distributions, the catch22 feature-variance ranking, the
-pairwise-redundancy histogram, and per-group diversity comparison.
+length/scale distributions, the catch22 feature-variance ranking, the raw
+series behind the most extreme feature-value outliers, the pairwise-redundancy
+histogram, the top redundant pairs themselves (overlaid with full creation
+provenance), and per-group diversity comparison.
 
     # validate a real sealed corpus (default --corpus is ./benchmark_out/public_dev)
     PYTHONPATH=. python3 tsfm_benchmark/example_runs/run_validation.py --out outputs
@@ -78,7 +81,7 @@ def main():
     ap.add_argument("--corpus", default=None, help=f"sealed corpus directory to validate (default: {DEFAULT_CORPUS} if it exists)")
     ap.add_argument("--demo", action="store_true", help="run the standalone demo benchmark instead of a real corpus (never the default)")
     ap.add_argument("--out", default=os.path.join(os.path.dirname(__file__), "..", "outputs"))
-    ap.add_argument("--method", choices=["xcorr", "dtw"], default="xcorr")
+    ap.add_argument("--method", choices=["xcorr", "dtw"], default="dtw", help="pairwise matcher: dtw (default, tolerates local time warping, batched via dtaidistance) or the cheaper shift-only xcorr")
     ap.add_argument("--catch24", action="store_true", help="use catch24 (adds mean and std)")
     ap.add_argument("--redundancy-threshold", type=float, default=0.97)
     ap.add_argument("--max-sequences", type=int, default=None, help="subsample for the O(n^2) matcher (recommended above a few thousand sequences)")
@@ -150,7 +153,9 @@ def main():
         written.append(bv.plot_example_sequences(records, os.path.join(args.out, "example_sequences.html"), key=args.group_by))
         written.append(bv.plot_value_length_distribution(records, os.path.join(args.out, "length_scale_distribution.html")))
         written.append(bv.plot_feature_variance(diversity, os.path.join(args.out, "feature_variance.html")))
+        written.append(bv.plot_feature_anomalies(fm, records, os.path.join(args.out, "feature_anomalies.html")))
         written.append(bv.plot_redundancy_histogram(match, os.path.join(args.out, "redundancy_histogram.html")))
+        written.append(bv.plot_top_redundant_pairs(match, records, os.path.join(args.out, "top_redundant_pairs.html")))
         if by_group:
             written.append(bv.plot_diversity_by_group(by_group, os.path.join(args.out, "diversity_by_group.html")))
         domain_path = bv.plot_domain_composition(records, os.path.join(args.out, "domain_composition.html"))

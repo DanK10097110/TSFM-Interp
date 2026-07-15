@@ -5,9 +5,14 @@ resampled to a common length (the "equal sized buckets" alignment), so the
 comparison is invariant to length and absolute scale. Two matchers are offered.
 Rolling cross-correlation slides one series against the other and takes the best
 Pearson correlation over a band of lags, which captures linear shape similarity
-under small shifts. Localized DTW takes a windowed (Sakoe-Chiba banded) dynamic
-time warp and converts the distance to a similarity, which additionally tolerates
-local time warping.
+under a small *uniform* shift only -- two sequences that are the same shape but
+locally stretched or compressed (one regime lasting a bit longer, a seasonal
+period drifting) score low even though they're genuine near-duplicates.
+Localized DTW takes a windowed (Sakoe-Chiba banded) dynamic time warp and
+converts the distance to a similarity, which additionally tolerates that local
+warping, so it's the more robust matcher for "is this actually a duplicate"
+and is the default here. xcorr remains available (``method="xcorr"``) as the
+cheaper, shift-only check.
 
 The pairwise similarities are summarised two ways: an equal-frequency bucketed
 histogram of all scores (the redundancy profile of the whole benchmark) and an
@@ -17,10 +22,12 @@ O(n^2); for large benchmarks pass ``max_sequences`` to score a random subset.
 Both matchers score every pair, but do it as a handful of batched matrix
 operations over *all* pairs at once rather than a Python-level double loop
 per pair: xcorr via one BLAS matmul per lag (elementwise-maxed together),
-DTW via dtaidistance's parallel C distance matrix when available. This is
-mathematically equivalent to scoring each pair individually -- same checks,
-same thresholds -- just without paying Python-call overhead n^2 (or n^2 *
-n_lags) times.
+DTW via dtaidistance's parallel C distance matrix when available (the numpy
+fallback below is used only if dtaidistance isn't installed, and stays
+O(n^2 * length * window)). This is mathematically equivalent to scoring each
+pair individually -- same checks, same thresholds -- just without paying
+Python-call overhead n^2 (or n^2 * n_lags) times, which is what makes DTW
+affordable as the default rather than only a fallback for small corpora.
 """
 
 from __future__ import annotations
@@ -195,7 +202,7 @@ class MatchReport:
 
 def match_all(
     records: list[SeqRecord],
-    method: str = "xcorr",
+    method: str = "dtw",
     length: int = 256,
     lag_frac: float = 0.1,
     window_frac: float = 0.1,
