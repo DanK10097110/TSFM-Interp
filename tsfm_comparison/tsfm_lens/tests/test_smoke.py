@@ -1,0 +1,117 @@
+"""End-to-end smoke test: every stage on mock models and generated data.
+
+Runnable directly (`python tests/test_smoke.py`) or via pytest. Passing
+means extraction, alignment, all four analysis levels, clustering, patching,
+and the report compose correctly; it says nothing about real checkpoints,
+which is what `--check-alignment` exists for.
+"""
+
+from __future__ import annotations
+
+import sys
+import tempfile
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from tsfm_lens.config import config_from_dict
+from tsfm_lens.pipeline import run_pipeline
+
+
+def build_config(out_dir: str) -> dict:
+    """Small but complete configuration exercising every stage."""
+    return {
+        "run": {"name": "smoke", "out_dir": out_dir, "device": "cpu",
+                "dtype": "float32", "seed": 0},
+        "data": {"source": "smoke", "context_len": 128, "horizon": 32,
+                 "smoke_series_per_family": 20},
+        "alignment": {"window": 32, "sanity_check": True},
+        "models": [
+            {"name": "patchy", "adapter": "mock_patch", "batch_size": 64},
+            {"name": "steppy", "adapter": "mock_step", "batch_size": 64},
+        ],
+        "l1": {"layer_stride": 1, "max_rows": 20000, "min_family_series": 10,
+               "rsa": True, "rsa_max_series": 120},
+        "l2": {"layer_stride": 1, "max_rows": 8000, "val_frac": 0.3},
+        "l3": {"max_series": 48,
+               "patching": {"layer_stride": 1, "max_series": 32,
+                            "corruptions": ["deseasonalize", "noise"]}},
+        "clustering": {"use_umap": False, "max_series": 200},
+        "stats": {"enabled": True, "n_boot": 150, "n_boot_heavy": 100,
+                  "min_series": 8},
+        "internals": {"enabled": True, "max_rows": 8000, "probe_pca_dim": 20},
+        "confirm": {"enabled": True, "source": "smoke", "max_series": 120,
+                    "require_seal": False},
+        "report": {"title": "Smoke comparison"},
+    }
+
+
+def test_end_to_end(tmp_path=None):
+    out = str(tmp_path) if tmp_path else tempfile.mkdtemp()
+    cfg = config_from_dict(build_config(out))
+    run_pipeline(cfg)
+    run_dir = cfg.run_dir()
+
+    expected = [
+        "activations.zarr", "meta.parquet", "config_resolved.yaml",
+        "l0/metrics.parquet", "l0/summary.json",
+        "l1/cka.npz", "l1/meta.json",
+        "l2/stitching.json",
+        "l3/sensitivity.npz", "l3/meta.json", "l3/patching.npz", "l3/patching.json",
+        "clustering/embedding.parquet", "clustering/clusters.json",
+        "clustering/comparison.json",
+        "internals/profile.json",
+        "confirm/behavioral.parquet", "confirm/confirmation.json",
+        "report.html",
+    ]
+    missing = [p for p in expected if not (run_dir / p).exists()]
+    assert not missing, f"missing artifacts: {missing}"
+
+    html = (run_dir / "report.html").read_text()
+    for token in ("Findings", "Representational geometry", "Activation clusters",
+                  "Model internals", "Private benchmark confirmation",
+                  "p (Holm)", "plotly"):
+        assert token in html, f"report missing '{token}'"
+    print(f"smoke test passed: {run_dir}")
+    return run_dir
+
+
+def test_confirm_hypothesis_path():
+    """The verdict machinery must fire correctly when dev strengths exist.
+
+    Mocks rarely produce significant dev strengths, so the smoke run
+    exercises only the empty-hypothesis branch; this test feeds synthetic
+    dev claims and private metrics with one real and one spurious effect.
+    """
+    import numpy as np
+    import pandas as pd
+
+    from tsfm_lens.analysis.confirm import _test_hypotheses
+    from tsfm_lens.utils import save_json
+
+    out = Path(tempfile.mkdtemp())
+    cfg = config_from_dict(build_config(str(out)))
+    (cfg.run_dir() / "l0").mkdir(parents=True)
+    save_json(cfg.run_dir() / "l0" / "summary.json", {
+        "strengths": {"patchy": ["trend"], "steppy": ["spiky"]},
+        "mase_ratio": {"trend": 0.7, "spiky": 1.4},
+    })
+    rng = np.random.default_rng(0)
+    rows = []
+    for fam, (mu_a, mu_b) in {"trend": (0.8, 1.2), "spiky": (1.0, 1.0)}.items():
+        for i in range(40):
+            sid = f"{fam}_{i}"
+            rows.append({"series_id": sid, "family": fam, "model": "patchy",
+                         "mase": mu_a + rng.normal(0, 0.1)})
+            rows.append({"series_id": sid, "family": fam, "model": "steppy",
+                         "mase": mu_b + rng.normal(0, 0.1)})
+    res = _test_hypotheses(cfg, pd.DataFrame(rows), "patchy", "steppy")
+    verdicts = {t["family"]: t["confirmed"] for t in res["tests"]}
+    assert verdicts == {"trend": True, "spiky": False}, verdicts
+    assert all("p_holm" in t for t in res["tests"])
+    print("confirm hypothesis-path test passed")
+
+
+if __name__ == "__main__":
+    test_end_to_end()
+    test_confirm_hypothesis_path()

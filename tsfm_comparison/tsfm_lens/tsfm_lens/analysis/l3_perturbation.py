@@ -1,0 +1,308 @@
+"""L3 — perturbation and causal analysis.
+
+A battery of parameterized input corruptions (each targeting one structural
+property: seasonality, trend, noise floor, frequency content, level, spikes)
+produces matched clean/corrupted pairs. Three measurements follow:
+
+1. Sensitivity fingerprints: per-layer relative activation change under each
+   corruption, giving each model a [layers x corruptions] signature of where
+   in depth it encodes which property.
+2. Cross-model fingerprint agreement: fingerprints interpolated onto a
+   shared relative-depth axis and rank-correlated per corruption, so models
+   of different depth are compared fairly.
+3. Within-model activation patching: cached clean token states are written
+   back into a corrupted forward one layer at a time, and forecast
+   restoration measures where the corrupted property is causally carried.
+   Patching is within-model by construction; comparing the resulting
+   restoration-by-depth curves across models is the cross-model claim.
+
+Sensitivity reuses the extraction store for clean activations, so each
+corruption costs one forward pass per model.
+"""
+
+from __future__ import annotations
+
+import numpy as np
+import torch
+from scipy.ndimage import uniform_filter1d
+from tqdm import tqdm
+
+from ..config import PipelineConfig
+from ..data import BenchmarkData
+from ..extraction.alignment import align, pooling_matrix
+from ..extraction.extract import capture_raw_tokens
+from ..extraction.hooks import ActivationCatcher, token_patch
+from ..extraction.store import ActivationStore
+from ..utils import batch_slices, log, relative_depths, save_json
+from .stats import mean_ci
+
+
+def corrupt_noise(v: np.ndarray, rng, snr_db: float = 6.0) -> np.ndarray:
+    """Add white noise at a fixed SNR relative to each series' power."""
+    power = v.var(axis=1, keepdims=True) + 1e-8
+    noise_std = np.sqrt(power / (10 ** (snr_db / 10.0)))
+    return v + rng.normal(0, 1, v.shape).astype(np.float32) * noise_std
+
+
+def corrupt_detrend(v: np.ndarray, rng) -> np.ndarray:
+    """Remove the per-series linear trend while keeping the level."""
+    t = np.arange(v.shape[1], dtype=np.float32)
+    tc = t - t.mean()
+    slope = ((v - v.mean(axis=1, keepdims=True)) * tc).sum(axis=1) / (tc ** 2).sum()
+    return v - slope[:, None] * tc[None, :]
+
+
+def corrupt_deseasonalize(v: np.ndarray, rng, top_k: int = 2) -> np.ndarray:
+    """Notch out each series' top-k spectral peaks (and neighbors), excluding DC."""
+    spec = np.fft.rfft(v, axis=1)
+    mag = np.abs(spec)
+    mag[:, 0] = 0.0
+    order = np.argsort(mag, axis=1)[:, ::-1][:, :top_k]
+    mask = np.zeros(mag.shape, dtype=bool)
+    rows = np.arange(v.shape[0])[:, None]
+    for off in (-1, 0, 1):
+        mask[rows, np.clip(order + off, 0, mag.shape[1] - 1)] = True
+    mask[:, 0] = False
+    spec[mask] = 0.0
+    return np.fft.irfft(spec, n=v.shape[1], axis=1).astype(np.float32)
+
+
+def corrupt_frequency_shift(v: np.ndarray, rng, factor: float = 2.0) -> np.ndarray:
+    """Resample the time axis so all frequencies scale by `factor`."""
+    t = v.shape[1]
+    idx = np.clip(np.arange(t, dtype=np.float32) * factor, 0, t - 1)
+    i0 = np.floor(idx).astype(np.int64)
+    i1 = np.minimum(i0 + 1, t - 1)
+    frac = (idx - i0).astype(np.float32)
+    return v[:, i0] * (1 - frac)[None, :] + v[:, i1] * frac[None, :]
+
+
+def corrupt_level_shift(v: np.ndarray, rng, position_frac: float = 0.6,
+                        scale: float = 3.0) -> np.ndarray:
+    """Inject a step change of +-scale std at a fixed relative position."""
+    pos = int(v.shape[1] * position_frac)
+    sign = rng.choice([-1.0, 1.0], size=(v.shape[0], 1)).astype(np.float32)
+    out = v.copy()
+    out[:, pos:] += sign * scale * (v.std(axis=1, keepdims=True) + 1e-6)
+    return out
+
+
+def corrupt_spike(v: np.ndarray, rng, count: int = 3, scale: float = 6.0) -> np.ndarray:
+    """Add `count` isolated spikes of +-scale std at random positions."""
+    out = v.copy()
+    amp = scale * (v.std(axis=1) + 1e-6)
+    n = v.shape[0]
+    for _ in range(count):
+        cols = rng.integers(0, v.shape[1], size=n)
+        signs = rng.choice([-1.0, 1.0], size=n).astype(np.float32)
+        out[np.arange(n), cols] += signs * amp
+    return out
+
+
+def corrupt_smooth(v: np.ndarray, rng, kernel: int = 9) -> np.ndarray:
+    """Moving-average filtering that suppresses high-frequency content."""
+    return uniform_filter1d(v, size=kernel, axis=1, mode="nearest")
+
+
+CORRUPTIONS = {
+    "noise": corrupt_noise,
+    "detrend": corrupt_detrend,
+    "deseasonalize": corrupt_deseasonalize,
+    "frequency_shift": corrupt_frequency_shift,
+    "level_shift": corrupt_level_shift,
+    "spike": corrupt_spike,
+    "smooth": corrupt_smooth,
+}
+
+
+def run_l3(cfg: PipelineConfig, hub, store: ActivationStore, data: BenchmarkData,
+           device: torch.device) -> None:
+    """Sensitivity fingerprints, cross-model agreement, and activation patching."""
+    out_dir = cfg.run_dir() / "l3"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    names = list(cfg.l3.corruptions.keys())
+    unknown = [n for n in names if n not in CORRUPTIONS]
+    if unknown:
+        raise ValueError(f"unknown corruptions {unknown}; available: {sorted(CORRUPTIONS)}")
+
+    rng = np.random.default_rng(cfg.run.seed + 3)
+    rows = np.sort(rng.choice(data.n, size=min(data.n, cfg.l3.max_series), replace=False))
+    contexts = data.contexts()[rows]
+    scale = np.abs(np.diff(contexts, axis=1)).mean(axis=1) + 1e-8
+    corrupted = {c: CORRUPTIONS[c](contexts.copy(), np.random.default_rng(cfg.run.seed + 100 + i),
+                                   **cfg.l3.corruptions[c])
+                 for i, c in enumerate(names)}
+
+    a, b = cfg.comparison_pair()
+    per_series, beh_series, layer_lists, patching = {}, {}, {}, {}
+    for mcfg in (a, b):
+        adapter = hub.get(mcfg.name)
+        adapter.ensure_loaded()
+        ps, beh, layers = _sensitivity(cfg, adapter, store, rows, contexts,
+                                       corrupted, names, scale)
+        per_series[mcfg.name], beh_series[mcfg.name] = ps, beh
+        layer_lists[mcfg.name] = layers
+        if cfg.l3.patching.enabled:
+            patching[mcfg.name] = _patching(cfg, adapter, layers, rows, contexts,
+                                            corrupted, data.horizon)
+        if not cfg.run.keep_models_loaded:
+            hub.release(mcfg.name)
+
+    fingerprints = {k: v.mean(axis=0) for k, v in per_series.items()}
+    agreement = _agreement_with_ci(cfg, per_series[a.name], per_series[b.name], names)
+    behavior_ci = {
+        model: {names[c]: mean_ci(bs[:, c], cfg.stats.n_boot, cfg.run.seed + 30 + c,
+                                  cfg.stats.ci)
+                for c in range(len(names))}
+        for model, bs in beh_series.items()
+    } if cfg.stats.enabled else {}
+    np.savez(out_dir / "sensitivity.npz",
+             **{f"fingerprint_{k}": v for k, v in fingerprints.items()},
+             **{f"per_series_{k}": v for k, v in per_series.items()},
+             **{f"behavior_{k}": v.mean(axis=0) for k, v in beh_series.items()})
+    save_json(out_dir / "meta.json", {
+        "model_a": a.name, "model_b": b.name, "corruptions": names,
+        "layers": layer_lists, "agreement": agreement, "behavior_ci": behavior_ci,
+        "n_series": int(len(rows)),
+    })
+    if patching:
+        np.savez(out_dir / "patching.npz",
+                 **{f"restoration_{k}": v["restoration"] for k, v in patching.items()})
+        save_json(out_dir / "patching.json", {
+            k: {"layers": v["layers"], "corruptions": v["corruptions"],
+                "rel_depth": relative_depths(len(v["layers"])).tolist()}
+            for k, v in patching.items()})
+    log.info("L3 complete: most divergent corruption = %s", agreement["most_divergent"])
+
+
+def _sensitivity(cfg: PipelineConfig, adapter, store: ActivationStore, rows: np.ndarray,
+                 contexts: np.ndarray, corrupted: dict, names: list, scale: np.ndarray):
+    """Per-series, per-layer relative activation deltas and forecast deltas for one model.
+
+    Per-series resolution is kept so downstream agreement statistics can
+    bootstrap over series, the exchangeable unit.
+    """
+    layers = store.layers(adapter.name)
+    pool = pooling_matrix(adapter.token_time_spans(), cfg.data.context_len,
+                          cfg.alignment.window)
+    clean_bank = {layer: store.load(adapter.name, layer, "window", rows) for layer in layers}
+    if store.has_predictions(adapter.name):
+        f_clean = store.load_predictions(adapter.name)["point"][rows]
+    else:
+        f_clean = _predict_batched(adapter, contexts, cfg.data.horizon,
+                                   cfg.l0.quantiles, cfg.run.seed)
+
+    per_series = np.zeros((len(rows), len(layers), len(names)), dtype=np.float32)
+    beh_series = np.zeros((len(rows), len(names)), dtype=np.float32)
+    for ci, cname in enumerate(tqdm(names, desc=f"L3 sensitivity {adapter.name}")):
+        ctx_c = corrupted[cname]
+        with ActivationCatcher(adapter.module, layers) as catcher:
+            for s, e in batch_slices(len(rows), adapter.cfg.batch_size):
+                with torch.no_grad(), torch.autocast(device_type=adapter.device.type,
+                                                     dtype=adapter.dtype,
+                                                     enabled=adapter.device.type == "cuda"):
+                    adapter.forward(adapter.prepare(ctx_c[s:e]))
+                acts = catcher.collect()
+                for li, layer in enumerate(layers):
+                    corr = align(adapter.postprocess_tokens(layer, acts[layer]).float(),
+                                 pool).cpu().numpy()
+                    clean = clean_bank[layer][s:e].astype(np.float32)
+                    num = np.linalg.norm(corr - clean, axis=-1)
+                    den = np.linalg.norm(clean, axis=-1) + 1e-6
+                    per_series[s:e, li, ci] = (num / den).mean(axis=1)
+        f_corr = _predict_batched(adapter, ctx_c, cfg.data.horizon,
+                                  cfg.l0.quantiles, cfg.run.seed)
+        beh_series[:, ci] = np.abs(f_corr - f_clean).mean(axis=1) / scale
+    return per_series, beh_series, layers
+
+
+def _patching(cfg: PipelineConfig, adapter, layers: list, rows: np.ndarray,
+              contexts: np.ndarray, corrupted: dict, horizon: int) -> dict:
+    """Layer-by-layer clean-into-corrupted patching, scored as forecast restoration."""
+    pcfg = cfg.l3.patching
+    take = min(len(rows), pcfg.max_series, adapter.cfg.batch_size)
+    ctx_clean = contexts[:take]
+    layers_p = layers[:: max(1, pcfg.layer_stride)]
+    corr_names = [c for c in pcfg.corruptions if c in corrupted]
+    clean_tokens = capture_raw_tokens(adapter, ctx_clean, layers_p)
+    seed = cfg.run.seed + 7
+    f_clean = _predict_once(adapter, ctx_clean, horizon, cfg.l0.quantiles, seed)
+
+    restoration = np.zeros((len(corr_names), len(layers_p)), dtype=np.float32)
+    for ci, cname in enumerate(tqdm(corr_names, desc=f"L3 patching {adapter.name}")):
+        ctx_corr = corrupted[cname][:take]
+        f_corr = _predict_once(adapter, ctx_corr, horizon, cfg.l0.quantiles, seed)
+        damage = np.abs(f_corr - f_clean).mean() + 1e-8
+        for li, layer in enumerate(layers_p):
+            with token_patch(adapter.module, layer, adapter.token_slice,
+                             clean_tokens[layer]):
+                f_patch = _predict_once(adapter, ctx_corr, horizon, cfg.l0.quantiles, seed)
+            restoration[ci, li] = float(1.0 - np.abs(f_patch - f_clean).mean() / damage)
+    return {"restoration": restoration, "layers": layers_p, "corruptions": corr_names}
+
+
+def _agreement_with_ci(cfg: PipelineConfig, psa: np.ndarray, psb: np.ndarray,
+                       names: list) -> dict:
+    """Fingerprint agreement with paired cluster-bootstrap CIs.
+
+    The same series resample is applied to both models before recomputing
+    fingerprints, since deltas come from identical series and corruptions.
+    """
+    point = _fingerprint_agreement(psa.mean(axis=0), psb.mean(axis=0), names)
+    out = {"overall": {"value": point["overall"]},
+           "per_corruption": {c: {"value": v} for c, v in point["per_corruption"].items()},
+           "most_divergent": point["most_divergent"]}
+    if not cfg.stats.enabled:
+        return out
+    n_boot = min(cfg.stats.n_boot, cfg.stats.n_boot_heavy)
+    rng = np.random.default_rng(cfg.run.seed + 25)
+    overall = np.empty(n_boot)
+    per = {c: np.empty(n_boot) for c in names}
+    for i in range(n_boot):
+        idx = rng.integers(0, psa.shape[0], psa.shape[0])
+        agr = _fingerprint_agreement(psa[idx].mean(axis=0), psb[idx].mean(axis=0), names)
+        overall[i] = agr["overall"]
+        for c in names:
+            per[c][i] = agr["per_corruption"][c]
+    q = [(1 - cfg.stats.ci) / 2, 1 - (1 - cfg.stats.ci) / 2]
+    lo, hi = np.quantile(overall, q)
+    out["overall"].update({"lo": float(lo), "hi": float(hi)})
+    for c in names:
+        lo, hi = np.quantile(per[c], q)
+        out["per_corruption"][c].update({"lo": float(lo), "hi": float(hi)})
+    return out
+
+
+def _fingerprint_agreement(fp_a: np.ndarray, fp_b: np.ndarray, names: list) -> dict:
+    """Rank agreement of depth profiles per corruption on a shared relative-depth grid."""
+    from scipy.stats import spearmanr
+    grid = np.linspace(0, 1, 33)
+    ia = np.stack([np.interp(grid, relative_depths(fp_a.shape[0]), fp_a[:, c])
+                   for c in range(fp_a.shape[1])], axis=1)
+    ib = np.stack([np.interp(grid, relative_depths(fp_b.shape[0]), fp_b[:, c])
+                   for c in range(fp_b.shape[1])], axis=1)
+    per = {}
+    for ci, cname in enumerate(names):
+        rho = spearmanr(ia[:, ci], ib[:, ci]).statistic
+        per[cname] = float(rho) if np.isfinite(rho) else 0.0
+    overall = spearmanr(ia.ravel(), ib.ravel()).statistic
+    return {"per_corruption": per,
+            "overall": float(overall) if np.isfinite(overall) else 0.0,
+            "most_divergent": min(per, key=per.get)}
+
+
+def _predict_batched(adapter, contexts: np.ndarray, horizon: int, quantiles: list,
+                     seed: int) -> np.ndarray:
+    """Batched point forecasts with per-batch seeding so sampling models are comparable."""
+    out = []
+    for s, e in batch_slices(len(contexts), adapter.cfg.batch_size):
+        torch.manual_seed(seed + s)
+        out.append(adapter.predict(contexts[s:e], horizon, quantiles)["point"])
+    return np.concatenate(out)
+
+
+def _predict_once(adapter, contexts: np.ndarray, horizon: int, quantiles: list,
+                  seed: int) -> np.ndarray:
+    """Single-call seeded point forecast, required by patching's one-batch constraint."""
+    torch.manual_seed(seed)
+    return adapter.predict(contexts, horizon, quantiles)["point"]

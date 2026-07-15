@@ -1,0 +1,76 @@
+# End-to-end smoke run: two mock architectures on generated data, no
+# downloads, no GPU. Validates every stage including the report.
+
+run:
+  name: smoke
+  out_dir: runs
+  device: cpu
+  dtype: float32
+  seed: 0
+
+data:
+  source: smoke
+  context_len: 128
+  horizon: 32
+  smoke_series_per_family: 20
+
+alignment:
+  window: 32
+  sanity_check: true
+
+models:
+  - name: patchy
+    adapter: mock_patch
+    batch_size: 64
+  - name: steppy
+    adapter: mock_step
+    batch_size: 64
+
+l1:
+  layer_stride: 1
+  max_rows: 20000
+  min_family_series: 10
+  rsa: true
+  rsa_max_series: 120
+
+l2:
+  layer_stride: 1
+  max_rows: 8000
+  val_frac: 0.3
+
+l3:
+  max_series: 48
+  patching:
+    layer_stride: 1
+    corruptions: [deseasonalize, noise]
+    max_series: 32
+
+clustering:
+  use_umap: false
+  max_series: 200
+
+report:
+  title: Smoke comparison — mock_patch vs mock_step
+
+stats:
+  enabled: true
+  n_boot: 150          # reduced for smoke speed; default is 500
+  n_boot_heavy: 100
+  ci: 0.95
+  alpha: 0.05
+  min_series: 8
+
+internals:
+  enabled: true
+  layer_stride: 1
+  max_rows: 8000
+  probe_pca_dim: 20
+
+# Smoke-mode confirmation generates a fresh "private" corpus from the same
+# generators with a shifted seed — it validates mechanics, not distribution
+# shift. Real runs point at a sealed private directory instead.
+confirm:
+  enabled: true
+  source: smoke
+  max_series: 120
+  require_seal: false

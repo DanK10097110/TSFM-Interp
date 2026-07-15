@@ -1,0 +1,133 @@
+# TimesFM vs Chronos on a sealed tsfm_benchmark corpus.
+# Every stage can be disabled (enabled: false) or tuned independently;
+# the report renders whichever sections have artifacts.
+
+run:
+  name: timesfm_vs_chronos
+  out_dir: runs
+  device: cuda
+  dtype: bfloat16
+  seed: 0
+  keep_models_loaded: false     # true if both models + headroom fit in VRAM
+
+data:
+  source: sealed                # sealed | jsonl | smoke
+  path: /path/to/benchmark_dir  # directory containing corpus.jsonl (+ manifest)
+  context_len: 512              # multiple of alignment.window; <= chronos-t5 context (512)
+  horizon: 64
+  family_key: auto              # or an explicit metadata path, e.g. provenance.generator
+
+alignment:
+  window: 32                    # = TimesFM input_patch_len so patches map 1:1 to windows
+  sanity_check: true            # impulse check at extraction; cheap, catches span drift
+
+models:
+  - name: timesfm
+    adapter: timesfm
+    checkpoint: google/timesfm-2.0-500m-pytorch
+    batch_size: 64
+    capture_layer_stride: 2     # 50 layers -> 25 capture points
+    kwargs:
+      num_layers: 50
+      input_patch_len: 32
+  - name: chronos
+    adapter: chronos
+    checkpoint: amazon/chronos-t5-base
+    batch_size: 64
+    capture_layer_stride: 1     # 12 encoder blocks
+    kwargs:
+      num_samples: 20
+  # Chronos-Bolt alternative (patch-based T5 encoder, deterministic quantile
+  # head). Swap in for the chronos entry; run --check-alignment first.
+  # - name: chronos_bolt
+  #   adapter: chronos_bolt
+  #   checkpoint: amazon/chronos-bolt-small
+  #   layer_regex: 'encoder\.block\.\d+$'
+  #   capture_layer_stride: 1
+  #   batch_size: 64
+
+l0:
+  enabled: true
+  quantiles: [0.1, 0.5, 0.9]
+
+l1:
+  enabled: true
+  layer_stride: 2
+  max_rows: 100000
+  family_conditioned: true
+  min_family_series: 15
+  rsa: true
+  rsa_max_series: 600
+
+l2:
+  enabled: true
+  layer_stride: 3
+  lambdas: [0.001, 0.01, 0.1, 1.0]
+  val_frac: 0.25
+  max_rows: 60000
+  input_baseline: true
+
+l3:
+  enabled: true
+  max_series: 384
+  corruptions:
+    noise: {snr_db: 6.0}
+    detrend: {}
+    deseasonalize: {top_k: 2}
+    frequency_shift: {factor: 2.0}
+    level_shift: {position_frac: 0.6, scale: 3.0}
+    spike: {count: 3, scale: 6.0}
+    smooth: {kernel: 9}
+  patching:
+    enabled: true
+    layer_stride: 3
+    corruptions: [deseasonalize, noise]
+    max_series: 48              # must be <= every model's batch_size
+    num_samples: 8
+
+clustering:
+  enabled: true
+  layer: auto                   # auto = each model's side of the L1 peak-CKA pair
+  k: auto                       # auto = number of benchmark families (clipped 2..20)
+  pca_dim: 50
+  max_series: 5000
+  use_umap: true
+
+sae:
+  enabled: false                # deferred; see tsfm_lens/sae/interface.py
+
+report:
+  enabled: true
+  title: TimesFM vs Chronos — layered comparison
+
+# ---------------------------------------------------------------------------
+# Statistics: series-level bootstrap CIs everywhere, paired tests with Holm
+# correction for family comparisons. Costs extra compute at analysis time
+# only (never at extraction).
+stats:
+  enabled: true
+  n_boot: 500          # resamples for cheap statistics (means, paired tests)
+  n_boot_heavy: 200    # cap for expensive statistics (CKA, stitching gain)
+  ci: 0.95
+  alpha: 0.05
+  min_series: 8        # families below this are reported as untestable
+
+# Per-model depth profiles: effective dimensionality, family-probe
+# decodability, and CKA-to-input per layer.
+internals:
+  enabled: true
+  layer_stride: 1
+  max_rows: 40000
+  probe_pca_dim: 50
+
+# One-shot confirmation on a sealed PRIVATE corpus. Discipline: enable this
+# only for the final run, after all exploration on the dev corpus is frozen.
+# The stage refuses to overwrite existing confirmation artifacts, and the
+# private epoch should be regenerated (tsfm_benchmark) if it is ever reused.
+confirm:
+  enabled: false
+  source: sealed
+  path: /path/to/private_benchmark_dir
+  max_series: 1024
+  require_seal: true   # refuse to run without tsfm_benchmark seal verification
+  alpha: 0.05
