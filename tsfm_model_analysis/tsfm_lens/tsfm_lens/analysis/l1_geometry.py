@@ -95,10 +95,12 @@ def run_l1(cfg: PipelineConfig, store: ActivationStore, device: torch.device) ->
     depth_curve = [{"layer_a": layers_a[i], "layer_b": layers_b[int(cka_window[i].argmax())],
                     "cka": float(cka_window[i].max())} for i in range(len(layers_a))]
 
-    best_ci, families_ci = None, {}
+    best_ci, families_ci, null_ci = None, {}, None
     if cfg.stats.enabled:
         best_ci = _best_pair_ci(cfg, bank_a, bank_b, layers_a[best[0]], layers_b[best[1]],
                                 n_series, n_windows)
+        null_ci = _shuffled_null_cka(cfg, bank_a, bank_b, layers_a[best[0]], layers_b[best[1]],
+                                     n_series, n_windows)
         for fam, mat in zip(families, cka_family):
             fi, fj = np.unravel_index(int(mat.argmax()), mat.shape)
             fam_idx = meta.index[meta["family"] == fam].to_numpy()
@@ -119,7 +121,7 @@ def run_l1(cfg: PipelineConfig, store: ActivationStore, device: torch.device) ->
         "model_a": a.name, "model_b": b.name,
         "layers_a": layers_a, "layers_b": layers_b, "families": families,
         "best_pair": {"layer_a": layers_a[best[0]], "layer_b": layers_b[best[1]],
-                      "cka": float(cka_window[best]), "ci": best_ci},
+                      "cka": float(cka_window[best]), "ci": best_ci, "null_ci": null_ci},
         "families_ci": families_ci,
         "depth_curve": depth_curve, "rsa": rsa,
         "n_rows_window": int(n_series * n_windows),
@@ -139,6 +141,31 @@ def _best_pair_ci(cfg: PipelineConfig, bank_a: _LayerBank, bank_b: _LayerBank,
 
     return bootstrap_ci(stat, n_series, min(cfg.stats.n_boot, cfg.stats.n_boot_heavy),
                         cfg.run.seed + 10, cfg.stats.ci)
+
+
+def _shuffled_null_cka(cfg: PipelineConfig, bank_a: _LayerBank, bank_b: _LayerBank,
+                       layer_a: str, layer_b: str, n_series: int, n_windows: int) -> dict:
+    """CKA at the peak pair after breaking series correspondence: an empirical null.
+
+    Raw CKA between two models is high whenever both are reasonable encoders
+    of the *same* structured input, even absent any shared computation (see
+    module docstring); this shuffles which series lines up with which before
+    recomputing CKA, so genuine per-sample correspondence (real signal)
+    collapses while any leftover similarity from incidental geometry alone
+    (e.g. two representations that both happen to spread their variance
+    similarly) would not. A peak CKA far above this null is evidence the
+    number reflects real shared structure, not just an artifact of comparing
+    two "reasonable" representations of anything.
+    """
+    xa = bank_a.get(layer_a).view(n_series, n_windows, -1)
+    xb = bank_b.get(layer_b).view(n_series, n_windows, -1)
+    rng = np.random.default_rng(cfg.run.seed + 13)
+    vals = []
+    for _ in range(5):
+        perm = rng.permutation(n_series)
+        vals.append(linear_cka(xa.reshape(-1, xa.shape[-1]),
+                               xb[perm].reshape(-1, xb.shape[-1])))
+    return {"value": float(np.mean(vals)), "lo": float(np.min(vals)), "hi": float(np.max(vals))}
 
 
 def _run_rsa(cfg: PipelineConfig, store: ActivationStore, meta, layers_a: list,

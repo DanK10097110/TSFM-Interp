@@ -42,15 +42,38 @@ l3:
   max_series: 48
   patching:
     layer_stride: 1
-    corruptions: [deseasonalize, noise]
+    corruptions: [deseasonalize, noise, level_shift, spike, warp, dropout]
     max_series: 32
+    per_window: true
+    window_stride: 1
+
+lens:
+  layer_stride: 1
+  max_series: 24
+  tuned: true
+  tuned_max_series: 200
+  lambdas: [0.01, 0.1, 1.0]
+
+attention:
+  max_series: 40
+  batch_series: 16
+  max_lag_tokens: 64
+  ablation_max_series: 32
+  top_k: 3
+
+exemplars:
+  per_family: 2
+  max_families: 4
 
 clustering:
   use_umap: false
   max_series: 200
 
 report:
-  title: Smoke comparison — mock_patch vs mock_step
+  # Model identity in the report (chips, H1, section text) always comes from
+  # the `models[*].name` entries above, never from this string — swap models
+  # or rename them freely and the report stays correct without touching this.
+  title: Smoke run · no downloads, no GPU
 
 stats:
   enabled: true

@@ -87,6 +87,14 @@ class ModelAdapter(ABC):
 
     def layer_names(self) -> list:
         """Capture points: named modules matching the layer regex, in forward order."""
+        return self.all_layer_names()[:: max(1, self.cfg.capture_layer_stride)]
+
+    def all_layer_names(self) -> list:
+        """Every layer-regex match in forward order, ignoring the capture stride.
+
+        The forecast lens patches states into the model's true final block,
+        which the strided capture list may skip, so it needs the full list.
+        """
         self.ensure_loaded()
         pattern = re.compile(self.cfg.layer_regex or self.default_layer_regex)
         names = [n for n, _ in self.module.named_modules() if pattern.search(n)]
@@ -94,7 +102,51 @@ class ModelAdapter(ABC):
             raise ValueError(
                 f"model '{self.name}': layer regex matched nothing; "
                 f"run discover_layers() to inspect module names")
-        return names[:: max(1, self.cfg.capture_layer_stride)]
+        return names
+
+    def final_block_name(self) -> str:
+        """The last block on the residual path, used as the skip-lens patch target."""
+        return self.all_layer_names()[-1]
+
+    def attention_info(self) -> Optional[list]:
+        """Standardized per-block attention map for head-level interventions.
+
+        Returns a list of dicts, one per block in forward order, each with
+        keys `block` (the capture-layer module name), `o_proj` (qualified name
+        of the attention output projection, whose input is the head
+        concatenation so slicing it isolates single heads), `n_heads`, and
+        `head_dim`. Returns None when the architecture does not expose a
+        hookable output projection; head-level analyses then skip this model.
+        """
+        return None
+
+    def mlp_info(self) -> Optional[dict]:
+        """Map of block capture name -> qualified MLP module name (pre-residual).
+
+        The named module's output must be the MLP contribution before the
+        residual addition, so mean-ablating it removes only that component.
+        Returns None when not resolvable for this architecture.
+        """
+        return None
+
+    def attention_patterns(self, prepared: Any) -> Optional[dict]:
+        """Self-attention probabilities per block for one prepared batch.
+
+        Returns {block_name: tensor [B, n_heads, T, T]} restricted to the
+        postprocessed token positions (specials stripped), or None when the
+        architecture cannot expose patterns robustly.
+        """
+        return None
+
+    def cross_attention_patterns(self, prepared: Any) -> Optional[torch.Tensor]:
+        """First-forecast-step decoder cross-attention over context tokens.
+
+        For encoder-decoder models only: returns [n_decoder_layers, B,
+        n_heads, T_enc] for the first decoding step, giving a view into the
+        otherwise-invisible decoder read of the encoder. None for
+        decoder-only models or when unsupported.
+        """
+        return None
 
     def discover_layers(self, contains: str = "") -> list:
         """List candidate module names, for choosing a layer regex on a new checkpoint."""
@@ -136,3 +188,43 @@ class ModelAdapter(ABC):
     def hidden_size(self) -> Optional[int]:
         """Best-effort hidden dimension, resolved from the first capture on the fly if unknown."""
         return None
+
+
+def _scan_attention(root, block_name: str):
+    """Locate an attention submodule and its output projection inside one block."""
+    block = dict(root.named_modules())[block_name]
+    for sub_name, sub in block.named_modules():
+        leaf = sub_name.rsplit(".", 1)[-1].lower()
+        if not sub_name or not ("attn" in leaf or "attention" in leaf):
+            continue
+        n_heads = _first_attr(sub, ("num_heads", "n_heads", "num_attention_heads"))
+        for proj_name, proj in sub.named_modules():
+            proj_leaf = proj_name.rsplit(".", 1)[-1].lower()
+            if isinstance(proj, nn.Linear) and proj_leaf in ("o_proj", "o", "out", "out_proj", "wo"):
+                if not n_heads or proj.in_features % n_heads:
+                    return None
+                return {"block": block_name,
+                        "o_proj": f"{block_name}.{sub_name}.{proj_name}",
+                        "n_heads": int(n_heads),
+                        "head_dim": proj.in_features // int(n_heads)}
+    return None
+
+
+def _scan_mlp(root, block_name: str):
+    """Locate the pre-residual feed-forward submodule inside one block."""
+    block = dict(root.named_modules())[block_name]
+    for sub_name, _sub in block.named_modules():
+        leaf = sub_name.rsplit(".", 1)[-1].lower()
+        if sub_name and leaf in ("mlp", "ff", "ffn", "feed_forward",
+                                 "transformer_feedforward", "densereludense"):
+            return f"{block_name}.{sub_name}"
+    return None
+
+
+def _first_attr(obj, names: tuple):
+    """First present integer attribute among candidate names, else None."""
+    for name in names:
+        value = getattr(obj, name, None)
+        if isinstance(value, int) and value > 0:
+            return value
+    return None

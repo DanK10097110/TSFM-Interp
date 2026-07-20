@@ -80,9 +80,44 @@ class L2Config:
 class PatchingConfig:
     enabled: bool = True
     layer_stride: int = 2
-    corruptions: list = field(default_factory=lambda: ["deseasonalize", "noise"])
+    corruptions: list = field(default_factory=lambda: [
+        "deseasonalize", "noise", "level_shift", "spike", "warp", "dropout"])
     max_series: int = 64
     num_samples: int = 8
+    per_window: bool = True
+    window_stride: int = 1
+
+
+@dataclass
+class LensConfig:
+    enabled: bool = True
+    layer_stride: int = 1
+    max_series: int = 64
+    tuned: bool = True
+    tuned_max_series: int = 2000
+    val_frac: float = 0.25
+    lambdas: list = field(default_factory=lambda: [1e-3, 1e-2, 1e-1, 1.0])
+    crystallization_tol: float = 0.1
+
+
+@dataclass
+class AttentionConfig:
+    enabled: bool = True
+    patterns: bool = True
+    max_series: int = 128
+    batch_series: int = 16
+    max_lag_tokens: int = 256
+    ablation: bool = True
+    ablation_max_series: int = 128
+    head_layer_stride: int = 1
+    top_k: int = 5
+
+
+@dataclass
+class ExemplarsConfig:
+    enabled: bool = True
+    per_family: int = 2
+    max_families: int = 6
 
 
 @dataclass
@@ -96,6 +131,8 @@ class L3Config:
         "level_shift": {"position_frac": 0.6, "scale": 3.0},
         "spike": {"count": 3, "scale": 6.0},
         "smooth": {"kernel": 9},
+        "warp": {"strength": 0.15},
+        "dropout": {"frac": 0.15, "n_blocks": 3},
     })
     max_series: int = 512
     patching: PatchingConfig = field(default_factory=PatchingConfig)
@@ -172,6 +209,9 @@ class PipelineConfig:
     l1: L1Config = field(default_factory=L1Config)
     l2: L2Config = field(default_factory=L2Config)
     l3: L3Config = field(default_factory=L3Config)
+    lens: LensConfig = field(default_factory=LensConfig)
+    attention: AttentionConfig = field(default_factory=AttentionConfig)
+    exemplars: ExemplarsConfig = field(default_factory=ExemplarsConfig)
     stats: StatsConfig = field(default_factory=StatsConfig)
     internals: InternalsConfig = field(default_factory=InternalsConfig)
     confirm: ConfirmConfig = field(default_factory=ConfirmConfig)
@@ -224,6 +264,7 @@ _NESTED = {
     "extraction": ExtractionConfig, "l0": L0Config, "l1": L1Config, "l2": L2Config,
     "clustering": ClusteringConfig, "sae": SAEConfig, "report": ReportConfig,
     "stats": StatsConfig, "internals": InternalsConfig, "confirm": ConfirmConfig,
+    "lens": LensConfig, "attention": AttentionConfig, "exemplars": ExemplarsConfig,
 }
 
 

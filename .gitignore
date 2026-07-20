@@ -26,3 +26,27 @@ Thumbs.db
 
 # Debug logs (run_validation.py --debug, etc.)
 /logs/
+
+# Data files (scientific computing formats)
+*.parquet
+*.npz
+*.npy
+*.pkl
+*.pickle
+*.pt
+*.pth
+*.h5
+*.hdf5
+*.feather
+*.zarr/
+
+# Cache and testing
+.pytest_cache/
+.mypy_cache/
+
+# Generated run outputs and intermediate data
+tsfm_model_analysis/tsfm_lens/runs/
+tsfm_benchmark/outputs/*.parquet
+tsfm_benchmark/outputs/*.npz
+tsfm_benchmark/outputs/*.pkl
+tsfm_benchmark/outputs/*.csv

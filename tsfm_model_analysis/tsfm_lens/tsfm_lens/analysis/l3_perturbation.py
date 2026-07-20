@@ -1,8 +1,9 @@
 """L3 — perturbation and causal analysis.
 
 A battery of parameterized input corruptions (each targeting one structural
-property: seasonality, trend, noise floor, frequency content, level, spikes)
-produces matched clean/corrupted pairs. Three measurements follow:
+property: seasonality, trend, noise floor, frequency content, level, spikes,
+local phase, missing data) produces matched clean/corrupted pairs. Three
+measurements follow:
 
 1. Sensitivity fingerprints: per-layer relative activation change under each
    corruption, giving each model a [layers x corruptions] signature of where
@@ -11,10 +12,23 @@ produces matched clean/corrupted pairs. Three measurements follow:
    shared relative-depth axis and rank-correlated per corruption, so models
    of different depth are compared fairly.
 3. Within-model activation patching: cached clean token states are written
-   back into a corrupted forward one layer at a time, and forecast
-   restoration measures where the corrupted property is causally carried.
-   Patching is within-model by construction; comparing the resulting
-   restoration-by-depth curves across models is the cross-model claim.
+   back into a corrupted forward one window at a time, and forecast
+   restoration measures where (in depth) and where (in time) the corrupted
+   property is causally carried. Patching is within-model by construction;
+   comparing the resulting restoration-by-depth curves across models is the
+   cross-model claim.
+
+Patching deliberately never overwrites a layer's *entire* token state (every
+position at once): in a purely sequential residual stack that operation is
+mathematically guaranteed to reach 100% restoration at every single layer,
+since the patched state completely determines everything computed downstream
+and nothing about the corruption survives past the patch point. That holds
+regardless of model or corruption, so it would test nothing. Patching one
+alignment window's tokens at a time (`_window_restoration`) leaves every
+other position's corruption in place, so the resulting restoration is
+genuinely graded by depth and by which part of the context was fixed; the
+per-layer curve reported to users is the mean of those per-window
+restorations, not a separate whole-context patch.
 
 Sensitivity reuses the extraction store for clean activations, so each
 corruption costs one forward pass per model.
@@ -104,6 +118,46 @@ def corrupt_smooth(v: np.ndarray, rng, kernel: int = 9) -> np.ndarray:
     return uniform_filter1d(v, size=kernel, axis=1, mode="nearest")
 
 
+def corrupt_warp(v: np.ndarray, rng, strength: float = 0.15, n_knots: int = 6) -> np.ndarray:
+    """Local nonlinear time warp: resample through a smooth random monotone map.
+
+    Unlike `frequency_shift` (a uniform global rescale of the whole series),
+    this stretches and compresses different parts of each series by
+    different amounts, corrupting local phase/alignment while leaving global
+    frequency content roughly unchanged on average — a distinct structural
+    property from anything else in this battery.
+    """
+    n, t = v.shape
+    knot_x = np.linspace(0, t - 1, n_knots)
+    jitter = rng.normal(0, strength * t / n_knots, size=(n, n_knots))
+    knot_y = np.sort(np.clip(knot_x[None, :] + jitter, 0, t - 1), axis=1)
+    idx = np.stack([np.interp(np.arange(t), knot_x, knot_y[i]) for i in range(n)])
+    i0 = np.floor(idx).astype(np.int64)
+    i1 = np.minimum(i0 + 1, t - 1)
+    frac = (idx - i0).astype(np.float32)
+    rows = np.arange(n)[:, None]
+    return (v[rows, i0] * (1 - frac) + v[rows, i1] * frac).astype(np.float32)
+
+
+def corrupt_dropout(v: np.ndarray, rng, frac: float = 0.15, n_blocks: int = 3) -> np.ndarray:
+    """Blank out `n_blocks` random contiguous spans with the series' own mean.
+
+    Simulates missing or intermittent data (sensor dropout, reporting gaps)
+    rather than any continuous-signal distortion, giving the battery a
+    "data is simply absent" corruption alongside the shape/spectrum ones.
+    """
+    out = v.copy()
+    n, t = v.shape
+    block_len = max(1, int(t * frac / max(1, n_blocks)))
+    mean = v.mean(axis=1, keepdims=True)
+    rows = np.arange(n)[:, None]
+    for _ in range(n_blocks):
+        starts = rng.integers(0, max(1, t - block_len + 1), size=n)
+        cols = starts[:, None] + np.arange(block_len)[None, :]
+        out[rows, cols] = mean
+    return out
+
+
 CORRUPTIONS = {
     "noise": corrupt_noise,
     "detrend": corrupt_detrend,
@@ -112,6 +166,8 @@ CORRUPTIONS = {
     "level_shift": corrupt_level_shift,
     "spike": corrupt_spike,
     "smooth": corrupt_smooth,
+    "warp": corrupt_warp,
+    "dropout": corrupt_dropout,
 }
 
 
@@ -166,11 +222,17 @@ def run_l3(cfg: PipelineConfig, hub, store: ActivationStore, data: BenchmarkData
         "n_series": int(len(rows)),
     })
     if patching:
+        win_arrays = {f"restoration_windows_{k}": v["restoration_windows"]
+                      for k, v in patching.items() if "restoration_windows" in v}
         np.savez(out_dir / "patching.npz",
-                 **{f"restoration_{k}": v["restoration"] for k, v in patching.items()})
+                 **{f"restoration_{k}": v["restoration"] for k, v in patching.items()},
+                 **win_arrays)
         save_json(out_dir / "patching.json", {
             k: {"layers": v["layers"], "corruptions": v["corruptions"],
-                "rel_depth": relative_depths(len(v["layers"])).tolist()}
+                "rel_depth": relative_depths(len(v["layers"])).tolist(),
+                "windows": v.get("windows", []),
+                "window_size": cfg.alignment.window,
+                "whole_context_patch": v.get("whole_context_patch", False)}
             for k, v in patching.items()})
     log.info("L3 complete: most divergent corruption = %s", agreement["most_divergent"])
 
@@ -218,7 +280,19 @@ def _sensitivity(cfg: PipelineConfig, adapter, store: ActivationStore, rows: np.
 
 def _patching(cfg: PipelineConfig, adapter, layers: list, rows: np.ndarray,
               contexts: np.ndarray, corrupted: dict, horizon: int) -> dict:
-    """Layer-by-layer clean-into-corrupted patching, scored as forecast restoration."""
+    """Layer-by-window clean-into-corrupted patching, aggregated to a depth curve.
+
+    Each (layer, window) cell patches only the tokens belonging to that one
+    alignment window, leaving every other position's corruption in place —
+    the reported per-layer "restoration" curve is the mean of those
+    per-window values. This is deliberate: patching a layer's *entire* token
+    state (every position at once) would completely determine everything the
+    model computes afterward, so a whole-context patch is restored to 100%
+    at every single layer regardless of model, corruption, or depth — a
+    guaranteed ceiling effect, not a finding. Falls back to whole-context
+    patching only if `per_window` is disabled, in which case the resulting
+    curve should be read as a wiring sanity-check, not a depth signal.
+    """
     pcfg = cfg.l3.patching
     take = min(len(rows), pcfg.max_series, adapter.cfg.batch_size)
     ctx_clean = contexts[:take]
@@ -228,17 +302,69 @@ def _patching(cfg: PipelineConfig, adapter, layers: list, rows: np.ndarray,
     seed = cfg.run.seed + 7
     f_clean = _predict_once(adapter, ctx_clean, horizon, cfg.l0.quantiles, seed)
 
+    n_windows = cfg.data.context_len // cfg.alignment.window
+    win_of_token = _token_windows(adapter.token_time_spans(), cfg.alignment.window,
+                                  n_windows)
+    windows = list(range(0, n_windows, max(1, pcfg.window_stride))) \
+        if pcfg.per_window else []
+
     restoration = np.zeros((len(corr_names), len(layers_p)), dtype=np.float32)
+    rest_win = np.zeros((len(corr_names), len(layers_p), len(windows)), dtype=np.float32)
     for ci, cname in enumerate(tqdm(corr_names, desc=f"L3 patching {adapter.name}")):
         ctx_corr = corrupted[cname][:take]
         f_corr = _predict_once(adapter, ctx_corr, horizon, cfg.l0.quantiles, seed)
         damage = np.abs(f_corr - f_clean).mean() + 1e-8
         for li, layer in enumerate(layers_p):
-            with token_patch(adapter.module, layer, adapter.token_slice,
-                             clean_tokens[layer]):
-                f_patch = _predict_once(adapter, ctx_corr, horizon, cfg.l0.quantiles, seed)
-            restoration[ci, li] = float(1.0 - np.abs(f_patch - f_clean).mean() / damage)
-    return {"restoration": restoration, "layers": layers_p, "corruptions": corr_names}
+            if windows:
+                vals = []
+                for wi, w in enumerate(windows):
+                    tok_idx = np.flatnonzero(win_of_token == w)
+                    if not len(tok_idx):
+                        continue
+                    v = _window_restoration(
+                        adapter, layer, tok_idx, clean_tokens[layer], ctx_corr,
+                        horizon, cfg.l0.quantiles, seed, f_clean, damage)
+                    rest_win[ci, li, wi] = v
+                    vals.append(v)
+                restoration[ci, li] = float(np.mean(vals)) if vals else float("nan")
+            else:
+                with token_patch(adapter.module, layer, adapter.token_slice,
+                                 clean_tokens[layer]):
+                    f_patch = _predict_once(adapter, ctx_corr, horizon, cfg.l0.quantiles, seed)
+                restoration[ci, li] = float(1.0 - np.abs(f_patch - f_clean).mean() / damage)
+    out = {"restoration": restoration, "layers": layers_p, "corruptions": corr_names,
+           "whole_context_patch": not bool(windows)}
+    if windows:
+        out["restoration_windows"] = rest_win
+        out["windows"] = windows
+    return out
+
+
+def _token_windows(spans: np.ndarray, window: int, n_windows: int) -> np.ndarray:
+    """Assign each token to the alignment window holding its span midpoint.
+
+    Midpoint assignment (rather than any-overlap) patches each token exactly
+    once even under overlapping strided tokenizations, keeping per-window
+    restorations additive rather than double-counted.
+    """
+    mid = spans.mean(axis=1)
+    return np.clip((mid // window).astype(np.int64), 0, n_windows - 1)
+
+
+def _window_restoration(adapter, layer: str, tok_idx: np.ndarray,
+                        clean_layer: torch.Tensor, ctx_corr: np.ndarray,
+                        horizon: int, quantiles: list, seed: int,
+                        f_clean: np.ndarray, damage: float) -> float:
+    """Forecast restoration from patching only one window's tokens at one layer."""
+    idx = torch.from_numpy(tok_idx)
+
+    def index_fn(live_len: int):
+        base = adapter.token_slice(live_len)
+        return idx + base.start
+
+    with token_patch(adapter.module, layer, index_fn, clean_layer[:, tok_idx]):
+        f_patch = _predict_once(adapter, ctx_corr, horizon, quantiles, seed)
+    return float(1.0 - np.abs(f_patch - f_clean).mean() / damage)
 
 
 def _agreement_with_ci(cfg: PipelineConfig, psa: np.ndarray, psb: np.ndarray,

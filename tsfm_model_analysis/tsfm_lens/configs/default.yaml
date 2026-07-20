@@ -24,12 +24,13 @@ alignment:
 models:
   - name: timesfm
     adapter: timesfm
-    checkpoint: google/timesfm-2.0-500m-pytorch
+    checkpoint: google/timesfm-2.5-200m-pytorch
     batch_size: 64
-    capture_layer_stride: 2     # 50 layers -> 25 capture points
-    kwargs:
-      num_layers: 50
-      input_patch_len: 32
+    capture_layer_stride: 2     # 20 layers -> 10 capture points
+    # No kwargs needed: the timesfm adapter targets the installed package's
+    # 2.5-only API (it dropped the old Hparams/Checkpoint class API, with no
+    # Python>=3.12-compatible release that keeps it), which fixes patch size
+    # (32) and layer count (20) from the checkpoint itself.
   - name: chronos
     adapter: chronos
     checkpoint: amazon/chronos-t5-base
@@ -78,12 +79,53 @@ l3:
     level_shift: {position_frac: 0.6, scale: 3.0}
     spike: {count: 3, scale: 6.0}
     smooth: {kernel: 9}
+    warp: {strength: 0.15}
+    dropout: {frac: 0.15, n_blocks: 3}
   patching:
     enabled: true
     layer_stride: 3
-    corruptions: [deseasonalize, noise]
+    corruptions: [deseasonalize, noise, level_shift, spike]
     max_series: 48              # must be <= every model's batch_size
     num_samples: 8
+    per_window: true            # layer x window restoration heatmaps
+    window_stride: 2            # every window doubles patching cost; stride 2 halves it
+
+# Forecast lens: per-layer forecasts decoded with the model's own head
+# (skip lens) plus a ridge readout from stored window states (tuned lens).
+# Skip lens runs one forward per layer on a single batch, so max_series must
+# be <= every model's batch_size.
+lens:
+  enabled: true
+  layer_stride: 1
+  max_series: 48
+  tuned: true
+  tuned_max_series: 2000
+  val_frac: 0.25
+  lambdas: [0.001, 0.01, 0.1, 1.0]
+  crystallization_tol: 0.1      # "crystallized" = within 10% of final MASE
+
+# Attention structure and head/MLP causality. Pattern capture holds
+# [batch, heads, T, T] per layer in memory: for chronos-t5 at T=512 that is
+# ~2.4 GB at batch_series 16 — lower batch_series before lowering max_series.
+# TimesFM exposes no patterns (functional attention) but still gets head and
+# MLP ablation through its discovered output projections.
+attention:
+  enabled: true
+  patterns: true
+  max_series: 128
+  batch_series: 16
+  max_lag_tokens: 256
+  ablation: true
+  ablation_max_series: 48       # must be <= every model's batch_size
+  head_layer_stride: 2          # ablation cost = blocks/stride x heads forwards
+  top_k: 5
+
+# Exemplar case studies: per-family series picked from the L0 MASE-gap
+# distribution, with forecasts, per-series lens curves, and attention maps.
+exemplars:
+  enabled: true
+  per_family: 2
+  max_families: 6
 
 clustering:
   enabled: true
@@ -98,7 +140,10 @@ sae:
 
 report:
   enabled: true
-  title: TimesFM vs Chronos — layered comparison
+  # Model identity in the report (chips, H1, section text) always comes from
+  # the `models[*].name` entries above, never from this string — swap models
+  # or rename them freely and the report stays correct without touching this.
+  title: Layered comparison
 
 # ---------------------------------------------------------------------------
 # Statistics: series-level bootstrap CIs everywhere, paired tests with Holm

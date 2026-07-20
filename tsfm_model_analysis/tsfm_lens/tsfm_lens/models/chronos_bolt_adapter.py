@@ -11,6 +11,11 @@ naturally by the overlap-weighted pooling.
 
 Written against chronos-forecasting>=1.4 with chronos-bolt-* checkpoints;
 run --check-alignment on your installed version before trusting results.
+Attention patterns and cross-attention stay unsupported: Bolt's patch-embed
+and decoding paths differ enough across releases that exposing probabilities
+robustly is not worth the fragility, while head- and MLP-level ablation work
+through the discovered output projections, which fire during
+`predict_quantiles`.
 """
 
 from __future__ import annotations
@@ -22,7 +27,7 @@ import numpy as np
 import torch
 
 from ..utils import log
-from .base import ModelAdapter
+from .base import ModelAdapter, _scan_attention, _scan_mlp
 
 
 class ChronosBoltAdapter(ModelAdapter):
@@ -92,3 +97,29 @@ class ChronosBoltAdapter(ModelAdapter):
             quantile_levels=list(quantiles))
         return {"point": mean.float().cpu().numpy(),
                 "quantiles": q.float().cpu().numpy()}
+
+    def attention_info(self) -> list:
+        """Best-effort head map via the shared block scan, None if any block fails."""
+        self.ensure_loaded()
+        infos = []
+        for block in self.all_layer_names():
+            info = _scan_attention(self.module, block)
+            if info is None:
+                log.info("chronos-bolt '%s': no head map for block %s; "
+                         "head-level analyses disabled", self.name, block)
+                return None
+            infos.append(info)
+        return infos
+
+    def mlp_info(self) -> dict:
+        """Best-effort block -> pre-residual MLP map via the shared block scan."""
+        self.ensure_loaded()
+        mapping = {}
+        for block in self.all_layer_names():
+            name = _scan_mlp(self.module, block)
+            if name is None:
+                log.info("chronos-bolt '%s': no MLP module for block %s; "
+                         "MLP ablation disabled", self.name, block)
+                return None
+            mapping[block] = name
+        return mapping

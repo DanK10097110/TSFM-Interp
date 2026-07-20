@@ -89,3 +89,46 @@ class ChronosAdapter(ModelAdapter):
         q = torch.quantile(samples, torch.tensor(quantiles, dtype=torch.float32), dim=1)
         return {"point": samples.median(dim=1).values.cpu().numpy(),
                 "quantiles": q.permute(1, 2, 0).cpu().numpy()}
+
+    def attention_info(self) -> list:
+        """T5 encoder blocks expose SelfAttention.o, a plain Linear over head concat."""
+        self.ensure_loaded()
+        cfg = self._t5.config
+        return [{"block": f"encoder.block.{i}",
+                 "o_proj": f"encoder.block.{i}.layer.0.SelfAttention.o",
+                 "n_heads": int(cfg.num_heads), "head_dim": int(cfg.d_kv)}
+                for i in range(int(cfg.num_layers))]
+
+    def mlp_info(self) -> dict:
+        """DenseReluDense outputs the pre-residual feed-forward contribution."""
+        self.ensure_loaded()
+        return {f"encoder.block.{i}": f"encoder.block.{i}.layer.1.DenseReluDense"
+                for i in range(int(self._t5.config.num_layers))}
+
+    def attention_patterns(self, prepared: Any) -> dict:
+        """Encoder self-attention probabilities with the EOS row/column stripped."""
+        token_ids, attention_mask = prepared
+        kept = self._kept()
+        with torch.no_grad():
+            out = self._t5.encoder(input_ids=token_ids, attention_mask=attention_mask,
+                                   output_attentions=True)
+        pats = {}
+        for i, att in enumerate(out.attentions):
+            if att.shape[-1] == kept + 1 and self._use_eos:
+                att = att[..., :kept, :kept]
+            pats[f"encoder.block.{i}"] = att.float().cpu()
+        return pats
+
+    def cross_attention_patterns(self, prepared: Any) -> torch.Tensor:
+        """First-step decoder cross-attention over encoder tokens, [L, B, H, T_enc]."""
+        token_ids, attention_mask = prepared
+        kept = self._kept()
+        start = torch.full((token_ids.shape[0], 1),
+                           int(self._t5.config.decoder_start_token_id),
+                           dtype=torch.long, device=self.device)
+        with torch.no_grad():
+            out = self._t5(input_ids=token_ids, attention_mask=attention_mask,
+                           decoder_input_ids=start, output_attentions=True)
+        cross = torch.stack([att[..., 0, :kept].float().cpu()
+                             for att in out.cross_attentions])
+        return cross

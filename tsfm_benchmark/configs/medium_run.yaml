@@ -1,0 +1,92 @@
+# ============================================================================
+# Medium benchmark configuration (~300 series per split)
+# ============================================================================
+# A scaled-down companion to configs/full_multidomain.yaml, sized for a
+# tsfm_lens run against real model checkpoints in minutes rather than hours,
+# while still exercising every part of the analysis pipeline meaningfully
+# (enough series per family for L1's family-conditioned CKA and L0's paired
+# family tests, which both need `>= min_family_series`/`min_series`). Read
+# configs/example.yaml first for a full field-by-field reference.
+#
+# Four tasks, three distinct families (tsfm_lens groups by generator name
+# when no explicit family field is set, so `parametric` and
+# `random_parametric` land in different buckets even though both are
+# synthetic):
+#   - random_parametric (200, 67%): the diverse synthetic backbone, all 12
+#     structural archetypes plus a randomized corruption subset per series.
+#   - parametric (40, 13%): one fixed seasonal+trend recipe repeated with
+#     only the noise draw varying -- a deliberately more homogeneous
+#     synthetic family, so L0/L1 have a third, qualitatively different
+#     bucket to compare against the diverse backbone.
+#   - mixture x2 (30 + 30, 20%): genuine real-world data. Both draw from
+#     Monash's `weather` domain (long, NaN-free station observations,
+#     verified to load cleanly in this environment -- many other Monash
+#     configs error on frequency-alias issues in the dataset's own loading
+#     script, see full_multidomain.yaml's docstring) with different
+#     mixing modes/seeds for variety.
+#
+# Build both splits (this pins `weather` directly, so no --sources flag is
+# needed -- see the module docstring in run_full.py if you want to swap in a
+# different domain or the full cross-domain bootstrap instead):
+#
+#   cd "TSFM Interp"
+#   PYTHONPATH=. python3 tsfm_benchmark/example_runs/run_full.py \
+#       --config tsfm_benchmark/configs/medium_run.yaml \
+#       --out ./benchmark_medium --references monash --reference-limit 80
+#
+# ============================================================================
+
+tasks:
+  - name: diverse_synthetic_backbone
+    generator: random_parametric
+    count: 200
+    tier: synthetic
+    generator_params:
+      length: 576   # 512 context + 64 horizon, matching the tsfm_lens config
+      archetypes: [trend_dominant, seasonal_dominant, multi_seasonal_complex,
+                   regime_switching, ar_colored_noise, anomaly_heavy,
+                   clean_low_noise, noisy_chaotic, random_walk_drift,
+                   intermittent_bursts, amplitude_modulated,
+                   nonsinusoidal_seasonal]
+    corruption_pool:
+      - {op: jitter, sigma: [0.01, 0.08]}
+      - {op: scaling, sigma: [0.05, 0.2]}
+      - {op: time_warp, strength: [0.05, 0.25], n_knots: [3, 6]}
+      - {op: dropout, rate: [0.02, 0.1]}
+    n_corruptions: [0, 3]
+
+  - name: seasonal_trend_fixed
+    generator: parametric
+    count: 40
+    tier: synthetic
+    generator_params:
+      length: 576
+      trend: {order: 2, scale: 0.5}
+      seasonalities:
+        - {period: 24, amplitude: 1.0}
+        - {period: 168, amplitude: 0.4}
+      ar_coeffs: [0.6, -0.2]
+      noise_scale: 0.15
+      n_changepoints: 2
+      n_anomalies: 3
+    corruptions:
+      - {op: jitter, sigma: 0.03}
+      - {op: time_warp, strength: 0.1}
+
+  - name: real_weather_weighted_sum
+    generator: mixture
+    count: 30
+    tier: realism_stress
+    generator_params: {mode: weighted_sum, weight_concentration: 0.7}
+    source_sample_size: [3, 6]
+    source_config: {kind: monash, subset: weather, limit: 80, seed: 1}
+
+  - name: real_weather_multiplicative
+    generator: mixture
+    count: 30
+    tier: realism_stress
+    generator_params: {mode: multiplicative, weight_concentration: 0.5}
+    source_sample_size: [3, 6]
+    # Different seed than the task above so the two tasks' random subsets of
+    # the (cached, shared) weather pool aren't forced identical.
+    source_config: {kind: monash, subset: weather, limit: 80, seed: 2}

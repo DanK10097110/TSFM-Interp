@@ -21,10 +21,13 @@ level's limitation:
 |---|---|---|---|
 | L0 | Who is better, where? | MASE / sMAPE / pinball per family, paired bootstrap tests, Holm-corrected | Behavioral only |
 | Profile | What is in each model? | Effective dimensionality, family-probe decodability, CKA-to-input per layer | Per-model, descriptive |
+| Lens | Where in depth does the forecast form? | Skip lens (layer-l states patched into the final block, decoded with the model's own head) + tuned ridge readout; crystallization depth | Depth-resolved, not component-resolved |
 | L1 | Do representations share geometry? | Linear CKA (global + per-family) with series-bootstrap CIs, RSA | Correlational |
 | L2 | Is the shared geometry linearly translatable *beyond the input*? | Ridge stitching vs an **input-feature baseline**; CI on the gain | Still not causal |
-| L3 | Where is structure causally carried? | Corruption sensitivity fingerprints + within-model activation patching | Within-model causality, compared across models |
+| L3 | Where is structure causally carried? | Corruption sensitivity fingerprints + within-model activation patching (per layer **and per window**) | Within-model causality, compared across models |
+| Attention | Which heads look where, and which matter? | Lag-profile head taxonomy, periodicity heads (induction-head analog), head/MLP mean-ablation ΔMASE, first-step decoder cross-attention | Pattern support varies by architecture |
 | L4 | How does each model organize the data? | Activation clustering with approximate labels, AMI across models | Descriptive |
+| Exemplars | What does the difference look like? | Per-family case studies: forecasts, per-series lens curves, window attention maps | Illustrative, not statistical |
 | Confirm | Which dev findings are real? | One-shot re-test of dev hypotheses on a sealed **private** corpus | The gold standard |
 
 Three design points are load-bearing:
@@ -150,10 +153,19 @@ also runs a spot check during extraction.
 Tested adapter targets: `chronos-forecasting>=1.2` with `chronos-t5-*`
 checkpoints, `chronos-forecasting>=1.4` with `chronos-bolt-*` checkpoints
 (patch geometry is read from the checkpoint config; forecasts are
-deterministic, so its L3 curves carry no sampling noise), and
-`timesfm[torch]` with `google/timesfm-2.0-500m-pytorch`. TimesFM's module
-layout moves between releases; the adapter resolves it defensively and
-warns when it has to guess.
+deterministic, so its L3 curves carry no sampling noise), and the `timesfm`
+PyPI package's 2.5-only API (`>=2.0`, which dropped the old
+`TimesFmHparams`/`TimesFmCheckpoint`/`TimesFm` class entirely, with no
+Python>=3.12-compatible release that keeps it) with
+`google/timesfm-2.5-200m-pytorch`. TimesFM's attention runs through a fused
+SDPA kernel by default with no exposed weights, so `attention_patterns`
+temporarily swaps in the library's own unfused dot-product math to recover
+them (same output, same query/key/value, restored right after). Its
+feed-forward block has no wrapping MLP submodule (`mlp_info` finds
+nothing), so MLP mean-ablation is unavailable for this checkpoint family;
+head-level ablation still works via the attention output projection. An older
+`timesfm` install that still exposes the Hparams API would need the
+class-based loader instead of the current adapter.
 
 ## Extending
 
@@ -210,8 +222,10 @@ tsfm_lens/
   models/              ModelAdapter contract; TimesFM/Chronos/Chronos-Bolt/mock adapters
   extraction/          hooks, time alignment (+ impulse check), zarr store
   analysis/            stats (bootstrap/Holm), l0 behavioral, internals profile,
-                       l1 geometry, l2 stitching, l3 perturbation+patching,
-                       clustering, confirm (private benchmark)
+                       lens (skip + tuned forecast lens), l1 geometry,
+                       l2 stitching, l3 perturbation+patching (per window),
+                       attention (lag profiles, head/MLP ablation, cross-attn),
+                       clustering, exemplars (case studies), confirm (private benchmark)
   sae/                 deferred phase: contract and integration seams
   report/              single-file interactive HTML report
   pipeline.py          stage DAG, artifact skipping, dependency resolution

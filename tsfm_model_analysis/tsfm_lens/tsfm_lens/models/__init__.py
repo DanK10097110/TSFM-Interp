@@ -13,11 +13,12 @@ import torch
 from ..config import DataConfig, ModelConfig
 from ..utils import log
 from .base import ModelAdapter
-from .mock import MockPatchAdapter, MockStepAdapter
+from .mock import MockPatchAdapter, MockStepAdapter, MockWaveAdapter
 
 ADAPTERS: Dict[str, type] = {
     "mock_patch": MockPatchAdapter,
     "mock_step": MockStepAdapter,
+    "mock_wave": MockWaveAdapter,
 }
 
 

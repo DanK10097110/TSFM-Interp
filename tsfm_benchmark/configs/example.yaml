@@ -336,16 +336,31 @@ tasks:
     generator_params:
       length: 512
       # archetypes: [trend_dominant, seasonal_dominant]
-      # OPTIONAL. Restrict which structural archetypes get drawn from
-      # (default: all 8 -- trend_dominant, seasonal_dominant,
-      # multi_seasonal_complex, regime_switching, ar_colored_noise,
-      # anomaly_heavy, clean_low_noise, noisy_chaotic). Each archetype
-      # samples its own trend/seasonality/AR/changepoint/anomaly ranges
-      # independently per series -- see generators.py:_ARCHETYPES for the
-      # exact ranges each one uses.
+      # OPTIONAL. Restrict (or extend) which structural archetypes get drawn
+      # from. The DEFAULT pool is the original 8 -- trend_dominant,
+      # seasonal_dominant, multi_seasonal_complex, regime_switching,
+      # ar_colored_noise, anomaly_heavy, clean_low_noise, noisy_chaotic --
+      # and is frozen so previously sealed corpora keep regenerating
+      # bit-identically from their seeds. Four further archetypes exist and
+      # are OPT-IN (list them explicitly): random_walk_drift (unit-root
+      # stochastic trend), intermittent_bursts (sparse series, 30-80% zeros
+      # -- stresses token-quantizing models like Chronos vs continuous-patch
+      # models like TimesFM), amplitude_modulated (heteroskedastic noise
+      # envelope), nonsinusoidal_seasonal (square/sawtooth/triangle seasonal
+      # shapes with harmonics). For a new benchmark, listing all 12 is
+      # recommended:
+      # archetypes: [trend_dominant, seasonal_dominant, multi_seasonal_complex,
+      #              regime_switching, ar_colored_noise, anomaly_heavy,
+      #              clean_low_noise, noisy_chaotic, random_walk_drift,
+      #              intermittent_bursts, amplitude_modulated,
+      #              nonsinusoidal_seasonal]
+      # Each archetype samples its own trend/seasonality/AR/changepoint/
+      # anomaly ranges independently per series -- see
+      # generators.py:_ARCHETYPES for the exact ranges each one uses.
       # archetype_weights: [2, 1]
-      # OPTIONAL, same length as `archetypes` (or the full 8, if `archetypes`
-      # is omitted). Relative sampling weight per archetype; default uniform.
+      # OPTIONAL, same length as `archetypes` (or the default 8, if
+      # `archetypes` is omitted). Relative sampling weight per archetype;
+      # default uniform.
 
     # Each of the 200 series gets a randomly chosen structural archetype AND
     # a randomly sized/ordered/parameterized subset of these corruptions --

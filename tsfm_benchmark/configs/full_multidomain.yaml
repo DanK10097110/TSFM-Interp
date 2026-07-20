@@ -10,7 +10,7 @@
 #
 # Synthetic backbone (leakage-safe, tier: synthetic):
 #   Uses 'random_parametric', which redraws its entire structural recipe
-#   (trend, seasonality, AR order, changepoints, anomalies) from one of 8
+#   (trend, seasonality, AR order, changepoints, anomalies) from one of 12
 #   qualitatively different archetypes independently for every generated
 #   series, plus a randomly-sampled subset/order/magnitude of corruptions per
 #   series (corruption_pool + n_corruptions). A plain 'parametric' task run
@@ -74,9 +74,18 @@ tasks:
     tier: synthetic
     generator_params:
       length: 512
-      # Uses all 8 built-in archetypes with equal weight by default. Narrow
-      # this with `archetypes: [...]` / `archetype_weights: [...]` if you
-      # want to bias the mix.
+      # All 12 archetypes, named explicitly: the generator's built-in default
+      # is only the original 8 (frozen so old sealed corpora keep
+      # regenerating bit-identically), so the 4 newer regimes -- unit-root
+      # random walks, sparse intermittent counts, heteroskedastic amplitude
+      # envelopes, non-sinusoidal seasonal shapes -- must be opted into, as
+      # done here. Narrow the list or add `archetype_weights: [...]` to bias
+      # the mix; see configs/example.yaml for what each archetype covers.
+      archetypes: [trend_dominant, seasonal_dominant, multi_seasonal_complex,
+                   regime_switching, ar_colored_noise, anomaly_heavy,
+                   clean_low_noise, noisy_chaotic, random_walk_drift,
+                   intermittent_bursts, amplitude_modulated,
+                   nonsinusoidal_seasonal]
     corruption_pool:
       - {op: jitter, sigma: [0.01, 0.08]}
       - {op: scaling, sigma: [0.05, 0.2]}

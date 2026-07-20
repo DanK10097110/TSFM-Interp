@@ -21,7 +21,7 @@ from jinja2 import Template
 from plotly.subplots import make_subplots
 
 from ..config import PipelineConfig
-from ..utils import load_json, log
+from ..utils import load_json, log, relative_depths
 
 _COLORS = {"a": "#2E6E8E", "b": "#9A5B88", "accent": "#C2661B",
            "ink": "#22303A", "muted": "#66727B", "line": "#E2E6E1"}
@@ -47,6 +47,10 @@ def run_report(cfg: PipelineConfig) -> Path:
          "Per-model depth profiles: where representations expand, where family information becomes decodable, and how far each layer moves from raw input statistics.",
          ["internals/profile.json"],
          lambda: _sec_internals(run_dir, model_colors, findings)),
+        ("Lens", "Forecast lens",
+         "Per-layer forecasts read out with the model's own head: where in depth the final forecast crystallizes, and how much of it a linear probe already sees.",
+         ["lens/curves.npz", "lens/lens.json"],
+         lambda: _sec_lens(run_dir, model_colors, findings)),
         ("L1", "Representational geometry",
          "Linear CKA between every layer pair: where the two models' representations share geometry. Correlational evidence only.",
          ["l1/cka.npz", "l1/meta.json"],
@@ -59,11 +63,19 @@ def run_report(cfg: PipelineConfig) -> Path:
          "Where each model's depth reacts to structured corruptions, and where clean activations causally restore corrupted forecasts.",
          ["l3/sensitivity.npz", "l3/meta.json"],
          lambda: _sec_l3(run_dir, model_colors, findings)),
+        ("Attention", "Attention structure & head causality",
+         "Where heads look as a function of temporal lag, which heads carry seasonal structure, and which heads and MLP blocks forecasts causally depend on.",
+         ["attention/arrays.npz", "attention/meta.json"],
+         lambda: _sec_attention(run_dir, model_colors, findings)),
         ("L4", "Activation clusters",
          "How each model organizes the benchmark, with clusters labeled by what they approximately activate for.",
          ["clustering/embedding.parquet", "clustering/clusters.json",
           "clustering/comparison.json"],
          lambda: _sec_clusters(run_dir, model_colors, findings)),
+        ("Exemplars", "Exemplar case studies",
+         "A few concrete series per family, told end to end: both forecasts, where each model's answer forms in depth, and where it looks in the context.",
+         ["exemplars/exemplars.npz", "exemplars/exemplars.json"],
+         lambda: _sec_exemplars(run_dir, model_colors, findings)),
         ("Confirm", "Private benchmark confirmation",
          "One-shot confirmatory tests of the dev findings on a sealed held-out corpus. This is the gold standard: exploration above, evidence here.",
          ["confirm/confirmation.json"],
@@ -82,6 +94,7 @@ def run_report(cfg: PipelineConfig) -> Path:
             sections.append({"eyebrow": eyebrow, "title": title, "blurb": blurb,
                              "html": inner})
 
+    mock_models = [m.name for m in cfg.models if m.adapter.startswith("mock_")]
     html = _TEMPLATE.render(
         title=cfg.report.title, run=cfg.run.name,
         date=datetime.date.today().isoformat(),
@@ -89,12 +102,43 @@ def run_report(cfg: PipelineConfig) -> Path:
         dataset_line=_dataset_line(cfg, run_dir),
         findings=findings, sections=sections,
         config_text=_config_text(run_dir),
+        mock_warning=_mock_warning(mock_models),
     )
     out = run_dir / "report.html"
     out.write_text(html)
     log.info("report written: %s (%d sections, %d findings)", out, len(sections),
              len(findings))
     return out
+
+
+def _mock_warning(mock_models: list) -> str:
+    """Banner flagging any model backed by an untrained mock/smoke adapter.
+
+    Mock adapters exist purely to exercise the pipeline's mechanics (hooks,
+    alignment, patching, stats) end to end with no downloads or GPU — their
+    weights are randomly initialized and never trained on anything, so their
+    forecasts, layer content, and attention patterns carry no signal about
+    real model behavior. Nothing about *which name* is configured changes
+    this: renaming a mock adapter to "TimesFM" would not make its forecasts
+    meaningful, and a real adapter's name is exactly what's shown everywhere
+    in this report, with no hardcoded assumptions about a fixed model roster.
+    """
+    if not mock_models:
+        return ""
+    names = ", ".join(mock_models)
+    return (f'<div class="mockwarn"><b>⚠ Mock/smoke run.</b> {names} '
+            f'{"is" if len(mock_models) == 1 else "are"} untrained toy '
+            f'architecture{"" if len(mock_models) == 1 else "s"} used to '
+            f'validate this pipeline end to end (hooks, alignment, patching, '
+            f'statistics) with no downloads or GPU — random weights, never '
+            f'trained. Forecasts, layer content, and attention patterns below '
+            f'are expected to look arbitrary and uncorrelated with the true '
+            f'continuation; that is not a bug. Every name in this report '
+            f'(including this one) is read directly from <code>models[*].name</code> '
+            f'in the run config — swap in a real adapter (<code>timesfm</code>, '
+            f'<code>chronos</code>, …) with its own name and every section '
+            f'updates automatically, with forecasts that should actually '
+            f'track the target.</div>')
 
 
 def _dataset_line(cfg: PipelineConfig, run_dir: Path) -> str:
@@ -126,6 +170,19 @@ def _frag(fig: go.Figure, height: int = 420) -> str:
                        config={"displayModeBar": False})
 
 
+def _note(purpose: str, reading: str, limitations: str, summary: str = "What is this chart?") -> str:
+    """Collapsed-by-default explanatory block rendered directly under a figure.
+
+    Three fixed fields because that's the question order a reader actually
+    has: what am I looking at, how do I read a value, and where would this
+    mislead me for a particular architecture or setup.
+    """
+    return (f'<details class="note"><summary>{summary}</summary>'
+            f'<div class="note-body"><p><b>Purpose</b><br>{purpose}</p>'
+            f'<p><b>Reading values</b><br>{reading}</p>'
+            f'<p><b>Limitations</b><br>{limitations}</p></div></details>')
+
+
 def _short(layer: str) -> str:
     """Compact layer tick label from a qualified module name."""
     m = re.search(r"(\d+)$", layer)
@@ -148,12 +205,24 @@ def _ci_str(d: dict, key: str = "value") -> str:
 
 
 def _err_y(entries: list) -> dict | None:
-    """Plotly error-bar payload from records carrying value/lo/hi, if they do."""
+    """Plotly error-bar payload from records carrying value/lo/hi, if they do.
+
+    Clipped at zero: a bootstrap CI is not guaranteed to bracket its own
+    point estimate (an argmax-selected statistic like a peak CKA regresses
+    under resampling, so the "point" can legitimately sit above `hi` or below
+    `lo` — a real selection-bias effect, not an error). Plotly's `error_y`
+    interprets `array`/`arrayminus` as offsets from the plotted value, so a
+    negative offset there draws the whisker on the wrong side of the bar
+    entirely; clipping keeps the whisker honest (it still won't reach past
+    the CI bound in that direction) without fabricating a wider interval.
+    """
     if not entries or "lo" not in entries[0] or entries[0]["lo"] is None:
         return None
     vals = np.array([e["value"] for e in entries])
-    return dict(type="data", array=np.array([e["hi"] for e in entries]) - vals,
-                arrayminus=vals - np.array([e["lo"] for e in entries]),
+    hi = np.array([e["hi"] for e in entries])
+    lo = np.array([e["lo"] for e in entries])
+    return dict(type="data", array=np.maximum(0.0, hi - vals),
+                arrayminus=np.maximum(0.0, vals - lo),
                 thickness=1.2, width=3)
 
 
@@ -171,7 +240,21 @@ def _sec_l0(run_dir: Path, model_colors: dict, findings: list) -> str:
                     marker_color=model_colors.get(model), error_y=err)
     fig.update_layout(barmode="group", yaxis_title="MASE (lower is better)",
                       xaxis_title="family")
-    inner = _frag(fig) + "<h4>Overall metrics</h4>" + _table(pd.DataFrame(summary["overall"]))
+    inner = _frag(fig) + _note(
+        "Per-family forecast error (MASE, mean absolute error scaled by each "
+        "series' own naive one-step error) for every configured model. This "
+        "is the purely behavioral baseline everything else in the report "
+        "tries to explain mechanistically.",
+        "Lower bars are better. Bars near 1.0 mean the model is about as "
+        "good as a naive one-step-repeat forecast on that family; well "
+        "below 1.0 is genuine skill. Compare bar heights within a family "
+        "across models, not across families (family difficulty varies a lot).",
+        "MASE rewards point-forecast accuracy only, not calibration — a "
+        "model can have great MASE and terrible quantile coverage. With "
+        "more than two models configured, every model appears here, but "
+        "the paired significance test below only ever compares the first "
+        "two (the deep-dive pair every other section analyzes).")
+    inner += "<h4>Overall metrics</h4>" + _table(pd.DataFrame(summary["overall"]))
 
     tests = summary.get("family_tests")
     if tests:
@@ -210,24 +293,72 @@ def _sec_l1(run_dir: Path, findings: list) -> str:
                                 y=[_short(y) for y in la], zmin=0, zmax=1,
                                 colorscale="Viridis", colorbar_title="CKA"))
     heat.update_layout(xaxis_title=meta["model_b"], yaxis_title=meta["model_a"])
+    best = meta["best_pair"]
+    null_ci = best.get("null_ci")
     curve = go.Figure(go.Scatter(
         x=np.linspace(0, 1, len(meta["depth_curve"])),
         y=[d["cka"] for d in meta["depth_curve"]], mode="lines+markers",
-        line_color=_COLORS["accent"],
+        line_color=_COLORS["accent"], name="observed",
         text=[f'{_short(d["layer_a"])} ↔ {_short(d["layer_b"])}'
               for d in meta["depth_curve"]],
         hovertemplate="depth %{x:.2f} · CKA %{y:.3f} · %{text}<extra></extra>"))
+    if null_ci:
+        curve.add_hline(y=null_ci["value"], line=dict(color=_COLORS["muted"], dash="dot"),
+                        annotation_text="shuffled-series null", annotation_font_size=10)
     curve.update_layout(xaxis_title=f'relative depth in {meta["model_a"]}',
                         yaxis_title="best-match CKA", yaxis_range=[0, 1])
-    best = meta["best_pair"]
     da = la.index(best["layer_a"]) / max(1, len(la) - 1)
     db = lb.index(best["layer_b"]) / max(1, len(lb) - 1)
     ci_txt = f' (95% CI [{best["ci"]["lo"]:.2f}, {best["ci"]["hi"]:.2f}], ' \
              f'series bootstrap)' if best.get("ci") else ""
+    null_txt = f'; shuffled-series null ≈{null_ci["value"]:.2f}' if null_ci else ""
     findings.append(f'L1 — peak similarity CKA={best["cka"]:.2f}{ci_txt} at '
                     f'{_short(best["layer_a"])} ↔ {_short(best["layer_b"])} '
-                    f'(relative depths {da:.2f} / {db:.2f}).')
-    inner = _frag(heat) + "<h4>Layer correspondence by depth</h4>" + _frag(curve, 320)
+                    f'(relative depths {da:.2f} / {db:.2f}){null_txt}.')
+    inner = _frag(heat) + _note(
+        "Linear CKA between every layer pair of the two models, in feature "
+        "space (invariant to rotation/scaling of either representation, so "
+        "it compares geometry, not raw coordinates). This is the first, "
+        "cheapest cross-model question: do these two layers organize the "
+        "same benchmark similarly at all?",
+        "1.0 is identical geometry up to rotation; 0 is unrelated. High "
+        "values are expected and not by themselves impressive: both models "
+        "process the exact same structured input, and CKA is well known to "
+        "be inflated by shared input-driven variance alone, independent of "
+        "any shared computation — that is exactly why L2's "
+        "stitching-gain-over-input-baseline exists as the corrected "
+        "comparison. The dotted reference line on the depth-correspondence "
+        "chart below is an empirical null: the same statistic recomputed "
+        "after shuffling which series lines up with which. A peak far above "
+        "that null line means the number is at least tracking genuine "
+        "per-sample correspondence (not an artifact of comparing any two "
+        "reasonable encoders) — it does not by itself mean the models "
+        "learned the same thing.",
+        "Correlational only; says nothing about mechanism (see L2/L3 for "
+        "that). Sensitive to how many series/windows are sampled — the CI "
+        "widens for family-conditioned values with few series. Layer-pair "
+        "geometry can also look similar simply because both networks are "
+        "under-trained or too small relative to the input's effective "
+        "dimensionality — that inflates CKA the same way shared input "
+        "structure does, and the two are hard to tell apart from this "
+        "number alone.",
+        "How to read this number")
+    inner += "<h4>Layer correspondence by depth</h4>" + _frag(curve, 320) + _note(
+        "For each layer of the first model, the best-matching layer of the "
+        "second model and their CKA, plotted against relative depth — a "
+        "compact way to see whether early layers match early layers "
+        "(architectures process the input in a similar order) or whether "
+        "matches jump around in depth.",
+        "A roughly monotonic line (early-to-early, late-to-late) suggests "
+        "comparable processing order despite different depths/patch sizes. "
+        "A flat, uniformly-high line usually means the input's own "
+        "structure dominates every layer's geometry about equally — see "
+        "the null-line caveat above.",
+        "The 'best match' is a max over the other model's layers, which "
+        "mechanically biases the curve upward versus any single fixed "
+        "pairing (more candidates to match against) and can look "
+        "artificially smooth even when the underlying matrix is noisy — "
+        "always sanity-check against the heatmap above.")
     fam = arrays["cka_family"]
     if fam.shape[0]:
         best_per = fam.reshape(fam.shape[0], -1).max(axis=1)
@@ -238,13 +369,43 @@ def _sec_l1(run_dir: Path, findings: list) -> str:
         bar = go.Figure(go.Bar(x=meta["families"], y=best_per,
                                marker_color=_COLORS["a"], error_y=err))
         bar.update_layout(yaxis_title="best CKA within family", yaxis_range=[0, 1.05])
-        inner += "<h4>Family-conditioned agreement</h4>" + _frag(bar, 320)
+        inner += "<h4>Family-conditioned agreement</h4>" + _frag(bar, 320) + _note(
+            "The same peak-CKA computation restricted to one benchmark "
+            "family at a time (e.g. only trending series, only spiky "
+            "series), so a family where the two models diverge structurally "
+            "doesn't get averaged away by families where they agree.",
+            "Compare bar heights across families, not to some universal "
+            "threshold — a lower bar means this family's structure is where "
+            "the two models' representations differ most, which is exactly "
+            "the kind of finding the exemplar case studies exist to make "
+            "concrete.",
+            "Families with fewer than `l1.min_family_series` series are "
+            "dropped entirely (too few series for a stable per-family "
+            "CKA), so a family's absence here isn't evidence of anything.")
         lo_f = meta["families"][int(best_per.argmin())]
         findings.append(f"L1 — representational agreement is weakest on family "
                         f"'{lo_f}' (best CKA "
                         f"{_ci_str({'value': float(best_per.min()), **fam_ci.get(str(lo_f), {})})}).")
     if meta.get("rsa"):
-        inner += "<h4>RSA along matched layers</h4>" + _table(pd.DataFrame(meta["rsa"]))
+        inner += ("<h4>RSA along matched layers</h4>" + _table(pd.DataFrame(meta["rsa"]))
+                  + _note(
+            "A second opinion on the CKA-matched layer pairs above: each "
+            "layer's series are ranked by pairwise dissimilarity (1 minus "
+            "correlation) into a representational dissimilarity matrix "
+            "(RDM), and the two models' RDMs at each matched pair are "
+            "Spearman rank-correlated. RSA is invariant to a different "
+            "class of transform than CKA (monotonic distance rescaling "
+            "instead of rotation), so agreement between the two is "
+            "evidence the CKA match isn't an artifact of its specific "
+            "invariance.",
+            "Spearman ρ near 1 means the two models rank which series-pairs "
+            "are similar/dissimilar in the same order at that layer pair; "
+            "near 0 means the rankings are unrelated even though CKA (a "
+            "different notion of agreement) may have matched these layers.",
+            "Computed on series-level pooled embeddings only (no window "
+            "resolution), over a capped sample (`l1.rsa_max_series`) for "
+            "cost — a rough second check, not a replacement for the CKA "
+            "statistics above."))
     return inner
 
 
@@ -266,6 +427,30 @@ def _sec_l2(run_dir: Path, findings: list) -> str:
         inner += (f"<h4>{src} → {dst} · best R² {res['best_r2']:.2f} · "
                   f"best gain over input baseline {gain_txt}</h4>"
                   + _frag(fig, 380))
+        inner += _note(
+            "For every (source layer, target layer) pair, a ridge probe "
+            "is fit from the source model's window states to the target "
+            "model's, and scored as held-out R². The heatmap color is "
+            "not that raw R² — it's the *gain* above a hand-crafted "
+            "input-feature probe (raw window values, FFT magnitudes, "
+            "summary stats) fit to predict the same target, because "
+            "both models saw the same input, so high raw R² can just "
+            "mean 'both are reasonable functions of the input,' not "
+            "'these representations share learned structure.'",
+            "Red (positive ΔR²) at a pair means the source layer "
+            "predicts the target layer better than raw input features "
+            "alone can — genuine evidence of shared structure beyond "
+            "input. Blue (negative) means the input baseline actually "
+            "wins; that pair carries no stitching evidence at all. The "
+            "title line's gain CI is the one number to trust: if its "
+            "low end is above zero, the best pair's gain is real; if "
+            "the CI straddles zero, treat the whole heatmap as noise "
+            "no matter how saturated it looks.",
+            "Ridge R² rewards *linear* translatability only — a "
+            "nonlinear correspondence between two layers would show "
+            "up as zero gain here even if it exists. Direction matters: "
+            "A→B and B→A are fit and scored independently and are not "
+            "expected to agree.")
         if best:
             sig = " (CI excludes zero)" if best["gain_ci"]["lo"] > 0 else \
                   " (CI includes zero: no evidence beyond input structure)"
@@ -295,7 +480,25 @@ def _sec_l3(run_dir: Path, model_colors: dict, findings: list) -> str:
                                  colorbar_title="Δact"), row=1, col=col)
         fig.update_yaxes(title_text="relative depth" if col == 1 else None,
                          row=1, col=col)
-    inner += _frag(fig, 400)
+    inner += _frag(fig, 400) + _note(
+        "For each corruption (columns) and layer (rows), the relative "
+        "change in that layer's activations between clean and corrupted "
+        "input, averaged over series — a [depth x corruption] fingerprint "
+        "of which structural property each model reacts to, and where.",
+        "Brighter cells mean that layer's representation shifted more "
+        "under that corruption. Reading down a column shows where in "
+        "depth a given property (say, seasonality) gets encoded; reading "
+        "across a row shows what a given layer is currently sensitive to. "
+        "Two models with similar column shapes react to the same "
+        "properties at similar relative depths, even if their absolute "
+        "layer counts differ.",
+        "This is a magnitude-of-change measure, not a causal one — a "
+        "layer can shift a lot without that shift affecting the final "
+        "forecast at all (see the behavioral-sensitivity bars and the "
+        "activation-patching curve below for the causal follow-through). "
+        "Different architectures normalize activations differently, so raw "
+        "magnitudes are not directly comparable across models — only the "
+        "column *shape* (where the peak is) should be compared.")
 
     agree = meta["agreement"]["per_corruption"]
     entries = [agree[c] for c in names]
@@ -303,7 +506,22 @@ def _sec_l3(run_dir: Path, model_colors: dict, findings: list) -> str:
                            marker_color=_COLORS["accent"], error_y=_err_y(entries)))
     bar.update_layout(yaxis_title="depth-profile agreement (Spearman ρ)",
                       yaxis_range=[-1, 1.05])
-    inner += "<h4>Cross-model fingerprint agreement</h4>" + _frag(bar, 300)
+    inner += "<h4>Cross-model fingerprint agreement</h4>" + _frag(bar, 300) + _note(
+        "Each model's per-corruption fingerprint (the column above) is "
+        "interpolated onto a shared 0-1 relative-depth axis, and the two "
+        "resulting depth profiles are Spearman rank-correlated — one "
+        "number per corruption summarizing whether both models encode "
+        "that property at matching relative depths.",
+        "+1 means both models' sensitivity peaks at the same relative "
+        "depth for that corruption; -1 means they peak at opposite ends; "
+        "0 means unrelated depth profiles. The lowest bar is called out "
+        "in the findings as the most divergent corruption — the one "
+        "structural property these two architectures seem to handle at "
+        "meaningfully different points in depth.",
+        "Rank correlation over a coarse 33-point depth grid can be noisy "
+        "for very shallow models (few layers to interpolate between), and "
+        "says nothing about whether the property matters to the forecast "
+        "at all — cross-reference with behavioral sensitivity below.")
 
     beh = go.Figure()
     beh_ci = meta.get("behavior_ci", {})
@@ -313,7 +531,22 @@ def _sec_l3(run_dir: Path, model_colors: dict, findings: list) -> str:
         beh.add_bar(x=names, y=arrays[f"behavior_{model}"], name=model,
                     marker_color=model_colors.get(model), error_y=err)
     beh.update_layout(barmode="group", yaxis_title="forecast change (scaled MAE)")
-    inner += "<h4>Behavioral sensitivity</h4>" + _frag(beh, 300)
+    inner += "<h4>Behavioral sensitivity</h4>" + _frag(beh, 300) + _note(
+        "How much each corruption changes the final *forecast* (scaled "
+        "mean absolute change), independent of any internals — the "
+        "behavioral counterpart to the activation fingerprints above.",
+        "Taller bars mean that corruption matters more to this model's "
+        "output. A corruption with a tall activation fingerprint but a "
+        "short bar here is being represented internally without much "
+        "consequence for the forecast — an interesting mismatch worth "
+        "checking against the patching curve below, which is the causal "
+        "version of this same question.",
+        "Scale is in MASE-like units (MAE over each series' own naive "
+        "scale), so it's comparable across families but reflects each "
+        "corruption's configured strength (e.g. `spike.scale`) as much as "
+        "the model's intrinsic sensitivity — a fair cross-model "
+        "comparison, not a fair cross-corruption one unless strengths "
+        "were tuned to match.")
     overall = meta["agreement"]["overall"]
     worst = meta["agreement"]["most_divergent"]
     findings.append(f'L3 — fingerprint agreement ρ={_ci_str(overall)}; '
@@ -326,8 +559,11 @@ def _sec_l3(run_dir: Path, model_colors: dict, findings: list) -> str:
         parrs = np.load(run_dir / "l3" / "patching.npz")
         pfig = go.Figure()
         dashes = ["solid", "dash", "dot", "dashdot"]
+        whole_context = any(info.get("whole_context_patch") for info in pmeta.values())
+        y_min = 0.0
         for model, info in pmeta.items():
             rest = parrs[f"restoration_{model}"]
+            y_min = min(y_min, float(np.nanmin(rest)))
             for ci, cname in enumerate(info["corruptions"]):
                 pfig.add_scatter(x=info["rel_depth"], y=rest[ci],
                                  mode="lines+markers",
@@ -335,10 +571,430 @@ def _sec_l3(run_dir: Path, model_colors: dict, findings: list) -> str:
                                  line=dict(color=model_colors.get(model),
                                            dash=dashes[ci % len(dashes)]))
         pfig.update_layout(xaxis_title="relative depth of patched layer",
-                           yaxis_title="forecast restoration",
-                           yaxis_range=[-0.1, 1.05])
+                           yaxis_title="forecast restoration (window-averaged)",
+                           yaxis_range=[min(-0.1, y_min * 1.15), 1.05])
         inner += ("<h4>Activation patching: clean → corrupted restoration</h4>"
                   + _frag(pfig, 380))
+        inner += _note(
+            "At each layer, clean (uncorrupted) token states are spliced "
+            "into an otherwise-corrupted forward pass, one alignment "
+            "window at a time, and each patched forecast is scored against "
+            "how much of the clean-vs-corrupted forecast gap that single "
+            "window's worth of clean state restored. The curve is the "
+            "average restoration across all windows at that layer — a "
+            "genuinely localized causal probe of where the corrupted "
+            "property's effect on the *forecast* is carried.",
+            "1.0 means patching that layer (on average, one window at a "
+            "time) fully restores the clean forecast; 0 means no effect; "
+            "negative means patching that window actively made the "
+            "corrupted forecast worse (a real and informative outcome, not "
+            "an error — it means that window's clean state is actively "
+            "misleading once the rest of the context is still corrupted). "
+            "A curve that rises with depth suggests the corruption's "
+            "effect on the output is increasingly concentrated in later "
+            "layers' local token states; a flat curve near 0 suggests the "
+            "damage isn't carried locally at all (check the per-window "
+            "heatmaps below for exactly where it lives instead).",
+            "Deliberately NOT a whole-context (every position at once) "
+            "patch: overwriting an entire layer's complete state is "
+            "mathematically guaranteed to reach exactly 100% restoration "
+            "at every layer in any purely sequential residual architecture "
+            "(nothing about the input survives past a fully-overwritten "
+            "layer), which tests wiring, not depth. Window-local patching "
+            "avoids that ceiling, but values from different corruptions "
+            "aren't on a shared physical scale (each is normalized by its "
+            "own clean-vs-corrupted damage) — compare shapes/crossovers "
+            "within a corruption, not raw levels across corruptions."
+            + (" This run has `per_window` disabled for at least one model, "
+               "so its curve IS the whole-context patch described above and "
+               "should be read only as a sanity check (expect it near 1.0 "
+               "everywhere)." if whole_context else ""))
+        inner += _l3_window_heatmaps(pmeta, parrs)
+    return inner
+
+
+def _l3_window_heatmaps(pmeta: dict, parrs) -> str:
+    """Layer x window restoration heatmaps per model and corruption, when present."""
+    html, shown_note = "", False
+    for model, info in pmeta.items():
+        key = f"restoration_windows_{model}"
+        if key not in parrs or not info.get("windows"):
+            continue
+        rest = parrs[key]
+        names = info["corruptions"]
+        wfig = make_subplots(rows=1, cols=len(names), subplot_titles=names,
+                             horizontal_spacing=0.05)
+        for ci in range(len(names)):
+            wfig.add_trace(go.Heatmap(z=rest[ci], x=info["windows"],
+                                      y=np.round(info["rel_depth"], 2),
+                                      colorscale="Magma", zmin=0.0,
+                                      showscale=ci == len(names) - 1,
+                                      colorbar_title="restore"),
+                           row=1, col=ci + 1)
+            wfig.update_xaxes(title_text="window" if ci == 0 else None,
+                              row=1, col=ci + 1)
+        wfig.update_yaxes(title_text="relative depth", row=1, col=1)
+        html += (f"<h4>{model}: per-window restoration "
+                 f"(window = {info['window_size']} steps)</h4>" + _frag(wfig, 320))
+        if not shown_note:
+            html += _note(
+                "The full [depth x time-window] grid the curve above "
+                "averages over: each cell patches only that layer's tokens "
+                "belonging to that one time window, so this is where in "
+                "*both* depth and time a corruption's effect on the "
+                "forecast is causally concentrated.",
+                "A bright cell means restoring just that (layer, window) "
+                "recovered most of the clean forecast — the corrupted "
+                "property's effect on the output is concentrated there. A "
+                "hot column at a late window (near forecast start) usually "
+                "just reflects recency — the model naturally weights recent "
+                "context more — rather than anything specific to the "
+                "corruption.",
+                "Every window is scored against the *same* full-context "
+                "damage denominator (so cells are additive/comparable "
+                "within one corruption's grid), but that also means a model "
+                "with many small-effect windows and one with a single "
+                "dominant window can show similar curve-level averages "
+                "above for very different reasons — always check the grid, "
+                "not just the averaged curve.")
+            shown_note = True
+    return html
+
+
+def _sec_lens(run_dir: Path, model_colors: dict, findings: list) -> str:
+    """Skip-lens MASE depth curves with final asymptotes, plus tuned-lens R²."""
+    arrays = np.load(run_dir / "lens" / "curves.npz")
+    meta = load_json(run_dir / "lens" / "lens.json")
+    inner = ""
+    fig = go.Figure()
+    for model, m in meta.items():
+        color = model_colors.get(model)
+        err = _err_y(m["mase_ci"])
+        fig.add_scatter(x=m["rel_depth"], y=arrays[f"skip_mase_{model}"],
+                        mode="lines+markers", name=model,
+                        line=dict(color=color), error_y=err)
+        fig.add_hline(y=m["final_mase"], line=dict(color=color, dash="dot", width=1),
+                      annotation_text=f"{model} final", annotation_font_size=10)
+    fig.update_layout(xaxis_title="relative depth of patched layer",
+                      yaxis_title="skip-lens MASE")
+    inner += _frag(fig, 380) + _note(
+        "The logit-lens analog for forecasting: layer-l's token states are "
+        "patched into the model's own final block, and its own head "
+        "decodes a forecast from them — using the real output pathway, no "
+        "access to internals beyond the existing patch primitive. The "
+        "dotted line is each model's true final-layer MASE.",
+        "A curve that drops toward the final-MASE line early in depth "
+        "means the forecast is already largely formed well before the "
+        "last layer ('crystallizes early'); a curve that only reaches it "
+        "at the last point means the model needs its full depth. The "
+        "'crystallization depth' finding below is the first relative depth "
+        "whose MASE lands within a configurable tolerance of final.",
+        "Like classic logit lens, early layers can be miscalibrated for "
+        "reasons unrelated to information content (the final block/head "
+        "wasn't trained to decode them) — a high early MASE doesn't prove "
+        "the forecast isn't already linearly present, only that this "
+        "particular readout can't see it yet. That's exactly the gap the "
+        "tuned lens below (a probe fit specifically for each layer) is "
+        "designed to close.")
+
+    if any(f"tuned_r2_model_{m}" in arrays for m in meta):
+        tfig = go.Figure()
+        for model, m in meta.items():
+            color = model_colors.get(model)
+            tfig.add_scatter(x=m["rel_depth"], y=arrays[f"tuned_r2_model_{model}"],
+                             mode="lines+markers", name=f"{model} · model output",
+                             line=dict(color=color))
+            tfig.add_scatter(x=m["rel_depth"], y=arrays[f"tuned_r2_true_{model}"],
+                             mode="lines+markers", name=f"{model} · ground truth",
+                             line=dict(color=color, dash="dash"))
+        tfig.update_layout(xaxis_title="relative depth",
+                           yaxis_title="tuned-lens R² (held-out series)",
+                           yaxis_range=[-0.05, 1.05])
+        inner += "<h4>Tuned lens: linear readout from window states</h4>" + _frag(tfig, 360) + _note(
+            "A ridge probe fit per layer (held-out by series) predicting "
+            "either the model's own final forecast (solid) or the true "
+            "target (dashed) from that layer's window states — a "
+            "readout that, unlike the skip lens above, is tuned for each "
+            "layer instead of relying on the final head to decode it.",
+            "High solid-line R² early in depth means the forecast is "
+            "already linearly recoverable from that layer even if the "
+            "skip lens (constrained to the model's own head) can't show "
+            "it yet. The dashed 'ground truth' line is usually lower and "
+            "caps out at whatever the model's own final-layer accuracy "
+            "allows — it can't exceed how good the forecast itself is.",
+            "A linear probe only detects *linear* readability; a "
+            "layer could carry the forecast in a nonlinear form invisible "
+            "here. Splits are by held-out series (matching the L2 "
+            "discipline), so R² reflects generalization to new series, not "
+            "in-sample fit.")
+
+    for model, m in meta.items():
+        depth = m["crystallization_depth"]
+        where = f"{depth:.2f} of depth" if depth is not None else "never (within tolerance)"
+        findings.append(f"Lens — {model}: forecast crystallizes at {where} "
+                        f"(within {m['crystallization_tol']:.0%} of final MASE "
+                        f"{m['final_mase']:.2f}).")
+    return inner
+
+
+def _sec_attention(run_dir: Path, model_colors: dict, findings: list) -> str:
+    """Lag-profile heatmaps, periodicity-head tables, ablation maps, cross-attention."""
+    arrays = np.load(run_dir / "attention" / "arrays.npz")
+    meta = load_json(run_dir / "attention" / "meta.json")
+    inner = ""
+    for model, m in meta.items():
+        parts = f"<h3>{model}</h3>"
+        pat = m.get("patterns", {})
+        if f"lag_profile_{model}" in arrays:
+            prof = arrays[f"lag_profile_{model}"]
+            n_layers, n_heads, n_lags = prof.shape
+            labels = [f"{_short(l)}·h{h}" for l in pat["layers"] for h in range(n_heads)]
+            hm = go.Figure(go.Heatmap(z=prof.reshape(-1, n_lags), y=labels,
+                                      x=np.arange(n_lags) * pat["token_width"],
+                                      colorscale="Viridis", colorbar_title="attn"))
+            hm.update_layout(xaxis_title="lag (time steps behind query)",
+                             yaxis_title="layer · head", yaxis_autorange="reversed")
+            parts += ("<h4>Attention mass by temporal lag</h4>"
+                      + _frag(hm, max(300, 14 * len(labels))))
+            parts += _note(
+                "Average attention weight as a function of how many "
+                "steps behind the query a key token is, for every head "
+                "of every captured layer — reveals which heads act "
+                "locally (mass concentrated at small lag) versus which "
+                "look far back (mass at large or periodic lags).",
+                "A bright stripe at a fixed lag repeating every "
+                "`period` steps is a candidate periodicity/induction "
+                "head — it's specifically looking one season back. A "
+                "head with all its mass at lag 0-1 is doing local/"
+                "recency-based aggregation, not long-range structure.",
+                "This is an unconditional average over sampled series, "
+                "so a head that's periodic only on seasonal families "
+                "and local on trend-only families will show a blurred, "
+                "unremarkable average here — the top-periodicity-heads "
+                "table below is computed per-family specifically to "
+                "avoid that dilution. Architectures with no exposed "
+                "attention pattern (purely functional attention) show "
+                "'unsupported' instead of this heatmap.")
+            tops = pat.get("head_scores", {}).get("top_periodicity_heads", [])
+            if tops:
+                parts += ("<h4>Top periodicity heads</h4>"
+                          + _table(pd.DataFrame(tops)))
+                best = tops[0]
+                findings.append(f"Attention — {model}: strongest periodicity head "
+                                f"{_short(best['layer'])}·h{best['head']} "
+                                f"(excess seasonal mass {best['score']:.2f}, "
+                                f"family {best['family']}).")
+        elif pat.get("status") == "error":
+            parts += (f'<p class="blurb">⚠ Attention pattern capture failed for '
+                      f'this model: {pat.get("reason", "unknown error")}. '
+                      f'Every other section still reflects this model\'s real '
+                      f'results — only pattern capture broke.</p>')
+        elif pat.get("status") == "unsupported":
+            parts += "<p>Attention patterns unsupported for this architecture.</p>"
+
+        abl = m.get("ablation", {})
+        if abl.get("status") == "error":
+            parts += (f'<p class="blurb">⚠ Ablation analysis failed for this '
+                      f'model: {abl.get("reason", "unknown error")}. Every '
+                      f'other section still reflects this model\'s real '
+                      f'results — only ablation broke.</p>')
+        elif abl.get("status") == "unsupported":
+            parts += ("<p>Head/MLP ablation unsupported for this architecture "
+                      "(no hookable attention output projection or MLP "
+                      "submodule found).</p>")
+        if f"head_delta_{model}" in arrays:
+            hd = arrays[f"head_delta_{model}"]
+            ah = go.Figure(go.Heatmap(z=hd, y=[_short(b) for b in abl["head_blocks"]],
+                                      x=[f"h{h}" for h in range(hd.shape[1])],
+                                      colorscale="RdBu_r", zmid=0.0,
+                                      colorbar_title="ΔMASE"))
+            ah.update_layout(xaxis_title="head", yaxis_title="block",
+                             yaxis_autorange="reversed")
+            parts += "<h4>Head mean-ablation ΔMASE</h4>" + _frag(ah, 340)
+            parts += _note(
+                "Each head's output projection input is fixed to its "
+                "mean activation (mean-ablation: removes what's "
+                "head-specific about this input while preserving the "
+                "head's typical/average contribution) and the "
+                "resulting forecast degradation is measured — a direct "
+                "causal test of which heads the forecast depends on, "
+                "not just which heads look interesting.",
+                "Positive ΔMASE (red) means removing that head hurts "
+                "the forecast — it's load-bearing. Near-zero or "
+                "negative (blue) means the head is redundant or even "
+                "actively unhelpful for this benchmark. The most "
+                "load-bearing head is called out in the findings.",
+                "Mean-ablation is a specific, relatively mild "
+                "intervention (replacing with the *average* behavior, "
+                "not zero or noise) — a head could still matter under a "
+                "harsher ablation. Heads can also compensate for each "
+                "other (redundant circuits), so ablating one at a time "
+                "can understate the importance of a head that's only "
+                "critical once its backup is also removed.")
+            top = abl.get("top_heads", [])
+            if top:
+                e = top[0]
+                findings.append(f"Attention — {model}: most load-bearing head "
+                                f"{_short(e['layer'])}·h{e['head']} "
+                                f"(ΔMASE {e['delta_mase']:+.3f} when ablated).")
+        elif abl.get("status") not in ("error", "unsupported"):
+            parts += ("<p class='blurb'>Head ablation unavailable: no hookable "
+                      "attention output projection found for this "
+                      "architecture.</p>")
+        if f"mlp_delta_{model}" in arrays:
+            md = arrays[f"mlp_delta_{model}"]
+            mb = go.Figure(go.Bar(x=[_short(b) for b in abl["mlp_blocks"]], y=md,
+                                  marker_color=model_colors.get(model)))
+            mb.update_layout(xaxis_title="block", yaxis_title="ΔMASE (MLP ablated)")
+            parts += "<h4>MLP mean-ablation ΔMASE</h4>" + _frag(mb, 280)
+            parts += _note(
+                "The same mean-ablation causal test as the head heatmap "
+                "above, applied to each block's MLP sublayer as a whole "
+                "instead of individual attention heads.",
+                "Taller bars mean that block's MLP matters more to the "
+                "forecast. Comparing this to the head-ablation heatmap "
+                "for the same block shows whether a layer's causal "
+                "contribution is mostly attention-driven, MLP-driven, "
+                "or both.",
+                "Same caveats as head ablation: mean-ablation is mild, "
+                "and redundancy across blocks can hide a block's true "
+                "importance if another block backs it up.")
+        elif abl.get("status") not in ("error", "unsupported"):
+            parts += ("<p class='blurb'>MLP ablation unavailable: no wrapping "
+                      "MLP submodule found for this architecture (its "
+                      "feed-forward block may be exposed as separate Linear "
+                      "layers instead of one named module).</p>")
+
+        if f"cross_profile_{model}" in arrays:
+            cross = arrays[f"cross_profile_{model}"].mean(axis=1)
+            cm = pat.get("cross_attention", {})
+            cf = go.Figure()
+            for li in range(cross.shape[0]):
+                cf.add_scatter(x=np.arange(cross.shape[1]) * cm.get("token_width", 1.0),
+                               y=cross[li], mode="lines", name=f"dec {_short(str(li))}")
+            cf.update_layout(xaxis_title="steps before forecast start",
+                             yaxis_title="cross-attention mass (first step)")
+            parts += ("<h4>Decoder cross-attention at the first forecast step</h4>"
+                      + _frag(cf, 320))
+            parts += _note(
+                "Encoder-decoder architectures only: how much attention "
+                "mass the decoder's first forecast step places on each "
+                "encoder input position, one line per decoder layer.",
+                "A line that peaks near lag 0 (the most recent context) "
+                "means that layer's forecast leans on recency; a line "
+                "with a bump further back at a periodic offset suggests "
+                "that layer is reading a specific earlier season. "
+                "Different decoder layers often specialize in different "
+                "lookback ranges.",
+                "Decoder-only architectures (no separate encoder) have "
+                "no such chart, since there's no encoder to cross-"
+                "attend into — that's an architectural fact, not a "
+                "missing measurement. Only the *first* forecast step is "
+                "shown; later autoregressive steps can attend "
+                "differently once earlier forecast steps enter the "
+                "context.")
+        inner += parts
+    return inner
+
+
+def _sec_exemplars(run_dir: Path, model_colors: dict, findings: list) -> str:
+    """Per-family case studies: forecasts, lens trajectories, attention maps."""
+    arrays = np.load(run_dir / "exemplars" / "exemplars.npz")
+    meta = load_json(run_dir / "exemplars" / "exemplars.json")
+    records = meta["exemplars"]
+    models = list(meta["models"])
+    contexts, targets = arrays["contexts"], arrays["targets"]
+    horizon = targets.shape[1]
+    tail = min(contexts.shape[1], 4 * horizon)
+    inner = ""
+    seen = []
+    for ei, rec in enumerate(records):
+        if rec["family"] in seen:
+            continue
+        seen.append(rec["family"])
+        fig = go.Figure()
+        t_ctx = np.arange(-tail, 0)
+        t_fut = np.arange(horizon)
+        fig.add_scatter(x=t_ctx, y=contexts[ei, -tail:], mode="lines",
+                        name="context", line=dict(color=_COLORS["ink"], width=1))
+        fig.add_scatter(x=t_fut, y=targets[ei], mode="lines", name="target",
+                        line=dict(color=_COLORS["ink"], dash="dot"))
+        for model in models:
+            fig.add_scatter(x=t_fut, y=arrays[f"forecast_{model}"][ei], mode="lines",
+                            name=model, line=dict(color=model_colors.get(model)))
+        fig.update_layout(xaxis_title="steps (0 = forecast start)", yaxis_title="value")
+        inner += (f"<h4>{rec['family']} · series {rec['series_id']} "
+                  f"(MASE gap {rec['gap']:+.2f})</h4>" + _frag(fig, 300))
+        if ei == 0:
+            inner += _note(
+                "A concrete, single series per family: raw context, true "
+                "continuation, and every model's forecast overlaid — the "
+                "ground-truth check behind every aggregate statistic above.",
+                "Series are picked from the tails of the L0 per-series MASE "
+                "gap distribution (the 'MASE gap' in the title), so these "
+                "are deliberately the cases where the two models disagree "
+                "most, not a random or representative sample.",
+                "Because they're selected for disagreement, don't treat "
+                "these as typical — they exist to make an aggregate finding "
+                "concrete and inspectable, not to estimate how often such "
+                "disagreements occur (the L0 family tables are for that).")
+
+        lens_fig = go.Figure()
+        for model in models:
+            key = f"lens_mase_{model}"
+            if key not in arrays:
+                continue
+            depths = relative_depths(arrays[key].shape[0])
+            lens_fig.add_scatter(x=depths, y=arrays[key][:, ei], mode="lines+markers",
+                                 name=model, line=dict(color=model_colors.get(model)))
+        lens_fig.update_layout(xaxis_title="relative depth",
+                               yaxis_title="skip-lens MASE (this series)")
+        inner += _frag(lens_fig, 260)
+        if ei == 0:
+            inner += _note(
+                "The same skip-lens depth curve as the Forecast Lens "
+                "section, computed for this one series instead of averaged "
+                "over the whole benchmark.",
+                "Where this single-series curve departs from the "
+                "aggregate lens curve is informative — it shows whether "
+                "this particular disagreement follows the model's typical "
+                "depth behavior or is unusual even for that model.",
+                "A single series is noisy by construction; a wiggle here "
+                "that isn't in the aggregate curve is just this series, not "
+                "a general property of the model.")
+
+    maps = {m: arrays[f"attn_map_{m}"] for m in models if f"attn_map_{m}" in arrays}
+    if maps:
+        for model, stack in maps.items():
+            rows = meta["models"][model]["attention"]["rows"]
+            fams = [records[r]["family"] for r in rows]
+            mf = make_subplots(rows=1, cols=len(fams), subplot_titles=fams,
+                               horizontal_spacing=0.04)
+            for ci in range(len(fams)):
+                mf.add_trace(go.Heatmap(z=stack[ci], colorscale="Viridis",
+                                        showscale=ci == len(fams) - 1),
+                             row=1, col=ci + 1)
+                mf.update_yaxes(autorange="reversed", row=1, col=ci + 1)
+            inner += (f"<h4>{model}: window-pooled attention "
+                      f"({_short(meta['models'][model]['attention']['layer'])}, "
+                      f"head-averaged)</h4>" + _frag(mf, 280))
+            inner += _note(
+                "This model's attention pattern at its L1 peak-CKA "
+                "layer, pooled onto windows and averaged across heads, "
+                "for the same exemplar series shown above — where in "
+                "the context this layer is looking, for this specific "
+                "case.",
+                "Bright cells show which window(s) of the context the "
+                "model attends to most when producing this series' "
+                "forecast; compare the pattern across families to see "
+                "whether attention shape tracks family structure "
+                "(e.g. periodic families showing a periodic pattern).",
+                "Averaging across heads can wash out a single "
+                "specialized head's sharp pattern into a diffuse "
+                "average — see the per-head lag-profile heatmap in the "
+                "Attention section for the unaveraged view.")
+    findings.append(f"Exemplars — {len(records)} case studies across "
+                    f"{len(set(r['family'] for r in records))} families.")
     return inner
 
 
@@ -364,7 +1020,24 @@ def _sec_clusters(run_dir: Path, model_colors: dict, findings: list) -> str:
                 hovertemplate="%{text}<extra></extra>"), row=1, col=col)
         fig.update_xaxes(showticklabels=False, row=1, col=col)
         fig.update_yaxes(showticklabels=False, row=1, col=col)
-    inner = _frag(fig, 460)
+    inner = _frag(fig, 460) + _note(
+        "Each model's window states at its side of the L1 peak-CKA layer "
+        "pair, reduced to 2D (UMAP if enabled, else PCA) and k-means "
+        "clustered — a low-dimensional map of how each model organizes the "
+        "whole benchmark, colored by its own cluster assignment.",
+        "Clean, well-separated color blobs mean that model's "
+        "representation carves the benchmark into distinct groups at this "
+        "layer; a single smeared blob means it doesn't separate much at "
+        "all there. Hover any point for its series id, true family, and "
+        "the cluster's approximate label — compare cluster shapes side by "
+        "side, not exact colors (cluster indices aren't matched across "
+        "models).",
+        "The 2D layout is a projection for visualization only — apparent "
+        "distances between clusters aren't meaningful, only which points "
+        "share a cluster. Cluster *labels* are approximate (majority "
+        "family + salient signal stats), so treat them as a reading aid, "
+        "not ground truth; the partition-overlap statistic below is the "
+        "quantitative version of what this plot shows visually.")
 
     for model in models:
         rows = [{"cluster": c, "size": v["size"], "purity": v["purity"],
@@ -381,11 +1054,86 @@ def _sec_clusters(run_dir: Path, model_colors: dict, findings: list) -> str:
     heat.update_layout(xaxis_title=f'{comp["model_b"]} clusters',
                        yaxis_title=f'{comp["model_a"]} clusters')
     ami = comp["ami"] if isinstance(comp["ami"], dict) else {"value": comp["ami"]}
-    inner += (f'<h4>Partition overlap · AMI = {_ci_str(ami)}</h4>' + _frag(heat, 360))
+    inner += (f'<h4>Partition overlap · AMI = {_ci_str(ami)}</h4>' + _frag(heat, 360)
+              + _note(
+        "Row-normalized contingency between the two models' cluster "
+        "assignments (what fraction of model A's cluster i falls into "
+        "each of model B's clusters), plus adjusted mutual information "
+        "(AMI) as a single overlap statistic.",
+        "A heatmap concentrated on (close to) a diagonal-like permutation "
+        "means the two partitions correspond well, even if cluster numbers "
+        "don't literally match; a spread-out heatmap means little "
+        "correspondence. AMI=1.0 is identical partitions, 0 is what you'd "
+        "expect from independent random partitions of the same size.",
+        "AMI corrects for chance agreement from cluster count/size alone, "
+        "but its bootstrap CI (when shown) resamples label pairs, not the "
+        "clustering itself — it reflects assignment stability, not "
+        "k-means initialization variance. `k` is often 'auto' (number of "
+        "benchmark families), so overlap partly reflects how family-like "
+        "each model's natural clusters are, not just agreement between "
+        "the two models."))
     findings.append(f'Clusters — partition agreement AMI={_ci_str(ami)}; '
                     "1.0 means both models carve the benchmark identically, "
                     "0 means unrelated groupings.")
     return inner
+
+
+_INTERNALS_NOTES = {
+    "effective_dim": (
+        "Participation ratio of each layer's activation covariance "
+        "spectrum — an effective count of how many dimensions the "
+        "representation actually spreads its variance across (not the "
+        "raw width of the layer), per model, per depth.",
+        "Higher means the representation is using more of its available "
+        "capacity at that layer; a dip means activity is collapsing onto "
+        "fewer effective directions there. Compare *shape* across depth "
+        "within a model (expansion then compression is a common pattern) "
+        "rather than comparing raw values across models with different "
+        "widths — a 64-dim and a 48-dim layer aren't on the same scale.",
+        "This is a per-model diagnostic, not a cross-model comparison — "
+        "two models can have very different effective-dimensionality "
+        "curves and still solve the forecasting task equally well. It "
+        "also only sees the *window-pooled* representation, so within-"
+        "window structure that pooling discards isn't reflected here."),
+    "input_cka": (
+        "Linear CKA between each layer's window states and a hand-crafted "
+        "baseline of that same window's raw values, FFT magnitudes, and "
+        "summary statistics — how far, per model and per depth, the "
+        "representation has moved from simple local input statistics.",
+        "Near 1.0 means this layer is still basically a linear function of "
+        "raw local window stats (typical right after an embedding, before "
+        "much mixing). Near 0 means the representation encodes something "
+        "the simple local baseline can't see at all, most often because "
+        "attention has already mixed information across positions/windows "
+        "before this depth — that decorrelates a *window's* state from "
+        "that *same window's* own raw statistics even though the "
+        "information hasn't vanished, it's just no longer purely local.",
+        "A curve that's low and flat across every depth (including layer 0) "
+        "usually means mixing saturates fast, which is expected for "
+        "architectures with very few tokens per context (a handful of "
+        "patches attend to each other almost immediately). Architectures "
+        "with many more tokens per context typically show a more gradual "
+        "decline instead. Low here is neither good nor bad on its own: it "
+        "says the representation isn't simply local, not whether it's "
+        "useful."),
+    "probe": (
+        "Held-out logistic-regression accuracy predicting the benchmark "
+        "family from each layer's window states (PCA-reduced first), split "
+        "by series so windows of a training series never leak into "
+        "validation — where in depth family identity becomes linearly "
+        "decodable.",
+        "The dotted line is chance (majority-class baseline for however "
+        "many families exist); a peak well above it means that depth "
+        "linearly encodes which kind of series this is. The peak layer is "
+        "called out in the findings below as where family information is "
+        "most accessible.",
+        "'Decodable' is not the same as 'used by the forecast' — a layer "
+        "can carry perfect family information the model never actually "
+        "reads out (cross-check against the tuned lens and behavioral "
+        "sensitivity to see what's causally load-bearing). Accuracy is "
+        "also capped by how separable the configured families actually "
+        "are in the benchmark, not just by the model."),
+}
 
 
 def _sec_internals(run_dir: Path, model_colors: dict, findings: list) -> str:
@@ -416,7 +1164,7 @@ def _sec_internals(run_dir: Path, model_colors: dict, findings: list) -> str:
                           annotation_font_size=10)
         fig.update_layout(xaxis_title="relative depth", yaxis_title=ylabel,
                           yaxis_range=yrange)
-        inner += f"<h4>{ylabel}</h4>" + _frag(fig, 320)
+        inner += f"<h4>{ylabel}</h4>" + _frag(fig, 320) + _note(*_INTERNALS_NOTES[key])
     for model, prof in profile.items():
         accs = [p["value"] for p in prof["probe"]]
         peak = int(np.argmax(accs))
@@ -474,7 +1222,7 @@ def _sec_confirm(run_dir: Path, findings: list) -> str:
 _TEMPLATE = Template(r"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{{ title }}</title>
+<title>{{ model_a }} vs {{ model_b }} — {{ title }}</title>
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
 <style>
 :root{
@@ -490,6 +1238,9 @@ header{border-bottom:2px solid var(--ink);padding-bottom:20px;margin-bottom:28px
 .kicker{font:11px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;
   color:var(--muted);margin-bottom:10px}
 h1{font:600 30px/1.15 var(--mono);margin:0 0 10px;letter-spacing:-.01em}
+h1 .chip{font-size:26px;padding:0;border:none;background:none;margin:0}
+h1 .chip.a{color:{{ colors.a }}}
+h1 .chip.b{color:{{ colors.b }}}
 .meta{color:var(--muted);font-size:13.5px}
 .chip{display:inline-block;font:12px var(--mono);padding:2px 9px;border-radius:999px;
   border:1px solid var(--line);background:var(--panel);margin-right:6px}
@@ -518,15 +1269,33 @@ details{margin-top:30px;color:var(--muted)}
 details pre{background:var(--panel);border:1px solid var(--line);border-radius:6px;
   padding:14px;font:12px/1.5 var(--mono);overflow-x:auto;color:var(--ink)}
 footer{color:var(--muted);font:12px var(--mono);margin-top:14px}
+details.note{margin:2px 0 18px;border:1px solid var(--line);border-radius:6px;
+  background:rgba(0,0,0,0.015)}
+details.note summary{cursor:pointer;padding:7px 12px;font:12px var(--mono);
+  color:var(--muted);letter-spacing:.02em;list-style:none}
+details.note summary::-webkit-details-marker{display:none}
+details.note summary::before{content:"▸ ";color:var(--accent)}
+details.note[open] summary::before{content:"▾ "}
+details.note .note-body{padding:2px 14px 12px;font-size:13px;color:var(--ink);max-width:74ch}
+details.note .note-body p{margin:6px 0}
+details.note .note-body b{color:var(--muted);font:600 11px var(--mono);
+  letter-spacing:.06em;text-transform:uppercase}
+.mockwarn{background:#3a2a12;color:#f3d9a8;border:1px solid #6b4a1a;
+  border-radius:6px;padding:12px 16px;margin:0 0 22px;font-size:13px;
+  max-width:78ch}
+.mockwarn b{color:#ffb74d}
+.mockwarn code{font:12px var(--mono);background:rgba(0,0,0,0.25);
+  padding:1px 5px;border-radius:3px}
 </style></head><body><div class="wrap">
 <header>
   <div class="kicker">tsfm-lens · cross-architecture comparison</div>
-  <h1>{{ title }}</h1>
+  <h1><span class="chip a">{{ model_a }}</span> vs <span class="chip b">{{ model_b }}</span></h1>
   <div class="meta">
-    <span class="chip a">{{ model_a }}</span><span class="chip b">{{ model_b }}</span>
-    &nbsp;run <b>{{ run }}</b> · {{ date }}{% if dataset_line %} · {{ dataset_line }}{% endif %}
+    {{ title }} &nbsp;· run <b>{{ run }}</b> · {{ date }}
+    {%- if dataset_line %} · {{ dataset_line }}{% endif %}
   </div>
 </header>
+{% if mock_warning %}{{ mock_warning }}{% endif %}
 {% if findings %}
 <div class="findings"><h2>Findings</h2><ul>
 {% for f in findings %}<li>{{ f }}</li>{% endfor %}

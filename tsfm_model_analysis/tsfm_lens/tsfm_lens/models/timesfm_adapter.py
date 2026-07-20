@@ -1,14 +1,28 @@
-"""Adapter for Google TimesFM (decoder-only transformer over input patches).
+"""Adapter for Google TimesFM 2.5 (decoder-only transformer over input patches).
 
-Capture rides the library's own `forecast` path so hooks see exactly the
-tensors the model uses in production, with the high-level API handling
-padding and batching. The context length is pinned to the data context at
-load time so input patches map one-to-one onto alignment windows when
-`alignment.window == input_patch_len` (the default 32).
+Capture calls the library's own `model.decode` path (the eager method behind
+both the high-level `forecast()` API and, for horizons within one output
+patch, the entire computation TimesFM does in production) so hooks see
+exactly the tensors the model uses. `torch_compile` is disabled at load time
+because torch.compile can fuse submodule calls in ways that silently drop
+Python-level forward hooks; every other adapter in this repo keeps the same
+eager-only discipline for the same reason.
 
-Tested against timesfm[torch]>=1.2 with google/timesfm-2.0-500m-pytorch.
-Library internals move between releases, so `module` resolution is
-defensive and `impulse_alignment_check` should be run on any new version.
+Tested against the `timesfm` PyPI package's 2.5-only API (>=2.0, which
+dropped the old `TimesFmHparams`/`TimesFmCheckpoint`/`TimesFm` class
+entirely) with `google/timesfm-2.5-200m-pytorch`. That package version has no
+compatible release for Python >=3.12 that still exposes the old API, so this
+adapter targets the new one; an older `timesfm` install with the Hparams API
+would need the class-based loader instead.
+
+Attention runs through a fused SDPA kernel by default with no exposed
+intermediate weights; `attention_patterns` temporarily swaps in the
+library's own unfused dot-product math (a drop-in replacement operating on
+the same already-processed query/key/value, restored right after) to
+recover them without changing what the model computes. The feed-forward
+block is two bare `nn.Linear`s (`ff0`/`ff1`) with no wrapping MLP submodule,
+so `mlp_info` finds nothing; head-level ablation still works because the
+attention output projection (`attn.out`) is a plain hookable Linear.
 """
 
 from __future__ import annotations
@@ -20,104 +34,136 @@ import torch
 from torch import nn
 
 from ..utils import log
-from .base import ModelAdapter
+from .base import ModelAdapter, _scan_attention, _scan_mlp
 
 
 class TimesFMAdapter(ModelAdapter):
 
-    default_layer_regex = r"stacked_transformer\.layers\.\d+$"
+    default_layer_regex = r"stacked_xf\.\d+$"
+    _patch_len = 32
 
     def load(self) -> None:
-        """Instantiate TimesFM pinned to the pipeline's context and horizon."""
-        import timesfm
-        backend = "gpu" if self.device.type == "cuda" else "cpu"
-        self._patch_len = int(self.cfg.kwargs.get("input_patch_len", 32))
+        """Instantiate TimesFM 2.5, eager (no compile) so capture hooks fire."""
+        from timesfm import TimesFM_2p5_200M_torch
         if self.data_cfg.context_len % self._patch_len:
-            raise ValueError("data.context_len must be a multiple of TimesFM input_patch_len")
-        hparams = timesfm.TimesFmHparams(
-            backend=backend,
-            per_core_batch_size=self.cfg.batch_size,
-            context_len=self.data_cfg.context_len,
-            horizon_len=max(self.data_cfg.horizon,
-                            int(self.cfg.kwargs.get("output_patch_len", 128))),
-            num_layers=int(self.cfg.kwargs["num_layers"]) if "num_layers" in self.cfg.kwargs else 50,
-            use_positional_embedding=bool(self.cfg.kwargs.get("use_positional_embedding", False)),
-        )
-        checkpoint = timesfm.TimesFmCheckpoint(
-            huggingface_repo_id=self.cfg.checkpoint or "google/timesfm-2.0-500m-pytorch")
-        self.tfm = timesfm.TimesFm(hparams=hparams, checkpoint=checkpoint)
-        self._module = self._resolve_module()
-        self._quantiles = list(getattr(self.tfm, "quantiles", None)
-                               or getattr(hparams, "quantiles", None)
-                               or [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9])
-
-    def _resolve_module(self) -> nn.Module:
-        """Locate the underlying torch module across library versions."""
-        for attr in ("_model", "torch_model", "model", "_torch_model"):
-            candidate = getattr(self.tfm, attr, None)
-            if isinstance(candidate, nn.Module):
-                return candidate
-        for value in vars(self.tfm).values():
-            if isinstance(value, nn.Module):
-                log.warning("timesfm '%s': located torch module by scan; "
-                            "pin the attribute if this version is kept", self.name)
-                return value
-        raise RuntimeError("could not locate TimesFM torch module; inspect the installed version")
+            raise ValueError("data.context_len must be a multiple of TimesFM's input patch (32)")
+        repo = self.cfg.checkpoint or "google/timesfm-2.5-200m-pytorch"
+        self.tfm = TimesFM_2p5_200M_torch.from_pretrained(repo, torch_compile=False)
+        self.tfm.model.device = self.device
+        self.tfm.model.to(self.device)
+        self.tfm.model.eval()
+        # Native quantile head: channel 0 is an unlabeled extra/mean channel,
+        # channels 1..9 are these 9 quantiles in order (verified against the
+        # checkpoint config: `aridx`/decode_index == 5 == channel for 0.5).
+        self._native_quantiles = list(self.tfm.model.config.quantiles)
+        self._point_idx = int(self.tfm.model.aridx)
 
     @property
     def module(self) -> nn.Module:
-        return self._module
+        return self.tfm.model
 
     def _release(self) -> None:
         self.tfm = None
-        self._module = None
 
     def prepare(self, contexts: np.ndarray) -> Any:
-        """TimesFM's high-level API takes a list of 1-D float arrays plus freq codes."""
-        series = [np.asarray(row, dtype=np.float32) for row in contexts]
-        return series, [0] * len(series)
+        """Fixed-length contexts need no padding: an all-False mask throughout."""
+        inputs = torch.from_numpy(np.ascontiguousarray(contexts, dtype=np.float32)).to(self.device)
+        masks = torch.zeros_like(inputs, dtype=torch.bool)
+        return inputs, masks
 
     def forward(self, prepared: Any) -> None:
-        """Forecast through the library path so capture hooks fire on real usage."""
-        series, freq = prepared
+        """One real decode pass (the library's own production path) so hooks fire."""
+        inputs, masks = prepared
         with torch.no_grad():
-            self.tfm.forecast(series, freq=freq)
+            self.tfm.model.decode(self.data_cfg.horizon, inputs, masks)
 
     def token_time_spans(self) -> np.ndarray:
-        """One token per input patch of `input_patch_len` steps, in order."""
+        """One token per 32-step input patch, contiguous and non-overlapping."""
         n_tokens = self.data_cfg.context_len // self._patch_len
         starts = np.arange(n_tokens) * self._patch_len
         return np.stack([starts, starts + self._patch_len], axis=1).astype(np.float64)
 
-    def postprocess_tokens(self, layer_name: str, hidden: torch.Tensor) -> torch.Tensor:
-        """Right-align to the expected patch count if the library pads the sequence."""
-        expected = self.data_cfg.context_len // self._patch_len
-        if hidden.shape[1] == expected:
-            return hidden
-        if hidden.shape[1] > expected:
-            if not getattr(self, "_warned_crop", False):
-                log.warning("timesfm '%s': captured %d tokens, keeping last %d "
-                            "(front padding assumed; verify with the alignment check)",
-                            self.name, hidden.shape[1], expected)
-                self._warned_crop = True
-            return hidden[:, -expected:]
-        return super().postprocess_tokens(layer_name, hidden)
-
-    def token_slice(self, live_len: int) -> slice:
-        """Patched positions are the trailing patches when the library front-pads."""
-        expected = self.data_cfg.context_len // self._patch_len
-        return slice(live_len - expected, live_len)
-
     def predict(self, contexts: np.ndarray, horizon: int, quantiles: list) -> dict:
-        """Forecast and map requested quantiles onto the checkpoint's native quantile head."""
-        series, freq = self.prepare(contexts)
+        """Decode and map requested quantiles onto the checkpoint's native quantile head."""
+        inputs, masks = self.prepare(contexts)
         with torch.no_grad():
-            point, full = self.tfm.forecast(series, freq=freq)
-        point = np.asarray(point)[:, :horizon]
-        full = np.asarray(full)
-        idx = [int(np.argmin(np.abs(np.array(self._quantiles) - q))) + 1 for q in quantiles]
-        matched = [self._quantiles[i - 1] for i in idx]
+            renormed_outputs, _, ar_outputs = self.tfm.model.decode(horizon, inputs, masks)
+        full = renormed_outputs[:, -1, ...]
+        if ar_outputs is not None:
+            extra = ar_outputs.reshape(inputs.shape[0], -1, self.tfm.model.q)
+            full = torch.cat([full, extra], dim=1)
+        full = full[:, :horizon, :].float().cpu().numpy()
+        point = full[:, :, self._point_idx]
+        idx = [1 + int(np.argmin(np.abs(np.array(self._native_quantiles) - q))) for q in quantiles]
+        matched = [self._native_quantiles[i - 1] for i in idx]
         if not np.allclose(matched, quantiles):
             log.warning("timesfm '%s': requested quantiles %s mapped to native %s",
                         self.name, quantiles, matched)
-        return {"point": point, "quantiles": full[:, :horizon, idx]}
+        return {"point": point, "quantiles": full[:, :, idx]}
+
+    def attention_patterns(self, prepared: Any) -> dict:
+        """Per-head attention weights, captured by swapping the fused SDPA kernel.
+
+        `MultiHeadAttention` takes its dot-product implementation as a
+        swappable `attention_fn(query, key, value, mask) -> output`
+        attribute; the default is a fused kernel with no exposed
+        intermediate weights, but the query/key/value it receives are
+        already fully processed (post rotary embedding, post qk-norm), so a
+        drop-in replacement that runs the identical (unscaled) dot-product
+        and softmax math — the library's own `_dot_product_attention`,
+        inlined here only to also stash the intermediate weights — computes
+        exactly the same output while exposing them. Swapped back
+        immediately after the one forward call this needs.
+        """
+        inputs, masks = prepared
+        blocks = self.all_layer_names()
+        attn_modules = {b: self.find_module(f"{b}.attn") for b in blocks}
+        originals = {b: m.attention_fn for b, m in attn_modules.items()}
+        captured: dict = {}
+
+        def make_fn(block_name: str):
+            def fn(query, key, value, mask=None):
+                weights = torch.einsum("...qhd,...khd->...hqk", query, key)
+                if mask is not None:
+                    weights = torch.where(mask, weights, -torch.finfo(weights.dtype).max / 2)
+                weights = torch.softmax(weights, dim=-1)
+                captured[block_name] = weights.detach()
+                return torch.einsum("...hqk,...khd->...qhd", weights, value)
+            return fn
+
+        for b, m in attn_modules.items():
+            m.attention_fn = make_fn(b)
+        try:
+            with torch.no_grad():
+                self.tfm.model.decode(self.data_cfg.horizon, inputs, masks)
+        finally:
+            for b, m in attn_modules.items():
+                m.attention_fn = originals[b]
+        return captured
+
+    def attention_info(self) -> list:
+        """Best-effort head map resolved by scanning each block's submodules."""
+        self.ensure_loaded()
+        blocks = self.all_layer_names()
+        infos = []
+        for block in blocks:
+            info = _scan_attention(self.module, block)
+            if info is None:
+                log.info("timesfm '%s': no head map for block %s; "
+                         "head-level analyses disabled", self.name, block)
+                return None
+            infos.append(info)
+        return infos
+
+    def mlp_info(self) -> dict:
+        """Best-effort block -> pre-residual MLP map via submodule scan."""
+        self.ensure_loaded()
+        mapping = {}
+        for block in self.all_layer_names():
+            name = _scan_mlp(self.module, block)
+            if name is None:
+                log.info("timesfm '%s': no MLP module for block %s; "
+                         "MLP ablation disabled", self.name, block)
+                return None
+            mapping[block] = name
+        return mapping

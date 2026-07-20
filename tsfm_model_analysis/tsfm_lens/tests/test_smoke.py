@@ -35,7 +35,14 @@ def build_config(out_dir: str) -> dict:
         "l2": {"layer_stride": 1, "max_rows": 8000, "val_frac": 0.3},
         "l3": {"max_series": 48,
                "patching": {"layer_stride": 1, "max_series": 32,
-                            "corruptions": ["deseasonalize", "noise"]}},
+                            "corruptions": ["deseasonalize", "noise"],
+                            "per_window": True, "window_stride": 1}},
+        "lens": {"layer_stride": 1, "max_series": 24, "tuned": True,
+                 "tuned_max_series": 200, "lambdas": [1e-2, 1e-1, 1.0]},
+        "attention": {"max_series": 40, "batch_series": 16,
+                      "max_lag_tokens": 64, "ablation_max_series": 32,
+                      "top_k": 3},
+        "exemplars": {"per_family": 2, "max_families": 4},
         "clustering": {"use_umap": False, "max_series": 200},
         "stats": {"enabled": True, "n_boot": 150, "n_boot_heavy": 100,
                   "min_series": 8},
@@ -58,6 +65,9 @@ def test_end_to_end(tmp_path=None):
         "l1/cka.npz", "l1/meta.json",
         "l2/stitching.json",
         "l3/sensitivity.npz", "l3/meta.json", "l3/patching.npz", "l3/patching.json",
+        "lens/curves.npz", "lens/lens.json",
+        "attention/arrays.npz", "attention/meta.json",
+        "exemplars/exemplars.npz", "exemplars/exemplars.json",
         "clustering/embedding.parquet", "clustering/clusters.json",
         "clustering/comparison.json",
         "internals/profile.json",
@@ -70,10 +80,46 @@ def test_end_to_end(tmp_path=None):
     html = (run_dir / "report.html").read_text()
     for token in ("Findings", "Representational geometry", "Activation clusters",
                   "Model internals", "Private benchmark confirmation",
-                  "p (Holm)", "plotly"):
+                  "Forecast lens", "Attention structure", "Exemplar case studies",
+                  "per-window restoration", "p (Holm)", "plotly"):
         assert token in html, f"report missing '{token}'"
     print(f"smoke test passed: {run_dir}")
     return run_dir
+
+
+def test_per_window_and_lens_artifacts(run_dir=None):
+    """Shape checks on the new per-window patching and lens/attention arrays."""
+    import numpy as np
+
+    from tsfm_lens.utils import load_json
+
+    run_dir = Path(run_dir) if run_dir else Path(test_end_to_end())
+    pmeta = load_json(run_dir / "l3" / "patching.json")
+    parrs = np.load(run_dir / "l3" / "patching.npz")
+    for model, info in pmeta.items():
+        rw = parrs[f"restoration_windows_{model}"]
+        assert rw.shape == (len(info["corruptions"]), len(info["rel_depth"]),
+                            len(info["windows"])), rw.shape
+
+    lmeta = load_json(run_dir / "lens" / "lens.json")
+    larrs = np.load(run_dir / "lens" / "curves.npz")
+    for model, m in lmeta.items():
+        assert larrs[f"skip_mase_{model}"].shape == (len(m["layers"]),)
+        assert np.isfinite(larrs[f"skip_mase_{model}"]).all()
+
+    ameta = load_json(run_dir / "attention" / "meta.json")
+    aarrs = np.load(run_dir / "attention" / "arrays.npz")
+    for model, m in ameta.items():
+        assert "head_scores" in m["patterns"], m
+        assert f"head_delta_{model}" in aarrs
+
+    emeta = load_json(run_dir / "exemplars" / "exemplars.json")
+    earrs = np.load(run_dir / "exemplars" / "exemplars.npz")
+    n_ex = len(emeta["exemplars"])
+    assert earrs["contexts"].shape[0] == n_ex
+    for model in emeta["models"]:
+        assert earrs[f"lens_mase_{model}"].shape[1] == n_ex
+    print("per-window/lens/attention/exemplar artifact test passed")
 
 
 def test_confirm_hypothesis_path():
@@ -113,5 +159,6 @@ def test_confirm_hypothesis_path():
 
 
 if __name__ == "__main__":
-    test_end_to_end()
+    run_dir = test_end_to_end()
+    test_per_window_and_lens_artifacts(run_dir)
     test_confirm_hypothesis_path()

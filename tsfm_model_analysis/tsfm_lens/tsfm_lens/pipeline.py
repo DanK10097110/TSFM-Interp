@@ -13,13 +13,16 @@ from typing import Callable, Optional
 
 import torch
 
+from .analysis.attention import run_attention
 from .analysis.clustering import run_clustering
+from .analysis.exemplars import run_exemplars
 from .analysis.confirm import run_confirm
 from .analysis.internals import run_internals
 from .analysis.l0_behavioral import run_l0
 from .analysis.l1_geometry import run_l1
 from .analysis.l2_stitching import run_l2
 from .analysis.l3_perturbation import run_l3
+from .analysis.lens import run_lens
 from .config import PipelineConfig, dump_config
 from .data import BenchmarkData, load_benchmark
 from .extraction.extract import run_extraction
@@ -82,6 +85,10 @@ def _stages() -> list:
               lambda c: c.internals.enabled,
               lambda c: (c.run_dir() / "internals" / "profile.json").exists(),
               lambda ctx: run_internals(ctx.cfg, ctx.store, ctx.data, ctx.device)),
+        Stage("lens", ["extract"],
+              lambda c: c.lens.enabled,
+              lambda c: (c.run_dir() / "lens" / "lens.json").exists(),
+              lambda ctx: run_lens(ctx.cfg, ctx.hub, ctx.store, ctx.data, ctx.device)),
         Stage("l1", ["extract"],
               lambda c: c.l1.enabled,
               lambda c: (c.run_dir() / "l1" / "meta.json").exists(),
@@ -94,10 +101,18 @@ def _stages() -> list:
               lambda c: c.l3.enabled,
               lambda c: (c.run_dir() / "l3" / "meta.json").exists(),
               lambda ctx: run_l3(ctx.cfg, ctx.hub, ctx.store, ctx.data, ctx.device)),
+        Stage("attention", ["extract"],
+              lambda c: c.attention.enabled,
+              lambda c: (c.run_dir() / "attention" / "meta.json").exists(),
+              lambda ctx: run_attention(ctx.cfg, ctx.hub, ctx.store, ctx.data, ctx.device)),
         Stage("cluster", ["extract"],
               lambda c: c.clustering.enabled,
               lambda c: (c.run_dir() / "clustering" / "comparison.json").exists(),
               lambda ctx: run_clustering(ctx.cfg, ctx.store, ctx.data)),
+        Stage("exemplars", ["l0"],
+              lambda c: c.exemplars.enabled,
+              lambda c: (c.run_dir() / "exemplars" / "exemplars.json").exists(),
+              lambda ctx: run_exemplars(ctx.cfg, ctx.hub, ctx.store, ctx.data, ctx.device)),
         Stage("confirm", ["l0"],
               lambda c: c.confirm.enabled,
               lambda c: (c.run_dir() / "confirm" / "confirmation.json").exists(),
