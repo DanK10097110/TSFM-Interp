@@ -34,8 +34,13 @@
 #                                             `tsbootstrap` package)
 #                       - 'sequential_par'    real-derived: SDV PARSynthesizer
 #                                             fit on a cohort of real series
-#                                             (not yet implemented upstream --
-#                                             calling it raises NotImplementedError)
+#                                             (`training` cohort must be the
+#                                             list of (SourceRef, values) tuples
+#                                             a source_config loads, same shape
+#                                             as `mixture`'s `sources` -- fits a
+#                                             small RNN per call, so keep `count`
+#                                             in the tens, not the thousands;
+#                                             see generators.py for the cost note)
 #   count             REQUIRED. Number of series this task contributes to
 #                     *each* split (public_dev and private_test are each built
 #                     with this many, independently seeded).

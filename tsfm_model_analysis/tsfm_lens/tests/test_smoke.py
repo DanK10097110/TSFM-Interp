@@ -77,11 +77,13 @@ def test_end_to_end(tmp_path=None):
     missing = [p for p in expected if not (run_dir / p).exists()]
     assert not missing, f"missing artifacts: {missing}"
 
-    html = (run_dir / "report.html").read_text()
+    html = (run_dir / "report.html").read_text(encoding="utf-8")
     for token in ("Findings", "Representational geometry", "Activation clusters",
                   "Model internals", "Private benchmark confirmation",
                   "Forecast lens", "Attention structure", "Exemplar case studies",
-                  "per-window restoration", "p (Holm)", "plotly"):
+                  "per-window restoration", "p (Holm)", "plotly",
+                  "How to read this report", "mask-fraction baseline",
+                  "How to read these case studies", "patched at"):
         assert token in html, f"report missing '{token}'"
     print(f"smoke test passed: {run_dir}")
     return run_dir
@@ -100,6 +102,14 @@ def test_per_window_and_lens_artifacts(run_dir=None):
         rw = parrs[f"restoration_windows_{model}"]
         assert rw.shape == (len(info["corruptions"]), len(info["rel_depth"]),
                             len(info["windows"])), rw.shape
+        for cname, vmeta in info.get("verbose", {}).items():
+            prefix = f"verbose_{model}_{cname}_"
+            grid = parrs[prefix + "grid"]
+            n_series = grid.shape[-1]
+            assert grid.shape[:2] == (len(info["rel_depth"]), len(info["windows"])), grid.shape
+            assert n_series == len(vmeta["series_ids"]) == len(vmeta["families"])
+            for key in ("context", "target", "clean", "corrupted", "patched"):
+                assert parrs[prefix + key].shape[0] == n_series, (prefix, key)
 
     lmeta = load_json(run_dir / "lens" / "lens.json")
     larrs = np.load(run_dir / "lens" / "curves.npz")

@@ -19,48 +19,73 @@
 #   generator instead makes the count repeats a genuinely varied population.
 #
 # Real-derived tier (tier: realism_stress):
-#   Deliberately restricted to the Monash TSF archive only (`kind: monash`,
-#   which is a convenience alias for `kind: huggingface, dataset:
-#   Monash-University/monash_tsf` -- the same source_config works against ANY
-#   Hugging Face dataset repo id, see configs/example.yaml, but this file
-#   intentionally keeps `dataset` unset so it always resolves to Monash).
-#   No domain is named, so sources.bootstrap_catalog discovers every config
-#   Monash exposes and draws a random sample of `n_domains` of them (skipping
-#   any whose loading script errors or hangs -- several Monash configs
-#   currently fail because the dataset's own script parses frequency strings
-#   like "H"/"min" with pandas aliases that changed upstream, and a couple of
-#   others turn out to be huge non-streamed downloads; that's a Monash-script
-#   issue, not this pipeline, and bootstrap_catalog just tries another domain
-#   after a bounded `domain_timeout_s` wait). Both tasks below pin
-#   `n_domains: 10` to bound cost/runtime; omit it to bootstrap across every
-#   Monash domain (the large default when unspecified -- see
-#   configs/example.yaml for the full source_config reference).
-#   `source_sample_size` then draws a different random handful of that pool
-#   for *each* generated series (via BenchmarkBuilder, which loads the pool
-#   once and caches it), so the task's `count` repeats each combine a
-#   different, randomly sized set of domains rather than one fixed blend.
+#   Verified working live end-to-end 2026-08-03 (see CLAUDE.md §12 and
+#   ROADMAP.md §5 for the full story). Two real corpora feed this tier now,
+#   not just one:
+#     - Monash TSF (`kind: monash`, a convenience alias for `kind:
+#       huggingface, dataset: Monash-University/monash_tsf`). No domain is
+#       named on the mixture tasks below, so sources.bootstrap_catalog
+#       discovers every config Monash exposes (32 domains as of this
+#       writing -- electricity, bitcoin, car parts, covid deaths, fred_md,
+#       hospital, kaggle/kdd web traffic, smart meters, nn5, weather,
+#       pedestrian counts, rideshare, solar, sunspot, temperature/rain,
+#       tourism x3 granularities, traffic, births, vehicle trips, wind, ...)
+#       and draws a random sample of `n_domains` of them (skipping any whose
+#       loading script errors or hangs -- e.g. `kdd_cup_2018` currently fails
+#       because the dataset's own script parses the frequency string "H"
+#       with a pandas alias that changed upstream; that's a Monash-script
+#       issue, not this pipeline, and bootstrap_catalog just tries another
+#       domain after a bounded `domain_timeout_s` wait, confirmed live).
+#     - ETT (`dataset: ETDataset/ett`, Electricity Transformer Temperature --
+#       a widely used, independently-licensed real forecasting benchmark),
+#       added specifically to prove the generic HF loader isn't Monash-only
+#       and to widen the real-derived tier beyond one corpus's collection
+#       biases. Its 4 configs (h1, h2, m1, m2) are all bootstrapped.
+#   `n_domains` is left UNSET on every task below (previously pinned to 10)
+#   so bootstrap_catalog uses the large/unbounded default -- every domain the
+#   dataset exposes -- rather than an arbitrary subset; this is now
+#   affordable to leave unbounded because the whole path has actually been
+#   run, not just wired. `source_sample_size` draws a different random
+#   handful of that pool for *each* generated series (via BenchmarkBuilder,
+#   which loads the pool once per task and caches it), so the task's `count`
+#   repeats each combine a different, randomly sized set of domains rather
+#   than one fixed blend.
 #
-# Synthetic:real ratio is 70:30 by sample count (35000 synthetic vs 7500 + 7500
-# real-derived, per split). Both splits (public_dev, private_test) are built
-# independently at these same counts, so the totals below are per split; the
-# full build (both splits) is 2x these numbers.
+#   A `sequential_par` (SDV PARSynthesizer) task is also included now that
+#   it's implemented (see generators.py) -- unlike `mixture`/`block_bootstrap`,
+#   it fits a small RNN per generated series, so its `count` is kept in the
+#   tens, not the thousands, even though a 2026-08-03 fix
+#   (`max_train_length`, see the task below) brought its per-fit cost down
+#   from ~1000s to ~5-6s by bounding training sequence length -- the
+#   remaining reason to keep `count` modest is that it's still not as cheap
+#   as `mixture`/`block_bootstrap` (a real RNN fit every call, not a weighted
+#   sum or a reshuffle), not the earlier length-driven blowup. A fit-once/
+#   sample-many cache in `BenchmarkBuilder` would let this scale further.
 #
-# Sizing: at these counts (35000 synthetic + 2 x 7500 real-derived per split,
-# 100000 series total across both splits) this lands at roughly 3.5 GB sealed
-# to corpus.jsonl, measured against this pipeline's actual per-sample JSON
-# size (~45 KB/synthetic series, ~12.5 KB/real-derived series with a small
-# source_sample_size). Scale every `count` by the same factor to hit a
-# different absolute size while keeping the 70:30 ratio; use --max-count for
-# a cheap dry run first (note --max-count only caps counts down, it can't
-# scale them up, and applies the same cap to every task so it does not
-# preserve the 70:30 ratio -- it's for smoke-testing the config, not sizing):
+# Synthetic:real ratio is roughly 70:26:4 by sample count (35000 synthetic vs
+# 6500+6500 mixture + 500+500 block_bootstrap + 50+50 sequential_par
+# real-derived, per split) -- real-derived's share was widened from the
+# previous 30% (all mixture) specifically because more real-world data was
+# the point of this expansion, and split across three real-derived
+# generators plus two corpora rather than one generator/one corpus. Both
+# splits (public_dev, private_test) are built independently at these same
+# counts, so the totals below are per split; the full build (both splits) is
+# 2x these numbers.
+#
+# Sizing: scale every `count` by the same factor to hit a different absolute
+# size while keeping the ratio; use --max-count for a cheap dry run first
+# (note --max-count only caps counts down, it can't scale them up, and
+# applies the same cap to every task so it does not preserve the ratio --
+# it's for smoke-testing the config, not sizing). sequential_par's per-series
+# fit cost means --max-count alone won't make a full run fast -- lower that
+# task's own `count` directly for a quick end-to-end check:
 #
 #   PYTHONPATH=. python3 tsfm_benchmark/example_runs/run_full.py \
 #       --config configs/full_multidomain.yaml --out ./benchmark_out \
 #       --max-count 20 --references monash --reference-limit 50
 #
 # Then drop --max-count for the real run. No --sources flag is needed here:
-# both real-derived tasks resolve their own sources via source_config.
+# every real-derived task resolves its own sources via source_config.
 # ============================================================================
 
 tasks:
@@ -96,24 +121,72 @@ tasks:
     # randomly sampled magnitude within each range above.
 
   # ---------------------------------------------------------------------
-  # Real-derived (30% combined, 15% + 15%): bootstrapped across a random
-  # sample of Monash-only domains, with a different random cross-domain
-  # combination per generated series.
+  # Real-derived, mixture generator (26% combined): bootstrapped across
+  # EVERY domain each source dataset exposes (n_domains unset), with a
+  # different random cross-domain combination per generated series.
   # ---------------------------------------------------------------------
   - name: real_bootstrapped_weighted_sum
     generator: mixture
-    count: 7500
+    count: 6500
     tier: realism_stress
     generator_params: {mode: weighted_sum, weight_concentration: 0.7}
     source_sample_size: [3, 10]
-    source_config: {kind: monash, n_domains: 10, limit: 300, seed: 1}
+    source_config: {kind: monash, limit: 600, seed: 1}
 
   - name: real_bootstrapped_multiplicative
     generator: mixture
-    count: 7500
+    count: 6500
     tier: realism_stress
     generator_params: {mode: multiplicative, weight_concentration: 0.5}
     source_sample_size: [2, 6]
     # Different seed than the task above so the two tasks' bootstrapped
     # domain samples aren't forced identical, widening overall coverage.
-    source_config: {kind: monash, n_domains: 10, limit: 300, seed: 2}
+    source_config: {kind: monash, limit: 600, seed: 2}
+
+  - name: real_ett_mixture
+    generator: mixture
+    count: 1000
+    tier: realism_stress
+    generator_params: {mode: weighted_sum, weight_concentration: 0.8}
+    source_sample_size: [2, 4]
+    # A second, independently-licensed real corpus (Electricity Transformer
+    # Temperature), so the real-derived tier isn't Monash-only. Only 4
+    # configs (h1, h2, m1, m2) exist, so n_domains is naturally "all" of them.
+    source_config: {kind: huggingface, dataset: ETDataset/ett, limit: 200, seed: 3}
+
+  # ---------------------------------------------------------------------
+  # Real-derived, block bootstrap generator (~4% combined): a moving-block
+  # reordering of one real series at a time -- cheap per call, unlike
+  # sequential_par below, so its count can be larger.
+  # ---------------------------------------------------------------------
+  - name: real_block_bootstrap
+    generator: block_bootstrap
+    count: 500
+    tier: realism_stress
+    generator_params: {block_length: 24}
+    # block_bootstrap only ever consumes sources[0], so source_sample_size
+    # of exactly 1 is what makes each repeat draw a *different* random
+    # source series from the pool instead of every repeat reusing the same
+    # one (see BenchmarkBuilder._make_one / run_full.py's load_specs).
+    source_sample_size: [1, 1]
+    source_config: {kind: monash, limit: 600, seed: 4}
+
+  # ---------------------------------------------------------------------
+  # Real-derived, SDV PARSynthesizer (~0.4% combined): fits a small RNN per
+  # generated series on a fresh real cohort, so count is kept small (see
+  # generators.sequential_par's docstring for the per-call cost caveat).
+  # ---------------------------------------------------------------------
+  - name: real_sequential_par
+    generator: sequential_par
+    count: 50
+    tier: realism_stress
+    # max_train_length bounds PAR's per-timestep RNN fit cost to real series
+    # length, not raw length -- without it, a bootstrapped domain with
+    # tens-of-thousands-of-points series (solar, weather, ...) can make a
+    # single fit take ~1000s regardless of epochs (found and fixed
+    # 2026-08-03, see generators.py's sequential_par docstring and
+    # ROADMAP.md's corrected cost finding). 512 is this generator's default;
+    # named explicitly here since it's load-bearing for this task's cost.
+    generator_params: {epochs: 64, max_train_length: 512}
+    source_sample_size: [4, 8]
+    source_config: {kind: monash, limit: 600, seed: 5}

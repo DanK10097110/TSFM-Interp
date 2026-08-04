@@ -199,8 +199,11 @@ def run_l3(cfg: PipelineConfig, hub, store: ActivationStore, data: BenchmarkData
         per_series[mcfg.name], beh_series[mcfg.name] = ps, beh
         layer_lists[mcfg.name] = layers
         if cfg.l3.patching.enabled:
-            patching[mcfg.name] = _patching(cfg, adapter, layers, rows, contexts,
-                                            corrupted, data.horizon)
+            patching[mcfg.name] = _patching(
+                cfg, adapter, layers, rows, contexts, corrupted, data.horizon,
+                targets=data.targets()[rows],
+                series_ids=data.meta["series_id"].to_numpy()[rows],
+                families=data.meta["family"].to_numpy()[rows])
         if not cfg.run.keep_models_loaded:
             hub.release(mcfg.name)
 
@@ -224,15 +227,31 @@ def run_l3(cfg: PipelineConfig, hub, store: ActivationStore, data: BenchmarkData
     if patching:
         win_arrays = {f"restoration_windows_{k}": v["restoration_windows"]
                       for k, v in patching.items() if "restoration_windows" in v}
+        verbose_arrays, verbose_meta = {}, {}
+        for model, v in patching.items():
+            verbose_meta[model] = {}
+            for cname, entry in v.get("verbose", {}).items():
+                prefix = f"verbose_{model}_{cname}_"
+                verbose_arrays[prefix + "grid"] = entry["restoration_grid"]
+                verbose_arrays[prefix + "context"] = entry["context"]
+                if entry["target"] is not None:
+                    verbose_arrays[prefix + "target"] = entry["target"]
+                verbose_arrays[prefix + "clean"] = entry["forecast_clean"]
+                verbose_arrays[prefix + "corrupted"] = entry["forecast_corrupted"]
+                verbose_arrays[prefix + "patched"] = entry["forecast_patched"]
+                verbose_meta[model][cname] = {"layer": entry["layer"], "window": entry["window"],
+                                              "series_ids": entry["series_ids"],
+                                              "families": entry["families"]}
         np.savez(out_dir / "patching.npz",
                  **{f"restoration_{k}": v["restoration"] for k, v in patching.items()},
-                 **win_arrays)
+                 **win_arrays, **verbose_arrays)
         save_json(out_dir / "patching.json", {
             k: {"layers": v["layers"], "corruptions": v["corruptions"],
                 "rel_depth": relative_depths(len(v["layers"])).tolist(),
                 "windows": v.get("windows", []),
                 "window_size": cfg.alignment.window,
-                "whole_context_patch": v.get("whole_context_patch", False)}
+                "whole_context_patch": v.get("whole_context_patch", False),
+                "verbose": verbose_meta.get(k, {})}
             for k, v in patching.items()})
     log.info("L3 complete: most divergent corruption = %s", agreement["most_divergent"])
 
@@ -279,7 +298,9 @@ def _sensitivity(cfg: PipelineConfig, adapter, store: ActivationStore, rows: np.
 
 
 def _patching(cfg: PipelineConfig, adapter, layers: list, rows: np.ndarray,
-              contexts: np.ndarray, corrupted: dict, horizon: int) -> dict:
+              contexts: np.ndarray, corrupted: dict, horizon: int,
+              targets: np.ndarray = None, series_ids: np.ndarray = None,
+              families: np.ndarray = None) -> dict:
     """Layer-by-window clean-into-corrupted patching, aggregated to a depth curve.
 
     Each (layer, window) cell patches only the tokens belonging to that one
@@ -307,9 +328,14 @@ def _patching(cfg: PipelineConfig, adapter, layers: list, rows: np.ndarray,
                                   n_windows)
     windows = list(range(0, n_windows, max(1, pcfg.window_stride))) \
         if pcfg.per_window else []
+    n_verbose = min(cfg.report.verbose_series, take) if cfg.report.verbose else 0
 
     restoration = np.zeros((len(corr_names), len(layers_p)), dtype=np.float32)
     rest_win = np.zeros((len(corr_names), len(layers_p), len(windows)), dtype=np.float32)
+    verbose_grid = (np.zeros((len(corr_names), len(layers_p), len(windows), n_verbose),
+                             dtype=np.float32)
+                    if n_verbose and windows else None)
+    verbose = {}
     for ci, cname in enumerate(tqdm(corr_names, desc=f"L3 patching {adapter.name}")):
         ctx_corr = corrupted[cname][:take]
         f_corr = _predict_once(adapter, ctx_corr, horizon, cfg.l0.quantiles, seed)
@@ -321,23 +347,68 @@ def _patching(cfg: PipelineConfig, adapter, layers: list, rows: np.ndarray,
                     tok_idx = np.flatnonzero(win_of_token == w)
                     if not len(tok_idx):
                         continue
-                    v = _window_restoration(
+                    v, v_series, _ = _window_restoration(
                         adapter, layer, tok_idx, clean_tokens[layer], ctx_corr,
                         horizon, cfg.l0.quantiles, seed, f_clean, damage)
                     rest_win[ci, li, wi] = v
                     vals.append(v)
+                    if verbose_grid is not None:
+                        verbose_grid[ci, li, wi] = v_series[:n_verbose]
                 restoration[ci, li] = float(np.mean(vals)) if vals else float("nan")
             else:
                 with token_patch(adapter.module, layer, adapter.token_slice,
                                  clean_tokens[layer]):
                     f_patch = _predict_once(adapter, ctx_corr, horizon, cfg.l0.quantiles, seed)
                 restoration[ci, li] = float(1.0 - np.abs(f_patch - f_clean).mean() / damage)
+        if verbose_grid is not None:
+            verbose[cname] = _verbose_case(
+                adapter, layers_p, windows, win_of_token, clean_tokens, ctx_corr,
+                horizon, cfg.l0.quantiles, seed, f_clean, f_corr, damage, rest_win[ci],
+                verbose_grid[ci], n_verbose, ctx_clean, targets, series_ids, families)
     out = {"restoration": restoration, "layers": layers_p, "corruptions": corr_names,
            "whole_context_patch": not bool(windows)}
     if windows:
         out["restoration_windows"] = rest_win
         out["windows"] = windows
+    if verbose:
+        out["verbose"] = verbose
     return out
+
+
+def _verbose_case(adapter, layers_p: list, windows: list, win_of_token: np.ndarray,
+                  clean_tokens: dict, ctx_corr: np.ndarray, horizon: int, quantiles: list,
+                  seed: int, f_clean: np.ndarray, f_corr: np.ndarray, damage: float,
+                  rest_win_ci: np.ndarray, verbose_grid_ci: np.ndarray, n_verbose: int,
+                  ctx_clean: np.ndarray, targets, series_ids, families) -> dict:
+    """A concrete before/after for a handful of series at one corruption.
+
+    Reuses the corpus-wide restoration grid to pick the single (layer, window)
+    cell that restored the most on average across the whole sampled batch, then
+    replays *only* the patch at that one cell for the first `n_verbose` series
+    to recover their actual patched forecast (everything else needed — clean
+    and corrupted forecasts, and this cell's full per-series restoration grid
+    from `verbose_grid_ci` — is already in hand at no extra cost). This is a
+    representative "best patch" example, not each series' own individually
+    best cell; the report states that distinction explicitly.
+    """
+    best_li, best_wi = np.unravel_index(int(np.argmax(rest_win_ci)), rest_win_ci.shape)
+    best_layer, best_window = layers_p[best_li], windows[best_wi]
+    tok_idx = np.flatnonzero(win_of_token == best_window)
+    ex = slice(0, n_verbose)
+    _, _, f_patch_ex = _window_restoration(
+        adapter, best_layer, tok_idx, clean_tokens[best_layer][ex], ctx_corr[ex],
+        horizon, quantiles, seed, f_clean[ex], damage)
+    return {
+        "layer": best_layer, "window": int(best_window),
+        "restoration_grid": verbose_grid_ci.copy(),
+        "series_ids": [str(s) for s in series_ids[:n_verbose]] if series_ids is not None else [],
+        "families": [str(f) for f in families[:n_verbose]] if families is not None else [],
+        "context": ctx_clean[:n_verbose].astype(np.float32),
+        "target": targets[:n_verbose].astype(np.float32) if targets is not None else None,
+        "forecast_clean": f_clean[:n_verbose].astype(np.float32),
+        "forecast_corrupted": f_corr[:n_verbose].astype(np.float32),
+        "forecast_patched": f_patch_ex.astype(np.float32),
+    }
 
 
 def _token_windows(spans: np.ndarray, window: int, n_windows: int) -> np.ndarray:
@@ -354,8 +425,15 @@ def _token_windows(spans: np.ndarray, window: int, n_windows: int) -> np.ndarray
 def _window_restoration(adapter, layer: str, tok_idx: np.ndarray,
                         clean_layer: torch.Tensor, ctx_corr: np.ndarray,
                         horizon: int, quantiles: list, seed: int,
-                        f_clean: np.ndarray, damage: float) -> float:
-    """Forecast restoration from patching only one window's tokens at one layer."""
+                        f_clean: np.ndarray, damage: float):
+    """Forecast restoration from patching only one window's tokens at one layer.
+
+    Returns the batch-mean restoration (the reported statistic, unchanged from
+    before this also returned per-series/patched-forecast detail), plus the
+    per-series restoration and the patched forecast itself — both needed only
+    by verbose single-series reporting, which reuses this same patched
+    forward instead of re-running the model.
+    """
     idx = torch.from_numpy(tok_idx)
 
     def index_fn(live_len: int):
@@ -364,7 +442,8 @@ def _window_restoration(adapter, layer: str, tok_idx: np.ndarray,
 
     with token_patch(adapter.module, layer, index_fn, clean_layer[:, tok_idx]):
         f_patch = _predict_once(adapter, ctx_corr, horizon, quantiles, seed)
-    return float(1.0 - np.abs(f_patch - f_clean).mean() / damage)
+    per_series = 1.0 - np.abs(f_patch - f_clean).mean(axis=1) / damage
+    return float(per_series.mean()), per_series.astype(np.float32), f_patch
 
 
 def _agreement_with_ci(cfg: PipelineConfig, psa: np.ndarray, psb: np.ndarray,

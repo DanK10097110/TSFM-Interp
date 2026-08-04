@@ -462,33 +462,160 @@ def block_bootstrap(source: tuple[SourceRef, np.ndarray], seed: int = 0, block_l
     realisation. Useful for the realism-stress tier; it offers no instance-level
     distance guarantee, so the leakage audit must still gate it.
 
-    Verify the tsbootstrap API against the installed version before use.
+    Verified 2026-08-03 against tsbootstrap 0.7.1, whose top-level API was
+    rewritten from the class-based ``MovingBlockBootstrap(n_bootstraps=...,
+    block_length=..., rng=...).bootstrap(arr)`` this was originally written
+    against (that class no longer exists in the package at all) to a
+    functional ``bootstrap(X, method=MovingBlock(block_length=...),
+    n_bootstraps=..., random_state=...)`` call returning a ``BootstrapResult``
+    whose replicates come back via ``.values()`` as an ``[n_bootstraps, n_obs]``
+    array -- not via iterating ``.bootstrap()``, which no longer exists either.
+    Like the TimesFM library rewrite (``CLAUDE.md`` §11.8), this is a dependency's
+    own breaking release invalidating a hardcoded call site, not a choice made
+    in this repo. Re-verify this call site after bumping tsbootstrap again.
+
+    Real sources vary wildly in length -- a bootstrapped Monash pool spans
+    yearly series as short as ~14 points alongside multi-thousand-point
+    hourly ones -- so a fixed ``block_length`` that's fine for most sources
+    can exceed a short one's length entirely (tsbootstrap raises
+    ``MethodConfigError`` rather than silently truncating). Clamped here to
+    at most half the series length (min 2) so a short real source degrades
+    to a smaller block instead of failing the whole task.
     """
     try:
-        from tsbootstrap import MovingBlockBootstrap
+        from tsbootstrap import MovingBlock, bootstrap as tsb_bootstrap
     except ImportError as exc:
         raise ImportError("install tsbootstrap to use block_bootstrap") from exc
 
     ref, arr = source
-    arr = np.asarray(arr, dtype=float).reshape(-1, 1)
-    bootstrap = MovingBlockBootstrap(n_bootstraps=1, block_length=block_length, rng=seed)
-    resampled = next(iter(bootstrap.bootstrap(arr)))
-    values = np.asarray(resampled).reshape(-1)
+    arr = np.asarray(arr, dtype=float)
+    effective_block_length = max(2, min(block_length, len(arr) // 2))
+    result = tsb_bootstrap(arr, method=MovingBlock(block_length=effective_block_length), n_bootstraps=1, random_state=seed)
+    values = np.asarray(result.values())[0]
     gt = GroundTruth(notes="real-derived block bootstrap; not leakage-safe")
-    prov = Provenance(generator="block_bootstrap", generator_params={"block_length": block_length}, seed=seed, source_refs=[ref])
+    prov = Provenance(
+        generator="block_bootstrap",
+        generator_params={"block_length": block_length, "effective_block_length": effective_block_length},
+        seed=seed,
+        source_refs=[ref],
+    )
     return TimeSeriesSample(values=values, ground_truth=gt, provenance=prov)
 
 
 @GENERATORS.register("sequential_par")
-def sequential_par(training: list[np.ndarray], seed: int = 0, epochs: int = 128) -> TimeSeriesSample:
+def sequential_par(
+    training: list[tuple[SourceRef, np.ndarray]],
+    seed: int = 0,
+    epochs: int = 128,
+    length: int | None = None,
+    cuda: bool | None = None,
+    max_train_length: int = 512,
+) -> TimeSeriesSample:
     """Fit a PAR model on a small real cohort and sample a new sequence (SDV).
 
     Learns cross-time dependence from a group of similar real series and samples
     a fresh one. Real-derived and dependent on the cohort distribution; gate with
-    the audit. Verify the SDV PARSynthesizer API against the installed version.
+    the audit.
+
+    Verified 2026-08-03 against sdv 1.14.0's ``sdv.sequential.PARSynthesizer``.
+    Two things worth recording so the next session doesn't have to rediscover
+    them: (1) declaring an explicit ``sequence_index`` column (e.g. a plain
+    integer timestep) makes ``auto_assign_transformers`` crash with
+    ``AttributeError: 'NoneType' object has no attribute
+    'enforce_min_max_values'`` in this version -- PAR does not require a
+    ``sequence_index`` at all when each cohort series' rows are already given
+    in time order (as built here), so this call site deliberately omits it
+    rather than working around the crash. (2) ``PARSynthesizer`` exposes no
+    ``random_state``/seed argument anywhere in its ``fit``/``sample`` API, so
+    reproducibility here is best-effort (seeding numpy and torch globally
+    before fit/sample), not the exact bit-for-bit guarantee the rest of this
+    module provides -- stated plainly rather than silently assumed.
+
+    Cost note (corrected 2026-08-03, see ROADMAP.md §5.1): an earlier version
+    of this docstring blamed the per-call cost mainly on ``epochs``. A direct
+    calibration (holding the cohort fixed, varying only epochs 8 vs 16)
+    disproved that -- both took ~1000s. The actual dominant cost is
+    **training sequence length**, not epoch count: this function used to feed
+    every row of every raw cohort series into PAR's fit call unbounded, and
+    real Monash domains include series tens of thousands of points long (one
+    calibration cohort had lengths up to 40,720). PAR's DeepEcho RNN backend
+    trains per-timestep, so an untruncated 40k-point series costs roughly
+    1000x what a 512-point one does, regardless of ``epochs``.
+    ``max_train_length`` now truncates each cohort series to its most recent
+    ``max_train_length`` points before fitting, which bounds this generator's
+    cost to a predictable range independent of which real domain happens to
+    get bootstrapped into a cohort. 512 matches this repo's typical
+    ``context_len`` elsewhere (`tsfm_lens`'s default config) rather than being
+    arbitrary. This fits a fresh PAR model (a small RNN) on every call, which
+    still costs real seconds at minimum -- unlike ``mixture``/
+    ``block_bootstrap``, it is not cheap enough to call thousands of times
+    for one task's ``count``. Keep ``count`` small (tens, not thousands) for
+    any task using this generator until/unless a fit-once, sample-many cache
+    is added to ``BenchmarkBuilder`` (see ROADMAP.md).
+
+    ``cuda=None`` (the default) auto-detects via ``torch.cuda.is_available()``
+    at call time rather than hardcoding either way, so the same config runs
+    on GPU where one's actually usable and degrades to CPU elsewhere without
+    needing a per-environment override -- deliberate, since a hardcoded
+    default here would silently stay wrong the moment this ran in a
+    different environment than whichever one it was tuned against.
     """
-    raise NotImplementedError(
-        "wire SDV PARSynthesizer here; kept as an explicit integration point "
-        "because the fit/sample API and the required metadata object change "
-        "across SDV releases and must be pinned"
+    try:
+        import pandas as pd
+        from sdv.metadata import SingleTableMetadata
+        from sdv.sequential import PARSynthesizer
+    except ImportError as exc:
+        raise ImportError("install sdv and pandas to use sequential_par") from exc
+
+    if cuda is None:
+        try:
+            import torch as _torch
+            cuda = bool(_torch.cuda.is_available())
+        except ImportError:
+            cuda = False
+
+    refs = [ref for ref, _ in training]
+    raw_arrays = [np.asarray(values, dtype=float) for _, values in training]
+    arrays = [arr[-max_train_length:] if len(arr) > max_train_length else arr for arr in raw_arrays]
+    n_truncated = sum(1 for raw in raw_arrays if len(raw) > max_train_length)
+    if length is None:
+        length = int(round(float(np.mean([len(a) for a in arrays]))))
+
+    rows = [
+        {"sequence_id": i, "value": float(v)}
+        for i, arr in enumerate(arrays)
+        for v in arr
+    ]
+    df = pd.DataFrame(rows)
+
+    metadata = SingleTableMetadata()
+    metadata.detect_from_dataframe(df)
+    metadata.update_column(column_name="sequence_id", sdtype="id")
+    metadata.set_sequence_key("sequence_id")
+
+    np.random.seed(seed)
+    try:
+        import torch
+        torch.manual_seed(seed)
+    except ImportError:
+        pass
+
+    synth = PARSynthesizer(metadata, epochs=epochs, cuda=cuda, verbose=False)
+    synth.fit(df)
+    sampled = synth.sample(num_sequences=1, sequence_length=length)
+    values = sampled["value"].to_numpy(dtype=float)
+
+    gt = GroundTruth(notes="real-derived; PAR-synthesized from a real cohort; not leakage-safe")
+    prov = Provenance(
+        generator="sequential_par",
+        generator_params={
+            "epochs": epochs,
+            "length": length,
+            "cohort_size": len(arrays),
+            "max_train_length": max_train_length,
+            "n_series_truncated": n_truncated,
+        },
+        seed=seed,
+        source_refs=refs,
     )
+    return TimeSeriesSample(values=values, ground_truth=gt, provenance=prov)

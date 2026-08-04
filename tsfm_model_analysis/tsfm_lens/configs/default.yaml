@@ -107,8 +107,12 @@ lens:
 # Attention structure and head/MLP causality. Pattern capture holds
 # [batch, heads, T, T] per layer in memory: for chronos-t5 at T=512 that is
 # ~2.4 GB at batch_series 16 — lower batch_series before lowering max_series.
-# TimesFM exposes no patterns (functional attention) but still gets head and
-# MLP ablation through its discovered output projections.
+# TimesFM's attention is fused SDPA with no exposed weights by default, but
+# its adapter recovers them by temporarily swapping in the library's own
+# unfused dot-product math (see models/timesfm_adapter.py's
+# attention_patterns) — confirmed live against google/timesfm-2.5-200m-pytorch
+# 2026-08-03. Both models also still get head/MLP ablation through their
+# discovered output projections.
 attention:
   enabled: true
   patterns: true

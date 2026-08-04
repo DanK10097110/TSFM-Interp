@@ -114,7 +114,8 @@ def _load_corpus_rows(path: Path, verify: bool) -> list:
         except Exception as e:
             raise RuntimeError(f"sealed corpus failed verification: {e}") from e
     jsonl = path / "corpus.jsonl" if path.is_dir() else path
-    rows = [json.loads(line) for line in jsonl.read_text().splitlines() if line.strip()]
+    rows = [json.loads(line) for line in jsonl.read_text(encoding="utf-8").splitlines()
+            if line.strip()]
     log.info("data: loaded %d rows from %s", len(rows), jsonl)
     return rows
 

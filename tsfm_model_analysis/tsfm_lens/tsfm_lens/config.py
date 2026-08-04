@@ -186,6 +186,8 @@ class SAEConfig:
 class ReportConfig:
     enabled: bool = True
     title: str = "TSFM Comparison Report"
+    verbose: bool = True
+    verbose_series: int = 3
 
 
 @dataclass
@@ -270,7 +272,7 @@ _NESTED = {
 
 def load_config(path: str | Path) -> PipelineConfig:
     """Load a YAML config into a validated PipelineConfig."""
-    raw = yaml.safe_load(Path(path).read_text()) or {}
+    raw = yaml.safe_load(Path(path).read_text(encoding="utf-8")) or {}
     return config_from_dict(raw)
 
 
@@ -294,4 +296,4 @@ def config_from_dict(raw: dict) -> PipelineConfig:
 def dump_config(cfg: PipelineConfig, path: Path) -> None:
     """Persist the fully resolved config next to the run artifacts."""
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(yaml.safe_dump(dataclasses.asdict(cfg), sort_keys=False))
+    path.write_text(yaml.safe_dump(dataclasses.asdict(cfg), sort_keys=False), encoding="utf-8")

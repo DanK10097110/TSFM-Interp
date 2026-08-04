@@ -44,10 +44,10 @@ class ActivationStore:
         """Allocate window-level and pooled arrays for one (model, layer)."""
         n, w = self.root.attrs["n_series"], self.root.attrs["n_windows"]
         chunk = min(256, n)
-        self.root.create_array(f"act/{model}/{layer}", shape=(n, w, dim),
-                                chunks=(chunk, w, dim), dtype=dtype, overwrite=True)
-        self.root.create_array(f"pooled/{model}/{layer}", shape=(n, dim),
-                                chunks=(min(4096, n), dim), dtype=dtype, overwrite=True)
+        self.root.create_dataset(f"act/{model}/{layer}", shape=(n, w, dim),
+                                  chunks=(chunk, w, dim), dtype=dtype, overwrite=True)
+        self.root.create_dataset(f"pooled/{model}/{layer}", shape=(n, dim),
+                                  chunks=(min(4096, n), dim), dtype=dtype, overwrite=True)
 
     def write_batch(self, model: str, layer: str, start: int, aligned: np.ndarray) -> None:
         """Write one batch of aligned window states and their series-level pooling."""
@@ -58,12 +58,12 @@ class ActivationStore:
     def write_predictions(self, model: str, point: np.ndarray, quantiles: np.ndarray) -> None:
         """Persist forecasts for L0 and L3 reuse."""
         g = self.root.require_group(f"pred/{model}")
-        g.create_array("point", data=point.astype(np.float32), overwrite=True)
-        g.create_array("quantiles", data=quantiles.astype(np.float32), overwrite=True)
+        g.create_dataset("point", data=point.astype(np.float32), overwrite=True)
+        g.create_dataset("quantiles", data=quantiles.astype(np.float32), overwrite=True)
 
     def write_targets(self, targets: np.ndarray) -> None:
         """Persist forecast ground truth once per run."""
-        self.root.create_array("targets", data=targets.astype(np.float32), overwrite=True)
+        self.root.create_dataset("targets", data=targets.astype(np.float32), overwrite=True)
 
     def models(self) -> List[str]:
         """Model names present in the store."""

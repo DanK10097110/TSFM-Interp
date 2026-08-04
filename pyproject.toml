@@ -15,10 +15,32 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# Verified working 2026-08-03 in a dedicated conda-forge env (see
+# tsfm_benchmark/README.md / CLAUDE.md §12 for the full story of why these
+# exact bounds matter -- every one of them was discovered by a real breaking
+# change, not chosen speculatively):
+#   - datasets MUST be <3: Monash-University/monash_tsf (and most Monash-era
+#     HF forecasting datasets) are script-backed, and datasets>=3 removed
+#     script-based dataset loading entirely ("Dataset scripts are no longer
+#     supported"). >=2.18 was the original (correct) floor; the missing upper
+#     bound is what broke once a newer datasets got installed. 2.21.0 is the
+#     verified-working pin.
+#   - tsbootstrap's public API was fully rewritten between versions (the
+#     class-based MovingBlockBootstrap(...).bootstrap(...) this was
+#     originally written against no longer exists as of 0.7.1, replaced by a
+#     functional bootstrap(X, method=MovingBlock(...), ...) call). No version
+#     ceiling is pinned here because the call site in generators.py now
+#     targets the current (0.7.1+) API directly -- if you need the old API,
+#     you need the old package, not this code.
+#   - sdv verified working at 1.14.0 (conda-forge, python 3.12, numpy 2.1.0).
+#   - On Windows with MKL-linked BLAS: conda-forge's numpy 2.1.0 build predates
+#     mkl 2025+ and crashes on basic matmuls (illegal instruction) against a
+#     newer MKL runtime pulled in transitively (e.g. by sdv's pytorch
+#     dependency) -- pin mkl==2024.2.2 alongside these if you hit that.
 real-data = [
-  "datasets>=2.18",      # Hugging Face hub access (Monash and other real corpora)
+  "datasets>=2.18,<3",   # Hugging Face hub access (Monash and other real corpora); see note above
   "dtaidistance>=2.3",   # fast C DTW for the leakage gate; numpy fallback exists
-  "tsbootstrap>=0.1",    # block bootstrap generator
+  "tsbootstrap>=0.7",    # block bootstrap generator; generators.py targets the 0.7+ functional API
   "sdv>=1.9",            # PARSynthesizer for the sequential generator
 ]
 

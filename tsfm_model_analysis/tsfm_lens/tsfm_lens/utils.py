@@ -51,12 +51,12 @@ def resolve_dtype(name: str, device: torch.device) -> torch.dtype:
 def save_json(path: Path, obj: object) -> None:
     """Write an object as pretty JSON, creating parent directories."""
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(obj, indent=2, default=_json_default))
+    path.write_text(json.dumps(obj, indent=2, default=_json_default), encoding="utf-8")
 
 
 def load_json(path: Path) -> dict:
     """Read a JSON artifact."""
-    return json.loads(Path(path).read_text())
+    return json.loads(Path(path).read_text(encoding="utf-8"))
 
 
 def _json_default(o: object) -> object:

@@ -55,9 +55,21 @@ def impulse_alignment_check(adapter: ModelAdapter, window: int,
 
     t = np.arange(context_len, dtype=np.float32)
     base = np.sin(2 * np.pi * t / (context_len / 4)).astype(np.float32)
+    # Impulse size relative to the base signal's own amplitude, not an
+    # absolute constant: verified live against chronos-t5-small that a large
+    # absolute impulse (previously a hardcoded 8.0, ~8x the base's unit
+    # amplitude) rescales Chronos's context-adaptive quantization tokenizer's
+    # global bin edges, shifting hundreds of unrelated tokens across the
+    # whole sequence and burying the local diagonal-dominance signal in noise
+    # unrelated to alignment (measured min diagonal-hit fraction 0.06 at
+    # amp=8.0 vs. a perfect 1.00 at amp<=0.3x base amplitude, for every
+    # layer). TimesFM's patch embeddings are insensitive to this (near-1.0
+    # across the same sweep) since they don't do sequence-global rescaling,
+    # so this smaller, relative impulse is safe for both tokenization styles.
+    impulse = 0.25 * float(np.max(np.abs(base)))
     batch = np.tile(base, (n_windows + 1, 1))
     for w in range(n_windows):
-        batch[w + 1, w * window + window // 2] += 8.0
+        batch[w + 1, w * window + window // 2] += impulse
 
     with torch.no_grad(), ActivationCatcher(adapter.module, layer_names) as catcher:
         adapter.forward(adapter.prepare(batch))

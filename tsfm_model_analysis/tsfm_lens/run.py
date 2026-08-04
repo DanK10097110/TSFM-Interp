@@ -29,10 +29,16 @@ def main() -> None:
     parser.add_argument("--discover-layers", default="",
                         help="print module names for one model name and exit")
     parser.add_argument("--contains", default="", help="filter for --discover-layers")
+    parser.add_argument("--verbose", dest="verbose", action="store_true", default=None,
+                        help="force report.verbose=true regardless of config")
+    parser.add_argument("--no-verbose", dest="verbose", action="store_false",
+                        help="force report.verbose=false regardless of config")
     args = parser.parse_args()
 
     setup_logging()
     cfg = load_config(args.config)
+    if args.verbose is not None:
+        cfg.report.verbose = args.verbose
 
     if args.discover_layers:
         adapter = Context(cfg).hub.get(args.discover_layers)

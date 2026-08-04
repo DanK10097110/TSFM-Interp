@@ -103,9 +103,10 @@ def run_report(cfg: PipelineConfig) -> Path:
         findings=findings, sections=sections,
         config_text=_config_text(run_dir),
         mock_warning=_mock_warning(mock_models),
+        how_to_read=_how_to_read(cfg.alignment.window),
     )
     out = run_dir / "report.html"
-    out.write_text(html)
+    out.write_text(html, encoding="utf-8")
     log.info("report written: %s (%d sections, %d findings)", out, len(sections),
              len(findings))
     return out
@@ -141,6 +142,65 @@ def _mock_warning(mock_models: list) -> str:
             f'track the target.</div>')
 
 
+def _how_to_read(window: int) -> str:
+    """A fixed preamble stating the evidence-class ladder before any numbers appear.
+
+    Every section blurb and per-plot note below states its own evidence class
+    and sign convention locally (`CLAUDE.md` §2.6/§6.6, §8), but a reader
+    opening this report cold has nowhere to see the ladder as a whole, or the
+    two terms ("window", "relative depth") that recur in nearly every section
+    without being redefined each time. This renders once, first, unconditionally.
+    """
+    return (
+        '<section class="howto"><div class="eyebrow">Before the numbers</div>'
+        '<h2 class="sec">How to read this report</h2>'
+        '<p class="blurb">Each section below answers a progressively stronger '
+        'question, and each one exists because of a specific limitation in the '
+        'question before it. Read a number\'s strength according to which rung '
+        'it sits on, not by how confident its chart looks:</p>'
+        '<ul class="ladder">'
+        '<li><b>Geometric</b> (Representational geometry) — do the two models\' '
+        'layers organize the benchmark similarly at all? Correlational; both '
+        'models seeing the same input inflates this on its own.</li>'
+        '<li><b>Linearly-translatable</b> (Stitching probes) — can one model\'s '
+        'layer be linearly mapped to the other\'s, <i>beyond</i> what a plain '
+        'input-feature probe already achieves? Stronger than geometry, still '
+        'not causal.</li>'
+        '<li><b>Causal, within one model</b> (Perturbation &amp; patching, '
+        'head/MLP ablation) — does intervening on this model\'s own '
+        'activations actually change its own forecast? The strongest evidence '
+        'short of confirmation, but never compared across models by '
+        'transplanting activations between them (only the resulting '
+        'within-model curves are compared).</li>'
+        '<li><b>Descriptive</b> (Model internals, Activation clusters) — how '
+        'does a model organize its own representations, on its own terms? No '
+        'cross-model or causal claim at all.</li>'
+        '<li><b>Illustrative</b> (Exemplar case studies) — concrete series '
+        'chosen because they show a difference clearly, not because they\'re '
+        'typical; useful for intuition, not for estimating how often '
+        'something happens.</li>'
+        '<li><b>Confirmatory</b> (Private benchmark confirmation) — the one '
+        'section tested exactly once, on held-out data no exploration above '
+        'ever touched. Treat it as the actual evidence; treat everything '
+        'above it as hypothesis-generation, however significant it looks.</li>'
+        '</ul>'
+        f'<p class="blurb">Two terms recur in almost every chart below. A '
+        f'<b>window</b> is a pooled ~{window}-timestep interval '
+        f'(`alignment.window`), not one raw model timestep — both models\' '
+        f'tokens are pooled onto this same axis specifically so an '
+        f'architecture reading one timestep per token and one reading many '
+        f'become comparable at all. <b>Relative depth</b> rescales each '
+        f'layer\'s position to 0–1 so models with different layer counts '
+        f'sit on a shared axis — a convention that makes comparison possible, '
+        f'not a claim that the same relative depth means the same '
+        f'computational stage in both architectures. Sign conventions '
+        f'(whether a positive Δ means better or worse) differ section to '
+        f'section and are restated locally in each chart\'s own note — check '
+        f'before comparing a ΔMASE bar to a ΔR² heatmap.</p>'
+        '</section>'
+    )
+
+
 def _dataset_line(cfg: PipelineConfig, run_dir: Path) -> str:
     """One-line dataset description from stored metadata."""
     try:
@@ -154,7 +214,7 @@ def _dataset_line(cfg: PipelineConfig, run_dir: Path) -> str:
 
 def _config_text(run_dir: Path) -> str:
     p = run_dir / "config_resolved.yaml"
-    return p.read_text() if p.exists() else ""
+    return p.read_text(encoding="utf-8") if p.exists() else ""
 
 
 def _frag(fig: go.Figure, height: int = 420) -> str:
@@ -528,30 +588,54 @@ def _sec_l3(run_dir: Path, model_colors: dict, findings: list) -> str:
     for model in (meta["model_a"], meta["model_b"]):
         cis = beh_ci.get(model, {})
         err = _err_y([cis[c] for c in names]) if cis else None
-        beh.add_bar(x=names, y=arrays[f"behavior_{model}"], name=model,
-                    marker_color=model_colors.get(model), error_y=err)
+        vals = arrays[f"behavior_{model}"]
+        beh.add_bar(x=names, y=vals, name=model, marker_color=model_colors.get(model),
+                    error_y=err, text=[f"{v:.2f}" for v in vals], textposition="outside")
     beh.update_layout(barmode="group", yaxis_title="forecast change (scaled MAE)")
     inner += "<h4>Behavioral sensitivity</h4>" + _frag(beh, 300) + _note(
         "How much each corruption changes the final *forecast* (scaled "
         "mean absolute change), independent of any internals — the "
-        "behavioral counterpart to the activation fingerprints above.",
+        "behavioral counterpart to the activation fingerprints above. "
+        "Value labels are drawn on every bar specifically because this "
+        "battery's corruptions are not strength-matched (next note) — a "
+        "shared linear axis dominated by one outsized corruption can make "
+        "every other bar look flat even when its own value is not small.",
         "Taller bars mean that corruption matters more to this model's "
         "output. A corruption with a tall activation fingerprint but a "
         "short bar here is being represented internally without much "
         "consequence for the forecast — an interesting mismatch worth "
         "checking against the patching curve below, which is the causal "
-        "version of this same question.",
+        "version of this same question. Read the printed value, not just "
+        "bar height, before concluding a corruption 'does nothing.'",
         "Scale is in MASE-like units (MAE over each series' own naive "
         "scale), so it's comparable across families but reflects each "
-        "corruption's configured strength (e.g. `spike.scale`) as much as "
-        "the model's intrinsic sensitivity — a fair cross-model "
-        "comparison, not a fair cross-corruption one unless strengths "
-        "were tuned to match.")
+        "corruption's configured strength as much as the model's intrinsic "
+        "sensitivity — a fair cross-model comparison, not a fair "
+        "cross-corruption one unless strengths were tuned to match. "
+        "Concretely: `level_shift` is a permanent step change of several "
+        "standard deviations over the back 40% of the series — a much "
+        "larger absolute perturbation than `spike`'s few isolated one-step "
+        "outliers or `detrend`'s slope removal — so it is expected to "
+        "dominate this chart regardless of which model is more "
+        "'intrinsically' sensitive; that dominance is an artifact of the "
+        "corruption battery's calibration, not a finding about the models. "
+        "A corruption barely touching the series at all (e.g. `spike` "
+        "perturbing 3 of 512 timesteps) will also show a small average "
+        "here by construction, even though its effect at the touched "
+        "points can be large — see the per-window patching heatmap below "
+        "for whether such localized damage is still causally recoverable.")
     overall = meta["agreement"]["overall"]
     worst = meta["agreement"]["most_divergent"]
     findings.append(f'L3 — fingerprint agreement ρ={_ci_str(overall)}; '
                     f'most divergent corruption: {worst} '
                     f'(ρ={_ci_str(agree[worst])}).')
+    for model in (meta["model_a"], meta["model_b"]):
+        vals = arrays[f"behavior_{model}"]
+        lo, hi = int(np.argmin(vals)), int(np.argmax(vals))
+        findings.append(f'L3 — {model}: least behaviorally-sensitive corruption is '
+                        f'{names[lo]} ({vals[lo]:.2f}), most is {names[hi]} '
+                        f'({vals[hi]:.2f}) — not necessarily comparable, since '
+                        f'corruption strengths are not calibrated to match.')
 
     patch_meta_path = run_dir / "l3" / "patching.json"
     if patch_meta_path.exists():
@@ -610,6 +694,7 @@ def _sec_l3(run_dir: Path, model_colors: dict, findings: list) -> str:
                "should be read only as a sanity check (expect it near 1.0 "
                "everywhere)." if whole_context else ""))
         inner += _l3_window_heatmaps(pmeta, parrs)
+        inner += _l3_verbose_cases(pmeta, parrs)
     return inner
 
 
@@ -658,6 +743,80 @@ def _l3_window_heatmaps(pmeta: dict, parrs) -> str:
                 "above for very different reasons — always check the grid, "
                 "not just the averaged curve.")
             shown_note = True
+    return html
+
+
+def _l3_verbose_cases(pmeta: dict, parrs) -> str:
+    """Per-series L3 case studies: concrete clean/corrupted/patched forecasts
+    next to that series' own layer x window restoration grid.
+
+    Extends the Exemplars section's narrated-case-study pattern to L3
+    specifically (`ROADMAP.md` Phase 0), populated only when
+    `report.verbose` was on during the L3 stage — its absence from the
+    artifacts (not a flag re-checked here) is what gates this section.
+    """
+    any_case = any(info.get("verbose") for info in pmeta.values())
+    if not any_case:
+        return ""
+    html = _note(
+        "A concrete, single-series version of the aggregate patching curves "
+        "above: this series' own context, true continuation, and clean / "
+        "corrupted / patched forecasts, next to its own full layer x window "
+        "restoration grid — the same kind of case study the Exemplars "
+        "section gives every other level, applied here to L3's causal "
+        "patching specifically.",
+        "The patched forecast uses the single (layer, window) cell that "
+        "achieved the highest restoration on average across the whole "
+        "sampled batch for this corruption (named in each heading) — not "
+        "necessarily this particular series' own best cell — so it is a "
+        "representative example of what a strong patch does, read "
+        "alongside this series' own heatmap showing where its restoration "
+        "actually peaks (which can be a different cell).",
+        "These series were not chosen for being typical — same caveat as "
+        "the Exemplars section: useful for making the aggregate patching "
+        "curves concrete, not for estimating how often a pattern like this "
+        "occurs across the benchmark.",
+        "How to read these case studies")
+    for model, info in pmeta.items():
+        for cname, vmeta in info.get("verbose", {}).items():
+            prefix = f"verbose_{model}_{cname}_"
+            if prefix + "grid" not in parrs:
+                continue
+            grid = parrs[prefix + "grid"]  # [layer, window, series]
+            context, clean = parrs[prefix + "context"], parrs[prefix + "clean"]
+            corr, patched = parrs[prefix + "corrupted"], parrs[prefix + "patched"]
+            target = parrs[prefix + "target"] if (prefix + "target") in parrs else None
+            sids, fams = vmeta.get("series_ids", []), vmeta.get("families", [])
+            for si in range(grid.shape[-1]):
+                label = sids[si] if si < len(sids) else f"series {si}"
+                fam = f" ({fams[si]})" if si < len(fams) else ""
+                fig = make_subplots(rows=1, cols=2, column_widths=[0.55, 0.45],
+                                    subplot_titles=["context + forecasts",
+                                                    "restoration: layer x window"])
+                tail = min(context.shape[1], 4 * clean.shape[1])
+                t_ctx, t_fut = np.arange(-tail, 0), np.arange(clean.shape[1])
+                fig.add_scatter(x=t_ctx, y=context[si, -tail:], mode="lines",
+                                name="context", line=dict(color=_COLORS["ink"], width=1),
+                                row=1, col=1)
+                if target is not None:
+                    fig.add_scatter(x=t_fut, y=target[si], mode="lines", name="target",
+                                    line=dict(color=_COLORS["ink"], dash="dot"), row=1, col=1)
+                fig.add_scatter(x=t_fut, y=clean[si], mode="lines", name="clean forecast",
+                                line=dict(color=_COLORS["a"]), row=1, col=1)
+                fig.add_scatter(x=t_fut, y=corr[si], mode="lines", name="corrupted forecast",
+                                line=dict(color=_COLORS["accent"]), row=1, col=1)
+                fig.add_scatter(x=t_fut, y=patched[si], mode="lines", name="patched forecast",
+                                line=dict(color=_COLORS["b"], dash="dash"), row=1, col=1)
+                fig.add_trace(go.Heatmap(z=grid[:, :, si], x=info.get("windows", []),
+                                         y=np.round(info.get("rel_depth", []), 2),
+                                         colorscale="Magma", zmin=0.0,
+                                         colorbar_title="restore"), row=1, col=2)
+                fig.update_xaxes(title_text="steps (0 = forecast start)", row=1, col=1)
+                fig.update_xaxes(title_text="window", row=1, col=2)
+                fig.update_yaxes(title_text="relative depth", row=1, col=2)
+                html += (f"<h4>{model} · {cname} · {label}{fam} — patched at "
+                         f"{_short(vmeta['layer'])}, window {vmeta['window']}</h4>"
+                         + _frag(fig, 320))
     return html
 
 
@@ -779,6 +938,32 @@ def _sec_attention(run_dir: Path, model_colors: dict, findings: list) -> str:
             if tops:
                 parts += ("<h4>Top periodicity heads</h4>"
                           + _table(pd.DataFrame(tops)))
+                parts += _note(
+                    "Per head, per family: normalized attention mass falling "
+                    "within ±1 lag of that family's seasonal period (and its "
+                    "multiples), minus a mask-fraction baseline — the mass a "
+                    "head paying uniform attention to every lag would put in "
+                    "those same positions purely by chance, given how many of "
+                    "the possible lags count as 'near a period multiple.' "
+                    "Each head keeps only its best-scoring family (shown in "
+                    "the table) so a head periodic on one family isn't "
+                    "diluted by its flat behavior on the others, the way the "
+                    "unconditional heatmap above would show it.",
+                    "'score' is excess mass over that chance baseline, not a "
+                    "raw fraction: 0 means this head's mass near seasonal-lag "
+                    "multiples is exactly what a uniform head would show by "
+                    "chance (no real periodicity signal); a score of, say, "
+                    "0.30 means an extra 30 percentage points of this head's "
+                    "attention mass sits at seasonal-lag multiples beyond "
+                    "chance — this is the induction-head analog for "
+                    "forecasting. Higher is a stronger, more specifically "
+                    "seasonal head.",
+                    "Only tests period multiples derived from each "
+                    "benchmark family's *labeled* seasonal period — a head "
+                    "genuinely periodic at an unlabeled or non-integer-ratio "
+                    "period would score near zero here despite being real. "
+                    "The reported family is whichever gave that head its "
+                    "single highest score, not every family it responds to.")
                 best = tops[0]
                 findings.append(f"Attention — {model}: strongest periodicity head "
                                 f"{_short(best['layer'])}·h{best['head']} "
@@ -822,8 +1007,13 @@ def _sec_attention(run_dir: Path, model_colors: dict, findings: list) -> str:
                 "Positive ΔMASE (red) means removing that head hurts "
                 "the forecast — it's load-bearing. Near-zero or "
                 "negative (blue) means the head is redundant or even "
-                "actively unhelpful for this benchmark. The most "
-                "load-bearing head is called out in the findings.",
+                "actively unhelpful for this benchmark. Concretely: a cell "
+                "at +0.15 means mean-ablating that head made this model's "
+                "average MASE 0.15 worse in absolute terms (e.g. 1.00 → "
+                "1.15, roughly 15% worse relative to a MASE-1.0 baseline); "
+                "a cell at -0.05 means ablating it left the forecast "
+                "slightly *better*. The most load-bearing head is called "
+                "out in the findings.",
                 "Mean-ablation is a specific, relatively mild "
                 "intervention (replacing with the *average* behavior, "
                 "not zero or noise) — a head could still matter under a "
@@ -1280,6 +1470,8 @@ details.note .note-body{padding:2px 14px 12px;font-size:13px;color:var(--ink);ma
 details.note .note-body p{margin:6px 0}
 details.note .note-body b{color:var(--muted);font:600 11px var(--mono);
   letter-spacing:.06em;text-transform:uppercase}
+.howto .ladder{margin:10px 0;padding-left:20px;max-width:78ch}
+.howto .ladder li{margin:7px 0;color:var(--ink);font-size:13.5px}
 .mockwarn{background:#3a2a12;color:#f3d9a8;border:1px solid #6b4a1a;
   border-radius:6px;padding:12px 16px;margin:0 0 22px;font-size:13px;
   max-width:78ch}
@@ -1295,6 +1487,7 @@ details.note .note-body b{color:var(--muted);font:600 11px var(--mono);
     {%- if dataset_line %} · {{ dataset_line }}{% endif %}
   </div>
 </header>
+{{ how_to_read }}
 {% if mock_warning %}{{ mock_warning }}{% endif %}
 {% if findings %}
 <div class="findings"><h2>Findings</h2><ul>

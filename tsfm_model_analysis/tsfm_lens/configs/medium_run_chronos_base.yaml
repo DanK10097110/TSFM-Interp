@@ -1,12 +1,12 @@
-# Medium real-model run (~300 series): TimesFM 2.5 vs Chronos-T5, against
-# the benchmark built from tsfm_benchmark/configs/medium_run.yaml (three
-# families: a diverse synthetic backbone, a fixed-recipe synthetic family,
-# and genuine real-world Monash weather data). Every stage enabled -- this
-# is the "all features" run, scaled for a single GPU in well under an hour
-# rather than default.yaml's production scale.
+# Size-variant control run (ROADMAP.md Phase 1 §5.3): identical corpus and
+# TimesFM checkpoint to configs/medium_run.yaml, swapping only
+# chronos-t5-small -> chronos-t5-base. Purpose: check whether findings
+# recorded from medium_run.yaml (chronos-t5-small) hold at a larger Chronos
+# size, so they can be told apart from a "bigger model vs smaller model"
+# confound rather than a genuine TimesFM-vs-Chronos-family effect.
 
 run:
-  name: medium_run
+  name: medium_run_chronos_base
   out_dir: runs
   device: cuda
   dtype: bfloat16
@@ -30,12 +30,11 @@ models:
     checkpoint: google/timesfm-2.5-200m-pytorch
     batch_size: 32
     capture_layer_stride: 2      # 20 layers -> 10 capture points
-  - name: Chronos-T5
+  - name: Chronos-T5-Base
     adapter: chronos
-    checkpoint: amazon/chronos-t5-small
-    batch_size: 32
-    capture_layer_stride: 1      # 6 encoder blocks
-    # Swap checkpoint to amazon/chronos-t5-base for a stronger (slower) run.
+    checkpoint: amazon/chronos-t5-base
+    batch_size: 24               # base is 2x chronos-t5-small; lower batch for VRAM headroom
+    capture_layer_stride: 1       # 12 encoder blocks (vs small's 6)
 
 l0:
   enabled: true
@@ -75,14 +74,14 @@ l3:
     enabled: true
     layer_stride: 2
     corruptions: [deseasonalize, noise, level_shift, spike, warp, dropout]
-    max_series: 32               # must be <= every model's batch_size
-    per_window: true             # layer x window restoration heatmaps
-    window_stride: 1             # full time resolution (dataset is small enough)
+    max_series: 24                # must be <= every model's batch_size
+    per_window: true              # layer x window restoration heatmaps
+    window_stride: 1              # full time resolution (dataset is small enough)
 
 lens:
   enabled: true
   layer_stride: 1
-  max_series: 32                 # must be <= every model's batch_size
+  max_series: 24                  # must be <= every model's batch_size
   tuned: true
   tuned_max_series: 300
   val_frac: 0.25
@@ -93,17 +92,17 @@ attention:
   enabled: true
   patterns: true
   max_series: 150
-  batch_series: 32
+  batch_series: 16                # base's T=512 attn patterns cost ~2x small's; halved vs medium_run
   max_lag_tokens: 128
   ablation: true
-  ablation_max_series: 32        # must be <= every model's batch_size
+  ablation_max_series: 24         # must be <= every model's batch_size
   head_layer_stride: 1
   top_k: 5
 
 exemplars:
   enabled: true
   per_family: 3
-  max_families: 3                # this corpus has 3 families
+  max_families: 3                 # this corpus has 3 families
 
 clustering:
   enabled: true
@@ -118,7 +117,7 @@ sae:
 
 report:
   enabled: true
-  title: Medium run · TimesFM 2.5 vs Chronos-T5, ~300 series (part real data)
+  title: Size-variant control · TimesFM 2.5 vs Chronos-T5-Base, ~300 series (part real data)
 
 stats:
   enabled: true

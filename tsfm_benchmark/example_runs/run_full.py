@@ -82,7 +82,18 @@ def load_specs(
                 print(f"no sources loaded for '{spec.name}' via '{config.get('kind', config)}'; skipping task")
                 continue
 
-            spec.generator_params = {**spec.generator_params, "sources": sources}
+            # Only 'mixture' takes a 'sources' list kwarg; 'block_bootstrap'
+            # takes a single 'source' tuple and 'sequential_par' takes a
+            # 'training' cohort -- mirrors BenchmarkBuilder._make_one's
+            # per-generator branching (builder.py), which every task that
+            # sets `source_sample_size` goes through instead of this eager
+            # path (see the `continue` above).
+            if spec.generator == "block_bootstrap":
+                spec.generator_params = {**spec.generator_params, "source": sources[0]}
+            elif spec.generator == "sequential_par":
+                spec.generator_params = {**spec.generator_params, "training": sources}
+            else:
+                spec.generator_params = {**spec.generator_params, "sources": sources}
 
         specs.append(spec)
     return specs

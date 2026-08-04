@@ -169,7 +169,7 @@ class BenchmarkBuilder:
             if spec.generator == "block_bootstrap" and sources:
                 generator_params["source"] = sources[0]
             elif spec.generator == "sequential_par" and sources:
-                generator_params["training"] = [values for _, values in sources]
+                generator_params["training"] = sources
             else:
                 generator_params["sources"] = sources
 
