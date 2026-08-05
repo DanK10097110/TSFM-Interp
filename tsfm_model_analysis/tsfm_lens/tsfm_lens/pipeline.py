@@ -18,6 +18,7 @@ from .analysis.clustering import run_clustering
 from .analysis.exemplars import run_exemplars
 from .analysis.confirm import run_confirm
 from .analysis.internals import run_internals
+from .analysis.layer_screen import run_layer_screen
 from .analysis.l0_behavioral import run_l0
 from .analysis.l1_geometry import run_l1
 from .analysis.l2_stitching import run_l2
@@ -78,6 +79,10 @@ def _stages() -> list:
               and (c.run_dir() / "meta.parquet").exists(),
               lambda ctx: (run_extraction(ctx.cfg, ctx.hub, ctx.data),
                            ctx.reset_store())),
+        Stage("layer_screen", ["extract"],
+              lambda c: c.layer_screen.enabled,
+              lambda c: (c.run_dir() / "layer_screen" / "selection.json").exists(),
+              lambda ctx: run_layer_screen(ctx.cfg, ctx.store, ctx.data, ctx.device)),
         Stage("l0", ["extract"],
               lambda c: c.l0.enabled,
               lambda c: (c.run_dir() / "l0" / "summary.json").exists(),

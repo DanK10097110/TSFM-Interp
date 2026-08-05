@@ -32,13 +32,14 @@ from sklearn.decomposition import PCA
 from sklearn.linear_model import Ridge
 from sklearn.preprocessing import StandardScaler
 
-from ..utils import log
+from ..utils import log, save_json
 from .l1_geometry import linear_cka
 
 __all__ = [
     "load_layer_bank", "within_model_cka_matrix", "select_work_bend",
     "select_coverage", "greedy_coverage_selection", "factor_probe_matrix",
     "factor_emergence_scores", "select_factor_emergence", "select_layers",
+    "run_layer_screen",
 ]
 
 
@@ -343,11 +344,9 @@ def select_factor_emergence(store, model: str, layers: list, gt, series_ids: np.
 def select_layers(method: str, store, model: str, layers: list, budget: int, **kwargs) -> dict:
     """Dispatch to one of the three candidate selectors by name.
 
-    Matches the `layer_screen: {method: ...}` config shape proposed in
-    `ROADMAP.md` §6.1.1 -- not yet wired into `config.py`/the pipeline DAG,
-    since §6.1.1-E's bake-off (`layer_screen_bakeoff.py`) has to name a winner
-    (or a combination) first, per `CLAUDE.md` §2.2's novelty-vs-null
-    discipline.
+    Matches the `layer_screen: {method: ...}` config shape from `ROADMAP.md`
+    §6.1.1 -- wired into the pipeline DAG via `run_layer_screen` below, whose
+    default method (`work_bend`, Idea A) is §6.1.1-E's bake-off winner.
     """
     if method == "work_bend":
         return select_work_bend(store, model, layers, budget,
@@ -363,3 +362,92 @@ def select_layers(method: str, store, model: str, layers: list, budget: int, **k
         return select_factor_emergence(store, model, layers, gt, series_ids, gt_cols, budget,
                                        seed=kwargs.get("seed", 0))
     raise ValueError(f"method must be one of work_bend|coverage|factor_emergence, got {method!r}")
+
+
+# ---------------------------------------------------------------------------
+# Pipeline-stage entry point (ROADMAP.md §6.1.1 -- production wiring)
+# ---------------------------------------------------------------------------
+
+def _uniform_fallback(layers: list, budget: int) -> dict:
+    """Evenly-spaced layer indices -- the cheap null itself, used as this
+    stage's own last-resort degrade (§2.5) rather than crashing the pipeline
+    or silently returning nothing when a selector errors on a real model's
+    activations (e.g. a degenerate/constant layer -- see `CLAUDE.md` traps).
+    """
+    n = len(layers)
+    idx = sorted(set(np.linspace(0, n - 1, min(budget, n)).astype(int).tolist()))
+    return {"method": "uniform_fallback", "layers": layers,
+            "score_per_layer": [0.0] * n, "selected": [layers[i] for i in idx],
+            "selected_idx": idx}
+
+
+def run_layer_screen(cfg, store, data, device: torch.device | None = None) -> None:
+    """Pipeline stage: screen every configured model's own captured layers.
+
+    Runs immediately after extraction and before every expensive stage
+    (lens/L1/L2/L3/attention/clustering/SAE) it is meant to inform -- the R4
+    dependency direction §6.1's `recommend_layers` got backwards. Writes
+    `layer_screen/selection.json`, which `sae/train.py::_default_targets`
+    consumes when `sae.targets` is left empty ("auto").
+
+    Default method is `work_bend` (Idea A), §6.1.1-E's bake-off winner: it
+    matched the oracle on the one model with real headroom to beat the nulls
+    and tied for best on the other (`ROADMAP.md` §6.1.1 Findings, 2026-08-05).
+    That result is from a single (corpus, checkpoint-pair) data point, so
+    `layer_screen.method` stays a config knob rather than a hardcoded
+    assumption -- `coverage` and `factor_emergence` remain available for
+    re-testing on new architectures without code changes.
+    """
+    from ..extraction.store import load_meta
+    from ..sae.ground_truth import load_ground_truth_table
+
+    out_dir = cfg.run_dir() / "layer_screen"
+    method = cfg.layer_screen.method
+    meta = load_meta(cfg.run_dir())
+    series_ids = meta["series_id"].to_numpy()
+
+    gt, gt_cols = None, None
+    if method == "factor_emergence":
+        if cfg.data.source == "sealed" and cfg.data.path:
+            try:
+                gt = load_ground_truth_table(cfg.data.path)
+                gt_cols = [c for c in gt.columns if c != "generator"]
+            except Exception as e:
+                log.warning(f"layer_screen: could not load ground truth from "
+                           f"{cfg.data.path!r} ({e}); falling back to work_bend "
+                           f"for this run")
+                method = "work_bend"
+        else:
+            log.info(f"layer_screen: factor_emergence needs a sealed corpus with "
+                     f"ground truth (data.source={cfg.data.source!r}); falling "
+                     f"back to work_bend for this run")
+            method = "work_bend"
+
+    seed = cfg.layer_screen.seed if cfg.layer_screen.seed is not None else cfg.run.seed
+    n_use = min(len(series_ids), cfg.layer_screen.max_series)
+    rows = np.arange(n_use)
+
+    results = {}
+    for m in cfg.models:
+        layers = store.layers(m.name)
+        if not layers:
+            log.info(f"layer_screen: {m.name} has no captured layers; skipped")
+            continue
+        budget = max(cfg.layer_screen.min_budget,
+                    round(cfg.layer_screen.budget_frac * len(layers)))
+        budget = min(budget, len(layers))
+        kwargs = {"device": device, "seed": seed, "rows": rows,
+                 "use_curvature": cfg.layer_screen.use_curvature}
+        if method == "factor_emergence":
+            kwargs.update(gt=gt, series_ids=series_ids[:n_use], gt_cols=gt_cols)
+        try:
+            sel = select_layers(method, store, m.name, layers, budget, **kwargs)
+        except Exception as e:
+            log.warning(f"layer_screen: {method} failed for {m.name} ({e}); "
+                       f"falling back to a uniform-stride selection")
+            sel = _uniform_fallback(layers, budget)
+        results[m.name] = sel
+        log.info(f"layer_screen: {m.name} ({method}, budget={budget}/{len(layers)}) "
+                 f"selected {sel['selected']}")
+
+    save_json(out_dir / "selection.json", results)

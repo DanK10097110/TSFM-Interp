@@ -1434,7 +1434,7 @@ know that before spending compute training SAEs on the wrong layers.
     `recommend_layers`'s direction/goal-validation logic. Full `tsfm_lens`
     suite re-run after: 10/10 passing, no regressions.
 
-### 6.1.1 Phase 2a-v2 — a better, architecture-agnostic, all-layers-fair layer selector — ✅ implemented + first bake-off run DONE 2026-08-05; not yet wired into production config
+### 6.1.1 Phase 2a-v2 — a better, architecture-agnostic, all-layers-fair layer selector — ✅ implemented, bake-off-tested, and wired into production DONE 2026-08-05
 
 > **Status.** Design written 2026-08-05 (below), implemented and empirically
 > bake-off-tested the same day (`tsfm_lens/analysis/layer_screen.py`,
@@ -1442,14 +1442,17 @@ know that before spending compute training SAEs on the wrong layers.
 > `tests/test_layer_screen.py` — 12 new unit tests, all passing, plus the full
 > 33-test `tsfm_lens` suite re-run clean). The bake-off ran for real against
 > live checkpoints, not mocked data — see the Findings block after Idea C
-> below for the full result. **Deliberately not wired into `sae.targets:
-> auto` or any config knob yet**: the result is genuinely mixed (no single
-> method cleanly wins both models; see Findings), and per §2.2's own
-> discipline a mixed first-pass result should be read as a real, provisional
-> signal — not rushed into production the way §6.1's `recommend_layers` was
-> trusted before it had actually been tried on one real model. Treat every
-> "should"/"expect" in the design sections below as the hypothesis it was
-> when written; the Findings block after Idea C is what actually happened.
+> below for the full result. **Same-day follow-up (below the bake-off
+> Findings): wired into the pipeline as a default stage.** The result was
+> genuinely mixed (no single method cleanly wins both models), but the user
+> explicitly directed this to be made the production default rather than
+> stay a standalone experiment — `work_bend` (Idea A) is the wired default
+> precisely *because* it was the bake-off's best performer, not despite the
+> mixed result; `coverage` and `factor_emergence` remain one config-line
+> swaps for re-testing on new architectures. Treat every "should"/"expect" in
+> the design sections below as the hypothesis it was when written; the two
+> Findings blocks after Idea C are what actually happened, first in the
+> bake-off, then in production.
 
 **Why §6.1's method is not the final answer.** §6.1 delivered a real
 *scientific finding* (effective dimensionality predicts two interpretability
@@ -1664,7 +1667,12 @@ each cheap selector against it — so no selector grades its own homework.
   {method: work_bend|factor_emergence|coverage, budget: N, stride: 1}` config
   block feeding a `select_layers()` that `sae.targets: auto` consumes; §6.1's
   `recommend_layers` stays as the cross-model *finding*, renamed/redocumented so
-  the two are never confused.
+  the two are never confused. **Landed 2026-08-05 (see the production-wiring
+  Findings block below):** `layer_screen: {enabled, method, budget_frac,
+  min_budget, max_series, use_curvature, seed}` in `config.py`, a
+  `layer_screen` pipeline stage (`pipeline.py`, runs right after `extract`,
+  before every expensive stage), and `sae/train.py::_default_targets`
+  consuming its `selection.json` whenever `sae.targets` is left empty.
 
 **Recommended order to test (cheapest-informative first):** Idea A (pure
 geometry, no probes, reuses L1 machinery) → Idea C (one CKA matrix, and it
@@ -1810,7 +1818,90 @@ seed on one A5000.
   configs/layer_screen_experiment.yaml --sae-epochs 50 --sae-dict-mult 6
   --sae-k 24`.
 
-### 6.2 Phase 2b — A TSFM-native SAE variant (the flagship research thread) — baseline (item 4) ✅ DONE 2026-08-05; crosscoder (item 1) not started
+**Findings — production wiring (2026-08-05, same-day follow-up).** Per
+explicit user direction, promoted `work_bend` from "provisional bake-off
+winner, not wired anywhere" to the pipeline's default layer selector, ahead
+of every config's `sae` stage. What changed, concretely:
+
+- **`config.py`**: new `LayerScreenConfig` (`enabled=True`,
+  `method="work_bend"`, `budget_frac=0.25`, `min_budget=2`,
+  `max_series=100_000`, `use_curvature=True`, `seed=None` → falls back to
+  `run.seed`), added to `PipelineConfig` and `_NESTED` so it loads from YAML
+  like every other stage config.
+- **`pipeline.py`**: a `layer_screen` `Stage` inserted immediately after
+  `extract` and before `l0`/`internals`/every other analysis stage —
+  satisfies R4 (screen before the expensive stages, not after) by
+  construction, since stage execution follows `_stages()`'s fixed list
+  order regardless of which subset is selected. Enabled by default, so it
+  runs automatically in every full pipeline run without any YAML change;
+  no hard DAG dependency was added from `sae` onto it (a config that
+  disables `layer_screen` while giving `sae` explicit targets must keep
+  working, not hard-fail).
+- **`analysis/layer_screen.py`**: new `run_layer_screen(cfg, store, data,
+  device)` stage entry point + `_uniform_fallback` (evenly-spaced indices —
+  the cheap null itself, reused as the last-resort degrade path). Degrades
+  gracefully and *loudly* (§2.5) in two independent ways: `method:
+  factor_emergence` on a non-sealed or path-less corpus (no ground truth to
+  probe against) logs and falls back to `work_bend` for that run; a
+  selector that raises on a real model's activations logs and falls back to
+  `_uniform_fallback` rather than crashing the whole pipeline over one
+  model's screen. Writes `layer_screen/selection.json` (one entry per
+  model: method, per-layer scores, selected layers/indices).
+- **`sae/train.py::_default_targets`**: rewritten to consume
+  `layer_screen/selection.json` when `sae.targets` is left empty — every
+  layer a model's screen selected becomes its own SAE target, replacing the
+  old "each model's final captured layer" default (itself as arbitrary a
+  rule as anything in §6.1's disqualified `recommend_layers`, just never
+  called out as such because nothing better existed yet). Falls back to the
+  old final-layer rule, with a `log.warning`, only if the artifact is
+  missing (stage disabled, or a `--stages sae`-only rerun skipped it) —
+  never a silent behavior change.
+- **`report/report.py`**: a new "Screen" section (between "L0" and
+  "Profile", matching pipeline order) bar-charts each model's per-layer
+  score with selected layers highlighted, and adds one `findings` line per
+  model naming what was selected out of how many captured layers. Carries
+  its own `_note()` stating plainly that the bar height is not comparable
+  across models/methods and that the default method is a single-bake-off
+  result, not a settled rule — the report should never imply more
+  confidence in this section than the Findings above actually support.
+- **Configs**: `default.yaml`, `medium_run.yaml` add an explicit
+  `layer_screen: {enabled: true, method: work_bend, budget_frac: 0.25,
+  min_budget: 2}` block (both already had `sae.enabled: false`, so this is
+  purely informational there today — the report shows what *would* be
+  trained on if SAE were turned on). `layer_screen_experiment.yaml` gets the
+  same block with a note distinguishing it from
+  `run_layer_screen_bakeoff.py`'s separate, more expensive three-selector
+  comparison. `medium_run_chronos_base.yaml` — the one config with `sae`
+  actually enabled — deliberately keeps its **explicit, hand-picked**
+  `sae.targets` (the exact layers `§5.3`/`§6.2`'s Findings already cite
+  numbers for) rather than switching to `auto`, so re-running that exact
+  config still reproduces the recorded result; a comment there tells a
+  future session to clear `targets: []` instead of copying those picks if
+  they want the new default selector.
+- **Tests**: `tests/test_smoke.py` — added `layer_screen/selection.json` to
+  the expected-artifacts list, `"Layer screening"` to the report-token
+  checks, and a new `test_layer_screen_stage_and_sae_auto_targets` that
+  asserts the stage ran with `method="work_bend"` on both mock models and
+  that `_default_targets` resolves *exactly* the layers `selection.json`
+  named — the actual wiring, not just that both halves work in isolation.
+  Full suite: **34/34 passing** (33 prior + 1 new). Verified live via the
+  actual CLI (`run.py --config configs/smoke.yaml`), not only pytest's
+  tmp-dir harness: report now has **11 sections / 22 findings** (was 10/18)
+  and `runs/smoke/layer_screen/selection.json` contains real, sane
+  `work_bend` scores for both mock architectures. Re-ran `compileall` and
+  the hardcoded-absolute-path grep (invariant 11) clean across every touched
+  file.
+- **Not done, and not requested this session:** fixing Idea B's diagnosed
+  peak-weighting flaw (§11.18); testing a second Chronos size or a
+  non-Chronos/non-TimesFM third architecture before trusting `work_bend` as
+  a cross-architecture default beyond the one bake-off's (corpus,
+  checkpoint-pair); swapping the bake-off's secondary gold from L3
+  sensitivity to per-window L3 patching. These stay exactly the follow-ups
+  the first Findings block already named — wiring the current best-known
+  method into production does not retroactively resolve them, and the
+  report's own note above says so.
+
+### 6.2 Phase 2b — A TSFM-native SAE variant (the flagship research thread) — baseline (item 4) ✅ DONE 2026-08-05; crosscoder (item 1) feasibility test ✅ DONE 2026-08-05, flagship build not started
 
 **Goal.** Train sparse dictionaries on the layers Phase 2a identifies as
 worth it, but don't just port a vanilla NLP-transformer SAE recipe
@@ -1865,11 +1956,14 @@ something novel" (brief item 3) should actually land.
   for at minimum the baseline (item 4) and the crosscoder (item 1); wire the
   encode-store pass into `sae/{model}/{layer}` per the seam already
   documented there. — **baseline done** (`sae/models.py::TopKSAE`);
-  **crosscoder (item 1) not started this session** — it needs its own
-  design work (joint training stability is explicitly an open question,
-  §13), not a small extension of the baseline. The encode-store pass
-  (writing back into `sae/{model}/{layer}` so L1/clustering could read a
-  `level="sae"`) is **also not wired** — `sae/interface.py`'s docstring
+  **crosscoder's prerequisite feasibility test now done too (same-day
+  follow-up, see Findings below)** — `sae/crosscoder.py`'s `CrosscoderSAE`
+  answers §13's stability question, but does not yet implement the
+  `SAEAdapter` Protocol or a report-integrated cross-model diffing section,
+  which is the remaining, larger scope of "the flagship crosscoder" as a
+  research deliverable rather than a feasibility check. The encode-store
+  pass (writing back into `sae/{model}/{layer}` so L1/clustering could read
+  a `level="sae"`) is **also not wired** — `sae/interface.py`'s docstring
   now states this explicitly as a follow-up rather than implying it's done.
 - [x] Build the SAE training loop as its own module (e.g.
   `tsfm_lens/sae/train.py`) reusing the zarr store's `level="window"` reads
@@ -2169,6 +2263,111 @@ something novel" (brief item 3) should actually land.
     with 3 tests, all mocking the network call per the same no-live-network
     discipline `test_smoke.py` follows).
 
+**Findings — crosscoder feasibility test (2026-08-05, same-day follow-up).**
+Per §13's own prerequisite ("needs an early small-scale test before
+committing significant compute"), built the smallest thing that could
+answer the stability question, not the flagship crosscoder itself.
+
+- **Mechanism** (`tsfm_lens/sae/crosscoder.py`): `CrosscoderSAE` generalizes
+  `TopKSAE` to `n_sources` inputs of independent dimension — each source
+  gets its own linear encoder/decoder, contributions sum before one shared
+  bias + TopK, and decoder columns are normalized *jointly* per feature
+  across sources (not independently per source) so `relative_decoder_norm`
+  (0 = source-B-specific, 0.5 = shared, 1 = source-A-specific — the
+  standard crosscoder cross-model-diffing metric) actually carries signal
+  rather than being trivially washed out. `train_crosscoder` mirrors
+  `sae/train.py::train_sae`'s loop (Adam, decoder renormalization every
+  step, dead-atom resampling with the same two bug classes already fixed
+  once in the single-source version — stale Adam moments, uncalibrated
+  resample scale — ported rather than reintroduced).
+- **A real instability found and fixed before it reached the real-checkpoint
+  run, exactly per `CLAUDE.md` §2.4 (verify empirically, don't assume the
+  first design is right).** A synthetic test with one source's activations
+  at 20x the other's raw scale reproduced precisely the failure §13 named
+  as the risk: source B's reconstruction fidelity collapsed to **−9.7**
+  (worse than predicting the mean) while source A's stayed at 0.95, because
+  summing raw per-source MSE lets whichever source has the larger absolute
+  scale dominate the joint objective — a real risk for two independently-
+  initialized model checkpoints, which have no reason to share an
+  activation scale. **Fixed**, not worked around: `CrosscoderSAE` now takes
+  a per-source `source_scale` (each source's own global std, computed once
+  in `train_crosscoder`) and divides/multiplies by it inside
+  `encode`/`decode`, so the dictionary is fit in a scale-normalized space
+  internally while the public contract still takes/returns activations at
+  their original scale, same as `TopKSAE`. The dead-neuron resampling
+  routing (which source's residual is largest) was normalized the same
+  way. Re-ran the mismatched-scale test after the fix: **both sources'
+  fidelity stayed within a normal, comparable range (no collapse) across
+  every repeated run** — this specific instability is closed, not just
+  reduced.
+- **3 new unit tests** (`tests/test_crosscoder.py`): joint-normalization
+  invariant, a planted-cause recovery test (sparse one-hot shared/A-only/
+  B-only causes — the sparse-concept structure TopK dictionaries are
+  actually suited to; a smaller exploratory check confirmed the mechanism
+  does *not* cleanly disentangle overlapping *continuous* Gaussian factors,
+  a real, separate limitation noted in the module docstring rather than
+  hidden), and the engineered mismatched-scale stability test above. One
+  genuine flakiness bug found and fixed along the way: model weight init
+  uses the *global* torch RNG (matching `TopKSAE`'s own existing pattern,
+  which relies on the pipeline's `set_seed()` having already been called),
+  so a test calling `train_crosscoder` directly without seeding the global
+  RNG first got non-reproducible dead-atom counts between runs — fixed in
+  the tests (`torch.manual_seed(cfg.seed)` before training), not in
+  `crosscoder.py`, since production callers already go through
+  `set_seed()`. Also fixed one real device-mismatch bug surfaced only by
+  the real-checkpoint run below (see next bullet).
+- **Real-checkpoint run** (`run_crosscoder_feasibility.py --run
+  runs/medium_run_chronos_base`): loads an already-extracted store (no
+  re-extraction, no new model calls), at the L1 peak-CKA pair (TimesFM
+  `stacked_xf.4` ↔ Chronos-T5-Base `encoder.block.10`, CKA=0.381, 4608
+  aligned rows), trains an independent baseline `TopKSAE` per model plus
+  one joint crosscoder, and compares. First real-GPU run crashed with a
+  device-mismatch `RuntimeError` in dead-neuron resampling
+  (`torch.multinomial`'s CPU output tensor indexing a CUDA tensor two steps
+  later) — a bug the CPU-only synthetic tests couldn't have caught; fixed
+  by moving the sampled index tensor to the model's device immediately
+  after `multinomial`. **Core stability answer: yes, comparable, no
+  domination.** Across three hyperparameter settings tried (dict sizes
+  1280–7680, k 16–24, 40–150 epochs), crosscoder fidelity for both sources
+  landed close to (typically ~0.05–0.15 below) their own independently-
+  trained baseline's fidelity, moving together rather than one collapsing
+  while the other held — e.g. at the best-tuned setting: baseline
+  TimesFM=0.669/Chronos-T5-Base=0.719 vs. crosscoder
+  TimesFM=0.606/Chronos-T5-Base=0.648. Neither source was left
+  near-unreconstructed at any setting tried.
+- **A second real finding, orthogonal to stability: this run's dictionaries
+  were mostly dead regardless of crosscoder vs. baseline.** Dead-feature
+  rate stayed 90–98% across every dict-size/epoch combination tried, for
+  *both* the independent baselines and the crosscoder alike — this is a
+  data/training-budget property of these specific 4608 rows and this
+  layer pair (plausibly low effective dimensionality at this depth, per
+  `internals.py`'s own eff-dim curves elsewhere in this repo), not a
+  crosscoder-specific pathology, since the plain single-model baseline
+  hits the same wall at matched settings. **A related metric bug found and
+  fixed**: `classify_features`'s shared/specific split, applied to *every*
+  dictionary atom including dead ones, read as 97–99% "shared" at every
+  setting — misleading, because a dead atom's decoder columns are just
+  whatever random (but jointly-normalized) init left them at, which is
+  centered near the "shared" band (0.5) by symmetry regardless of any
+  learned signal. Added `alive_mask` and restricted the split to atoms
+  that actually fired; the alive-only split at the best-tuned setting reads
+  **69% shared, 30% TimesFM-specific, <1% Chronos-specific** among the 122
+  (of 1280) alive atoms — still a real, likely-noisy read at this sample
+  size, but no longer diluted by atoms carrying no signal at all.
+- **Net answer to §13's question:** joint crosscoder training is
+  trainable and stable across TimesFM and Chronos-T5-Base at their peak-CKA
+  layer pair, once source-scale mismatch is corrected for (now built into
+  `CrosscoderSAE` itself, not left as a caller responsibility). **Not yet
+  answered:** whether the shared/specific split reflects real shared
+  structure or mostly training-budget noise, given how few atoms survive
+  at any dictionary size tried here — that needs either much more
+  training/data, a smaller dictionary matched to this layer pair's actual
+  effective dimensionality, or both, before the flagship crosscoder (full
+  `SAEAdapter` implementation, a report section, ground-truth-checked
+  shared features) is worth building on top of this mechanism. Artifact:
+  `runs/crosscoder_feasibility.json` (not committed, `.gitignore`,
+  regenerable via the command above).
+
 ### 6.3 Phase 2c — L2 stitching as a distillation / fine-tune detector (brief item 2)
 
 **Goal.** Test whether the repo's existing L2 stitching-gain machinery (and
@@ -2213,7 +2412,7 @@ use case in mind. This is separable from — and doesn't block — 2a/2b.
 
 ---
 
-## 7. Phase 3 — Ablation and bias-characterization studies (brief item 3)
+## 7. Phase 3 — Ablation and bias-characterization studies (brief item 3) — bullet 1 (controlled parameter sweeps) ✅ MASE-axis first pass DONE 2026-08-05; bullet 2 (noise x depth sweep) ✅ first pass DONE 2026-08-05; quantization-churn follow-up ✅ DONE 2026-08-05; bullet 5 (bias card) ✅ DONE 2026-08-05; bullet 4 (verbose case studies) ✅ forecast-half DONE 2026-08-05
 
 **Goal.** Beyond the head/MLP ablation and corruption-patching already in
 `CLAUDE.md` §6.5, run *designed* experiments that isolate specific biases —
@@ -2222,7 +2421,7 @@ means" is a concrete brief question (§1) that deserves a controlled answer,
 not just an inference from aggregate archetype MASE.
 
 **Concrete deliverables**
-- [ ] **Controlled parameter sweeps** using `build_pipeline`'s `parametric`
+- [x] **Controlled parameter sweeps** using `build_pipeline`'s `parametric`
   generator directly (not `random_parametric`): hold every component fixed
   except one (e.g. sweep seasonal period from 4 to 256 timesteps holding
   amplitude/noise/trend constant; sweep noise SNR holding structure
@@ -2230,8 +2429,16 @@ not just an inference from aggregate archetype MASE.
   crystallization depth, and L3 noise-fingerprint response as a function of
   the swept parameter — this directly answers "where is each model's
   sweet spot" with a dose-response curve instead of an archetype-level
-  average.
-- [ ] Follow up on the one concrete causal lead already in hand (this file's
+  average. — **MASE axis done 2026-08-05** for all three named sweeps
+  (period, noise, intermittency); see Findings below for real numbers,
+  including a genuine anomaly (TimesFM's MASE spikes specifically at
+  period=32, its own patch width) and a genuine methodological caveat
+  (MASE's scale term gets unreliable under heavy intermittency). **Not
+  done**: crystallization depth and L3 noise-fingerprint response per sweep
+  point — both need the full extraction/lens machinery run per sweep point,
+  not just `adapter.predict`, and are left as a follow-up rather than
+  attempted partially this session.
+- [x] Follow up on the one concrete causal lead already in hand (this file's
   §5 Findings, carried forward 2026-08-05 from the now-retired `CLAUDE.md`
   §10): additive-noise depth-sensitivity is **strongly
   anti-correlated** between the two models (ρ=−0.90). Design a sweep (SNR ×
@@ -2239,26 +2446,337 @@ not just an inference from aggregate archetype MASE.
   quantization, as hypothesized, or something else? This is exactly the kind
   of "further understand the inner workings and biases" the brief asks for,
   and there's already a strong, specific, previously-observed effect to
-  chase rather than starting from nothing.
+  chase rather than starting from nothing. **First pass done 2026-08-05,
+  same-day follow-up** — see Findings below: the anti-correlation is not a
+  fixed property of one arbitrary SNR, it's a real dose-response transition
+  (positive at mild noise, flipping negative and then plateauing strongly
+  negative across a wide range of heavier noise) — real signal, but the
+  *why* (quantization vs. something else) is still open, see Findings.
+  **Quantization-churn follow-up done 2026-08-05 (same-day, second
+  follow-up)**: directly tokenized Chronos under the same SNR sweep, per
+  `CLAUDE.md` §11.16's method. Partial answer — token-ID jump *magnitude*
+  (not raw churn fraction, which saturates immediately) plausibly explains
+  the sign flip's *onset*, but not the plateau's flat shape — see Findings.
 - [ ] **Feature-level ablation** (depends on Phase 2b): zero individual SAE
   features (or small groups) via `token_patch` on the reconstruction and
   measure forecast impact, cross-referenced against each feature's
   ground-truth alignment score (§6.3) — do features that align well with
   "trend order" actually matter causally for trend-dominant series and nothing
   else? This is the sharpest test of whether the learned features are real
-  computational structure or just descriptive correlations.
-- [ ] Verbose-mode case studies for every sweep (§4): don't just report a
+  computational structure or just descriptive correlations. **Deliberately
+  skipped this session** in favor of the two fully-unblocked bullets below
+  (2026-08-05, per §0.4's "explain before reordering"): per §6.2's Findings,
+  the SAE's forecast-preservation validity check currently passes for
+  TimesFM (ΔMASE +0.05) but still fails for Chronos-T5-Base (ΔMASE +2.37),
+  so a cross-model ablation comparison built now would be one-sided and the
+  Chronos side's ablation deltas would be confounded by the SAE's own
+  reconstruction error rather than isolating a feature's causal
+  contribution — exactly the failure mode that validity check exists to
+  catch. Still the natural next pick once Chronos's forecast-preservation
+  gap (a window-broadcast-granularity confound, per §6.2) is closed.
+- [x] Verbose-mode case studies for every sweep (§4): don't just report a
   dose-response curve, show 2–3 concrete series at the extremes of the sweep
-  with their forecasts and lens curves side by side, narrated.
-- [ ] Consolidate bias findings into a **per-model "bias card"**: a compact,
+  with their forecasts and lens curves side by side, narrated. — **forecast
+  half done 2026-08-05** for all three sweeps (context/true-continuation/
+  both-models'-forecasts, narrated, at the two extremes plus any anomaly the
+  bias card flagged); see Findings below. **Not done**: per-layer skip-lens
+  curves at each case-study series, mirroring `analysis/exemplars.py`'s
+  existing pattern — needs the full extraction/lens machinery run per
+  series, a materially larger undertaking than `adapter.predict`, left as a
+  follow-up rather than attempted partially.
+- [x] Consolidate bias findings into a **per-model "bias card"**: a compact,
   plain-language summary (a few sentences plus 2–3 supporting plots) of what
   each model is systematically better/worse at and under what conditions —
   this is the artifact that most directly answers the brief's original
   research questions and should be prominent in the top-level report, not
-  buried in a stage-specific section.
+  buried in a stage-specific section. — **done 2026-08-05** as a standalone
+  artifact (`runs/bias_card.html`), mirroring `report/meta_report.py`'s
+  existing "cross-artifact aggregator, separate from any single run's own
+  report.html" pattern rather than a new report.py section — see Findings
+  below for why, and for the real generated card's content.
 
 **Findings / decisions**
-- *(append here)*
+- **Controlled parameter sweeps, MASE axis (2026-08-05).** Built
+  `analysis/parameter_sweep.py` (`build_recipe`/`generate_sweep_data`, pure
+  and unit-tested — no GPU needed, since `parametric()` is plain numpy —
+  split from the model-scoring loop the same way `sae/ground_truth.py`
+  splits its pure matching function from its I/O wrapper) and
+  `run_parameter_sweep.py` (reuses an existing run's model configs/
+  checkpoints only; generates fresh synthetic sweep data itself, no
+  benchmark corpus or store I/O — just `adapter.predict`, the same call L0
+  already makes). Ran all three sweeps named in the checklist live against
+  `runs/medium_run_chronos_base` (TimesFM 2.5-200M vs. Chronos-T5-Base),
+  40 series per sweep point, series-level bootstrap CIs:
+  - **Seasonal period (4→256, amplitude/noise/trend fixed).** TimesFM beats
+    Chronos-T5-Base at every period tried except one: 4 (0.120 vs. 0.145),
+    8 (0.245 vs. 0.311), 16 (0.445 vs. 0.553), 64 (0.674 vs. 0.765), 128
+    (0.723 vs. 0.902), 256 (0.765 vs. 1.250) — a real, monotonically
+    widening TimesFM advantage as period grows past the short end. **A
+    genuine, striking anomaly at period=32**: TimesFM's MASE spikes to
+    0.847 [0.757, 0.964] — *worse* than Chronos's 0.663 [0.640, 0.686] at
+    that exact point, and both CIs are comfortably non-overlapping with
+    their neighbors, so this isn't noise. Period=32 is exactly
+    `alignment.window`/TimesFM's own patch width (`CLAUDE.md` §6.3) —
+    plausibly an aliasing effect between the seasonal period and the
+    patch-boundary tokenization, but **not verified as the mechanism this
+    session** (would need e.g. checking whether the anomaly tracks patch
+    width specifically by re-running against a TimesFM checkpoint with a
+    different patch length, or phase-shifting the seasonality relative to
+    the patch boundary) — flagged as a concrete, well-defined follow-up
+    rather than asserted as fact.
+  - **Noise scale (0.05→2.5, seasonality/trend fixed, amplitude fixed so
+    this is directly an inverse-SNR sweep).** The clearest reversal in
+    either sweep: at the lowest noise tried, Chronos-T5-Base is far better
+    (0.188 [0.183,0.194] vs. TimesFM's 0.505 [0.473,0.538]) — the opposite
+    ranking from the period sweep. Both degrade toward a similar MASE
+    (~0.7–0.75) as noise grows and stay close together from noise_scale≈0.6
+    onward, with TimesFM very slightly ahead at the heaviest noise tested
+    (0.719 vs. 0.735 at 2.5). Read plainly: Chronos's advantage is
+    concentrated specifically at *very clean* periodic signal, not a
+    general noise-robustness edge — it disappears once noise_scale exceeds
+    roughly 0.3 in this recipe.
+  - **Intermittency rate (0→0.8, everything else fixed).** The noisiest,
+    least monotonic of the three, and read with a real methodological
+    caveat rather than at face value: 0 (TimesFM 0.694, Chronos 0.676), 0.1
+    (0.827, 0.678), 0.2 (0.773, 0.814), 0.4 (0.837, 0.926), 0.6 (0.899,
+    0.772), 0.8 (0.658, 0.581). **Caveat, not a clean finding**:
+    `parametric`'s `intermittency` zeroes the *entire* series independently
+    per point, including the forecast horizon itself — at rate=0.8, ~80% of
+    target values are exact zeros, and `mase()`'s own scale term (mean
+    absolute context step-change) also shrinks under heavy zeroing, so both
+    the numerator and denominator of MASE become dominated by a floor
+    effect that has little to do with either model's actual forecasting
+    skill at high intermittency. This likely explains why MASE *drops* for
+    both models at rate=0.8 rather than continuing to rise — predicting
+    near-zero for a mostly-zero target is easy regardless of model quality.
+    Not fixed this session (a scale-term redesign robust to intermittency
+    is its own piece of work); stated here so the raw numbers above aren't
+    mistaken for "both models get slightly better at extreme
+    intermittency," which they almost certainly do not in any real sense.
+  - 8 new unit tests (`tests/test_parameter_sweep.py`; recipe-construction
+    per sweep type, sweep-data shape/label/determinism, positive-argument
+    validation, and a planted-difference recovery test for the scoring
+    path), all synthetic and GPU-free. Full `tsfm_lens` suite **52/52**
+    after (was 44). Artifacts: `runs/param_sweep_{seasonal_period,
+    noise_scale,intermittency_rate}.json` (gitignored, regenerable via the
+    commands in `run_parameter_sweep.py`'s module docstring).
+  - **Not done, explicit follow-up**: crystallization depth and L3
+    noise-fingerprint response per sweep point (needs the full extraction/
+    lens machinery run per point, a meaningfully larger undertaking than
+    `adapter.predict`); verbose-mode per-sweep case studies; the per-model
+    bias card consolidating this and the noise-SNR sweep below into one
+    plain-language summary. Single (corpus-recipe, checkpoint-pair) result,
+    same caveat as everywhere else in this file.
+
+- **Noise-SNR × depth sweep (2026-08-05, same-day follow-up).** Built
+  `run_noise_snr_sweep.py`: reuses an already-extracted run's store and
+  models (no re-extraction, no new downloads) and reruns only L3's
+  `noise` corruption's sensitivity fingerprint (patching disabled) at each
+  of several SNR values, via the same `run_l3` the main pipeline already
+  uses — cheap, since each sweep point costs exactly one forward pass per
+  corruption per model over `l3.max_series` series, reusing the store's
+  already-captured clean activations. Ran against
+  `runs/medium_run_chronos_base` (TimesFM 2.5-200M vs. Chronos-T5-Base,
+  the L1/L2/L3 comparison pair already in that run's config), 96 series,
+  SNR ∈ {20, 12, 6, 3, 0, −3} dB, ~82 seconds total on one GPU.
+  - **The ρ≈−0.90 anti-correlation is not a fixed property of one
+    arbitrary corruption strength — it's a real dose-response transition.**
+    At mild noise (SNR=20dB) the depth-profile agreement is
+    **positive**, ρ=+0.397 [0.16, 0.60] (CI excludes zero). It **flips
+    sign** by SNR=12dB, ρ=−0.439 [−0.60, −0.19] (CI excludes zero, opposite
+    direction). From SNR=6dB down through −3dB it settles into a broad
+    **plateau of strong, stable anti-correlation**: ρ=−0.852, −0.851,
+    −0.825, −0.764 respectively (all CIs comfortably excluding zero,
+    typically ±0.1). The main pipeline's default battery happens to use
+    SNR=6dB, which this sweep shows sits squarely inside that plateau, not
+    at some fragile edge case — the previously-reported number was real
+    and representative of a wide noise range, not a fluke of one setting.
+  - **Each model's *own* peak-sensitivity layer never moves across the
+    entire SNR range** — TimesFM's noise-sensitivity fingerprint peaks at
+    its very first captured layer (index 0, right after patch embedding)
+    and Chronos-T5-Base's peaks at its very last captured encoder layer
+    (index 11 of 12) at *every single SNR tested*, mild or heavy. Only the
+    *sign/strength* of the cross-model rank agreement changes with noise
+    level, not where each model's own sensitivity concentrates. Read
+    together with the sign flip: at mild noise, TimesFM's early-peaking
+    and Chronos's late-peaking profiles happen to still rank-correlate
+    positively (both may show a broadly similar shape away from their
+    respective peaks); as noise grows, the profiles increasingly diverge
+    in a rank sense even though each one's own peak location is unchanged.
+  - **The *why* is still open** — this sweep characterizes the effect's
+    shape precisely but does not yet test the "continuous embedding vs.
+    quantization" hypothesis directly. That would need a matched sweep on
+    a corruption that stresses quantization specifically (e.g. comparing
+    `noise` against `intermittent_bursts`-style zero-runs, or directly
+    inspecting Chronos's token-ID churn under the same SNR sweep the way
+    `CLAUDE.md` §11.16 did for the alignment-check tool) — named here as
+    the concrete next step, not attempted this session.
+  - **Single (corpus, checkpoint-pair) result** — same caveat this session
+    applied everywhere else: `runs/medium_run_chronos_base` is one corpus
+    against TimesFM 2.5-200M vs. Chronos-T5-Base specifically. A second
+    checkpoint pair (e.g. `runs/medium_run`'s Chronos-T5-*Small*) would be
+    the natural replication check, but that run's zarr store was written
+    by a different environment's zarr version (v3-formatted `zarr.json`
+    metadata, vs. this environment's pinned v2) and isn't readable here
+    without re-extraction — flagged as a live, reproducible instance of
+    exactly the environment-drift risk `CLAUDE.md` §11.15 already warns
+    about, not re-litigated further this session.
+  - Artifact: `runs/noise_snr_sweep.json` plus one `l3_snr_sweep_*`
+    subrun directory per SNR value under `runs/` (all gitignored, not
+    committed, regenerable via the command in `run_noise_snr_sweep.py`'s
+    module docstring).
+
+- **Quantization-churn probe (2026-08-05, second same-day follow-up) — the
+  concrete next step named above, now attempted.** Built
+  `analysis/quantization_churn.py` (`token_churn_stats`, a pure/tested
+  statistic split from I/O per the same pattern `sae/ground_truth.py`
+  already uses) plus `run_quantization_churn_sweep.py`, which reuses the
+  *exact* 96-series row sample and `corrupt_noise` draws the sweep above
+  used (same rng derivation, so points line up 1:1 against the already-
+  published rho values) and tokenizes clean vs. corrupted contexts through
+  whichever model in the pair exposes a quantization tokenizer
+  (`pipeline.tokenizer.context_input_transform`) — skipping
+  continuous-embedding models like TimesFM with a log rather than
+  fabricating something to measure there (`CLAUDE.md` §2.5). No
+  re-extraction, no new downloads, and — unlike every other sweep in this
+  file — no forward passes at all (`prepare()` only tokenizes). Ran live
+  against `runs/medium_run_chronos_base`'s Chronos-T5-Base.
+  - **Churn *fraction* saturates almost immediately and does not track the
+    sign flip — a real, if initially counter-intuitive, result.** Even at
+    the mildest SNR tested (20dB, noise_std ≈ 0.1× signal_std), **96.4%** of
+    tokens already land in a different quantization bin than their clean
+    counterpart (CI [0.956, 0.971]), rising only to 99.5% by −3dB.
+    `amazon/chronos-t5-base`'s tokenizer (`MeanScaleUniformBins`, 4094
+    usable bins over a per-series-rescaled [−15, 15] range) is fine-grained
+    enough that almost *any* perturbation reassigns some bin — churn
+    fraction has essentially no dynamic range across this sweep, a ceiling
+    effect, not evidence against the quantization hypothesis.
+  - **Jump *magnitude* (mean |bin-index change| among changed tokens) has
+    real dynamic range and partially tracks the sign flip's onset.** Mean
+    jump size: 13.51 (20dB) → 32.30 (12dB) → 59.08 (6dB) → 76.99 (3dB) →
+    96.88 (0dB) → 116.80 (−3dB) — monotonically increasing, as expected for
+    heavier noise. The two largest *relative* jumps in mean jump size
+    (20dB→12dB, ×2.4; 12dB→6dB, ×1.8) line up with the two biggest moves in
+    rho from the sweep above (the sign flip +0.40→−0.44, then the
+    deepening −0.44→−0.85) — a real, though correlational and only
+    n=6-points-observed, alignment between "how far tokens jump when they
+    do change" and "how much the cross-model depth-profile agreement
+    moves."
+  - **The plateau region complicates a clean quantization story — stated
+    plainly rather than glossed over.** From 6dB down through −3dB, mean
+    jump size keeps climbing at a *decelerating* relative rate (×1.30,
+    ×1.26, ×1.20) while rho stays essentially flat (−0.852, −0.851, −0.825,
+    −0.764) instead of continuing to deepen in step. If jump magnitude
+    alone drove the cross-model disagreement, rho would be expected to keep
+    intensifying as jump size keeps growing through this range — it
+    doesn't. Read plainly: quantization jump severity is a plausible
+    explanation for *why the sign flips* between mild and moderate noise,
+    but not a complete explanation for the plateau's flat shape —
+    something else (plausibly each model's own sensitivity fingerprint
+    saturating once corruption is severe relative to the signal, a
+    property that wouldn't be specific to Chronos's tokenizer at all) likely
+    contributes once noise is heavy. Not decomposed further this session —
+    the concrete next step if this thread is picked up again.
+  - Sanity-checked the jump-size numbers against the tokenizer's own config
+    rather than trusting them at face value: a mean jump of 13.5 bins at
+    20dB corresponds to roughly a 0.1 z-score-unit shift (13.5 × 30/4094),
+    in line with a ~0.1×-signal-std noise injection after the tokenizer's
+    own per-series rescaling — the numbers are calibrated to the actual
+    mechanism, not an artifact of the measurement.
+  - 7 new unit tests (`tests/test_quantization_churn.py`; all synthetic —
+    identity/full-churn, mask-respecting churn, jump-size accounting,
+    shape/zero-valid-position validation, bootstrap-CI bounds), all against
+    `token_churn_stats`'s pure logic, not a live tokenizer. Full `tsfm_lens`
+    suite **44/44** after (was 37). Artifact: `runs/quantization_churn_sweep.json`
+    (gitignored, not committed, regenerable via the command in
+    `run_quantization_churn_sweep.py`'s module docstring).
+
+- **Per-model bias card (2026-08-05).** Built `report/bias_card.py`
+  (`compare_at_point`/`summarize_param_sweep`/`build_bias_card`, pure and
+  unit-tested against synthetic sweep dicts, plus `render_bias_card_html`
+  for the standalone-HTML I/O — split the same way `sae/ground_truth.py`
+  and `analysis/parameter_sweep.py` already split pure logic from I/O) and
+  `run_bias_card.py`, which consolidates whatever `param_sweep_*.json`
+  files exist (glob default) into one plain-language summary per model.
+  **Built as a standalone artifact (`runs/bias_card.html`), not a new
+  `report.py` section** — a deliberate choice, not an oversight: the
+  sweep JSONs are cross-artifact inputs generated outside any single run's
+  own directory (same situation `report/meta_report.py` already solved for
+  cross-run artifacts), so this follows that established precedent rather
+  than inventing a second mechanism for the same kind of problem
+  (`CLAUDE.md` §2.2/§2.5's "one well-tested mechanism over parallel ones").
+  A model is only ever called "favored" at a sweep point when its bootstrap
+  CI does not overlap the other model's — a raw point-estimate ratio would
+  read noise as a finding.
+  - Ran live against this session's three real sweep artifacts
+    (`param_sweep_{seasonal_period,noise_scale,intermittency_rate}.json`,
+    §7's Findings above). The generated card's verdicts corroborate and
+    sharpen the hand-written Findings above, entirely mechanically (no
+    numbers hand-picked for the card): **TimesFM** favored at 6/7
+    confidently-different `seasonal_period` points, with the period=32
+    point flagged as an **anomaly** against that sweep's own plurality
+    (discovered generically — "the favored model differs from the sweep's
+    own plurality winner" — not hardcoded to period=32); **Chronos-T5-Base**
+    favored at 2/2 confidently-different `noise_scale` points — the
+    CI-overlap requirement mechanically discovered that only the *lowest*
+    two noise levels are confidently distinguishable at all, exactly
+    matching the hand-written finding that Chronos's edge is concentrated
+    at very clean signal and closes by moderate noise; and Chronos favored
+    at 2/3 confidently-different `intermittency_rate` points (TimesFM
+    anomalous at rate=0.4), both models' cards correctly carrying the
+    intermittency scale-term caveat verbatim from §7's Findings above.
+  - 6 new unit tests (`tests/test_bias_card.py`: CI-overlap comparison,
+    plurality/anomaly detection with a planted single anomaly, a
+    two-model-only guard, a no-confident-points degrade path, cross-sweep
+    caveat attachment, and an HTML-render smoke test), all synthetic. Full
+    `tsfm_lens` suite **58/58** after (was 52). Artifacts:
+    `runs/bias_card.html` + `runs/bias_card.json` (gitignored, regenerable
+    via `run_bias_card.py`).
+  - **Not done**: integrating this into `report.py` itself, or a per-model
+    plot beyond the existing dose-response line charts (e.g. a compact
+    single "scorecard" figure); verbose-mode narrated case studies at each
+    card entry's most extreme sweep point (bullet 4 — **now done, see the
+    next Findings entry**). Single (corpus-recipe, checkpoint-pair) result,
+    same caveat as everywhere else in this file.
+
+- **Verbose-mode sweep case studies, forecast half (2026-08-05).** Built
+  `report/sweep_case_studies.py` (`select_case_study_values`, pure and
+  unit-tested — always the two sweep extremes, plus any point
+  `report/bias_card.py::summarize_param_sweep` flagged as anomalous, so
+  "interesting" is discovered the same generic way the bias card already
+  discovers it, not hardcoded per sweep; `render_case_studies_html` for the
+  I/O) and `run_sweep_case_studies.py`, which generates one fresh example
+  series per selected value, runs the real models' forecasts on it, and
+  renders a narrated context/true-continuation/both-models'-forecasts
+  comparison — the same escalation `analysis/exemplars.py`'s own module
+  docstring describes for family-level exemplars ("aggregate statistics
+  answer *which* model is better; exemplars answer *what that looks
+  like*"), applied to sweep points instead of families.
+  - Ran live against all three of this session's real sweep artifacts
+    (`runs/medium_run_chronos_base`). Each correctly selected the sweep's
+    own extremes plus its already-known anomaly with no manual
+    intervention: `seasonal_period` → {4, 32 (anomaly), 256}; `noise_scale`
+    → {0.05, 0.6, 2.5} (no anomaly in this sweep, so the middle value fills
+    the third slot, exactly the fallback the selection logic is designed
+    for); `intermittency_rate` → {0, 0.4 (anomaly), 0.8}. Every case study's
+    printed per-model MASE matches the aggregate sweep numbers already in
+    this file's Findings above, confirming the case-study series are drawn
+    from the same sweep the aggregate table describes, not an inconsistent
+    parallel generation.
+  - 7 new unit tests (`tests/test_sweep_case_studies.py`: extremes+middle
+    selection, anomaly-priority over the middle fallback, single- and
+    two-value edge cases, a max-points cap, an empty-values guard, and an
+    HTML-render smoke test), all synthetic. Full `tsfm_lens` suite
+    **65/65** after (was 58). Artifacts:
+    `runs/sweep_case_studies_{seasonal_period,noise_scale,
+    intermittency_rate}.html` (gitignored, regenerable via the command in
+    `run_sweep_case_studies.py`'s module docstring).
+  - **Not done, explicit follow-up**: per-layer skip-lens curves at each
+    case-study series (needs `ActivationStore`/hooks run per series, not
+    just `adapter.predict` — a materially larger undertaking); attention
+    maps (same limitation). This closes the forecast half of bullet 4 only,
+    as the checklist above now states plainly rather than marking the
+    bullet fully done.
 
 ---
 
@@ -2460,13 +2978,31 @@ so a future session doesn't accidentally drift into them:
   (union/vote/rank-average) did not beat the single best method on either
   model. Still open: whether this holds on a second Chronos size, a third
   architecture family, and with the (more expensive) per-window-patching
-  secondary gold instead of the cheaper sensitivity-only proxy used here —
-  not yet promoted to a config knob pending that broader check.
-- [ ] Is a joint crosscoder actually trainable/stable across two
+  secondary gold instead of the cheaper sensitivity-only proxy used here.
+  **Promoted to the production default anyway, on explicit user direction
+  (2026-08-05, same-day follow-up):** `layer_screen: {method: work_bend}`
+  now runs by default ahead of `sae` in every config (§6.1.1's
+  production-wiring Findings) — the open items above are unchanged and
+  still worth closing, but no longer block using the current best-known
+  method instead of the old arbitrary final-layer default.
+- [~] Is a joint crosscoder actually trainable/stable across two
   architecturally distinct models at a shared alignment window, or does the
   representational mismatch (even at peak CKA) make joint training degrade
-  into one model dominating the dictionary? Needs an early small-scale test
-  before committing significant compute (§6.2).
+  into one model dominating the dictionary? **The prerequisite small-scale
+  test is now done (2026-08-05, `tsfm_lens/sae/crosscoder.py` +
+  `run_crosscoder_feasibility.py`, §6.2's Findings below):** yes, trainable
+  and stable, with one real caveat found and fixed along the way (naive
+  equal-weighted MSE across sources of different raw activation scale
+  *does* let the larger-scale source dominate — fixed by per-source
+  scale-normalization inside the model, not by the caller). Real-checkpoint
+  run (TimesFM stacked_xf.4 ↔ Chronos-T5-Base encoder.block.10, the L1
+  peak-CKA pair) shows comparable per-source fidelity to independently
+  trained baselines, not a collapse. Still open: whether the flagship
+  crosscoder (full shared/specific decomposition as a research deliverable,
+  not just a stability check) is worth building next, given this run's
+  dictionaries were mostly dead at every hyperparameter setting tried —
+  see the Findings for why that's a data/training-budget issue, not
+  specific to crosscoders, and what would need fixing first.
 - [ ] Does the distillation-detection signal (§6.3) actually separate from
   "same training era, similar data" confounds, or is that confound
   unavoidable with publicly available checkpoints? May require training
@@ -2882,3 +3418,230 @@ so a future session doesn't accidentally drift into them:
   first pass on one corpus/checkpoint-pair, not a settled cross-architecture
   claim. Full numbers, the exact diagnosed Idea B flaw, and the concrete
   follow-up list are in §6.1.1's Findings block and the updated §13 entry.
+- **2026-08-05 (third same-day follow-up — §6.1.1 production wiring)** — Per
+  explicit user instruction ("make sure the new layer selection is default
+  in full pipeline runs and is fully integrated"), wired `work_bend` in as
+  the pipeline's default layer selector rather than leaving it a standalone
+  bake-off script. Added `LayerScreenConfig` to `config.py`; a
+  `layer_screen` pipeline `Stage` in `pipeline.py` running right after
+  `extract` and before every expensive stage (satisfies R4 by construction,
+  via canonical stage-list order); `run_layer_screen` in
+  `analysis/layer_screen.py` with two independent graceful-degrade paths
+  (`factor_emergence` without a sealed/ground-truth corpus falls back to
+  `work_bend`; any selector raising on a real model falls back to a
+  uniform-stride `_uniform_fallback`); `sae/train.py::_default_targets`
+  rewritten to consume `layer_screen/selection.json` when `sae.targets` is
+  empty, replacing the old "each model's final captured layer" default; a
+  new "Screen" report section between L0 and Profile with its own
+  evidence-class-honest `_note()`. Updated `default.yaml`/`medium_run.yaml`/
+  `layer_screen_experiment.yaml` with an explicit `layer_screen:` block;
+  deliberately left `medium_run_chronos_base.yaml`'s already-enabled `sae`
+  stage on its **explicit**, historically-documented targets rather than
+  switching to `auto`, so re-running that exact config still reproduces
+  §5.3/§6.2's recorded numbers. Extended `tests/test_smoke.py` with the new
+  artifact path, the new report-section token, and a new test asserting
+  `_default_targets` resolves *exactly* what `layer_screen` selected (not
+  just that each half works alone) — full suite 34/34, plus a live CLI run
+  of `configs/smoke.yaml` (not just pytest's tmp-dir harness) confirming a
+  real 11-section/22-finding report and a sane `selection.json`. This is a
+  deliberate policy call, not a new empirical result: the bake-off's mixed,
+  single-corpus finding is unchanged (§6.1.1's Findings, §13's open
+  question) — what changed is that "provisional but currently-best" is now
+  treated as good enough to replace an admittedly-arbitrary old default,
+  on the user's explicit authority to make that call, rather than waiting
+  for the broader cross-architecture validation the Findings still name as
+  outstanding. Full detail in §6.1.1's second Findings block.
+- **2026-08-05 (fourth same-day follow-up — §6.2/§13 crosscoder feasibility
+  test)** — Read `ROADMAP.md` fresh per the user's autonomous-loop
+  instruction ("do the next unfinished thing... keep doing this") and
+  picked up §13's explicit prerequisite for §6.2 item 1's flagship
+  crosscoder: an early small-scale trainability/stability test, before
+  committing to the full build. Built `tsfm_lens/sae/crosscoder.py`
+  (`CrosscoderSAE` — a TopK dictionary jointly trained across `n_sources`
+  inputs of independent dimension, joint per-feature decoder
+  normalization so `relative_decoder_norm` carries real shared-vs-specific
+  signal, dead-atom resampling ported from the single-source baseline) and
+  `run_crosscoder_feasibility.py` (loads an already-extracted run's store
+  at the L1 peak-CKA layer pair, trains independent baselines plus one
+  joint crosscoder, compares). Found and fixed two real bugs via testing
+  before trusting any result (`CLAUDE.md` §2.4): a genuine training
+  instability (unequal per-source activation scale lets the larger-scale
+  source dominate the joint MSE objective, reproduced synthetically as a
+  fidelity collapse to −9.7, fixed via per-source scale normalization
+  built into the model itself) and a device-mismatch crash in dead-neuron
+  resampling that only the real-GPU run surfaced. Ran for real against
+  `runs/medium_run_chronos_base`'s already-extracted TimesFM/Chronos-T5-Base
+  activations: joint training is stable (no source-domination collapse
+  across three hyperparameter settings), though this run's dictionaries
+  were mostly dead regardless of crosscoder-vs-baseline — a data/training-
+  budget finding, not a crosscoder-specific one, and itself surfaced a
+  second metric bug (the shared/specific split counted dead atoms, which
+  are near-"shared" by random-init symmetry regardless of signal; fixed
+  with an alive-only filter). 3 new unit tests, full `tsfm_lens` suite
+  37/37 after. Full numbers, both bug fixes, and the concrete "what's
+  still needed before the flagship build" list are in §6.2's new Findings
+  block and the updated §13 entry — this session deliberately did not
+  attempt the flagship crosscoder itself (SAEAdapter implementation, report
+  section), only the feasibility gate.
+- **2026-08-05 (fifth same-day follow-up — §7 Phase 3 noise-SNR × depth
+  sweep)** — Continued the autonomous "read roadmap, do the next unfinished
+  thing" loop. Picked §7 Phase 3 bullet 2, the one bullet in an otherwise
+  entirely-unstarted phase with a concrete, already-observed effect to
+  chase (ρ≈−0.90 additive-noise depth-sensitivity anti-correlation) rather
+  than an open-ended new design. Built `run_noise_snr_sweep.py`, which
+  reruns only `analysis/l3_perturbation.py::run_l3`'s `noise` corruption
+  at several SNR values against an already-extracted run's store (no
+  re-extraction, no new downloads) and reads back its own already-computed
+  per-corruption Spearman agreement rather than writing new statistics
+  machinery. Ran for real against `runs/medium_run_chronos_base`
+  (TimesFM 2.5-200M vs. Chronos-T5-Base), 96 series, 6 SNR points, ~82
+  seconds total on one GPU. Found a real dose-response transition: positive
+  agreement at mild noise (ρ=+0.40), a sign flip by SNR=12dB (ρ=−0.44), and
+  a broad plateau of strong anti-correlation from 6dB down through −3dB
+  (ρ≈−0.76 to −0.85) — the main pipeline's default 6dB setting sits well
+  inside that plateau, not at a fragile edge. Also found each model's own
+  peak-sensitivity layer (TimesFM's first captured layer, Chronos's last)
+  never moves across the entire SNR range — only the cross-model rank
+  agreement's sign/strength changes. The *why* (quantization vs. something
+  else) is still open, named as the concrete next step. Full numbers in
+  §7's new Findings block.
+- **2026-08-05 (sixth same-day follow-up — §7 quantization-churn probe)** —
+  Picked up the concrete next step named at the end of the previous entry:
+  test the "continuous embedding vs. quantization" hypothesis directly,
+  rather than leaving it open. Built `analysis/quantization_churn.py`
+  (`token_churn_stats`, a pure statistic split from I/O so it's unit-testable
+  without a live tokenizer, mirroring `sae/ground_truth.py`'s existing
+  pattern) and `run_quantization_churn_sweep.py`, which reuses the exact
+  same 96-series row sample and noise draws the prior sweep used and
+  tokenizes clean vs. corrupted contexts through whichever model in the
+  pair exposes a quantization tokenizer — gracefully skipping
+  continuous-embedding models like TimesFM with a log, per `CLAUDE.md`
+  §2.5, rather than fabricating a comparable metric where none exists. Ran
+  live against `runs/medium_run_chronos_base`'s Chronos-T5-Base (no
+  re-extraction, no forward passes — tokenization only). Found a real,
+  nuanced answer rather than a clean confirmation: raw churn *fraction*
+  saturates almost immediately (96.4% of tokens already reassigned at the
+  mildest SNR tested) and has no dynamic range to explain anything, but
+  token-ID jump *magnitude* does — its two largest relative jumps
+  (20dB→12dB, 12dB→6dB) line up with the sweep's sign-flip and subsequent
+  deepening, a real partial confirmation of the quantization hypothesis for
+  *why the sign flips*. But the plateau region (6dB→−3dB) breaks a clean
+  story: jump magnitude keeps climbing there while the cross-model
+  agreement stays flat rather than continuing to deepen, so quantization
+  severity alone doesn't explain the plateau's shape — likely each model's
+  own sensitivity saturating under heavy corruption contributes too, not
+  decomposed further this session. Sanity-checked the jump numbers against
+  the tokenizer's own bin width (`MeanScaleUniformBins`, 4094 bins over
+  [−15,15]) before trusting them — calibrated to the actual mechanism, not
+  an artifact. 7 new unit tests (`tests/test_quantization_churn.py`, all
+  synthetic), full `tsfm_lens` suite **44/44** after (was 37). Full numbers
+  in §7's Findings block. This closes out §7's one concrete, ready-to-chase
+  lead from `CLAUDE.md` §10/carried-forward findings; the rest of §7
+  (controlled parameter sweeps, feature-level ablation, verbose-mode case
+  studies, the per-model bias card) remains entirely unstarted and is the
+  natural next pick for a future session, per §3's dependency ordering
+  (feature-level ablation still needs a forecast-preservation-passing SAE,
+  which per §6.2's Findings currently exists for TimesFM but not
+  Chronos-T5-Base).
+- **2026-08-05 (seventh same-day follow-up — §7 Phase 3 bullet 1, controlled
+  parameter sweeps)** — Continued the autonomous "read roadmap, do the next
+  unfinished thing" loop; picked up exactly what the previous entry named as
+  the natural next pick, §7's remaining unstarted bullet 1. Built
+  `analysis/parameter_sweep.py` (pure recipe-construction and sweep-data
+  generation, using `build_pipeline`'s `parametric` generator directly and
+  holding every component fixed except the one swept parameter, unit-tested
+  without any GPU since generation is plain numpy) and
+  `run_parameter_sweep.py` (reuses an existing run's model configs/
+  checkpoints, generates fresh sweep data itself, scores via the same
+  `adapter.predict` call L0 already makes — no extraction, no store I/O).
+  Ran all three sweeps the checklist names, live, against
+  `runs/medium_run_chronos_base`: seasonal period (4→256), noise scale
+  (0.05→2.5, an inverse-SNR sweep), and intermittency rate (0→0.8). Found
+  three genuinely different regimes rather than one clean story: TimesFM
+  leads increasingly as seasonal period grows, with one striking exception —
+  a real, CI-confirmed MASE spike specifically at period=32, TimesFM's own
+  patch width, flagged as a plausible aliasing effect but explicitly not
+  verified as the mechanism this session; Chronos-T5-Base is far better at
+  very clean low-noise periodic signal specifically, a reversal from the
+  period sweep, with the gap closing entirely by noise_scale≈0.6; and the
+  intermittency sweep is confounded by MASE's own scale term collapsing
+  under heavy zeroing (which also zeroes the forecast horizon itself),
+  documented as a real methodological caveat rather than reported as a
+  clean finding. 8 new unit tests (`tests/test_parameter_sweep.py`, all
+  synthetic/GPU-free), full `tsfm_lens` suite **52/52** after (was 44). Full
+  numbers and the exact caveat reasoning are in §7's Findings block. Not
+  attempted this session: crystallization depth and L3 noise-fingerprint
+  response per sweep point (both need the full extraction/lens machinery,
+  not just prediction — a materially larger undertaking, left as an
+  explicit follow-up rather than partially built), verbose-mode case
+  studies, and the per-model bias card. §7's remaining unstarted work
+  (feature-level ablation, verbose-mode case studies, the bias card) is the
+  natural next pick, with feature-level ablation still gated on a
+  forecast-preservation-passing SAE for Chronos-T5-Base specifically (per
+  §6.2's Findings, TimesFM already has one).
+- **2026-08-05 (eighth same-day follow-up — §7 Phase 3 bullet 5, per-model
+  bias card)** — Continued the autonomous "read roadmap, do the next
+  unfinished thing" loop. Of the three items the previous entry named as
+  the natural next pick, deliberately chose the bias card over
+  feature-level ablation (bullet 3): per `ROADMAP.md` §0.4's "explain before
+  reordering," ablation is only half-unblocked (§6.2's Findings show the
+  SAE's forecast-preservation validity check passes for TimesFM but still
+  fails for Chronos-T5-Base), so building it now would produce a one-sided,
+  confounded comparison rather than the real cross-model test it's meant to
+  be — recorded as an explicit, reasoned skip in §7's checklist, not a
+  silent one. Built `report/bias_card.py` (pure comparison/aggregation
+  logic — CI-overlap-based "favored" verdicts, generic anomaly detection
+  against each sweep's own plurality winner, caveat attachment — split from
+  its HTML-rendering I/O the same way `analysis/parameter_sweep.py` and
+  `sae/ground_truth.py` already split) and `run_bias_card.py`, which
+  consolidates the `param_sweep_*.json` artifacts from the immediately
+  preceding session into one standalone `runs/bias_card.html` — deliberately
+  not a new `report.py` section, mirroring `report/meta_report.py`'s
+  existing precedent for cross-artifact (not single-run) aggregation.
+  6 new unit tests, full `tsfm_lens` suite **58/58** after (was 52). Ran
+  live against the real sweep data: the generated card mechanically
+  corroborated every hand-written finding from the previous session (the
+  period=32 TimesFM anomaly, Chronos's noise-sweep edge being confined to
+  the two lowest noise levels once CI-overlap is required, the
+  intermittency caveat attached to both models) with no numbers hand-picked
+  for the card — a genuine, if small, validation that the CI-based
+  "favored" logic recovers the same conclusions a human read of the tables
+  already reached. Closes out §7 bullet 5. Remaining §7 work: feature-level
+  ablation (blocked as above until Chronos's SAE forecast-preservation gap
+  closes) and verbose-mode case studies for the sweeps (bullet 4, still
+  entirely unstarted and now the only fully-unblocked item left in this
+  phase) — the natural next pick.
+- **2026-08-05 (ninth same-day follow-up — §7 Phase 3 bullet 4, verbose
+  sweep case studies)** — Continued the autonomous "read roadmap, do the
+  next unfinished thing" loop; picked up exactly what the previous entry
+  named as the last fully-unblocked item in this phase. Built
+  `report/sweep_case_studies.py` (`select_case_study_values` — pure,
+  reusing `report/bias_card.py`'s anomaly detection rather than
+  reinventing "interesting sweep point" — plus `render_case_studies_html`
+  for the I/O) and `run_sweep_case_studies.py`, which generates one fresh
+  example series per selected sweep value and renders its context/true-
+  continuation/both-models'-forecasts, narrated — the forecast half of the
+  bullet; explicitly did not attempt the per-layer skip-lens-curve half,
+  which needs the full extraction/lens machinery per series and was
+  already flagged in two prior entries as a materially larger undertaking
+  than anything this session's sweeps have needed so far. Ran live against
+  all three real sweep artifacts from the last two sessions
+  (`runs/medium_run_chronos_base`): the selection logic correctly picked
+  each sweep's own extremes plus its already-known anomaly (or the middle
+  value, for the noise_scale sweep which has none) with zero manual
+  intervention, and every case study's per-model MASE matched the
+  aggregate sweep numbers already on record, confirming consistency rather
+  than a parallel, potentially-diverging generation path. 7 new unit
+  tests, full `tsfm_lens` suite **65/65** after (was 58). Full detail in
+  §7's Findings block. This closes the forecast half of bullet 4 — the
+  checklist item is marked done with that scope stated explicitly, not
+  silently expanded to cover lens curves it doesn't include. §7's remaining
+  work is now: the lens-curve half of bullet 4 (needs extraction/lens
+  machinery per case-study series) and feature-level ablation (bullet 3,
+  still blocked on Chronos-T5-Base's SAE forecast-preservation gap, §6.2).
+  Phase 3's three fully-unblocked, self-contained deliverables (controlled
+  sweeps, the bias card, forecast-half case studies) are now all done;
+  everything left in this phase needs either the SAE fix or new
+  extraction/lens plumbing, not just `adapter.predict` — a natural point to
+  pick up a different phase, or to invest in one of those two prerequisites
+  directly, next session.

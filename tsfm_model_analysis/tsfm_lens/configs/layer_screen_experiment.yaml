@@ -82,6 +82,20 @@ exemplars:
 clustering:
   enabled: false
 
+# The pipeline's own default layer_screen stage (ROADMAP.md §6.1.1, now
+# wired in ahead of `sae` in every config) runs the bake-off winner
+# (work_bend) as a cheap sanity artifact here too -- independent of, and far
+# cheaper than, run_layer_screen_bakeoff.py's full three-selector-vs-SAE-gold
+# comparison below, which remains the actual experiment this config exists
+# for. Only relevant if `layer_screen` is included in `--stages` explicitly;
+# the documented `--stages extract,l0,internals,l3` command above does not
+# run it.
+layer_screen:
+  enabled: true
+  method: work_bend
+  budget_frac: 0.25
+  min_budget: 2
+
 sae:
   enabled: false  # run_layer_screen_bakeoff.py trains its own per-layer SAEs directly
 

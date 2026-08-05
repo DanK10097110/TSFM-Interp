@@ -112,9 +112,22 @@ clustering:
   max_series: 300
   use_umap: true
 
+# Layer screening (ROADMAP.md §6.1.1) now runs by default ahead of `sae` --
+# it is left enabled here purely so its selection is visible in the report;
+# `sae.targets` below stays pinned to the exact layers §5.3/§6.2's Findings
+# already document numbers for (picked from tuned-lens R^2, predating
+# layer_screen), so re-running this exact config reproduces that recorded
+# result. A fresh run wanting the new default selector should clear
+# `sae.targets` to `[]` ("auto") instead of copying these explicit picks.
+layer_screen:
+  enabled: true
+  method: work_bend
+  budget_frac: 0.25
+  min_budget: 2
+
 sae:
   enabled: true
-  targets:                        # picked from each model's own tuned-lens R^2 profile
+  targets:                        # pinned for reproducibility -- see note above
     - model: TimesFM
       layer: stacked_xf.18        # final layer: highest tuned_r2_model (0.622) in this run
     - model: Chronos-T5-Base

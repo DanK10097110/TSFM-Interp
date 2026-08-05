@@ -43,6 +43,10 @@ def run_report(cfg: PipelineConfig) -> Path:
          "Forecast quality per benchmark family: the hypotheses the deeper levels try to explain.",
          ["l0/metrics.parquet", "l0/summary.json"],
          lambda: _sec_l0(run_dir, model_colors, findings)),
+        ("Screen", "Layer screening",
+         "Which of each model's own captured layers were flagged as worth further, expensive analysis — and what sae.targets: auto trained on.",
+         ["layer_screen/selection.json"],
+         lambda: _sec_layer_screen(run_dir, model_colors, findings)),
         ("Profile", "Model internals",
          "Per-model depth profiles: where representations expand, where family information becomes decodable, and how far each layer moves from raw input statistics.",
          ["internals/profile.json"],
@@ -1324,6 +1328,51 @@ _INTERNALS_NOTES = {
         "also capped by how separable the configured families actually "
         "are in the benchmark, not just by the model."),
 }
+
+
+_LAYER_SCREEN_NOTE = (
+    "A cheap, architecture-agnostic pre-screen (ROADMAP.md §6.1.1) run on "
+    "every one of a model's own captured layers before any expensive "
+    "downstream stage (lens/L1/L2/L3/attention/SAE) -- the layer(s) it "
+    "picks per model are what `sae.targets: auto` trains a dictionary on. "
+    "The bar height is the selector's own internal score (not comparable "
+    "across models or across methods); the highlighted bars are the "
+    "layers actually selected, within this run's compute budget.",
+    "Read this as \"where this method thinks it's worth spending expensive "
+    "compute\", not as a finished interpretability claim -- nothing else in "
+    "the report depends on it being right, only on what gets trained "
+    "downstream if `sae.targets` is left empty.",
+    "The default method (`work_bend`, Idea A) won a single-corpus, "
+    "single-checkpoint-pair bake-off (ROADMAP.md §6.1.1 Findings, "
+    "2026-08-05) — real signal, not a settled cross-architecture rule. On "
+    "some models/corpora the theoretical best possible selector has "
+    "little room to beat a free uniform-stride null; a method not beating "
+    "it there is not necessarily broken. `factor_emergence` (Idea B) has a "
+    "known, diagnosed weighting flaw and underperformed in that bake-off.",
+)
+
+
+def _sec_layer_screen(run_dir: Path, model_colors: dict, findings: list) -> str:
+    """Per-model layer-screening bars: selector score per layer, selected layers highlighted."""
+    screen = load_json(run_dir / "layer_screen" / "selection.json")
+    inner = ""
+    for model, sel in screen.items():
+        method = sel.get("method", "?")
+        layers = sel.get("layers", [])
+        scores = sel.get("score_per_layer", [0.0] * len(layers))
+        selected_idx = set(sel.get("selected_idx", []))
+        base = model_colors.get(model, _COLORS["a"])
+        colors = [_COLORS["accent"] if i in selected_idx else base for i in range(len(layers))]
+        fig = go.Figure()
+        fig.add_bar(x=[_short(l) for l in layers], y=scores, marker_color=colors)
+        fig.update_layout(xaxis_title="layer", yaxis_title=f"{method} score")
+        inner += f"<h4>{model}</h4>" + _frag(fig, 300)
+        findings.append(
+            f"Layer screen — {model}: {method} selected "
+            f"{', '.join(_short(l) for l in sel.get('selected', []))} "
+            f"of {len(layers)} captured layers.")
+    inner += _note(*_LAYER_SCREEN_NOTE)
+    return inner
 
 
 def _sec_internals(run_dir: Path, model_colors: dict, findings: list) -> str:

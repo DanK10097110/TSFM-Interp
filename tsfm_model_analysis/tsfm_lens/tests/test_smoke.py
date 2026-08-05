@@ -62,6 +62,7 @@ def test_end_to_end(tmp_path=None):
     expected = [
         "activations.zarr", "meta.parquet", "config_resolved.yaml",
         "l0/metrics.parquet", "l0/summary.json",
+        "layer_screen/selection.json",
         "l1/cka.npz", "l1/meta.json",
         "l2/stitching.json",
         "l3/sensitivity.npz", "l3/meta.json", "l3/patching.npz", "l3/patching.json",
@@ -81,7 +82,7 @@ def test_end_to_end(tmp_path=None):
     for token in ("Findings", "Representational geometry", "Activation clusters",
                   "Model internals", "Private benchmark confirmation",
                   "Forecast lens", "Attention structure", "Exemplar case studies",
-                  "per-window restoration", "p (Holm)", "plotly",
+                  "Layer screening", "per-window restoration", "p (Holm)", "plotly",
                   "How to read this report", "mask-fraction baseline",
                   "How to read these case studies", "patched at"):
         assert token in html, f"report missing '{token}'"
@@ -209,8 +210,34 @@ def test_sae_stage_integration(run_dir=None):
     print("sae stage integration test passed")
 
 
+def test_layer_screen_stage_and_sae_auto_targets(run_dir=None):
+    """`layer_screen` runs by default in a full pipeline (ROADMAP.md §6.1.1)
+    and `sae.targets: []` ("auto") must resolve from its selection.json
+    rather than falling back to the old arbitrary final-layer default."""
+    from tsfm_lens.extraction.store import ActivationStore
+    from tsfm_lens.sae.train import _default_targets
+    from tsfm_lens.utils import load_json
+
+    run_dir = Path(run_dir) if run_dir else Path(test_end_to_end())
+    screen = load_json(run_dir / "layer_screen" / "selection.json")
+    assert set(screen) == {"patchy", "steppy"}, screen.keys()
+    for model, sel in screen.items():
+        assert sel["method"] == "work_bend"
+        assert 0 < len(sel["selected"]) <= len(sel["layers"])
+        assert len(sel["score_per_layer"]) == len(sel["layers"])
+
+    cfg = config_from_dict(build_config(str(run_dir.parent)))
+    cfg.run.name = run_dir.name
+    store = ActivationStore(run_dir / "activations.zarr", mode="r")
+    resolved = _default_targets(cfg, store)
+    expected = [{"model": m, "layer": l} for m, sel in screen.items() for l in sel["selected"]]
+    assert resolved == expected, (resolved, expected)
+    print("layer_screen stage + sae auto-target resolution test passed")
+
+
 if __name__ == "__main__":
     run_dir = test_end_to_end()
     test_per_window_and_lens_artifacts(run_dir)
     test_confirm_hypothesis_path()
     test_sae_stage_integration(run_dir)
+    test_layer_screen_stage_and_sae_auto_targets(run_dir)

@@ -94,6 +94,38 @@
 > (§5.5's precedent). **Not yet wired into any config or the SAE stage** —
 > the result is a real but provisional single-corpus, single-checkpoint-pair
 > first pass.
+>
+> **Reconciliation note (2026-08-05, third same-day follow-up).** The
+> "not yet wired into any config" line directly above is now stale: per
+> explicit user instruction, `layer_screen` (default method `work_bend`)
+> is wired in as a real pipeline `Stage` (`pipeline.py`) that runs by
+> default right after `extract`, and `sae/train.py`'s `sae.targets: auto`
+> resolution now consumes its selection instead of the old arbitrary
+> "final captured layer" default. This is a deliberate policy call, not a
+> new empirical result — the underlying bake-off is still the single
+> (corpus, checkpoint-pair) data point described above; what changed is
+> that a provisional-but-currently-best method was judged good enough to
+> replace an equally-unvalidated old default, on the user's authority to
+> make that call. §3's repo layout, §6.1's stage table, and §9's
+> verification table below are updated; full mechanism and test evidence
+> are in `ROADMAP.md` §6.1.1's second Findings block, not repeated here.
+>
+> **Reconciliation note (2026-08-05, fourth same-day follow-up).** Picked
+> up `ROADMAP.md` §13's explicit prerequisite for the flagship crosscoder
+> (§6.2 item 1) — a small-scale trainability/stability test — rather than
+> building the full candidate directly. New `tsfm_lens/sae/crosscoder.py`
+> (`CrosscoderSAE`) + `run_crosscoder_feasibility.py`; found and fixed a
+> real training instability (unequal per-source activation scale lets the
+> larger-scale source dominate the joint loss, confirmed synthetically as
+> a fidelity collapse) and a device-mismatch bug only a real-GPU run
+> surfaced — see the new §11.19. Real-checkpoint result: joint training is
+> stable once the scale fix is in (no source-domination collapse across
+> three hyperparameter settings against `runs/medium_run_chronos_base`'s
+> already-extracted TimesFM/Chronos-T5-Base store), but this is a
+> feasibility gate only — no `SAEAdapter` implementation, pipeline stage,
+> or report section exists yet. §3's repo layout and §9's verification
+> table are updated; full numbers are in `ROADMAP.md` §6.2's new Findings
+> block, not repeated here.
 
 ---
 
@@ -262,17 +294,24 @@ TSFM-Interp/
         │   │                    # exemplars, confirm, layer_selection (cross-run study,
         │   │                    # ROADMAP.md §6.1 -- not a pipeline stage, reads existing
         │   │                    # run artifacts across N run dirs like report/meta_report.py),
-        │   │                    # layer_screen.py + layer_screen_bakeoff.py (ROADMAP.md
-        │   │                    # §6.1.1 -- architecture-agnostic, all-layers-fair within-
-        │   │                    # model layer screening + its null-controlled bake-off
-        │   │                    # scoring; also not a pipeline stage, invoked via
-        │   │                    # run_layer_screen_bakeoff.py like meta_report.py)
+        │   │                    # layer_screen.py (ROADMAP.md §6.1.1 -- IS a pipeline stage,
+        │   │                    # runs right after extract via pipeline.py's `layer_screen`
+        │   │                    # Stage; work_bend is the default method, feeding
+        │   │                    # sae.targets: auto) + layer_screen_bakeoff.py (the
+        │   │                    # null-controlled bake-off that chose work_bend -- not a
+        │   │                    # pipeline stage, invoked via run_layer_screen_bakeoff.py
+        │   │                    # like meta_report.py)
         │   ├── sae/            # interface.py (contract), models.py (TopKSAE baseline),
         │   │                    # train.py (training loop incl. dead-neuron resampling,
         │   │                    #   + pipeline-stage runner), eval.py (fidelity/dead-feature-
         │   │                    #   rate/forecast-preservation), ground_truth.py (feature-
         │   │                    #   alignment score), real_data.py (optional HF-sourced
-        │   │                    #   training augmentation) -- ROADMAP.md §6.2
+        │   │                    #   training augmentation), crosscoder.py (CrosscoderSAE --
+        │   │                    #   ROADMAP.md §13's crosscoder feasibility test; NOT an
+        │   │                    #   SAEAdapter yet, NOT a pipeline stage, invoked via
+        │   │                    #   run_crosscoder_feasibility.py against an already-
+        │   │                    #   extracted run's store like layer_screen_bakeoff.py) --
+        │   │                    #   ROADMAP.md §6.2
         │   ├── report/report.py # single-file interactive HTML (one run)
         │   ├── report/meta_report.py # cross-run aggregator (ROADMAP.md §5.5);
         │   │                    # reads N run dirs' existing artifacts, no re-run
@@ -280,6 +319,9 @@ TSFM-Interp/
         ├── run.py               # CLI
         ├── run_meta_report.py   # CLI for report/meta_report.py: --runs a,b,c --out path
         ├── run_layer_screen_bakeoff.py # CLI for layer_screen_bakeoff.py (ROADMAP.md §6.1.1-E)
+        ├── run_crosscoder_feasibility.py # CLI for sae/crosscoder.py (ROADMAP.md §13/§6.2)
+        ├── run_noise_snr_sweep.py # reruns L3's noise corruption at several SNR values
+        │                        # against an already-extracted run (ROADMAP.md §7)
         ├── configs/default.yaml # real pair (TimesFM vs Chronos)
         ├── configs/medium_run.yaml # mid-scale real-model config
         ├── configs/medium_run_chronos_base.yaml # size-variant control (chronos-t5-base)
@@ -292,6 +334,9 @@ TSFM-Interp/
         ├── tests/test_meta_report.py # aggregator: missing-stage degrade, null-depth
         ├── tests/test_layer_screen.py # 3 selectors + bake-off scoring, all on synthetic
         │                        # data with a planted, known-correct answer
+        ├── tests/test_crosscoder.py # joint-normalization invariant, planted shared/
+        │                        # specific-cause recovery, engineered mismatched-scale
+        │                        # stability check -- all synthetic, planted answers
         ├── requirements.txt, pyproject.toml
         └── README.md
 ```
@@ -496,6 +541,7 @@ stronger question and exists **because of the previous level's limitation**.
 | Stage | Question | Method | Limitation inherited |
 |---|---|---|---|
 | **L0** | Who is better, where? | MASE/sMAPE/pinball per family, paired bootstrap, Holm-corrected | Behavioral only |
+| **Screen** (`layer_screen`) | Which of *this* model's own layers are worth further, expensive analysis? | Residual-trajectory work+bend geometry (default `work_bend`), or coverage/factor-emergence (§6.1.1) | Cheap proxy for interestingness, not interestingness itself |
 | **Profile** (`internals`) | What is in each model? | Effective dimensionality, family-probe decodability, CKA-to-input per layer | Per-model, descriptive |
 | **Lens** | Where in depth does the forecast form? | Skip lens + tuned ridge readout; crystallization depth | Depth-resolved, not component-resolved |
 | **L1** | Do representations share geometry? | Linear CKA (global + per-family) w/ series-bootstrap CIs, RSA | **Correlational** |
@@ -506,8 +552,10 @@ stronger question and exists **because of the previous level's limitation**.
 | **Exemplars** | What does the difference look like? | Per-family case studies: forecasts, lens curves, attention maps | Illustrative, not statistical |
 | **Confirm** | Which dev findings are real? | One-shot re-test of dev hypotheses on sealed **private** corpus | The gold standard |
 
-Plus `extract` (upstream) and `report` (downstream). 12 stages total in the smoke
-run; **10 report sections**, **18 findings** as last measured.
+Plus `extract` (upstream) and `report` (downstream). 13 stages total in the smoke
+run (12 plus `layer_screen`, added 2026-08-05 and enabled by default); **11
+report sections**, **22 findings** as last measured live (`configs/smoke.yaml`
+via the actual CLI, not just the test suite).
 
 **Why this ordering exists:** an early session explicitly argued down a proposal
 to put SAEs first. Training good SAEs on two models × multiple layers is the
@@ -872,9 +920,14 @@ mock-only smoke run and this full default.
 Notable stage knobs: `l3.patching.per_window: true`,
 `l3.patching.window_stride: 2` (every window doubles patching cost);
 `lens.crystallization_tol: 0.1`; `attention.batch_series` (memory-critical);
-`sae.enabled: false` (default off; `sae.targets: [{model, layer}, ...]`,
-`sae.dict_size_mult`/`k`/`epochs` size the baseline `TopKSAE` when on —
-`configs/medium_run_chronos_base.yaml` has a real worked example);
+`layer_screen.enabled: true` (default on; `method: work_bend` is the
+§6.1.1 bake-off winner, `budget_frac`/`min_budget` size the per-model
+selection its `selection.json` writes); `sae.enabled: false` (default off;
+`sae.targets: []` resolves via `layer_screen`'s selection ("auto") when
+left empty, or `[{model, layer}, ...]` to pin explicit layers —
+`configs/medium_run_chronos_base.yaml` has a real worked example, pinned
+rather than auto so it keeps reproducing its already-documented result);
+`sae.dict_size_mult`/`k`/`epochs` size the baseline `TopKSAE` when on;
 `report.verbose: true` / `report.verbose_series: 3`
 (`--verbose`/`--no-verbose` on `run.py` overrides per-run — §6.5).
 
@@ -924,7 +977,9 @@ PYTHONPATH=. python3 example_runs/run_validation.py
 | Confirm hypothesis-path test | Feeds synthetic dev claims + one real / one spurious effect; asserts verdicts `{trend: True, spiky: False}` |
 | Real-data path (`mixture`/`block_bootstrap`/`sequential_par`, Monash + ETT) | ✅ **Verified live end-to-end 2026-08-03**, then run at ~4200-sequence scale the same day (`configs/full_multidomain_run1.yaml` + `benchmark_validation`) — see §4.3, §11.9–§11.12, §11.14, `ROADMAP.md` §5 |
 | `tsfm_lens` against real checkpoints (TimesFM 2.5, Chronos-T5) | ✅ **Verified live end-to-end 2026-08-03** (third session) — full `medium_run.yaml` pipeline, 12 stages, real GPU (RTX 5070), ~10.5 min. Found and fixed two real bugs along the way (§11.15–§11.16); see `ROADMAP.md` §5.4 |
-| Layer-screening bake-off (`layer_screen.py`/`layer_screen_bakeoff.py`, ROADMAP.md §6.1.1) | ✅ **First real run 2026-08-05** against live TimesFM 2.5 + Chronos-T5-Small, TimesFM captured at all 20 layers for the first time (not stride-2's usual 10); replicated across two independent SAE seeds (gold-ranking Spearman stability ρ=1.0/0.926). **Provisional** — one corpus, one checkpoint pair; not yet wired into any config. Full numbers in `ROADMAP.md` §6.1.1's Findings. |
+| Layer-screening bake-off (`layer_screen.py`/`layer_screen_bakeoff.py`, ROADMAP.md §6.1.1) | ✅ **First real run 2026-08-05** against live TimesFM 2.5 + Chronos-T5-Small, TimesFM captured at all 20 layers for the first time (not stride-2's usual 10); replicated across two independent SAE seeds (gold-ranking Spearman stability ρ=1.0/0.926). **Provisional result, but wired into production the same day** on explicit user direction: `work_bend` now runs as a default `layer_screen` pipeline stage ahead of `sae` in every config. Full numbers in `ROADMAP.md` §6.1.1's Findings (both blocks). |
+| `layer_screen` pipeline stage + `sae.targets: auto` wiring (`config.py`, `pipeline.py`, `sae/train.py::_default_targets`) | ✅ **Verified 2026-08-05** — full `tsfm_lens` suite 34/34 (33 prior + 1 new asserting `_default_targets` resolves exactly what the stage selected), plus a live CLI run of `configs/smoke.yaml` (not only pytest) confirming a real 11-section/22-finding report and a sane `layer_screen/selection.json` for both mock architectures. |
+| Crosscoder feasibility test (`sae/crosscoder.py`, ROADMAP.md §13/§6.2) | ✅ **First run 2026-08-05** against live `google/timesfm-2.5-200m-pytorch` + `amazon/chronos-t5-base` activations (an already-extracted store, no new model calls) at their L1 peak-CKA layer pair. Joint training is stable (no source-domination collapse across three hyperparameter settings) once a real, found-and-fixed scale-domination instability (§11.19) and a device-mismatch crash are corrected. **Not** an `SAEAdapter` implementation or a pipeline stage — feasibility-gate only. Full numbers in `ROADMAP.md` §6.2's Findings. |
 
 **Golden hashes (do not let these change) — 🔴 currently mismatched, see below:**
 ```
@@ -1272,6 +1327,45 @@ noisy signal's own peak doesn't distinguish "this factor has a real,
 strong emergence event" from "this factor is uniformly weak and its peak is
 barely above the noise floor" — an absolute floor (or a peak-magnitude
 weight) is needed alongside any relative threshold, not instead of it.
+
+### 11.19 Summing raw per-source MSE lets the larger-scale source dominate a joint crosscoder
+`sae/crosscoder.py`'s `CrosscoderSAE` trains one dictionary jointly across
+`n_sources` inputs by summing each source's MSE into one loss. The first
+version computed that MSE on each source's *raw* activation scale. A
+synthetic test with one source at 20x the other's scale reproduced exactly
+the failure `ROADMAP.md` §13 named as the risk for two independently
+initialized model checkpoints (which have no reason to share an activation
+scale): the smaller-scale source's reconstruction fidelity collapsed to
+**−9.7** (worse than predicting the mean) while the larger-scale source
+sat at 0.95 — the optimizer simply spent its capacity on whichever source
+contributed more raw squared error, with no signal that the smaller
+source's *relative* fit was terrible. Measured before assuming this would
+be fine (§2.4) precisely because the module docstring already flagged the
+risk in prose; testing it turned "should be fine" into a confirmed bug.
+**Fix:** `CrosscoderSAE` now takes a per-source `source_scale` (each
+source's own global std, computed once by `train_crosscoder`) and
+divides/multiplies by it inside `encode`/`decode`, so the dictionary is
+fit in a scale-normalized space internally while the public
+`encode`/`decode`/`forward` contract still takes and returns activations
+at each source's original scale — training-loss MSE and dead-neuron
+resampling's "which source needs this atom most" routing were both moved
+onto the same normalized residuals, not just the encoder's TopK
+competition. Re-tested after the fix: fidelity for both sources stayed in
+a normal, comparable range with no collapse, repeatably. A second,
+unrelated bug only the real-GPU run surfaced: `torch.multinomial`'s output
+stays on whatever device its input `probs` tensor was on (here, CPU, since
+probabilities were moved there for the sampling call) even when every
+other tensor in the function is on CUDA — indexing a CUDA tensor with that
+leftover CPU index two lines later raised a device-mismatch
+`RuntimeError` that no CPU-only synthetic test could have caught. Fixed by
+moving the sampled index tensor to the target device immediately after
+`torch.multinomial`. **Lesson:** for any newly-written multi-source loss,
+test an artificially extreme scale mismatch *before* trusting a real
+multi-checkpoint run — two real model checkpoints are exactly this
+scenario by default, not an edge case; and a bug in device-transfer
+plumbing can hide indefinitely behind CPU-only tests no matter how
+thorough the synthetic coverage is, so a real-GPU run before trusting a
+new training loop is not optional.
 
 ---
 

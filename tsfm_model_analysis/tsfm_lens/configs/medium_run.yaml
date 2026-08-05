@@ -113,6 +113,16 @@ clustering:
   max_series: 300
   use_umap: true
 
+# Layer screening (ROADMAP.md §6.1.1): cheap pre-screen over every captured
+# layer, run before the expensive stages above. sae.targets: [] ("auto")
+# below would train on this selection; work_bend (Idea A) is the current
+# bake-off winner (2026-08-05).
+layer_screen:
+  enabled: true
+  method: work_bend
+  budget_frac: 0.25
+  min_budget: 2
+
 sae:
   enabled: false
 

@@ -177,6 +177,17 @@ class ClusteringConfig:
 
 
 @dataclass
+class LayerScreenConfig:
+    enabled: bool = True
+    method: str = "work_bend"       # work_bend | coverage | factor_emergence
+    budget_frac: float = 0.25
+    min_budget: int = 2
+    max_series: int = 100_000       # cap on rows fed to the screen; effectively "all" by default
+    use_curvature: bool = True      # work_bend only
+    seed: Optional[int] = None      # falls back to run.seed
+
+
+@dataclass
 class SAEConfig:
     enabled: bool = False
     checkpoints: dict = field(default_factory=dict)
@@ -231,6 +242,7 @@ class PipelineConfig:
     internals: InternalsConfig = field(default_factory=InternalsConfig)
     confirm: ConfirmConfig = field(default_factory=ConfirmConfig)
     clustering: ClusteringConfig = field(default_factory=ClusteringConfig)
+    layer_screen: LayerScreenConfig = field(default_factory=LayerScreenConfig)
     sae: SAEConfig = field(default_factory=SAEConfig)
     report: ReportConfig = field(default_factory=ReportConfig)
 
@@ -277,7 +289,8 @@ def _build(cls: type, data: dict):
 _NESTED = {
     "run": RunConfig, "data": DataConfig, "alignment": AlignmentConfig,
     "extraction": ExtractionConfig, "l0": L0Config, "l1": L1Config, "l2": L2Config,
-    "clustering": ClusteringConfig, "sae": SAEConfig, "report": ReportConfig,
+    "clustering": ClusteringConfig, "layer_screen": LayerScreenConfig,
+    "sae": SAEConfig, "report": ReportConfig,
     "stats": StatsConfig, "internals": InternalsConfig, "confirm": ConfirmConfig,
     "lens": LensConfig, "attention": AttentionConfig, "exemplars": ExemplarsConfig,
 }

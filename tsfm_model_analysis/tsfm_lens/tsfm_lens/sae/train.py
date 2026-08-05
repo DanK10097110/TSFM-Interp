@@ -18,7 +18,7 @@ from ..config import PipelineConfig
 from ..data import BenchmarkData
 from ..extraction.store import ActivationStore
 from ..models import ModelHub
-from ..utils import batch_slices, log, save_json
+from ..utils import batch_slices, load_json, log, save_json
 from .eval import dead_feature_rate, forecast_preservation, reconstruction_fidelity
 from .ground_truth import ground_truth_alignment
 from .models import TopKSAE
@@ -247,7 +247,27 @@ def _real_data_activations(cfg: PipelineConfig, adapter, layer: str, device: tor
 
 
 def _default_targets(cfg: PipelineConfig, store: ActivationStore) -> list:
-    """If `sae.targets` is empty, default to each configured model's final captured layer."""
+    """If `sae.targets` is empty ("auto"), resolve targets from `layer_screen`'s
+    per-model selection (ROADMAP.md §6.1.1) -- every layer it picked for a
+    model becomes its own SAE target. Falls back to each model's final
+    captured layer, with a warning, only when the layer_screen stage didn't
+    run (disabled, or `--stages sae` skipped it) -- the old, arbitrary
+    default this replaces (§2.5: degrade gracefully, but say so loudly).
+    """
+    screen_path = cfg.run_dir() / "layer_screen" / "selection.json"
+    if screen_path.exists():
+        screen = load_json(screen_path)
+        out = []
+        for m in cfg.models:
+            sel = screen.get(m.name) or {}
+            for layer in sel.get("selected", []):
+                out.append({"model": m.name, "layer": layer})
+        if out:
+            log.info(f"sae: targets=auto resolved via layer_screen -- {out}")
+            return out
+    log.warning("sae: targets=auto but no layer_screen/selection.json found "
+               "(stage disabled or not yet run); falling back to each model's "
+               "final captured layer")
     out = []
     for m in cfg.models:
         layers = store.layers(m.name)

@@ -139,8 +139,21 @@ clustering:
   max_series: 5000
   use_umap: true
 
+# Layer screening (ROADMAP.md §6.1.1): a cheap pre-screen over every one of
+# each model's own captured layers, run before every expensive stage above.
+# `sae.targets: []` below ("auto") trains one SAE per layer this selects,
+# instead of the old arbitrary "final captured layer" default. work_bend
+# (Idea A) is the current bake-off winner (2026-08-05, one corpus/checkpoint
+# pair) -- coverage and factor_emergence remain available for re-testing.
+layer_screen:
+  enabled: true
+  method: work_bend             # work_bend | coverage | factor_emergence
+  budget_frac: 0.25
+  min_budget: 2
+
 sae:
-  enabled: false                # deferred; see tsfm_lens/sae/interface.py
+  enabled: false                # baseline TopKSAE exists (sae/train.py); off here for cost --
+                                 # enable + leave targets: [] to train on layer_screen's picks
 
 report:
   enabled: true
