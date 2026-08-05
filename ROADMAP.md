@@ -1255,7 +1255,15 @@ This is the brief's highest-value, most novel-research-shaped ask (items 1
 and 3), plus a related but separable idea (item 2). Broken into three
 sub-phases because they have different dependencies (§3).
 
-### 6.1 Phase 2a — Does anything predict "this layer is worth interpreting"? — ✅ first pass DONE 2026-08-05
+### 6.1 Phase 2a — Does anything predict "this layer is worth interpreting"? — ✅ first pass DONE 2026-08-05 (superseded as a *selector* by §6.1.1; kept as a cross-model *finding*)
+
+> **See §6.1.1** for a full redesign of the layer *selector*. The mechanism
+> below (`recommend_layers`) turned out to be a cross-(run, model) correlation
+> study that does **not** transfer as a within-single-model selection rule
+> (§6.2 Findings proves it picks a model's *worst* layer). §6.1.1 specifies an
+> architecture-agnostic, all-layers-fair, parsimonious replacement and the
+> bake-off that chooses between candidates. Read §6.1 as the *scientific
+> finding* it is; do not use it to pick SAE targets.
 
 **Goal.** Test the brief's central hypothesis directly: *does a layer's
 effective dimensionality (participation ratio, already computed in
@@ -1425,6 +1433,382 @@ know that before spending compute training SAEs on the wrong layers.
     find one, reject the other), the too-few-groups guard, and
     `recommend_layers`'s direction/goal-validation logic. Full `tsfm_lens`
     suite re-run after: 10/10 passing, no regressions.
+
+### 6.1.1 Phase 2a-v2 — a better, architecture-agnostic, all-layers-fair layer selector — ✅ implemented + first bake-off run DONE 2026-08-05; not yet wired into production config
+
+> **Status.** Design written 2026-08-05 (below), implemented and empirically
+> bake-off-tested the same day (`tsfm_lens/analysis/layer_screen.py`,
+> `layer_screen_bakeoff.py`, `run_layer_screen_bakeoff.py`,
+> `tests/test_layer_screen.py` — 12 new unit tests, all passing, plus the full
+> 33-test `tsfm_lens` suite re-run clean). The bake-off ran for real against
+> live checkpoints, not mocked data — see the Findings block after Idea C
+> below for the full result. **Deliberately not wired into `sae.targets:
+> auto` or any config knob yet**: the result is genuinely mixed (no single
+> method cleanly wins both models; see Findings), and per §2.2's own
+> discipline a mixed first-pass result should be read as a real, provisional
+> signal — not rushed into production the way §6.1's `recommend_layers` was
+> trusted before it had actually been tried on one real model. Treat every
+> "should"/"expect" in the design sections below as the hypothesis it was
+> when written; the Findings block after Idea C is what actually happened.
+
+**Why §6.1's method is not the final answer.** §6.1 delivered a real
+*scientific finding* (effective dimensionality predicts two interpretability
+proxies, in opposite directions; L3 fingerprint entropy beats it on one). It
+did **not** deliver a trustworthy *layer selector*, and the difference is the
+whole point of this section. Five concrete, already-logged problems:
+
+1. **It's a cross-model correlation study wearing a selector's clothes.**
+   `recommend_layers` is validated only as a pooled, depth-controlled,
+   cross-(run, model) trend, and **provably fails within a single model** — on
+   `runs/medium_run_chronos_base` it picked `encoder.block.0` for
+   `"forecast_readability"`, the layer with the *lowest* tuned-lens R² of all
+   12 (0.433), the literal opposite of intent (§6.2 Findings has the exact
+   per-layer numbers, and `analysis/layer_selection.py`'s docstring now warns
+   of it). A selector's entire job is to rank *one model's own* layers; the
+   §6.1 mechanism can't be trusted to.
+2. **It's circular and expensive — the dependency runs backwards.** Every
+   input it consumes (internals' eff-dim/CKA/family-probe, lens' tuned-R²,
+   L3's fingerprint) is an artifact of running the *full, expensive* pipeline
+   over *all captured layers first*. Layer selection exists to say *where to
+   spend expensive compute* (SAE training, §6.2). A selector that first
+   demands the expensive analysis over every layer has the arrow reversed.
+3. **It is not fair to every layer.** Capture runs at
+   `capture_layer_stride: 2` (`configs/default.yaml` → only 10 of TimesFM's 20
+   blocks are ever stored). The skipped layers are never scored — so "find
+   *all* interesting layers" is impossible by construction; half of them are
+   invisible to the selector before it starts.
+4. **Its predictive direction is itself architecture-dependent.** The pooled
+   negative eff-dim ↔ tuned-R² relationship is driven mostly by TimesFM and
+   **reverses inside Chronos-T5-Base** (§6.2 Findings). Its proxies also lean
+   on architecture-specific machinery — tuned-lens needs the model's own head
+   *and* uniform hidden size (fails loudly otherwise, `CLAUDE.md` §6.5), and
+   "family decodability" is one narrow notion of interpretable. None of this
+   is "architecture-agnostic by construction" (§2.4).
+5. **n_groups = 8, wide CIs** — a genuine signal, not a robust rule.
+
+**Keep §6.1, but re-scope it.** Its study stays valuable as a *finding* ("does
+eff-dim predict interpretability *across* models?"). What changes is that the
+selection *mechanism* becomes the redesign below, and `recommend_layers` is
+documented as the cross-model finding it actually is — not a per-model
+selector. This is the same "distinguish two things that got the same name"
+discipline §6.1 already applied to `clustering.py`'s unrelated `layer: auto`.
+
+**Design requirements (from the user's framing, made concrete and testable).**
+Every candidate below is judged against these four before the §6.1.1-E
+bake-off even runs:
+
+- **R1 — Architecture-agnostic by construction (§2.4).** Operate only on the
+  aligned `[series, window, dim]` surface (`CLAUDE.md` §6.3 — the one
+  representation guaranteed comparable across architectures), using
+  dimension-invariant primitives. Linear CKA / RSA (`analysis/l1_geometry.py`)
+  are already the repo's cross-architecture tools and *do not care about hidden
+  size*, which sidesteps the lens' fail-loud uniform-hidden-size assumption
+  outright. No dependence on the model's own head/decoder; no per-architecture
+  layer-name heuristics beyond the adapter's existing `all_layer_names()`.
+- **R2 — Fair to every layer.** The *screening* signal must be computed on
+  **every** block at **stride 1**, not a strided subset — a new cheap
+  screening-extraction mode (e.g. `layer_screen.stride: 1`, independent of the
+  analysis `capture_layer_stride`). Fairness means every layer gets a score;
+  nothing is invisible. (Note `config.py`'s `capture_layer_stride` *default* is
+  already 1; it's `default.yaml` that sets 2 for cost — the screen must pin it
+  to 1 regardless of what the analysis config uses.)
+- **R3 — Parsimonious ("find all interesting layers, but not too many").** The
+  output is a *small* set sized to a compute budget, chosen so the next layer
+  added buys little — an explicit coverage/redundancy objective, not a fixed
+  top-k of a noisy score.
+- **R4 — Cheap enough to run *before* the expensive stages,** so the pipeline
+  dependency runs the right way round (this is what §6.1 violated). Ideally one
+  extra stride-1 forward-extraction pass plus closed-form linear algebra over
+  the stored activations — no lens, no L3, no SAE required to *select*.
+
+---
+
+**Idea A — Residual-trajectory "work + bend" profile (cheap, activation-only).**
+*Intuition:* interesting layers are where the model actually *does work* on the
+residual stream, and where the representational trajectory *bends* (one kind of
+processing ends, another begins). A layer whose representation is nearly
+identical to its neighbour's is a way-station, not a target.
+
+*What it computes,* per layer, from the stored `[series·window, dim]` activation
+matrix `H_l` (all layers, stride 1):
+- **Change profile:** `change_l = 1 − linear_cka(H_l, H_{l+1})`
+  (`analysis/l1_geometry.py:linear_cka`). CKA is scale- and dimension-invariant,
+  so this is well-defined even when consecutive blocks differ in width and
+  across architectures (R1). Peaks = the layers transforming the representation
+  the most.
+- **Trajectory curvature:** treat each layer's RSA representational-dissimilarity
+  matrix (RDM) as a point in a depth-indexed curve; the local turning angle
+  between successive RDM *difference* vectors flags a **regime boundary** — the
+  depth where the geometry stops changing one way and starts changing another.
+  High curvature = interesting even when the raw change magnitude is moderate.
+- **Optional same-pass add-on:** participation-ratio effective dimensionality
+  (already in `internals.py`, recomputed here at stride 1) and, more usefully,
+  its *derivative across depth* — a sharp eff-dim change is a compression or
+  expansion event worth flagging.
+
+*Selection:* local maxima of the change profile ∪ curvature maxima; these are
+naturally few (R3). *Cost:* one CKA/RDM per layer over already-stored
+activations — O(L) linear-algebra passes, zero extra model calls beyond the one
+stride-1 extraction (R4). Reuses `l1_geometry.linear_cka` and L1's RSA.
+*Strength:* the most purely architecture-agnostic of the three — it makes no
+reference to any ground-truth concept or downstream task, only to the geometry
+of the model's own trajectory. *Weakness to test:* "does work here" ≠ "carries
+interpretable structure here"; §6.1.1-E's gold ranking is exactly what checks
+whether geometric bends coincide with SAE-interpretable layers.
+
+---
+
+**Idea B — Ground-truth factor-emergence spectroscopy (exploits §2.1's unfair advantage).**
+*Intuition:* a layer is interesting when a *known generative factor* first
+becomes linearly readable there (emergence) or stops being readable
+(compression/discard). This is the one idea that can say *what* makes a layer
+interesting, and validate it against ground truth rather than a proxy.
+
+*What it computes:* for each ground-truth factor the benchmark records — trend
+order, dominant seasonal period, `n_seasonalities`, changepoint count, anomaly
+count, AR-coefficient energy, noise level, intermittency rate, random-walk
+scale, heteroskedastic depth (`build_pipeline`'s `GroundTruth`, surfaced by
+`sae/ground_truth.py:load_ground_truth_table`) — fit a cheap held-out probe
+(ridge for continuous factors, logistic for categorical) from each layer's
+window-pooled activations to that factor, on a **series-level** train/test split
+(`CLAUDE.md` §6.6 — never a window split). The output is a `[layers × factors]`
+decodability matrix `D` (R² / AUC).
+
+*Three "interesting layer" definitions to test against each other:*
+- **Emergence** — the first layer where factor *f* crosses a decodability
+  threshold (the depth where the model *has* that information linearly).
+- **Loss/compression** — the layer where *f*'s decodability drops after peaking
+  (information discarded or entangled); often the *more* interesting event.
+- **Transition mass** — per-layer `Σ_f |D[l+1,f] − D[l,f]|`; peaks = "the
+  decodable-factor set changed most here."
+
+*Selection:* keep each factor's emergence layer and peak layer, take the union,
+dedupe (many factors share transitions → a small set, R3); optionally cover all
+factors with the fewest layers (a set-cover, linking to Idea C). *Why it's the
+strongest principled candidate:* it is directly ground-truth-verifiable (§2.1),
+carries no circular dependence on the pipeline's own downstream proxies, is
+architecture-agnostic because ground truth is model-independent and a probe
+reads any `[·, dim]` (R1), and is cheap because ridge is closed-form (R4), on
+all layers (R2). *Distinct from §6.1's family-probe:* that used a single coarse
+"family" label as a *proxy to correlate a metric against*; this uses the *full
+factor battery as the selection signal itself*, and reads *transitions*, not
+levels. *Weakness to test:* it can only see interestingness that an
+*expressible* generative factor captures — a layer whose important content is
+something the synthetic ground truth doesn't encode is invisible to it (the
+same caveat as catch22 in `CLAUDE.md` §12). §6.1.1-E's SAE-gold target is
+precisely what quantifies how much interestingness this misses.
+
+---
+
+**Idea C — Redundancy-coverage selection (submodular; parsimony is the objective, not a knob).**
+*Intuition:* stop scoring layers one at a time; instead pick the *smallest set
+of layers that covers the representational diversity across depth*. This is the
+only idea whose objective function *is* "all interesting, not too many."
+
+*What it computes:* the full `L × L` layer similarity matrix via linear CKA (or
+CKA on RDMs), over all layers (R2) — the map of which layers are redundant with
+which. Two formulations to compare:
+- **Greedy facility-location / set-cover:** the smallest set `S` such that every
+  layer has CKA ≥ τ to some member of `S`. τ trades size against coverage and is
+  the user's direct "how many is not too many" knob (R3). The objective is
+  submodular, so greedy is near-optimal *and* the choice is interpretable
+  ("this layer represents this redundant band").
+- **Spectral banding:** cluster layers from the CKA affinity matrix, pick `k` by
+  the eigengap, take each band's medoid — "one representative per depth-regime."
+
+*Selection:* the cover / medoid set directly. *Cross-model extension worth
+testing:* run the coverage over the **aligned union** of both models' bands so
+the selected layer *pair* is representationally comparable across architectures —
+which is exactly the shared layer a crosscoder needs (§6.2 item 1), making this
+idea do double duty. *Cost:* one `L × L` CKA matrix (R4), all layers (R2),
+CKA-based so architecture-agnostic (R1). *Weakness to test:* "non-redundant"
+≠ "interesting" — a layer can be geometrically unique yet carry nothing
+SAE-worth-training-on. Again, §6.1.1-E decides.
+
+---
+
+**§6.1.1-E — The bake-off: how the winner is chosen (this is the deliverable, per §2.2).**
+
+The ideas above are hypotheses. None is adopted until this experiment runs.
+The design mirrors `CLAUDE.md` §6.7's exploration-vs-confirmation discipline:
+build an **independent gold ranking of layer interestingness**, then measure
+each cheap selector against it — so no selector grades its own homework.
+
+- **Two-stage protocol the winner plugs into.** Stage A (screen, cheap, stride 1,
+  ALL layers): compute the chosen idea's signal → a candidate set ~2–3× the
+  final budget. Stage B (confirm, expensive, candidates only): run
+  lens/L3/SAE only on survivors → final top-k. This is what fixes §6.1's
+  backwards dependency (R4) and makes R2 affordable.
+- **The gold ranking (run once, expensively, and only once).** Train the
+  baseline TopK SAE (§6.2) on **every** layer (stride 1) for one or two models
+  on a small corpus, and score each layer by its **ground-truth
+  feature-alignment mass** (`sae/ground_truth.py` — count × strength of
+  features matching a ground-truth factor, §6.2's clearest positive result) and,
+  as a second gold, per-window causal restoration (L3 patching). This is the
+  operational definition of "worth interpreting," and it is deliberately *not*
+  an input to any cheap selector.
+- **Scoring each selector:** (i) rank-correlation and recall@k of its selected
+  set against the gold ranking; (ii) the **parsimony curve** — fraction of total
+  gold interestingness captured vs. number of layers selected — which is the
+  "not too many" axis made quantitative (the winner is the method whose curve
+  rises fastest).
+- **Negative controls, written down before running (§2.2).** Uniform stride-k,
+  random-k, and the all-layers upper bound. *A selector that does not beat
+  uniform stride at equal k is not worth its complexity* — this null is the bar,
+  stated up front so a plausible-looking method can't be rationalized past it.
+- **Cross-architecture robustness gate (the test §6.1 fails).** The winner must
+  pick sensible layers for **TimesFM and Chronos *individually***, not just
+  pooled. A method that only works in aggregate is disqualified as a selector
+  (R1). This is a hard gate, not a tiebreaker.
+- **Deliverable shape once a winner exists:** a `layer_screen:
+  {method: work_bend|factor_emergence|coverage, budget: N, stride: 1}` config
+  block feeding a `select_layers()` that `sae.targets: auto` consumes; §6.1's
+  `recommend_layers` stays as the cross-model *finding*, renamed/redocumented so
+  the two are never confused.
+
+**Recommended order to test (cheapest-informative first):** Idea A (pure
+geometry, no probes, reuses L1 machinery) → Idea C (one CKA matrix, and it
+doubles as the crosscoder's shared-layer picker) → Idea B (most principled and
+most ground-truth-honest, but needs the per-factor probe battery built). Run all
+three through §6.1.1-E rather than picking a favourite on intuition — the whole
+reason this section exists is that the last "plausible-sounding" layer selector
+(§6.1) didn't survive contact with a single real model.
+
+**Findings — first bake-off run (2026-08-05).** Ran the whole §6.1.1-E
+protocol for real, against live checkpoints, not mocks:
+`configs/layer_screen_experiment.yaml` extracts `google/timesfm-2.5-200m-pytorch`
+(TimesFM) and `amazon/chronos-t5-small` at `capture_layer_stride: 1` on
+**both** models — the first time this repo has ever captured TimesFM's full
+20 layers rather than the usual stride-2 10 — against 220 series of
+`benchmark_medium/public_dev` (188 `random_parametric` + 32 `parametric`,
+both ground-truth-bearing tiers). `--check-alignment`-equivalent diagonal-hit
+fraction was a perfect 1.00 for both models before trusting anything
+downstream (invariant 7). The gold reference
+(`layer_screen_bakeoff.build_gold_ranking`) trained one small TopK SAE per
+layer — all 26 (20 + 6), not a subset — scored by ground-truth
+feature-alignment mass (`sae/ground_truth.py`, reused not reinvented);
+L3 sensitivity-fingerprint magnitude (patching disabled for cost) served as
+a cheaper secondary/cross-check gold. `run_layer_screen_bakeoff.py --config
+configs/layer_screen_experiment.yaml` reproduces this from the committed
+config against the already-extracted store in well under two minutes per
+seed on one A5000.
+
+- **Stability check passed before trusting anything else.** Per `CLAUDE.md`
+  §2.4 ("verify empirically; distrust your first instinct"), re-ran the
+  entire gold-ranking + scoring pass with an independent SAE training seed
+  before reading any result as real. Gold-score Spearman agreement between
+  the two seeds: **ρ = 1.0 (Chronos-T5-Small), ρ = 0.926 (TimesFM)** — every
+  method's recall@budget and both null-beating verdicts were bit-for-bit
+  identical across the reruns. The numbers below are from the first seed;
+  the replicate is not a coincidence.
+- **On Chronos-T5-Small (6 layers, budget=2 ≈ 25%): Idea A (work_bend)
+  essentially matches the oracle.** Gold mass concentrates in the encoder's
+  second half (`block.4`=106, `block.5`=98, `block.3`=83, descending to
+  `block.0`=34). `work_bend`'s parsimony curve `[0.25, 0.48, 0.63, 0.82,
+  0.92, 1.0]` is nearly indistinguishable from the oracle's `[0.25, 0.48,
+  0.68, 0.82, 0.92, 1.0]` at every budget — **recall@budget = 1.00**,
+  clearing both the uniform-stride null (`[0.08, 0.31, ...]`) and the random
+  null (`[0.18, 0.35, ...]`) with room to spare. `coverage` (Idea C) is
+  close behind (curve `[0.20, 0.43, 0.52, 0.61, 0.75, 1.0]`,
+  recall@budget=0.50), also clearing both nulls. **`factor_emergence`
+  (Idea B) is at or below the random null** (curve `[0.20, 0.28, ...]` vs.
+  random's `[0.18, 0.35, ...]`) — recall@budget=**0.00**, failing both nulls.
+  This is the clean, unambiguous win case: real headroom over the nulls
+  existed, and one cheap geometric method (A) captured almost all of it.
+- **On TimesFM (20 layers, budget=5 ≈ 25%): no selector beats uniform
+  stride — but neither does the oracle, and that's the real finding.**
+  Gold mass's two highest layers are `stacked_xf.0` (93.7, the very first
+  captured layer) and `stacked_xf.19` (81.4, the very last) — an edge
+  effect, plausibly tied to TimesFM's decoder-only architecture (the first
+  block sits right after patch embedding, the last right before the
+  read-out head), with the middle depths comparatively flat and close
+  together (25–69). Checked the **full** parsimony curve, not just the
+  budget point: oracle `[0.09, 0.17, 0.23, 0.30, 0.35, 0.41, ...]` tracks
+  uniform-stride `[0.09, 0.17, 0.23, 0.27, 0.32, 0.33, ...]` almost exactly
+  across *every* depth, because `linspace`-spaced stride picks already land
+  near layer 0 and layer 19 by construction. All three selectors clear the
+  random null (`[0.05, 0.10, 0.15, 0.19, 0.24, ...]`) comfortably but **none
+  clears uniform-stride**: `work_bend` recall@budget=0.40, `coverage`
+  recall@budget=0.40, `factor_emergence` recall@budget=0.20 (weakest of the
+  three here too). Read plainly: this is **not** §6.1's failure mode
+  (`recommend_layers` provably picked the *worst* layer on a real model) —
+  here the *theoretical best possible selector* has almost no room to beat
+  a free null on this particular model/corpus, so a real selector failing
+  to beat it either is close to the ceiling, not a broken method. Whether
+  this "TimesFM's interesting layers are its edges" pattern is a property of
+  TimesFM specifically, of this corpus, or of the SAE-alignment-mass gold
+  metric is not yet disentangled — flagged as follow-up, not asserted.
+- **A genuine, diagnosed design weakness in Idea B, not a code bug.**
+  Inspecting `factor_emergence`'s own `emergence`/`peak` breakdown
+  (`select_factor_emergence`'s `components`) explains its underperformance:
+  many of the ~18–20 kept ground-truth factors are only ever weakly
+  decodable (their own peak R² is low), and `emergence`'s threshold is
+  *relative to each factor's own peak* — so a weak factor's "emergence"
+  layer is often just an early layer where noise first crosses a low
+  relative bar, not a real signal. On TimesFM, 8 of 20 kept factors have
+  their nominal "emergence" at layers 2–4 even though the *informative*
+  peaks (the layers with real, higher R²) cluster at layers 9–16 — the
+  count-based combined score gets diluted by noisy early hits before the
+  real peaks can dominate it. **Follow-up, not fixed this session** (§2.5
+  scope discipline: diagnosing the mechanism is itself the useful
+  deliverable here): weight each factor's contribution by its own peak R²
+  (or gate `emergence` behind an absolute floor, not just a relative one)
+  before trusting Idea B again.
+- **Combining did not beat the best single method on either model — a real,
+  tested "no" to the "maybe combined" question.** `ensemble_vote`
+  (≥2-of-3 agreement) and `ensemble_rank_average` both landed at
+  recall@budget=0.50 on Chronos — *worse* than `work_bend` alone (1.00) — and
+  at 0.40 on TimesFM, tied with (not better than) the best individual
+  methods there. `ensemble_union` did no better. Read plainly: in this
+  experiment, agreement between methods was not a useful proxy for
+  correctness, and picking the single best-performing method beat every
+  combination tried. This doesn't rule out ensembling being useful as a
+  qualitative cross-check (e.g. "a layer 2 of 3 methods agree on" as a
+  lower-stakes flag for a human or a downstream stage to weight more), but
+  it is **not** a substitute for identifying which method is actually best
+  on a given model, and should not be read as "combine them and skip the
+  comparison."
+- **The gold reference itself is more trustworthy for Chronos than for
+  TimesFM.** Spearman agreement between the primary (SAE ground-truth-mass)
+  and secondary (L3 sensitivity-fingerprint) golds: **ρ=0.714 for
+  Chronos-T5-Small**, a reassuring cross-check that the SAE-based gold is
+  tracking something causally real, not an SAE-training idiosyncrasy —
+  versus **ρ=0.14–0.20 for TimesFM** (seed-dependent) — the two gold signals
+  agree far less there. This weakens confidence in the TimesFM-specific
+  conclusions above (including the "edges are gold-interesting" finding)
+  more than it weakens the Chronos conclusions, and is a concrete argument
+  for swapping in the design's originally-preferred secondary gold
+  (per-window L3 *patching* restoration, disabled in this run for cost)
+  before treating the TimesFM result as final.
+- **Net recommendation (provisional, one corpus, one checkpoint pair):
+  Idea A (`work_bend`) is the current best default** — cheapest to compute
+  (pure CKA/RDM linear algebra over already-stored activations, no ground
+  truth or probes, the strongest R1 architecture-agnosticism of the three),
+  matched the oracle almost exactly on the one model where any selector had
+  real headroom to beat the nulls, and tied for best-of-three on the model
+  where headroom was scarce. **Idea C (`coverage`) is a good, cheap second
+  opinion** — same cost profile, a genuinely different objective (pure
+  representational coverage vs. change+bend), so agreement between A and C
+  is a meaningful (if here, untested-as-a-lift) cross-check and disagreement
+  would be worth a closer look. **Idea B (`factor_emergence`) is not
+  recommended as currently designed** pending the peak-weighting fix above.
+  **Not yet promoted to a config knob or `sae.targets: auto`**: this is a
+  single (corpus, checkpoint-pair) data point, exactly the "n=1" caveat
+  §6.1 itself had to learn the hard way applies to any cross-architecture
+  generalization claim in this repo. Before trusting this further: (a) a
+  second Chronos size (base/large) and ideally a non-Chronos/non-TimesFM
+  third architecture, mirroring how §5.3's base-vs-small run de-confounded
+  §6.1's own pooled study; (b) the per-window-patching secondary gold
+  instead of the cheaper sensitivity-only proxy, given TimesFM's weak
+  cross-check agreement above; (c) the Idea B peak-weighting fix, re-tested.
+- Artifacts: `runs/layer_screen_experiment/` (extraction + internals + L3
+  sensitivity), `runs/layer_screen_bakeoff.json` (seed 0, the numbers above)
+  and `runs/layer_screen_bakeoff_seed1.json` (the stability replicate) — run
+  artifacts, not committed (`.gitignore`), regenerable via `run.py --config
+  configs/layer_screen_experiment.yaml --stages extract,l0,internals,l3`
+  then `run_layer_screen_bakeoff.py --config
+  configs/layer_screen_experiment.yaml --sae-epochs 50 --sae-dict-mult 6
+  --sae-k 24`.
 
 ### 6.2 Phase 2b — A TSFM-native SAE variant (the flagship research thread) — baseline (item 4) ✅ DONE 2026-08-05; crosscoder (item 1) not started
 
@@ -2051,10 +2435,33 @@ so a future session doesn't accidentally drift into them:
 
 ## 13. Open questions / risks (append as they arise; mark resolved in place)
 
-- [ ] Does effective dimensionality actually predict anything useful, or is
+- [~] Does effective dimensionality actually predict anything useful, or is
   it a plausible-sounding metric that doesn't survive contact with data
-  (§6.1)? Genuinely open — could go either way, and either answer is a real
-  finding.
+  (§6.1)? **Partially answered (2026-08-05):** it *does* predict two
+  interpretability proxies across models — but in *opposite* directions, and
+  (§6.2 Findings) the relationship does **not** transfer within a single
+  model, so eff-dim alone is not a usable per-model selector. A proposed
+  alternative (L3 fingerprint entropy) beat it on the one comparable proxy.
+  Still open at the *selector* level: which of §6.1.1's redesigned candidates
+  (geometry / factor-emergence / coverage) actually wins the §6.1.1-E
+  bake-off against the uniform-stride null.
+- [~] Which §6.1.1 layer-selector wins, and does *any* of them beat uniform
+  stride-k at equal budget (§6.1.1-E)? **Provisionally answered (2026-08-05,
+  one corpus, one checkpoint pair — see §6.1.1's Findings for the full
+  numbers):** Idea A (`work_bend`) essentially matched the oracle and beat
+  both nulls on Chronos-T5-Small, where real headroom over uniform-stride
+  existed; on TimesFM no selector beat uniform-stride, but neither did the
+  oracle itself — gold interestingness there is close to evenly spread
+  across depth (concentrated only at the very first/last layer), so there
+  was little room for *any* selector to add value, which is a different and
+  more forgiving finding than "the method failed." Idea B
+  (`factor_emergence`) underperformed both nulls on Chronos, traced to a
+  real, diagnosed (not yet fixed) weighting flaw. Combining methods
+  (union/vote/rank-average) did not beat the single best method on either
+  model. Still open: whether this holds on a second Chronos size, a third
+  architecture family, and with the (more expensive) per-window-patching
+  secondary gold instead of the cheaper sensitivity-only proxy used here —
+  not yet promoted to a config knob pending that broader check.
 - [ ] Is a joint crosscoder actually trainable/stable across two
   architecturally distinct models at a shared alignment window, or does the
   representational mismatch (even at peak CKA) make joint training degrade
@@ -2419,3 +2826,59 @@ so a future session doesn't accidentally drift into them:
   reflects the working configuration (`epochs: 60,
   resample_dead_every_epochs: 5, real_data_enabled: true`), not the
   original broken-baseline one.
+- **2026-08-05 (design-only session — §6.1.1, layer-selector redesign)** — No
+  implementation this session, per explicit user instruction. Read `CLAUDE.md`
+  and `ROADMAP.md` in full and `analysis/layer_selection.py` to characterize
+  why the §6.1 layer-selection mechanism, though its limitations were already
+  documented, is not the right long-term solution: it's a cross-(run, model)
+  correlation study that provably fails as a within-single-model selector
+  (§6.2 Findings), it's circular (needs the full expensive pipeline over all
+  layers *before* it can select), it's unfair to strided-out layers, and its
+  predictive direction is itself architecture-dependent. Wrote §6.1.1: three
+  candidate selectors (residual-trajectory work/bend geometry;
+  ground-truth factor-emergence spectroscopy; submodular redundancy-coverage),
+  each mapped against four explicit design requirements (architecture-agnostic,
+  all-layers-fair, parsimonious, cheap-enough-to-run-first), plus §6.1.1-E —
+  the bake-off protocol (independent SAE-ground-truth gold ranking,
+  parsimony curve, uniform-stride null, within-model robustness gate) that
+  decides the winner rather than picking one on intuition. Re-scoped §6.1 in
+  place as a *finding* not a selector, updated the §13 open question it
+  partially answers, and added a new open question for the bake-off outcome.
+- **2026-08-05 (same-day follow-up — §6.1.1 implementation + first bake-off
+  run)** — Implemented and empirically ran the design from the session
+  above, per explicit user instruction ("implement the tests, compare their
+  usefulness ..., update documentation with results"). Built
+  `tsfm_lens/analysis/layer_screen.py` (all three selectors:
+  `select_work_bend`, `select_coverage`/`greedy_coverage_selection`,
+  `select_factor_emergence`/`factor_probe_matrix`, plus the unifying
+  `select_layers()` dispatcher) and `layer_screen_bakeoff.py` (§6.1.1-E's
+  gold ranking via `build_gold_ranking` — reusing `sae/train.py`'s
+  `train_sae` and `sae/ground_truth.py`'s matching logic rather than
+  reinventing either — plus `recall_at_budget`/`parsimony_curve`/
+  `null_curves`/`robustness_gate` and three ensemble combiners). Renamed
+  `sae/ground_truth.py`'s `_encode_series_level` → `encode_series_level`
+  (now genuinely shared between the production SAE stage and the bake-off,
+  not duplicated). Added 12 new unit tests
+  (`tests/test_layer_screen.py`) against synthetic data with planted,
+  known-correct answers (a regime change, a redundant band, a ground-truth
+  factor embedded only from a known layer onward) — full `tsfm_lens` suite
+  33/33 after, no regressions. Built `configs/layer_screen_experiment.yaml`
+  (the first config in this repo to capture **all 20** of TimesFM's layers,
+  not the usual stride-2 10, specifically because a layer *screen* has to be
+  fair to every layer by construction) and
+  `run_layer_screen_bakeoff.py`, then actually ran the whole thing against
+  live `google/timesfm-2.5-200m-pytorch` + `amazon/chronos-t5-small`
+  checkpoints on an 8×RTX A5000 machine (extraction + gold-ranking SAE
+  training for all 26 layers completed in under two minutes per seed) and
+  replicated with an independent SAE seed before trusting any result
+  (`CLAUDE.md` §2.4) — gold-ranking Spearman stability ρ=1.0/0.926. Headline
+  result: Idea A (`work_bend`) matched the oracle almost exactly and beat
+  both nulls on Chronos-T5-Small; no selector beat uniform-stride on
+  TimesFM, but neither did the oracle there (a real, different finding from
+  §6.1's outright selector failure); Idea B underperformed with a diagnosed,
+  not-yet-fixed weighting flaw; combining methods did not beat the best
+  single method on either model. Deliberately **not** wired into any config
+  knob or `sae.targets: auto` yet — the result is a genuine, provisional
+  first pass on one corpus/checkpoint-pair, not a settled cross-architecture
+  claim. Full numbers, the exact diagnosed Idea B flaw, and the concrete
+  follow-up list are in §6.1.1's Findings block and the updated §13 entry.

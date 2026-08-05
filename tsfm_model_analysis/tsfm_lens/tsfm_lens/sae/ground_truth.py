@@ -89,8 +89,8 @@ def load_ground_truth_table(corpus_path: str) -> pd.DataFrame:
 
 
 @torch.no_grad()
-def _encode_series_level(sae, store: ActivationStore, model: str, layer: str,
-                         rows: np.ndarray, device) -> np.ndarray:
+def encode_series_level(sae, store: ActivationStore, model: str, layer: str,
+                        rows: np.ndarray, device) -> np.ndarray:
     pooled = store.load(model, layer, level="series", rows=rows).astype(np.float32)
     features = sae.encode(torch.from_numpy(pooled).to(device))
     return features.cpu().numpy()
@@ -152,5 +152,5 @@ def ground_truth_alignment(cfg: PipelineConfig, store: ActivationStore, model: s
 
     n = min(len(meta), cfg.sae.ground_truth_max_series)
     series_ids = meta["series_id"].to_numpy()[:n]
-    features = _encode_series_level(sae, store, model, layer, np.arange(n), device)
+    features = encode_series_level(sae, store, model, layer, np.arange(n), device)
     return best_ground_truth_matches(features, gt, series_ids, gt_cols)

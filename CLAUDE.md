@@ -77,6 +77,23 @@
 > base-vs-small comparison, including a genuine disagreement between L1/L2
 > (grow with size) and L4 clustering AMI (shrinks with size) worth reading
 > in full rather than summarizing here.
+>
+> **Reconciliation note (2026-08-05, same-day follow-up).** Implemented and
+> empirically bake-off-tested `ROADMAP.md` §6.1.1's redesigned layer
+> selectors (`tsfm_lens/analysis/layer_screen.py` +
+> `layer_screen_bakeoff.py`, `run_layer_screen_bakeoff.py`) — the fix for
+> §6.1's `recommend_layers`, which §6.2's own Findings had already shown
+> provably picks the *worst* layer within a single real model. See the new
+> §6.1's "Correction" callout below and §11.18 for what's new; the full
+> empirical result (which of three candidate selectors actually beat cheap
+> nulls, on real `google/timesfm-2.5-200m-pytorch` +
+> `amazon/chronos-t5-small` checkpoints with TimesFM captured at **all 20**
+> layers for the first time, not the usual stride-2 10) lives in
+> `ROADMAP.md` §6.1.1's Findings block, not here, per this file's own
+> "describe stable architecture, not a moving research result" doctrine
+> (§5.5's precedent). **Not yet wired into any config or the SAE stage** —
+> the result is a real but provisional single-corpus, single-checkpoint-pair
+> first pass.
 
 ---
 
@@ -244,7 +261,12 @@ TSFM-Interp/
         │   │                    # l2_stitching, l3_perturbation, attention, clustering,
         │   │                    # exemplars, confirm, layer_selection (cross-run study,
         │   │                    # ROADMAP.md §6.1 -- not a pipeline stage, reads existing
-        │   │                    # run artifacts across N run dirs like report/meta_report.py)
+        │   │                    # run artifacts across N run dirs like report/meta_report.py),
+        │   │                    # layer_screen.py + layer_screen_bakeoff.py (ROADMAP.md
+        │   │                    # §6.1.1 -- architecture-agnostic, all-layers-fair within-
+        │   │                    # model layer screening + its null-controlled bake-off
+        │   │                    # scoring; also not a pipeline stage, invoked via
+        │   │                    # run_layer_screen_bakeoff.py like meta_report.py)
         │   ├── sae/            # interface.py (contract), models.py (TopKSAE baseline),
         │   │                    # train.py (training loop incl. dead-neuron resampling,
         │   │                    #   + pipeline-stage runner), eval.py (fidelity/dead-feature-
@@ -257,12 +279,19 @@ TSFM-Interp/
         │   └── pipeline.py      # stage DAG, artifact skipping, dependency resolution
         ├── run.py               # CLI
         ├── run_meta_report.py   # CLI for report/meta_report.py: --runs a,b,c --out path
+        ├── run_layer_screen_bakeoff.py # CLI for layer_screen_bakeoff.py (ROADMAP.md §6.1.1-E)
         ├── configs/default.yaml # real pair (TimesFM vs Chronos)
         ├── configs/medium_run.yaml # mid-scale real-model config
         ├── configs/medium_run_chronos_base.yaml # size-variant control (chronos-t5-base)
         ├── configs/smoke.yaml   # two mock architectures, CPU, ~minutes
+        ├── configs/layer_screen_experiment.yaml # the layer-screening bake-off config --
+        │                        # TimesFM captured at ALL 20 layers (stride 1), not the
+        │                        # usual stride-2 10; only extract/l0/internals/l3
+        │                        # (sensitivity, no patching) stages enabled
         ├── tests/test_smoke.py  # full end-to-end + confirm hypothesis-path test
         ├── tests/test_meta_report.py # aggregator: missing-stage degrade, null-depth
+        ├── tests/test_layer_screen.py # 3 selectors + bake-off scoring, all on synthetic
+        │                        # data with a planted, known-correct answer
         ├── requirements.txt, pyproject.toml
         └── README.md
 ```
@@ -895,6 +924,7 @@ PYTHONPATH=. python3 example_runs/run_validation.py
 | Confirm hypothesis-path test | Feeds synthetic dev claims + one real / one spurious effect; asserts verdicts `{trend: True, spiky: False}` |
 | Real-data path (`mixture`/`block_bootstrap`/`sequential_par`, Monash + ETT) | ✅ **Verified live end-to-end 2026-08-03**, then run at ~4200-sequence scale the same day (`configs/full_multidomain_run1.yaml` + `benchmark_validation`) — see §4.3, §11.9–§11.12, §11.14, `ROADMAP.md` §5 |
 | `tsfm_lens` against real checkpoints (TimesFM 2.5, Chronos-T5) | ✅ **Verified live end-to-end 2026-08-03** (third session) — full `medium_run.yaml` pipeline, 12 stages, real GPU (RTX 5070), ~10.5 min. Found and fixed two real bugs along the way (§11.15–§11.16); see `ROADMAP.md` §5.4 |
+| Layer-screening bake-off (`layer_screen.py`/`layer_screen_bakeoff.py`, ROADMAP.md §6.1.1) | ✅ **First real run 2026-08-05** against live TimesFM 2.5 + Chronos-T5-Small, TimesFM captured at all 20 layers for the first time (not stride-2's usual 10); replicated across two independent SAE seeds (gold-ranking Spearman stability ρ=1.0/0.926). **Provisional** — one corpus, one checkpoint pair; not yet wired into any config. Full numbers in `ROADMAP.md` §6.1.1's Findings. |
 
 **Golden hashes (do not let these change) — 🔴 currently mismatched, see below:**
 ```
@@ -1214,6 +1244,34 @@ break on the next library upgrade. **Lesson:** never trust `Path.write_text`/
 `read_text`'s default encoding for any file that might contain non-ASCII —
 name `encoding="utf-8"` explicitly, every time, regardless of what platform
 today's session happens to be running on.
+
+### 11.18 A relative-to-its-own-peak threshold lets weak signals fake "emergence" at the wrong layer
+`analysis/layer_screen.py`'s Idea B (`factor_emergence_scores`) scores a
+layer by how many ground-truth factors have their `emergence` (first layer
+clearing a threshold) or `peak` (argmax) decodability there. `emergence`'s
+threshold is defined *relative to each factor's own peak* (`threshold_frac *
+col.max()`), which seemed reasonable — it lets a factor that's only ever
+weakly decodable still contribute an emergence layer instead of being
+swamped by strongly-decodable ones. In the first real bake-off run
+(`ROADMAP.md` §6.1.1's Findings, 2026-08-05) this backfired: many of the
+ground-truth factors in `benchmark_medium/public_dev` are weakly decodable
+everywhere (their own peak R² is low), so a *relative* 50%-of-peak bar is
+also low in absolute terms and gets cleared early by ordinary noise, not by
+a real emergence event. On TimesFM, 8 of 20 kept factors nominally
+"emerged" at layers 2–4 even though the *informative* peaks (the layers
+with genuinely higher R²) clustered at layers 9–16 — the noisy early hits
+diluted the count-based combined score before the real signal could
+dominate it, and `factor_emergence` ended up scoring at or below the random
+null on Chronos-T5-Small (recall@budget = 0.00). **Not fixed this
+session** — the diagnosis (found by inspecting the `emergence`/`peak`
+breakdown directly, not by guessing, per §2.4) is recorded as the concrete
+next step: weight each factor's contribution by its own peak R² (or gate
+`emergence` behind an absolute floor, not only a relative one) before
+trusting this selector again. **Lesson:** a threshold defined relative to a
+noisy signal's own peak doesn't distinguish "this factor has a real,
+strong emergence event" from "this factor is uniformly weak and its peak is
+barely above the noise floor" — an absolute floor (or a peak-magnitude
+weight) is needed alongside any relative threshold, not instead of it.
 
 ---
 
