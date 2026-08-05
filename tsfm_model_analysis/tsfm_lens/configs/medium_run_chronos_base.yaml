@@ -113,7 +113,30 @@ clustering:
   use_umap: true
 
 sae:
-  enabled: false
+  enabled: true
+  targets:                        # picked from each model's own tuned-lens R^2 profile
+    - model: TimesFM
+      layer: stacked_xf.18        # final layer: highest tuned_r2_model (0.622) in this run
+    - model: Chronos-T5-Base
+      layer: encoder.block.6      # highest tuned_r2_model (0.581) in this run -- NOT block.0,
+                                   # which Phase 2a's cross-run recommend_layers("forecast_readability")
+                                   # would naively suggest; see ROADMAP.md §6.1's follow-up finding
+                                   # on why that policy doesn't transfer within this specific model
+  dict_size_mult: 8
+  k: 32
+  lr: 0.001
+  epochs: 60
+  batch_size: 4096
+  resample_dead_every_epochs: 5   # fixes the dead-feature collapse found on the first run --
+                                   # see ROADMAP.md §6.2's Findings for the two real bugs this
+                                   # took to get right (uncalibrated scale, stale Adam moments)
+  forecast_preservation_max_series: 24  # must be <= every target model's batch_size
+  ground_truth_max_series: 2000
+  real_data_enabled: true          # augment training with real HF (Monash) series --
+                                   # user request 2026-08-05, tsfm_lens/sae/real_data.py
+  real_data_source: "Monash-University/monash_tsf"
+  real_data_n_windows: 4000
+  real_data_pool_limit: 500
 
 report:
   enabled: true

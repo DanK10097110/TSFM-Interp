@@ -70,3 +70,15 @@ def holm(pvals: Dict[str, float]) -> Dict[str, float]:
         running = max(running, (m - rank) * p)
         adjusted[key] = float(min(1.0, running))
     return adjusted
+
+
+def mase(point: np.ndarray, targets: np.ndarray, contexts: np.ndarray) -> np.ndarray:
+    """Per-series MASE, scaled by each series' own mean absolute context step change.
+
+    Pulled out of `l0_behavioral.py::_score` (which now calls this) so any
+    other stage needing the exact same metric -- e.g. the SAE eval harness's
+    forecast-preservation check -- imports it rather than reimplementing the
+    formula. Behavior is unchanged: same scale floor, same axis reductions.
+    """
+    scale = np.abs(np.diff(contexts, axis=1)).mean(axis=1) + 1e-8
+    return np.abs(targets - point).mean(axis=1) / scale

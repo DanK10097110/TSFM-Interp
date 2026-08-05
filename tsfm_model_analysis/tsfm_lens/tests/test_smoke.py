@@ -15,7 +15,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from tsfm_lens.config import config_from_dict
-from tsfm_lens.pipeline import run_pipeline
+from tsfm_lens.pipeline import Context, run_pipeline
 
 
 def build_config(out_dir: str) -> dict:
@@ -168,7 +168,49 @@ def test_confirm_hypothesis_path():
     print("confirm hypothesis-path test passed")
 
 
+def test_sae_stage_integration(run_dir=None):
+    """The `sae` stage against mock adapters: trains, evaluates, and degrades
+    gracefully on `ground_truth_alignment` (smoke data has no sealed corpus
+    to load ground truth from) without breaking `forecast_preservation`,
+    which needs no corpus -- only the model and stored activations."""
+    from tsfm_lens.extraction.store import ActivationStore
+    from tsfm_lens.sae.train import run_sae
+    from tsfm_lens.utils import load_json
+
+    run_dir = Path(run_dir) if run_dir else Path(test_end_to_end())
+    cfg = config_from_dict(build_config(str(run_dir.parent)))
+    cfg.run.name = run_dir.name
+    store = ActivationStore(run_dir / "activations.zarr", mode="r")
+    layer = store.layers("patchy")[-1]
+    cfg.sae.enabled = True
+    cfg.sae.targets = [{"model": "patchy", "layer": layer}]
+    cfg.sae.epochs = 3
+    cfg.sae.dict_size_mult = 2
+    cfg.sae.k = 4
+    cfg.sae.forecast_preservation_max_series = 16
+
+    ctx = Context(cfg)
+    run_sae(cfg, ctx.hub, ctx.store, ctx.data, ctx.device)
+
+    meta = load_json(run_dir / "sae" / "meta.json")
+    key = f"patchy/{layer}"
+    assert key in meta, meta.keys()
+    entry = meta[key]
+    assert entry["dict_size"] == entry["d_in"] * 2
+    assert 0.0 <= entry["dead_feature_rate"] <= 1.0
+
+    fp = entry["forecast_preservation"]
+    assert "error" not in fp, fp
+    assert fp["n_series"] == 16
+    assert fp["mase_clean"] > 0 and fp["mase_reconstructed"] > 0
+
+    gt = entry["ground_truth_alignment"]
+    assert "error" in gt, "smoke data has no sealed corpus; ground truth must degrade, not crash"
+    print("sae stage integration test passed")
+
+
 if __name__ == "__main__":
     run_dir = test_end_to_end()
     test_per_window_and_lens_artifacts(run_dir)
     test_confirm_hypothesis_path()
+    test_sae_stage_integration(run_dir)

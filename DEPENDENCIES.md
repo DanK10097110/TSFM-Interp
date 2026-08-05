@@ -15,6 +15,21 @@
 > CUDA 13.0). Re-verify (see "Sanity checks" below) after any package
 > upgrade and update this date.
 >
+> **Third-environment note (2026-08-05).** `tsfm_lens` was also run on a
+> third, previously-undocumented machine — Linux, a pre-existing `cudaPy`
+> conda env (not `tsfmPy`), 8× NVIDIA RTX A5000 — for `ROADMAP.md` §5.3's
+> `medium_run_chronos_base.yaml` run. That env had **zarr 3.2.1** installed
+> (violating the `<3` pin below) and would have crashed extraction
+> immediately; fixed with `pip install "zarr>=2.16,<3"`, which resolved to
+> the same `2.18.7` already verified here — no code or version-target
+> change needed, this is a third confirmation the pin is load-bearing, not
+> a new gotcha. `torch` in that env was `2.12.0` (vs. this file's verified
+> `2.9.1+cu130`) and worked with no observed issue for that run, but was
+> not deliberately re-verified package-by-package the way the `tsfmPy` env
+> below was — **this file's exact-version table (§3) still describes only
+> `tsfmPy`**; treat any other environment as "spot-check the pins in §5
+> before trusting it," not as covered by this file.
+>
 > **Update this file whenever a library version changes** — a new pin, a
 > loosened/tightened bound, a newly-discovered fragile interaction. See
 > `CLAUDE.md` §11 for the trap-log pattern this file's "why pinned" notes

@@ -29,6 +29,7 @@ from .extraction.extract import run_extraction
 from .extraction.store import ActivationStore
 from .models import ModelHub
 from .report.report import run_report
+from .sae.train import run_sae
 from .utils import log, resolve_device, resolve_dtype, set_seed, setup_logging
 
 
@@ -109,6 +110,10 @@ def _stages() -> list:
               lambda c: c.clustering.enabled,
               lambda c: (c.run_dir() / "clustering" / "comparison.json").exists(),
               lambda ctx: run_clustering(ctx.cfg, ctx.store, ctx.data)),
+        Stage("sae", ["extract"],
+              lambda c: c.sae.enabled,
+              lambda c: (c.run_dir() / "sae" / "meta.json").exists(),
+              lambda ctx: run_sae(ctx.cfg, ctx.hub, ctx.store, ctx.data, ctx.device)),
         Stage("exemplars", ["l0"],
               lambda c: c.exemplars.enabled,
               lambda c: (c.run_dir() / "exemplars" / "exemplars.json").exists(),

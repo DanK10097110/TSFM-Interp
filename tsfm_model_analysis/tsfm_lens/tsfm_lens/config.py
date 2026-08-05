@@ -180,6 +180,19 @@ class ClusteringConfig:
 class SAEConfig:
     enabled: bool = False
     checkpoints: dict = field(default_factory=dict)
+    targets: list = field(default_factory=list)  # [{"model": "...", "layer": "..."}]
+    dict_size_mult: int = 8
+    k: int = 32
+    lr: float = 1e-3
+    epochs: int = 20
+    batch_size: int = 4096
+    resample_dead_every_epochs: int = 0
+    forecast_preservation_max_series: int = 64
+    ground_truth_max_series: int = 2000
+    real_data_enabled: bool = False
+    real_data_source: str = "Monash-University/monash_tsf"
+    real_data_n_windows: int = 20_000
+    real_data_pool_limit: int = 2000
 
 
 @dataclass

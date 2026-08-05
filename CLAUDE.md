@@ -58,6 +58,25 @@
 > whole-layer-averaging artifact it was suspected to be — per-window
 > patching recovers real, depth-intensifying causal structure. See §9, §10,
 > §11.15–§11.16 below and `ROADMAP.md` §5.4's Findings block for full numbers.
+>
+> **Reconciliation note (2026-08-05).** Completed `ROADMAP.md` §5.3 (the
+> deferred chronos-t5-base-vs-small size-confound run), on a fourth
+> previously-undocumented machine/environment (Linux, `cudaPy` conda env,
+> 8× RTX A5000) — the same zarr-v3-vs-v2 trap from the third session above
+> recurred and was fixed the same way (pin `zarr<3`), now confirmed
+> load-bearing across three separate environments. Built the §5.5
+> cross-run aggregator (`tsfm_lens/report/meta_report.py` +
+> `run_meta_report.py`), which immediately surfaced a real three-run
+> replication of the `random_parametric`-favors-TimesFM finding across two
+> checkpoint sizes and a third, independent corpus. Per §5.5's own
+> instruction, **§10 below is now retired** — its provisional single-run
+> findings are preserved verbatim, just relocated to `ROADMAP.md` §5's
+> Findings block alongside every later run's numbers, since a findings
+> section in this file goes stale exactly the way that one did. See
+> `ROADMAP.md` §5's Findings block (2026-08-05 entries) for the full
+> base-vs-small comparison, including a genuine disagreement between L1/L2
+> (grow with size) and L4 clustering AMI (shrinks with size) worth reading
+> in full rather than summarizing here.
 
 ---
 
@@ -223,15 +242,27 @@ TSFM-Interp/
         │   ├── extraction/      # hooks.py, alignment.py, extract.py, store.py (zarr)
         │   ├── analysis/        # stats, l0_behavioral, internals, lens, l1_geometry,
         │   │                    # l2_stitching, l3_perturbation, attention, clustering,
-        │   │                    # exemplars, confirm
-        │   ├── sae/interface.py # deferred phase: contract + seams only
-        │   ├── report/report.py # single-file interactive HTML
+        │   │                    # exemplars, confirm, layer_selection (cross-run study,
+        │   │                    # ROADMAP.md §6.1 -- not a pipeline stage, reads existing
+        │   │                    # run artifacts across N run dirs like report/meta_report.py)
+        │   ├── sae/            # interface.py (contract), models.py (TopKSAE baseline),
+        │   │                    # train.py (training loop incl. dead-neuron resampling,
+        │   │                    #   + pipeline-stage runner), eval.py (fidelity/dead-feature-
+        │   │                    #   rate/forecast-preservation), ground_truth.py (feature-
+        │   │                    #   alignment score), real_data.py (optional HF-sourced
+        │   │                    #   training augmentation) -- ROADMAP.md §6.2
+        │   ├── report/report.py # single-file interactive HTML (one run)
+        │   ├── report/meta_report.py # cross-run aggregator (ROADMAP.md §5.5);
+        │   │                    # reads N run dirs' existing artifacts, no re-run
         │   └── pipeline.py      # stage DAG, artifact skipping, dependency resolution
         ├── run.py               # CLI
+        ├── run_meta_report.py   # CLI for report/meta_report.py: --runs a,b,c --out path
         ├── configs/default.yaml # real pair (TimesFM vs Chronos)
         ├── configs/medium_run.yaml # mid-scale real-model config
+        ├── configs/medium_run_chronos_base.yaml # size-variant control (chronos-t5-base)
         ├── configs/smoke.yaml   # two mock architectures, CPU, ~minutes
         ├── tests/test_smoke.py  # full end-to-end + confirm hypothesis-path test
+        ├── tests/test_meta_report.py # aggregator: missing-stage degrade, null-depth
         ├── requirements.txt, pyproject.toml
         └── README.md
 ```
@@ -792,6 +823,10 @@ python run.py --config configs/default.yaml --stages confirm,report
 
 # Adapter development
 python run.py --config configs/default.yaml --discover-layers
+
+# Cross-run comparison (ROADMAP.md §5.5): reads N existing run directories'
+# artifacts as-is, writes one comparison JSON + HTML, re-runs nothing.
+python run_meta_report.py --runs runs/medium_run,runs/medium_run_chronos_base
 ```
 
 **Key `default.yaml` values (corrected — TimesFM moved to 2.5 since this file
@@ -808,7 +843,10 @@ mock-only smoke run and this full default.
 Notable stage knobs: `l3.patching.per_window: true`,
 `l3.patching.window_stride: 2` (every window doubles patching cost);
 `lens.crystallization_tol: 0.1`; `attention.batch_series` (memory-critical);
-`sae.enabled: false`; `report.verbose: true` / `report.verbose_series: 3`
+`sae.enabled: false` (default off; `sae.targets: [{model, layer}, ...]`,
+`sae.dict_size_mult`/`k`/`epochs` size the baseline `TopKSAE` when on —
+`configs/medium_run_chronos_base.yaml` has a real worked example);
+`report.verbose: true` / `report.verbose_series: 3`
 (`--verbose`/`--no-verbose` on `run.py` overrides per-run — §6.5).
 
 ### `build_pipeline`
@@ -887,40 +925,21 @@ real bugs first, not just running the existing code — see §11.15–§11.16.
 
 ---
 
-## 10. Findings from the one small real run
+## 10. Findings from real-model runs — moved to `ROADMAP.md`
 
-Treat as **provisional** — one small run, dev corpus, exploratory.
-
-- **Defensible:** TimesFM stronger on the tested families. TimesFM front-loads
-  then compresses family-relevant information; Chronos's encoder accumulates it.
-  The models share learned structure beyond input statistics but **not** global
-  geometry. TimesFM's activation space is far more family-organized (cluster
-  purity **0.90–0.98** vs **0.60–0.79**; AMI **0.40**).
-- **The causal payload:** fingerprint agreement is middling overall (ρ=**0.46**),
-  but per-corruption is the story — depth responses to **additive noise are
-  strongly anti-correlated (ρ=−0.90)**: where one model's noise sensitivity grows
-  with depth, the other's shrinks. Plausibly continuous-embedding vs
-  quantization, though the mechanism claim needs per-layer curves. They **agree**
-  on deseasonalization (ρ=**0.76**).
-- **Underdelivered, now resolved 2026-08-03:** TimesFM's patching restoration was
-  **flat** across captured layers. This was diagnosed as whole-layer window
-  patching being **too coarse to localize anything in a residual-stream
-  model** — a limitation of the method as configured, **not** a finding about
-  TimesFM — and per-window patching was added to fix it. **Confirmed on real
-  checkpoints** (`ROADMAP.md` §5.4): whole-layer patching genuinely is still
-  flat (e.g. `level_shift` restoration: 0.036, 0.037, 0.037, 0.037, 0.035
-  across relative depth 0→1 — not a mock-model artifact), but the per-window
-  breakdown recovers real, strong structure the average was hiding —
-  restoration concentrates overwhelmingly in the context window immediately
-  preceding the forecast horizon, and for several corruptions (`noise`,
-  `warp`, `dropout`) that concentration **strengthens with depth** rather
-  than staying flat (`noise`'s last-window restoration climbs from 0.068 at
-  the shallowest captured layer to 0.412 at the deepest, while early-window
-  restoration correspondingly shrinks). The whole-layer flatness was exactly
-  the averaging artifact suspected — 15 near-zero windows swamping 1 strong,
-  depth-growing one — not evidence TimesFM lacks localizable causal
-  structure. See `ROADMAP.md` §5.4 for the full per-corruption numbers and
-  the appropriate "exploratory, small corpus" caveat on reading them further.
+**Retired from this file 2026-08-05, per `ROADMAP.md` §5.5's own instruction**
+("retire it from `CLAUDE.md` ... since `CLAUDE.md` should describe stable
+architecture, not a moving research result"). This section used to hold a
+single small run's provisional findings; those numbers are still real and
+are **not deleted** (this repo's own doctrine forbids that), just relocated
+to where a growing, multi-run research record belongs — `ROADMAP.md` Phase 1
+§5's Findings block, appended in chronological order alongside every later
+run's numbers (the §5.4 live-checkpoint session, the §5.3 chronos-base-vs-
+-small size comparison, and whatever `run_meta_report.py`'s cross-run
+aggregator — `tsfm_lens/report/meta_report.py`, §5.5 — surfaces next). Read
+findings there, not here: this file describes what the pipeline *is*, not
+what it has *found* on any particular run, and a findings section here would
+go stale exactly the way this one did.
 
 ---
 
@@ -1265,13 +1284,35 @@ today's session happens to be running on.
    windows and **cannot be naively CKA'd** against context-window states. Treat
    as a **separate measurement**, not an attempt to force symmetry the
    architectures don't have.
-3. **SAE phase (deferred, seams already built).** The store holds raw aligned
-   activations an SAE pass would re-encode into `sae/{model}/{layer}`;
-   `extraction.hooks.token_patch` is the intervention primitive feature ablation
-   would reuse. Contract is `sae/interface.py`; flip `sae.enabled` once an
-   implementation is registered. Note SAE features **still need cross-model
-   matching** (max-activating examples or input-space decoder correlations).
-   SAELens is the precedent for it being a distinct phase.
+3. **SAE phase — baseline landed 2026-08-05, flagship crosscoder still to
+   do.** `sae.enabled: true` now runs a real baseline `TopKSAE`
+   (`sae/models.py`/`train.py`/`eval.py`/`ground_truth.py`) trained straight
+   from the store's window-level activations, optionally augmented with
+   real (non-benchmark) activations pulled from an HF dataset
+   (`sae/real_data.py`, reusing `tsfm_benchmark`'s generic loader), with a
+   real evaluation harness (reconstruction fidelity, dead-feature rate,
+   dead-neuron resampling, forecast-preservation via `token_patch`) and a
+   real ground-truth feature-alignment score. First run found real
+   seasonality-linked features but a real forecast-preservation failure
+   (dead-feature collapse); fixed (two real bugs in the resampling fix
+   itself along the way — see `ROADMAP.md` §6.2's Findings for the full
+   story) to reconstruction fidelity 0.86/0.84 and a forecast-preservation
+   check that now **passes for TimesFM** (ΔMASE +0.05) but **still fails
+   for Chronos-T5-Base** (ΔMASE +2.4) — traced to an architecture-specific
+   confound in the check's window-broadcast approximation (exact for
+   TimesFM's patch tokenization, lossy for Chronos's per-timestep
+   tokenization), not necessarily the SAE itself; documented in
+   `eval.py`'s docstring. **Not yet done:** the flagship cross-model
+   crosscoder (§6.2 item 1, still needs its own design work — joint-
+   training stability across two architectures is an open question, §13
+   below), and the encode-store pass into `sae/{model}/{layer}` this
+   section used to describe as the whole seam — the baseline trains and
+   evaluates but doesn't yet persist encoded features back into the store,
+   so L1/clustering still can't read a `level="sae"`. Note SAE features
+   **still need cross-model matching**
+   (max-activating examples or input-space decoder correlations) once a
+   crosscoder or per-model dictionaries on both sides exist — SAELens is
+   the precedent for that being a distinct phase.
 4. **Validation as CI gates.** Turn the diversity metrics into explicit pass/fail
    gates (redundancy fraction < X, effective dimensionality > Y, no
    near-collision cluster larger than Z) so each benchmark epoch is checked

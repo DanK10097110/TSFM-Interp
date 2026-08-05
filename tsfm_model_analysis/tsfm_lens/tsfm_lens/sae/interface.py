@@ -1,4 +1,4 @@
-"""Deferred SAE phase: the contract and its seams, no implementation.
+"""SAE phase: the contract and its seams (ROADMAP.md §6.2).
 
 The intended workflow once SAEs are trained: encode stored activations into
 sparse feature spaces per (model, layer), then rerun L1/clustering in
@@ -7,12 +7,22 @@ matching over the shared benchmark. Two seams already exist for this:
 
 1. Extraction writes raw aligned activations to the store; an SAE pass
    re-encodes `act/{model}/{layer}` into `sae/{model}/{layer}` without
-   touching adapters.
+   touching adapters. (Not yet wired: the baseline `sae` stage below trains
+   and evaluates a dictionary per target but does not yet persist its
+   encoded features back into the store under that path -- L1/clustering
+   do not read a `level="sae"` today. Flagged as follow-up, not silently
+   dropped.)
 2. `extraction.hooks.token_patch` is the intervention primitive: feature
    ablation is patching a reconstruction with selected features zeroed.
+   `sae/eval.py::forecast_preservation` already reuses it for the
+   whole-reconstruction case; per-feature ablation (Phase 3) is the next
+   step down that same seam.
 
-Enable via config `sae.enabled: true` with `sae.checkpoints` mapping
-"model/layer" to checkpoint paths, once an implementation is registered.
+Enable via config `sae.enabled: true`, `sae.targets: [{model, layer}, ...]`;
+`sae.checkpoints` maps "model/layer" to a saved checkpoint path for
+`load_sae` to load directly (e.g. for later feature-ablation work) without
+retraining. The `sae` pipeline stage (`train.py::run_sae`) trains fresh
+baselines and writes checkpoints there itself when none is given.
 """
 
 from __future__ import annotations
@@ -20,6 +30,8 @@ from __future__ import annotations
 from typing import Protocol
 
 import torch
+
+from .train import load_sae_checkpoint
 
 
 class SAEAdapter(Protocol):
@@ -33,8 +45,12 @@ class SAEAdapter(Protocol):
 
 
 def load_sae(model: str, layer: str, checkpoint: str) -> SAEAdapter:
-    """Load a trained SAE for one capture point (not yet implemented)."""
-    raise NotImplementedError(
-        "SAE phase is deferred. Implement an SAEAdapter (encode/decode), load it "
-        "here, and add an encode-store pass writing sae/{model}/{layer}; analysis "
-        "stages can then read level='sae' the same way they read pooled activations.")
+    """Load a trained SAE for one capture point from its saved checkpoint path.
+
+    `model`/`layer` are accepted for symmetry with `sae.checkpoints`'
+    "model/layer" keying and future multi-variant dispatch (a crosscoder
+    checkpoint would need a different loader); today there is exactly one
+    implementation (`TopKSAE`), so both arguments are currently unused
+    beyond documenting which capture point `checkpoint` belongs to.
+    """
+    return load_sae_checkpoint(checkpoint)

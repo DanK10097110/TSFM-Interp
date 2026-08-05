@@ -395,27 +395,24 @@ versions, each for a different reason:
   rot silently. — all three fixed in place; see Findings.
 
 ### 5.3 Model + checkpoint breadth (still within TimesFM/Chronos family)
-- [~] Run more than the single default checkpoint pair
+- [x] Run more than the single default checkpoint pair
   (`google/timesfm-2.0-500m-pytorch`, `amazon/chronos-t5-base`) — at minimum
   add a size variant on each side (e.g. TimesFM 1.0 vs 2.0, chronos-t5-small
   vs -base vs -large, chronos-bolt at a comparable size) so findings can be
   checked for "is this a TimesFM-vs-Chronos finding or a
   bigger-model-vs-smaller-model finding." This directly de-confounds several
-  of the tentative findings in `CLAUDE.md` §10. **In progress 2026-08-04**:
-  added `configs/medium_run_chronos_base.yaml` — identical corpus
-  (`benchmark_medium`) and TimesFM checkpoint to `configs/medium_run.yaml`,
-  swapping only `chronos-t5-small` → `chronos-t5-base` (6 → 12 encoder
-  blocks), so a base-vs-small comparison isolates the size confound cleanly.
-  The full pipeline run was started but **deliberately not completed/analyzed
-  this session** (user explicitly deferred it mid-run) — the config and
-  alignment check below are real and done; the actual base-vs-small
-  comparison numbers are not yet in hand. **Next session: rerun
-  `python run.py --config configs/medium_run_chronos_base.yaml` to
-  completion**, then compare against the existing `runs/medium_run` (small)
-  artifacts for L0 MASE gap, L1 peak CKA, L2 stitching gain, crystallization
-  depth, and the L3 per-window restoration pattern (§5.4's window-15
-  recency-concentration finding) before treating any of this file's or
-  `CLAUDE.md`'s existing single-checkpoint findings as size-independent.
+  of the tentative findings in `CLAUDE.md` §10. **Completed 2026-08-05**:
+  `configs/medium_run_chronos_base.yaml` (added 2026-08-04) run to completion
+  on a new, more powerful machine (8× RTX A5000, see the environment note
+  below) — `runs/medium_run_chronos_base/`, 10 sections, 21 findings,
+  ~32.5 min wall-clock (slower than the chronos-small run's ~10.5 min despite
+  the better GPU — chronos-t5-base's 12 encoder blocks vs. small's 6 roughly
+  doubles L3 per-window-patching and attention-pattern cost, which dominate
+  wall-clock; see the environment note for why this took a fresh
+  `--check-alignment` pass first). See §5's Findings block below for the
+  full base-vs-small comparison and the headline result: the tested
+  behavioral finding is **size-robust**, but representational-similarity
+  metrics are **not**, and don't even move consistently with each other.
 - [x] Confirm `--check-alignment` passes for every new checkpoint before
   trusting cross-model numbers from it (`CLAUDE.md` §6.3, invariant 7) — done
   for `amazon/chronos-t5-base`: perfect 1.00 diagonal-hit fraction at every
@@ -443,22 +440,52 @@ meaning "actually broken until someone runs it for real"):
   recovers real, strong, depth-dependent causal structure the whole-layer
   average was washing out. See Findings.
 
-### 5.5 Consolidated cross-run reporting
+### 5.5 Consolidated cross-run reporting — ✅ DONE 2026-08-05
 A single-run HTML report (`CLAUDE.md` §6.5) doesn't by itself answer "what
 are the qualities of each model in general" — that needs aggregation *across*
 runs.
-- [ ] Build a small cross-run aggregator (new, e.g.
+- [x] Build a small cross-run aggregator (new, e.g.
   `tsfm_lens/report/meta_report.py`) that takes N run directories and
   produces one summary: per-archetype MASE gap, per-archetype crystallization
   depth, per-archetype CKA peak, stability of each finding across
   data regimes (does "TimesFM front-loads then compresses" hold on
   `intermittent_bursts` too, or only on the smooth archetypes it was observed
-  on?). This is new work, not a rename of the existing per-run report.
-- [ ] Explicitly revisit every "Defensible" / "Underdelivered" claim in
+  on?). This is new work, not a rename of the existing per-run report. —
+  **done**: `tsfm_lens/report/meta_report.py` (+ CLI `run_meta_report.py`)
+  reads N run directories' existing artifacts (nothing re-run), producing a
+  runs table (L0 overall MASE, L1 peak CKA, L2 best gain, clustering AMI,
+  crystallization depth) and a per-**family** stability table (this repo's
+  L0 summary only breaks down by top-level `family`, not by finer
+  `random_parametric` archetype — a genuine per-archetype breakdown isn't
+  in the current L0 artifact and would need a new field there first, noted
+  as follow-up below, not silently claimed as done). Tested against the
+  four existing run directories (`medium_run`, `medium_run_chronos_base`,
+  `real_run`, `smoke`): correctly surfaced that `random_parametric` favors
+  TimesFM **stably across all three real-checkpoint runs** (two Chronos
+  sizes plus a third, independently-built corpus) — a genuine answer to
+  exactly the "does this hold across regimes" question this deliverable
+  exists to give, on the first real use. Two regression tests
+  (`tests/test_meta_report.py`) cover the missing-stage graceful-degrade
+  path and a real edge case hit live on `runs/real_run` (a model with
+  `crystallization_depth: null` — never crystallized within tolerance —
+  which crashed the first template draft on a bare `%.2f` format).
+  **Follow-up, not done:** a true per-*archetype* (not per-family) stability
+  view would need `l0/summary.json` to record `random_parametric`'s sampled
+  archetype per series, which it currently doesn't — this is a small
+  `analysis/l0_behavioral.py` schema addition, not an aggregator change, and
+  is left for whoever next wants that finer granularity rather than
+  bundled into this session unprompted (§2.5 scope discipline).
+- [x] Explicitly revisit every "Defensible" / "Underdelivered" claim in
   `CLAUDE.md` §10 against the broader evidence base and update that section
   (or better, retire it from `CLAUDE.md` and move the *current*, broader-based
   version of these findings into this file's Findings block, since `CLAUDE.md`
-  should describe stable architecture, not a moving research result).
+  should describe stable architecture, not a moving research result). —
+  **took the "better" option**: `CLAUDE.md` §10 now redirects here;
+  its original content is preserved verbatim as a dated entry in this
+  section's Findings block below (2026-08-05, "carried forward from
+  `CLAUDE.md` §10"), which also states plainly which of its claims are
+  now superseded by later evidence and which are still exactly as
+  provisional as when first measured.
 
 **Findings / decisions**
 
@@ -1052,6 +1079,174 @@ runs.
   a future session. `tsfmPy` is confirmed to be genuinely one shared
   environment for both halves of the repo, not two.
 
+- **2026-08-05 — a third machine/environment, same "wired but unverified
+  pin" trap recurring, now fixed for a third time.** This session ran on a
+  new machine never documented before in `CLAUDE.md`/`ROADMAP.md`/
+  `DEPENDENCIES.md`: Linux (not Windows), an existing `cudaPy` conda env
+  (not `tsfmPy`), **8× NVIDIA RTX A5000 (24 GB each)**. Checked package
+  versions against `DEPENDENCIES.md` before trusting anything (per
+  `CLAUDE.md` §11.15's own lesson: "pin compliance should be spot-checked,
+  not assumed"), and found this env had **zarr 3.2.1** installed —
+  exactly the v3 line whose `Group.create_array`/no-`create_dataset` API
+  break was already diagnosed and fixed once, in §5.4/`CLAUDE.md` §11.15,
+  on a *different* machine. `store.py`'s current code calls
+  `create_dataset` (the v2-API fix), which does not exist on zarr 3.x's
+  `Group` (confirmed directly: `dir(zarr.group())` on this env showed
+  `create_array`/`create_group`/`create_hierarchy`, no `create_dataset`) —
+  so extraction would have crashed immediately on this machine exactly
+  the way it did before the §11.15 fix, had the version not been checked
+  first. **Fix:** `pip install "zarr>=2.16,<3"` in `cudaPy`, which resolved
+  to `zarr==2.18.7` — the same exact version already verified in
+  `DEPENDENCIES.md` — with no other package changes needed. Also missing
+  in this env (not needed for this run: `benchmark_medium/` was already
+  built and present at the repo root, so no `build_pipeline` regeneration
+  was required): `tsbootstrap`, `mkl` (as a Python-importable package —
+  irrelevant, `mkl` is a C runtime `conda` manages, not a `pip`-importable
+  module, so this "MISSING" is not a real gap). `torch` in this env is
+  `2.12.0` (newer than `DEPENDENCIES.md`'s verified `2.9.1+cu130`) and
+  worked with no observed issue for this run — not re-pinned or
+  downgraded, since nothing broke, but flagged here rather than silently
+  assumed identical to the documented version. Re-ran
+  `--check-alignment` for both `TimesFM` and `Chronos-T5-Base` on this env
+  before trusting the run (`CLAUDE.md` invariant 7) — both perfect 1.00
+  diagonal-hit fraction at every layer, matching the prior machine's
+  numbers exactly. **Lesson, now demonstrated a third time:** a "verified
+  working" environment claim is scoped to the machine it was verified on;
+  moving to new hardware requires re-checking the pin, not re-reading the
+  doc and assuming it travels. `DEPENDENCIES.md` intentionally is not
+  updated to describe this third environment in full (it documents one
+  reproducible recipe, not every machine this repo has run on) but this
+  finding is the record that the `zarr<3` pin is now confirmed load-bearing
+  across three independent environments, not one.
+
+- **2026-08-05 — chronos-t5-base vs. chronos-t5-small comparison (§5.3):
+  the tested behavioral finding is size-robust; representational-similarity
+  metrics are not, and disagree with each other about the direction of the
+  size effect.** Same `benchmark_medium` corpus, same TimesFM checkpoint,
+  same seed, only `chronos-t5-small` (6 encoder blocks) swapped for
+  `chronos-t5-base` (12 blocks) — isolating the size confound as designed.
+  - **Behavioral (L0), size-robust:** overall MASE barely moved
+    (Chronos-T5 2.365 → Chronos-T5-Base 2.355, TimesFM unchanged at 1.991
+    since it's the same checkpoint/corpus) — doubling Chronos's encoder
+    depth bought **~0.4% overall MASE improvement**, not a proportional
+    gain. Per-family, the one pre-registered, statistically significant dev
+    finding (`random_parametric` favors TimesFM) is essentially identical
+    at both sizes: ratio 0.776 (small) vs. 0.777 (base), Holm p=0.006 both,
+    and **both replicate on the sealed private corpus** (confirm mean gap
+    0.454 small / 0.455 base, p=0.002 both) — this specific finding is not
+    a smaller-model artifact. `mixture`/`parametric` remain non-significant
+    at both sizes.
+  - **L1 CKA, grows with size:** peak CKA rose from **0.276** (small, at
+    TimesFM `stacked_xf.4` / Chronos `encoder.block.4` — block 4 of 6, 80%
+    relative depth) to **0.381** (base, at TimesFM `stacked_xf.4` / Chronos
+    `encoder.block.10` — block 10 of 12, 91% relative depth) — a ~38%
+    relative increase, both CIs well clear of their null baselines
+    (~0.036-0.037 either way), and **both replicate on private data**
+    (0.275 small / 0.374 base). The peak partner layer stayed at a similar
+    *relative* depth on Chronos's side (late-but-not-final) even though
+    the absolute layer index moved.
+  - **L2 stitching gain-over-baseline, grows with size in both
+    directions:** TimesFM→Chronos best gain 0.287 (small) → 0.318 (base);
+    Chronos→TimesFM best gain 0.335 (small) → **0.413** (base) — a ~23%
+    relative increase, the larger of the two directions' growth. Both
+    remain clearly non-zero (CIs excluding zero) at both sizes — the bigger
+    Chronos is more linearly stitchable to/from TimesFM, not just a bigger
+    version of the same stitchability.
+  - **L4 clustering AMI, *shrinks* with size — the opposite direction from
+    CKA/L2:** cross-model cluster agreement dropped from **0.705** (small)
+    to **0.538** (base), using the same `layer: auto` policy (each model's
+    side of its own L1 peak-CKA pair) at both sizes. This is the headline
+    caution of this comparison: two different "shared structure" metrics
+    computed on the *same* size change moved in **opposite directions** —
+    CKA/L2 say the bigger Chronos is more geometrically/translatably
+    similar to TimesFM; AMI says its own actual activation partition
+    agrees *less* with TimesFM's. Per `CLAUDE.md` §6.1's evidence-class
+    discipline, L1/L2 are the geometric/translatable claims and L4
+    clustering is explicitly "descriptive... approximate by construction"
+    — this isn't a contradiction to resolve, it's a demonstration that
+    these evidence classes answer different questions and **do not
+    substitute for each other**, a concrete instance of why the layered
+    method exists rather than picking one favorite metric.
+  - **Lens crystallization depth — flagged as not directly comparable, not
+    reported as a finding:** small run's lens stage used
+    `lens.max_series: 32`, base run's used `24` (lowered for the larger
+    Chronos's VRAM footprint, per that config's own comment) — different
+    small subsets of the corpus, not the full 288/286 series L0/L1/L2 run
+    over. The raw numbers (crystallization depth 0.8 small → 0.909 base;
+    lens-internal final MASE 2.277 small → 1.680 base **for the same
+    TimesFM checkpoint**, which cannot be a real per-model change) make
+    this obvious once checked — the difference is which ~24-32 series got
+    sampled, not a real lens-depth effect. Recorded here specifically so a
+    future session doesn't mistake it for a real number; a real
+    size-vs-crystallization-depth comparison would need matched
+    `max_series` across configs.
+  - **Confirm stage — both sizes tested against the same sealed private
+    corpus, deliberately, not a seal violation:** `CLAUDE.md` §6.7's
+    "confirm runs once" discipline concerns *mining new hypotheses* against
+    private data; here, the exact same single pre-registered hypothesis
+    (`random_parametric` favors TimesFM, registered on dev before this
+    session) was re-tested against private data once per model
+    configuration, as part of *this specific* pre-planned size-confound
+    check — no new hypothesis was fished for using private results. Stated
+    explicitly here rather than silently reusing the private corpus without
+    comment, per §6.7's own "if peeked at, regenerate" caution — this is
+    not the kind of peeking that caution is about, but it's a judgment call
+    worth recording, not assuming.
+  - **Net read:** the one specific dev-to-private-confirmed finding this
+    corpus can currently support (`random_parametric` favors TimesFM) is
+    not a size confound. But this is exactly one finding, on one corpus, at
+    two sizes of one model family — it licenses "this particular result is
+    size-robust," not "results in this report are generally
+    size-independent." The AMI/CKA disagreement above is itself evidence
+    that extrapolating any single internals metric's story across
+    checkpoint sizes needs to be checked, not assumed, every time.
+
+- **2026-08-05 — carried forward from `CLAUDE.md` §10 ("Findings from the
+  one small real run"), which is now retired in place of this file per
+  §5.5's own instruction** ("retire it from `CLAUDE.md` and move the
+  *current*, broader-based version of these findings into this file's
+  Findings block, since `CLAUDE.md` should describe stable architecture,
+  not a moving research result"). This is the **verbatim historical
+  record** of that section, predating both this roadmap and the §5.4
+  live-checkpoint session below it in wall-clock time (it describes an
+  earlier, smaller, likely mock- or first-pass-real-model run) — preserved
+  rather than deleted per this file's own append-only Findings doctrine,
+  just relocated to where research results belong:
+  - *Defensible:* TimesFM stronger on the tested families. TimesFM
+    front-loads then compresses family-relevant information; Chronos's
+    encoder accumulates it. The models share learned structure beyond
+    input statistics but **not** global geometry. TimesFM's activation
+    space is far more family-organized (cluster purity **0.90–0.98** vs
+    **0.60–0.79**; AMI **0.40**).
+  - *The causal payload:* fingerprint agreement is middling overall
+    (ρ=**0.46**), but per-corruption is the story — depth responses to
+    **additive noise are strongly anti-correlated (ρ=−0.90)**: where one
+    model's noise sensitivity grows with depth, the other's shrinks.
+    Plausibly continuous-embedding vs. quantization, though the mechanism
+    claim needs per-layer curves. They **agree** on deseasonalization
+    (ρ=**0.76**).
+  - *Underdelivered, resolved 2026-08-03 (§5.4 above):* TimesFM's patching
+    restoration was flat across captured layers — diagnosed as whole-layer
+    window patching being too coarse to localize anything in a
+    residual-stream model, not a finding about TimesFM, and fixed with
+    per-window patching. Confirmed on real checkpoints in §5.4's Findings
+    above: whole-layer patching genuinely is still flat, but the
+    per-window breakdown recovers real, depth-intensifying causal
+    structure concentrated in the context window nearest the forecast
+    horizon.
+  - **What has and hasn't been superseded by broader evidence since:** the
+    per-window-patching resolution is now confirmed on real weights (§5.4).
+    The `random_parametric`-favors-TimesFM behavioral claim now has a
+    second, independent confirmation on a third run and checkpoint size
+    (`runs/real_run`, and the base-vs-small comparison directly above) —
+    see the new `run_meta_report.py` output (§5.5) for the three-run
+    stability table. The cluster-purity/AMI/fingerprint-ρ numbers above
+    have **not** been re-measured against real checkpoints at the scale
+    this file's later sessions used — they remain exactly what they were
+    when first measured, an early, small, provisional read, not yet
+    superseded or contradicted. Flag any future re-measurement here rather
+    than silently treating the numbers above as current.
+
 ---
 
 ## 6. Phase 2 — Layer selection, novel SAEs, and IP detection (the "meat")
@@ -1060,7 +1255,7 @@ This is the brief's highest-value, most novel-research-shaped ask (items 1
 and 3), plus a related but separable idea (item 2). Broken into three
 sub-phases because they have different dependencies (§3).
 
-### 6.1 Phase 2a — Does anything predict "this layer is worth interpreting"?
+### 6.1 Phase 2a — Does anything predict "this layer is worth interpreting"? — ✅ first pass DONE 2026-08-05
 
 **Goal.** Test the brief's central hypothesis directly: *does a layer's
 effective dimensionality (participation ratio, already computed in
@@ -1070,7 +1265,7 @@ layer-selection rule for Phase 2b. If no, the fallback is just as valuable —
 know that before spending compute training SAEs on the wrong layers.
 
 **Concrete deliverables**
-- [ ] Define "interpretable/controllable" operationally, since it's not a
+- [x] Define "interpretable/controllable" operationally, since it's not a
   single number today. Proposed composite (test each piece separately before
   trusting a composite):
   - **Family-probe decodability** at that layer (already in `internals.py`).
@@ -1084,35 +1279,154 @@ know that before spending compute training SAEs on the wrong layers.
     fixed sparsity, dead-feature rate, and (§2.1/§6.3 below) ground-truth
     feature-alignment score. This piece necessarily runs *after* some SAEs
     exist, so treat it as validating/falsifying the earlier proxies
-    retroactively, not as required before starting 2b.
-- [ ] Compute effective dimensionality (and candidate alternatives — see
+    retroactively, not as required before starting 2b. — **used the three
+    proxies above as-is** (all three already existed in run artifacts, no
+    new computation needed); the fourth remains blocked on Phase 2b as
+    documented, not attempted.
+- [x] Compute effective dimensionality (and candidate alternatives — see
   below) per layer per model across every Phase 1 run, and correlate against
   each interpretability proxy above. Use the same series-level bootstrap
   discipline as the rest of the repo (`CLAUDE.md` §6.6) to put a CI on the
-  correlation, not just a point estimate.
-- [ ] Test at least these alternative candidate metrics against the same
+  correlation, not just a point estimate. — **done**:
+  `tsfm_lens/analysis/layer_selection.py`, pooling one record per
+  (run, model, layer) from every run directory that exists
+  (`medium_run`, `medium_run_chronos_base`, `real_run`, `smoke` — literally
+  "every Phase 1 run," since Phase 1 closed §5.5 immediately before this).
+  The resampling unit is the **(run, model) group**, not the layer — layers
+  within one model are depth-autocorrelated the same way windows within a
+  series are (`CLAUDE.md` §6.6's discipline, extended to this differently-
+  shaped data), so the cluster bootstrap resamples which of the 8
+  (run, model) groups are included, keeping every group's layers together.
+  Reused `analysis/stats.py`'s existing generic `bootstrap_ci` rather than
+  writing a new bootstrap primitive. See Findings below for numbers.
+- [x] Test at least these alternative candidate metrics against the same
   proxies, since the brief explicitly invites better metrics if they beat
   effective dimensionality:
   - Per-layer CKA-to-input (already computed in `internals.py`) — a layer
     that's barely moved from raw input statistics is a poor SAE target for
-    different reasons than a too-high-dimensional one.
+    different reasons than a too-high-dimensional one. — **tested**, weaker
+    signal than effective dimensionality (see Findings).
   - Per-layer L3 fingerprint *entropy* across corruption types (a layer
     causally sensitive to everything vs. to one specific structural
-    property might make differently-useful SAE targets).
+    property might make differently-useful SAE targets). — **tested**, the
+    single most robust correlation found in this whole study (see
+    Findings) — a genuine case of the brief's "propose a better metric"
+    invitation paying off.
   - Simple activation kurtosis / sparsity of the raw (pre-SAE) activations —
-    cheap, worth ruling in or out early.
-- [ ] Write up the result as a genuine finding either way: "effective
+    cheap, worth ruling in or out early. — **not tested this session**:
+    unlike the other three candidates, this needs the raw per-window
+    activations from the zarr store (`extraction/store.py`), not an
+    already-written summary artifact, which is a real (if modest) new
+    plumbing cost the other three didn't have. Flagged as follow-up, not
+    silently skipped.
+- [x] Write up the result as a genuine finding either way: "effective
   dimensionality [does/doesn't] predict X, with these caveats" — and if it
   does, turn it into an actual `layer_select: auto` policy usable by Phase 2b
   and by `analysis/clustering.py`'s existing `layer: auto` (which today
   picks the L1 peak-CKA pair for an unrelated reason — reconcile or
   distinguish these two "auto" policies explicitly so they don't get
-  confused).
+  confused). — **done, with a deliberate naming decision**: effective
+  dimensionality *does* predict two different proxies, but in **opposite
+  directions**, so there is no single "worth interpreting" score to turn
+  into one `layer: auto`-style flag without hiding that disagreement. Added
+  `recommend_layers(records, run, model, goal, top_k)` instead of a
+  goal-less "auto" — `goal` must be `"forecast_readability"` (ranks by
+  lowest effective dimensionality) or `"family_decodability"` (ranks by
+  highest L3-fingerprint entropy), explicitly distinct from
+  `clustering.py`'s own `layer: auto` (which answers "where do the two
+  models' representations most agree," an unrelated question). Not yet
+  wired into any config or Phase 2b training loop — that wiring is Phase
+  2b's own concrete deliverable, not this one's.
 
 **Findings / decisions**
-- *(append here)*
+- **2026-08-05 — effective dimensionality predicts two different
+  interpretability proxies, in *opposite* directions; a proposed
+  alternative (L3 fingerprint entropy) beats it on the proxy where they're
+  comparable.** Pooled 64 (run, model, layer) records across all 4 existing
+  run directories (8 (run, model) groups: TimesFM×3 real-checkpoint runs +
+  3 different Chronos variants + 2 mock architectures from `smoke`).
+  Every correlation below is Spearman ρ with a cluster-bootstrap 95% CI
+  (n_boot=4000, resampling the 8 (run, model) groups) reported both raw and
+  after linearly detrending both variables against relative depth first
+  (`_add_depth_residuals`) — the depth-controlled column is the one to
+  trust, since three of the four candidate/proxy metrics *themselves*
+  trend significantly with depth (`l3_entropy` ρ=+0.47, `probe_decodability`
+  ρ=+0.32, `tuned_r2_model` ρ=+0.37, all CIs excluding zero; `effective_dim`
+  and `input_cka` do **not** trend significantly with depth, CIs straddle
+  zero) — so a raw correlation between two depth-trending metrics risks
+  just restating "both increase with depth," exactly the kind of
+  confound-blind result §2.2's null-control discipline exists to catch.
+  - **Robust, sign-flipped relationship (the headline result):**
+    `effective_dim` vs. `tuned_r2_model` (tuned-lens R² against the model's
+    own forecast): raw ρ=−0.661 [−0.872,−0.210], depth-controlled
+    ρ=−0.686 [−0.871,−0.329] — **significant both ways, barely moved by
+    depth control**, so this is a real, depth-independent relationship, not
+    a depth artifact. **Lower** effective dimensionality predicts a
+    **more linearly-readable forecast** at that layer.
+    `effective_dim` vs. `probe_decodability` (family-probe accuracy): raw
+    ρ=+0.511 [−0.030,+0.809] (not quite significant), depth-controlled
+    ρ=+0.653 [+0.176,+0.859] (significant) — the *opposite* sign from the
+    forecast-readability relationship. **Higher** effective dimensionality
+    predicts **better family decodability**, once depth is controlled.
+    Read together: effective dimensionality does not have one "is this
+    layer worth interpreting" story — a layer that's easy to linearly read
+    the forecast *from* tends to be a layer where family identity is
+    *harder* to decode, and vice versa. This is exactly the kind of result
+    §6.1's "if yes, that's a genuine finding" framing anticipated, but
+    sharper and more useful than a single yes/no: **the answer depends on
+    which notion of "interpretable" is meant**, which is why
+    `recommend_layers` takes an explicit `goal` rather than picking one.
+  - **A proposed alternative that beats effective dimensionality on the
+    proxy where they're comparable:** `l3_entropy` (normalized Shannon
+    entropy of a layer's per-corruption sensitivity fingerprint — high
+    means the layer reacts broadly across corruption types rather than to
+    one specific structural property) vs. `probe_decodability`: raw
+    ρ=+0.642 [+0.216,+0.853], depth-controlled ρ=+0.674 [+0.247,+0.823] —
+    **significant both ways, and a tighter CI than effective dimensionality's
+    own (depth-controlled) relationship with the same proxy** (0.176–0.859
+    vs. 0.247–0.823 — narrower, more confidently away from zero). Per this
+    file's §2.2 doctrine ("novelty must be tested against the null, not
+    just proposed") and the brief's own invitation to find a metric that
+    beats effective dimensionality: **on the family-decodability proxy,
+    L3 fingerprint entropy is the stronger of the two tested candidates.**
+    It also shows a borderline depth-controlled relationship with
+    `tuned_r2_model` (ρ=−0.523 [−0.745,−0.015], CI just clears zero) worth
+    flagging as weaker/tentative rather than reported with the same
+    confidence as the results above.
+  - **input_cka: weaker signal than effective dimensionality throughout.**
+    vs. `probe_decodability`: raw not significant, depth-controlled
+    ρ=+0.526 [+0.145,+0.850] (significant but wider CI than either
+    `effective_dim` or `l3_entropy`'s versions of the same test). vs.
+    `tuned_r2_model`: not significant either way. Real but the weakest of
+    the three tested representational candidates.
+  - **`l3_mean_sensitivity` (the causal-magnitude proxy) was not
+    significantly predicted by any candidate metric tested**, raw or
+    depth-controlled. Read as a genuine negative result for this small
+    sample, not evidence the proxy itself is uninformative — it's a
+    different kind of signal (how much a layer's *activations* move under
+    corruption) than the two proxies that did show structure.
+  - **Kurtosis/sparsity of raw activations: not tested**, per the
+    checklist note above — flagged rather than silently dropped.
+  - **Honest limitation, stated plainly rather than glossed over:** `n_groups
+    = 8` for every correlation above. A cluster bootstrap over 8 units gives
+    real but wide CIs (visible above), and every "significant" result here
+    should be read as **a genuine signal worth building on, not a settled
+    fact** — Phase 1's future corpus-breadth work (§5.1's still-unbuilt
+    literal-scale `full_multidomain.yaml`) and Phase 4's multi-model
+    expansion would each add more (run, model) groups and meaningfully
+    tighten these CIs. Re-run `run_layer_selection_study` (now a one-line
+    call, `tsfm_lens/analysis/layer_selection.py`) against whatever new run
+    directories exist next, rather than treating today's numbers as final.
+  - Raw study output: `runs/layer_selection_study.json` (not committed —
+    it's a run artifact, regenerable from existing run directories with no
+    new model calls). Three regression tests added
+    (`tests/test_layer_selection.py`): the cluster-bootstrap primitive
+    against synthetic data with a known correlation and a known null (must
+    find one, reject the other), the too-few-groups guard, and
+    `recommend_layers`'s direction/goal-validation logic. Full `tsfm_lens`
+    suite re-run after: 10/10 passing, no regressions.
 
-### 6.2 Phase 2b — A TSFM-native SAE variant (the flagship research thread)
+### 6.2 Phase 2b — A TSFM-native SAE variant (the flagship research thread) — baseline (item 4) ✅ DONE 2026-08-05; crosscoder (item 1) not started
 
 **Goal.** Train sparse dictionaries on the layers Phase 2a identifies as
 worth it, but don't just port a vanilla NLP-transformer SAE recipe
@@ -1163,40 +1477,313 @@ something novel" (brief item 3) should actually land.
    a real baseline, not an implied one.
 
 **Concrete deliverables**
-- [ ] Implement `SAEAdapter` (the existing `Protocol` in `sae/interface.py`)
+- [x] Implement `SAEAdapter` (the existing `Protocol` in `sae/interface.py`)
   for at minimum the baseline (item 4) and the crosscoder (item 1); wire the
   encode-store pass into `sae/{model}/{layer}` per the seam already
-  documented there.
-- [ ] Build the SAE training loop as its own module (e.g.
+  documented there. — **baseline done** (`sae/models.py::TopKSAE`);
+  **crosscoder (item 1) not started this session** — it needs its own
+  design work (joint training stability is explicitly an open question,
+  §13), not a small extension of the baseline. The encode-store pass
+  (writing back into `sae/{model}/{layer}` so L1/clustering could read a
+  `level="sae"`) is **also not wired** — `sae/interface.py`'s docstring
+  now states this explicitly as a follow-up rather than implying it's done.
+- [x] Build the SAE training loop as its own module (e.g.
   `tsfm_lens/sae/train.py`) reusing the zarr store's `level="window"` reads
   directly — do not re-extract activations, the store already holds them
-  (`CLAUDE.md` §6.4).
-- [ ] Build an SAE evaluation harness covering: reconstruction fidelity
+  (`CLAUDE.md` §6.4). — done; `load_all_windows`/`train_sae`/`save_sae`/
+  `load_sae_checkpoint`, plus `run_sae` as the pipeline-stage entry point
+  (registered in `pipeline.py`, gated on `sae.enabled`, depends only on
+  `extract`). `sae.interface.load_sae` is now a real implementation
+  (delegates to `load_sae_checkpoint`), not the `NotImplementedError` stub
+  it was.
+- [x] Build an SAE evaluation harness covering: reconstruction fidelity
   (fraction variance explained) vs. sparsity (L0) frontier, dead-feature
   rate, and **forecast-preservation under reconstruction** (patch the
   reconstruction back in via `token_patch` and confirm MASE is close to
   clean — this is the validity check that ablation experiments in Phase 3
-  will depend on).
-- [ ] Implement the **ground-truth feature-alignment score** from §2.1/§6.3:
+  will depend on). — done (`sae/eval.py`); the first run found it failing
+  for both models (a real, useful negative result), and after fixing the
+  baseline's dead-feature collapse (see the second Findings entry below)
+  it now **passes for TimesFM** (ΔMASE +0.047) but **still fails for
+  Chronos-T5-Base** (ΔMASE +2.37) — traced to an architecture-specific
+  confound in the check itself (window-broadcast granularity), not
+  necessarily the SAE, documented in `eval.py`'s docstring and the
+  Findings below. The "vs. sparsity (L0)
+  frontier" half is **partial**: TopK's sparsity is architectural (exactly
+  `k` per row by construction), so there's no sparsity dial to sweep the
+  way a ReLU+L1 SAE would need — a genuine frontier plot would need
+  multiple runs at different `k`, not done this session, noted as
+  follow-up rather than silently equated with "not applicable."
+- [x] Implement the **ground-truth feature-alignment score** from §2.1/§6.3:
   for each learned feature, correlate its activation across the benchmark
   against every available ground-truth component (trend order, each
   seasonality's period/phase/amplitude, changepoint proximity, anomaly
   indicator, AR coefficients, noise-envelope depth, intermittency mask) and
   report the best match and its strength. This is this repo's distinctive
   answer to "is this feature interpretable" and should be a first-class
-  output, not an afterthought.
+  output, not an afterthought. — **done, at series-level scalar
+  granularity, not full per-window/per-timestep granularity** (see
+  `sae/ground_truth.py`'s module docstring for exactly why: `GroundTruth`
+  stores scalar recipe parameters, not a pooled-to-window decomposition,
+  so a window-level version needing to pool `components`' per-timestep
+  arrays itself is a real but separate follow-up, not built this session).
+  Anomaly-proximity and changepoint-*location* matching specifically are
+  **not implemented** — only `n_anomalies`/`n_changepoints` *counts* are,
+  which is coarser than "proximity to a specific changepoint" the checklist
+  names; flagged rather than silently claimed as the finer version. Found
+  real, strong, ground-truth-verified structure on the first real run — see
+  Findings.
 - [ ] Feed the SAE evaluation results back into §6.1's layer-selection
-  correlation study (the retroactive validation step noted there).
+  correlation study (the retroactive validation step noted there). — **not
+  done**; needs SAE runs across enough (run, model, layer) combinations to
+  add as a fourth proxy the way §6.1's other three were pooled, which this
+  session's two-target demo run doesn't yet provide at meaningful n.
 - [ ] Verbose-mode reporting (§4): a per-feature exemplar panel — top
   activating series/windows for a feature, its ground-truth alignment score,
   and (once Phase 3 feature ablation exists) its causal effect on forecast
-  when zeroed.
+  when zeroed. — **not done**; the `sae` stage currently writes only
+  `sae/meta.json` (no report-integrated section yet). Genuine follow-up,
+  not attempted this session — report integration for a fundamentally new
+  artifact type is its own real piece of work, distinct from getting the
+  underlying numbers to exist at all (this session's actual scope).
 
 **Findings / decisions**
-- *(append here — including negative results; a crosscoder that doesn't
-  outperform independent per-model SAEs at matching is itself an important
-  finding about whether TimesFM and Chronos share feature-level structure,
-  not just layer-level geometry)*
+- **2026-08-05 — baseline TopK SAE built and run against real checkpoint
+  activations for the first time; genuine ground-truth-verified structure
+  found, and a genuine validity-check failure that should block Phase 3
+  feature-ablation work until fixed.** Ran against
+  `runs/medium_run_chronos_base`'s already-extracted store (no new
+  extraction, per the deliverable's own "reuse the store" instruction) —
+  edited that config to add an `sae:` block (`dict_size_mult: 8, k: 32,
+  epochs: 30`) and ran `python run.py --config
+  configs/medium_run_chronos_base.yaml --stages sae`, which correctly
+  skipped straight to the new stage since `extract` artifacts already
+  existed. Targets: `TimesFM/stacked_xf.18` and
+  `Chronos-T5-Base/encoder.block.6` — chosen directly from each model's own
+  observed `tuned_r2_model` peak in that run (0.622 and 0.581
+  respectively), **not** from Phase 2a's `recommend_layers` policy — see
+  the next Finding for why that policy would have picked the *wrong* layer
+  for Chronos-T5-Base here.
+  - **Reconstruction fidelity: moderate.** Fraction of variance explained
+    0.629 (TimesFM), 0.567 (Chronos-T5-Base) — a real baseline, not broken,
+    but not strong either at only 30 epochs / ~4600 training rows against
+    dictionaries this large (see next point).
+  - **Dead-feature rate: ~98% for both models** (0.982 TimesFM, 0.983
+    Chronos-T5-Base). `dict_size_mult: 8` against `k: 32` and only 4608
+    training rows is real overcapacity — a well-known TopK-SAE pathology
+    (most dictionary atoms never win top-k against a much smaller live
+    population of "directions actually used") that this session's training
+    loop does **not** correct: no dead-feature resampling/reinitialization
+    was implemented, which the SAE literature treats as close to standard
+    practice for exactly this failure mode. Stated as a real limitation of
+    this baseline as configured, not silently accepted as fine — a smaller
+    `dict_size_mult`, more training rows (a bigger corpus), or periodic
+    dead-neuron resampling would all plausibly help, and none were tried
+    this session.
+  - **Forecast-preservation: fails the validity check, informatively.**
+    Patching the SAE's reconstruction (broadcast from window-pooled
+    granularity back to token positions, per `sae/eval.py`'s documented
+    approximation) back into a clean forward pass roughly **doubled**
+    MASE for both models (TimesFM 2.096 → 3.509; Chronos-T5-Base 2.837 →
+    5.480) rather than leaving it "close to clean" as the checklist hoped.
+    Read plainly: at this fidelity/dead-feature-rate, **this baseline
+    dictionary is not yet a safe substrate for Phase 3's planned
+    feature-ablation work** — an ablation delta measured against a
+    reconstruction baseline that already breaks the forecast this much
+    would be confounded by the SAE's own reconstruction error, not
+    isolating a feature's causal contribution. This is exactly the
+    "validity check ablation experiments will depend on" the checklist
+    asked for, and it correctly caught a real problem before any Phase 3
+    work was built on top of it — read as a success of the check, not a
+    failure of the session. Note this also folds in window-pooling
+    information loss (the broadcast is coarser than true per-token
+    fidelity, stated explicitly in `eval.py`'s docstring), so some of this
+    gap is inherent to the pooling granularity, not only the SAE.
+  - **Ground-truth feature alignment: real, strong, verified signal — the
+    session's clearest positive result.** Of ~184 (TimesFM) and ~104
+    (Chronos) *alive* features (the ~2% surviving the dead-feature rate
+    above), 62 and 61 respectively found a significant best-match ground
+    truth field — i.e. roughly a third to over half of the features that
+    actually do anything are ground-truth-interpretable to a meaningful
+    degree. Top matches for both models are seasonality-related and
+    strong: TimesFM's best feature matches `archetype_trend_dominant`
+    (ρ=0.752, n=288) and several match `n_seasonalities` (ρ up to 0.546);
+    Chronos-T5-Base's best matches `n_seasonalities` (ρ=0.783, n=288) and
+    `seasonal_period_dominant` (ρ=−0.610, n=174). Mean |ρ| among matched
+    features: 0.381 (TimesFM), 0.386 (Chronos-T5-Base). This is a genuine,
+    first-time confirmation that §2.1's "ground-truth-verifiable
+    interpretability is this repo's unfair advantage" claim pays off on a
+    real trained SAE, not just as an aspiration — worth pursuing further
+    (larger training set, fixing the dead-feature problem above) before
+    concluding anything about *how* interpretable this dictionary is
+    overall, since only the alive ~2% could be scored at all.
+  - **A real, checked limitation of §6.1's `recommend_layers`: it does not
+    transfer as a within-model ranking rule, and this run proves it, not
+    just risks it.** Before picking targets, tried
+    `recommend_layers(goal="forecast_readability")` on this exact run:
+    for TimesFM it correctly picked `stacked_xf.18` (its actual best layer,
+    tuned_r2=0.622). For Chronos-T5-Base it picked `encoder.block.0` —
+    whose own `tuned_r2_model` (0.433) is the *lowest* of any of its 12
+    layers, the literal opposite of the intended ranking. Cause, checked
+    directly (`analysis/layer_selection.py::collect_layer_records`'s raw
+    per-layer numbers for this run): within Chronos-T5-Base specifically,
+    effective dimensionality and tuned-lens R² **rise together** from
+    layer 0 through the mid-layers (eff-dim 3.42→13.93, R² 0.433→0.581)
+    before both softening late — the *opposite* sign from §6.1's pooled,
+    depth-controlled, cross-(run,model) finding. TimesFM's own layers, by
+    contrast, actually do show the pooled study's negative relationship
+    within-model (eff-dim 21.92→2.66, R² 0.498→0.622 from layer 6 onward).
+    **Read plainly: the pooled cross-model relationship is real (§6.1's
+    CIs are genuine), but it is driven more strongly by one architecture in
+    this small population than the other, and does not reliably describe
+    every individual model's own layers** — exactly the kind of thing that
+    only surfaces by actually trying to use a proposed policy on a real
+    case, not by re-deriving the pooled statistics. `recommend_layers`'s
+    docstring (`analysis/layer_selection.py`) now states this limitation
+    with these exact numbers so it isn't rediscovered as a surprise.
+  - Test suite: 6 new unit tests (`tests/test_sae.py` — model shapes/
+    sparsity, training convergence on synthetic low-rank data, checkpoint
+    roundtrip, ground-truth matching logic with a planted correlation and
+    a too-few-valid guard) plus one new integration test
+    (`tests/test_smoke.py::test_sae_stage_integration`, mock adapters,
+    confirms `forecast_preservation` works with no real corpus and
+    `ground_truth_alignment` degrades to a logged, non-crashing `error`
+    key when smoke data has none — real degrade-gracefully behavior, not
+    assumed). Full suite after: 17/17 passing.
+  - Also refactored `analysis/l0_behavioral.py::_score`'s inline MASE
+    formula into a new shared `analysis/stats.py::mase()` (byte-identical
+    behavior, re-verified via the smoke suite) so the forecast-preservation
+    check calls the exact same metric the rest of the repo reports, not a
+    reimplementation — a small, targeted refactor surfaced by actually
+    trying to reuse the existing code rather than duplicating a 2-line
+    formula.
+
+- **2026-08-05 (same-day follow-up — fixing the baseline's two real
+  problems, per explicit user direction).** After reporting the baseline's
+  forecast-preservation failure and ~98% dead-feature rate, checked in with
+  the user on how to proceed; chosen path was "fix the baseline first,"
+  specifically dead-neuron resampling and pulling more SAE training data
+  from an established source (user's own suggestion: "find an established
+  library and just pull from it, like something on huggingface") rather
+  than only shrinking the dictionary. Both landed, and **found two
+  additional real bugs building the first one** — this took three
+  iterations to get right, not one, each caught by actually measuring
+  rather than assuming the fix worked (`CLAUDE.md` §2.4):
+  1. **Dead-neuron resampling, attempt 1: catastrophic, not just
+     ineffective.** First implementation reinitialized a dead atom's
+     decoder column from a normalized reconstruction-residual direction and
+     its encoder column at a **fixed absolute scale (0.2)**. Measured
+     immediately after implementing (not assumed working): reconstruction
+     fidelity went from a positive baseline to **deeply negative**
+     (TimesFM: 0.617 → **−31.2**; Chronos-T5-Base: 0.506 → **−0.77**) —
+     worse than predicting the mean. Root cause, found by checking what a
+     standard implementation does differently: (a) a fixed absolute scale
+     is miscalibrated for activation magnitudes that vary enormously across
+     models/layers — fixed by scaling to `0.2 ×` the *alive* atoms' own
+     average encoder-column norm instead; (b) Adam's per-parameter moment
+     estimates for the resampled weight slices were never reset, so
+     `opt.step()` immediately applied stale momentum (computed against the
+     old, dead, near-zero-gradient weights) to a freshly meaningful
+     direction — fixed by zeroing `exp_avg`/`exp_avg_sq` for every
+     resampled slice.
+  2. **Attempt 2, with both of those fixed: fixed for Chronos-T5-Base
+     (fidelity 0.506 → 0.697), still catastrophic for TimesFM (still
+     −19 to −32).** Measured again rather than declaring victory after one
+     model improved. Cause: TimesFM's dictionary was both the largest
+     (10240 atoms) and the most dead (~98%), so resampling **every** dead
+     atom in one shot drew ~10,000 replacement directions from only
+     `batch_size × 4 = 16,384` source rows via `torch.multinomial`
+     weighted by a highly skewed per-row residual-loss distribution —
+     thousands of atoms collapsed onto a handful of near-duplicate
+     directions, and that many simultaneously-live, nearly-identical atoms
+     competing for the same top-k slots destabilized training. Fixed by
+     (a) capping resampling to `max_resample_frac=0.1` of the dictionary
+     per event — spreading a large dead population across several
+     resample events instead of one shock — and (b) jittering each sampled
+     direction with a little noise before renormalizing, so atoms drawn
+     from the same source row end up distinct rather than duplicated.
+  3. **Attempt 3, both fixes combined: real, substantial, and stable
+     improvement**, confirmed both in a fast controlled sweep against
+     already-extracted activations (no model calls needed) and in a full
+     real run. Sweep (dict_size_mult=8, k=32, resample every 5 epochs,
+     30→60 epochs): fidelity rose to 0.86 (TimesFM) / 0.85
+     (Chronos-T5-Base) at 60 epochs — a large, clean improvement over the
+     no-resampling baseline at the same epoch count, and resampling the
+     *large* dictionary now clearly beat shrinking it (`dict_size_mult=2`
+     alone reached only ~0.54–0.61). A regression test
+     (`tests/test_sae.py::test_dead_neuron_resampling_improves_not_destroys_reconstruction`)
+     now guards against reintroducing either bug.
+  - **Real-data augmentation, implemented and verified live, exactly as
+    requested.** `tsfm_lens/sae/real_data.py` reuses
+    `tsfm_benchmark.build_pipeline.sources.bootstrap_catalog` (the same
+    generic HF-dataset loader §4.3/§5.2 already verified against Monash) to
+    pull real series, slice random context-length windows from them, run
+    them through the model, and window-pool the resulting activations —
+    concatenated with the run's own benchmark activations for SAE
+    training. These series never enter the leakage-audited benchmark, are
+    never sealed, and never get ground-truth labels — purely SAE-training
+    augmentation, governed by nothing invariant 10 restricts. Verified live
+    against `Monash-University/monash_tsf` (`real_data_pool_limit: 500`):
+    pooled 152 series across 12 working domains (the rest failing with the
+    same pandas frequency-alias errors §12 already documents — confirmed
+    again, not a new problem), of which only a fraction reach
+    `context_len=512` — real, worth stating plainly: the realized
+    diversity gain is bounded by how many long-enough real series exist in
+    the pool, not by `real_data_n_windows`'s nominal target. Still added
+    4000 real-data rows on top of the benchmark's own 4608 for this run.
+    **Not fixed, minor, noted rather than silently left:** `run_sae` calls
+    this once per target, so a multi-target run re-fetches and re-pools
+    the same catalog redundantly (this run fetched Monash twice, once per
+    model) — cheap to fix by hoisting the fetch above the per-target loop,
+    not done this session.
+  - **Final numbers on the real run, both fixes combined
+    (`configs/medium_run_chronos_base.yaml`, now `epochs: 60,
+    resample_dead_every_epochs: 5, real_data_enabled: true`):**
+    reconstruction fidelity **0.858 (TimesFM), 0.840 (Chronos-T5-Base)** —
+    up from the original baseline's 0.629/0.567, a large, real
+    improvement, not a marginal one. Dead-feature rate only modestly
+    improved (0.959/0.974, down from 0.982/0.983) — most of the
+    dictionary is still unused, but the *alive* fraction now reconstructs
+    far better, which is what actually mattered for the checks below.
+  - **Forecast-preservation: a genuine, informative split result, not a
+    uniform pass or fail.** TimesFM: MASE 2.096 (clean) → **2.143**
+    (SAE-reconstructed), ΔMASE **+0.047** — the validity check now
+    essentially **passes**; the reconstruction is close enough to clean
+    that Phase 3 feature-ablation work could plausibly build on this
+    target. Chronos-T5-Base: MASE 2.837 → **5.205**, ΔMASE **+2.37** —
+    still fails, only marginally better than before (+2.64) despite a
+    similar fidelity gain. Investigated why the two models diverged this
+    much given comparable fidelity improvements (§2.4: measured, didn't
+    assume "Chronos's SAE is just worse") and found a real, previously
+    unstated confound in the *eval method itself*, not the SAE: the
+    forecast-preservation check broadcasts one window-pooled reconstructed
+    vector across every raw token in that window. For TimesFM,
+    `alignment.window` (32) equals its own patch width, so each window is
+    exactly one token — the broadcast is lossless. For Chronos, each token
+    is one timestep, so a 32-step window covers **32 distinct tokens**
+    that all get forced to the same single reconstructed vector — a large,
+    architecture-specific information loss the check was always going to
+    incur, independent of SAE quality. `sae/eval.py::forecast_preservation`'s
+    docstring now states this explicitly with these exact numbers so
+    Chronos's failing number isn't mistaken for "this SAE is bad" without
+    the caveat. A finer, per-token (not per-window-broadcast) version of
+    this check would resolve the confound for per-step-tokenized models —
+    real follow-up, not attempted this session.
+  - **Ground-truth alignment: richer than the pre-fix run, and one
+    striking new clean match.** TimesFM: 154/10240 features matched (up
+    from 62), mean |ρ| 0.317. Chronos-T5-Base: 115/6144 matched (up from
+    61), mean |ρ| 0.306, and its single best match is now
+    **`has_intermittency`, ρ=0.881** — one of the cleanest single-feature
+    ground-truth matches found anywhere this session, a feature that
+    nearly perfectly tracks whether a series has the intermittency
+    ground-truth property. Both models keep matching seasonality-related
+    fields prominently (`n_seasonalities`, `seasonal_amplitude_max`,
+    `seasonal_period_dominant`, and for TimesFM specific archetype labels
+    like `archetype_trend_dominant`/`archetype_multi_seasonal_complex`).
+  - Full `tsfm_lens` test suite after all of this: 21/21 passing (up from
+    17 — 3 new resampling/stability tests plus 1 new real-data test file
+    with 3 tests, all mocking the network call per the same no-live-network
+    discipline `test_smoke.py` follows).
 
 ### 6.3 Phase 2c — L2 stitching as a distillation / fine-tune detector (brief item 2)
 
@@ -1260,8 +1847,9 @@ not just an inference from aggregate archetype MASE.
   the swept parameter — this directly answers "where is each model's
   sweet spot" with a dose-response curve instead of an archetype-level
   average.
-- [ ] Follow up on the one concrete causal lead already in hand
-  (`CLAUDE.md` §10): additive-noise depth-sensitivity is **strongly
+- [ ] Follow up on the one concrete causal lead already in hand (this file's
+  §5 Findings, carried forward 2026-08-05 from the now-retired `CLAUDE.md`
+  §10): additive-noise depth-sensitivity is **strongly
   anti-correlated** between the two models (ρ=−0.90). Design a sweep (SNR ×
   depth) specifically to characterize *why* — is it continuous embedding vs.
   quantization, as hypothesized, or something else? This is exactly the kind
@@ -1434,8 +2022,12 @@ above accidentally re-proposes it as new work:
   live-weights `--check-alignment` re-verification in §5.4 above is now
   doubly relevant: it hasn't just "not been done yet," the model underneath
   it changed since `CLAUDE.md` was last accurate.
-- SAE **contract only** (`Protocol`, seams documented) — no training code.
-  This is exactly where Phase 2b starts from, not a head start beyond that.
+- SAE: as of 2026-08-05, **the baseline (§6.2 item 4) is done, not just the
+  contract** — a real `TopKSAE`, training loop, eval harness, and
+  ground-truth alignment score all exist and have run against real
+  checkpoint activations (see §6.2's Findings for what they found). The
+  flagship crosscoder (item 1) and the encode-store-into-`sae/{model}/{layer}`
+  seam are still exactly where they were — not started.
 
 ---
 
@@ -1663,3 +2255,167 @@ so a future session doesn't accidentally drift into them:
   and alignment check are real, the actual result is the next session's
   first step (`python run.py --config configs/medium_run_chronos_base.yaml`
   to completion, then diff against `runs/medium_run`'s existing artifacts).
+- **2026-08-05 (§5.3 completion session)** — Picked up exactly where the
+  prior session left off: completed the deferred
+  `medium_run_chronos_base.yaml` run, this time on a new, previously-
+  undocumented machine (Linux, `cudaPy` conda env, 8× RTX A5000). Checked
+  package versions against `DEPENDENCIES.md` before running anything
+  (`CLAUDE.md` §11.15's own lesson) and found the same zarr-v3-vs-v2
+  `create_array`/`create_dataset` trap recurring on this third environment
+  — fixed by pinning `zarr<3` as documented, no code change needed this
+  time since the §11.15 fix already targets the v2 API correctly. Re-ran
+  `--check-alignment` for both models before trusting the run (perfect 1.00
+  at every layer, matching prior machines). Ran the full 12-stage pipeline
+  to completion (~32.5 min; 10 sections, 21 findings) and diffed every
+  major artifact against the existing chronos-small `runs/medium_run`: the
+  one dev-to-private-confirmed finding this corpus supports
+  (`random_parametric` favors TimesFM) is size-robust, but L1 CKA and L2
+  stitching gain both *increase* with Chronos's size while L4 clustering
+  AMI *decreases* — a genuine, checked demonstration that different
+  evidence-class metrics don't move together across a size change, not
+  just a restated doctrine point. See §5's Findings block for full numbers.
+  Did not touch Phase 1 §5.1 (corpus breadth) or re-litigate §5.4 (already
+  done) — this session's scope was strictly finishing §5.3's one open
+  item. Next: §5.5 (cross-run aggregator + retiring `CLAUDE.md` §10's
+  single-run findings into this file) is Phase 1's last unstarted item.
+- **2026-08-05 (same-day follow-up — §5.5, closing out Phase 1)** — Built
+  `tsfm_lens/report/meta_report.py` + CLI `run_meta_report.py`: reads N
+  existing run directories' artifacts (L0/L1/L2/lens/clustering/confirm),
+  degrading per-section rather than crashing when a stage was skipped in a
+  given run, and renders one comparison table plus a per-family stability
+  view. Tested against all four run directories that existed in the repo
+  (`medium_run`, `medium_run_chronos_base`, `real_run`, `smoke`) — on first
+  use it correctly surfaced that `random_parametric` favors TimesFM
+  *stably* across all three real-checkpoint runs (two Chronos sizes, one
+  independent corpus), directly answering the "does this hold across
+  regimes" question this deliverable exists for. Found and fixed one real
+  bug building it: `runs/real_run`'s TimesFM has `crystallization_depth:
+  null` (never crystallized within tolerance) and the first template draft
+  crashed formatting that with `%.2f` — added two regression tests
+  (`tests/test_meta_report.py`) covering this and the missing-stage
+  degrade path. Re-ran the full `tsfm_lens` pytest suite after — all 5
+  tests (3 existing + 2 new) pass, no regressions. Then retired `CLAUDE.md`
+  §10 per this section's own "better" option: moved its original
+  provisional findings verbatim into this section's Findings block (dated
+  2026-08-05, "carried forward"), stated which of its claims are now
+  superseded by later evidence and which aren't, and replaced §10 itself
+  with a pointer here — added a matching `CLAUDE.md` reconciliation note
+  and updated its repo-layout tree and CLI examples for the new files.
+  **Phase 1 is now fully checked off** (§5.1–§5.5 all done); Phase 2a
+  (layer-selection metric research) is the next unstarted item per §3's
+  dependency ordering.
+- **2026-08-05 (same-day follow-up — §6.1, Phase 2a first pass)** — Picked
+  up the next item per §3's dependency ordering: does effective
+  dimensionality predict which layers are worth interpreting? Built
+  `tsfm_lens/analysis/layer_selection.py`, pooling 64 (run, model, layer)
+  records across all 4 existing run directories and correlating three
+  candidate metrics (effective dimensionality, input-CKA, and a proposed
+  new one — L3 fingerprint entropy) against two interpretability proxies
+  (tuned-lens R², family-probe decodability), reusing `analysis/stats.py`'s
+  existing bootstrap primitive with a cluster unit of (run, model) rather
+  than layer (layers within one model are depth-autocorrelated the same
+  way windows within a series are). Checked the obvious confound before
+  trusting anything (§2.4): three of the four metrics trend with depth on
+  their own, so every correlation is reported both raw and depth-controlled.
+  Real result: effective dimensionality predicts the two proxies in
+  **opposite directions** (lower predicts more forecast-readable, higher
+  predicts more family-decodable), both significant after depth control —
+  so there's no single "worth interpreting" score, which is itself the
+  finding. The proposed alternative, L3 fingerprint entropy, beat effective
+  dimensionality on the decodability proxy (tighter CI, same direction).
+  Added `recommend_layers(goal=...)` rather than a goal-less "auto," with
+  an explicit note distinguishing it from `clustering.py`'s unrelated
+  `layer: auto`. Did not test kurtosis/sparsity of raw activations (would
+  need new zarr-store plumbing, not just reading existing artifacts like
+  the other three candidates) — flagged as follow-up. Three new regression
+  tests (`tests/test_layer_selection.py`); full suite 10/10 after. See
+  §6.1's Findings block for exact numbers and the honest n_groups=8
+  caveat. Next: Phase 2b (SAE variants) is the flagship research thread and
+  a much larger undertaking — a natural point to check in with the user on
+  scope/direction before committing to a specific SAE architecture, per
+  §6.2's own "evaluate empirically, do not assume one is best" instruction.
+- **2026-08-05 (same-day follow-up — §6.2, Phase 2b baseline)** — Checked in
+  with the user before committing to an SAE architecture given the phase's
+  scale; user chose the baseline-first path (item 4: plain TopK SAE +
+  eval harness + ground-truth alignment, before attempting the flagship
+  crosscoder). Researched the exact integration points first (a background
+  agent read `sae/interface.py`, `extraction/store.py`, `extraction/hooks.py`,
+  `tsfm_benchmark`'s ground-truth schema, `config.py`, `pipeline.py` in
+  detail) rather than guessing signatures. Built `sae/models.py`
+  (`TopKSAE`: architectural top-k sparsity, unit-norm decoder columns),
+  `sae/train.py` (training loop reading straight from the zarr store's
+  window-level activations, `run_sae` as a new pipeline stage gated on
+  `sae.enabled`), `sae/eval.py` (reconstruction fidelity, dead-feature
+  rate, forecast-preservation reusing `token_patch` + L3's own
+  per-token-to-window assignment), and `sae/ground_truth.py` (the
+  ground-truth feature-alignment score, split into a pure matching
+  function and an I/O wrapper specifically so the matching logic is unit-
+  testable without a real corpus). Extracted `l0_behavioral.py`'s inline
+  MASE formula into a shared `analysis/stats.py::mase()` along the way
+  (re-verified byte-identical via the smoke suite) rather than
+  reimplementing it for the new eval harness. Ran the baseline against
+  `runs/medium_run_chronos_base`'s already-extracted real-checkpoint
+  activations (added an `sae:` block to that config, ran `--stages sae` —
+  the existing stage-skip machinery correctly reused the existing
+  extraction with no new model calls needed for training/eval) and found:
+  real, ground-truth-verified seasonality-linked features (the session's
+  clearest positive result); a genuinely high dead-feature rate (~98%,
+  `dict_size_mult: 8` was real overcapacity for ~4600 training rows with
+  no dead-neuron resampling implemented); and a forecast-preservation
+  check that correctly caught a real problem (patching the reconstruction
+  back in roughly doubled MASE for both models) that should block Phase
+  3's planned feature-ablation work on this baseline until fixed — the
+  validity check did exactly its job. Also discovered, by actually trying
+  to use it rather than trusting the pooled statistics, that §6.1's
+  `recommend_layers` policy does **not** transfer as a within-model
+  ranking rule: it correctly picked TimesFM's best layer in this run but
+  picked Chronos-T5-Base's *worst* one, because that model's own layers
+  trend the opposite direction from the pooled cross-model finding —
+  documented with the exact numbers in both `recommend_layers`'s docstring
+  and this file's §6.2 Findings. 6 new unit tests
+  (`tests/test_sae.py`) plus one new mock-adapter integration test
+  (`tests/test_smoke.py::test_sae_stage_integration`, confirming
+  `forecast_preservation` works with no real corpus and
+  `ground_truth_alignment` degrades to a logged error rather than
+  crashing when one isn't available); full suite 17/17 after. See §6.2's
+  Findings block for every number. Not done this session, left as
+  explicit follow-up in §6.2's checklist: the crosscoder (item 1), the
+  encode-store-into-`sae/{model}/{layer}` seam, feeding SAE results back
+  into §6.1's correlation study, and verbose-mode report integration.
+- **2026-08-05 (same-day follow-up — fixing the baseline, per user
+  choice)** — User chose to fix the baseline (dead-feature collapse,
+  forecast-preservation failure) before touching the crosscoder, and
+  explicitly asked for more SAE training data from an established source
+  ("something on huggingface") rather than only shrinking the dictionary.
+  Implemented dead-neuron resampling and `sae/real_data.py` (reuses
+  `tsfm_benchmark`'s existing generic HF loader, verified live against
+  Monash). Dead-neuron resampling took **three iterations, not one**, each
+  caught by actually measuring before declaring it fixed (§2.4): attempt 1
+  (fixed absolute encoder scale, no Adam-state reset) was catastrophic —
+  fidelity went deeply negative, worse than baseline, not just
+  ineffective. Attempt 2 (calibrated scale + Adam-state reset) fixed
+  Chronos-T5-Base but was still catastrophic for TimesFM specifically —
+  root cause: resampling ~10,000 dead atoms at once from too few source
+  rows collapsed most of them onto near-duplicate directions. Attempt 3
+  (capped resample fraction per event + directional jitter) finally gave
+  a clean, real improvement on both models, confirmed first in a fast
+  controlled sweep (no model calls) before trusting it on a real run.
+  Final real-run numbers: reconstruction fidelity 0.629→**0.858**
+  (TimesFM), 0.567→**0.840** (Chronos-T5-Base). Forecast-preservation now
+  **passes for TimesFM** (ΔMASE +0.047) but **still fails for
+  Chronos-T5-Base** (ΔMASE +2.37) despite similar fidelity gains —
+  investigated the discrepancy rather than shrugging at it, and found a
+  real, architecture-specific confound in the check's own window-broadcast
+  approximation (exact for TimesFM's patch tokenization where window ==
+  token width, lossy for Chronos's per-timestep tokenization where one
+  window spans 32 distinct tokens forced to the same value) — documented
+  in `sae/eval.py`'s docstring, not left as an unexplained asymmetry.
+  Ground-truth alignment got richer and produced the session's cleanest
+  single match: Chronos-T5-Base's top feature now tracks
+  `has_intermittency` at ρ=0.881. Added a regression test guarding the
+  exact resampling-collapse failure mode found along the way. Full suite:
+  21/21. See §6.2's Findings for every number and the full three-attempt
+  story. `configs/medium_run_chronos_base.yaml`'s `sae:` block now
+  reflects the working configuration (`epochs: 60,
+  resample_dead_every_epochs: 5, real_data_enabled: true`), not the
+  original broken-baseline one.

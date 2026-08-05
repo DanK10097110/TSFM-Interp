@@ -17,7 +17,7 @@ from ..config import PipelineConfig
 from ..data import BenchmarkData
 from ..extraction.store import ActivationStore
 from ..utils import batch_slices, log, save_json
-from .stats import holm, mean_ci, paired_bootstrap
+from .stats import holm, mase as _mase, mean_ci, paired_bootstrap
 
 
 def run_l0(cfg: PipelineConfig, hub, data: BenchmarkData, store: ActivationStore) -> None:
@@ -56,13 +56,12 @@ def _score(model: str, point: np.ndarray, quants: np.ndarray, contexts: np.ndarr
     """Per-series metric table for one model."""
     scale = np.abs(np.diff(contexts, axis=1)).mean(axis=1) + 1e-8
     err = targets - point
-    mase = np.abs(err).mean(axis=1) / scale
     smape = (2 * np.abs(err) / (np.abs(targets) + np.abs(point) + 1e-8)).mean(axis=1)
     q = np.asarray(quantiles, dtype=np.float32)[None, None, :]
     diff = targets[:, :, None] - quants
     pinball = np.maximum(q * diff, (q - 1) * diff).mean(axis=(1, 2)) / scale
     return pd.DataFrame({"model": model, "series_id": meta["series_id"],
-                         "family": meta["family"], "mase": mase,
+                         "family": meta["family"], "mase": _mase(point, targets, contexts),
                          "smape": smape, "pinball": pinball})
 
 
