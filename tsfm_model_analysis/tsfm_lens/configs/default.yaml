@@ -12,7 +12,12 @@ run:
 
 data:
   source: sealed                # sealed | jsonl | smoke
-  path: /path/to/benchmark_dir  # directory containing corpus.jsonl (+ manifest)
+  # Relative to tsfm_lens/ (where run.py is invoked from), like every other
+  # path: field in this file -- an absolute placeholder here was itself a
+  # violation of CLAUDE.md invariant 11 (ROADMAP.md sec 15 A18). Point this
+  # at a real sealed public_dev directory (corpus.jsonl + manifest), e.g.
+  # ../../benchmark_full/public_dev.
+  path: ../../benchmark_full/public_dev
   context_len: 512              # multiple of alignment.window; <= chronos-t5 context (512)
   horizon: 64
   family_key: auto              # or an explicit metadata path, e.g. provenance.generator
@@ -189,7 +194,12 @@ internals:
 confirm:
   enabled: false
   source: sealed
-  path: /path/to/private_benchmark_dir
+  # Relative to tsfm_lens/ (where run.py is invoked from), matching every
+  # other path: field in this file (CLAUDE.md invariant 11) -- an absolute
+  # placeholder here was itself a violation of that invariant (ROADMAP.md
+  # sec 15 A18). Point this at your own sealed private epoch, e.g. one
+  # produced by tsfm_benchmark/example_runs/run_full.py.
+  path: ../../benchmark_full/private_test
   max_series: 1024
   require_seal: true   # refuse to run without tsfm_benchmark seal verification
   alpha: 0.05

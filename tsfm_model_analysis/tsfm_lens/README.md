@@ -76,7 +76,7 @@ applied to the same series. Concretely:
 
 ```bash
 pip install -r requirements.txt          # core
-pip install chronos-forecasting timesfm[torch]   # the models you compare
+pip install chronos-forecasting timesfm          # the models you compare (timesfm>=2.0; see below)
 pip install umap-learn                   # optional, nicer cluster maps
 ```
 

@@ -40,12 +40,19 @@ class DataConfig:
 @dataclass
 class AlignmentConfig:
     window: int = 32
-    sanity_check: bool = False
+    sanity_check: bool = True
+    min_diagonal_frac: float = 0.5   # required hit fraction at the shallowest probed layer
+    on_failure: str = "fail"         # fail | warn -- ROADMAP.md sec 15 A2
 
 
 @dataclass
 class ExtractionConfig:
     enabled: bool = True
+    # "float16" (default, half the disk/VRAM of float32) or "float32" for a
+    # model whose activations run hot enough to overflow float16's ~65504
+    # max (`root.attrs["nonfinite"]`, written by `extraction/store.py::
+    # finalize_layer`, sec 15 A19, says which layers actually do on a given
+    # run -- check it before assuming this knob is needed for a new model).
     store_dtype: str = "float16"
 
 
@@ -53,6 +60,32 @@ class ExtractionConfig:
 class L0Config:
     enabled: bool = True
     quantiles: list = field(default_factory=lambda: [0.1, 0.5, 0.9])
+    # MASE denominator (`ROADMAP.md` sec 15 A11): "mean_abs_diff" (default,
+    # every previously-recorded number keeps reproducing) or
+    # "seasonal_naive" (mean absolute error of a period-m seasonal-naive
+    # forecast on the context -- the standard fix for scale degeneracy
+    # under heavy intermittency or a near-flat context; period estimated
+    # per series via autocorrelation when not otherwise available).
+    scale: str = "mean_abs_diff"
+    # Reliability guard, independent of `scale`: a series whose MASE
+    # denominator is below this fraction of the target's own mean absolute
+    # level is flagged `mase_reliable: false` and excluded from MASE
+    # aggregates (never from smape/pinball, which don't share this
+    # degeneracy). 0.0 disables the guard (matches pre-A11 behavior
+    # exactly); >0 is the recommended setting for any corpus containing
+    # `intermittent_bursts` or similarly zero-heavy families.
+    min_scale_frac: float = 0.05
+    # Repeat-run noise floor (`ROADMAP.md` sec 15 A13): how much a model's
+    # own MASE varies between two calls that should, in the absence of
+    # sampling, be identical -- every ΔMASE elsewhere in the repo (head/MLP
+    # ablation, SAE forecast-preservation, L3 restoration) is otherwise
+    # compared against zero instead of against this. `noise_floor_repeats:
+    # 0` disables it (no extra predict() calls, matches pre-A13 runtime);
+    # >=2 measures it on a small `noise_floor_series`-sized subset. Cheap
+    # relative to what it re-contextualizes, so on by default with a small
+    # repeat count (3) rather than requiring opt-in.
+    noise_floor_repeats: int = 3
+    noise_floor_series: int = 16
 
 
 @dataclass
@@ -136,6 +169,17 @@ class L3Config:
     })
     max_series: int = 512
     patching: PatchingConfig = field(default_factory=PatchingConfig)
+    # `ROADMAP.md` sec 15 A12: corruption strengths are set independently
+    # per corruption, so raw "behavioral sensitivity" bars aren't comparable
+    # across corruptions (`level_shift` dominates by construction). `"none"`
+    # (default) keeps every recorded number reproducing byte-for-byte.
+    # `"input_energy"` re-solves each calibratable corruption's magnitude
+    # parameter (pure numpy, no model) to hit a common per-series
+    # perturbation-energy budget derived from this battery's own configured
+    # strengths (the median of their natural energies) -- every corruption
+    # is still run and reported either way (§5's decision to keep the
+    # low-signal end of the contrast stands).
+    calibrate: str = "none"
 
 
 @dataclass
@@ -185,6 +229,9 @@ class LayerScreenConfig:
     max_series: int = 100_000       # cap on rows fed to the screen; effectively "all" by default
     use_curvature: bool = True      # work_bend only
     seed: Optional[int] = None      # falls back to run.seed
+    stride: int = 1                 # screening capture stride, independent of models[*].capture_layer_stride
+    require_full_capture: bool = True   # run a dedicated stride-1 screening extraction (ROADMAP.md sec 15 A1)
+    keep_store: bool = False        # keep screen_activations.zarr after selection instead of deleting it
 
 
 @dataclass
@@ -212,6 +259,12 @@ class ReportConfig:
     title: str = "TSFM Comparison Report"
     verbose: bool = True
     verbose_series: int = 3
+    # A section builder raising is a bug (ROADMAP.md sec 15 A5), so the
+    # default is to surface it as a hard failure (non-zero exit) rather than
+    # let a report with a silently-dropped section report success. CLI
+    # --allow-partial-report (or setting this true) downgrades that to a
+    # loud warning, matching --allow-stale's precedent.
+    allow_partial: bool = False
 
 
 @dataclass

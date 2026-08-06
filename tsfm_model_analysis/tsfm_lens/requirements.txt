@@ -16,4 +16,9 @@ tqdm>=4.66
 
 # Model adapters (install the ones you compare; not needed for the smoke run)
 # chronos-forecasting>=1.2   # tested adapter target; Chronos-Bolt needs its own adapter
-# timesfm[torch]>=1.2        # tested adapter target: google/timesfm-2.0-500m-pytorch
+# timesfm>=2.0               # tested against timesfm 2.0.2 (see DEPENDENCIES.md);
+#                            # >=2.0 removed the old TimesFmHparams/TimesFmCheckpoint
+#                            # class API entirely (CLAUDE.md sec 11.8) -- the adapter
+#                            # targets the new class-based API and defaults to
+#                            # checkpoint google/timesfm-2.5-200m-pytorch (20 layers),
+#                            # not the older 2.0/500m checkpoint (50 layers)

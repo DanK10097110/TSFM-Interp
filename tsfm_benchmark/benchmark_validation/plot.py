@@ -54,7 +54,7 @@ import numpy as np
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-from .diversity import DiversityReport
+from .diversity import DiversityReport, InsufficientN
 from .features import FeatureMatrix
 from .loaders import SeqRecord
 from .matching import MatchReport
@@ -360,17 +360,29 @@ def plot_diversity_by_group(by_group: dict[str, DiversityReport], output_path: s
     that's nearly constant across most of the corpus but genuinely varies in
     one minority group can dominate that group's number on its own -- naming
     the feature turns a suspicious bar into a diagnosable one.
+
+    Groups below the minimum-n threshold (`InsufficientN`, sec 15 A17) are
+    excluded from the bars entirely rather than plotted as a misleading
+    zero; the plot title states how many.
     """
-    labels = list(by_group.keys())
+    labels = [g for g in by_group if isinstance(by_group[g], DiversityReport)]
+    n_excluded = len(by_group) - len(labels)
     eff_dims = [by_group[g].effective_dimensionality for g in labels]
     total_vars = [by_group[g].total_variance for g in labels]
     n_seqs = [by_group[g].n_sequences for g in labels]
     top_feat = [by_group[g].feature_variance_ranking[0] if by_group[g].feature_variance_ranking else ("-", 0.0) for g in labels]
     var_hover = [f"n={n}<br>top feature: {feat} ({val:.2f})" for n, (feat, val) in zip(n_seqs, top_feat)]
+    eff_ci = [by_group[g].effective_dimensionality_ci for g in labels]
+    eff_err = ([abs(by_group[g].effective_dimensionality - c[0]) for g, c in zip(labels, eff_ci)]
+              if all(eff_ci) else None)
+    eff_err_hi = ([abs(c[1] - by_group[g].effective_dimensionality) for g, c in zip(labels, eff_ci)]
+                 if all(eff_ci) else None)
 
-    fig = make_subplots(rows=1, cols=2, subplot_titles=["Effective dimensionality", "Total variance (hover: top-driving feature)"])
+    fig = make_subplots(rows=1, cols=2, subplot_titles=["Effective dimensionality (95% bootstrap CI)", "Total variance (hover: top-driving feature)"])
     fig.add_trace(
-        go.Bar(x=labels, y=eff_dims, text=[f"n={n}" for n in n_seqs], textposition="auto", showlegend=False),
+        go.Bar(x=labels, y=eff_dims, text=[f"n={n}" for n in n_seqs], textposition="auto", showlegend=False,
+              error_y=(dict(type="data", symmetric=False, array=eff_err_hi, arrayminus=eff_err)
+                       if eff_err is not None else None)),
         row=1,
         col=1,
     )
@@ -379,8 +391,11 @@ def plot_diversity_by_group(by_group: dict[str, DiversityReport], output_path: s
         row=1,
         col=2,
     )
+    title = "Diversity per group (feature-space metrics, not the UMAP plot)"
+    if n_excluded:
+        title += f" -- {n_excluded} group(s) omitted for insufficient n"
     fig.update_layout(
-        title="Diversity per group (feature-space metrics, not the UMAP plot)",
+        title=title,
         xaxis_tickangle=-30,
         xaxis2_tickangle=-30,
     )

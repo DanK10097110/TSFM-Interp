@@ -21,6 +21,7 @@ import json
 import os
 from typing import Any
 
+from .generators import BIT_EXACT
 from .schema import GroundTruth, Provenance, ProvenanceStep, SourceRef, TimeSeriesSample
 import numpy as np
 
@@ -28,6 +29,22 @@ import numpy as np
 def _global_digest(sample_hashes: list[str]) -> str:
     joined = "".join(sorted(sample_hashes)).encode()
     return hashlib.sha256(joined).hexdigest()
+
+
+def _determinism_summary(samples: list[TimeSeriesSample]) -> dict[str, Any]:
+    """Per-generator `{bit_exact, count}` breakdown for this corpus (sec 15 A8).
+
+    A sealed corpus is a mix of generators with genuinely different
+    reproducibility guarantees (`generators.BIT_EXACT`); this is a
+    correctness claim a manifest should carry explicitly, not a docs
+    footnote a consumer has to already know to go looking for.
+    """
+    by_gen: dict[str, dict[str, Any]] = {}
+    for s in samples:
+        gen = s.provenance.generator
+        entry = by_gen.setdefault(gen, {"bit_exact": BIT_EXACT.get(gen), "count": 0})
+        entry["count"] += 1
+    return by_gen
 
 
 def seal_corpus(samples: list[TimeSeriesSample], directory: str, epoch: int, visibility: str, extra: dict[str, Any] | None = None) -> str:
@@ -49,6 +66,7 @@ def seal_corpus(samples: list[TimeSeriesSample], directory: str, epoch: int, vis
         "n_samples": len(samples),
         "sample_hashes": sample_hashes,
         "global_digest": _global_digest(sample_hashes),
+        "determinism": _determinism_summary(samples),
         "extra": extra or {},
     }
     manifest_path = os.path.join(directory, "manifest.json")

@@ -18,7 +18,7 @@ from ..extraction.alignment import align, pooling_matrix
 from ..extraction.extract import capture_raw_tokens
 from ..extraction.hooks import token_patch
 from ..extraction.store import ActivationStore
-from ..utils import batch_slices
+from ..utils import batch_slices, capped_take, sample_rows
 
 
 @torch.no_grad()
@@ -83,9 +83,17 @@ def forecast_preservation(cfg: PipelineConfig, adapter, layer: str, sae,
     granularity mismatch, not as a clean SAE-only validity failure.
     """
     adapter.ensure_loaded()
-    take = min(data.n, cfg.sae.forecast_preservation_max_series, adapter.cfg.batch_size)
-    contexts = data.contexts()[:take]
-    targets = data.targets()[:take]
+    requested = cfg.sae.forecast_preservation_max_series
+    cap = capped_take(requested, n_available=data.n, batch_size=adapter.cfg.batch_size)
+    take = cap["n_realized"]
+    # A head slice here silently scored both models on whichever series happen
+    # to sit first in a corpus written grouped by task -- stratified instead
+    # (ROADMAP.md sec 15 A4); `n_requested`/`n_realized`/`limited_by` are
+    # recorded below so this run's exact sample, and *why* it differs from the
+    # configured request when it does, is comparable to another's (sec 15 A16).
+    rows = sample_rows(data.n, take, cfg.run.seed + 11, strata=data.meta["family"].to_numpy())
+    contexts = data.contexts()[rows]
+    targets = data.targets()[rows]
     seed = cfg.run.seed + 11
 
     torch.manual_seed(seed)
@@ -111,6 +119,10 @@ def forecast_preservation(cfg: PipelineConfig, adapter, layer: str, sae,
 
     return {
         "n_series": int(take),
+        "n_requested": cap["n_requested"],
+        "n_realized": cap["n_realized"],
+        "limited_by": cap["limited_by"],
+        "rows": [int(r) for r in rows],
         "mase_clean": float(np.mean(mase_clean)),
         "mase_reconstructed": float(np.mean(mase_patch)),
         "mase_delta": float(np.mean(mase_patch) - np.mean(mase_clean)),

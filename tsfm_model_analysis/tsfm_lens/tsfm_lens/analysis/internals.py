@@ -27,7 +27,7 @@ from sklearn.preprocessing import StandardScaler
 from ..config import PipelineConfig
 from ..data import BenchmarkData
 from ..extraction.store import ActivationStore
-from ..utils import log, relative_depths, save_json
+from ..utils import log, relative_depths, sample_rows, save_json
 from .l1_geometry import linear_cka
 from .l2_stitching import _baseline_features
 from .stats import bootstrap_ci
@@ -39,9 +39,8 @@ def run_internals(cfg: PipelineConfig, store: ActivationStore, data: BenchmarkDa
     out_dir = cfg.run_dir() / "internals"
     out_dir.mkdir(parents=True, exist_ok=True)
     n_windows = store.root.attrs["n_windows"]
-    rng = np.random.default_rng(cfg.run.seed + 6)
     n_series = min(data.n, max(8, cfg.internals.max_rows // n_windows))
-    rows = np.sort(rng.choice(data.n, size=n_series, replace=False))
+    rows = sample_rows(data.n, n_series, cfg.run.seed + 6, strata=data.meta["family"].to_numpy())
     families = data.meta["family"].to_numpy()[rows]
     row_labels = np.repeat(families, n_windows)
 
@@ -55,6 +54,21 @@ def run_internals(cfg: PipelineConfig, store: ActivationStore, data: BenchmarkDa
     train_mask = np.zeros(n_series * n_windows, dtype=bool)
     train_mask[(train_s[:, None] * n_windows + np.arange(n_windows)).ravel()] = True
 
+    n_families = int(np.unique(row_labels).size)
+    family_comparisons = None
+    if n_families < 2:
+        # A logistic probe needs >=2 classes to fit at all (sklearn raises
+        # otherwise) -- with one family there is nothing to decode, so skip
+        # the probe rather than crash, and say so explicitly rather than
+        # silently rendering an empty column (`ROADMAP.md` sec 15 A6). This
+        # is the failure mode a real single-family checkpoint run actually
+        # hit before this guard existed.
+        family_comparisons = {
+            "applicable": False,
+            "reason": f"only {n_families} family present in this corpus; family "
+                      f"decodability needs >=2 classes for a probe to fit",
+        }
+
     profile = {}
     for model in store.models():
         layers = store.layers(model)[:: max(1, cfg.internals.layer_stride)]
@@ -65,7 +79,10 @@ def run_internals(cfg: PipelineConfig, store: ActivationStore, data: BenchmarkDa
             xt = torch.from_numpy(x).to(device)
             eff_dim.append(_participation_ratio(xt))
             input_cka.append(linear_cka(xt, base_rows))
-            probes.append(_family_probe(cfg, x, row_labels, train_mask, val_s, n_windows))
+            if n_families >= 2:
+                probes.append(_family_probe(cfg, x, row_labels, train_mask, val_s, n_windows))
+            else:
+                probes.append({"value": None})
         counts = np.unique(row_labels[~train_mask], return_counts=True)[1]
         profile[model] = {
             "layers": layers,
@@ -75,11 +92,16 @@ def run_internals(cfg: PipelineConfig, store: ActivationStore, data: BenchmarkDa
             "probe": probes,
             "chance": float(counts.max() / counts.sum()),
             "n_classes": int(len(counts)),
+            "family_comparisons": family_comparisons,
         }
-        peak = int(np.argmax([p["value"] for p in probes]))
-        log.info("internals %s: probe peak %.2f at %s, eff-dim range %.0f-%.0f",
-                 model, probes[peak]["value"], layers[peak],
-                 min(eff_dim), max(eff_dim))
+        if n_families >= 2:
+            peak = int(np.argmax([p["value"] for p in probes]))
+            log.info("internals %s: probe peak %.2f at %s, eff-dim range %.0f-%.0f",
+                     model, probes[peak]["value"], layers[peak],
+                     min(eff_dim), max(eff_dim))
+        else:
+            log.info("internals %s: family probe skipped (%s); eff-dim range %.0f-%.0f",
+                     model, family_comparisons["reason"], min(eff_dim), max(eff_dim))
     save_json(out_dir / "profile.json", profile)
 
 

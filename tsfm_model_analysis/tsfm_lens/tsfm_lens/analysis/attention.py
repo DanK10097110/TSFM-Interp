@@ -35,8 +35,9 @@ from ..data import BenchmarkData
 from ..extraction.hooks import (ActivationCatcher, InputCatcher,
                                 input_slice_ablate, output_mean_ablate)
 from ..extraction.store import ActivationStore
-from ..utils import batch_slices, log, save_json
+from ..utils import batch_slices, log, sample_rows, save_json
 from .lens import predict_rows
+from .stats import dominant_period as _dominant_period
 
 
 def _safe(fn, *args):
@@ -214,15 +215,6 @@ def _periodicity(prof: np.ndarray, q: int) -> np.ndarray:
     return norm[..., mask].sum(axis=-1) - baseline
 
 
-def _dominant_period(x: np.ndarray, min_lag: int = 4) -> int:
-    """Dominant period of one series via the autocorrelation peak beyond min_lag."""
-    xc = x - x.mean()
-    ac = np.correlate(xc, xc, mode="full")[len(xc) - 1:]
-    ac = ac / (ac[0] + 1e-12)
-    hi = max(min_lag + 1, len(xc) // 2)
-    return min_lag + int(np.argmax(ac[min_lag:hi]))
-
-
 def _cross_attention(cfg: PipelineConfig, adapter, data: BenchmarkData, rng,
                      token_width: float):
     """Mean first-step decoder cross-attention profile over context recency."""
@@ -232,7 +224,7 @@ def _cross_attention(cfg: PipelineConfig, adapter, data: BenchmarkData, rng,
     if sample is None:
         return None, {"status": "unsupported"}
     take = min(data.n, cfg.attention.max_series)
-    rows = np.sort(rng.choice(data.n, size=take, replace=False))
+    rows = sample_rows(data.n, take, cfg.run.seed + 9, strata=data.meta["family"].to_numpy())
     contexts = data.contexts()[rows]
     acc, count = None, 0
     for s, e in batch_slices(take, cfg.attention.batch_series):
@@ -261,9 +253,8 @@ def _ablation_analysis(cfg: PipelineConfig, adapter, store: ActivationStore,
         log.info("attention %s: ablation unsupported by adapter", adapter.name)
         return None
     acfg = cfg.attention
-    rng = np.random.default_rng(cfg.run.seed + 10)
     take = min(data.n, acfg.ablation_max_series)
-    rows = np.sort(rng.choice(data.n, size=take, replace=False))
+    rows = sample_rows(data.n, take, cfg.run.seed + 10, strata=data.meta["family"].to_numpy())
     contexts, targets = data.contexts()[rows], data.targets()[rows]
     scale = np.abs(np.diff(contexts, axis=1)).mean(axis=1) + 1e-8
     families = data.families[rows]

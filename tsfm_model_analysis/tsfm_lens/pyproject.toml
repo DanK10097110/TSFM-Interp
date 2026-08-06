@@ -16,7 +16,11 @@ dependencies = [
 [project.optional-dependencies]
 umap = ["umap-learn>=0.5"]
 chronos = ["chronos-forecasting>=1.2"]
-timesfm = ["timesfm[torch]>=1.2"]
+# >=2.0, not the old [torch] extra a pre-2.0 install used: >=2.0 removed
+# the TimesFmHparams/TimesFmCheckpoint class API entirely and switched to a
+# new class-based API with no such extra (CLAUDE.md sec 11.8); verified
+# working at timesfm==2.0.2, plain `pip install timesfm` (DEPENDENCIES.md).
+timesfm = ["timesfm>=2.0"]
 
 [tool.setuptools.packages.find]
 include = ["tsfm_lens*"]

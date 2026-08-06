@@ -619,3 +619,22 @@ def sequential_par(
         source_refs=refs,
     )
     return TimeSeriesSample(values=values, ground_truth=gt, provenance=prov)
+
+
+# Per-generator determinism contract (`ROADMAP.md` sec 15 A8, fix item 5):
+# whether the *same seed* is guaranteed to regenerate bit-identical output.
+# `sequential_par` is the one exception -- SDV's `PARSynthesizer` exposes no
+# `random_state`/seed parameter anywhere in its `fit`/`sample` API (see its
+# docstring above and `CLAUDE.md` §11.11), so its reproducibility is
+# best-effort (global numpy/torch seeding only), not the exact guarantee
+# every other generator here provides. `seal.py` reads this to record which
+# of a sealed corpus's samples can actually be regenerated from their seed,
+# rather than leaving that as an unstated assumption every consumer has to
+# already know.
+BIT_EXACT = {
+    "parametric": True,
+    "random_parametric": True,
+    "mixture": True,
+    "block_bootstrap": True,
+    "sequential_par": False,
+}

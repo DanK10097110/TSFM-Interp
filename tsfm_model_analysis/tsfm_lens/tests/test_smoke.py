@@ -72,7 +72,7 @@ def test_end_to_end(tmp_path=None):
         "clustering/embedding.parquet", "clustering/clusters.json",
         "clustering/comparison.json",
         "internals/profile.json",
-        "confirm/behavioral.parquet", "confirm/confirmation.json",
+        "hypotheses.json", "confirm/behavioral.parquet", "confirm/confirmation.json",
         "report.html",
     ]
     missing = [p for p in expected if not (run_dir / p).exists()]
@@ -143,7 +143,7 @@ def test_confirm_hypothesis_path():
     import numpy as np
     import pandas as pd
 
-    from tsfm_lens.analysis.confirm import _test_hypotheses
+    from tsfm_lens.analysis.confirm import _test_registered_hypotheses
     from tsfm_lens.utils import save_json
 
     out = Path(tempfile.mkdtemp())
@@ -153,6 +153,14 @@ def test_confirm_hypothesis_path():
         "strengths": {"patchy": ["trend"], "steppy": ["spiky"]},
         "mase_ratio": {"trend": 0.7, "spiky": 1.4},
     })
+    # A hand-built registry (sec 15 A15), standing in for what the `register`
+    # stage would have written from the same `l0/summary.json` above.
+    registry = {"hypotheses": [
+        {"id": "l0_family::trend::patchy", "stage": "l0", "family": "trend",
+        "favored": "patchy", "replicable": True},
+        {"id": "l0_family::spiky::steppy", "stage": "l0", "family": "spiky",
+        "favored": "steppy", "replicable": True},
+    ]}
     rng = np.random.default_rng(0)
     rows = []
     for fam, (mu_a, mu_b) in {"trend": (0.8, 1.2), "spiky": (1.0, 1.0)}.items():
@@ -162,7 +170,7 @@ def test_confirm_hypothesis_path():
                          "mase": mu_a + rng.normal(0, 0.1)})
             rows.append({"series_id": sid, "family": fam, "model": "steppy",
                          "mase": mu_b + rng.normal(0, 0.1)})
-    res = _test_hypotheses(cfg, pd.DataFrame(rows), "patchy", "steppy")
+    res = _test_registered_hypotheses(cfg, pd.DataFrame(rows), registry, "patchy", "steppy")
     verdicts = {t["family"]: t["confirmed"] for t in res["tests"]}
     assert verdicts == {"trend": True, "spiky": False}, verdicts
     assert all("p_holm" in t for t in res["tests"])

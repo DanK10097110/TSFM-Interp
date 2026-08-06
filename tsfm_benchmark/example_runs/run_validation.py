@@ -85,6 +85,8 @@ def main():
     ap.add_argument("--catch24", action="store_true", help="use catch24 (adds mean and std)")
     ap.add_argument("--redundancy-threshold", type=float, default=0.97)
     ap.add_argument("--max-sequences", type=int, default=None, help="subsample for the O(n^2) matcher (recommended above a few thousand sequences)")
+    ap.add_argument("--blocked", action="store_true", help="approximate O(n*k) matcher (sec 15 A17): bucket by shape, score within/adjacent buckets only -- for corpora too large for the exact O(n^2) pass even with --max-sequences")
+    ap.add_argument("--n-blocks", type=int, default=None, help="number of shape-clusters for --blocked (default: ~sqrt(n/2))")
     ap.add_argument("--group-by", default="task", choices=["task", "tier", "group", "archetype"], help="grouping key for per-group diversity/example-sequence breakdowns")
     ap.add_argument("--debug", action="store_true", help=f"write comprehensive DEBUG-level logs to a timestamped file under {LOG_DIR}")
     args = ap.parse_args()
@@ -113,7 +115,8 @@ def main():
         logger.info("loaded %d sequences from %s", len(records), corpus)
 
     with StepTimer(logger, f"matching all pairs (method={args.method})"):
-        match = bv.match_all(records, method=args.method, redundancy_threshold=args.redundancy_threshold, max_sequences=args.max_sequences)
+        match = bv.match_all(records, method=args.method, redundancy_threshold=args.redundancy_threshold,
+                             max_sequences=args.max_sequences, blocked=args.blocked, n_blocks=args.n_blocks)
     with StepTimer(logger, f"extracting catch{'24' if args.catch24 else '22'} features"):
         fm = bv.extract_features(records, catch24=args.catch24)
     with StepTimer(logger, "computing 3D embedding"):

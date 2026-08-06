@@ -38,6 +38,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 import numpy as np
+from sklearn.cluster import KMeans
 
 from .loaders import SeqRecord
 
@@ -49,6 +50,38 @@ except ImportError:
     _HAVE_DTAI = False
 
 logger = logging.getLogger("tsfm_benchmark.benchmark_validation.matching")
+
+
+def _stratified_subsample(records: list[SeqRecord], k: int, seed: int) -> list[int]:
+    """Stratified-without-replacement subsample by generator (sec 15 A17).
+
+    A plain `rng.choice` over the whole corpus draws proportionally from
+    whichever generators happen to be most numerous, which is *random* (not
+    a head-slice bias) but still leaves per-group redundancy/matching
+    numbers measuring mostly whichever generator dominates the corpus by
+    count rather than a representative cross-section. Deliberately a small
+    local copy of the same proportional-allocation idea `tsfm_lens`'s
+    `utils.sample_rows` uses, not an import of it -- the two packages are
+    kept decoupled by design (`loaders.py`'s own module docstring).
+    """
+    groups = np.array([r.group for r in records])
+    labels, inv = np.unique(groups, return_inverse=True)
+    counts = np.bincount(inv, minlength=len(labels))
+    raw_alloc = counts / counts.sum() * k
+    alloc = np.floor(raw_alloc).astype(int)
+    remainder = k - int(alloc.sum())
+    if remainder > 0:
+        frac_order = np.argsort(-(raw_alloc - alloc))
+        for i in frac_order[:remainder]:
+            alloc[i] += 1
+    rng = np.random.default_rng(seed)
+    chosen: list[int] = []
+    for i in range(len(labels)):
+        pool = np.where(inv == i)[0]
+        take = min(int(alloc[i]), len(pool))
+        if take > 0:
+            chosen.extend(rng.choice(pool, size=take, replace=False).tolist())
+    return sorted(chosen)
 
 
 def _prepare(values: np.ndarray, length: int) -> np.ndarray:
@@ -198,6 +231,16 @@ class MatchReport:
     bucket_counts: list[int]
     redundant_pairs: list[tuple[str, str, float]] = field(default_factory=list)
     redundancy_fraction: float = 0.0
+    # sec 15 A17: the exact O(n^2) pass always covers every pair
+    # (coverage_fraction=1.0, blocked=False). The blocked/approximate
+    # matcher only scores pairs within the same or a neighboring catch22-
+    # shape cluster and leaves the rest unscored (NaN in `similarity_matrix`,
+    # excluded from `redundancy_fraction`'s denominator) -- this is the
+    # exactness trade-off the fix explicitly requires be stated in the
+    # report, not buried in a docstring.
+    coverage_fraction: float = 1.0
+    blocked: bool = False
+    n_blocks: int | None = None
 
 
 def match_all(
@@ -210,6 +253,9 @@ def match_all(
     redundancy_threshold: float = 0.95,
     max_sequences: int | None = None,
     seed: int = 0,
+    blocked: bool = False,
+    n_blocks: int | None = None,
+    adjacent_k: int = 2,
 ) -> MatchReport:
     """Score every pair of sequences and summarise the redundancy of the set.
 
@@ -217,16 +263,30 @@ def match_all(
     the off-diagonal scores, and the pairs whose similarity meets the redundancy
     threshold. A high redundancy fraction means the benchmark is wasting slots on
     near-duplicates.
+
+    ``blocked=True`` switches to an approximate O(n*k) matcher for corpora too
+    large for the exact O(n^2) pass (sec 15 A17); see `_match_all_blocked`.
     """
     if method not in ("xcorr", "dtw"):
         raise ValueError(f"unknown method '{method}'")
 
     if max_sequences and len(records) > max_sequences:
-        logger.info("subsampling %d sequences down to max_sequences=%d (seed=%d)", len(records), max_sequences, seed)
-        rng = np.random.default_rng(seed)
-        idx = rng.choice(len(records), size=max_sequences, replace=False)
-        records = [records[i] for i in sorted(idx)]
+        logger.info("subsampling %d sequences down to max_sequences=%d (seed=%d, stratified by generator)",
+                   len(records), max_sequences, seed)
+        idx = _stratified_subsample(records, max_sequences, seed)
+        records = [records[i] for i in idx]
 
+    if blocked:
+        return _match_all_blocked(records, method, length, lag_frac, window_frac, n_buckets,
+                                  redundancy_threshold, seed, n_blocks, adjacent_k)
+    return _match_all_exact(records, method, length, lag_frac, window_frac, n_buckets,
+                            redundancy_threshold)
+
+
+def _match_all_exact(records: list[SeqRecord], method: str, length: int, lag_frac: float,
+                     window_frac: float, n_buckets: int, redundancy_threshold: float) -> MatchReport:
+    """The original exact O(n^2) pass, unchanged -- every existing call site
+    that doesn't pass `blocked=True` reproduces byte-for-byte (sec 15 A17)."""
     n = len(records)
     n_pairs = n * (n - 1) // 2
     max_lag = max(1, int(lag_frac * length))
@@ -274,6 +334,111 @@ def match_all(
     )
 
 
+def _match_all_blocked(records: list[SeqRecord], method: str, length: int, lag_frac: float,
+                       window_frac: float, n_buckets: int, redundancy_threshold: float,
+                       seed: int, n_blocks: int | None, adjacent_k: int) -> MatchReport:
+    """Approximate matcher for corpora too large for the exact O(n^2) pass (sec 15 A17).
+
+    Sequences are bucketed by shape (KMeans over the same z-normalised,
+    resampled arrays the exact matcher itself compares -- a self-contained
+    proxy for "catch22 neighbourhood" that doesn't add a new coupling to
+    `features.py`, a deliberate implementation choice, not the literal
+    "catch22 neighbourhood" the fix's own wording suggested). Exact
+    similarity (the same batched `_max_xcorr_matrix`/`_dtw_similarity_matrix`
+    routines the exact path uses -- no new numerical code) is computed only
+    for pairs whose two sequences fall in the same bucket or in each other's
+    `adjacent_k` nearest buckets by centroid distance; every other pair is
+    left unscored (`NaN` in `similarity_matrix`) rather than assumed
+    non-redundant, and excluded from `redundancy_fraction`'s denominator.
+    `coverage_fraction` states exactly what fraction of all possible pairs
+    were actually scored -- the stated exactness trade-off the fix requires.
+    """
+    n = len(records)
+    ids = [r.seq_id for r in records]
+    if n_blocks is None:
+        n_blocks = max(1, int(np.sqrt(max(1, n) / 2)))
+    n_blocks = max(1, min(n_blocks, n))
+
+    if n < 3 or n_blocks <= 1:
+        logger.info("match_all(blocked=True): n=%d too small to block meaningfully; "
+                   "falling back to the exact O(n^2) pass", n)
+        exact = _match_all_exact(records, method, length, lag_frac, window_frac, n_buckets,
+                                 redundancy_threshold)
+        exact.coverage_fraction, exact.blocked, exact.n_blocks = 1.0, True, 1
+        return exact
+
+    prepared = np.stack([_prepare(r.values, length) for r in records])
+    max_lag = max(1, int(lag_frac * length))
+    window = max(1, int(window_frac * length))
+
+    t0 = time.perf_counter()
+    km = KMeans(n_clusters=n_blocks, random_state=seed, n_init=10).fit(prepared)
+    block_of = km.labels_
+    centroids = km.cluster_centers_
+    cdist = np.linalg.norm(centroids[:, None, :] - centroids[None, :, :], axis=-1)
+    neighbor_blocks = []
+    for b in range(n_blocks):
+        order = [o for o in np.argsort(cdist[b]) if o != b]
+        neighbor_blocks.append({b, *order[:adjacent_k]})
+    logger.info("match_all(blocked=True): n=%d into %d shape-clusters (adjacent_k=%d) in %.2fs",
+               n, n_blocks, adjacent_k, time.perf_counter() - t0)
+
+    sim = np.full((n, n), np.nan)
+    np.fill_diagonal(sim, 1.0)
+    t0 = time.perf_counter()
+    done_block_pairs = set()
+    for bi in range(n_blocks):
+        for bj in neighbor_blocks[bi]:
+            key = (min(bi, bj), max(bi, bj))
+            if key in done_block_pairs:
+                continue
+            done_block_pairs.add(key)
+            rows_i = np.where(block_of == bi)[0]
+            rows_j = np.where(block_of == bj)[0] if bj != bi else rows_i
+            combined = np.unique(np.concatenate([rows_i, rows_j]))
+            if method == "xcorr":
+                sub_sim = _max_xcorr_matrix(prepared[combined], max_lag)
+                np.fill_diagonal(sub_sim, 1.0)
+            else:
+                sub_sim = _dtw_similarity_matrix(list(prepared[combined]), window, length)
+            local_of = {g: l for l, g in enumerate(combined)}
+            for gi in rows_i:
+                for gj in rows_j:
+                    if gi >= gj or not np.isnan(sim[gi, gj]):
+                        continue
+                    sim[gi, gj] = sim[gj, gi] = sub_sim[local_of[gi], local_of[gj]]
+    logger.info("match_all(blocked=True): scored block-adjacency pairs in %.2fs", time.perf_counter() - t0)
+
+    tri_i, tri_j = np.triu_indices(n, k=1)
+    pair_sims = sim[tri_i, tri_j]
+    scored_mask = ~np.isnan(pair_sims)
+    total_pairs = n * (n - 1) // 2
+    coverage = float(scored_mask.sum()) / max(1, total_pairs)
+
+    off_scored = pair_sims[scored_mask]
+    quantiles = np.linspace(0, 1, n_buckets + 1)
+    edges = np.quantile(off_scored, quantiles) if len(off_scored) else np.zeros(n_buckets + 1)
+    edges = np.unique(edges)
+    counts, edges = np.histogram(off_scored, bins=edges) if len(edges) > 1 else (np.array([len(off_scored)]), edges)
+
+    above = scored_mask & (pair_sims >= redundancy_threshold)
+    redundant = [(ids[i], ids[j], float(pair_sims[k]))
+                for k, (i, j) in enumerate(zip(tri_i, tri_j)) if above[k]]
+    redundant.sort(key=lambda t: t[2], reverse=True)
+    frac = float(above.sum() / max(1, scored_mask.sum()))
+    logger.info("match_all(blocked=True): coverage=%.1f%% (%d/%d pairs), redundancy %d/%d "
+               "scored pairs (%.2f%%) at or above threshold %.3f", 100 * coverage,
+               int(scored_mask.sum()), total_pairs, len(redundant), int(scored_mask.sum()),
+               100.0 * frac, redundancy_threshold)
+
+    return MatchReport(
+        method=method, n_sequences=n, similarity_matrix=sim, ids=ids,
+        bucket_edges=[float(e) for e in edges], bucket_counts=[int(c) for c in counts],
+        redundant_pairs=redundant, redundancy_fraction=frac,
+        coverage_fraction=round(coverage, 4), blocked=True, n_blocks=n_blocks,
+    )
+
+
 def redundancy_by_group(match: MatchReport, id_to_label: dict[str, str]) -> dict[str, Any]:
     """Split the pairwise similarity matrix into within-group and cross-group means.
 
@@ -283,6 +448,13 @@ def redundancy_by_group(match: MatchReport, id_to_label: dict[str, str]) -> dict
     pairs sharing a label (e.g. both 'synthetic') and pairs that don't.
     ``match.ids`` may be a subsample of the full corpus (``max_sequences``);
     ``id_to_label`` only needs to cover whichever ids ended up in ``match``.
+
+    Under ``match.blocked=True`` (sec 15 A17), unscored pairs are ``NaN`` in
+    ``similarity_matrix`` and excluded here too -- a group whose members
+    landed in scattered shape-clusters can end up with very few *scored*
+    within-group pairs even though it has many members, which
+    ``n_pairs_within`` reports honestly rather than silently averaging over
+    fewer pairs than a reader would assume from the group's size.
     """
     labels = np.array([id_to_label.get(i, "unknown") for i in match.ids])
     sim = match.similarity_matrix
@@ -291,13 +463,14 @@ def redundancy_by_group(match: MatchReport, id_to_label: dict[str, str]) -> dict
     tri_i, tri_j = np.triu_indices(n, k=1)
     same_group = labels[tri_i] == labels[tri_j]
     sim_pairs = sim[tri_i, tri_j]
+    scored = ~np.isnan(sim_pairs)
 
     within: dict[str, list[float]] = {}
     for g in np.unique(labels):
-        mask = same_group & (labels[tri_i] == g)
+        mask = same_group & (labels[tri_i] == g) & scored
         if mask.any():
             within[str(g)] = sim_pairs[mask].tolist()
-    across = sim_pairs[~same_group].tolist()
+    across = sim_pairs[(~same_group) & scored].tolist()
     logger.debug("redundancy_by_group: %d groups, %d within-group pairs, %d across-group pairs", len(within), len(sim_pairs) - len(across), len(across))
 
     return {
@@ -305,4 +478,5 @@ def redundancy_by_group(match: MatchReport, id_to_label: dict[str, str]) -> dict
         "across_group_mean_similarity": round(float(np.mean(across)), 4) if across else None,
         "n_pairs_within": {g: len(v) for g, v in sorted(within.items())},
         "n_pairs_across": len(across),
+        "coverage_fraction": match.coverage_fraction,
     }

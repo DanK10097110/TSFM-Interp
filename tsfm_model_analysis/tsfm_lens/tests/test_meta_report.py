@@ -17,11 +17,13 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from tsfm_lens.report.meta_report import build_meta_report, render_meta_report_html, summarize_run
+from tsfm_lens.report.meta_report import (build_meta_report, provenance_warnings,
+                                          render_meta_report_html, summarize_run)
 from tsfm_lens.utils import save_json
 
 
-def _write_full_run(run_dir: Path, label: str, favored: str, crystallization_depth) -> None:
+def _write_full_run(run_dir: Path, label: str, favored: str, crystallization_depth,
+                    provenance: dict = None) -> None:
     run_dir.mkdir(parents=True)
     (run_dir / "config_resolved.yaml").write_text(
         f"run:\n  name: {label}\ndata:\n  path: fake/{label}\n"
@@ -46,6 +48,9 @@ def _write_full_run(run_dir: Path, label: str, favored: str, crystallization_dep
     })
     save_json(run_dir / "clustering" / "comparison.json", {"ami": {"value": 0.6}})
     save_json(run_dir / "confirm" / "confirmation.json", {"tests": [], "overall": {}})
+    if provenance is not None:
+        save_json(run_dir / "run_manifest.json", {"version": 1, "stages": {},
+                                                  "provenance": provenance})
 
 
 def test_missing_stage_degrades_gracefully():
@@ -90,6 +95,47 @@ def test_none_crystallization_depth_and_stability():
     print("none-crystallization-depth and stability test passed")
 
 
+def test_provenance_warnings_flag_corpus_and_library_drift():
+    """Two runs with different corpus digests and a different torch major
+    must both be flagged; a matched pair of runs must produce no warnings
+    (ROADMAP.md sec 15 A7)."""
+    out = Path(tempfile.mkdtemp())
+    _write_full_run(out / "run_a", "run_a", favored="A", crystallization_depth=0.3,
+                    provenance={"git_sha": "aaa", "corpus_digest": "digest_1",
+                               "packages": {"torch": "2.9.1", "numpy": "2.1.0"}})
+    _write_full_run(out / "run_b", "run_b", favored="A", crystallization_depth=0.4,
+                    provenance={"git_sha": "bbb", "corpus_digest": "digest_2",
+                               "packages": {"torch": "1.13.0", "numpy": "2.1.0"}})
+    meta = build_meta_report([out / "run_a", out / "run_b"])
+    warnings = meta["provenance_warnings"]
+    assert any("corpus digest differs" in w for w in warnings), warnings
+    assert any("torch major version differs" in w for w in warnings), warnings
+    assert not any("numpy" in w for w in warnings), "matching numpy majors must not warn"
+
+    html = render_meta_report_html(meta, out / "meta_report.html").read_text(encoding="utf-8")
+    assert "Environment drift across these runs" in html
+    assert "aaa" in html and "bbb" in html
+
+    matched = build_meta_report([out / "run_a", out / "run_a"])
+    assert matched["provenance_warnings"] == [], (
+        "identical provenance across the compared runs must not warn")
+    print("provenance warnings test passed")
+
+
+def test_runs_with_no_provenance_degrade_without_warning():
+    """Pre-A7 runs (no run_manifest.json) must aggregate without crashing
+    and without a spurious drift warning -- absence of data isn't evidence
+    of drift."""
+    out = Path(tempfile.mkdtemp())
+    _write_full_run(out / "run_a", "run_a", favored="A", crystallization_depth=0.3)
+    _write_full_run(out / "run_b", "run_b", favored="A", crystallization_depth=0.4)
+    meta = build_meta_report([out / "run_a", out / "run_b"])
+    assert meta["provenance_warnings"] == []
+    print("no-provenance degrade test passed")
+
+
 if __name__ == "__main__":
     test_missing_stage_degrades_gracefully()
     test_none_crystallization_depth_and_stability()
+    test_provenance_warnings_flag_corpus_and_library_drift()
+    test_runs_with_no_provenance_degrade_without_warning()

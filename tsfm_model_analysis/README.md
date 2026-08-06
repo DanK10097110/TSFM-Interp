@@ -73,7 +73,7 @@ applied to the same series. Concretely:
 
 ```bash
 pip install -r requirements.txt          # core
-pip install chronos-forecasting timesfm[torch]   # the models you compare
+pip install chronos-forecasting timesfm          # the models you compare (timesfm>=2.0; see below)
 pip install umap-learn                   # optional, nicer cluster maps
 ```
 
@@ -150,8 +150,11 @@ also runs a spot check during extraction.
 Tested adapter targets: `chronos-forecasting>=1.2` with `chronos-t5-*`
 checkpoints, `chronos-forecasting>=1.4` with `chronos-bolt-*` checkpoints
 (patch geometry is read from the checkpoint config; forecasts are
-deterministic, so its L3 curves carry no sampling noise), and
-`timesfm[torch]` with `google/timesfm-2.0-500m-pytorch`. TimesFM's module
+deterministic, so its L3 curves carry no sampling noise), and the `timesfm`
+PyPI package's 2.5-only API (`>=2.0`, which dropped the old
+`TimesFmHparams`/`TimesFmCheckpoint`/`TimesFm` class entirely, with no
+Python>=3.12-compatible release that keeps it) with
+`google/timesfm-2.5-200m-pytorch` (`CLAUDE.md` sec 11.8). TimesFM's module
 layout moves between releases; the adapter resolves it defensively and
 warns when it has to guess.
 

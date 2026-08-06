@@ -88,3 +88,52 @@ def impulse_alignment_check(adapter: ModelAdapter, window: int,
         log.warning("alignment check '%s': a layer shows zero diagonal hits; "
                     "token_time_spans is likely wrong for this checkpoint", adapter.name)
     return results
+
+
+def run_alignment_gate(adapter: ModelAdapter, window: int, layers: list,
+                       min_diagonal_frac: float = 0.5, on_failure: str = "fail") -> dict:
+    """Run the impulse alignment check, persist a full record, and enforce a gate.
+
+    `CLAUDE.md` sec 6.3/sec 7 invariant 7 say a near-zero diagonal-hit fraction
+    means the declared `token_time_spans` are wrong for the installed library
+    version and no cross-model number should be trusted until fixed -- but
+    until this function existed (ROADMAP.md sec 15 A2), the check ran, printed
+    one INFO line, and its result was discarded: nothing enforced the "before
+    trusting any cross-model number" half of that sentence. This probes every
+    captured layer (not a strided subset -- the check is one extra forward
+    pass, effectively free) and fails loudly on a broken mapping by default,
+    exactly like any other broken assumption in this codebase (`CLAUDE.md`
+    sec 2.5) rather than degrading to a log line.
+    """
+    hits = impulse_alignment_check(adapter, window, layers)
+    names = list(hits.keys())
+    values = [hits[n] for n in names]
+    shallowest = names[0]
+    shallowest_frac = hits[shallowest]
+    passed = shallowest_frac >= min_diagonal_frac
+    record = {
+        "per_layer": hits,
+        "layers_probed": names,
+        "n_layers_probed": len(names),
+        "min": float(min(values)),
+        "mean": float(sum(values) / len(values)),
+        "window": window,
+        "shallowest_layer": shallowest,
+        "shallowest_frac": float(shallowest_frac),
+        "min_diagonal_frac_threshold": min_diagonal_frac,
+        "on_failure": on_failure,
+        "passed": passed,
+    }
+    if not passed:
+        msg = (f"alignment check FAILED for model '{adapter.name}': shallowest probed "
+              f"layer '{shallowest}' has diagonal-hit fraction {shallowest_frac:.2f}, "
+              f"below alignment.min_diagonal_frac={min_diagonal_frac}. This means "
+              f"token_time_spans is likely wrong for this checkpoint/library version -- "
+              f"CLAUDE.md sec 6.3, sec 7 invariant 7. Inspect every layer with "
+              f"`python run.py --config <this config> --check-alignment {adapter.name}`, "
+              f"fix the adapter's declared spans, or set alignment.on_failure: warn to "
+              f"proceed anyway at your own risk (not recommended -- see ROADMAP.md sec 15 A2).")
+        if on_failure == "fail":
+            raise RuntimeError(msg)
+        log.warning(msg)
+    return record

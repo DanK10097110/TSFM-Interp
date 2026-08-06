@@ -1,0 +1,225 @@
+# CI (ROADMAP.md sec 15 A14). Three jobs, matching that item's fix plan:
+#
+#   fast     - CPU-only, pip-pinned to close approximations of
+#              DEPENDENCIES.md's exact versions (mocks only: no GPU, no
+#              model-checkpoint downloads, minutes not hours).
+#   pinned   - recreates DEPENDENCIES.md sec 2's exact conda recipe and runs
+#              the same suite, proving the documented recovery procedure
+#              still resolves and works, not just that *some* recent
+#              version set does.
+#   bleeding - installs the *latest* release of every load-bearing library
+#              named in CLAUDE.md sec 11's trap log (numpy, torch, zarr,
+#              datasets, transformers, timesfm, chronos-forecasting) and
+#              runs the same suite. Allowed to fail; its entire job is to
+#              fail on someone else's release on a schedule, rather than on
+#              a future session's Tuesday (the repeated-rediscovery pattern
+#              CLAUDE.md sec 11.8/11.9/11.10/11.15/11.17 all share).
+#
+# None of the three touches real model checkpoints (timesfm/chronos
+# weights) -- every suite here runs against mock adapters only, per
+# CLAUDE.md sec 8's own "no downloads, no GPU, minutes" framing of the
+# smoke config. Real-checkpoint verification stays a manual, per-session
+# step (this repo's own established practice -- see ROADMAP.md's Findings
+# blocks for every item verified that way).
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    # Weekly bleeding-edge check (fix item 3's "scheduled weekly").
+    - cron: "0 6 * * 1"
+  workflow_dispatch: {}
+
+jobs:
+  fast:
+    name: fast (CPU, pinned)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install pinned dependencies (pip approximation of DEPENDENCIES.md sec 3)
+        run: |
+          python -m pip install --upgrade pip
+          # Core numeric/report stack -- exact versions from DEPENDENCIES.md
+          # sec 3 where a pip (PyPI) wheel exists for them. `mkl` itself is
+          # intentionally omitted: that pin only matters for conda-forge's
+          # MKL-linked numpy build (CLAUDE.md sec 11.13); PyPI's numpy wheel
+          # links OpenBLAS instead, so the ABI crash this pin guards against
+          # does not apply to a pip-based environment like this job's.
+          pip install \
+            "numpy==2.1.0" "scipy==1.18.0" "pandas==2.3.3" "scikit-learn==1.9.0" \
+            "pyyaml==6.0.3" "jinja2==3.1.6" "tqdm==4.70.0" "plotly==5.24.1" \
+            "zarr>=2.16,<3" "pyarrow>=14" \
+            "pycatch22" "umap-learn" "dtaidistance" \
+            "datasets>=2.18,<3" "tsbootstrap>=0.7" "sdv>=1.9"
+          # CPU-only torch -- the fast job never touches a GPU (mocks only).
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install -e .
+          pip install -e tsfm_model_analysis/tsfm_lens
+
+      - name: compileall (both packages)
+        run: |
+          python -m compileall -q tsfm_benchmark tsfm_model_analysis/tsfm_lens
+
+      - name: Invariant 11 -- no hardcoded absolute paths
+        run: |
+          # CLAUDE.md sec 7 invariant 11: no literal absolute paths (drive
+          # letters, /home/, /Users/) in code or config. `Path(__file__)`-
+          # relative construction is fine; a literal string is not. Excludes
+          # this workflow file itself, git internals, and virtualenvs.
+          if grep -rInE '(\b[A-Za-z]:[\\/]|/home/[A-Za-z0-9_.-]+/|/Users/[A-Za-z0-9_.-]+/)' \
+              --include='*.py' --include='*.yaml' --include='*.yml' \
+              --exclude-dir='.git' --exclude-dir='.github' --exclude-dir='node_modules' \
+              --exclude-dir='runs' --exclude-dir='.venv' --exclude-dir='venv' \
+              tsfm_benchmark tsfm_model_analysis; then
+            echo "::error::found a literal absolute path -- see CLAUDE.md invariant 11"
+            exit 1
+          fi
+          # ROADMAP.md sec 15 A18: the mid-string patterns above wouldn't
+          # catch a bare absolute placeholder like `path: /path/to/...` (no
+          # drive letter, no /home//Users/) -- a real instance of exactly
+          # this shipped in a committed config (configs/default.yaml) until
+          # this item. Any YAML `path:`/`out_dir:` value starting with `/`
+          # is a separate, narrower check for that specific config-file shape.
+          if grep -rInE '^\s*(path|out_dir):\s*/' \
+              --include='*.yaml' --include='*.yml' \
+              --exclude-dir='.git' --exclude-dir='.github' --exclude-dir='runs' \
+              tsfm_benchmark tsfm_model_analysis; then
+            echo "::error::found a config path:/out_dir: value starting with '/' -- see CLAUDE.md invariant 11, ROADMAP.md sec 15 A18"
+            exit 1
+          fi
+
+      - name: tsfm_benchmark test suite
+        run: python -m pytest tsfm_benchmark/tests -q
+
+      - name: tsfm_lens test suite (includes test_adapter_conformance.py against all mocks)
+        run: |
+          cd tsfm_model_analysis/tsfm_lens
+          python -m pytest tests -q
+
+      - name: Smoke run end-to-end (configs/smoke.yaml, mock adapters, no downloads)
+        run: |
+          cd tsfm_model_analysis/tsfm_lens
+          python run.py --config configs/smoke.yaml
+          python - <<'PY'
+          import json, pathlib, sys
+          run_dir = pathlib.Path("runs/smoke")
+          cov = json.loads((run_dir / "report" / "coverage.json").read_text())["sections"]
+          failed = [c["eyebrow"] for c in cov if c["status"] == "failed"]
+          if failed:
+              print(f"::error::smoke run had failed report sections: {failed}")
+              sys.exit(1)
+          rendered = sum(c["status"] == "rendered" for c in cov)
+          # A floor, not a hardcoded exact count on purpose (ROADMAP.md sec
+          # 15 A14) -- an exact "N sections, M findings" assertion would need
+          # editing every time a feature adds a finding (this session alone
+          # added several), which is exactly the kind of brittle check that
+          # goes stale and gets ignored. Zero failed sections + a sane
+          # minimum rendered count still catches a real regression.
+          if rendered < 8:
+              print(f"::error::smoke run rendered only {rendered} sections, expected >= 8")
+              sys.exit(1)
+          html = (run_dir / "report.html").read_text(encoding="utf-8")
+          if len(html) < 10_000:
+              print(f"::error::report.html suspiciously small ({len(html)} bytes)")
+              sys.exit(1)
+          print(f"smoke run OK: {rendered} sections rendered, 0 failed")
+          PY
+
+      - name: Upload smoke report artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-report
+          path: |
+            tsfm_model_analysis/tsfm_lens/runs/smoke/report.html
+            tsfm_model_analysis/tsfm_lens/runs/smoke/report/coverage.json
+          if-no-files-found: warn
+
+  pinned:
+    name: pinned (DEPENDENCIES.md recipe)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: conda-incubator/setup-miniconda@v3
+        with:
+          python-version: "3.12"
+          channels: conda-forge
+          channel-priority: strict
+
+      - name: Recreate the exact DEPENDENCIES.md sec 2 environment
+        shell: bash -el {0}
+        run: |
+          conda install -y -c conda-forge numpy=2.1.0 mkl=2024.2.2 scipy pandas \
+            scikit-learn pyyaml jinja2 tqdm zarr=2.18.7 plotly=5.24.1 \
+            pycatch22 umap-learn dtaidistance datasets=2.21.0 tsbootstrap=0.7.1 \
+            sdv=1.14.0
+          # CPU-only torch (this job has no GPU runner either -- "pinned"
+          # verifies the *recipe* resolves and the suite passes, not that a
+          # GPU is present; real-checkpoint verification is a separate,
+          # manual, per-session step per this repo's own established
+          # practice, ROADMAP.md's own Findings blocks).
+          pip install torch==2.9.1
+          pip install -e .
+          pip install -e tsfm_model_analysis/tsfm_lens
+
+      - name: tsfm_benchmark test suite
+        shell: bash -el {0}
+        run: python -m pytest tsfm_benchmark/tests -q
+
+      - name: tsfm_lens test suite
+        shell: bash -el {0}
+        run: |
+          cd tsfm_model_analysis/tsfm_lens
+          python -m pytest tests -q
+
+  bleeding:
+    name: bleeding (latest of every load-bearing library)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install the latest of every load-bearing dependency, unpinned
+        run: |
+          python -m pip install --upgrade pip
+          pip install numpy scipy pandas scikit-learn pyyaml jinja2 tqdm plotly \
+            pyarrow pycatch22 umap-learn dtaidistance sktime
+          # zarr and datasets are deliberately NOT force-upgraded past this
+          # repo's own known ceilings (CLAUDE.md sec 11.9/11.15) -- this job
+          # exists to catch breaks in libraries that *aren't* already a
+          # documented, understood constraint, not to re-discover the same
+          # two traps every week. transformers/timesfm/chronos-forecasting/
+          # torch ARE left unpinned: those are exactly the model-library
+          # surface that broke this repo before (CLAUDE.md sec 11.8) with no
+          # warning.
+          pip install "zarr>=2.16,<3" "datasets>=2.18,<3" tsbootstrap sdv
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install transformers timesfm chronos-forecasting
+          pip install -e .
+          pip install -e tsfm_model_analysis/tsfm_lens
+
+      - name: tsfm_benchmark test suite
+        run: python -m pytest tsfm_benchmark/tests -q
+
+      - name: tsfm_lens test suite
+        run: |
+          cd tsfm_model_analysis/tsfm_lens
+          python -m pytest tests -q
+
+      - name: Smoke run end-to-end
+        run: |
+          cd tsfm_model_analysis/tsfm_lens
+          python run.py --config configs/smoke.yaml

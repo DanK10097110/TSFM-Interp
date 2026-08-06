@@ -126,6 +126,37 @@
 > or report section exists yet. §3's repo layout and §9's verification
 > table are updated; full numbers are in `ROADMAP.md` §6.2's new Findings
 > block, not repeated here.
+>
+> **Reconciliation note (2026-08-06) — audit pass; several claims in this
+> file are now qualified.** A planning-only session read this file and
+> `ROADMAP.md` against the actual pipeline looking for silent-failure paths
+> and fixable limitations, and wrote the result up as **`ROADMAP.md` §15**
+> (19 items, each with `file:line` evidence and a detailed fix plan, all
+> marked NEEDS IMPLEMENTATION) plus **§16** (an enhancement backlog for the
+> "anyone, any model, one button" goal). Nothing was implemented. The four
+> findings that directly qualify statements made *in this file* are marked
+> inline below (§6.3, §6.4, §7 invariant 7, §8) and collected as §11.20;
+> summarized once here because they change how a fresh session should read
+> the rest of this document:
+> 1. **Invariant 7 is not machine-enforced.** `extraction/extract.py` calls
+>    `impulse_alignment_check` and *discards the result* — no threshold, no
+>    artifact, no report line, and only a stride-4 subset of layers probed.
+>    §6.3's "near-zero everywhere means fix the adapter before trusting any
+>    cross-model number" is true and currently depends on a human running
+>    `--check-alignment` by hand and reading it (`ROADMAP.md` §15 A2).
+> 2. **`build_pipeline` writes corpora grouped by task, and four analysis
+>    call sites subsample with a head slice**, so several already-recorded
+>    numbers were measured on family-skewed prefixes rather than
+>    representative samples (`ROADMAP.md` §15 A4 names which).
+> 3. **Stage skipping has no config fingerprint** — editing a config and
+>    rerunning into the same run directory silently mixes artifacts from two
+>    configs (§15 A3). §8's "stages self-skip when artifacts exist" is
+>    accurate but incomplete as guidance.
+> 4. **The `layer_screen` stage cannot satisfy its own all-layers-fair
+>    requirement** under any production config, because it screens the
+>    strided store rather than every block (§15 A1). §6.1's Screen row and
+>    §8's `layer_screen` knob description are both correct about what the
+>    stage *does*; the requirement it was designed to meet is unimplemented.
 
 ---
 
@@ -656,6 +687,21 @@ spans are wrong for your installed version — fix the adapter before trusting a
 cross-model number.** `alignment.sanity_check: true` runs a cheap spot check
 during extraction.
 
+⚠️ **AUDIT (2026-08-06) — that spot check's result is thrown away; see
+`ROADMAP.md` §15 A2.** `extraction/extract.py:50-51` calls the function,
+ignores the returned dict, and probes only `layers[::len//4]`;
+`alignment.py:84-86` logs one INFO line. There is no threshold, nothing
+written to the run directory, and nothing in the report — so inside a
+pipeline run the exact signal this paragraph says must block trusting a
+number is one line among hundreds, followed by a complete-looking report.
+The manual `--check-alignment` path *is* trustworthy (and is how §11.16 was
+caught); the automatic one is decorative. Until A2 lands, treat
+`--check-alignment` as mandatory-by-hand for every new checkpoint and every
+library bump, exactly as invariant 7 says — the config flag does not
+substitute for it. **Also: `extraction/store.py` writes activations as
+`float16` with no finiteness check** (§15 A19), so an overflowing layer
+enters CKA/ridge solves as `inf`/`NaN` rather than raising.
+
 ### 6.4 Extraction & storage
 - `hooks.py`: `ActivationCatcher` (forward hooks) and **`token_patch`** — the
   single intervention primitive reused by L3, Lens, and (eventually) SAE feature
@@ -866,9 +912,21 @@ sealed private corpora.
    restoration-by-depth *curve*.
 6. **`confirm` runs once**, on frozen analysis, against a sealed private corpus.
 7. **Alignment is verified empirically** (`--check-alignment`) on every new
-   library version before any cross-model number is trusted.
+   library version before any cross-model number is trusted. ⚠️ **Enforced by
+   human memory only** — the in-pipeline check discards its own result
+   (`ROADMAP.md` §15 A2, and the marker in §6.3). Run the CLI check by hand,
+   every time, until A2 lands.
 8. **Unsupported capabilities skip and log; broken assumptions fail loudly.**
-   Never silently produce a wrong slice.
+   Never silently produce a wrong slice. ⚠️ **"Loudly" is currently
+   implemented as a log line in most places, which is not loud once the
+   deliverable is an HTML file** — the report omits skipped and *failed*
+   sections with no trace in the HTML (`ROADMAP.md` §15 A5), a mis-resolved
+   `family_key` silently regroups every per-family statistic (§15 A6), a
+   configured sample cap is silently clamped to the model's batch size
+   (§15 A16), and `layer_screen` can fall back to the very null it was
+   supposed to beat without the report saying so (§15 A1). The doctrine is
+   right; twelve of §15's nineteen items are places the implementation
+   doesn't meet it yet.
 9. **Evidence class is stated in the report** — geometric / translatable /
    causal-within-model / descriptive / illustrative.
 10. **Real data never enters the benchmark directly** — only as leakage reference
@@ -909,6 +967,12 @@ python run.py --config configs/default.yaml --check-alignment chronos
 python run.py --config configs/default.yaml
 
 # Stage selection / reruns (stages self-skip when artifacts exist)
+# WARNING: the skip is a bare path-existence check with NO config fingerprint
+# (ROADMAP.md §15 A3). If you edited anything a skipped stage consumes --
+# context_len, alignment.window, a checkpoint, data.path -- and rerun into the
+# same run.name, you get last config's artifacts feeding this config's
+# analyses, with a report that looks complete. Until A3 lands: change a config
+# => change run.name, or --force all.
 python run.py --config configs/default.yaml --stages extract,l1,report
 python run.py --config configs/default.yaml --stages l2 --force l2
 
@@ -939,7 +1003,12 @@ Notable stage knobs: `l3.patching.per_window: true`,
 `lens.crystallization_tol: 0.1`; `attention.batch_series` (memory-critical);
 `layer_screen.enabled: true` (default on; `method: work_bend` is the
 §6.1.1 bake-off winner, `budget_frac`/`min_budget` size the per-model
-selection its `selection.json` writes); `sae.enabled: false` (default off;
+selection its `selection.json` writes — ⚠️ but it screens only the layers
+`capture_layer_stride` actually captured, so with the stride 2 both
+`default.yaml` and `medium_run.yaml` use for TimesFM, half that model's
+blocks are never scored; the bake-off ran at stride 1. `ROADMAP.md` §15 A1
+has the fix; until then set `capture_layer_stride: 1` if you intend the
+screen's selection to mean what its own design says it means); `sae.enabled: false` (default off;
 `sae.targets: []` resolves via `layer_screen`'s selection ("auto") when
 left empty, or `[{model, layer}, ...]` to pin explicit layers —
 `configs/medium_run_chronos_base.yaml` has a real worked example, pinned
@@ -986,9 +1055,9 @@ PYTHONPATH=. python3 example_runs/run_validation.py
 
 | Suite | Status |
 |---|---|
-| `tsfm_benchmark/tests/` | **40 passed / 1 failed** (see golden-hash row below) — includes `test_real_derived_generators.py` (2026-08-03), +1 test same-day follow-up for `sequential_par`'s length-truncation fix (§11.14) |
+| `tsfm_benchmark/tests/` | **41 passed / 1 skipped** (see golden-hash row below — corrected 2026-08-06, was reported as 1 failing) — includes `test_real_derived_generators.py` (2026-08-03), +1 test same-day follow-up for `sequential_par`'s length-truncation fix (§11.14), +4 tests 2026-08-06 (a golden-hash split test + 3 seal-determinism tests, `ROADMAP.md` sec 15 A8) |
 | `tsfm_lens/tests/test_smoke.py` | **Green end-to-end**, all 12 stages, artifact shape checks, report token checks (10 sections, 18 findings) — **corrected 2026-08-03**: this had never actually passed against the package's own pinned zarr version until this session (§11.15) |
-| Golden-hash generator regression | 🔴 **Currently FAILING against numpy 2.1.0** (verified 2026-08-03, in a from-scratch environment, with no change to `parametric`/`random_parametric` — see below and §11.13). Was previously reported passing; that may have been true only against whatever numpy version was in use at the time, never pinned or stated. |
+| Golden-hash generator regression | ✅ **Currently PASSING against numpy 2.1.0** (re-verified 2026-08-06, `ROADMAP.md` sec 15 A8 — corrects this row's prior "currently FAILING" claim from 2026-08-03). The 2026-08-03 failure report is **not reproducible** in this persistent environment on the same numpy version; a direct comparison of `Generator.choice(..., replace=False)` and `.normal()` between numpy 1.26.4 and 2.1.0 in an isolated venv found them bit-identical, refuting (not confirming) the leading cross-version-instability hypothesis. Root cause of the original 2026-08-03 report remains unexplained — see §11.13's update. |
 | Modularity check | Partial run (`extract,l1,report`) renders **only** the L1 section |
 | `compileall` on both packages | OK |
 | Confirm hypothesis-path test | Feeds synthetic dev claims + one real / one spurious effect; asserts verdicts `{trend: True, spiky: False}` |
@@ -998,12 +1067,27 @@ PYTHONPATH=. python3 example_runs/run_validation.py
 | `layer_screen` pipeline stage + `sae.targets: auto` wiring (`config.py`, `pipeline.py`, `sae/train.py::_default_targets`) | ✅ **Verified 2026-08-05** — full `tsfm_lens` suite 34/34 (33 prior + 1 new asserting `_default_targets` resolves exactly what the stage selected), plus a live CLI run of `configs/smoke.yaml` (not only pytest) confirming a real 11-section/22-finding report and a sane `layer_screen/selection.json` for both mock architectures. |
 | Crosscoder feasibility test (`sae/crosscoder.py`, ROADMAP.md §13/§6.2) | ✅ **First run 2026-08-05** against live `google/timesfm-2.5-200m-pytorch` + `amazon/chronos-t5-base` activations (an already-extracted store, no new model calls) at their L1 peak-CKA layer pair. Joint training is stable (no source-domination collapse across three hyperparameter settings) once a real, found-and-fixed scale-domination instability (§11.19) and a device-mismatch crash are corrected. **Not** an `SAEAdapter` implementation or a pipeline stage — feasibility-gate only. Full numbers in `ROADMAP.md` §6.2's Findings. |
 
-**Golden hashes (do not let these change) — 🔴 currently mismatched, see below:**
+**Golden hashes (do not let these change) — ✅ currently matching, see below:**
 ```
 seed 0   → parametric 2856658d044e4c49  random a45664e176fbb71a  clean_low_noise
 seed 7   → parametric ded6ff4ee4d08e00  random a1d7456a6daeb78e  noisy_chaotic
 seed 123 → parametric 13157fdc8501e113  random 8b8395cd08aced50  trend_dominant
 ```
+**Correction (2026-08-06, `ROADMAP.md` sec 15 A8).** The paragraph below
+described a 2026-08-03 failure (seed 0 producing `4070db4646799f09` against
+numpy 2.1.0) as reproducible and unfixed. Re-run 2026-08-06 in this
+persistent environment (also numpy 2.1.0):
+`test_golden_hashes_pre_extension_outputs_unchanged` **passes**, matching
+every hash above exactly. The leading hypothesis named below was checked
+directly rather than left as a guess — `Generator.choice(..., replace=
+False)` and `.normal()` were compared bit-for-bit between numpy 1.26.4 and
+2.1.0 in an isolated venv and found **identical** across both, which
+refutes rather than confirms it. The original 2026-08-03 report's exact
+cause is still unexplained (a different point-release, platform, or BLAS
+backend are the remaining candidates), but as of now this invariant is
+green, not red, and no code in `generators.py` was changed to make it so.
+Preserved verbatim below per this file's own no-deletion doctrine (§0.2-style):
+
 As of 2026-08-03, `test_golden_hashes_pre_extension_outputs_unchanged` fails
 against numpy 2.1.0 (seed 0 produces `4070db4646799f09`, not
 `2856658d044e4c49`) — reproducibly, in an environment where `parametric`/
@@ -1411,9 +1495,53 @@ plumbing can hide indefinitely behind CPU-only tests no matter how
 thorough the synthetic coverage is, so a real-GPU run before trusting a
 new training loop is not optional.
 
+### 11.20 Open (not yet fixed) audit items — read before trusting a number 🔴
+Everything above in §11 is a trap that was **hit and fixed**. As of
+2026-08-06 there is also a list of traps that are **live and unfixed**:
+`ROADMAP.md` §15, produced by a planning-only pass that read this file and
+`ROADMAP.md` against the pipeline rather than trusting either. Nineteen
+items, each with `file:line` evidence, a stated blast radius, and a detailed
+fix plan; nine are marked P1 ("can silently produce a wrong number that
+reaches a report or a recorded finding").
+
+The short version, because a fresh session will otherwise re-derive it:
+**twelve of the nineteen are the same shape** — a mechanism that degrades
+quietly where §2.5 says it must degrade loudly, because "loudly" was
+implemented as a log line. Logs are not loud inside a thirty-minute run,
+and they are not loud at all once the deliverable is an HTML file someone
+opens next month. The load-bearing five: the in-pipeline alignment check
+discards its own result (A2); corpora are written grouped by task while four
+call sites subsample with a head slice, so several already-published numbers
+sit on family-skewed prefixes (A4); stage skipping has no config fingerprint
+(A3); no ΔMASE anywhere has been compared against a measured repeat-run
+noise floor (A13); and there is still no CI, which is why §11.8/§11.9/§11.10/
+§11.15/§11.17 each cost a human a session instead of costing a build ten
+minutes (A14).
+
+Do not read this as "the results are wrong." Read it as: **the error bars on
+a specific, named set of recorded numbers are currently unknown**, and
+`ROADMAP.md` §15's markers say which. Two of them gate a real decision
+(whether Phase 3's feature-level ablation can build on the TimesFM SAE
+target). When an item is fixed, move its lesson up into §11 proper and mark
+the §15 item `[x]` — don't delete it (`ROADMAP.md` §0.2).
+
 ---
 
 ## 12. Known limitations (stated, not hidden)
+
+> **Which of these are actually fixable (added 2026-08-06).** A limitation
+> being stated honestly is not the same as it being unavoidable, and the
+> audit pass (`ROADMAP.md` §15/§16) found several here that have a concrete
+> fix nobody had scheduled: the forecast-stochasticity asymmetry (item 3
+> below) is measurable rather than merely caveat-able — nothing currently
+> measures either model's repeat-run noise floor, so every ΔMASE in the repo
+> is compared against zero instead of against it (§15 A13); the Chronos
+> decoder gap (items 1-2) has a specified plan as §16 E21; the O(n²) matcher
+> ceiling is §15 A17; and the catch22/ground-truth expressiveness caveats are
+> exactly what §16 E9's untrained-weights null and E16's third matching
+> signal are for. Treat the list below as accurate about *today* and
+> `ROADMAP.md` §15/§16 as the record of which entries are permanent envelope
+> edges versus unscheduled work.
 
 **Architectural / conceptual**
 1. **The Chronos decoder is largely invisible.** Capture is encoder-only. Any
@@ -1468,6 +1596,19 @@ new training loop is not optional.
 ---
 
 ## 13. Future work — in rough priority order
+
+> **Read `ROADMAP.md` §15 and §16 alongside this list (added 2026-08-06).**
+> This section is the original, pre-roadmap future-work list and is kept for
+> continuity; `ROADMAP.md` is where forward work is actually tracked. §16 in
+> particular covers the ground this section doesn't: what the repo needs to
+> become usable by someone who didn't build it (zero-config entry point,
+> preflight doctor, empirically-discovered token spans instead of declared
+> ones, a bundled reference corpus, CI), plus the analysis axes a TSFM
+> interpretability user asks for that nothing here mentions — horizon-resolved
+> metrics, a spectral lens, forecast calibration diagnostics, steering, and
+> input-front-end diagnostics. Items 2, 3, 4, 6, 7, and 8 below all have a
+> §16 counterpart with a sharper scope; prefer the §16 wording where they
+> disagree.
 
 1. **Run the pipeline on real checkpoints at scale.** The highest-value next
    action. Verify the TimesFM flat-patching curve resolves under per-window

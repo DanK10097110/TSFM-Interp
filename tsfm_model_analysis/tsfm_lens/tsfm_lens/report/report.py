@@ -21,7 +21,7 @@ from jinja2 import Template
 from plotly.subplots import make_subplots
 
 from ..config import PipelineConfig
-from ..utils import load_json, log, relative_depths
+from ..utils import load_json, log, relative_depths, save_json
 
 _COLORS = {"a": "#2E6E8E", "b": "#9A5B88", "accent": "#C2661B",
            "ink": "#22303A", "muted": "#66727B", "line": "#E2E6E1"}
@@ -32,75 +32,120 @@ _CLUSTER_PALETTE = ["#2E6E8E", "#9A5B88", "#C2661B", "#4E8D6E", "#B04A5A",
 
 
 def run_report(cfg: PipelineConfig) -> Path:
-    """Render report.html from the run directory's artifacts."""
+    """Render report.html from the run directory's artifacts.
+
+    Every builder's outcome (rendered / skipped: stage disabled / skipped:
+    artifacts missing / failed: <exception>) is recorded — not just logged —
+    so the HTML itself, not only the console, states what's missing and why
+    (`ROADMAP.md` sec 15 A5; a `log.info`/`log.warning` split is invisible to
+    anyone who only reads the report). `report/coverage.json` carries the
+    same record for tooling. A `failed` section is a bug, not a degrade
+    path: by default this raises once the report (with its failures visibly
+    named in the coverage panel) has still been written, so the process
+    exits non-zero; `cfg.report.allow_partial` (CLI `--allow-partial-report`)
+    downgrades that to a loud warning.
+    """
     run_dir = cfg.run_dir()
     a, b = cfg.comparison_pair()
     model_colors = {a.name: _COLORS["a"], b.name: _COLORS["b"]}
-    sections, findings = [], []
+    sections, findings, coverage = [], [], []
 
     builders = [
         ("L0", "Behavioral profile",
          "Forecast quality per benchmark family: the hypotheses the deeper levels try to explain.",
-         ["l0/metrics.parquet", "l0/summary.json"],
+         ["l0/metrics.parquet", "l0/summary.json"], "l0",
          lambda: _sec_l0(run_dir, model_colors, findings)),
         ("Screen", "Layer screening",
          "Which of each model's own captured layers were flagged as worth further, expensive analysis — and what sae.targets: auto trained on.",
-         ["layer_screen/selection.json"],
+         ["layer_screen/selection.json"], "layer_screen",
          lambda: _sec_layer_screen(run_dir, model_colors, findings)),
         ("Profile", "Model internals",
          "Per-model depth profiles: where representations expand, where family information becomes decodable, and how far each layer moves from raw input statistics.",
-         ["internals/profile.json"],
+         ["internals/profile.json"], "internals",
          lambda: _sec_internals(run_dir, model_colors, findings)),
         ("Lens", "Forecast lens",
          "Per-layer forecasts read out with the model's own head: where in depth the final forecast crystallizes, and how much of it a linear probe already sees.",
-         ["lens/curves.npz", "lens/lens.json"],
+         ["lens/curves.npz", "lens/lens.json"], "lens",
          lambda: _sec_lens(run_dir, model_colors, findings)),
         ("L1", "Representational geometry",
          "Linear CKA between every layer pair: where the two models' representations share geometry. Correlational evidence only.",
-         ["l1/cka.npz", "l1/meta.json"],
+         ["l1/cka.npz", "l1/meta.json"], "l1",
          lambda: _sec_l1(run_dir, findings)),
         ("L2", "Stitching probes",
          "Ridge maps between window states, reported as gain over an input-feature baseline; only that gain is evidence of shared learned structure.",
-         ["l2/stitching.json"],
+         ["l2/stitching.json"], "l2",
          lambda: _sec_l2(run_dir, findings)),
         ("L3", "Perturbation & patching",
          "Where each model's depth reacts to structured corruptions, and where clean activations causally restore corrupted forecasts.",
-         ["l3/sensitivity.npz", "l3/meta.json"],
+         ["l3/sensitivity.npz", "l3/meta.json"], "l3",
          lambda: _sec_l3(run_dir, model_colors, findings)),
         ("Attention", "Attention structure & head causality",
          "Where heads look as a function of temporal lag, which heads carry seasonal structure, and which heads and MLP blocks forecasts causally depend on.",
-         ["attention/arrays.npz", "attention/meta.json"],
+         ["attention/arrays.npz", "attention/meta.json"], "attention",
          lambda: _sec_attention(run_dir, model_colors, findings)),
         ("L4", "Activation clusters",
          "How each model organizes the benchmark, with clusters labeled by what they approximately activate for.",
          ["clustering/embedding.parquet", "clustering/clusters.json",
-          "clustering/comparison.json"],
+          "clustering/comparison.json"], "clustering",
          lambda: _sec_clusters(run_dir, model_colors, findings)),
         ("SAE", "Sparse feature dictionary",
          "Per-target reconstruction/dead-feature/forecast-preservation summary, plus exemplar series for the dictionary's ground-truth-matched features.",
-         ["sae/meta.json"],
+         ["sae/meta.json"], "sae",
          lambda: _sec_sae(cfg, run_dir, findings)),
         ("Exemplars", "Exemplar case studies",
          "A few concrete series per family, told end to end: both forecasts, where each model's answer forms in depth, and where it looks in the context.",
-         ["exemplars/exemplars.npz", "exemplars/exemplars.json"],
+         ["exemplars/exemplars.npz", "exemplars/exemplars.json"], "exemplars",
          lambda: _sec_exemplars(run_dir, model_colors, findings)),
         ("Confirm", "Private benchmark confirmation",
          "One-shot confirmatory tests of the dev findings on a sealed held-out corpus. This is the gold standard: exploration above, evidence here.",
-         ["confirm/confirmation.json"],
-         lambda: _sec_confirm(run_dir, findings)),
+         ["confirm/confirmation.json"], "confirm",
+         lambda: _sec_confirm(run_dir, findings, n_exploratory[0])),
     ]
-    for eyebrow, title, blurb, requires, build in builders:
-        if not all((run_dir / p).exists() for p in requires):
-            log.info("report: section %s skipped (stage not run)", eyebrow)
+    # Filled in when the "Confirm" builder is reached below (sec 15 A15) --
+    # every finding appended *before* that point is exploratory-only
+    # (`CLAUDE.md` §6.7), so the template tags it inline rather than relying
+    # on the preamble alone. A mutable single-element list, not a plain int,
+    # so the "Confirm" lambda above (built before the loop runs) can read a
+    # value set later in the same closure scope.
+    n_exploratory = [None]
+    for eyebrow, title, blurb, requires, config_attr, build in builders:
+        if eyebrow == "Confirm":
+            n_exploratory[0] = len(findings)
+        missing = [p for p in requires if not (run_dir / p).exists()]
+        if missing:
+            enabled = getattr(cfg, config_attr).enabled
+            detail = ("stage not enabled in config" if not enabled
+                      else f"artifacts missing: {', '.join(missing)}")
+            log.info("report: section %s skipped (%s)", eyebrow, detail)
+            coverage.append({"eyebrow": eyebrow, "title": title, "status": "skipped",
+                             "detail": detail})
             continue
         try:
             inner = build()
         except Exception as exc:
-            log.warning("report: section %s failed: %s", eyebrow, exc)
-            inner = None
+            detail = f"{type(exc).__name__}: {exc}"
+            log.warning("report: section %s failed: %s", eyebrow, detail)
+            coverage.append({"eyebrow": eyebrow, "title": title, "status": "failed",
+                             "detail": detail})
+            continue
         if inner:
             sections.append({"eyebrow": eyebrow, "title": title, "blurb": blurb,
                              "html": inner})
+            coverage.append({"eyebrow": eyebrow, "title": title, "status": "rendered",
+                             "detail": ""})
+        else:
+            coverage.append({"eyebrow": eyebrow, "title": title, "status": "skipped",
+                             "detail": "builder returned no content"})
+    if n_exploratory[0] is None:
+        n_exploratory[0] = len(findings)
+    findings = [(f"[exploratory — not pre-registered] {f}" if i < n_exploratory[0] else f)
+               for i, f in enumerate(findings)]
+
+    n_rendered = sum(c["status"] == "rendered" for c in coverage)
+    n_skipped = sum(c["status"] == "skipped" for c in coverage)
+    failed = [c for c in coverage if c["status"] == "failed"]
+    summary = f"{n_rendered} rendered, {n_skipped} skipped" + (
+        f", {len(failed)} FAILED: {', '.join(c['eyebrow'] for c in failed)}" if failed else "")
 
     mock_models = [m.name for m in cfg.models if m.adapter.startswith("mock_")]
     html = _TEMPLATE.render(
@@ -112,11 +157,28 @@ def run_report(cfg: PipelineConfig) -> Path:
         config_text=_config_text(run_dir),
         mock_warning=_mock_warning(mock_models),
         how_to_read=_how_to_read(cfg.alignment.window),
+        coverage=coverage, coverage_summary=summary, any_failed=bool(failed),
+        family_resolution_line=_family_resolution_line(run_dir),
+        alignment_provenance=_alignment_provenance_block(run_dir)[0],
     )
     out = run_dir / "report.html"
     out.write_text(html, encoding="utf-8")
+    (run_dir / "report").mkdir(parents=True, exist_ok=True)
+    save_json(run_dir / "report" / "coverage.json",
+             {"summary": summary, "sections": coverage})
+    if failed:
+        log.warning("report: %s", summary)
+    else:
+        log.info("report: %s", summary)
     log.info("report written: %s (%d sections, %d findings)", out, len(sections),
              len(findings))
+    if failed and not cfg.report.allow_partial:
+        failed_desc = "; ".join(f"{c['eyebrow']} ({c['detail']})" for c in failed)
+        raise RuntimeError(
+            f"report has {len(failed)} failed section(s): {failed_desc} -- "
+            f"report.html was still written to {out} with this named in its coverage "
+            f"panel. Fix the underlying builder bug, or pass --allow-partial-report "
+            f"(cfg.report.allow_partial: true) to proceed anyway.")
     return out
 
 
@@ -225,6 +287,124 @@ def _config_text(run_dir: Path) -> str:
     return p.read_text(encoding="utf-8") if p.exists() else ""
 
 
+def _alignment_provenance_block(run_dir: Path) -> tuple:
+    """Combined "Alignment & Provenance" panel (`ROADMAP.md` sec 15 A2 + A7).
+
+    A2 built the alignment gate but deferred its report panel to land with
+    A7's provenance work, since both are "can this run's numbers be
+    trusted" facts that belong next to each other, not two more separate
+    collapsed boxes. Returns `(html, any_degraded)` so the caller can decide
+    whether to auto-open the panel the same way the coverage panel does.
+    """
+    manifest_path = run_dir / "run_manifest.json"
+    manifest = load_json(manifest_path) if manifest_path.exists() else {}
+    prov = manifest.get("provenance") or {}
+    align_path = run_dir / "alignment" / "alignment_check.json"
+    alignment = load_json(align_path) if align_path.exists() else {}
+    nonfinite = _nonfinite_summary(run_dir)
+
+    any_degraded = (any(not rec.get("passed", True) for rec in alignment.values())
+                   or any(v["fraction"] > 0 for v in nonfinite.values()))
+    parts = ['<details class="coverage"' + (" open" if any_degraded else "") + '>'
+            '<summary class="' + ("coverage-bad" if any_degraded else "coverage-ok") + '">'
+            'Alignment &amp; provenance</summary>']
+
+    if alignment:
+        rows = "".join(
+            f'<tr class="{"cov-failed" if not rec.get("passed", True) else ""}">'
+            f'<td>{model}</td><td>{rec.get("min", float("nan")):.2f}</td>'
+            f'<td>{rec.get("mean", float("nan")):.2f}</td>'
+            f'<td>{rec.get("shallowest_layer", "")}</td>'
+            f'<td>{"pass" if rec.get("passed", True) else "FAIL"}</td></tr>'
+            for model, rec in alignment.items())
+        parts.append('<p style="margin:10px 16px 4px;font-size:12.5px;color:var(--muted)">'
+                     'Impulse alignment check (diagonal-hit fraction; CLAUDE.md sec 6.3, '
+                     'sec 7 invariant 7) — near 1.0 means declared token time spans are '
+                     'trustworthy for this checkpoint/library version.</p>')
+        parts.append('<table class="tbl" style="margin:0 16px 14px;width:calc(100% - 32px)">'
+                     '<tr><th>model</th><th>min</th><th>mean</th><th>shallowest layer</th>'
+                     f'<th>gate</th></tr>{rows}</table>')
+    else:
+        parts.append('<p style="margin:10px 16px 4px;font-size:12.5px;color:var(--muted)">'
+                     'No alignment check recorded for this run (alignment.sanity_check: '
+                     'false, or written before this panel existed).</p>')
+
+    if prov:
+        pkgs = ", ".join(f"{k} {v}" for k, v in (prov.get("packages") or {}).items() if v)
+        models_txt = "; ".join(
+            f'{m["name"]} ({m["adapter"]}): {m["checkpoint"]}'
+            + (f' @ {m["hf_revision"][:10]}' if m.get("hf_revision") else "")
+            for m in (prov.get("models") or []))
+        device = prov.get("device") or {}
+        device_txt = (", ".join(device.get("device_names", [])) if device.get("cuda_available")
+                      else "cpu")
+        parts.append(
+            '<p style="margin:2px 16px 10px;font-size:12.5px;color:var(--muted)">'
+            f'<b>git</b> {(prov.get("git_sha") or "unknown")[:10]}'
+            f'{" (dirty)" if prov.get("git_dirty") else ""} · '
+            f'<b>tsfm_lens</b> {prov.get("tsfm_lens_version", "?")} · '
+            f'<b>device</b> {device_txt} · <b>config hash</b> {prov.get("config_hash", "?")}'
+            f'{" · <b>corpus digest</b> " + prov["corpus_digest"][:12] if prov.get("corpus_digest") else ""}'
+            f'<br><b>models</b> {models_txt}<br><b>packages</b> {pkgs}</p>')
+    else:
+        parts.append('<p style="margin:2px 16px 10px;font-size:12.5px;color:var(--muted)">'
+                     'No run provenance recorded (run predates this panel; re-run to '
+                     'populate it).</p>')
+    if nonfinite:
+        rows = "".join(
+            f'<tr class="{"cov-failed" if v["fraction"] > 0 else ""}">'
+            f'<td>{key}</td><td>{v["count"]}</td><td>{v["total"]}</td>'
+            f'<td>{v["fraction"]:.4%}</td></tr>'
+            for key, v in sorted(nonfinite.items()))
+        parts.append('<p style="margin:10px 16px 4px;font-size:12.5px;color:var(--muted)">'
+                     'Non-finite activation values at write time (sec 15 A19) — any nonzero '
+                     'count here means that layer\'s stored values include inf/NaN, which '
+                     '<code>store.load</code> would otherwise raise on the first time an '
+                     'analysis stage actually reads that layer.</p>')
+        parts.append('<table class="tbl" style="margin:0 16px 14px;width:calc(100% - 32px)">'
+                     '<tr><th>model/layer</th><th>count</th><th>total</th><th>fraction</th></tr>'
+                     f'{rows}</table>')
+
+    parts.append("</details>")
+    return "".join(parts), any_degraded
+
+
+def _nonfinite_summary(run_dir: Path) -> dict:
+    """`root.attrs["nonfinite"]` from the activation store, if any (sec 15 A19).
+
+    Read-only, degrades to `{}` for a run predating this attr or with no
+    store at all -- the coverage panel already renders fine either way.
+    """
+    zarr_path = run_dir / "activations.zarr"
+    if not zarr_path.exists():
+        return {}
+    try:
+        from ..extraction.store import ActivationStore
+        return dict(ActivationStore(zarr_path, mode="r").root.attrs.get("nonfinite", {}))
+    except Exception as e:
+        log.info(f"report: could not read non-finite summary from {zarr_path}: {e}")
+        return {}
+
+
+def _family_resolution_line(run_dir: Path) -> str:
+    """One line summarizing `data.family_key` resolution, from `run_manifest.json` (sec 15 A6).
+
+    Empty string if extraction hasn't run yet or recorded nothing -- the
+    coverage panel already renders fine without this row, so absence here
+    is not itself an error worth surfacing.
+    """
+    manifest = load_json(run_dir / "run_manifest.json") if (run_dir / "run_manifest.json").exists() else {}
+    fr = manifest.get("family_resolution")
+    if not fr:
+        return ""
+    comp = ", ".join(f"{k}: {v}" for k, v in fr["composition"].items())
+    rate_str = f", explicit key resolved {fr['resolution_rate']:.0%}" if fr.get("resolution_rate") is not None else ""
+    return (f'<p style="margin:2px 16px 10px;font-size:12.5px;color:var(--muted)">'
+           f'<b>family_key</b> = <code>{fr["key_requested"]}</code>{rate_str} → '
+           f'{fr["n_families"]} family/families ({comp})'
+           f'{", " + str(fr["n_unknown"]) + " unresolved" if fr["n_unknown"] else ""}.</p>')
+
+
 def _frag(fig: go.Figure, height: int = 420) -> str:
     """Style a figure to the report theme and emit an embeddable fragment."""
     fig.update_layout(
@@ -294,6 +474,78 @@ def _err_y(entries: list) -> dict | None:
                 thickness=1.2, width=3)
 
 
+def _archetype_block(per_arch: dict, findings: list) -> str:
+    """Per-archetype MASE ratio/Holm table, one level finer than per-family (sec 15 A9)."""
+    if not per_arch:
+        return ""
+    if not per_arch.get("applicable", True):
+        return (f'<h4>Per-archetype breakdown</h4>'
+                f'<p class="blurb"><b>Not applicable.</b> {per_arch["reason"]}</p>')
+    html = "<h4>Per-archetype breakdown</h4>"
+    if per_arch.get("fallback_to_family"):
+        html += (f'<p class="blurb">Families with no per-sample archetype label '
+                 f'(shown under their family name instead): '
+                 f'{", ".join(per_arch["fallback_to_family"])}.</p>')
+    if per_arch.get("dropped_min_n"):
+        html += (f'<p class="blurb">Dropped for fewer than {per_arch["min_n"]} series: '
+                 f'{", ".join(per_arch["dropped_min_n"])}.</p>')
+    rows_df = pd.DataFrame(per_arch["rows"])
+    arch_cols = [c for c in ("model", "archetype", "mase", "mae_over_mad", "smape", "pinball",
+                             "mase_n_excluded") if c in rows_df.columns]
+    html += _table(rows_df[arch_cols])
+    tests = per_arch.get("tests")
+    if isinstance(tests, dict) and not tests.get("applicable", True):
+        html += f'<p class="blurb"><b>No paired archetype tests.</b> {tests["reason"]}</p>'
+        return html
+    if tests:
+        tbl = pd.DataFrame(tests)[["archetype", "ratio", "mean", "lo", "hi",
+                                   "p", "p_holm", "favored"]]
+        tbl.columns = ["archetype", "MASE ratio", "paired ΔMASE", "lo", "hi",
+                       "p (boot)", "p (Holm)", "favored"]
+        html += (f'<p class="blurb">Paired tests (α={per_arch.get("alpha", 0.05)}, '
+                 f'Holm-corrected across archetypes, positive Δ favors first model):</p>' + _table(tbl))
+        for model, arches in per_arch.get("strengths", {}).items():
+            if arches:
+                findings.append(f"L0 — {model} is significantly stronger on archetype(s): "
+                                f"{', '.join(arches)} (paired bootstrap, Holm-corrected "
+                                f"α={per_arch.get('alpha', 0.05)}).")
+    return html
+
+
+def _noise_floor_block(run_dir: Path, findings: list) -> str:
+    """Repeat-run MASE noise floor, shared by L0/L3/SAE report sections (sec 15 A13)."""
+    path = run_dir / "l0" / "noise_floor.json"
+    if not path.exists():
+        return ""
+    floor = load_json(path)
+    rows = [{"model": m, "repeats": v["repeats"], "n_series": v["n_series"],
+            "deterministic": v["deterministic"], "mean |ΔMASE|": v["mase_abs_delta_mean"],
+            "p95 |ΔMASE|": v["mase_abs_delta_p95"], "max |ΔMASE|": v["mase_abs_delta_max"]}
+           for m, v in floor.items()]
+    html = "<h4>Repeat-run noise floor</h4>" + _table(pd.DataFrame(rows)) + _note(
+        "Each model forecasts the same small series subset "
+        f"({rows[0]['n_series'] if rows else '?'} series) {rows[0]['repeats'] if rows else '?'} "
+        "times; this is how much MASE varies between calls that should, absent sampling, be "
+        "identical. Every ΔMASE elsewhere in this report (head/MLP ablation, SAE "
+        "forecast-preservation, L3 restoration) is otherwise implicitly compared against zero.",
+        "`deterministic: true` with a floor of exactly 0 is expected and correct for a model "
+        "with no sampling in its forecast path (e.g. TimesFM, Chronos-Bolt) -- a free wiring "
+        "sanity check. A sampling model (Chronos-T5) will show a nonzero floor; a ΔMASE smaller "
+        "than that floor is not distinguishable from noise.",
+        "Measured on a small subset for speed, so the floor estimate itself has some "
+        "uncertainty -- read it as an order-of-magnitude reference, not a precise bound.")
+    for m, v in floor.items():
+        if v["deterministic"]:
+            findings.append(f"Noise floor — {m} is deterministic (repeat calls identical); "
+                            f"any ΔMASE for this model is real signal, not repeat-run noise.")
+        else:
+            findings.append(f"Noise floor — {m}: repeat-run MASE varies by "
+                            f"{v['mase_abs_delta_mean']:.4f} on average (p95 "
+                            f"{v['mase_abs_delta_p95']:.4f}); ΔMASE figures for this model "
+                            f"smaller than this are not distinguishable from repeat-run noise.")
+    return html
+
+
 def _sec_l0(run_dir: Path, model_colors: dict, findings: list) -> str:
     """Family-level MASE comparison with CIs and Holm-corrected paired tests."""
     summary = load_json(run_dir / "l0" / "summary.json")
@@ -322,7 +574,40 @@ def _sec_l0(run_dir: Path, model_colors: dict, findings: list) -> str:
         "more than two models configured, every model appears here, but "
         "the paired significance test below only ever compares the first "
         "two (the deep-dive pair every other section analyzes).")
+    inner += _noise_floor_block(run_dir, findings)
+    rel = summary.get("mase_reliability") or {}
+    if rel.get("n_excluded"):
+        inner += (f'<p class="blurb"><b>{rel["n_excluded"]} of {rel["n_total"]} series excluded '
+                  f'from every MASE mean/ratio/test above and below</b> (scale='
+                  f'{rel.get("scale")!r}, min_scale_frac={rel.get("min_scale_frac")}) -- their MASE '
+                  f'denominator was too small relative to the target\'s own level to trust '
+                  f'(sec 15 A11: heavy intermittency or a near-flat context both degenerate this '
+                  f'way). smape/pinball/mae_over_mad below still include them. Per-family/per-'
+                  f'archetype breakdown is in the "excluded" column of each table.</p>')
+        findings.append(f'L0 — {rel["n_excluded"]}/{rel["n_total"]} series excluded from MASE '
+                        f'aggregates as unreliable (scale={rel.get("scale")!r}, '
+                        f'min_scale_frac={rel.get("min_scale_frac")}).')
     inner += "<h4>Overall metrics</h4>" + _table(pd.DataFrame(summary["overall"]))
+    fam_cols = [c for c in ("model", "family", "mase", "mae_over_mad", "smape", "pinball",
+                            "mase_n_excluded") if c in per_fam.columns]
+    inner += "<h4>Per-family metrics</h4>" + _table(per_fam[fam_cols])
+    inner += _note(
+        "`mae_over_mad` (sec 15 A11) is a scale-free companion to MASE that "
+        "doesn't depend on the context, only the target's own dispersion.",
+        "It should move roughly in step with MASE. If MASE looks anomalously "
+        "low/high for a family but `mae_over_mad` doesn't, suspect a MASE "
+        "scale-term artifact rather than genuine model behavior on that family.",
+        "Not a drop-in MASE replacement — it can itself look small/undefined "
+        "on a near-constant target, which is a different, legitimate "
+        "degeneracy this metric doesn't protect against.")
+    inner += _archetype_block(summary.get("per_archetype"), findings)
+
+    fam_comp = summary.get("family_comparisons")
+    if fam_comp and not fam_comp.get("applicable", True):
+        inner += (f'<h4>Paired family tests</h4>'
+                  f'<p class="blurb"><b>Not applicable.</b> {fam_comp["reason"]}</p>')
+        findings.append(f"L0 — per-family comparison not applicable: {fam_comp['reason']}")
+        return inner
 
     tests = summary.get("family_tests")
     if tests:
@@ -427,6 +712,11 @@ def _sec_l1(run_dir: Path, findings: list) -> str:
         "pairing (more candidates to match against) and can look "
         "artificially smooth even when the underlying matrix is noisy — "
         "always sanity-check against the heatmap above.")
+    fam_comp = meta.get("family_comparisons")
+    if fam_comp and not fam_comp.get("applicable", True):
+        inner += (f'<h4>Family-conditioned agreement</h4>'
+                  f'<p class="blurb"><b>Not applicable.</b> {fam_comp["reason"]}</p>')
+        findings.append(f"L1 — family-conditioned agreement not applicable: {fam_comp['reason']}")
     fam = arrays["cka_family"]
     if fam.shape[0]:
         best_per = fam.reshape(fam.shape[0], -1).max(axis=1)
@@ -591,16 +881,43 @@ def _sec_l3(run_dir: Path, model_colors: dict, findings: list) -> str:
         "says nothing about whether the property matters to the forecast "
         "at all — cross-reference with behavioral sensitivity below.")
 
+    calib = meta.get("calibration") or {}
+    x_labels = [(f"{n}<br><span style='font-size:0.75em;color:#66727B'>"
+                f"{calib[n]['footprint'] * 100:.0f}% touched</span>" if n in calib else n)
+               for n in names]
     beh = go.Figure()
     beh_ci = meta.get("behavior_ci", {})
     for model in (meta["model_a"], meta["model_b"]):
         cis = beh_ci.get(model, {})
         err = _err_y([cis[c] for c in names]) if cis else None
         vals = arrays[f"behavior_{model}"]
-        beh.add_bar(x=names, y=vals, name=model, marker_color=model_colors.get(model),
+        beh.add_bar(x=x_labels, y=vals, name=model, marker_color=model_colors.get(model),
                     error_y=err, text=[f"{v:.2f}" for v in vals], textposition="outside")
     beh.update_layout(barmode="group", yaxis_title="forecast change (scaled MAE)")
-    inner += "<h4>Behavioral sensitivity</h4>" + _frag(beh, 300) + _note(
+    floor_path = run_dir / "l0" / "noise_floor.json"
+    floor_note = ""
+    if floor_path.exists():
+        floor = load_json(floor_path)
+        for model in (meta["model_a"], meta["model_b"]):
+            fv = floor.get(model)
+            if fv and not fv["deterministic"]:
+                beh.add_hline(y=fv["mase_abs_delta_mean"],
+                             line=dict(color=model_colors.get(model), dash="dot"),
+                             annotation_text=f"{model} repeat-run floor", annotation_font_size=9)
+        floor_note = (' Dotted reference lines (sec 15 A13) mark each sampling model\'s own '
+                     'repeat-run MASE noise floor (see the Overall metrics section above) -- a '
+                     'bar below its model\'s line is not distinguishable from repeat-run noise.')
+    calib_note = ""
+    if meta.get("calibrate") == "input_energy":
+        calibrated_names = [n for n in names if calib.get(n, {}).get("calibrated")]
+        uncalibrated_names = [n for n in names if not calib.get(n, {}).get("calibrated")]
+        calib_note = (f'<p class="blurb"><b>l3.calibrate: input_energy</b> — '
+                      f'{", ".join(calibrated_names)} were re-solved to a common per-series '
+                      f'perturbation-energy budget ({calib[names[0]]["target_energy"]:.3g}, '
+                      f'the median of this battery\'s own configured strengths); '
+                      f'{", ".join(uncalibrated_names)} have no continuous magnitude knob '
+                      f'and are reported as configured.</p>')
+    inner += calib_note + "<h4>Behavioral sensitivity</h4>" + _frag(beh, 300) + _note(
         "How much each corruption changes the final *forecast* (scaled "
         "mean absolute change), independent of any internals — the "
         "behavioral counterpart to the activation fingerprints above. "
@@ -631,7 +948,8 @@ def _sec_l3(run_dir: Path, model_colors: dict, findings: list) -> str:
         "perturbing 3 of 512 timesteps) will also show a small average "
         "here by construction, even though its effect at the touched "
         "points can be large — see the per-window patching heatmap below "
-        "for whether such localized damage is still causally recoverable.")
+        "for whether such localized damage is still causally recoverable."
+        + floor_note)
     overall = meta["agreement"]["overall"]
     worst = meta["agreement"]["most_divergent"]
     findings.append(f'L3 — fingerprint agreement ρ={_ci_str(overall)}; '
@@ -1121,7 +1439,8 @@ def _sec_exemplars(run_dir: Path, model_colors: dict, findings: list) -> str:
             fig.add_scatter(x=t_fut, y=arrays[f"forecast_{model}"][ei], mode="lines",
                             name=model, line=dict(color=model_colors.get(model)))
         fig.update_layout(xaxis_title="steps (0 = forecast start)", yaxis_title="value")
-        inner += (f"<h4>{rec['family']} · series {rec['series_id']} "
+        arch_txt = f" · archetype {rec['archetype']}" if rec.get("archetype") else ""
+        inner += (f"<h4>{rec['family']}{arch_txt} · series {rec['series_id']} "
                   f"(MASE gap {rec['gap']:+.2f})</h4>" + _frag(fig, 300))
         if ei == 0:
             inner += _note(
@@ -1237,6 +1556,11 @@ def _sec_clusters(run_dir: Path, model_colors: dict, findings: list) -> str:
         "not ground truth; the partition-overlap statistic below is the "
         "quantitative version of what this plot shows visually.")
 
+    fam_comp = comp.get("family_comparisons")
+    if fam_comp and not fam_comp.get("applicable", True):
+        inner += (f'<h4>Cluster family-purity labeling</h4>'
+                  f'<p class="blurb"><b>Not applicable.</b> {fam_comp["reason"]}</p>')
+        findings.append(f"Clusters — family-purity labeling not applicable: {fam_comp['reason']}")
     for model in models:
         rows = [{"cluster": c, "size": v["size"], "purity": v["purity"],
                  "label": v["label"]} for c, v in clusters[model]["clusters"].items()]
@@ -1293,6 +1617,8 @@ def _sec_sae(cfg: PipelineConfig, run_dir: Path, findings: list) -> str:
         return ""
     store = ActivationStore(run_dir / "activations.zarr")
     run_meta = load_meta(run_dir)
+    floor_path = run_dir / "l0" / "noise_floor.json"
+    noise_floor = load_json(floor_path) if floor_path.exists() else {}
     try:
         gt = load_ground_truth_table(cfg.data.path)
     except Exception as exc:
@@ -1306,6 +1632,12 @@ def _sec_sae(cfg: PipelineConfig, run_dir: Path, findings: list) -> str:
         stats = f"reconstruction fidelity {fid:.3f} · dead-feature rate {dead:.3f}"
         if d_mase is not None:
             stats += f" · forecast-preservation ΔMASE {d_mase:+.3f}"
+            fv = noise_floor.get(model)
+            if fv and not fv["deterministic"]:
+                stats += (f' (repeat-run floor ±{fv["mase_abs_delta_mean"]:.3f} -- '
+                         f'sec 15 A13, see L0\'s "Repeat-run noise floor")')
+            elif fv and fv["deterministic"]:
+                stats += " (this model is deterministic; the delta is real signal)"
         inner += f"<h4>{key}</h4><p class='blurb'>{stats}</p>"
         try:
             df = build_run_exemplars(cfg, store, model, layer, entry, gt, run_meta)
@@ -1429,11 +1761,18 @@ _SAE_EXEMPLAR_NOTE = (
 
 
 def _sec_layer_screen(run_dir: Path, model_colors: dict, findings: list) -> str:
-    """Per-model layer-screening bars: selector score per layer, selected layers highlighted."""
+    """Per-model layer-screening bars: selector score per layer, selected layers highlighted.
+
+    Fairness is stated in the section body, not a collapsed note (`ROADMAP.md`
+    sec 15 A1): a selection made without the dedicated stride-1 screening pass
+    only ever saw a subset of the model's blocks, and a reader should not have
+    to open a `<details>` to find that out.
+    """
     screen = load_json(run_dir / "layer_screen" / "selection.json")
     inner = ""
     for model, sel in screen.items():
         method = sel.get("method", "?")
+        method_requested = sel.get("method_requested", method)
         layers = sel.get("layers", [])
         scores = sel.get("score_per_layer", [0.0] * len(layers))
         selected_idx = set(sel.get("selected_idx", []))
@@ -1442,11 +1781,32 @@ def _sec_layer_screen(run_dir: Path, model_colors: dict, findings: list) -> str:
         fig = go.Figure()
         fig.add_bar(x=[_short(l) for l in layers], y=scores, marker_color=colors)
         fig.update_layout(xaxis_title="layer", yaxis_title=f"{method} score")
-        inner += f"<h4>{model}</h4>" + _frag(fig, 300)
+        n_blocks = sel.get("n_model_blocks")
+        fair = sel.get("fair_to_all_layers")
+        inner += f"<h4>{model}</h4>"
+        if fair:
+            inner += (f'<p class="blurb">Screened all {len(layers)} of {n_blocks} model '
+                      f'blocks (dedicated stride-{sel.get("screen_stride", 1)} screening '
+                      f'pass, independent of capture_layer_stride='
+                      f'{sel.get("capture_layer_stride")}).</p>')
+        else:
+            denom = n_blocks if n_blocks is not None else "an unknown number of"
+            inner += (f'<p class="blurb">⚠ <b>NOT fair to every model block</b> — screened '
+                      f'only {len(layers)} of {denom} model blocks '
+                      f'(capture_layer_stride={sel.get("capture_layer_stride")}). This '
+                      f'selection may have missed layers the main analysis config never '
+                      f'captured at all. See <code>ROADMAP.md</code> §15 A1.</p>')
+        if method != method_requested:
+            inner += (f'<p class="blurb">⚠ requested method <code>{method_requested}</code> '
+                      f'was not used for this model — fell back to <code>{method}</code> '
+                      f'(see run log for why; the run may have silently selected layers '
+                      f'with the null the requested method was meant to beat).</p>')
+        inner += _frag(fig, 300)
         findings.append(
             f"Layer screen — {model}: {method} selected "
             f"{', '.join(_short(l) for l in sel.get('selected', []))} "
-            f"of {len(layers)} captured layers.")
+            f"of {len(layers)} screened layers"
+            f"{'' if fair else f' out of {n_blocks} total model blocks (NOT all screened)'}.")
     inner += _note(*_LAYER_SCREEN_NOTE)
     return inner
 
@@ -1480,23 +1840,55 @@ def _sec_internals(run_dir: Path, model_colors: dict, findings: list) -> str:
         fig.update_layout(xaxis_title="relative depth", yaxis_title=ylabel,
                           yaxis_range=yrange)
         inner += f"<h4>{ylabel}</h4>" + _frag(fig, 320) + _note(*_INTERNALS_NOTES[key])
-    for model, prof in profile.items():
-        accs = [p["value"] for p in prof["probe"]]
-        peak = int(np.argmax(accs))
-        findings.append(f"Profile — {model}: family information peaks at "
-                        f"{_short(prof['layers'][peak])} "
-                        f"(probe {_ci_str(prof['probe'][peak])} vs chance "
-                        f"{prof['chance']:.2f}).")
+    fam_comp = next(iter(profile.values())).get("family_comparisons")
+    if fam_comp and not fam_comp.get("applicable", True):
+        inner += (f'<h4>Family probe</h4>'
+                  f'<p class="blurb"><b>Not applicable.</b> {fam_comp["reason"]}</p>')
+        findings.append(f"Profile — family probe not applicable: {fam_comp['reason']}")
+    else:
+        for model, prof in profile.items():
+            accs = [p["value"] for p in prof["probe"]]
+            peak = int(np.argmax(accs))
+            findings.append(f"Profile — {model}: family information peaks at "
+                            f"{_short(prof['layers'][peak])} "
+                            f"(probe {_ci_str(prof['probe'][peak])} vs chance "
+                            f"{prof['chance']:.2f}).")
     return inner
 
 
-def _sec_confirm(run_dir: Path, findings: list) -> str:
-    """Private-benchmark verdicts: hypothesis table, overall test, CKA replication."""
+def _sec_confirm(run_dir: Path, findings: list, n_exploratory: int) -> str:
+    """Private-benchmark verdicts: multiplicity ledger, hypothesis table, overall test, CKA replication."""
     conf = load_json(run_dir / "confirm" / "confirmation.json")
     inner = (f'<p class="blurb">Held-out private corpus: {conf["n_private_series"]} '
              f'series, tested once at α={conf["alpha"]} (Holm-corrected across '
              f'hypotheses). Everything above this section is exploratory; this is '
              f'the confirmatory evidence.</p>')
+    registry_path = run_dir / "hypotheses.json"
+    if registry_path.exists():
+        registry = load_json(registry_path)
+        n_registered, n_replicable = conf.get("n_registered", 0), conf.get("n_replicable", 0)
+        confirmed_n = sum(1 for t in conf.get("tests", []) if t["confirmed"])
+        inner += (f'<h4>Multiplicity ledger</h4>'
+                  f'<p class="blurb"><b>{n_exploratory} exploratory finding(s) examined → '
+                  f'{n_registered} hypotheses registered ({n_replicable} replicable by this '
+                  f'stage today) → {confirmed_n} confirmed.</b> The registry '
+                  f'(<code>hypotheses.json</code>, sha256 {conf.get("registry_sha256", "")[:12]}) '
+                  f'pins exactly which dev claims this stage tests, plus the exact content hash '
+                  f'of the dev artifact each was derived from — <code>confirm</code> refuses to '
+                  f'run at all if any of those hashes no longer match (sec 15 A15), which is '
+                  f'what makes "tested exactly once" an enforced fact rather than a convention. '
+                  f'"Exploratory findings examined" is every finding text this report generated '
+                  f'before this section ran — a real but approximate multiplicity count, not a '
+                  f'formal comparison tally.</p>')
+        not_replicable = [h for h in registry["hypotheses"] if not h["replicable"]]
+        if not_replicable:
+            df = pd.DataFrame([{"stage": h["stage"], "statement": h["statement"],
+                               "why not replicated": h.get("not_replicable_reason", "")}
+                              for h in not_replicable])
+            inner += (f'<h4>Registered but not yet replicated ({len(not_replicable)})</h4>'
+                      f'<p class="blurb">Counted in the ledger above (they were real dev '
+                      f'comparisons), but this stage does not yet re-test them on private '
+                      f'data — a stated gap, not a silent one.</p>' + _table(df))
     tests = conf.get("tests", [])
     if tests:
         rows = []
@@ -1510,7 +1902,12 @@ def _sec_confirm(run_dir: Path, findings: list) -> str:
                          "p (Holm)": t.get("p_holm"), "verdict": verdict})
         inner += "<h4>Dev hypotheses on private data</h4>" + _table(pd.DataFrame(rows))
         confirmed = sum(1 for t in tests if t["confirmed"])
-        findings.insert(0, f"CONFIRM — {confirmed}/{len(tests)} dev family hypotheses "
+        # `append`, not the old `insert(0, ...)` (sec 15 A15) -- every
+        # finding added before this section runs gets tagged "exploratory"
+        # by index position (see `run_report`'s boundary capture); inserting
+        # at the front would have put this genuinely-confirmatory finding
+        # before that boundary and mislabeled it.
+        findings.append(f"CONFIRM — {confirmed}/{len(tests)} dev family hypotheses "
                         f"confirmed on the private benchmark "
                         f"(paired bootstrap, Holm α={conf['alpha']}).")
     else:
@@ -1529,7 +1926,7 @@ def _sec_confirm(run_dir: Path, findings: list) -> str:
                   f'{_short(rep["layer_b"])}; private estimate '
                   f'{_ci_str(rep["private"])} — dev value {verdict} within the '
                   f'private CI.</p>')
-        findings.insert(1, f'CONFIRM — peak-CKA layer pair {verdict} on private data '
+        findings.append(f'CONFIRM — peak-CKA layer pair {verdict} on private data '
                         f'({_ci_str(rep["private"])}).')
     return inner
 
@@ -1603,6 +2000,18 @@ details.note .note-body b{color:var(--muted);font:600 11px var(--mono);
 .mockwarn b{color:#ffb74d}
 .mockwarn code{font:12px var(--mono);background:rgba(0,0,0,0.25);
   padding:1px 5px;border-radius:3px}
+details.coverage{margin:0 0 22px;border:1px solid var(--line);border-radius:6px;
+  background:var(--panel)}
+details.coverage summary{cursor:pointer;padding:10px 16px;font:600 12px var(--mono);
+  letter-spacing:.04em;list-style:none}
+details.coverage summary::-webkit-details-marker{display:none}
+details.coverage summary::before{content:"▸ ";color:var(--accent)}
+details.coverage[open] summary::before{content:"▾ "}
+details.coverage summary.coverage-ok{color:var(--muted)}
+details.coverage summary.coverage-bad{color:#a83232}
+details.coverage table{margin:0 16px 14px;width:calc(100% - 32px)}
+tr.cov-failed td{color:#a83232;font-weight:600}
+tr.cov-skipped td{color:var(--muted)}
 </style></head><body><div class="wrap">
 <header>
   <div class="kicker">tsfm-lens · cross-architecture comparison</div>
@@ -1613,6 +2022,19 @@ details.note .note-body b{color:var(--muted);font:600 11px var(--mono);
   </div>
 </header>
 {{ how_to_read }}
+<details class="coverage"{% if any_failed %} open{% endif %}>
+<summary class="{% if any_failed %}coverage-bad{% else %}coverage-ok{% endif %}">
+Run coverage — {{ coverage_summary }}</summary>
+<table class="tbl">
+<tr><th>Section</th><th>Status</th><th>Detail</th></tr>
+{% for c in coverage %}
+<tr class="cov-{{ c.status }}"><td>{{ c.eyebrow }} — {{ c.title }}</td>
+<td>{{ c.status }}</td><td>{{ c.detail }}</td></tr>
+{% endfor %}
+</table>
+{% if family_resolution_line %}{{ family_resolution_line }}{% endif %}
+</details>
+{{ alignment_provenance }}
 {% if mock_warning %}{{ mock_warning }}{% endif %}
 {% if findings %}
 <div class="findings"><h2>Findings</h2><ul>

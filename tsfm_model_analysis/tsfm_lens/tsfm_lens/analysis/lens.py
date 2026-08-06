@@ -35,7 +35,7 @@ from ..data import BenchmarkData
 from ..extraction.extract import capture_raw_tokens
 from ..extraction.hooks import token_patch
 from ..extraction.store import ActivationStore
-from ..utils import batch_slices, log, relative_depths, save_json
+from ..utils import batch_slices, capped_take, log, relative_depths, sample_rows, save_json
 from .l2_stitching import ridge_r2
 from .stats import mean_ci
 
@@ -45,13 +45,12 @@ def run_lens(cfg: PipelineConfig, hub, store: ActivationStore, data: BenchmarkDa
     """Compute skip-lens and tuned-lens depth curves for every configured model."""
     out_dir = cfg.run_dir() / "lens"
     out_dir.mkdir(parents=True, exist_ok=True)
-    rng = np.random.default_rng(cfg.run.seed + 8)
     meta, arrays = {}, {}
     for mcfg in cfg.models:
         adapter = hub.get(mcfg.name)
         adapter.ensure_loaded()
         layers = store.layers(mcfg.name)[:: max(1, cfg.lens.layer_stride)]
-        result = _model_lens(cfg, adapter, store, data, layers, rng, device)
+        result = _model_lens(cfg, adapter, store, data, layers, device)
         meta[mcfg.name] = result["meta"]
         for key, arr in result["arrays"].items():
             arrays[f"{key}_{mcfg.name}"] = arr
@@ -86,10 +85,19 @@ def skip_lens_forecasts(adapter, layers: list, contexts: np.ndarray, horizon: in
 
 
 def _model_lens(cfg: PipelineConfig, adapter, store: ActivationStore,
-                data: BenchmarkData, layers: list, rng, device) -> dict:
-    """Skip- and tuned-lens curves plus crystallization depth for one model."""
-    take = min(data.n, cfg.lens.max_series, adapter.cfg.batch_size)
-    rows = np.sort(rng.choice(data.n, size=take, replace=False))
+                data: BenchmarkData, layers: list, device) -> dict:
+    """Skip- and tuned-lens curves plus crystallization depth for one model.
+
+    Uses a fixed seed (not per-model-advancing rng state) so every configured
+    model is scored on the *same* stratified row sample -- `CLAUDE.md` sec 5.3
+    found lens numbers moving for an unchanged checkpoint purely because two
+    configs' different `max_series` caused `rng.choice` to draw disjoint
+    samples; sampling deterministically in `(n, k, seed, strata)` and sharing
+    the seed across models removes that confound (`ROADMAP.md` sec 15 A4).
+    """
+    cap = capped_take(cfg.lens.max_series, n_available=data.n, batch_size=adapter.cfg.batch_size)
+    take = cap["n_realized"]
+    rows = sample_rows(data.n, take, cfg.run.seed + 8, strata=data.meta["family"].to_numpy())
     contexts, targets = data.contexts()[rows], data.targets()[rows]
     scale = np.abs(np.diff(contexts, axis=1)).mean(axis=1) + 1e-8
 
@@ -113,7 +121,8 @@ def _model_lens(cfg: PipelineConfig, adapter, store: ActivationStore,
             "final_mase": final_mase, "mase_ci": mase_ci,
             "crystallization_depth": crystallization,
             "crystallization_tol": cfg.lens.crystallization_tol,
-            "n_series_skip": int(take)}
+            "n_series_skip": int(take), "n_requested_skip": cap["n_requested"],
+            "limited_by_skip": cap["limited_by"]}
     arrays = {"skip_mase": mase_curve.astype(np.float32),
               "skip_agreement": agreement.astype(np.float32)}
 
@@ -135,9 +144,9 @@ def _tuned_lens(cfg: PipelineConfig, adapter, store: ActivationStore,
     the recency that forecasts depend on. Splits are by series, matching the
     L2 leakage discipline, and the lambda grid is shared with L2's ridge.
     """
-    rng = np.random.default_rng(cfg.run.seed + 83)
     n = min(data.n, cfg.lens.tuned_max_series)
-    rows = np.sort(rng.choice(data.n, size=n, replace=False))
+    rows = sample_rows(data.n, n, cfg.run.seed + 83, strata=data.meta["family"].to_numpy())
+    rng = np.random.default_rng(cfg.run.seed + 83)
     n_val = max(2, int(n * cfg.lens.val_frac))
     perm = rng.permutation(n)
     val, train = perm[:n_val], perm[n_val:]

@@ -23,7 +23,7 @@ from sklearn.preprocessing import StandardScaler
 from ..config import PipelineConfig
 from ..data import BenchmarkData
 from ..extraction.store import ActivationStore
-from ..utils import load_json, log, save_json
+from ..utils import load_json, log, sample_rows, save_json
 from .stats import bootstrap_ci
 
 _FEATURE_WORDS = {
@@ -42,9 +42,8 @@ def run_clustering(cfg: PipelineConfig, store: ActivationStore, data: BenchmarkD
     a, b = cfg.comparison_pair()
     layer_a, layer_b = _choose_layers(cfg, store, a.name, b.name)
 
-    rng = np.random.default_rng(cfg.run.seed + 4)
-    rows = np.sort(rng.choice(data.n, size=min(data.n, cfg.clustering.max_series),
-                              replace=False))
+    rows = sample_rows(data.n, cfg.clustering.max_series, cfg.run.seed + 4,
+                      strata=data.meta["family"].to_numpy())
     meta = data.meta.iloc[rows].reset_index(drop=True)
     features = _series_features(data.contexts()[rows])
     k = _resolve_k(cfg, meta)
@@ -76,12 +75,29 @@ def run_clustering(cfg: PipelineConfig, store: ActivationStore, data: BenchmarkD
                           cfg.run.seed + 5, cfg.stats.ci)
         ami.update({"lo": ci["lo"], "hi": ci["hi"]})
     contingency = pd.crosstab(la, lb, normalize="index")
+    n_families = int(meta["family"].nunique())
+    family_comparisons = None
+    if n_families < 2:
+        # Cluster *labels* (top_family/purity) are guarded in
+        # `_label_clusters` itself; this is the corresponding note for the
+        # report (`ROADMAP.md` sec 15 A6). AMI/contingency above are
+        # unaffected -- they compare the two models' clusters to *each
+        # other*, never to family labels, so they stay meaningful
+        # regardless of how many families are present.
+        family_comparisons = {
+            "applicable": False,
+            "reason": f"only {n_families} family present in this corpus; every "
+                      f"cluster's family purity would be a trivial 100% "
+                      f"regardless of clustering quality, so cluster labels above "
+                      f"show only feature-based descriptors",
+        }
     save_json(out_dir / "clusters.json", cluster_meta)
     save_json(out_dir / "comparison.json", {
         "model_a": a.name, "model_b": b.name, "ami": ami,
         "contingency": contingency.to_numpy().tolist(),
         "rows_a": [int(i) for i in contingency.index],
         "cols_b": [int(i) for i in contingency.columns],
+        "family_comparisons": family_comparisons,
     })
     log.info("clustering complete: AMI=%.3f", ami["value"])
 
@@ -144,20 +160,32 @@ def _series_features(contexts: np.ndarray) -> pd.DataFrame:
 
 def _label_clusters(labels: np.ndarray, meta: pd.DataFrame,
                     features: pd.DataFrame) -> dict:
-    """Approximate label per cluster: majority family plus salient feature descriptors."""
+    """Approximate label per cluster: majority family plus salient feature descriptors.
+
+    With a single family present, every cluster's family purity is
+    trivially 100% regardless of how the clustering actually carved the
+    data -- that's an artifact of there being nothing else a series could
+    be, not a finding, so the family/purity framing is dropped in favor of
+    the feature-based description alone (`ROADMAP.md` sec 15 A6).
+    """
     mu, sd = features.mean(), features.std() + 1e-8
+    n_families = int(meta["family"].nunique())
     info = {}
     for c in sorted(set(labels)):
         mask = labels == c
-        fam_counts = meta.loc[mask, "family"].value_counts()
-        top_family, purity = fam_counts.index[0], fam_counts.iloc[0] / mask.sum()
         z = ((features[mask].mean() - mu) / sd)
         salient = z.abs().sort_values(ascending=False).index[:2]
         words = [_FEATURE_WORDS[f][0 if z[f] > 0 else 1] for f in salient if abs(z[f]) > 0.4]
         desc = " · ".join(words) if words else "mixed characteristics"
+        if n_families >= 2:
+            fam_counts = meta.loc[mask, "family"].value_counts()
+            top_family = fam_counts.index[0]
+            purity = float(fam_counts.iloc[0] / mask.sum())
+            label = f"{top_family} ({purity:.0%}) · {desc}"
+        else:
+            top_family, purity, label = None, None, desc
         info[int(c)] = {
-            "label": f"{top_family} ({purity:.0%}) · {desc}",
-            "top_family": top_family, "purity": float(purity),
+            "label": label, "top_family": top_family, "purity": purity,
             "size": int(mask.sum()),
             "feature_z": {f: float(z[f]) for f in features.columns},
         }

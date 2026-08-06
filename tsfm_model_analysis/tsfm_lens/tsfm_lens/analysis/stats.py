@@ -72,13 +72,95 @@ def holm(pvals: Dict[str, float]) -> Dict[str, float]:
     return adjusted
 
 
-def mase(point: np.ndarray, targets: np.ndarray, contexts: np.ndarray) -> np.ndarray:
-    """Per-series MASE, scaled by each series' own mean absolute context step change.
+def dominant_period(x: np.ndarray, min_lag: int = 4) -> int:
+    """Dominant period of one series via the autocorrelation peak beyond min_lag.
+
+    Shared with `analysis/attention.py`'s periodicity taxonomy (which used to
+    keep its own private copy) and `mase()`'s `seasonal_naive` scale option
+    (`ROADMAP.md` sec 15 A11) -- the exact same estimate both places, so a
+    future improvement to it doesn't silently drift between the two.
+    """
+    xc = x - x.mean()
+    ac = np.correlate(xc, xc, mode="full")[len(xc) - 1:]
+    ac = ac / (ac[0] + 1e-12)
+    hi = max(min_lag + 1, len(xc) // 2)
+    return min_lag + int(np.argmax(ac[min_lag:hi]))
+
+
+def _mase_scale(contexts: np.ndarray, scale_mode: str = "mean_abs_diff",
+                periods: Optional[np.ndarray] = None) -> np.ndarray:
+    """Per-series MASE denominator, floored at 1e-8 (sec 15 A11).
+
+    `mean_abs_diff` (the original, still the default -- every number
+    computed under it stays byte-identical) is the mean absolute one-step
+    context change; it collapses under heavy intermittency or a flat
+    context (both numerator and denominator floor together when the
+    horizon is also mostly zero, which is exactly what made the
+    intermittency sweep's "MASE falls for both models at rate 0.8" reading
+    an artifact rather than a finding). `seasonal_naive` instead uses the
+    mean absolute error of a period-`m` seasonal-naive forecast on the
+    context -- the standard fix for scale degeneracy -- with `m` supplied
+    per series (e.g. from ground truth) or, when `periods` is not given,
+    estimated per series via `dominant_period`.
+    """
+    if scale_mode == "mean_abs_diff":
+        return np.abs(np.diff(contexts, axis=1)).mean(axis=1) + 1e-8
+    if scale_mode == "seasonal_naive":
+        if periods is None:
+            periods = np.array([dominant_period(c) for c in contexts])
+        out = np.empty(len(contexts), dtype=np.float64)
+        for i, (c, p) in enumerate(zip(contexts, periods)):
+            p = int(np.clip(p, 1, len(c) - 1))
+            out[i] = np.abs(c[p:] - c[:-p]).mean()
+        return out + 1e-8
+    raise ValueError(f"unknown MASE scale_mode {scale_mode!r} "
+                     f"(expected 'mean_abs_diff' or 'seasonal_naive')")
+
+
+def mase(point: np.ndarray, targets: np.ndarray, contexts: np.ndarray,
+        scale_mode: str = "mean_abs_diff", periods: Optional[np.ndarray] = None) -> np.ndarray:
+    """Per-series MASE, scaled by each series' own context-derived denominator.
 
     Pulled out of `l0_behavioral.py::_score` (which now calls this) so any
     other stage needing the exact same metric -- e.g. the SAE eval harness's
     forecast-preservation check -- imports it rather than reimplementing the
-    formula. Behavior is unchanged: same scale floor, same axis reductions.
+    formula. Default behavior (`scale_mode="mean_abs_diff"`, no `periods`) is
+    unchanged byte-for-byte from before `seasonal_naive` existed; every
+    existing call site keeps reproducing without passing the new kwargs.
     """
-    scale = np.abs(np.diff(contexts, axis=1)).mean(axis=1) + 1e-8
+    scale = _mase_scale(contexts, scale_mode, periods)
     return np.abs(targets - point).mean(axis=1) / scale
+
+
+def mase_reliability(contexts: np.ndarray, targets: np.ndarray, scale_mode: str = "mean_abs_diff",
+                     periods: Optional[np.ndarray] = None, min_scale_frac: float = 0.0) -> np.ndarray:
+    """Per-series reliability mask for `mase()` (sec 15 A11).
+
+    `False` when the MASE denominator is below `min_scale_frac` of the
+    target's own mean absolute level -- independent of which `scale_mode`
+    produced the denominator, since a near-zero scale is unreliable
+    regardless of *why* it's near zero. `min_scale_frac=0.0` (the default)
+    never flags anything, so callers that don't opt in see no behavior
+    change. All-`True` when `min_scale_frac<=0`.
+    """
+    if min_scale_frac <= 0:
+        return np.ones(len(contexts), dtype=bool)
+    scale = _mase_scale(contexts, scale_mode, periods)
+    target_level = np.abs(targets).mean(axis=1) + 1e-8
+    return scale >= min_scale_frac * target_level
+
+
+def mae_over_mad(point: np.ndarray, targets: np.ndarray) -> np.ndarray:
+    """Per-series MAE normalized by the target's own mean absolute deviation.
+
+    A companion to `mase()` that never depends on the *context* (sec 15
+    A11's "one scale-free companion metric that doesn't degenerate the same
+    way") -- shown beside MASE so a floor effect from context degeneracy
+    shows up as a divergence between the two rather than staying invisible.
+    Can still be small/undefined-feeling on a near-constant *target*, which
+    is a different, legitimate failure mode (a genuinely flat horizon), not
+    the one this metric exists to catch.
+    """
+    mae = np.abs(targets - point).mean(axis=1)
+    mad = np.abs(targets - np.median(targets, axis=1, keepdims=True)).mean(axis=1) + 1e-8
+    return mae / mad

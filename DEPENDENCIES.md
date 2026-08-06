@@ -111,7 +111,7 @@ pin harder.
 | Package | Version | Source | Why this exact version matters |
 |---|---|---|---|
 | `python` | 3.12.13 | conda-forge | — |
-| `numpy` | 2.1.0 | conda-forge | Golden-hash regression test (`CLAUDE.md` §7 invariant 1, §11.13) is known to mismatch against this exact version for reasons still not fully root-caused (leading hypothesis: `rng.choice(..., replace=False)` algorithm stability isn't guaranteed cross-version). Bit-exact corpus regeneration is **numpy-version-fragile** — don't bump numpy casually. |
+| `numpy` | 2.1.0 | conda-forge | Golden-hash regression test (`CLAUDE.md` §7 invariant 1, `ROADMAP.md` sec 15 A8) is **currently green** against this exact version in this environment (re-verified 2026-08-06). The leading cross-version-instability hypothesis was checked directly (`default_rng(0).choice(100,5,replace=False)` and `.normal(size=5)` compared bit-for-bit against numpy 1.26.4 in an isolated venv) and **did not reproduce** — both primitives are identical across 1.26.4 and 2.1.0. The originally-reported mismatch (`CLAUDE.md` §11.13, a from-scratch environment on an unspecified earlier session) remains unexplained; still don't bump numpy casually, but the specific "choice isn't stream-stable" story is refuted for these two versions, not confirmed. |
 | `mkl` | 2024.2.2 | conda-forge | Must match `numpy` 2.1.0's build era. A newer MKL (2025+, e.g. pulled in transitively by some `sdv`/pytorch installs) causes an unhandled SEH crash (`0xc06d007f`) on **any** matmul with this numpy build (`CLAUDE.md` §11.13). Verified together with CUDA torch 2.9.1+cu130 today with no crash (§1). |
 | `scipy` | 1.18.0 | pip (pypi) | — |
 | `pandas` | 2.3.3 | conda-forge | — |
@@ -177,9 +177,12 @@ cd tsfm_model_analysis/tsfm_lens && python tests/test_smoke.py
 ## 5. Known fragile spots (see `CLAUDE.md` §11 for full detail)
 
 - **numpy 2.1.0 + MKL 2025+ = crash.** Pin `mkl==2024.2.2` alongside it (§3).
-- **numpy version affects golden-hash reproducibility** in ways not yet
-  root-caused (§7 invariant 1 in `CLAUDE.md`) — treat any numpy bump as a
-  reproducibility risk, not just a routine upgrade.
+- **numpy version *might* affect golden-hash reproducibility**, but the
+  leading hypothesis (`Generator.choice(..., replace=False)` cross-version
+  instability) was directly checked 2026-08-06 and did **not** reproduce
+  between numpy 1.26.4 and 2.1.0 — treat any numpy bump as a reproducibility
+  risk to re-verify (`ROADMAP.md` sec 15 A8's golden-hash test), not as a
+  confirmed-broken mechanism.
 - **`datasets>=3` breaks Monash loading entirely** (script-based datasets
   removed). Keep `<3`.
 - **`zarr>=3` breaks `extraction/store.py`** (renamed `Group` API). Keep `<3`.

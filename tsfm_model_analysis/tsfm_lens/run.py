@@ -24,6 +24,14 @@ def main() -> None:
                         help=f"comma-separated subset of {stage_names()}; default: all enabled")
     parser.add_argument("--force", default="",
                         help="stages to rerun even if artifacts exist, or 'all'")
+    parser.add_argument("--allow-stale", action="store_true",
+                        help="proceed even if a stage's config fingerprint no longer "
+                             "matches its existing artifacts (default: refuse; "
+                             "ROADMAP.md sec 15 A3)")
+    parser.add_argument("--allow-partial-report", action="store_true",
+                        help="do not fail the run when a report section builder raises "
+                             "(default: raise after still writing report.html with the "
+                             "failure named in its coverage panel; ROADMAP.md sec 15 A5)")
     parser.add_argument("--check-alignment", default="",
                         help="run the impulse alignment check for one model name and exit")
     parser.add_argument("--discover-layers", default="",
@@ -39,6 +47,8 @@ def main() -> None:
     cfg = load_config(args.config)
     if args.verbose is not None:
         cfg.report.verbose = args.verbose
+    if args.allow_partial_report:
+        cfg.report.allow_partial = True
 
     if args.discover_layers:
         adapter = Context(cfg).hub.get(args.discover_layers)
@@ -54,7 +64,7 @@ def main() -> None:
 
     stages = [s.strip() for s in args.stages.split(",") if s.strip()] or None
     force = {s.strip() for s in args.force.split(",") if s.strip()}
-    run_pipeline(cfg, stages=stages, force=force)
+    run_pipeline(cfg, stages=stages, force=force, allow_stale=args.allow_stale)
 
 
 if __name__ == "__main__":

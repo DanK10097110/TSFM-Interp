@@ -60,6 +60,11 @@ def summarize_run(run_dir: str | Path) -> dict:
     if l0:
         summary["l0_overall"] = {row["model"]: row["mase"] for row in l0.get("overall", [])}
         summary["l0_family_tests"] = l0.get("family_tests", [])
+        # `per_archetype.tests` is a list when applicable, a `{"applicable":
+        # False, ...}` dict otherwise (ROADMAP.md sec 15 A9) -- only the list
+        # form feeds cross-run archetype stability.
+        arch_tests = (l0.get("per_archetype") or {}).get("tests")
+        summary["l0_archetype_tests"] = arch_tests if isinstance(arch_tests, list) else []
     else:
         log.info(f"meta_report: {run_dir} has no l0/summary.json; L0 skipped")
 
@@ -88,6 +93,21 @@ def summarize_run(run_dir: str | Path) -> dict:
             for model, payload in lens.items()
             if isinstance(payload, dict) and "crystallization_depth" in payload
         }
+        # `n_series_skip`/`limited_by_skip` (sec 15 A16): lens must fit one
+        # batch, so its realized n is silently capped to `adapter.cfg.
+        # batch_size` per model -- recorded here so a cross-run comparison
+        # of crystallization depth can be flagged, not just tabulated, when
+        # the two runs' realized n actually differ (`CLAUDE.md` §5.3's own
+        # incident was exactly this, diagnosed only after a result looked
+        # impossible).
+        summary["lens_n_realized"] = {
+            model: payload.get("n_series_skip")
+            for model, payload in lens.items() if isinstance(payload, dict)
+        }
+        summary["lens_limited_by"] = {
+            model: payload.get("limited_by_skip")
+            for model, payload in lens.items() if isinstance(payload, dict)
+        }
     else:
         log.info(f"meta_report: {run_dir} has no lens/lens.json; lens skipped")
 
@@ -103,6 +123,13 @@ def summarize_run(run_dir: str | Path) -> dict:
         summary["confirm_overall"] = confirm.get("overall")
     else:
         log.info(f"meta_report: {run_dir} has no confirm/confirmation.json; confirm skipped")
+
+    manifest = _safe_load_json(run_dir / "run_manifest.json")
+    summary["provenance"] = (manifest or {}).get("provenance", {})
+    if not summary["provenance"]:
+        log.info(f"meta_report: {run_dir} has no run_manifest.json provenance "
+                 f"(run predates ROADMAP.md sec 15 A7); cross-run environment "
+                 f"drift cannot be checked for this run")
 
     return summary
 
@@ -131,12 +158,94 @@ def family_stability(run_summaries: list[dict]) -> list[dict]:
     return rows
 
 
+def archetype_stability(run_summaries: list[dict]) -> list[dict]:
+    """Pivot each run's per-archetype L0 test onto a shared archetype axis (sec 15 A9).
+
+    Same shape as `family_stability`, one level finer -- this is what answers
+    "does the family-level gap hold on every archetype it was pooled from,
+    or only some" across runs, not just within one run's own report.
+    """
+    by_archetype: dict[str, list[dict]] = {}
+    for run in run_summaries:
+        for test in run.get("l0_archetype_tests", []):
+            by_archetype.setdefault(test["archetype"], []).append({
+                "run": run["label"], "ratio": test.get("ratio"),
+                "favored": test.get("favored"), "p_holm": test.get("p_holm"),
+            })
+    rows = []
+    for archetype, entries in sorted(by_archetype.items()):
+        favored_set = {e["favored"] for e in entries if e.get("favored") not in (None, "none")}
+        rows.append({"archetype": archetype, "runs": entries, "stable": len(favored_set) <= 1})
+    return rows
+
+
+_PROVENANCE_DRIFT_PACKAGES = ("torch", "numpy", "zarr")
+
+
+def provenance_warnings(run_summaries: list[dict]) -> list[str]:
+    """Cross-run environment-drift warnings (`ROADMAP.md` sec 15 A7).
+
+    A finding that "replicates" across runs whose corpus contents or
+    library majors actually differ is weaker evidence than the same finding
+    replicating in a matched environment -- this repo's own multi-session
+    history (`CLAUDE.md` sec 11.15/11.17, this file's own §5.5 precedent) is
+    the reason to check rather than assume runs being aggregated together
+    are actually comparable. Runs with no recorded provenance (pre-A7) are
+    silently excluded from a given check rather than treated as a mismatch
+    -- absence of data isn't evidence of drift.
+    """
+    warnings = []
+    digests = {r["label"]: r["provenance"]["corpus_digest"] for r in run_summaries
+              if r.get("provenance", {}).get("corpus_digest")}
+    if len(set(digests.values())) > 1:
+        warnings.append(f"corpus digest differs across runs -- these runs saw different "
+                        f"corpus contents, not just different configs: {digests}")
+    for pkg in _PROVENANCE_DRIFT_PACKAGES:
+        majors = {r["label"]: v.split(".")[0]
+                 for r in run_summaries
+                 if (v := (r.get("provenance", {}).get("packages") or {}).get(pkg))}
+        if len(set(majors.values())) > 1:
+            versions = {r["label"]: (r.get("provenance", {}).get("packages") or {}).get(pkg)
+                       for r in run_summaries}
+            warnings.append(f"{pkg} major version differs across runs: {versions}")
+    warnings.extend(_batch_cap_warnings(run_summaries))
+    return warnings
+
+
+def _batch_cap_warnings(run_summaries: list[dict]) -> list[str]:
+    """Flag a batch-limited stage's realized n differing across runs (sec 15 A16).
+
+    Lens must fit one forward pass, so its realized sample size is silently
+    capped to each model's own `batch_size` -- a real, previously-hit
+    failure mode (`CLAUDE.md` §5.3: crystallization depth moved for an
+    *unchanged* checkpoint purely because two runs' configs implied
+    different realized n). This is the cross-run version of that same
+    check: comparing crystallization depth across runs whose lens stage
+    realized a different n per model is comparing numbers computed on
+    different sample sizes, not a like-for-like replication.
+    """
+    warnings = []
+    models = {m for r in run_summaries for m in (r.get("lens_n_realized") or {})}
+    for model in sorted(models):
+        by_run = {r["label"]: (r.get("lens_n_realized") or {}).get(model)
+                 for r in run_summaries if model in (r.get("lens_n_realized") or {})}
+        if len(set(v for v in by_run.values() if v is not None)) > 1:
+            limited = {r["label"]: (r.get("lens_limited_by") or {}).get(model)
+                      for r in run_summaries if model in (r.get("lens_limited_by") or {})}
+            warnings.append(f"lens realized n for {model} differs across runs -- "
+                            f"crystallization depth is not directly comparable: "
+                            f"n_realized={by_run}, limited_by={limited}")
+    return warnings
+
+
 def build_meta_report(run_dirs: list) -> dict:
     """Aggregate N run directories into one cross-run comparison dict."""
     if not run_dirs:
         raise ValueError("build_meta_report needs at least one run directory")
     runs = [summarize_run(d) for d in run_dirs]
-    return {"runs": runs, "family_stability": family_stability(runs)}
+    return {"runs": runs, "family_stability": family_stability(runs),
+           "archetype_stability": archetype_stability(runs),
+           "provenance_warnings": provenance_warnings(runs)}
 
 
 def _family_ratio_figure(meta: dict) -> str:
@@ -170,12 +279,37 @@ th { color: #66727B; font-weight: 600; }
 .stable { color: #4E8D6E; } .unstable { color: #B04A5A; font-weight: 600; }
 .note { color: #66727B; font-size: 0.85rem; max-width: 800px; }
 code { background: #F4F5F3; padding: 0.1rem 0.3rem; border-radius: 3px; }
+.warn { background: #3a2a12; color: #f3d9a8; border: 1px solid #6b4a1a;
+        border-radius: 6px; padding: 0.75rem 1rem; margin: 0.75rem 0; font-size: 0.85rem; }
 </style></head><body>
 <h1>tsfm-lens cross-run summary</h1>
 <p class="note">Generated {{ generated }} from {{ meta.runs|length }} run director{{ 'y' if meta.runs|length == 1 else 'ies' }}.
 This aggregates each run's own artifacts as-is (nothing re-run) -- see each run's own
 <code>report.html</code> for the full evidence-class detail and per-plot notes this
 summary omits.</p>
+
+{% if meta.provenance_warnings %}
+<div class="warn"><b>Environment drift across these runs</b><ul>
+{% for w in meta.provenance_warnings %}<li>{{ w }}</li>{% endfor %}
+</ul>A finding replicating across runs with different corpus contents or major
+library versions is weaker evidence than the same finding replicating in a
+matched environment -- read the aggregation below with that in mind.</div>
+{% endif %}
+
+<h2>Run provenance</h2>
+<table>
+<tr><th>Run</th><th>git SHA</th><th>tsfm_lens</th><th>packages</th><th>device</th><th>corpus digest</th></tr>
+{% for run in meta.runs %}
+<tr>
+<td>{{ run.label }}</td>
+<td>{{ (run.provenance.git_sha or "--")[:10] }}{{ " (dirty)" if run.provenance.get("git_dirty") else "" }}</td>
+<td>{{ run.provenance.get("tsfm_lens_version", "--") }}</td>
+<td>{% for pkg in ["torch", "numpy", "zarr"] %}{{ pkg }} {{ run.provenance.get("packages", {}).get(pkg) or "--" }}<br>{% endfor %}</td>
+<td>{% set dev = run.provenance.get("device", {}) %}{{ (dev.get("device_names", []) | join(", ")) if dev.get("cuda_available") else "cpu" }}</td>
+<td>{{ (run.provenance.get("corpus_digest") or "--")[:12] }}</td>
+</tr>
+{% endfor %}
+</table>
 
 <h2>Runs</h2>
 <table>
@@ -218,6 +352,29 @@ stability, not confirmed stable.</p>
 
 <h2>Per-family MASE ratio by run</h2>
 {{ fig_html | safe }}
+
+<h2>Per-archetype stability across runs</h2>
+<p class="note">One level finer than the per-family table above --
+<code>random_parametric</code>'s per-sample archetype, where recorded (ROADMAP.md
+sec 15 A9). A family-level gap that looks stable can still be carried by only
+some of its archetypes; this is where that would show up. Empty if no
+aggregated run recorded archetype-level tests (pre-A9 runs, or corpora with no
+`random_parametric` samples).</p>
+{% if meta.archetype_stability %}
+<table>
+<tr><th>Archetype</th><th>Stable?</th><th>Per-run ratio (favored, Holm p)</th></tr>
+{% for row in meta.archetype_stability %}
+<tr>
+<td>{{ row.archetype }}</td>
+<td class="{{ 'stable' if row.stable else 'unstable' }}">{{ 'yes' if row.stable else 'NO -- favored model differs across runs' }}</td>
+<td>{% for r in row.runs %}{{ r.run }}: {{ '%.3f'|format(r.ratio) if r.ratio is not none else '--' }}
+    ({{ r.favored }}, p_holm={{ '%.3f'|format(r.p_holm) if r.p_holm is not none else '--' }})<br>{% endfor %}</td>
+</tr>
+{% endfor %}
+</table>
+{% else %}
+<p class="note">No archetype-level tests available across the given runs.</p>
+{% endif %}
 
 </body></html>"""
 

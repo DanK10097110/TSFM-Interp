@@ -1,6 +1,6 @@
 """Validation helpers for benchmark analysis and reporting."""
 
-from .diversity import DiversityReport, diversity_metrics, diversity_metrics_by_group
+from .diversity import DiversityReport, InsufficientN, diversity_metrics, diversity_metrics_by_group
 from .embedding import embed_3d
 from .features import FeatureMatrix, extract_features
 from .loaders import SeqRecord, from_arrays, from_samples, from_sealed
@@ -21,6 +21,7 @@ from .report import build_report, print_summary, save_report
 
 __all__ = [
     "DiversityReport",
+    "InsufficientN",
     "FeatureMatrix",
     "MatchReport",
     "SeqRecord",

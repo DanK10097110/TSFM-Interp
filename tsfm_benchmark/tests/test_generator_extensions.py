@@ -15,10 +15,27 @@ from tsfm_benchmark.build_pipeline.generators import (_ARCHETYPES,
 NEW_ARCHETYPES = ["random_walk_drift", "intermittent_bursts",
                   "amplitude_modulated", "nonsinusoidal_seasonal"]
 
+# Captured against numpy 2.1.0 (`DEPENDENCIES.md` §3), re-verified against
+# that exact version 2026-08-06 (`ROADMAP.md` sec 15 A8) -- these hashes are
+# NOT guaranteed stable across other numpy versions until re-verified the
+# same way; treat any numpy bump as a re-verification task, not a routine
+# upgrade (CLAUDE.md §7 invariant 1, §11.13).
 GOLDEN = {
     0: ("2856658d044e4c49", "a45664e176fbb71a", "clean_low_noise"),
     7: ("ded6ff4ee4d08e00", "a1d7456a6daeb78e", "noisy_chaotic"),
     123: ("13157fdc8501e113", "8b8395cd08aced50", "trend_dominant"),
+}
+
+# Same seeds/recipe as GOLDEN's `parametric` call but with n_changepoints=0,
+# n_anomalies=0 -- the only two knobs that call `rng.choice(..., replace=
+# False)` (`ROADMAP.md` sec 15 A8 evidence: generators.py's changepoint and
+# anomaly-index draws). Isolates the `rng.normal`-only draw path (trend
+# coefficients, AR colored noise) from the `rng.choice`-dependent path, so a
+# future mismatch localizes to one or the other instead of "the hash moved."
+GOLDEN_NORMAL_ONLY = {
+    0: "ed1f2a4a34571452",
+    7: "269c5be494e6ef47",
+    123: "bec52cc5e6c52279",
 }
 
 
@@ -44,6 +61,22 @@ def test_golden_hashes_pre_extension_outputs_unchanged():
         assert _short_hash(p.values) == p_hash
         assert _short_hash(r.values) == r_hash
         assert r.ground_truth.generative_params["archetype"] == archetype
+
+
+def test_golden_hashes_normal_only_recipe_unchanged():
+    """Same recipe as the composite test above, minus changepoints/anomalies.
+
+    If this passes while the composite test above fails, the break is in the
+    `rng.choice(..., replace=False)` draws (changepoint/anomaly indices) --
+    not in `rng.normal` (trend/AR coefficients) or draw *ordering* upstream
+    of them. If both fail, the break is earlier (`np.random.default_rng`
+    itself, or the trend/AR draws). (`ROADMAP.md` sec 15 A8, fix item 4.)
+    """
+    for seed, p_hash in GOLDEN_NORMAL_ONLY.items():
+        p = parametric(seed=seed, length=256, trend={"order": 2, "scale": 0.5},
+                       seasonalities=[{"period": 24, "amplitude": 1.0}],
+                       ar_coeffs=[0.6, -0.2], noise_scale=0.15)
+        assert _short_hash(p.values) == p_hash
 
 
 def test_default_pool_excludes_new_archetypes_but_registry_has_them():

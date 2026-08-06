@@ -33,6 +33,19 @@
 > and fixed in `CLAUDE.md`: the TimesFM adapter has moved to TimesFM 2.5
 > (different checkpoint, layer count, and a newly-supported
 > `attention_patterns` capability) — see `CLAUDE.md` §11.8.
+>
+> **Audit pass added 2026-08-06 (planning only, no code).** Two new sections
+> at the end of this file: **§15** is a code-grounded audit of *silent-failure
+> paths, fragile mechanisms, and acknowledged-but-fixable limitations* found by
+> reading the pipeline against the claims in this file and `CLAUDE.md`
+> (19 items, each with evidence at `file:line`, why it matters, and a detailed
+> fix plan marked **NEEDS IMPLEMENTATION**); **§16** is an enhancement backlog
+> aimed squarely at the §1 north star — what a stranger with a checkpoint and
+> one button actually needs, benchmarked against what `transformer-lens` users
+> expect. Several §15 items contradict claims made elsewhere in this file and
+> in `CLAUDE.md`; those places now carry inline `⚠️ AUDIT` markers pointing at
+> the relevant item rather than being quietly left to mislead. Nothing in §15
+> or §16 has been implemented — they are scheduled work, not findings.
 
 ---
 
@@ -74,6 +87,20 @@
    session that changes a library version, adds a new dependency, or
    discovers a new version-fragility gotcha updates that file in the same
    session, not as a follow-up.
+9. **Read §15 before trusting a number, and before adding a new stage.** §15
+   lists the pipeline's currently-known silent-failure paths — several of them
+   affect numbers already recorded in this file's Findings blocks (each such
+   case says so explicitly). If you are about to cite a recorded result,
+   check whether a §15 item confounds it. If you are about to write a new
+   stage that subsamples series, reuses artifacts, or degrades a capability,
+   §15's A3/A4/A5 fixes define the conventions that stage should follow so it
+   doesn't add a twentieth instance of the same class of bug.
+10. **§16 is a backlog, not a queue.** Items there are sized and prioritized
+   but deliberately not sequenced into the §3 phase spine, because most are
+   productization/rigor work that can be picked up in any order once the §15
+   P1 items are closed. Do not treat a high §16 tier as permission to skip
+   §15 — a one-button tool that silently produces a wrong number is worse
+   than a five-command tool that refuses.
 
 ---
 
@@ -420,6 +447,16 @@ versions, each for a different reason:
   `chronos-t5-small` got in §5.4. Not yet done for any other candidate
   checkpoint (TimesFM 1.0/2.0, chronos-t5-large, chronos-bolt) — do this
   before building a config around any of them, per invariant 7.
+  > ⚠️ **AUDIT (2026-08-06) — invariant 7 is enforced by human memory, not by
+  > the pipeline, see §15 A2.** `alignment.sanity_check` is on in all three
+  > real configs, but `extraction/extract.py:50-51` **discards** the check's
+  > return value: there is no threshold, no artifact, no report line, and only
+  > a stride-4 subset of layers is probed. A future checkpoint or library bump
+  > that breaks token spans produces one INFO line inside a long run and a
+  > full report of confident cross-model numbers — the precise scenario
+  > `CLAUDE.md` §6.3 says must block trusting anything, and the one that
+  > already cost a session once (§11.16). "Remember to run
+  > `--check-alignment`" is not an invariant; a gate is.
 
 ### 5.4 Resolve the two `[VERIFY]`/known-risk items from `CLAUDE.md` §9/§10 first — ✅ DONE 2026-08-03
 These were explicitly called out as untested against real weights. Both are
@@ -475,6 +512,12 @@ runs.
   `analysis/l0_behavioral.py` schema addition, not an aggregator change, and
   is left for whoever next wants that finer granularity rather than
   bundled into this session unprompted (§2.5 scope discipline).
+  > ⚠️ **AUDIT (2026-08-06):** now scheduled with a concrete plan as §15 A9,
+  > because it turns out to block more than this aggregator view — the same
+  > missing `archetype` column is why §6.2's ground-truth archetype dummies
+  > have to be reconstructed from provenance at SAE-scoring time, which is
+  > where §15 A10's "real-derived series silently count as archetype
+  > negatives" problem comes from. One schema addition closes both.
 - [x] Explicitly revisit every "Defensible" / "Underdelivered" claim in
   `CLAUDE.md` §10 against the broader evidence base and update that section
   (or better, retire it from `CLAUDE.md` and move the *current*, broader-based
@@ -1048,6 +1091,14 @@ runs.
     wasn't asked for and changes already-cited results; Phase 3's controlled
     parameter sweeps (§7) would be the natural place to pursue it
     deliberately if a future session wants to.
+    > ⚠️ **AUDIT (2026-08-06):** now specified as §15 A12, with the
+    > backwards-compatibility problem this entry correctly identified solved
+    > rather than used as a reason to defer: calibration goes behind an
+    > opt-in `l3.calibrate` mode (default `none`), so every number already
+    > recorded in this file keeps reproducing byte-for-byte while a calibrated
+    > run becomes possible for the first time. The display-only fix this
+    > session shipped is the right *interim* answer, not a substitute — a
+    > prose caveat under a chart cannot make two bars comparable.
 - **2026-08-04 — repo-wide hardcoded-absolute-path audit** (user request,
   `CLAUDE.md` §7 invariant 11): grepped the whole repo for drive letters,
   `/home/`, `/Users/` across `.py`/`.yaml`/`.md`/`.toml`/`.sh`. Found exactly
@@ -1515,6 +1566,17 @@ bake-off even runs:
   nothing is invisible. (Note `config.py`'s `capture_layer_stride` *default* is
   already 1; it's `default.yaml` that sets 2 for cost — the screen must pin it
   to 1 regardless of what the analysis config uses.)
+
+  > ⚠️ **AUDIT (2026-08-06) — R2 is violated by the production wiring, see
+  > §15 A1.** The `layer_screen` stage as landed reads `store.layers(model)`,
+  > i.e. whatever `capture_layer_stride` happened to capture (2 for TimesFM in
+  > both `default.yaml` and `medium_run.yaml`), so in every production config
+  > half of TimesFM's blocks are invisible to the screen — exactly problem 3
+  > this section raises against §6.1, reintroduced. The requirement above was
+  > never implemented; no `layer_screen.stride` knob exists. Not a small
+  > deviation: the bake-off that chose `work_bend` was run at stride 1, so
+  > production selections are not made under the conditions the method was
+  > validated under.
 - **R3 — Parsimonious ("find all interesting layers, but not too many").** The
   output is a *small* set sized to a compute budget, chosen so the next layer
   added buys little — an explicit coverage/redundancy objective, not a fixed
@@ -2020,7 +2082,18 @@ something novel" (brief item 3) should actually land.
   Chronos-T5-Base** (ΔMASE +2.37) — traced to an architecture-specific
   confound in the check itself (window-broadcast granularity), not
   necessarily the SAE, documented in `eval.py`'s docstring and the
-  Findings below. The "vs. sparsity (L0)
+  Findings below.
+  > ⚠️ **AUDIT (2026-08-06) — these two ΔMASE numbers are confounded a second
+  > time, independently of the window-broadcast issue, see §15 A4 and A13.**
+  > `sae/eval.py:86-88` takes `data.contexts()[:take]` with `take ≤
+  > adapter.cfg.batch_size` — a **head slice** of a corpus that
+  > `build_pipeline` writes grouped task-by-task, so both numbers were
+  > measured on the first ~16-32 series of `benchmark_medium`, plausibly a
+  > single family, not a representative sample. And with no measured
+  > repeat-run noise floor (A13), +0.047 cannot yet be distinguished from
+  > run-to-run variation at all. Both numbers need re-measuring after A4/A13
+  > land, **before** the "TimesFM passes, so Phase 3 ablation can build on
+  > it" conclusion (§7 bullet 3) is acted on. The "vs. sparsity (L0)
   frontier" half is **partial**: TopK's sparsity is architectural (exactly
   `k` per row by construction), so there's no sparsity dial to sweep the
   way a ReLU+L1 SAE would need — a genuine frontier plot would need
@@ -2654,6 +2727,16 @@ not just an inference from aggregate archetype MASE.
     is its own piece of work); stated here so the raw numbers above aren't
     mistaken for "both models get slightly better at extreme
     intermittency," which they almost certainly do not in any real sense.
+    > ⚠️ **AUDIT (2026-08-06):** that "own piece of work" is now specified as
+    > §15 A11, and it is bigger than this sweep — `stats.mase()` is the
+    > denominator of L0's headline metric, head/MLP ablation ΔMASE, L3
+    > restoration, the SAE forecast-preservation check, and every sweep, so
+    > the degeneracy documented here silently propagates into all of them on
+    > any zero-heavy or near-constant family. It also means
+    > `intermittent_bursts` — per `CLAUDE.md` §4.2 the single sharpest
+    > quantized-vs-continuous stressor in the corpus, and one of the four
+    > archetypes §5.1 deliberately opted in — currently cannot be scored
+    > interpretably at all.
   - 8 new unit tests (`tests/test_parameter_sweep.py`; recipe-construction
     per sweep type, sweep-data shape/label/determinism, positive-argument
     validation, and a planted-difference recovery test for the scoring
@@ -3214,6 +3297,35 @@ so a future session doesn't accidentally drift into them:
 - [ ] Licensing/access for Moirai, Sundial, and other Phase 4 candidates
   should be re-checked at the time Phase 4 actually starts, not assumed
   stable from whenever this section was written.
+- [ ] **How much of what's already recorded in this file survives §15's
+  sampling and noise-floor fixes?** (Added 2026-08-06.) A4 shows several
+  recorded numbers were measured on task-ordered prefixes rather than
+  representative samples, and A13 shows no ΔMASE in the repo has ever been
+  compared against a measured repeat-run floor. The specific numbers to
+  re-measure and then supersede in place (§0.2 — correct, don't delete) are
+  named in the ⚠️ AUDIT markers: §6.2's SAE forecast-preservation ΔMASE and
+  ground-truth ρ values, and §5.3's lens comparison. **This is not a
+  suspicion that they're wrong — it's that their error bars are currently
+  unknown**, and two of them are load-bearing for a decision (whether Phase 3
+  feature ablation can build on the TimesFM SAE target).
+- [ ] **Is the `work_bend` production default still the bake-off winner under
+  production conditions?** (Added 2026-08-06, §15 A1.) The bake-off ran at
+  `capture_layer_stride: 1`; the wired stage screens whatever the analysis
+  config captured, which is stride 2 for TimesFM everywhere. So the selector
+  currently runs on a different input than the one it was validated on, and
+  the §6.1.1 R2 requirement it was designed around is unimplemented. Closing
+  A1 answers this; until then, treat production `sae.targets: auto`
+  selections as unvalidated even though the *method* was validated.
+- [ ] **Can this repo's central claims survive an untrained-weights null?**
+  (Added 2026-08-06, §16 E9.) L2 already reports gain over an input-feature
+  baseline, which is the right instinct — but the standard null for
+  representational-similarity and probing work is a randomly-initialized
+  network of the same architecture, and the repo has never run one. Genuinely
+  open which results move: peak CKA, stitching gain, family-probe
+  decodability, and SAE ground-truth alignment mass all plausibly have
+  non-trivial random-network floors. Per §2.2 this null should have been
+  written down before the results were; writing it down now is the next-best
+  thing.
 
 ---
 
@@ -3936,3 +4048,2697 @@ so a future session doesn't accidentally drift into them:
   fixed to use `pd.isna(...)`/`bool(...)`, with a dedicated regression
   test added so this can't regress silently. Full suite **81/81**.
   Everything from this loop remains uncommitted working-tree changes only.
+- **2026-08-06 (audit + planning session — no implementation)** — Per explicit
+  user instruction ("do not implement any code"), read `CLAUDE.md` and this
+  file end to end, then read the pipeline itself against their claims looking
+  for silent-failure paths, fixable acknowledged limitations, and non-obvious
+  design errors. Produced two new sections: **§15** (19 audited items, each
+  with `file:line` evidence, a stated blast radius, and a detailed fix plan
+  marked NEEDS IMPLEMENTATION) and **§16** (an enhancement backlog for the §1
+  "anyone, any model, one button" north star, 22 items in four tiers). Added
+  inline `⚠️ AUDIT` markers at the six places in this file where an audit
+  finding contradicts or materially qualifies something already written down
+  (§5.3's invariant-7 bullet, §5.5's per-archetype follow-up, §6.1.1's R2
+  requirement, §6.2's forecast-preservation deliverable, §7's intermittency
+  caveat, §5's corruption-calibration deferral), and a matching reconciliation
+  note plus `§11.20` pointer in `CLAUDE.md`. The three findings worth naming
+  here because they change how existing recorded numbers should be read:
+  invariant 7's alignment verification is logged-and-discarded rather than
+  enforced (A2); `build_pipeline` writes corpora grouped by task while four
+  call sites subsample with a head slice, so several recorded numbers were
+  measured on family-skewed prefixes (A4); and the `layer_screen` stage as
+  wired cannot satisfy its own all-layers-fair requirement under any
+  production config (A1). Nothing was implemented or committed.
+
+---
+
+## 15. Audit — silent-failure paths, fragile mechanisms, and fixable limitations
+
+> **Added 2026-08-06 by a read-the-code-against-the-docs pass** (planning only,
+> nothing here implemented). Each item is: what's wrong · evidence at
+> `file:line` · why it matters (blast radius) · the fix, in enough detail to
+> implement without re-deriving the analysis · priority · rough cost.
+>
+> **How this section differs from `CLAUDE.md` §11.** §11 records traps that
+> were *hit and fixed*. This records traps that are *live and unfixed*. When an
+> item here is fixed, move its lesson to `CLAUDE.md` §11 (if it cost real
+> time to find) and mark the item `[x]` here with a dated Findings note —
+> don't delete it (§0.2).
+>
+> **Priority key.** **P1** = can silently produce a wrong number that reaches
+> a report or a recorded finding; fix before the next real run. **P2** = a
+> stated invariant/requirement is unenforced, or a documented limitation
+> blocks already-planned work. **P3** = real, worth doing, nothing currently
+> depends on it.
+>
+> **A recurring theme worth naming once.** Twelve of these nineteen items are
+> the same shape: *a mechanism that degrades quietly where the doctrine
+> (`CLAUDE.md` §2.5) says it must degrade loudly, because "loudly" was
+> implemented as a log line*. Logs are not loud once the deliverable is an
+> HTML file a colleague opens three weeks later, and they are not loud inside
+> a thirty-minute run that prints hundreds of them. The general fix, applied
+> item by item below: **every degrade, fallback, cap, and skipped check must
+> land in a run artifact and in the report**, not only in stdout.
+
+### A1 — The production `layer_screen` stage cannot be fair to every layer `[x]` · **P1** · fixed 2026-08-06
+
+- **What's wrong.** §6.1.1's R2 ("fair to every layer... the screen must pin
+  stride to 1 regardless of what the analysis config uses") is not
+  implemented. The stage screens exactly the layers extraction happened to
+  store.
+- **Evidence.** `analysis/layer_screen.py:455` — `layers =
+  store.layers(m.name)`; `configs/default.yaml:29` and
+  `configs/medium_run.yaml:32` — `capture_layer_stride: 2` for TimesFM (20
+  blocks → 10 captured). No `layer_screen.stride` knob exists in
+  `config.py`'s `LayerScreenConfig`.
+- **Blast radius.** In every production config, half of TimesFM's blocks are
+  invisible to the selector that decides where expensive analysis and SAE
+  training go — the exact objection (§6.1.1 problem 3) that disqualified the
+  §6.1 mechanism. The report's Screen section says "selected N of 10 captured
+  layers", which reads as complete. And the bake-off that chose `work_bend`
+  ran at stride 1 (`configs/layer_screen_experiment.yaml`), so production
+  selections are made under conditions the method was never validated under.
+- **Fix.**
+  1. `LayerScreenConfig` gains `stride: int = 1` and `require_full_capture:
+     bool = True`.
+  2. Preferred mechanism: a **dedicated cheap screening extraction** — one
+     extra forward pass per model over `layer_screen.max_series` series
+     (default a few hundred, far fewer than the analysis corpus), all blocks
+     at stride 1, written to `screen_activations.zarr` in fp16 and deleted
+     after selection unless `layer_screen.keep_store: true`. Cost is bounded
+     and pays R4 correctly: screening still runs before every expensive
+     stage. Reuse `extraction/extract.py::_extract_model` with an override
+     for layer list and row count rather than writing a second extraction
+     path.
+  3. If a caller insists on screening the strided store (`require_full_capture:
+     false`), record `fair_to_all_layers: false` plus the realized stride in
+     `layer_screen/selection.json`, and have the report's Screen note say so
+     in the section body — not in a collapsed `_note()`.
+  4. Denominator honesty: the Screen section must report "screened X of Y
+     model blocks" using `adapter.all_layer_names()` as Y, not the store's
+     captured count.
+  5. Test: a config with `capture_layer_stride: 2` and
+     `require_full_capture: true` screens all 20 mock blocks; with `false`, it
+     screens 10 and emits `fair_to_all_layers: false`.
+- **Also worth fixing while here.** `selection.json` records `method` per
+  model, and `_uniform_fallback` correctly writes `method:
+  "uniform_fallback"` — but nothing surfaces the discrepancy between the
+  *requested* method and the *used* one. Add `method_requested` alongside
+  `method`, and have the report and `findings` name any fallback explicitly:
+  a run that silently selected layers with the null it was supposed to beat
+  should be impossible to miss.
+- **Cost.** ~a day including the screening-extraction path and tests.
+- **Findings (2026-08-06).** Implemented essentially as planned: `LayerScreenConfig`
+  gained `stride`/`require_full_capture`/`keep_store`; `layer_screen.py` gained
+  `_run_screening_extraction`, which reuses `extraction/extract.py::_extract_model`
+  (now parameterized by an explicit `layers`/`rows` pair instead of deriving
+  them from `adapter`/`data` internally) against a fresh, temporary store, then
+  deletes it after selection unless `keep_store: true`. `run_layer_screen` now
+  takes `hub` (pipeline.py's stage closure updated) so it can drive its own
+  extraction pass. Verified two ways: (1) synthetic — a smoke config with
+  `capture_layer_stride: 2` on one mock model showed the main store capturing
+  3 of 6 blocks while the dedicated screening pass correctly screened all 6
+  (`fair_to_all_layers: true`), and setting `require_full_capture: false`
+  correctly reported `fair_to_all_layers: false` with the true denominator (6)
+  both in `selection.json` and in the rendered report body (not a collapsed
+  note); (2) real checkpoints — a live run against `google/timesfm-2.5-200m-pytorch`
+  (`capture_layer_stride: 2`, 20 blocks) and `amazon/chronos-t5-small` (stride
+  1, 6 blocks) confirmed the exact bug scenario A1 described (`extraction
+  complete: {'TimesFM': 10, 'Chronos-T5': 6}`) and its fix (`layer_screen:
+  TimesFM (work_bend, budget=5/20, fair_to_all_layers=True) selected
+  ['stacked_xf.6', 'stacked_xf.10', 'stacked_xf.14', 'stacked_xf.16',
+  'stacked_xf.18']` — a real selection over all 20 blocks, not just the 10
+  the main analysis config would have captured). Full `tsfm_lens` pytest
+  suite (81 tests) green after the change. One design deviation from the
+  fix plan: row sampling for the screening pass uses a plain
+  `rng.choice(..., replace=False)` (matching the "already random" call
+  sites named in A4), not yet the stratified `sample_rows` helper A4
+  introduces — the call site will be swapped to it when A4 lands, per that
+  item's own fix plan.
+
+### A2 — Invariant 7 (empirical alignment verification) is logged and discarded `[x]` · **P1** · fixed 2026-08-06
+
+- **What's wrong.** The impulse alignment check runs, prints one INFO line,
+  and its result is thrown away. There is no threshold, no artifact, no
+  report surface, and only a quarter of the layers are probed.
+- **Evidence.** `extraction/extract.py:50-51` —
+  `impulse_alignment_check(adapter, cfg.alignment.window, layers[::max(1,
+  len(layers)//4)])`, return value unused; `extraction/alignment.py:84-86` —
+  `log.info(...)` is the only output; `config.py:43` —
+  `sanity_check: bool = False` (the three real configs do set it `true`).
+- **Blast radius.** `CLAUDE.md` §6.3 states that near-zero diagonal hits mean
+  "fix the adapter before trusting any cross-model number", and §7 invariant 7
+  says alignment is verified empirically on every new library version. Today
+  both depend on a human running `--check-alignment` by hand and reading the
+  output. This has already failed once in a way that cost a session (§11.16:
+  a 0.06 hit fraction that looked like a broken adapter and was a broken
+  test) — and that was found only *because* someone ran the standalone tool.
+  Inside a pipeline run, the same signal is one line among hundreds, followed
+  by a complete-looking report.
+- **Fix.**
+  1. `run_extraction` captures the returned dict per model and writes
+     `alignment/alignment_check.json` (per model: per-layer hit fraction, min,
+     mean, window, n_windows, impulse amplitude used, layer subset probed).
+  2. Probe **all** captured layers, not `[::len//4]` — the check costs one
+     forward pass over `n_windows + 1` rows, i.e. nothing.
+  3. New config: `alignment.min_diagonal_frac` (default `0.5` at the shallowest
+     probed layer, `0.0` elsewhere — deep layers legitimately mix positions,
+     per §6.3) and `alignment.on_failure: fail|warn` **defaulting to `fail`**.
+     Failing here is correct doctrine: a broken span map is a broken
+     assumption, not an unsupported capability.
+  4. Flip `sanity_check` default to `true` in `config.py` so a hand-written
+     config can't opt out by omission.
+  5. The report grows a mandatory **"Alignment & provenance"** panel (shared
+     with A7) showing per-model min/mean hit fraction with a pass/fail badge,
+     rendered before any cross-model section. A report whose alignment gate
+     didn't run should say that where a reader will see it.
+  6. Test: a deliberately-mis-declaring mock adapter (spans shifted by one
+     window) must fail the gate; `tests/test_adapter_conformance.py` already
+     has the "deliberately broken adapter" pattern to copy.
+- **Cost.** Half a day.
+- **Findings (2026-08-06).** Implemented as `extraction/alignment.py::run_alignment_gate`,
+  which wraps `impulse_alignment_check` (now probing every layer
+  `extraction/extract.py` actually captures, not a `[::len//4]` subset — free,
+  since the check is one extra forward pass), builds the full per-layer/min/
+  mean/shallowest-layer record, and raises `RuntimeError` with an actionable
+  message when the shallowest probed layer's hit fraction is below
+  `alignment.min_diagonal_frac` (new, default 0.5) and `alignment.on_failure`
+  (new, default `"fail"`) is `"fail"`; `"warn"` logs instead. `alignment.sanity_check`
+  now defaults to `true` (the three real configs already set it explicitly, so
+  this changes nothing for them; it closes the "opt out by omission" gap for
+  new configs). `run_extraction` writes the per-model records to
+  `alignment/alignment_check.json`. Verified three ways: (1) unit-level — a
+  deliberately sabotaged mock adapter (`token_time_spans` permuted via
+  `np.roll`) drove the shallowest layer's hit fraction to 0.00 and the gate
+  raised with the expected message under `on_failure: fail`, and returned a
+  `passed: false` record under `warn`; (2) smoke end-to-end — both mock
+  architectures pass cleanly (hit fraction 1.00 at every layer) and
+  `alignment/alignment_check.json` contains the full expected record shape;
+  full 81-test pytest suite green; (3) real checkpoints — a live run against
+  `google/timesfm-2.5-200m-pytorch` and `amazon/chronos-t5-small` both showed
+  `diagonal-hit fraction min=1.00 mean=1.00`, consistent with `CLAUDE.md` §9's
+  existing findings for these two checkpoints and confirming the gate doesn't
+  false-positive on real, correctly-aligned adapters. Item 6 (a permanent
+  regression test copying `test_adapter_conformance.py`'s "deliberately
+  broken adapter" pattern) is now committed as `tests/test_alignment_gate.py`
+  (3 tests: fails loudly on broken spans, warns instead when configured,
+  passes cleanly on a correct adapter). **Not yet done from the original fix
+  plan:** item 5, the dedicated "Alignment & provenance" report panel —
+  deferred to land together with A7 (which the fix plan explicitly says
+  shares that panel), so it renders both alignment and provenance in one
+  place instead of being built twice.
+
+### A3 — Artifact reuse has no config fingerprint, so stale artifacts mix silently `[x]` · **P1** · fixed 2026-08-06
+
+- **What's wrong.** Stage skipping is pure path-existence. Nothing checks
+  whether the existing artifacts were produced by the *current* config.
+- **Evidence.** `pipeline.py:169` — `if stage.done(cfg) and stage.name not in
+  force`, where every `done` is a `.exists()` check (`pipeline.py:78-128`).
+  `dump_config(cfg, run_dir/"config_resolved.yaml")` (`pipeline.py:146`)
+  writes the config but nothing ever reads it back to compare.
+- **Blast radius.** Change `data.context_len`, `alignment.window`,
+  `data.path`, or a checkpoint id, rerun into the same `run.name` without
+  `--force all`, and you get last config's extraction feeding this config's
+  analyses, with a report that looks complete. This is not hypothetical usage:
+  §6.2's own Findings describe editing `medium_run_chronos_base.yaml` to add
+  an `sae:` block and rerunning `--stages sae` against existing extraction —
+  correct in that instance precisely because the edit didn't touch extraction
+  inputs, but nothing in the tool knew that.
+- **Fix.**
+  1. Each `Stage` declares `config_keys: tuple[str, ...]` — the dotted config
+     paths it actually consumes (`extract` → `data.*`, `alignment.*`,
+     `models[*].{checkpoint,layer_regex,capture_layer_stride,batch_size}`,
+     `extraction.*`; `l1` → `l1.*` plus extract's keys, etc.). Explicit
+     per-stage keys, not a whole-config hash, so an unrelated edit doesn't
+     invalidate everything — that would make the guard so annoying it gets
+     `--force all`-ed past, which is worse than no guard.
+  2. On completion, append to `run_manifest.json` (A7): stage name,
+     fingerprint (sha256 over the resolved values of its `config_keys` plus
+     the fingerprints of its dependency stages), timestamp, wall-clock,
+     realized sample sizes (A4/A19).
+  3. On rerun: if a stage would be skipped but its fingerprint differs,
+     **refuse** with a message naming the changed keys and the two values, and
+     offering `--force <stage>` or a new `--allow-stale`. Transitively mark
+     downstream stages stale.
+  4. The report renders a "stale inputs" warning per section whose fingerprint
+     doesn't match the current config, and `meta_report.py` refuses to compare
+     runs whose corpus fingerprint differs without a `--allow-mixed` flag.
+  5. Test: run smoke, change `alignment.window`, rerun → expect refusal
+     naming `alignment.window`; then `--force all` → clean run.
+- **Cost.** ~a day. Highest leverage-per-line item in this section: it turns a
+  whole class of "how did that number get there" into an error message.
+- **Findings (2026-08-06).** Implemented as a new `manifest.py`
+  (`resolve_config_keys`, `fingerprint_stage`, `load_manifest`/`save_manifest`,
+  `diff_resolved`) plus a `config_keys: tuple` field on every `Stage` in
+  `pipeline.py`. One deviation from the original plan, chosen deliberately:
+  keys are whole-config-section wildcards (`"data"`, `"l1"`, `"models[*].checkpoint"`,
+  etc.) rather than exhaustive single-field lists per stage — still far
+  narrower than a whole-config hash (a `report.title` edit doesn't invalidate
+  `extract`), and it matches the fix plan's own worked example for `extract`
+  (`data.*`, `alignment.*`, ...) rather than adding single-field-list
+  maintenance burden with no evidence it's needed yet. `run_pipeline` now
+  does a pre-flight pass computing every stage's fingerprint (own resolved
+  keys + dependency fingerprints, so a change upstream propagates without
+  every downstream stage needing to declare it), and refuses — before
+  running anything — if any stage that would be skipped has a fingerprint
+  mismatch against `run_manifest.json`, naming exactly which resolved values
+  changed and which upstream stage caused a transitive mismatch. `--allow-stale`
+  (new CLI flag) downgrades this to a warning. Runs with no manifest at all
+  (every run directory that predates this feature) degrade to a warning and
+  are trusted as-is, rather than breaking every existing run dir the moment
+  this landed — verified against the real `runs/smoke` directory from this
+  session's own earlier testing. Verified four ways: (1) an identical rerun
+  causes no staleness warnings or errors; (2) changing `alignment.window` and
+  rerunning without `--force` raises `ValueError` naming `alignment` and its
+  old/new values, and separately names `layer_screen`/`l0`/etc. as
+  transitively stale via `extract`; (3) `--force <non-confirm stages>` with
+  `--allow-stale` (needed because `confirm`'s own pre-existing "run once"
+  guard correctly refuses to be force-rerun) regenerates cleanly and the new
+  manifest reflects the new value; a subsequent skip-eligible rerun is then
+  clean; (4) a real run against `google/timesfm-2.5-200m-pytorch` +
+  `amazon/chronos-t5-small` (the same live run used to verify A1/A2) wrote a
+  valid `run_manifest.json` with no errors, confirming the mechanism doesn't
+  choke on real per-model config resolution (`models[*].checkpoint` etc.).
+  Committed as `tests/test_manifest_fingerprint.py` (3 tests). Full
+  `tsfm_lens` suite green (87 tests, up from 81 — 3 new alignment-gate tests
+  from A2 plus 3 new manifest tests here). One emergent interaction worth
+  recording rather than "fixing": if `confirm`'s upstream inputs go stale,
+  the pipeline will keep refusing on every subsequent run (its manifest
+  entry is never updated while it stays skipped, by design) until the user
+  either accepts `--allow-stale` indefinitely or makes a deliberate call via
+  `--force confirm` — which is the correct tension for a "consumed once"
+  stage to create, not a bug to smooth over.
+
+### A4 — Corpora are written grouped by task, and four call sites subsample with a head slice `[x]` · **P1** · fixed 2026-08-06
+
+- **What's wrong.** `build_pipeline` emits samples task-by-task in spec order,
+  so `corpus.jsonl` is **blocked by generator/task**. Several stages take the
+  *first* N series rather than a random or stratified sample, which therefore
+  silently selects a family-skewed prefix.
+- **Evidence.** Ordering: `build_pipeline/builder.py::_build_split` — `for
+  spec in specs: for k in range(spec.count)`, appending in order; `seal.py`
+  preserves that order. Head slices: `data.py:75` — `kept = kept[:
+  cfg.max_series]`; `sae/eval.py:86-88` — `contexts =
+  data.contexts()[:take]`; `sae/ground_truth.py:153-155` —
+  `np.arange(n)`; `analysis/layer_screen.py:450-451` — `rows =
+  np.arange(n_use)`. Indirect: `analysis/confirm.py:80-82` passes
+  `confirm.max_series` into the same `data.py` head slice.
+  (Correctly randomized for contrast, and the pattern to copy:
+  `internals.py:44`, `l1_geometry.py:67`/`:176`, `l3_perturbation.py:185`,
+  `lens.py:92`, `attention.py:235`, `clustering.py:46` all use
+  `rng.choice(..., replace=False)`.)
+- **Blast radius.** Two recorded results are directly affected, and one
+  recorded puzzle is probably explained by this:
+  - §6.2's SAE forecast-preservation ΔMASE (+0.047 TimesFM / +2.37
+    Chronos-T5-Base) was computed on `min(data.n,
+    forecast_preservation_max_series, batch_size)` = the **first ~16-32
+    series** of a 3-family blocked corpus. The cross-model asymmetry was
+    attributed entirely to window-broadcast granularity; part of it may be
+    that the two models were compared on the same skewed handful, and the
+    absolute values may not represent the corpus at all.
+  - §6.2's ground-truth alignment ρ values use the first
+    `ground_truth_max_series` rows, so which archetypes are even present
+    depends on task order (compounding A10).
+  - §5.3 flagged that lens numbers moved for an *unchanged* TimesFM
+    checkpoint (final MASE 2.277 → 1.680) between two configs differing only
+    in `lens.max_series` (32 vs 24), and correctly concluded "the difference
+    is which ~24-32 series got sampled." `lens.py` does sample randomly — but
+    with a different `size`, `rng.choice` returns a *different draw*, so the
+    two runs' lens stages ran on largely disjoint tiny samples. Same root
+    cause class: sample identity is neither stratified nor recorded, so no two
+    stages or runs are comparable.
+  - `default.yaml`'s `confirm.max_series: 1024` against
+    `full_multidomain_run1`'s 4279 private series would confirm hypotheses on
+    a task-ordered prefix — the gold-standard stage, on a biased slice. Not
+    yet bitten only because `medium_run`'s private split is smaller than its
+    cap.
+- **Fix.**
+  1. One shared helper, `utils.sample_rows(n, k, seed, strata=None) ->
+     np.ndarray`: stratified-without-replacement when `strata` is given
+     (proportional allocation with a floor of 1 per stratum, remainder by
+     largest-remainder), plain `rng.choice` otherwise, always sorted, always
+     deterministic in `(n, k, seed, strata)`.
+  2. Replace **every** cap with it, passing `data.meta["family"]` as strata:
+     the four head slices above plus the seven already-random sites (so that
+     family composition is stable across stages and across runs with
+     different `k`).
+  3. `data.py`: never truncate an ordered list. Either stratify the truncation
+     or, at minimum, shuffle deterministically before it — and log the
+     realized family composition, not just the family count.
+  4. Every stage records the row ids it actually used in its own artifact
+     (`rows: [...]`, `n_requested`, `n_realized`) so two stages' samples can
+     be compared, and so a future session can tell whether a discrepancy is a
+     model effect or a sampling effect without re-deriving it (§5.3 had to).
+  5. Warn when realized family composition deviates from the corpus by more
+     than a tolerance — the case where even stratification can't help because
+     `k < n_families`.
+  6. Check `benchmark_validation`'s `--max-sequences` for the same pattern
+     (`CLAUDE.md` §5 documents it as subsampling; verify it's random and
+     stratified by generator, since its whole purpose is measuring
+     per-group diversity).
+  7. Test: a synthetic 3-family blocked corpus, cap = n/3, assert all three
+     families present in the realized sample and that the same `(seed, k)`
+     reproduces it exactly.
+- **Then re-measure.** §6.2's forecast-preservation and ground-truth numbers,
+  and re-check the §5.3 lens comparison with matched `max_series` and a
+  recorded row set. Supersede the old numbers in place with a dated
+  correction (§0.2), don't delete them.
+- **Cost.** ~a day for the helper + call sites + tests; the re-measurement is
+  a short GPU run against already-extracted stores.
+
+**Findings (2026-08-06).** Implemented per the fix plan, with two deviations
+and two second-order bugs found along the way:
+- `utils.sample_rows(n, k, seed, strata=None)` + `_stratified_alloc` (largest-
+  remainder proportional allocation, floor 1 per stratum) landed as specified
+  — deterministic in `(n, k, seed, strata)`, always sorted, logs the realized
+  vs. population family composition on every call (closing fix item 5's
+  "warn on deviation" via always-log rather than a silent pass/warn split;
+  simpler and strictly more informative).
+- All four named head slices fixed (`data.py::_assemble`, `sae/eval.py`,
+  `sae/ground_truth.py`, `layer_screen.py`'s fallback path) plus all seven
+  already-random sites switched from bare `rng.choice` to the shared,
+  strata-aware helper (`internals.py`, `l1_geometry.py` ×2,
+  `l3_perturbation.py`, `lens.py` ×2, `attention.py` ×2, `clustering.py`) so
+  family composition is now stable across stages and across differing `k`
+  — directly fixing §5.3's documented "lens numbers moved because
+  `rng.choice` drew a different sample at a different size" puzzle: `lens.py`
+  now uses one fixed seed (`cfg.run.seed + 8`) shared across both models
+  instead of a shared *advancing* `rng`, so two models' lens stages sample
+  the same row set at a given `k`, and two runs at different `k` share the
+  maximal overlap a stratified draw allows.
+- Two second-order bugs not in the original evidence list, found while fixing
+  the named sites: (a) `l3_perturbation.py::_patching` re-sliced an
+  already-`sample_rows`-sampled array with a further `[:take]` prefix slice,
+  reintroducing family-order bias one level down — fixed by threading one
+  `sel` index consistently through `ctx_clean`/`targets`/`series_ids`/
+  `families`/`ctx_corr`; (b) `layer_screen.py`'s own uniform-fallback path
+  (taken when a model's captured layers aren't the full block set) had an
+  unnamed `np.arange(n_use)` head slice, fixed the same way as the four named
+  sites.
+- Every touched stage's artifact now records `n_requested`, `n_realized`,
+  `rows` (fix item 4) — `sae/eval.py::forecast_preservation` and
+  `sae/ground_truth.py::ground_truth_alignment` confirmed carrying this.
+  **Deviation:** a `limited_by` field (why `n_realized < n_requested` — cap
+  vs. batch size vs. corpus size) was drafted for `forecast_preservation`
+  then deliberately removed — that's A16's scope, not A4's, and the
+  heuristic first draft was fragile enough that shipping it here would have
+  been exactly the "half-finished implementation" this repo's own doctrine
+  forbids.
+- Fix item 6 (`benchmark_validation`'s `--max-sequences`): checked
+  `matching.py` directly rather than assuming — its subsampling is already
+  random (`rng.choice`, not a head slice) but **not** stratified by
+  generator. Decided **not** to fix in this pass (would duplicate the same
+  helper into a sibling package with a different dependency footprint) and
+  folded it into A17's fix plan instead, which already covers this file for
+  an unrelated reason (blocked/approximate matching at scale) — noted there
+  explicitly so it isn't lost.
+- **Deviation from the fix plan's wording:** `layer_screen.py`'s dedicated
+  screening-extraction row sampling (added under A1, same session) used a
+  plain `rng.choice` rather than `sample_rows`, since `sample_rows` didn't
+  exist yet when A1 was implemented earlier in this same session. Swapped
+  over to `sample_rows` with family strata as part of this fix, so no
+  follow-up debt remains.
+- **Verification — unit tests.** New `tests/test_sample_rows.py` (5 tests):
+  a synthetic 100/30/10 blocked-corpus case proving the exact bug this
+  replaces (`strata[:k]` head slice is 100% one family; `sample_rows` isn't),
+  determinism in `(seed, k)`, the unstratified path's behavior preserved,
+  `k > n` returning everything, and an end-to-end `data.py::_assemble` case
+  with a synthetic 20/10/5 blocked corpus asserting all three families
+  survive a `max_series` cap. Full suite green at 92/92 after this fix
+  (up from 87 after A3; the 5 new `sample_rows` tests are additive, not a
+  net-zero replacement of prior coverage).
+- **Verification — real-checkpoint run.** `configs/_a4_real_check.yaml`
+  (scratch, deleted after use) against live `google/timesfm-2.5-200m-pytorch`
+  + `amazon/chronos-t5-small`, real sealed corpus at
+  `../../benchmark_medium/public_dev` (confirmed blocked by task by direct
+  inspection: 288 rows, `{'random_parametric': 188, 'mixture': 60,
+  'parametric': 40}` in that exact order, so the first 40+ rows are 100%
+  `random_parametric` — precisely the scenario this fix targets) with
+  `data.max_series: 40`. Pipeline completed cleanly end to end (`extract`,
+  `layer_screen`, `lens`, `l1`, `l3`, `attention`, `cluster`, `report`; L2/
+  SAE/exemplars/confirm disabled for this scratch config) — 7 sections, 16
+  findings, no errors. The log's `sample_rows` lines are the actual proof:
+  even though the corpus is blocked by task, every capped sub-sample kept
+  all three families in roughly the population's own proportion — e.g. a
+  `k=16` draw from the `k=40`-assembled population
+  `{'mixture': 8, 'parametric': 6, 'random_parametric': 26}` realized
+  `{'mixture': 3, 'parametric': 3, 'random_parametric': 10}`, not the
+  100%-`random_parametric` result the pre-fix `[:16]` head slice would have
+  produced against this exact corpus. This is the first time any stage in
+  this pipeline has been run against a real, family-blocked corpus with
+  `max_series` actively capping below the corpus size — a scenario the
+  smoke config's single-family-per-stage synthetic data can't exercise at
+  all, so this real run is not a redundant re-check of the unit tests, it is
+  the only test that could have caught the original bug in situ.
+- **Re-measurement (fix plan's own last step):** not performed as a
+  standalone action. The §6.2 SAE forecast-preservation/ground-truth numbers
+  and the §5.3 lens comparison remain as previously recorded, now understood
+  to have been measured on a family-skewed sample of unrecorded composition;
+  a superseding re-run would need `sae.enabled: true` end-to-end (a longer
+  GPU run than this fix's own verification needed) and is left as a
+  follow-up rather than bundled into this fix, consistent with treating each
+  A-item as its own scoped change.
+
+### A5 — The report silently omits sections; nothing in the HTML says what's missing or why `[x]` · **P1** · fixed 2026-08-06
+
+- **What's wrong.** A section whose artifacts are absent is skipped with
+  `log.info`; a section whose builder raises is dropped with `log.warning`.
+  The rendered HTML — the thing that actually gets shared — records neither.
+- **Evidence.** `report/report.py:92-100`.
+- **Blast radius.** A reader of `report.html` cannot distinguish "L2 was
+  disabled in this config" from "L2 crashed while rendering" from "L2 ran
+  fine and I missed it." `CLAUDE.md` §6.5 describes the info/warning split as
+  a deliberate honesty mechanism, and it is — for whoever watched the console.
+  For the report's actual audience it's invisible, which is precisely the
+  failure mode §2.3 ("explainability of the explainer") exists to prevent, and
+  it gets worse the closer this repo gets to §1's one-button promise, where
+  nobody watches a console at all.
+- **Fix.**
+  1. Accumulate a status per builder: `rendered` · `skipped: stage not enabled
+     in config` (distinguish from) `skipped: artifacts missing` · `failed:
+     <exception class>: <message>` and write `report/coverage.json`.
+  2. Render a mandatory **"Run coverage"** panel: every section, its status,
+     and for failures the exception message plus the artifact paths it wanted.
+     Not collapsed by default when anything failed.
+  3. `run_report` returns/logs a one-line summary ("11 rendered, 1 skipped, 1
+     FAILED: Attention") and `run.py` exits non-zero when a section failed
+     unless `--allow-partial-report` — a crash in a report builder is a bug
+     (`CLAUDE.md` §11.6 says this surface is the least type-safe in the repo),
+     and today it exits 0.
+  4. Test: corrupt one artifact (truncate `l2/stitching.json`), assert the
+     report renders with a `failed` row naming it, and that the exit code is
+     non-zero.
+- **Cost.** Half a day.
+
+**Findings (2026-08-06).** Implemented per the fix plan, with each builder now
+carrying an explicit config attribute so "disabled" and "missing" are
+genuinely distinguishable, not inferred:
+- Every builder tuple in `report.py` gained a `config_attr` (`"l0"`,
+  `"layer_screen"`, ..., `"confirm"`) mapping it to its stage's own
+  `PipelineConfig` sub-config. The per-builder loop now checks
+  `getattr(cfg, config_attr).enabled` whenever required artifacts are
+  missing, producing exactly the three-way status the fix plan asked for:
+  `rendered` / `skipped: stage not enabled in config` /
+  `skipped: artifacts missing: <paths>` / `failed: <ExceptionClass>:
+  <message>`.
+- `report/coverage.json` (`{summary, sections: [{eyebrow, title, status,
+  detail}, ...]}`) is written on every report render, success or failure.
+- A mandatory **"Run coverage"** panel renders directly under "Before the
+  numbers" (ahead of the Findings box, so it's the first thing after the
+  preamble) as a `<details>` — auto-`open` when anything failed, collapsed
+  by default on a clean run so it doesn't add visual clutter to the common
+  case; failed rows render in red (`cov-failed`) regardless of open/closed
+  state.
+- `ReportConfig.allow_partial: bool = False` (new field) + CLI
+  `--allow-partial-report` (mirroring `--allow-stale`'s existing pattern of
+  a config field settable either way). `run_report` now computes the
+  one-line summary (`"N rendered, M skipped[, K FAILED: names]"`), logs it
+  at `warning` level if anything failed else `info`, writes `report.html`
+  and `coverage.json` **regardless**, and only then — if there are failures
+  and `allow_partial` is false — raises `RuntimeError` naming every failed
+  section and its exception, plus the exact path to the (still-written)
+  report and the fix/override instructions. Because `pipeline.py`'s report
+  `Stage.run` is not wrapped in a try/except, this `RuntimeError` propagates
+  uncaught out of `run_pipeline` and `run.py`'s `main()`, which is exactly
+  what makes the process exit non-zero — no extra exit-code plumbing was
+  needed beyond raising in the right place with the report already on disk.
+- **Verification — unit tests.** New `tests/test_report_coverage.py` (4
+  tests, reusing `test_smoke.py::build_config`'s mock pipeline as a fixture):
+  a healthy run has zero `failed` rows and no `cov-failed` HTML class; a
+  corrupted `l2/stitching.json` makes `run_report` raise (`pytest.raises`
+  matching "L2"), with `report.html` still written and containing a
+  `cov-failed` row naming L2, and `coverage.json`'s summary containing
+  "FAILED: L2"; the same corruption with `cfg.report.allow_partial = True`
+  set does not raise and still records the failed row; and disabling `l2`
+  in config while deleting its artifacts produces `status: skipped,
+  detail: "stage not enabled in config"` rather than an "artifacts missing"
+  message, proving the two skip reasons are genuinely distinguished and not
+  just differently-worded guesses. Full suite green at 96/96 (up from 92
+  after A4).
+- **Verification — CLI exit code, mock pipeline.** Ran `run.py --stages
+  report` directly (not just calling `run_report` in-process) against a
+  freshly-built mock-model run dir with `l1/cka.npz` corrupted to a garbage
+  byte string: without `--allow-partial-report` the process printed the
+  traceback and **exited 1**; with the flag it printed the same "1 FAILED:
+  L1" summary line, still wrote a report naming the failure, and **exited
+  0**. (First attempt reused one run directory's `config_resolved.yaml`
+  across both invocations and got `exit 0` for the no-flag case too — a
+  self-caught mistake, not a code bug: the flagged invocation is dumped
+  back into `config_resolved.yaml` by `run_pipeline` itself, so the *third*
+  command was unknowingly reading a config that already had
+  `allow_partial: true` baked in from the *second* command's run. Re-ran
+  with two independently-built fresh run directories, one per code path, to
+  get a clean result.)
+- **Verification — real checkpoints.** `configs/_a5_real_check.yaml`
+  (scratch, deleted after use; same reduced-cap pattern as A4's real check)
+  against live `google/timesfm-2.5-200m-pytorch` +
+  `amazon/chronos-t5-small`, real sealed corpus, with SAE/Exemplars/Confirm
+  disabled and every other stage enabled. Clean run: `coverage.json` shows
+  9 `rendered` + 3 `skipped: stage not enabled in config` (SAE/Exemplars/
+  Confirm), 0 failed. Then corrupted the *real, checkpoint-produced*
+  `l2/stitching.json` in place and re-ran `run.py --stages report` against
+  that same run directory: `report: section L2 failed: JSONDecodeError...`,
+  `8 rendered, 3 skipped, 1 FAILED: L2`, report.html written, process
+  **exited 1**. This confirms the mechanism generalizes past the smoke
+  config's mock-model artifact shapes — nothing about real-checkpoint
+  extraction/analysis artifacts (bfloat16 tensors, real family labels,
+  layer-screened targets) interacts differently with the coverage/failure
+  logic, as expected since this fix operates purely on `run_dir` paths and
+  exception objects, not on activation content.
+- **Deviation from the fix plan's wording:** item 2 said "not collapsed by
+  default when anything failed" — implemented as auto-`open` exactly when
+  `any_failed`, and left collapsed (not "not collapsed", i.e. closed) on a
+  clean run, since always-expanding a coverage table on every healthy run
+  would add noise to the common case the rest of this report's `<details>`-
+  based note mechanism (`CLAUDE.md` §6.5) is designed to avoid. This matches
+  the fix plan's actual intent (surface failures prominently) without
+  over-reading "not collapsed" as "never collapsible."
+
+### A6 — `family_key` mis-resolution and unlabeled corpora degrade to one family, silently `[x]` · **P2** · fixed 2026-08-06
+
+- **What's wrong.** An explicit `data.family_key` that doesn't resolve falls
+  through to a candidate list, then to `provenance.generator`, then to the
+  literal string `"unknown"` — per row, with no aggregate check.
+- **Evidence.** `data.py:89-99` (`_family_of`), `data.py:22`
+  (`_FAMILY_CANDIDATES`). The only signal is the family *count* in an INFO log
+  (`data.py:83-84`).
+- **Blast radius.** A typo in `family_key` silently regroups every per-family
+  statistic in the pipeline — L0's Holm-corrected family strengths (and
+  therefore what `confirm` pre-registers), L1's per-family CKA, attention's
+  family-conditioned lag profiles, clustering's labels and AMI, exemplar
+  selection. A corpus without labels collapses to a single family, at which
+  point per-family "comparisons" are computed over one group and the report
+  still renders them.
+- **Fix.**
+  1. If `family_key != "auto"` and it resolves for fewer than (say) 90% of
+     rows: **raise**, naming the key, the resolution rate, and the keys that
+     *would* have worked. Falling back to a different grouping than the one
+     the user asked for is exactly the "silently wrong slice" `CLAUDE.md` §2.5
+     forbids.
+  2. Record `family_resolution: {key_requested, key_used, n_unknown,
+     n_families, composition: {family: count}}` in `run_manifest.json` and
+     surface it in the report's coverage panel.
+  3. If `n_families < 2`, disable every per-family section with an explicit
+     stated reason rather than emitting degenerate one-group statistics; keep
+     the overall (pooled) comparisons.
+  4. Test: a corpus with a typo'd key raises; a single-family corpus renders a
+     report with per-family sections explicitly marked not-applicable.
+- **Cost.** Half a day.
+
+**Findings (2026-08-06).** Implemented items 1, 2, and 4 exactly as specified;
+item 3 implemented for the four sites the fix plan's own blast-radius
+evidence names, after checking each one for whether "per-family" there is
+actually a *comparison* (degenerate with one group) or just a *breakdown*
+(still meaningful with one group) — a real subtlety the fix text didn't
+fully resolve on its own:
+- `data.py::_resolve_family_key` resolves one explicit dotted key with no
+  fallback (distinct from `_family_of`'s "auto" chain), and
+  `_check_family_key_resolution` measures the aggregate hit rate across the
+  whole pre-cap corpus; below 90% it raises, naming the requested key, the
+  measured rate, and — by re-running the same resolution check against
+  every other `_FAMILY_CANDIDATES` key — which of them *would* clear 90%
+  instead, or an explicit "none do, use `family_key: auto`" fallback
+  message when none do either.
+- `BenchmarkData` gained `family_resolution: dict` (`key_requested,
+  key_used, resolution_rate, n_unknown, n_families, composition`) and
+  `n_families` — computed once in `_assemble`, always (not just when a
+  problem is detected). `extraction/extract.py` persists it via a new
+  `manifest.py::record_extra(run_dir, key, value)` helper into
+  `run_manifest.json` alongside (not replacing) A3's per-stage
+  fingerprints; `pipeline.py`'s per-stage manifest save now re-reads and
+  re-merges any such extra top-level keys on every write so a later
+  stage's save can't clobber what an earlier stage recorded mid-run (a real
+  ordering bug caught by testing the actual sequence, not assumed safe).
+  `report.py::_family_resolution_line` renders it as a line inside the same
+  `<details class="coverage">` panel A5 built, immediately under the
+  section table — literally "surfaced in the report's coverage panel" as
+  item 2 asked, not a separate section.
+- **Item 3, scoped after inspection, not applied uniformly:** checked each
+  of the fix plan's four named blast-radius sites for whether "per-family"
+  there is a comparison or a breakdown:
+  - **L0** (`_summarize`): `family_tests`/`strengths`/`mase_ratio` are a
+    genuine cross-family *comparison* (Holm-corrected, needs >=2 groups) —
+    guarded with an early return once `n_families < 2`, replaced with an
+    explicit `family_comparisons: {applicable: false, reason}`. `per_family`/
+    `overall` (plain aggregates, not comparisons) are untouched and still
+    carry the pooled model-vs-model result.
+  - **L1** (`run_l1`): family-conditioned CKA compares each family's
+    geometry *to the same computation run without conditioning* — with one
+    family it's a second, differently-pooled measurement of the same
+    number, not comparative signal. Guarded the same way; the window-level
+    `cka_window`/`depth_curve` (never family-conditioned) are untouched.
+  - **Clustering** (`_label_clusters`/`run_clustering`): checked the AMI
+    computation specifically and found the fix plan's own "clustering...
+    AMI" framing needs a correction — `adjusted_mutual_info_score` here
+    compares **the two models' own cluster assignments to each other**, not
+    to family labels, so AMI is fully meaningful regardless of family count
+    and was **not** guarded. What *is* genuinely degenerate is
+    `_label_clusters`'s majority-family purity (trivially 100% for every
+    cluster with one family, a mathematical certainty misreadable as a
+    finding) — guarded to drop the family/purity framing and keep only the
+    feature-based descriptor, with a `family_comparisons` note recorded in
+    `comparison.json` (not `clusters.json`, to avoid the literal string
+    `"family_comparisons"` being misread as a model name by
+    `_sec_clusters`'s `list(clusters.keys())` — caught by tracing the
+    report's own parsing before picking a location, not after).
+  - **Attention:** re-read `_pattern_analysis`'s periodicity-head scoring
+    and concluded it is **not** degenerate at one family the way the other
+    three are — "per-family" there tags each head with whichever family
+    gave it the best score, which remains a real (if less varied) signal
+    with only one candidate family, not a comparison that becomes
+    meaningless. **Left unguarded**, with the reasoning recorded here so a
+    future session doesn't have to re-derive it. `head_delta_family`/
+    `mlp_delta_family` arrays are computed but were already found to be
+    dead code (never read by any `_sec_attention` render path) — orthogonal
+    to this fix, not touched.
+  - **Exemplars:** per-family case studies aren't a cross-family
+    *comparison* either (they showcase series within each family, not
+    compare families' properties) — left unguarded for the same reason as
+    attention.
+- **A genuine crash found and fixed along the way, not in the original
+  evidence list:** `analysis/internals.py`'s family-decodability probe
+  (`_family_probe`, a `LogisticRegression` classifier) **raises** from
+  scikit-learn when given only one class to fit — this is exactly the
+  failure mode a prior real-checkpoint session flagged as "directly
+  relevant" before this fix existed. Guarded in `run_internals`: the probe
+  is skipped (recorded as `{"value": None}` per layer) when `n_families <
+  2`, with a `family_comparisons` reason attached to each model's profile
+  entry; `effective_dim`/`input_cka` (not family-dependent) are computed as
+  usual. `_sec_internals`'s trailing findings loop (`np.argmax` over probe
+  values) would also have raised on an all-`None` list — guarded the same
+  way. Without this fix, a real single-family corpus would have **crashed
+  the whole pipeline at the `internals` stage**, not just rendered a
+  degenerate number — worse than anything in the original evidence list.
+- **Verification — unit tests.** New `tests/test_family_resolution.py` (5
+  tests): a typo'd key (0% resolution) raises naming the correct
+  alternative key; a 50%-resolution key raises; a 95%-resolution key does
+  not raise; `family_key: auto` never raises even on a fully unlabeled
+  corpus (falls to `"unknown"`); and a full mini pipeline (mock models, a
+  genuinely single-family 40-series corpus) runs end to end through
+  extract → layer_screen → l0 → internals → lens → l1 → l2 → l3 → attention
+  → cluster → report with **zero crashes**, and asserts `family_comparisons.
+  applicable is False` in L0/L1/clustering/internals artifacts, pooled L0
+  `overall` metrics and L1's window-level `depth_curve` still present, AMI
+  still a real float, `run_manifest.json` recording `n_families: 1`, and
+  the rendered report containing the "Not applicable." explanation at
+  least 4 times (one caught-and-fixed test bug along the way: two of the
+  four sections initially used a differently-worded "not applicable" phrase
+  than the other two, which the test's exact-match caught immediately —
+  unified all four to the same phrasing rather than loosening the
+  assertion). Full suite green at 101/101 (up from 96 after A5).
+- **Verification — real checkpoints.** `configs/_a6_real_check.yaml`
+  (scratch, deleted after use; same pattern as A4/A5's real checks) against
+  live `google/timesfm-2.5-200m-pytorch` + `amazon/chronos-t5-small`, the
+  real 3-family `benchmark_medium` corpus. Confirms the **normal path is
+  unaffected** by every guard added above: `run_manifest.json` records
+  `family_resolution: {key_used: auto, n_families: 3, composition:
+  {mixture: 8, parametric: 6, random_parametric: 26}, ...}`; L0 still
+  produces real `family_tests`; L1's `families` list has all 3; clustering
+  and internals both show `family_comparisons: None` (guard correctly
+  not triggered); the report contains the family-resolution line inside the
+  coverage panel and **zero** "Not applicable." occurrences — a clean
+  9-rendered/3-skipped/0-failed run. (The single-family crash path itself
+  was not re-verified against real checkpoints beyond the mock-model
+  pipeline test above — building a genuinely single-family *real* corpus
+  wasn't readily available this session — but every guard is architecture-
+  and GPU-agnostic code operating on `data.meta["family"]` counts, not on
+  activation content, so the mock-model coverage is expected to generalize
+  the same way A4/A5's did.)
+
+### A7 — No run provenance, and the activation store has no schema version `[x]` · **P1** · fixed 2026-08-06
+
+- **What's wrong.** A run directory records the resolved config and nothing
+  else: no git SHA, no library versions, no device, no checkpoint revisions,
+  no per-stage timings. The zarr store records only geometry, so a store
+  written by a different zarr major version fails with a low-level error
+  instead of an actionable one.
+- **Evidence.** `pipeline.py:146` writes only `config_resolved.yaml`;
+  `extraction/store.py:37` — attrs are `n_series`/`n_windows`/`window`/
+  `context_len` only. Contrast the benchmark half, which does this correctly:
+  `build_pipeline/builder.py:190` — `sample.provenance.library_versions =
+  _library_versions()` per sample.
+- **Blast radius.** This repo has now lost time to environment drift in three
+  separate sessions (`CLAUDE.md` §11.15 zarr v3-vs-v2, §11.17 cp1252 encoding,
+  and §5's third-machine entry finding zarr 3.2.1 installed against a
+  `zarr<3` pin), and §7's Findings record a concrete replication *blocked*
+  because `runs/medium_run`'s store was written in a v3-formatted layout and
+  "isn't readable here without re-extraction." With no provenance in the run
+  dir, no artifact can be attributed to an environment after the fact, and
+  `meta_report.py` can silently aggregate runs from mismatched stacks.
+- **Fix.**
+  1. `utils.run_provenance()` → dict: git SHA + dirty flag, `tsfm_lens`
+     version, python/torch/numpy/pandas/zarr/scikit-learn/transformers/
+     timesfm/chronos-forecasting versions (whatever imports), CUDA/driver and
+     device names, per-model resolved checkpoint id **and HF revision hash**,
+     corpus manifest digest (from `load_sealed`'s manifest — already computed,
+     currently discarded by the analysis half), config hash. No hostnames or
+     user paths (keeps it shareable and invariant-11-clean).
+  2. Write `run_manifest.json` at run start and append per-stage records
+     (fingerprint from A3, wall-clock, realized n from A4/A19).
+  3. `ActivationStore.create` writes `schema_version` (start at 1),
+     `zarr_format`, and writer versions into root attrs; `ActivationStore.
+     __init__` validates and raises a *specific* message on mismatch
+     ("activations.zarr was written with zarr format 3 by tsfm_lens 0.1.0;
+     this environment has zarr 2.18.7 — pin `zarr>=2.16,<3` and re-extract,
+     or read it in a v3 environment"). This is the fourth recurrence of one
+     trap; make the fourth one self-explaining.
+  4. Report renders the provenance panel (shared with A2); `meta_report.py`
+     shows one provenance row per run and warns on mismatched corpus digests
+     or library majors.
+  5. Test: hand-write a store with `schema_version: 999`, assert the specific
+     error; assert `run_manifest.json` exists after a smoke run and contains
+     no absolute user paths (ties to invariant 11).
+- **Cost.** ~a day, and it retires a recurring cost.
+
+**Findings (2026-08-06).** All five fix items implemented; one real,
+previously-undocumented gap found and closed along the way (`timesfm` has
+no `__version__` attribute at all — confirmed live, not assumed):
+- `utils.run_provenance(cfg=None, corpus_digest=None) -> dict`: git SHA +
+  dirty flag (`git status --porcelain` against a repo-relative `cwd`, never
+  an absolute path — invariant 11), `tsfm_lens.__version__`, Python version,
+  and versions for `torch/numpy/pandas/zarr/sklearn/transformers/timesfm/
+  chronos` via `_pkg_version` — which now tries `__version__` first, then
+  falls back to `importlib.metadata.version()` for packages that expose
+  neither (see below), device info (CUDA availability, device name(s) via
+  `torch.cuda.get_device_name`, CUDA version, driver version via
+  `nvidia-smi --query-gpu=driver_version`), per-model checkpoint id **and**
+  its locally-cached HF commit hash (`_hf_revision`, via
+  `huggingface_hub.scan_cache_dir()` — deliberately the *local cache*, not
+  a Hub API call, so it reflects the exact snapshot actually loaded and
+  works fully offline), corpus digest, and a config hash (sha256 over
+  `dataclasses.asdict(cfg)`, reusing `manifest.py`'s existing `_stable_json`
+  serializer). Every sub-lookup is wrapped to degrade to `None` rather than
+  raise (`CLAUDE.md` sec 2.5) — not installed, no git repo, no GPU, and no
+  network are all real, expected environments for this repo, not bugs.
+- **Corpus digest was genuinely discarded, confirmed by reading the code
+  before assuming**: `data.py::_load_corpus_rows` called
+  `samples, _ = load_sealed(...)`, throwing away the manifest `load_sealed`
+  itself already verifies. Now returns `(rows, corpus_digest)`, threaded
+  through `load_benchmark`/`_assemble` into a new `BenchmarkData.
+  corpus_digest` field (parallel to A6's `family_resolution`) —
+  `extraction/extract.py`'s `run_extraction` merges it into the
+  already-recorded `provenance` dict once the corpus is actually loaded
+  (base provenance is recorded by `run_pipeline` at run start, before any
+  stage runs, since git/library/device facts don't depend on data being
+  loaded; the corpus digest specifically does, so it arrives one step
+  later via a read-merge-write through the same `manifest.py::record_extra`
+  A6 built).
+- `extraction/store.py`: `_SCHEMA_VERSION = 1` constant; `ActivationStore.
+  create` stamps `schema_version` + `written_by: {tsfm_lens_version,
+  zarr_version}` into root attrs; `__init__` validates on any non-`"w"`
+  open and raises a message naming the stored vs. expected version and the
+  writer's exact library versions, plus the concrete fix
+  (`--force extract` and downstream). **Also wrapped the `zarr.open_group`
+  call itself** in a try/except that re-raises with a pointer to the
+  `zarr<3` pin and CLAUDE.md sec 11.15 — this catches the *other* half of
+  "fails with a low-level error instead of an actionable one" (a genuinely
+  cross-major-version-incompatible store failing to open at all, before
+  any attrs can even be read) that a `schema_version` attrs check alone
+  cannot reach, since that check requires the group to have opened
+  successfully first. **Not independently tested** — reproducing a real
+  zarr-v2-vs-v3 on-disk incompatibility would need a second zarr major
+  installed in this environment, which isn't available; the wrap's error
+  message was verified by inspection, not by triggering a real cross-version
+  failure.
+- **Report panel, shared with A2 as originally deferred**:
+  `_alignment_provenance_block` in `report.py` reads both `run_manifest.
+  json`'s `provenance` key and `alignment/alignment_check.json` (A2's
+  artifact, previously written but never rendered) into one combined
+  `<details class="coverage">` panel — auto-open when any model's alignment
+  gate recorded `passed: false`, immediately below the run-coverage panel
+  A5 built. Shows per-model min/mean diagonal-hit fraction and gate
+  pass/fail, plus git SHA (+dirty), tsfm_lens version, device, config hash,
+  corpus digest, per-model checkpoint+HF revision, and package versions.
+- `meta_report.py`: `summarize_run` now reads each run's `run_manifest.
+  json` provenance (absent for pre-A7 runs, handled as a plain missing key,
+  not an error); new `provenance_warnings(run_summaries)` flags **mismatched
+  corpus digests** and **mismatched major versions** of
+  `torch`/`numpy`/`zarr` across the runs being aggregated — the exact
+  "meta_report.py can silently aggregate runs from mismatched stacks" risk
+  named in this item's own blast radius. Rendered as a highlighted warning
+  block above the existing runs table, plus a new "Run provenance" table
+  (one row per run: git SHA, tsfm_lens version, key package versions,
+  device, corpus digest — "one provenance row per run" per the fix's own
+  wording). Runs with no provenance recorded are excluded from a given
+  check rather than flagged as mismatched — absence of data isn't evidence
+  of drift.
+- **A real, previously-undocumented gap found and fixed, not in the
+  original evidence list**: the first real-checkpoint verification run
+  showed `packages: {..., "timesfm": null, ...}` even though `timesfm` is
+  installed and working (checkpoints loaded fine throughout this session).
+  Checked directly (`import timesfm; timesfm.__version__` →
+  `AttributeError`) rather than assumed: the installed `timesfm` package
+  genuinely has no `__version__` attribute at all — a real gap in
+  "whatever imports" as originally scoped, not a bug in the lookup itself.
+  Fixed by falling back to `importlib.metadata.version(module_name)` when
+  `__version__` is absent; re-verified live (`packages["timesfm"] ==
+  "2.0.2"` after the fix, matching `pip show timesfm`).
+- **Verification — unit tests.** New `tests/test_provenance.py` (4 tests):
+  `run_provenance()` output contains no absolute `/home/...` paths and
+  resolves `torch`'s version (a hard dependency, must never be `None`); a
+  hand-corrupted `schema_version: 999` store raises `RuntimeError` matching
+  the exact mismatch on open; a freshly-created store round-trips through
+  reopen with no error; and a full smoke run's `run_manifest.json` has no
+  absolute paths, records `corpus_digest: None` (correctly, for the
+  no-sealed-corpus smoke source), and its `report.html` contains the
+  rendered "Alignment &amp; provenance" panel. Two new tests in
+  `tests/test_meta_report.py`: mismatched corpus digests and a mismatched
+  `torch` major across two synthetic runs both produce the expected
+  warning strings (and a matching `numpy` major does **not** false-positive
+  warn), rendered visibly in the aggregate HTML; and runs with no recorded
+  provenance at all aggregate cleanly with zero warnings. Full suite green
+  at 107/107 (up from 101 after A6).
+- **Verification — real checkpoints.** `configs/_a7_real_check.yaml`
+  (scratch, deleted after use; a fast extract+l0+l1+report-only config to
+  keep this check cheap) against live `google/timesfm-2.5-200m-pytorch` +
+  `amazon/chronos-t5-small`, the real `benchmark_medium` sealed corpus.
+  Every field resolved to a real, correct value: `git_sha` (the actual
+  working-tree HEAD, `git_dirty: true` — correctly reflecting this
+  session's uncommitted edits), real package versions for all 8 tracked
+  libraries (after the `timesfm` fix above), real device info (`NVIDIA RTX
+  A5000`, CUDA 12.9, driver 535.216.03 via `nvidia-smi`), and — the
+  detail most worth calling out — **real, resolved HF revision hashes for
+  both checkpoints** (`1d952420fb...` for TimesFM 2.5,
+  `a971ba2194...` for Chronos-T5-small) via `huggingface_hub.
+  scan_cache_dir()`, plus a real sha256 corpus digest and config hash.
+  The rendered report's "Alignment & provenance" panel showed the real
+  alignment gate results (1.00/1.00 diagonal-hit fraction for both models,
+  consistent with every prior session's numbers) directly alongside this
+  provenance line, exactly as the shared-panel design intended.
+
+### A8 — Invariant 1 is currently red and unowned (golden hashes vs. numpy) `[x]` · **P1** · addressed 2026-08-06
+
+- **What's wrong.** `test_golden_hashes_pre_extension_outputs_unchanged` fails
+  against numpy 2.1.0 with no change to the generators; the leading hypothesis
+  (`Generator.choice(..., replace=False)` is not stream-stable across numpy
+  versions) has never been confirmed, and the failure has been carried as a
+  known-red test across five sessions.
+- **Evidence.** `CLAUDE.md` §9, §11.13; §5's 2026-08-03 Findings (seed 0
+  produces `4070db4646799f09`, expected `2856658d044e4c49`).
+- **Blast radius.** Invariant 1 is the whole basis of the sealed-corpus
+  reproducibility claim, which is in turn the basis of the epoch-regeneration
+  story (`CLAUDE.md` §4.5) and of every "this corpus regenerates from its
+  seed" statement. A red invariant that nobody owns decays into a permanently
+  accepted failure, and the suite's "40 passed / 1 failed" line stops being
+  read at all.
+- **Fix.**
+  1. **Confirm the mechanism first, cheaply** (§2.4): in an isolated env, diff
+     `np.random.default_rng(0).choice(100, 5, replace=False)` and
+     `default_rng(0).normal(size=5)` across the numpy versions available.
+     One is expected to move and the other not; that alone settles it without
+     bisecting the whole generator.
+  2. If confirmed: replace every `rng.choice(..., replace=False)` in
+     `generators.py` with a construct built from primitives whose stream is
+     stable — candidate `np.argsort(rng.random(n))[:k]` — and **verify that
+     candidate's cross-version stability by the same test** rather than
+     assuming it (the assumption is what broke here the first time).
+  3. Re-baseline the golden hashes in the same commit; record the numpy
+     version they were captured against *in the test file itself* and in
+     `DEPENDENCIES.md` (invariant 12).
+  4. Split the regression test: one case over a pure `rng.normal`-only recipe,
+     one over the full composite. A future break then localizes itself instead
+     of just saying "the hash moved."
+  5. State the **determinism contract** in the seal manifest, per generator:
+     `bit_exact: true|best_effort`. `sequential_par` is best-effort by
+     construction (SDV's `PARSynthesizer` exposes no seed — `CLAUDE.md`
+     §11.11), and nothing in a sealed corpus currently tells a consumer which
+     of its samples can actually be regenerated. That's a correctness claim a
+     manifest should carry, not a docs footnote.
+  6. Once green, wire into CI (A14) as a blocking check, and mark it
+     `xfail(strict=True)` in the interim so it flips loudly when fixed rather
+     than staying quietly red.
+- **Cost.** Half a day to confirm + a day to fix and re-baseline.
+
+**Findings (2026-08-06) — item 1's own "confirm first" step changed the
+shape of this fix.** Followed the fix plan's own ordering exactly: before
+touching any code, checked whether the failure reproduces at all in the
+current, persistent environment.
+
+- **The golden-hash test currently PASSES here** (`python3 -m pytest
+  tests/test_generator_extensions.py::test_golden_hashes_pre_extension_outputs_unchanged`
+  → 1 passed), and the **full `tsfm_benchmark` suite has zero failures**
+  (37 passed / 1 skipped before this session's additions) — not the
+  "40 passed / 1 failed" state `CLAUDE.md` §9 describes. This environment's
+  numpy is 2.1.0, the same version the original failure report named, so
+  this isn't simply "a different numpy version, of course it's fine now."
+- **Fix item 1's direct comparison refutes the leading hypothesis**, rather
+  than confirming it: `np.random.default_rng(0).choice(100, 5,
+  replace=False)` and `.normal(size=5)` were run in an isolated,
+  throw-away `venv` with `numpy==1.26.4` (chosen so as not to touch this
+  session's own pinned, MKL-matched numpy 2.1.0 install and risk
+  reintroducing `CLAUDE.md` §11.13's SEH crash) and compared byte-for-byte
+  against the same two calls under this environment's numpy 2.1.0. **Both
+  arrays were bit-identical across the two numpy versions.** If `choice`'s
+  algorithm were the culprit, this is exactly the comparison that would
+  have shown a divergence, and it didn't.
+- **What this means, stated plainly:** the specific, five-session-old
+  hypothesis ("`Generator.choice(..., replace=False)` isn't stream-stable
+  across numpy versions") is not supported by direct evidence between the
+  two most relevant versions (1.26.4 and 2.1.0), and the originally-reported
+  mismatch is **not currently reproducible** in this persistent environment.
+  The original failure's true cause remains unexplained — it may have been
+  a different numpy point-release, a different platform/BLAS backend, or
+  an environment-specific artifact (`CLAUDE.md` §11.13 already documents an
+  unrelated numpy/MKL ABI crash in this same version's history, i.e. this
+  numpy build has precedent for environment-sensitive behavior). Per
+  `CLAUDE.md` §2.4's own doctrine, an unconfirmed hypothesis is not grounds
+  to rewrite `generators.py`'s RNG calls — doing so would risk breaking bit-
+  exact reproducibility for a *new*, self-inflicted reason (§11.1's own
+  lesson), to fix a bug that isn't currently present. **No changes were made
+  to `generators.py`'s actual `rng.choice` calls.**
+- **What *was* still done, because it's correct regardless of whether the
+  original bug ever recurs:**
+  1. Item 3 (partial): recorded the numpy version (2.1.0) the hashes are
+     verified against directly in the test file's own comment above
+     `GOLDEN`, and updated `DEPENDENCIES.md` §3's numpy row and §5's fragile-
+     spots list to state the refutation plainly rather than repeating the
+     unconfirmed hypothesis as fact. Re-baselining wasn't needed — the
+     existing hashes already match.
+  2. Item 4: split the regression test. New `GOLDEN_NORMAL_ONLY` +
+     `test_golden_hashes_normal_only_recipe_unchanged` runs the *same*
+     recipe/seeds as the composite test but with `n_changepoints=0,
+     n_anomalies=0` — the only two knobs that call `rng.choice(...,
+     replace=False)` (confirmed by grep, not assumed). A future break now
+     localizes: normal-only fails alone → the break is in `rng.choice`;
+     composite fails alone → impossible (composite is a strict superset of
+     normal-only's draws) — so really: both fail → the break is upstream
+     (`rng.normal` or `default_rng` itself); only composite fails → the
+     break is specifically in the choice-based changepoint/anomaly draws.
+  3. Item 5: `generators.py` gained a `BIT_EXACT` dict (`parametric`,
+     `random_parametric`, `mixture`, `block_bootstrap` → `True`;
+     `sequential_par` → `False`, per `CLAUDE.md` §11.11's already-documented
+     "PARSynthesizer exposes no seed" finding) and `seal.py::seal_corpus`
+     now writes a `determinism: {generator: {bit_exact, count}}` block into
+     every manifest — the `bit_exact: true|best_effort` contract the fix
+     asked for, generalized slightly to a per-generator breakdown since a
+     real corpus mixes generators with different guarantees. An unknown
+     generator (not yet in `BIT_EXACT`) degrades to `bit_exact: None` rather
+     than crashing or silently claiming a guarantee, tested explicitly.
+  4. Item 6: **not applicable as worded** — `xfail(strict=True)` marks a
+     test *expected* to fail; this test currently passes, so marking it
+     `xfail(strict=True)` would itself fail the suite (strict xfail demands
+     an actual failure). CI wiring itself is A14's scope, not yet reached;
+     when A14 lands, this test should simply run as a normal blocking check
+     like any other, with no special-casing needed now that it's green.
+- **Verification — unit tests.** `test_golden_hashes_normal_only_recipe_unchanged`
+  (new) plus the existing composite test both pass. New
+  `tests/test_seal_determinism.py` (3 tests): `BIT_EXACT` has the expected
+  value for all five registered generators (asserting `sequential_par is
+  False` specifically, so this can't silently regress to claiming a
+  guarantee SDV doesn't provide); a corpus mixing `parametric`/
+  `sequential_par` samples produces the exact expected per-generator
+  `determinism` breakdown in the sealed manifest; and a sample from a
+  generator not in `BIT_EXACT` degrades to `bit_exact: None` without
+  crashing `seal_corpus`. Full `tsfm_benchmark` suite green at 41 passed / 1
+  skipped (up from 37 passed / 1 skipped — 4 new tests, 0 regressions, 0
+  fixes needed to existing tests since none were failing).
+- **Verification — real build.** Two real, non-mocked builds: (1)
+  `example_runs/run_smoke.py` end to end (leakage gate, seal, reload+verify,
+  cross-process reproducibility, epoch regeneration) — unaffected by the
+  `seal.py` import addition, all prior assertions still pass; (2) a real
+  `run_full.py` build against `configs/example.yaml` with live Monash data
+  (`bootstrap_catalog` pooling 251 series across 6 real domains) producing a
+  20-sample `public_dev` split mixing `parametric`/`mixture`/
+  `random_parametric` — the written `manifest.json` carries a real
+  `determinism` field: `{"parametric": {"bit_exact": true, "count": 10},
+  "mixture": {"bit_exact": true, "count": 5}, "random_parametric":
+  {"bit_exact": true, "count": 5}}`, exactly matching the corpus's actual
+  generator mix. Confirms the manifest change composes correctly with the
+  real leakage-audit/seal/real-source pipeline, not just synthetic
+  `TimeSeriesSample` fixtures.
+- **What "fixed" means for this item, precisely:** the audit's own
+  instruction was to confirm the mechanism and either repair it or
+  re-baseline; the confirmation step is what actually resolved this — there
+  was nothing live to repair, and the hashes needed no re-baselining. What
+  shipped is exactly the fix plan's items 3-5 (version provenance, a
+  self-localizing test split, and the determinism contract), which stand on
+  their own merit independent of whether the original numpy-version bug
+  ever recurs. If it resurfaces on a *different* numpy version in a future
+  session, the split test (item 4) will say which half of the mechanism
+  broke instead of just "the hash moved," which is the actual, lasting
+  value of this session's work here.
+
+### A9 — `l0/summary.json` has no archetype granularity `[x]` · **P2** · fixed 2026-08-06
+
+- **What's wrong.** `random_parametric`'s sampled archetype is recorded in
+  sample provenance but never carried into the analysis half, so every
+  per-group statistic stops at the coarse `family` level.
+- **Evidence.** §5.5's own follow-up note; `data.py:77-82` builds `meta` with
+  `series_id`/`family`/`tier` only.
+- **Blast radius.** The question §5.5 exists to answer — "does 'TimesFM
+  front-loads then compresses' hold on `intermittent_bursts` too, or only on
+  the smooth archetypes it was observed on?" — is unanswerable today: all 12
+  archetypes collapse into one `random_parametric` family. It also forces
+  `sae/ground_truth.py` to reconstruct archetype labels itself, which is where
+  A10 comes from.
+- **Fix.** `data.py` carries `archetype` (from
+  `provenance.generator_params`, `None` for tiers that can't express one) and
+  `generator` into `meta.parquet`; `l0_behavioral.py` reports per-`(family,
+  archetype)` alongside per-family (with an explicit minimum-n guard, and
+  falling back to the family label where archetype is `None` — stated, not
+  silent); `meta_report.py` gains the per-archetype stability table §5.5
+  wanted; exemplars and attention gain an optional archetype conditioning.
+  Keep `family` as the primary axis so recorded numbers stay comparable.
+- **Cost.** Half a day.
+
+**Findings (2026-08-06).** Implemented all five fix items, scoped as follows:
+- `data.py::_assemble` now carries two new `meta` columns:
+  `archetype` (from `provenance.generator_params.archetype`, `None` for
+  tiers that can't express one) and `generator` (the raw provenance
+  generator name, finer than `family` when `family_key` groups several
+  generators under one task label) via two new small resolvers
+  (`_archetype_of`, `_generator_of`) applied before the same
+  `max_series` stratified-subsample step A4 already built, so both new
+  columns stay aligned under subsampling.
+- `l0_behavioral.py`: `_score` carries `archetype`/`generator` into
+  `metrics.parquet`; a new `_archetype_summary()` (called from
+  `_summarize`, independent of and before the `n_families < 2` early
+  return, since the single-family `random_parametric` corpus *is* the
+  motivating case for this axis) reports per-archetype mean metrics **and**
+  Holm-corrected paired MASE-ratio tests, mirroring `family_tests`'
+  shape/statistics exactly but on the finer axis. Series whose tier can't
+  express an archetype fall back to their family label (`fallback_to_family`,
+  stated in the output, not silently dropped or silently blended with real
+  archetype rows); groups below `stats.min_series` are dropped and named in
+  `dropped_min_n` (reusing the existing min-n knob rather than adding a new
+  one). Degrades explicitly (`{"applicable": False, "reason": ...}`) when no
+  series in the corpus carry an archetype at all, when fewer than 2 groups
+  survive the min-n guard, or when `stats.enabled` is false — matching A6's
+  established "Not applicable, stated" pattern rather than a silent skip.
+- `report.py`: new `_archetype_block()` renders the per-archetype table,
+  fallback/dropped notes, and the paired-test table (or the applicable:false
+  reason) directly under L0's existing per-family section, and feeds
+  `strengths`-style findings into the same findings list.
+- `meta_report.py`: new `archetype_stability()` (exact mirror of
+  `family_stability()`, one axis finer) plus a rendered "Per-archetype
+  stability across runs" table, wired into `build_meta_report`.
+- `exemplars.py`/`report.py`: `_select_exemplars` now carries an `archetype`
+  column through to `exemplars.json` (mapped from `data.meta` by row index,
+  avoiding a `pivot_table` NaN-index-drop trap), and the exemplar card
+  headings show it when present (`"{family} · archetype {archetype} · series
+  {id}"`).
+- **Deliberately scoped out, stated rather than silently dropped**:
+  `attention.py`'s family-conditioned lag profiles, periodicity scores, and
+  head/MLP ablation ΔMASE were **not** given an archetype axis. Unlike L0's
+  aggregate (a `groupby` and a paired test), attention's per-family
+  machinery is threaded through batched forward passes, ablation loops, and
+  its own `top_heads`/`meta` JSON shape (`CLAUDE.md` §11.6 already flags
+  this file's report-key surface as fragile) — duplicating a
+  min-n-guarded, fallback-aware grouping axis through all of that
+  correctly would be a multi-hour change in its own right, not the
+  half-day this item was costed at, and the fix plan itself called this
+  piece "optional." Left for a future item if a concrete question needs it
+  (the motivating §5.5 question — "does the family-level MASE gap hold on
+  every archetype" — is already answerable from L0 alone, which is what got
+  built).
+- **Verification — unit tests.** New `tests/test_archetype_reporting.py` (6
+  tests): `_assemble` carries `archetype`/`generator` with correct `None`
+  fallback; `_archetype_summary` returns `applicable: False` when no series
+  carry an archetype; a group below `min_series` is dropped and named;
+  a planted MASE gap on one archetype (with a tied second archetype and a
+  no-archetype "real_derived" family mixed in) produces the correct
+  `favored` verdict and correct `fallback_to_family`; `archetype_stability`
+  flags a favored-model disagreement across two synthetic runs; and a full
+  mini pipeline (three archetype-labeled + one unlabeled family, mock
+  adapters) asserts `l0/summary.json`'s `per_archetype` block, `meta.parquet`'s
+  `generator` column, and `report.html`'s rendered "Per-archetype breakdown"
+  all appear correctly. Full suite green at 113/113 (up from 107 after A7 —
+  6 new tests, 0 regressions).
+- **Verification — real checkpoints.** `configs/_a9_real_check.yaml`
+  (scratch, deleted after use; extract+l0+report only) against live
+  `google/timesfm-2.5-200m-pytorch` + `amazon/chronos-t5-small` on the real
+  `benchmark_medium/public_dev` corpus (288 series: 188 `random_parametric`,
+  60 `mixture`, 40 `parametric` — confirmed via `meta.parquet`'s new
+  `generator` column, exactly matching the corpus's documented composition).
+  `l0/summary.json`'s `per_archetype` block recovered all **12** of
+  `CLAUDE.md` §4.2's archetypes as distinct groups (`trend_dominant`,
+  `seasonal_dominant`, `multi_seasonal_complex`, `regime_switching`,
+  `ar_colored_noise`, `anomaly_heavy`, `clean_low_noise`, `noisy_chaotic`,
+  `random_walk_drift`, `intermittent_bursts`, `amplitude_modulated`,
+  `nonsinusoidal_seasonal`), each with a real Holm-corrected paired test
+  (e.g. `multi_seasonal_complex` ratio 0.365, p=0.005 but p_holm=0.07 — a
+  real illustration of why the Holm correction matters once the comparison
+  fans out to 14 groups instead of 3 families); `mixture` and `parametric`
+  correctly appeared in `fallback_to_family` with zero groups dropped for
+  low n. `report.html` rendered the "Per-archetype breakdown" section. This
+  is exactly the previously-unanswerable question this item names in its
+  own blast radius — "does the family-level gap hold on every archetype
+  `random_parametric` was pooled from" — now answerable directly from one
+  run's `l0/summary.json`, no `sae/ground_truth.py` archetype-label
+  reconstruction (A10's origin) required.
+
+### A10 — Ground-truth archetype dummies count every real-derived series as a negative `[x]` · **P2** · fixed 2026-08-06
+
+- **What's wrong.** Real-derived-tier series carry an empty `GroundTruth` by
+  design (`CLAUDE.md` §4.1); the archetype dummy encoding treats that as
+  `archetype_x = 0` — a valid negative example — rather than "not applicable."
+- **Evidence.** §6.2's 2026-08-06 Findings, which found this by reading real
+  exemplar rows (two `mixture` series at activation 0.0 / `field_value` 0.0
+  sitting in a top-exemplar table) and correctly declined to change it as a
+  side effect of a reporting feature.
+- **Blast radius.** Every archetype-related ρ already recorded in §6.2
+  (including TimesFM's headline `archetype_trend_dominant` ρ=0.650/0.752) is
+  computed against a label that partly encodes *tier*, not archetype. A
+  feature that merely separates synthetic from real-derived series scores as
+  an archetype detector. Interacts with A4: which tiers are even present
+  depends on a head slice.
+- **Fix.**
+  1. `encode_series_level` emits `NaN` for any field a series' tier cannot
+     express; `best_ground_truth_matches` already reports per-field `n`, so
+     drop `NaN` rows per field and let `n` tell the reader how much support a
+     match has.
+  2. Add an explicit `tier` (and `generator`, from A9) column to the
+     candidate field set, so "this feature detects the real-derived tier" is a
+     *detectable, nameable* match rather than something that masquerades as an
+     archetype match.
+  3. Re-run against `runs/medium_run_chronos_base` and record old vs. new ρ
+     side by side once, then supersede the old numbers in place with a dated
+     correction (§0.2). Don't silently re-baseline.
+  4. Test: a planted feature that perfectly separates tiers must match `tier`,
+     not an archetype dummy.
+- **Cost.** Half a day + a short re-scoring run.
+
+**Findings (2026-08-06).** Implemented all four fix items in
+`sae/ground_truth.py`, and found (via this item's own real-checkpoint
+verification, per `CLAUDE.md` §2.4) two additional real bugs one level
+removed from the one this item was named for:
+
+- **Item 1 (archetype dummies), as named.** `load_ground_truth_table`'s
+  per-archetype dummy construction moved into a new pure function
+  `_add_dummy_columns(df)` (split from the `load_sealed` I/O, matching this
+  file's existing pure/IO split for `best_ground_truth_matches` vs
+  `ground_truth_alignment`, so the fix could be unit tested directly on a
+  synthetic DataFrame). Rows with no archetype now get `NaN`, not `0.0`, on
+  every `archetype_*` dummy.
+- **Item 2 (tier/generator as first-class fields), as named, plus a real bug
+  found underneath it.** `tier_{value}`/`generator_{value}` one-hot dummies
+  are now added (always defined, no NaN case, unlike archetype). Building
+  this surfaced a genuine, previously undocumented bug: `data.py::
+  _sample_to_row`'s `hasattr(sample, "tier")` is **always False** —
+  `TimeSeriesSample` has no `tier` attribute; `build_pipeline/builder.py`
+  writes it to `provenance.generator_params["tier"]` instead. Confirmed live
+  against `benchmark_medium/public_dev` (not assumed): every real
+  sealed-corpus series' `meta["tier"]` was silently `"unknown"`. New
+  `data.py::_tier_of(row)` checks the top-level key first (smoke rows) then
+  falls back to `provenance.generator_params.tier` (real samples); re-verified
+  live — `Counter({'synthetic': 228, 'realism_stress': 60})`, matching
+  `benchmark_medium`'s known composition exactly. `l0`/A9's `meta.parquet`
+  `tier` column inherits this fix for free (same `_assemble` call site).
+- **A second, larger bug found the same way, one level removed from the one
+  this item names:** `_scalar_ground_truth`'s `len([])`/`"x" in {}` on an
+  empty `generative_params` silently produced a valid `0`/`False` for
+  `n_seasonalities`/`ar_order`/`n_changepoints`/`n_anomalies`/`has_random_
+  walk`/`has_intermittency`/`has_heteroskedastic` too — the exact same
+  "not applicable" vs "genuinely zero" confusion this item is about, just
+  not confined to the `archetype` dummy. Gated all seven fields on a new
+  `has_gt` flag. **First attempt used `has_gt = bool(generative_params)`
+  and was itself wrong** — checked directly against a real `mixture` sample
+  rather than assumed (§2.4 again, twice in one item): `mixture` sets
+  `generative_params={"mode": ...}` (`generators.py:450`), non-empty but with
+  none of `parametric`'s structural keys, so `bool(p)` would have left this
+  exact generator's rows un-fixed. Corrected to `has_gt = "trend" in p`,
+  since `_generative_params()` (`generators.py:152`) sets `trend`/
+  `seasonalities`/`ar_coeffs`/`noise_scale` together unconditionally for
+  every `parametric`/`random_parametric` call and `mixture`/
+  `block_bootstrap`/`sequential_par` never set `"trend"` at all — verified
+  against a live `mixture` sample from `benchmark_medium` before trusting it.
+- **Item 3 (re-score and supersede old numbers), done against real
+  checkpoints, not a fresh run.** No retraining needed: `sae/train.py`
+  already persists trained SAE weights to `.pt` (`load_sae_checkpoint`), so
+  the already-extracted `runs/medium_run_chronos_base` store plus its two
+  already-trained checkpoints (`TimesFM/stacked_xf.18`,
+  `Chronos-T5-Base/encoder.block.6`) were re-scored directly through the
+  fixed `ground_truth_alignment`, with zero new model forward passes.
+  **Old vs. new, side by side:**
+  - `mean_abs_rho_matched`: TimesFM 0.317 → 0.349; Chronos-T5-Base 0.306 →
+    0.401 — a real, substantial increase in how well-matched the average
+    top feature is, exactly as expected once tier-masquerading matches stop
+    diluting the field.
+  - **Most matches previously attributed to `n_seasonalities` were actually
+    detecting tier.** E.g. TimesFM feature 5109: old best match
+    `n_seasonalities` ρ=−0.552 (n=288) → new best match
+    `tier_realism_stress` ρ=+0.943 (n=288). Six of TimesFM's top-8 and six
+    of Chronos-T5-Base's top-8 (by new ρ) flipped from a spurious
+    `n_seasonalities`/`ar_order`/`n_anomalies` match to a `tier_*` match at
+    much higher |ρ| (0.70–0.94 vs. 0.43–0.60) — these features were tier
+    detectors all along, previously misattributed to the nearest available
+    numeric field because no `tier` field existed to compete for the match.
+    Genuinely intermittency-detecting features (e.g. TimesFM/Chronos feature
+    2189, `has_intermittency` ρ=0.881→0.880) were essentially unaffected,
+    confirming the fix corrects specifically the tier-masquerading cases and
+    doesn't disturb real matches.
+  - **The headline number this item's own evidence names is confirmed
+    genuine, not an artifact.** `CLAUDE.md` §13's `archetype_trend_dominant`
+    ρ=0.650 (TimesFM feature 2872): re-scored at ρ=0.648, now correctly on
+    `n=188` (the actual `random_parametric` count) instead of the old,
+    tier-inflated `n=288`. Every `archetype_trend_dominant` match in both
+    models' old top lists survived at essentially the same ρ under the fix
+    (TimesFM: 0.650→0.648, 0.561→0.558; Chronos-T5-Base: six features at
+    0.530→0.527, 0.518→0.514, 0.500→0.497) — this specific finding was a
+    real archetype match, not a tier-confound artifact, and is superseded
+    in place here with the corrected `n` per this item's own "supersede, don't
+    silently re-baseline" instruction; no other file restates these numbers
+    (`CLAUDE.md` §13's item 3 links here rather than repeating them).
+- **Item 4 (test).** Done, generalized to cover both the named bug and the
+  one found underneath it. New `tests/test_ground_truth_dummies.py` (9
+  tests): real-derived rows get `NaN` not `0.0` on archetype dummies;
+  `tier_*`/`generator_*` dummies are always defined; a planted tier-detecting
+  feature matches `tier_*` and not an archetype dummy (with a sanity check
+  proving the pre-fix encoding really was indistinguishable, restricted to
+  the two-archetype/tier comparison where the bug actually bites); `_tier_of`
+  resolves both the top-level and `provenance.generator_params` paths and
+  degrades to `"unknown"` without crashing; a fully-empty `GroundTruth` gets
+  `None` on every count field; a real-shaped `mixture` `generative_params`
+  (`{"mode": ...}`) is correctly *not* mistaken for real ground truth; and a
+  genuinely zero-valued synthetic recipe still records real `0.0`s, not
+  `None`. Full suite: 122 tests collected, 121 passed, 0 failures (up from
+  113 before this item — the 1-test discrepancy from this item's own 9 new
+  tests is unreconciled bookkeeping across sessions, not a failure or a
+  skip; the log shows zero failures/errors/skips).
+- **Known, accepted side-effect, not fixed this session:** `layer_screen.py`'s
+  `factor_emergence` method (not the default; `work_bend` is, per §6.1.1)
+  also calls `load_ground_truth_table` and now sees the new `tier_*`/
+  `generator_*` dummies as additional candidate factors alongside every
+  archetype. Left as is — `factor_emergence` already has its own open,
+  larger-scope defect (`CLAUDE.md` §11.18, not yet re-verified against a
+  real bake-off) and is not the default selector; revisit if that method is
+  ever promoted past `work_bend`.
+
+### A11 — MASE's scale term degenerates on intermittent and near-constant series `[x]` · **P2** · fixed 2026-08-06
+
+- **What's wrong.** The denominator is the mean absolute first difference of
+  the context (`+ 1e-8`). Under heavy intermittency or a flat context it
+  collapses, and because `parametric`'s intermittency zeroes the horizon too,
+  numerator and denominator both floor.
+- **Evidence.** §7's intermittency-sweep caveat (MASE *falls* for both models
+  at rate 0.8, which is an artifact); `analysis/stats.py::mase()`.
+- **Blast radius.** Wider than that one sweep, because `mase()` was
+  deliberately centralized (§6.2's refactor) and is now the metric behind L0's
+  headline numbers and per-family strengths, head/MLP ablation ΔMASE, L3
+  restoration scores, the SAE forecast-preservation check, every parameter
+  sweep, and the bias card's verdicts. Any zero-heavy or low-volatility family
+  is silently compressed toward a floor in all of them. Consequence worth
+  stating plainly: `intermittent_bursts` — per `CLAUDE.md` §4.2 the sharpest
+  quantized-vs-continuous stressor available, opted into deliberately by §5.1
+  — cannot currently be scored interpretably, so one of the corpus's most
+  discriminating archetypes is dead weight until this is fixed.
+- **Fix.**
+  1. `l0.scale: mean_abs_diff|seasonal_naive` (default `mean_abs_diff` so
+     every recorded number keeps reproducing). `seasonal_naive` uses period
+     `m` from ground truth where available, else an autocorrelation estimate,
+     and is the standard fix for exactly this degeneracy.
+  2. A **reliability guard** independent of the scale choice: when the
+     denominator is below a threshold fraction of the target's own mean
+     absolute level, mark that series `mase_reliable: false`, exclude it from
+     aggregates, and **report the excluded count** everywhere a MASE
+     aggregate is shown. Silent exclusion would be its own version of this
+     bug.
+  3. Add one scale-free companion metric that doesn't degenerate the same way
+     (e.g. MAE normalized by the target's own MAD) and show it beside MASE in
+     L0 and the sweeps, so a floor effect is visible as a divergence between
+     the two.
+  4. Audit `sMAPE`'s zero handling in `l0_behavioral.py` at the same time —
+     same family of failure, same corpus regions.
+  5. Test: a mostly-zero synthetic series must be flagged unreliable, not
+     scored; a normal series's MASE must be byte-identical to today's.
+- **Cost.** ~a day including re-running the intermittency sweep to see what
+  it actually says.
+
+**Findings (2026-08-06).** Implemented items 1-4; item 5 covered by new
+tests. Scoped deliberately to `stats.py` (shared) + `l0_behavioral.py`/
+`config.py`/`report.py` (L0, the stage this item's own evidence and blast
+radius are about) rather than every one of `mase()`'s ~8 call sites:
+
+- **Item 1.** `stats.py` gained `dominant_period()` (moved out of
+  `attention.py`, which had its own private, byte-identical copy —
+  deduplicated, `attention.py` now imports the shared one under its old
+  private name so nothing else in that file changed), `_mase_scale()`
+  (`mean_abs_diff` — unchanged formula, still the default — or
+  `seasonal_naive`, mean absolute error of a period-`m` seasonal-naive
+  forecast, `m` autocorrelation-estimated per series when not supplied),
+  and `mase()` gained optional `scale_mode`/`periods` kwargs with defaults
+  that reproduce every existing call byte-for-byte. New `config.py::
+  L0Config.scale: "mean_abs_diff"|"seasonal_naive"` (default
+  `"mean_abs_diff"`). **Ground-truth-period lookup (`m` "from ground truth
+  where available") was not built** — it would require L0 to load the
+  sealed corpus's `GroundTruth` records the way `sae/ground_truth.py`
+  does, a new coupling this stage doesn't otherwise have; the
+  always-available autocorrelation fallback is what `seasonal_naive`
+  actually uses. Stated here as a real, deliberate gap, not silently
+  dropped.
+- **Item 2.** New `stats.py::mase_reliability()`: `False` when the MASE
+  denominator is below `min_scale_frac` of the target's own mean absolute
+  level, independent of `scale_mode`. New `L0Config.min_scale_frac: 0.05`
+  (on by default, unlike `scale` — this guard's whole purpose is to stop a
+  degenerate case from silently entering aggregates, so a default of `0.0`
+  would defeat it). `l0_behavioral.py::_score` records a per-series
+  `mase_reliable` column in `metrics.parquet`; `_summarize`/
+  `_archetype_summary` compute every MASE-based number (means, CIs, ratios,
+  paired tests) on the reliable subset only, while `smape`/`pinball`/
+  `mae_over_mad` still aggregate every row (they don't share this
+  degeneracy). Excluded counts are recorded corpus-wide
+  (`summary["mase_reliability"]`) and per `per_family`/`per_archetype` row
+  (`mase_n_excluded`); `report.py` renders both — a blurb naming the total
+  excluded count right under the MASE chart (auto-added as a finding too)
+  and a `mase_n_excluded` column in the new per-family/per-archetype tables.
+- **Item 3.** New `stats.py::mae_over_mad()` — MAE normalized by the
+  target's own median absolute deviation, never touching the context, so it
+  can't share MASE's context-driven degeneracy. Reported beside MASE in
+  every L0 table (`_score`, `per_family`, `overall`, `per_archetype`) with a
+  report note on how to read a MASE/`mae_over_mad` divergence. **Not wired
+  into the parameter sweeps** (`analysis/parameter_sweep.py` still computes
+  its own local MASE only) — left as a documented gap since sweep case
+  studies are a separate, lower-priority consumer than L0's headline
+  numbers.
+- **Item 4 (sMAPE audit).** Checked rather than assumed (`CLAUDE.md` §2.4):
+  generated a real `intermittent_bursts` series
+  (`random_parametric(seed=0, archetypes=["intermittent_bursts"])`, 72.5%
+  zero-valued) and scored a deliberately-wrong constant-0.3 forecast against
+  its zero-heavy horizon. sMAPE = **1.97** (correctly saturating near its
+  own max of 2.0 — a genuinely bad forecast against a near-zero target
+  scores near-worst, not `inf`/`NaN`), MASE for the identical case = **3.20**
+  (also a large, sane number, not the "artifact" reading this item warned
+  about, since here the *context* wasn't degenerate, only the *target*
+  region tested). **Conclusion: no fix needed.** `l0_behavioral.py::_score`'s
+  existing `+ 1e-8` epsilon on the denominator already handles the
+  both-zero edge case correctly; the real degeneracy this item is about
+  lives in MASE's context-derived scale term, not sMAPE's target-derived
+  one, and item 2's reliability guard is the actual fix for that.
+- **Item 5 (tests).** New `tests/test_mase_reliability.py` (11 tests):
+  `mean_abs_diff` scale matches the pre-existing formula byte-for-byte;
+  `dominant_period` recovers a planted period-24 sine to within 1 step;
+  `seasonal_naive` scale matches a hand-computed value for a known period;
+  an unknown `scale_mode` raises; `mase_reliability` is all-`True` when
+  disabled (`min_scale_frac<=0`), correctly flags an all-flat-context/
+  nonzero-target batch as unreliable, and correctly keeps a normal series
+  reliable; `mae_over_mad` matches a hand-computed value;
+  `_summarize`/`_score` correctly exclude unreliable rows from the MASE
+  mean while keeping them in smape (a planted 999.0 MASE on unreliable rows
+  does **not** move the reported per-family mean, proving the exclusion
+  actually happens, not just gets flagged); and a full mini pipeline run
+  (mock adapters, `l0.min_scale_frac: 0.05`) confirms `mase_reliability`/
+  `mae_over_mad` appear in real `summary.json`/`report.html` output. **Two
+  pre-existing tests broke and were fixed, not worked around**:
+  `test_archetype_reporting.py`'s synthetic `_metrics()` fixture built a
+  metrics DataFrame by hand without a `mase_reliable`/`mae_over_mad` column
+  (written before this item existed) — `_archetype_summary` now requires
+  both, so both tests failed with a `KeyError` until the fixture was
+  updated to add `mase_reliable=True`/`mae_over_mad=mase` columns, matching
+  the "every row reliable, sanity metric equals MASE" semantics those
+  synthetic rows already implied. Full suite green at 133/133 (up from 121
+  after A10).
+- **Verification — real checkpoints.** `configs/_a11_real_check.yaml`
+  (scratch, deleted after use; extract+l0+report only,
+  `min_scale_frac: 0.05`) against live `google/timesfm-2.5-200m-pytorch` +
+  `amazon/chronos-t5-small` on the real `benchmark_medium/public_dev`
+  corpus. **16 of 576 model-series rows (8 unique series, since reliability
+  is series-level and duplicated across both models) were excluded as
+  unreliable** — real numbers, real degenerate contexts, not a synthetic
+  demonstration. Rendered correctly end to end: `summary.json`'s
+  `mase_reliability` block, `mae_over_mad` alongside `mase` in every
+  `per_family`/`per_archetype` row, and `report.html`'s "16 of 576 series
+  excluded from every MASE mean/ratio/test above and below" note (grep-
+  confirmed present) plus its new "Per-family metrics" table. **A genuinely
+  non-obvious finding, worth stating plainly rather than assuming the
+  reliability guard would only fire where §7's caveat suspected it**: the
+  8 excluded series were **not** concentrated in `intermittent_bursts` (0
+  excluded there, despite being the archetype `CLAUDE.md` §4.2 calls "the
+  sharpest quantized-vs-continuous stressor" and the one this item's own
+  Evidence section names) — they were scattered across `parametric` (2) and
+  `random_parametric` (6, including 2 in `trend_dominant` specifically).
+  The degeneracy this item names turns out to be driven by genuinely flat
+  *stretches of a sampled recipe* (e.g. a `trend_dominant` draw with a
+  near-zero trend scale and low noise), not specifically by the
+  intermittency archetype's design — a real, previously-unmeasured fact
+  about which series this guard actually protects, not something either
+  this item's evidence or `CLAUDE.md` had predicted.
+- **Deliberately out of scope, stated rather than silently dropped**: L3's
+  patching-restoration MASE, `attention.py`'s ablation ΔMASE, `lens.py`'s
+  crystallization-depth MASE, `sae/eval.py`'s forecast-preservation MASE,
+  `confirm.py`'s re-tested MASE, and `parameter_sweep.py`'s sweep MASE all
+  keep calling `mase()`/computing MASE inline with the pre-A11 defaults
+  (`scale_mode="mean_abs_diff"`, no reliability filtering) — every number
+  those stages have already recorded stays byte-identical. This item's own
+  Fix section named `l0.scale` (an L0-config knob) as the mechanism, and
+  the reliability guard's report-surfacing ask ("everywhere a MASE
+  aggregate is shown") is read here as "wherever L0 already aggregates
+  MASE," not as a mandate to touch every downstream stage's own metric
+  computation in the same pass — each of those is its own, separately-
+  scoped follow-up if the degeneracy turns out to matter there too.
+
+### A12 — The corruption battery is uncalibrated across corruptions `[x]` · **P2** · fixed 2026-08-06
+
+- **What's wrong.** Each corruption's strength is set independently, so
+  "behavioral sensitivity" bars are not comparable across corruptions —
+  `level_shift` dominates by construction at 4-12× everything else.
+- **Evidence.** §5's 2026-08-04 Findings (with numbers); `CLAUDE.md` §6.5's
+  standing warning. The 2026-08-04 session fixed the *display* and explicitly
+  left calibration as "an option, not a decision."
+- **Blast radius.** The L3 section's headline chart, the cross-model
+  fingerprint agreement (rank correlations are computed per corruption, so
+  those are fine — but any statement of the form "model X is most sensitive
+  to Y" is not), and any future reader who trusts bar heights over the prose
+  note. Also blocks the "is one model better at high-frequency structure vs.
+  statistical means" question (§1) from being answered *contrastively across
+  corruption types* rather than within one.
+- **Fix.**
+  1. `l3.calibrate: none|input_energy` (default `none` — every recorded number
+     keeps reproducing byte-for-byte, which is what made the last session
+     defer this).
+  2. Under `input_energy`, solve per corruption for the parameter that hits a
+     common per-series perturbation-energy budget, measured with the
+     corruption functions alone (no model in the loop — cheap, pure numpy,
+     unit-testable). Record realized budget, parameter, and **footprint**
+     (fraction of timesteps touched) per corruption in `l3/meta.json`.
+  3. Report shows footprint next to every sensitivity bar regardless of mode,
+     so sparse-by-construction corruptions (`spike` ~0.6%, `dropout` ~14%)
+     can't be misread as "the model is robust" — the exact misreading the
+     2026-08-04 session had to investigate by hand.
+  4. Keep every corruption. §5's decision to keep the low-signal end of the
+     contrast stands and is not what this item revisits.
+- **Cost.** ~a day.
+
+**Findings (2026-08-06).** Implemented all four fix items in
+`l3_perturbation.py` + `config.py` + `report.py`:
+
+- **Item 1.** `L3Config.calibrate: "none"|"input_energy"`, default `"none"`.
+- **Item 2.** New pure-numpy `calibrate_corruptions(names, configs,
+  contexts, seed)`: per-corruption perturbation energy (`mean((corrupted -
+  clean)**2)`) and footprint (`fraction of timesteps changed beyond a
+  scale-relative tolerance`), a shared budget set to the **median of the
+  battery's own natural (pre-calibration) energies** (anchored to this
+  battery's existing scale rather than an arbitrary constant — a deliberate
+  design choice this item's own wording left open), and a per-corruption
+  solve to hit that budget. **Checked monotonicity directly before trusting
+  it** (`CLAUDE.md` §2.4): swept each corruption's obvious magnitude
+  parameter against energy on a real batch of series.
+  `level_shift:scale`, `spike:scale`, `smooth:kernel`, `warp:strength`,
+  `dropout:frac` are all confirmed monotone increasing over a wide range —
+  calibrated via a 30-iteration bisection (`_bisect_param`), clamped (not
+  extrapolated) when the target falls outside the search range.
+  `noise:snr_db` is calibrated via a closed form instead
+  (`snr_db = 10·log10(mean_power / target)`, exact since
+  `corrupt_noise`'s own formula is closed-form in `snr_db`) — cheaper and
+  exact where bisection would just be approximating an already-known
+  relationship. **`frequency_shift:factor` was swept and found genuinely
+  non-monotone past ~1.5×** (energy plateaus/wobbles rather than growing) —
+  excluded from calibration on that empirical basis, not assumed.
+  `detrend` (no free parameter) and `deseasonalize` (integer `top_k`, not a
+  continuous magnitude knob) have nothing to calibrate by construction.
+  All three are still fully reported (footprint/energy), just never
+  adjusted — `calibrated: false` in `l3/meta.json`'s new `calibration`
+  block, not silently omitted from it.
+- **Item 3.** Footprint is computed and stored for **every** corruption
+  regardless of `calibrate` mode (`corruption_footprint_meta` covers the
+  `"none"` path). `report.py::_sec_l3` now labels every behavioral-
+  sensitivity bar's x-axis tick with its footprint percentage
+  (`"spike<br>0.6% touched"` etc., real numbers below) and, when
+  `calibrate: input_energy`, prepends a blurb naming which corruptions were
+  calibrated to which shared budget and which weren't and why.
+- **Item 4.** Every corruption stays in the battery in both modes — nothing
+  dropped, per §5's own prior decision this item explicitly said stands.
+- **A real bug found and fixed via this item's own testing, not by
+  inspection alone**: the first implementation used `seed + 200 + i` inside
+  `_bisect_param`'s search but `seed + i` for the *final* realized-energy
+  verification recompute after the solve — for a corruption whose output
+  depends on more than just the calibrated parameter (`warp`'s random knot
+  jitter, drawn fresh from the RNG on every call), searching and verifying
+  under two different RNG streams meant the verified energy didn't actually
+  match what the search had converged on. Caught by a unit test asserting
+  <5% relative error (got 5.18% — just over), not by eyeballing the numbers.
+  Fixed by using one consistent seed per corruption throughout
+  `calibrate_corruptions` for both the search and the verification.
+  **Lesson, matching this session's own recurring pattern (§11.19's
+  device-transfer bug, A9/A10's real-checkpoint-only findings): a
+  stochastic corruption function needs the *same* RNG draw sequence
+  compared against itself, not just the same parameter value, or a
+  seed mismatch masquerades as a solver-tolerance issue.**
+- **Verification — unit tests.** New `tests/test_l3_calibration.py` (9
+  tests): energy/footprint are exactly zero for identical arrays;
+  `spike`'s footprint is small as expected; `_bisect_param` hits a target
+  within tolerance and correctly clamps rather than extrapolates when the
+  target is out of range; `calibrate: none` leaves every config
+  byte-identical while still reporting footprint/energy for all of them;
+  `calibrate_corruptions` converges every calibratable corruption to the
+  shared median budget within 5%; `detrend`/`deseasonalize` are never
+  touched by calibration; a full mini pipeline with the **default** config
+  (`calibrate: none`) produces a `calibration` block with `calibrated:
+  false` everywhere (the byte-identical-reproduction regression guard this
+  item's item 1 promised); and a full mini pipeline with `calibrate:
+  input_energy` produces a real calibration block and renders both the
+  calibration blurb and footprint captions in `report.html` (matched
+  loosely against `"touched"`, not the literal `"touched</span>"`, since
+  plotly JSON-escapes `<`/`/` in embedded tick-label strings — caught by
+  the first assertion failing, not assumed). Full suite green at 142/142
+  (up from 133 after A11).
+- **Verification — real checkpoints.** `configs/_a12_real_check.yaml`
+  (scratch, deleted after use; extract+l3+report only, patching disabled to
+  keep it fast, `calibrate: input_energy`) against live
+  `google/timesfm-2.5-200m-pytorch` + `amazon/chronos-t5-small` on the real
+  `benchmark_medium/public_dev` corpus. Real target energy = **0.1606**
+  (median of the battery's configured-default natural energies). All six
+  calibratable corruptions converged close to it: `noise` 0.1608, `level_
+  shift` 0.1606, `spike` 0.1606, `dropout` 0.1626, `warp` 0.1606, `smooth`
+  0.1512 (the one visibly furthest off at ~6% relative error — noted
+  plainly rather than smoothed over; still within the same order of
+  magnitude and not a sign of the seed bug recurring, since `smooth`'s
+  corruption function is itself deterministic given `kernel`, no RNG
+  dependence to mismatch). `frequency_shift`/`detrend`/`deseasonalize`
+  correctly stayed at their natural, uncalibrated energies (1.132, 0.049,
+  0.369 respectively). Real footprints, exactly the contrast this item's
+  blast radius named: `spike` 0.6%, `dropout` 28.0%, `level_shift` 40.0%,
+  `warp` 91.6%, `detrend` 96.2%, `smooth` 96.1%, `frequency_shift` 96.9%,
+  `deseasonalize` 99.6%, `noise` 99.7% — confirming `spike`/`dropout`'s low
+  aggregate behavioral-sensitivity bars (documented elsewhere as
+  potentially misleading) are exactly the sparse-footprint corruptions this
+  fix's whole point is to keep from being misread as model robustness.
+  `report.html` rendered the calibration blurb and every bar's footprint
+  caption (grep-confirmed).
+
+### A13 — No repeat-run noise floor, so small ΔMASE values are uninterpretable `[x]` · **P1** · fixed 2026-08-06
+
+- **What's wrong.** Nothing measures how much a model's own MASE varies
+  between two identical calls. Every Δ in the repo is compared against zero
+  rather than against that floor.
+- **Evidence.** `CLAUDE.md` §12 item 3 (Chronos-T5 samples, TimesFM is
+  deterministic; "seeds are pinned and `num_samples` reduced during patching"
+  — pinning makes a run reproducible, it does not make a *difference*
+  meaningful); head/MLP ablation ΔMASE (`attention.py`), SAE
+  forecast-preservation ΔMASE (`sae/eval.py`), L3 restoration
+  (`l3_perturbation.py`) all compare across separate `predict` calls.
+- **Blast radius.** The SAE validity check's TimesFM "pass" is ΔMASE
+  **+0.047** — a number whose significance is entirely a question of the noise
+  floor, which is unknown. Head-ablation "top load-bearing heads" rankings
+  can be sorted by noise in their tail. For the sampled model the floor may
+  be substantial, and the two models' floors differ, which means every
+  cross-model Δ comparison currently rests on an unmeasured asymmetry that
+  `CLAUDE.md` §12 already names as a known hazard.
+- **Fix.**
+  1. Cheap sub-step in L0 (or a tiny `noise_floor` stage): for each model,
+     predict the same `k` series `R` times (R≈5) with different seeds; write
+     `l0/noise_floor.json` — distribution of |ΔMASE| between identical
+     repeats, overall and per family, plus a `deterministic: bool` flag taken
+     from the adapter.
+  2. Every ΔMASE figure draws the floor as a shaded band / reference line;
+     every findings string that asserts a Δ is meaningful must compare against
+     it, and say so ("+0.047, against a repeat-run floor of ±0.0X").
+  3. Deterministic models should show a floor of exactly 0 — a free, strong
+     wiring sanity check, in the same spirit as TimesFM's exactly-0.0
+     `future_mass` (§5.4).
+  4. `Chronos-Bolt` as the deterministic control is already suggested by
+     `CLAUDE.md` §12; the floor measurement is what makes that comparison
+     quantitative instead of rhetorical.
+- **Cost.** Half a day. Cheapest item here relative to how many recorded
+  numbers it re-contextualizes.
+
+**Findings (2026-08-06).** Implemented as a cheap sub-step of L0 (item 1's
+first option), not a new pipeline stage — no `pipeline.py`/`manifest.py`
+wiring needed, since it reuses L0's already-loaded adapters and existing
+`_predict_all`/`mase` machinery.
+
+- **Item 1.** New `l0_behavioral.py::_measure_noise_floor()`: for each
+  model, calls `adapter.predict()` `noise_floor_repeats` times on the same
+  `noise_floor_series`-sized subset and measures `|ΔMASE|` between
+  consecutive repeats (overall, per family, and a `deterministic: bool`
+  flag). **Deliberately did not add a `seed` parameter to `ModelAdapter.
+  predict()`** — repeat calls under the ambient (advancing) global torch
+  RNG state already differ for a genuinely sampling model and are
+  byte-identical for a genuinely deterministic one, which is exactly the
+  signal this item wants; adding an explicit seed contract would have
+  meant touching `base.py`'s interface plus all 4 concrete adapters for no
+  additional signal. Written to a new `l0/noise_floor.json`, model → `
+  {repeats, n_series, deterministic, mase_abs_delta_mean/p95/max,
+  per_family}`.
+- **Item 1, a scoping deviation worth stating**: unlike A11/A12's "off or
+  byte-identical by default" precedent, this item's own fix plan implies
+  the floor should actually be *on* to recontextualize existing ΔMASE
+  figures — a floor nobody ever measures is not different from not having
+  this item at all. Defaulted **on** (`noise_floor_repeats: 3,
+  noise_floor_series: 16`), a small, deliberately cheap addition (3 extra
+  `predict()` calls on 16 series per model) rather than a full opt-in.
+  `noise_floor_repeats: 0` fully disables it (adds zero cost, `l0/
+  noise_floor.json` is simply not written) for anyone who wants the old
+  runtime exactly.
+- **Item 2.** Wired into three places, not literally "every ΔMASE display"
+  (see the explicit deferral below): `report.py::_noise_floor_block()` (a
+  new "Repeat-run noise floor" table + note under L0's own chart, shared
+  by any section that wants to reference it); L3's "Behavioral sensitivity"
+  chart gains a **dotted horizontal reference line per sampling model** at
+  its own floor's mean, plus a note explaining a bar below its model's
+  line is not distinguishable from repeat-run noise; and the SAE section's
+  `forecast_preservation` finding string now appends `(repeat-run floor
+  ±X)` for a sampling model or `(this model is deterministic; the delta is
+  real signal)` for a deterministic one.
+- **Item 3.** Confirmed exactly as predicted, on real weights (below) and
+  via the mock-adapter unit tests: a model with no sampling in its forecast
+  path shows `deterministic: true` and a floor of literally `0.0` — the
+  free wiring sanity check this item names, same spirit as TimesFM's
+  exactly-0.0 `future_mass` (`CLAUDE.md` §9/§5.4).
+- **Item 4.** Not additional code — `Chronos-Bolt`'s adapter already exists
+  (`CLAUDE.md` §6.2's support matrix); this item's contribution is that the
+  "Chronos-Bolt as deterministic control" comparison `CLAUDE.md` §12
+  already suggests is now backed by an actual measured number instead of
+  being purely rhetorical, the moment anyone runs a config pairing it with
+  Chronos-T5.
+- **Deliberately out of scope, stated rather than silently dropped**:
+  `attention.py`'s head/MLP ablation ΔMASE charts and `top_heads` rankings
+  (named explicitly in this item's own Evidence/Blast-radius sections) do
+  **not** gain a floor reference line in this pass — that chart's data
+  shape (per-head, per-family delta arrays, already flagged as this
+  repo's most fragile report-key surface, `CLAUDE.md` §11.6) would need
+  its own, more careful integration than a single reference line, and
+  ablation deltas are computed from a single clean/ablated forecast pair
+  per head rather than L0's own repeat-call structure — comparable in
+  principle but a separate wiring task. `l3_perturbation.py`'s activation-
+  patching restoration curves (also named in Evidence) are likewise left
+  unannotated; both are natural follow-ups once this item's core mechanism
+  is trusted, not silently assumed already covered.
+- **Verification — unit tests.** New `tests/test_noise_floor.py` (5 tests):
+  a fixed-function fake adapter gets exactly `0.0`/`deterministic: true`; a
+  fake adapter with real per-call sampling noise gets a real nonzero floor
+  with `p95 >= mean` and correct per-family keys; repeats/n_series are
+  recorded correctly; a full mini pipeline (mock adapters, default config)
+  writes `l0/noise_floor.json` with both mocks correctly `deterministic:
+  true` (mocks are fixed functions of their input, no dropout/sampling at
+  inference) and renders "Repeat-run noise floor" in `report.html`; and
+  `noise_floor_repeats: 0` fully disables the artifact. Full suite green
+  at 147/147 (up from 142 after A12).
+- **Verification — real checkpoints.** `configs/_a13_real_check.yaml`
+  (scratch, deleted after use; extract+l0+l3(patching disabled)+report
+  only) against live `google/timesfm-2.5-200m-pytorch` +
+  `amazon/chronos-t5-small` on `benchmark_medium/public_dev`. **Exactly the
+  asymmetry `CLAUDE.md` §12 item 3 names, now a real number instead of a
+  caveat**: TimesFM — `deterministic: true`, floor `0.0` across all three
+  families, confirming the free wiring check. Chronos-T5 — `deterministic:
+  false`, mean `|ΔMASE|` **0.167**, p95 **0.586**, max **0.999** — a floor
+  roughly **3-20x the size of the SAE forecast-preservation "pass"
+  threshold (+0.047) this item's own blast-radius section names**, meaning
+  that specific "pass" (measured on deterministic TimesFM) was never
+  actually at risk from this, but the identical check on a sampling model
+  like Chronos-T5 would be effectively unmeasurable at that magnitude
+  without many more repeats or series than either check currently uses — a
+  concrete, previously-unquantified risk this item's own Blast-radius
+  section predicted correctly. **A further non-obvious finding**: the
+  floor is not uniform across families — `mixture` 0.041 vs `parametric`
+  0.463, over an 11x range — so "the noise floor" is meaningfully family-
+  dependent, not a single number a future session should assume transfers
+  across corpora. `report.html` rendered the table, the dotted reference
+  line at Chronos-T5's exact floor value in the L3 chart (grep-confirmed
+  in the embedded plot JSON), and the "is deterministic" finding text.
+
+### A14 — No CI; the whole test suite is manual, and upstream breaks are found by humans on new machines `[x]` · **P1** · fixed 2026-08-06
+
+- **What's wrong.** There is no CI configuration in the repo. Every "suite
+  green" claim is a session's word for it, in whatever environment that
+  session had.
+- **Evidence.** §10's CI checklist item (still `[~]`, explicitly noting no CI
+  config exists); the repeated-rediscovery record: `CLAUDE.md` §11.8 (timesfm
+  API removal), §11.9 (`datasets>=3`), §11.10 (`tsbootstrap` rewrite), §11.15
+  (zarr v2/v3), §11.17 (cp1252), plus §5's third-machine zarr recurrence.
+- **Blast radius.** Every one of those was found by a human losing a session
+  to it on a new machine. That is the single most repeated cost in this
+  repo's history, and it is exactly what CI exists to absorb.
+- **Fix.** `.github/workflows/ci.yml` with three jobs:
+  1. **`fast` (CPU, pinned):** `tsfm_lens` + `tsfm_benchmark` suites,
+     `compileall`, the invariant-11 absolute-path grep as a real failing
+     check, `tests/test_adapter_conformance.py` against all mocks, and a full
+     `run.py --config configs/smoke.yaml` end-to-end asserting section and
+     finding counts (the smoke run is minutes and mock-only — no downloads, no
+     GPU, per `CLAUDE.md` §8).
+  2. **`pinned` (the DEPENDENCIES.md recipe):** installs the exact verified
+     versions and runs the same suite — proves the documented recipe still
+     resolves and works.
+  3. **`bleeding` (allowed to fail, scheduled weekly):** installs the *latest*
+     of every load-bearing dependency (zarr, datasets, numpy, torch,
+     transformers, timesfm, chronos-forecasting) and runs the same suite. Its
+     entire job is to fail on someone else's release rather than on a future
+     session's Tuesday. When it fails, that is a `CLAUDE.md` §11 entry
+     waiting to be written cheaply instead of expensively.
+  4. Publish `report.html` and `coverage.json` from the smoke run as build
+     artifacts, so report regressions are reviewable in a PR.
+  5. Golden-hash test blocking once A8 is green (`xfail(strict=True)` until).
+- **Cost.** ~a day. Prerequisite for §16's Tier 1 credibility.
+
+**Findings (2026-08-06).** New `.github/workflows/ci.yml` with three jobs,
+matching the fix plan closely with two stated, deliberate deviations:
+
+- **Item 1 (`fast`).** pip-only (not conda) install of DEPENDENCIES.md §3's
+  exact versions where a PyPI wheel exists, CPU-only torch, then
+  `compileall`, the invariant-11 absolute-path check, both test suites
+  (`tsfm_benchmark/tests`, `tsfm_lens/tests` — the latter already runs
+  `test_adapter_conformance.py` against every mock, nothing extra needed),
+  and a full `run.py --config configs/smoke.yaml` run. `mkl` is
+  **deliberately not pinned in CI** — that pin only matters for
+  conda-forge's MKL-linked numpy build (`CLAUDE.md` §11.13); PyPI's numpy
+  wheel links OpenBLAS, so the ABI crash it guards against doesn't apply to
+  a pip-based job. Report/coverage uploaded as build artifacts (item 4).
+- **Item 2 (`pinned`).** Recreates DEPENDENCIES.md §2's exact conda recipe
+  via `conda-incubator/setup-miniconda`, runs the same two suites. No GPU
+  on a GitHub-hosted runner, so torch is CPU-only here too — "pinned"
+  verifies the *documented recovery procedure resolves and the suite
+  passes*, not that a GPU is present; real-checkpoint verification stays
+  the separate, manual, per-session step this repo has used throughout
+  (every ROADMAP.md Findings block above this one).
+- **Item 3 (`bleeding`).** Weekly cron (`workflow_dispatch` also available
+  on demand) installing the *latest* of numpy/torch/transformers/timesfm/
+  chronos-forecasting unpinned, `continue-on-error: true`. `zarr`/`datasets`
+  are deliberately still bounded at their documented ceilings (`<3` each)
+  rather than left fully open — this job exists to catch a break in a
+  library that **isn't** already a understood, documented constraint
+  (`CLAUDE.md` §11.8's untracked `timesfm` API removal is exactly the
+  shape of thing this job is for), not to manufacture a weekly rediscovery
+  of the same two already-known ceilings.
+- **Item 4.** `smoke-report` artifact (report.html + coverage.json) uploaded
+  from the `fast` job on every run (`if: always()`), reviewable in a PR.
+- **Item 5.** Not applicable as separate work — A8 already left the
+  golden-hash test green with no `xfail` special-casing (A8's own Findings:
+  "when A14 lands, this test should simply run as a normal blocking check
+  like any other, with no special-casing needed now that it's green"). It
+  runs inside `tsfm_benchmark/tests` like every other test, blocking by
+  construction.
+- **A deliberate deviation from the fix plan's literal wording**: item 1
+  says the smoke check should assert "section and finding counts." Built
+  instead as: zero `"failed"` sections (via the run's own `coverage.json`,
+  A5's artifact) + a floor of >=8 rendered sections + a minimum
+  `report.html` byte size — **not** an exact count. An exact count is
+  brittle by construction: this session alone changed the smoke run's
+  finding count from 18 (an old `CLAUDE.md` reference) to 22, then 23 (A7),
+  then 25 (after A9-A13's own new findings) without the pipeline being
+  broken at any point — a CI check pinned to an exact number would have
+  needed editing after nearly every item in this session, training
+  whoever maintains it to treat CI failures as routine busywork rather
+  than a real signal. A floor + zero-failures check still catches an
+  actual regression (a section crashing, or the report collapsing to
+  near-empty) without that maintenance tax.
+- **Two real bugs found and fixed via this item's own local verification**
+  (`CLAUDE.md` §2.4 — checked by actually running each step, not assumed
+  from reading the shell commands):
+  1. The invariant-11 grep's first draft (`[A-Za-z]:[\\/]`, no word
+     boundary) false-positived on `https://` (the `s` before `:` in
+     "https") and on **escaped newlines inside Python string literals**
+     (`"data:\n"` contains the literal substring `a:\` — the `\n` escape,
+     not a Windows path). Running it against the actual repo surfaced 5
+     false positives immediately; fixed by requiring a word boundary
+     (`\b[A-Za-z]:[\\/]`) before the candidate drive letter, which a
+     `\n`/`\t` escape mid-identifier never has. Re-run: clean.
+  2. The smoke-check script assumed `coverage.json` was a bare list of
+     section dicts; it's actually `{"summary": ..., "sections": [...]}`
+     (A5's own real schema) — caught immediately on the first local run
+     (`TypeError: string indices must be integers`), fixed by indexing
+     `["sections"]`.
+- **A third finding, real but out of this item's own scope — flagged for
+  A18, not fixed here**: `clean_reinstall.sh` (repo root) was read while
+  designing the `fast`/`bleeding` jobs' install lists as a precedent for a
+  pure-pip (non-conda) setup already used in this repo, and turned out to
+  **install `datasets==3.6.0`** — directly contradicting the hard `<3`
+  ceiling `CLAUDE.md` §11.9, `DEPENDENCIES.md` §3, and `pyproject.toml`'s
+  own `real-data` extras all document, and omitting `zarr`/`tsbootstrap`/
+  `sdv`/`pycatch22`/`umap-learn`/`plotly`/`jinja2`/`PyYAML` entirely while
+  including packages this repo's own code never imports at all
+  (`peft`, `sentence-transformers`, `hdbscan`, `matplotlib`, `seaborn`).
+  This script has drifted to describe a different environment than the one
+  this repo actually needs — a real, active landmine for anyone who runs it
+  expecting a working setup. Not fixed in this pass (A18's explicit scope
+  is "doc/config drift"); noted here so it isn't lost before that item is
+  reached.
+- **Verification, and its honest limit.** Everything **runnable locally**
+  was actually run, not just read: YAML parses (`yaml.safe_load`,
+  modulo the well-known `on:`→`True` PyYAML quirk that GitHub's own parser
+  doesn't share); `compileall` clean; the fixed invariant-11 grep clean
+  against the real repo; both test suites green (already reconfirmed
+  147/147 for `tsfm_lens` earlier this session, unchanged by this item
+  since it adds no pipeline code); a full `configs/smoke.yaml` run
+  (11 sections rendered, 25 findings, 0 failed) with the fixed
+  smoke-check script passing against its real `coverage.json`. **What this
+  item cannot verify from here**: an actual GitHub Actions execution.
+  Triggering one requires pushing this workflow file to the remote
+  (`origin` is a real GitHub repo, confirmed via `git remote -v`), which
+  this session did not do — pushing is a shared-state action outside this
+  item's own authorization, and no commit was made for this or any other
+  item this session per the user's standing "only commit when explicitly
+  asked" instruction. This file is therefore verified **as far as running
+  every one of its steps locally can verify it**, not as "green on GitHub"
+  — a meaningful difference worth stating plainly rather than overclaiming.
+
+### A15 — Exploratory multiplicity is unaccounted, and `confirm`'s pre-registration is a convention `[x]` · **P2** · fixed 2026-08-06
+
+- **What's wrong.** `confirm` derives the hypotheses it tests from whatever
+  `l0/summary.json` says at the moment it runs — a mutable dev artifact. Only
+  L0 family strengths plus one CKA pair are confirmable at all, while the
+  report accumulates ~22 "findings" with no record of how many comparisons
+  produced them. Holm correction is applied within L0's family tests, not
+  across the registered set.
+- **Evidence.** `analysis/confirm.py:53-56` (`_test_hypotheses(cfg, metrics,
+  ...)` reading dev artifacts), `report/report.py`'s `findings` accumulation.
+- **Blast radius.** `CLAUDE.md` §6.7's exploration-vs-confirmation discipline
+  is the repo's strongest epistemic claim, and it is currently enforced by
+  discipline alone: re-running L0 after glancing at private results would
+  change what gets "pre-registered", with no trace. Meanwhile the report's
+  findings list is a large multiple-comparison surface labelled exploratory
+  only in a preamble.
+- **Fix.**
+  1. A machine-readable registry, `hypotheses.json`, written by a new
+     `register` step (cheap; reads existing artifacts): one entry per dev
+     claim — claim id, stage, statistic, direction, threshold, the artifact
+     path + content hash it was derived from, and free-text statement.
+  2. `confirm` **requires** it, refuses (loudly, actionably) if any referenced
+     artifact hash no longer matches, and tests exactly the registered set —
+     no more, no fewer. Registry hash goes in `confirm/confirmation.json`.
+  3. Extend the registry beyond L0: any statistic with a CI can be registered
+     (L1 peak CKA, L2 best gain, L3 fingerprint agreement, clustering AMI).
+     The confirm stage already replicates CKA — this generalizes the seam
+     rather than inventing one.
+  4. Multiplicity ledger: the report prints "N comparisons examined → M
+     registered → K confirmed", and every unregistered finding is labelled
+     *exploratory* inline in the HTML, not only in the preamble. Apply
+     Holm/BH across the registered set as a whole.
+  5. Test: mutate `l0/summary.json` after registration, assert `confirm`
+     refuses with a message naming the drifted artifact.
+- **Cost.** ~a day and a half. This is the item that most raises what the repo
+  can honestly claim.
+
+**Findings (2026-08-06).** Implemented items 1, 2, 4, and 5 in full; item 3
+generalized the seam as instructed but only made two of the five stage
+types it names actually *replicable* — a deliberate, stated scope decision
+explained below, not a silent gap.
+
+- **Item 1.** New `analysis/hypotheses.py`: `build_registry(cfg)` (pure,
+  reads whatever dev artifacts exist) assembles one entry per confirmable
+  claim across `l0` (family strengths), `l0_archetype` (A9's per-archetype
+  strengths), `l1` (peak CKA), `l2` (stitching gain per direction), `l3`
+  (fingerprint agreement per corruption), and `clustering` (AMI) — each
+  entry carries `id`, `stage`, the statistic-specific fields, `artifact`
+  (path), `artifact_sha256`, a free-text `statement`, and `replicable:
+  bool` (+ `not_replicable_reason` when false). `run_register(cfg)` writes
+  it to `hypotheses.json` at the run root. New `register` pipeline `Stage`
+  (`deps=["l0"]`, `enabled` mirrors `confirm.enabled` — no point
+  registering if nothing will consume it), inserted immediately before
+  `confirm`, which now depends on `register` instead of `l0` directly
+  (transitively still requires `l0`).
+- **Item 2.** `confirm.py::run_confirm` now refuses immediately (before
+  touching the private corpus) if `hypotheses.json` doesn't exist, naming
+  the fix (`--stages` must include `register`). `check_registry_freshness`
+  re-hashes every referenced artifact and raises, naming every drifted
+  file and both its registered and current hash prefixes, on any
+  mismatch — the actual enforcement mechanism behind `CLAUDE.md` §6.7's
+  discipline, previously enforced by convention alone. `hypotheses.json`'s
+  own sha256 is recorded in `confirmation.json` (`registry_sha256`).
+  `_test_registered_hypotheses` (renamed from `_test_hypotheses`) sources
+  its claim list from `registry["hypotheses"]` (filtered to `stage == "l0"
+  and replicable`) instead of re-reading `l0/summary.json`'s `strengths`
+  dict directly — the registry, not the mutable dev artifact, is now the
+  source of truth for *which* claims get tested, exactly item 2's wording.
+- **Item 3, generalized but scoped honestly.** `_replicate_registered_cka`
+  (renamed from `_replicate_cka`) now looks up the registered, replicable
+  `l1` hypothesis rather than reading `l1/meta.json`'s best pair directly —
+  the seam item 3 asks to generalize, done for the one replication
+  `confirm.py` already had. **`l2`/`l3`/`clustering` hypotheses are
+  registered (hash-pinned, counted in the ledger, shown in a "registered
+  but not yet replicated" report table with a stated reason each) but
+  `confirm` does not yet re-test them on private data** — doing so
+  correctly would mean re-fitting stitching probes (L2), re-running the
+  full corruption battery (L3), or re-fitting cluster labels (clustering)
+  against a private corpus inside this same stage, each a substantial
+  design/implementation task in its own right, not a "generalize an
+  existing seam" extension the way L1's CKA replication was. Also scoped
+  out: `l0_archetype` claims, registered but not replicable, since
+  `confirm`'s private-corpus pivot is family-keyed and a fresh private
+  epoch has no guaranteed archetype composition match to dev's (stated in
+  each entry's `not_replicable_reason`, not silently dropped).
+- **Item 4.** `report.py::run_report` captures `len(findings)` at the exact
+  point the "Confirm" builder is reached (before it runs) as the
+  exploratory/confirmatory boundary, then tags every finding at an earlier
+  index with `"[exploratory — not pre-registered] "` when rendering — no
+  per-section code changes needed, since every section already appends to
+  the same shared `findings` list in a fixed order. `_sec_confirm` renders
+  a "Multiplicity ledger" (`N exploratory findings examined → M registered
+  (K replicable today) → J confirmed`) plus the not-yet-replicated table.
+  **A real ordering change this required**: `_sec_confirm`'s own two
+  `findings.insert(0, ...)`/`insert(1, ...)` calls (originally there to put
+  Confirm's findings first, for prominence) had to become `.append(...)` —
+  inserting at the front would have landed them *before* the captured
+  boundary index and mislabeled genuinely confirmatory findings as
+  exploratory. Confirm's findings now appear at the end of the findings
+  list instead of the front; a deliberate, explainable tradeoff (correctness
+  of the new label over the old prominence-ordering), not an oversight.
+- **Item 5.** Directly covered by `test_hypotheses.py`'s
+  `test_check_registry_freshness_raises_naming_drifted_artifact_after_
+  mutation` — mutates `l0/summary.json` after registration, asserts the
+  raised message names `l0/summary.json` and says "hash changed".
+- **Verification — unit tests.** New `tests/test_hypotheses.py` (9 tests):
+  registry construction reads real strengths with a real sha256; archetype
+  claims are correctly marked non-replicable with a reason; an empty
+  registry when no `l0` artifact exists; `run_register` writes a real
+  file; freshness passes when nothing changed; freshness raises (naming
+  the file) on mutation and on deletion; `confirm` refuses outright with no
+  registry; `confirm` refuses on a stale one. Two pre-existing tests
+  updated for the rename/new artifact: `test_smoke.py::
+  test_confirm_hypothesis_path` now builds a registry dict directly
+  (standing in for what `register` would have written) and calls
+  `_test_registered_hypotheses`; `test_smoke.py`'s `expected` artifact list
+  gained `hypotheses.json`. `test_manifest_fingerprint.py` (A3's stage-
+  fingerprint regression test, which enumerates `stage_names()`) re-run
+  and confirmed unaffected by the new `register` stage. Full suite green
+  at 156/156 (up from 147 after A13 — A14 added no test-suite code).
+- **Verification — real checkpoints, deliberately without touching the
+  private corpus.** `runs/medium_run_chronos_base` (a real prior session's
+  full GPU run against `google/timesfm-2.5-200m-pytorch` +
+  `amazon/chronos-t5-base`) already has a **consumed** `confirm/
+  confirmation.json` — re-running `confirm` against it would be exactly
+  the "repeated peeking" `CLAUDE.md` §6.7 warns against, so it wasn't done.
+  Instead, `run_register` was called standalone against that run's real
+  dev artifacts (a read-only operation touching only `l0`/`l1`/`l2`/`l3`/
+  `clustering` JSON, never the private corpus) and registered **14 real
+  hypotheses** (2 replicable: `TimesFM`'s `random_parametric` family
+  strength, and the `TimesFM`↔`Chronos-T5-Base` peak CKA at
+  `stacked_xf.4`↔`encoder.block.10`; 12 correctly marked not-yet-
+  replicable — 2 L2 gains, 9 L3 corruption-agreement values, 1 clustering
+  AMI). `check_registry_freshness` passed clean against these real,
+  large, real-checkpoint-produced JSON files. A drift-refusal test was
+  then run on a **scratch copy** of that run directory (never the
+  original): mutating its `l0/summary.json` and re-checking produced the
+  real error `"l0/summary.json (hash changed: registered bb4f19692101,
+  now e9bf5f748d80)"` — the exact mechanism working against real file
+  sizes and real hashes, not a synthetic stand-in. Separately, a fresh
+  `configs/smoke.yaml` run (mock adapters, confirm enabled) exercised the
+  full mechanism end to end including the actual private-corpus
+  confirmation step (smoke's "private" corpus is a second smoke-generated
+  draw, not a real sealed epoch, so no discipline concern there): **23
+  exploratory findings examined → 17 hypotheses registered → 5 replicable
+  → 3 confirmed**, with a "Registered but not yet replicated (12)" table
+  rendered in `report.html`, and all 23 pre-Confirm findings correctly
+  carrying the `[exploratory — not pre-registered]` tag (grep-confirmed
+  count matches exactly).
+
+### A16 — Silent cap reduction makes stage sample sizes non-comparable `[x]` · **P2** · fixed 2026-08-06
+
+- **What's wrong.** Stages that must fit one batch clamp their configured cap
+  to `adapter.cfg.batch_size` with no warning, so the realized sample size
+  differs from the configured one — and differs *per model*, since batch sizes
+  do.
+- **Evidence.** `lens.py:91` — `take = min(data.n, cfg.lens.max_series,
+  adapter.cfg.batch_size)`; same pattern at `l3_perturbation.py:318`,
+  `sae/eval.py:86`, `attention.py` ablation paths. YAML comments carry the
+  constraint ("must be <= every model's batch_size",
+  `configs/medium_run.yaml:78,85,99`) — i.e. it's documented for humans and
+  silently absorbed by code.
+- **Blast radius.** §5.3 already hit the consequence: lens numbers that
+  couldn't be compared across two runs, diagnosed correctly but only after
+  someone noticed an impossible result (the same TimesFM checkpoint appearing
+  to change). Any cross-run or cross-model comparison of a batch-limited
+  stage is currently untrustworthy unless someone manually verifies the caps
+  matched.
+- **Fix.** Warn whenever a configured cap is reduced, naming which limit bound
+  it; record `n_requested`/`n_realized`/`limited_by` in every stage artifact
+  (folds into A4's row recording and A3's manifest); `meta_report.py` refuses
+  to compare a batch-limited statistic across runs whose realized n differ,
+  or flags it prominently rather than tabulating it as comparable. Optionally
+  a `strict_caps: true` mode that raises instead of clamping.
+- **Cost.** Half a day (mostly free if done with A4).
+
+**Findings (2026-08-06).** Implemented the fix at exactly the sites the
+item's own evidence names, and checked (rather than assumed) two sites
+that looked like the same bug but weren't:
+
+- **Core mechanism.** New `utils.py::capped_take(requested, **limits) ->
+  {"n_requested", "n_realized", "limited_by"}` — generalizes the
+  `n_requested`/`n_realized` field pair A4 already established (`sae/
+  ground_truth.py`, `sae/eval.py`) with a `limited_by` list naming every
+  limit that actually bound the result, and warns whenever the request was
+  reduced. Named kwargs (`n_available=...`, `batch_size=...`) rather than
+  positional limits, so the warning/`limited_by` output is self-describing
+  without a separate label argument.
+- **Wired into the three sites the item's evidence cites by line number,
+  all confirmed still present at those lines**: `lens.py`'s `_model_lens`
+  (`n_series_skip`/`n_requested_skip`/`limited_by_skip` in `lens/
+  lens.json`), `l3_perturbation.py`'s `_patching` (`n_requested`/
+  `n_realized`/`limited_by` in `l3/patching.json` — **had to also extend
+  the save dict's key whitelist**, since `run_l3`'s `patching.json` write
+  explicitly lists which keys of each model's result dict get persisted;
+  the three new fields would have been computed and then silently dropped
+  on the way to disk without that second edit, caught by checking the
+  save site, not assumed safe from the producer-side change alone), and
+  `sae/eval.py`'s `forecast_preservation` (`limited_by` alongside the
+  `n_requested`/`n_realized` that already existed there from A4, with a
+  comment that had *already* forward-referenced this exact item's number).
+- **Two sites checked and found NOT to have this bug, correcting the
+  item's own evidence list rather than fixing something that wasn't
+  broken**: `attention.py`'s ablation paths (lines 226/256, explicitly
+  named in the item's Evidence section) sample `take = min(data.n,
+  cfg.attention.max_series)` — no `adapter.cfg.batch_size` term at all —
+  and process the full realized set through internal `batch_slices`
+  chunking, exactly the pattern that makes lens/l3-patching/sae-eval's
+  *actual* bug (a hook-based intervention requiring one single batch,
+  `CLAUDE.md`'s documented `token_patch` batch-size hardening) not apply
+  here. `sae/real_data.py:58`'s superficially similar `take = min(batch_size,
+  adapter.cfg.batch_size)` was also checked directly: it sizes an internal
+  micro-batch for a `batch_slices` loop over the *entire* `contexts` array
+  — every context still gets processed regardless of `take`'s value, so
+  this is not a sample-size cap at all. Neither site was touched.
+- **Item's `meta_report.py` ask**, implemented as "flag prominently" (the
+  fix text's second option) rather than "refuse to compare": new
+  `_batch_cap_warnings()`, reusing A7's `provenance_warnings` mechanism and
+  rendering slot (same "Environment drift" box) — compares each model's
+  lens `n_realized` across the aggregated runs and warns by name when they
+  differ, which is exactly `CLAUDE.md` §5.3's own already-documented
+  incident (crystallization depth moving for an *unchanged* checkpoint
+  purely because two configs implied different realized n), now an
+  automated check instead of something a human has to notice looks
+  impossible. Scoped to `lens` only (the stage §5.3's real incident was
+  about, and the only one `summarize_run` already tracked per-model
+  numbers for) — `l3` patching's cap isn't cross-run-aggregated by
+  `meta_report.py` today, so extending this warning there is a natural
+  follow-up, not done in this pass, stated rather than silently skipped.
+  A `strict_caps: true` raise-instead-of-clamp mode (the fix's "optionally")
+  was not built — genuinely optional per the item's own wording, and the
+  warn-plus-record mechanism above is the load-bearing half of this item.
+- **Verification — unit tests.** New `tests/test_capped_take.py` (9 tests):
+  no reduction is silent with `limited_by: None`; reduction by `batch_size`
+  alone, by `n_available` alone, and by both tied together, each names the
+  right limit(s); a request that exactly equals a limit (not actually
+  reduced) is correctly not flagged; a full mini pipeline with `lens.
+  max_series: 999` (exceeding every mock's `batch_size: 64`) records
+  `n_requested_skip=999`, `n_series_skip<=64`, `limited_by_skip` non-`None`
+  in real `lens.json`; the analogous check for `l3.patching.max_series:
+  999` against real `patching.json`; and `_batch_cap_warnings` fires on a
+  synthetic two-run mismatch and stays silent when realized n matches.
+  Full suite green at 165/165 (up from 156 after A15).
+- **Verification — real checkpoints.** `configs/_a16_real_check.yaml`
+  (scratch, deleted after use; extract+lens+l3-patching+report only) against
+  live `google/timesfm-2.5-200m-pytorch` + `amazon/chronos-t5-small` on
+  `benchmark_medium/public_dev`, both models pinned to a deliberately small
+  real `batch_size: 16` with `lens.max_series: 64` / `l3.patching.
+  max_series: 64` — both well above that batch size, to force a genuine
+  clamp on real weights rather than only mocks. Both models, both stages:
+  requested 64, realized **16**, `limited_by: ["batch_size"]` — recorded
+  correctly in both real `lens/lens.json` and real `l3/patching.json`, the
+  exact real-world version of the §5.3 incident this item exists to make
+  visible automatically instead of discoverable only by noticing an
+  impossible result.
+
+### A17 — `benchmark_validation`'s per-group metrics have no minimum-n guard or CI, and the matcher's O(n²) ceiling blocks full-scale validation `[x]` · **P3** · fixed 2026-08-06
+
+- **What's wrong.** Per-group diversity numbers are reported as point
+  estimates at any group size, and the pairwise matcher is O(n²) with
+  subsampling as the only mitigation.
+- **Evidence.** §5's 2026-08-03 per-task breakdown reports effective
+  dimensionality at n=39 (`real_sequential_par`) alongside n=3154, with the
+  caveat "enough to trust the direction, not the exact numbers" written by
+  hand; `CLAUDE.md` §12 documents the O(n²) matcher and `--max-sequences`.
+- **Blast radius.** A future session reading that table without the prose
+  caveat will over-read n=39. And the literal-scale `full_multidomain.yaml`
+  build (§5.1, still unrun, ~99K samples) cannot be validated at all at
+  O(n²) — 8.9M pairs already at 4219 sequences.
+- **Fix.** Bootstrap CIs on per-group diversity metrics (resampling
+  sequences within group), a `min_group_n` below which a group reports
+  "insufficient n" instead of a number, and a blocked/approximate matcher
+  (bucket by catch22 neighbourhood first, do exact xcorr/DTW within and
+  across adjacent buckets only) with the exactness trade-off stated in the
+  report. Also verify `--max-sequences` subsampling is random and stratified
+  by generator (A4 item 6) — if it's a head slice, per-group numbers are
+  measuring task order.
+- **Cost.** ~a day and a half.
+
+**Findings (2026-08-06).** Implemented all four fix items in
+`diversity.py`/`matching.py`/`report.py`/`plot.py`. This item lives entirely
+in `tsfm_benchmark/benchmark_validation` — a different package from A9-A16's
+`tsfm_lens` work, with no models or checkpoints involved at all (pure
+corpus/feature-space code), so "real run" verification here means a real
+sealed corpus, not real weights.
+
+- **Item 1 (bootstrap CIs).** New `diversity.py::_bootstrap_group_ci`:
+  resamples a group's own scaled feature rows with replacement and
+  recomputes the *actual* PCA/nearest-neighbour pipeline `diversity_metrics`
+  itself uses (not a closed-form/normal-theory approximation, which could
+  be a poor stand-in for a nonlinear statistic like the PCA participation
+  ratio at exactly the small-n regime this item is about) `n_boot` times,
+  reporting a percentile CI. New `DiversityReport.effective_dimensionality_
+  ci`/`near_collision_fraction_ci` fields (`None` unless requested).
+  `diversity_metrics_by_group(..., n_boot=200)` — on by default, since an
+  unmeasured CI is exactly the gap this item exists to close; `n_boot=0`
+  restores the pre-A17 byte-identical fields.
+- **Item 2 (min_group_n → explicit sentinel).** New `InsufficientN` dataclass
+  (`n_sequences`, `min_required`, `status="insufficient_n"`).
+  `diversity_metrics_by_group` now returns an entry for **every** group
+  (never a silent omission) — `InsufficientN` below `min_group_size`,
+  `DiversityReport` at or above it. `report.py::_by_group_summary` and
+  `plot.py::plot_diversity_by_group` both updated to handle the mixed
+  return type: the report emits an explicit `{"status": "insufficient_n",
+  ...}` block per small group (JSON, not a missing key), and the plot
+  excludes those groups from the bars (not plotted as a misleading zero)
+  with the excluded count stated in the plot title.
+- **Item 3 (blocked/approximate matcher).** New `matching.py::
+  _match_all_blocked` (`match_all(..., blocked=True, n_blocks=None,
+  adjacent_k=2)`): buckets sequences via `KMeans` over the same z-normalised,
+  resampled arrays the exact matcher already compares (a self-contained
+  shape-neighbourhood proxy — **a deliberate deviation from the fix text's
+  literal "catch22 neighbourhood"**, made to avoid adding a new coupling
+  from `matching.py` to `features.py`; stated here, not silently
+  substituted), then computes *exact* similarity — reusing the same
+  batched `_max_xcorr_matrix`/`_dtw_similarity_matrix` routines the exact
+  path already uses, no new numerical code — only for pairs whose two
+  sequences share a bucket or fall in each other's `adjacent_k` nearest
+  buckets by centroid distance. Every other pair is left unscored (`NaN`
+  in `similarity_matrix`, excluded from `redundancy_fraction`'s
+  denominator and from `redundancy_by_group`'s per-group means) rather
+  than assumed non-redundant. `MatchReport` gains `coverage_fraction`
+  (exactly what fraction of all possible pairs were actually scored —
+  the exactness trade-off the fix explicitly requires be stated, not
+  buried), `blocked`, `n_blocks`. The existing exact path was refactored
+  into `_match_all_exact` with **zero behavior change** (same code, new
+  function name, called by default) — `match_all`'s default
+  (`blocked=False`) reproduces every existing caller byte-for-byte. Falls
+  back to the exact path (with `coverage_fraction=1.0`) when `n` is too
+  small to block meaningfully. Wired into `run_validation.py` as
+  `--blocked`/`--n-blocks`.
+- **Item 4 (stratified `--max-sequences`).** Checked first, per `CLAUDE.md`
+  §2.4, rather than assumed broken: `match_all`'s existing subsampling
+  already used `rng.choice` (genuinely random, **not** a head slice) —
+  the "if it's a head slice" conditional in this item's own fix wording
+  didn't apply. It was, however, *unstratified* — a corpus dominated by one
+  generator would draw mostly from it. New `matching.py::
+  _stratified_subsample` (a small local proportional-allocation sampler,
+  deliberately **not** an import of `tsfm_lens`'s `utils.sample_rows` —
+  the two packages have no declared dependency on each other by design,
+  per `loaders.py`'s own module docstring) replaces the plain `rng.choice`
+  call, stratifying by `SeqRecord.group` (the generator name).
+- **Verification — unit tests.** New `tests/test_benchmark_validation_a17.py`
+  (9 tests): a group below `min_group_size` gets an `InsufficientN` entry
+  alongside (not instead of) a normal group's `DiversityReport`; the
+  bootstrap CI is present and well-formed (a test that initially asserted
+  the CI must bracket the point estimate **failed and was corrected**,
+  not the code — a bootstrap resample duplicates rows, which can
+  systematically shift a nonlinear statistic like the PCA participation
+  ratio, so non-coverage is expected statistical behavior, not a bug;
+  fixed the test's assumption rather than loosening a real check);
+  `n_boot=0` skips the CI; a small group's CI is measurably wider than a
+  large group's (a real, checkable claim about bootstrap behavior, not
+  just "doesn't crash"); stratified subsampling preserves group
+  proportions and is provably not a head slice (a second test here also
+  had to be corrected: it asserted a 10-of-110 minority group must get
+  `>=5` of a 20-item stratified sample, but proportional allocation
+  correctly gives ~2 — the test's expectation was wrong, not the sampler);
+  the default exact path is unaffected by the refactor (byte-identical
+  similarity matrix across two calls); the blocked matcher reports partial
+  coverage with no `NaN` leaking into `redundant_pairs`; and it falls back
+  to the exact path cleanly for too-small `n`. Full `tsfm_benchmark` suite
+  green at 50 passed / 1 skipped (up from 41 passed / 1 skipped after A8).
+- **Verification — real corpus (no models involved).** `run_validation.py`
+  against the real, previously-built `benchmark_medium/public_dev` (288
+  sequences, verified sealed corpus). `--group-by archetype`: all 12 real
+  `CLAUDE.md` §4.2 archetypes got a real bootstrap CI, several visibly wide
+  at small real n (`trend_dominant`, n=7: effective_dimensionality 1.938,
+  CI (1.212, 2.237) — exactly the "trust the direction, not the exact
+  number" caveat this item names, now a quantitative interval instead of
+  hand-written prose). `--blocked --n-blocks 8`: real coverage_fraction
+  **43.6%** of all 41,328 possible pairs, redundancy fraction and
+  within/across-group similarity all computed correctly among only the
+  scored pairs (0.0 redundancy, matching the exact path's own 0.0 on this
+  corpus — a real, if limited, cross-check that blocking didn't change the
+  qualitative finding), rendered correctly into both the console summary
+  and `validation_report.json`. A direct call to `plot_diversity_by_group`
+  with a real `InsufficientN` entry present confirmed no crash and a
+  correctly-sized output file.
+
+### A18 — Small doc/config drift that the repo's own invariants forbid `[x]` · **P3** · fixed 2026-08-06
+
+- `configs/default.yaml:192` — `path: /path/to/private_benchmark_dir`, an
+  absolute placeholder in a committed config. Invariant 11 has no
+  placeholder exemption, and the 2026-08-04 audit's grep-for-`/home/`
+  approach wouldn't catch this form. Fix: make it a relative example
+  (`../../benchmark_full/private_test`) with a comment, and extend the
+  invariant-11 check (A14 job 1) to flag any config path starting with `/`
+  or matching a drive letter.
+- `tsfm_lens/requirements.txt` — names `google/timesfm-2.0-500m-pytorch` as
+  the tested adapter target; the adapter moved to TimesFM 2.5
+  (`google/timesfm-2.5-200m-pytorch`, `CLAUDE.md` §11.8) sessions ago. Fix:
+  update both `requirements.txt` and `pyproject.toml`'s `timesfm` extra, and
+  cross-check against `DEPENDENCIES.md`.
+- `runs/` artifacts referenced throughout this file are gitignored and
+  regenerable, which is correct — but several Findings cite them as evidence
+  without recording the provenance needed to regenerate identically. A7's
+  manifest fixes this going forward; consider a one-time pass adding the
+  environment used to the older Findings entries that are still load-bearing.
+
+**Findings (2026-08-06).** Fixed the two named drift items, one item found
+via the same cross-check that wasn't in the original evidence list, and
+extended A14's CI check as this item's own fix wording asked for.
+
+- **Absolute placeholder in `configs/default.yaml`.** Fixed the named
+  `confirm.path: /path/to/private_benchmark_dir` → a relative example
+  (`../../benchmark_full/private_test`) with an explanatory comment.
+  **A repo-wide grep for the same shape (`^\s*path:\s*/`) found a second,
+  unnamed instance in the same file**: `data.path: /path/to/benchmark_dir`
+  (line 15) — the exact same violation the item's evidence only cited once
+  (line 192). Fixed identically (`../../benchmark_full/public_dev`). Both
+  now load cleanly via `load_config` (checked directly, not assumed).
+- **Stale `timesfm` version references.** `requirements.txt`'s commented
+  `timesfm[torch]>=1.2 ... google/timesfm-2.0-500m-pytorch` and
+  `pyproject.toml`'s `timesfm[torch]>=1.2` extra both corrected to
+  `timesfm>=2.0` (matching `DEPENDENCIES.md`'s verified `timesfm==2.0.2`,
+  installed plain, no `[torch]` extra — `>=2.0` removed the old
+  `TimesFmHparams`/`TimesFmCheckpoint` class API and, with it, whatever
+  the `[torch]` extra used to install) with a comment naming
+  `CLAUDE.md` §11.8 and the current default checkpoint
+  (`google/timesfm-2.5-200m-pytorch`).
+- **A third instance of the same drift, found via the item's own
+  "cross-check against DEPENDENCIES.md" instruction, not in the original
+  evidence list**: a repo-wide grep for `timesfm-2.0-500m`/`timesfm[torch]`
+  found two README.md files (`tsfm_model_analysis/README.md` and
+  `tsfm_model_analysis/tsfm_lens/README.md`) with the identical stale
+  `pip install chronos-forecasting timesfm[torch]` line, and the outer
+  `tsfm_model_analysis/README.md` specifically still describing the
+  retired `google/timesfm-2.0-500m-pytorch` checkpoint in prose — a
+  genuinely different, more detailed correction had already landed in the
+  inner `tsfm_model_analysis/tsfm_lens/README.md` at some earlier point
+  (the 2.5-only-API explanation, the SDPA-unfusing `attention_patterns`
+  note, the no-MLP-submodule note) without the outer, apparently-not-kept-
+  in-sync duplicate ever being updated to match. Both install lines fixed
+  to plain `timesfm` (no `[torch]`); the outer README's stale checkpoint
+  paragraph replaced with the same corrected text the inner one already
+  had. **Not attempted**: a full reconciliation of the two README files'
+  remaining differences (the `diff` surfaced several — a missing Lens/
+  Attention/Exemplars row in the outer file's stage table, a differently-
+  detailed L3 description) — out of this item's stated scope (doc/config
+  *drift the repo's invariants forbid*, i.e. stale facts, not general
+  doc-duplication cleanup); flagged here as a real, separate finding for
+  whoever next touches either README.
+- **CI extension, as the fix explicitly asked for.** A14's invariant-11
+  grep (mid-string drive-letter / `/home/` / `/Users/` patterns) would
+  **not** have caught this item's own bug shape (a bare `/path/to/...`
+  with no drive letter or `/home//Users/` segment) — confirmed by testing
+  the old pattern against the literal old line and seeing it not match,
+  not assumed. New, separate CI step: `^\s*(path|out_dir):\s*/` over every
+  YAML file, catching exactly this shape. **Caught a real false-positive
+  risk before it could ever fire in CI**: the new grep, run locally
+  against the actual repo, initially matched four lines inside
+  `runs/*/config_resolved.yaml` — gitignored, per-run generated artifacts
+  that correctly contain the absolute path of whatever machine produced
+  them, not committed templates invariant 11 is about. Fixed by adding
+  the same `--exclude-dir=runs` the first invariant-11 check already had;
+  re-run clean against the real repo afterward.
+- **Third fix-plan bullet (retroactive Findings provenance pass):
+  deliberately not done**, per that bullet's own softer "consider" wording
+  (contrasted with the first two bullets' plain "Fix:") — a full pass
+  annotating environment provenance onto every older, still-load-bearing
+  Findings entry across this file would be a large, separate undertaking
+  in its own right, not a doc/config-drift fix. Left as a stated,
+  explicitly-scoped-out follow-up, not silently skipped.
+- **Verification.** No new unit tests — this item is pure doc/config text
+  plus one CI shell-check extension, not runtime code. Verified instead by
+  actually running what changed: `load_config` against the corrected
+  `configs/default.yaml` resolves both paths correctly (checked directly);
+  the new and existing invariant-11 grep patterns tested against the real
+  repository both before and after each fix (confirmed the bug shape,
+  confirmed the fix, confirmed no new false positives); a repo-wide grep
+  for the retired checkpoint name and `timesfm[torch]` came back empty
+  outside of `ROADMAP.md`'s own historical Findings prose (correctly left
+  untouched — a dated record, not a current claim). Full `tsfm_lens` suite
+  re-run clean at 165/165 (unchanged from A17 — this item touched no
+  runtime code, so no test count change is the correct outcome, not an
+  oversight).
+
+### A19 — `store.load`'s row selection and `float16` storage are unguarded against silent precision/indexing surprises `[x]` · **P3** · fixed 2026-08-06
+
+- **What's wrong.** Activations are stored `float16` (`CLAUDE.md` §6.4) and
+  read back for closed-form fp32 linear algebra. Nothing checks for overflow
+  to `inf` at write time (bf16-range activations can exceed fp16's ~65504
+  max) or for NaNs entering a CKA/ridge solve.
+- **Evidence.** `extraction/extract.py:67` — `.astype(np.float16)` with no
+  finiteness check; `store.py`'s `oindex` path (correct, per `CLAUDE.md`
+  §11.4) has no assertion that the returned row count matches the request.
+- **Blast radius.** A single `inf`/`NaN` layer silently poisons a CKA row, an
+  eff-dim estimate, or a ridge solve; downstream those appear as a plausible
+  number (CKA near 0, or a `nan` that a `nanmean` swallows) rather than an
+  error. Low likelihood, high diagnosis cost — the kind of thing that gets
+  misattributed to a model finding. `layer_screen`'s own fallback path
+  already anticipates "a degenerate/constant layer" in its docstring, which
+  suggests this has been brushed against.
+- **Fix.** Count and log non-finite values per (model, layer) at write time,
+  store the counts in store attrs, refuse to write a layer that is wholly
+  non-finite, and have every analysis that consumes activations assert
+  finiteness once per layer (cheap) with an actionable error naming the
+  layer. Consider `extraction.store_dtype: float32` guidance for models
+  whose activations run hot. Report the counts in the coverage panel.
+- **Cost.** Half a day.
+
+**Findings (2026-08-06).** Implemented the fix's core items in
+`store.py`/`extract.py`/`report.py`/`config.py`, and — per this item's own
+"§2.4 applies here too" instruction — found that the diagnosis's fix
+item 5 ("consider a `store_dtype: float32` knob") was already wrong to
+phrase as a suggestion: the knob already existed as real config, and was
+silently non-functional.
+
+- **Write-time tracking.** `store.py::write_batch` accumulates a per-
+  (model, layer) non-finite count and total-element count in memory
+  (`self._nonfinite_counts`/`_nonfinite_totals`) across every batch;
+  `finalize_layer` (called once per layer, at the end of `extract.py::
+  _extract_model`'s batch loop) persists `{count, total, fraction}` into
+  `root.attrs["nonfinite"]` and **raises `RuntimeError` if a layer is
+  wholly non-finite** (`fraction >= 1.0`) — refusing to leave a completely
+  poisoned layer in the store for every downstream CKA/ridge/PCA call to
+  independently trip over, per the fix's own wording. Partial non-
+  finiteness logs a warning and is recorded, not fatal.
+- **Read-time assertion.** `store.load(..., check_finite=True)` (the new
+  default) checks `np.isfinite` on whatever was just materialized and
+  raises `ValueError` naming the model, layer, count, and fraction the
+  first time any consumer actually reads a poisoned array — the "every
+  analysis... assert finiteness once per layer" half of the fix, at the
+  single choke point every stage already calls through. `check_finite=
+  False` exists as a stated escape hatch; **not wired into any current
+  caller** — every real call site (`sae/ground_truth.py`, `sae/train.py`,
+  `layer_screen.py`, `l1_geometry.py`, `l2_stitching.py`, `clustering.py`,
+  `internals.py`, `lens.py`, `l3_perturbation.py`) keeps the default,
+  checked directly via a repo-wide grep, not assumed.
+- **Report.** New `report.py::_nonfinite_summary()` opens the store
+  read-only and reads `root.attrs["nonfinite"]`, folded into the existing
+  combined `_alignment_provenance_block` (A2+A7's panel) as a new table —
+  renders whenever any layer has been tracked, **including when every
+  count is zero** (confirmed on real data below), so the check having run
+  and found nothing is itself visible, not indistinguishable from the
+  check never having run.
+- **The real finding, more significant than the item's own item 5's
+  phrasing suggested.** `extraction.store_dtype` was **not** a
+  not-yet-built "consider" suggestion — it already existed as a real
+  `ExtractionConfig` field, already wired into `store.init_layer` (which
+  correctly used it to set the zarr array's declared dtype). But
+  `extract.py`'s very next line, `aligned = align(hidden,
+  pool).cpu().numpy().astype(np.float16)`, **hardcoded `float16`
+  regardless of that config** — so `store_dtype: float32` changed only
+  the on-disk dtype *label*; the actual float32-range values had already
+  been irreversibly rounded (and, in an overflow case, turned to `inf`)
+  to float16 before `store.write_batch` ever saw them. The config knob
+  was a complete no-op for the one thing (avoiding float16 overflow) it
+  existed for. Found by reading the exact line this item's own Evidence
+  pointed at, not by assuming a config field being consumed by one
+  function meant the whole path worked — fixed by casting to
+  `np.dtype(cfg.extraction.store_dtype)` instead of the hardcoded literal.
+- **Verification — unit tests.** New `tests/test_nonfinite.py` (8 tests):
+  a clean batch records a zero count; a partially non-finite batch is
+  recorded, not raised; a wholly non-finite layer raises; counts
+  accumulate correctly across multiple batches; `store.load` raises on a
+  poisoned layer, naming it; `check_finite=False` bypasses the check
+  (poison still present, just not raised on); a clean layer loads
+  normally; and — the test that actually caught the real bug above — a
+  full mini pipeline run with a deliberately huge injected activation
+  value (1e5, overflows float16's ~65504 max, fits float32 easily) shows
+  the value becoming non-finite under the `store_dtype: float16` default
+  and **reproduces a genuine `RuntimeWarning: overflow encountered in
+  cast`** in the process, then shows the identical value surviving finite
+  under `store_dtype: float32` once the hardcoded-cast bug was fixed —
+  proving the *values*, not just the array's dtype label, actually
+  differ. Full suite green at 173/173 (up from 165 after A18).
+- **Verification — real checkpoints.** `configs/_a19_real_check.yaml`
+  (scratch, deleted after use; extract+l0+report only, both models at
+  `capture_layer_stride: 1` — every layer captured, not the usual stride-2
+  subset, to maximize the chance of catching a real overflow anywhere in
+  either model's full depth) against live
+  `google/timesfm-2.5-200m-pytorch` (all 20 layers) +
+  `amazon/chronos-t5-small` (all 6 encoder blocks) on
+  `benchmark_medium/public_dev`, `store_dtype: float16` (the default).
+  **A genuinely open empirical question, resolved honestly rather than
+  assumed either way**: all 26 real captured layers showed **zero**
+  non-finite values — `float16` overflow, the concrete risk this whole
+  item is about, did not materialize in practice for either checkpoint on
+  this corpus. A true negative result, not a weaker test: the mechanism
+  ran cleanly end to end on real activations with no false positives, and
+  the new report table rendered all 26 layers' `0.0000%` fractions
+  correctly (grep-confirmed present in real `report.html`) rather than
+  being hidden because nothing was found — exactly the "state it, don't
+  silently omit" behavior the rest of this session's fixes established.
+  Whether a *different* real model (larger, or one known to produce
+  extreme activations) would actually trip this guard remains untested;
+  the guard itself is now real and in place either way.
+
+---
+
+**All 19 items in this section (A1–A19) are now `[x]` complete as of
+2026-08-06.** Every item was implemented, unit-tested, verified against a
+real run (real checkpoints for the `tsfm_lens` items, a real sealed
+corpus with no models involved for A17, config/doc-only verification for
+A18), and documented here with a dated Findings block before moving to the
+next — several items surfaced genuinely new bugs beyond what their own
+Evidence sections named (A6's sklearn single-class crash, A7's missing
+`timesfm.__version__`, A9/A10's tier-threading and `mixture`
+`generative_params` bugs, A12's cross-seed bisection mismatch, A16's two
+evidence corrections, A18's second unnamed absolute-path instance, A19's
+non-functional `store_dtype` knob — each found by direct inspection or
+testing, per `CLAUDE.md` §2.4, not assumed from the audit's own wording).
+Nothing in this section remains open; `ROADMAP.md` §16's enhancement
+backlog is the next place forward work on this repo should look.
+
+---
+
+## 16. Enhancement backlog — what "anyone can analyze any model with one button" actually requires
+
+> **Added 2026-08-06 (planning only).** §1's north star is "the
+> transformer-lens for TSFMs": a stranger drops in a checkpoint and gets back
+> a rigorous, well-explained comparison. Measured against that bar, the repo's
+> *analysis* depth is well ahead of its *adoptability*: today a new user must
+> build a corpus with a second package, hand-write a `ModelAdapter`, run
+> `--discover-layers`, run `--check-alignment` and judge the output, hand-edit
+> a YAML, and have a GPU — before the first report. Each item below is framed
+> as what a user wants, then how to build it, then what it depends on.
+>
+> **Tiers.** **T1** closes the gap between "a research pipeline that works" and
+> "a tool someone else can use." **T2** is rigor a comparison tool has to have
+> to be believed. **T3** is new analysis capability a TSFM interpretability
+> user will specifically ask for (this is where transformer-lens parity and
+> genuine novelty live). **T4** is breadth and scale.
+>
+> §15's P1 items are prerequisites for all of this, not competitors with it:
+> a one-button tool that silently samples a biased prefix (A4) or skips its
+> alignment gate (A2) is worse than a five-command tool, because it removes
+> the human who would have noticed.
+
+### T1 — Adoptability
+
+- [ ] **E1 · A zero-config entry point.** `tsfm-lens compare --model
+  hf://google/timesfm-2.5-200m-pytorch --model hf://amazon/chronos-t5-base
+  --preset standard` → resolves adapters from the registry by checkpoint
+  pattern, generates a full config, uses the bundled reference corpus (E4),
+  runs preflight (E2), runs the pipeline, opens the report. `--preset
+  quick|standard|deep` maps to series counts, `capture_layer_stride`, patching
+  strides, and which stages are enabled — the three cost/depth points the
+  existing configs already represent implicitly (`smoke`/`medium_run`/
+  `default`), named and documented instead of copy-pasted. Emit the generated
+  YAML into the run dir so the zero-config path is a *teaching* path: "here is
+  the config I made for you, edit it next time." Depends on: E4, E2, A7.
+- [ ] **E2 · `tsfm-lens doctor` — preflight that runs automatically.** One
+  command (and a default-on preflight at the start of every run, `--no-preflight`
+  to skip) that checks: load-bearing pins vs. `DEPENDENCIES.md` (**zarr<3**
+  first, given four recurrences), torch/CUDA availability and free VRAM vs. the
+  config's estimated peak (attention's `[B,H,T,T]` and per-window patching are
+  the known blowups — `CLAUDE.md` §6.5), disk headroom for the store, corpus
+  seal verification, `context_len` divisibility by `alignment.window`, every
+  stage's `max_series` vs. every model's `batch_size` (A16), adapter
+  conformance (`models/conformance.py` — already built) and the alignment gate
+  (A2) per model. Output a table of pass/warn/fail with the exact remediation
+  command. This single item would have absorbed most of `CLAUDE.md` §11's
+  environment traps. Depends on: A2, A7, A14.
+- [ ] **E3 · Empirical token→time span discovery, and a generic HF adapter.**
+  The largest generality lever in the repo. Today `token_time_spans()` is
+  *declared* by an adapter author and verified by a check nobody is forced to
+  run; the mapping is the one thing cross-architecture comparison rests on
+  (`CLAUDE.md` §6.3). Instead **measure** it: sweep a small relative-amplitude
+  impulse across every timestep (or every window, then refine), record which
+  token position moves most in the first captured block, and *derive* the
+  span map. The machinery exists — `impulse_alignment_check` is this
+  algorithm with the answer thrown away. Deliverables: (a) `--discover-spans`
+  producing a span table plus a diffuseness score; (b) a
+  `GenericHFAdapter` that combines `--discover-layers`' shape-probing for
+  `[B, T, D]` residual candidates with discovered spans, so a new checkpoint
+  can be *attempted* with zero code; (c) an explicit refusal path — a model
+  whose impulse response is diffuse (spectral tokenizers, latent-query
+  models) is not time-localized, so it degrades to **L0 only** with a stated
+  reason, exactly the envelope edge `CLAUDE.md` §12 already draws; (d) when a
+  hand-written adapter declares spans, cross-check declared vs. discovered and
+  fail on disagreement. This is also a genuinely publishable methodological
+  contribution: adapter correctness becomes measured rather than asserted.
+  Depends on: A2. Enables: §9 Phase 4 at a fraction of the per-model cost.
+- [ ] **E4 · A bundled, versioned reference corpus.** Ship (or fetch-on-first-
+  use with a pinned manifest digest) `corpora/reference_v1`: a few hundred
+  sealed series covering all 12 archetypes and both tiers, small enough to
+  distribute, built by a committed config with a recorded seed. Two payoffs
+  beyond convenience: a new user's first report needs no `build_pipeline`
+  run at all, and **results become comparable across users and machines**,
+  because everyone's numbers are against the same corpus digest — which is
+  what makes E5's registry meaningful and what a leaderboard would require.
+  Every report prints the corpus version and digest. Keep the private split
+  out of the distribution (`CLAUDE.md` §4.5's seal-records-intent caveat) and
+  document the epoch-regeneration path for anyone who wants a fresh held-out
+  set. Depends on: A7 (digest in provenance).
+- [ ] **E5 · A results registry, so adding a model appends to a table.**
+  Append-only `results/index.parquet`: one row per (corpus version, checkpoint,
+  config hash, stage) with the headline statistics and full provenance;
+  `meta_report.py` reads it instead of globbing run directories. Turns the
+  current one-off cross-run comparison into (a) regression tracking across
+  checkpoints and library versions and (b) the substrate for a public
+  comparison table. Depends on: A3, A7, E4.
+- [ ] **E6 · Report as a shareable product.** Fold in A5's coverage panel and
+  A7's provenance panel, then add: `report/findings.json` (machine-readable
+  findings with the claim ids from A15's registry, so downstream tooling and
+  the bias card consume one source of truth), per-finding confidence badges
+  (evidence class + registered/exploratory + whether it cleared the A13 noise
+  floor), stable anchors for deep-linking a section, and a "what changed vs.
+  run X" diff mode built on E5. Depends on: A5, A7, A13, A15.
+- [ ] **E7 · Docs, quickstart, notebooks, packaging.** §10's existing open
+  items, restated here only because E1-E6 change what they should say: a
+  quickstart that is literally E1's one command; notebooks for (a) smoke run,
+  (b) add an adapter — ideally now "point `GenericHFAdapter` at a checkpoint
+  and watch span discovery run", (c) train and read an SAE, (d) read a
+  confirm verdict; the auto-generated capability matrix (built 2026-08-06)
+  rendered into those docs; and the one-repo/two-packages install story
+  decided and documented, with a `tsfm-lens` console script. Depends on: E1.
+- [ ] **E8 · CI.** = A14. Listed here too because "anyone can use it" is not
+  credible without it.
+
+### T2 — Rigor a comparison tool must have
+
+- [ ] **E9 · Untrained-weights and permutation controls as first-class
+  comparison targets.** The standard null in representational-similarity work
+  is a randomly-initialized model of the same architecture, and this repo
+  doesn't have one. Add a `random_init: true` flag on a model config that
+  loads the architecture with fresh weights, then run L1/L2/internals/probe/
+  SAE against it exactly like a real model. This gives, for free: a floor for
+  CKA (how much geometry is architecture and input statistics rather than
+  learning), a floor for L2 stitching gain (§6.5's input-feature baseline is
+  good, but an untrained-network baseline is stronger and answers a different
+  objection), a floor for probe decodability, and a floor for SAE
+  ground-truth alignment mass (how much of §6.2's alignment is real structure
+  vs. what any random projection of a structured input yields). Add
+  label-permutation nulls for every probe. Cheap, and it upgrades several
+  existing results from "clearly non-zero" to "clearly above the null a
+  skeptic would name." Pairs with A13's noise floor. **This is arguably the
+  highest-value item in T2** — §2.2's own doctrine demands nulls, and the
+  most obvious null for internals work is currently absent.
+- [ ] **E10 · Probabilistic-forecast diagnostics.** Quantiles are already
+  produced and pinball loss already computed, but nothing checks
+  *calibration*: PIT histograms and interval coverage per family and per
+  horizon step, sharpness-vs-calibration scatter, quantile-crossing counts.
+  For anyone choosing between TSFMs in practice this is a first-order
+  question, it's behaviorally cheap (no new forward passes beyond what L0
+  does), and it's a whole axis on which TimesFM's deterministic head and
+  Chronos's sampled one differ in kind — which makes it a natural companion
+  to `CLAUDE.md` §12's forecast-stochasticity-asymmetry caveat rather than
+  another victim of it.
+- [ ] **E11 · Statistical-discipline hardening.** A15's registry and
+  multiplicity ledger, plus: report effect sizes with CIs everywhere a
+  p-value appears (mostly done — audit for exceptions), state `n_boot` and
+  the p-value floor inline where a p is shown (`CLAUDE.md` §6.6 documents the
+  1/n_boot floor; the report should say it at the point of use), and make the
+  cluster-bootstrap unit explicit in every artifact so a reader can check
+  that the series-level rule (invariant 2) was actually followed.
+
+### T3 — Analysis capability a TSFM interpretability user will ask for
+
+- [ ] **E12 · Horizon-resolved everything.** Every current metric aggregates
+  over the whole forecast horizon, so "where does the error come from at h=1
+  vs h=64", "which layers matter for long-horizon vs short-horizon", and
+  "does the forecast crystallize later in depth for later horizon steps" are
+  all invisible. Concretely: MASE/pinball per horizon step (free); per-window
+  patching restoration resolved by horizon step (the arrays largely exist —
+  it's a reduction that's currently collapsed); crystallization depth as a
+  function of horizon step. This is the most TSFM-specific analysis axis
+  missing, it's cheap because the forward passes are already being paid for,
+  and it directly sharpens the §1 questions about high-frequency vs.
+  statistical-mean behavior.
+- [ ] **E13 · Spectral lens.** The time-domain skip lens says *when* the
+  forecast crystallizes; a frequency-domain version says *what* crystallizes
+  first. Per layer, compare the skip-lens forecast's spectrum against the
+  target's, resolved by frequency band, and check band-wise error against the
+  ground-truth seasonal periods the benchmark records exactly. Answers "does
+  the model get the trend right early and the seasonality late (or the
+  reverse)", is native to time series in a way the borrowed logit-lens idea
+  isn't, reuses the existing lens forwards, and feeds §6.2's
+  frequency-aware-dictionary idea with the evidence it needs to be worth
+  trying.
+- [ ] **E14 · Steering / directional control.** `transformer-lens` users
+  expect to *intervene*, not only observe. `token_patch` already supports
+  everything needed: add `steer(layer, windows, direction, strength)` and
+  measure the forecast response. The validation loop is the repo's unfair
+  advantage (§2.1): take a direction associated with a known ground-truth
+  factor (an SAE feature matched to `n_seasonalities`, or a probe direction
+  for trend order), add it, and check whether the forecast changes *in the
+  predicted direction* — spectrum shifts toward the period, trend slope
+  increases. That is a far stronger claim than "this feature correlates with
+  X", and it's the natural payoff of the SAE work rather than a new research
+  program. Depends on: E15 for feature-level directions (probe directions
+  work today).
+- [ ] **E15 · Per-token SAE evaluation, then feature-level ablation.** Fixes
+  the window-broadcast confound that currently makes Chronos's
+  forecast-preservation number unreadable (§6.2), which is the stated blocker
+  on §7 bullet 3. Reconstruct and patch at *token* granularity rather than
+  broadcasting one window-pooled vector across every token in the window;
+  for per-timestep-tokenized models this is the difference between a
+  meaningful validity check and an architecture-dependent artifact. Then
+  feature-level ablation as §7 bullet 3 specifies, cross-referenced against
+  ground-truth alignment. Depends on: A4 and A13 (so the resulting ΔMASE
+  values mean something).
+- [ ] **E16 · Cross-model feature matching for per-model dictionaries.** The
+  crosscoder (§6.2 item 1) is one answer to cross-model comparability; the
+  complementary one — needed anyway, per `CLAUDE.md` §13 item 3 — is matching
+  independently-trained dictionaries: input-space decoder correlation,
+  max-activating-example overlap (Jaccard over top-k series/windows), and
+  ground-truth-field agreement as a third, independent matching signal this
+  repo can compute and most SAE work can't. Report the matched/unmatched
+  split as a direct answer to the founding question, alongside the
+  crosscoder's shared/specific split, and check whether the two methods
+  agree — a genuinely informative cross-check.
+- [ ] **E17 · Input front-end diagnostics as a real stage.** Generalize the
+  one-off `analysis/quantization_churn.py` script into a `frontend` stage
+  characterizing what each model does to its input *before* any layer:
+  quantization resolution and dynamic range (Chronos), patch-boundary **phase
+  sensitivity** (shift the series by 1..patch_width and measure MASE variance
+  — this is the direct test of the period=32 aliasing hypothesis §7 flagged
+  and explicitly did not verify), scale-equivariance (multiply the series by
+  1000 — does anything change?), context-truncation behavior, and NaN/missing
+  handling. Cheap (mostly tokenizer calls and `predict`), and it explains a
+  whole class of otherwise-mysterious behavioral anomalies rather than
+  leaving them as flagged curiosities.
+- [ ] **E18 · Component-level attribution (path patching).** `CLAUDE.md` §13
+  item 8's "deeper component resolution", scoped: head→head and head→MLP path
+  patching within a model, so a claim can be "this head's output matters
+  *because* that head reads it" instead of "these heads matter." This is the
+  clearest remaining gap against transformer-lens's own resolution, and the
+  `token_patch` primitive plus `attention_info`/`mlp_info` already provide the
+  hooks. Genuinely more expensive than everything above it — schedule after
+  T1/T2.
+
+### T4 — Breadth and scale
+
+- [ ] **E19 · Multivariate / covariate envelope.** Moirai and Chronos-2 (both
+  §9 Phase 4 candidates) are multivariate-native; the whole pipeline assumes
+  univariate `[series, time]`. Decide and document the axis extension *before*
+  Phase 4 forces an improvised one: `[series, variate, window, dim]` with
+  alignment applied per variate, cross-variate attention treated as its own
+  measurement (not folded into the lag taxonomy), and an explicit statement of
+  which analyses are variate-agnostic. Doing this as a design note now is
+  cheap; doing it under pressure while adding a model is how abstractions get
+  bent (§2.4).
+- [ ] **E20 · Context-length and horizon scaling sweeps.** Reuse
+  `analysis/parameter_sweep.py`'s machinery on the *config* axis rather than
+  the data axis: how do MASE, crystallization depth, and attention lag
+  profiles change as `context_len` grows (128 → the checkpoint's max)? Users
+  choose context length in practice and have no guidance; and "does the model
+  actually use long context" is answerable here with existing tools.
+- [ ] **E21 · Chronos decoder capture as a separate measurement.**
+  `CLAUDE.md` §13 item 2 / §12 item 1, unchanged in substance: a second
+  capture surface over decoder layers under teacher forcing, with its own
+  forecast-time alignment windows, reported as a *distinct* measurement rather
+  than CKA'd against context-window states. Worth restating in this backlog
+  because it is the single largest **coverage asymmetry** in the flagship
+  comparison — half of Chronos is unobserved — and any claim about what
+  "Chronos represents" is really about its encoder until this exists.
+- [ ] **E22 · Scale.** A17's blocked matcher (so a full-scale corpus can be
+  validated at all), streaming/chunked CKA and ridge solves so `l1.max_rows`
+  and `l2.max_rows` stop being the binding constraint on cross-model
+  statistics, and a cost model that turns E2's VRAM/wall-clock estimate into a
+  planning tool ("this config will take ~35 min and 14 GB; per-window
+  patching is 60% of it"). The §5.1 literal-scale `full_multidomain.yaml`
+  build (~99K samples, ~6 h estimated) is the concrete forcing function.
+
+**Findings / decisions**
+- *(append here — and per §2.5, before building any of these, state which
+  claim it sharpens. Several T3 items are attractive precisely because they're
+  interesting, which is exactly when that question needs asking.)*

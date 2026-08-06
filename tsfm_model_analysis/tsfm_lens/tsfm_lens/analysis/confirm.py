@@ -22,6 +22,7 @@ unverifiable private corpora.
 from __future__ import annotations
 
 import dataclasses
+import hashlib
 
 import numpy as np
 import pandas as pd
@@ -32,19 +33,38 @@ from ..data import BenchmarkData, load_benchmark
 from ..extraction.alignment import align, pooling_matrix
 from ..extraction.hooks import ActivationCatcher
 from ..utils import batch_slices, load_json, log, save_json
+from .hypotheses import check_registry_freshness
 from .l0_behavioral import _predict_all, _score
 from .l1_geometry import linear_cka
 from .stats import bootstrap_ci, holm, paired_bootstrap
 
 
 def run_confirm(cfg: PipelineConfig, hub) -> None:
-    """Load the private corpus, re-test dev hypotheses, spot-check the CKA peak."""
+    """Load the private corpus, re-test exactly the registered hypotheses, spot-check the CKA peak.
+
+    Requires `hypotheses.json` (the `register` stage, which runs
+    automatically as this stage's dependency) and refuses if any artifact
+    it was registered against has since changed (`ROADMAP.md` sec 15 A15) --
+    the actual enforcement behind `CLAUDE.md` §6.7's "everything on dev is
+    exploratory, confirm tests it exactly once" discipline, previously
+    enforced by convention alone.
+    """
     out_dir = cfg.run_dir() / "confirm"
     if (out_dir / "confirmation.json").exists():
         raise RuntimeError(
             "confirmation artifacts already exist; the private benchmark is meant to be "
             "consumed once. Rerun with --force confirm only if you understand that this "
             "constitutes a second look (and consider a fresh private epoch).")
+    registry_path = cfg.run_dir() / "hypotheses.json"
+    if not registry_path.exists():
+        raise RuntimeError(
+            "confirm requires a hypothesis registry (ROADMAP.md sec 15 A15) -- no "
+            "hypotheses.json found at the run root. It should have run automatically as "
+            "confirm's dependency; if you selected stages explicitly with --stages, include "
+            "'register'.")
+    registry = load_json(registry_path)
+    check_registry_freshness(cfg, registry)
+
     log.warning("CONFIRM: running the one-shot private-benchmark confirmation; "
                 "avoid re-running against the same private epoch")
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -52,19 +72,24 @@ def run_confirm(cfg: PipelineConfig, hub) -> None:
     private = _load_private(cfg)
     a, b = cfg.comparison_pair()
     metrics = _private_behavioral(cfg, hub, private, out_dir)
-    hypotheses = _test_hypotheses(cfg, metrics, a.name, b.name)
-    replication = _replicate_cka(cfg, hub, private)
+    hypotheses = _test_registered_hypotheses(cfg, metrics, registry, a.name, b.name)
+    replication = _replicate_registered_cka(cfg, hub, private, registry)
 
     confirmed = sum(1 for h in hypotheses["tests"] if h["confirmed"])
+    n_replicable = sum(1 for h in registry["hypotheses"] if h["replicable"])
     save_json(out_dir / "confirmation.json", {
         "model_a": a.name, "model_b": b.name,
         "n_private_series": private.n,
         "alpha": cfg.confirm.alpha,
+        "n_registered": len(registry["hypotheses"]),
+        "n_replicable": n_replicable,
+        "registry_sha256": hashlib.sha256(registry_path.read_bytes()).hexdigest(),
         **hypotheses,
         "cka_replication": replication,
     })
-    log.info("confirm complete: %d/%d dev hypotheses confirmed on private data",
-             confirmed, len(hypotheses["tests"]))
+    log.info("confirm complete: %d/%d dev hypotheses confirmed on private data "
+            "(%d registered, %d replicable)", confirmed, len(hypotheses["tests"]),
+            len(registry["hypotheses"]), n_replicable)
 
 
 def _load_private(cfg: PipelineConfig) -> BenchmarkData:
@@ -103,14 +128,21 @@ def _private_behavioral(cfg: PipelineConfig, hub, private: BenchmarkData,
     return metrics
 
 
-def _test_hypotheses(cfg: PipelineConfig, metrics: pd.DataFrame,
-                     name_a: str, name_b: str) -> dict:
-    """Re-test dev family strengths on private series, Holm-corrected."""
+def _test_registered_hypotheses(cfg: PipelineConfig, metrics: pd.DataFrame, registry: dict,
+                                name_a: str, name_b: str) -> dict:
+    """Re-test exactly the registered, replicable `l0` family claims on private series.
+
+    Sourced from `hypotheses.json`, not a fresh re-read of `l0/summary.json`
+    (`ROADMAP.md` sec 15 A15) -- `check_registry_freshness` has already
+    proven that file matches what was registered, so reading it here for
+    the descriptive `dev_ratio` display value is safe, but *which* claims
+    get tested comes from the registry, not from re-deriving the claim list.
+    """
     sc = cfg.stats
     dev = load_json(cfg.run_dir() / "l0" / "summary.json")
-    dev_strengths = dev.get("strengths", {})
     dev_ratio = dev.get("mase_ratio", {})
-    claims = [(fam, model) for model, fams in dev_strengths.items() for fam in fams]
+    claims = [(h["family"], h["favored"]) for h in registry["hypotheses"]
+             if h["stage"] == "l0" and h["replicable"]]
 
     wide = metrics.pivot_table(index=["series_id", "family"], columns="model",
                                values="mase").reset_index()
@@ -144,11 +176,14 @@ def _test_hypotheses(cfg: PipelineConfig, metrics: pd.DataFrame,
             "overall_direction": f"positive favors {name_a}"}
 
 
-def _replicate_cka(cfg: PipelineConfig, hub, private: BenchmarkData) -> dict:
-    """Recompute the dev peak-pair CKA on private contexts with a cluster-bootstrap CI."""
+def _replicate_registered_cka(cfg: PipelineConfig, hub, private: BenchmarkData,
+                              registry: dict) -> dict:
+    """Recompute the registered dev peak-pair CKA on private contexts with a cluster-bootstrap CI."""
+    l1_hyp = next((h for h in registry["hypotheses"]
+                   if h["stage"] == "l1" and h["replicable"]), None)
+    if l1_hyp is None:
+        return {"status": "skipped", "reason": "no registered, replicable L1 hypothesis"}
     l1_path = cfg.run_dir() / "l1" / "meta.json"
-    if not l1_path.exists():
-        return {"status": "skipped", "reason": "no L1 artifacts on dev"}
     best = load_json(l1_path)["best_pair"]
     a, b = cfg.comparison_pair()
     acts = {}

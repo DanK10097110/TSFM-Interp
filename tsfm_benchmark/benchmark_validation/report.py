@@ -12,7 +12,7 @@ import json
 from collections import Counter
 from typing import Any
 
-from .diversity import DiversityReport
+from .diversity import DiversityReport, InsufficientN
 from .features import FeatureMatrix
 from .loaders import SeqRecord
 from .matching import MatchReport
@@ -37,7 +37,7 @@ def _composition(records: list[SeqRecord]) -> dict[str, Any]:
     }
 
 
-def _by_group_summary(by_group: dict[str, DiversityReport]) -> dict[str, Any]:
+def _by_group_summary(by_group: dict[str, Any]) -> dict[str, Any]:
     """Per-group headline numbers, plus which feature(s) actually drive each group's variance.
 
     ``diversity_metrics_by_group`` scales every group against one scaler fit
@@ -48,18 +48,30 @@ def _by_group_summary(by_group: dict[str, DiversityReport]) -> dict[str, Any]:
     scaled variance and make it look collapsed in every *other* dimension by
     comparison. ``top_variance_feature`` names the feature so that's
     diagnosable instead of just a suspicious-looking number.
+
+    A group below the minimum-n threshold (sec 15 A17) is an ``InsufficientN``
+    entry, not a ``DiversityReport`` -- surfaced explicitly with its own
+    status rather than being coerced into the same numeric shape (which
+    would either crash on the missing attributes or, worse, silently print
+    as zeros).
     """
-    return {
-        g: {
+    out: dict[str, Any] = {}
+    for g, d in by_group.items():
+        if isinstance(d, InsufficientN):
+            out[g] = {"status": d.status, "n_sequences": d.n_sequences,
+                      "min_required": d.min_required}
+            continue
+        out[g] = {
             "n_sequences": d.n_sequences,
             "effective_dimensionality": d.effective_dimensionality,
+            "effective_dimensionality_ci": d.effective_dimensionality_ci,
             "total_variance": d.total_variance,
             "nn_distance_mean": d.nn_distance_mean,
             "near_collision_fraction": d.near_collision_fraction,
+            "near_collision_fraction_ci": d.near_collision_fraction_ci,
             "top_variance_feature": d.feature_variance_ranking[0] if d.feature_variance_ranking else None,
         }
-        for g, d in by_group.items()
-    }
+    return out
 
 
 def build_report(
@@ -68,7 +80,7 @@ def build_report(
     diversity: DiversityReport,
     embed_method: str,
     records: list[SeqRecord] | None = None,
-    diversity_by_group: dict[str, DiversityReport] | None = None,
+    diversity_by_group: dict[str, Any] | None = None,
     diversity_by_group_key: str | None = None,
     redundancy_by_group_result: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
@@ -94,6 +106,9 @@ def build_report(
             "top_redundant_pairs": match.redundant_pairs[:10],
             "bucket_edges": match.bucket_edges,
             "bucket_counts": match.bucket_counts,
+            "blocked": match.blocked,
+            "n_blocks": match.n_blocks,
+            "coverage_fraction": match.coverage_fraction,
         },
         "features": {
             "set": "catch24" if len(fm.feature_names) == 24 else "catch22",
@@ -138,8 +153,11 @@ def print_summary(report: dict[str, Any]) -> None:
             print(f"real domains used    : {c['by_domain']}")
     print(f"sequences            : {report['n_sequences']}")
     print(f"feature set          : {f['set']} ({f['n_features']} features), imputed {f['n_sequences_imputed']}, winsorized {f.get('n_values_winsorized', 0)} values")
-    print(f"match method         : {m['method']}")
-    print(f"redundancy fraction  : {m['redundancy_fraction']}  ({m['n_redundant_pairs']} pairs >= threshold)")
+    print(f"match method         : {m['method']}" + (f" (blocked, {m['n_blocks']} shape-clusters, "
+                                                       f"coverage={m['coverage_fraction']:.1%} of all pairs)"
+                                                       if m.get("blocked") else ""))
+    print(f"redundancy fraction  : {m['redundancy_fraction']}  ({m['n_redundant_pairs']} pairs >= threshold"
+         + (", among scored pairs only" if m.get("blocked") else "") + ")")
     print(f"effective dimensions : {d['effective_dimensionality']} of {f['n_features']}")
     print(f"NN dist mean/min/p05 : {d['nn_distance_mean']} / {d['nn_distance_min']} / {d['nn_distance_p05']}")
     print(f"near-collision frac  : {d['near_collision_fraction']}")
@@ -150,10 +168,15 @@ def print_summary(report: dict[str, Any]) -> None:
             print(f"   {a}  ~  {b}   sim={s:.4f}")
     if "diversity_by_group" in report:
         dg = report["diversity_by_group"]
-        print(f"diversity by {dg['by']:<8} : (effective_dim / total_var / near_collision_frac, n, top variance feature)")
-        for g, v in sorted(dg["groups"].items(), key=lambda kv: kv[1]["effective_dimensionality"]):
+        print(f"diversity by {dg['by']:<8} : (effective_dim [CI] / total_var / near_collision_frac, n, top variance feature)")
+        insufficient = {g: v for g, v in dg["groups"].items() if v.get("status") == "insufficient_n"}
+        sufficient = {g: v for g, v in dg["groups"].items() if v.get("status") != "insufficient_n"}
+        for g, v in sorted(sufficient.items(), key=lambda kv: kv[1]["effective_dimensionality"]):
             top_feat = f"{v['top_variance_feature'][0]}={v['top_variance_feature'][1]:.1f}" if v["top_variance_feature"] else "-"
-            print(f"   {g:<32} {v['effective_dimensionality']:>6.3f} / {v['total_variance']:>10.3f} / {v['near_collision_fraction']:.3f}   (n={v['n_sequences']:<4d} top={top_feat})")
+            eff_ci = f" {v['effective_dimensionality_ci']}" if v.get("effective_dimensionality_ci") else ""
+            print(f"   {g:<32} {v['effective_dimensionality']:>6.3f}{eff_ci} / {v['total_variance']:>10.3f} / {v['near_collision_fraction']:.3f}   (n={v['n_sequences']:<4d} top={top_feat})")
+        for g, v in sorted(insufficient.items()):
+            print(f"   {g:<32} insufficient n={v['n_sequences']} (< {v['min_required']} required) -- no metrics reported")
     if "redundancy_by_group" in report:
         rg = report["redundancy_by_group"]
         print(f"within-group similarity : {rg['within_group_mean_similarity']}")

@@ -32,7 +32,7 @@ from sklearn.decomposition import PCA
 from sklearn.linear_model import Ridge
 from sklearn.preprocessing import StandardScaler
 
-from ..utils import log, save_json
+from ..utils import log, sample_rows, save_json
 from .l1_geometry import linear_cka
 
 __all__ = [
@@ -404,7 +404,47 @@ def _uniform_fallback(layers: list, budget: int) -> dict:
             "selected_idx": idx}
 
 
-def run_layer_screen(cfg, store, data, device: torch.device | None = None) -> None:
+def _run_screening_extraction(cfg, hub, data, families=None) -> tuple:
+    """Dedicated stride-1, all-block extraction pass used only for screening.
+
+    `ROADMAP.md` sec 15 A1: the production `layer_screen` stage used to screen
+    `store.layers(model)` -- whatever `models[*].capture_layer_stride` happened
+    to capture for the main analysis -- so under any config with stride > 1
+    (every shipped real-model config), half a model's blocks were invisible
+    to the selector deciding where expensive analysis and SAE training go,
+    violating the bake-off's own "fair to every layer" requirement (sec
+    6.1.1 R2). This runs a second, independent, and much cheaper extraction
+    (`layer_screen.max_series` series, far fewer than the analysis corpus) at
+    `layer_screen.stride` (default 1 = every block) into its own store, reusing
+    `extraction.extract._extract_model` rather than duplicating the batching /
+    alignment / store-write logic. The store is deleted after selection unless
+    `layer_screen.keep_store` is set.
+    """
+    from ..extraction.extract import _extract_model
+    from ..extraction.store import ActivationStore
+
+    out_path = cfg.run_dir() / "layer_screen" / "screen_activations.zarr"
+    seed = cfg.layer_screen.seed if cfg.layer_screen.seed is not None else cfg.run.seed
+    rows = sample_rows(data.n, cfg.layer_screen.max_series, seed, strata=families)
+    n_windows = cfg.data.context_len // cfg.alignment.window
+    screen_store = ActivationStore.create(out_path, len(rows), n_windows,
+                                          cfg.alignment.window, cfg.data.context_len)
+    stride = max(1, cfg.layer_screen.stride)
+    layer_map, all_layers_by_model = {}, {}
+    for mcfg in cfg.models:
+        adapter = hub.get(mcfg.name)
+        adapter.ensure_loaded()
+        all_layers = adapter.all_layer_names()
+        all_layers_by_model[mcfg.name] = all_layers
+        layers = all_layers[::stride]
+        layer_map[mcfg.name] = _extract_model(adapter, data, screen_store, cfg, layers, rows=rows)
+        if not cfg.run.keep_models_loaded:
+            hub.release(mcfg.name)
+    screen_store.set_layers(layer_map)
+    return screen_store, rows, all_layers_by_model
+
+
+def run_layer_screen(cfg, hub, store, data, device: torch.device | None = None) -> None:
     """Pipeline stage: screen every configured model's own captured layers.
 
     Runs immediately after extraction and before every expensive stage
@@ -420,14 +460,47 @@ def run_layer_screen(cfg, store, data, device: torch.device | None = None) -> No
     `layer_screen.method` stays a config knob rather than a hardcoded
     assumption -- `coverage` and `factor_emergence` remain available for
     re-testing on new architectures without code changes.
+
+    By default (`layer_screen.require_full_capture: true`) this screens a
+    dedicated stride-1 extraction over every model block, independent of
+    `models[*].capture_layer_stride` -- see `_run_screening_extraction` and
+    `ROADMAP.md` sec 15 A1. Set it `false` to screen only the main store's
+    already-captured (possibly strided) layers instead; the resulting
+    selection is then explicitly marked `fair_to_all_layers: false` in the
+    artifact and in the report, rather than looking complete.
     """
     from ..extraction.store import load_meta
     from ..sae.ground_truth import load_ground_truth_table
 
     out_dir = cfg.run_dir() / "layer_screen"
-    method = cfg.layer_screen.method
-    meta = load_meta(cfg.run_dir())
-    series_ids = meta["series_id"].to_numpy()
+    method = method_requested = cfg.layer_screen.method
+    full_meta = load_meta(cfg.run_dir())
+    full_series_ids = full_meta["series_id"].to_numpy()
+
+    active_store = store
+    fair_to_all_layers = False
+    all_layers_by_model: dict = {}
+    seed = cfg.layer_screen.seed if cfg.layer_screen.seed is not None else cfg.run.seed
+    families = full_meta["family"].to_numpy()
+    rows = sample_rows(len(full_series_ids), cfg.layer_screen.max_series, seed, strata=families)
+    series_ids = full_series_ids[rows]
+
+    if cfg.layer_screen.require_full_capture:
+        try:
+            active_store, screen_rows, all_layers_by_model = _run_screening_extraction(
+                cfg, hub, data, families=families)
+            fair_to_all_layers = True
+            rows = np.arange(len(screen_rows))
+            series_ids = full_series_ids[screen_rows]
+        except Exception as e:
+            log.warning(f"layer_screen: dedicated stride-1 screening extraction failed "
+                       f"({e}); falling back to screening the main store's already-"
+                       f"captured layers only (fair_to_all_layers=False) -- selection "
+                       f"may not be fair to every model block, see ROADMAP.md sec 15 A1")
+    else:
+        log.info("layer_screen: require_full_capture=False by explicit config; "
+                 "screening only the main store's captured layers "
+                 "(fair_to_all_layers=False)")
 
     gt, gt_cols = None, None
     if method == "factor_emergence":
@@ -447,12 +520,11 @@ def run_layer_screen(cfg, store, data, device: torch.device | None = None) -> No
             method = "work_bend"
 
     seed = cfg.layer_screen.seed if cfg.layer_screen.seed is not None else cfg.run.seed
-    n_use = min(len(series_ids), cfg.layer_screen.max_series)
-    rows = np.arange(n_use)
+    stride_by_model = {m.name: m.capture_layer_stride for m in cfg.models}
 
     results = {}
     for m in cfg.models:
-        layers = store.layers(m.name)
+        layers = active_store.layers(m.name)
         if not layers:
             log.info(f"layer_screen: {m.name} has no captured layers; skipped")
             continue
@@ -462,15 +534,26 @@ def run_layer_screen(cfg, store, data, device: torch.device | None = None) -> No
         kwargs = {"device": device, "seed": seed, "rows": rows,
                  "use_curvature": cfg.layer_screen.use_curvature}
         if method == "factor_emergence":
-            kwargs.update(gt=gt, series_ids=series_ids[:n_use], gt_cols=gt_cols)
+            kwargs.update(gt=gt, series_ids=series_ids, gt_cols=gt_cols)
         try:
-            sel = select_layers(method, store, m.name, layers, budget, **kwargs)
+            sel = select_layers(method, active_store, m.name, layers, budget, **kwargs)
         except Exception as e:
             log.warning(f"layer_screen: {method} failed for {m.name} ({e}); "
                        f"falling back to a uniform-stride selection")
             sel = _uniform_fallback(layers, budget)
+        n_model_blocks = (len(all_layers_by_model[m.name]) if m.name in all_layers_by_model
+                          else len(hub.get(m.name).all_layer_names()))
+        sel["method_requested"] = method_requested
+        sel["fair_to_all_layers"] = fair_to_all_layers
+        sel["n_screened"] = len(layers)
+        sel["n_model_blocks"] = n_model_blocks
+        sel["capture_layer_stride"] = stride_by_model.get(m.name)
+        sel["screen_stride"] = cfg.layer_screen.stride if fair_to_all_layers else None
         results[m.name] = sel
-        log.info(f"layer_screen: {m.name} ({method}, budget={budget}/{len(layers)}) "
-                 f"selected {sel['selected']}")
+        log.info(f"layer_screen: {m.name} ({method}, budget={budget}/{len(layers)}, "
+                 f"fair_to_all_layers={fair_to_all_layers}) selected {sel['selected']}")
 
     save_json(out_dir / "selection.json", results)
+    if fair_to_all_layers and not cfg.layer_screen.keep_store:
+        import shutil
+        shutil.rmtree(active_store.path, ignore_errors=True)

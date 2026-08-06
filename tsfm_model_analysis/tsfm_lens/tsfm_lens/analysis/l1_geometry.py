@@ -22,7 +22,7 @@ from scipy.stats import spearmanr
 
 from ..config import PipelineConfig
 from ..extraction.store import ActivationStore, load_meta
-from ..utils import log, save_json
+from ..utils import log, sample_rows, save_json
 from .stats import bootstrap_ci
 
 
@@ -62,9 +62,8 @@ def run_l1(cfg: PipelineConfig, store: ActivationStore, device: torch.device) ->
     n = len(meta)
     n_windows = store.root.attrs["n_windows"]
 
-    rng = np.random.default_rng(cfg.run.seed)
     n_series = min(n, max(1, cfg.l1.max_rows // n_windows))
-    rows = np.sort(rng.choice(n, size=n_series, replace=False))
+    rows = sample_rows(n, n_series, cfg.run.seed, strata=meta["family"].to_numpy())
     bank_a = _LayerBank(store, a.name, layers_a, "window", rows, device)
     bank_b = _LayerBank(store, b.name, layers_b, "window", rows, device)
     cka_window = np.zeros((len(layers_a), len(layers_b)), dtype=np.float32)
@@ -75,8 +74,21 @@ def run_l1(cfg: PipelineConfig, store: ActivationStore, device: torch.device) ->
     log.info("L1: window-level CKA over %d rows, peak=%.3f", n_series * n_windows,
              cka_window.max())
 
-    families, cka_family = [], []
-    if cfg.l1.family_conditioned:
+    families, cka_family, family_comparisons = [], [], None
+    n_families = int(meta["family"].nunique())
+    if cfg.l1.family_conditioned and n_families < 2:
+        # "Per-family" CKA compares families' geometry *to each other*; with
+        # one family it would just be a second, differently-pooled measure of
+        # the same overall CKA under a family-shaped table -- disabled with a
+        # stated reason instead (`ROADMAP.md` sec 15 A6). The window-level
+        # `cka_window`/`depth_curve` above are unaffected -- they were never
+        # family-conditioned.
+        family_comparisons = {
+            "applicable": False,
+            "reason": f"only {n_families} family present in this corpus; "
+                      f"family-conditioned CKA needs >=2 families to compare",
+        }
+    elif cfg.l1.family_conditioned:
         pooled_a = _LayerBank(store, a.name, layers_a, "series", None, device)
         pooled_b = _LayerBank(store, b.name, layers_b, "series", None, device)
         for fam, group in meta.groupby("family"):
@@ -125,6 +137,7 @@ def run_l1(cfg: PipelineConfig, store: ActivationStore, device: torch.device) ->
         "families_ci": families_ci,
         "depth_curve": depth_curve, "rsa": rsa,
         "n_rows_window": int(n_series * n_windows),
+        "family_comparisons": family_comparisons,
     })
 
 
@@ -171,9 +184,9 @@ def _shuffled_null_cka(cfg: PipelineConfig, bank_a: _LayerBank, bank_b: _LayerBa
 def _run_rsa(cfg: PipelineConfig, store: ActivationStore, meta, layers_a: list,
              layers_b: list, cka_window: np.ndarray, name_a: str, name_b: str) -> list:
     """Spearman RDM agreement along the CKA-matched layer correspondence."""
-    rng = np.random.default_rng(cfg.run.seed + 1)
     n = len(meta)
-    idx = np.sort(rng.choice(n, size=min(n, cfg.l1.rsa_max_series), replace=False))
+    idx = sample_rows(n, cfg.l1.rsa_max_series, cfg.run.seed + 1,
+                      strata=meta["family"].to_numpy())
     results = []
     for i, la in enumerate(layers_a):
         lb = layers_b[int(cka_window[i].argmax())]

@@ -107,6 +107,10 @@ def _select_exemplars(cfg: PipelineConfig, data: BenchmarkData) -> pd.DataFrame:
     if picks["row"].isna().any():
         raise RuntimeError("exemplar series_id not found in benchmark metadata")
     picks["row"] = picks["row"].astype(int)
+    # Carried through for the report's exemplar cards (sec 15 A9) -- `None`
+    # for series whose tier can't express an archetype, matching L0's own
+    # per_archetype fallback-to-family convention rather than inventing one.
+    picks["archetype"] = data.meta["archetype"].to_numpy()[picks["row"].to_numpy()]
     return picks
 
 

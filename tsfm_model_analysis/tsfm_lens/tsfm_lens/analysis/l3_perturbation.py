@@ -47,7 +47,7 @@ from ..extraction.alignment import align, pooling_matrix
 from ..extraction.extract import capture_raw_tokens
 from ..extraction.hooks import ActivationCatcher, token_patch
 from ..extraction.store import ActivationStore
-from ..utils import batch_slices, log, relative_depths, save_json
+from ..utils import batch_slices, capped_take, log, relative_depths, sample_rows, save_json
 from .stats import mean_ci
 
 
@@ -171,6 +171,136 @@ CORRUPTIONS = {
 }
 
 
+# Corruptions with a single scalar knob empirically confirmed monotone
+# increasing in perturbation energy (checked directly against a real batch
+# of series before trusting it, sec 15 A12, `CLAUDE.md` §2.4): (param, lo,
+# hi, is_integer). `noise` is handled separately via a closed-form solve
+# (its knob, `snr_db`, is *decreasing* in energy). `detrend` (no free
+# parameter), `deseasonalize` (integer `top_k`, not a continuous magnitude
+# knob), and `frequency_shift` (`factor` -- empirically non-monotone in
+# energy past ~1.5x, confirmed by direct sweep, not assumed) are left
+# uncalibrated: reported, never adjusted.
+_CALIBRATABLE_RANGES = {
+    "level_shift": ("scale", 0.1, 20.0, False),
+    "spike": ("scale", 0.1, 30.0, False),
+    "smooth": ("kernel", 3, 101, True),
+    "warp": ("strength", 0.01, 1.0, False),
+    "dropout": ("frac", 0.01, 0.9, False),
+}
+
+
+def _perturbation_energy(clean: np.ndarray, corrupted: np.ndarray) -> float:
+    """Mean squared per-timestep perturbation -- the "energy" budget calibration targets."""
+    return float(((corrupted - clean) ** 2).mean())
+
+
+def _perturbation_footprint(clean: np.ndarray, corrupted: np.ndarray, rel_tol: float = 1e-3) -> float:
+    """Fraction of timesteps actually changed, relative to the input's own scale (sec 15 A12).
+
+    Reported for every corruption regardless of `calibrate` mode -- this is
+    what stops a sparse-by-construction corruption (`spike`, `dropout`) from
+    being misread as "the model is robust" just because its aggregate
+    behavioral-sensitivity bar is short.
+    """
+    scale = np.abs(clean).std() + 1e-8
+    touched = np.abs(corrupted - clean) > rel_tol * scale
+    return float(touched.mean())
+
+
+def _bisect_param(name: str, base_kwargs: dict, param: str, lo: float, hi: float, is_int: bool,
+                  contexts: np.ndarray, target: float, seed: int, n_iter: int = 30):
+    """Bisection over one corruption's magnitude parameter to hit a target energy.
+
+    Assumes (confirmed empirically per corruption, see `_CALIBRATABLE_RANGES`)
+    that energy is monotone increasing in `param` over `[lo, hi]`. Clamps to
+    the range's boundary (rather than extrapolating or raising) when the
+    target is out of reach within it, and returns the realized value/energy
+    either way so a clamp is a recorded fact, not a silent miss.
+    """
+    fn = CORRUPTIONS[name]
+
+    def energy_at(val: float) -> float:
+        v = int(round(val))
+        if is_int and v % 2 == 0:
+            v += 1
+        kwargs = {**base_kwargs, param: v if is_int else float(val)}
+        c = fn(contexts.copy(), np.random.default_rng(seed), **kwargs)
+        return _perturbation_energy(contexts, c)
+
+    e_lo, e_hi = energy_at(lo), energy_at(hi)
+    if target <= e_lo:
+        return lo, e_lo
+    if target >= e_hi:
+        return hi, e_hi
+    for _ in range(n_iter):
+        mid = (lo + hi) / 2.0
+        if energy_at(mid) < target:
+            lo = mid
+        else:
+            hi = mid
+    val = (lo + hi) / 2.0
+    return val, energy_at(val)
+
+
+def calibrate_corruptions(names: list, configs: dict, contexts: np.ndarray, seed: int) -> tuple:
+    """Solve each calibratable corruption's magnitude parameter to a common energy budget.
+
+    Pure numpy, no model in the loop (sec 15 A12 fix item 2) -- the budget
+    is the *median* of the battery's own natural (pre-calibration) energies,
+    so calibration is anchored to this battery's own existing scale rather
+    than an arbitrary external constant. Returns `(adjusted_configs,
+    calibration_meta)`; every corruption appears in `calibration_meta`
+    (`calibrated: bool`), never dropped.
+    """
+    natural_energy, natural_footprint = {}, {}
+    for i, name in enumerate(names):
+        c = CORRUPTIONS[name](contexts.copy(), np.random.default_rng(seed + i), **configs[name])
+        natural_energy[name] = _perturbation_energy(contexts, c)
+        natural_footprint[name] = _perturbation_footprint(contexts, c)
+    target = float(np.median(list(natural_energy.values())))
+
+    adjusted = {name: dict(configs[name]) for name in names}
+    meta = {}
+    for i, name in enumerate(names):
+        calibrated_param = None
+        if name == "noise":
+            power = float(contexts.var(axis=1).mean() + 1e-8)
+            adjusted[name]["snr_db"] = float(10.0 * np.log10(power / max(target, 1e-8)))
+            calibrated_param, calibrated_value = "snr_db", adjusted[name]["snr_db"]
+        elif name in _CALIBRATABLE_RANGES:
+            param, lo, hi, is_int = _CALIBRATABLE_RANGES[name]
+            val, _ = _bisect_param(name, configs[name], param, lo, hi, is_int,
+                                   contexts, target, seed + i)
+            if is_int:
+                val = int(round(val))
+                if val % 2 == 0:
+                    val += 1
+            adjusted[name][param] = val
+            calibrated_param, calibrated_value = param, val
+        c = CORRUPTIONS[name](contexts.copy(), np.random.default_rng(seed + i), **adjusted[name])
+        meta[name] = {
+            "calibrated": calibrated_param is not None,
+            "calibrated_param": calibrated_param,
+            "calibrated_value": calibrated_value if calibrated_param else None,
+            "target_energy": target,
+            "realized_energy": _perturbation_energy(contexts, c),
+            "footprint": _perturbation_footprint(contexts, c),
+            "natural_energy": natural_energy[name],
+            "natural_footprint": natural_footprint[name],
+        }
+    return adjusted, meta
+
+
+def corruption_footprint_meta(names: list, configs: dict, contexts: np.ndarray, seed: int) -> dict:
+    """Footprint/energy for every corruption without changing any parameter (`calibrate: none`)."""
+    meta = {}
+    for i, name in enumerate(names):
+        c = CORRUPTIONS[name](contexts.copy(), np.random.default_rng(seed + i), **configs[name])
+        meta[name] = {"calibrated": False, "footprint": _perturbation_footprint(contexts, c),
+                     "energy": _perturbation_energy(contexts, c)}
+    return meta
+
+
 def run_l3(cfg: PipelineConfig, hub, store: ActivationStore, data: BenchmarkData,
            device: torch.device) -> None:
     """Sensitivity fingerprints, cross-model agreement, and activation patching."""
@@ -181,12 +311,27 @@ def run_l3(cfg: PipelineConfig, hub, store: ActivationStore, data: BenchmarkData
     if unknown:
         raise ValueError(f"unknown corruptions {unknown}; available: {sorted(CORRUPTIONS)}")
 
-    rng = np.random.default_rng(cfg.run.seed + 3)
-    rows = np.sort(rng.choice(data.n, size=min(data.n, cfg.l3.max_series), replace=False))
+    rows = sample_rows(data.n, cfg.l3.max_series, cfg.run.seed + 3,
+                      strata=data.meta["family"].to_numpy())
     contexts = data.contexts()[rows]
     scale = np.abs(np.diff(contexts, axis=1)).mean(axis=1) + 1e-8
+
+    if cfg.l3.calibrate == "none":
+        corruption_configs = cfg.l3.corruptions
+        calibration_meta = corruption_footprint_meta(names, corruption_configs, contexts,
+                                                      cfg.run.seed + 500)
+    elif cfg.l3.calibrate == "input_energy":
+        corruption_configs, calibration_meta = calibrate_corruptions(
+            names, cfg.l3.corruptions, contexts, cfg.run.seed + 500)
+        log.info("l3: calibrated corruptions to a common energy budget of %.4g -- %s",
+                 calibration_meta[names[0]]["target_energy"],
+                 {n: calibration_meta[n].get("calibrated_value") for n in names
+                  if calibration_meta[n]["calibrated"]})
+    else:
+        raise ValueError(f"unknown l3.calibrate {cfg.l3.calibrate!r} "
+                         f"(expected 'none' or 'input_energy')")
     corrupted = {c: CORRUPTIONS[c](contexts.copy(), np.random.default_rng(cfg.run.seed + 100 + i),
-                                   **cfg.l3.corruptions[c])
+                                   **corruption_configs[c])
                  for i, c in enumerate(names)}
 
     a, b = cfg.comparison_pair()
@@ -222,7 +367,8 @@ def run_l3(cfg: PipelineConfig, hub, store: ActivationStore, data: BenchmarkData
     save_json(out_dir / "meta.json", {
         "model_a": a.name, "model_b": b.name, "corruptions": names,
         "layers": layer_lists, "agreement": agreement, "behavior_ci": behavior_ci,
-        "n_series": int(len(rows)),
+        "n_series": int(len(rows)), "calibrate": cfg.l3.calibrate,
+        "calibration": calibration_meta,
     })
     if patching:
         win_arrays = {f"restoration_windows_{k}": v["restoration_windows"]
@@ -251,7 +397,9 @@ def run_l3(cfg: PipelineConfig, hub, store: ActivationStore, data: BenchmarkData
                 "windows": v.get("windows", []),
                 "window_size": cfg.alignment.window,
                 "whole_context_patch": v.get("whole_context_patch", False),
-                "verbose": verbose_meta.get(k, {})}
+                "verbose": verbose_meta.get(k, {}),
+                "n_requested": v.get("n_requested"), "n_realized": v.get("n_realized"),
+                "limited_by": v.get("limited_by")}
             for k, v in patching.items()})
     log.info("L3 complete: most divergent corruption = %s", agreement["most_divergent"])
 
@@ -315,8 +463,20 @@ def _patching(cfg: PipelineConfig, adapter, layers: list, rows: np.ndarray,
     curve should be read as a wiring sanity-check, not a depth signal.
     """
     pcfg = cfg.l3.patching
-    take = min(len(rows), pcfg.max_series, adapter.cfg.batch_size)
-    ctx_clean = contexts[:take]
+    cap = capped_take(pcfg.max_series, n_available=len(rows), batch_size=adapter.cfg.batch_size)
+    take = cap["n_realized"]
+    # `contexts`/`targets`/`series_ids`/`families` arrive already row-sampled
+    # (by `run_l3`) but still in sorted-index order; a further `[:take]` head
+    # slice here would re-introduce the family-order bias `sample_rows` exists
+    # to avoid, one level removed (ROADMAP.md sec 15 A4) -- so this second cap
+    # is stratified too, applied consistently to every per-series array below.
+    sel = (sample_rows(len(rows), take, cfg.run.seed + 77,
+                       strata=families if families is not None else None)
+          if take < len(rows) else np.arange(len(rows)))
+    ctx_clean = contexts[sel]
+    targets = targets[sel] if targets is not None else None
+    series_ids = series_ids[sel] if series_ids is not None else None
+    families = families[sel] if families is not None else None
     layers_p = layers[:: max(1, pcfg.layer_stride)]
     corr_names = [c for c in pcfg.corruptions if c in corrupted]
     clean_tokens = capture_raw_tokens(adapter, ctx_clean, layers_p)
@@ -337,7 +497,7 @@ def _patching(cfg: PipelineConfig, adapter, layers: list, rows: np.ndarray,
                     if n_verbose and windows else None)
     verbose = {}
     for ci, cname in enumerate(tqdm(corr_names, desc=f"L3 patching {adapter.name}")):
-        ctx_corr = corrupted[cname][:take]
+        ctx_corr = corrupted[cname][sel]
         f_corr = _predict_once(adapter, ctx_corr, horizon, cfg.l0.quantiles, seed)
         damage = np.abs(f_corr - f_clean).mean() + 1e-8
         for li, layer in enumerate(layers_p):
@@ -366,7 +526,9 @@ def _patching(cfg: PipelineConfig, adapter, layers: list, rows: np.ndarray,
                 horizon, cfg.l0.quantiles, seed, f_clean, f_corr, damage, rest_win[ci],
                 verbose_grid[ci], n_verbose, ctx_clean, targets, series_ids, families)
     out = {"restoration": restoration, "layers": layers_p, "corruptions": corr_names,
-           "whole_context_patch": not bool(windows)}
+           "whole_context_patch": not bool(windows),
+           "n_requested": cap["n_requested"], "n_realized": cap["n_realized"],
+           "limited_by": cap["limited_by"]}
     if windows:
         out["restoration_windows"] = rest_win
         out["windows"] = windows
