@@ -175,6 +175,52 @@ def test_factor_probe_matrix_finds_planted_emergence_layer():
     print("factor_probe_matrix planted-emergence test passed")
 
 
+def test_factor_emergence_weak_factors_no_longer_dilute_strong_late_peak():
+    """CLAUDE.md §11.18: weak, uniformly-noisy factors must not out-vote a
+    strong factor with a real, late, high-magnitude peak.
+
+    One factor ("strong") is near-chance until layer 5 then jumps to a clear
+    peak at layer 6 -- the real signal. Three "weak" factors never clear
+    ~0.11 decodability anywhere; under the *old* unweighted, ungated scoring
+    their small noisy peaks at layers 0-2 (with a relative-to-own-peak
+    emergence threshold) would out-vote the strong factor's single event at
+    layer 6 by raw count alone. The fix (peak-magnitude weighting + an
+    absolute `min_peak_score` floor on `emergence`) must put the combined
+    per-layer score's maximum back on layer 6, and must exclude every weak
+    factor from `emergence` outright since none clears the default
+    `min_peak_score` (0.15).
+    """
+    layers = [f"l{i}" for i in range(8)]
+    strong = [0.05, 0.06, 0.07, 0.08, 0.10, 0.30, 0.90, 0.85]
+    weak1 = [0.09, 0.02, 0.03, 0.01, 0.02, 0.01, 0.02, 0.01]
+    weak2 = [0.02, 0.10, 0.03, 0.02, 0.01, 0.02, 0.01, 0.02]
+    weak3 = [0.03, 0.02, 0.11, 0.01, 0.02, 0.01, 0.02, 0.01]
+    weak4 = [0.08, 0.01, 0.02, 0.03, 0.01, 0.02, 0.01, 0.02]
+    D = np.array([strong, weak1, weak2, weak3, weak4]).T
+    decodability = {"layers": layers, "factors": ["strong", "weak1", "weak2", "weak3", "weak4"],
+                   "decodability": D.tolist()}
+
+    scores = factor_emergence_scores(decodability)
+    assert scores["emergence"] == {"strong": 6}, scores["emergence"]
+    assert set(scores["no_emergence_factors"]) == {"weak1", "weak2", "weak3", "weak4"}
+    assert scores["peak"]["strong"] == 6
+
+    combined = np.array(scores["score_per_layer"])
+    # `combined` also carries a transition-mass term (a separate, legitimate
+    # "big jump into this layer" signal, unrelated to the count-score dilution
+    # bug being fixed here), so the winner may land on layer 5 (the jump into
+    # the peak) or layer 6 (the peak itself) -- either is the real strong
+    # signal's neighborhood. What must not happen, and is what the bug
+    # actually caused, is an early layer (0-2, where only weak/noisy factors
+    # had their spurious "emergence") outscoring it.
+    assert int(np.argmax(combined)) in (5, 6), (combined, "strong factor's real late "
+                                               "signal must win")
+    assert combined[5:7].max() > combined[:3].max(), (combined, "weak factors' early "
+                                                       "noise must not out-score the "
+                                                       "strong factor's late signal")
+    print("factor_emergence weak-factor-dilution fix test passed")
+
+
 def test_factor_probe_matrix_drops_unusable_columns():
     """A constant column and a too-sparse column must be dropped, not scored as 0."""
     rng = np.random.default_rng(1)
@@ -264,6 +310,7 @@ if __name__ == "__main__":
     test_greedy_coverage_selects_one_per_redundant_band()
     test_greedy_coverage_auto_stops_on_min_gain()
     test_factor_probe_matrix_finds_planted_emergence_layer()
+    test_factor_emergence_weak_factors_no_longer_dilute_strong_late_peak()
     test_factor_probe_matrix_drops_unusable_columns()
     test_select_layers_dispatch_validates_inputs()
     test_recall_at_budget_perfect_and_disjoint()

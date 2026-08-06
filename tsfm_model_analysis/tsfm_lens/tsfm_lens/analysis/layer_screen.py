@@ -279,14 +279,29 @@ def factor_probe_matrix(store, model: str, layers: list, gt, series_ids: np.ndar
 
 
 def factor_emergence_scores(decodability: dict, threshold_frac: float = 0.5,
-                            floor: float = 0.05) -> dict:
+                            floor: float = 0.05, min_peak_score: float = 0.15) -> dict:
     """Score each layer by how many factors emerge/peak there, plus transition mass.
 
-    `threshold_frac` is relative to each factor's *own* peak decodability (not
-    an absolute R^2), so factors that are only ever weakly decodable still
-    contribute an emergence layer rather than being swamped by ones that are
-    strongly decodable everywhere. Factors that never clear `floor` anywhere
-    are dropped and named in the result, not silently zeroed.
+    `threshold_frac` is relative to each factor's *own* peak decodability, so a
+    factor that is only ever weakly decodable can still register an event
+    instead of being unconditionally excluded. But a purely relative bar lets
+    ordinary noise clear it for a weak factor (its "peak" is barely above
+    chance to begin with), producing spurious early emergence events that
+    dilute the real signal from strongly-decodable factors peaking later
+    (`CLAUDE.md` §11.18 -- confirmed on a real run: 8/20 factors "emerged" at
+    layers 2-4 from noise while the informative peaks sat at layers 9-16, and
+    the method scored at/below a random null). Two changes address this
+    without dropping weak factors outright: (1) each factor's contribution to
+    `count_score` is weighted by its own peak decodability (`col.max()`), so a
+    weak factor's event moves the combined score proportionally less than a
+    strong factor's; (2) `min_peak_score` is an absolute (not peak-relative)
+    floor gating the `emergence` event specifically -- a factor whose own peak
+    never clears it cannot claim a "this is where it emerged" layer at all
+    (weighting alone would already shrink its influence, but a peak barely
+    above noise shouldn't get a specific emergence layer attributed to it
+    either); it still contributes a peak-weighted `peak` event. Factors that
+    never clear `floor` anywhere are dropped and named in the result, not
+    silently zeroed.
     """
     layers = decodability["layers"]
     factors = decodability["factors"]
@@ -294,18 +309,24 @@ def factor_emergence_scores(decodability: dict, threshold_frac: float = 0.5,
     L = len(layers)
     if D.shape[1] == 0:
         return {"score_per_layer": [0.0] * L, "emergence": {}, "peak": {},
-                "transition_mass": [0.0] * L, "dropped_factors": [], "kept_factors": []}
+                "transition_mass": [0.0] * L, "dropped_factors": [], "kept_factors": [],
+                "weights": {}, "no_emergence_factors": []}
 
-    emergence, peak, kept_idx, dropped = {}, {}, [], []
+    emergence, peak, weights, kept_idx, dropped, no_emergence = {}, {}, {}, [], [], []
     for fi, f in enumerate(factors):
         col = D[:, fi]
-        if col.max() < floor:
+        peak_score = float(col.max())
+        if peak_score < floor:
             dropped.append(f)
             continue
         kept_idx.append(fi)
-        thresh = threshold_frac * col.max()
-        emergence[f] = int(np.argmax(col >= thresh))
+        weights[f] = peak_score
         peak[f] = int(np.argmax(col))
+        if peak_score >= min_peak_score:
+            thresh = threshold_frac * peak_score
+            emergence[f] = int(np.argmax(col >= thresh))
+        else:
+            no_emergence.append(f)
 
     transition_mass = np.zeros(L)
     if kept_idx:
@@ -314,14 +335,16 @@ def factor_emergence_scores(decodability: dict, threshold_frac: float = 0.5,
             transition_mass[l] = float(np.abs(dk[l + 1] - dk[l]).sum())
 
     count_score = np.zeros(L)
-    for f in emergence:
-        count_score[emergence[f]] += 1.0
-        count_score[peak[f]] += 1.0
+    for f, l in emergence.items():
+        count_score[l] += weights[f]
+    for f, l in peak.items():
+        count_score[l] += weights[f]
     tm_z = _zscore(transition_mass)
     combined = count_score + np.clip(tm_z, 0, None)
     return {"score_per_layer": combined.tolist(), "emergence": emergence, "peak": peak,
             "transition_mass": transition_mass.tolist(), "dropped_factors": dropped,
-            "kept_factors": [factors[i] for i in kept_idx]}
+            "kept_factors": [factors[i] for i in kept_idx], "weights": weights,
+            "no_emergence_factors": no_emergence}
 
 
 def select_factor_emergence(store, model: str, layers: list, gt, series_ids: np.ndarray,

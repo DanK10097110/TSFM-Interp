@@ -171,7 +171,7 @@ def load_sae_checkpoint(path: str) -> TopKSAE:
     return sae
 
 
-def _sanitize(name: str) -> str:
+def sanitize(name: str) -> str:
     return name.replace("/", "_").replace(".", "_")
 
 
@@ -185,6 +185,7 @@ def run_sae(cfg: PipelineConfig, hub: ModelHub, store: ActivationStore,
                                resample_dead_every_epochs=cfg.sae.resample_dead_every_epochs)
     targets = cfg.sae.targets or _default_targets(cfg, store)
     results = {}
+    real_contexts = _sample_real_contexts(cfg) if cfg.sae.real_data_enabled else None
     for target in targets:
         model, layer = target["model"], target["layer"]
         key = f"{model}/{layer}"
@@ -194,7 +195,8 @@ def run_sae(cfg: PipelineConfig, hub: ModelHub, store: ActivationStore,
         train_activations = bench_activations
         n_real = 0
         if cfg.sae.real_data_enabled:
-            real_activations = _real_data_activations(cfg, adapter, layer, device)
+            real_activations = extract_real_activations(
+                adapter, layer, real_contexts, cfg.alignment.window, cfg.sae.batch_size, device)
             n_real = real_activations.shape[0]
             train_activations = np.concatenate([bench_activations, real_activations], axis=0)
             log.info(f"sae: augmented {key} training set with {n_real} real-data rows "
@@ -202,7 +204,7 @@ def run_sae(cfg: PipelineConfig, hub: ModelHub, store: ActivationStore,
                      f"{train_activations.shape[0]} total)")
         sae, history = train_sae(train_activations, train_cfg, device)
 
-        ckpt_path = out_dir / _sanitize(model) / f"{_sanitize(layer)}.pt"
+        ckpt_path = out_dir / sanitize(model) / f"{sanitize(layer)}.pt"
         save_sae(sae, ckpt_path)
 
         # Fidelity/dead-feature-rate reported against the benchmark's own
@@ -236,14 +238,18 @@ def run_sae(cfg: PipelineConfig, hub: ModelHub, store: ActivationStore,
     log.info(f"sae: complete, {len(results)} target(s)")
 
 
-def _real_data_activations(cfg: PipelineConfig, adapter, layer: str, device: torch.device) -> np.ndarray:
-    """Window-pooled activations from a real HF time-series pool, for SAE training augmentation."""
+def _sample_real_contexts(cfg: PipelineConfig) -> np.ndarray:
+    """Real HF time-series context windows for SAE training augmentation.
+
+    Sampled once per `run_sae` call and reused across every (model, layer)
+    target -- the pool/sampling is model-independent, so re-fetching it per
+    target (as an earlier version did) redundantly re-downloaded the same
+    catalog once per target for no benefit (`ROADMAP.md` §6.2's Findings).
+    """
     windows_needed = cfg.sae.real_data_n_windows // (cfg.data.context_len // cfg.alignment.window)
-    contexts = sample_real_context_windows(
+    return sample_real_context_windows(
         context_len=cfg.data.context_len, n_windows=max(1, windows_needed), seed=cfg.run.seed,
         dataset_name=cfg.sae.real_data_source, total_limit=cfg.sae.real_data_pool_limit)
-    return extract_real_activations(adapter, layer, contexts, cfg.alignment.window,
-                                    cfg.sae.batch_size, device)
 
 
 def _default_targets(cfg: PipelineConfig, store: ActivationStore) -> list:

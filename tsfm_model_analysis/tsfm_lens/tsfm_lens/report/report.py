@@ -76,6 +76,10 @@ def run_report(cfg: PipelineConfig) -> Path:
          ["clustering/embedding.parquet", "clustering/clusters.json",
           "clustering/comparison.json"],
          lambda: _sec_clusters(run_dir, model_colors, findings)),
+        ("SAE", "Sparse feature dictionary",
+         "Per-target reconstruction/dead-feature/forecast-preservation summary, plus exemplar series for the dictionary's ground-truth-matched features.",
+         ["sae/meta.json"],
+         lambda: _sec_sae(cfg, run_dir, findings)),
         ("Exemplars", "Exemplar case studies",
          "A few concrete series per family, told end to end: both forecasts, where each model's answer forms in depth, and where it looks in the context.",
          ["exemplars/exemplars.npz", "exemplars/exemplars.json"],
@@ -1272,6 +1276,54 @@ def _sec_clusters(run_dir: Path, model_colors: dict, findings: list) -> str:
     return inner
 
 
+def _sec_sae(cfg: PipelineConfig, run_dir: Path, findings: list) -> str:
+    """Per-target SAE summary stats plus a ground-truth-matched feature exemplar panel.
+
+    ROADMAP.md §6.2's "verbose-mode reporting" checklist item, forecast-half
+    only -- the causal-effect-when-zeroed half needs Phase 3 feature-level
+    ablation, which doesn't exist yet (stated in the note below, not
+    silently implied).
+    """
+    from ..extraction.store import ActivationStore, load_meta
+    from ..sae.ground_truth import load_ground_truth_table
+    from .sae_exemplars import build_run_exemplars
+
+    meta_sae = load_json(run_dir / "sae" / "meta.json")
+    if not meta_sae:
+        return ""
+    store = ActivationStore(run_dir / "activations.zarr")
+    run_meta = load_meta(run_dir)
+    try:
+        gt = load_ground_truth_table(cfg.data.path)
+    except Exception as exc:
+        log.info(f"report: SAE section has no ground truth to draw exemplars from: {exc}")
+        gt = pd.DataFrame()
+    inner = ""
+    for key, entry in meta_sae.items():
+        model, layer = key.split("/", 1)
+        fid, dead = entry.get("reconstruction_fidelity"), entry.get("dead_feature_rate")
+        d_mase = entry.get("forecast_preservation", {}).get("mase_delta")
+        stats = f"reconstruction fidelity {fid:.3f} · dead-feature rate {dead:.3f}"
+        if d_mase is not None:
+            stats += f" · forecast-preservation ΔMASE {d_mase:+.3f}"
+        inner += f"<h4>{key}</h4><p class='blurb'>{stats}</p>"
+        try:
+            df = build_run_exemplars(cfg, store, model, layer, entry, gt, run_meta)
+        except Exception as exc:
+            inner += f"<p class='blurb'>exemplar panel unavailable: {exc}</p>"
+            continue
+        if df.empty:
+            inner += "<p class='blurb'>no ground-truth-matched features to illustrate.</p>"
+            continue
+        inner += _table(df)
+        top = df.iloc[0]
+        findings.append(f"SAE — {key}: feature {int(top['feature'])} best matches "
+                        f"{top['best_field']} (ρ={top['rho']:.2f}); top exemplar series "
+                        f"{top['series_id']} (activation {top['activation']:.2f}).")
+    inner += _note(*_SAE_EXEMPLAR_NOTE, summary="What is this table?")
+    return inner
+
+
 _INTERNALS_NOTES = {
     "effective_dim": (
         "Participation ratio of each layer's activation covariance "
@@ -1349,6 +1401,30 @@ _LAYER_SCREEN_NOTE = (
     "little room to beat a free uniform-stride null; a method not beating "
     "it there is not necessarily broken. `factor_emergence` (Idea B) has a "
     "known, diagnosed weighting flaw and underperformed in that bake-off.",
+)
+
+_SAE_EXEMPLAR_NOTE = (
+    "For each SAE target, the series-level ground-truth feature-alignment "
+    "score (ROADMAP.md §2.1/§6.2) is computed for every dictionary feature; "
+    "this table shows, for the top few features with a significant "
+    "ground-truth match, the exemplar series that feature fires hardest on "
+    "-- the field it matches, that match's Spearman ρ, and (`field_value`) "
+    "that exemplar series' own actual value of the matched field, so a "
+    "reader can eyeball whether the correlation the number claims is real.",
+    "A high |ρ| with `field_value` varying sensibly across the listed "
+    "exemplars (e.g. activation tracking a seasonal period or trend order "
+    "up and down) is a genuine, ground-truth-verified interpretable "
+    "feature. `activation` is that feature's own encoded value for the "
+    "listed series, not comparable in scale across different features or "
+    "models.",
+    "Illustrative evidence only (`CLAUDE.md` §2.6), same class as the "
+    "Exemplars section -- a feature firing here is not a causal claim "
+    "about the forecast; that needs Phase 3 feature-level ablation "
+    "(ROADMAP.md §6.2), which does not exist yet. Only the small alive "
+    "fraction of the dictionary can ever appear here (dead-feature rate is "
+    "typically 90%+, shown above per target); real-derived-tier series "
+    "carry no ground truth and never appear as exemplars regardless of how "
+    "hard a feature fires on them.",
 )
 
 

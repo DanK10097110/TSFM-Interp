@@ -20,6 +20,7 @@ import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from tsfm_lens.report.sae_exemplars import build_exemplar_table, select_feature_exemplars
 from tsfm_lens.sae.eval import dead_feature_rate, reconstruction_fidelity
 from tsfm_lens.sae.ground_truth import best_ground_truth_matches
 from tsfm_lens.sae.models import TopKSAE
@@ -151,6 +152,55 @@ def test_ground_truth_matching_skips_when_too_few_valid():
     print("too-few-valid guard test passed")
 
 
+def test_select_feature_exemplars_ranks_by_activation_descending():
+    features = np.array([[0.1, 5.0], [0.9, 1.0], [0.4, 9.0], [0.7, 0.0]])
+    series_ids = np.array(["s0", "s1", "s2", "s3"])
+    top = select_feature_exemplars(features, series_ids, feature_idx=0, top_k=2)
+    assert [e["series_id"] for e in top] == ["s1", "s3"], top
+    assert top[0]["activation"] == 0.9
+    print("select_feature_exemplars ranking test passed")
+
+
+def test_build_exemplar_table_matches_planted_feature_to_field_value():
+    """A feature planted to track `trend_order` must surface exemplar series
+    whose own `trend_order` ground-truth values actually vary sensibly with
+    the shown activation -- the whole point of the panel (eyeball the
+    correlation a ρ number claims), not just that the plumbing runs."""
+    n = 20
+    series_ids = np.array([f"s{i}" for i in range(n)])
+    trend_order = np.arange(n, dtype=float)
+    features = np.zeros((n, 3))
+    features[:, 1] = trend_order  # feature 1 tracks trend_order exactly
+    gt = pd.DataFrame({"trend_order": trend_order}, index=series_ids)
+    meta = pd.DataFrame({"series_id": series_ids, "family": ["trend"] * n})
+    matched_features = [{"feature": 1, "best_field": "trend_order", "rho": 0.99}]
+
+    df = build_exemplar_table(features, series_ids, matched_features, meta, gt,
+                              top_features=5, top_examples=3)
+    assert len(df) == 3
+    assert (df["feature"] == 1).all()
+    assert (df["best_field"] == "trend_order").all()
+    # Top exemplars must be the series with the highest trend_order (feature
+    # 1's own values are exactly trend_order, so ranking by activation must
+    # reproduce ranking by trend_order) -- and `field_value` must equal the
+    # real ground-truth value, not a coincidence of the activation column.
+    assert list(df["series_id"]) == ["s19", "s18", "s17"], df["series_id"].tolist()
+    assert list(df["field_value"]) == [19.0, 18.0, 17.0], df["field_value"].tolist()
+    print("build_exemplar_table planted-feature test passed")
+
+
+def test_build_exemplar_table_skips_unmatched_features():
+    n = 15
+    series_ids = np.array([f"s{i}" for i in range(n)])
+    features = np.random.default_rng(0).normal(size=(n, 2))
+    gt = pd.DataFrame({"trend_order": np.arange(n, dtype=float)}, index=series_ids)
+    meta = pd.DataFrame({"series_id": series_ids, "family": ["trend"] * n})
+    matched_features = [{"feature": 0, "best_field": None, "rho": 0.0}]
+    df = build_exemplar_table(features, series_ids, matched_features, meta, gt)
+    assert df.empty, df
+    print("build_exemplar_table unmatched-feature skip test passed")
+
+
 if __name__ == "__main__":
     test_topk_sae_shapes_and_sparsity()
     test_train_sae_reduces_loss_and_reconstructs()
@@ -159,3 +209,6 @@ if __name__ == "__main__":
     test_save_and_load_checkpoint_roundtrip()
     test_ground_truth_matching_finds_planted_correlation()
     test_ground_truth_matching_skips_when_too_few_valid()
+    test_select_feature_exemplars_ranks_by_activation_descending()
+    test_build_exemplar_table_matches_planted_feature_to_field_value()
+    test_build_exemplar_table_skips_unmatched_features()

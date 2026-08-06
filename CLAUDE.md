@@ -287,7 +287,11 @@ TSFM-Interp/
         │   ├── config.py        # typed dataclasses, per-stage enables, YAML load
         │   ├── data.py          # sealed loader + jsonl fallback + smoke generator
         │   ├── utils.py         # log, save_json, batch_slices, relative_depths
-        │   ├── models/          # base.py (ModelAdapter), timesfm/chronos/chronos_bolt/mock
+        │   ├── models/          # base.py (ModelAdapter), timesfm/chronos/chronos_bolt/mock,
+        │   │                    # conformance.py (check_adapter_conformance -- ROADMAP.md
+        │   │                    # §10's automated adapter-checklist, mocks only),
+        │   │                    # capability_matrix.py (declared/verified capability
+        │   │                    # table generator -- ROADMAP.md §10, no checkpoint load)
         │   ├── extraction/      # hooks.py, alignment.py, extract.py, store.py (zarr)
         │   ├── analysis/        # stats, l0_behavioral, internals, lens, l1_geometry,
         │   │                    # l2_stitching, l3_perturbation, attention, clustering,
@@ -322,6 +326,10 @@ TSFM-Interp/
         ├── run_crosscoder_feasibility.py # CLI for sae/crosscoder.py (ROADMAP.md §13/§6.2)
         ├── run_noise_snr_sweep.py # reruns L3's noise corruption at several SNR values
         │                        # against an already-extracted run (ROADMAP.md §7)
+        ├── run_capability_matrix.py # CLI for models/capability_matrix.py: prints/writes
+        │                        # the auto-generated capability matrix; --verify
+        │                        # adapter=run_dir:model_name reads an existing run's
+        │                        # attention/ artifacts, no checkpoint loaded
         ├── configs/default.yaml # real pair (TimesFM vs Chronos)
         ├── configs/medium_run.yaml # mid-scale real-model config
         ├── configs/medium_run_chronos_base.yaml # size-variant control (chronos-t5-base)
@@ -337,6 +345,14 @@ TSFM-Interp/
         ├── tests/test_crosscoder.py # joint-normalization invariant, planted shared/
         │                        # specific-cause recovery, engineered mismatched-scale
         │                        # stability check -- all synthetic, planted answers
+        ├── tests/test_adapter_conformance.py # runs check_adapter_conformance against
+        │                        # all 3 mock adapters incl. mock_wave (the unexercised-
+        │                        # by-default third architecture), a no-optional-
+        │                        # capabilities stand-in, and a deliberately-broken adapter
+        ├── tests/test_capability_matrix.py # declared-vs-verified capability generator:
+        │                        # synthetic fixtures only; the real-run cross-check that
+        │                        # caught a numpy.bool_/`is` rendering bug is documented
+        │                        # in ROADMAP.md, not repeated here as a pytest test
         ├── requirements.txt, pyproject.toml
         └── README.md
 ```
@@ -606,10 +622,11 @@ interpretability machinery — hence L0 exists as the hypothesis generator.
 > on the same already-processed query/key/value) to recover the weights,
 > then swaps the original back immediately after the one forward call this
 > needs. Same computed output, just with the intermediate weights stashed
-> on the way. ⚠️ There is a stale comment in `configs/default.yaml`'s
-> `attention:` block still asserting TimesFM "exposes no patterns
-> (functional attention)" — that comment is doc-drift from before this
-> rewrite and should be fixed next time that file is touched.
+> on the way. ✅ **Checked 2026-08-06:** the stale `configs/default.yaml`
+> comment this paragraph used to flag ("exposes no patterns (functional
+> attention)") is no longer present — the file's `attention:` block comment
+> already correctly describes `attention_patterns` support. Fixed in an
+> earlier, undated session; this paragraph's own warning had gone stale.
 
 **Adding a model:** subclass `ModelAdapter`, register in `models/__init__.py`,
 run `--discover-layers` to pick a `layer_regex`, then `--check-alignment`.
@@ -1327,6 +1344,33 @@ noisy signal's own peak doesn't distinguish "this factor has a real,
 strong emergence event" from "this factor is uniformly weak and its peak is
 barely above the noise floor" — an absolute floor (or a peak-magnitude
 weight) is needed alongside any relative threshold, not instead of it.
+
+**Fixed 2026-08-06 (code + synthetic-data unit test only — not yet
+re-verified against the real bake-off).** `factor_emergence_scores` now
+does both things the diagnosis above named: (1) each factor's contribution
+to `count_score` is weighted by its own peak decodability (`col.max()`)
+rather than counted as a flat `+1`, so a uniformly weak factor's spurious
+early "emergence" moves the combined score proportionally less than a
+strong factor's real late peak; (2) a new `min_peak_score` parameter
+(default `0.15`, absolute, not peak-relative) gates the `emergence` event
+specifically — a factor whose own peak never clears it is recorded in a new
+`no_emergence_factors` list and contributes only a (small, weighted) `peak`
+event, never an `emergence` one. A new planted-data test
+(`tests/test_layer_screen.py::test_factor_emergence_weak_factors_no_longer_dilute_strong_late_peak`)
+constructs one factor with a real late peak (layer 6) against four factors
+that are uniformly noisy and never clear ~0.11 decodability, and asserts
+the combined per-layer score's maximum lands on the strong factor's real
+signal (layer 5 or 6, not the weak factors' spurious early layers 0–2) and
+that every weak factor is excluded from `emergence` via
+`no_emergence_factors`. Full `tsfm_lens` suite re-run clean after this fix:
+66/66 passing. **What this does not close:** the fix has only been checked
+against synthetic planted data, not re-run through the real §6.1.1-E
+bake-off against live TimesFM/Chronos checkpoints — whether
+`factor_emergence` now actually beats the
+uniform-stride/random nulls on real activations (it scored at/below them
+before this fix) is still open and is the natural next step before
+promoting it past `work_bend` as a selector choice. See `ROADMAP.md`
+§6.1.1's Findings for the same update with the exact numbers.
 
 ### 11.19 Summing raw per-source MSE lets the larger-scale source dominate a joint crosscoder
 `sae/crosscoder.py`'s `CrosscoderSAE` trains one dictionary jointly across

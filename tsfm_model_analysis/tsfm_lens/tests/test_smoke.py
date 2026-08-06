@@ -207,6 +207,15 @@ def test_sae_stage_integration(run_dir=None):
 
     gt = entry["ground_truth_alignment"]
     assert "error" in gt, "smoke data has no sealed corpus; ground truth must degrade, not crash"
+
+    from tsfm_lens.report.report import run_report
+    run_report(cfg)
+    html = (run_dir / "report.html").read_text(encoding="utf-8")
+    assert "Sparse feature dictionary" in html, "report missing the SAE section"
+    assert "reconstruction fidelity" in html
+    assert "no ground-truth-matched features to illustrate" in html, (
+        "smoke data has no ground truth, so the exemplar panel must say so, not crash or "
+        "silently render an empty table")
     print("sae stage integration test passed")
 
 

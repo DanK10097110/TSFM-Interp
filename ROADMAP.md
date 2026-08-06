@@ -1901,6 +1901,40 @@ of every config's `sae` stage. What changed, concretely:
   method into production does not retroactively resolve them, and the
   report's own note above says so.
 
+**Findings — Idea B peak-weighting fix (2026-08-06).** Picked up the one
+item from the list directly above that was cheap, well-scoped, and did not
+need a live checkpoint/GPU rerun: `factor_emergence_scores`
+(`tsfm_lens/analysis/layer_screen.py`) now weights each ground-truth
+factor's contribution to the per-layer `count_score` by that factor's own
+peak decodability (`col.max()`) instead of a flat `+1` per emergence/peak
+event, and gates the `emergence` event specifically behind a new absolute
+(not peak-relative) `min_peak_score` floor (default `0.15`) — a factor
+whose own peak never clears it is now recorded in a new
+`no_emergence_factors` list and can still register a (heavily downweighted)
+`peak` event, but never an `emergence` one. This is exactly the fix
+`CLAUDE.md` §11.18 named as the concrete next step, implemented as both
+halves ("weight by peak R²" *and* "gate behind an absolute floor"), not a
+choice between them. A new planted-data unit test
+(`tests/test_layer_screen.py::test_factor_emergence_weak_factors_no_longer_dilute_strong_late_peak`)
+constructs one factor with a real, high-magnitude, late peak (layer 6 of 8)
+against four factors that are uniformly noisy and never clear ~0.11
+decodability anywhere — under the old unweighted/ungated scoring the four
+weak factors' spurious early "emergence" events (layers 0–2) would
+out-vote the strong factor's single real event by raw count; the fix must
+put the combined score's maximum back on the strong factor's layer 5/6
+neighborhood and exclude every weak factor from `emergence` via
+`no_emergence_factors`. Full `tsfm_lens` test suite re-run clean after:
+**66/66 passing.** **Explicitly not done this session, per its own scope**
+(no live GPU/checkpoint work was in scope for this fix): re-running the
+real §6.1.1-E bake-off (`run_layer_screen_bakeoff.py` against live
+TimesFM 2.5 / Chronos-T5-Small) to check whether `factor_emergence` now
+actually clears the uniform-stride/random nulls it previously scored at or
+below — the fix is verified against a synthetic planted answer, not yet
+against the real gold ranking. That live re-verification is the natural
+next step before `factor_emergence` could be reconsidered as anything more
+than "no longer disqualified by a known bug," and before it could be
+compared again against `work_bend`/`coverage` as a production candidate.
+
 ### 6.2 Phase 2b — A TSFM-native SAE variant (the flagship research thread) — baseline (item 4) ✅ DONE 2026-08-05; crosscoder (item 1) feasibility test ✅ DONE 2026-08-05, flagship build not started
 
 **Goal.** Train sparse dictionaries on the layers Phase 2a identifies as
@@ -2016,14 +2050,23 @@ something novel" (brief item 3) should actually land.
   done**; needs SAE runs across enough (run, model, layer) combinations to
   add as a fourth proxy the way §6.1's other three were pooled, which this
   session's two-target demo run doesn't yet provide at meaningful n.
-- [ ] Verbose-mode reporting (§4): a per-feature exemplar panel — top
+- [x] Verbose-mode reporting (§4): a per-feature exemplar panel — top
   activating series/windows for a feature, its ground-truth alignment score,
   and (once Phase 3 feature ablation exists) its causal effect on forecast
-  when zeroed. — **not done**; the `sae` stage currently writes only
-  `sae/meta.json` (no report-integrated section yet). Genuine follow-up,
-  not attempted this session — report integration for a fundamentally new
-  artifact type is its own real piece of work, distinct from getting the
-  underlying numbers to exist at all (this session's actual scope).
+  when zeroed. — **done 2026-08-06, series-level and forecast-effect-on-
+  zero half explicitly deferred, not silently expanded to cover it**: a new
+  "Sparse feature dictionary" report section (`report/report.py::_sec_sae`
+  + new `report/sae_exemplars.py`) shows, per SAE target, the summary
+  stats already computed (reconstruction fidelity, dead-feature rate,
+  forecast-preservation ΔMASE) plus a table of the dictionary's top
+  ground-truth-matched features and their top-activating exemplar series,
+  including each exemplar's own real ground-truth value of the matched
+  field (so a reader can eyeball whether the ρ number is a real pattern,
+  not just trust it). Window-level exemplars (only series-level was built,
+  matching `sae/ground_truth.py`'s own series-level-only scope) and the
+  causal-ablation-when-zeroed column both remain explicit follow-ups —
+  the latter is still correctly blocked on Phase 3 feature-level ablation,
+  which doesn't exist yet. See this section's new Findings entry below.
 
 **Findings / decisions**
 - **2026-08-05 — baseline TopK SAE built and run against real checkpoint
@@ -2209,11 +2252,16 @@ something novel" (brief item 3) should actually land.
     diversity gain is bounded by how many long-enough real series exist in
     the pool, not by `real_data_n_windows`'s nominal target. Still added
     4000 real-data rows on top of the benchmark's own 4608 for this run.
-    **Not fixed, minor, noted rather than silently left:** `run_sae` calls
-    this once per target, so a multi-target run re-fetches and re-pools
+    **Fixed 2026-08-06:** `run_sae` used to call `_real_data_activations`
+    (which both sampled the real context pool *and* ran it through the
+    model) once per target, so a multi-target run re-fetched and re-pooled
     the same catalog redundantly (this run fetched Monash twice, once per
-    model) — cheap to fix by hoisting the fetch above the per-target loop,
-    not done this session.
+    model) even though sampling is model-independent. `train.py` now calls
+    a new `_sample_real_contexts(cfg)` once, before the per-target loop,
+    and reuses the resulting `contexts` array in every target's
+    `extract_real_activations` call (the model-specific half, which still
+    correctly runs once per target since activations differ per model).
+    Full `tsfm_lens` suite re-run clean after: 66/66.
   - **Final numbers on the real run, both fixes combined
     (`configs/medium_run_chronos_base.yaml`, now `epochs: 60,
     resample_dead_every_epochs: 5, real_data_enabled: true`):**
@@ -2262,6 +2310,59 @@ something novel" (brief item 3) should actually land.
     17 — 3 new resampling/stability tests plus 1 new real-data test file
     with 3 tests, all mocking the network call per the same no-live-network
     discipline `test_smoke.py` follows).
+
+**Findings — per-feature exemplar panel / "Sparse feature dictionary" report
+section (2026-08-06).** Built the checklist item above and verified it two
+ways, per `CLAUDE.md` §2.4: synthetic planted-data unit tests first
+(`tests/test_sae.py`'s three new tests — ranking-by-activation, a planted
+feature that must recover the right exemplar series *and* the right real
+`field_value` for each, and a features-with-no-match-must-be-skipped guard),
+then regenerated the real report for `runs/medium_run_chronos_base` (the
+already-existing real-checkpoint SAE run this section's earlier Findings
+already cite numbers from) and read the actual rendered HTML rather than
+trusting the unit tests alone.
+- **The real report reproduces this section's own earlier-cited numbers
+  exactly**, which is itself a useful consistency check: TimesFM's top
+  exemplar table surfaces feature 2872 matching `archetype_trend_dominant`
+  (ρ=0.650) and feature 7945 matching `n_seasonalities` (ρ=0.640); Chronos-
+  T5-Base's top row is feature 2189 matching `has_intermittency` (ρ=0.881,
+  shown rounded in-report as 0.88) — the exact "cleanest single-feature
+  ground-truth match found anywhere this session" cited earlier in this
+  block, now visible as an actual exemplar (series `2f89e898a893a0be`,
+  activation 40.09).
+- **A genuine, minor observation surfaced only by looking at real exemplar
+  rows, not by reading the aggregate ρ number** — exactly the kind of thing
+  this panel exists to catch: TimesFM's top exemplars for the
+  `archetype_trend_dominant`-matched feature include two `mixture` (real-
+  derived tier) series with activation 0.0 and `field_value` 0.0, sitting
+  alongside three genuinely trend-dominant `random_parametric` series with
+  activation ~8 and `field_value` 1.0. This is not a bug in the new panel —
+  it faithfully reflects how `sae/ground_truth.py`'s existing archetype
+  dummy-encoding already treats every series with no archetype label
+  (i.e. every real-derived-tier series, which by design carries an empty
+  `GroundTruth`, `CLAUDE.md` §4.1) as a valid `archetype_trend_dominant = 0`
+  data point, rather than an excluded/`NaN` one — the same encoding
+  `best_ground_truth_matches` already used to compute the ρ=0.650 this
+  section cited before today. Not changed here: doing so would silently
+  alter every previously-reported archetype-related ρ number in this file
+  retroactively (§0.2's own "don't silently reorder/change" doctrine), and
+  deciding whether real-derived series *should* count as negative examples
+  for an archetype label is a real design question, not a bug fix, that a
+  future session should make deliberately rather than as a side effect of
+  a reporting feature.
+- Only the series-level granularity was built (matching `ground_truth.py`'s
+  own existing scope, `CLAUDE.md` §11's window-level version is a separate,
+  unbuilt follow-up already noted there) and the causal-effect-when-zeroed
+  column is not present — both stated explicitly in the section's own
+  `_note()` in the report, not just here, so a reader of the report itself
+  sees the same caveat.
+- Full `tsfm_lens` suite after: **69/69 passing** (was 66 — 3 new unit
+  tests, plus the existing `test_sae_stage_integration` extended to call
+  `run_report` and assert the section degrades to an explicit
+  "no ground-truth-matched features to illustrate" message rather than an
+  empty table or a crash when smoke data has no sealed corpus to draw
+  ground truth from, matching this stage's already-established
+  degrade-gracefully behavior).
 
 **Findings — crosscoder feasibility test (2026-08-05, same-day follow-up).**
 Per §13's own prerequisite ("needs an early small-scale test before
@@ -2850,7 +2951,12 @@ availability/licensing may have changed):**
   it as a Phase 4 finding and fix the abstraction before moving to the next
   model.
 - [ ] Auto-generate the capability matrix from the registry (see Phase 5)
-  rather than hand-maintaining a table that will drift.
+  rather than hand-maintaining a table that will drift. — **the generator
+  itself now exists** (`tsfm_lens/models/capability_matrix.py`, built
+  2026-08-06 under Phase 5's matching checklist item), so this bullet stays
+  open only because no Phase-4 model addition has actually happened yet to
+  run it against; not re-marked done here since this specific checklist
+  item is about *using* it during a real addition, not building it.
 
 **Findings / decisions**
 - *(append here)*
@@ -2869,16 +2975,53 @@ authors have never seen.
 - [ ] **API/docs pass**: a quickstart that takes a new user from "I have a
   HF checkpoint" to "I have a report" in a few commands, modeled on
   `transformer-lens`'s own onboarding experience (`CLAUDE.md` §1, §14).
-- [ ] **Auto-generated model-zoo capability matrix** (from Phase 4) rendered
-  as part of the docs, not hand-maintained.
+- [x] **Auto-generated model-zoo capability matrix** (from Phase 4) rendered
+  as part of the docs, not hand-maintained. — **done 2026-08-06**: new
+  `tsfm_lens/models/capability_matrix.py` + `run_capability_matrix.py`,
+  see this section's checklist entry below (paired with §9's own
+  "auto-generate the capability matrix from the registry" bullet, the same
+  deliverable named twice from two angles). Not yet actually wired into any
+  docs page (there is no docs page yet, per this phase's other still-open
+  items) — the generator exists and is verified; publishing its output
+  somewhere readers see it is left to whichever future session builds the
+  Phase 5 docs pass.
 - [ ] **Tutorial notebooks**: at minimum, (a) run the smoke config end to
   end, (b) add a new toy adapter from scratch, (c) train and interpret an
   SAE on one layer, (d) read a confirm-stage verdict correctly.
-- [ ] **CI**: golden-hash regression (`CLAUDE.md` §11.1) plus the smoke test
+- [~] **CI**: golden-hash regression (`CLAUDE.md` §11.1) plus the smoke test
   (`CLAUDE.md` §9) on every change; a lightweight adapter-conformance test
   that any new `ModelAdapter` can be run against (discover-layers,
   check-alignment, degrade-gracefully checks) so Phase 4's per-model
-  checklist becomes partly automated.
+  checklist becomes partly automated. — **conformance-test half done
+  2026-08-06**: new `tsfm_lens/models/conformance.py`
+  (`check_adapter_conformance`) automates exactly the manual checklist this
+  bullet and Phase 4's per-model deliverables (§9) already describe by
+  hand — layer discovery non-empty, `token_time_spans()` well-formed
+  (positive-width, strictly increasing spans), `impulse_alignment_check`
+  runs and returns fractions in `[0, 1]`, `predict()` returns a finite,
+  correctly-shaped point forecast, and every optional capability
+  (`attention_info`/`mlp_info`/`attention_patterns`/
+  `cross_attention_patterns`) either returns a well-formed value or `None`
+  — never raises (`CLAUDE.md` invariant 8). New
+  `tests/test_adapter_conformance.py` runs it against all three registered
+  mock adapters, including `mock_wave` (the third architecture that
+  already existed in `models/mock.py` specifically to prove new adapters
+  need no changes outside their own file, per this section's and §9's own
+  success bar, but that no default config actually exercises), plus one
+  test proving an adapter with none of the optional capabilities still
+  passes (the "None is fine" contract) and one proving a deliberately
+  broken adapter (non-monotonic `token_time_spans`) is caught, not
+  silently accepted. Full suite 74/74 after adding it. **Not done, and
+  correctly not attempted**: wiring this into an actual CI pipeline
+  (there is no CI config in this repo yet — this bullet's "CI" framing is
+  aspirational until Phase 5's packaging/CI infrastructure exists) and the
+  golden-hash regression's own independent, unresolved numpy-version
+  fragility (`CLAUDE.md` §11.13) — this conformance checker doesn't touch
+  or fix that; it only gives the model-adapter half of this bullet an
+  automated, runnable form. It also only checks mocks: real-checkpoint
+  adapters still need `--check-alignment`'s own live-weights judgment call
+  (`CLAUDE.md` invariant 7), which this deliberately does not replace —
+  see the new module's own docstring for why.
 - [ ] **Flip `report.verbose` default to `false`** (§4) now that the tool is
   closer to release — verbose stays available, just opt-in.
 - [ ] **Packaging**: decide on PyPI/versioning for `tsfm_lens` (currently
@@ -2892,7 +3035,63 @@ authors have never seen.
   adapters, real-corpus activation bucketing, deeper component resolution).
 
 **Findings / decisions**
-- *(append here)*
+- **Adapter-conformance checker (2026-08-06).** Built
+  `tsfm_lens/models/conformance.py::check_adapter_conformance` + new
+  `tests/test_adapter_conformance.py` — see this section's checklist entry
+  above for exactly what it checks and doesn't. The interesting design
+  choice was what to raise on vs. what to accept as valid: a genuinely
+  broken adapter (non-monotonic `token_time_spans`, an empty layer list, a
+  malformed `attention_info` entry) raises `AssertionError` immediately
+  (`CLAUDE.md` §2.5's "broken assumption fails loudly"), while an adapter
+  that simply doesn't support an optional capability and correctly returns
+  `None` passes cleanly — tested explicitly with a
+  no-optional-capabilities stand-in subclass, not just inferred from the
+  mocks (which all happen to support everything, so that path was
+  previously untested by the smoke suite). Ran against `mock_wave`
+  specifically because it's the one existing adapter that mirrors what a
+  genuinely new Phase-4 model addition would look like (registered, never
+  exercised by any default config) — passing conformance against it with
+  zero changes to `models/mock.py` is a small but real confirmation of
+  this section's and §9's own "no changes needed outside the new adapter
+  file" success bar. Full suite 74/74 after adding it.
+- **Auto-generated capability matrix (2026-08-06).** Built
+  `tsfm_lens/models/capability_matrix.py` + `run_capability_matrix.py` +
+  `tests/test_capability_matrix.py` — the checklist entry above covers
+  what it does. Two layers, kept explicitly separate rather than one
+  merged bool per capability: `declared_capabilities` is a static check
+  (does the adapter *class* override `ModelAdapter`'s default for
+  `attention_info`/`mlp_info`/`attention_patterns`/
+  `cross_attention_patterns`?) needing no loaded model at all, and
+  `verified_capabilities_from_run` reads an already-completed run's
+  `attention/meta.json` + `arrays.npz` to report what actually produced
+  usable output for one named model in that run — no checkpoint loaded by
+  this module itself, either. Ran the CLI with no `--verify` at all and it
+  reproduced `CLAUDE.md` §6.2's hand-maintained capability table exactly
+  from the registry alone (all six adapters, including `chronos_bolt`'s
+  declared-false on both `attention_patterns`/`cross_attention_patterns`,
+  matching its documented "deliberately unsupported" status). Then ran it
+  a second time with `--verify timesfm=runs/medium_run_chronos_base:TimesFM`
+  and `--verify chronos=runs/medium_run_chronos_base:Chronos-T5-Base`
+  (reading that already-completed real-checkpoint run's artifacts, no new
+  model calls) and it reproduced the one genuinely subtle case §6.2
+  documents by hand: TimesFM's `mlp_info` *declares* an override (it calls
+  the shared `_scan_mlp` helper) but *verified* nothing in that real run —
+  rendered as a distinct "⚠️ declared, found nothing" cell, not conflated
+  with "never checked". Chronos verified fully across all four
+  capabilities in the same run. Found and fixed one real bug while writing
+  this: the initial renderer used `verified is True`/`is False` identity
+  checks against a pandas column value, which works when a column mixes
+  booleans with `pd.NA` (pandas keeps it `object`-dtype, preserving Python
+  bool identity) but silently mis-renders everything as "unverified" once
+  a column has no `NA` at all (pandas then stores plain `numpy.bool_`,
+  which is `==True` but not `is True`) — caught by a real-run cross-check
+  showing an unexpectedly-unverified cell where a verified one was
+  expected, then isolated with a dedicated single-row, no-NA regression
+  test (`test_render_capability_matrix_markdown_renders_verified_true_with_no_na_rows`)
+  before fixing the renderer to use `pd.isna(...)`/`bool(...)` instead of
+  `is`. Full suite **81/81** after both new modules. Not yet wired into
+  any actual docs page, since none exists yet — see this section's
+  checklist entry above.
 
 ---
 
@@ -2974,7 +3173,12 @@ so a future session doesn't accidentally drift into them:
   was little room for *any* selector to add value, which is a different and
   more forgiving finding than "the method failed." Idea B
   (`factor_emergence`) underperformed both nulls on Chronos, traced to a
-  real, diagnosed (not yet fixed) weighting flaw. Combining methods
+  real, diagnosed weighting flaw — **the peak-weighting + absolute-floor
+  fix is now implemented and unit-tested against synthetic planted data
+  (2026-08-06, `CLAUDE.md` §11.18 / §6.1.1's new Findings entry), but not
+  yet re-run through the real bake-off** — whether it now actually clears
+  the nulls on live checkpoints is still open, just no longer blocked on a
+  known, undiagnosed bug. Combining methods
   (union/vote/rank-average) did not beat the single best method on either
   model. Still open: whether this holds on a second Chronos size, a third
   architecture family, and with the (more expensive) per-window-patching
@@ -3645,3 +3849,90 @@ so a future session doesn't accidentally drift into them:
   extraction/lens plumbing, not just `adapter.predict` — a natural point to
   pick up a different phase, or to invest in one of those two prerequisites
   directly, next session.
+- **2026-08-06 (autonomous 20-minute-cadence session, user-directed)** —
+  Picked up two small, well-scoped, previously-diagnosed-but-unfixed items
+  that needed no live GPU/checkpoint rerun, deliberately avoiding anything
+  requiring unattended multi-hour compute: (1) §6.1.1's `factor_emergence`
+  peak-weighting flaw (`CLAUDE.md` §11.18) — `factor_emergence_scores`
+  (`tsfm_lens/analysis/layer_screen.py`) now weights each ground-truth
+  factor's contribution by its own peak decodability and gates the
+  `emergence` event behind a new absolute `min_peak_score` floor, verified
+  against a new planted-data unit test (weak/noisy factors no longer
+  out-vote a real late peak); real-checkpoint re-verification through the
+  §6.1.1-E bake-off is explicitly still open, not claimed done. (2) SAE
+  training's redundant real-data catalog refetch (noted but not fixed in
+  §6.2's Findings) — `run_sae` now samples the real context pool once per
+  run instead of once per (model, layer) target. Full `tsfm_lens` suite
+  re-run clean after both: **66/66**. Also corrected one piece of doc
+  drift found while touching this area: `CLAUDE.md` §6.2's own warning
+  about a stale `configs/default.yaml` comment was itself stale — that
+  comment had already been fixed in an untracked earlier session. First
+  fix's implementation was done by a background agent (per the user's
+  20-minute self-pacing loop request); this session's continuation
+  verified its work (full suite, cross-checked the diff against the
+  diagnosis in both files) before writing it up here, rather than trusting
+  the agent's own unseen completion report.
+- **2026-08-06 (same loop, iteration 3)** — Picked up §6.2's last
+  fully-unblocked, no-live-GPU-needed checklist item: the per-feature SAE
+  exemplar panel. New `report/sae_exemplars.py` (pure selection/table-
+  building split from I/O, mirroring `report/sweep_case_studies.py`'s own
+  convention) + a new "Sparse feature dictionary" `report.py` section
+  showing each SAE target's summary stats plus its top ground-truth-
+  matched features' top-activating exemplar series and their real
+  ground-truth values. Renamed `sae/train.py`'s private `_sanitize` to
+  public `sanitize` rather than importing a name-mangled helper across a
+  module boundary. Verified two ways (`CLAUDE.md` §2.4): new planted-data
+  unit tests in `tests/test_sae.py`, then regenerated the real report for
+  the already-existing `runs/medium_run_chronos_base` real-checkpoint run
+  and read the actual HTML, which reproduced this section's own
+  previously-cited numbers exactly (the `has_intermittency` ρ=0.881
+  match) and surfaced one genuine, minor, not-fixed observation about how
+  the existing archetype dummy-encoding treats real-derived-tier series —
+  see this session's new Findings entry in §6.2 for the full account.
+  Full suite: **69/69**. Everything from this loop remains uncommitted
+  working-tree changes only, per the user's git-safety instructions.
+- **2026-08-06 (same loop, iteration 4)** — Picked up §10 (Phase 5)'s CI
+  checklist item's model-adapter half: a lightweight adapter-conformance
+  checker, chosen specifically because it's testable end-to-end against
+  the existing mock adapters with no live GPU/checkpoint needed, same
+  standard as every prior iteration this loop. New
+  `tsfm_lens/models/conformance.py::check_adapter_conformance` runs the
+  same manual checklist Phase 4 (§9) and this bullet already describe in
+  prose — layer discovery, well-formed `token_time_spans`, a sane
+  `impulse_alignment_check`, a correctly-shaped finite `predict()` output,
+  and every optional capability degrading to `None` rather than raising —
+  and a new `tests/test_adapter_conformance.py` runs it against all three
+  registered mocks (`mock_patch`, `mock_step`, and `mock_wave` — the third
+  architecture that already existed specifically to prove new adapters
+  need no changes outside their own file, but that no default config
+  actually exercises), plus a no-optional-capabilities stand-in (proving
+  the "`None` is fine" path, previously untested since every existing mock
+  happens to support everything) and a deliberately-broken adapter (proving
+  a real contract violation is still caught, not silently accepted). Full
+  suite **74/74**. Not attempted, and correctly flagged as such in this
+  section's checklist entry: actually wiring this into a CI pipeline (no
+  CI config exists in this repo yet) and the separate, already-known,
+  unresolved golden-hash numpy-version fragility (`CLAUDE.md` §11.13) —
+  this bullet's "CI" framing names both together but this session's work
+  only covers the adapter-conformance half. Everything from this loop
+  remains uncommitted working-tree changes only.
+- **2026-08-06 (same loop, iteration 5)** — Picked up §10's paired
+  "auto-generated model-zoo capability matrix" items (§10 and §9's own
+  cross-reference to it), the natural next Phase-5 CI item after
+  iteration 4's conformance checker, and again chosen for being verifiable
+  with no live GPU work: new `tsfm_lens/models/capability_matrix.py` +
+  `run_capability_matrix.py` + `tests/test_capability_matrix.py`. Verified
+  two ways (`CLAUDE.md` §2.4): synthetic-fixture unit tests, then the CLI
+  run twice against real artifacts — once with no `--verify` at all
+  (reproduced `CLAUDE.md` §6.2's hand-maintained table purely from static
+  class introspection) and once pointed at the already-completed
+  `runs/medium_run_chronos_base` (reproduced the one genuinely subtle
+  documented case, TimesFM's `mlp_info` declaring-but-verifying-nothing,
+  as a distinct rendered state from "never checked"). That real-run
+  cross-check caught a genuine bug before it shipped: the renderer's
+  `verified is True`/`is False` comparisons broke silently on any
+  single-capability all-verified/no-`NA` DataFrame column (pandas then
+  stores plain `numpy.bool_`, not Python's `True`/`False` singletons) —
+  fixed to use `pd.isna(...)`/`bool(...)`, with a dedicated regression
+  test added so this can't regress silently. Full suite **81/81**.
+  Everything from this loop remains uncommitted working-tree changes only.
