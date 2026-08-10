@@ -9,6 +9,7 @@ attention-head and component mean-ablation for the sub-block analyses.
 
 from __future__ import annotations
 
+import dataclasses
 from contextlib import contextmanager
 from typing import Dict, List
 
@@ -17,8 +18,32 @@ from torch import nn
 
 
 def _primary(output):
-    """Extract the hidden-state tensor from a module output that may be a tuple."""
-    return output[0] if isinstance(output, tuple) else output
+    """Extract the hidden-state tensor from a module output that may be a
+    tuple, a plain tensor, or an HF `ModelOutput`-style dataclass (dict-like
+    but integer-indexable for its first field -- `isinstance(output, tuple)`
+    alone misses these: `ModelOutput` subclasses `OrderedDict`, not `tuple`,
+    which crashed the very first real capture against Chronos-2's encoder
+    blocks, ROADMAP.md §9)."""
+    return output if isinstance(output, torch.Tensor) else output[0]
+
+
+def _rebuild(output, replacement: torch.Tensor):
+    """Return `output` with its primary field replaced by `replacement`,
+    preserving whatever container type it came in (tensor, tuple, or an HF
+    `ModelOutput`-style dataclass) so attribute access on any other field
+    (e.g. a block's own attention weights) keeps working after a hook
+    rewrites the primary value mid-forward -- degrading a dataclass output
+    to a plain tuple would silently break that for any architecture whose
+    block forward returns one (§2.5: fail loudly instead of guessing)."""
+    if isinstance(output, torch.Tensor):
+        return replacement
+    if isinstance(output, tuple):
+        return (replacement,) + tuple(output[1:])
+    if dataclasses.is_dataclass(output):
+        first = dataclasses.fields(output)[0].name
+        return dataclasses.replace(output, **{first: replacement})
+    raise TypeError(f"_rebuild: unsupported module output type {type(output).__name__}; "
+                    "extend hooks.py._rebuild for this architecture")
 
 
 class ActivationCatcher:
@@ -82,9 +107,7 @@ def token_patch(root: nn.Module, layer_name: str,
         idx = index_fn(hidden.shape[1])
         patched[: replacement.shape[0], idx] = replacement.to(device=hidden.device,
                                                               dtype=hidden.dtype)
-        if isinstance(output, tuple):
-            return (patched,) + tuple(output[1:])
-        return patched
+        return _rebuild(output, patched)
 
     handle = module.register_forward_hook(hook)
     try:
@@ -171,9 +194,7 @@ def output_mean_ablate(root: nn.Module, module_name: str, value: torch.Tensor):
     def hook(_module, _inputs, output):
         hidden = _primary(output)
         replaced = value.to(device=hidden.device, dtype=hidden.dtype).expand_as(hidden)
-        if isinstance(output, tuple):
-            return (replaced,) + tuple(output[1:])
-        return replaced
+        return _rebuild(output, replaced)
 
     handle = module.register_forward_hook(hook)
     try:

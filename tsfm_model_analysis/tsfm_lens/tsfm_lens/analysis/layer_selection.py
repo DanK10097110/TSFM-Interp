@@ -4,11 +4,13 @@ predict how interpretable/controllable that layer is?
 Pools one record per (run, model, layer) from artifacts every existing run
 directory already has -- internals' effective dimensionality, input-CKA,
 and family-probe decodability; lens's tuned-lens R² against the model's own
-forecast; L3's per-layer causal-sensitivity fingerprint -- and correlates
-each candidate "worth interpreting" metric against each interpretability
-proxy. Nothing is re-run; a run missing a stage just contributes fewer
-records for that metric, matching the rest of the pipeline's degrade-with-
-a-log discipline (CLAUDE.md §2.5).
+forecast; L3's per-layer causal-sensitivity fingerprint; and (once
+`run_sae_layer_sweep.py` has been run against a given run directory) SAE
+ground-truth-alignment mean |ρ| as a fourth interpretability proxy -- and
+correlates each candidate "worth interpreting" metric against each proxy.
+Nothing is re-run; a run missing a stage (or missing the optional SAE
+sweep) just contributes fewer records for that metric, matching the rest of
+the pipeline's degrade-with-a-log discipline (CLAUDE.md §2.5).
 
 The resampling unit for the bootstrap CI is the (run, model) group, not the
 individual layer. Layers within one model are strongly depth-autocorrelated
@@ -30,7 +32,11 @@ from ..utils import load_json, log
 from .stats import bootstrap_ci
 
 CANDIDATE_METRICS = ["effective_dim", "input_cka", "l3_entropy"]
-PROXY_METRICS = ["probe_decodability", "tuned_r2_model", "l3_mean_sensitivity"]
+# `sae_ground_truth_rho` (ROADMAP.md §6.1's "feed SAE eval results back into
+# layer-selection" item): populated only for runs with a `sae_layer_sweep.json`
+# artifact (`run_sae_layer_sweep.py`), so it degrades to "no data" like every
+# other optional proxy here on a run that hasn't had the sweep run against it.
+PROXY_METRICS = ["probe_decodability", "tuned_r2_model", "l3_mean_sensitivity", "sae_ground_truth_rho"]
 
 
 def _entropy(row: np.ndarray) -> float:
@@ -72,6 +78,9 @@ def collect_layer_records(run_dirs: list) -> list[dict]:
         l3_arrs_path = run_dir / "l3" / "sensitivity.npz"
         l3_arrs = np.load(l3_arrs_path) if l3_arrs_path.exists() else None
 
+        sae_sweep = _safe_json(run_dir / "sae_layer_sweep.json")
+        sae_results = (sae_sweep or {}).get("results", {})
+
         for model, info in profile.items():
             layers = info["layers"]
             for i, layer in enumerate(layers):
@@ -93,6 +102,12 @@ def collect_layer_records(run_dirs: list) -> list[dict]:
                         fp_row = l3_arrs[key][i]
                         rec["l3_mean_sensitivity"] = float(np.mean(fp_row))
                         rec["l3_entropy"] = _entropy(fp_row)
+
+                sae_entry = sae_results.get(f"{model}/{layer}")
+                if sae_entry is not None:
+                    gt = sae_entry.get("ground_truth_alignment", {})
+                    if "error" not in gt and gt.get("n_features_matched", 0) > 0:
+                        rec["sae_ground_truth_rho"] = float(gt["mean_abs_rho_matched"])
 
                 records.append(rec)
     return records

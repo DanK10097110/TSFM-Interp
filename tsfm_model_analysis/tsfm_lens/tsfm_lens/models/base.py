@@ -190,6 +190,33 @@ class ModelAdapter(ABC):
         return None
 
 
+def random_init_like(model: nn.Module) -> nn.Module:
+    """An architecture-matched twin of `model` with freshly, randomly initialized
+    weights (ROADMAP.md sec 16 E9's untrained-weights null baseline).
+
+    Reconstructs from the model's own `.config` via `type(model)(model.config)`
+    rather than a generic reinitialization heuristic. This matters: many
+    architectures (e.g. HF's `T5LayerNorm`) hold learnable parameters but
+    define no `reset_parameters()`, so a heuristic that only reinitializes
+    modules exposing that method would silently leave those specific weights
+    at their pretrained values -- exactly the kind of silent partial failure
+    `CLAUDE.md` sec 2.5 forbids. `type(model)(model.config)` instead reruns
+    the class's own constructor (and, for `transformers.PreTrainedModel`
+    subclasses, its own `_init_weights` scheme via `post_init()`), which is
+    the standard, library-provided way to get "same config, untrained
+    weights" -- exactly what `AutoModel.from_config()` does versus
+    `from_pretrained()`. Raises if `model` has no `.config` to reconstruct
+    from, rather than silently falling back to a weaker heuristic.
+    """
+    if not hasattr(model, "config"):
+        raise ValueError(
+            f"random_init_like: {type(model).__name__} has no `.config` attribute to "
+            f"reconstruct from; this adapter needs its own random_init handling")
+    fresh = type(model)(model.config)
+    fresh.eval()
+    return fresh
+
+
 def _scan_attention(root, block_name: str):
     """Locate an attention submodule and its output projection inside one block."""
     block = dict(root.named_modules())[block_name]

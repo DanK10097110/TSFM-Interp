@@ -43,12 +43,27 @@ class TimesFMAdapter(ModelAdapter):
     _patch_len = 32
 
     def load(self) -> None:
-        """Instantiate TimesFM 2.5, eager (no compile) so capture hooks fire."""
+        """Instantiate TimesFM 2.5, eager (no compile) so capture hooks fire.
+
+        `random_init` (ROADMAP.md sec 16 E9): `TimesFM_2p5_200M_torch.__init__`
+        already builds the full architecture (tokenizer, `stacked_xf` blocks,
+        output projections) from a fixed, checkpoint-independent default
+        config before any weights are loaded -- `.load_checkpoint()` is a
+        separate, later step. So the untrained-weights null baseline here is
+        simply: construct the wrapper and skip that step, rather than load a
+        checkpoint and discard it. No network access at all in this path.
+        """
         from timesfm import TimesFM_2p5_200M_torch
         if self.data_cfg.context_len % self._patch_len:
             raise ValueError("data.context_len must be a multiple of TimesFM's input patch (32)")
         repo = self.cfg.checkpoint or "google/timesfm-2.5-200m-pytorch"
-        self.tfm = TimesFM_2p5_200M_torch.from_pretrained(repo, torch_compile=False)
+        if self.cfg.random_init:
+            log.warning("timesfm '%s': random_init=True -- constructing the architecture "
+                        "with its own default (untrained) initialization, no checkpoint "
+                        "loaded (ROADMAP.md sec 16 E9)", self.name)
+            self.tfm = TimesFM_2p5_200M_torch(torch_compile=False)
+        else:
+            self.tfm = TimesFM_2p5_200M_torch.from_pretrained(repo, torch_compile=False)
         self.tfm.model.device = self.device
         self.tfm.model.to(self.device)
         self.tfm.model.eval()

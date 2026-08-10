@@ -1,0 +1,117 @@
+# Untrained-weights null baseline for TimesFM (ROADMAP.md sec 16 E9): the
+# same TimesFM 2.5 architecture paired against an identical architecture
+# with fresh random weights (random_init: true) instead of a second real
+# model. Running the ordinary two-model pipeline against this pair gives a
+# real floor for L1's CKA, L2's stitching gain, internals' probe
+# decodability, and (via sae.targets) SAE ground-truth alignment -- how
+# much of each looks like "architecture + input statistics" rather than
+# learning. Deliberately mirrors configs/medium_run_chronos_base.yaml's
+# TimesFM side (same checkpoint, context/window, sae.targets layer) so
+# these numbers are directly comparable to that run's already-recorded
+# ones rather than a fresh, incomparable measurement.
+#
+# L3/attention/exemplars/clustering/confirm/layer_screen are disabled: this
+# run exists to answer one question (how much of L1/L2/internals/SAE is
+# architecture-only), not to re-run the whole flagship comparison against a
+# model with no learned structure to be causal about.
+
+run:
+  name: null_timesfm_random
+  out_dir: runs
+  device: cuda
+  dtype: bfloat16
+  seed: 0
+  keep_models_loaded: false
+
+data:
+  source: sealed
+  path: ../../benchmark_medium/public_dev  # relative to tsfm_lens/ (where run.py is invoked from)
+  context_len: 512
+  horizon: 64
+  family_key: auto
+
+alignment:
+  window: 32
+  sanity_check: true
+
+models:
+  - name: TimesFM
+    adapter: timesfm
+    checkpoint: google/timesfm-2.5-200m-pytorch
+    batch_size: 32
+    capture_layer_stride: 2      # 20 layers -> 10 capture points, matches medium_run*.yaml
+  - name: TimesFM-random
+    adapter: timesfm
+    checkpoint: google/timesfm-2.5-200m-pytorch  # architecture only -- weights never loaded
+    random_init: true
+    batch_size: 32
+    capture_layer_stride: 2
+
+l0:
+  enabled: true
+  quantiles: [0.1, 0.5, 0.9]
+
+l1:
+  enabled: true
+  layer_stride: 1
+  max_rows: 20000
+  family_conditioned: true
+  min_family_series: 15
+  rsa: true
+  rsa_max_series: 300
+
+l2:
+  enabled: true
+  layer_stride: 1
+  lambdas: [0.001, 0.01, 0.1, 1.0]
+  val_frac: 0.25
+  max_rows: 15000
+  input_baseline: true
+
+l3: {enabled: false}
+lens: {enabled: false}
+attention: {enabled: false}
+exemplars: {enabled: false}
+clustering: {enabled: false}
+confirm: {enabled: false}
+layer_screen: {enabled: false}
+
+sae:
+  enabled: true
+  targets:                        # pinned to the exact layer configs/medium_run_chronos_base.yaml
+                                   # already reports a real, trained ground-truth alignment number for
+    - model: TimesFM
+      layer: stacked_xf.18
+    - model: TimesFM-random
+      layer: stacked_xf.18
+  dict_size_mult: 8
+  k: 32
+  lr: 0.001
+  epochs: 60
+  batch_size: 4096
+  resample_dead_every_epochs: 5
+  forecast_preservation_max_series: 24
+  ground_truth_max_series: 2000
+  ground_truth_permutation_repeats: 3
+  real_data_enabled: true
+  real_data_source: "Monash-University/monash_tsf"
+  real_data_n_windows: 4000
+  real_data_pool_limit: 500
+
+report:
+  enabled: true
+  title: "Untrained-weights null baseline (ROADMAP.md sec 16 E9) · TimesFM 2.5, real vs random-init twin"
+
+stats:
+  enabled: true
+  n_boot: 500
+  n_boot_heavy: 200
+  ci: 0.95
+  alpha: 0.05
+  min_series: 8
+
+internals:
+  enabled: true
+  layer_stride: 1
+  max_rows: 15000
+  probe_pca_dim: 50

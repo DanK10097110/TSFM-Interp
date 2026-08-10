@@ -26,9 +26,11 @@ def _register_optional() -> None:
     """Register real-model adapters; their heavy imports happen only at load()."""
     from .chronos_adapter import ChronosAdapter
     from .chronos_bolt_adapter import ChronosBoltAdapter
+    from .chronos2_adapter import Chronos2Adapter
     from .timesfm_adapter import TimesFMAdapter
     ADAPTERS["chronos"] = ChronosAdapter
     ADAPTERS["chronos_bolt"] = ChronosBoltAdapter
+    ADAPTERS["chronos2"] = Chronos2Adapter
     ADAPTERS["timesfm"] = TimesFMAdapter
 
 

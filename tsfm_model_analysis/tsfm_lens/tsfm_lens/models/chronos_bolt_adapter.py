@@ -27,7 +27,7 @@ import numpy as np
 import torch
 
 from ..utils import log
-from .base import ModelAdapter, _scan_attention, _scan_mlp
+from .base import ModelAdapter, _scan_attention, _scan_mlp, random_init_like
 
 
 class ChronosBoltAdapter(ModelAdapter):
@@ -35,12 +35,23 @@ class ChronosBoltAdapter(ModelAdapter):
     default_layer_regex = r"encoder\.block\.\d+$"
 
     def load(self) -> None:
-        """Load a Bolt pipeline and read patching geometry from its config."""
+        """Load a Bolt pipeline and read patching geometry from its config.
+
+        `random_init` (ROADMAP.md sec 16 E9) reconstructs the underlying HF
+        model from its own config -- same patch geometry, tokenizer-free
+        input handling and `chronos_config` metadata, but untrained weights.
+        """
         from chronos import BaseChronosPipeline
         self.pipeline = BaseChronosPipeline.from_pretrained(
             self.cfg.checkpoint or "amazon/chronos-bolt-small",
             device_map=str(self.device), torch_dtype=self.dtype)
         self._inner = self.pipeline.model
+        if self.cfg.random_init:
+            log.warning("chronos_bolt '%s': random_init=True -- discarding pretrained "
+                        "weights, using an architecture-matched random-weight twin "
+                        "(ROADMAP.md sec 16 E9)", self.name)
+            self._inner = random_init_like(self._inner).to(self.device, dtype=self.dtype)
+            self.pipeline.model = self._inner
         ccfg = getattr(self._inner.config, "chronos_config", {}) or {}
         self._patch = int(ccfg.get("input_patch_size", 16))
         self._stride = int(ccfg.get("input_patch_stride", self._patch))

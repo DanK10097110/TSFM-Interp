@@ -24,6 +24,14 @@ class ModelConfig:
     batch_size: int = 32
     capture_layer_stride: int = 1
     kwargs: dict = field(default_factory=dict)
+    # Untrained-weights null baseline (ROADMAP.md sec 16 E9): same
+    # architecture/checkpoint config, but randomly initialized rather than
+    # pretrained. Load this model alongside its pretrained twin (same
+    # `adapter`/`checkpoint`, a distinct `name`) to get a floor for CKA, L2
+    # stitching gain, probe decodability, and SAE ground-truth alignment --
+    # how much of each looks like "architecture + input statistics" rather
+    # than learning.
+    random_init: bool = False
 
 
 @dataclass
@@ -247,6 +255,14 @@ class SAEConfig:
     resample_dead_every_epochs: int = 0
     forecast_preservation_max_series: int = 64
     ground_truth_max_series: int = 2000
+    # Label-permutation null for ground-truth alignment (ROADMAP.md sec 16
+    # E9): `best_ground_truth_matches` picks each feature's *best* of many
+    # candidate fields, which inflates `mean_abs_rho_matched` above zero even
+    # under pure noise (max-of-many-comparisons). Repeating the identical
+    # search with feature-to-series correspondence permuted gives a real
+    # floor to compare the headline number against. `0` disables it.
+    ground_truth_permutation_repeats: int = 3
+    ground_truth_permutation_max_features: int = 2000
     real_data_enabled: bool = False
     real_data_source: str = "Monash-University/monash_tsf"
     real_data_n_windows: int = 20_000

@@ -92,9 +92,18 @@ class _MockAdapterBase(ModelAdapter):
     n_heads = 2
     seed = 7
 
+    # Mocks have no real "pretrained" state -- `seed` alone determines their
+    # fixed weights. `random_init` (ROADMAP.md sec 16 E9) is emulated as a
+    # different, offset seed: same architecture, deliberately different
+    # (still fixed, still reproducible) weights, exactly analogous to a real
+    # adapter's untrained-vs-pretrained twin, so config wiring / pipeline
+    # tests can exercise the flag with no GPU or download involved.
+    _RANDOM_INIT_SEED_OFFSET = 999_983
+
     def load(self) -> None:
+        seed = self.seed + self._RANDOM_INIT_SEED_OFFSET if self.cfg.random_init else self.seed
         self._net = _MockNet(self.patch, self.dim, self.n_layers, self.n_heads,
-                             self.data_cfg.horizon, self.seed).to(self.device)
+                             self.data_cfg.horizon, seed).to(self.device)
 
     @property
     def module(self) -> nn.Module:

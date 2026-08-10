@@ -18,7 +18,7 @@ import numpy as np
 import torch
 
 from ..utils import log
-from .base import ModelAdapter
+from .base import ModelAdapter, random_init_like
 
 
 class ChronosAdapter(ModelAdapter):
@@ -26,12 +26,25 @@ class ChronosAdapter(ModelAdapter):
     default_layer_regex = r"encoder\.block\.\d+$"
 
     def load(self) -> None:
-        """Load a ChronosPipeline and cache tokenizer limits."""
+        """Load a ChronosPipeline and cache tokenizer limits.
+
+        The tokenizer itself is never randomized even when `random_init` is
+        set -- its quantization bin edges are architecture/checkpoint
+        metadata, not learned weights, and the null baseline this flag
+        exists for (ROADMAP.md sec 16 E9) is meant to isolate "untrained
+        transformer weights", not "a different tokenizer".
+        """
         from chronos import ChronosPipeline
         self.pipeline = ChronosPipeline.from_pretrained(
             self.cfg.checkpoint or "amazon/chronos-t5-small",
             device_map=str(self.device), torch_dtype=self.dtype)
         self._t5 = self.pipeline.model.model
+        if self.cfg.random_init:
+            log.warning("chronos '%s': random_init=True -- discarding pretrained "
+                        "weights, using an architecture-matched random-weight twin "
+                        "(ROADMAP.md sec 16 E9)", self.name)
+            self._t5 = random_init_like(self._t5).to(self.device, dtype=self.dtype)
+            self.pipeline.model.model = self._t5
         tok_cfg = getattr(self.pipeline.tokenizer, "config", None)
         self._model_context = int(getattr(tok_cfg, "context_length", self.data_cfg.context_len))
         self._use_eos = bool(getattr(tok_cfg, "use_eos_token", True))

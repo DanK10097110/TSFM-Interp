@@ -23,6 +23,28 @@ from ..utils import log, save_json
 from .stats import bootstrap_ci
 
 
+def series_split(cfg: PipelineConfig, data_n: int, n_windows: int) -> tuple:
+    """The train/val series split `run_l2` fits every probe against.
+
+    Pulled out so a downstream analysis (e.g. `null_baseline.py`'s
+    real-vs-untrained-null comparison, ROADMAP.md sec 16 E9) can reproduce
+    the *identical* split from `config_resolved.yaml` alone, without
+    reloading the corpus -- `data_n` is exactly `store.root.attrs["n_series"]`,
+    so no `BenchmarkData` load is needed to call this. Depends only on
+    `cfg.run.seed`, `cfg.l2.max_rows`, `cfg.l2.val_frac`, `data_n`, and
+    `n_windows`, in that order -- unchanged from `run_l2`'s inline version,
+    so a call here and the pipeline's own call give byte-identical arrays
+    whenever those five inputs match (e.g. two runs over the same corpus
+    with the same seed).
+    """
+    rng = np.random.default_rng(cfg.run.seed + 2)
+    n_series = min(data_n, max(4, cfg.l2.max_rows // n_windows))
+    series_idx = np.sort(rng.choice(data_n, size=n_series, replace=False))
+    n_val = max(1, int(len(series_idx) * cfg.l2.val_frac))
+    perm = rng.permutation(len(series_idx))
+    return series_idx[perm[n_val:]], series_idx[perm[:n_val]]
+
+
 def run_l2(cfg: PipelineConfig, store: ActivationStore, data: BenchmarkData,
            device: torch.device) -> None:
     """Fit stitching and baseline probes for both directions of the model pair."""
@@ -33,12 +55,7 @@ def run_l2(cfg: PipelineConfig, store: ActivationStore, data: BenchmarkData,
               b.name: store.layers(b.name)[:: cfg.l2.layer_stride]}
     n_windows = store.root.attrs["n_windows"]
 
-    rng = np.random.default_rng(cfg.run.seed + 2)
-    n_series = min(data.n, max(4, cfg.l2.max_rows // n_windows))
-    series_idx = np.sort(rng.choice(data.n, size=n_series, replace=False))
-    n_val = max(1, int(len(series_idx) * cfg.l2.val_frac))
-    perm = rng.permutation(len(series_idx))
-    val_series, train_series = series_idx[perm[:n_val]], series_idx[perm[n_val:]]
+    train_series, val_series = series_split(cfg, data.n, n_windows)
 
     baseline = _baseline_features(data.contexts(), store.root.attrs["window"]) \
         if cfg.l2.input_baseline else None

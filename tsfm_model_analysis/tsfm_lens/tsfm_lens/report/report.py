@@ -1638,6 +1638,13 @@ def _sec_sae(cfg: PipelineConfig, run_dir: Path, findings: list) -> str:
                          f'sec 15 A13, see L0\'s "Repeat-run noise floor")')
             elif fv and fv["deterministic"]:
                 stats += " (this model is deterministic; the delta is real signal)"
+        gt_align = entry.get("ground_truth_alignment", {})
+        rho_mean = gt_align.get("mean_abs_rho_matched")
+        null = gt_align.get("permutation_null", {})
+        if rho_mean is not None and null.get("n_perm"):
+            stats += (f' · ground-truth alignment mean |ρ| {rho_mean:.3f} '
+                      f'(label-permutation null mean {null["mean_abs_rho_null_mean"]:.3f}, '
+                      f'p95 {null["mean_abs_rho_null_p95"]:.3f} -- ROADMAP.md sec 16 E9)')
         inner += f"<h4>{key}</h4><p class='blurb'>{stats}</p>"
         try:
             df = build_run_exemplars(cfg, store, model, layer, entry, gt, run_meta)
@@ -1756,7 +1763,16 @@ _SAE_EXEMPLAR_NOTE = (
     "fraction of the dictionary can ever appear here (dead-feature rate is "
     "typically 90%+, shown above per target); real-derived-tier series "
     "carry no ground truth and never appear as exemplars regardless of how "
-    "hard a feature fires on them.",
+    "hard a feature fires on them. Separately, the 'ground-truth alignment' "
+    "line's mean |ρ| above picks, per feature, the best of many candidate "
+    "ground-truth fields -- a real inflation above zero from that search "
+    "alone, even on pure noise, since the max of many weak correlations is "
+    "not itself weak. The label-permutation null next to it (ROADMAP.md "
+    "§16 E9) reruns the identical search with each feature's series "
+    "correspondence shuffled, so it shows how large that same number gets "
+    "by chance; only a mean |ρ| clearly above the null's p95 supports "
+    "reading the dictionary's alignment as real structure rather than "
+    "search inflation.",
 )
 
 

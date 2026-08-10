@@ -1,0 +1,108 @@
+# Untrained-weights null baseline for Chronos-T5-Base (ROADMAP.md sec 16
+# E9): the same architecture paired against an identical architecture with
+# fresh random weights (random_init: true) instead of a second real model.
+# Mirrors configs/medium_run_chronos_base.yaml's Chronos side (same
+# checkpoint, context/window, sae.targets layer) so these numbers are
+# directly comparable to that run's already-recorded ones. See
+# null_timesfm_random.yaml for the TimesFM-side twin and the full rationale.
+
+run:
+  name: null_chronos_random
+  out_dir: runs
+  device: cuda
+  dtype: bfloat16
+  seed: 0
+  keep_models_loaded: false
+
+data:
+  source: sealed
+  path: ../../benchmark_medium/public_dev  # relative to tsfm_lens/ (where run.py is invoked from)
+  context_len: 512
+  horizon: 64
+  family_key: auto
+
+alignment:
+  window: 32
+  sanity_check: true
+
+models:
+  - name: Chronos-T5-Base
+    adapter: chronos
+    checkpoint: amazon/chronos-t5-base
+    batch_size: 24
+    capture_layer_stride: 1      # 12 encoder blocks, matches medium_run_chronos_base.yaml
+  - name: Chronos-T5-Base-random
+    adapter: chronos
+    checkpoint: amazon/chronos-t5-base  # architecture + tokenizer only -- weights never loaded
+    random_init: true
+    batch_size: 24
+    capture_layer_stride: 1
+
+l0:
+  enabled: true
+  quantiles: [0.1, 0.5, 0.9]
+
+l1:
+  enabled: true
+  layer_stride: 1
+  max_rows: 20000
+  family_conditioned: true
+  min_family_series: 15
+  rsa: true
+  rsa_max_series: 300
+
+l2:
+  enabled: true
+  layer_stride: 1
+  lambdas: [0.001, 0.01, 0.1, 1.0]
+  val_frac: 0.25
+  max_rows: 15000
+  input_baseline: true
+
+l3: {enabled: false}
+lens: {enabled: false}
+attention: {enabled: false}
+exemplars: {enabled: false}
+clustering: {enabled: false}
+confirm: {enabled: false}
+layer_screen: {enabled: false}
+
+sae:
+  enabled: true
+  targets:                        # pinned to the exact layer configs/medium_run_chronos_base.yaml
+                                   # already reports a real, trained ground-truth alignment number for
+    - model: Chronos-T5-Base
+      layer: encoder.block.6
+    - model: Chronos-T5-Base-random
+      layer: encoder.block.6
+  dict_size_mult: 8
+  k: 32
+  lr: 0.001
+  epochs: 60
+  batch_size: 4096
+  resample_dead_every_epochs: 5
+  forecast_preservation_max_series: 24
+  ground_truth_max_series: 2000
+  ground_truth_permutation_repeats: 3
+  real_data_enabled: true
+  real_data_source: "Monash-University/monash_tsf"
+  real_data_n_windows: 4000
+  real_data_pool_limit: 500
+
+report:
+  enabled: true
+  title: "Untrained-weights null baseline (ROADMAP.md sec 16 E9) · Chronos-T5-Base, real vs random-init twin"
+
+stats:
+  enabled: true
+  n_boot: 500
+  n_boot_heavy: 200
+  ci: 0.95
+  alpha: 0.05
+  min_series: 8
+
+internals:
+  enabled: true
+  layer_stride: 1
+  max_rows: 15000
+  probe_pca_dim: 50

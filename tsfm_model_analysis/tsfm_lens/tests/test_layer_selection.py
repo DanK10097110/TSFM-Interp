@@ -79,6 +79,70 @@ def test_collect_layer_records_degrades_when_stages_missing():
     print("missing-stage degrade test passed")
 
 
+def test_collect_layer_records_picks_up_sae_layer_sweep_when_present():
+    """A run with both internals/profile.json and sae_layer_sweep.json must
+    contribute `sae_ground_truth_rho` (ROADMAP.md §6.1's "feed SAE eval back
+    into layer-selection" item), one value per (model, layer) the sweep
+    covers, keyed off ground_truth_alignment's mean_abs_rho_matched."""
+    out = Path(tempfile.mkdtemp())
+    run_dir = out / "with_sae_sweep"
+    save_json(run_dir / "internals" / "profile.json", {
+        "M": {"layers": ["l0", "l1"], "rel_depth": [0.0, 1.0],
+              "effective_dim": [3.0, 5.0], "input_cka": [0.1, 0.2],
+              "probe": [{"value": 0.5}, {"value": 0.9}]},
+    })
+    save_json(run_dir / "sae_layer_sweep.json", {
+        "run": str(run_dir), "models": ["M"],
+        "results": {
+            "M/l0": {"ground_truth_alignment": {"mean_abs_rho_matched": 0.12, "n_features_matched": 3}},
+            "M/l1": {"ground_truth_alignment": {"mean_abs_rho_matched": 0.31, "n_features_matched": 7}},
+        },
+    })
+    records = collect_layer_records([run_dir])
+    assert len(records) == 2
+    by_layer = {r["layer"]: r for r in records}
+    assert by_layer["l0"]["sae_ground_truth_rho"] == 0.12
+    assert by_layer["l1"]["sae_ground_truth_rho"] == 0.31
+    print("sae_layer_sweep ingestion test passed")
+
+
+def test_collect_layer_records_omits_sae_proxy_when_sweep_missing_or_errored():
+    """No sae_layer_sweep.json at all -> no `sae_ground_truth_rho` field (not
+    a zero); a sweep entry with an `error` or zero matched features must be
+    skipped the same way, not recorded as a spurious 0.0."""
+    out = Path(tempfile.mkdtemp())
+    no_sweep = out / "no_sweep"
+    save_json(no_sweep / "internals" / "profile.json", {
+        "M": {"layers": ["l0"], "rel_depth": [0.0], "effective_dim": [3.0],
+              "input_cka": [0.1], "probe": [{"value": 0.5}]},
+    })
+    records = collect_layer_records([no_sweep])
+    assert "sae_ground_truth_rho" not in records[0]
+
+    errored = out / "errored_sweep"
+    save_json(errored / "internals" / "profile.json", {
+        "M": {"layers": ["l0"], "rel_depth": [0.0], "effective_dim": [3.0],
+              "input_cka": [0.1], "probe": [{"value": 0.5}]},
+    })
+    save_json(errored / "sae_layer_sweep.json", {
+        "results": {"M/l0": {"ground_truth_alignment": {"error": "too few series with ground truth"}}},
+    })
+    records = collect_layer_records([errored])
+    assert "sae_ground_truth_rho" not in records[0]
+
+    zero_matched = out / "zero_matched_sweep"
+    save_json(zero_matched / "internals" / "profile.json", {
+        "M": {"layers": ["l0"], "rel_depth": [0.0], "effective_dim": [3.0],
+              "input_cka": [0.1], "probe": [{"value": 0.5}]},
+    })
+    save_json(zero_matched / "sae_layer_sweep.json", {
+        "results": {"M/l0": {"ground_truth_alignment": {"mean_abs_rho_matched": 0.0, "n_features_matched": 0}}},
+    })
+    records = collect_layer_records([zero_matched])
+    assert "sae_ground_truth_rho" not in records[0]
+    print("missing/errored/zero-matched sae sweep degrade test passed")
+
+
 def test_recommend_layers_directions_and_goal_validation():
     records = [
         {"run": "r1", "model": "M", "layer": "l0", "effective_dim": 10.0, "l3_entropy": 0.2},
@@ -104,4 +168,6 @@ if __name__ == "__main__":
     test_cluster_bootstrap_needs_at_least_three_groups()
     test_entropy_bounds()
     test_collect_layer_records_degrades_when_stages_missing()
+    test_collect_layer_records_picks_up_sae_layer_sweep_when_present()
+    test_collect_layer_records_omits_sae_proxy_when_sweep_missing_or_errored()
     test_recommend_layers_directions_and_goal_validation()

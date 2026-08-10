@@ -61,6 +61,44 @@ def paired_bootstrap(diff: np.ndarray, n_boot: int = 500, seed: int = 0,
             "p": p, "n": int(len(d))}
 
 
+def bootstrap_ci_diff(stat_a: Callable[[np.ndarray], float], stat_b: Callable[[np.ndarray], float],
+                      n_a: int, n_b: Optional[int] = None, n_boot: int = 500, seed: int = 0,
+                      ci: float = 0.95, paired: bool = True) -> dict:
+    """Bootstrap CI and two-sided p-value for the difference `stat_a() - stat_b()`
+    of two independently computed statistics (e.g. a real run's and a null
+    run's version of the same metric).
+
+    `paired=True` (default; the only mode when `n_b` is `None`) draws ONE
+    bootstrap index array per iteration and evaluates both `stat_a`/`stat_b`
+    on it -- valid, and much tighter, when both statistics are computed over
+    the *same* `n_a == n_b` units in the *same* order (e.g. two pipeline runs
+    that loaded the identical corpus with the identical seed, so row i means
+    the same series in both -- see `analysis/null_baseline.py`). `paired=False`
+    draws independent index arrays of size `n_a`/`n_b` for each side every
+    iteration -- the always-valid fallback when the two statistics are not
+    computed over matched units.
+    """
+    rng = np.random.default_rng(seed)
+    point_a = float(stat_a(np.arange(n_a)))
+    n_b = n_a if n_b is None else n_b
+    point_b = float(stat_b(np.arange(n_b)))
+    if paired and n_a != n_b:
+        raise ValueError(f"bootstrap_ci_diff: paired=True needs n_a==n_b, got {n_a} vs {n_b}")
+    diffs = np.empty(n_boot, dtype=np.float64)
+    for i in range(n_boot):
+        if paired:
+            idx_a = idx_b = rng.integers(0, n_a, n_a)
+        else:
+            idx_a, idx_b = rng.integers(0, n_a, n_a), rng.integers(0, n_b, n_b)
+        diffs[i] = stat_a(idx_a) - stat_b(idx_b)
+    lo, hi = np.quantile(diffs, [(1 - ci) / 2, 1 - (1 - ci) / 2])
+    p = 2.0 * min((diffs <= 0).mean(), (diffs >= 0).mean())
+    p = float(np.clip(p, 1.0 / n_boot, 1.0))
+    return {"a": point_a, "b": point_b, "diff": point_a - point_b,
+            "diff_lo": float(lo), "diff_hi": float(hi), "p": p,
+            "a_exceeds_b": bool(lo > 0), "paired": paired, "n_boot": n_boot}
+
+
 def holm(pvals: Dict[str, float]) -> Dict[str, float]:
     """Holm-Bonferroni step-down adjustment over a family of p-values."""
     items = sorted(pvals.items(), key=lambda kv: kv[1])

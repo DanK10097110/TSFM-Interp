@@ -199,6 +199,49 @@ def best_ground_truth_matches(features: np.ndarray, gt: pd.DataFrame, series_ids
     }
 
 
+def permutation_null_alignment(features: np.ndarray, gt: pd.DataFrame, series_ids: np.ndarray,
+                               gt_cols: list, seed: int, n_perm: int = 3,
+                               max_features: int = 2000,
+                               min_valid: int = _MIN_VALID) -> dict:
+    """Label-permutation null for `mean_abs_rho_matched` (ROADMAP.md sec 16 E9).
+
+    `best_ground_truth_matches` picks, per feature, the *best* of ~len(gt_cols)
+    candidate fields -- a real multiple-comparisons inflation even under pure
+    noise, since the max of many weak correlations is not itself weak. This
+    reruns the identical search with each feature's row permuted (breaking
+    every feature-to-series correspondence while leaving each field's own and
+    each feature's own marginal distribution untouched) `n_perm` times, so
+    the real `mean_abs_rho_matched` can be read against how large that number
+    gets by chance alone, not against zero.
+
+    Subsamples to `max_features` features per permutation (logged, never
+    silent, per `ROADMAP.md` sec 15's no-silent-cap precedent) since a
+    dictionary can hold 10k+ features and the null does not need every one
+    to give an informative summary; `n_perm=0` disables this entirely.
+    """
+    if n_perm <= 0:
+        return {"n_perm": 0, "max_features": 0, "mean_abs_rho_null_mean": 0.0,
+               "mean_abs_rho_null_p95": 0.0, "mean_abs_rho_null_values": []}
+    rng = np.random.default_rng(seed)
+    n_features = features.shape[1]
+    use_n = min(max_features, n_features)
+    if use_n < n_features:
+        log.info("sae ground-truth permutation null: subsampling %d/%d features "
+                 "per permutation (n_perm=%d)", use_n, n_features, n_perm)
+    means = []
+    for _ in range(n_perm):
+        feat_idx = rng.choice(n_features, size=use_n, replace=False)
+        perm_rows = rng.permutation(len(series_ids))
+        shuffled = features[:, feat_idx][perm_rows]
+        sub = best_ground_truth_matches(shuffled, gt, series_ids, gt_cols, min_valid=min_valid)
+        means.append(sub["mean_abs_rho_matched"])
+    means = np.asarray(means, dtype=np.float64)
+    return {"n_perm": int(n_perm), "max_features": int(use_n),
+            "mean_abs_rho_null_mean": float(means.mean()),
+            "mean_abs_rho_null_p95": float(np.quantile(means, 0.95)),
+            "mean_abs_rho_null_values": [float(m) for m in means]}
+
+
 def ground_truth_alignment(cfg: PipelineConfig, store: ActivationStore, model: str,
                            layer: str, sae, device) -> dict:
     """I/O wrapper: load the corpus's ground truth + this model/layer's encoded features."""
@@ -219,4 +262,8 @@ def ground_truth_alignment(cfg: PipelineConfig, store: ActivationStore, model: s
     result["n_requested"] = int(cfg.sae.ground_truth_max_series)
     result["n_realized"] = int(len(rows))
     result["rows"] = [int(r) for r in rows]
+    result["permutation_null"] = permutation_null_alignment(
+        features, gt, series_ids, gt_cols, seed=cfg.run.seed + 13,
+        n_perm=cfg.sae.ground_truth_permutation_repeats,
+        max_features=cfg.sae.ground_truth_permutation_max_features)
     return result

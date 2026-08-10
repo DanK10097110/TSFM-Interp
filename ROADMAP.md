@@ -2099,6 +2099,76 @@ something novel" (brief item 3) should actually land.
   way a ReLU+L1 SAE would need — a genuine frontier plot would need
   multiple runs at different `k`, not done this session, noted as
   follow-up rather than silently equated with "not applicable."
+  > ✅ **RE-MEASURED (2026-08-06, same-day follow-up) — the deferred
+  > re-run this AUDIT called for.** Re-ran `l0` (to get a matched noise
+  > floor for this exact pair) and `sae` against `configs/
+  > medium_run_chronos_base.yaml`'s already-extracted store, live
+  > `google/timesfm-2.5-200m-pytorch` + `amazon/chronos-t5-base`, now
+  > running through the fixed stratified `sample_rows` (A4) with a
+  > matched `l0/noise_floor.json` (A13) available to interpret the result
+  > against, both closed earlier the same day. **Corrected numbers,
+  > superseding the ΔMASE/rho pair quoted just above (old values kept
+  > verbatim there per §0.2, not deleted):**
+  > - **Forecast-preservation** (the metric A4 directly affects — its
+  >   `take=24 < n=288` triggers `sample_rows`'s stratified path instead of
+  >   a head slice): TimesFM ΔMASE **+0.047 → +0.175**; Chronos-T5-Base
+  >   ΔMASE **+2.368 → +3.869**. Both got *worse* under a representative
+  >   sample, meaning the old head-slice prefix happened to be an
+  >   easier-than-representative subset for this check on **both** models,
+  >   not just a confound that happened to favor one of them.
+  > - **Against the newly-available, matched noise floor**
+  >   (`l0/noise_floor.json`, same run, same checkpoints): TimesFM is
+  >   `deterministic: true` with a floor of exactly `0.0`, so its
+  >   +0.175 is still 100% real signal by construction — but the earlier
+  >   "passes almost exactly" framing (a +0.047 delta against a
+  >   ~2.1-MASE clean baseline, ~2.3% relative) no longer holds verbatim;
+  >   the corrected relative increase is ~9.3% (1.880 → 2.055), a real but
+  >   noticeably larger gap than previously reported. Chronos-T5-Base's
+  >   floor is `mean 0.160 / p95 0.705 / max 0.830` (family-dependent,
+  >   `mixture` 0.009 to `random_parametric` 0.193 mean) — its corrected
+  >   +3.869 delta is **~4.7x its own measured maximum noise floor**,
+  >   closing the "maybe this is just Chronos's inherent sampling
+  >   variance" question this AUDIT block left open: it is not, the
+  >   failure is real signal by a wide margin. `report.html` renders both
+  >   contextualized finding strings end to end (grep-confirmed): *"TimesFM
+  >   ... ΔMASE +0.175 (this model is deterministic; the delta is real
+  >   signal)"* / *"Chronos-T5-Base ... ΔMASE +3.869 (repeat-run floor
+  >   ±0.160 — sec 15 A13 ...)"*.
+  > - **Ground-truth alignment** moved too (TimesFM ρ 0.317 → 0.338,
+  >   Chronos-T5-Base 0.306 → 0.401) but — checked directly rather than
+  >   assumed (§2.4) — its own `rows` array is byte-identical
+  >   (`arange(288)`, the corpus's full population) in both the old and
+  >   new run, because `ground_truth_max_series: 2000` exceeds this
+  >   corpus's 288 series, so `sample_rows`'s stratified path degenerates
+  >   to "take everything" regardless of seed. This delta is **not**
+  >   attributable to the A4 fix and should not be read as one — it
+  >   reflects ordinary SAE-training run-to-run variance (real-data
+  >   augmentation pull, dead-neuron resampling), the same class of
+  >   noise A13 measures for forecasts but that this session did not
+  >   separately quantify for SAE training itself.
+  > - **Revised bottom line for §7 bullet 3**: the comparative claim
+  >   ("TimesFM's SAE reconstruction preserves the forecast far better
+  >   than Chronos-T5-Base's does") is unchanged and now rests on firmer
+  >   ground (a representative sample plus a matched noise floor ruling out
+  >   the "just noise" alternative for Chronos), so Phase 3's planned
+  >   feature-level ablation can still reasonably build on TimesFM's SAE.
+  >   But the specific magnitude previously quoted ("passes almost
+  >   exactly, ΔMASE +0.047") should not be repeated — the corrected,
+  >   representative-sample value is +0.175 (~9.3% relative), a real
+  >   though comparatively small effect, not a near-zero one.
+  > - **Scoping note**: only `l0`+`sae` were forced (not a full
+  >   re-extraction), since the store was already valid and unaffected by
+  >   either fix. `train_sae`'s per-target RNG (`torch.Generator().
+  >   manual_seed(cfg.run.seed)`) is local to each call, independent of
+  >   how much of the pipeline ran before it, which is consistent with
+  >   what was observed: Chronos-T5-Base's `reconstruction_fidelity`/
+  >   `dead_feature_rate` reproduced bit-for-bit against the 2026-08-05
+  >   run despite the different stage subset, while TimesFM's shifted by
+  >   ~0.007/0.005 — small enough to be ordinary GPU floating-point
+  >   nondeterminism between runs rather than anything RNG-state-related,
+  >   but not chased further since it doesn't change any conclusion above.
+  > - **Verification.** Full `tsfm_lens` suite green at 173/173 both
+  >   immediately before (baseline check) and after this re-run.
 - [x] Implement the **ground-truth feature-alignment score** from §2.1/§6.3:
   for each learned feature, correlate its activation across the benchmark
   against every available ground-truth component (trend order, each
@@ -2118,11 +2188,24 @@ something novel" (brief item 3) should actually land.
   names; flagged rather than silently claimed as the finer version. Found
   real, strong, ground-truth-verified structure on the first real run — see
   Findings.
-- [ ] Feed the SAE evaluation results back into §6.1's layer-selection
-  correlation study (the retroactive validation step noted there). — **not
-  done**; needs SAE runs across enough (run, model, layer) combinations to
-  add as a fourth proxy the way §6.1's other three were pooled, which this
-  session's two-target demo run doesn't yet provide at meaningful n.
+- [x] Feed the SAE evaluation results back into §6.1's layer-selection
+  correlation study (the retroactive validation step noted there). — **done
+  2026-08-07**: new `sae/layer_sweep.py` (`run_layer_sweep`) trains and
+  evaluates one lightweight `TopKSAE` per *captured* layer (not just the
+  one or two targets a real `sae` pipeline stage run would pin), reusing
+  `train_sae`/`load_all_windows`/`reconstruction_fidelity`/
+  `dead_feature_rate`/`ground_truth_alignment` verbatim — deliberately
+  CPU-only and skipping `forecast_preservation`, since ground-truth
+  alignment needs no live model (only the store + sealed corpus + the
+  freshly-trained SAE), so a full per-layer sweep costs nothing but CPU
+  time, no GPU/model-loading required. New CLI `run_sae_layer_sweep.py`
+  writes `<run>/sae_layer_sweep.json`. `analysis/layer_selection.py` grew a
+  fourth proxy metric, `sae_ground_truth_rho` (added to `PROXY_METRICS`),
+  populated from that JSON's `ground_truth_alignment.mean_abs_rho_matched`
+  per (model, layer) when present and not itself an error/zero-matched
+  degrade case. See Findings below for the real numbers and a flagged,
+  not-fixed-this-session zarr-v3 incompatibility that limited which runs
+  could be pooled.
 - [x] Verbose-mode reporting (§4): a per-feature exemplar panel — top
   activating series/windows for a feature, its ground-truth alignment score,
   and (once Phase 3 feature ablation exists) its causal effect on forecast
@@ -2384,6 +2467,86 @@ something novel" (brief item 3) should actually land.
     with 3 tests, all mocking the network call per the same no-live-network
     discipline `test_smoke.py` follows).
 
+- **2026-08-07 — SAE ground-truth alignment fed back into §6.1's
+  layer-selection correlation study as a fourth proxy; real signal found,
+  and it independently replicates the pattern `probe_decodability` already
+  showed.** Built `sae/layer_sweep.py` + `run_sae_layer_sweep.py` (CPU-only
+  per-layer TopK-SAE train+eval, see the checklist item above for the
+  mechanism) and ran it against three run directories: `medium_run_chronos_base`
+  (22 layers: real TimesFM + real Chronos-T5-Base), `null_timesfm_random`
+  (20 layers: real TimesFM + its random-init twin), `null_chronos_random`
+  (24 layers: real Chronos-T5-Base + its random-init twin) — 66 records, 6
+  (run, model) groups total, clearing `cluster_bootstrap_spearman`'s
+  `n_groups>=3` floor for the first time since this correlation study was
+  built (a single-run demo previously gave only 2 groups; see the checklist
+  item's prior "not done" text).
+  - **Sanity check the sweep itself passes cleanly:** every random-init twin's
+    `sae_ground_truth_rho` is flat and low across all its own layers
+    (TimesFM-random: 0.192–0.200 at every one of 10 layers; Chronos-T5-Base-random:
+    0.162–0.167 at every one of 12) — no depth structure at all, as expected
+    for an untrained architecture — while both real models show real
+    depth-varying structure well above their own random twin at every layer
+    (TimesFM: 0.240→0.385 range; Chronos-T5-Base: 0.264→0.382 range). This is
+    the same real-vs-random-twin separation §16 E9's null baseline already
+    established for CKA/stitching/probe-decodability, now confirmed for the
+    SAE ground-truth-alignment proxy too.
+  - **Two attempted extra sources, ruled out and flagged rather than
+    silently dropped:** `runs/medium_run` and `runs/real_run` (both dated
+    2026-07-20) were tried as additional (run, model) groups to pool
+    without new extraction, but both fail `zarr.open_group()` with
+    `GroupNotFoundError` — confirmed via direct inspection that their
+    `activations.zarr` directories contain a `zarr.json` file (zarr v3
+    format) rather than `.zattrs`/`.zgroup` (v2), meaning both predate this
+    repo's `zarr<3` pin (CLAUDE.md §11.15) and are unreadable by the
+    currently-pinned zarr 2.18.7. **Not fixed this session** — would need a
+    full GPU re-extraction, out of scope for this item; flagged here as a
+    fixable-later note per this file's own no-silent-dropping doctrine
+    (§0.2), not silently worked around.
+  - **The real correlation numbers**
+    (`run_layer_selection_study(['runs/medium_run_chronos_base',
+    'runs/null_timesfm_random', 'runs/null_chronos_random'])`, n_records=66,
+    n_groups=6; `l3_entropy` correctly produced "not enough data" since `l3`
+    is enabled in only one of the three runs — an expected degrade, not a
+    bug):
+    - `input_cka` vs `sae_ground_truth_rho`: raw ρ=0.584 (CI
+      [−0.079,+0.915], **not** significant — spans zero), but
+      **depth-controlled ρ=0.623 (CI [+0.074,+0.758], p<1/2000 —
+      significant, excludes zero.** Layers whose activations already
+      resemble the raw input (high `input_cka`) beyond what depth alone
+      predicts also tend to train SAEs whose features align better with
+      ground-truth structure beyond what depth alone predicts.
+    - `input_cka` vs `probe_decodability` (one of the study's original
+      three proxies): raw ρ=0.583 (not significant), depth-controlled
+      ρ=0.580 (CI [+0.021,+0.800], significant) — **the same shape of
+      result**, found independently by a completely different proxy metric
+      (family-probe linear decodability vs. SAE ground-truth-feature
+      alignment). Two unrelated interpretability measures agreeing this
+      closely, after the same depth control, is a meaningfully stronger
+      claim than either alone — convergent validity, not just one more
+      correlation.
+    - `effective_dim` vs `sae_ground_truth_rho`: raw ρ=−0.386, depth-controlled
+      ρ=−0.382, **neither significant** (both CIs span zero:
+      [−0.810,+0.376] raw, [−0.896,+0.207] depth-controlled) — no
+      relationship established either way at this n_groups, unlike
+      `effective_dim`'s significant (opposite-signed, per-model) relationship
+      with `tuned_r2_model` documented earlier in §6.1's Findings; this
+      pooled cross-model version of the effective-dim question remains
+      genuinely unresolved, not contradicted.
+    - `effective_dim` vs `probe_decodability`: raw ρ=−0.173, depth-controlled
+      ρ=−0.059, neither significant — consistent with the `sae_ground_truth_rho`
+      null result immediately above, i.e. `effective_dim` shows no clear
+      pooled cross-model relationship with *either* interpretability proxy
+      at this sample.
+    - `depth_trend`: `probe_decodability` (ρ=0.321, CI [0.038,0.812]) and
+      `sae_ground_truth_rho` (ρ=0.319, CI [0.015,0.742]) both trend
+      significantly upward with relative depth pooled across these 6
+      groups; `effective_dim` (ρ=0.025) and `input_cka` (ρ=−0.153) show no
+      significant depth trend — this is exactly why the depth-controlled
+      correlations above matter and aren't redundant with the raw ones.
+  - Full `tsfm_lens` suite green at 198/198 after `sae/layer_sweep.py` +
+    the `layer_selection.py` extension (3 new tests for the sweep itself,
+    2 new tests for the proxy-ingestion degrade paths).
+
 **Findings — per-feature exemplar panel / "Sparse feature dictionary" report
 section (2026-08-06).** Built the checklist item above and verified it two
 ways, per `CLAUDE.md` §2.4: synthetic planted-data unit tests first
@@ -2550,7 +2713,7 @@ from "model B was trained independently," with a real IP/provenance-detection
 use case in mind. This is separable from — and doesn't block — 2a/2b.
 
 **Concrete deliverables**
-- [ ] Design a **ground-truth-labeled experiment**, since no public registry
+- [x] Design a **ground-truth-labeled experiment**, since no public registry
   of "known-distilled TSFM pairs" is likely to exist: fine-tune (or
   distill, if a teacher-student recipe is feasible) a small model from a
   pretrained checkpoint as the **positive** case, and separately train a
@@ -2560,18 +2723,45 @@ use case in mind. This is separable from — and doesn't block — 2a/2b.
   (e.g. `chronos-t5-small` vs. `chronos-t5-base`) are a plausible proxy
   positive if they share meaningful pretraining lineage — verify what's
   actually documented about their training relationship before assuming it,
-  don't guess.
-- [ ] Compute L1 peak-CKA and L2 stitching-gain-over-baseline for both the
+  don't guess. — **done 2026-08-07**: verified (via `hf_hub_download` on
+  `amazon/chronos-t5-base`'s actual README, not assumed) that every
+  Chronos-T5 size is fine-tuned from a **separately pretrained**
+  `google/t5-efficient-{tiny,mini,small,base,large}` text checkpoint — so
+  the positive pair does **not** share initialization weights, this is not
+  literal distillation — but all five sizes were then trained on the
+  *identical* time-series corpus using the *identical* published Chronos
+  procedure (arXiv:2403.07815). That's the precise, documented "meaningful
+  pretraining lineage" this item asked to confirm rather than guess:
+  shared training data/recipe, independent base weights. Negative control:
+  `amazon/chronos-t5-base` vs `google/timesfm-2.5-200m-pytorch` (already
+  on record from `medium_run_chronos_base` — real checkpoints, unrelated
+  organizations, unrelated training data, no shared lineage). See the
+  confound this introduces in the Findings below (same-architecture
+  positive vs. cross-architecture negative) — flagged, not hidden.
+- [x] Compute L1 peak-CKA and L2 stitching-gain-over-baseline for both the
   positive and negative pairs, using the exact same benchmark corpus and
   identical bootstrap discipline (`CLAUDE.md` §6.6) as the main comparison.
-- [ ] The claim worth testing precisely: does the *gain over the
+  — **done 2026-08-07**: new `configs/distill_positive_chronos_small_base.yaml`
+  (same `benchmark_medium/public_dev` corpus, context/horizon/seed as
+  `medium_run_chronos_base.yaml`) run live against real
+  `amazon/chronos-t5-small` + `amazon/chronos-t5-base` checkpoints. Real
+  numbers in Findings below.
+- [x] The claim worth testing precisely: does the *gain over the
   input-feature baseline* (not raw CKA/R², which two same-domain-trained
   independent models could share plenty of) separate positive from negative
   pairs with a CI that excludes overlap? State the null explicitly (§2.2):
   independently-trained same-size models might already show substantial
   stitching gain just from sharing training-data statistics, in which case
   this signal is weaker evidence of lineage than of "same era, same data"
-  and that distinction needs to be reported honestly, not oversold.
+  and that distinction needs to be reported honestly, not oversold. —
+  **done 2026-08-07**: new `analysis/distillation_detection.py` +
+  `run_distillation_detection_test.py` (a thin, purpose-named reuse of
+  `null_baseline.py`'s existing bootstrap-difference machinery — see
+  Findings for why no new statistical code was needed). Real result: yes,
+  cleanly, for both L1 and L2 — see Findings for exact numbers. The stated
+  null (same-era/same-data rather than lineage) is exactly the confound
+  named in the item above and addressed the same way: flagged as real and
+  currently unresolved by this design, not resolved by it.
 - [ ] If the signal holds up, write this as a standalone method note (its
   own doc or a clearly separated section here) describing the intended
   use case (provenance/IP disputes) and its actual false-positive risk
@@ -2579,10 +2769,83 @@ use case in mind. This is separable from — and doesn't block — 2a/2b.
   it, so §2.6 (`CLAUDE.md`)'s "never let a correlational number be read as
   causal" discipline applies doubly hard here: this method establishes
   *representational similarity*, not legal derivation, and any writeup must
-  say so explicitly.
+  say so explicitly. — **not done**: per the item's own "if the signal
+  holds up" condition — it did (see Findings) — but a standalone method
+  note making real-world provenance/IP claims should not be written from a
+  single (positive, negative) pair with a known confound (same-architecture
+  positive vs. cross-architecture negative) still unresolved. The honest
+  next step is a same-architecture negative control (e.g. a second,
+  unrelated T5-based time-series checkpoint, if one becomes available) to
+  isolate "lineage" from "architecture match" before this method is written
+  up as usable evidence for anything with actual stakes.
 
 **Findings / decisions**
-- *(append here)*
+- **2026-08-07 — first real test: the signal is real and large, but the
+  design has a confound that must be resolved before this method is
+  trustworthy evidence of lineage specifically.** Built
+  `configs/distill_positive_chronos_small_base.yaml` (lean: only
+  `l0`/`l1`/`l2`/`internals`/`report`, no `l3`/`lens`/`attention`/`sae`/
+  `confirm` — this deliverable needs L1/L2 only) and ran it live against
+  real `amazon/chronos-t5-small` (6 encoder blocks) + `amazon/chronos-t5-base`
+  (12 encoder blocks) checkpoints, same corpus as `medium_run_chronos_base`.
+  Extraction + L0 + L1 + L2 + report completed in **under two minutes**
+  (288 series, no L3/attention/SAE) — by far the cheapest real-checkpoint
+  run in this repo's history, since this deliverable only ever needed two
+  of the pipeline's ~13 stages.
+  - **Point estimates**: positive pair (Chronos-T5-Small vs Chronos-T5-Base)
+    L1 peak window-CKA = **0.734**; negative pair (Chronos-T5-Base vs
+    TimesFM, already on record from `medium_run_chronos_base`) L1 peak =
+    **0.381**. L2 best gain-over-baseline: positive = **0.637**, negative =
+    **0.413**. Both point estimates already nearly double for the positive
+    pair before any significance test.
+  - **Significance test** (`analysis/distillation_detection.py`'s
+    `compare_lineage_signal`, `n_boot=2000`, paired bootstrap — both runs
+    load the identical corpus/seed, confirmed row-aligned by
+    `null_baseline.py`'s existing `_series_aligned` check, not assumed):
+    L1 diff = **+0.353, 95% CI [+0.307, +0.390], p=0.0005** (floored at
+    1/2000 per `CLAUDE.md` §6.6); L2 diff = **+0.224, 95% CI [+0.168,
+    +0.285], p=0.0005**. Both CIs are comfortably clear of zero and clear
+    of each other's point estimate — this is a decisive, not marginal,
+    separation for this one (positive, negative) pair.
+  - **No new statistical code was needed.** `null_baseline.py`'s
+    `compare_l1_peak_cka`/`compare_l2_best_gain`/
+    `run_null_baseline_comparison` already implement exactly "bootstrap the
+    difference between two runs' own best-achievable L1/L2 signal, paired
+    when the two runs share corpus row order" — nothing in that
+    implementation assumes one side is an untrained-weights null
+    specifically. `distillation_detection.py` is a ~20-line named wrapper
+    (`compare_lineage_signal`) that calls `run_null_baseline_comparison`
+    under this question's own semantics (`a`=positive, `b`=negative) rather
+    than duplicating the bootstrap logic — `CLAUDE.md` §2.2's "prefer one
+    well-tested mechanism over a parallel one" applied directly.
+  - ⚠️ **The confound this design does not resolve, stated plainly rather
+    than glossed over**: the positive pair is **same-architecture**
+    (both T5 encoder-decoder, both Chronos scalar-quantization
+    tokenization) while the negative pair is **cross-architecture**
+    (TimesFM decoder-only vs. Chronos encoder-decoder, different
+    tokenization entirely). So this one test cannot distinguish "the
+    signal tracks shared pretraining lineage" from "the signal just tracks
+    shared architecture" — both are true simultaneously for the positive
+    pair, and both are false simultaneously for the negative pair, by
+    construction of the only two runs available. A same-architecture
+    negative control (two independently-trained T5-encoder-decoder time-
+    series models with no shared lineage) is the natural next step and is
+    **not currently possible with any checkpoint already in this repo's
+    reach** — no other public T5-based TSFM was found during this session.
+    Read this Finding as: **"L1/L2's gain-over-baseline separates this
+    positive pair from this negative pair, decisively"** — a real, useful,
+    first result — **not** yet "L1/L2 detects shared pretraining lineage
+    specifically, independent of architecture." The distinction matters
+    precisely because §6.3's own intended use case (provenance/IP disputes)
+    has real stakes if overclaimed — which is why the "standalone method
+    note" item above is left undone rather than written prematurely.
+  - Full `tsfm_lens` test suite green at **200/200** (2 new tests for
+    `distillation_detection.py`, reusing `test_null_baseline.py`'s exact
+    mock-pipeline fixture pattern — a same-architecture "positive" pair of
+    two `mock_patch` instances and a cross-architecture "negative" pair of
+    `mock_patch` vs `mock_wave`, confirming only that the comparison
+    plumbing runs and labels sides correctly, not making any claim about
+    mock adapters having real lineage).
 
 ---
 
@@ -3001,10 +3264,20 @@ whether it's reusable.
 
 **Candidate models, roughly in priority order (revisit before starting —
 availability/licensing may have changed):**
-- [ ] **Chronos-2** (if released/available) — same lineage as the existing
+- [x] **Chronos-2** (if released/available) — same lineage as the existing
   Chronos adapters, likely the lowest-effort addition and a good smoke test
   of the adapter-add process itself before tackling something structurally
-  different.
+  different. — **done 2026-08-07**: verified released (not guessed) —
+  `amazon/chronos-2` exists on HF, `chronos-forecasting==2.3.1` (already
+  installed) exposes `Chronos2Pipeline`, no new package needed. Turned out
+  to be architecturally distinct enough to be a genuine Phase-4 stress test,
+  not just a smoke test: encoder-only (no decoder), 12 blocks, 768 dim, each
+  block runs TIME self-attention (within one series) then GROUP
+  self-attention (across series sharing a `group_id`, along the *batch*
+  axis) then feed-forward, and processes context + a `[REG]` token +
+  forecast-horizon placeholders together in one non-causal encoder pass —
+  no separate decode step at all. See Findings below for the real numbers
+  and the one abstraction bug this surfaced.
 - [ ] **Moirai (uni2ts)** — masked-encoder, multivariate-native, patch-based;
   structurally distinct from both existing adapters (handles multivariate
   series and variable patch sizes natively) — a good test of whether the
@@ -3021,28 +3294,154 @@ availability/licensing may have changed):**
   (`CLAUDE.md` §4.3).
 
 **Concrete deliverables per model (repeat this checklist per addition):**
-- [ ] Subclass `ModelAdapter`, register in `models/__init__.py`.
-- [ ] Run `--discover-layers`, pick `layer_regex`, run `--check-alignment`
+
+**Chronos-2 — done 2026-08-07:**
+- [x] Subclass `ModelAdapter`, register in `models/__init__.py`. — new
+  `tsfm_lens/models/chronos2_adapter.py` (`Chronos2Adapter`), registered as
+  `"chronos2"` in `models/__init__.py`'s `_register_optional`.
+- [x] Run `--discover-layers`, pick `layer_regex`, run `--check-alignment`
   and confirm near-1.0 diagonal dominance at early layers before trusting
-  anything (`CLAUDE.md` §6.3, invariant 7).
-- [ ] Fill in the capability matrix (`CLAUDE.md` §6.2) honestly — which
+  anything (`CLAUDE.md` §6.3, invariant 7). — `--discover-layers` confirmed
+  the default `encoder\.block\.\d+$` regex matches this checkpoint's 12
+  blocks with no override needed; `--check-alignment Chronos-2` (via new
+  `configs/chronos2_adapter_check.yaml`) showed a **perfect 1.00 diagonal-hit
+  fraction at all 12 layers** — the token-span/patch-geometry math (mirrored
+  from `ChronosBoltAdapter`'s own front-padding formula, since both share
+  `chronos.chronos_bolt.Patch`'s convention) is correct on the first try.
+- [x] Fill in the capability matrix (`CLAUDE.md` §6.2) honestly — which
   optional capabilities (`attention_patterns`, `cross_attention_patterns`,
   head/MLP info) this model supports, and confirm unsupported ones degrade
-  with a log rather than breaking (`CLAUDE.md` invariant 8).
-- [ ] Confirm §2.4's success bar: no changes needed outside the new adapter
+  with a log rather than breaking (`CLAUDE.md` invariant 8). — `python
+  run_capability_matrix.py` auto-detected `chronos2` declaring
+  `attention_info`/`mlp_info`/`attention_patterns` (all real, verified live
+  below) and correctly `❌` for `cross_attention_patterns` (encoder-only, no
+  decoder — never overridden, so it degrades to the base class's `None`
+  automatically). **Scope note, stated not hidden**: Chronos-2 runs a
+  *second* attention sub-layer per block (GROUP self-attention, across
+  series along the batch axis) that this mechanism does not expose —
+  `_scan_attention`/`_scan_mlp` (the shared helpers `chronos_bolt_adapter.py`
+  already uses) return on the first matching submodule, which is always the
+  TIME self-attention; GROUP heads are simply out of scope for head-level
+  ablation/pattern capture, documented in the adapter's own docstrings
+  rather than silently claimed as full coverage.
+- [x] Confirm §2.4's success bar: no changes needed outside the new adapter
   file and its registration. Any exception is a bug in the abstraction — file
   it as a Phase 4 finding and fix the abstraction before moving to the next
-  model.
-- [ ] Auto-generate the capability matrix from the registry (see Phase 5)
-  rather than hand-maintaining a table that will drift. — **the generator
-  itself now exists** (`tsfm_lens/models/capability_matrix.py`, built
-  2026-08-06 under Phase 5's matching checklist item), so this bullet stays
-  open only because no Phase-4 model addition has actually happened yet to
-  run it against; not re-marked done here since this specific checklist
-  item is about *using* it during a real addition, not building it.
+  model. — **one exception found, filed, and fixed per this item's own
+  contingency plan**: `extraction/hooks.py`'s `_primary()` crashed on the
+  very first real capture (`--check-alignment`), because
+  `Chronos2EncoderBlock.forward` returns an HF `ModelOutput`-style dataclass
+  (dict-like, integer-indexable, but **not** an instance of `tuple` —
+  `isinstance(output, tuple)` silently missed it). Fixed in the shared
+  module, not the adapter — see this section's Findings for the full
+  mechanism and the new regression test.
+- [x] Auto-generate the capability matrix from the registry (see Phase 5)
+  rather than hand-maintaining a table that will drift. — **now actually
+  exercised against a real Phase-4 addition**: `run_capability_matrix.py`'s
+  output above is exactly this generator, run for the first time against a
+  newly-added model rather than only the pre-existing three.
 
 **Findings / decisions**
-- *(append here)*
+- **2026-08-07 — Chronos-2 added; a real abstraction bug found and fixed;
+  live numbers against TimesFM confirm the pipeline treats it as a genuine
+  third architecture, not a Chronos-T5 clone.** `amazon/chronos-2` (120M
+  params, `d_model=768`, 12 layers, 12 heads, patch=16, `use_reg_token=True`,
+  `use_arcsinh=True`, verified via its own `config.json` and HF README, not
+  assumed) is encoder-only: no decoder, and each block runs TIME
+  self-attention → GROUP self-attention (across series sharing a
+  `group_id`, along the *batch* axis, not token-token — out of scope here)
+  → feed-forward. Crucially, the encoder processes **context + `[REG]` +
+  forecast-horizon placeholders together in one non-causal pass** — there
+  is no separate decode step at all, unlike Chronos-T5 (real
+  encoder-decoder) or Chronos-Bolt (encoder + a small direct quantile
+  head). `token_time_spans`/`postprocess_tokens` keep only the leading
+  context-patch positions (mirroring `ChronosBoltAdapter`'s own
+  trailing-`[REG]`-strip pattern, generalized to also strip the trailing
+  forecast placeholders) — confirmed correct by the perfect 1.00 alignment
+  check above, not just asserted.
+  - **The one abstraction bug (`hooks.py`), full mechanism.** `_primary()`
+    read `output[0] if isinstance(output, tuple) else output`, then called
+    `.detach()` on the result. `Chronos2EncoderBlockOutput` (and every HF
+    `transformers.utils.ModelOutput` subclass) is a dataclass that
+    subclasses `OrderedDict` — supports `output[0]` indexing for its first
+    field, but `isinstance(output, tuple)` is `False` — so `_primary`
+    returned the whole dataclass unchanged, and `.detach()` raised
+    `AttributeError`. Fixed by checking for `torch.Tensor` first instead of
+    `tuple` (`return output if isinstance(output, torch.Tensor) else
+    output[0]`) — correct for tensor, tuple, *and* any indexable dataclass
+    output uniformly. A second, related gap: `token_patch`/
+    `output_mean_ablate`'s hooks reconstructed a patched/ablated tuple
+    output via `(patched,) + tuple(output[1:])`, which would have silently
+    **degraded a dataclass output to a plain tuple** — losing attribute
+    access to any other field (e.g. a block's own attention weights) for
+    every later consumer of that forward pass. Fixed with a new shared
+    `_rebuild(output, replacement)` helper: preserves `torch.Tensor` as-is,
+    rebuilds a plain `tuple` as before, and for any `dataclasses.is_dataclass`
+    output uses `dataclasses.replace(output, **{first_field: replacement})`
+    to swap only the primary field, keeping every other field intact and
+    the exact original type. New `tests/test_hooks_modeloutput.py` (3
+    tests, all passing) exercises `ActivationCatcher`/`token_patch`/
+    `output_mean_ablate` directly against a synthetic `ModelOutput`-style
+    module with no real checkpoint or network access needed, so this fix
+    has fast offline regression coverage independent of whether a future
+    session can reach Chronos-2's weights at all. **This is exactly the
+    "any exception outside the new adapter file is a bug in the
+    abstraction" case this phase's own checklist was written to catch** —
+    filed and fixed in the shared module, per that instruction, rather than
+    worked around inside `chronos2_adapter.py`.
+  - **Real numbers from a live GPU validation run**
+    (`configs/chronos2_phase4_check.yaml`: Chronos-2 vs TimesFM, same
+    `benchmark_medium/public_dev` corpus as `medium_run_chronos_base`, with
+    `l0`/`l1`/`internals`/`l3`(**with per-window patching**, exercising the
+    `token_patch` half of the hooks.py fix)/`attention`(**patterns + head/MLP
+    ablation**, exercising `output_mean_ablate`/`input_slice_ablate`)/`report`
+    enabled — deliberately the two mechanisms a lean L0/L1/L2-only run
+    wouldn't touch). Completed clean end-to-end, 5 report sections / 17
+    findings, no traceback:
+    - **L0**: paired ΔMASE −0.14 [−0.21, −0.06] (favors Chronos-2 overall,
+      p=0.003); Chronos-2 significantly stronger on `nonsinusoidal_seasonal`
+      and `random_parametric` (Holm-corrected).
+    - **Profile**: family information peaks at block 3 of 12 for Chronos-2
+      (probe 0.98 vs chance 0.65) vs. the *last* captured layer for TimesFM
+      (probe 0.97 vs chance 0.65, at its stride-2 layer 10 of 10) — Chronos-2
+      crystallizes family identity much earlier in its (shorter) depth.
+    - **L1**: peak CKA **0.43** [0.42, 0.46] at TimesFM-relative-depth 0.22
+      ↔ Chronos-2-relative-depth 0.64, decisively above this run's own
+      shuffled-series null (≈0.04) — real, non-trivial geometric alignment
+      between TimesFM and a third, architecturally distinct model, not just
+      the two flagship architectures.
+    - **L3**: fingerprint agreement **ρ=−0.75** [−0.76, −0.73] overall —
+      a strong *anti*-correlation, the same qualitative pattern
+      `CLAUDE.md` §6.5/ROADMAP.md §5's Findings already documented between
+      TimesFM and Chronos-T5 (there ρ≈−0.90), now replicated against a
+      third, structurally different model; `noise` is again the most
+      divergent single corruption (ρ=−0.39 [−0.51,−0.35]), consistent with
+      the noise-sensitivity anti-correlation this repo has flagged as a
+      concrete causal lead since §7's Phase-3 work.
+    - **Attention**: Chronos-2's strongest periodicity head is L3·h5
+      (excess seasonal mass 0.41, family `mixture`) and its most
+      load-bearing head is L6·h9 (ΔMASE +0.070 when mean-ablated) — real,
+      non-degenerate, sane numbers, confirming `attention_info`/
+      `attention_patterns`/head-ablation all function correctly end-to-end
+      for the new architecture, not just in the isolated alignment check.
+  - Full `tsfm_lens` test suite green at **203/203** (200 before this
+    session's Phase-4 work, +3 new `test_hooks_modeloutput.py` tests).
+    Per this repo's established precedent (`chronos`/`chronos_bolt`/
+    `timesfm` have no pytest coverage either — see
+    `test_adapter_conformance.py`'s own docstring), no pytest test imports
+    real Chronos-2 weights; the live numbers above are the validation,
+    exactly mirroring how every other real-checkpoint adapter in this repo
+    has been validated.
+  - **Not done this session**: Chronos-2 is not yet part of any flagship
+    comparison config (`default.yaml`/`medium_run*.yaml`), has no
+    `random_init` null-baseline pair built, and its GROUP (cross-series)
+    attention axis remains entirely unexplored by this pipeline — all
+    reasonable next steps, not attempted here since this item's own scope
+    is "prove the adapter, not run the full battery."
+- Moirai/Sundial/others below remain **not started** — Chronos-2 was
+  correctly the lowest-effort pick per this list's own stated priority, and
+  turned out to justify that choice (one real bug found and fixed, cheap to
+  fix, zero adapter-specific special-casing needed elsewhere).
 
 ---
 
@@ -3316,16 +3715,28 @@ so a future session doesn't accidentally drift into them:
   the §6.1.1 R2 requirement it was designed around is unimplemented. Closing
   A1 answers this; until then, treat production `sae.targets: auto`
   selections as unvalidated even though the *method* was validated.
-- [ ] **Can this repo's central claims survive an untrained-weights null?**
-  (Added 2026-08-06, §16 E9.) L2 already reports gain over an input-feature
-  baseline, which is the right instinct — but the standard null for
-  representational-similarity and probing work is a randomly-initialized
-  network of the same architecture, and the repo has never run one. Genuinely
-  open which results move: peak CKA, stitching gain, family-probe
-  decodability, and SAE ground-truth alignment mass all plausibly have
-  non-trivial random-network floors. Per §2.2 this null should have been
-  written down before the results were; writing it down now is the next-best
-  thing.
+- [~] **Can this repo's central claims survive an untrained-weights null?**
+  (Added 2026-08-06, §16 E9.) **Answered, with a genuine split verdict that
+  turned out to depend heavily on comparing matched layers, not just
+  matched runs (2026-08-06/07, §16 E9's Findings has every number).** SAE
+  ground-truth alignment and internals' family-probe decodability survive
+  cleanly — real beats untrained at every depth, for both models. **L1 and
+  L2's verdicts are layer-dependent, not uniform**, and reading only each
+  run's single global best pair (the first-follow-up test) understated both:
+  comparing the real run's own reported peak pair against each null run's
+  own *unrelated* best pair (often an early layer with a same-architecture
+  self-predictability artifact, not a comparable layer) gave "L1 CKA:
+  ambiguous/depends on which model; L2 gain: statistically indistinguishable
+  from null (p=0.474, p=0.532)." Re-testing at the **matching layer index**
+  in both runs (the depth-curve follow-ups) instead shows: **L1** decisively
+  beats both floors at every middle depth (layers 6-14 of 10), losing only
+  at the extremes; **L2** decisively beats both floors at the real run's own
+  actual best-performing layer and every layer from there on (8 of 12
+  Chronos blocks), losing only at the earliest, lowest-absolute-gain blocks.
+  Still open (kept `[~]` rather than `[x]` for this reason): this is one
+  direction (`Chronos->TimesFM` for L2), one corpus, one Chronos checkpoint
+  size — the reverse L2 direction and cross-corpus/size replication are the
+  named next step, not yet done.
 
 ---
 
@@ -4069,6 +4480,219 @@ so a future session doesn't accidentally drift into them:
   measured on family-skewed prefixes (A4); and the `layer_screen` stage as
   wired cannot satisfy its own all-layers-fair requirement under any
   production config (A1). Nothing was implemented or committed.
+- **2026-08-06 (same-day follow-up — the deferred §6.2/A4 re-measurement)**
+  — With every §15 P1 item now fixed, picked up the one concrete piece of
+  unfinished business those fixes explicitly left behind: A4's own
+  Findings said the SAE forecast-preservation/ground-truth numbers "remain
+  as previously recorded... left as a follow-up," and §6.2's own AUDIT
+  block said not to act on the "TimesFM passes" conclusion before
+  re-measuring. Verified the full suite green (173/173) first, then
+  re-ran `l0` (for a matched noise floor) and `sae` against
+  `configs/medium_run_chronos_base.yaml`'s already-extracted store, live
+  `google/timesfm-2.5-200m-pytorch` + `amazon/chronos-t5-base` (checkpoints
+  already cached locally, GPU idle and available). Corrected numbers now
+  in §6.2's Findings, superseding the old ones in place rather than
+  replacing them: forecast-preservation ΔMASE for TimesFM moved
+  +0.047 → +0.175 and for Chronos-T5-Base +2.368 → +3.869 under the
+  now-representative stratified sample — both *worse* than previously
+  reported, ruling out the possibility that the old sampling bug happened
+  to favor one model over the other. The new matched noise floor
+  (TimesFM exactly `0.0`, deterministic; Chronos-T5-Base mean `0.160`/max
+  `0.830`) confirms Chronos-T5-Base's failure is real signal, not sampling
+  noise, and that TimesFM's own delta — while still much smaller and still
+  real by construction (deterministic ⇒ any nonzero floor is signal) — is
+  larger than the "passes almost exactly" framing previously implied.
+  Ground-truth alignment also moved (both models' ρ up moderately) but,
+  checked directly rather than assumed, its own row set is provably
+  identical before and after (this corpus's 288 series is smaller than
+  the configured cap, so `sample_rows` degenerates to "take everything"
+  regardless of the fix) — that delta is ordinary SAE-training run-to-run
+  variance, not something A4 changed, and is called out as such so it
+  isn't misattributed. `report.html` was confirmed (by direct grep of the
+  rendered HTML, not just the JSON artifact) to render both new
+  noise-floor-contextualized finding strings end to end. Full suite
+  reconfirmed green at 173/173 after the re-run. Everything from this
+  session remains uncommitted working-tree changes only.
+- **2026-08-06 (same-day follow-up — §16 E9 implementation)** — With every
+  §15 P1 item closed and the §6.2 re-measurement done, picked E9
+  (untrained-weights null baseline) as the highest-value item left in the
+  backlog, per this file's own "arguably the highest-value item in T2"
+  framing. Implemented `ModelConfig.random_init` + `models/base.py::
+  random_init_like` (HF's own `type(model)(model.config)` idiom for the two
+  Chronos adapters, a checkpoint-load skip for TimesFM — no generic
+  reinitialization heuristic, no per-adapter special-casing beyond one
+  branch in each `load()`), which gives L1/L2/internals/SAE a real floor
+  with zero changes to any of those four analysis modules: pairing a real
+  model against its own `random_init` twin is just an ordinary two-model
+  config. Added `sae/ground_truth.py::permutation_null_alignment`, a
+  label-permutation null for the SAE ground-truth alignment score's own
+  multiple-comparisons inflation, wired into the report. New unit tests
+  (`tests/test_random_init.py`, `tests/test_ground_truth_permutation_null.py`,
+  10 tests total) — one, a full mock-pipeline `extract`+`l1` run of a
+  real-vs-random-init pair, exercises the whole wiring end to end offline.
+  Found and fixed one real bug by actually running the smoke test rather
+  than trusting the diff: a 4th paragraph appended to an existing
+  `report.py` note tuple collided with `_note()`'s `summary=` keyword.
+  Full suite green at 183/183. Ran two real-checkpoint verification runs
+  in the background (`configs/null_timesfm_random.yaml`,
+  `null_chronos_random.yaml`, live TimesFM 2.5 / Chronos-T5-Base), both
+  completed cleanly, and the result is a genuine **split verdict** worth
+  reading in full (§16 E9's Findings has all four numbers, not summarized
+  twice here): internals' probe decodability and the SAE ground-truth
+  alignment (validated further by its own permutation null landing right
+  on top of the untrained twins' scores, exactly as it should) both
+  clearly survive the null: real models beat their untrained twins at
+  every depth. L1's peak CKA and, more strikingly, L2's stitching gain do
+  **not** clearly exceed an architecture-only floor computed from the same
+  models' own untrained twins — L2 gain in particular sits within, and for
+  one direction *below*, the untrained-twin floor's range. This materially
+  qualifies (not refutes) `CLAUDE.md` §6.5's L2 framing, and is exactly the
+  kind of check E9's own text predicted this repo was missing. `CLAUDE.md`
+  §6.2 updated with the new capability and a matching reconciliation note.
+- **2026-08-07 — E9 follow-up: the eyeball null comparison becomes a real
+  significance test.** Picked up the prior session's own explicitly-named
+  next step (§16 E9's Findings: "a rigorous verdict... needs a per-layer-pair
+  bootstrap test... not eyeballing two point estimates") and §13's matching
+  open question, both still marked unresolved at session start. Built
+  `stats.py::bootstrap_ci_diff` (general paired/unpaired bootstrap CI + p for
+  the difference of two statistics), factored `l2_stitching.py`'s train/val
+  split into a reusable `series_split()`, and a new `analysis/null_baseline.py`
+  (+ `run_null_baseline_test.py` CLI) that reads two already-extracted run
+  directories — no model loaded, nothing re-run — and bootstraps real-run vs.
+  null-run peak CKA / best gain with the *same* series-index draw in both
+  (verified row-for-row corpus alignment first, not assumed; falls back to an
+  unpaired bootstrap with a warning otherwise). 5 new tests
+  (`tests/test_null_baseline.py`), full suite green at **189/189**. Ran the
+  new CLI against the two already-completed real-checkpoint null runs from
+  the prior session (`null_timesfm_random`, `null_chronos_random`) against
+  `medium_run_chronos_base` — no GPU needed, pure re-analysis of existing
+  activation stores. Result (full numbers in §16 E9's Findings, appended
+  in place): L2's null result is now confirmed by an actual difference test
+  (both directions' CIs comfortably contain zero, p=0.474/0.532) rather than
+  inferred from overlapping point-estimate CIs. L1's result sharpens into
+  something more specific than "model-asymmetric": the real cross-model peak
+  CKA significantly *exceeds* Chronos's own untrained-twin floor (p=0.001)
+  while significantly *trailing* TimesFM's own untrained-twin floor (p=0.001)
+  — two decisive, opposite verdicts from the same real number depending on
+  which model supplies the null. §13's open question and §16 E9's checklist
+  item both updated in place (kept at `[~]`, not `[x]`: this tests only each
+  run's single global best pair, not a full per-layer-pair grid, and on one
+  corpus/checkpoint size only).
+- **2026-08-07 (same-day second follow-up, run via a scheduled autonomous
+  loop) — the depth-curve half of E9's named next step.** Extended
+  `analysis/null_baseline.py` with `compare_l1_depth_curve`: for each of
+  TimesFM's 10 captured layers, bootstrap its best-cross-model-partner CKA
+  against both models' own untrained-twin floor *at that exact layer*
+  (mechanical extension of `bootstrap_ci_diff`, exactly as the prior
+  entry's "next concrete step" predicted). 2 new tests, full suite green at
+  **191/191**. Real result (full table in §16 E9's Findings): real
+  cross-model structure decisively beats **both** floors at every middle
+  depth (layers 6-14 of 10), and loses to at least one floor only at the
+  extremes (shallowest vs. TimesFM's own steeply-decaying floor, deepest
+  vs. Chronos's own flat floor) — a materially more informative and more
+  positive picture than the single peak-pair result alone suggested, since
+  the peak (layer 4) happens to land in the one genuinely ambiguous spot.
+  Also found and fixed a real display bug (not a numbers bug) in
+  `run_null_baseline_test.py`'s verdict formatter, which collapsed
+  "null decisively exceeds real" into the same label as "not clearly
+  different." `CLAUDE.md` §6.5 updated with a pointer to read the depth
+  curve, not just the peak. Cross-corpus/checkpoint-size replication and
+  an equivalent L2 depth curve remain the open next step.
+- **2026-08-07 (same-day third follow-up, run via the scheduled autonomous
+  loop's next 30-minute firing) — the L2 analog, and it reverses rather
+  than just qualifies the earlier peak-pair reading.** Added
+  `compare_l2_depth_curve` to `analysis/null_baseline.py` (factoring
+  `_best_direction_decomposition` into a reusable `_pair_decomposition`
+  helper first), `--depth-curve l2` on the CLI, 2 new tests, full suite
+  green at **193/193**. Real result (full table in §16 E9's Findings): the
+  earlier "L2 gain is statistically indistinguishable from null" verdict
+  turned out to be an artifact of comparing the real run's actual best pair
+  (Chronos block 10, gain 0.413) against `null_chronos_random`'s own
+  *unrelated* global-best pair (block 0 — an early-layer self-vs-random-twin
+  predictability artifact, gain 0.444, nothing to do with where the real
+  cross-model signal peaks). Retested layer-for-layer at block 10 in both
+  runs, the null floor is only 0.062/0.046 and real decisively beats both
+  (p=0.002 each) — and does so at every block from 4 through 11 (8 of 12),
+  losing only at the earliest, lowest-absolute-gain blocks. Same lesson as
+  the L1 depth curve, arguably sharper here: a single global-best-pair
+  comparison across two independently-run configs can silently compare two
+  *unrelated* layers whenever each run's own optimum lands somewhere
+  different, and only a matched-layer test catches that. `CLAUDE.md` §6.5
+  corrected in place (not deleted). §13's open question rewritten to state
+  the layer-matching lesson explicitly rather than a flat "L2 gain doesn't
+  survive." Open: the reverse L2 direction, and cross-corpus/checkpoint-size
+  replication for both L1 and L2.
+- **2026-08-07 (same-day fourth follow-up, autonomous loop) — §6.1's
+  long-open "feed SAE evaluation results back into the layer-selection
+  correlation study" item, finally unblocked by the null-baseline runs
+  already sitting in `runs/`.** Built `sae/layer_sweep.py` +
+  `run_sae_layer_sweep.py` (per-captured-layer, CPU-only TopK-SAE
+  train+eval reusing the existing `sae` module's functions verbatim) and a
+  fourth `layer_selection.py` proxy metric, `sae_ground_truth_rho`. Ran it
+  against `medium_run_chronos_base` (already had it), plus
+  `null_timesfm_random`/`null_chronos_random` (chosen specifically because
+  they're zarr-v2 and already had `internals` enabled) to clear
+  `cluster_bootstrap_spearman`'s `n_groups>=3` floor — 6 groups, 66 records
+  total. Result: `input_cka` vs the new `sae_ground_truth_rho` proxy is
+  depth-controlled-significant (ρ=0.623, CI [0.074,0.758]) and closely
+  replicates the *already-established* `input_cka` vs `probe_decodability`
+  relationship (ρ=0.580) — two independent interpretability proxies
+  agreeing after the same depth control, a real convergent-validity result.
+  `effective_dim` showed no significant relationship with either proxy at
+  this n. Found (and explicitly flagged, not silently worked around) that
+  `runs/medium_run`/`runs/real_run` can't be added to this pool — both
+  predate this repo's `zarr<3` pin and are unreadable by the current
+  environment (`CLAUDE.md` §11.15's trap, recurring). Full suite green at
+  198/198. Full numbers in §6.1's Findings.
+- **2026-08-07 (same-day fifth follow-up, autonomous loop) — Phase 2c
+  (§6.3): first real test of whether L1/L2's stitching machinery separates
+  a documented-shared-lineage model pair from an independently-trained
+  one.** Verified from `amazon/chronos-t5-base`'s actual HF README (not
+  guessed) that every Chronos-T5 size fine-tunes from a *separately*
+  pretrained `google/t5-efficient-{size}` checkpoint (no shared init
+  weights) but all sizes then train on the identical time-series
+  corpus/procedure — the precise "meaningful lineage" the checklist asked
+  to confirm. Ran a new lean config
+  (`configs/distill_positive_chronos_small_base.yaml`, only `l0/l1/l2/
+  internals/report`, done in under 2 minutes) live against real
+  `amazon/chronos-t5-small` + `amazon/chronos-t5-base` as the positive
+  pair; reused `medium_run_chronos_base` (Chronos-T5-Base vs TimesFM,
+  already on disk) as the negative. New `analysis/distillation_detection.py`
+  is a ~20-line named wrapper around `null_baseline.py`'s existing
+  bootstrap-difference functions (nothing in them is null-specific) plus a
+  matching CLI. Result: **decisive separation** — L1 peak CKA 0.734
+  (positive) vs 0.381 (negative), diff +0.353 CI [+0.307,+0.390] p=0.0005;
+  L2 best gain 0.637 vs 0.413, diff +0.224 CI [+0.168,+0.285] p=0.0005 —
+  but flagged, not oversold: the positive pair is same-architecture (both
+  T5) and the negative is cross-architecture, so this one test can't yet
+  separate "tracks lineage" from "tracks architecture match." Left the
+  checklist's "write a standalone method note" item explicitly undone
+  pending a same-architecture negative control, per §2.6/§2.7's honesty
+  doctrine — real stakes (provenance/IP disputes) if overclaimed. Full
+  suite green at 200/200 (2 new tests). Full numbers in §6.3's Findings.
+- **2026-08-07 (same-day sixth follow-up, autonomous loop) — Phase 4 (§9):
+  first real multi-model-expansion addition, Chronos-2, plus a real bug
+  found and fixed in shared infrastructure rather than worked around.**
+  New `models/chronos2_adapter.py` (`Chronos2Adapter`), registered as
+  `"chronos2"`. `--check-alignment` crashed on the very first real capture:
+  `extraction/hooks.py`'s `_primary()` assumed a module's forward output is
+  either a plain tensor or a literal `tuple`, but `Chronos2EncoderBlock`
+  returns an HF `ModelOutput`-style dataclass (dict-like, integer-indexable,
+  but not a `tuple` instance) — exactly the "any exception outside the new
+  adapter file is a bug in the abstraction" case §9's own checklist names.
+  Fixed in `hooks.py` (generalized `_primary`, added `_rebuild` so
+  `token_patch`/`output_mean_ablate` preserve the original output type
+  instead of degrading it to a plain tuple), with a new offline regression
+  test (`tests/test_hooks_modeloutput.py`, 3 tests) rather than any
+  Chronos-2-specific special-casing. After the fix: perfect 1.00
+  diagonal-hit alignment at all 12 layers, and a full live GPU validation
+  run (Chronos-2 vs TimesFM, with L3 per-window patching and attention
+  patterns/ablation both exercised) completed clean end-to-end — L1 peak
+  CKA 0.43 vs a shuffled-null ≈0.04, L3 fingerprint agreement ρ=−0.75
+  (replicating the TimesFM/Chronos-T5 anti-correlation pattern against a
+  third, structurally distinct model), and real, sane periodicity/
+  load-bearing-head numbers from attention analysis. Full suite green at
+  203/203. Full numbers and the abstraction-bug mechanism in §9's Findings.
 
 ---
 
@@ -6595,7 +7219,7 @@ backlog is the next place forward work on this repo should look.
 
 ### T2 — Rigor a comparison tool must have
 
-- [ ] **E9 · Untrained-weights and permutation controls as first-class
+- [~] **E9 · Untrained-weights and permutation controls as first-class
   comparison targets.** The standard null in representational-similarity work
   is a randomly-initialized model of the same architecture, and this repo
   doesn't have one. Add a `random_init: true` flag on a model config that
@@ -6612,6 +7236,16 @@ backlog is the next place forward work on this repo should look.
   skeptic would name." Pairs with A13's noise floor. **This is arguably the
   highest-value item in T2** — §2.2's own doctrine demands nulls, and the
   most obvious null for internals work is currently absent.
+  — **2026-08-06: `random_init` implemented and unit-tested; real-checkpoint
+  verification launched, not yet confirmed at time of writing — see this
+  section's Findings block below for status, run directories, and (once
+  complete) the actual floor numbers.** The label-permutation-null half is
+  implemented for one probe (SAE ground-truth alignment, the one this item's
+  own text names as "SAE ground-truth alignment mass") via
+  `sae/ground_truth.py::permutation_null_alignment`; internals' family-probe
+  decodability does not yet have its own permutation null (it already has a
+  majority-class chance-line CI, a weaker but related control) — noted as a
+  remaining follow-up, not silently folded into "done."
 - [ ] **E10 · Probabilistic-forecast diagnostics.** Quantiles are already
   produced and pinball loss already computed, but nothing checks
   *calibration*: PIT histograms and interval coverage per family and per
@@ -6742,3 +7376,402 @@ backlog is the next place forward work on this repo should look.
 - *(append here — and per §2.5, before building any of these, state which
   claim it sharpens. Several T3 items are attractive precisely because they're
   interesting, which is exactly when that question needs asking.)*
+- **2026-08-06 — E9 implementation session.** Picked E9 as the highest-value
+  item in the backlog per this section's own text and the prior session's
+  recommendation: every §15 P1 item was closed, so this was the first
+  genuinely new capability rather than a fix. Sharpens: every L1 CKA, L2
+  stitching-gain, internals probe-decodability, and SAE ground-truth
+  alignment number already recorded in this file (`ROADMAP.md` §5's
+  Findings, §6.1/§6.2's Findings) has so far been read against zero, not
+  against an architecture-only floor — exactly the gap §2.2's own doctrine
+  (demand nulls) and this item's text name.
+  - **Design decision, checked against the actual code before writing any:**
+    rather than building a new "null baseline" analysis path, `random_init`
+    is implemented purely as a `ModelConfig` flag + one `if` branch inside
+    each real adapter's existing `load()`. A model with `random_init: true`
+    paired against its own pretrained twin is then just an ordinary
+    two-model config — `l1_geometry.py`, `l2_stitching.py`, `internals.py`,
+    and `sae/train.py` needed **zero changes** to produce real floor
+    numbers, since they already operate generically on whatever two (or,
+    for SAE, however many pinned-target) models a config names. This is a
+    direct instance of `CLAUDE.md` §2.2 (prefer established mechanism over
+    new code) and §2.4 (architecture-agnostic by construction).
+  - **Mechanism, verified per-library rather than assumed (`CLAUDE.md`
+    §2.4):** read `chronos_adapter.py`/`chronos_bolt_adapter.py`'s actual
+    `load()` before writing anything, confirming `self.pipeline.model.model`
+    / `self.pipeline.model` are plain `transformers.PreTrainedModel`
+    instances (`T5ForConditionalGeneration` / `ChronosBoltModelForForecasting`,
+    both confirmed live via `issubclass(..., PreTrainedModel)`), so
+    `type(model)(model.config)` — HF's own from-config idiom, the same
+    mechanism `AutoModel.from_config()` uses versus `from_pretrained()` —
+    is exact and needs no custom reinitialization heuristic.
+    `models/base.py::random_init_like` is this one function, used by both
+    Chronos adapters. Read `timesfm` package source (not assumed) and found
+    an even simpler case: `TimesFM_2p5_200M_torch.__init__` already builds
+    the entire architecture (tokenizer, all 20 `stacked_xf` blocks, output
+    projections) from a fixed, checkpoint-independent config *before*
+    `.load_checkpoint()` is ever called, so TimesFM's `random_init` is
+    simply constructing the wrapper and skipping that call — no checkpoint
+    download or discard, faster than the Chronos path. Confirmed directly
+    that HF's `T5LayerNorm` (used throughout Chronos/Chronos-Bolt) has **no**
+    `reset_parameters()` method, which is exactly why a generic
+    "`.apply(reset_parameters if present)`" heuristic was rejected in favor
+    of the config-reconstruction approach — that heuristic would have
+    silently left every T5LayerNorm weight at its pretrained value in a
+    supposedly "untrained" model.
+  - **Permutation null, scoped to what E9's own text names:** implemented
+    for the SAE ground-truth alignment score specifically
+    (`sae/ground_truth.py::permutation_null_alignment`), since
+    `best_ground_truth_matches` picks each feature's *best* of ~30
+    candidate ground-truth fields — a real multiple-comparisons inflation
+    of `mean_abs_rho_matched` above zero even under pure noise, which a
+    permutation null (shuffle feature-to-series correspondence, rerun the
+    identical search, repeat `ground_truth_permutation_repeats` times)
+    directly measures. Subsamples to `ground_truth_permutation_max_features`
+    features per permutation when a dictionary is large, logged rather than
+    silent (`ROADMAP.md` sec 15's no-silent-cap precedent). Internals'
+    family-probe decodability was **not** given its own permutation null
+    this session (it already has a weaker, related majority-class
+    chance-line CI) — named explicitly as remaining scope rather than
+    folded into "done."
+  - **New configs**: `configs/null_timesfm_random.yaml` /
+    `null_chronos_random.yaml`, each pairing a real model against its
+    `random_init` twin at the exact checkpoint and SAE-target layer
+    `configs/medium_run_chronos_base.yaml` already has freshly re-measured
+    numbers for (this same day's earlier §6.2 re-measurement session), so
+    the null floor is directly comparable to an already-recorded real
+    number rather than a fresh, incomparable one. `l3`/`attention`/
+    `exemplars`/`clustering`/`confirm`/`layer_screen` disabled in both —
+    this run answers one question (how much of L1/L2/internals/SAE is
+    architecture-only), not a full flagship re-comparison against a model
+    with no learned structure to be causal about.
+  - **Verification — unit tests.** New `tests/test_random_init.py` (6
+    tests: `random_init_like` against a tiny fully-offline HF T5 config,
+    confirming different weights and that `T5LayerNorm`'s lack of
+    `reset_parameters` doesn't silently leak pretrained values; a
+    no-`.config` module raises; the mock adapters' seed-offset emulation
+    produces same-architecture/different-weight/reproducible pairs; a YAML
+    round-trip; and a full mock-pipeline `extract`+`l1` run of a
+    real-vs-random-init pair producing finite, in-range CKA) and
+    `tests/test_ground_truth_permutation_null.py` (4 tests: a planted
+    strong real correlation clears the permutation null's p95 while a
+    pure-noise aggregate lands in the same ballpark as its own null —
+    the two-scenario check that proves the null actually discriminates
+    signal from search inflation, not just that it runs; `n_perm=0`
+    disables cleanly; feature subsampling works). One real bug found by
+    actually running the existing smoke test (not assumed passing):
+    `report.py::_note()` takes exactly three positional fields, and a
+    fourth item appended to `_SAE_EXEMPLAR_NOTE` collided with the
+    `summary=` keyword arg (`TypeError: _note() got multiple values for
+    argument 'summary'`) — fixed by folding the new explanation into the
+    existing "Limitations" field instead. Full suite green at **183/183**
+    (up from 173) after the fix.
+  - **Verification — real checkpoints, both runs completed cleanly
+    (2026-08-06).** `configs/null_timesfm_random.yaml` and
+    `null_chronos_random.yaml` ran end to end against live
+    `google/timesfm-2.5-200m-pytorch` and `amazon/chronos-t5-base`.
+    Artifacts: `tsfm_model_analysis/tsfm_lens/runs/null_timesfm_random/`
+    and `.../runs/null_chronos_random/`. **The result is a genuine split
+    verdict, not uniform validation — read all four numbers below, not
+    just the reassuring ones:**
+    - **SAE ground-truth alignment survives the null cleanly, and the
+      permutation-null mechanism itself checks out exactly as designed.**
+      Real TimesFM (layer `stacked_xf.18`): mean |ρ| **0.358** vs. its own
+      permutation null (mean 0.182, p95 0.193) — clearly above. Its
+      untrained twin at the identical layer: mean |ρ| **0.195**, right at
+      *its own* permutation null (p95 0.189) — i.e. an untrained model's
+      SAE finds no ground-truth-aligned structure beyond pure search
+      inflation, exactly as it should. Real Chronos-T5-Base (`encoder.
+      block.6`): mean |ρ| **0.397** vs. null (mean 0.183, p95 0.199) —
+      clearly above. Its untrained twin: mean |ρ| **0.178**, at/below its
+      own null (p95 0.201). This is the cleanest result of the four and a
+      strong sanity check on the whole mechanism: it distinguishes real
+      from untrained cleanly in both directions it needs to.
+    - **Internals' family-probe decodability also survives cleanly.** Real
+      TimesFM's probe accuracy across all 10 captured depths: 0.852 →
+      0.939 → 0.949 → 0.955 → 0.958 → 0.967 → 0.961 → 0.963 → 0.951 →
+      0.905. Its untrained twin: **flat at 0.720 every single layer**
+      (probing a network with no learned structure just decodes whatever
+      linearly-readable signal survives from raw input statistics, which
+      doesn't change with depth). Real Chronos-T5-Base: 0.793 → 0.825 →
+      0.855 → 0.904 → 0.904 → 0.898 → 0.912 → 0.955 → 0.954 → 0.964 →
+      0.984 → 0.980 across its 12 blocks; its untrained twin: **flat at
+      0.665**. Real clearly and consistently beats untrained at every
+      single depth, for both models.
+    - **L1's CKA floor is architecture-dependent in a way that changes how
+      the flagship peak-CKA number should be read.** TimesFM's own
+      untrained-twin CKA is high and steeply depth-decaying: 0.599 at the
+      shallowest captured layer down to 0.077 at the deepest (its patch-
+      based continuous embedding carries a lot of "free" architecture-only
+      geometric agreement). Chronos-T5-Base's own untrained-twin CKA is
+      much lower and nearly flat: 0.123 → 0.174 (peak, block 7) → 0.152 by
+      the last block (its per-timestep quantized-token embedding carries
+      far less). The real cross-model peak, previously recorded this same
+      day in §6.2's re-measurement session, is **CKA 0.381** at (TimesFM
+      layer 4, Chronos block 10). Read against **TimesFM's own** floor at
+      its matching layer 4 (0.369), the real number is barely above it —
+      the reported "peak" sits almost exactly at what architecture alone
+      predicts. Read against **Chronos's own** floor at its matching block
+      10 (0.152), the *same* real number is clearly (~2.5x) above it. This
+      asymmetry is itself the finding: which model's floor you check the
+      shared peak-CKA number against changes the verdict from "barely
+      distinguishable from architecture" to "clearly above it." At
+      mid-to-late TimesFM depths the real cross-model curve does pull
+      increasingly clear of TimesFM's own (fast-decaying) null — e.g.
+      layer 8: 0.323 real vs. 0.214 null; layer 18: 0.104 vs. 0.077 — so
+      the *shape* of "shared structure persisting with depth" looks real
+      even where the single reported peak number does not clearly beat
+      the null.
+    - **L2's stitching-gain floor is the most sobering result, and
+      materially qualifies `CLAUDE.md` §6.5's framing.** TimesFM's own
+      untrained-twin best gain-over-baseline: **0.388** (TimesFM→random,
+      CI 0.324–0.461) / **0.363** (reverse, CI 0.316–0.412). Chronos's own:
+      **0.444** (CI 0.360–0.534) / **0.357** (CI 0.278–0.430). The real
+      cross-model gain, previously recorded this same day: **0.318**
+      (TimesFM→Chronos, CI 0.293–0.342) / **0.413** (Chronos→TimesFM, CI
+      0.360–0.461). These are the same order of magnitude with
+      substantially overlapping CIs — the TimesFM→Chronos real gain
+      (0.318) is not just "not clearly above" but numerically *below*
+      TimesFM's own untrained-twin floor (0.388) at its own best pair.
+      Right now, an architecture-only untrained twin achieves a
+      stitching gain over the input-feature baseline comparable to (or
+      larger than) what two real, differently-trained models achieve
+      against each other. This does not mean L2's real number is
+      meaningless — it already carries a "not causal" evidence-class
+      caveat (`CLAUDE.md` §2.6) — but it is a materially stronger
+      qualification than that caveat previously implied, and should be
+      read as genuinely open rather than folded quietly into "gain over
+      baseline shows shared structure."
+    - **What this does not (yet) establish**, stated rather than implied:
+      this is one run, one corpus (`benchmark_medium`), one Chronos size
+      (base), and only the single global best-pair per run has a proper
+      bootstrap CI — every other depth-curve cell above is a point
+      estimate. A rigorous verdict on L1/L2 needs a per-layer-pair
+      bootstrap test of (real CKA/gain − matched null CKA/gain) with its
+      own CI, not eyeballing two point estimates, plus replication across
+      corpora and the Chronos-small size already used elsewhere in this
+      file. **The single-global-best-pair version of this test is now done
+      (2026-08-07 follow-up, immediately below) — the per-layer-pair grid
+      version and cross-corpus/size replication remain the open part of
+      this item.**
+    - **Also not done this session**: wiring these floors into `report.py`
+      as an automatic reference line/band the way A13's noise floor was
+      wired into the L3 chart — this write-up is a manual comparison
+      against two separately-run null configs, not yet a permanent,
+      automatic part of every L1/L2 report section. A natural, similarly-
+      scoped follow-up once the per-layer bootstrap test above exists.
+  - **Follow-up (2026-08-07): the eyeball comparison above is now a real
+    significance test, not two point estimates read side by side.** New
+    `analysis/null_baseline.py` (`compare_l1_peak_cka`, `compare_l2_best_gain`,
+    `run_null_baseline_comparison`) + `run_null_baseline_test.py` CLI +
+    `stats.py::bootstrap_ci_diff` (a general paired/unpaired bootstrap CI and
+    p-value for the *difference* of two statistics) + `l2_stitching.py`'s
+    train/val split factored out into a reusable `series_split()`. Reads two
+    already-extracted run directories — no model loaded, no checkpoint
+    touched, nothing re-run — and bootstraps the difference between a real
+    cross-model run's peak-pair statistic and a null run's own peak-pair
+    statistic. **Paired, not independent, bootstrap**: verified (via
+    `_series_aligned`, not assumed) that `medium_run_chronos_base` and both
+    null runs load the identical 288-series corpus with the identical
+    `run.seed`, so `l1`'s row sample and `l2`'s train/val split are
+    byte-identical across runs — every bootstrap draw resamples the *same*
+    series from both the real and null run simultaneously, cancelling
+    shared between-series noise (the same logic `CLAUDE.md` §6.6 already
+    applies to L3's cross-model fingerprint-agreement bootstrap, here
+    applied cross-run instead of cross-model). Falls back to an unpaired
+    bootstrap with a logged warning if alignment ever fails — exercised
+    directly in `tests/test_null_baseline.py` via a deliberately
+    differently-sized corpus, alongside 4 other tests (paired L1/L2 runs are
+    finite and well-formed; the top-level wrapper degrades per-section, not
+    wholesale, when one run is missing an artifact). Full suite green at
+    **189/189** (up from 183) after adding these.
+    - **Numbers reproduce the prior point-estimate reading exactly** (a
+      direct correctness check on the new machinery, not just "it runs
+      without crashing"): the recomputed null-run peak CKAs (0.5989 TimesFM,
+      0.1739 Chronos) and best gains (0.3883 TimesFM, 0.4442 Chronos) match
+      the hand-read values recorded above (0.599/0.174 and 0.388/0.444) to
+      three decimal places.
+    - **L1 peak CKA: the asymmetry is not just "related," it is a
+      significant effect in *opposite directions* depending on which
+      model's null you check the shared peak number against.** Against
+      Chronos's own untrained-twin floor: real CKA 0.3812 vs. null 0.1739,
+      diff **+0.207** (95% CI [+0.159, +0.217], p=0.001, paired,
+      n_boot=1000) — **the real cross-model number clearly, significantly
+      exceeds this floor.** Against TimesFM's own untrained-twin floor: the
+      *same* real CKA 0.3812 vs. null 0.5989, diff **−0.218** (95% CI
+      [−0.251, −0.180], p=0.001, paired) — **the real number is clearly,
+      significantly *below* this floor.** Both are decisive (CIs nowhere
+      near zero); they just decide opposite ways. This sharpens, not just
+      restates, the "model-asymmetric" language from earlier this section:
+      it's not that the null comparison is ambiguous, it's that it gives two
+      confident, contradictory verdicts depending on which model supplies
+      the architecture-only floor.
+    - **L2 best gain: the null result is now confirmed, not just
+      suggestive.** Against Chronos's floor: real 0.4132 vs. null 0.4442,
+      diff **−0.031** (95% CI [−0.127, +0.061], p=0.474). Against TimesFM's
+      floor: real 0.4132 vs. null 0.3883, diff **+0.025** (95% CI [−0.057,
+      +0.102], p=0.532). Both CIs comfortably contain zero — an actual
+      bootstrap test of the difference, not an eyeballed CI overlap, confirms
+      neither null is statistically distinguishable from the real
+      cross-model gain. `CLAUDE.md` §6.5's qualification stands as written
+      and is now backed by a significance test rather than a point-estimate
+      comparison.
+    - **Still open, stated precisely so it isn't quietly widened into "L1/L2
+      are settled":** this tests only each run's single global best pair,
+      on one corpus, one Chronos size. It does *not* test every layer pair
+      (the depth-curve comparison at line ~7034-7039 above is still
+      point-estimate-only), and it does not replicate across corpora or the
+      Chronos-small checkpoint. Extending `bootstrap_ci_diff` to a full
+      per-layer-pair grid is mechanical (the function is already
+      pair-agnostic); doing so and re-running against a second corpus/size
+      is the next concrete step. **The depth-curve half of that step is now
+      done (2026-08-07, second follow-up, immediately below); cross-corpus
+      and cross-size replication is not.**
+  - **Second follow-up (2026-08-07): the depth curve above is now
+    significance-tested at every layer, not just the single global peak
+    pair — and the result is a real, informative, non-uniform pattern, not
+    a blanket "L1 fails the null."** New `analysis/null_baseline.py::
+    compare_l1_depth_curve` (+ `run_null_baseline_test.py --depth-curve`):
+    for each of TimesFM's 10 captured layers, take its already-computed
+    best cross-model Chronos partner (`l1/cka.npz`'s row-argmax, the same
+    correspondence the depth-curve point estimates above were read from),
+    and bootstrap the difference against *both* models' own architecture-
+    only floor **at that exact matching layer** (not the null run's own
+    global peak, which — this is itself part of the finding — sits at a
+    different depth than the real cross-model peak for TimesFM's side).
+    2 new tests (`tests/test_null_baseline.py`), full suite green at
+    **191/191**. Ran against the same already-extracted artifacts as the
+    peak-pair test (`medium_run_chronos_base` vs `null_timesfm_random`/
+    `null_chronos_random`), n_boot=500, still CPU-only, no re-extraction:
+
+    | TimesFM layer | Chronos partner | real CKA | vs. TimesFM's own floor | vs. Chronos's own floor |
+    |---|---|---|---|---|
+    | xf.0  | block.8  | 0.181 | 0.599 — **null exceeds real** (p=.002) | 0.170 — not clearly different |
+    | xf.2  | block.10 | 0.284 | 0.532 — **null exceeds real** (p=.002) | 0.152 — **real exceeds null** (p=.002) |
+    | xf.4  | block.10 | 0.381 | 0.369 — not clearly different | 0.152 — **real exceeds null** (p=.002) |
+    | xf.6  | block.10 | 0.353 | 0.278 — **real exceeds null** (p=.002) | 0.152 — **real exceeds null** (p=.002) |
+    | xf.8  | block.10 | 0.323 | 0.215 — **real exceeds null** (p=.002) | 0.152 — **real exceeds null** (p=.002) |
+    | xf.10 | block.9  | 0.309 | 0.189 — **real exceeds null** (p=.002) | 0.169 — **real exceeds null** (p=.002) |
+    | xf.12 | block.9  | 0.279 | 0.163 — **real exceeds null** (p=.002) | 0.169 — **real exceeds null** (p=.002) |
+    | xf.14 | block.9  | 0.238 | 0.137 — **real exceeds null** (p=.002) | 0.169 — **real exceeds null** (p=.008) |
+    | xf.16 | block.8  | 0.145 | 0.105 — **real exceeds null** (p=.002) | 0.170 — **null exceeds real** (p=.002) |
+    | xf.18 | block.9  | 0.104 | 0.077 — **real exceeds null** (p=.002) | 0.169 — **null exceeds real** (p=.002) |
+
+    (Every CI is decisive — p=0.002 is the floor at n_boot=500 — except
+    xf.4 vs. TimesFM's own floor and xf.0 vs. Chronos's own floor, both
+    genuinely CI-spans-zero results, and xf.0 vs. TimesFM's floor / xf.16
+    and xf.18 vs. Chronos's floor, which are decisive in the *null-wins*
+    direction.)
+    - **The headline single-peak-pair test's "not clearly different"
+      verdict for TimesFM was itself an artifact of which layer got
+      compared against which null value.** The peak-pair test (first
+      follow-up, above) compared the real peak (layer 4) against
+      TimesFM-null's own *global* peak (layer 0, CKA 0.599) and found null
+      exceeds real decisively. This depth-curve test instead compares layer
+      4 against TimesFM-null's value **at layer 4 specifically** (0.369) —
+      a much weaker floor, giving a genuinely ambiguous (CI-spans-zero)
+      result rather than a decisive loss. Both comparisons are individually
+      valid; they just answer different questions ("does the real peak beat
+      the null's best layer" vs. "does the real peak beat the null at the
+      same depth"), and reading only one of them would have been
+      misleading either way.
+    - **The real, substantive finding: real cross-model structure clearly
+      beats *both* architecture-only floors at every middle depth (layers
+      6-14 of 10 captured), and clearly loses to at least one floor only at
+      the extremes** (shallowest: layers 0/2 lose to TimesFM's own
+      steeply-decaying floor; deepest: layers 16/18 lose to Chronos's own
+      floor, which is nearly flat with depth and so stays a fixed ~0.17
+      bar the real curve eventually decays below). This is a materially
+      more informative and more positive picture for L1 than either "the
+      peak doesn't survive the null" or "L1 is uniformly null-level" would
+      suggest — most of the depth range shows a real, decisive,
+      double-sided win over architecture alone; it's specifically the
+      curve's two ends that don't.
+    - **One CLI display bug found and fixed while writing this up (not a
+      correctness bug in the numbers — the JSON's `diff_lo`/`diff_hi`/`p`
+      were always right):** `run_null_baseline_test.py`'s print formatter
+      collapsed "null decisively exceeds real" (CI entirely negative) into
+      the same "NOT CLEARLY DIFFERENT" label as a genuine CI-spans-zero
+      result, which would have made e.g. xf.0's clear null-exceeds-real
+      result read as ambiguous from the console output alone. Fixed to a
+      three-way label (`REAL EXCEEDS NULL` / `NULL EXCEEDS REAL` / `NOT
+      CLEARLY DIFFERENT (CI spans zero)`); the table above uses the
+      corrected classification, read directly from each row's `diff_lo`/
+      `diff_hi` rather than the old printed string.
+    - **Still open (at the time of writing):** L2's depth curve has no
+      equivalent per-layer test yet (only its single best pair, from the
+      first follow-up above); no cross-corpus or cross-checkpoint-size
+      replication of any of this exists. **The L2 depth curve is now done —
+      third follow-up, immediately below, and it materially changes the
+      L2 verdict.**
+  - **Third follow-up (2026-08-07, run via the scheduled autonomous loop):
+    the L2 analog of the depth-curve test above — and it reverses, not just
+    qualifies, the earlier "L2 gain is null-level" reading at the real run's
+    own reported best pair.** New `analysis/null_baseline.py::
+    compare_l2_depth_curve` (+ `run_null_baseline_test.py --depth-curve
+    l2`): for each src layer along the real run's own best direction
+    (`l2/stitching.json`'s highest-`best_gain` direction —
+    `Chronos-T5-Base->TimesFM` here), bootstrap its gain (predicting its
+    own best-matching dst layer) against two same-architecture floors **at
+    the matching layer index** — `null_run_a` gives the src model's own
+    real-vs-random-twin gain at that exact src layer, `null_run_b` gives
+    the dst model's own random-twin-vs-real gain at that exact dst layer
+    (mirrors `compare_l1_depth_curve`'s same-index design exactly, not each
+    null run's own best pair). Required factoring `_best_direction_
+    decomposition` into a lower-level `_pair_decomposition` helper so both
+    the single-best-pair and depth-curve paths share one ridge-fit/baseline
+    code path. 2 new tests, full suite green at **193/193**. Ran against
+    the same already-extracted artifacts (`medium_run_chronos_base` vs.
+    `null_chronos_random`/`null_timesfm_random`), n_boot=500, CPU-only:
+
+    | Chronos src layer | TimesFM partner | real gain | vs. Chronos's own floor (same layer) | vs. TimesFM's own floor (same layer) |
+    |---|---|---|---|---|
+    | block.0  | xf.12 | 0.021 | 0.444 — **null exceeds real** (p=.002) | 0.047 — not clearly different |
+    | block.1  | xf.18 | 0.077 | 0.197 — not clearly different | 0.046 — not clearly different |
+    | block.2  | xf.18 | 0.138 | 0.128 — not clearly different | 0.046 — **real exceeds null** (p=.002) |
+    | block.3  | xf.18 | 0.170 | 0.086 — not clearly different | 0.046 — **real exceeds null** (p=.002) |
+    | block.4  | xf.18 | 0.214 | 0.078 — **real exceeds null** (p=.016) | 0.046 — **real exceeds null** (p=.002) |
+    | block.5  | xf.18 | 0.277 | 0.076 — **real exceeds null** (p=.002) | 0.046 — **real exceeds null** (p=.002) |
+    | block.6  | xf.18 | 0.361 | 0.075 — **real exceeds null** (p=.002) | 0.046 — **real exceeds null** (p=.002) |
+    | block.7  | xf.18 | 0.375 | 0.073 — **real exceeds null** (p=.002) | 0.046 — **real exceeds null** (p=.002) |
+    | block.8  | xf.18 | 0.404 | 0.069 — **real exceeds null** (p=.002) | 0.046 — **real exceeds null** (p=.002) |
+    | block.9  | xf.18 | 0.409 | 0.068 — **real exceeds null** (p=.002) | 0.046 — **real exceeds null** (p=.002) |
+    | block.10 | xf.18 | **0.413** (this run's global best) | 0.062 — **real exceeds null** (p=.002) | 0.046 — **real exceeds null** (p=.002) |
+    | block.11 | xf.18 | 0.393 | 0.062 — **real exceeds null** (p=.002) | 0.046 — **real exceeds null** (p=.002) |
+
+    - **Why this reverses, rather than merely qualifies, the earlier
+      peak-pair reading.** `compare_l2_best_gain`'s single-peak-pair test
+      (first follow-up above) compared the real run's best pair (block 10,
+      gain 0.413) against `null_chronos_random`'s own *global* best pair —
+      which this depth curve now shows sits at **block 0** (self-vs-random-
+      twin gain 0.444), an entirely different, unrelated layer where an
+      early Chronos block's output is still close enough to the raw input
+      that it trivially predicts its own untrained twin's same-index output
+      well. Comparing the real cross-model peak (block 10) against that
+      irrelevant early-block artifact was comparing apples to oranges. At
+      the layer the real signal actually peaks (block 10, matched
+      layer-for-layer against the null), the null floor is **0.062**, not
+      0.444 — and real decisively, overwhelmingly exceeds it (diff +0.351,
+      95% CI [+0.265, +0.429], p=0.002), and likewise decisively exceeds
+      TimesFM's own matched-layer floor (0.046, diff +0.367, CI
+      [+0.316,+0.421], p=0.002). The exact same pattern that made L1's peak
+      look worse than most of its depth range (§16 E9's second follow-up,
+      above) made L2's peak look *worse than every layer from block 4 on*.
+    - **The corrected picture: real gain decisively beats both floors at
+      every layer from block 4 through block 11 (8 of 12), is ambiguous at
+      blocks 1-3, and loses only at block 0** (where absolute real gain is
+      smallest anyway, 0.02-0.17, and the null's self-predictability
+      artifact is largest). This is the opposite shape from the original
+      qualification's implication that L2's gain "does not survive the
+      null" — at the specific layer pair this file already reports as the
+      flagship number, it survives both null floors cleanly and by a wide
+      margin. `CLAUDE.md` §6.5 corrected in place (not deleted, per this
+      file's own §0.2) to reflect this.
+    - **What this does not overturn:** the *other* direction
+      (`TimesFM->Chronos`) and its own depth curve haven't been tested this
+      way — this result is specific to the direction the real run already
+      reports as its overall best, which is the one number this file's
+      other sections actually cite. Cross-corpus and cross-checkpoint-size
+      replication of this depth-curve result also remain undone, same as
+      L1's. `run_null_baseline_test.py --depth-curve l2` makes re-running
+      this against a second corpus mechanical once one is extracted.

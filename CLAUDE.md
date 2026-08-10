@@ -157,6 +157,50 @@
 >    strided store rather than every block (§15 A1). §6.1's Screen row and
 >    §8's `layer_screen` knob description are both correct about what the
 >    stage *does*; the requirement it was designed to meet is unimplemented.
+>
+> **Reconciliation note (2026-08-06, fifth same-day follow-up) — untrained-
+> weights null baseline implemented (`ROADMAP.md` §16 E9).** New
+> `ModelConfig.random_init: bool` flag (§6.2 below): a model config with
+> `random_init: true` loads the same architecture (and, for Chronos, the
+> same tokenizer/`chronos_config` metadata) but with freshly, randomly
+> initialized weights instead of the pretrained checkpoint, via each
+> library's own from-config construction path (`type(model)(model.config)`
+> for the two HF-based Chronos adapters; simply not calling
+> `.load_checkpoint()` for TimesFM, whose wrapper already builds its full
+> architecture before any checkpoint step) — no generic reinitialization
+> heuristic, and no per-adapter special-casing beyond one `if
+> self.cfg.random_init` branch in each adapter's existing `load()`. Pairing
+> a real model against its own `random_init` twin as an ordinary two-model
+> config gives L1's CKA, L2's stitching gain, internals' probe
+> decodability, and SAE ground-truth alignment a real floor with **zero
+> changes to any of those four analysis modules** — the null is just
+> another run of the unchanged pipeline. Also added: a label-permutation
+> null for the SAE ground-truth alignment score itself
+> (`sae/ground_truth.py::permutation_null_alignment`), since
+> `best_ground_truth_matches` picks each feature's *best* of ~30 candidate
+> fields, which inflates the headline `mean_abs_rho_matched` above zero
+> from search alone even under pure noise — the permutation null shows how
+> large that same number gets by chance, rendered next to the real value
+> in the report. New `configs/null_timesfm_random.yaml` /
+> `null_chronos_random.yaml` pair each real model (at the exact checkpoint
+> and layer `configs/medium_run_chronos_base.yaml` already has recorded
+> numbers for) against its random-init twin. Verified against real
+> checkpoints (`ROADMAP.md` §16 E9's Findings has the numbers once the
+> background run this session launched completes — see that section for
+> the run directories and current status if you're reading this before it
+> has). New unit tests (`tests/test_random_init.py`,
+> `tests/test_ground_truth_permutation_null.py`) cover the reconstruction
+> mechanism directly against a tiny offline HF T5 (no network), the mock
+> adapters' seed-offset emulation of the same flag, an end-to-end
+> mock-pipeline run of a real-vs-random-init pair through `extract`+`l1`,
+> and the permutation null's statistical behavior on synthetic planted-
+> signal-vs-pure-noise data. Full suite green after this addition (see
+> `ROADMAP.md` §16 E9 for the exact count). One real bug found and fixed
+> by actually running the smoke test rather than trusting the diff:
+> `report.py`'s `_note()` takes exactly three positional fields, and a
+> fourth appended to `_SAE_EXEMPLAR_NOTE` collided with the `summary=`
+> keyword — folded into the existing "Limitations" field instead of adding
+> a fourth positional argument.
 
 ---
 
@@ -195,6 +239,16 @@ on `transformer-lens`.
 > TimesFM is *decoder-only*, Chronos-T5 is the *encoder-decoder*. The asymmetry
 > is therefore: TimesFM's captured stack does everything; Chronos's captured
 > stack only *reads* the context.
+
+> **A fourth architecture is now integrated at the adapter level (ROADMAP.md
+> §9, Phase 4), not yet part of the flagship comparison above.** Chronos-2
+> (`models/chronos2_adapter.py`) is encoder-only with no decoder at all, and
+> adds a second, cross-series "group" attention axis neither model above
+> has. It has real, live-checkpoint numbers on record (§6.2, §11.21) but no
+> `default.yaml`/`medium_run*.yaml` config yet — the table above still
+> describes the pair this repo's central research questions were built
+> around and is not stale, just no longer literally "the two models this
+> repo can analyze."
 
 ---
 
@@ -318,7 +372,7 @@ TSFM-Interp/
         │   ├── config.py        # typed dataclasses, per-stage enables, YAML load
         │   ├── data.py          # sealed loader + jsonl fallback + smoke generator
         │   ├── utils.py         # log, save_json, batch_slices, relative_depths
-        │   ├── models/          # base.py (ModelAdapter), timesfm/chronos/chronos_bolt/mock,
+        │   ├── models/          # base.py (ModelAdapter), timesfm/chronos/chronos_bolt/chronos2/mock,
         │   │                    # conformance.py (check_adapter_conformance -- ROADMAP.md
         │   │                    # §10's automated adapter-checklist, mocks only),
         │   │                    # capability_matrix.py (declared/verified capability
@@ -634,14 +688,53 @@ interpretability machinery — hence L0 exists as the hypothesis generator.
 - `cross_attention_patterns(prepared)` → `[L, B, H, T_enc]` (first decode step)
 - `final_block_name()`, `all_layer_names()`
 
+**Untrained-weights null baseline (`ModelConfig.random_init`, `ROADMAP.md`
+§16 E9).** Any model config can set `random_init: true` to load the same
+architecture (and, for Chronos, the same tokenizer/`chronos_config`) with
+freshly, randomly initialized weights instead of the pretrained checkpoint.
+Pair a model against its own `random_init` twin as an ordinary two-model
+config (`configs/null_timesfm_random.yaml`, `null_chronos_random.yaml`) and
+L1's CKA, L2's stitching gain, internals' probe decodability, and SAE
+ground-truth alignment all get a real floor — how much of each is
+"architecture + input statistics" rather than learning — with **no changes
+to any of those four modules**; the null is just another pipeline run.
+Implemented via each library's own from-config construction
+(`models/base.py::random_init_like`: `type(model)(model.config)` for the
+two HF-based Chronos adapters; TimesFM's wrapper already builds its full
+architecture before any checkpoint step, so `random_init` there is simply
+skipping that step), not a generic reinitialization heuristic — deliberate,
+since e.g. HF's `T5LayerNorm` has no `reset_parameters()` and a
+heuristic relying on it would silently leave that weight at its pretrained
+value. `sae/ground_truth.py::permutation_null_alignment` is the
+complementary label-permutation null this same item asks for, contextualizing
+the SAE ground-truth alignment score's own multiple-comparisons inflation.
+
 **Support matrix as built:**
 
-| Capability | Chronos-T5 | TimesFM | Chronos-Bolt |
-|---|---|---|---|
-| Capture / alignment / L0–L4 | ✅ | ✅ | ✅ |
-| `attention_info` / `mlp_info` | Hard-coded (`encoder.block.{i}.layer.0.SelfAttention.o`, `...layer.1.DenseReluDense`) | `attention_info` discovered via shared `_scan_attention` in `base.py`; `mlp_info` usually finds nothing (its feed-forward block is two bare `nn.Linear`s, `ff0`/`ff1`, with no wrapping MLP submodule for `_scan_mlp` to find — head ablation still works via the attention output projection) | Discovered |
-| `attention_patterns` | ✅ (`output_attentions`, EOS row/col stripped) | ✅ **(corrected — see below; was unsupported when this file was first written)** | ❌ deliberately (release fragility not worth it) |
-| `cross_attention_patterns` | ✅ first step only | n/a | ❌ |
+| Capability | Chronos-T5 | TimesFM | Chronos-Bolt | Chronos-2 |
+|---|---|---|---|---|
+| Capture / alignment / L0–L4 | ✅ | ✅ | ✅ | ✅ |
+| `attention_info` / `mlp_info` | Hard-coded (`encoder.block.{i}.layer.0.SelfAttention.o`, `...layer.1.DenseReluDense`) | `attention_info` discovered via shared `_scan_attention` in `base.py`; `mlp_info` usually finds nothing (its feed-forward block is two bare `nn.Linear`s, `ff0`/`ff1`, with no wrapping MLP submodule for `_scan_mlp` to find — head ablation still works via the attention output projection) | Discovered | Discovered via the same shared `_scan_attention`/`_scan_mlp` — resolves to the block's TIME self-attention only (see below) |
+| `attention_patterns` | ✅ (`output_attentions`, EOS row/col stripped) | ✅ **(corrected — see below; was unsupported when this file was first written)** | ❌ deliberately (release fragility not worth it) | ✅ TIME self-attention only, context-patch positions only |
+| `cross_attention_patterns` | ✅ first step only | n/a | ❌ | n/a (encoder-only, no decoder) |
+
+**Chronos-2 (`models/chronos2_adapter.py`, added ROADMAP.md §9, Phase 4's
+first real multi-model-expansion addition).** Encoder-only — no decoder at
+all. Each block runs TIME self-attention (within one series, the axis this
+repo captures/exposes) then GROUP self-attention (across series sharing a
+`group_id`, along the *batch* axis — not a token-token pattern, and
+deliberately out of scope for `attention_info`/`attention_patterns` here)
+then feed-forward. The encoder processes context + a `[REG]` token +
+forecast-horizon placeholders **together in one non-causal pass** — there
+is no separate decode step, unlike Chronos-T5's real encoder-decoder split
+or Chronos-Bolt's encoder-plus-small-quantile-head design.
+`token_time_spans`/`postprocess_tokens` keep only the leading context-patch
+positions. `_scan_attention`'s "return on first match" behavior always
+resolves to the TIME self-attention sub-layer (registered first in each
+block), never GROUP — a real, stated scope limit, not a bug. Default
+checkpoint `amazon/chronos-2` (120M params, `d_model=768`, 12 layers,
+patch=16); `--check-alignment` shows a perfect 1.00 diagonal-hit fraction
+at every layer.
 
 > **Correction:** this file previously said TimesFM's `attention_patterns`
 > was unsupported ("functional attention"). As of the TimesFM 2.5 adapter
@@ -661,8 +754,14 @@ interpretability machinery — hence L0 exists as the hypothesis generator.
 
 **Adding a model:** subclass `ModelAdapter`, register in `models/__init__.py`,
 run `--discover-layers` to pick a `layer_regex`, then `--check-alignment`.
-Nothing downstream changes. `chronos_bolt_adapter.py` is the compact worked
-example.
+Nothing downstream changes *in principle* — `chronos2_adapter.py` (Phase
+4's first real test of that claim) needed zero adapter-specific
+special-casing anywhere else, but did surface one genuine bug in shared
+infrastructure (`extraction/hooks.py`, §11.21) that a Chronos-T5/Bolt/
+TimesFM-only test surface had never exercised: fixed in the shared module,
+not worked around per-adapter, exactly per this section's own contingency
+plan for such a finding. `chronos_bolt_adapter.py` is the compact worked
+example for a new adapter file itself.
 
 ### 6.3 Time alignment — the mechanism that makes cross-architecture comparison possible
 
@@ -757,6 +856,67 @@ same targets, and **only the gain above it is reported as evidence of shared
 learned structure.** Both directions (A→B, B→A) reported. R² is
 variance-weighted on a held-out **series** split — never a window split.
 Artifact: `l2/stitching.json`.
+⚠️ **Qualified by the untrained-weights null (2026-08-06, `ROADMAP.md` §16
+E9; upgraded from an eyeball comparison to an actual significance test
+2026-08-07).** The input-feature baseline controls for "both models saw the
+same input"; it does **not** control for "any two networks of this shape
+agree this much before either is trained." A paired bootstrap of the
+*difference* between the real cross-model gain (0.413, this run's global
+best pair) and each model's own untrained-twin floor confirms this is a
+real null result, not just overlapping CIs: diff = −0.031 (95% CI
+[−0.127, +0.061], p=0.474) against Chronos's floor, diff = +0.025 (95% CI
+[−0.057, +0.102], p=0.532) against TimesFM's floor — both CIs comfortably
+contain zero. **L1's peak CKA is not just "a related, model-asymmetric
+version of the same gap" — the same paired-bootstrap test shows it as two
+decisive verdicts pointing opposite ways**: the real cross-model CKA
+(0.381) significantly *exceeds* Chronos's own untrained-twin floor (0.174,
+diff +0.207, CI [+0.159,+0.217], p=0.001) while significantly *trailing*
+TimesFM's own untrained-twin floor (0.599, diff −0.218, CI [−0.251,−0.180],
+p=0.001) — which floor you check the one shared number against changes the
+answer, cleanly, in both directions. Read "gain over baseline shows shared
+learned structure" as **verdict depends on which layer of the null run you
+compare against** for both L1's and L2's peak-pair numbers (see the two
+depth-curve corrections immediately below — this superseded an earlier,
+narrower "not yet established for L2" reading of the single-peak-pair test)
+— all now backed by `analysis/null_baseline.py`'s bootstrap tests
+(`ROADMAP.md` §16 E9's Findings has the full numbers), not just point
+estimates. Still scoped to one corpus, one Chronos checkpoint size, and (for
+L2) one direction — cross-corpus/size replication and the reverse L2
+direction are the named next step. Does not apply to L0, L3, L4, attention,
+or the SAE ground-truth alignment score, which the same null check
+confirmed clearly survive it.
+⚠️ **L1's peak-pair verdict above does not generalize to "L1 fails the
+null" — read the depth curve, not just the peak (2026-08-07, `ROADMAP.md`
+§16 E9's second follow-up).** Testing every TimesFM layer against both
+models' own floor *at that exact depth* (not the null run's own global
+peak, which sits at a different layer than the real cross-model peak)
+shows real cross-model structure decisively beating **both** architecture-
+only floors at every middle depth (layers 6–14 of TimesFM's 10 captured
+layers), and losing to at least one floor only at the extremes — the
+shallowest layers lose to TimesFM's own steeply-decaying floor, the
+deepest lose to Chronos's own nearly-flat floor. The single global peak
+pair (layer 4) happens to land exactly in the one genuinely ambiguous
+(CI-spans-zero) spot against TimesFM's floor, which is why the peak-pair
+test alone reads more pessimistically than most of the depth range
+actually supports.
+⚠️ **L2's single-peak-pair null result above is corrected, not just
+qualified, by its own depth curve (2026-08-07, `ROADMAP.md` §16 E9's third
+follow-up) — the earlier "statistically indistinguishable from null" verdict
+was an artifact of comparing the real run's peak against the wrong layer of
+the null run.** `compare_l2_best_gain`'s peak-pair test compared the real
+run's best pair (Chronos block 10, gain 0.413) against `null_chronos_
+random`'s own *global* best pair, which the depth curve reveals sits at
+block 0 — an early layer where an untrained twin trivially predicts its own
+same-index untrained twin (self-vs-random-twin gain 0.444) because both are
+still close to the raw input, not a layer comparable to where the real
+cross-model signal actually peaks. Retested at the **matching layer index**
+(block 10 in both the real and null runs): the null floor there is 0.062
+(Chronos-side) / 0.046 (TimesFM-side), and real decisively, overwhelmingly
+exceeds both (diff +0.351 and +0.367, p=0.002 each) — real gain beats both
+floors at every Chronos block from 4 through 11 (8 of 12), losing only at
+the earliest blocks where absolute gain is smallest anyway. At the exact
+layer pair this file already reports as the flagship L2 number, the gain
+now clearly survives the null.
 
 **L3** (`analysis/l3_perturbation.py`) — corruption battery, each targeting one
 structural property: `noise` (fixed SNR dB), `detrend`, `deseasonalize`
@@ -1524,6 +1684,42 @@ a specific, named set of recorded numbers are currently unknown**, and
 (whether Phase 3's feature-level ablation can build on the TimesFM SAE
 target). When an item is fixed, move its lesson up into §11 proper and mark
 the §15 item `[x]` — don't delete it (`ROADMAP.md` §0.2).
+
+### 11.21 A capture hook that only recognized `tuple` outputs missed HF's `ModelOutput` dataclasses
+`extraction/hooks.py`'s `_primary()` (the helper every capture/patching/
+ablation hook uses to pull the hidden-state tensor out of whatever a
+module's `forward()` returned) checked `isinstance(output, tuple)` and
+fell through to treating anything else as already-a-tensor. This was
+invisible across three real adapters (Chronos-T5, Chronos-Bolt, TimesFM)
+because none of their captured blocks happen to return anything but a
+plain tensor or a literal tuple. Adding a fourth real adapter
+(`chronos2_adapter.py`, ROADMAP.md §9, Phase 4) broke this immediately:
+`Chronos2EncoderBlock.forward` returns a `Chronos2EncoderBlockOutput`, an
+HF `transformers.utils.ModelOutput` dataclass — dict-like (it subclasses
+`OrderedDict`), integer-indexable (`output[0]` works), but **not** an
+instance of `tuple`. `_primary` returned the whole dataclass unchanged, and
+the very next line's `.detach()` call crashed with `AttributeError` on the
+first real `--check-alignment` run. **Fix:** check for `torch.Tensor`
+first instead of `tuple` (`output if isinstance(output, torch.Tensor) else
+output[0]`) — correct uniformly for a tensor, a tuple, or any
+integer-indexable dataclass. A second, related gap in the same module:
+`token_patch`/`output_mean_ablate`'s hooks reconstructed a patched output
+via `(patched,) + tuple(output[1:])`, which would have silently degraded
+any dataclass output to a plain tuple — losing attribute access to any
+other field (e.g. a block's own attention weights) for whatever consumed
+that forward pass next. Fixed with a new shared `_rebuild(output,
+replacement)` that uses `dataclasses.replace(output, **{first_field:
+replacement})` to swap only the primary field when the output is a
+dataclass, preserving its exact original type. New
+`tests/test_hooks_modeloutput.py` covers this directly against a synthetic
+`ModelOutput`-style module, independent of any real checkpoint. **Lesson:**
+"nothing downstream changes when adding a model" (`CLAUDE.md` §6.2,
+ROADMAP.md §9's own success bar) is a claim about the *abstraction*, not a
+guarantee that three prior real adapters have already exercised every
+shape a fourth might introduce — a plain `tuple` check is exactly the kind
+of assumption that looks complete until an architecture with a genuinely
+different forward-output convention (HF's own `ModelOutput`, ubiquitous
+across `transformers`-based models) shows up.
 
 ---
 
