@@ -1926,15 +1926,18 @@ def _sec_sae(cfg: PipelineConfig, run_dir: Path, findings: list) -> str:
         model, layer = key.split("/", 1)
         fid, dead = entry.get("reconstruction_fidelity"), entry.get("dead_feature_rate")
         d_mase = entry.get("forecast_preservation", {}).get("mase_delta")
+        d_mase_token = entry.get("forecast_preservation_token", {}).get("mase_delta")
         stats = f"reconstruction fidelity {fid:.3f} · dead-feature rate {dead:.3f}"
         if d_mase is not None:
-            stats += f" · forecast-preservation ΔMASE {d_mase:+.3f}"
+            stats += f" · forecast-preservation ΔMASE (window) {d_mase:+.3f}"
             fv = noise_floor.get(model)
             if fv and not fv["deterministic"]:
                 stats += (f' (repeat-run floor ±{fv["mase_abs_delta_mean"]:.3f} -- '
                          f'sec 15 A13, see L0\'s "Repeat-run noise floor")')
             elif fv and fv["deterministic"]:
                 stats += " (this model is deterministic; the delta is real signal)"
+        if d_mase_token is not None:
+            stats += (f" · ΔMASE (token, ROADMAP.md sec 16 E15) {d_mase_token:+.3f}")
         gt_align = entry.get("ground_truth_alignment", {})
         rho_mean = gt_align.get("mean_abs_rho_matched")
         null = gt_align.get("permutation_null", {})

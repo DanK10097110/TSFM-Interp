@@ -288,6 +288,30 @@ class SAEConfig:
     real_data_source: str = "Monash-University/monash_tsf"
     real_data_n_windows: int = 20_000
     real_data_pool_limit: int = 2000
+    # Feature-level ablation (ROADMAP.md sec 7 bullet 3 / sec 16 E15's second
+    # half): zero each of the top `feature_ablation_top_k` ground-truth-
+    # matched features (by |rho|) one at a time in the token-level SAE
+    # reconstruction and measure the forecast MASE impact. Off by default --
+    # it costs one extra full forward pass per ablated feature on top of
+    # `forecast_preservation`'s own two, and is only meaningful once that
+    # check's token-granularity number shows the *intact* reconstruction
+    # preserves the forecast reasonably well for this model/layer.
+    feature_ablation_enabled: bool = False
+    feature_ablation_top_k: int = 8
+    feature_ablation_max_series: int = 64
+    # Feature steering (ROADMAP.md sec 16 E14): push each of the top
+    # `feature_steering_top_k` ground-truth-matched features (by |rho|) up
+    # and down by `feature_steering_strength_sigma` standard deviations (of
+    # that feature's own clean activation) and check whether the forecast's
+    # own directional metric (trend slope / seasonal-band magnitude) moves
+    # the way the feature's signed correlation with its matched field
+    # predicts -- a sharper causal claim than ablation's "this feature
+    # matters at all". Off by default for the same cost reason as ablation
+    # (two extra forward passes per steered feature, not one).
+    feature_steering_enabled: bool = False
+    feature_steering_top_k: int = 8
+    feature_steering_max_series: int = 64
+    feature_steering_strength_sigma: float = 2.0
 
 
 @dataclass

@@ -213,6 +213,36 @@
 > layer-selector fix (`CLAUDE.md` §11.18) against the real bake-off — see
 > `ROADMAP.md` §6.1.1's Findings and §13 for the outcome once that
 > background run (started this session) lands.
+>
+> **Reconciliation note (2026-08-11) — `ROADMAP.md` planning pass; two
+> claims in this file are now stale, one is unchanged-but-now-planned.** A
+> user-directed session restructured `ROADMAP.md` (no code changed, no
+> recorded number altered): added a **§0.5 "Start here — next actions, in
+> order"** entry point, a full build plan for the flagship crosscoder
+> (**§6.2.1**, with a blocking dead-feature gate, a five-rung validation
+> ladder, and six candidate variants V0–V6 to be built and compared), a
+> reopening of the falsified provenance work with five replacement
+> approaches (**§6.3.1**), corrections blocks on §11/§12/§16, detail-ups
+> for all twelve unstarted §16 items, and four previously-untracked §13
+> entries. Full writeup in `ROADMAP.md` §14's entry for this date. What
+> changes for *this* file:
+> 1. **§13 item 4's E23 caveat is stale.** It says the diversity-gate
+>    thresholds are calibrated against only the demo-mode reference point
+>    and that the item "stays open" for that reason. `ROADMAP.md` §16 E23
+>    is `[x]` — a real corpus build has since confirmed the thresholds and
+>    no recalibration was needed.
+> 2. **§13 item 3 and §6.2's "flagship crosscoder not started" is still
+>    accurate but no longer the whole story** — it now has a complete,
+>    stage-gated build plan at `ROADMAP.md` §6.2.1. Read that before
+>    starting any crosscoder work, in particular its Stage 0 finding that
+>    the 90–98% dead-feature rate makes `relative_decoder_norm` read ~98%
+>    "shared" from dead-atom symmetry alone, so **no shared-vs-specific
+>    split from the existing feasibility run should be quoted.**
+> 3. **§12's "which of these are actually fixable" note gains one
+>    correction:** the Chronos-decoder gap is no longer a clean non-goal —
+>    `ROADMAP.md` §12 reclassified it as *deferred with a design* (§16
+>    E21), with the never-CKA-decoder-against-context-states rule as the
+>    binding constraint.
 
 ---
 
@@ -2231,10 +2261,61 @@ directly before assuming `extract` simply never ran.
    (max-activating examples or input-space decoder correlations) once a
    crosscoder or per-model dictionaries on both sides exist — SAELens is
    the precedent for that being a distinct phase.
+
+   > **Update (2026-08-11, ROADMAP.md §16 E16).** Implemented as
+   > `sae/matching.py`, against independently-trained per-model dictionaries
+   > (no crosscoder needed) — reframed from "input-space decoder
+   > correlation" to **activation-profile correlation** (Pearson over a
+   > shared series sample) since decoder vectors live in each model's own,
+   > differently-sized hidden space and can't be compared directly; the
+   > shared sample comes free from `ground_truth_alignment`'s existing
+   > run-level row sampling, confirmed identical across targets on a real
+   > run (`gt_a["rows"] == gt_b["rows"]`). Live-verified against real
+   > TimesFM/Chronos-T5-Base SAE checkpoints: 40 of 50 ground-truth-matched
+   > TimesFM features found a Chronos-side partner. Full numbers in
+   > `ROADMAP.md` §16 E16's Findings, not repeated here.
+
+   > **Correction (2026-08-11, ROADMAP.md §16 E15, sixteenth cron-loop
+   > firing).** The "still fails for Chronos-T5-Base" claim above is now
+   > superseded, not just qualified. `sae/eval.py::forecast_preservation`
+   > gained a `granularity: "token"` mode (encode/decode every raw token
+   > independently, no window-pooled broadcast) alongside the original,
+   > now-called `"window"` mode; both are computed and recorded per target
+   > (`"forecast_preservation"` / `"forecast_preservation_token"`), so no
+   > prior number was overwritten. Verified live against
+   > `runs/medium_run_chronos_base`'s real TimesFM-2.5-200M / Chronos-T5-
+   > Base checkpoints (a freshly retrained SAE, so absolute values differ
+   > from the ΔMASE +0.05/+2.4 pair quoted above — that's normal SAE-
+   > training variance, not a regression): TimesFM's window and token
+   > numbers are **bit-for-bit identical** (ΔMASE +0.110 both ways, exactly
+   > as expected since its token width equals the alignment window), while
+   > Chronos-T5-Base's ΔMASE drops from **+3.869 under "window"** (fails
+   > badly) to **−0.346 under "token"** (reconstruction is net *better*
+   > than the clean forecast) — decisive evidence the window-broadcast
+   > confound, not SAE reconstruction quality, was the dominant driver of
+   > every previously-recorded Chronos forecast-preservation failure.
+   > Chronos's token-granularity delta being *negative* is itself a little
+   > surprising (n=24 series noise, or TopK sparsity acting as a mild
+   > denoiser, are the leading guesses) and worth a skeptical look before
+   > reading it as "the SAE is simply excellent" — but directionally it
+   > unambiguously confirms the confound diagnosis over the alternative
+   > "genuine reconstruction quality" explanation. Feature-level ablation
+   > (§7 bullet 3, `ROADMAP.md` §16 E15's second half) is now unblocked.
 4. **Validation as CI gates.** Turn the diversity metrics into explicit pass/fail
    gates (redundancy fraction < X, effective dimensionality > Y, no
    near-collision cluster larger than Z) so each benchmark epoch is checked
    automatically rather than inspected manually.
+
+   > **Update (2026-08-11, ROADMAP.md §16 E23, same firing).** Scaffolded:
+   > `benchmark_validation/gates.py::check_diversity_gates` implements
+   > exactly this (redundancy fraction, effective dimensionality, near-
+   > collision fraction, corpus-wide and per-group), wired into
+   > `run_validation.py` (always prints; `--enforce-gates` to fail the
+   > exit code). Thresholds are still calibrated against only the one
+   > demo-mode reference point (§5's 4.8%/4.6-of-24), so treat a fail as
+   > "worth a human look" rather than a validated gate until a real corpus
+   > build recalibrates them — the item stays open in `ROADMAP.md` §16 E23
+   > for that reason, not because the mechanism is unbuilt.
 5. **Land the QuantileTransformer / IQR fix** in validation if not already
    present (§5).
 6. **More source adapters** — `TIME`, `BOOM`, `ARFBench` slot into the existing

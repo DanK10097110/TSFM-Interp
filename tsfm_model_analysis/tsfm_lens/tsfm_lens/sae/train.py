@@ -14,13 +14,15 @@ from pathlib import Path
 import numpy as np
 import torch
 
+from ..analysis.steering import evaluate_direction_match, predicted_direction_metric
 from ..config import PipelineConfig
 from ..data import BenchmarkData
 from ..extraction.store import ActivationStore
 from ..models import ModelHub
 from ..utils import batch_slices, load_json, log, save_json
-from .eval import dead_feature_rate, forecast_preservation, reconstruction_fidelity
-from .ground_truth import ground_truth_alignment
+from .eval import (dead_feature_rate, feature_ablation_effects, feature_steering_effects,
+                   forecast_preservation, reconstruction_fidelity)
+from .ground_truth import ground_truth_alignment, load_ground_truth_table
 from .models import TopKSAE
 from .real_data import extract_real_activations, sample_real_context_windows
 
@@ -186,6 +188,15 @@ def run_sae(cfg: PipelineConfig, hub: ModelHub, store: ActivationStore,
     targets = cfg.sae.targets or _default_targets(cfg, store)
     results = {}
     real_contexts = _sample_real_contexts(cfg) if cfg.sae.real_data_enabled else None
+    # Ground-truth seasonal periods for every series in `data`, sampled once
+    # and reused across targets (model-independent, same reasoning as
+    # `real_contexts` above) -- only `feature_steering_effects`'s seasonal
+    # directional metric consumes this; other checks ignore it.
+    periods_full = None
+    if cfg.sae.feature_steering_enabled:
+        gt_table = load_ground_truth_table(cfg.data.path)
+        series_ids = data.meta["series_id"].to_numpy()
+        periods_full = gt_table.reindex(series_ids)["seasonal_period_dominant"].to_numpy(dtype=np.float64)
     for target in targets:
         model, layer = target["model"], target["layer"]
         key = f"{model}/{layer}"
@@ -215,10 +226,23 @@ def run_sae(cfg: PipelineConfig, hub: ModelHub, store: ActivationStore,
         dead_rate = dead_feature_rate(sae, bench_activations, device)
 
         try:
-            fp = forecast_preservation(cfg, adapter, layer, sae, store, data, device)
+            fp = forecast_preservation(cfg, adapter, layer, sae, store, data, device,
+                                       granularity="window")
         except Exception as e:
             log.warning(f"sae: forecast-preservation check failed for {key}: {e}")
             fp = {"error": str(e)}
+
+        try:
+            # ROADMAP.md sec 16 E15: a second, token-granularity pass of the
+            # same check, closing the window-broadcast confound the "window"
+            # pass above carries for finer-tokenized models (see
+            # eval.py::forecast_preservation's own docstring for both sides
+            # of this comparison).
+            fp_token = forecast_preservation(cfg, adapter, layer, sae, store, data, device,
+                                             granularity="token")
+        except Exception as e:
+            log.warning(f"sae: token-granularity forecast-preservation check failed for {key}: {e}")
+            fp_token = {"error": str(e)}
 
         try:
             gt = ground_truth_alignment(cfg, store, model, layer, sae, device)
@@ -226,13 +250,96 @@ def run_sae(cfg: PipelineConfig, hub: ModelHub, store: ActivationStore,
             log.warning(f"sae: ground-truth alignment failed for {key}: {e}")
             gt = {"error": str(e)}
 
+        fa = None
+        if cfg.sae.feature_ablation_enabled:
+            try:
+                # ROADMAP.md sec 7 bullet 3 / sec 16 E15's second half: ablate
+                # the top-|rho| ground-truth-matched features one at a time
+                # and measure the causal forecast impact. Reuses `gt`'s
+                # already-computed matches rather than re-searching -- the
+                # candidate set is exactly the features this run already
+                # found a ground-truth correlate for.
+                matched = [f for f in gt.get("features", []) if f.get("best_field") is not None]
+                candidates = [f["feature"] for f in matched[:cfg.sae.feature_ablation_top_k]]
+                if not candidates:
+                    log.info(f"sae: feature-ablation skipped for {key}: no ground-truth-matched "
+                             f"features to ablate")
+                else:
+                    fa = feature_ablation_effects(cfg, adapter, layer, sae, data, device, candidates)
+                    by_field = {f["feature"]: f["best_field"] for f in matched}
+                    for entry in fa["features"]:
+                        entry["best_field"] = by_field.get(entry["feature"])
+            except Exception as e:
+                log.warning(f"sae: feature-ablation failed for {key}: {e}")
+                fa = {"error": str(e)}
+
+        fs = None
+        if cfg.sae.feature_steering_enabled:
+            try:
+                # ROADMAP.md sec 16 E14: steer the top-|rho| ground-truth-
+                # matched features up and down and check whether the
+                # forecast's own directional metric moves the way each
+                # feature's signed correlation with its matched field
+                # predicts. Reuses the same `gt` matches feature-ablation
+                # does (same candidate-selection reasoning: only features
+                # this run already found a ground-truth correlate for).
+                matched = [f for f in gt.get("features", []) if f.get("best_field") is not None]
+                candidates = [f["feature"] for f in matched[:cfg.sae.feature_steering_top_k]]
+                # ROADMAP.md sec 16 E14's named next step: the top-|rho| set
+                # above can miss trend_scale/seasonal_amplitude_max entirely
+                # (the only two fields predicted_direction_metric maps to a
+                # directional claim) if neither is any feature's *global*
+                # top-k match on this run. Explicitly add each field's own
+                # single best-|rho| match (matched is already sorted by
+                # -|rho|, so [0] is the best) so the directional claim gets
+                # at least one evaluable example per model whenever
+                # ground_truth_alignment found one at all, without
+                # displacing the existing top-k set.
+                seen = set(candidates)
+                widened = []
+                for field in ("trend_scale", "seasonal_amplitude_max"):
+                    field_matches = [f for f in matched if f["best_field"] == field]
+                    if field_matches and field_matches[0]["feature"] not in seen:
+                        candidates.append(field_matches[0]["feature"])
+                        seen.add(field_matches[0]["feature"])
+                        widened.append((field, field_matches[0]["feature"]))
+                if widened:
+                    log.info(f"sae: feature-steering candidates for {key} widened with "
+                             f"directional-field match(es): {widened}")
+                if not candidates:
+                    log.info(f"sae: feature-steering skipped for {key}: no ground-truth-matched "
+                             f"features to steer")
+                else:
+                    fs = feature_steering_effects(cfg, adapter, layer, sae, data, device, candidates,
+                                                  periods=periods_full,
+                                                  strength_sigma=cfg.sae.feature_steering_strength_sigma)
+                    by_field = {f["feature"]: (f["best_field"], f["rho"]) for f in matched}
+                    for entry in fs["features"]:
+                        best_field, rho = by_field.get(entry["feature"], (None, None))
+                        entry["best_field"] = best_field
+                        entry["rho"] = rho
+                        metric = predicted_direction_metric(best_field)
+                        entry["predicted_metric"] = metric
+                        if metric is None or rho is None:
+                            entry["direction_match"] = None
+                            continue
+                        response_key = f"{metric}_response"
+                        entry["direction_match"] = evaluate_direction_match(
+                            rho, entry["up"].get(response_key), entry["down"].get(response_key))
+            except Exception as e:
+                log.warning(f"sae: feature-steering failed for {key}: {e}")
+                fs = {"error": str(e)}
+
         results[key] = {
             "checkpoint": str(ckpt_path), "d_in": sae.d_in, "dict_size": sae.dict_size,
             "k": sae.k, "n_train_rows": int(train_activations.shape[0]),
             "n_benchmark_rows": int(bench_activations.shape[0]), "n_real_data_rows": n_real,
             "train_mse_history": history, "reconstruction_fidelity": fidelity,
             "dead_feature_rate": dead_rate, "forecast_preservation": fp,
+            "forecast_preservation_token": fp_token,
             "ground_truth_alignment": gt,
+            "feature_ablation": fa,
+            "feature_steering": fs,
         }
     save_json(out_dir / "meta.json", results)
     log.info(f"sae: complete, {len(results)} target(s)")

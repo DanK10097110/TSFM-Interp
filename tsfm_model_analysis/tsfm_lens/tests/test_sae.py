@@ -21,7 +21,9 @@ import torch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from tsfm_lens.report.sae_exemplars import build_exemplar_table, select_feature_exemplars
-from tsfm_lens.sae.eval import dead_feature_rate, reconstruction_fidelity
+from tsfm_lens.sae.eval import (_feature_ablated_replacement, _token_level_replacement,
+                                _window_broadcast_replacement, dead_feature_rate,
+                                reconstruction_fidelity)
 from tsfm_lens.sae.ground_truth import best_ground_truth_matches
 from tsfm_lens.sae.models import TopKSAE
 from tsfm_lens.sae.train import SAETrainConfig, load_sae_checkpoint, save_sae, train_sae
@@ -201,6 +203,120 @@ def test_build_exemplar_table_skips_unmatched_features():
     print("build_exemplar_table unmatched-feature skip test passed")
 
 
+class _IdentitySAE:
+    """Passes activations through unchanged -- isolates the pooling/broadcast
+    logic itself from any SAE reconstruction error, for the granularity test
+    below."""
+
+    def __call__(self, x):
+        return x, None
+
+
+def test_window_broadcast_collapses_within_window_variation_token_level_does_not():
+    """ROADMAP.md sec 16 E15: `forecast_preservation`'s "window" granularity
+    broadcasts one window-pooled vector across every token in the window,
+    destroying real within-window variation for any model tokenized finer
+    than the alignment window (Chronos: 1 token/timestep vs. e.g. an 8-step
+    window) -- the confound the "token" granularity is supposed to close.
+    Verified directly against the two production helper functions with an
+    identity SAE, so this isolates the pooling/broadcast mechanism from any
+    SAE reconstruction error: token-level replacement must reproduce the
+    original per-token values exactly (no information loss at all), while
+    window-broadcast replacement must collapse each window's tokens to their
+    shared average (the loss the fix is designed to remove)."""
+    n_tokens, window, d = 32, 8, 2
+    n_windows = n_tokens // window
+    spans = np.stack([np.arange(n_tokens), np.arange(n_tokens) + 1], axis=1).astype(np.float64)
+
+    class _FakeAdapter:
+        def token_time_spans(self):
+            return spans
+
+    class _NS:
+        pass
+
+    cfg = _NS()
+    cfg.data = _NS()
+    cfg.data.context_len = n_tokens
+    cfg.alignment = _NS()
+    cfg.alignment.window = window
+
+    torch.manual_seed(0)
+    clean_tokens = torch.randn(1, n_tokens, d)  # real per-token variation within every window
+    sae = _IdentitySAE()
+    device = torch.device("cpu")
+
+    token_repl = _token_level_replacement(clean_tokens, sae, device)
+    assert torch.allclose(token_repl, clean_tokens), (
+        "token-granularity replacement must reproduce the original per-token "
+        "values exactly when the SAE is an identity map")
+
+    window_repl = _window_broadcast_replacement(clean_tokens, sae, _FakeAdapter(), cfg, device)
+    expected_window_means = clean_tokens.reshape(1, n_windows, window, d).mean(dim=2)
+    expected_broadcast = expected_window_means.repeat_interleave(window, dim=1)
+    assert torch.allclose(window_repl, expected_broadcast, atol=1e-5), (
+        "window-broadcast replacement must equal each window's mean, repeated "
+        "across every token in that window")
+    # The whole point: within a window, token-level keeps the real variation
+    # that window-broadcast collapses to a single shared value.
+    within_window_std_token = token_repl[0, :window].std(dim=0).mean().item()
+    within_window_std_broadcast = window_repl[0, :window].std(dim=0).max().item()
+    assert within_window_std_token > 0.1, within_window_std_token
+    assert within_window_std_broadcast < 1e-5, within_window_std_broadcast
+    print("window-broadcast-vs-token-granularity replacement test passed")
+
+
+class _LinearDecodeSAE:
+    """encode returns a fixed, caller-supplied features tensor (ignoring the
+    input) so the ablation test can isolate `_feature_ablated_replacement`'s
+    zero-then-decode mechanism from any real encoder behavior; decode is a
+    plain linear map, so a feature's exact contribution to the reconstruction
+    is analytically known (outer product of that feature's activations with
+    its own decoder row)."""
+
+    def __init__(self, features_by_row, w_dec):
+        self.features_by_row = features_by_row  # [N, F]
+        self.w_dec = w_dec  # [F, D]
+
+    def encode(self, x):
+        return self.features_by_row.clone()
+
+    def decode(self, features):
+        return features @ self.w_dec
+
+    def __call__(self, x):
+        features = self.encode(x)
+        return self.decode(features), features
+
+
+def test_feature_ablated_replacement_removes_exactly_that_features_contribution():
+    """ROADMAP.md sec 7 bullet 3 / sec 16 E15's second half: ablating feature
+    idx must remove exactly that feature's own analytically-known contribution
+    from the full token-level reconstruction, leaving every other feature's
+    contribution (and any row where the ablated feature never fired) untouched."""
+    torch.manual_seed(0)
+    n_tokens, d, f = 6, 4, 3
+    features_by_row = torch.zeros(n_tokens, f)
+    features_by_row[:, 0] = torch.tensor([1.0, 2.0, 0.0, 3.0, 0.0, 1.5])
+    features_by_row[:, 1] = torch.tensor([0.5, 0.0, 2.0, 0.0, 1.0, 0.0])
+    w_dec = torch.randn(f, d)
+    sae = _LinearDecodeSAE(features_by_row, w_dec)
+
+    clean_tokens = torch.randn(1, n_tokens, d)  # shape-only input; this SAE's encode ignores it
+    device = torch.device("cpu")
+    full_recon = _token_level_replacement(clean_tokens, sae, device)
+    ablated = _feature_ablated_replacement(clean_tokens, sae, device, feature_idx=0)
+
+    expected_removed = torch.outer(features_by_row[:, 0], w_dec[0]).reshape(1, n_tokens, d)
+    expected = full_recon - expected_removed
+    assert torch.allclose(ablated, expected, atol=1e-5), (ablated, expected)
+
+    # A row where the ablated feature never fired must be completely unaffected.
+    never_fires_row = 2  # feature 0 is zero there
+    assert torch.allclose(ablated[0, never_fires_row], full_recon[0, never_fires_row], atol=1e-5)
+    print("feature-ablated-replacement mechanism test passed")
+
+
 if __name__ == "__main__":
     test_topk_sae_shapes_and_sparsity()
     test_train_sae_reduces_loss_and_reconstructs()
@@ -212,3 +328,5 @@ if __name__ == "__main__":
     test_select_feature_exemplars_ranks_by_activation_descending()
     test_build_exemplar_table_matches_planted_feature_to_field_value()
     test_build_exemplar_table_skips_unmatched_features()
+    test_window_broadcast_collapses_within_window_variation_token_level_does_not()
+    test_feature_ablated_replacement_removes_exactly_that_features_contribution()

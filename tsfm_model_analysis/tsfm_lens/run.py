@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 
 from tsfm_lens.config import load_config
+from tsfm_lens.doctor import print_preflight, run_preflight
 from tsfm_lens.extraction.alignment import impulse_alignment_check
 from tsfm_lens.pipeline import Context, run_pipeline, stage_names
 from tsfm_lens.utils import setup_logging
@@ -37,6 +38,17 @@ def main() -> None:
     parser.add_argument("--discover-layers", default="",
                         help="print module names for one model name and exit")
     parser.add_argument("--contains", default="", help="filter for --discover-layers")
+    parser.add_argument("--doctor", action="store_true",
+                        help="run the full preflight (incl. loading every model for "
+                             "adapter conformance + alignment checks) and exit "
+                             "(ROADMAP.md sec 16 E2)")
+    parser.add_argument("--no-preflight", action="store_true",
+                        help="skip the fast static preflight that otherwise runs "
+                             "automatically before every pipeline invocation")
+    parser.add_argument("--allow-preflight-fail", action="store_true",
+                        help="run anyway if the preflight reports a FAIL (default: "
+                             "refuse, matching --allow-stale/--allow-partial-report's "
+                             "precedent of defaulting to strict)")
     parser.add_argument("--verbose", dest="verbose", action="store_true", default=None,
                         help="force report.verbose=true regardless of config")
     parser.add_argument("--no-verbose", dest="verbose", action="store_false",
@@ -61,6 +73,18 @@ def main() -> None:
         for layer, frac in results.items():
             print(f"{frac:5.2f}  {layer}")
         return
+    if args.doctor:
+        print(f"tsfm-lens doctor: full preflight for {args.config}")
+        print_preflight(run_preflight(cfg, full=True))
+        return
+
+    if not args.no_preflight:
+        print(f"tsfm-lens preflight ({args.config}) -- use --no-preflight to skip, "
+              f"--doctor to also check adapters/alignment:")
+        preflight_ok = print_preflight(run_preflight(cfg, full=False))
+        if not preflight_ok and not args.allow_preflight_fail:
+            parser.error("preflight reported a FAIL -- fix the items above, or pass "
+                        "--allow-preflight-fail to run anyway")
 
     stages = [s.strip() for s in args.stages.split(",") if s.strip()] or None
     force = {s.strip() for s in args.force.split(",") if s.strip()}

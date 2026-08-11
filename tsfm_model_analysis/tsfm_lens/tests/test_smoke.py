@@ -210,6 +210,8 @@ def test_sae_stage_integration(run_dir=None):
     cfg.sae.dict_size_mult = 2
     cfg.sae.k = 4
     cfg.sae.forecast_preservation_max_series = 16
+    cfg.sae.feature_ablation_enabled = True
+    cfg.sae.feature_ablation_max_series = 8
 
     ctx = Context(cfg)
     run_sae(cfg, ctx.hub, ctx.store, ctx.data, ctx.device)
@@ -225,9 +227,22 @@ def test_sae_stage_integration(run_dir=None):
     assert "error" not in fp, fp
     assert fp["n_series"] == 16
     assert fp["mase_clean"] > 0 and fp["mase_reconstructed"] > 0
+    assert fp["granularity"] == "window"
+
+    fp_token = entry["forecast_preservation_token"]
+    assert "error" not in fp_token, fp_token
+    assert fp_token["granularity"] == "token"
+    assert fp_token["n_series"] == 16
+    assert fp_token["mase_clean"] > 0 and fp_token["mase_reconstructed"] > 0
 
     gt = entry["ground_truth_alignment"]
     assert "error" in gt, "smoke data has no sealed corpus; ground truth must degrade, not crash"
+
+    # Feature ablation reuses `gt`'s matches as its candidate set; since smoke
+    # data has no sealed corpus (`gt` is an error dict), there are no matched
+    # features to ablate -- it must degrade to a clean no-op, not crash.
+    assert entry["feature_ablation"] is None, (
+        "no ground-truth matches available on smoke data; feature_ablation must skip, not run")
 
     from tsfm_lens.report.report import run_report
     run_report(cfg)

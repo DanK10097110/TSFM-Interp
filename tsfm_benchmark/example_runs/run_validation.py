@@ -89,6 +89,11 @@ def main():
     ap.add_argument("--n-blocks", type=int, default=None, help="number of shape-clusters for --blocked (default: ~sqrt(n/2))")
     ap.add_argument("--group-by", default="task", choices=["task", "tier", "group", "archetype"], help="grouping key for per-group diversity/example-sequence breakdowns")
     ap.add_argument("--debug", action="store_true", help=f"write comprehensive DEBUG-level logs to a timestamped file under {LOG_DIR}")
+    ap.add_argument("--enforce-gates", action="store_true",
+                     help="exit nonzero if any diversity/redundancy gate fails (ROADMAP.md sec 16 E23). "
+                          "Off by default -- the gate table always prints, but thresholds are a "
+                          "first-pass calibration against one demo-mode reference point, not yet "
+                          "validated enough to block a build on by default.")
     args = ap.parse_args()
 
     log_path = setup_logging(args.debug, LOG_DIR, "run_validation")
@@ -148,6 +153,12 @@ def main():
     json_path = bv.save_report(report, os.path.join(args.out, "validation_report.json"))
     logger.info("wrote %s", json_path)
     bv.print_summary(report)
+
+    gate_report = bv.check_diversity_gates(report)
+    bv.print_gate_summary(gate_report)
+    if args.enforce_gates and not gate_report["passed"]:
+        logger.error("diversity gates failed with --enforce-gates set; see the gate table above")
+        sys.exit(3)
 
     with StepTimer(logger, "rendering plots"):
         written = [json_path]

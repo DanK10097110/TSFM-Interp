@@ -3,6 +3,7 @@
 from .diversity import DiversityReport, InsufficientN, diversity_metrics, diversity_metrics_by_group
 from .embedding import embed_3d
 from .features import FeatureMatrix, extract_features
+from .gates import DEFAULT_THRESHOLDS, GateThresholds, check_diversity_gates, print_gate_summary
 from .loaders import SeqRecord, from_arrays, from_samples, from_sealed
 from .matching import MatchReport, match_all, redundancy_by_group
 from .plot import (
@@ -25,7 +26,10 @@ __all__ = [
     "FeatureMatrix",
     "MatchReport",
     "SeqRecord",
+    "DEFAULT_THRESHOLDS",
+    "GateThresholds",
     "build_report",
+    "check_diversity_gates",
     "diversity_metrics",
     "diversity_metrics_by_group",
     "embed_3d",
@@ -44,6 +48,7 @@ __all__ = [
     "plot_redundancy_histogram",
     "plot_top_redundant_pairs",
     "plot_value_length_distribution",
+    "print_gate_summary",
     "print_summary",
     "redundancy_by_group",
     "save_report",

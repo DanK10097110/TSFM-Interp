@@ -20,6 +20,7 @@ level's limitation:
 | Level | Question | Method | Limitation it inherits |
 |---|---|---|---|
 | L0 | Who is better, where? | MASE / sMAPE / pinball per family, paired bootstrap tests, Holm-corrected | Behavioral only |
+| Screen | Which of *this* model's own layers are worth further analysis? | Residual-trajectory work+bend geometry (default), or coverage/factor-emergence | Cheap proxy for interestingness, not interestingness itself |
 | Profile | What is in each model? | Effective dimensionality, family-probe decodability, CKA-to-input per layer | Per-model, descriptive |
 | Lens | Where in depth does the forecast form? | Skip lens (layer-l states patched into the final block, decoded with the model's own head) + tuned ridge readout; crystallization depth | Depth-resolved, not component-resolved |
 | L1 | Do representations share geometry? | Linear CKA (global + per-family) with series-bootstrap CIs, RSA | Correlational |
@@ -169,19 +170,47 @@ class-based loader instead of the current adapter.
 
 ## Extending
 
-**New model.** Subclass `ModelAdapter` (`tsfm_lens/models/base.py`):
-implement `load`, `module`, `prepare`, `forward`, `token_time_spans`,
-`predict`, override `postprocess_tokens`/`token_slice` if the sequence
-carries specials or padding, and register it in
-`tsfm_lens/models/__init__.py`. Run `--discover-layers` to choose a
-`layer_regex`, then `--check-alignment`. Nothing downstream changes.
-`chronos_bolt_adapter.py` is a compact worked example of all of the above.
+**New model — bring your own HF checkpoint.** Nothing downstream changes in
+principle; four real adapters (Chronos-T5, Chronos-Bolt, TimesFM 2.5,
+Chronos-2, Sundial) have proven this out, and the one real shared-code gap
+a fourth architecture ever surfaced (a capture hook that assumed `tuple`
+outputs) was fixed once in `extraction/hooks.py`, not per-adapter.
 
-**SAE phase (deferred).** The seams are in place: the store holds raw
-aligned activations an SAE pass would re-encode into `sae/{model}/{layer}`,
-and `extraction.hooks.token_patch` is the intervention primitive feature
-ablation would reuse. The contract is `tsfm_lens/sae/interface.py`; flip
-`sae.enabled` once an implementation is registered.
+1. Subclass `ModelAdapter` (`tsfm_lens/models/base.py`): implement `load`,
+   `module`, `prepare`, `forward`, `token_time_spans`, `predict`; override
+   `postprocess_tokens`/`token_slice` if the sequence carries specials or
+   padding. `chronos_bolt_adapter.py` is the compact worked example;
+   `sundial_adapter.py` is the most recent one and shows how to route around
+   a checkpoint's own broken `.generate()`/cache path without touching any
+   shared file.
+2. Register it in `tsfm_lens/models/__init__.py`.
+3. `python run.py --config <your config> --discover-layers` to pick a
+   `layer_regex` over its residual stream.
+4. `python run.py --config <your config> --check-alignment <name>` — read
+   the full per-layer table, not just whether it ran (see the alignment
+   caveat below).
+5. Drop it into a config next to any existing model and run the pipeline
+   normally — `layer_screen` (below) and every downstream stage work
+   unmodified.
+
+**Layer screening.** Before the expensive per-layer analyses (Profile, L1,
+SAE), the `layer_screen` stage (`analysis/layer_screen.py`, method
+`work_bend` by default) scores each model's own layers as a cheap
+residual-trajectory proxy for "worth a closer look," and
+`sae.targets: auto` consumes its selection. It runs automatically right
+after `extract`; `run_layer_screen_bakeoff.py` is the standalone,
+null-controlled comparison that chose `work_bend` over the alternatives.
+
+**SAE phase.** `sae.enabled: true` trains a real `TopKSAE`
+(`sae/models.py`/`train.py`) straight from the store's activations, with a
+real eval harness (`sae/eval.py`: reconstruction fidelity, dead-feature
+rate, forecast preservation) and a ground-truth feature-alignment score
+(`sae/ground_truth.py`). `sae/crosscoder.py` is a feasibility-tested (not
+yet a pipeline stage) joint dictionary across two models' activations, and
+`sae/matching.py` correlates two independently-trained dictionaries'
+activation profiles to find cross-model feature partners without one.
+`extraction.hooks.token_patch` is the shared intervention primitive
+feature ablation and L3 patching both reuse.
 
 ## Design decisions and caveats
 
@@ -219,17 +248,28 @@ ablation would reuse. The contract is `tsfm_lens/sae/interface.py`; flip
 tsfm_lens/
   config.py            typed YAML config, per-stage enables and defaults
   data.py              sealed-corpus loader (+ jsonl fallback, smoke generator)
-  models/              ModelAdapter contract; TimesFM/Chronos/Chronos-Bolt/mock adapters
+  models/              ModelAdapter contract; TimesFM/Chronos/Chronos-Bolt/
+                       Chronos-2/Sundial/mock adapters, conformance + capability-
+                       matrix generators
   extraction/          hooks, time alignment (+ impulse check), zarr store
-  analysis/            stats (bootstrap/Holm), l0 behavioral, internals profile,
-                       lens (skip + tuned forecast lens), l1 geometry,
-                       l2 stitching, l3 perturbation+patching (per window),
-                       attention (lag profiles, head/MLP ablation, cross-attn),
-                       clustering, exemplars (case studies), confirm (private benchmark)
-  sae/                 deferred phase: contract and integration seams
+  analysis/            stats (bootstrap/Holm), l0 behavioral, layer_screen
+                       (cheap per-model layer scoring, feeds sae.targets),
+                       internals profile, lens (skip + tuned forecast lens,
+                       + spectral_lens's frequency-domain crystallization
+                       depth), l1 geometry, l2 stitching, l3
+                       perturbation+patching (per window), attention (lag
+                       profiles, head/MLP ablation, cross-attn), clustering,
+                       exemplars (case studies), confirm (private benchmark)
+  sae/                 TopKSAE baseline (models/train/eval/ground_truth),
+                       cross-model matching, crosscoder (feasibility-tested,
+                       not yet a pipeline stage)
   report/              single-file interactive HTML report
   pipeline.py          stage DAG, artifact skipping, dependency resolution
 run.py                 CLI
+run_layer_screen_bakeoff.py, run_crosscoder_feasibility.py,
+run_spectral_lens.py, run_meta_report.py, ...   standalone scripts that
+                       reuse an already-extracted run's config/data/store
+                       for probes that aren't (yet, or ever) pipeline stages
 configs/               default.yaml (real pair), smoke.yaml (mocks)
 tests/test_smoke.py    full pipeline end-to-end + confirmation verdict test
 ```
