@@ -1997,6 +1997,348 @@ next step before `factor_emergence` could be reconsidered as anything more
 than "no longer disqualified by a known bug," and before it could be
 compared again against `work_bend`/`coverage` as a production candidate.
 
+**Findings — the deferred live re-verification (2026-08-10) — negative
+result: the fix doesn't clear the nulls, and regresses TimesFM.** Reran
+`run_layer_screen_bakeoff.py` against `runs/layer_screen_experiment`'s
+existing store (both models, all layers, stride 1 — unchanged from the
+first bake-off, reused rather than re-extracted; confirmed byte-identical
+via checksum before/after) for both seed 0 and the seed-1 replicate,
+backing up the pre-fix `layer_screen_bakeoff.json`/`_seed1.json` files
+before overwriting (`CLAUDE.md` §0's "correct in place, never silently
+delete" discipline — both preserved as `*_pre_fix_backup.json`).
+
+- **Chronos-T5-Small: completely unaffected.** `factor_emergence` selects
+  the identical `[encoder.block.0, encoder.block.3]` and scores
+  recall@budget=**0.00**, `beats_uniform=False`, `beats_random=False` in
+  all four runs (both seeds, pre- and post-fix) — bit-for-bit the same
+  failing selection as the original 2026-08-05 run. The fix did nothing
+  here.
+- **TimesFM: got measurably worse.** recall@budget dropped from **0.20**
+  (pre-fix, one hit — `stacked_xf.6`) to **0.00** (post-fix, zero hits) in
+  both seeds. `beats_random` was `False` before and stays `False` (no
+  qualitative flip), but the quantitative regression is real and
+  reproduced across both seeds, not a one-off.
+- **`work_bend`/`coverage`: bit-identical pre- vs. post-fix**, both models,
+  both seeds — confirms the fix stayed correctly scoped to
+  `factor_emergence_scores` with no side effects elsewhere, which is the
+  one part of this result that came out exactly as expected.
+- **Ensembles got worse too, driven entirely by `factor_emergence`'s
+  changed (not just unchanged-but-still-bad) picks.** On TimesFM,
+  `vote_min2`/`rank_average` dropped from 0.40 (tied with the best single
+  method, pre-fix) to 0.20 (worse than either `work_bend` or `coverage`
+  alone, post-fix) — `factor_emergence`'s new picks actively pull the
+  combination down rather than just failing to help it.
+- **Root cause, isolated properly this time** — holding one run's actual
+  stored per-factor decodability matrix fixed and rescoring it with the
+  literal old (unweighted, ungated) formula vs. the new (peak-weighted,
+  floor-gated) formula side by side, rather than comparing two separately
+  SAE-trained (and therefore individually noisy) end-to-end runs: on real
+  data, `no_emergence_factors` came back **empty every time** — the new
+  absolute `min_peak_score=0.15` floor never once excluded a factor here,
+  so that half of the fix is inert on this corpus. The other half — peak-
+  weighting — actively backfires: this corpus/model pair's *highest*
+  peak-R² factors (`has_intermittency`, `archetype_intermittent_bursts`,
+  `archetype_trend_dominant`, peak weight ≈0.80–0.82) are near-input
+  statistics that decode well starting at layer 0 and plateau early, so
+  weighting up exactly these factors pulls the combined emergence score
+  toward layer 0 — the single *worst* layer by the SAE-mass gold ranking
+  (TimesFM block 0 mass 34.8 vs. the real best layer, block 4's 109.9).
+  This is the **mirror image** of `CLAUDE.md` §11.18's original diagnosis
+  and the synthetic test built for it (weak, noisy factors spuriously
+  "emerging" early and diluting one strong factor's real *late* signal) —
+  on real checkpoints it's the *strong* factors whose real, legitimate
+  early decodability creates the early-layer bias, so a fix that weights
+  by peak magnitude amplifies exactly the thing it was meant to correct.
+  The synthetic unit test (`test_factor_emergence_weak_factors_no_longer_
+  dilute_strong_late_peak`) is not wrong — it correctly tests the failure
+  mode it was designed for — that failure mode simply isn't the one that
+  dominates on this real corpus.
+- Full `tsfm_lens` pytest suite: **203 passed, 0 failed** (matching the
+  last recorded count; no production code changed this session, this was a
+  verification-only rerun).
+- **Verdict: `factor_emergence` remains not usable, now for a diagnosed
+  structural reason rather than an open question.** `work_bend` — already
+  the production default and untouched by any of this — is unaffected.
+  A real fix would need to explicitly discount very-early emergence layers
+  (an absolute depth floor, not only a magnitude floor) rather than reweight
+  by peak decodability alone; not attempted this session, since it would be
+  a second design iteration needing its own synthetic-test-first treatment
+  per `CLAUDE.md` §2.4, not a quick follow-on to this verification pass.
+
+**Findings — extending to a third architecture family (2026-08-10, same
+day) — answers §6.1.1-E's own named next step, and surfaces a more
+important, previously-uncontrolled-for finding along the way: the
+bake-off's qualitative verdicts are not stable across independent
+re-extractions.** Built `configs/layer_screen_experiment_v2.yaml` — the
+original bake-off config plus Sundial (added as a fourth `ModelAdapter`
+earlier this same day, §9's Findings) as a third model, all three at
+`capture_layer_stride: 1`. `run_layer_screen_bakeoff.py`'s "for every model
+in the run" loop worked exactly as documented for three models with no
+code changes — `cfg.comparison_pair()` (used by L1/L2/L3, not the
+bake-off) still only compares the first two configured models, its
+existing warning fired as designed, and this only meant Sundial's
+`gold_agreement` (the L3-sensitivity cross-check) came back `null`;
+Sundial's primary SAE-based gold ranking and all three selectors' scores
+are complete and unaffected.
+
+- **Sundial's own leaderboard** (12 layers, budget=3; gold_score by layer
+  index 0–11: `[83.00, 99.28, 122.57, 153.78, 159.85, 181.88, 197.33,
+  197.84, 220.30, 214.99, 197.31, 203.54]` — a plateau across layers 6–11,
+  not a sharp peak, capping how informative exact-index recall can be
+  here): `work_bend` selected `[3, 7, 10]`, **beats both nulls**
+  (`beats_uniform_stride=True, beats_random=True`); `coverage` selected
+  `[10, 2, 7]`, also **beats both nulls**; `factor_emergence` selected
+  `[0, 3, 5]` — front-loaded relative to gold's actual top layers — and
+  **fails both nulls** (parsimony-curve AUC strictly below both uniform-
+  stride and random at every budget checked). All three tie at
+  `recall_at_budget=0.0` by the harsh exact-top-3-index metric (the
+  plateau means several near-tied layers outrank the nominal top-3), but
+  the AUC-based null comparison is the more meaningful signal per this
+  same session's Sundial-specific gold-mass-shape observation, and by that
+  signal `work_bend`/`coverage` clearly win and `factor_emergence` clearly
+  loses — the same qualitative pattern as the original two-model bake-off.
+- **`factor_emergence`'s diagnosed failure mode (this same day, above)
+  reproduces cleanly on a third, structurally distinct architecture — if
+  anything more pronounced.** Sundial's highest-weight factors are the
+  same near-input "meta" fields (`tier_synthetic`, `generator_mixture`,
+  etc., weight ≈0.95–0.97) and 6 of its top-7-weighted factors emerge at
+  layer 0–1 despite their own peak decodability sitting much later (peaks
+  at layers 5, 9, 9, 11 for several) — exactly the "strong factor,
+  spurious early emergence, real peak later" pattern. `no_emergence_
+  factors` correctly excludes the one genuinely weak factor
+  (`n_anomalies`), matching the same behavior already seen on TimesFM/
+  Chronos. **Conclusion: this failure mode is a property of the
+  ground-truth factor table itself** (tier/generator identity is
+  near-perfectly linearly readable from the earliest layer of *any*
+  architecture, by construction of how the benchmark is built) **rather
+  than anything specific to TimesFM's or Chronos's own internals** — it
+  generalizes cleanly to a third, unrelated architecture family, which is
+  stronger evidence for the root-cause diagnosis than either single-model
+  finding alone was.
+- **Net verdict on `work_bend` across all three architectures now on
+  record: mixed, not a clean sweep — consistent with, not a new
+  contradiction of, the original two-model finding's own already-mixed
+  TimesFM result.** From this same v2 run: `work_bend` beats both nulls on
+  Sundial; on TimesFM it beats random but fails uniform-stride
+  (`recall=0.2`, matching the qualitative verdict already on record); on
+  Chronos-T5-Small it beats uniform-stride but — in this fresh extraction
+  only, see below — fails random. Three architectures, three different
+  "which null does it fail, if any" answers. `work_bend` is still the best
+  single method tried and remains the reasonable production default, but
+  "beats both nulls cleanly on every architecture" was never actually true
+  even before this session — the original bake-off's own TimesFM result
+  already said so; this extends the same honest picture to a third model
+  rather than newly complicating it.
+- 🔴 **The more important finding: a fresh, independent re-extraction of
+  the "same" config changed Chronos-T5-Small's qualitative bake-off
+  verdict, which no prior session had checked for.** This v2 run's
+  Chronos-T5-Small numbers (`work_bend` recall=0.0, `beats_random=False`,
+  `gold_agreement` ρ=0.429) do **not** match the existing, same-day
+  `runs/layer_screen_bakeoff.json` numbers for the identical model at the
+  identical config values (`work_bend` recall=1.0, `beats_random=True`,
+  `gold_agreement` ρ=0.714) — both independently re-verified directly
+  against their JSON artifacts, not taken on either session's word.
+  TimesFM's qualitative verdict *did* reproduce (fails uniform, beats
+  random, in both runs) — so this isn't a uniform instability, but it is a
+  real one for at least one model. **This is a different axis of variance
+  than anything previously checked**: the existing "seed1 stability
+  replicate" (§6.1.1's first Findings block) only re-seeds SAE training on
+  a *frozen, already-extracted* store, holding the activations themselves
+  fixed — it was never a test of whether a fresh extraction (new forward
+  passes, same corpus/config) reproduces the same gold ranking and
+  therefore the same selector verdict. This run shows it does not,
+  cleanly, for Chronos-T5-Small. **Practical implication, stated plainly
+  rather than downplayed:** every single-run bake-off qualitative verdict
+  on record in this file — including today's own "`factor_emergence`
+  decisively fails, confirmed by a controlled same-data comparison"
+  conclusion above — was measured on one extraction. The controlled
+  same-data comparison used there is still valid evidence that the new
+  formula is worse than the old one *on that one extraction's data*; what
+  this new finding adds is that "that one extraction's data" is itself not
+  guaranteed representative of what a different, equally-valid extraction
+  of the same config would show. Not a reason to distrust any specific
+  number retroactively without cause, but a real, previously-uncharacterized
+  source of noise this bake-off's own documented CIs/nulls do not capture
+  (they characterize sampling/bootstrap uncertainty *within* one
+  extraction's SAE training, not extraction-to-extraction variance). Added
+  to §13 as a new, prominent open item rather than folded quietly into an
+  existing one.
+- **Timing**: 3-model extraction (extract+l0+internals+l3, 220 series,
+  all-layer capture) — 1m49.3s wall-clock. Bake-off (38 total per-layer
+  SAEs across 3 models) — 2m37.3s wall-clock. Full `tsfm_lens` pytest
+  suite: **207 passed** (independently re-run and confirmed, matching; no
+  production code changed — this was a config + live-run addition only).
+- Artifacts: `configs/layer_screen_experiment_v2.yaml`,
+  `runs/layer_screen_experiment_v2/` (extraction store),
+  `runs/layer_screen_bakeoff_v2.json` (bake-off output) — all new, nothing
+  overwritten.
+- ✅ **Root-caused 2026-08-10, same day, follow-up session — the 🔴 finding
+  immediately above is not unexplained variance, it is `§15 A4`'s sampling
+  fix.** `data.max_series: 220` against the 288-row
+  `benchmark_medium/public_dev` corpus used to be applied as a bare head
+  slice (`kept[:max_series]`); `§15 A4` (fixed 2026-08-06, i.e. *between*
+  the 08-05 run that produced `layer_screen_bakeoff.json` and this same
+  day's 08-10 rerun) replaced it with a family-stratified `sample_rows`
+  call. Verified directly: the full corpus is `{random_parametric: 188,
+  mixture: 60, parametric: 40}`; the first 220 rows (the old head slice)
+  are `{random_parametric: 188, parametric: 32}` — **the entire 60-row
+  `mixture` family, and 8 of 40 `parametric` rows, were silently absent
+  from every number `layer_screen_bakeoff.json` (08-05) ever reported**,
+  because `tsfm_benchmark` writes corpora grouped by generator and
+  `mixture` sorts last. The three 08-10 reruns (`_v2`/a fresh `_v3`/a
+  2-model-only `retest2model`, confirmed bit-identical to each other down
+  to the raw stored activations via `np.array_equal`) all correctly sample
+  a `mixture`-inclusive 220-row subset instead — same seed, same
+  deterministic algorithm, different (more representative) population than
+  08-05 saw. This fully explains the Chronos-T5-Small verdict flip with no
+  need for a GPU-nondeterminism, SAE-seed, or model-state mechanism (all
+  three were checked directly in code and ruled out — see `CLAUDE.md`
+  §11.24 and `ROADMAP.md` §13's now-resolved entry near line 4038 for the
+  full investigation). **Practical upshot, superseding the "practical
+  implication" paragraph above:** `layer_screen_bakeoff.json` (08-05) was
+  never a valid same-population replicate of the 08-10 runs — it was
+  measuring a `mixture`-family-blind sample, a concrete instance of
+  exactly the risk `§15 A4`/the open item at ROADMAP.md line ~4085 already
+  named in the abstract. Treat the 08-10 3-model numbers as the current
+  best answer for this experiment, not as one of two equally-valid samples
+  to average over. The narrower question of whether *this* (correctly
+  sampled) result is itself stable under a second seed remains open, but
+  the "is the whole methodology unreliable" framing above is retracted.
+- 🔴 **The second-seed test is now done (2026-08-10, same day, third
+  follow-up) — answer: no, not reliably, especially for `work_bend` (the
+  production default).** Built `configs/layer_screen_experiment_v2_seed1.yaml`
+  (identical to `_v2.yaml` except `run.seed: 1`), extracted fresh, and ran
+  the bake-off (`runs/layer_screen_bakeoff_v2_seed1.json`) — independently
+  re-verified against the raw JSON/`meta.parquet` directly, not taken on the
+  delegating agent's word, and both matched exactly. **Row overlap between
+  the two seeds' 220-of-288 draws: intersection 169, union 271, Jaccard
+  0.6236162361623616 — 76.8% of each seed's sample reappears in the
+  other's, family composition identical (`{random_parametric: 144,
+  mixture: 46, parametric: 30}` both).** Despite that substantial overlap,
+  qualitative verdicts moved:
+  - **`work_bend` (the wired production default) flips `beats_random` on 2
+    of 3 models.** TimesFM: True (seed0) → **False** (seed1), `recall_at_
+    budget` unchanged at exactly `0.2` both times — the flip comes entirely
+    from the random-null curve shifting under the reseed, not from the
+    selector's own choice (selected layers `[xf.2,6,10,15,18]` are
+    bit-identical both seeds). Chronos-T5-Small: False → **True**,
+    `recall_at_budget` moving `0.0→0.5` — again with the selector's own
+    choice unchanged (`[block.2, block.4]` both seeds); what moved is the
+    *gold* ranking itself (top-2 by SAE mass: `[block.3,5]` seed0 vs.
+    `[block.4,5]` seed1 — one slot swaps, enough to change whether
+    `work_bend`'s fixed pick overlaps it). Sundial alone is fully stable —
+    every number and every selected layer bit-identical across seeds.
+  - **`coverage` is fully stable** on all three models (`beats_random`/
+    `beats_uniform_stride` identical both seeds, selected layers
+    bit-identical too).
+  - **`factor_emergence`'s `beats_random` is stable (still fails on
+    Chronos/Sundial, still beats on TimesFM) but `beats_uniform_stride`
+    flips for Chronos** (True→False) and its selected layers change on both
+    Chronos and Sundial (recall moving 0.5→0.0 and 0.0→0.333 respectively).
+  - Gold-agreement ρ itself moved substantially for both models with one
+    (Chronos 0.429→0.543, TimesFM 0.466→0.665), consistent with a ~23%
+    different row set producing a meaningfully different SAE-mass ranking.
+  **This does not reopen the just-closed A4 question — the mechanism there
+  (a `mixture`-family-blind head slice) is fully confirmed and distinct from
+  this.** What it establishes is a *second*, independent source of
+  fragility: even under the corrected, unbiased, family-stratified sampler,
+  a `recall_at_budget` statistic computed at budget=2 (Chronos) or budget=5
+  (TimesFM) against a 220-row draw is high-variance enough that a routine
+  reseed — not an adversarial or biased one — flips which null the
+  production-default selector beats on 2 of 3 architectures. Extends
+  (doesn't supersede) `CLAUDE.md` §11.23's still-open item: that finding was
+  about extraction-to-extraction variance from a fresh re-extraction; this
+  one shows comparable-magnitude instability purely from row-sampling
+  variance at fixed extraction machinery. Independently confirmed the test
+  suite is unaffected: **207 passed, 2 warnings**, cross-checked by both the
+  delegating agent's own run (417.01s) and a separately-launched run in
+  this same session. **Practical implication for the production
+  `layer_screen` stage:** `work_bend`'s selection of *which layers* is far
+  more stable than its *beats-null verdict* — the same 5 (TimesFM) / 2
+  (Chronos) layers get picked regardless of seed, it's only the
+  null-comparison scorecard that's noisy at this sample size. That's
+  arguably the more actionable reading: the selector's actual behavior
+  (what it picks) looks trustworthy; the bake-off's own evaluation
+  methodology (is that pick *provably* better than chance, at n=220,
+  budget≤5) does not yet have the statistical power to answer that
+  reliably in a single run. A fix would need either a much larger corpus,
+  a bootstrap/multi-seed CI on `recall_at_budget` itself (rather than one
+  point estimate), or both — not attempted this session.
+- ✅ **Fixed and re-verified against real checkpoints (2026-08-10, same day,
+  fourth follow-up) — the instability above is closed, not just documented.**
+  User instruction was explicit: fix it, don't just record it. Root cause,
+  isolated by re-reading `layer_screen_bakeoff.py`/`layer_screen.py`
+  directly rather than guessing: `select_work_bend`/`select_coverage` take
+  no `seed` argument at all (confirmed by grep) and are fully deterministic
+  given a fixed corpus — exactly consistent with the observation two
+  paragraphs up that their *selected layers* never moved across seeds. The
+  entire flip traced to `build_gold_ranking` (`analysis/layer_screen_bakeoff.py`),
+  which trained **exactly one** stochastic small SAE per layer as the "gold"
+  reference every selector is scored against — random dictionary init,
+  minibatch shuffling, and dead-neuron resampling all vary run to run, and
+  at this bake-off's small budgets (2-5 layers) a modest rank swap between
+  two adjacent layers' mass is enough to change which layers count as "gold
+  top-budget," flipping the boolean verdict outright even though nothing
+  about the selector itself changed. Two-part fix, both landed:
+  1. `build_gold_ranking` now trains `n_replicates` (default 3, `run_
+     layer_screen_bakeoff.py --n-gold-replicates`) independently-seeded SAEs
+     per layer and **averages** the ground-truth-alignment mass instead of
+     trusting one run — the standard variance-reduction-by-replication fix,
+     matching how every other statistic in this repo is already treated
+     (`CLAUDE.md` §6.6). Returns `gold_score` (mean) and `gold_score_std`
+     (per-layer spread across replicates) so a layer whose replicates
+     disagree wildly stays visible. (A related small gap the verification
+     run itself caught: `run_bakeoff_for_model` computed but never saved
+     `gold_score_std`/`n_gold_replicates` into the output JSON — fixed in
+     the same edit, `run_layer_screen_bakeoff.py`.)
+  2. New `configs/layer_screen_experiment_v4.yaml` / `_v4_seed1.yaml`: the
+     corpus-subsampling half of the original noise source (§11.24's
+     A4-adjacent finding) is removed outright by omitting `data.max_series`/
+     `l3.max_series` entirely — `benchmark_medium/public_dev` is only 288
+     rows, small enough that capping at 220 bought negligible compute
+     savings while costing real determinism. Both configs now use the full,
+     fixed corpus regardless of `run.seed`.
+  New unit test `tests/test_layer_screen.py::
+  test_build_gold_ranking_averages_replicates_and_is_deterministic` covers
+  the averaging plumbing on synthetic data (CPU, no checkpoint needed).
+  Full `tsfm_lens` suite green after the fix: **208/208** (207 prior + 1 new).
+
+  **Re-verified live against all three real checkpoints** (TimesFM 2.5,
+  Chronos-T5-Small, Sundial), fresh extractions on both seed 0 (`v4`) and
+  seed 1 (`v4_seed1`), full 288-row corpus, 3-replicate gold ranking. Exact
+  `beats_random` comparison, seed 0 → seed 1:
+
+  | Model | work_bend | coverage | factor_emergence |
+  |---|---|---|---|
+  | Chronos-T5-Small | True → True | True → True | False → False |
+  | Sundial | True → True | True → True | False → False |
+  | TimesFM | False → False | True → True | True → True |
+
+  **Every `beats_random` verdict now matches across seeds, for all three
+  methods on all three architectures.** `work_bend` and `coverage` also
+  kept bit-identical `selected_idx` across seeds on every model (as before
+  the fix — consistent with the diagnosis that they were never the noise
+  source). `factor_emergence`'s own selections still move across seeds
+  (`select_factor_emergence`/`factor_probe_matrix` do take a `seed` kwarg,
+  unlike the other two) but this no longer changes its `beats_random`
+  verdict in this run. One smaller residual instability, noted rather than
+  chased further this session: `factor_emergence`'s `beats_uniform_stride`
+  on Chronos-T5-Small still flips (True→False) even with `beats_random`
+  holding at False→False — the fix closes the specific instability it
+  targeted (the production selector's null-comparison verdict) but is not
+  a claim that every secondary metric in the bake-off is now seed-invariant.
+  `factor_emergence` remains not the production default either way.
+  Artifacts: `runs/layer_screen_bakeoff_v4.json`, `runs/
+  layer_screen_bakeoff_v4_seed1.json`.
+
+  **Bottom line:** the concern raised two entries up — that `work_bend`'s
+  own trustworthiness verdict was a coin flip at this sample size — is
+  resolved, not merely characterized. The fix did not touch the selector
+  the production `layer_screen` stage actually runs (`work_bend`'s own
+  layer-selection code path is untouched); it fixed the *evaluation
+  harness* that decides whether to trust it, which is exactly where the
+  noise was isolated to.
+
 ### 6.2 Phase 2b — A TSFM-native SAE variant (the flagship research thread) — baseline (item 4) ✅ DONE 2026-08-05; crosscoder (item 1) feasibility test ✅ DONE 2026-08-05, flagship build not started
 
 **Goal.** Train sparse dictionaries on the layers Phase 2a identifies as
@@ -2169,6 +2511,50 @@ something novel" (brief item 3) should actually land.
   >   but not chased further since it doesn't change any conclusion above.
   > - **Verification.** Full `tsfm_lens` suite green at 173/173 both
   >   immediately before (baseline check) and after this re-run.
+  > ✅ **RE-MEASURED AGAIN (2026-08-10, third data point) — §13's open item
+  > asking whether the 08-06 numbers themselves were stable.** Reran
+  > `sae,report` against the same already-valid `medium_run_chronos_base`
+  > store (no re-extraction needed). **Chronos-T5-Base and both models'
+  > ground-truth ρ replicate closely**, confirming those numbers are stable
+  > across runs: Chronos ΔMASE **3.869 → 3.8686** (effectively identical);
+  > ground-truth ρ TimesFM 0.338 → 0.3487, Chronos 0.401 → 0.4015 (both
+  > small, ordinary-looking training-noise moves, consistent with the
+  > 08-06 entry's own characterization). **TimesFM's forecast-preservation
+  > ΔMASE did not replicate** — it moved **0.175 → 0.1097**, a ~37%
+  > relative shift, meaningfully larger than the ~0.007
+  > reconstruction-fidelity wobble the 08-06 entry above dismissed as
+  > "ordinary GPU floating-point nondeterminism... not chased further."
+  > Reconstruction fidelity itself stayed put this run (TimesFM 0.8575,
+  > Chronos 0.8395 — both close to the "0.86/0.84" already on record
+  > elsewhere in this section), so the instability is specifically in the
+  > *forecast-preservation* metric, not in the SAE's own reconstruction
+  > quality — i.e. `train_sae`'s per-target seeding reproduces a similar
+  > dictionary each time, but which few hundred timesteps the `token_patch`
+  > validity check happens to land on evidently matters more for TimesFM's
+  > deterministic decoder than previously characterized. **New, real
+  > finding, not yet closed**: TimesFM's own SAE forecast-preservation
+  > ΔMASE has a repeat-run noise floor of its own that nothing currently
+  > measures — analogous to A13's *model-level* MASE noise floor, but for
+  > this specific SAE-validity check, and distinct from it. Until that
+  > floor is measured (would need several repeat `sae` reruns with fixed
+  > data/model, isolating the SAE-training RNG as the only varying input),
+  > neither 0.175 nor 0.1097 should be quoted as *the* TimesFM
+  > forecast-preservation number — read it as "small and real, exact
+  > magnitude uncertain by roughly this much," which does not change
+  > §6.2's qualitative bottom line (TimesFM's SAE preserves the forecast
+  > far better than Chronos-T5-Base's does — Chronos's 3.87 dwarfs either
+  > TimesFM value by more than an order of magnitude) but does mean the
+  > specific "~9.3% relative" framing above is itself less precise than it
+  > read. Ground-truth alignment permutation nulls (new context, not
+  > previously recorded in this section for this pair) both cleared
+  > cleanly: TimesFM 0.3487 vs. null mean 0.182/p95 0.191; Chronos 0.4015
+  > vs. null mean 0.172/p95 0.178. Verification: the launching agent's own
+  > post-rerun pytest reported **215 passed, 2 warnings** (same two
+  > pre-existing benign warnings) — matching this session's own,
+  > independently-run full-suite result from earlier the same turn (after
+  > the unrelated §16 E11 change), a real cross-check rather than a single
+  > unverified report, since this rerun touched only `runs/` artifacts and
+  > no source code.
 - [x] Implement the **ground-truth feature-alignment score** from §2.1/§6.3:
   for each learned feature, correlate its activation across the benchmark
   against every available ground-truth component (trend order, each
@@ -2500,7 +2886,13 @@ something novel" (brief item 3) should actually land.
     repo's `zarr<3` pin (CLAUDE.md §11.15) and are unreadable by the
     currently-pinned zarr 2.18.7. **Not fixed this session** — would need a
     full GPU re-extraction, out of scope for this item; flagged here as a
-    fixable-later note per this file's own no-silent-dropping doctrine
+    fixable-later note per this file's own no-silent-dropping doctrine.
+    **Correction (2026-08-10, later the same day):** `medium_run` was
+    re-extracted from scratch for an unrelated reason (the §5.3/A4
+    re-measurement thread; `CLAUDE.md` §11.25) and now has a valid v2
+    store — it could be added to this pool on a future pass. `real_run`'s
+    store is unchanged and still the stale v3 format described above; not
+    re-checked this session
     (§0.2), not silently worked around.
   - **The real correlation numbers**
     (`run_layer_selection_study(['runs/medium_run_chronos_base',
@@ -2705,7 +3097,7 @@ answer the stability question, not the flagship crosscoder itself.
   `runs/crosscoder_feasibility.json` (not committed, `.gitignore`,
   regenerable via the command above).
 
-### 6.3 Phase 2c — L2 stitching as a distillation / fine-tune detector (brief item 2)
+### 6.3 Phase 2c — L2 stitching as a distillation / fine-tune detector (brief item 2) — ❌ falsified for its stated use case, DONE 2026-08-10 (a real, decisive, negative result — see Findings)
 
 **Goal.** Test whether the repo's existing L2 stitching-gain machinery (and
 L1 CKA) can distinguish "model B was fine-tuned or distilled from model A"
@@ -2762,22 +3154,28 @@ use case in mind. This is separable from — and doesn't block — 2a/2b.
   null (same-era/same-data rather than lineage) is exactly the confound
   named in the item above and addressed the same way: flagged as real and
   currently unresolved by this design, not resolved by it.
-- [ ] If the signal holds up, write this as a standalone method note (its
+- [x] If the signal holds up, write this as a standalone method note (its
   own doc or a clearly separated section here) describing the intended
   use case (provenance/IP disputes) and its actual false-positive risk
   in plain terms — this has real-world stakes if anyone downstream acts on
   it, so §2.6 (`CLAUDE.md`)'s "never let a correlational number be read as
   causal" discipline applies doubly hard here: this method establishes
   *representational similarity*, not legal derivation, and any writeup must
-  say so explicitly. — **not done**: per the item's own "if the signal
-  holds up" condition — it did (see Findings) — but a standalone method
-  note making real-world provenance/IP claims should not be written from a
-  single (positive, negative) pair with a known confound (same-architecture
-  positive vs. cross-architecture negative) still unresolved. The honest
-  next step is a same-architecture negative control (e.g. a second,
-  unrelated T5-based time-series checkpoint, if one becomes available) to
-  isolate "lineage" from "architecture match" before this method is written
-  up as usable evidence for anything with actual stakes.
+  say so explicitly. — **answered, negatively: no standalone method note
+  will be written, because the signal does not hold up (done 2026-08-10,
+  see Findings).** The honest next step named at the time — a
+  same-architecture negative control isolating "lineage" from "architecture
+  match" — turned out not to need a second real checkpoint after all: the
+  already-implemented `random_init` mechanism (§6.2) gives a same-
+  architecture, *zero-training* control for free. That control's L1/L2
+  signal came back significantly **higher** than the real trained positive
+  pair's, not lower — meaning architecture match alone, with no training
+  and no lineage whatsoever, produces more apparent "shared structure" by
+  this method's own metrics than genuine documented shared-lineage
+  training does. This closes the item by falsifying the method for its
+  stated use case, not by validating it — a standalone provenance/IP
+  method note would be actively misleading to write now, so the checklist
+  is complete precisely by staying unwritten.
 
 **Findings / decisions**
 - **2026-08-07 — first real test: the signal is real and large, but the
@@ -2846,6 +3244,63 @@ use case in mind. This is separable from — and doesn't block — 2a/2b.
     `mock_patch` vs `mock_wave`, confirming only that the comparison
     plumbing runs and labels sides correctly, not making any claim about
     mock adapters having real lineage).
+- **2026-08-10 — the confound named above is now resolved, and it kills the
+  method for its stated use case.** Built the same-architecture,
+  zero-training control the 2026-08-07 Findings said wasn't available: not
+  a second real T5-based TSFM checkpoint (still doesn't exist in this
+  repo's reach), but `random_init: true` on **both** sides of the existing
+  positive pair's own architectures — `configs/
+  distill_negative_random_architecture.yaml` pairs a freshly, randomly
+  initialized `Chronos-T5-Small` against a freshly, randomly initialized
+  `Chronos-T5-Base`: same architecture family and tokenizer as the real
+  positive pair, but zero shared initialization, zero training, zero
+  lineage of any kind. Ran live against real checkpoint configs (weights
+  discarded per §6.2's `random_init` mechanism, no new code needed — exactly
+  the "prefer one well-tested mechanism" reuse `CLAUDE.md` §2.2 asks for).
+  - **Point estimates**: L1 peak window-CKA = **0.878** (best pair
+    `encoder.block.0` ↔ `encoder.block.8`); L2 best gain-over-baseline =
+    **0.834** (Small→Base) / **0.940** (Base→Small). All three numbers
+    *exceed* the real trained positive pair's own (0.734 CKA / 0.637 best
+    gain) — a zero-training, architecture-matched pair looks *more*
+    "linearly shared" than the actual documented-lineage trained pair does.
+  - **Significance test** (`run_distillation_detection_test.py`, positive =
+    `distill_positive_chronos_small_base`, "negative" = this new random-
+    architecture control, `n_boot=2000`, paired — both runs load the
+    identical corpus/seed): L1 diff = **−0.1431, 95% CI [−0.2173, −0.1302],
+    p=0.0005**; L2 diff = **−0.3029, 95% CI [−0.3353, −0.2685], p=0.0005**.
+    Both decisively favor the *random-architecture* side, the opposite
+    direction the method would need to show lineage-specific signal.
+  - **Reading this correctly.** This is not "the confound is still
+    unresolved" — it is resolved, and the answer is that **architecture
+    match alone, with no training at all, explains more of the previously-
+    measured positive-vs-negative gap than lineage does.** The 2026-08-07
+    result ("positive pair beats negative pair, decisively") was real and
+    reproduces, but this session's control shows that gap was very likely
+    driven by "same architecture" rather than "shared training lineage" —
+    if anything, real training *shrinks* the stitching/CKA signal relative
+    to what architecture-matched random initialization alone already
+    produces on the same input corpus. A plausible mechanism (not tested
+    further this session): an untrained network's representations stay
+    close to a generic, architecture-determined transform of the input,
+    which two same-architecture random twins share almost automatically;
+    training pulls each model's representations toward its own model-
+    specific, task-driven structure, which need not stay as mutually
+    predictable even between models with real shared lineage.
+  - **Consequence for the method as a provenance/IP detector.** Not
+    usable as designed. A same-architecture pair with *zero* relationship
+    of any kind already produces a bigger apparent "positive" signal by
+    this method's own metrics than genuine shared training lineage does —
+    so a high L1 CKA / L2 gain number cannot be read as evidence of lineage
+    specifically; it may just as easily be evidence of nothing but a shared
+    architecture family, which is very often already known and undisputed
+    in a real provenance question. This is exactly the "never let a
+    correlational number be read as causal" risk the checklist item above
+    flagged in advance — caught before, not after, a method note overclaimed
+    it.
+  - Full `tsfm_lens` suite unaffected by this session's changes (one new
+    config, no source-code edits) — not re-run as part of this finding
+    since nothing testable changed; the live-checkpoint results above are
+    themselves the verification.
 
 ---
 
@@ -3282,11 +3737,33 @@ availability/licensing may have changed):**
   structurally distinct from both existing adapters (handles multivariate
   series and variable patch sizes natively) — a good test of whether the
   alignment/pooling machinery (`CLAUDE.md` §6.3) holds up against a model
-  whose tokenization isn't a simple fixed patch width.
-- [ ] **Sundial** — worth checking whether it's decoder-only or
-  encoder-decoder and what its probabilistic head looks like (flow-matching,
-  last checked) — likely needs its own thinking about how `predict()`
-  and quantiles map onto the existing contract.
+  whose tokenization isn't a simple fixed patch width. ⚠️ **Correction
+  (2026-08-10, this section's own licensing-recheck item below): the
+  "masked-encoder" description above is stale for the current release.**
+  `Salesforce/moirai-2.0-R-small` (Aug 2025) moved to a **decoder-only**
+  design; only the older 1.x line (`moirai-1.1-R-small`, 13.8M params) is
+  the masked-encoder this bullet describes. Both are `cc-by-nc-4.0`
+  (non-commercial) — fine for this repo's research use, but a real
+  constraint, not previously stated. Pick 1.x specifically if the
+  masked-encoder structural contrast is the point of adding this model;
+  2.0 would instead be a third decoder-only architecture alongside TimesFM
+  and (if added) Sundial, not a structural contrast to either.
+- [x] **Sundial** — decoder-only, confirmed (2026-08-10, was open above) —
+  patch length 16, **Apache-2.0** (fully permissive, no NC constraint
+  unlike Moirai), pretrained on ~1 trillion time points (`thuml/
+  sundial-base-128m`, ICML 2025 Oral). Its probabilistic head is
+  flow-matching (`TimeFlow Loss`) — a third distinct sampling mechanism
+  next to TimesFM's deterministic quantile head and Chronos's discrete-token
+  sampling; `predict()`'s design will need to map flow-matching samples onto
+  the existing `{"point": ..., quantiles...}` contract, mirroring how
+  Chronos's `num_samples` already does this for a sampled decoder. Given
+  the license difference and that Moirai 2.0 no longer offers as clean a
+  structural contrast, **Sundial is now the more attractive next pick**
+  of the two, ahead of where this list originally ranked it — see this
+  section's Findings and §13's licensing item for the full recheck. —
+  **done 2026-08-10, same day as the licensing recheck above**: adapter
+  built, registered, alignment-verified, live-run confirmed against
+  TimesFM. Full checklist and Findings below.
 - [ ] Others worth scanning for fit against the `ModelAdapter` contract as
   they mature: Toto, Time-MoE, Tiny Time Mixers, Lag-Llama — don't commit to
   these without first checking checkpoint availability and license terms,
@@ -3438,10 +3915,116 @@ availability/licensing may have changed):**
     attention axis remains entirely unexplored by this pipeline — all
     reasonable next steps, not attempted here since this item's own scope
     is "prove the adapter, not run the full battery."
-- Moirai/Sundial/others below remain **not started** — Chronos-2 was
-  correctly the lowest-effort pick per this list's own stated priority, and
-  turned out to justify that choice (one real bug found and fixed, cheap to
-  fix, zero adapter-specific special-casing needed elsewhere).
+
+**Sundial — done 2026-08-10:**
+- [x] Subclass `ModelAdapter`, register in `models/__init__.py`. — new
+  `tsfm_lens/models/sundial_adapter.py` (`SundialAdapter`), registered as
+  `"sundial"`.
+- [x] Run `--discover-layers`, pick `layer_regex`, run `--check-alignment`
+  and confirm near-1.0 diagonal dominance before trusting anything
+  (`CLAUDE.md` §6.3, invariant 7). — module structure verified directly
+  against the loaded checkpoint (not assumed from the HF card): 12
+  `SundialDecoderLayer` blocks (`model.layers.{i}`), `d_model=768`, 12
+  heads/64 head_dim, patch=16. `--check-alignment` found a real,
+  **amplitude-dependent** diagonal-hit pattern — perfect 1.00 at every
+  layer at small impulse amplitudes, decaying by mid-depth at this repo's
+  default 0.25× amplitude, with zero backward/future leakage at any
+  amplitude tested. Diagnosed as a genuine architectural property (plain
+  residual blocks, no QK-norm) rather than a broken adapter, exactly per
+  `CLAUDE.md` §11.16's precedent for not trusting a low diagonal-hit
+  number without checking why first. Full mechanism now in `CLAUDE.md`
+  §11.22 (a real limitation of only checking the shallowest layer, which
+  is where this pattern would be invisible).
+- [x] Fill in the capability matrix honestly. — `attention_info`/`mlp_info`
+  supported (attention via the shared `_scan_attention`; MLP hard-coded to
+  `{block}.ffn_layer` since `_scan_mlp` doesn't recognize that leaf name —
+  same class of gap as Chronos-T5's `ff0`/`ff1`, same fix: hard-code rather
+  than extend the shared scanner). `attention_patterns` correctly declared
+  unsupported and verified to degrade with a log, not a crash — the
+  checkpoint's own `output_attentions=True` path is independently broken
+  upstream, and recovering weights would need a global
+  `scaled_dot_product_attention` monkeypatch, judged not worth the fragility
+  (same call already made for Chronos-Bolt). `cross_attention_patterns`
+  correctly `n/a` (decoder-only, no encoder-decoder split).
+- [x] Confirm §2.4's success bar: no changes needed outside the new adapter
+  file and its registration. — **held this time**, in contrast to Chronos-2:
+  Sundial's block returns a plain tensor/tuple, already handled correctly
+  by `hooks.py`'s existing (post-§11.21) `_primary`/`_rebuild` logic. The
+  only bugs found were in the **checkpoint's own remote code**
+  (`transformers.DynamicCache` API mismatch breaking both `.generate()` and
+  any cached `forward()` call), not this repo's shared infrastructure —
+  worked around inside `sundial_adapter.py` by calling
+  `SundialForPrediction.forward(..., use_cache=False)` directly rather than
+  `.generate()`, deliberately **not** downgrading the shared `cudaPy` env's
+  `transformers==4.57.6` (which would risk the `CLAUDE.md` §11.8-class
+  regression of breaking the other three adapters over one new one). Full
+  mechanism in `CLAUDE.md` §11.22.
+- [x] Auto-generate the capability matrix from the registry rather than
+  hand-maintaining a table that will drift. — `run_capability_matrix.py`
+  confirmed correct output for `sundial` alongside the other four models.
+
+**Findings — 2026-08-10.** `thuml/sundial-base-128m` (Apache-2.0, ~1
+trillion time points pretraining, ICML 2025 Oral) added as a fourth real
+adapter with no changes to shared infrastructure — a useful contrast with
+Chronos-2's §11.21 finding, showing that finding was a real, now-closed
+gap rather than "every new architecture breaks something new here."
+- **Live comparison run** (`configs/sundial_phase4_check.yaml`, TimesFM vs
+  Sundial, same `benchmark_medium/public_dev` corpus as `medium_run_
+  chronos_base.yaml`/`chronos2_phase4_check.yaml`, l0+l1+internals+l3+
+  attention, ~1 min GPU wall-clock, spot-checked against the actual
+  `runs/sundial_phase4_check/l1/meta.json` artifact rather than trusted
+  from the report alone): clean end-to-end, 5/5 sections, 0 failures.
+  - **L0**: overall paired ΔMASE (Sundial−TimesFM) = +0.146 [−0.008,+0.306],
+    p=0.06 — not significant overall. TimesFM significantly stronger on
+    `mixture` specifically (+0.118 [0.090,0.148], p_holm=0.01); no
+    significant family-level difference on `random_parametric`/`parametric`.
+  - **L1**: peak CKA **0.381** [0.359,0.410] (TimesFM `stacked_xf.4` ↔
+    Sundial `model.layers.11`) against this run's own shuffled-series null
+    of **0.022** [0.020,0.023] — decisive, non-trivial shared geometry with
+    a third distinct architecture, replicating the pattern Chronos-2
+    already established (CKA 0.43 vs. null ≈0.04) at a comparable
+    magnitude.
+  - **Internals**: family-probe peak 0.974 (Sundial, final layer 11 of 12)
+    vs. 0.967 (TimesFM, mid-depth `stacked_xf.10`), both far above chance
+    (0.653) — Sundial crystallizes family identity latest-in-depth of any
+    model in this repo so far (contrast with Chronos-2's *earliest*-in-depth
+    crystallization at block 3 of 12, §9's Chronos-2 Findings above) —
+    genuinely different depth-organization strategies across the four
+    models now on record, not a repeated pattern.
+  - **L3**: fingerprint agreement overall **ρ=0.517** [0.451,0.560] — a
+    real *positive* correlation, qualitatively different from the strong
+    *anti*-correlation this repo has otherwise documented for every
+    TimesFM-vs-Chronos-family pairing (TimesFM/Chronos-T5 ρ≈−0.90,
+    TimesFM/Chronos-2 ρ≈−0.75). `noise` is still the most divergent single
+    corruption (ρ=−0.80, same qualitative lead as every other pairing so
+    far), but the *overall* sign flip is a genuinely new data point: the
+    anti-correlation pattern this repo had started to treat as a
+    cross-architecture regularity does not hold for Sundial, worth
+    revisiting once a fifth model exists to see which pairing is the
+    outlier.
+  - **Attention**: most load-bearing head layer.6·h1 (ΔMASE +0.059); MLP
+    ablation produced sane numbers across all 12 layers; `attention`
+    section correctly logged `patterns: unsupported` for Sundial with no
+    crash, per the capability-matrix deliverable above.
+- **Test suite**: 203 → **207 passing** (4 new tests in
+  `tests/test_sundial_adapter.py`, no live weights required, matching this
+  repo's established precedent for adapter tests). Independently re-run
+  and confirmed (207 passed, 2 pre-existing benign warnings unrelated to
+  this change) before this Findings entry was written, not just taken on
+  the implementing session's word.
+- **Not done this session** (same shape of gap as Chronos-2's own "not
+  done" list): Sundial is not yet part of any flagship comparison config,
+  no `random_init` null-baseline pair has actually been run for it
+  (mechanism should already work via the existing `ModelConfig.
+  random_init` flag, untested live), and `attention_patterns` stays
+  unsupported by deliberate choice, not attempted further.
+- Moirai/others remain **not started**. Sundial was correctly the more
+  attractive of the two remaining named candidates once the licensing
+  recheck (§13) surfaced Moirai's non-commercial restriction and its
+  architecture drift to decoder-only in 2.0 — and, like Chronos-2, turned
+  out to validate the `ModelAdapter` abstraction cleanly (this time with
+  zero shared-infrastructure changes at all, a stronger form of the same
+  validation).
 
 ---
 
@@ -3504,17 +4087,79 @@ authors have never seen.
   adapters still need `--check-alignment`'s own live-weights judgment call
   (`CLAUDE.md` invariant 7), which this deliberately does not replace —
   see the new module's own docstring for why.
-- [ ] **Flip `report.verbose` default to `false`** (§4) now that the tool is
-  closer to release — verbose stays available, just opt-in.
-- [ ] **Packaging**: decide on PyPI/versioning for `tsfm_lens` (currently
+- [x] **Flip `report.verbose` default to `false`** (§4) now that the tool is
+  closer to release — verbose stays available, just opt-in. — **done
+  2026-08-10**: `config.py::ReportConfig.verbose` flipped `True`→`False`.
+  Only one call site anywhere in the repo relied on the implicit default
+  (`tests/test_smoke.py::build_config`, whose whole purpose is exercising
+  every stage/section — grepped every test file's config-building function
+  for "verbose" to confirm) — updated to request `report.verbose: true`
+  explicitly rather than relying on a default it needs. No production
+  config (`default.yaml`, `medium_run*.yaml`, etc.) sets `report.verbose`
+  explicitly, so every real run's report becomes non-verbose by default;
+  `--verbose` on `run.py` remains the one-flag opt-in. Verified live: smoke
+  test passed directly (not just asserted) after the change.
+- [x] **Packaging**: decide on PyPI/versioning for `tsfm_lens` (currently
   only `tsfm_benchmark` has a root `pyproject.toml`); `tsfm_lens` has its own
   `pyproject.toml` one level down — reconcile these into a coherent
   install story (one repo, plausibly two installable packages, document
-  which).
-- [ ] Revisit and either implement or explicitly defer-with-reason the
+  which). **Decided 2026-08-11: keep two independently installable
+  packages, each with its own `pyproject.toml` — not a single merged
+  package.** Rationale, from actually reading both files side by side
+  rather than assuming a merge is obviously better: their dependency sets
+  barely overlap and differ by an order of magnitude in weight —
+  `tsfm_benchmark`'s core deps are `numpy`/`scipy`/`pyyaml` with
+  `real-data` as an opt-in extra (`datasets`/`tsbootstrap`/`sdv`/
+  `dtaidistance`), while `tsfm_lens`'s core deps already require
+  `torch`/`zarr`/`plotly`/`scikit-learn`/`jinja2` plus optional
+  `chronos-forecasting`/`timesfm` extras. Someone who only wants to
+  *generate and validate* benchmark corpora has no reason to install
+  `torch`; someone who only wants to *run the analysis pipeline* against
+  an already-built corpus has no reason to install `sdv`. A single merged
+  `pyproject.toml` would force every install to pull the union of both,
+  with no PyPI-extras mechanism clean enough to avoid it given the two
+  packages don't share a namespace prefix (`tsfm_benchmark.*` vs.
+  `tsfm_lens.*`, confirmed via each file's own `[tool.setuptools]` package
+  list). This is not a new decision so much as a formalization of the
+  status quo — both files already work today as independent, correctly
+  scoped installs; what was actually missing was a written-down reason,
+  not a structural fix. No code changed. Cross-referenced into
+  `CLAUDE.md` §3's own note on this (which previously called it "not yet
+  folded into one coherent install story"). If PyPI publication is ever
+  pursued for either, `tsfm-benchmark` and `tsfm-lens` are the natural
+  two distinct package names (already set as each `pyproject.toml`'s
+  `[project.name]`) — versioning can move independently per package,
+  which is the normal multi-package-monorepo convention and requires no
+  extra tooling this repo doesn't already have.
+- [x] Revisit and either implement or explicitly defer-with-reason the
   remaining `CLAUDE.md` §13 future-work items not already folded into this
   roadmap (Chronos decoder capture, CI diversity gates, more source
   adapters, real-corpus activation bucketing, deeper component resolution).
+  **Resolved 2026-08-11 as a doc-only audit — no code changes, no test
+  rerun needed.** Cross-checked all five named items against the existing
+  backlog: (1) **Chronos decoder capture** — already tracked verbatim as
+  §16 **E21**, no new content needed. (2) **CI diversity gates** — was
+  genuinely untracked (confirmed via grep for "diversity gate"/"CI gate"/
+  "redundancy fraction <"; distinct from E8/A14, which cover pipeline
+  *code* correctness, not generated-*corpus* quality) — added as new §16
+  **E23** above, scoped and explicitly deferred pending a first real
+  threshold-calibration pass (the only reference point on record is one
+  demo-mode run's numbers, §5's redundancy fraction 4.8%/eff-dim 4.6-of-24
+  — one sample, not a validated threshold). (3) **More source adapters**
+  (TIME/BOOM/ARFBench) — not untracked, just not cross-referenced: the
+  reason (access/license unverifiable) is already stated in full at
+  `CLAUDE.md` §4.3 and §12; no roadmap action needed, this note is the
+  cross-reference. (4) **Real-corpus activation bucketing** — was
+  genuinely untracked (confirmed via grep for "GIFT-Eval"/"LOTSA"/
+  "bucket" — the only "bucket" hits were `benchmark_validation`'s
+  unrelated matcher-bucketing optimization) — added as new §16 **E24**
+  above, scoped and explicitly deferred behind a real large-corpus source
+  and a GPU session, sequenced after the synthetic-corpus L4 work per
+  `CLAUDE.md` §13 item 7's own stated rationale. (5) **Deeper component
+  resolution** — already tracked verbatim as §16 **E18**, no new content
+  needed. Net effect: two new backlog entries (E23, E24), no design
+  decisions made about *when* to build either — both are explicitly
+  deferred with a stated blocker, not silently dropped.
 
 **Findings / decisions**
 - **Adapter-conformance checker (2026-08-06).** Built
@@ -3656,21 +4301,158 @@ so a future session doesn't accidentally drift into them:
   more forgiving finding than "the method failed." Idea B
   (`factor_emergence`) underperformed both nulls on Chronos, traced to a
   real, diagnosed weighting flaw — **the peak-weighting + absolute-floor
-  fix is now implemented and unit-tested against synthetic planted data
-  (2026-08-06, `CLAUDE.md` §11.18 / §6.1.1's new Findings entry), but not
-  yet re-run through the real bake-off** — whether it now actually clears
-  the nulls on live checkpoints is still open, just no longer blocked on a
-  known, undiagnosed bug. Combining methods
+  fix was implemented and unit-tested against synthetic planted data
+  (2026-08-06, `CLAUDE.md` §11.18), and has now been re-run through the
+  real bake-off (2026-08-10, §6.1.1's Findings) — answered, and the answer
+  is no.** `factor_emergence` still doesn't clear the nulls on
+  Chronos-T5-Small (bit-identical failing selection, recall@budget=0.00,
+  pre- and post-fix) and actively regressed on TimesFM (recall@budget 0.20
+  → 0.00). Root cause: on real data the early-layer bias comes from
+  *strong*, near-input-statistics factors decoding well from layer 0, the
+  opposite of the synthetic test's weak-noisy-factor scenario the fix
+  targeted — so peak-weighting amplifies rather than corrects it, and the
+  new absolute floor never once fired (no factor's peak fell below it on
+  this corpus). `work_bend`/`coverage` confirmed bit-identical pre- vs.
+  post-fix, so the fix stayed correctly scoped with no side effects — that
+  part of the original diagnosis holds. `factor_emergence` is not usable
+  as a selector on the evidence gathered so far, full stop; a real fix
+  would need an explicit depth floor, not a magnitude reweighting, and
+  hasn't been attempted. Combining methods
   (union/vote/rank-average) did not beat the single best method on either
-  model. Still open: whether this holds on a second Chronos size, a third
-  architecture family, and with the (more expensive) per-window-patching
+  model. Still open: whether this holds on a second Chronos size, ~~a third
+  architecture family~~, and with the (more expensive) per-window-patching
   secondary gold instead of the cheaper sensitivity-only proxy used here.
+  **The third-architecture-family question is now answered (2026-08-10,
+  §6.1.1's newest Findings block, using Sundial): mixed, not a clean
+  sweep.** `work_bend` beats both nulls on Sundial, but the picture across
+  all three architectures now on record is "beats a different subset of
+  the two nulls on each" — consistent with, not a new contradiction of,
+  the original two-model finding's own already-mixed TimesFM result.
+  `factor_emergence`'s diagnosed early-layer-bias failure mode (this same
+  day, above) reproduces cleanly on Sundial too, and if anything more
+  pronounced — strong evidence the failure is a property of the
+  ground-truth factor table itself, not either specific architecture.
   **Promoted to the production default anyway, on explicit user direction
   (2026-08-05, same-day follow-up):** `layer_screen: {method: work_bend}`
   now runs by default ahead of `sae` in every config (§6.1.1's
-  production-wiring Findings) — the open items above are unchanged and
-  still worth closing, but no longer block using the current best-known
-  method instead of the old arbitrary final-layer default.
+  production-wiring Findings) — the second-Chronos-size and per-window-
+  patching items above are unchanged and still worth closing, but no
+  longer block using the current best-known method instead of the old
+  arbitrary final-layer default.
+- 🔴 **New (2026-08-10, found while closing the item above): does the
+  bake-off's qualitative verdict (beats a given null, yes/no) reproduce
+  across independent re-extractions of the same config, or only across
+  SAE-training reseeds of one frozen extraction?** The existing "seed1
+  stability replicate" only ever re-seeded SAE training on one already-
+  extracted store — it was never a test of extraction-to-extraction
+  variance. A same-day, same-config, fresh re-extraction (built to add
+  Sundial as a third model, §6.1.1's newest Findings) changed
+  Chronos-T5-Small's verdict outright: `work_bend` recall 1.0→0.0,
+  `beats_random` True→False, gold-agreement ρ 0.714→0.429, while TimesFM's
+  own qualitative verdict reproduced unchanged in the same two runs — so
+  this is real, but not uniform across models. **Not yet known:** how many
+  independent extractions it would take to characterize this variance
+  properly (an n=2 comparison establishes that it exists, not its
+  distribution), whether it's driven by corpus resampling, model-loading
+  nondeterminism, SAE-training stochasticity compounding with a different
+  activation draw, or something else, and — most importantly — whether
+  today's `factor_emergence`-fix verdict (§6.1.1's Findings, "the fix
+  doesn't clear the nulls and regresses TimesFM") would survive a second
+  independent extraction the same way TimesFM's verdict just did, or flip
+  the way Chronos's just did. Until this is characterized, read every
+  single-run bake-off qualitative verdict in this file (there is no
+  multi-extraction one yet, for any method or model) as measured on one
+  sample from a distribution whose spread is now known to be non-trivial
+  for at least one model, not as a fixed ground truth.
+- [x] **Resolved (2026-08-10, same-day follow-up) — root-caused. It is not
+  extraction/GPU/SAE-seed variance at all: it is `§15 A4`'s already-landed
+  sampling fix, and the "same config" premise above was false at the code
+  level even though the YAML was byte-identical.** A background agent
+  ranked four candidate causes (GPU/SDPA kernel nondeterminism, SAE-init/
+  seed sensitivity, global-RNG-stream reordering from adding Sundial,
+  corpus-row-sampling nondeterminism) and tested them directly against real
+  extractions on 8×RTX A5000 (`cudaPy`), then found something none of the
+  four predicted, which a follow-up `git diff 84cdbc0 HEAD --
+  tsfm_lens/data.py` independently confirmed line-for-line: **`data.py`'s
+  `_assemble` used to cap `max_series` with a bare `kept[:max_series]` head
+  slice; `§15 A4`'s fix (landed 2026-08-06, one day after this bake-off's
+  original 08-05 run and four days before its 08-10 rerun) replaced that
+  with `sample_rows(len(kept), max_series, seed, strata=families_all)`, a
+  stratified random sample.** `layer_screen_experiment.yaml`/`_v2.yaml` set
+  `data.max_series: 220` against a 288-row corpus
+  (`benchmark_medium/public_dev`) — verified directly:
+  `Counter({'random_parametric': 188, 'mixture': 60, 'parametric': 40})` for
+  the full 288 rows vs. `Counter({'random_parametric': 188, 'parametric':
+  32})` for the first 220 (the pre-fix head slice) — **the old head slice
+  excluded the entire `mixture` family (all 60 rows) and 8 of 40
+  `parametric` rows**, because `tsfm_benchmark` writes corpora grouped by
+  task/generator and `mixture` happens to sort last. So the 08-05 bake-off
+  (`layer_screen_bakeoff.json`) trained its gold ranking and scored every
+  selector on a corpus subset with an entire real-derived family silently
+  missing; the 08-10 reruns (`_v2`/`_v3`/`retest2model`, all bit-identical
+  to each other) correctly used a family-proportional sample including
+  `mixture`. This is fully deterministic given a fixed seed (explaining why
+  `v2`/`v3`/`retest2model` are bit-for-bit identical to each other — the
+  agent confirmed this directly via `np.array_equal` on the raw stored
+  activations) and fully explains the "instability" without needing any
+  GPU-nondeterminism, hook-leak, or model-loading mechanism — all of which
+  were checked directly in the model/extraction code
+  (`extraction/hooks.py`'s `ActivationCatcher.__exit__` correctly removes
+  hooks even on the alignment-gate's failure path; `_primary`'s §11.21
+  rewrite is provably output-preserving for tensor/tuple returns;
+  `extraction/store.py`'s new `finalize_layer` only records metadata, never
+  rewrites stored values) and ruled out as the mechanism. **This retracts
+  the "not yet known... whether it's driven by corpus resampling..." framing
+  two paragraphs up** — it is exactly that, identified precisely, not one
+  candidate among several. **What this means for every number already on
+  record:** the 08-05 `layer_screen_bakeoff.json` run (§6.1.1's first
+  Findings block) and everything that cited it were measured on a
+  `mixture`-family-blind sample — a concrete, real instance of the abstract
+  risk the open item at line ~4085 below ("how much of what's already
+  recorded in this file survives §15's sampling... fixes?") already named,
+  now confirmed to apply here specifically. The 08-10 3-model numbers
+  (§6.1.1's newest Findings) are the trustworthy ones going forward for
+  this experiment; the 08-05 pairwise numbers should be read as superseded
+  by them, not as an independent replication — they were never actually
+  comparing the same population. **Tested (2026-08-10, same day, third
+  follow-up — see §6.1.1's newest Findings for the full numbers): no, not
+  reliably.** A second seed under the identical, correctly-stratified
+  sampler (76.8% row overlap with seed 0, not a wildly different draw)
+  still flips `work_bend`'s `beats_random` verdict on 2 of 3 architectures
+  (TimesFM True→False, Chronos False→True), though `coverage` is fully
+  stable and the selector's own *choice of layers* is bit-identical across
+  seeds in every flip case — only the null-comparison scorecard is noisy,
+  not the underlying selection. This is real statistical power, not
+  systematic bias like A4 was: `recall_at_budget` at budget=2-5 over a
+  220-row corpus doesn't yet have the resolution to answer "beats null,
+  yes/no" with confidence in a single run. **Lesson for `CLAUDE.md` §2.8's
+  own workflow,
+  worth carrying forward:** a background-compute config/artifact that
+  predates a shared-infrastructure bugfix is not safe to treat as "the same
+  experiment, rerun" just because its YAML never changed — the fix can
+  silently change what a `max_series`-style cap or any other config field
+  *means*, and the only way to have caught this without the accidental
+  Sundial-driven re-extraction would have been to notice the run's own
+  `git log` position relative to `§15`'s fix dates. See `CLAUDE.md` §11.24
+  for the write-up of this as a general trap.
+  **Fixed and re-verified (2026-08-10, same day, fourth follow-up) — no
+  longer an open statistical-power gap.** Per explicit user instruction not
+  to leave this as a documented-but-unfixed concern: root-caused the flip
+  to `build_gold_ranking`'s single stochastic per-layer SAE-training run
+  (confirmed `select_work_bend`/`select_coverage` take no `seed` argument
+  and are otherwise fully deterministic, so the noise had to be entering
+  through the gold reference, not the selector). Fixed by averaging
+  `n_replicates=3` independently-seeded SAE-training runs into the gold
+  score (`analysis/layer_screen_bakeoff.py::build_gold_ranking`) and by
+  dropping the corpus-subsampling cap entirely in new `configs/
+  layer_screen_experiment_v4[.yaml/_seed1.yaml]` (288-row corpus is small
+  enough to use in full, removing that axis of seed-dependence too).
+  Re-verified live against all three real checkpoints on both seeds:
+  **every `beats_random` verdict now matches across seeds for all three
+  selectors on all three architectures** — `work_bend`'s TimesFM and
+  Chronos-T5-Small flips are both closed. Full comparison table in
+  §6.1.1's Findings block and the 2026-08-10 §14 session-log entry
+  describing this fix. New unit test added; full suite green at 208/208.
 - [~] Is a joint crosscoder actually trainable/stable across two
   architecturally distinct models at a shared alignment window, or does the
   representational mismatch (even at peak CKA) make joint training degrade
@@ -3689,14 +4471,57 @@ so a future session doesn't accidentally drift into them:
   dictionaries were mostly dead at every hyperparameter setting tried —
   see the Findings for why that's a data/training-budget issue, not
   specific to crosscoders, and what would need fixing first.
-- [ ] Does the distillation-detection signal (§6.3) actually separate from
+- [x] Does the distillation-detection signal (§6.3) actually separate from
   "same training era, similar data" confounds, or is that confound
   unavoidable with publicly available checkpoints? May require training
-  the controlled positive/negative pair from scratch to know for sure.
-- [ ] Licensing/access for Moirai, Sundial, and other Phase 4 candidates
+  the controlled positive/negative pair from scratch to know for sure. —
+  **answered 2026-08-10, and worse than the confound this question named:**
+  no from-scratch training was needed — a same-architecture,
+  zero-*training* control (`random_init: true` on both sides, §6.2's
+  existing mechanism) showed the signal doesn't even separate from "same
+  architecture, literally no training or data at all." That control's L1
+  CKA (0.878) and L2 gain (0.834–0.940) both significantly *exceeded* the
+  real trained positive pair's (0.734 / 0.637, p=0.0005 both). See §6.3's
+  Findings for the full numbers — the method is falsified for its stated
+  provenance/IP use case, not just confounded.
+- [x] Licensing/access for Moirai, Sundial, and other Phase 4 candidates
   should be re-checked at the time Phase 4 actually starts, not assumed
-  stable from whenever this section was written.
-- [ ] **How much of what's already recorded in this file survives §15's
+  stable from whenever this section was written. — **checked 2026-08-10**,
+  live against each model's actual HuggingFace card (not assumed from this
+  file's own prior description, which turns out to be stale on
+  architecture for one of the two): **Moirai** (both `Salesforce/
+  moirai-1.1-R-small` and the newer `Salesforce/moirai-2.0-R-small`,
+  released August 2025) is **`cc-by-nc-4.0` — non-commercial only**. That's
+  fine for this repo's own research/interpretability use but is a real,
+  previously-unstated constraint worth carrying forward if this project's
+  scope ever shifts toward anything commercial — flagged here rather than
+  silently assumed permissive, matching the diligence `CLAUDE.md` §4.3
+  already applies to benchmark data sources. Also: Moirai 2.0 is a genuine
+  architecture change from 1.x, not just a size bump — **decoder-only now**
+  (patch embeddings + missing-value encoding into a decoder-only
+  transformer), not the masked-encoder design §9's candidate list
+  describes; 1.1-small is 13.8M params, 2.0-small is 11.4M. §9's "good test
+  of whether alignment/pooling holds up against a model whose tokenization
+  isn't a simple fixed patch width" rationale should be re-verified against
+  whichever Moirai version is actually adapted — it may describe 1.x better
+  than 2.0. **Sundial** (`thuml/sundial-base-128m`, ICML 2025 Oral,
+  pretrained on ~1 trillion time points) is **Apache-2.0** — fully
+  permissive, no constraint. Confirmed **decoder-only** (§9's "worth
+  checking" is now answered, not open) with patch length 16 and a
+  flow-matching (`TimeFlow Loss`) probabilistic head instead of TimesFM's
+  deterministic quantile head or Chronos's discrete-token sampling — a
+  third distinct way of producing multi-sample forecasts, worth naming
+  explicitly when Sundial's adapter is built since `predict()`'s contract
+  will need to map flow-matching sampling onto the existing
+  `{"point": ..., quantiles...}` shape the way Chronos's `num_samples`
+  already does. Net effect on priority: Sundial is now the **more
+  attractive next pick** of the two — permissively licensed, and
+  structurally further from both existing flagship architectures (a third
+  decoder-only design with a genuinely different probabilistic mechanism)
+  than Moirai 2.0 turned out to be. Not done this session: no adapter code
+  written for either, no `predict()` design worked out — this is the
+  licensing/architecture recheck only, per this item's own stated scope.
+- [x] **How much of what's already recorded in this file survives §15's
   sampling and noise-floor fixes?** (Added 2026-08-06.) A4 shows several
   recorded numbers were measured on task-ordered prefixes rather than
   representative samples, and A13 shows no ΔMASE in the repo has ever been
@@ -3707,14 +4532,92 @@ so a future session doesn't accidentally drift into them:
   suspicion that they're wrong — it's that their error bars are currently
   unknown**, and two of them are load-bearing for a decision (whether Phase 3
   feature ablation can build on the TimesFM SAE target).
-- [ ] **Is the `work_bend` production default still the bake-off winner under
+  **A concrete instance found 2026-08-10 (not one of the two named above,
+  a third):** `§6.1.1`'s original `layer_screen_bakeoff.json` (08-05, one
+  day before A4 landed) turned out to be exactly this failure mode —
+  measured on a `max_series: 220` head slice of a 288-row corpus that
+  silently excluded the entire `mixture` family — discovered by accident
+  when a same-day 08-10 rerun (post-A4-fix) gave different numbers; see the
+  resolution two entries below and `CLAUDE.md` §11.24. Worth a deliberate
+  sweep rather than waiting for more accidents: any run directory whose
+  `data.max_series` is set below its corpus's row count, and whose
+  extraction predates 2026-08-06, likely has the same problem.
+  **Swept (2026-08-10, same day, second follow-up):** grepped every
+  `data:` block (not the many *other*, unrelated `max_series`-named knobs —
+  `rsa_max_series`, `tuned_max_series`, `forecast_preservation_max_series`,
+  `ground_truth_max_series`, `ablation_max_series`, l3/attention's own
+  per-stage `max_series` — those are separate analysis-level subsample caps,
+  already tracked by A16/the two numbers named above, not `data.py`'s
+  corpus-level cap this specific bug lives in) across every config in
+  `tsfm_model_analysis/tsfm_lens/configs/*.yaml`. Result: **the top-level
+  `data.max_series` cap this bug affects is set** ***only*** **in the
+  `layer_screen_experiment*.yaml` family** (`.yaml`, `_v2.yaml`, `_v3.yaml`,
+  `_retest2model.yaml`, all `max_series: 220` against the same 288-row
+  corpus). Every other real-checkpoint config that reads
+  `benchmark_medium/public_dev` or `benchmark_full/public_dev`
+  (`medium_run.yaml`, `medium_run_chronos_base.yaml`, `default.yaml`,
+  `null_chronos_random.yaml`, `null_timesfm_random.yaml`,
+  `distill_positive_chronos_small_base.yaml`, `sundial_phase4_check.yaml`,
+  `chronos2_phase4_check.yaml`) sets **no** `data.max_series` at all — the
+  `if cfg.max_series is not None` guard in `_assemble` never fires for any
+  of them, pre- or post-fix, so they always used every row their corpus had
+  regardless of which side of 2026-08-06 they ran on. **Conclusion: this
+  specific bug (`data.py`'s corpus-level cap) has exactly one other victim
+  beyond the two already named above, and it's the layer_screen bake-off
+  just resolved — not a wider, still-undiscovered problem.** The two
+  already-named §6.2/§5.3 numbers go through different call sites
+  (`sae/eval.py`, `sae/ground_truth.py`, `lens.py`) that A4's fix also
+  covered, and their re-measurement remains exactly as open as this item's
+  original text says — this sweep doesn't change that, it just confirms
+  `data.py`'s own cap isn't hiding a fourth instance anywhere else in the
+  repo's existing configs.
+  **Both named re-measurements are now actually done, closing this item's
+  own scope (2026-08-10, later the same day).** §5.3's lens comparison: the
+  `medium_run.yaml` side turned out to be blocked by an unrelated stale
+  zarr-v3 store (`CLAUDE.md` §11.25), fixed via a full re-extraction; both
+  sides now reproduce bit-identical TimesFM lens numbers (`final_mase:
+  1.7899408340454102`) — see this file's own session log and `CLAUDE.md`
+  §11.25. §6.2's SAE forecast-preservation/ground-truth numbers: it turned
+  out these had *already* been re-measured once, same-day, 2026-08-06 (the
+  "RE-MEASURED" entry in §6.2's own Findings block above) — this item's
+  text above, written earlier that same day, went stale within hours and
+  was never corrected until now (fixed in place at this file's A4 Findings
+  block too). A further, independent third measurement (2026-08-10) shows
+  Chronos-T5-Base's ΔMASE and both models' ground-truth ρ are stable across
+  reruns, but surfaces a genuinely new, still-open sub-question: TimesFM's
+  own forecast-preservation ΔMASE moved 0.175 → 0.1097 between the 08-06
+  and 08-10 reruns of the *identical* config — real run-to-run SAE-training
+  variance in that specific metric that nothing currently measures (see
+  §6.2's Findings for the full numbers). **Spun out as its own narrower
+  follow-up rather than left as a residual "still open" tag on this whole
+  item**: a proper repeat-run noise floor for the SAE forecast-preservation
+  check itself (several `sae`-only reruns with the extraction/model held
+  fixed), analogous to A13's model-level MASE floor but scoped to this one
+  metric. Until that exists, treat any single TimesFM SAE
+  forecast-preservation ΔMASE as "small and real, exact magnitude
+  uncertain," not a precise number.
+- [x] **Is the `work_bend` production default still the bake-off winner under
   production conditions?** (Added 2026-08-06, §15 A1.) The bake-off ran at
   `capture_layer_stride: 1`; the wired stage screens whatever the analysis
   config captured, which is stride 2 for TimesFM everywhere. So the selector
   currently runs on a different input than the one it was validated on, and
   the §6.1.1 R2 requirement it was designed around is unimplemented. Closing
   A1 answers this; until then, treat production `sae.targets: auto`
-  selections as unvalidated even though the *method* was validated.
+  selections as unvalidated even though the *method* was validated. —
+  **Resolved (2026-08-10): yes, per A1's already-shipped fix, re-confirmed
+  by rereading rather than re-running.** `LayerScreenConfig`'s defaults
+  (`tsfm_lens/config.py`) are `stride: 1` and `require_full_capture: True`
+  — every production config already runs the dedicated stride-1 screening
+  extraction A1 built, independent of whatever `capture_layer_stride` the
+  main analysis config uses, unless a caller explicitly opts out. A1's own
+  Findings already recorded live proof of exactly this scenario (TimesFM
+  20 blocks, main store captured 10 at stride 2, the screening pass
+  correctly screened all 20 and reported `fair_to_all_layers: true`) — this
+  entry was just never marked resolved even though the fix it was waiting
+  on had already landed and been verified. No new run needed to close
+  this; the open, real caveat is still §6.1.1-E's own named next step
+  (replicate on a second Chronos size / third architecture family), not
+  this production-fairness question.
 - [~] **Can this repo's central claims survive an untrained-weights null?**
   (Added 2026-08-06, §16 E9.) **Answered, with a genuine split verdict that
   turned out to depend heavily on comparing matched layers, not just
@@ -4693,6 +5596,566 @@ so a future session doesn't accidentally drift into them:
   third, structurally distinct model), and real, sane periodicity/
   load-bearing-head numbers from attention analysis. Full suite green at
   203/203. Full numbers and the abstraction-bug mechanism in §9's Findings.
+- **2026-08-10 — resumed after a gap; documented the ad-hoc autonomous-loop
+  pattern as a real doctrine section, kicked off the next flagged §13 item
+  as a background run, and closed the Phase 4 licensing-recheck open
+  question live.** No prior session had written down *how* the several
+  "run via a scheduled autonomous loop" entries above actually worked, so
+  it was ad hoc every time; added `CLAUDE.md` §2.8 ("Delegate long-running
+  compute; keep the roadmap moving in parallel") stating the pattern as an
+  instruction, and set up a session-local 30-minute-cadence `CronCreate`
+  loop (5-hour self-stopping deadline) so this continues without a human
+  re-prompting each time. Launched §13's explicitly-flagged next step — a
+  live rerun of the `factor_emergence` layer-selector bake-off
+  (`CLAUDE.md` §11.18's fix, previously verified only on synthetic data)
+  against the real, already-extracted `runs/layer_screen_experiment` store
+  — as a background agent per the new §2.8 rule, rather than blocking on it;
+  its numbers will be written up here once it reports back (not yet landed
+  as of this entry). While that ran, closed §13's other open item live
+  rather than leaving it as a stale assumption: **Moirai** (`Salesforce/
+  moirai-1.1-R-small` and the newer `moirai-2.0-R-small`) is
+  `cc-by-nc-4.0` (non-commercial, fine for this repo's research use but
+  previously unstated), and Moirai 2.0 turns out to have moved to a
+  **decoder-only** architecture, not the masked-encoder design §9's
+  candidate list described (only 1.x still matches that description).
+  **Sundial** (`thuml/sundial-base-128m`) is **Apache-2.0** (fully
+  permissive), confirmed decoder-only with a flow-matching probabilistic
+  head — answering §9's own "worth checking" note rather than leaving it
+  open. Net call: Sundial is now the more attractive next Phase-4 pick of
+  the two (permissive license, cleaner structural contrast) — see §9 and
+  §13 for the full recheck. No code changed this entry (docs + one
+  background job only); full suite not re-run since nothing executable
+  changed.
+- **2026-08-10 (same-day follow-up) — the background bake-off rerun landed;
+  written up as a genuine negative result, not the hoped-for confirmation.**
+  The `factor_emergence` fix (`CLAUDE.md` §11.18, 2026-08-06) does not clear
+  the nulls on real checkpoints: Chronos-T5-Small is completely unaffected
+  (bit-identical failing selection, both seeds, pre- and post-fix) and
+  TimesFM's recall@budget actively regressed (0.20→0.00). A controlled
+  same-data-different-formula comparison (not just diffing two independently
+  noisy end-to-end runs) pinned the cause: on this real corpus the
+  early-layer bias comes from *strong*, near-input-statistics factors
+  decoding well from layer 0, the mirror image of the weak-noisy-factor
+  scenario the fix's synthetic test targeted — so peak-weighting amplifies
+  the bias instead of correcting it, and the new absolute floor never once
+  fired. `work_bend`/`coverage` (the actual production default) confirmed
+  unaffected. §13's corresponding sub-question and `CLAUDE.md` §11.18 both
+  updated in place with the full numbers; `factor_emergence` remains
+  correctly excluded from production. Full `tsfm_lens` suite green at
+  203/203 (verification-only, no production code changed). This closes out
+  the two items opened earlier this session — the licensing recheck and
+  this bake-off rerun — with no roadmap item left in-flight as of this
+  entry; the 30-minute `CronCreate` loop set up earlier this session will
+  pick the next one.
+- **2026-08-10 (second cron-loop firing) — Sundial added as a fourth real
+  `ModelAdapter`, Phase 4's second multi-model-expansion addition, via the
+  same background-agent-plus-continue-the-loop pattern as the entry
+  above.** No background agent was pending write-up at firing time (the
+  bake-off rerun above was already closed out); picked Sundial as the next
+  concrete item per §9's own priority list, now that the same firing's
+  earlier licensing recheck had established it as the more attractive of
+  the two remaining candidates. Launched the whole adapter-build-and-verify
+  task as one background agent (adapter code, alignment check, capability
+  matrix, a live TimesFM-vs-Sundial comparison run, tests — the full §9
+  checklist, not just a rerun of existing code) rather than working on it
+  inline, and deliberately did not start a second, file-touching task in
+  parallel this firing to avoid contention with an agent whose scope was
+  this wide. Once it landed: verified independently before writing
+  anything up (re-ran the full test suite myself — 207/207, matching the
+  agent's own count — and spot-checked the live run's actual
+  `runs/sundial_phase4_check/l1/meta.json` artifact against the numbers
+  quoted in its report, rather than trusting the report alone). Real
+  result: no shared-infrastructure bug this time (contrast with Chronos-2's
+  §11.21), but two genuine bugs in the **checkpoint's own remote code** (a
+  `transformers.DynamicCache` API mismatch breaking `.generate()` and even
+  a cached `forward()` call), worked around by calling the lower-level
+  `forward(..., use_cache=False)` directly rather than risking a
+  transformers downgrade that could break the other three adapters — new
+  `CLAUDE.md` §11.22. Live numbers (§9's new Findings block has the full
+  set): L1 peak CKA 0.381 vs. a null of 0.022 (real shared geometry with a
+  third architecture, replicating Chronos-2's own finding), and a genuinely
+  new data point — L3 fingerprint agreement is *positive* (ρ=0.517) for
+  TimesFM-vs-Sundial, breaking the anti-correlation pattern every other
+  model pairing in this repo had shown so far. `CLAUDE.md` §6.2's capability
+  matrix and adapter-description prose updated to a five-model table.
+  No roadmap item left in-flight as of this entry.
+- **2026-08-10 (third cron-loop firing) — closed a stale-but-already-answered
+  §13 item, then used today's Sundial addition to attack the bake-off's own
+  named "third architecture family" open question.** No background agent
+  was pending write-up. Rereading §13 (not re-running anything) found the
+  "is `work_bend` still the bake-off winner under production conditions"
+  item had actually been resolved by A1's fix days ago and simply never
+  marked `[x]` — `LayerScreenConfig`'s defaults (`stride: 1`,
+  `require_full_capture: True`) already make every production config run
+  the dedicated stride-1 screening extraction A1 built, and A1's own
+  Findings already recorded live proof of exactly this scenario. Marked
+  resolved with a pointer back to A1 rather than re-verifying something
+  already verified. Then picked up §6.1.1-E's own still-open replication
+  question — "a third architecture family" — now directly answerable
+  using Sundial, added earlier this same day. Launched a background agent
+  to build a 3-model (TimesFM + Chronos-T5-Small + Sundial, all
+  `capture_layer_stride: 1`) extension of the original bake-off config and
+  rerun `run_layer_screen_bakeoff.py` against it, checking both whether
+  `work_bend` still wins on a third architecture and whether
+  `factor_emergence`'s newly-diagnosed (this same day) early-layer-bias
+  failure mode reproduces or looks different for Sundial. Did not start a
+  second parallel task this firing (the new 3-model extraction is itself
+  the natural next step; no other independent item was picked up). Results
+  not yet landed as of this entry.
+- **2026-08-10 (fourth cron-loop firing) — the 3-model bake-off landed;
+  writing it up surfaced a more important finding than the one it was sent
+  to check.** Independently verified before writing anything up (reread
+  the actual `runs/layer_screen_bakeoff_v2.json` and the existing
+  `runs/layer_screen_bakeoff.json` directly, and reran the full pytest
+  suite myself — 207/207, matching). The "third architecture family"
+  question got a real answer: `work_bend` beats both nulls on Sundial, but
+  the three-architecture picture is "beats a different subset of the two
+  nulls on each," not a clean sweep, and `factor_emergence`'s diagnosed
+  early-layer-bias failure (from earlier today) reproduces cleanly on
+  Sundial, reinforcing that it's a property of the ground-truth factor
+  table rather than either specific architecture. **The bigger finding,
+  caught only because verifying the comparison numbers meant reading both
+  JSON files directly:** Chronos-T5-Small's qualitative bake-off verdict
+  is not stable across independent re-extractions of the identical config
+  — `work_bend`'s `beats_random` flipped True→False between the existing
+  same-day run and this session's fresh 3-model extraction, while
+  TimesFM's own verdict reproduced unchanged in the same two runs. The
+  bake-off's existing "stability replicate" only ever reseeds SAE training
+  on one frozen, already-extracted store — it has never tested whether the
+  extraction itself is stable, and this is the first time that axis was
+  ever exercised (by accident, as a side effect of needing a fresh
+  extraction for Sundial). Wrote this up as a new, prominent §13 open item
+  (not folded quietly into an existing one) and a new `CLAUDE.md` §11.23,
+  and updated the verification-status table row rather than treating it as
+  a footnote — per §2.6's honesty doctrine, this genuinely changes how much
+  confidence any single-run bake-off number in this file deserves, and
+  said so plainly rather than downplaying it. No roadmap item left
+  in-flight as of this entry; did not start a new background task this
+  firing given the length of this write-up.
+- **2026-08-10 (fifth cron-loop firing) — the extraction-variance mystery
+  from the previous entry is fully root-caused, not just narrowed.** Found
+  nothing in progress via `ListAgents` beyond the already-written-up
+  3-model bake-off agent; launched a background investigation (ranked
+  candidate causes, then live-tested the top one) into whether
+  Chronos-T5-Small's flipped bake-off verdict was extraction/GPU/SAE-seed
+  variance. While that ran, closed an unrelated `DEPENDENCIES.md`
+  invariant-12 gap (Chronos-2's and Sundial's fragile version interactions
+  had never been recorded there — added both with the same file:line detail
+  `CLAUDE.md` §11.21/§11.22 already has). The agent's own report initially
+  under-delivered (returned mid-experiment claiming it was "waiting for
+  pytest," resumed once via `SendMessage` to get the real final numbers),
+  but its actual finding — GPU nondeterminism ruled out via a bit-exact
+  `np.array_equal` re-extraction, Sundial's presence ruled out via a
+  2-model-only rerun matching the 3-model numbers, SAE-seed sensitivity
+  real but not the cause since neither compared run ever varied it — pointed
+  at a code change between the two runs' dates rather than randomness.
+  Followed that up directly with `git diff 84cdbc0 HEAD --
+  tsfm_lens/data.py` and confirmed it precisely: `§15 A4`'s sampling fix
+  (landed 2026-08-06, between the experiment's 08-05 and 08-10 runs)
+  replaced a `kept[:max_series]` head slice with a stratified
+  `sample_rows(...)` call, and the experiment's own `max_series: 220`
+  against a 288-row corpus meant the pre-fix run silently excluded the
+  entire 60-row `mixture` family (verified directly via a `Counter` over
+  the actual corpus file) — full family coverage only appeared in the
+  post-fix runs. Corrected §13's 🔴 item and §6.1.1's Findings block in
+  place (marked resolved, did not delete the original "not yet known"
+  framing — appended the resolution after it per §0.2), added `CLAUDE.md`
+  §11.24 for the general lesson (a background rerun of "the same"
+  experiment can silently change meaning across a shared-infrastructure
+  fix, with no config diff to catch it — check `git log` on the shared
+  paths before spending investigation budget on nondeterminism
+  hypotheses), and updated the verification-status table row. Independently
+  re-ran the full test suite myself rather than trusting the agent's
+  count: **207 passed, 2 warnings in 287.78s**, both warnings pre-existing
+  (an intentional overflow-cast test, a `PytestReturnNotNoneWarning` in
+  `test_smoke.py`) and unrelated to anything touched this session — matches
+  the agent's own reported count exactly. No production code changed this
+  firing (docs + a resumed investigation only). Narrower question left
+  open: whether the now-correctly-sampled bake-off verdict is itself stable
+  across a second seed — smaller in scope than what was open at the start
+  of this firing, and a reasonable candidate for the next one.
+- **2026-08-10 (sixth cron-loop firing) — started the second-seed stability
+  check the previous entry named as the next candidate, and closed out its
+  own "worth a deliberate sweep" note.** `ListAgents` showed nothing
+  in-flight (the previous firing's investigation agent had fully completed
+  and dropped off the list). Launched a background agent to build
+  `configs/layer_screen_experiment_v2_seed1.yaml` (identical to `_v2.yaml`
+  except `run.seed: 1`), extract, run the bake-off, and compare against the
+  existing seed-0 numbers for all three models plus a row-sample-overlap
+  check, to answer the narrower question left open at the end of the last
+  entry — results not yet landed. While that ran, swept every config's
+  `data:` block (not the several other, unrelated `*_max_series` knobs) for
+  the specific `data.max_series` corpus-level cap the just-resolved bug
+  lives in: it turns out to be set **only** in the
+  `layer_screen_experiment*.yaml` family — every other real-checkpoint
+  config (`medium_run*.yaml`, `default.yaml`, both `null_*_random.yaml`,
+  `distill_positive_chronos_small_base.yaml`, `sundial_phase4_check.yaml`,
+  `chronos2_phase4_check.yaml`) sets no `data.max_series` at all, so the
+  `_assemble` guard this bug lived behind never fires for them regardless
+  of which side of 2026-08-06 they ran on. Wrote this up as closing the
+  "worth a deliberate sweep" line from two entries ago: the bug has exactly
+  the one victim already found and fixed, not a wider undiscovered
+  problem — the two other already-tracked affected numbers (§6.2's SAE
+  forecast-preservation/ground-truth, §5.3's lens comparison) go through
+  different call sites entirely and their re-measurement status is
+  unchanged by this sweep. No test suite run this entry (docs-only
+  addition, no code touched, and the background agent's own pytest run
+  will cover the code path it touches). Second-seed stability results not
+  yet landed as of this entry.
+- **2026-08-10 (seventh cron-loop firing, same-turn write-up of the
+  second-seed background agent) — the narrower question from the previous
+  entry is answered: no, `work_bend` does not reliably survive a reseed.**
+  The delegating agent's own final report (a second nested agent it used to
+  actually run the GPU work) gave a full seed0-vs-seed1 comparison; rather
+  than take it on trust, independently re-derived every headline number
+  directly from `runs/layer_screen_bakeoff_v2_seed1.json` and both runs'
+  `meta.parquet` files myself (gold_agreement, recall_at_budget,
+  beats_random/beats_uniform_stride, selected layers, and the row-overlap
+  Jaccard) — all matched the agent's report exactly, including to the full
+  decimal. Headline: 76.8% row overlap between the two seeds' 220-of-288
+  draws (not a biased or wildly different sample), yet `work_bend` — the
+  production default — flips its `beats_random` verdict on 2 of 3
+  architectures (TimesFM True→False, Chronos False→True), while
+  `coverage` stays fully stable on all three and Sundial stays fully
+  stable on every selector. In every flip, the selector's own chosen
+  layers were bit-identical across seeds — only the null-comparison
+  scorecard moved, tied to the SAE-mass gold ranking shifting under the
+  ~23%-different row draw. Read this as a statistical-power gap in the
+  bake-off's own evaluation (recall@budget at n=220, budget≤5) rather than
+  a bias like A4's — a materially different, and arguably more concerning
+  for production use, kind of instability than what the previous two
+  entries closed out. Wrote the full comparison into `ROADMAP.md` §6.1.1's
+  Findings and updated §13's item and `CLAUDE.md`'s verification-status
+  row in place. Independently launched my own separate `pytest -q` run in
+  parallel with the write-up (the agent's own run already reported 207
+  passed, 2 warnings, matching every prior count this session) as a second
+  check; it was still running when this entry was written due to apparent
+  GPU contention with the peer session's own activity, so treat the
+  suite's status this entry as "agent-confirmed, self-confirmation
+  in-flight" rather than doubly independently verified — worth a quick
+  glance next firing if the log wasn't checked before this session ends.
+  No new background task started this firing — the write-up was the full
+  scope of the work. Remaining open items: whether a third seed would
+  narrow or confirm this spread, and whether the bake-off's statistical
+  power should be improved (larger corpus, bootstrap CI on recall@budget)
+  before trusting any single future run's verdict — left for a future
+  firing or session, not attempted here.
+- **2026-08-10 (fifth cron-loop firing) — launched the extraction-variance
+  characterization, and closed a real `DEPENDENCIES.md` invariant-12 gap
+  while it runs.** `ListAgents` showed only the already-written-up 3-model
+  bake-off agent (completed, stale re-notification, no new content).
+  Nothing in progress, so started the §13 🔴 item from the previous firing:
+  launched a background agent (two parts — first read
+  `data.py`/`extract.py`/`pipeline.py`/`layer_screen.py`/
+  `layer_screen_bakeoff.py` for every candidate source of run-to-run
+  nondeterminism with file:line citations and rank them; then design and
+  run a targeted experiment against the single most plausible candidate,
+  either re-running the bake-off against the *same* already-extracted
+  `runs/layer_screen_experiment_v2/` store with two SAE seeds, or a fresh
+  third independent extraction, whichever the ranking points to) to
+  characterize whether Chronos-T5-Small's flipped verdict (previous entry)
+  is explained by SAE-training stochasticity, extraction-level
+  nondeterminism, or something else. Told it explicitly not to touch
+  production code — root-cause first, design a fix in a later session.
+  While that ran, noticed `DEPENDENCIES.md` §5 ("Known fragile spots") had
+  never been updated for either Chronos-2 (`CLAUDE.md` §11.21, the
+  `ModelOutput`-vs-tuple hooks bug) or Sundial (`CLAUDE.md` §11.22, the
+  `DynamicCache` API break in its own remote code) — a real gap against
+  invariant 12's "any newly-discovered fragile version interaction gets
+  reflected there in the same session" rule, missed in both of those
+  adapter-build sessions. Added both as new bullets in `DEPENDENCIES.md` §5
+  with the same file:line-anchored detail `CLAUDE.md` §11 already has, so
+  the two records stay in sync. No test suite run needed (docs-only change,
+  no code touched). Extraction-variance results not yet landed as of this
+  entry.
+- **2026-08-10 — explicit user instruction to fix the second-seed
+  `work_bend` instability rather than leave it as documented, mid-turn
+  during a routine cron-loop firing.** Not a mechanical firing this time —
+  the user directly told the session not to just leave the previous
+  entry's finding ("`work_bend` doesn't reliably survive a reseed") as a
+  written-up limitation. Root-caused by re-reading `layer_screen.py`
+  directly rather than re-testing hypotheses: `select_work_bend`/
+  `select_coverage` take no `seed` kwarg at all (grepped to confirm) and
+  are fully deterministic given a fixed corpus, so the entire flip had to
+  be coming from `build_gold_ranking`'s single stochastic per-layer SAE
+  training run standing in as ground truth at a budget small enough
+  (2-5 layers) that ordinary training noise flips which layers count as
+  "gold." Fixed with two changes, both landed and both verified against
+  real checkpoints, not left as an untested patch: (1) `build_gold_ranking`
+  now averages `n_replicates=3` independently-seeded SAE-training runs per
+  layer instead of trusting one, wired through a new `run_layer_screen_
+  bakeoff.py --n-gold-replicates` flag; (2) new `configs/
+  layer_screen_experiment_v4[.yaml/_seed1.yaml]` drop the `max_series: 220`
+  corpus cap entirely (the corpus is only 288 rows — subsampling bought
+  negligible compute savings for real determinism cost). Added a synthetic
+  unit test for the averaging/determinism property
+  (`test_build_gold_ranking_averages_replicates_and_is_deterministic`);
+  full suite green at **208/208** (self-run, not just an agent's report).
+  Then launched a background agent to rerun the actual 3-checkpoint
+  bake-off (TimesFM 2.5, Chronos-T5-Small, Sundial) on both seeds with the
+  fix — not just asserting the fix should work. Result: **every
+  `beats_random` verdict now matches across both seeds, for all three
+  selectors on all three architectures** (`work_bend`'s TimesFM False↔False
+  and Chronos-T5-Small True↔True, both previously flipping, now hold).
+  Full comparison table and residual caveats (one secondary metric,
+  `factor_emergence`'s `beats_uniform_stride` on Chronos, still moves
+  slightly) are in §6.1.1's Findings block, not repeated here. Also fixed a
+  small related gap the verification agent caught along the way:
+  `gold_score_std`/`n_gold_replicates` were computed but never persisted
+  into the bake-off's saved JSON — one-line fix in `run_layer_screen_
+  bakeoff.py`. §13's corresponding open item is updated to reflect this is
+  now resolved rather than an open statistical-power gap.
+- **2026-08-10 (eighth cron-loop firing, deadline reached mid-write-up) —
+  stopped the loop with two items left incomplete; both now finished.**
+  The prior firing's write-up of a real, newly-discovered finding (a stale
+  `runs/medium_run` activation store, written in zarr v3 and silently
+  unreadable — returns empty rather than erroring — under this repo's
+  pinned zarr v2) was interrupted twice by `Edit` tool-hook timeouts, and
+  the loop's own 5-hour deadline (`2026-08-10T21:16:58Z`) was crossed before
+  a third attempt could be made, so per the loop's explicit instructions the
+  session stopped (deleted cron job `d69df929`) rather than retry further.
+  Picked back up on direct user instruction ("finish what you were unable
+  to finish, then move onto the next roadmap item"): the `CLAUDE.md` §11.25
+  trap entry landed cleanly this time, and this section's own item plus the
+  `§5.3`/A4 Findings block above were updated with the same finding —
+  including that the background agent attempting the actual re-extraction
+  had separately failed on its own infrastructure-level session/API usage
+  limit, not a code bug. Re-armed the recurring loop (new job, every 20
+  minutes for 3 hours from `2026-08-10T23:13:24Z`) and relaunched the
+  `runs/medium_run` re-extraction as a fresh background agent before moving
+  to the next roadmap item, per `CLAUDE.md` §2.8.
+- **2026-08-10 (same-day follow-up) — picked the next roadmap item while the
+  re-extraction ran in the background: closed §6.3's confound, and it fell
+  the wrong way.** While waiting on `runs/medium_run`'s re-extraction (also
+  needing a mid-flight correction — the background agent twice ended its
+  turn assuming a raw shell background job would notify it automatically,
+  same mistake `CLAUDE.md` documents elsewhere; resumed it with explicit
+  polling instructions each time and verified its real progress directly on
+  disk rather than trusting its self-report), built the same-architecture
+  negative control §6.3's 2026-08-07 Findings said wasn't available with any
+  checkpoint in reach: `configs/distill_negative_random_architecture.yaml`
+  pairs `Chronos-T5-Small`/`Chronos-T5-Base` with `random_init: true` on
+  both sides — same architecture family as the real trained positive pair,
+  zero shared training or lineage. Ran live in about 90 seconds. Result was
+  the opposite of what the method would need to be useful: this zero-
+  training control's L1 CKA (0.878) and L2 gain (0.834–0.940) both
+  significantly *exceeded* the real trained positive pair's (0.734 CKA /
+  0.637 gain; bootstrap diff CIs [−0.217,−0.130] and [−0.335,−0.269], both
+  p=0.0005, `n_boot=2000`). Closed §6.3's own checklist item and §13's
+  matching open question as answered — the method is falsified for its
+  stated provenance/IP use case, not merely confounded — rather than left
+  open. No source code changed (one new config, reused the already-built
+  `random_init` mechanism and `distillation_detection.py` test harness
+  exactly per `CLAUDE.md` §2.2), so no test suite re-run was needed; the
+  live-checkpoint numbers are themselves the verification.
+  Meanwhile the relaunched `runs/medium_run` re-extraction agent completed
+  cleanly (~11 min wall-clock, needing the same "actively poll, don't
+  assume a raw shell background job notifies you" correction as its
+  predecessor, verified independently on disk both mid-run and at
+  completion rather than trusting either agent report at face value): fresh
+  v2 store confirmed (`.zattrs` present, no `zarr.json`), `report.html`
+  rendered 11 sections / 27 findings, `confirm` passed (1/1 dev hypotheses
+  on private data), and the now-trustworthy TimesFM lens number
+  (`final_mase: 1.7899408340454102`) reproduced bit-for-bit against
+  `medium_run_chronos_base.yaml`'s already-recorded value — exactly the
+  cross-check the matched-`max_series` fix (§5.3/A4) was supposed to
+  produce. Self-ran the full `tsfm_lens` suite afterward rather than
+  trusting the agent's own count: **208 passed, 2 warnings**, identical to
+  what the agent had independently reported. Both this session's open
+  threads (§6.3's confound, §5.3/A4's stale store) are now fully closed —
+  see their own Findings blocks for the numbers, not repeated here.
+- **2026-08-10 (ninth cron-loop firing) — picked up §16 E10 (probabilistic-
+  forecast calibration diagnostics) as the next concrete item, with nothing
+  else in flight.** Both prior threads (§6.3's confound, §5.3/A4's stale
+  store) were fully closed by the previous entry, and no background agent
+  was running, so per `CLAUDE.md` §2.8 this was small/quick enough to build
+  directly rather than delegate. New `analysis/calibration.py` (reliability
+  curve, PIT histogram, quantile-crossing rate, interval coverage/sharpness
+  by horizon) reduces over `predict()`'s already-computed `quantiles`/
+  `targets` arrays — zero new forward passes, wired into `run_l0` behind a
+  new `L0Config.calibration` flag and rendered as three new report
+  sections. Verified with 7 new synthetic-planted-answer unit tests (all
+  passing on first run) plus a live `configs/smoke.yaml` run confirming the
+  new `l0/calibration.json` artifact and report sections render with real,
+  correctly-populated content. Full suite green at 215/215, zero
+  regressions. See §16 E10's own checklist entry for the full write-up and
+  numbers, not repeated here.
+- **2026-08-10 (tenth cron-loop firing) — launched the §13/A4 follow-up
+  SAE re-measurement in the background, did §16 E11's n_boot/p-floor fix
+  directly in parallel.** Per `CLAUDE.md` §2.8: §13's open item "how much of
+  what's already recorded survives §15's sampling/noise-floor fixes" still
+  named one concrete, un-closed re-measurement — §6.2's SAE
+  forecast-preservation ΔMASE and ground-truth ρ, computed 2026-08-05, one
+  day before A4's stratified-sampling fix landed. Confirmed the fix is
+  already wired into both call sites (`sae/eval.py:94`, `sae/
+  ground_truth.py:257`) and the `medium_run_chronos_base` activation store
+  is a valid v2 zarr (no §11.25-class repair needed), so this was a pure
+  re-run of `sae,report` against already-extracted activations — launched
+  as a background agent (needed correcting twice for the same "waiting on
+  a notification that will never arrive" mistake this file's own §11.24/
+  earlier entries already document as a recurring risk of this delegation
+  pattern; it eventually armed a proper `Monitor` for the actual GPU run
+  and a second one for its own post-run pytest check). While that ran,
+  picked up §16 E11 (statistical-discipline hardening) directly: audited
+  every `p=` rendering in `report.py` (only two exist, both already paired
+  with a CI — that bullet was already satisfied) and confirmed A15's
+  `hypotheses.json` registry already covers the multiplicity-ledger bullet
+  (this item just hadn't been marked to reflect either). What was actually
+  missing — `n_boot`/the 1/n_boot floor stated inline wherever a p-value is
+  shown — is now fixed (`stats.py::paired_bootstrap` returns `n_boot`;
+  `report.py`'s new `_p_note` helper renders it at all three sites) and
+  verified live against a rerun of `configs/smoke.yaml`'s `l0,report`
+  stages (confirmed `"n_boot=150, p floored at 1/n_boot=0.0067"` in the
+  actual rendered HTML) plus a full self-run suite: **215 passed, 2
+  warnings**, same two pre-existing benign warnings, no regressions. See
+  §16 E11's own checklist entry for the full detail. The cluster-bootstrap-
+  unit-explicit bullet of E11 remains open; E11 marked `[~]`, not `[x]`.
+  The background SAE re-measurement agent then reported back: Chronos-T5-
+  Base's ΔMASE and both models' ground-truth ρ replicated closely against
+  the already-recorded 2026-08-06 re-measurement (confirming those numbers
+  stable), but **TimesFM's forecast-preservation ΔMASE did not** (0.175 →
+  0.1097, a real ~37% shift with reconstruction fidelity itself unchanged)
+  — a genuine new finding, not an agent error. Investigating this surfaced
+  that the §13 open item this whole thread was closing had itself gone
+  stale hours after it was written: its own "left as a follow-up" framing,
+  and A4's matching Findings-block bullet, were never updated after the
+  2026-08-06 same-day follow-up had already performed exactly the
+  re-measurement both text blocks still described as outstanding. Corrected
+  both in place (§0.2 discipline) rather than layering a third, redundant
+  "still open" note on top, appended the new 08-10 measurement to §6.2's
+  Findings, and spun the newly-discovered TimesFM SAE-forecast-preservation
+  run-to-run variance out as its own explicit, narrower open follow-up
+  (a repeat-run noise floor for that one metric specifically) instead of
+  leaving the whole §13 item ambiguously reopened. §13's item marked `[x]`;
+  §5.3's lens-comparison half was already closed by an earlier entry this
+  same day. Verification: the launching agent's own post-rerun pytest
+  (215 passed, 2 warnings) matches this turn's own earlier, independently-
+  run full-suite result — a real cross-check, not a single unverified
+  report.
+
+**2026-08-10, eleventh cron-loop firing.** Nothing was in progress
+(previous firing's write-up was the last outstanding item). Re-read
+§13/§15/§16 fresh and picked up §16 E12 (horizon-resolved everything) —
+specifically only its cheapest, zero-new-forward-passes sub-part
+(MASE/pinball per horizon step), since the other two named sub-parts
+(L3 per-window patching by horizon, Lens crystallization by horizon) are
+each their own separate unit of work. Implemented directly (small/quick,
+no background delegation needed): `analysis/stats.py::
+mase_pinball_by_horizon()`, `L0Config.horizon_resolved` flag,
+`l0_behavioral.py::_summarize_by_horizon` + new `l0/horizon_resolved.json`
+artifact, `report.py::_horizon_resolved_block()` wired into `_sec_l0`. Four
+new synthetic-planted-answer tests
+(`tests/test_horizon_resolved.py`) all passed on first run. Verified live,
+not just unit-tested: reran `configs/smoke.yaml`'s `l0,report` stages,
+confirmed `l0/horizon_resolved.json`'s array shapes directly and the
+rendered HTML's actual findings text (`"L0 horizon profile — patchy: MASE
+2.731 at h=1 vs 4.042 at h=32 (ratio 1.48x)"`,
+`"...steppy: MASE 5.270 at h=1 vs 5.584 at h=32 (ratio 1.06x)"`) — findings
+count rose from 27 to 29 as expected, sections stayed at 11. Full
+`tsfm_lens` suite green at **219 passed, 2 warnings** (215 prior + the 4
+new tests, same two pre-existing benign warnings, zero regressions). §16
+E12 marked `[~]` (partial — the L3/Lens sub-parts remain open, each is a
+natural next pick for a future firing). No background work was launched
+this firing since the chosen item was small enough to finish inline within
+the loop's own turn.
+
+**2026-08-10, twelfth cron-loop firing.** No background agent was running
+(`ListAgents` returned none) and nothing else was mid-way. Per this
+firing's own brief, retried the `CLAUDE.md` §11.25 write-up that two
+earlier edit attempts had failed to apply due to tool-hook timeouts — this
+time it landed cleanly on the first try. Confirmed on disk, not just from
+memory, that the underlying fix is real before writing it up: `runs/
+medium_run/activations.zarr` has a valid v2 `.zattrs`/`.zgroup` (no
+`zarr.json`), file mtimes 2026-08-10 23:17–23:28Z (consistent with the
+"same-day follow-up" session-log entry above, which already documented the
+successful re-extraction — that entry's numbers were correct, only
+`CLAUDE.md` §11.25 itself had never actually been updated to match).
+Corrected §11.25 in place: replaced the "Not yet fixed as of 2026-08-10"
+line with what actually happened (a second background agent completed the
+delete-and-re-extract cleanly after the first hit an infra-level usage
+limit; ~11 min wall-clock; fresh v2 store; TimesFM lens number
+`1.7899408340454102` reproduced bit-for-bit against `medium_run_chronos_
+base`; full suite 208/2 at the time), and explicitly flagged that
+`real_run`'s own store is untouched and still stale (confirmed directly:
+`real_run/activations.zarr` still has `zarr.json`, no `.zattrs`) — not to
+be assumed fixed by association. Also corrected a now-stale sub-claim in
+§6.2's SAE-ground-truth-null Findings block (line ~2880) that had listed
+`medium_run` alongside `real_run` as unusable for pooling due to the zarr
+v3 issue — added a same-day correction noting `medium_run` could now be
+added to that pool on a future pass, while `real_run` remains excluded and
+unchecked. Doc-only changes (`CLAUDE.md`, `ROADMAP.md`); no code touched,
+so no test suite re-run was needed. No new roadmap item started this
+firing per the brief's own instruction to finish the pending write-up
+first and not layer new heavy work on top in the same turn.
+
+**2026-08-10, thirteenth cron-loop firing.** Same firing prompt as the
+prior one (the still-pending §11.25 retry it names had already landed last
+firing) — `ListAgents` confirmed no background work running, so re-read
+§13/§15/§16 fresh per the brief's own instructions. Picked up the first of
+§16 E12's two remaining named sub-parts: L3 per-window patching
+restoration resolved by horizon step, explicitly flagged by the previous
+E12 write-up as "the arrays already exist... this needs only the
+reduction step" — confirmed that framing was accurate by reading
+`_window_restoration`/`_patching` directly, so this was small/quick enough
+to build inline rather than delegate to a background agent. Implemented,
+unit-tested (4 new synthetic-planted-answer tests against a newly
+extracted, directly-testable `restoration_by_horizon()` helper) and
+live-verified against a rerun of `configs/smoke.yaml`'s `l3,report`
+stages (confirmed the new artifact's shape/finiteness and the new report
+heatmap section + findings text directly). Full `tsfm_lens` suite green
+at **223 passed, 2 warnings**, zero regressions. See §16 E12's own
+checklist entry for the full write-up and numbers. E12 stays `[~]` — only
+the Lens crystallization-depth-by-horizon sub-part remains, a natural pick
+for a future firing. No background work was launched this firing since
+the chosen item finished comfortably inline.
+
+**2026-08-11, fourteenth cron-loop firing.** Same recurring firing prompt
+as the prior two; `ListAgents` again confirmed no background work running
+and nothing was mid-way. Picked up the exact item the previous firing
+flagged as the natural next pick: the Lens crystallization-depth-by-
+horizon sub-part, the last of §16 E12's three named parts. Implemented
+directly (small/quick, no delegation needed): `analysis/lens.py` gained
+`per_series_h`/`final_mase_h` (the same skip-lens arrays already computed
+for the whole-horizon curve, kept resolved by horizon step instead of
+collapsed by `.mean(axis=2)`) and a new standalone
+`crystallization_depths()` function that unifies the existing scalar
+crossing logic with a new per-horizon-step version — refactored the
+existing call site to use it too, verified behavior-preserving via a
+dedicated 2-D/1-D consistency test rather than assumed. New
+`LensConfig.horizon_resolved` flag, new `skip_mase_by_horizon` array and
+`crystallization_depth_by_horizon` list artifacts, new
+`report.py::_lens_horizon_block()` (heatmap + line chart + findings). 4
+new synthetic-planted-answer tests (`tests/test_lens_horizon_resolved.py`)
+all passed on first run; extended `test_smoke.py`'s existing artifact
+shape-check test too. Verified live end-to-end: reran
+`configs/smoke.yaml`'s `lens,report` stages, confirmed the new arrays'
+shapes/finiteness and the rendered HTML's actual new chart titles and
+findings text directly (not just that the run exited 0) — findings count
+rose from 39 to 41 as expected, sections stayed at 11. Full `tsfm_lens`
+suite green at **227 passed, 2 warnings** (223 prior + the 4 new tests,
+same two pre-existing benign warnings, zero regressions). **§16 E12 is
+now fully `[x]`** — all three named sub-parts landed across this and the
+two prior firings. No background work was launched or left running this
+firing.
+
+**2026-08-11, fifteenth cron-loop firing.** Same recurring firing prompt;
+`ListAgents` again confirmed no background work in flight and nothing was
+mid-way from a prior firing. §16 E13 (spectral lens) was considered and set
+aside as too large to safely land within the remaining loop window, so
+instead picked a doc-only item off the open-checklist list: "revisit and
+either implement or explicitly defer-with-reason the remaining `CLAUDE.md`
+§13 future-work items not already folded into this roadmap" (this
+section's own list, above). Cross-checked all five named `CLAUDE.md` §13
+items against the existing §16 backlog and found three already tracked
+(Chronos decoder gap = E21, deeper component resolution = E18, more source
+adapters already explained in full at `CLAUDE.md` §4.3/§12) and two
+genuinely missing (CI diversity gates for `benchmark_validation`,
+real-corpus activation bucketing) — added those as new §16 **E23**/**E24**,
+each with scope and an explicit defer-with-reason rationale rather than
+either implementing them or leaving them unaddressed. Checklist item marked
+`[x]` with the full resolution recorded inline above. No code changed, no
+test suite rerun (nothing to verify — this was a cross-referencing audit,
+not an implementation), no background work launched or left running.
 
 ---
 
@@ -5115,13 +6578,60 @@ and two second-order bugs found along the way:
   all, so this real run is not a redundant re-check of the unit tests, it is
   the only test that could have caught the original bug in situ.
 - **Re-measurement (fix plan's own last step):** not performed as a
-  standalone action. The §6.2 SAE forecast-preservation/ground-truth numbers
-  and the §5.3 lens comparison remain as previously recorded, now understood
-  to have been measured on a family-skewed sample of unrecorded composition;
-  a superseding re-run would need `sae.enabled: true` end-to-end (a longer
-  GPU run than this fix's own verification needed) and is left as a
-  follow-up rather than bundled into this fix, consistent with treating each
-  A-item as its own scoped change.
+  standalone action *in this fix's own session*. The §6.2 SAE
+  forecast-preservation/ground-truth numbers and the §5.3 lens comparison
+  remain as previously recorded, now understood to have been measured on a
+  family-skewed sample of unrecorded composition; a superseding re-run would
+  need `sae.enabled: true` end-to-end (a longer GPU run than this fix's own
+  verification needed) and is left as a follow-up rather than bundled into
+  this fix, consistent with treating each A-item as its own scoped change.
+  **Correction (2026-08-10): this bullet went stale the same day it was
+  written and was never updated to say so.** The §6.2 re-measurement it
+  defers *did* happen later the same day (2026-08-06, same-day follow-up —
+  see §6.2's own Findings block, "RE-MEASURED" entry) and again on
+  2026-08-10 (a third data point — see the same Findings block's newest
+  entry). §5.3's lens comparison was also later completed (2026-08-10, see
+  the entries below this one). Leaving this bullet's "left as a follow-up"
+  wording unedited after both follow-ups actually landed is exactly the
+  kind of doc drift `ROADMAP.md` §0 warns about — flagged and corrected in
+  place here rather than silently left for a future session to re-discover.
+- **Partial follow-up attempt, 2026-08-10 — one of the two configs re-measured, the other blocked by a newly-discovered stale store.** Re-ran the matched-`max_series` (24, per `medium_run.yaml`'s same-day fix) lens comparison against `medium_run_chronos_base.yaml`'s already-extracted store: succeeded, TimesFM's own lens numbers came back `final_mase: 1.7899408340454102`, `crystallization_depth: 1.0`. The `medium_run.yaml` side of the same comparison could not be re-measured — its `activations.zarr` turned out to be a dead store, written entirely in zarr v3 format and silently unreadable (returns empty, not an error) under this repo's pinned zarr v2 (see `CLAUDE.md` §11.25, new this session). A background agent was dispatched to delete the stale store and rerun `extract` from scratch, but it failed outright on an infrastructure-level session/API usage limit on the agent's own side (not a code or logic bug) before completing. **Still not re-measured as of 2026-08-10** — `medium_run`'s re-extraction plus the matched lens rerun remains the concrete next step; nothing about the numbers already on record here needed correcting, since the ones being checked were never actually invalidated, only unable to be refreshed yet.
+- **Completed, same day, second attempt.** A fresh background agent was
+  relaunched (the first retry's failure was purely a session/API limit, not
+  a logic problem — verified by confirming a clean redo worked). The stale
+  store was renamed, not deleted, to `runs/
+  medium_run_stale_v3_backup_20260810` (preserved for anyone who wants to
+  double-check the zarr-v3 diagnosis directly), and the full
+  `medium_run.yaml` pipeline (13 stages, real `google/timesfm-2.5-200m-
+  pytorch` + `amazon/chronos-t5-small` checkpoints) was rerun clean end to
+  end in about 11 minutes wall-clock. Confirmed directly (not just taken on
+  the agent's word — the agent itself twice made the same "waiting on a
+  notification that will never come" mistake §11.25's own writeup already
+  flagged as a risk of `CLAUDE.md` §2.8's delegation pattern, resumed each
+  time with explicit polling instructions, and its actual progress verified
+  independently via `ps`/filesystem checks): `runs/medium_run/
+  activations.zarr` now has a valid v2 `.zattrs` and no `zarr.json`,
+  `report.html` rendered **11 sections / 27 findings**, and `confirm`
+  completed (1/1 dev hypotheses confirmed on private data, 17 registered/2
+  replicable). Fresh, now-trustworthy lens numbers: TimesFM `final_mase:
+  1.7899408340454102, crystallization_depth: 1.0` — **bit-identical to
+  `medium_run_chronos_base.yaml`'s own already-recorded TimesFM number**,
+  which is exactly the expected outcome now that both configs' `lens.
+  max_series` are matched at 24 (same TimesFM checkpoint, same corpus,
+  same context/horizon/seed, same sampled series → deterministic TimesFM
+  reproduces bit-for-bit) — a clean, independent confirmation that the
+  earlier max_series-mismatch fix this item exists to verify actually
+  works. Chronos-T5 (small, this config's pairing — not directly comparable
+  to `medium_run_chronos_base`'s Chronos-T5-**Base**): `final_mase:
+  2.173410654067993, crystallization_depth: 1.0`. Full `tsfm_lens` pytest
+  suite self-run after this fix to confirm nothing else regressed (this
+  only touched a `runs/` artifact directory, not source code): **208
+  passed, 2 warnings** (both pre-existing and benign — an intentional
+  overflow-cast warning inside `test_nonfinite.py`'s own precision test,
+  and a pytest style warning about `test_smoke.py::test_end_to_end`
+  returning a value — same count and same two warnings the re-extraction
+  agent's own independent pytest run had already reported). **This closes the item**: both
+  configs' lens numbers are now on record from real, non-empty stores.
 
 ### A5 — The report silently omits sections; nothing in the HTML says what's missing or why `[x]` · **P1** · fixed 2026-08-06
 
@@ -7246,7 +8756,7 @@ backlog is the next place forward work on this repo should look.
   decodability does not yet have its own permutation null (it already has a
   majority-class chance-line CI, a weaker but related control) — noted as a
   remaining follow-up, not silently folded into "done."
-- [ ] **E10 · Probabilistic-forecast diagnostics.** Quantiles are already
+- [x] **E10 · Probabilistic-forecast diagnostics.** Quantiles are already
   produced and pinball loss already computed, but nothing checks
   *calibration*: PIT histograms and interval coverage per family and per
   horizon step, sharpness-vs-calibration scatter, quantile-crossing counts.
@@ -7256,17 +8766,77 @@ backlog is the next place forward work on this repo should look.
   Chronos's sampled one differ in kind — which makes it a natural companion
   to `CLAUDE.md` §12's forecast-stochasticity-asymmetry caveat rather than
   another victim of it.
-- [ ] **E11 · Statistical-discipline hardening.** A15's registry and
+  — **✅ DONE 2026-08-10.** New `analysis/calibration.py`: a reliability
+  curve (empirical vs. nominal coverage per quantile level, overall and per
+  family), an approximate PIT (probability-integral-transform) histogram
+  via per-position linear interpolation against each model's own discrete
+  quantile levels, a quantile-crossing-rate check (a real forecast-head
+  defect, independent of calibration), and outer-interval coverage +
+  sharpness resolved per horizon step. All of it is a pure reduction over
+  the `quantiles`/`targets` arrays `run_l0` already holds in memory after
+  calling `predict()` — **zero new forward passes**, exactly as the item
+  scoped it. Wired in via a new `L0Config.calibration: bool = True` flag
+  (default on, silently skipped if fewer than 2 quantile levels are
+  configured) and a new `l0/calibration.json` artifact
+  (`l0_behavioral.py::run_l0`). Report gets a new `_calibration_block` in
+  the L0 section (`report/report.py`): a reliability-curve plot, a PIT
+  histogram, and a coverage/sharpness/crossing-rate table, each with a
+  `_note()` purpose/reading/limitations block, plus a per-model findings
+  string (`"L0 calibration — {model}: max reliability-curve gap …, outer-
+  interval coverage … (nominal …), quantile-crossing rate …."`). **Verified,
+  not just implemented:** 7 new synthetic-planted-answer unit tests
+  (`tests/test_calibration.py`) — a well-calibrated Uniform(0,1) forecaster
+  (calibrated by construction, since Uniform(0,1)'s quantile function is
+  the identity) confirms the reliability curve and outer-interval coverage
+  both land within 0.02 of nominal; a deliberately overconfident
+  (too-narrow) forecaster shows empirical coverage far below its nominal
+  claim (<0.2 vs. nominal 0.8); PIT values recover the planted identity
+  mapping exactly for in-range targets; the quantile-crossing check reads
+  exactly 0.0 on monotonic input and finds a single hand-planted violation
+  at the exact rate `1/(n·h)` expected; horizon-resolved coverage/sharpness
+  and per-family breakdown both return the right shapes/counts. All 7
+  passed on first run. Live end-to-end check: ran `configs/smoke.yaml`
+  (both mock architectures) and confirmed `l0/calibration.json` is written
+  with real content and the report renders the new "Quantile calibration" /
+  "PIT histogram" / "Interval coverage, sharpness and quantile crossing"
+  sections with correctly-populated findings text — not just a passing
+  pytest suite. Full `tsfm_lens` suite green at **215/215** (208 prior + 7
+  new), same two pre-existing benign warnings as before, zero regressions.
+- [~] **E11 · Statistical-discipline hardening.** A15's registry and
   multiplicity ledger, plus: report effect sizes with CIs everywhere a
   p-value appears (mostly done — audit for exceptions), state `n_boot` and
   the p-value floor inline where a p is shown (`CLAUDE.md` §6.6 documents the
   1/n_boot floor; the report should say it at the point of use), and make the
   cluster-bootstrap unit explicit in every artifact so a reader can check
   that the series-level rule (invariant 2) was actually followed.
+  — **Partial progress 2026-08-10.** Audited every `p=` rendering in
+  `report.py`: only two exist (L0's overall paired ΔMASE, CONFIRM's overall
+  paired ΔMASE on private data), and both already pair the p-value with a
+  `_ci_str`-rendered CI right next to it — the "report effect sizes with CIs
+  everywhere a p-value appears" bullet was already satisfied, not merely
+  "mostly." The registry/multiplicity-ledger bullet is also already done —
+  it's A15's `hypotheses.json`, fixed 2026-08-06, this item just hadn't been
+  updated to say so. What was actually missing and is now fixed: neither
+  `p=` site, nor the family-level paired-tests table header, stated `n_boot`
+  or the 1/n_boot floor at all — a reader had no way to tell a "genuinely
+  tiny" p from a floored one without cross-referencing `CLAUDE.md` §6.6.
+  `analysis/stats.py::paired_bootstrap` now returns `n_boot` in its result
+  dict (`bootstrap_ci_diff` already did); `report.py` gained a small
+  `_p_note(d)` helper rendering `" (n_boot=N, p floored at 1/n_boot=F)"` and
+  wired it into all three sites (L0's family-tests table header, L0's
+  overall-test finding, CONFIRM's overall-test blurb). Verified live, not
+  just unit-tested: reran `configs/smoke.yaml`'s `l0,report` stages and
+  confirmed the rendered HTML actually contains
+  `"n_boot=150, p floored at 1/n_boot=0.0067"` next to the real p-value.
+  Full `tsfm_lens` suite green at **215 passed, 2 warnings** (same two
+  pre-existing benign warnings, zero regressions) after the change. **Not
+  done:** the cluster-bootstrap-unit-explicit bullet (recording per-artifact
+  that a given CI/p resampled series, not windows) — untouched this
+  session, still open.
 
 ### T3 — Analysis capability a TSFM interpretability user will ask for
 
-- [ ] **E12 · Horizon-resolved everything.** Every current metric aggregates
+- [x] **E12 · Horizon-resolved everything.** Every current metric aggregates
   over the whole forecast horizon, so "where does the error come from at h=1
   vs h=64", "which layers matter for long-horizon vs short-horizon", and
   "does the forecast crystallize later in depth for later horizon steps" are
@@ -7277,6 +8847,150 @@ backlog is the next place forward work on this repo should look.
   missing, it's cheap because the forward passes are already being paid for,
   and it directly sharpens the §1 questions about high-frequency vs.
   statistical-mean behavior.
+
+  **Partial progress 2026-08-10 — first sub-part (MASE/pinball per horizon
+  step) implemented and verified; the other two are still open.** New
+  `analysis/stats.py::mase_pinball_by_horizon()` mirrors `mase()`'s exact
+  per-series scale (`_mase_scale`) but keeps the horizon axis instead of
+  reducing over it, returning `[n_series, horizon]` MASE and pinball arrays;
+  `mase_pinball_by_horizon(...).mean(axis=1)` is verified identical to the
+  existing whole-horizon `mase()` to `atol=1e-9` (a consistency test, not
+  just a new formula taken on faith). New `L0Config.horizon_resolved: bool =
+  True` (mirrors the `calibration` flag's pattern exactly);
+  `l0_behavioral.py` computes pooled + per-family MASE/pinball curves over
+  horizon step per model (`_summarize_by_horizon`) whenever `data.horizon >
+  1`, written to a new `l0/horizon_resolved.json` artifact. `report.py`
+  gained `_horizon_resolved_block()` (two plotly line charts — MASE by
+  horizon step, pinball by horizon step, one line per model — with the same
+  `_note()` purpose/reading/limitations pattern as every other report
+  figure), wired into `_sec_l0` right after the existing calibration block,
+  plus one new findings string per model
+  (`"L0 horizon profile — {model}: MASE {h1} at h=1 vs {hN} at h={N} (ratio
+  {r}x)"`). New `tests/test_horizon_resolved.py` (4 tests, all synthetic
+  with a planted, known-correct answer per `CLAUDE.md`'s testing
+  convention): a linearly-growing-with-horizon planted error gives a
+  monotonically increasing MASE curve and a growing pinball curve; the
+  per-series mean over horizon matches whole-horizon `mase()` exactly; a
+  constant-offset error gives a flat curve. Verified live end-to-end, not
+  just unit-tested: reran `configs/smoke.yaml`'s `l0,report` stages and
+  confirmed `l0/horizon_resolved.json` has the expected `[n_series, 32]`-length
+  arrays for both mock models, and that the rendered HTML actually contains
+  the new findings strings verbatim (e.g. `"L0 horizon profile — patchy:
+  MASE 2.731 at h=1 vs 4.042 at h=32 (ratio 1.48x)"`,
+  `"...steppy: MASE 5.270 at h=1 vs 5.584 at h=32 (ratio 1.06x)"`) and the
+  new chart titles ("MASE by horizon step" / pinball equivalent) — findings
+  count rose from 27 to 29 (exactly the 2 new per-model findings expected),
+  sections stayed at 11. Full `tsfm_lens` suite green at **219 passed, 2
+  warnings** (215 prior + the 4 new tests, same two pre-existing benign
+  warnings, zero regressions). **Not done, left `[~]` rather than `[x]` for
+  this reason:** the other two named sub-parts — per-window L3 patching
+  restoration resolved by horizon step (the arrays already exist per the
+  item's own text, this needs only the reduction step) and Lens
+  crystallization depth as a function of horizon step — are both
+  untouched this session.
+
+  **Second sub-part done, 2026-08-10 (twelfth cron-loop firing, same day) —
+  L3 per-window patching restoration resolved by horizon step.** Confirmed
+  the item's own claim was right: `_window_restoration`/`_patching`
+  (`analysis/l3_perturbation.py`) already compute `f_patch`/`f_clean` per
+  horizon step at every (layer, window) cell, and only `.mean(axis=1)`
+  discarded the horizon axis before this — a pure reduction, no new forward
+  passes. Pulled the one-liner out into a standalone, directly testable
+  `restoration_by_horizon(f_patch, f_clean, damage_h)` (used at both the
+  per-window and whole-context-patch call sites, so the fallback path gets
+  the same treatment) instead of inlining it twice. `_patching` now also
+  computes a per-horizon damage denominator (`damage_h`, mirroring the
+  existing scalar `damage`) and accumulates a `[n_corruptions, n_layers,
+  horizon]` array (averaged over windows, the same way the existing
+  `restoration` curve is already averaged over windows) into a new
+  `restoration_by_horizon` output key, gated by a new
+  `PatchingConfig.horizon_resolved: bool = True` flag (`config.py`) —
+  mirrors `L0Config.horizon_resolved`'s naming exactly. Saved into
+  `l3/patching.npz` as `restoration_by_horizon_{model}`. `report.py` gained
+  `_l3_horizon_heatmaps()` (a [relative depth x horizon step] heatmap per
+  corruption, one per model, immediately below the existing per-window
+  depth-x-time heatmap) plus a findings string whenever a corruption's
+  best-restoring layer differs between horizon step 1 and the final step.
+  New `tests/test_l3_horizon_resolved.py` (4 synthetic-planted-answer
+  tests, exercising the extracted `restoration_by_horizon` function
+  directly, independent of any adapter/forward pass): a perfect patch
+  restores fully at every horizon step; a patch that drifts further from
+  clean at later horizon steps by construction gives a monotonically
+  decreasing restoration curve; a patch identical to the corrupted input
+  gives exactly zero restoration everywhere; output shape matches the
+  horizon axis, not the batch axis. Also extended
+  `tests/test_smoke.py::test_per_window_and_lens_artifacts` with a shape/
+  finiteness check on the new `restoration_by_horizon_{model}` array.
+  Verified live end-to-end, not just unit-tested: reran
+  `configs/smoke.yaml`'s `l3,report` stages and confirmed
+  `restoration_by_horizon_{model}` arrays are finite with the expected
+  `[corruptions, layers, horizon]` shape for both mock models, the new
+  "per-horizon-step restoration" heatmap section and its `_note()` block
+  render, and the new findings text appears verbatim (e.g. `"L3
+  horizon-resolved patching — patchy/deseasonalize: the layer that best
+  restores horizon step 1 (0.80 relative depth) differs from the layer
+  that best restores the final horizon step (0.20)."`) — findings count
+  rose from 29 to 39 (up to 6 corruptions x 2 models = 12 possible new
+  findings; 10 fired, 2 corruption/model pairs happened to share the same
+  best layer at both horizon extremes). Full `tsfm_lens` suite green at
+  **223 passed, 2 warnings** (219 prior + the 4 new tests, same two
+  pre-existing benign warnings, zero regressions). **Still open at that
+  point:** only the Lens crystallization-depth-by-horizon sub-part
+  remained from this item's original three.
+
+  **Third and final sub-part done, 2026-08-11 (fourteenth cron-loop
+  firing, same UTC evening) — Lens crystallization depth resolved by
+  horizon step, closing E12 fully.** `_model_lens`
+  (`analysis/lens.py`) already computes `lens_fc`/`final_fc` as
+  `[n_layers, B, horizon]`/`[B, horizon]` arrays before collapsing the
+  horizon axis with `.mean(axis=2)` for the existing whole-horizon-averaged
+  curve — the same "arrays already exist, only the reduction was
+  collapsed" situation as the L3 sub-part above, no new forward passes.
+  Added `per_series_h` (keeps the horizon axis) and `final_mase_h`
+  alongside the existing scalar versions, gated by a new
+  `LensConfig.horizon_resolved: bool = True` flag (mirrors
+  `PatchingConfig.horizon_resolved`'s naming exactly). Extracted the
+  existing inline crystallization-crossing logic (previously duplicated
+  as a one-off `next(...)` loop) into a standalone, directly-testable
+  `crystallization_depths(mase_curve, final_mase, tol, depths)` that
+  handles both the original 1-D (whole-horizon) case and a new 2-D
+  (per-horizon-step) case with one shared implementation — verified this
+  refactor is byte-for-byte behavior-preserving for the existing scalar
+  path via a dedicated consistency test (single-horizon-step 2-D input
+  must equal the 1-D scalar result). New `skip_mase_by_horizon` array
+  (`[n_layers, horizon]`) saved to `lens/curves.npz`, and a new
+  `crystallization_depth_by_horizon` list (length = horizon, `null` where
+  unresolved) saved to `lens/lens.json`. `report.py` gained
+  `_lens_horizon_block()`: a [relative depth x horizon step] MASE heatmap
+  per model plus a crystallization-depth-vs-horizon-step line chart (one
+  line per model), both with `_note()` blocks, plus a findings string
+  comparing each model's horizon-step-1 vs. final-horizon-step
+  crystallization depth. New `tests/test_lens_horizon_resolved.py` (4
+  synthetic-planted-answer tests against `crystallization_depths`
+  directly, independent of any adapter/forward pass): the scalar case
+  matches a hand-computed crossing index; a curve that never crosses
+  returns `None`; three independently-planted per-horizon-step columns
+  (crosses early / crosses late / never crosses) all resolve to their
+  correct, distinct answers in one call; and the 2-D/1-D consistency
+  check above. Also extended
+  `tests/test_smoke.py::test_per_window_and_lens_artifacts` with a shape/
+  finiteness/list-length check on the new Lens artifacts. Verified live
+  end-to-end: reran `configs/smoke.yaml`'s `lens,report` stages and
+  confirmed `skip_mase_by_horizon_{model}` arrays are finite with shape
+  `[n_layers, 32]` for both mock models, `crystallization_depth_by_horizon`
+  is a real 32-entry list for each, and the rendered HTML contains both
+  new chart titles ("skip-lens MASE by horizon step", "Crystallization
+  depth by horizon step") and the new findings text verbatim (e.g.
+  `"Lens horizon-resolved crystallization — patchy: horizon step 1
+  crystallizes at 0.60 relative depth vs. 0.00 at the final step (32)."`)
+  — findings count rose from 39 to 41 (exactly the 2 new per-model
+  findings expected), sections stayed at 11. Full `tsfm_lens` suite green
+  at **227 passed, 2 warnings** (223 prior + the 4 new tests, same two
+  pre-existing benign warnings, zero regressions). **E12 marked `[x]`** —
+  all three named sub-parts (L0 MASE/pinball, L3 per-window patching, Lens
+  crystallization depth) are now implemented, tested, and live-verified,
+  all resolved by horizon step with zero additional forward passes beyond
+  what each stage already pays for.
 - [ ] **E13 · Spectral lens.** The time-domain skip lens says *when* the
   forecast crystallizes; a frequency-domain version says *what* crystallizes
   first. Per layer, compare the skip-lens forecast's spectrum against the
@@ -7371,6 +9085,36 @@ backlog is the next place forward work on this repo should look.
   planning tool ("this config will take ~35 min and 14 GB; per-window
   patching is 60% of it"). The §5.1 literal-scale `full_multidomain.yaml`
   build (~99K samples, ~6 h estimated) is the concrete forcing function.
+- [ ] **E23 · `benchmark_validation` diversity metrics as CI pass/fail
+  gates.** `CLAUDE.md` §13 item 4, not previously cross-referenced into this
+  backlog (closed the gap 2026-08-11, §11's own item revisiting `CLAUDE.md`
+  §13). Turn the diversity metrics (`validation_report.json`'s redundancy
+  fraction, effective dimensionality, near-collision fraction, per-group
+  breakdowns from A17's fix) into explicit numeric thresholds checked
+  automatically per benchmark epoch, rather than eyeballed from the report —
+  e.g. fail if redundancy fraction exceeds some X, effective dimensionality
+  drops below some Y, or any subgroup's near-collision fraction exceeds Z.
+  Distinct from E8/A14 (test-suite CI): this is a data-quality gate on a
+  *generated corpus*, not a code-correctness gate on the *pipeline*. Needs a
+  first real threshold-calibration pass against at least one full corpus
+  build (the §5.1 demo-mode numbers — 4.8% redundancy, eff-dim 4.6/24 — are
+  the only reference point so far, and it's one sample, not a validated
+  threshold) before the gate can be anything other than arbitrary.
+- [ ] **E24 · Real-corpus activation bucketing.** `CLAUDE.md` §13 item 7, not
+  previously cross-referenced into this backlog (closed the gap 2026-08-11,
+  same pass as E23). Embed a large real corpus (Monash, GIFT-Eval
+  pretraining corpus, LOTSA) in each model, cluster, and compare
+  **partitions** across models via AMI / cluster matching — the same L4
+  method already built (`analysis/clustering.py`), just pointed at wild
+  data instead of the synthetic benchmark. Deliberately sequenced after (not
+  instead of) the synthetic-corpus work already done: clusters on
+  uncontrolled real data are uninterpretable without the controlled
+  reference points L4 already established on the synthetic benchmark first
+  — this is a generalization check on an existing method, not a
+  replacement for it. Needs a real large-corpus source wired in (Monash's
+  `sources.py` adapter already exists per §4.3 and is the natural first
+  choice) and a GPU session with both models loaded; no design blocker,
+  just not yet scheduled.
 
 **Findings / decisions**
 - *(append here — and per §2.5, before building any of these, state which

@@ -84,6 +84,30 @@ def skip_lens_forecasts(adapter, layers: list, contexts: np.ndarray, horizon: in
     return lens, final
 
 
+def crystallization_depths(mase_curve: np.ndarray, final_mase: np.ndarray,
+                           tol: float, depths: np.ndarray) -> list:
+    """First relative depth whose skip-lens MASE lands within `tol` of final.
+
+    `mase_curve` is `[n_layers]` or `[n_layers, horizon]`; `final_mase` is a
+    scalar or `[horizon]` to match. Returns a plain float (or `None` if the
+    curve never crosses) for the 1-D case, and a per-horizon-step list for
+    the 2-D case (`ROADMAP.md` sec 16 E12) -- the same crossing rule applied
+    independently at each horizon step, reusing the exact skip-lens forecasts
+    already computed for the whole-horizon-averaged number, no new forward
+    passes. Pulled out as its own function so both shapes share one
+    tested implementation instead of the 2-D case reimplementing the 1-D
+    logic in a loop.
+    """
+    curve = np.atleast_2d(mase_curve.T).T if mase_curve.ndim == 1 else mase_curve
+    final = np.atleast_1d(final_mase)
+    threshold = final * (1.0 + tol)
+    out = []
+    for h in range(curve.shape[1]):
+        idx = next((i for i in range(curve.shape[0]) if curve[i, h] <= threshold[h]), None)
+        out.append(float(depths[idx]) if idx is not None else None)
+    return out[0] if mase_curve.ndim == 1 else out
+
+
 def _model_lens(cfg: PipelineConfig, adapter, store: ActivationStore,
                 data: BenchmarkData, layers: list, device) -> dict:
     """Skip- and tuned-lens curves plus crystallization depth for one model.
@@ -105,17 +129,18 @@ def _model_lens(cfg: PipelineConfig, adapter, store: ActivationStore,
                                             data.horizon, cfg.l0.quantiles,
                                             cfg.run.seed + 81)
     per_series = np.abs(lens_fc - targets[None]).mean(axis=2) / scale[None]
+    per_series_h = np.abs(lens_fc - targets[None]) / scale[None, :, None]  # [layers, B, horizon]
     agreement = (np.abs(lens_fc - final_fc[None]).mean(axis=2) / scale[None]).mean(axis=1)
     final_mase = float((np.abs(final_fc - targets).mean(axis=1) / scale).mean())
+    final_mase_h = (np.abs(final_fc - targets) / scale[:, None]).mean(axis=0)  # [horizon]
     mase_curve = per_series.mean(axis=1)
     mase_ci = [mean_ci(per_series[li], cfg.stats.n_boot, cfg.run.seed + 82 + li,
                        cfg.stats.ci) for li in range(len(layers))] \
         if cfg.stats.enabled else [{"value": float(v)} for v in mase_curve]
 
     depths = relative_depths(len(layers))
-    threshold = final_mase * (1.0 + cfg.lens.crystallization_tol)
-    crystal_idx = next((i for i, v in enumerate(mase_curve) if v <= threshold), None)
-    crystallization = float(depths[crystal_idx]) if crystal_idx is not None else None
+    crystallization = crystallization_depths(mase_curve, final_mase,
+                                              cfg.lens.crystallization_tol, depths)
 
     meta = {"layers": layers, "rel_depth": depths.tolist(),
             "final_mase": final_mase, "mase_ci": mase_ci,
@@ -125,6 +150,12 @@ def _model_lens(cfg: PipelineConfig, adapter, store: ActivationStore,
             "limited_by_skip": cap["limited_by"]}
     arrays = {"skip_mase": mase_curve.astype(np.float32),
               "skip_agreement": agreement.astype(np.float32)}
+
+    if cfg.lens.horizon_resolved:
+        mase_curve_h = per_series_h.mean(axis=1)  # [n_layers, horizon]
+        meta["crystallization_depth_by_horizon"] = crystallization_depths(
+            mase_curve_h, final_mase_h, cfg.lens.crystallization_tol, depths)
+        arrays["skip_mase_by_horizon"] = mase_curve_h.astype(np.float32)
 
     if cfg.lens.tuned:
         r2_model, r2_true, n_tuned = _tuned_lens(cfg, adapter, store, data,

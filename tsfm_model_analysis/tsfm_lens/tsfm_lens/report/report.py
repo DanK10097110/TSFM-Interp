@@ -452,6 +452,19 @@ def _ci_str(d: dict, key: str = "value") -> str:
     return v
 
 
+def _p_note(d: dict) -> str:
+    """'(n_boot=N, p floored at 1/n_boot=F)' whenever a bootstrap p-value is
+    shown -- `CLAUDE.md` sec 6.6 documents the 1/n_boot floor globally, but a
+    reader looking at one p-value in isolation has no way to tell it apart
+    from a "genuinely tiny" p without this stated at the point of use
+    (`ROADMAP.md` sec 16 E11).
+    """
+    if not d or "n_boot" not in d:
+        return ""
+    n_boot = d["n_boot"]
+    return f' (n_boot={n_boot}, p floored at 1/n_boot={1.0 / n_boot:.4f})'
+
+
 def _err_y(entries: list) -> dict | None:
     """Plotly error-bar payload from records carrying value/lo/hi, if they do.
 
@@ -509,6 +522,138 @@ def _archetype_block(per_arch: dict, findings: list) -> str:
                 findings.append(f"L0 — {model} is significantly stronger on archetype(s): "
                                 f"{', '.join(arches)} (paired bootstrap, Holm-corrected "
                                 f"α={per_arch.get('alpha', 0.05)}).")
+    return html
+
+
+def _calibration_block(run_dir: Path, model_colors: dict, findings: list) -> str:
+    """Reliability curve, PIT histogram, and interval coverage/sharpness/
+    quantile-crossing table (`ROADMAP.md` sec 16 E10). Reuses `run_l0`'s
+    already-computed quantile predictions -- no new forward passes."""
+    path = run_dir / "l0" / "calibration.json"
+    if not path.exists():
+        return ""
+    calib = load_json(path)
+
+    curve = go.Figure()
+    curve.add_scatter(x=[0, 1], y=[0, 1], mode="lines", line=dict(color=_COLORS["muted"], dash="dot"),
+                      name="perfect calibration", hoverinfo="skip")
+    for model, d in calib.items():
+        c = d["calibration_curve"]
+        curve.add_scatter(x=c["nominal"], y=c["empirical"], mode="lines+markers",
+                          name=model, marker_color=model_colors.get(model))
+    curve.update_layout(xaxis_title="nominal quantile level", yaxis_title="empirical coverage",
+                        xaxis_range=[0, 1], yaxis_range=[0, 1])
+
+    pit = go.Figure()
+    for model, d in calib.items():
+        ph = d["pit_histogram"]
+        edges = ph["bin_edges"]
+        centers = [(edges[i] + edges[i + 1]) / 2 for i in range(len(edges) - 1)]
+        density = [c / ph["n"] for c in ph["counts"]] if ph["n"] else ph["counts"]
+        pit.add_bar(x=centers, y=density, name=model, marker_color=model_colors.get(model),
+                   width=(edges[1] - edges[0]) * 0.9, opacity=0.7)
+    pit.update_layout(barmode="overlay", xaxis_title="PIT value", yaxis_title="fraction of positions")
+
+    rows = [{"model": m, "nominal coverage": d["nominal_coverage"],
+            "empirical coverage": d["empirical_coverage"],
+            "mean interval width": d["sharpness_mean_width"],
+            "quantile crossing rate": d["quantile_crossing_rate"]}
+           for m, d in calib.items()]
+
+    html = ("<h4>Quantile calibration</h4>" + _frag(curve, 360) + _note(
+        "Reliability curve: for each nominal quantile level (e.g. p90), the fraction of "
+        "(series, horizon-step) positions where the true target actually fell at or below "
+        "that level's forecast. A perfectly calibrated model traces the diagonal.",
+        "Above the diagonal means this model's forecasts at that level are set too high "
+        "(the target clears them more often than the nominal rate implies); below the "
+        "diagonal means set too low. This is orthogonal to point-forecast accuracy (MASE) "
+        "above -- a model can have excellent MASE and poor calibration, or vice versa.",
+        "Computed by pooling every (series, horizon-step) position; a model that's "
+        "well-calibrated on average can still be miscalibrated on a specific family or "
+        "horizon range the pooled curve doesn't show. `CLAUDE.md` sec 12's forecast-"
+        "stochasticity asymmetry applies here too: a sampled model's quantiles reflect "
+        "real predictive uncertainty a deterministic model's quantile head cannot "
+        "represent the same way.")
+       + "<h4>PIT histogram</h4>" + _frag(pit, 300) + _note(
+        "Probability integral transform: where each target actually falls within its own "
+        "model's quantile forecasts, approximated by linear interpolation between the "
+        "handful of quantile levels this repo requests.",
+        "A flat histogram across [0, 1] is the calibration signature; a hump in the middle "
+        "means intervals are too wide (underconfident, targets cluster near the median "
+        "forecast); mass piled at the edges means intervals are too narrow (overconfident).",
+        "Coarse by construction -- only as fine-grained as the configured quantile levels "
+        "(`l0.quantiles`), not a true continuous-CDF PIT.")
+       + "<h4>Interval coverage, sharpness, and quantile crossing</h4>" + _table(pd.DataFrame(rows))
+       + _note(
+        "Outer-interval (lowest to highest configured quantile level) empirical vs. nominal "
+        "coverage, mean interval width (sharpness), and how often a model's own quantile "
+        "levels are non-monotonic (a claimed higher-level forecast below a lower-level one "
+        "-- a real forecast-head defect, not a calibration question).",
+        "Empirical coverage close to nominal is good; a wide gap either way means this "
+        "model's stated interval doesn't mean what it claims. Sharpness alone (narrower is "
+        "'better') is only meaningful once coverage is already close to nominal -- a narrow, "
+        "badly-undercovering interval is not an improvement.",
+        "Quantile crossing rate should be 0 or near-0 for any competently implemented "
+        "quantile head; a nonzero rate here is a real defect worth investigating in that "
+        "model's `predict()` path, not a modeling nuance to read past."))
+    for model, d in calib.items():
+        gap = max(abs(e - n) for n, e in zip(d["calibration_curve"]["nominal"],
+                                             d["calibration_curve"]["empirical"]))
+        findings.append(f"L0 calibration — {model}: max reliability-curve gap {gap:.3f}, "
+                        f"outer-interval coverage {d['empirical_coverage']:.3f} "
+                        f"(nominal {d['nominal_coverage']:.3f}), "
+                        f"quantile-crossing rate {d['quantile_crossing_rate']:.3f}.")
+    return html
+
+
+def _horizon_resolved_block(run_dir: Path, model_colors: dict, findings: list) -> str:
+    """MASE/pinball curves over horizon step (`ROADMAP.md` sec 16 E12).
+
+    Reuses `run_l0`'s already-computed forecasts -- no new forward passes.
+    Every other behavioral metric in this report aggregates over the whole
+    horizon; this is the only place "does error grow with horizon, and does
+    it grow differently for each model" is answerable at all.
+    """
+    path = run_dir / "l0" / "horizon_resolved.json"
+    if not path.exists():
+        return ""
+    by_model = load_json(path)
+
+    mase_fig, pinball_fig = go.Figure(), go.Figure()
+    for model, d in by_model.items():
+        h = list(range(1, len(d["mase_by_horizon"]) + 1))
+        mase_fig.add_scatter(x=h, y=d["mase_by_horizon"], mode="lines", name=model,
+                             line_color=model_colors.get(model))
+        pinball_fig.add_scatter(x=h, y=d["pinball_by_horizon"], mode="lines", name=model,
+                                line_color=model_colors.get(model))
+    mase_fig.update_layout(xaxis_title="horizon step", yaxis_title="MASE at this step")
+    pinball_fig.update_layout(xaxis_title="horizon step", yaxis_title="pinball loss at this step")
+
+    html = ("<h4>MASE by horizon step</h4>" + _frag(mase_fig, 320) + _note(
+        "Per-horizon-step absolute error, scaled by the same per-series MASE denominator "
+        "used everywhere else in L0 -- the whole-horizon MASE elsewhere in this report is "
+        "this curve's own mean.",
+        "A rising curve means error compounds with forecast distance, as expected; a flat "
+        "curve means the model's error is dominated by something other than "
+        "distance-from-context (e.g. a systematic bias). Compare the *shape*, not just the "
+        "endpoints, between models: one model can start worse at h=1 and end better at "
+        "h=H, which the whole-horizon average alone would hide.",
+        "Pooled across every series in the corpus; a family- or archetype-specific curve "
+        "would need the `by_family` breakdown in the underlying artifact, not shown here.")
+       + "<h4>Pinball loss by horizon step</h4>" + _frag(pinball_fig, 320) + _note(
+        "Same per-horizon-step reduction applied to pinball loss instead of point MASE -- "
+        "so this reflects the whole quantile forecast's calibration-weighted accuracy at "
+        "each step, not just the point forecast.",
+        "Read alongside the calibration section above: a model whose pinball loss grows "
+        "faster than its MASE at long horizons is likely widening its intervals "
+        "appropriately (expected and healthy); one whose pinball loss stays flat while "
+        "MASE grows may be under-widening its uncertainty at long range.",
+        "Same pooling caveat as the MASE curve above."))
+    for model, d in by_model.items():
+        mase_h = d["mase_by_horizon"]
+        findings.append(f"L0 horizon profile — {model}: MASE {mase_h[0]:.3f} at h=1 vs "
+                        f"{mase_h[-1]:.3f} at h={len(mase_h)} "
+                        f"(ratio {mase_h[-1] / (mase_h[0] + 1e-8):.2f}x).")
     return html
 
 
@@ -601,6 +746,8 @@ def _sec_l0(run_dir: Path, model_colors: dict, findings: list) -> str:
         "on a near-constant target, which is a different, legitimate "
         "degeneracy this metric doesn't protect against.")
     inner += _archetype_block(summary.get("per_archetype"), findings)
+    inner += _calibration_block(run_dir, model_colors, findings)
+    inner += _horizon_resolved_block(run_dir, model_colors, findings)
 
     fam_comp = summary.get("family_comparisons")
     if fam_comp and not fam_comp.get("applicable", True):
@@ -615,8 +762,10 @@ def _sec_l0(run_dir: Path, model_colors: dict, findings: list) -> str:
                                    "p", "p_holm", "favored"]]
         tbl.columns = ["family", "MASE ratio", "paired ΔMASE", "lo", "hi",
                        "p (boot)", "p (Holm)", "favored"]
+        fam_n_boot = next((t.get("n_boot") for t in tests if t.get("n_boot")), None)
         inner += (f'<h4>Paired family tests (α={summary.get("alpha", 0.05)}, '
-                  f'Holm-corrected, positive Δ favors first model)</h4>' + _table(tbl))
+                  f'Holm-corrected, positive Δ favors first model'
+                  f'{_p_note({"n_boot": fam_n_boot}) if fam_n_boot else ""})</h4>' + _table(tbl))
         for model, fams in summary.get("strengths", {}).items():
             if fams:
                 findings.append(f"L0 — {model} is significantly stronger on: "
@@ -628,7 +777,8 @@ def _sec_l0(run_dir: Path, model_colors: dict, findings: list) -> str:
         overall = summary.get("overall_test")
         if overall:
             findings.append(f'L0 — overall paired ΔMASE {_ci_str(overall, "mean")} '
-                            f'(positive favors the first model, p={overall["p"]:.3f}).')
+                            f'(positive favors the first model, p={overall["p"]:.3f}'
+                            f'{_p_note(overall)}).')
     else:
         for model, fams in summary.get("strengths", {}).items():
             if fams:
@@ -1020,6 +1170,7 @@ def _sec_l3(run_dir: Path, model_colors: dict, findings: list) -> str:
                "should be read only as a sanity check (expect it near 1.0 "
                "everywhere)." if whole_context else ""))
         inner += _l3_window_heatmaps(pmeta, parrs)
+        inner += _l3_horizon_heatmaps(pmeta, parrs, findings)
         inner += _l3_verbose_cases(pmeta, parrs)
     return inner
 
@@ -1069,6 +1220,70 @@ def _l3_window_heatmaps(pmeta: dict, parrs) -> str:
                 "above for very different reasons — always check the grid, "
                 "not just the averaged curve.")
             shown_note = True
+    return html
+
+
+def _l3_horizon_heatmaps(pmeta: dict, parrs, findings: list) -> str:
+    """Layer x horizon-step restoration heatmaps per model and corruption
+    (`ROADMAP.md` sec 16 E12) — the same window-averaged restoration curve
+    the top-of-section figure plots, but resolved by *which forecast step*
+    was restored instead of collapsed over the whole horizon.
+    """
+    html, shown_note = "", False
+    for model, info in pmeta.items():
+        key = f"restoration_by_horizon_{model}"
+        if key not in parrs:
+            continue
+        rest = parrs[key]
+        names = info["corruptions"]
+        hfig = make_subplots(rows=1, cols=len(names), subplot_titles=names,
+                             horizontal_spacing=0.05)
+        horizon = rest.shape[-1]
+        for ci in range(len(names)):
+            hfig.add_trace(go.Heatmap(z=rest[ci], x=list(range(1, horizon + 1)),
+                                      y=np.round(info["rel_depth"], 2),
+                                      colorscale="Magma", zmin=0.0,
+                                      showscale=ci == len(names) - 1,
+                                      colorbar_title="restore"),
+                           row=1, col=ci + 1)
+            hfig.update_xaxes(title_text="horizon step" if ci == 0 else None,
+                              row=1, col=ci + 1)
+        hfig.update_yaxes(title_text="relative depth", row=1, col=1)
+        html += (f"<h4>{model}: per-horizon-step restoration</h4>"
+                 + _frag(hfig, 320))
+        if not shown_note:
+            html += _note(
+                "The same window-averaged restoration curve above, resolved "
+                "by forecast horizon step instead of collapsed over it: each "
+                "cell asks how much of the clean-vs-corrupted gap AT THAT "
+                "specific forecast step (not the whole horizon on average) "
+                "patching that layer restored.",
+                "A cell that fades toward the right (later horizon steps) "
+                "means that layer's causal contribution to restoring the "
+                "corruption's damage is concentrated in the near-term part "
+                "of the forecast; a flat row means the layer's causal role "
+                "is uniform across the whole forecast horizon.",
+                "Uses the exact per-window-averaged restoration already "
+                "computed for the depth curve above — no new forward "
+                "passes — so it inherits the same per-corruption "
+                "normalization caveat: compare shapes within one "
+                "corruption's row, not raw levels across corruptions.")
+            shown_note = True
+        for ci, cname in enumerate(names):
+            row = rest[ci]
+            if not np.all(np.isnan(row)):
+                early, late = row[:, 0], row[:, -1]
+                if np.any(~np.isnan(early)) and np.any(~np.isnan(late)):
+                    peak_early = int(np.nanargmax(early))
+                    peak_late = int(np.nanargmax(late))
+                    if peak_early != peak_late:
+                        findings.append(
+                            f"L3 horizon-resolved patching — {model}/{cname}: "
+                            f"the layer that best restores horizon step 1 "
+                            f"({info['rel_depth'][peak_early]:.2f} relative "
+                            f"depth) differs from the layer that best "
+                            f"restores the final horizon step "
+                            f"({info['rel_depth'][peak_late]:.2f}).")
     return html
 
 
@@ -1219,7 +1434,89 @@ def _sec_lens(run_dir: Path, model_colors: dict, findings: list) -> str:
         findings.append(f"Lens — {model}: forecast crystallizes at {where} "
                         f"(within {m['crystallization_tol']:.0%} of final MASE "
                         f"{m['final_mase']:.2f}).")
+
+    if any(f"skip_mase_by_horizon_{m}" in arrays for m in meta):
+        inner += _lens_horizon_block(arrays, meta, model_colors, findings)
     return inner
+
+
+def _lens_horizon_block(arrays, meta: dict, model_colors: dict, findings: list) -> str:
+    """Skip-lens MASE and crystallization depth resolved by horizon step
+    (`ROADMAP.md` sec 16 E12) -- the same skip-lens forecasts already
+    computed for the whole-horizon-averaged curve above, no new forward
+    passes, just kept resolved by which forecast step instead of averaged
+    over all of them.
+    """
+    html = ""
+    for model, m in meta.items():
+        key = f"skip_mase_by_horizon_{model}"
+        if key not in arrays:
+            continue
+        rest = arrays[key]  # [n_layers, horizon]
+        horizon = rest.shape[1]
+        hfig = go.Figure(go.Heatmap(z=rest, x=list(range(1, horizon + 1)),
+                                    y=np.round(m["rel_depth"], 2),
+                                    colorscale="Viridis_r", colorbar_title="MASE"))
+        hfig.update_layout(xaxis_title="horizon step", yaxis_title="relative depth")
+        html += f"<h4>{model}: skip-lens MASE by horizon step</h4>" + _frag(hfig, 340)
+    html += _note(
+        "The skip-lens MASE curve above, resolved by forecast horizon step "
+        "instead of averaged over the whole horizon: each cell is that "
+        "layer's skip-lens forecast error at that one specific step ahead.",
+        "A column that stays dark (low MASE) across most of depth means "
+        "that horizon step crystallizes early; a column that only lightens "
+        "near the bottom row means the model needs its full depth to "
+        "forecast that far ahead. Comparing near-term columns (small "
+        "horizon step) against far-term columns answers whether a model "
+        "commits to its short-horizon forecast earlier in depth than its "
+        "long-horizon one.",
+        "Same caveats as the whole-horizon skip lens above (miscalibration "
+        "at early layers is a readout limitation, not proof the forecast "
+        "isn't linearly present yet — see the tuned lens for that) — "
+        "colors are not comparable across models, only within one model's "
+        "own grid.")
+    cfig = go.Figure()
+    any_curve = False
+    for model, m in meta.items():
+        curve = m.get("crystallization_depth_by_horizon")
+        if not curve:
+            continue
+        any_curve = True
+        horizon = len(curve)
+        cfig.add_scatter(x=list(range(1, horizon + 1)),
+                         y=[d if d is not None else None for d in curve],
+                         mode="lines+markers", name=model,
+                         line=dict(color=model_colors.get(model)))
+    if any_curve:
+        cfig.update_layout(xaxis_title="horizon step",
+                           yaxis_title="crystallization depth (relative)",
+                           yaxis_range=[-0.05, 1.05])
+        html += "<h4>Crystallization depth by horizon step</h4>" + _frag(cfig, 320)
+        html += _note(
+            "For each forecast horizon step independently, the first "
+            "relative depth whose skip-lens MASE at that step lands within "
+            "tolerance of that step's own final-layer MASE — the same "
+            "crystallization-depth definition above, just computed once "
+            "per horizon step instead of once for the whole averaged curve.",
+            "A rising curve (crystallization depth increasing with horizon "
+            "step) means the model settles its near-term forecast earlier "
+            "in depth than its far-term one — plausible if later steps "
+            "need more integrated context. A flat curve means the model "
+            "commits to the whole horizon at once, regardless of how far "
+            "out a given step is.",
+            "A gap in the curve (missing marker) means that horizon step's "
+            "skip-lens MASE never came within tolerance at any captured "
+            "layer — read as 'not resolved', not as 'infinitely deep'.")
+        for model, m in meta.items():
+            curve = m.get("crystallization_depth_by_horizon")
+            if not curve or curve[0] is None or curve[-1] is None:
+                continue
+            findings.append(
+                f"Lens horizon-resolved crystallization — {model}: horizon "
+                f"step 1 crystallizes at {curve[0]:.2f} relative depth vs. "
+                f"{curve[-1]:.2f} at the final step "
+                f"({len(curve)}).")
+    return html
 
 
 def _sec_attention(run_dir: Path, model_colors: dict, findings: list) -> str:
@@ -1933,7 +2230,8 @@ def _sec_confirm(run_dir: Path, findings: list, n_exploratory: int) -> str:
     if overall:
         inner += (f'<h4>Overall paired ΔMASE on private data</h4>'
                   f'<p class="blurb">{_ci_str(overall, "mean")} '
-                  f'(p={overall["p"]:.3f}; {conf.get("overall_direction", "")}).</p>')
+                  f'(p={overall["p"]:.3f}{_p_note(overall)}; '
+                  f'{conf.get("overall_direction", "")}).</p>')
     rep = conf.get("cka_replication", {})
     if rep.get("status") == "tested":
         verdict = "replicates" if rep["replicates"] else "does NOT replicate"

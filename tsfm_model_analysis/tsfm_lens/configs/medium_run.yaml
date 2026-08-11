@@ -82,7 +82,12 @@ l3:
 lens:
   enabled: true
   layer_stride: 1
-  max_series: 32                 # must be <= every model's batch_size
+  max_series: 24                 # matched to medium_run_chronos_base.yaml's binding
+                                  # constraint (Chronos-T5-Base's batch_size: 24) so the
+                                  # two configs' lens numbers are comparable -- ROADMAP.md
+                                  # §5.3/§15 A4 found the old mismatched 32-vs-24 made the
+                                  # same TimesFM checkpoint's own lens-internal final MASE
+                                  # look different across configs purely from sample identity
   tuned: true
   tuned_max_series: 300
   val_frac: 0.25

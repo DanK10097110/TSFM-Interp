@@ -65,7 +65,7 @@ def _load_l3_secondary_gold(run_dir: Path, model: str, layers: list) -> np.ndarr
 
 def run_bakeoff_for_model(store, model: str, layers: list, gt, series_ids: np.ndarray,
                           gt_cols: list, device, budget: int, sae_cfg: SAETrainConfig,
-                          seed: int, run_dir: Path) -> dict:
+                          seed: int, run_dir: Path, n_gold_replicates: int = 3) -> dict:
     log.info(f"layer_screen_bakeoff: {model} -- {len(layers)} layers, budget={budget}")
     selections = {}
     for method in METHODS:
@@ -75,7 +75,8 @@ def run_bakeoff_for_model(store, model: str, layers: list, gt, series_ids: np.nd
         selections[method] = select_layers(method, store, model, layers, budget, **kwargs)
 
     gold = build_gold_ranking(store, model, layers, device, sae_cfg,
-                              gt=gt, series_ids=series_ids, gt_cols=gt_cols)
+                              gt=gt, series_ids=series_ids, gt_cols=gt_cols,
+                              n_replicates=n_gold_replicates)
     gold_score = np.asarray(gold["gold_score"], dtype=np.float64)
 
     secondary_gold = _load_l3_secondary_gold(run_dir, model, layers)
@@ -111,7 +112,8 @@ def run_bakeoff_for_model(store, model: str, layers: list, gt, series_ids: np.nd
 
     return {
         "model": model, "layers": layers, "budget": budget,
-        "gold_score": gold_score.tolist(), "gold_detail": gold["detail"],
+        "gold_score": gold_score.tolist(), "gold_score_std": gold["gold_score_std"],
+        "n_gold_replicates": gold["n_gold_replicates"], "gold_detail": gold["detail"],
         "secondary_gold_score": secondary_gold.tolist() if secondary_gold is not None else None,
         "gold_agreement": gold_agreement,
         "selections": selections, "scored": scored, "scored_vs_secondary_gold": scored_secondary,
@@ -131,6 +133,11 @@ def main() -> None:
     parser.add_argument("--sae-seed", type=int, default=None,
                         help="override the SAE training seed independent of run.seed, "
                              "for replicate runs that check gold-ranking stability")
+    parser.add_argument("--n-gold-replicates", type=int, default=3,
+                        help="number of independently-seeded SAE-training runs per layer "
+                             "averaged into the gold ranking (ROADMAP.md §13's second-seed "
+                             "instability fix -- a single stochastic run is too noisy at "
+                             "this bake-off's small budgets)")
     parser.add_argument("--out", default="runs/layer_screen_bakeoff.json")
     args = parser.parse_args()
 
@@ -155,7 +162,8 @@ def main() -> None:
         layers = store.layers(model)
         budget = max(args.min_budget, round(args.budget_frac * len(layers)))
         results[model] = run_bakeoff_for_model(store, model, layers, gt, series_ids, gt_cols,
-                                               device, budget, sae_cfg, cfg.run.seed, run_dir)
+                                               device, budget, sae_cfg, cfg.run.seed, run_dir,
+                                               n_gold_replicates=args.n_gold_replicates)
 
     save_json(Path(args.out), results)
     print(f"\nwrote {args.out}\n")

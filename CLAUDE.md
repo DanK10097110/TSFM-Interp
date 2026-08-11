@@ -201,6 +201,18 @@
 > fourth appended to `_SAE_EXEMPLAR_NOTE` collided with the `summary=`
 > keyword — folded into the existing "Limitations" field instead of adding
 > a fourth positional argument.
+>
+> **Reconciliation note (2026-08-10).** No repo-content correction this
+> time — added **§2.8** below, a doctrine section on *how* a session should
+> work in this repo, prompted by the fact that this pattern was already
+> happening ad hoc (`ROADMAP.md` §14's several "run via a scheduled
+> autonomous loop" session-log entries from 2026-08-06/07) without ever
+> being written down as an instruction for a fresh session to follow on
+> purpose. Also picked up the next concrete open item this same session:
+> `ROADMAP.md` §13's flagged-but-not-yet-run re-test of the `factor_emergence`
+> layer-selector fix (`CLAUDE.md` §11.18) against the real bake-off — see
+> `ROADMAP.md` §6.1.1's Findings and §13 for the outcome once that
+> background run (started this session) lands.
 
 ---
 
@@ -313,6 +325,69 @@ The first session's brief ("no leakage into any model's training data" **and**
 "make data similar to real data") contains a real contradiction. Rather than
 paper over it, it was split into two labeled tiers. Do the same with future
 briefs — surface the tension, then architect around it.
+
+### 2.8 Delegate long-running compute; keep the roadmap moving in parallel
+
+This repo's own history is the evidence for this section: every "autonomous
+loop" session-log entry in `ROADMAP.md` §14 from 2026-08-06/07 already did
+this ad hoc, and it produced more roadmap progress per session than any
+single-threaded session before it. The pattern below is that same practice,
+written down on purpose instead of reinvented next time.
+
+**The problem this solves.** Real work in this repo is bimodal: most edits
+(a bug fix, a new selector, a report section) are seconds of compute and
+minutes of thinking; a handful of things (extraction against a live
+checkpoint, SAE/crosscoder training, a layer-screen bake-off, a full
+multi-stage pipeline run) are 5+ minutes of GPU/CPU time where the working
+session can do nothing useful by sitting and waiting. Blocking on the
+second kind wastes the first kind's opportunity cost.
+
+**The rule.** Before starting anything expected to run 5+ minutes
+(extraction, any real-checkpoint pipeline stage, SAE/crosscoder training, a
+bake-off, a param sweep, a full test-suite-plus-live-run validation pass):
+1. Launch it via the `Agent` tool with `run_in_background: true` rather than
+   running it inline. Brief that agent exactly like a fresh colleague — it
+   has no memory of this session — with: which section of `CLAUDE.md`/
+   `ROADMAP.md` motivates the run, the exact commands (including env
+   activation — see `DEPENDENCIES.md`), which existing artifacts to reuse
+   vs. regenerate and why, and precisely what to report back (raw numbers,
+   quoted exactly — not rounded or paraphrased — since these often become
+   permanent `ROADMAP.md` Findings text).
+2. Tell that agent to **report results, not write findings** — it should
+   not edit `ROADMAP.md`/`CLAUDE.md` itself. Only the session that reads its
+   report writes the findings up, so two concurrent writers never race on
+   the same doc edit (see `ROADMAP.md` §0's "correct in place, never
+   silently delete" discipline — that only works if one writer is doing it
+   at a time).
+3. While it runs, do NOT poll or wait — pick up the *next* unfinished
+   roadmap item that doesn't touch the same files/artifacts the background
+   run is using (a different subsystem, a docs pass, a quick synthetic-data
+   test, a licensing check) and make progress on that instead. If nothing
+   independent is available, it is fine to end the turn — the harness
+   notifies automatically when the background agent finishes; do not
+   fabricate, guess, or narrate its results before that notification
+   actually arrives.
+4. When the notification lands: read its report, write the findings into
+   `ROADMAP.md` (append, don't overwrite — §0's discipline) and `CLAUDE.md`
+   if a stated claim changed, run whatever test suite the change touches,
+   and only then mark the roadmap item's checkbox done.
+
+**Keeping a session going across a whole afternoon without a human
+re-prompting it.** When asked to keep working autonomously for a stretch
+(not just one background job), pair the above with a recurring wake-up —
+either the `loop` skill (`/loop 30m ...`, which schedules via `CronCreate`)
+or `ScheduleWakeup` inside an already-running `/loop`. Each firing should:
+check whether a previously-launched background agent has since completed
+(if so, write up its findings per step 4 above before doing anything else);
+if nothing is in-flight, re-read `ROADMAP.md` fresh (its own state is the
+source of truth on what's next, not this session's memory of it — the doc
+is kept current precisely so a new firing can pick up cold) and start the
+next unfinished item, applying this section's own rule recursively (long →
+background + move on, short → just do it). Give the recurring prompt an
+explicit stop condition (a wall-clock deadline, or "no unfinished items
+remain") so it doesn't run past what was actually asked for — cron jobs in
+this harness are session-only and auto-expire after 7 days regardless, but
+don't rely on that as the stop condition if a shorter one was requested.
 
 ---
 
@@ -444,8 +519,13 @@ TSFM-Interp/
 
 Note the two installable units: the root `pyproject.toml` packages only
 `tsfm_benchmark` (+ `benchmark_validation` + `example_runs`); `tsfm_lens` has
-its own separate `pyproject.toml` one level down and is not yet folded into
-one coherent install story — tracked in `ROADMAP.md` Phase 5.
+its own separate `pyproject.toml` one level down. **Decided 2026-08-11
+(`ROADMAP.md` Phase 5): this is deliberate, not unfinished** — the two
+packages' dependency sets barely overlap and differ by an order of
+magnitude in weight (`tsfm_benchmark`: numpy/scipy/pyyaml core, heavy real-
+data deps opt-in; `tsfm_lens`: torch/zarr/plotly/scikit-learn core), so a
+single merged package would force every install to pull the union of
+both. Two independent installs, one repo — not a gap to close.
 
 ---
 
@@ -711,12 +791,62 @@ the SAE ground-truth alignment score's own multiple-comparisons inflation.
 
 **Support matrix as built:**
 
-| Capability | Chronos-T5 | TimesFM | Chronos-Bolt | Chronos-2 |
-|---|---|---|---|---|
-| Capture / alignment / L0–L4 | ✅ | ✅ | ✅ | ✅ |
-| `attention_info` / `mlp_info` | Hard-coded (`encoder.block.{i}.layer.0.SelfAttention.o`, `...layer.1.DenseReluDense`) | `attention_info` discovered via shared `_scan_attention` in `base.py`; `mlp_info` usually finds nothing (its feed-forward block is two bare `nn.Linear`s, `ff0`/`ff1`, with no wrapping MLP submodule for `_scan_mlp` to find — head ablation still works via the attention output projection) | Discovered | Discovered via the same shared `_scan_attention`/`_scan_mlp` — resolves to the block's TIME self-attention only (see below) |
-| `attention_patterns` | ✅ (`output_attentions`, EOS row/col stripped) | ✅ **(corrected — see below; was unsupported when this file was first written)** | ❌ deliberately (release fragility not worth it) | ✅ TIME self-attention only, context-patch positions only |
-| `cross_attention_patterns` | ✅ first step only | n/a | ❌ | n/a (encoder-only, no decoder) |
+| Capability | Chronos-T5 | TimesFM | Chronos-Bolt | Chronos-2 | Sundial |
+|---|---|---|---|---|---|
+| Capture / alignment / L0–L4 | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `attention_info` / `mlp_info` | Hard-coded (`encoder.block.{i}.layer.0.SelfAttention.o`, `...layer.1.DenseReluDense`) | `attention_info` discovered via shared `_scan_attention` in `base.py`; `mlp_info` usually finds nothing (its feed-forward block is two bare `nn.Linear`s, `ff0`/`ff1`, with no wrapping MLP submodule for `_scan_mlp` to find — head ablation still works via the attention output projection) | Discovered | Discovered via the same shared `_scan_attention`/`_scan_mlp` — resolves to the block's TIME self-attention only (see below) | `attention_info` discovered via `_scan_attention` (`self_attn.o_proj`); `mlp_info` hard-coded (`{block}.ffn_layer` — `_scan_mlp` doesn't recognize that leaf name, same class of gap as Chronos-T5's `ff0`/`ff1`, worked around the same way: hard-code rather than extend the shared scanner) |
+| `attention_patterns` | ✅ (`output_attentions`, EOS row/col stripped) | ✅ **(corrected — see below; was unsupported when this file was first written)** | ❌ deliberately (release fragility not worth it) | ✅ TIME self-attention only, context-patch positions only | ❌ deliberately — the checkpoint's own `output_attentions=True` path is independently broken upstream (`UnboundLocalError` in its remote code) and recovering weights would need a global `scaled_dot_product_attention` monkeypatch, judged riskier than TimesFM's local `attention_fn` swap; same reliability call as Chronos-Bolt |
+| `cross_attention_patterns` | ✅ first step only | n/a | ❌ | n/a (encoder-only, no decoder) | n/a (decoder-only, no encoder-decoder split) |
+
+> **Correction:** this file previously said TimesFM's `attention_patterns`
+> was unsupported ("functional attention"). As of the TimesFM 2.5 adapter
+> rewrite (`models/timesfm_adapter.py`) it **is** supported: TimesFM's
+> `MultiHeadAttention` takes its dot-product implementation as a swappable
+> `attention_fn(query, key, value, mask)` attribute — the default is a fused
+> SDPA kernel with no exposed intermediate weights, but `attention_patterns`
+> temporarily swaps in the library's own unfused dot-product math (operating
+> on the same already-processed query/key/value) to recover the weights,
+> then swaps the original back immediately after the one forward call this
+> needs. Same computed output, just with the intermediate weights stashed
+> on the way. ✅ **Checked 2026-08-06:** the stale `configs/default.yaml`
+> comment this paragraph used to flag ("exposes no patterns (functional
+> attention)") is no longer present — the file's `attention:` block comment
+> already correctly describes `attention_patterns` support. Fixed in an
+> earlier, undated session; this paragraph's own warning had gone stale.
+
+**Sundial (`models/sundial_adapter.py`, added ROADMAP.md §9, Phase 4's
+second multi-model-expansion addition, 2026-08-10).** `thuml/
+sundial-base-128m`: decoder-only, 12 `SundialDecoderLayer` blocks,
+`d_model=768`, 12 heads, patch=16, pretrained on ~1 trillion time points,
+Apache-2.0 licensed. Uses a flow-matching ("TimeFlow Loss") head that
+samples the whole forecast horizon in one shot from the last patch's
+hidden state rather than autoregressive decoding — `predict()` maps its
+native `(batch, num_samples, horizon)` sample output onto this repo's
+`{"point": ..., quantiles...}` contract the same way `ChronosAdapter`
+already does for Chronos-T5's own sampled decoding. **Two genuine upstream
+breaks found and worked around, not fixed in this repo (the checkpoint's
+own remote code, not shared infrastructure — see §11.22 for the
+mechanism):** the HF card's documented `.generate()` path, and even a
+single cached `forward()` call, both crash on any currently-supportable
+transformers version because Sundial's own `prepare_inputs_for_generation`/
+cache handling assumes a pre-4.41 `transformers.DynamicCache` API. Fixed by
+calling `SundialForPrediction.forward(..., use_cache=False)` directly
+instead of `.generate()` (sufficient since this repo's horizon, 64, is
+well under Sundial's 720-token one-shot sampling limit) — **the shared
+`cudaPy` env's `transformers==4.57.6` pin was left untouched**, avoiding
+the §11.8-class risk of a version change silently breaking the other three
+adapters. `--check-alignment` shows a real, diagnosed **amplitude-dependent**
+diagonal-hit pattern (perfect 1.00 at every layer at small impulse
+amplitudes, decaying by mid-depth at this repo's default 0.25× amplitude,
+with zero backward/future leakage at any amplitude) — a genuine property of
+Sundial's plain-residual, no-QK-norm blocks, not a broken `token_time_spans`
+(§11.22 has the full diagnosis). No shared-infrastructure bug this time
+(a real, useful contrast with Chronos-2 below) — Sundial's block returns a
+plain tensor/tuple, already handled correctly by `hooks.py`. Live
+comparison run vs. TimesFM: L1 peak CKA 0.381 (TimesFM `stacked_xf.4` ↔
+Sundial `model.layers.11`) against a shuffled-series null of 0.022 —
+decisive shared geometry with a third distinct architecture, replicating
+the pattern Chronos-2 already established.
 
 **Chronos-2 (`models/chronos2_adapter.py`, added ROADMAP.md §9, Phase 4's
 first real multi-model-expansion addition).** Encoder-only — no decoder at
@@ -736,22 +866,6 @@ checkpoint `amazon/chronos-2` (120M params, `d_model=768`, 12 layers,
 patch=16); `--check-alignment` shows a perfect 1.00 diagonal-hit fraction
 at every layer.
 
-> **Correction:** this file previously said TimesFM's `attention_patterns`
-> was unsupported ("functional attention"). As of the TimesFM 2.5 adapter
-> rewrite (`models/timesfm_adapter.py`) it **is** supported: TimesFM's
-> `MultiHeadAttention` takes its dot-product implementation as a swappable
-> `attention_fn(query, key, value, mask)` attribute — the default is a fused
-> SDPA kernel with no exposed intermediate weights, but `attention_patterns`
-> temporarily swaps in the library's own unfused dot-product math (operating
-> on the same already-processed query/key/value) to recover the weights,
-> then swaps the original back immediately after the one forward call this
-> needs. Same computed output, just with the intermediate weights stashed
-> on the way. ✅ **Checked 2026-08-06:** the stale `configs/default.yaml`
-> comment this paragraph used to flag ("exposes no patterns (functional
-> attention)") is no longer present — the file's `attention:` block comment
-> already correctly describes `attention_patterns` support. Fixed in an
-> earlier, undated session; this paragraph's own warning had gone stale.
-
 **Adding a model:** subclass `ModelAdapter`, register in `models/__init__.py`,
 run `--discover-layers` to pick a `layer_regex`, then `--check-alignment`.
 Nothing downstream changes *in principle* — `chronos2_adapter.py` (Phase
@@ -760,8 +874,11 @@ special-casing anywhere else, but did surface one genuine bug in shared
 infrastructure (`extraction/hooks.py`, §11.21) that a Chronos-T5/Bolt/
 TimesFM-only test surface had never exercised: fixed in the shared module,
 not worked around per-adapter, exactly per this section's own contingency
-plan for such a finding. `chronos_bolt_adapter.py` is the compact worked
-example for a new adapter file itself.
+plan for such a finding. `sundial_adapter.py` (Phase 4's second test,
+§11.22) needed **zero** shared-infrastructure changes — a useful data
+point that §11.21's finding was a real, now-fixed gap rather than a sign
+every new architecture surfaces a new shared bug. `chronos_bolt_adapter.py`
+is the compact worked example for a new adapter file itself.
 
 ### 6.3 Time alignment — the mechanism that makes cross-architecture comparison possible
 
@@ -826,7 +943,18 @@ enters CKA/ridge solves as `inf`/`NaN` rather than raising.
 **L0** — MASE/sMAPE/pinball per family. Paired bootstrap of per-series MASE
 differences, Holm-corrected across families. A "strength" requires corrected
 p < alpha **and** a CI excluding zero. Ratios kept as effect sizes. Artifacts:
-`l0/metrics.parquet`, `l0/summary.json`.
+`l0/metrics.parquet`, `l0/summary.json`. Also computes **quantile
+calibration** (`analysis/calibration.py`, `ROADMAP.md` §16 E10): reliability
+curve (empirical vs. nominal coverage per quantile level, overall and per
+family), an approximate PIT histogram, quantile-crossing rate, and interval
+coverage/sharpness per horizon step — a pure reduction over the same
+`predict()` output L0 already holds, so it costs zero extra forward passes.
+`l0.calibration: true` by default; artifact `l0/calibration.json`, rendered
+in the report's L0 section. This is where `CLAUDE.md` §12's forecast-
+stochasticity asymmetry (Chronos-T5 sampled, TimesFM/Chronos-Bolt
+deterministic) shows up on a quantile axis: sharpness differences between
+models are expected from that asymmetry alone and aren't by themselves
+evidence of better or worse calibration.
 
 **Lens** (`analysis/lens.py`) — the highest-value addition of the last round;
 the missing bridge between internals and L0.
@@ -1005,7 +1133,8 @@ before `ROADMAP.md` existed and easy to miss if you don't open the file.
 A fixed **"How to read this report"** preamble (`_how_to_read`) renders
 first, unconditionally, stating the evidence-class ladder end to end and the
 one canonical definition of "window" and "relative depth" that recur in
-nearly every section. `report.verbose` (default `true`; `run.py --verbose`/
+nearly every section. `report.verbose` (default `false` as of 2026-08-10, ROADMAP.md §10/§16's
+"closer to release, verbose stays opt-in" call — was `true`; `run.py --verbose`/
 `--no-verbose` overrides it per-run) additionally gates a narrated
 single-series case-study section for **L3 patching**, matching the
 `Exemplars` section's pattern: for `report.verbose_series` (default 3)
@@ -1174,7 +1303,7 @@ left empty, or `[{model, layer}, ...]` to pin explicit layers —
 `configs/medium_run_chronos_base.yaml` has a real worked example, pinned
 rather than auto so it keeps reproducing its already-documented result);
 `sae.dict_size_mult`/`k`/`epochs` size the baseline `TopKSAE` when on;
-`report.verbose: true` / `report.verbose_series: 3`
+`report.verbose: false` (default as of 2026-08-10, was `true`) / `report.verbose_series: 3`
 (`--verbose`/`--no-verbose` on `run.py` overrides per-run — §6.5).
 
 ### `build_pipeline`
@@ -1223,7 +1352,7 @@ PYTHONPATH=. python3 example_runs/run_validation.py
 | Confirm hypothesis-path test | Feeds synthetic dev claims + one real / one spurious effect; asserts verdicts `{trend: True, spiky: False}` |
 | Real-data path (`mixture`/`block_bootstrap`/`sequential_par`, Monash + ETT) | ✅ **Verified live end-to-end 2026-08-03**, then run at ~4200-sequence scale the same day (`configs/full_multidomain_run1.yaml` + `benchmark_validation`) — see §4.3, §11.9–§11.12, §11.14, `ROADMAP.md` §5 |
 | `tsfm_lens` against real checkpoints (TimesFM 2.5, Chronos-T5) | ✅ **Verified live end-to-end 2026-08-03** (third session) — full `medium_run.yaml` pipeline, 12 stages, real GPU (RTX 5070), ~10.5 min. Found and fixed two real bugs along the way (§11.15–§11.16); see `ROADMAP.md` §5.4 |
-| Layer-screening bake-off (`layer_screen.py`/`layer_screen_bakeoff.py`, ROADMAP.md §6.1.1) | ✅ **First real run 2026-08-05** against live TimesFM 2.5 + Chronos-T5-Small, TimesFM captured at all 20 layers for the first time (not stride-2's usual 10); replicated across two independent SAE seeds (gold-ranking Spearman stability ρ=1.0/0.926). **Provisional result, but wired into production the same day** on explicit user direction: `work_bend` now runs as a default `layer_screen` pipeline stage ahead of `sae` in every config. Full numbers in `ROADMAP.md` §6.1.1's Findings (both blocks). |
+| Layer-screening bake-off (`layer_screen.py`/`layer_screen_bakeoff.py`, ROADMAP.md §6.1.1) | ✅ **First real run 2026-08-05** against live TimesFM 2.5 + Chronos-T5-Small, TimesFM captured at all 20 layers for the first time (not stride-2's usual 10); replicated across two independent SAE seeds (gold-ranking Spearman stability ρ=1.0/0.926). **Provisional result, but wired into production the same day** on explicit user direction: `work_bend` now runs as a default `layer_screen` pipeline stage ahead of `sae` in every config. Extended to a third architecture (Sundial) 2026-08-10 — `work_bend` beats both nulls there too, but the three-architecture picture is "beats a different subset of the two nulls on each," not a clean sweep; `factor_emergence`'s early-layer-bias failure reproduces cleanly on Sundial. ✅ **Root-caused same day:** a fresh re-extraction of the nominally-identical Chronos-T5-Small config had flipped its qualitative verdict (`work_bend` beats-random True→False) while TimesFM's reproduced unchanged — traced not to nondeterminism but to `ROADMAP.md` §15 A4's corpus-sampling fix landing *between* the two runs' dates: the pre-fix run's `max_series: 220` head-sliced a 288-row corpus and silently excluded the entire `mixture` family, so the two runs were never actually comparable populations despite byte-identical YAML. See §11.23–§11.24. ⚠️ **That narrower question is now answered, same day: no, not reliably.** A second sampling seed under the corrected, family-stratified sampler (76.8% row overlap with seed 0 — not a biased or adversarial draw) still flips `work_bend` — the production default — `beats_random` verdict on 2 of 3 architectures (TimesFM True→False, Chronos False→True); `coverage` stays fully stable. In every flip case the selector's own chosen layers are bit-identical across seeds — what moves is the gold-ranking/null-comparison scorecard, not the selection itself, so this reads as a statistical-power gap in the bake-off's evaluation (recall@budget over 220 rows, budget≤5) rather than a bias like A4's. ✅ **Fixed and re-verified same day, on explicit instruction not to leave this as a documented-but-unfixed gap.** Root cause was narrower than "the bake-off in general lacks power": `select_work_bend`/`select_coverage` take no `seed` argument and are fully deterministic given a fixed corpus (confirmed by reading `layer_screen.py` directly), so all the noise traced to `build_gold_ranking` (`layer_screen_bakeoff.py`) training exactly one stochastic SAE per layer as the gold reference. Fixed by (1) averaging `n_replicates=3` independently-seeded SAE-training runs per layer into the gold score instead of trusting one (`run_layer_screen_bakeoff.py --n-gold-replicates`), and (2) new `configs/layer_screen_experiment_v4[.yaml/_seed1.yaml]` dropping the `max_series: 220` corpus cap entirely (288 rows is small enough to use in full, closing the sampling axis of the noise too). Re-verified live against all three real checkpoints on both seeds: every `beats_random` verdict now matches across seeds for all three selectors on all three architectures — `work_bend`'s two prior flips (TimesFM, Chronos-T5-Small) are both closed. Full numbers in `ROADMAP.md` §6.1.1's Findings (fifth block) and §13. |
 | `layer_screen` pipeline stage + `sae.targets: auto` wiring (`config.py`, `pipeline.py`, `sae/train.py::_default_targets`) | ✅ **Verified 2026-08-05** — full `tsfm_lens` suite 34/34 (33 prior + 1 new asserting `_default_targets` resolves exactly what the stage selected), plus a live CLI run of `configs/smoke.yaml` (not only pytest) confirming a real 11-section/22-finding report and a sane `layer_screen/selection.json` for both mock architectures. |
 | Crosscoder feasibility test (`sae/crosscoder.py`, ROADMAP.md §13/§6.2) | ✅ **First run 2026-08-05** against live `google/timesfm-2.5-200m-pytorch` + `amazon/chronos-t5-base` activations (an already-extracted store, no new model calls) at their L1 peak-CKA layer pair. Joint training is stable (no source-domination collapse across three hyperparameter settings) once a real, found-and-fixed scale-domination instability (§11.19) and a device-mismatch crash are corrected. **Not** an `SAEAdapter` implementation or a pipeline stage — feasibility-gate only. Full numbers in `ROADMAP.md` §6.2's Findings. |
 
@@ -1616,6 +1745,56 @@ before this fix) is still open and is the natural next step before
 promoting it past `work_bend` as a selector choice. See `ROADMAP.md`
 §6.1.1's Findings for the same update with the exact numbers.
 
+**Re-run against the real bake-off 2026-08-10 — the fix does not close this,
+and actively regresses one of the two models.** Reran
+`run_layer_screen_bakeoff.py` against the same live TimesFM 2.5 /
+Chronos-T5-Small store this bug was originally diagnosed on (both seed 0
+and the seed-1 replicate; old outputs backed up, not overwritten blind).
+**Chronos-T5-Small: unaffected.** `factor_emergence` still selects
+`[encoder.block.0, encoder.block.3]` and scores recall@budget=0.00,
+`beats_random=False` in every one of the four runs (both seeds, pre- and
+post-fix) — bit-for-bit the same failing selection as before the fix.
+**TimesFM: got worse.** recall@budget dropped from 0.20 (pre-fix, one hit)
+to 0.00 (post-fix, zero hits) in both seeds; `beats_random` was already
+`False` and stays `False`, but the quantitative recall regressed. `work_bend`
+and `coverage` were bit-identical pre- vs post-fix on both models/seeds,
+confirming the fix stayed correctly scoped to `factor_emergence_scores`
+with no side effects elsewhere — that part of the diagnosis holds.
+**Root cause, isolated by holding one run's stored decodability matrix
+fixed and rescoring it with the old vs. new formula (not just comparing
+two separately-trained, individually-noisy runs):** on real data, `
+no_emergence_factors` came back **empty** in every run — the new absolute
+`min_peak_score=0.15` floor never actually excluded anything here, so that
+half of the fix is inert on this corpus. The other half — weighting each
+factor's contribution by its own peak decodability — backfires, because the
+real factors with the *highest* peak R² on this corpus/model pair
+(`has_intermittency`, `archetype_intermittent_bursts`,
+`archetype_trend_dominant`, peak weight ≈0.80–0.82) are near-input
+statistics whose decodability rises fast and plateaus at an early layer —
+so weighting up exactly these factors pulls the combined emergence score
+*toward* layer 0, which is the single worst layer by the SAE-mass gold
+ranking (TimesFM block 0 mass 34.8 vs. the real peak block 4's 109.9).
+This is the mirror image of the synthetic test's planted scenario (weak,
+noisy factors causing a spurious *early* signal that dilutes one strong
+factor's real *late* signal) — on this real corpus it is the *strong*
+factors that carry the early-layer bias, so peak-weighting amplifies
+rather than corrects it. The unit test this fix added still passes and is
+still a real, correctly-diagnosed fix for the specific failure mode it
+targets — it just isn't the failure mode that dominates on real
+checkpoints, which is exactly why §2.4's discipline requires re-testing on
+real data before trusting a synthetic-only fix, not after. **Bottom line,
+unchanged in substance but now on firmer ground:** `factor_emergence`
+remains not usable and is not the production default (`work_bend` is, and
+is untouched by any of this) — but the reason has moved from "a diagnosed,
+fixable weighting bug" to "a structural mismatch between what this
+selector's design assumes causes early-layer bias and what actually causes
+it on real activations." A future fix would need to explicitly discount
+very-early emergence layers (a depth floor, not just a magnitude floor),
+not reweight by peak magnitude alone — not attempted this session. Full
+`tsfm_lens` suite green at 203/203 after the rerun (no production code
+changed, verification-only). See `ROADMAP.md` §6.1.1's Findings and §13
+for the full numbers table.
+
 ### 11.19 Summing raw per-source MSE lets the larger-scale source dominate a joint crosscoder
 `sae/crosscoder.py`'s `CrosscoderSAE` trains one dictionary jointly across
 `n_sources` inputs by summing each source's MSE into one loss. The first
@@ -1720,6 +1899,212 @@ shape a fourth might introduce — a plain `tuple` check is exactly the kind
 of assumption that looks complete until an architecture with a genuinely
 different forward-output convention (HF's own `ModelOutput`, ubiquitous
 across `transformers`-based models) shows up.
+
+### 11.22 A checkpoint's own remote code can be broken against the transformers version everything else already depends on
+Adding Sundial (`thuml/sundial-base-128m`, ROADMAP.md §9, Phase 4's second
+model addition) surfaced two bugs — but this time in the **checkpoint's own
+`trust_remote_code=True` modeling file**, not in this repo's shared
+infrastructure (contrast with §11.21's Chronos-2 finding, which *was* a
+shared-code bug). Sundial's HF model card's own documented usage —
+`model.generate(seqs, max_new_tokens=..., num_samples=...)` — crashes with
+`AttributeError: 'DynamicCache' object has no attribute 'seen_tokens'`
+inside Sundial's own `prepare_inputs_for_generation`. A second, independent
+break hits even a single non-generation forward call unless `use_cache=
+False` is passed explicitly: `'DynamicCache' object has no attribute
+'get_usable_length'` inside `SundialModel.forward`'s cache path. Both
+attributes were removed from `transformers.DynamicCache` in a release
+newer than the 4.40.1 the model card recommends but older than this repo's
+installed 4.57.6 — the checkpoint's remote code was written against an
+API surface that no longer exists in any transformers version this repo
+could plausibly install today. **Not fixed by downgrading transformers**
+(that would risk the exact §11.8-class regression of breaking the other
+three already-working adapters over one new one) — fixed by never calling
+`.generate()` at all: `SundialAdapter.predict()` calls
+`SundialForPrediction.forward(..., use_cache=False)` directly, which is
+sufficient because Sundial's flow-matching head samples the entire forecast
+horizon in one shot from the last patch's hidden state rather than
+autoregressively, and this repo's horizon (64) is far under Sundial's
+720-token one-shot limit. `forward()` (the capture path) goes one level
+lower still, calling `model.model(...)` to skip the flow-matching head
+entirely, mirroring `ChronosAdapter`'s existing "encoder only" capture
+pattern. **Lesson, distinct from §11.8-11.10's "a *pinned* library's own
+release broke its API":** here the break is in a *third party's* remote
+code shipped alongside the checkpoint weights, version-pinned to a
+transformers release this repo doesn't (and, given the other three
+adapters, can't easily) install — the fix path is "route around the
+checkpoint's broken convenience method using the lower-level call it
+wraps," not "pin a version," when the alternative would destabilize
+everything else already depending on the installed version.
+
+**A second, real-but-benign finding from the same session, worth recording
+so it isn't mistaken for a bug later:** Sundial's `--check-alignment`
+diagonal-hit fraction is **amplitude-dependent** — a perfect 1.00 at every
+layer at small impulse amplitudes (0.02×–0.05× the probe signal's own
+amplitude), decaying by mid-depth at this repo's default 0.25× amplitude
+(§11.16's own fix value, chosen for Chronos's tokenizer). Diagnosed rather
+than assumed broken (`CLAUDE.md` §2.4): zero backward/future leakage at
+every window/layer/amplitude tested (causality is intact), and the decay
+tracks amplitude cleanly, consistent with ordinary forward causal signal
+accumulation through Sundial's plain-residual, no-QK-norm decoder blocks
+— a real architectural property, not a broken `token_time_spans`.
+**Directly relevant to §6.3's own audit note (A2):** the in-pipeline
+automatic alignment check only probes a stride-4 subset of layers and
+discards its result, and — worse for a case like this — even a *manual*
+`--check-alignment` run that only glances at the shallowest layer (always
+a perfect 1.00 here) would miss this pattern entirely. Reinforces, with a
+concrete example, why invariant 7 means reading the check's *full
+per-layer table*, not just confirming it runs without error.
+
+### 11.23 A stability replicate that only reseeds SAE training doesn't cover extraction-to-extraction variance
+`layer_screen_bakeoff.py`'s existing robustness check (ROADMAP.md
+§6.1.1's first Findings block) reruns the bake-off with a different SAE
+training seed against **the same, already-extracted activation store** and
+checks gold-ranking Spearman stability (ρ=1.0/0.926 across the two models,
+originally read as a reassuring replication). Extending the bake-off to a
+third architecture (Sundial, ROADMAP.md §6.1.1's newest Findings, same
+session as §11.22) required building a *fresh* extraction of the same
+config values rather than reusing the frozen store, and that fresh
+extraction changed Chronos-T5-Small's qualitative bake-off verdict
+outright — `work_bend`'s `beats_random` flipped `True`→`False`
+(recall@budget 1.0→0.0) between two nominally identical-config runs,
+independently confirmed against both runs' actual JSON artifacts, not
+taken on a report's word. TimesFM's own qualitative verdict reproduced
+unchanged across the same two runs, so this is a real instability for at
+least one model, not a uniformly broken check. **The gap:** the existing
+seed-reseed replicate answers "is the bake-off's *scoring*, given fixed
+activations, stable?" — yes. It has never answered "is the *activation
+extraction itself* (a fresh forward pass over the same corpus/config)
+stable enough that the gold ranking, and therefore the selector verdict
+built on it, doesn't depend on which extraction happened to run?" — this
+session's accidental natural experiment (building a third-model
+extraction forced a fresh one) shows the answer, for at least
+Chronos-T5-Small, is no. **Not yet root-caused** (candidates: corpus row
+sampling, model-loading/dtype nondeterminism, or SAE-training stochasticity
+compounding with a genuinely different activation draw) **and not yet
+fixed** — flagged in `ROADMAP.md` §13 as a new, prominent open item rather
+than silently absorbed into the existing seed-replicate claim. **Lesson:**
+when a pipeline stage's own "robustness check" holds one expensive
+upstream artifact fixed and varies only a downstream seed, that check
+provides evidence about the downstream stage's stability *conditional on*
+that artifact — it says nothing about whether the artifact itself would
+look the same on a second, equally valid run. Don't let a partial
+robustness check read as a full one.
+
+**Root-caused 2026-08-10, same day, follow-up session — see §11.24.** This
+was not GPU nondeterminism, model-loading nondeterminism, SAE-seed
+sensitivity, or Sundial's presence (all four checked directly and ruled
+out). It was `ROADMAP.md` §15 A4's already-landed corpus-sampling fix: the
+08-05 extraction predates it, the 08-10 rerun postdates it, and the two
+"identical configs" therefore sampled genuinely different, non-overlapping
+row sets from the same corpus. Fully explained, not merely narrowed — see
+§11.24 for the mechanism and `ROADMAP.md` §13/§6.1.1 for the corrected
+Findings.
+
+### 11.24 A background experiment's own config can silently change meaning across a shared-infrastructure fix, with no diff to catch it
+§11.23 documented a real, alarming-looking symptom: two runs of
+`run_layer_screen_bakeoff.py` against byte-identical YAML
+(`configs/layer_screen_experiment.yaml` vs. `_v2.yaml`, diffed directly —
+the only difference is a third model block for Sundial) produced
+completely different Chronos-T5-Small verdicts. A dedicated background
+investigation (per §2.8) ranked four plausible mechanisms — GPU/SDPA kernel
+nondeterminism, SAE dictionary-init/seed sensitivity, global-RNG-stream
+reordering from adding a third model to the config, and corpus-sampling
+nondeterminism — and live-tested the two most GPU-dependent ones directly
+(a same-store SAE-reseed test, and a from-scratch re-extraction compared
+via `np.array_equal` on the raw stored activations). Both were reproducible
+and deterministic (ruling out GPU/process nondeterminism outright: two
+independent extractions of the same config were bit-for-bit identical), but
+neither explained *why* the 08-05 and 08-10 numbers disagreed in the first
+place. The actual mechanism was found by a follow-up `git diff` against the
+extraction path's git history rather than by testing another hypothesis in
+isolation: `data.py`'s `_assemble` used to cap `data.max_series` with a bare
+`kept[:max_series]` head slice; `ROADMAP.md` §15 A4 (fixed 2026-08-06 — one
+day after this experiment's original 08-05 run, four days before its
+accidental 08-10 rerun) replaced that with a family-stratified
+`sample_rows(len(kept), max_series, seed, strata=families_all)` call. The
+experiment's own `data.max_series: 220` against the 288-row
+`benchmark_medium/public_dev` corpus means the pre-fix run silently sampled
+`{random_parametric: 188, parametric: 32}` — **the entire 60-row `mixture`
+family, and 8 of the 40 `parametric` rows, were never seen at all** —
+because `tsfm_benchmark` writes corpora grouped by generator and `mixture`
+happens to sort last in this corpus. The post-fix runs correctly draw a
+family-proportional 220-row sample instead. Same YAML, same seed, same
+`max_series` integer, completely different actual training/scoring
+population — because the code that interprets `max_series` changed
+underneath it, and nothing about that shows up in a config diff. **This is
+not a version-pin trap like §11.8-§11.10, and not a checkpoint's-own-code
+trap like §11.22 — it's a new category**: a standalone experiment script or
+config that reuses shared pipeline internals (`data.py`, `extract.py`) can
+have its own meaning silently rewritten by a fix to those internals,
+entirely independently of whether the experiment's own file changes at all.
+`CLAUDE.md` §2.8's background-delegation workflow makes this more likely to
+recur, not less — a background agent asked to "rerun the same experiment"
+has no way to know a shared-infrastructure fix landed in between unless
+explicitly told to check. **Lesson:** before treating two runs of a
+standalone experiment config as comparable, check whether any shared
+pipeline file the experiment depends on (not just the experiment's own
+config/script) changed between the two runs' dates — `git log --since=<run
+1 date> --until=<run 2 date> -- <shared path>` is cheap and would have
+caught this immediately, and is now worth doing by default whenever a
+background rerun of "the same" experiment produces a surprising result,
+before spending investigation budget on nondeterminism hypotheses first.
+
+### 11.25 A zarr store written under a different major version doesn't error at read time — it silently reads back empty
+Revisiting `ROADMAP.md` §5.3's lens re-measurement (2026-08-10) required
+loading `runs/medium_run`'s already-extracted `activations.zarr`, and
+`ActivationStore(..., mode="r")` opened without error but returned zero
+layers/rows for every model — not an `AttributeError` like §11.15's
+`create_array`-vs-`create_dataset` bug, a **quiet empty store**. Inspecting
+the store's own metadata directly (`runs/medium_run/activations.zarr/
+zarr.json`) showed `"zarr_format": 3` — this run directory was written
+entirely in zarr **v3**'s on-disk layout (a single `zarr.json` manifest per
+group/array) at some point before this repo's zarr pin was enforced or
+before §11.15's fix session, evidenced by file mtimes roughly two weeks
+older than that session. zarr **2.18.7** (this repo's pinned version, `zarr
+<3`) does not raise on `open_group` against a v3-only directory — it has no
+v2 metadata (`.zattrs`/`.zgroup`) to find, so it silently treats the
+directory as an empty v2 group and lets every downstream read proceed
+against that emptiness rather than erroring. Confirmed this is not
+universal corruption: of every run directory under `runs/`, only
+`medium_run` and `real_run` lacked a valid v2 `.zattrs` — every other run
+(including `medium_run_chronos_base`, used successfully in the same
+session) has one.
+
+**Fixed 2026-08-10 (`medium_run` only; `real_run` untouched — see below).**
+A first attempt to delete the stale store and rerun `medium_run`'s
+`extract` stage via a background agent (per §2.8) failed only because that
+agent's own session hit an infrastructure-level usage limit mid-run, not
+because the fix itself failed. A second, freshly-launched background agent
+completed the same fix cleanly (~11 min wall-clock): the stale directory
+(the original v3 `zarr.json` files plus the stray empty v2 `.zgroup` the
+failed first attempt had left alongside them) was removed outright and
+`extract` rerun from scratch, producing a real v2 store (`.zattrs` present,
+no `zarr.json`). Verified independently on disk, not just from the agent's
+own report: the full pipeline completed end to end (`report.html`, 11
+sections / 27 findings at the time, `confirm` 1/1 dev hypotheses passing on
+private data), and the now-trustworthy TimesFM lens number
+(`final_mase: 1.7899408340454102`) reproduces bit-for-bit against
+`medium_run_chronos_base.yaml`'s already-recorded value — the exact
+cross-check `ROADMAP.md`'s A4 fix (family-stratified sampling) needed a
+second, independent store to confirm. Full `tsfm_lens` suite green
+afterward (208 passed, 2 warnings at the time). See `ROADMAP.md`'s session
+log (2026-08-10, "same-day follow-up" entry after the eighth cron-loop
+firing) and §5's A4 Findings block for the full numbers — not repeated
+here. **`real_run` was not part of this fix and its own store's format has
+not been re-checked** — the fix above only re-extracted `medium_run`
+because that was the store an active re-measurement needed; treat
+`real_run`'s `activations.zarr` as suspect until spot-checked the same way
+(`zarr.json` present / `.zattrs` absent → stale) before trusting anything
+read from it. **Lesson, distinct from §11.15's
+"wrong method name for the pinned major version" bug:** a pinned major
+version being *installed* correctly does not guarantee every *on-disk
+store* was written under that same pin — a store's format can drift
+independently of the current environment's package versions (e.g. from an
+earlier environment, a different machine, or a brief unpinned install),
+and the read path's degrade-to-empty behavior means this shows up as
+"nothing extracted yet" rather than a version-mismatch error. Spot-check a
+suspicious-looking empty store's own `zarr.json`/`.zattrs` presence
+directly before assuming `extract` simply never ran.
 
 ---
 

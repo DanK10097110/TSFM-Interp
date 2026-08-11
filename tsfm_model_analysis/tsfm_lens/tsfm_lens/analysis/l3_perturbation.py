@@ -373,6 +373,8 @@ def run_l3(cfg: PipelineConfig, hub, store: ActivationStore, data: BenchmarkData
     if patching:
         win_arrays = {f"restoration_windows_{k}": v["restoration_windows"]
                       for k, v in patching.items() if "restoration_windows" in v}
+        horizon_arrays = {f"restoration_by_horizon_{k}": v["restoration_by_horizon"]
+                          for k, v in patching.items() if "restoration_by_horizon" in v}
         verbose_arrays, verbose_meta = {}, {}
         for model, v in patching.items():
             verbose_meta[model] = {}
@@ -390,7 +392,7 @@ def run_l3(cfg: PipelineConfig, hub, store: ActivationStore, data: BenchmarkData
                                               "families": entry["families"]}
         np.savez(out_dir / "patching.npz",
                  **{f"restoration_{k}": v["restoration"] for k, v in patching.items()},
-                 **win_arrays, **verbose_arrays)
+                 **win_arrays, **horizon_arrays, **verbose_arrays)
         save_json(out_dir / "patching.json", {
             k: {"layers": v["layers"], "corruptions": v["corruptions"],
                 "rel_depth": relative_depths(len(v["layers"])).tolist(),
@@ -492,6 +494,9 @@ def _patching(cfg: PipelineConfig, adapter, layers: list, rows: np.ndarray,
 
     restoration = np.zeros((len(corr_names), len(layers_p)), dtype=np.float32)
     rest_win = np.zeros((len(corr_names), len(layers_p), len(windows)), dtype=np.float32)
+    horizon_resolved = pcfg.horizon_resolved
+    rest_h = (np.zeros((len(corr_names), len(layers_p), horizon), dtype=np.float32)
+             if horizon_resolved else None)
     verbose_grid = (np.zeros((len(corr_names), len(layers_p), len(windows), n_verbose),
                              dtype=np.float32)
                     if n_verbose and windows else None)
@@ -500,26 +505,34 @@ def _patching(cfg: PipelineConfig, adapter, layers: list, rows: np.ndarray,
         ctx_corr = corrupted[cname][sel]
         f_corr = _predict_once(adapter, ctx_corr, horizon, cfg.l0.quantiles, seed)
         damage = np.abs(f_corr - f_clean).mean() + 1e-8
+        damage_h = (np.abs(f_corr - f_clean).mean(axis=0) + 1e-8) if horizon_resolved else None
         for li, layer in enumerate(layers_p):
             if windows:
-                vals = []
+                vals, vals_h = [], []
                 for wi, w in enumerate(windows):
                     tok_idx = np.flatnonzero(win_of_token == w)
                     if not len(tok_idx):
                         continue
-                    v, v_series, _ = _window_restoration(
+                    v, v_series, _, v_h = _window_restoration(
                         adapter, layer, tok_idx, clean_tokens[layer], ctx_corr,
-                        horizon, cfg.l0.quantiles, seed, f_clean, damage)
+                        horizon, cfg.l0.quantiles, seed, f_clean, damage, damage_h)
                     rest_win[ci, li, wi] = v
                     vals.append(v)
+                    if v_h is not None:
+                        vals_h.append(v_h)
                     if verbose_grid is not None:
                         verbose_grid[ci, li, wi] = v_series[:n_verbose]
                 restoration[ci, li] = float(np.mean(vals)) if vals else float("nan")
+                if rest_h is not None:
+                    rest_h[ci, li] = (np.mean(vals_h, axis=0) if vals_h
+                                      else np.full(horizon, np.nan, dtype=np.float32))
             else:
                 with token_patch(adapter.module, layer, adapter.token_slice,
                                  clean_tokens[layer]):
                     f_patch = _predict_once(adapter, ctx_corr, horizon, cfg.l0.quantiles, seed)
                 restoration[ci, li] = float(1.0 - np.abs(f_patch - f_clean).mean() / damage)
+                if rest_h is not None:
+                    rest_h[ci, li] = restoration_by_horizon(f_patch, f_clean, damage_h)
         if verbose_grid is not None:
             verbose[cname] = _verbose_case(
                 adapter, layers_p, windows, win_of_token, clean_tokens, ctx_corr,
@@ -532,6 +545,8 @@ def _patching(cfg: PipelineConfig, adapter, layers: list, rows: np.ndarray,
     if windows:
         out["restoration_windows"] = rest_win
         out["windows"] = windows
+    if rest_h is not None:
+        out["restoration_by_horizon"] = rest_h
     if verbose:
         out["verbose"] = verbose
     return out
@@ -557,7 +572,7 @@ def _verbose_case(adapter, layers_p: list, windows: list, win_of_token: np.ndarr
     best_layer, best_window = layers_p[best_li], windows[best_wi]
     tok_idx = np.flatnonzero(win_of_token == best_window)
     ex = slice(0, n_verbose)
-    _, _, f_patch_ex = _window_restoration(
+    _, _, f_patch_ex, _ = _window_restoration(
         adapter, best_layer, tok_idx, clean_tokens[best_layer][ex], ctx_corr[ex],
         horizon, quantiles, seed, f_clean[ex], damage)
     return {
@@ -571,6 +586,21 @@ def _verbose_case(adapter, layers_p: list, windows: list, win_of_token: np.ndarr
         "forecast_corrupted": f_corr[:n_verbose].astype(np.float32),
         "forecast_patched": f_patch_ex.astype(np.float32),
     }
+
+
+def restoration_by_horizon(f_patch: np.ndarray, f_clean: np.ndarray,
+                           damage_h: np.ndarray) -> np.ndarray:
+    """Forecast restoration resolved by horizon step (`ROADMAP.md` sec 16 E12).
+
+    Same restoration formula as the whole-horizon statistic
+    (`1 - |patched - clean| / damage`), but keeping the horizon axis instead
+    of collapsing it with `.mean(axis=1)` — batch-mean absolute error at
+    each forecast step, normalized by that step's own clean-vs-corrupted
+    damage. Pulled out as its own function (rather than inlined at both call
+    sites in `_window_restoration`/`_patching`) so the arithmetic is testable
+    against synthetic data independent of any adapter/forward pass.
+    """
+    return 1.0 - np.abs(f_patch - f_clean).mean(axis=0) / damage_h
 
 
 def _token_windows(spans: np.ndarray, window: int, n_windows: int) -> np.ndarray:
@@ -587,14 +617,19 @@ def _token_windows(spans: np.ndarray, window: int, n_windows: int) -> np.ndarray
 def _window_restoration(adapter, layer: str, tok_idx: np.ndarray,
                         clean_layer: torch.Tensor, ctx_corr: np.ndarray,
                         horizon: int, quantiles: list, seed: int,
-                        f_clean: np.ndarray, damage: float):
+                        f_clean: np.ndarray, damage: float,
+                        damage_h: np.ndarray = None):
     """Forecast restoration from patching only one window's tokens at one layer.
 
     Returns the batch-mean restoration (the reported statistic, unchanged from
-    before this also returned per-series/patched-forecast detail), plus the
-    per-series restoration and the patched forecast itself — both needed only
+    before this also returned per-series/patched-forecast detail), the
+    per-series restoration and the patched forecast itself (both needed only
     by verbose single-series reporting, which reuses this same patched
-    forward instead of re-running the model.
+    forward instead of re-running the model), and -- when `damage_h` (the
+    per-horizon-step damage denominator) is supplied -- the same restoration
+    resolved by horizon step instead of collapsed by `.mean(axis=1)`
+    (`ROADMAP.md` sec 16 E12): a `[horizon]` array from the exact same
+    already-computed `f_patch`/`f_clean`, no new forward pass.
     """
     idx = torch.from_numpy(tok_idx)
 
@@ -605,7 +640,9 @@ def _window_restoration(adapter, layer: str, tok_idx: np.ndarray,
     with token_patch(adapter.module, layer, index_fn, clean_layer[:, tok_idx]):
         f_patch = _predict_once(adapter, ctx_corr, horizon, quantiles, seed)
     per_series = 1.0 - np.abs(f_patch - f_clean).mean(axis=1) / damage
-    return float(per_series.mean()), per_series.astype(np.float32), f_patch
+    restoration_h = (restoration_by_horizon(f_patch, f_clean, damage_h)
+                     if damage_h is not None else None)
+    return float(per_series.mean()), per_series.astype(np.float32), f_patch, restoration_h
 
 
 def _agreement_with_ci(cfg: PipelineConfig, psa: np.ndarray, psb: np.ndarray,

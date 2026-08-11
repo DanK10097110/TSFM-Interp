@@ -49,7 +49,10 @@ def build_config(out_dir: str) -> dict:
         "internals": {"enabled": True, "max_rows": 8000, "probe_pca_dim": 20},
         "confirm": {"enabled": True, "source": "smoke", "max_series": 120,
                     "require_seal": False},
-        "report": {"title": "Smoke comparison"},
+        # verbose explicitly requested: `report.verbose` now defaults to False
+        # (ROADMAP.md §10/§16), but this test exists to exercise every stage
+        # and every report section, verbose L3 case studies included.
+        "report": {"title": "Smoke comparison", "verbose": True},
     }
 
 
@@ -103,6 +106,10 @@ def test_per_window_and_lens_artifacts(run_dir=None):
         rw = parrs[f"restoration_windows_{model}"]
         assert rw.shape == (len(info["corruptions"]), len(info["rel_depth"]),
                             len(info["windows"])), rw.shape
+        rh = parrs[f"restoration_by_horizon_{model}"]
+        assert rh.shape[:2] == (len(info["corruptions"]), len(info["rel_depth"])), rh.shape
+        assert rh.shape[2] > 0, rh.shape
+        assert np.isfinite(rh).all(), "restoration_by_horizon has non-finite entries"
         for cname, vmeta in info.get("verbose", {}).items():
             prefix = f"verbose_{model}_{cname}_"
             grid = parrs[prefix + "grid"]
@@ -117,6 +124,12 @@ def test_per_window_and_lens_artifacts(run_dir=None):
     for model, m in lmeta.items():
         assert larrs[f"skip_mase_{model}"].shape == (len(m["layers"]),)
         assert np.isfinite(larrs[f"skip_mase_{model}"]).all()
+        if f"skip_mase_by_horizon_{model}" in larrs:
+            mh = larrs[f"skip_mase_by_horizon_{model}"]
+            assert mh.shape[0] == len(m["layers"]) and mh.shape[1] > 0, mh.shape
+            assert np.isfinite(mh).all()
+            curve = m.get("crystallization_depth_by_horizon")
+            assert curve is not None and len(curve) == mh.shape[1]
 
     ameta = load_json(run_dir / "attention" / "meta.json")
     aarrs = np.load(run_dir / "attention" / "arrays.npz")

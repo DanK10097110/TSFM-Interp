@@ -24,6 +24,7 @@ user's own "maybe combined, or used as a mutual sanity check" framing.
 from __future__ import annotations
 
 from collections import Counter
+from dataclasses import replace as _dc_replace
 
 import numpy as np
 import torch
@@ -46,36 +47,64 @@ __all__ = [
 
 def build_gold_ranking(store, model: str, layers: list, device: torch.device,
                        sae_cfg: SAETrainConfig, gt=None, series_ids: np.ndarray | None = None,
-                       gt_cols: list | None = None) -> dict:
-    """Train one small SAE per layer; gold score = ground-truth alignment mass.
+                       gt_cols: list | None = None, n_replicates: int = 3) -> dict:
+    """Train one small SAE per layer, `n_replicates` times each; gold score is
+    the mean ground-truth alignment mass across replicates.
 
-    Mass is `n_features_matched * mean_abs_rho_matched` -- a dictionary with
-    many strongly-matched features scores higher than one with a single
-    weak match, matching how §6.2's own Findings read this number as
-    evidence of *how much* ground-truth structure a layer's dictionary
-    captured, not just whether any exists. Fidelity and dead-feature rate
-    are recorded alongside for diagnosing a layer whose low gold score is an
-    SAE-training artifact (undersized training set, no resampling) rather
-    than a genuine property of that layer -- read them before trusting a
-    surprisingly-low gold score at face value.
+    Fixed 2026-08-10 (ROADMAP.md §13's second-sampling-seed finding): with a
+    single stochastic SAE-training run per layer, `beats_random`/`beats_
+    uniform_stride` flipped on 2 of 3 architectures under a routine reseed
+    even though every selector's own layer choices stayed bit-identical --
+    isolating the actual noise source to *this* function, not the
+    selectors or the corpus sample. Random dictionary init, minibatch
+    shuffling, and dead-neuron resampling all vary run to run; at this
+    bake-off's small budgets (2-5 layers) a modest rank swap between two
+    adjacent layers' mass is enough to change which layers count as "gold
+    top-budget," which flips the boolean verdict outright. Averaging
+    `n_replicates` independently-seeded training runs per layer -- the
+    SAE fit only, not the corpus and not the selector -- reduces that
+    variance the same way every other repeat/bootstrap in this repo does
+    (`CLAUDE.md` §6.6). `gold_score_std` is kept alongside the mean so a
+    layer whose replicates disagree is visible rather than hidden inside a
+    single misleadingly-precise number. Mass is
+    `n_features_matched * mean_abs_rho_matched` -- a dictionary with many
+    strongly-matched features scores higher than one with a single weak
+    match, matching how §6.2's own Findings read this number as evidence of
+    *how much* ground-truth structure a layer's dictionary captured, not
+    just whether any exists. `detail` keeps the first replicate's
+    fidelity/dead-feature-rate breakdown for diagnosing a layer whose low
+    gold score is an SAE-training artifact rather than a genuine property
+    of that layer.
     """
-    scores, detail = [], []
-    for layer in layers:
-        acts = load_all_windows(store, model, layer)
-        sae, history = train_sae(acts, sae_cfg, device)
-        fidelity = reconstruction_fidelity(sae, acts, device)
-        dead = dead_feature_rate(sae, acts, device)
-        gt_result, mass = None, 0.0
-        if gt is not None and series_ids is not None and gt_cols is not None:
-            features = encode_series_level(sae, store, model, layer, np.arange(len(series_ids)), device)
-            gt_result = best_ground_truth_matches(features, gt, series_ids, gt_cols)
-            mass = gt_result["n_features_matched"] * gt_result["mean_abs_rho_matched"]
-        scores.append(mass)
-        detail.append({"layer": layer, "fidelity": fidelity, "dead_rate": dead,
-                       "final_train_mse": history[-1], "ground_truth": gt_result, "gold_mass": mass})
-        log.info(f"layer_screen_bakeoff gold {model}/{layer}: mass={mass:.3f} "
-                f"fidelity={fidelity:.3f} dead_rate={dead:.3f}")
-    return {"model": model, "layers": layers, "gold_score": scores, "detail": detail}
+    per_replicate_scores = []
+    detail = None
+    for r in range(n_replicates):
+        rep_cfg = _dc_replace(sae_cfg, seed=sae_cfg.seed + r)
+        scores, rep_detail = [], []
+        for layer in layers:
+            acts = load_all_windows(store, model, layer)
+            sae, history = train_sae(acts, rep_cfg, device)
+            fidelity = reconstruction_fidelity(sae, acts, device)
+            dead = dead_feature_rate(sae, acts, device)
+            gt_result, mass = None, 0.0
+            if gt is not None and series_ids is not None and gt_cols is not None:
+                features = encode_series_level(sae, store, model, layer, np.arange(len(series_ids)), device)
+                gt_result = best_ground_truth_matches(features, gt, series_ids, gt_cols)
+                mass = gt_result["n_features_matched"] * gt_result["mean_abs_rho_matched"]
+            scores.append(mass)
+            rep_detail.append({"layer": layer, "fidelity": fidelity, "dead_rate": dead,
+                               "final_train_mse": history[-1], "ground_truth": gt_result, "gold_mass": mass})
+            log.info(f"layer_screen_bakeoff gold {model}/{layer} replicate {r}: mass={mass:.3f} "
+                    f"fidelity={fidelity:.3f} dead_rate={dead:.3f}")
+        per_replicate_scores.append(scores)
+        if detail is None:
+            detail = rep_detail
+    score_matrix = np.asarray(per_replicate_scores, dtype=np.float64)  # [n_replicates, n_layers]
+    gold_score = score_matrix.mean(axis=0)
+    gold_score_std = score_matrix.std(axis=0)
+    return {"model": model, "layers": layers, "gold_score": gold_score.tolist(),
+            "gold_score_std": gold_score_std.tolist(), "n_gold_replicates": n_replicates,
+            "detail": detail}
 
 
 # ---------------------------------------------------------------------------

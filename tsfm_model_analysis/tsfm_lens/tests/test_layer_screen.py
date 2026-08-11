@@ -17,6 +17,7 @@ from types import SimpleNamespace
 
 import numpy as np
 import pandas as pd
+import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
@@ -29,6 +30,7 @@ from tsfm_lens.analysis.layer_screen import (
     work_bend_scores,
 )
 from tsfm_lens.analysis.layer_screen_bakeoff import (
+    build_gold_ranking,
     ensemble_rank_average,
     ensemble_union,
     ensemble_vote,
@@ -37,6 +39,8 @@ from tsfm_lens.analysis.layer_screen_bakeoff import (
     recall_at_budget,
     robustness_gate,
 )
+from tsfm_lens.sae.train import SAETrainConfig
+from tsfm_lens.utils import set_seed
 
 
 class _FakeStore:
@@ -49,8 +53,8 @@ class _FakeStore:
 
     def __init__(self, acts: dict):
         self._acts = acts
-        n_windows = next(iter(acts.values())).shape[1]
-        self.root = SimpleNamespace(attrs={"n_windows": n_windows})
+        n_series, n_windows = next(iter(acts.values())).shape[:2]
+        self.root = SimpleNamespace(attrs={"n_windows": n_windows, "n_series": n_series})
 
     def load(self, model: str, layer: str, level: str = "window", rows=None) -> np.ndarray:
         arr = self._acts[layer]
@@ -304,6 +308,60 @@ def test_ensembles_union_vote_rank_average():
     print("ensemble union/vote/rank_average test passed")
 
 
+def test_build_gold_ranking_averages_replicates_and_is_deterministic():
+    """ROADMAP.md §13's second-sampling-seed finding: a single stochastic
+    SAE-training run per layer made `build_gold_ranking`'s output noisy
+    enough to flip `beats_random` on a routine reseed even though every
+    selector's own layer choices stayed bit-identical -- isolating the
+    actual noise source to this function. The fix averages `n_replicates`
+    independently-seeded training runs per layer; this test checks the
+    plumbing (right shapes, non-negative spread, and -- crucially, since
+    the whole point is trustworthy repeatability -- that calling it twice
+    with the same `sae_cfg.seed` and `n_replicates` reproduces the exact
+    same averaged score, not just "some" score) rather than re-deriving a
+    known-correct ranking (that's `test_factor_probe_matrix_finds_planted_
+    emergence_layer`'s job, one layer down in the stack).
+    """
+    rng = np.random.default_rng(0)
+    n_series, n_windows, d = 80, 3, 6
+    y = rng.normal(size=n_series)
+    direction = rng.normal(size=d)
+    direction /= np.linalg.norm(direction)
+    acts = {}
+    for li, scale in enumerate([0.1, 3.0]):  # l0: near-noise, l1: real planted signal
+        base = rng.normal(scale=1.0, size=(n_series, n_windows, d)).astype(np.float32)
+        base += (scale * y)[:, None, None] * direction[None, None, :]
+        acts[f"l{li}"] = base.astype(np.float32)
+    store = _FakeStore(acts)
+
+    gt = pd.DataFrame({"factor_y": y}, index=[f"s{i}" for i in range(n_series)])
+    series_ids = np.array([f"s{i}" for i in range(n_series)])
+    sae_cfg = SAETrainConfig(dict_size_mult=2, k=2, epochs=3, batch_size=32, seed=0)
+    device = torch.device("cpu")
+
+    # SAE weight init draws from torch's *global* RNG, not the per-call local
+    # generator `train_sae` seeds for batch order -- exactly like the real
+    # CLI entry point (`run_layer_screen_bakeoff.py::main` calls `set_seed`
+    # once per process before anything else touches torch), so a fair
+    # determinism check must reset the global seed before each call rather
+    # than call `build_gold_ranking` twice back-to-back in one process.
+    set_seed(0)
+    gold = build_gold_ranking(store, "M", ["l0", "l1"], device, sae_cfg,
+                              gt=gt, series_ids=series_ids, gt_cols=["factor_y"], n_replicates=3)
+    assert gold["n_gold_replicates"] == 3
+    assert len(gold["gold_score"]) == 2 and len(gold["gold_score_std"]) == 2
+    assert all(s >= 0.0 for s in gold["gold_score_std"]), gold["gold_score_std"]
+    assert len(gold["detail"]) == 2, "detail must keep one entry per layer, not per replicate"
+
+    set_seed(0)
+    gold_again = build_gold_ranking(store, "M", ["l0", "l1"], device, sae_cfg,
+                                    gt=gt, series_ids=series_ids, gt_cols=["factor_y"], n_replicates=3)
+    assert gold["gold_score"] == gold_again["gold_score"], (
+        "same (data, sae_cfg.seed, n_replicates) must reproduce the exact same averaged "
+        "gold score -- this determinism is the whole point of the fix")
+    print("build_gold_ranking multi-replicate averaging/determinism test passed")
+
+
 if __name__ == "__main__":
     test_within_model_cka_matrix_identity_and_symmetry()
     test_work_bend_detects_planted_regime_change()
@@ -318,3 +376,4 @@ if __name__ == "__main__":
     test_null_curves_oracle_dominates_and_sums_to_one()
     test_robustness_gate_true_and_false()
     test_ensembles_union_vote_rank_average()
+    test_build_gold_ranking_averages_replicates_and_is_deterministic()

@@ -58,7 +58,7 @@ def paired_bootstrap(diff: np.ndarray, n_boot: int = 500, seed: int = 0,
     p = 2.0 * min((boots <= 0).mean(), (boots >= 0).mean())
     p = float(np.clip(p, 1.0 / n_boot, 1.0))
     return {"mean": float(d.mean()), "lo": float(lo), "hi": float(hi),
-            "p": p, "n": int(len(d))}
+            "p": p, "n": int(len(d)), "n_boot": n_boot}
 
 
 def bootstrap_ci_diff(stat_a: Callable[[np.ndarray], float], stat_b: Callable[[np.ndarray], float],
@@ -202,3 +202,25 @@ def mae_over_mad(point: np.ndarray, targets: np.ndarray) -> np.ndarray:
     mae = np.abs(targets - point).mean(axis=1)
     mad = np.abs(targets - np.median(targets, axis=1, keepdims=True)).mean(axis=1) + 1e-8
     return mae / mad
+
+
+def mase_pinball_by_horizon(point: np.ndarray, quants: np.ndarray, targets: np.ndarray,
+                            contexts: np.ndarray, quantiles: list,
+                            scale_mode: str = "mean_abs_diff") -> dict:
+    """MASE and pinball loss resolved per horizon step (`ROADMAP.md` sec 16 E12).
+
+    `mase()`/`_score()`'s pinball both collapse over the whole horizon
+    (`.mean(axis=1)`); this keeps the horizon axis instead of reducing over
+    it, using the exact same per-series scale so the pooled result is
+    consistent with the whole-horizon numbers elsewhere. "Does error grow
+    with horizon" and "is the model's quantile spread appropriately wider
+    at h=64 than at h=1" are otherwise invisible -- every other metric in
+    this repo answers only the whole-horizon-averaged version of those
+    questions.
+    """
+    scale = _mase_scale(contexts, scale_mode)
+    mase_h = np.abs(targets - point) / scale[:, None]
+    q = np.asarray(quantiles, dtype=np.float64)[None, None, :]
+    diff = targets[:, :, None] - quants
+    pinball_h = np.maximum(q * diff, (q - 1) * diff).mean(axis=2) / scale[:, None]
+    return {"mase_by_horizon": mase_h, "pinball_by_horizon": pinball_h}

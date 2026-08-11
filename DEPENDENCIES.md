@@ -193,3 +193,30 @@ cd tsfm_model_analysis/tsfm_lens && python tests/test_smoke.py
 - **`sdv`'s `PARSynthesizer` has no `random_state`** at this version —
   `sequential_par`'s reproducibility is best-effort (global seeding only),
   not bit-exact like the rest of the generation pipeline.
+- **Chronos-2's own remote code (`amazon/chronos-2`, `trust_remote_code=True`)
+  returns HF `ModelOutput` dataclasses from its encoder blocks, not plain
+  tuples** — invisible across the three prior adapters (Chronos-T5,
+  Chronos-Bolt, TimesFM), which never happened to return anything else, and
+  surfaced only once a fourth architecture with a genuinely different
+  forward-output convention was added. Fixed in `extraction/hooks.py`'s
+  output-unwrapping helper (`CLAUDE.md` §11.21); not a version-pin issue,
+  but the kind of gap a `transformers`/adapter bump elsewhere could
+  reintroduce for the *next* new model, so worth re-checking then.
+- **Sundial's own remote code (`thuml/sundial-base-128m`,
+  `trust_remote_code=True`) is broken against `transformers` 4.57.6** — its
+  documented `.generate()` path, and even a single cached `forward()` call,
+  crash on `transformers.DynamicCache` attributes (`seen_tokens`,
+  `get_usable_length`) that this checkpoint's remote code still expects but
+  that were removed from `DynamicCache` in a release newer than what the
+  model card recommends (pre-4.41) and older than this repo's pinned 4.57.6
+  (`CLAUDE.md` §11.22). **Not fixed by changing the `transformers` pin**
+  (would risk the same §11.8-class regression against the other three
+  already-working adapters) — worked around in
+  `models/sundial_adapter.py` by calling
+  `SundialForPrediction.forward(..., use_cache=False)` directly instead of
+  `.generate()` (sufficient since this repo's horizon, 64, is well under
+  Sundial's 720-token one-shot flow-matching sampling limit). If
+  `transformers` is ever bumped, re-check this specific checkpoint's remote
+  code against the new version before trusting Sundial again — this is a
+  third-party checkpoint's own code being version-fragile, not something a
+  version bump in this repo's control can pre-empt.

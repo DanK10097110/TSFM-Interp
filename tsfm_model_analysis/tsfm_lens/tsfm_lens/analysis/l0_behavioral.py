@@ -17,8 +17,9 @@ from ..config import PipelineConfig
 from ..data import BenchmarkData
 from ..extraction.store import ActivationStore
 from ..utils import batch_slices, log, sample_rows, save_json
-from .stats import (_mase_scale, holm, mae_over_mad, mase as _mase, mase_reliability,
-                    mean_ci, paired_bootstrap)
+from .calibration import summarize_calibration
+from .stats import (_mase_scale, holm, mae_over_mad, mase as _mase,
+                    mase_pinball_by_horizon, mase_reliability, mean_ci, paired_bootstrap)
 
 
 def run_l0(cfg: PipelineConfig, hub, data: BenchmarkData, store: ActivationStore) -> None:
@@ -30,7 +31,7 @@ def run_l0(cfg: PipelineConfig, hub, data: BenchmarkData, store: ActivationStore
     if cfg.l0.noise_floor_repeats >= 2:
         k = min(data.n, cfg.l0.noise_floor_series)
         nf_rows = sample_rows(data.n, k, cfg.run.seed + 77, strata=data.meta["family"].to_numpy())
-    frames, noise_floor = [], {}
+    frames, noise_floor, calibration, horizon_resolved = [], {}, {}, {}
     for mcfg in cfg.models:
         adapter = hub.get(mcfg.name)
         adapter.ensure_loaded()
@@ -38,6 +39,13 @@ def run_l0(cfg: PipelineConfig, hub, data: BenchmarkData, store: ActivationStore
         store.write_predictions(mcfg.name, point, quants)
         frames.append(_score(mcfg.name, point, quants, contexts, targets,
                              cfg.l0.quantiles, data.meta, cfg.l0.scale, cfg.l0.min_scale_frac))
+        if cfg.l0.calibration and len(cfg.l0.quantiles) >= 2:
+            calibration[mcfg.name] = summarize_calibration(
+                quants, cfg.l0.quantiles, targets, data.meta["family"].to_numpy())
+        if cfg.l0.horizon_resolved and data.horizon > 1:
+            horizon_resolved[mcfg.name] = _summarize_by_horizon(
+                point, quants, targets, contexts, cfg.l0.quantiles, cfg.l0.scale,
+                data.meta["family"].to_numpy())
         if nf_rows is not None:
             noise_floor[mcfg.name] = _measure_noise_floor(
                 adapter, contexts[nf_rows], targets[nf_rows], data.horizon, cfg.l0.quantiles,
@@ -49,7 +57,31 @@ def run_l0(cfg: PipelineConfig, hub, data: BenchmarkData, store: ActivationStore
     save_json(out_dir / "summary.json", _summarize(metrics, cfg))
     if noise_floor:
         save_json(out_dir / "noise_floor.json", noise_floor)
+    if calibration:
+        save_json(out_dir / "calibration.json", calibration)
+    if horizon_resolved:
+        save_json(out_dir / "horizon_resolved.json", horizon_resolved)
     log.info("L0 complete: %d model-series scores", len(metrics))
+
+
+def _summarize_by_horizon(point: np.ndarray, quants: np.ndarray, targets: np.ndarray,
+                          contexts: np.ndarray, quantiles: list, scale_mode: str,
+                          families: np.ndarray) -> dict:
+    """Pooled + per-family MASE/pinball curves over horizon step (sec 16 E12)."""
+    by_h = mase_pinball_by_horizon(point, quants, targets, contexts, quantiles, scale_mode)
+    mase_h, pinball_h = by_h["mase_by_horizon"], by_h["pinball_by_horizon"]
+    out = {"mase_by_horizon": mase_h.mean(axis=0).tolist(),
+          "pinball_by_horizon": pinball_h.mean(axis=0).tolist(), "n_series": int(len(mase_h))}
+    per_family = {}
+    for fam in sorted(set(families.tolist())):
+        mask = families == fam
+        if mask.sum() == 0:
+            continue
+        per_family[str(fam)] = {"mase_by_horizon": mase_h[mask].mean(axis=0).tolist(),
+                                "pinball_by_horizon": pinball_h[mask].mean(axis=0).tolist(),
+                                "n_series": int(mask.sum())}
+    out["by_family"] = per_family
+    return out
 
 
 def _measure_noise_floor(adapter, contexts: np.ndarray, targets: np.ndarray, horizon: int,

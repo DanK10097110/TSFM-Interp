@@ -27,10 +27,12 @@ def _register_optional() -> None:
     from .chronos_adapter import ChronosAdapter
     from .chronos_bolt_adapter import ChronosBoltAdapter
     from .chronos2_adapter import Chronos2Adapter
+    from .sundial_adapter import SundialAdapter
     from .timesfm_adapter import TimesFMAdapter
     ADAPTERS["chronos"] = ChronosAdapter
     ADAPTERS["chronos_bolt"] = ChronosBoltAdapter
     ADAPTERS["chronos2"] = Chronos2Adapter
+    ADAPTERS["sundial"] = SundialAdapter
     ADAPTERS["timesfm"] = TimesFMAdapter
 
 

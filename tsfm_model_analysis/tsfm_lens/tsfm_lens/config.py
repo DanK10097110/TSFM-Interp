@@ -94,6 +94,19 @@ class L0Config:
     # repeat count (3) rather than requiring opt-in.
     noise_floor_repeats: int = 3
     noise_floor_series: int = 16
+    # Probabilistic-forecast calibration diagnostics (`ROADMAP.md` sec 16
+    # E10): reliability curve, PIT histogram, quantile-crossing rate, and
+    # interval coverage/sharpness by horizon step -- computed from the same
+    # `predict()` output `run_l0` already has in memory, so this adds no new
+    # forward passes. Needs >=2 quantile levels to be meaningful; silently
+    # skipped otherwise regardless of this flag.
+    calibration: bool = True
+    # Horizon-resolved MASE/pinball (`ROADMAP.md` sec 16 E12): every current
+    # behavioral metric aggregates over the whole forecast horizon, so
+    # "where does the error come from at h=1 vs h=H" is currently invisible.
+    # A pure reduction over the same `predict()` output already in memory --
+    # zero new forward passes -- so on by default.
+    horizon_resolved: bool = True
 
 
 @dataclass
@@ -127,6 +140,10 @@ class PatchingConfig:
     num_samples: int = 8
     per_window: bool = True
     window_stride: int = 1
+    # ROADMAP.md sec 16 E12: resolve restoration by forecast horizon step
+    # (in addition to layer/window) from the same already-computed patched
+    # forecasts, no new forward passes.
+    horizon_resolved: bool = True
 
 
 @dataclass
@@ -139,6 +156,10 @@ class LensConfig:
     val_frac: float = 0.25
     lambdas: list = field(default_factory=lambda: [1e-3, 1e-2, 1e-1, 1.0])
     crystallization_tol: float = 0.1
+    # ROADMAP.md sec 16 E12: resolve crystallization depth per horizon step
+    # (in addition to the whole-horizon-averaged number) from the same
+    # already-computed skip-lens forecasts, no new forward passes.
+    horizon_resolved: bool = True
 
 
 @dataclass
@@ -273,7 +294,7 @@ class SAEConfig:
 class ReportConfig:
     enabled: bool = True
     title: str = "TSFM Comparison Report"
-    verbose: bool = True
+    verbose: bool = False
     verbose_series: int = 3
     # A section builder raising is a bug (ROADMAP.md sec 15 A5), so the
     # default is to surface it as a hard failure (non-zero exit) rather than
