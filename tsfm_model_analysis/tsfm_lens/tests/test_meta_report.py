@@ -95,6 +95,34 @@ def test_none_crystallization_depth_and_stability():
     print("none-crystallization-depth and stability test passed")
 
 
+def test_crystallization_depth_is_annotated_with_capture_coverage():
+    """ROADMAP.md sec 18 F4. Crystallization depth locates a claim inside a
+    model's stack, so "0.7 of depth" means something different for a model
+    whose stack was only partly observed -- and this aggregator's whole job is
+    putting such numbers side by side across runs, where that difference is
+    invisible. A run predating the measurement must stay *unannotated* rather
+    than being rendered as complete: unmeasured and fully-captured are opposite
+    claims, the same tri-state discipline sec 18 F6 applies to deltas."""
+    out = Path(tempfile.mkdtemp())
+    _write_full_run(out / "measured", "measured", favored="A", crystallization_depth=0.7)
+    _write_full_run(out / "older", "older", favored="A", crystallization_depth=0.7)
+    save_json(out / "measured" / "budget" / "model_budget.json", {"models": {
+        "A": {"coverage": {"headline_flops_fraction": 0.42}},
+        "B": {"coverage": {"headline_flops_fraction": 0.97}}}})
+
+    meta = build_meta_report([out / "measured", out / "older"])
+    measured = next(r for r in meta["runs"] if r["label"] == "measured")
+    older = next(r for r in meta["runs"] if r["label"] == "older")
+    assert measured["capture_coverage"] == {"A": 0.42, "B": 0.97}
+    assert "capture_coverage" not in older, "no artifact must not become a coverage of 0"
+
+    html = render_meta_report_html(meta, out / "meta_report.html").read_text(encoding="utf-8")
+    assert "(of the 42% of this model captured)" in html, "under-captured model annotated"
+    assert "(of the 97% of this model captured)" not in html, "well-captured model left alone"
+    assert "unmeasured rather than complete" in html, "the older run's silence is explained"
+    print("crystallization-depth capture-coverage annotation test passed")
+
+
 def test_provenance_warnings_flag_corpus_and_library_drift():
     """Two runs with different corpus digests and a different torch major
     must both be flagged; a matched pair of runs must produce no warnings

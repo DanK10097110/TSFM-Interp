@@ -50,6 +50,11 @@ def main() -> None:
                              "peak-pair test (needs --null-run-a/--null-run-b)")
     parser.add_argument("--null-run-a", help="model/side A's real-vs-random-init null run (depth-curve mode)")
     parser.add_argument("--null-run-b", help="model/side B's real-vs-random-init null run (depth-curve mode)")
+    parser.add_argument("--direction", default=None,
+                        help="'src->dst' as keyed in the real run's l2/stitching.json (--depth-curve l2 "
+                             "only). Default: the run's own best-gaining direction. L2 is not symmetric, "
+                             "so the reverse direction is a separate measurement -- pass --null-run-a/-b "
+                             "in the order matching whatever direction you name here")
     parser.add_argument("--n-boot", type=int, default=500)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--ci", type=float, default=0.95)
@@ -78,8 +83,10 @@ def main() -> None:
         if not args.null_run_a or not args.null_run_b:
             parser.error("--depth-curve l2 needs --null-run-a and --null-run-b")
         rows = compare_l2_depth_curve(real_run, Path(args.null_run_a), Path(args.null_run_b),
-                                      args.n_boot, args.seed, args.ci)
-        out = Path(args.out) if args.out else real_run / "l2_depth_curve_null_test.json"
+                                      args.n_boot, args.seed, args.ci, direction=args.direction)
+        default_name = ("l2_depth_curve_null_test.json" if not args.direction else
+                        f"l2_depth_curve_null_test_{args.direction.replace('->', '_to_')}.json")
+        out = Path(args.out) if args.out else real_run / default_name
         save_json(out, rows)
         print(f"\nwrote {out}\n")
         print(f"=== {real_run.name} L2 depth curve ({rows[0]['direction']}) vs "

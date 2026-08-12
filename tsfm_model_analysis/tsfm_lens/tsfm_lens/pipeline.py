@@ -27,6 +27,7 @@ from .analysis.l1_geometry import run_l1
 from .analysis.l2_stitching import run_l2
 from .analysis.l3_perturbation import run_l3
 from .analysis.lens import run_lens
+from .analysis.model_budget import run_budget
 from .config import PipelineConfig, dump_config
 from .data import BenchmarkData, load_benchmark
 from .extraction.extract import run_extraction
@@ -96,6 +97,16 @@ def _stages() -> list:
               lambda ctx: (run_extraction(ctx.cfg, ctx.hub, ctx.data),
                            ctx.reset_store()),
               _EXTRACT_KEYS),
+        # No `extract` dependency on purpose: a cost record needs only a
+        # loaded model, so `--stages budget` is a valid standalone run. It is
+        # placed here so that in a full run the models are already warm.
+        Stage("budget", [],
+              lambda c: c.budget.enabled,
+              lambda c: (c.run_dir() / "budget" / "model_budget.json").exists(),
+              lambda ctx: run_budget(ctx.cfg, ctx.hub, ctx.data, ctx.device),
+              ("budget", "data.context_len", "data.horizon",
+               "models[*].checkpoint", "models[*].layer_regex",
+               "models[*].capture_layer_stride")),
         Stage("layer_screen", ["extract"],
               lambda c: c.layer_screen.enabled,
               lambda c: (c.run_dir() / "layer_screen" / "selection.json").exists(),

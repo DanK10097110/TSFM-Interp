@@ -144,8 +144,32 @@ def test_l2_depth_curve_returns_one_row_per_src_layer_with_both_null_sides(runs)
 def test_l2_depth_curve_raises_on_mismatched_null_run_order(runs):
     _, _, src, dst = _real_best_direction(runs)
     null_by_model = {"A": runs["null"], "B": runs["null_b"]}
-    with pytest.raises(ValueError, match="best direction"):
+    with pytest.raises(ValueError, match="direction under test"):
         compare_l2_depth_curve(runs["real"], null_by_model[dst], null_by_model[src], n_boot=10, seed=0)
+
+
+def test_l2_depth_curve_runs_the_reverse_direction_when_asked(runs):
+    """L2 is not symmetric -- the ridge probe maps one model's states onto
+    the other's -- so a null verdict on the run's best direction says nothing
+    about the reverse. `direction=` makes the reverse its own measurement
+    (ROADMAP.md sec 13), with the null runs supplied in its order."""
+    stitch, best_dir, src, dst = _real_best_direction(runs)
+    reverse = f"{dst}->{src}"
+    assert reverse in stitch["directions"]
+    null_by_model = {"A": runs["null"], "B": runs["null_b"]}
+    rows = compare_l2_depth_curve(runs["real"], null_by_model[dst], null_by_model[src],
+                                  n_boot=15, seed=0, direction=reverse)
+    assert len(rows) == len(stitch["layers"][dst])
+    assert {row["direction"] for row in rows} == {reverse}
+    assert all(np.isfinite(row["real_gain"]) for row in rows)
+
+
+def test_l2_depth_curve_rejects_an_unknown_direction(runs):
+    """A typo must name the available directions rather than silently
+    falling back to the best one (CLAUDE.md sec 2.5)."""
+    with pytest.raises(ValueError, match="not in this run"):
+        compare_l2_depth_curve(runs["real"], runs["null"], runs["null_b"],
+                               n_boot=10, seed=0, direction="A->Nonexistent")
 
 
 def test_l1_falls_back_to_unpaired_on_series_mismatch_without_crashing(runs):

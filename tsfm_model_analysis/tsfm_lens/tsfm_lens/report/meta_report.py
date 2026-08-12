@@ -117,6 +117,24 @@ def summarize_run(run_dir: str | Path) -> dict:
     else:
         log.info(f"meta_report: {run_dir} has no clustering/comparison.json; clustering skipped")
 
+    budget = _safe_load_json(run_dir / "budget" / "model_budget.json")
+    if budget:
+        # ROADMAP.md sec 18 F4. The two depth-located columns this aggregator
+        # tabulates (L1 peak pair, crystallization depth) locate a claim inside
+        # a model's stack, so they mean different things for a model whose
+        # stack was only partly observed. The single-run report qualifies its
+        # own findings in prose; here the fraction is carried per run so the
+        # comparison table can mark the column rather than repeat the sentence.
+        summary["capture_coverage"] = {
+            name: (rec.get("coverage") or {}).get("headline_flops_fraction")
+            for name, rec in (budget.get("models") or {}).items()
+        }
+    else:
+        log.info(f"meta_report: {run_dir} has no budget/model_budget.json; "
+                 f"captured-FLOP fractions unavailable (run predates ROADMAP.md "
+                 f"sec 18 F2/F4), so depth-located columns are tabulated "
+                 f"without a coverage qualifier")
+
     confirm = _safe_load_json(run_dir / "confirm" / "confirmation.json")
     if confirm:
         summary["confirm_tests"] = confirm.get("tests", [])
@@ -327,10 +345,15 @@ matched environment -- read the aggregation below with that in mind.</div>
     <span class="note">{{ run.l1_peak_pair[0] }} / {{ run.l1_peak_pair[1] }}</span>{% else %}--{% endif %}</td>
 <td>{% for direction, gain in run.get('l2_best_gain', {}).items() %}{{ direction }}: {{ '%.3f'|format(gain) if gain is not none else '--' }}<br>{% endfor %}</td>
 <td>{% if run.clustering_ami is defined %}{{ '%.3f'|format(run.clustering_ami) }}{% else %}--{% endif %}</td>
-<td>{% for name, depth in run.get('crystallization_depth', {}).items() %}{{ name }}: {{ '%.2f'|format(depth) if depth is not none else 'never (no captured layer within tolerance)' }}<br>{% endfor %}</td>
+<td>{% for name, depth in run.get('crystallization_depth', {}).items() %}{{ name }}: {{ '%.2f'|format(depth) if depth is not none else 'never (no captured layer within tolerance)' }}{% set cov = run.get('capture_coverage', {}).get(name) %}{% if cov is not none and cov < 0.9 %} <span class="note">(of the {{ '%.0f'|format(100 * cov) }}% of this model captured)</span>{% endif %}<br>{% endfor %}</td>
 </tr>
 {% endfor %}
 </table>
+<p class="note">A crystallization depth or peak-CKA layer locates a claim inside a
+model's stack, so it means something different for a model whose stack was only
+partly observed. Where a run measured a captured-FLOP fraction below 90%
+(ROADMAP.md sec 18 F4) the depth is annotated with it; runs predating that
+measurement carry no annotation, which means unmeasured rather than complete.</p>
 
 <h2>Per-family stability across runs</h2>
 <p class="note">"Stable" means every run that tested this family's paired MASE gap

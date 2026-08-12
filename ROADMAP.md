@@ -101,6 +101,13 @@
    P1 items are closed. Do not treat a high §16 tier as permission to skip
    §15 — a one-button tool that silently produces a wrong number is worse
    than a five-command tool that refuses.
+   **Amended 2026-08-12: §16 stays a backlog, but it is no longer the only
+   unsequenced pool.** §17–§21 add four more (F/G/H/J items), and **§22 is
+   the one place any of them are sequenced** — six waves, with the single
+   hard ordering constraint that Wave A (§18's equal-grounds work) precedes
+   Wave F (adoptability), for the same reason this item gives for not
+   skipping §15. Read §22 before pulling any F/G/H/J item; read §0.5 for the
+   immediate next actions.
 
 ---
 
@@ -119,6 +126,37 @@
 > `CLAUDE.md` §2.8; any config edit means a new `run.name` (§15 A3); any new
 > checkpoint or library bump means `--check-alignment` read in full, per-layer,
 > by a human (invariant 7 + `CLAUDE.md` §11.22).
+>
+> ⚠️ **Updated 2026-08-12 — read §22 alongside this.** A strategic pass added
+> §17 (a whole-plan gap analysis against §1's north star), §18 (**equal
+> grounds** — F1–F9, the fairness contract made measurable), §19 (architecture
+> adaptivity — G1–G7 plus a landscape table of what's outside the envelope),
+> §20 (new capabilities H1–H12) and §21 (the beginner/advanced layering,
+> J1–J6). **§22 is the resulting six-wave interleaving** and is now the
+> authoritative sequencing for anything beyond this section's Tier 1. Two
+> changes to the queue below, both from §17's findings:
+> - **A new Tier 0 goes first for anything cross-model.** ~~§18's F6 (deltas in
+>   noise-floor units)~~ **F6 done 2026-08-12 — the audit count on
+>   `medium_run_chronos_base` is 0 of 6 below-floor, so nothing recorded from
+>   that run needed retroactive correction; see §18 F6's Findings for the one
+>   marginal value (§16 E15's `−0.346`, at 2.2×) and for L3 restoration's
+>   stated deferral**, ~~F2 (parameter/compute budgets — *nothing* in the repo
+>   measures these today)~~ **F2 done 2026-08-12 — measured, staged and
+>   rendered; see §18 F2's Findings. Its remaining gap is a live-checkpoint
+>   run, not implementation**, F1 (the depth axis — Chronos's "relative depth 1.0"
+>   is currently the middle of its computation, plotted against TimesFM's
+>   actual output) and ~~F4 (capture-coverage accounting)~~ **F4 done
+>   2026-08-12 — measured live and rendered: TimesFM observes 42.5% of its
+>   forward FLOPs, Chronos-T5-Base at most 14.4%, and every depth-located
+>   finding about either now carries an automatic qualifier. §12 item 2's
+>   "for Chronos maybe half" was wrong in both halves and is corrected. See
+>   §18 F4's Findings**. These **retroactively
+>   qualify numbers already recorded in this file**, which is why they precede
+>   the next round of cross-model claims — the same argument §16 E9's null
+>   baseline won.
+> - **Tier 4 (adoptability) must not overtake Tier 0.** §22's closing
+>   paragraph has the reasoning: one-button automation removes the expert who
+>   would have known not to believe an unequal axis.
 
 **Tier 1 — the flagship research deliverable.** This is the one thing in the
 file that is both novel and unfinished, and everything else is support.
@@ -129,6 +167,45 @@ file that is both novel and unfinished, and everything else is support.
    metric) read ~98% "shared" from dead-atom symmetry alone. Four ranked
    hypotheses and an explicit exit criterion are in §6.2.1. **Nothing
    downstream of this is trustworthy until it passes.**
+   **Status 2026-08-12 (updated after the `k`, `h2xh4` and `pinch` sweeps) —
+   still `[ ]`, and the blocker has moved twice.** H4 (AuxK) was decisive
+   (80 alive atoms → 1072); H1 and H2 are both refuted as fixes, H2 now in
+   the AuxK-*on* regime too (the crosscoder passes every criterion at dict
+   ∈ {640, 768, 896, 1024}). The **crosscoder itself passes** — a winner is
+   committed at `configs/crosscoder_stage0_winner.yaml`. What still fails is
+   the **Chronos-T5-Base per-model baseline**, and the `pinch` sweep proved
+   by measurement that **no dictionary size in [512, 1280] clears both
+   `dead ≤ 0.30` and `alive ≥ 500`** (the two rows clearing the rate bar sit
+   114 and 33 atoms short of the floor; fidelity is never the blocker).
+   So the residual is a **criteria question, not a training question**:
+   `MIN_ALIVE = 500` is a global constant applied to a layer with measured
+   effective dimensionality 13.93. §6.2.1 names two defensible resolutions
+   (a per-model floor of ~`20 × eff_dim`, or keep the constant and carry a
+   quantified caveat into Stage 2) and **deliberately decides neither** —
+   that call is the actual next action here. Also open: alive counts are
+   non-monotone in dictionary size, implying ±60-atom single-seed noise
+   against a 33-atom margin, so the decision should rest on replicate seeds.
+   Full tables in §6.2.1's sweep Findings.
+   **Status update, later the same day — the criteria question above is now
+   decided, the replicate seeds are in, and Stage 0 is still `[ ]` for a
+   third, different reason.** The floor became `max(100, round(20 ×
+   eff_dim))` per source (279 Chronos / 563 TimesFM — *stricter* than the
+   500 it replaced, for the crosscoder), because the old pair was provably
+   unsatisfiable at any size for a model whose alive count saturates
+   (§6.2.1 finding (11) + DECISION). The 5-seed `pinch` replicate then
+   showed the same shape recurring **between** models: Chronos's untouched
+   rate bar caps a shared dictionary near 569 atoms while the crosscoder's
+   alive floor needs ~606, so all three artifacts pass together at **0 of 5
+   seeds at every size** (findings (12)-(13)). The recommended fix — size
+   the dictionary per model, matching rows/k/epochs rather than dict, which
+   gives every artifact a passing size on record — is written up with its
+   evidence and **deliberately not applied**, because it would be a second
+   criteria change in one session in the direction that makes the gate pass
+   (finding (14)). That call is now the actual next action here. Also newly
+   on record: the crosscoder's failures are **bimodal**, one collapsed run
+   in five rather than a marginal miss (finding (15)) — Stage 1's scorecard
+   needs replicates per variant or it will attribute a bad basin to a
+   variant.
 2. **§6.2.1 Stage 1 — the validation ladder** (L-A identity → L-B `random_init`
    hard null → L-C layer-offset monotonicity → L-D the real question → L-E
    planted synthetic). Build `sae/crosscoder_eval.py` first; the ladder is what
@@ -155,13 +232,26 @@ in parallel by a background agent.
 **Tier 3 — cheap items that retire recorded uncertainty.** Each is small and
 each currently leaves a number in this file with unknown error bars.
 
-6. **§13 — SAE forecast-preservation repeat-run variance.** An identical config
-   moved ΔMASE 0.175 → 0.1097. Retrain N≥5 seeds on a frozen store, publish the
-   floor the way §15 A13 did for the rest.
-7. **§13 — the reverse L2 direction** (`TimesFM→Chronos`). Pure re-analysis of
-   existing artifacts, no model calls.
-8. **§16 E19 — ratify or reverse the univariate-only envelope.** A decision
-   paragraph in `CLAUDE.md` §12, not code. Phase 4 shipped without it.
+6. ~~**§13 — SAE forecast-preservation repeat-run variance.**~~ **Measured
+   2026-08-12** — n=5 seeds on a frozen store via the new
+   `run_sae_repeat_variance.py`. The floor is **sd 0.121** (TimesFM), so the
+   0.175→0.1097 swing that motivated this is half a standard deviation and
+   explains itself. One recorded number is **retracted**: E15's Chronos
+   token-granularity **−0.346** falls outside the five-seed range
+   [−0.112, +0.414] and its sign replicates in 1 of 5 seeds — quote
+   **+0.246 ± 0.211** instead. Numbers at §13's Findings block. **Residual
+   split out as its own §13 item:** the floor is measured but not yet
+   *rendered* beside the numbers in the report.
+7. ~~**§13 — the reverse L2 direction** (`TimesFM→Chronos`).~~ **Done
+   2026-08-12** — real gain beats Chronos's own floor at every depth and
+   TimesFM's own floor from `stacked_xf.10` down; the recorded pessimistic
+   number was a wrong-layer artifact. §13's checkbox is `[x]`, numbers at
+   §16 E9's fourth follow-up.
+8. ~~**§16 E19 — ratify or reverse the univariate-only envelope.**~~ **Done
+   2026-08-12 — ratified univariate-only.** The decision paragraph is in
+   `CLAUDE.md` §12's envelope-edge list; Chronos-2's GROUP axis is the named
+   exclusion, with a stated rule for future cross-series adapters and an
+   explicit note that the size of the resulting coverage gap is unmeasured.
 
 **Tier 4 — adoptability, in dependency order.** All of §16's T1 is unblocked by
 §15 today (see §16's corrections block); the internal ordering below is the
@@ -3231,6 +3321,20 @@ H3/H2 first makes H1's sweep cheaper to interpret.
 | **H2** | **Dictionary far larger than the layer's effective dimensionality.** | `dict_size = 8 × max(d_in)` is a rule of thumb imported from NLP transformers. `analysis/internals.py` **already computes per-layer effective dimensionality** for exactly this run — read it for `stacked_xf.4` / `encoder.block.10` instead of guessing. If eff-dim there is ~40, an 8×768=6144-atom dictionary is asking for ~150 atoms per genuine direction. | One run at `dict_size ≈ 4 × eff_dim` and one at `16 × eff_dim`, from the recorded internals numbers. | ~20 min |
 | **H4** | **TopK's winner-take-all dynamics need an auxiliary loss.** | Standard, published failure mode of TopK SAEs: unit-norm decoder + hard top-k means a latent that loses early is permanently starved. The published fix is an **auxiliary reconstruction loss** (`aux_k`) that asks the top-`k_aux` *currently dead* latents to reconstruct the residual, giving them gradient without letting them into the main forward path. | Implement `aux_k` in `train_crosscoder` (~15 lines: take the residual `x − x̂`, encode with dead latents only, add `aux_coef · MSE` to the loss) and rerun. | ~1 h |
 
+> **Correction (2026-08-12) — H3's premise is false; H3 is already
+> answered.** The H3 row above asserts "the feasibility runs did not set it."
+> They did. `run_crosscoder_feasibility.py:79` (per-model baselines) and
+> `:94` (crosscoder) both pass
+> `resample_dead_every_epochs=max(1, args.epochs // 5)` explicitly, and
+> `git log` shows that file unchanged since before the 2026-08-05
+> feasibility run whose numbers are recorded above. The dataclass *default*
+> is indeed `0`, which is what the hypothesis was reasoning from — but the
+> CLI that produced every recorded number overrode it. So the real state of
+> H3 is stronger and worse than "untested": **dead-atom resampling was on,
+> at every recorded setting, and the 90–98% dead rate happened anyway.**
+> Resampling is not the missing piece. Row kept rather than deleted
+> (§0.2); do not spend the ~5 min running it.
+
 **Exit criteria (all must hold, on the crosscoder *and* on the matched
 per-model `TopKSAE` baseline at the same data/budget):**
 
@@ -3247,6 +3351,812 @@ gets there, that is itself a real, publishable finding about TSFM activation
 geometry at these layers — write it up as such and reconsider whether
 window-pooled activations are the right training substrate at all (see V6's
 token-level note below).
+
+**Findings — Stage 0 preparation (2026-08-12): H3 refuted on inspection, H1's
+substrate built and verified, H4 implemented, plus two bugs found along the
+way.** No Stage 0 sweep has been *run* yet — this block records the four
+things that had to be true before one could be, and the two things that
+turned out not to be.
+
+**(a) H3 is dead on arrival — see the Correction above the exit criteria.**
+Decisive evidence was two lines of an existing CLI
+(`run_crosscoder_feasibility.py:79,94`), not a rerun. Cost: minutes of
+reading instead of the ~5 min the table budgeted, and it removes a
+hypothesis rather than answering it. Resampling was on for every recorded
+90–98%-dead number.
+
+**(b) H1's big-data store is built and verified.**
+`tsfm_lens/configs/crosscoder_stage0.yaml` (new, committed — Stage 0's exit
+criteria demand a config file, not a CLI incantation) extracts *only* the
+two layers of the recorded L1 peak-CKA pair (TimesFM `stacked_xf.4`,
+Chronos-T5-Base `encoder.block.10`) from
+`tsfm_benchmark/benchmark_out_full1/public_dev`, every analysis stage
+disabled. Run name `crosscoder_stage0_bigdata` (new name, not a rerun into
+an existing directory — §15 A3). Wall clock **50 s** total, extract stage
+**42 s**, one A5000.
+
+- Corpus 4288 samples, **975 skipped** (shorter than `context_len +
+  horizon`, or non-finite) → **3313 series, 3 families**.
+- Aligned rows: **46382** at 14 windows/series, against the feasibility
+  run's 4608 → **10.07×**, i.e. **36.2 rows per atom** at `dict_size` 1280,
+  up from 3.6. H1 is testable as designed.
+- Store verification, verbatim (loaded, not inferred from shapes on disk):
+  ```
+  TimesFM stacked_xf.4 (46382, 1280) float32 mean 0.09705475717782974 std 3.0355584621429443 finite True
+  Chronos-T5-Base encoder.block.10 (46382, 768) float32 mean -0.45171332359313965 std 22.106319427490234 finite True
+  ```
+  On disk float16, shapes `(3313,14,1280)` / `(3313,14,768)`, chunks
+  `(256,14,1280)` / `(256,14,768)`, 196 MB. Confirmed a genuine zarr **v2**
+  store (`.zattrs` present, no `zarr.json`) — checked explicitly against
+  `CLAUDE.md` §11.25's silent-empty-store trap rather than assumed.
+- `context_len: 448`, not the usual 512. 3205 of this corpus's 4288
+  sequences are exactly 512 points long, so `512 + 64 = 576` would have
+  admitted only 108 series. This is the one departure from
+  `medium_run_chronos_base.yaml` that changes what is compared, and it has
+  a consequence — see (c).
+
+**(c) A real, diagnosed alignment finding at `context_len: 448`, which is a
+probe-calibration artifact and NOT an adapter bug.** The extraction's own
+`sanity_check` reported a Chronos diagonal-hit fraction of **0.50**, which
+passed only because `min_diagonal_frac` is exactly `0.5` — i.e. the gate did
+not fail, but it had no margin at all. Measured rather than assumed
+(`CLAUDE.md` §2.4), and the first hypothesis (left-padding shifting the
+token↔time map) was **refuted**: at 448 the tokenizer emits 449 tokens
+(448 + EOS), the attention mask is all 1s, `postprocess_tokens` returns 448,
+and spans are `[0,1]…[447,448]` — the declared mapping is correct.
+
+Depth profile, same checkpoint and session, both context lengths:
+
+```
+block:            0    1    2    3    4    5    6    7    8    9   10   11
+ctx=448         0.57 0.57 0.57 0.43 0.50 0.29 0.29 0.50 0.50 0.50 0.50 0.50
+ctx=512         1.00 1.00 1.00 1.00 1.00 1.00 1.00 1.00 1.00 1.00 1.00 1.00
+```
+
+Impulse-amplitude sweep at 448 (amplitude as a fraction of the probe's own
+max, per §11.16's fix; "unrelated tokens changed" is the mean count of token
+IDs that flipped away from the impulse's own window):
+
+| amplitude | mean unrelated tokens changed | hit fractions |
+|---|---|---|
+| 0.25 (current default) | 38.6 | the 448 row above |
+| 0.15 | 35.1 | still degraded |
+| 0.10 | 26.0 | still degraded |
+| 0.05 | 1.0 | **1.00 at blocks 0–7** |
+| 0.02 | 1.0 | **1.00 at every block** |
+
+A clean cliff, at the same amplitude where global re-quantization stops.
+This is §11.16's mechanism exactly — Chronos's `MeanScaleUniformBins`
+tokenizer computes bin edges from whole-sequence statistics — but it shows
+that §11.16's fix constant (`0.25 × base.max()`) was calibrated at one
+checkpoint size and **one context length** and does not generalize to
+another context length of the same checkpoint. **Conclusion: the
+`crosscoder_stage0_bigdata` store is trustworthy** (the token↔time map is
+correct; the 0.50 measures probe amplitude, not span error). `alignment.py`
+was deliberately **not** edited — changing that constant changes every
+recorded alignment number in this repo, a §2.1 downstream call that needs
+its own item rather than a drive-by fix. Tracked as §15 A20 below.
+
+**(d) H4 (`aux_k`) is implemented and wired end to end, and does not
+obviously work yet.** `sae/models.py` gains `pre_activations`/`sparsify`
+(split out of `encode`, which is asserted bit-identical), `forward_with_pre`
+(a separate method — `forward`'s two-tuple contract is consumed in a dozen
+places), and `auxiliary_dead_loss`. `sae/train.py` and `sae/crosscoder.py`
+both consume it; `SAETrainConfig`/`CrosscoderTrainConfig`/`SAEConfig` each
+gain `aux_k: 0` (off by default, so every recorded number stays regenerable),
+`aux_coef: 1/32`, `aux_dead_steps: 20`. `history["loss"]` stays
+reconstruction-only so aux runs remain comparable to every aux-free run on
+record; the aux term is reported separately as `history["aux"]`.
+
+First synthetic diagnostic bed (10 planted causes, d=20, dict=320, k=4,
+n=4000, 25 epochs, `TopKSAE`) — the full table, not the winner, since the
+honest answer here is "no winner":
+
+| variant | dead | fidelity |
+|---|---|---|
+| plain (aux off) | 0.272 | 0.8770 |
+| signed, dead_steps=4, coef=0.03125 | 0.581 | 0.8682 |
+| signed, dead_steps=4, coef=0.25 | 0.553 | 0.8420 |
+| signed, dead_steps=20, coef=0.03125 | **0.266** | 0.8733 |
+| signed, dead_steps=20, coef=0.25 | 0.375 | 0.8660 |
+| relu'd, dead_steps=4, coef=0.03125 | 0.609 | 0.8668 |
+| relu'd, dead_steps=4, coef=0.25 | 0.619 | 0.8482 |
+| relu'd, dead_steps=20, coef=0.03125 | 0.453 | 0.8749 |
+| relu'd, dead_steps=20, coef=0.25 | 0.500 | 0.8692 |
+
+Three readings. (1) The **signed** (no-ReLU) variant beats the ReLU'd
+variant at every matched setting — vindicating that documented design
+choice, which was the one most likely to look like an oversight later.
+(2) `aux_dead_steps=4` is **actively harmful** (0.581 vs. 0.272 plain): four
+batches without firing mislabels sporadically-firing atoms as dead, and the
+aux term then optimizes them *away* from the role they were actually
+filling. (3) The best setting (0.266 vs. 0.272) is a wash. **AuxK is not
+yet demonstrated to help.** This bed may simply be a bad test of it — 320
+atoms for 10 planted causes means most atoms *should* be dead, so there is
+almost no headroom for revival to be correct. A second bed with the
+cause-to-atom ratio inverted is running; its result decides whether H4 is
+carried into the real sweep as a candidate or recorded as refuted.
+Consequently `tests/test_aux_k.py::test_aux_k_revives_dead_atoms_in_a_topk_sae`
+currently **fails** (asserts `dead_aux < dead_plain − 0.05`; measured 0.581
+vs. 0.272) and is knowingly left failing rather than weakened to green until
+that question is settled.
+
+**(e) A real reproducibility bug in `train_sae`, found by a new test rather
+than by inspection.** `TopKSAE._init_weight` drew its dictionary from the
+**global** torch RNG, while `cfg.seed` seeded only the local batch-permutation
+`Generator`. Two `train_sae` calls with identical config and identical
+`cfg.seed` therefore produced different dictionaries — histories starting
+`0.16660461068153382` vs. `0.17042111217975617` — with the difference
+determined by whatever ambient global stream state the process happened to
+be in, which inside a pipeline run means *which earlier stages ran and how
+many draws they made*. `run_crosscoder_feasibility.py`'s `set_seed(...)` +
+`torch.manual_seed(...)` calls were caller-side workarounds for exactly this
+gap. Fixed by threading an optional `generator` through
+`TopKSAE.__init__`/`_init_weight` and `CrosscoderSAE.__init__`/`_init_weight`
+and passing `generator=rng` from both training loops. This is a
+`CLAUDE.md` §2.4 case in its purest form: the bug was invisible to reading
+the code and was surfaced by an assertion that two identical runs agree.
+
+**Superseded 2026-08-12 by the sweep-results block below** — the harness and
+the sweep it calls for both exist and have been run; the eff-dim numbers and
+the "18 alive atoms per effective direction may not be reachable" tension
+below are still live and are directly addressed there. Kept per §0.2.
+
+**Still open before the Stage 0 checkbox can move:** the sweep harness
+(`run_crosscoder_stage0.py`) and the sweep itself (H2 → H1 → H4, H3 having
+been eliminated above), plus the matched per-model `TopKSAE` baselines the
+exit criteria require. Relevant prior number for H2, read from
+`runs/medium_run_chronos_base/internals/profile.json` rather than guessed
+(as the H2 row instructs): effective dimensionality is **28.15** for TimesFM
+`stacked_xf.4` and **13.93** for Chronos-T5-Base `encoder.block.10`. A
+1280-atom dictionary is therefore ~45× the pair's larger effective
+dimensionality — and the exit criteria's conjunction ("≥ 500 alive **and**
+≤ 30% dead") implies roughly **18 alive atoms per linear effective
+direction**, which may not be reachable at any setting. If it isn't, that is
+the publishable Stage 0 finding this section's own last paragraph asks for,
+not a failure to report.
+
+**Findings — Stage 0 sweep run (2026-08-12): H4 (AuxK) is decisive by a wide
+margin, H1 and H2 are both refuted as fixes, and the gate does NOT pass —
+but the blocker has moved from deadness to fidelity, and one per-model
+baseline passes outright.** Nine grid rows × three trainings each (one joint
+crosscoder + two matched per-model `TopKSAE` baselines on the same rows at
+the same budget), 60 epochs, k=16, seed 0, against
+`runs/crosscoder_stage0_bigdata`'s 46382 aligned rows (TimesFM
+`stacked_xf.4`, d=1280; Chronos-T5-Base `encoder.block.10`, d=768). ~5 min
+wall clock on one RTX A5000. Command:
+`python run_crosscoder_stage0.py --run runs/crosscoder_stage0_bigdata --grid full --epochs 60 --k 16`.
+Artifacts: `runs/crosscoder_stage0_bigdata/crosscoder_stage0.{json,md}`.
+
+**The crosscoder sweep table, verbatim** (`crosscoder_stage0.md`; `n/a*` =
+dictionary smaller than the 500-alive floor, so the row could not pass
+regardless of training quality):
+
+| row | rows | dict | rows/atom | xc fid TimesFM | xc fid Chronos-T5-Base | xc dead | xc alive | xc L0 | pass |
+|---|---|---|---|---|---|---|---|---|---|
+| `h2:dict=4x_effdim(112)` | 46382 | 112 | 414.1 | 0.4616 | 0.5856 | 0.5446 | 51 | 16.00 | n/a* |
+| `h2:dict=16x_effdim(448)` | 46382 | 448 | 103.5 | 0.4753 | 0.6008 | 0.8638 | 61 | 16.00 | n/a* |
+| `h2:dict=40x_effdim(1120)` | 46382 | 1120 | 41.4 | 0.4854 | 0.6070 | 0.9393 | 68 | 16.00 | fail |
+| `h1:rows=4608(feasibility)` | 4608 | 1280 | 3.6 | 0.3205 | 0.3722 | 0.9609 | 50 | 16.00 | fail |
+| `h1:rows=20000` | 20000 | 1280 | 15.6 | 0.4580 | 0.5614 | 0.9359 | 82 | 16.00 | fail |
+| `h1:rows=all` | 46382 | 1280 | 36.2 | 0.4913 | 0.6170 | 0.9375 | 80 | 16.00 | fail |
+| `h4:aux_off` | 46382 | 1280 | 36.2 | 0.4913 | 0.6170 | 0.9375 | 80 | 16.00 | fail |
+| `h4:aux_k=64,coef=0.03125` | 46382 | 1280 | 36.2 | 0.6028 | 0.6791 | 0.3477 | 835 | 16.00 | fail |
+| `h4:aux_k=64,coef=0.25` | 46382 | 1280 | 36.2 | 0.5687 | 0.6543 | 0.1625 | 1072 | 16.00 | fail |
+
+`crosscoder_rows_passing: []` — **no crosscoder row passes all three exit
+criteria.** The matched per-model baselines, same rows and budget, full
+precision:
+
+| row | model | dict | fidelity | dead | alive | L0 | final MSE | passes |
+|---|---|---|---|---|---|---|---|---|
+| `h2:dict=4x_effdim(112)` | TimesFM | 112 | 0.53932497404855 | 0.3660714328289032 | 71 | 16.0 | 0.7405528528154408 | no |
+| `h2:dict=4x_effdim(112)` | Chronos-T5-Base | 112 | 0.6982846197513244 | 0.6964285969734192 | 34 | 16.0 | 12.565651349152441 | no |
+| `h2:dict=16x_effdim(448)` | TimesFM | 448 | 0.5622627384910894 | 0.7723214626312256 | 102 | 16.0 | 0.7028092962820335 | no |
+| `h2:dict=16x_effdim(448)` | Chronos-T5-Base | 448 | 0.7227196082177738 | 0.8705357313156128 | 58 | 16.0 | 11.547010354723085 | no (fidelity only) |
+| `h2:dict=40x_effdim(1120)` | TimesFM | 1120 | 0.6033689051699381 | 0.8803571462631226 | 134 | 16.0 | 0.6371318326669371 | no |
+| `h2:dict=40x_effdim(1120)` | Chronos-T5-Base | 1120 | 0.7329605062985123 | 0.9276785850524902 | 81 | 16.0 | 11.135191526960305 | no (fidelity only) |
+| `h1:rows=4608` | TimesFM | 1280 | 0.32733329705716274 | 0.93359375 | 85 | 16.0 | 1.0818790197372437 | no |
+| `h1:rows=4608` | Chronos-T5-Base | 1280 | 0.5424557552927723 | 0.9671875238418579 | 42 | 16.0 | 19.147632175021702 | no |
+| `h1:rows=20000` | TimesFM | 1280 | 0.5359753360595216 | 0.866406261920929 | 171 | 16.0 | 0.7450868275642395 | no |
+| `h1:rows=20000` | Chronos-T5-Base | 1280 | 0.6450327434749685 | 0.9554687738418579 | 57 | 16.0 | 14.749556788635253 | no |
+| `h1:rows=all` / `h4:aux_off` | TimesFM | 1280 | 0.6104473418821939 | 0.893750011920929 | 136 | 16.0 | 0.621604638008481 | no |
+| `h1:rows=all` / `h4:aux_off` | Chronos-T5-Base | 1280 | 0.7291947010247736 | 0.9453125 | 70 | 16.0 | 11.245107474094128 | no (fidelity only) |
+| `h4:aux_k=64,coef=0.03125` | TimesFM | 1280 | 0.7080086114967346 | 0.07500000298023224 | 1184 | 16.0 | 0.47092298487967 | ✅ **PASSES ALL THREE** |
+| `h4:aux_k=64,coef=0.03125` | Chronos-T5-Base | 1280 | 0.7900891284979146 | 0.69921875 | 385 | 16.0 | 8.707635288831513 | no (fidelity only) |
+| `h4:aux_k=64,coef=0.25` | TimesFM | 1280 | 0.6972009715293437 | 0.06406249850988388 | 1198 | 16.0 | 0.4891255340342904 | no (dead+alive only) |
+| `h4:aux_k=64,coef=0.25` | Chronos-T5-Base | 1280 | 0.8002951914643573 | 0.5859375 | 530 | 16.0 | 8.339681685076233 | no (fidelity+alive) |
+
+**Crosscoder full precision for the three rows that matter.** `h4:aux_off` /
+`h1:rows=all`: fidelity `{TimesFM: 0.49126626478729474, Chronos-T5-Base:
+0.6170109332217114}`, dead `0.9375`, alive `80`, loss `0.12138739499657784`
+(per-source `[0.08870120313069803, 0.03268619252384149]`, aux `0.0`).
+`h4:aux_k=64,coef=0.03125`: fidelity `{TimesFM: 0.6028074448732459,
+Chronos-T5-Base: 0.6791484134622208}`, dead `0.34765625`, alive `835`, loss
+`0.09693617558081961` (per-source `[0.06940870532592258,
+0.02752747118385025]`, aux `0.848771290176462`).
+`h4:aux_k=64,coef=0.25`: fidelity `{TimesFM: 0.568718036289822,
+Chronos-T5-Base: 0.6542606601812815}`, dead `0.16249999999999998`, alive
+`1072`, loss `0.1047686935232541` (per-source `[0.07522591450347417,
+0.02954277934876077]`, aux `0.8658747349605385`).
+
+**(1) H4 is the decisive hypothesis — and it was ranked last.** At a fixed
+dictionary, fixed rows, and everything else identical, turning on AuxK moves
+the crosscoder from **80 alive atoms (93.75% dead) to 835 (34.8%) at
+`coef=0.03125` and 1072 (16.2%) at `coef=0.25`** — a 10–13× increase in
+living dictionary capacity. Crucially it is **not a liveness-for-fidelity
+trade at `coef=0.03125`**: crosscoder fidelity *rises* on both sources at
+the same time (TimesFM 0.4913 → 0.6028, Chronos 0.6170 → 0.6791), and the
+per-model TimesFM baseline goes from 0.6104/89.4% dead to 0.7080/7.5% dead.
+Starved atoms were not surplus capacity correctly declining to represent
+nothing; they were capacity the optimizer could not reach, and the aux
+gradient reaches it. `coef=0.25` buys more liveness but starts costing
+fidelity (TimesFM 0.6028 → 0.5687), so 0.03125 is the better of the two
+tested and the coefficient is worth sweeping finer.
+
+**(2) H1 (data per atom) is refuted for deadness and confirmed for
+fidelity — a clean dissociation.** Going 4608 → 20000 → 46382 rows at fixed
+`dict_size=1280` moves the dead rate `0.9609 → 0.9359 → 0.9375` — flat, and
+not even monotonic. Alive atoms go `50 → 82 → 80`. So 10× the data buys
+essentially **nothing** in liveness. The same 10× buys a great deal of
+*fidelity*: TimesFM `0.3205 → 0.4580 → 0.4913`, Chronos `0.3722 → 0.5614 →
+0.6170`, and on the TimesFM baseline `0.3273 → 0.5360 → 0.6104`. This is
+worth stating plainly because H1 was the *most likely cause* in the ranking
+and the extraction built for it (§6.2.1 Stage 0 prep (b)) was the session's
+most expensive prerequisite: the extra data was necessary — every
+AuxK number above sits on it and the 4608-row rows are the worst in the
+table on every axis — but it is not what fixes deadness.
+
+**(3) H2 (dictionary vs. effective dimensionality) is refuted as a fix, and
+the reason is the sharpest single number in the sweep: the alive-atom count
+is nearly invariant to dictionary size.** 112 / 448 / 1120 atoms yield
+**51 / 61 / 68** alive atoms respectively — a 10× change in dictionary size
+moves the surviving count by ~33%. The dead *rate* does fall as the
+dictionary shrinks (`0.9393 → 0.8638 → 0.5446`) but only because the
+denominator shrinks; nothing more is actually alive. Under plain TopK at
+k=16 this layer pair supports an **absolute ceiling of roughly 50–80 living
+atoms**, essentially regardless of how many are offered. That ceiling is
+what makes the ≥500-alive criterion unreachable by resizing: the two smaller
+H2 rows are marked `n/a*` because a 112- or 448-atom dictionary cannot host
+500 alive atoms even in principle. It also directly answers the "18 alive
+atoms per linear effective direction may not be reachable" tension recorded
+in the preparation block above — **it is reachable, but only via AuxK**
+(1072 alive against a summed effective dimensionality of 28.15 + 13.93),
+never via sizing.
+
+**(4) The gate does not pass, and the blocker is now fidelity alone.**
+`h4:aux_k=64,coef=0.25` satisfies `dead_ok` (0.1625 ≤ 0.30) and `alive_ok`
+(1072 ≥ 500) and fails only `fidelity_ok` (TimesFM 0.5687, Chronos 0.6543,
+both < 0.70). Before this sweep every row failed all three. **Stage 0's
+checkbox stays `[ ]`.**
+
+**(5) One configuration passes outright, and it is a per-model baseline, not
+the crosscoder.** TimesFM's `TopKSAE` at `aux_k=64, coef=0.03125`, 46382
+rows, dict 1280: fidelity 0.7080086114967346, dead 0.07500000298023224,
+1184 alive — all three criteria, the first fully-passing configuration
+anywhere in this work. The joint crosscoder at the identical setting reaches
+only 0.6028 on the same source. **Joint training currently costs fidelity on
+both sources at every row in the table** (crosscoder < both baselines,
+without exception), which is a real result about the crosscoder rather than
+about deadness, and is exactly what Stage 1's scorecard exists to quantify.
+
+**(6) Chronos's baseline reaches `fidelity_ok` at five separate rows while
+70–97% dead — and that is not a bug.** At `h2:dict=4x_effdim(112)` it hits
+0.6982846197513244 with **34 alive atoms**; at `h1:rows=all`,
+0.7291947010247736 with 70. Its measured effective dimensionality at
+`encoder.block.10` is 13.93, so a few dozen atoms genuinely suffice to
+reconstruct it — the dictionary is not failing to learn, there is
+comparatively little there to learn. TimesFM (eff-dim 28.15, d=1280) needs
+an order of magnitude more atoms for comparable fidelity. Read the
+per-source fidelity and the per-source alive count together; neither alone
+distinguishes "collapsed" from "the source is low-dimensional."
+
+**(7) Consistency checks that came out clean.** `l0_actual` is exactly
+`16.00` in all 27 trainings (= k, as plain TopK requires — no silent
+sparsity drift). `h4:aux_off` reproduces `h1:rows=all` to every printed
+digit on the crosscoder and both baselines despite being trained in a
+separate call, which independently confirms the seeded-`generator` fix from
+the preparation block (e) actually made training reproducible. No fidelity
+fell outside [0, 1]. The `aux` loss term is exactly `0.0` in every `aux_k=0`
+row and nonzero only where enabled.
+
+**(8) The synthetic AuxK bed did not predict this, and the tests were
+written accordingly.** `tests/test_aux_k.py`'s planted-data beds measured
+AuxK as a **wash** (dead 0.272 → 0.266) on one bed and provably **inert** on
+a second where nothing was dead — which is why that file asserts only "does
+no harm" rather than "revives atoms" (`CLAUDE.md` §2.4). On real
+activations the same mechanism is a 10–13× effect. The synthetic tests were
+not wrong; they were measuring a regime where the failure mode AuxK fixes
+does not occur. Had the stronger claim been asserted to match the
+hypothesis, it would have passed for the wrong reason on synthetic data and
+told us nothing about the real case.
+
+**Next action for Stage 0, and the specific reason:** sweep **k**, not
+anything already in the grid. Every row above ran at `k=16` while TimesFM's
+`stacked_xf.4` has a measured effective dimensionality of **28.15** — a
+16-atom reconstruction budget cannot span a ~28-dimensional subspace, so
+the fidelity ceiling of ~0.60–0.71 seen across the entire table is the
+expected consequence of the sparsity budget rather than evidence about the
+dictionary. `k ∈ {32, 48, 64}` at `aux_k=64, coef=0.03125` on all 46382
+rows is the direct test, and it is the only untested lever that plausibly
+moves fidelity above 0.70 on both sources simultaneously. Note this also
+loosens the interpretability claim (higher L0 = less sparse features), so
+record the smallest k that clears the gate rather than the largest tried.
+Finer `aux_coef` between 0.03125 and 0.25 is the secondary lever.
+
+**Findings — Stage 0 k sweep (2026-08-12, same session): the crosscoder gate
+PASSES at k=48; the prediction above was correct and the remaining failure
+is on the matched *Chronos baseline*, not the crosscoder.** Ran
+`run_crosscoder_stage0.py --grid k` against the same
+`runs/crosscoder_stage0_bigdata` store (46382 rows, TimesFM `stacked_xf.4` ↔
+Chronos-T5-Base `encoder.block.10`, `dict_size=1280`, `aux_k=64,
+aux_coef=0.03125`, 60 epochs, seed 0 — only `k` varies). Artifacts:
+`crosscoder_stage0_ksweep.{json,md}` in that run directory.
+
+| row | rows | dict | rows/atom | xc fid TimesFM | xc fid Chronos-T5-Base | xc dead | xc alive | xc L0 | pass |
+|---|---|---|---|---|---|---|---|---|---|
+| `k=16:aux_k=64,coef=0.03125` | 46382 | 1280 | 36.2 | 0.6028 | 0.6791 | 0.3477 | 835 | 16.00 | fail |
+| `k=32:aux_k=64,coef=0.03125` | 46382 | 1280 | 36.2 | 0.6899 | 0.7048 | 0.1516 | 1086 | 32.00 | fail |
+| `k=48:aux_k=64,coef=0.03125` | 46382 | 1280 | 36.2 | 0.7589 | 0.7556 | 0.0203 | 1254 | 48.00 | **PASS** |
+| `k=64:aux_k=64,coef=0.03125` | 46382 | 1280 | 36.2 | 0.7485 | 0.7028 | 0.2688 | 936 | 64.00 | PASS |
+
+**(1) k was the right lever, and the effect is monotone up to k=48 on every
+axis at once.** Fidelity rises on both sources (TimesFM 0.6028 → 0.6899 →
+0.7589; Chronos 0.6791 → 0.7048 → 0.7556) *while* the dead rate falls
+(0.3477 → 0.1516 → 0.0203) and alive atoms rise (835 → 1086 → 1254 of 1280).
+This is not a sparsity-for-fidelity trade in the k≤48 range — it is the
+straightforward consequence of the diagnosis in the previous block: at
+`k=16` the reconstruction budget was smaller than the subspace TimesFM's
+layer actually occupies (measured eff-dim **28.15**), so atoms competed for
+too few slots and most never won one.
+
+**(2) The winner is `k=48`, recorded as the smallest k that clears the gate,
+not the best-looking one.** Full precision: crosscoder fidelity
+**0.7588510627220952** (TimesFM) / **0.7556082781475381** (Chronos-T5-Base),
+`dead_feature_rate` **0.020312499999999956**, **1254** alive atoms of 1280,
+`l0_actual` exactly 48.0, final loss 0.061717941376224925 (per-source
+[0.0408388023874678, 0.02087914035793102]). All three numeric criteria hold
+simultaneously with margin (0.0203 ≤ 0.30; 1254 ≥ 500; both fidelities ≥
+0.70), which no configuration in the previous 9-row sweep achieved on any
+axis pair.
+
+**(3) k=64 is strictly worse than k=48 despite also passing — a real
+non-monotonicity worth recording.** Going 48 → 64 *lowers* fidelity on both
+sources (0.7589 → 0.7485, 0.7556 → 0.7028) and *raises* the dead rate more
+than 13× (0.0203 → 0.2688, alive 1254 → 936), while making every feature
+less sparse. The optimum is interior, so "more k is better" is false past
+the effective dimensionality; the previous block's instruction to record the
+smallest passing k turns out to also select the best one here. Not
+over-read: this is one seed at one layer pair, and 0.0203 vs. 0.2688 is a
+large enough gap that seed noise is an unlikely explanation, but the
+*location* of the optimum between 32 and 64 is resolved only to ±16.
+
+**(4) The gate is NOT fully cleared, and the reason has moved again — from
+the crosscoder to one per-model baseline.** The exit criteria require all
+three conditions on the crosscoder *and* on the matched per-model `TopKSAE`
+baselines at the same budget. At k=48 the **TimesFM baseline passes
+outright** (fidelity 0.8223450861413343, dead 0.01718750037252903, 1258
+alive) but the **Chronos-T5-Base baseline fails `dead_ok`** — fidelity
+0.871442102659578 and 576 alive (both fine), dead rate
+**0.550000011920929**, well over the 0.30 bar. The same pattern holds at
+every k (Chronos baseline dead 0.699 / 0.745 / 0.550 / 0.543 at k =
+16/32/48/64), i.e. it is not a k problem. Stage 0's checkbox therefore stays
+`[ ]`.
+
+**(5) But the specific confound Stage 0 exists to remove is gone.** The
+gate's stated purpose is that a 90–98% dead crosscoder makes
+`relative_decoder_norm` read ~98% "shared" from dead-atom symmetry alone. At
+k=48 the crosscoder has 1254 of 1280 atoms alive — that failure mode is
+eliminated, and a shared-vs-specific split computed on *this* dictionary is
+no longer symmetric-by-deadness. The residual Chronos-baseline deadness
+affects the **V0 per-model-dictionaries route** (`sae/matching.py`), which
+is the comparison baseline every crosscoder variant must beat in Stage 2 —
+so it is a live problem for Stage 2's scorecard, not for the crosscoder's
+own trainability. Recording it here rather than closing Stage 0 on a
+technicality, because the distinction is the whole reason the criteria named
+both objects.
+
+**(6) The likely cause of the Chronos baseline's deadness, and why the
+earlier H2 refutation does not settle it.** Chronos-T5-Base's
+`encoder.block.10` has measured eff-dim **13.93**, half TimesFM's 28.15, so
+a 1280-atom dictionary is ~92× its effective dimensionality (vs. ~45× for
+TimesFM) — a smaller per-model dictionary is the obvious candidate fix. The
+previous block refuted H2 (alive count nearly invariant to dict size:
+51/61/68 alive at 112/448/1120), **but every one of those rows ran with
+AuxK off**, and AuxK is what turned out to be decisive. The H2 × H4
+interaction has never been tested. That is the concrete next experiment for
+this residual: per-model dictionary sizing (e.g. `dict_size ≈ 20–40×
+eff_dim`, so ~280–560 for Chronos) *with* `aux_k=64, coef=0.03125` on, which
+is cheap — it reuses the same store and touches only the baseline arm.
+
+**(7) The joint-training fidelity cost persists at every k, and is now
+quantified where it matters.** The crosscoder is below both per-model
+baselines on their own source in all four rows, without exception. At the
+winning k=48: TimesFM 0.7589 (joint) vs. 0.8223 (own SAE), Chronos 0.7556
+vs. 0.8714 — a cost of 0.063 and 0.116 fidelity respectively. This is a real
+property of the crosscoder, not a training defect, and it is exactly the
+quantity Stage 1's scorecard exists to weigh against whatever cross-model
+alignment the joint dictionary buys. Note the cost is ~2× larger on Chronos,
+the lower-eff-dim source — consistent with the joint dictionary being
+sized/budgeted for the harder source.
+
+**(8) Consistency checks clean.** `l0_actual` is exactly `k` in all four
+crosscoder rows and all eight baselines (16.0/32.0/48.0/64.0 — no sparsity
+drift). `k=16:aux_k=64,coef=0.03125` reproduces the previous sweep's
+`h4:aux_k=64,coef=0.03125` row to every printed digit (fidelity 0.6028 /
+0.6791, dead 0.3477, alive 835) despite being a separate invocation through
+a new grid — a second independent confirmation of the seeded-`generator`
+reproducibility fix, and evidence the new `k_is_swept` flag did not
+perturb the shared rows. All fidelities in [0, 1]; `aux` nonzero in every
+row (AuxK enabled throughout).
+
+**(9) The winner is committed as a config, and the config was verified by
+replay rather than by reading it.** `configs/crosscoder_stage0_winner.yaml`
+holds the winning hyperparameters, the store and layer pair they were
+measured on, and the measured result inline for diffing;
+`run_crosscoder_stage0.py --params <file>` executes it as a single-row sweep
+(unknown `train:` keys raise rather than being ignored, so a typo cannot
+silently become a different experiment). Running it end to end reproduced
+the sweep **bit-for-bit** — fidelity 0.7588510627220952 / 0.7556082781475381,
+dead 0.020312499999999956, 1254 alive, and both baselines identical to
+their swept values on every field. That is a stronger check than "the config
+file says the right numbers": it confirms the file is a runnable definition
+of the experiment rather than a transcription of one, which is the
+difference the exit criterion was asking for. Pinned by
+`tests/test_stage0_winner_config.py` (4 tests, no GPU), which also checks the
+config's inline `expected:` block against the real artifact — the
+`CLAUDE.md` §11.24 failure mode is a config whose *meaning* drifts while its
+bytes stay identical, and a config recording numbers nobody re-checks is
+exactly where that hides.
+
+**Next action for Stage 0:** the winning configuration is committed as
+`configs/crosscoder_stage0_winner.yaml` (the fourth exit criterion), so the
+only thing standing between here and `[x]` is the per-model Chronos baseline
+in (6) — one cheap sweep over `dict_size` with AuxK on. Do that before
+Stage 1, since Stage 1's ladder and Stage 2's V0 baseline both consume the
+per-model dictionaries this affects.
+
+---
+
+**Findings — Stage 0 H2 × H4: the dictionary-size sweep with AuxK on
+(2026-08-12, same session).** The experiment finding (6) directly above
+named, run against the same `runs/crosscoder_stage0_bigdata` store, same
+seed, same k=48 / `aux_k=64, coef=0.03125` / 60 epochs, varying only
+`dict_size` (`run_crosscoder_stage0.py --grid h2xh4`, artifacts
+`crosscoder_stage0_h2xh4.json`/`.md`):
+
+| row | dict | rows/atom | xc fid TimesFM | xc fid Chronos | xc dead | xc alive | pass |
+|---|---|---|---|---|---|---|---|
+| `h2xh4:dict=640` | 640 | 72.5 | 0.7346 | 0.7670 | 0.0203 | 627 | PASS |
+| `h2xh4:dict=768` | 768 | 60.4 | 0.7356 | 0.7260 | 0.1081 | 685 | PASS |
+| `h2xh4:dict=896` | 896 | 51.8 | 0.7590 | 0.7782 | 0.0112 | 886 | PASS |
+| `h2xh4:dict=1024` | 1024 | 45.3 | 0.7363 | 0.7348 | 0.0322 | 991 | PASS |
+
+**(1) H2 stays refuted, now in the regime where it could have mattered.**
+Finding (6) flagged that the original H2 refutation used AuxK-off rows and
+that the H2 × H4 interaction had never been tested. It has now: with AuxK
+on, the crosscoder clears all three numeric criteria at **every** dictionary
+size from 640 through 1280 (the k-sweep's winner). Dictionary size is not
+the lever for crosscoder deadness in either regime — `k` and AuxK are, and
+the earlier refutation holds up rather than being an artifact of the broken
+regime it was measured in.
+
+**(2) The best crosscoder row in this repo so far is `dict=896`, not the
+committed k=48/dict=1280 winner.** Fidelity 0.7590 / 0.7782 (vs. the
+winner's 0.7589 / 0.7556), dead rate **0.0112** (vs. 0.0203), 886 of 896
+atoms alive. It beats the committed winner on Chronos fidelity by 0.023 and
+ties on TimesFM, at 70% of the parameters. **`configs/crosscoder_stage0_
+winner.yaml` was deliberately not edited** — it records the row the k sweep
+selected under the stated rule (smallest passing k), the numbers in its
+`expected:` block are that row's, and rewriting it to chase a 0.02 fidelity
+difference found by a different sweep would break the property finding (9)
+just established (a config that is a runnable definition of the experiment
+it names). If Stage 1 wants dict=896, that is a new committed config with
+its own replay, not an in-place edit of this one.
+
+**(3) The Chronos-T5-Base per-model baseline fails at every dictionary size,
+and the failure mode is a pinch between two criteria rather than a
+threshold to tune.** Its alive-atom count is almost flat across a 2×
+dictionary range, so the dead *rate* is essentially mechanical:
+
+| dict | 640 | 768 | 896 | 1024 | 1280 |
+|---|---|---|---|---|---|
+| alive | 467 | 473 | 529 | 546 | 576 |
+| dead rate | **0.2703** | 0.3841 | 0.4096 | 0.4668 | 0.5500 |
+| `dead_ok` (≤0.30) | ✅ | ❌ | ❌ | ❌ | ❌ |
+| `alive_ok` (≥500) | ❌ | ❌ | ✅ | ✅ | ✅ |
+| fidelity | 0.8880 | 0.8757 | 0.8810 | 0.8739 | 0.8714 |
+
+Doubling the dictionary buys 109 additional living atoms (467 → 576). The
+two criteria therefore move in opposite directions and **cross without ever
+both holding**: `dict=640` is the first size to clear the rate bar (0.2703,
+comfortably under 0.30) and misses the absolute floor by 33 atoms; every
+larger size clears the floor and fails the rate. Fidelity is never the
+problem — it is 0.87–0.89 throughout, well above the 0.70 bar, and the
+*highest* fidelity in the table sits on the *smallest* dictionary.
+
+**(4) The candidate fix named in (6) is therefore refuted, and the residual
+is now a criteria question rather than a training question.** Finding (6)
+predicted "per-model dictionary sizing (~280–560 for Chronos)" would fix
+this. It does not: shrinking the dictionary lowers the rate exactly as
+predicted, but takes the absolute alive count down with it, because this
+layer supports a bounded number of distinguishable atoms (~470–580 here) no
+matter how many are offered. Extrapolating the alive-fraction curve
+(0.450 / 0.533 / 0.590 / 0.616 / 0.730 at dict 1280→640) says no size in the
+500–640 range reaches 500 alive atoms either, which would make the `≥500`
+floor **unreachable for this model at this layer**, not merely unreached.
+That extrapolation is not yet a measurement — a `dict ∈ {512, 576, 704}`
+confirmation sweep is running as this is written; its result is the
+deciding evidence and is written up below when it lands.
+
+**(5) What this means for Stage 0's checkbox, stated rather than resolved.**
+If (4)'s extrapolation confirms, the honest reading is that `MIN_ALIVE =
+500` is a *global* constant applied to a layer whose measured effective
+dimensionality is **13.93** — asking a 14-dimensional representation to
+support 500 distinguishable atoms while also keeping ≥70% of them alive is
+a stronger demand than the same constant makes of TimesFM's 28.15. The
+constant was chosen (§6.2.1 Stage 0) to make `relative_decoder_norm`
+meaningful, and 467 alive atoms serve that purpose as well as 546 do — the
+dead-atom symmetry confound that motivated the whole gate is *gone* at
+`dict=640` (73% alive). Two defensible resolutions: scale the floor per
+model (e.g. `min_alive ≥ 20× eff_dim`, giving ~279 for Chronos and ~563 for
+TimesFM), or keep the constant and record Stage 0 as passing on the
+crosscoder while the Chronos baseline carries a stated, quantified caveat
+into Stage 2's scorecard. **Not decided here** — it changes what a recorded
+gate means, so it is a call to make deliberately rather than one to slip in
+alongside a sweep result. Stage 0 stays `[ ]` pending it.
+
+**(6) Consistency checks clean.** `l0_actual` is exactly 48.0 in all four
+crosscoder rows and all eight baselines. The TimesFM baseline passes at
+every size (dead 0.0000 / 0.0039 / 0.0033 / 0.0117; alive 640 / 765 / 893 /
+1012; fidelity 0.795–0.807), confirming the failure in (3) is specific to
+the Chronos side and not a property of the harness or the store. The
+joint-training fidelity cost from finding (7) reproduces at every size
+(e.g. at dict=896: 0.759 joint vs. 0.807 own-SAE on TimesFM, 0.778 vs.
+0.881 on Chronos).
+
+**(7) The pinch is confirmed by measurement, not left as an extrapolation
+(`--grid pinch`, dict ∈ {512, 576, 704}, same session).** Finding (4) said
+the deciding evidence was a sweep below `h2xh4`'s smallest dictionary. It
+ran; artifacts `crosscoder_stage0_pinch.json`/`.md`. Chronos-T5-Base
+baseline, now across the full measured range:
+
+| dict | 512 | 576 | 640 | 704 | 768 | 896 | 1024 | 1280 |
+|---|---|---|---|---|---|---|---|---|
+| alive | 386 | 355 | 467 | 405 | 473 | 529 | 546 | 576 |
+| dead rate | **0.2461** | 0.3837 | **0.2703** | 0.4247 | 0.3841 | 0.4096 | 0.4668 | 0.5500 |
+| `dead_ok` | ✅ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| `alive_ok` | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ | ✅ |
+
+**No dictionary size in [512, 1280] satisfies both criteria**, and the two
+that clear the rate bar (512 and 640) land at 386 and 467 alive — 114 and
+33 short of the floor. Finding (4)'s extrapolation is therefore confirmed
+in the direction it predicted, and (5)'s criteria question is now the real
+residual rather than a hypothetical one.
+
+**(8) But the alive count is noisy enough that the smooth curve in (3) was
+partly an illusion — worth knowing before anyone fits a model to it.**
+Ordering by dictionary size, alive goes 386 → 355 → 467 → 405 → 473 → 529 →
+546 → 576: *non-monotone*, with dict=576 below dict=512 and dict=704 below
+dict=640. Every row is a single seed, so run-to-run SAE-training variance
+on this layer is on the order of ±60 alive atoms — comparable to the
+33-atom margin (4) turns on. Two consequences, both stated rather than
+worked around: the "bounded number of distinguishable atoms (~470–580)"
+band in (4) is better read as **~350–580 with substantial noise**, and any
+future attempt to find a passing dictionary size by search should average
+replicate seeds per size (the same fix `run_layer_screen_bakeoff.py
+--n-gold-replicates` already applies to the bake-off's gold ranking, for
+the same reason — see `CLAUDE.md` §9's layer-screen row). It does not
+change (7)'s conclusion: the *best* rate-passing row across eight
+dictionary sizes is 33 atoms short, and the noise band does not reach 500
+at any size where the rate bar also holds.
+
+**(9) The crosscoder's own passing range has a floor too, now located.**
+`dict=512` and `dict=576` fail — not on fidelity for 512 (0.7103 / 0.7220,
+both above the bar) but on the absolute alive floor (451 and 461 atoms);
+`dict=576` additionally drops Chronos fidelity to 0.6867, below 0.70. So
+the crosscoder passes for every `dict_size ≥ 640` tried and fails below it,
+which brackets the committed winner comfortably rather than putting it near
+an edge.
+
+**Next action for Stage 0, revised.** The training-side search is finished:
+three grids (`k`, `h2xh4`, `pinch`) across four sparsity budgets and eight
+dictionary sizes establish that the crosscoder clears every criterion
+comfortably and the Chronos-T5-Base per-model baseline clears none of the
+size-dependent ones at any setting. **What is left is not another sweep —
+it is (5)'s decision**: whether `MIN_ALIVE = 500` should be a global
+constant or scale with the layer's measured effective dimensionality. Both
+options are defensible and both are one-line changes to
+`run_crosscoder_stage0.py`'s constants; what is *not* defensible is picking
+whichever one makes the gate pass. Recommended framing for whoever makes
+it: the gate exists to stop dead-atom symmetry from faking a
+shared-vs-specific split, that failure mode is measured by the *fraction*
+alive (73% at `dict=640`) rather than by the absolute count, and the
+absolute floor was added as a crude guard against a tiny dictionary
+trivially satisfying the fraction — a guard that a per-model floor of
+`20× eff_dim` (279 Chronos / 563 TimesFM) serves at least as well. Stage 0
+stays `[ ]` until that call is made and written down.
+
+**(10) The replicate seeds landed, and they refute the premise the decision
+was being staged on (`configs/crosscoder_stage0_replicate640.yaml`, seeds
+0–4, 2026-08-12).** Finding (8) said the 33-atom margin at `dict=640` was
+comparable to single-seed noise, so the criteria call should rest on
+replicates rather than on that one row. It now does, and the answer is not
+the one the framing anticipated: the margin is not marginal, and seed 0 —
+the row every previous finding quoted — was **the most favorable of five
+draws on both criteria simultaneously**. Seed 0 reproduces bit-for-bit
+(crosscoder fidelity 0.7346103683566961 / 0.7669887293414291, dead
+0.020312499999999956, alive 627; Chronos baseline dead 0.27031251788139343,
+alive 467, fidelity 0.8880293424795604), so this is genuine seed variance,
+not drift (`CLAUDE.md` §11.24 checked and cleared).
+
+| seed | xc fid TimesFM | xc fid Chronos | xc dead | xc alive | baseline-A alive | baseline-B dead | baseline-B alive |
+|---|---|---|---|---|---|---|---|
+| 0 | 0.7346 | 0.7670 | 0.0203 | 627 | 640 | **0.2703** | **467** |
+| 1 | 0.7197 | 0.7157 | 0.0250 | 624 | 639 | 0.3375 | 424 |
+| 2 | 0.7361 | 0.7579 | 0.0219 | 626 | 635 | 0.4203 | 371 |
+| 3 | 0.6966 | 0.6993 | 0.0500 | 608 | 639 | 0.3063 | 444 |
+| 4 | 0.7023 | 0.6999 | 0.0563 | 604 | 633 | 0.3891 | 391 |
+| **mean ± sd** | 0.7179 ± 0.0181 | 0.7279 ± 0.0323 | 0.0347 ± 0.0171 | 617.8 ± 10.9 | 637.2 ± 3.0 | 0.3447 ± 0.0607 | 419.4 ± 38.9 |
+
+Three things follow, none of them what finding (8) predicted:
+
+- **The Chronos baseline clears `alive ≥ 500` in 0 of 5 seeds.** The mean
+  shortfall is **80.6 atoms (sd 38.9)** — about 2.1 sd from the bar, not the
+  33-atom coin-flip finding (8) described. Seed 0's 467 is the *maximum* of
+  the five.
+- **Its `dead ≤ 0.30` pass at `dict=640` also fails to replicate** — 1 of 5
+  seeds (mean 0.3447 ± 0.0607). So the "first size to clear the rate bar"
+  language in finding (3) and the table in (7) describes a single lucky
+  draw, and `dict=640` is better read as a **rate-bar failure** too.
+  🔴 **The header comment in `configs/crosscoder_stage0_replicate640.yaml`
+  asserted both of those as fact; it has been corrected in place rather than
+  deleted, and no other config quotes them.**
+- **TimesFM's baseline is not noisy at all** (alive 637.2 ± 3.0, fidelity
+  0.7913 ± 0.0026, dead ≤0.011). The ±60-atom noise band finding (8)
+  inferred from the non-monotone size curve is **Chronos-specific**, and on
+  the Chronos side it is if anything larger (sd 38.9 at one fixed size)
+  while on the TimesFM side it barely exists. Reading one noise band off a
+  curve that mixes both models was the error.
+
+**(11) The criteria are jointly unsatisfiable for this model, provably, at
+any dictionary size — which is what actually decides (5).** Combining the
+two constants: `dead ≤ 0.30` is exactly `alive ≥ 0.70 × dict`, so the pair
+requires a size where `alive ≥ 500` **and** `dict ≤ alive / 0.70`. The two
+bars therefore pull in opposite directions — the floor wants a *large*
+dictionary (alive only ever grows with dict), the rate bar a *small* one.
+Chronos-T5-Base's alive count at this layer **saturates** — across the eight
+swept sizes it runs 386 / 355 / 467 / 405 / 473 / 529 / 546 / 576 while the
+dictionary grows 512 → 1280, i.e. the dead *rate* climbs monotonically
+(0.246 → 0.550) precisely because the alive count stops tracking the
+dictionary. Once alive plateaus at a ceiling C, every dictionary above
+C / 0.70 fails the rate bar permanently; with C = 576 that caps a passing
+size at **823**, while the smallest size whose alive count reaches 500 is
+**896**. The window is empty. **So the passing window is empty by
+construction, not by bad luck or bad hyperparameters.**
+
+> 🔴 **Corrected in place 2026-08-12 (same session), arithmetic only — the
+> conclusion is unchanged.** This paragraph first stated the cap as "a
+> dictionary no larger than 500/0.70 = 714". That is the bound only in the
+> boundary case `alive = 500` exactly; the correct cap is `C / 0.70` for the
+> model's own saturation ceiling C, which is looser (823, not 714) and so
+> makes the unsatisfiability claim *harder* to establish, not easier. It
+> still holds: the first size reaching 500 alive atoms is 896 > 823. Caught
+> by writing the argument as a test assertion
+> (`tests/test_stage0_criteria.py::test_legacy_pair_is_unsatisfiable_for_a_saturating_model`),
+> which failed against the 714 framing — an instance of §2.4 in the small,
+> and the reason that test encodes the measured alive-per-dict table rather
+> than a summary statistic of it. TimesFM shows the
+opposite: alive tracks dict almost perfectly (511 / 640 / 765 / 893 / 1012 /
+1258, dead 0.000–0.012), so the same two constants are trivially satisfiable
+for it. The constants encode a hidden assumption — *alive-atom count scales
+with dictionary size* — that holds at eff_dim 28.15 and fails at eff_dim
+13.93.
+
+**DECISION (2026-08-12) — the floor scales per model; the rate bar does
+not.** `MIN_ALIVE` becomes `max(100, round(20 × eff_dim))` per source
+(279 Chronos / 563 TimesFM); `MAX_DEAD_RATE = 0.30` and `MIN_FIDELITY =
+0.70` stay global and unchanged. The reasoning is (11), not (10): a
+criteria *pair* that no dictionary size can satisfy is measuring the
+constants' interaction rather than the SAE, and that defect is visible
+independently of which side it happens to fail on. The gate's actual job —
+stopping dead-atom symmetry from faking a shared-vs-specific split — is
+carried by the *fraction* alive, which is exactly what the untouched
+`MAX_DEAD_RATE` measures; the absolute floor was only ever a guard against
+a tiny dictionary trivially satisfying that fraction, and `20 × eff_dim`
+guards it while scaling with the thing that actually bounds the atom count.
+The `max(100, ...)` term keeps the guard from vanishing on a very
+low-dimensional layer.
+
+🔴 **This decision does not, by itself, flip Stage 0's checkbox, and that is
+the point.** Under the new floor the Chronos baseline clears `alive` at
+`dict=640` (419.4 ± 38.9 vs. 279) but still fails `dead ≤ 0.30`
+(0.3447 ± 0.0607) at 4 of 5 seeds — so the change is demonstrably *not*
+"whichever option makes the gate pass", the thing the prior paragraph
+correctly ruled out. It relocates the candidate passing size downward to
+`dict=512`, whose single-seed rate (0.2461) sits ~0.9 sd under the bar and
+is therefore exactly the kind of number finding (8) warned against trusting.
+A 5-seed `--grid pinch` replicate (dict 512 / 576 / 704) is running as this
+is written; **Stage 0 stays `[ ]` until it lands** and a size clears both
+criteria across seeds. ✅ **It landed — see the pinch Findings immediately
+below. No size clears the criteria at any seed, for a new and different
+reason than (11), and Stage 0 stays `[ ]`.**
+
+**Findings — Stage 0 pinch replicate (2026-08-12, same session): the
+unsatisfiability recurs one level up, between models rather than within one.
+5 seeds × dict {512, 576, 704}, crosscoder plus both matched per-model
+`TopKSAE` baselines at each size, all against the same 46382-row store at
+k=48 / aux_k=64 / aux_coef=0.03125 / 60 epochs.** Artifacts:
+`runs/crosscoder_stage0_bigdata/pinch_seed{0..4}.json`. Floors in force:
+563 for the crosscoder and TimesFM, 279 for Chronos (the DECISION above).
+
+| dict | artifact | dead rate | alive | fidelity (min over sources) | passes |
+|---|---|---|---|---|---|
+| 512 | crosscoder | 0.0754 ± 0.0740 | 473.4 ± 37.9 | 0.6981 ± 0.0418 | **0/5** |
+| 512 | TimesFM baseline | 0.0086 ± 0.0064 | 507.6 ± 3.3 | 0.7780 ± 0.0057 | **0/5** |
+| 512 | Chronos baseline | 0.2387 ± 0.0313 | 389.8 ± 16.0 | 0.8786 ± 0.0051 | 5/5 |
+| 576 | crosscoder | 0.0722 ± 0.0644 | 534.4 ± 37.1 | 0.7128 ± 0.0137 | **0/5** |
+| 576 | TimesFM baseline | 0.0094 ± 0.0069 | 570.6 ± 4.0 | 0.7845 ± 0.0042 | 5/5 |
+| 576 | Chronos baseline | 0.3063 ± 0.0476 | 399.6 ± 27.4 | 0.8740 ± 0.0080 | 3/5 |
+| 704 | crosscoder | 0.0693 ± 0.0561 | 655.2 ± 39.5 | 0.7055 ± 0.0357 | 4/5 |
+| 704 | TimesFM baseline | 0.0131 ± 0.0097 | 694.8 ± 6.8 | 0.7931 ± 0.0039 | 5/5 |
+| 704 | Chronos baseline | 0.3716 ± 0.0531 | 442.4 ± 37.4 | 0.8703 ± 0.0071 | **0/5** |
+
+**(12) All three artifacts pass simultaneously at 0 of 5 seeds, at every
+size — and the exit criteria require exactly that** ("all must hold, on the
+crosscoder *and* on the matched per-model `TopKSAE` baseline at the same
+data/budget"). The blocking bar is a *different one at each end of the
+range*, which is the whole point: at 512 the crosscoder and TimesFM fail the
+alive floor (a 512-atom dictionary cannot hold 563 alive atoms —
+`structurally_cannot_pass` is `true`, not a training failure); at 704 they
+both clear it comfortably and Chronos fails the untouched dead-rate bar.
+
+**(13) The window is empty by ~37 atoms, and the three boundaries can be
+located.** Interpolating each mean alive count linearly against dictionary
+size: Chronos's rate bar (`alive ≥ 0.70 × dict`) has surplus +31.4 at 512 and
+−3.6 at 576, crossing at **dict ≈ 569** — its ceiling. TimesFM's alive floor
+(563) is crossed at **dict ≈ 568** — its floor, essentially the same point.
+The crosscoder's own floor (also 563, since one dictionary serves both
+sources) is crossed at **dict ≈ 606**, because it runs ~5% deader than the
+TimesFM baseline at matched settings. So a shared size must satisfy
+`dict ≥ 606` **and** `dict ≤ 569`. This is structurally the same defect as
+(11) — two bars pulling in opposite directions with no overlap — but the
+cause has moved: in (11) the two bars were both constraints on *one* model,
+and the DECISION fixed that by letting the floor scale with each model's own
+eff_dim. Here the surviving conflict is between *different models sharing
+one dictionary size*, which no per-model constant can resolve, because the
+size itself is the shared quantity.
+
+**(14) Per-model dictionary sizing would close it, and that is the obvious
+next move — but it is a second criteria change in one session, so it is
+proposed, not taken.** Under the criteria's own words the baseline must be
+"matched … at the same data/budget", and the harness currently implements
+*budget* as including dictionary size. Read as rows/k/epochs matched but
+dict sized per model, every artifact already has a passing size on record:
+Chronos baseline at 512 (5/5), TimesFM baseline at 576 and 704 (5/5 each),
+crosscoder at 704 (4/5). This is defensible on the same reasoning the
+DECISION used — a fixed shared size is a constant that measures the models'
+differing effective dimensionality rather than the SAE — but this session
+has already moved one criterion, and moving a second one *in the direction
+that makes the gate pass*, in the same sitting, on the same data, is exactly
+the pattern finding (5) and the DECISION both went out of their way to
+avoid. **Recorded as the recommended change with its evidence; not applied.
+Stage 0 stays `[ ]`.**
+
+**(15) The crosscoder's one failing seed at 704 is bimodal, not marginal —
+which matters for how (14) should be read if it is ever taken.** The 4/5 is
+not "four seeds squeaking over and one just under". Seeds 0/1/3/4 cluster
+tightly (dead 0.0415 ± 0.0088, alive 674.8 ± 6.2, fidelity 0.7233 ± 0.0018
+TimesFM / 0.7453 ± 0.0065 Chronos); seed 2 lands in a visibly different
+basin (dead 0.1804, alive 577, fidelity 0.6687 / 0.6343 — **both** sources
+collapse together, below the 0.70 bar). The same shape appears at 576, where
+seed 0 alone shows dead 0.1997 and fidelity 0.6991 / 0.6867 against four
+seeds at 0.71–0.76. So the aggregate `0.7055 ± 0.0357` at 704 is a mixture
+of a tight good mode and one bad run, and quoting its sd as a noise band
+would misdescribe it. A 1-in-5 joint-collapse rate is itself a real
+stability finding about `CrosscoderSAE` at this budget, and it is a
+prerequisite for Stage 1's ladder: a scorecard that trains one dictionary
+per variant would attribute a bad basin to the variant.
 
 ---
 
@@ -5157,6 +6067,39 @@ so a future session doesn't accidentally drift into them:
 
 ## 13. Open questions / risks (append as they arise; mark resolved in place)
 
+- [ ] **`_per_block_flops` resolves 0 of 12 Chronos blocks by name
+  (2026-08-12, §18 F4).** `analysis/model_budget.py::_per_block_flops` builds
+  its lookup keys as `f"{type(adapter.module).__name__}.{block_name}"`, which
+  assumes the counted call entered the adapter's `.module`. `ChronosAdapter.
+  forward()` calls `self._t5.encoder(...)` directly, so `FlopCounterMode`
+  most likely keys its blocks relative to *that* submodule (`T5Stack.block.0`
+  rather than `<root>.encoder.block.0`) — **hypothesis, formed by reading the
+  adapter, not verified.** A diagnostic script that dumps the counter's actual
+  keys is written but was not run: `scratchpad/probe_keys.py` (regenerate it
+  from this description; it is in a session-scoped temp dir). **Consequences,
+  which are live right now:** Chronos has no per-block FLOPs, so (a) its F4
+  headline is an *upper bound* rather than a measurement, (b) it has no trace
+  in F2's "Compute completed by depth" chart, which currently shows TimesFM
+  only, and (c) F1's proposed compute-fraction depth axis cannot be built for
+  it, which matters because F1 is the item where that axis is the deliverable.
+  **Fix sketch:** fall back to a suffix match, but require the candidate to be
+  *unique* — a bare suffix match is ambiguous between `encoder.block.0` and
+  `decoder.block.0`, and silently picking one would put decoder FLOPs on an
+  encoder depth axis, which is the exact class of error F4 exists to prevent.
+  Keep returning `None` when the match is not unique.
+- [ ] **The F4 qualifier fires on SAE feature findings, and it is not
+  obvious that it should (2026-08-12).** `_qualify_depth_claims` matches on a
+  model name plus depth vocabulary, and "SAE — Chronos-T5-Base/encoder.block.6:
+  feature 2189 best matches has_intermittency" contains both. Appending "at
+  least ~86% of this model's forward computation is unobserved" to it is
+  *true*, and the block name does locate the claim in the stack — but the
+  finding is about what a feature encodes, not about where in depth something
+  happens, so the qualifier is arguably noise there. Left firing deliberately:
+  over-qualifying adds a true sentence, under-qualifying drops a needed one,
+  and §2.5's doctrine prefers the first error. Revisit if the findings list
+  gets noisy enough that readers start skimming past qualifiers — that failure
+  mode would defeat the whole mechanism.
+
 - [~] Does effective dimensionality actually predict anything useful, or is
   it a plausible-sounding metric that doesn't survive contact with data
   (§6.1)? **Partially answered (2026-08-05):** it *does* predict two
@@ -5530,8 +6473,11 @@ below; the first three were previously *mentioned inside other items' prose*
 but never tracked as their own open questions, which is exactly how an
 acknowledged follow-up gets lost.
 
-- [ ] 🔴 **How large is the repeat-run variance of a single SAE's forecast-
+- [x] 🔴 **How large is the repeat-run variance of a single SAE's forecast-
   preservation ΔMASE, and does it invalidate any recorded SAE number?**
+  **Answered 2026-08-12: the variance is large enough to swallow the
+  motivating observation whole, and it does invalidate one recorded claim
+  (not the headline one). Findings below.**
   Spun out of the item above's own text, where it was named and then left
   untracked: TimesFM's SAE forecast-preservation ΔMASE moved **0.175 →
   0.1097** between two runs of an *identical* config. That is a ~40% swing
@@ -5544,16 +6490,117 @@ acknowledged follow-up gets lost.
   SAE number the way A13's floor is published beside behavioral ones.
   Cheap (no extraction, no model calls beyond `forecast_preservation`'s own).
   **Blocks**: reading §6.2's SAE numbers as differences rather than as noise.
-- [ ] **Does the L2 null-baseline verdict hold in the reverse direction
+
+  > **Findings (2026-08-12).** New `tsfm_lens/run_sae_repeat_variance.py`
+  > retrains both of `runs/medium_run_chronos_base`'s configured SAE targets
+  > at seeds 0–4 against that run's **frozen, read-only** activation store
+  > (nothing re-extracted; the corpus rows, checkpoints and store are held
+  > fixed by construction) and records fidelity, dead-feature rate, and
+  > `forecast_preservation` ΔMASE at **both** granularities per seed.
+  > Artifact: `runs/medium_run_chronos_base/sae/repeat_variance.json`.
+  >
+  > **The frozen-store control passes exactly.** `mase_clean` — the
+  > *unpatched* forecast's own MASE, which must not move when only the SAE
+  > seed varies — has sd **0.0** across all five seeds for both models and
+  > both granularities (TimesFM 1.8799978494644165, Chronos-T5-Base
+  > 3.1090171337127686, bit-identical every time). So everything below is
+  > SAE-training stochasticity and nothing else.
+  >
+  > | target | metric | mean | sd | min | max | range |
+  > |---|---|---|---|---|---|---|
+  > | TimesFM `stacked_xf.18` | fidelity | 0.8574 | 0.0064 | 0.8477 | 0.8649 | 0.0172 |
+  > | | dead_rate | 0.9445 | 0.0053 | 0.9353 | 0.9481 | 0.0129 |
+  > | | ΔMASE (window) | **+0.1704** | **0.1212** | +0.0650 | +0.3740 | **0.3090** |
+  > | | ΔMASE (token) | +0.1704 | 0.1212 | +0.0650 | +0.3740 | 0.3090 |
+  > | Chronos-T5-Base `encoder.block.6` | fidelity | 0.8318 | 0.0105 | 0.8173 | 0.8449 | 0.0277 |
+  > | | dead_rate | 0.9734 | 0.0027 | 0.9691 | 0.9759 | 0.0068 |
+  > | | ΔMASE (window) | **+3.8972** | 0.2420 | +3.6783 | +4.2641 | 0.5858 |
+  > | | ΔMASE (token) | **+0.2457** | 0.2113 | **−0.1118** | +0.4136 | 0.5253 |
+  >
+  > **1. The motivating observation was noise.** TimesFM's ΔMASE moving
+  > 0.175 → 0.1097 across two identical-config runs — the ~40% swing this
+  > item was opened for — is a 0.065 gap against a measured seed-to-seed sd
+  > of **0.1212**. Both recorded values sit comfortably inside the five-seed
+  > range [0.0650, 0.3740]. There is nothing to explain: it is half a
+  > standard deviation. §6.2's "did not replicate" framing (see the
+  > 08-06/08-11 entries) should be read as *was never a replication test in
+  > the first place*, not as an unexplained instability.
+  >
+  > **2. TimesFM's forecast-preservation pass/fail verdict is not resolvable
+  > at n=1 seed.** The recorded ΔMASE values (+0.05, +0.1097, +0.110) all
+  > come from single training runs whose own noise floor is sd 0.12 with a
+  > 0.31 range. Any threshold-crossing claim in that neighbourhood — "passes
+  > for TimesFM" — is a claim about one draw, not about the SAE. Quote the
+  > mean and sd, or quote the number *with* this floor beside it, exactly as
+  > §15 A13 requires for behavioral ΔMASE.
+  >
+  > **3. E15's directional conclusion is robustly confirmed; one of its
+  > specific numbers is retracted.** The window-vs-token gap for
+  > Chronos-T5-Base is +3.897 vs +0.246 — a ~16× reduction against a
+  > seed-to-seed sd of 0.24/0.21, so the window-broadcast confound is
+  > overwhelmingly the dominant driver of every previously-recorded Chronos
+  > forecast-preservation failure. That holds. What does **not** hold is
+  > E15's headline **−0.346** ("reconstruction is net *better* than the clean
+  > forecast"): that value falls **outside** the five-seed range
+  > [−0.1118, +0.4136], and the qualitative sign flip replicates in only
+  > **1 of 5** seeds, at a much smaller magnitude (−0.112). E15's own
+  > write-up already flagged that number as "a little surprising ... worth a
+  > skeptical look before reading it as 'the SAE is simply excellent'" — the
+  > skeptical look now has a measurement behind it. **Do not quote −0.346.**
+  > Chronos's token-granularity ΔMASE is a small positive number, +0.246
+  > ± 0.21, not a negative one.
+  >
+  > **4. TimesFM's window and token deltas are bit-for-bit identical at
+  > every one of the five seeds** (not merely equal in the two-run
+  > comparison E15 recorded) — as expected, since its token width equals the
+  > alignment window, so the pooled broadcast is exact. That is now a
+  > five-seed confirmation of E15's mechanism claim rather than a single
+  > coincidence.
+  >
+  > **5. Unrelated but visible in the same artifact, and worth carrying to
+  > §6.2.1:** both targets' dead-feature rates are **94.5% and 97.3%**, and
+  > they are *stable* across seeds (sd 0.005 / 0.003). Every SAE number
+  > recorded from this run therefore comes from a dictionary that is ~95%
+  > dead — the exact condition Stage 0's gate exists to eliminate, here
+  > confirmed as a reproducible property of the configuration rather than an
+  > unlucky draw.
+  >
+  > **Not done:** the floor is measured for one run directory, one layer per
+  > model, at n=5. It is not yet *published beside* every SAE number — the
+  > report still renders single-seed ΔMASE with no floor next to it. That
+  > rendering change is spun out as its own item below.
+
+- [ ] **Render the SAE ΔMASE noise floor in the report, the way §15 A13's
+  behavioral floor is rendered.** Split out of the item above on
+  2026-08-12, which measured the floor (sd 0.121 TimesFM / 0.242
+  Chronos-window / 0.211 Chronos-token) but changed nothing about how the
+  numbers are displayed. `report.py`'s SAE section still shows a single
+  seed's ΔMASE against an implicit zero. **Concretely**: have the `sae`
+  stage optionally train `n_seeds` (default 1, so nothing changes by
+  default) and, when >1, record mean/sd and render "ΔMASE +0.17 ± 0.12
+  (5 seeds)" plus a `_note()` stating that a single-seed delta smaller than
+  the sd is not a result. Cheap — the training loop is already seed-
+  parameterized and `run_sae_repeat_variance.py` is the working prototype.
+- [x] **Does the L2 null-baseline verdict hold in the reverse direction
   (`TimesFM→Chronos`)?** Named as "the named next step" in the item above and
   never given its own checkbox. `l2_stitching.py` already computes both
   directions; this is a re-analysis of existing artifacts, not a rerun.
+  **Done 2026-08-12** — yes, and for the same reason the forward direction
+  did: real cross-model gain beats Chronos's own untrained-twin floor at
+  every TimesFM depth (+0.38 to +0.49, p=0.002) and beats TimesFM's own
+  floor at every layer from `stacked_xf.10` through `.18`, losing only at
+  the two shallowest layers where that floor's self-predictability artifact
+  is largest. The previously-recorded "0.318 real vs. 0.388 null" pessimism
+  was the same wrong-layer comparison the forward direction already
+  corrected. `compare_l2_depth_curve(..., direction=)` +
+  `run_null_baseline_test.py --direction` added for it (2 new tests). Full
+  numbers in §16 E9's fourth follow-up.
 - [ ] **Does `work_bend` remain the bake-off winner on a second Chronos size
   and against the per-window-patching secondary gold?** Named inside item 2's
   resolution text as the remaining scope and never tracked separately. The
   production default currently rests on one corpus and one checkpoint pair
   per architecture.
-- [ ] **Should §16 E19's multivariate-axis decision be made retroactively?**
+- [x] **Should §16 E19's multivariate-axis decision be made retroactively?**
   E19 asks for the `[series, variate, window, dim]` decision to be made
   *before* Phase 4 forces an improvised one — but Phase 4 already shipped
   (Chronos-2, Sundial), and the improvisation was made: Chronos-2's GROUP
@@ -5561,6 +6608,13 @@ acknowledged follow-up gets lost.
   `_scan_attention` resolves to TIME attention by first-match. The open
   question is now **"ratify or reverse"**, not "decide in advance," and E19's
   text should be updated to say so (see §16's 2026-08-11 corrections block).
+  **Answered 2026-08-12: ratified.** Univariate-only is now a decided,
+  documented envelope edge in `CLAUDE.md` §12 rather than an unexamined
+  assumption, with Chronos-2's GROUP axis named as the concrete exclusion and
+  a stated rule for future cross-series adapters (capture the time axis,
+  declare the cross-series axis out of scope, say so). The unknown magnitude
+  of the resulting capture-coverage gap is recorded as part of the decision,
+  not hidden by it. §16 E19 is `[x]`.
 
 ---
 
@@ -7891,6 +8945,142 @@ No Findings block was edited and no recorded number was changed anywhere in
 this pass — per §0.2, this session added structure and detail around the
 research record without touching it.
 
+**2026-08-12, user-directed strategic pass (planning only; no code changed).**
+Brief: read the plan *as a whole* against the repo's actual goal (a one-button,
+transformer-lens-esque tool that lets anyone understand and compare TSFMs),
+improve it to be valuable to advanced researchers while remaining
+understandable to beginners, make it adapt dynamically to as many TSFM
+architectures as possible, ensure models are compared **on equal grounds**, and
+plan out any additional useful features. Five new sections (§17–§22, ~1,130
+lines). Nothing implemented; no Findings block or recorded number touched.
+
+**The two findings that came out of grepping the code rather than re-reading the
+docs** — both are new, neither was in §15 or §16, and both retroactively qualify
+numbers already in this file:
+- 🔴 **The cross-model depth axis is comparing unlike to unlike.**
+  `utils.py::relative_depths` is `arange(n)/(n-1)` over each model's *captured*
+  layers. For Chronos-T5 the captured surface is the **encoder only**, so
+  Chronos's "relative depth 1.0" is the middle of its computation — last
+  encoder block, entire decoder still to run — while TimesFM's 1.0 is its
+  actual output. Every figure interpolating both onto a shared relative-depth
+  axis (L1 CKA depth curves, L3 fingerprint agreement, crystallization depth,
+  and §16 E9's depth-curve null tests) is therefore comparing 80%-of-TimesFM
+  against 80%-of-Chronos's-encoder. `CLAUDE.md` §12 item 4 states the honest
+  caveat and the pipeline then uses the axis as if it were a fact. Also
+  stride-dependent: two configs of the same model give the same block different
+  depth coordinates. Fix: §18 F1, which builds four candidate axes (index /
+  block-of-full-stack / compute-fraction / functional) and bakes them off the
+  way §6.1.1 did for layer selectors — **with re-running E9's null tests on the
+  new axis as the acceptance test**, since a flipped verdict would prove the old
+  axis materially misleading.
+- 🔴 **There is no parameter, FLOP, latency or VRAM accounting anywhere in the
+  repo** (grep: no `n_params`, no FLOP estimate, no timing in any analysis
+  module). So every quality comparison is size-confounded, and the first
+  question a practitioner asks — *per unit of compute, which model wins?* —
+  cannot be expressed. §5.3's base-vs-small study is the only size control in
+  the file and it varies size *within* a family rather than normalizing across
+  them. Fix: §18 F2, measuring FLOPs via `torch.utils.flop_counter` rather than
+  hand-deriving them so it works on unseen architectures, which also supplies
+  F1's compute-fraction axis for free.
+- Also confirmed by reading it: **`report/coverage.json` is *section* coverage**
+  (which report sections rendered), **not computational coverage** of each
+  model — so the single most important caveat on every Chronos claim is absent
+  from the machine-readable output entirely. Fix: §18 F4.
+
+What landed, in file order:
+- **§17 Gap analysis.** The whole-plan read, done once: three of the four words
+  in "compare *any* TSFM on *equal grounds*, one button" have unfinished
+  business, with **equal grounds** the largest gap and the one the plan was
+  least aware of. Five structural gaps (G-I depth axis · G-II no compute
+  accounting · G-III capability asymmetry silently yields one-sided comparisons
+  · G-IV the envelope is narrower than "any TSFM" and nothing enumerates what's
+  outside · G-V no on-ramp for beginners *and* no methods spine for experts).
+  §17.2 deliberately records **what must not be "improved"** — the evidence-class
+  ladder, the L2 baseline, the confirm split, series-level resampling, §0.2's
+  append-only discipline — since a restructuring pass is exactly when
+  load-bearing constraints get tidied away.
+- **§18 Equal grounds (F1–F9).** The rule it establishes: *every cross-model
+  number is either on an axis both models genuinely share, or is rendered next
+  to the measured size of the asymmetry* — no prose-only caveats; an
+  unmeasurable asymmetry downgrades the claim rather than footnoting it. F1
+  depth axes (four candidates, tabled with arguments both ways) · F2 budgets ·
+  F3 a capability-**intersection** comparison mode so asymmetric analyses are
+  physically separated from the symmetric comparison and can never be promoted
+  to a headline claim · F4 coverage accounting with an *automatically appended*
+  qualifier on depth-located claims for any model under 90% captured FLOPs ·
+  F5 token-resolution parity for attention-lag claims · F6 every delta in
+  noise-floor units, with findings *forbidden* below the floor · F7 the
+  training-exposure confound bounded rather than waved at (declared corpora +
+  reuse of the leakage auditor in reverse + per-tier result splits, since the
+  `synthetic` tier is the only data no model can have trained on instance-wise)
+  · F8 multiple-comparison correction across *models*, not just families ·
+  F9 the **fairness card** — one auto-generated page, rendered *before* any
+  result section, listing every measured asymmetry and which claims it
+  qualifies.
+- **§19 Architecture adaptivity (G1–G7).** Reframed from "support more models"
+  to "support more *architecture classes*, where a class is defined by which
+  §12 envelope assumption it breaks" — a sixth attention-transformer-over-
+  patches teaches nothing, the first attention-free model unlocks a family. A
+  14-row landscape table (Lag-Llama's non-contiguous lag tokens, TTM's absent
+  attention, TimeMoE/Moirai-MoE routing, SSMs' carried state, hosted/API models,
+  VisionTS's 2-D patches, Time-LLM/TabPFN-TS as likely documented refusals,
+  supervised baselines as controls) with effort and value per row, all marked
+  `[VERIFY]`. **G3 is the standout:** every attention analysis in the repo
+  actually asks one question — how does information at *t* influence the
+  representation at *t′* — which can be **measured by perturbation** for
+  attention, convolution, mixing MLPs, SSMs and MoE alike, and validated
+  against real attention patterns on a model where both exist. That converts
+  "no attention → a third of the report is blank" into a common footing, and is
+  the most publishable methodological item in the file after the crosscoder.
+  G1's four adapter tiers (black box → observable → steerable → decomposable)
+  make partial support first-class, which is what makes hosted models nearly
+  free — with an explicit rule that `confirm` must **refuse** network adapters,
+  since sending the sealed private corpus to a third-party API would burn the
+  one consumable the whole method depends on.
+- **§20 New capabilities (H1–H12).** Opens with three *rejected* proposals and
+  why (stronger probes weaken decodability claims; embedding galleries invite
+  the one thing `CLAUDE.md` §5 forbids; generated narrative breaks
+  artifact-traceability), since §16's own Findings bar is "state which claim
+  this sharpens." Four cheap-and-novel first: H4 cross-model agreement as a
+  reliability signal (~0.5 session, pure reduction over existing `predict()`
+  output, with the honest baseline check that self-reported quantile width may
+  predict error just as well) · H1 the **Chronos-T5 tiny→large scaling ladder**,
+  five same-corpus same-tokenizer points turning §5.3's two-point L1/L2-grow-
+  but-AMI-shrinks curiosity into a curve · H3 **memorization probing**, the
+  leakage machinery inverted, where the matched-catch22-profile synthetic
+  control is the whole item and a null result is pre-committed as publishable ·
+  H2 the **practitioner recommender**, the item that serves §1's "anyone", with
+  a mandatory refusal path for out-of-coverage input. Then H5 phase/position
+  probes, H6 fine-tuning plasticity (free from §6.3.1 Option E, and an
+  independent cross-validation of `work_bend`'s production status), H7 a
+  distribution-shift envelope distinct from L3's corruptions, H8 the
+  **seasonality circuit** as the flagship mechanistic result (minimal
+  sufficient head/MLP set, necessity *and* sufficiency, against known-exact
+  ground-truth periods), H9 analysis-card export, H11 checkpoint trajectories,
+  and H12 a deterministic-replay/provenance mode motivated directly by
+  §11.24's cost — a session of investigation that a three-line environment
+  diff would have closed in a minute.
+- **§21 Two audiences (J1–J6).** One document, *layered* — not two, because
+  two drift (this repo has paid for that between `CLAUDE.md` and `ROADMAP.md`
+  repeatedly). J1's three-layer claim contract (`plain`/`text`/auto-generated
+  `caveat`, generated because invariant 8's lesson is that author discipline
+  decays), J2 a fixed four-line card per stage whose fourth line is *what it
+  cannot tell you*, J3 glossary + one worked example read paragraph by
+  paragraph, J4 headline/standard/methods progressive disclosure, J5 the
+  **advanced methods appendix** (cheapest credibility item in the file — the
+  content already exists in module docstrings and its absence is what a
+  sceptical reader notices first), J6 a **failure-mode gallery** built entirely
+  from real artifacts already in `runs/`, every one of which fooled someone
+  here first.
+- **§22 Sequencing.** Six waves (A retroactive integrity · B the flagship
+  crosscoder, unchanged and still top priority, run in parallel with A as the
+  natural background/foreground split · C legibility · D the four cheap studies
+  · E architecture breadth, one class per session · F adoptability), with one
+  hard constraint stated explicitly: **Wave F must not precede Wave A** —
+  automating a comparison on an unequal axis removes the expert who would have
+  known not to believe it. §0.5 updated to point here and to add Wave A as a
+  new Tier 0.
+
 ---
 
 **2026-08-11, twenty-fourth cron-loop firing.** Checked `ListAgents` — nothing
@@ -7912,6 +9102,225 @@ sweep (implementation + 6/6 local tests + a clean mock-adapter dry run were
 completed instead, given the time remaining) — left as the explicit next
 step in E20a's own entry rather than either skipped silently or rushed
 unsafely against the deadline.
+
+---
+
+**2026-08-12, §6.2.1 Stage 0 implementation session (multi-firing).** Picked
+up §0.5's Tier-1 item 1 — the crosscoder's blocking dead-feature gate — and
+took it from "four ranked hypotheses" to a measured verdict. Implemented the
+one hypothesis that had no implementation at all (**H4, AuxK**:
+`sae/models.py::auxiliary_dead_loss` plus call sites in `sae/train.py` and
+`sae/crosscoder.py`, with `aux_k`/`aux_coef`/`aux_dead_steps` threaded
+through both train configs and defaulting to **off**, so every number already
+on record stays regenerable); built the gate's harness
+(`run_crosscoder_stage0.py`, which trains the joint crosscoder **and** two
+matched per-model `TopKSAE` baselines on the same rows at the same budget per
+grid row, and scores all four exit criteria); built the ~10x larger store H1
+needed (`configs/crosscoder_stage0.yaml`, 46382 aligned rows vs. the
+feasibility run's 4608); and ran the 9-row sweep against real
+TimesFM-2.5-200M / Chronos-T5-Base activations. Findings — including the full
+sweep table, not just the winner — are at §6.2.1's "Stage 0 sweep run"
+Findings block, not repeated here; the headline is that **the decisive
+hypothesis was the one ranked last** (AuxK: 80 → 1072 alive atoms at
+identical dictionary/rows), **H2 was refuted by the sweep's sharpest number**
+(alive count is nearly invariant to dictionary size: 51/61/68 alive at
+112/448/1120 atoms), and **the gate still does not pass** — its blocker has
+moved from deadness to per-source fidelity, so Stage 0 stays `[ ]`. Two real
+bugs found by running rather than reading: a numpy-vs-torch `alive_mask`
+type error in the harness, and an unseeded `torch.randperm` in
+`train_crosscoder` that made "identical" configs irreproducible (fixed;
+`h4:aux_off` now reproduces `h1:rows=all` to every printed digit across
+separate invocations, which is what confirmed it). Also worth recording as a
+methodology point: the synthetic AuxK test bed did **not** predict the real
+result (a wash on one bed, provably inert on another), which is exactly why
+`tests/test_aux_k.py` asserts only "does no harm" — had the stronger claim
+been asserted to match the hypothesis, it would have passed for the wrong
+reason (`CLAUDE.md` §2.4). Full `tsfm_lens` suite green after all of it:
+**283 passed, 2 warnings**. A follow-up `k` sweep (k ∈ {16,32,48,64} against
+TimesFM's measured effective dimensionality of 28.15) was launched to test
+the fidelity blocker directly and is written up at §6.2.1 separately.
+
+---
+
+**2026-08-12, cron-loop session — Stage 0's dictionary-size question closed,
+and the reverse L2 direction measured.** Two independent items, both
+finishing work the previous session had only set up.
+
+*Stage 0 (§6.2.1).* Ran two new sweeps against the same 46382-row
+`runs/crosscoder_stage0_bigdata` store. **`--grid h2xh4`** (dict ∈
+{640, 768, 896, 1024} at k=48/aux_k=64/coef=0.03125, 60 epochs) tested
+whether H2 (dictionary size) matters *in the AuxK-on regime* where it
+plausibly could have, after the original sweep refuted it in the AuxK-off
+regime. It does not: the crosscoder **passes every exit criterion at all
+four sizes** (fidelity 0.7346/0.7670 at 640 up to 0.7590/0.7782 at 896;
+dead rate 0.0112–0.1081; alive 627–991). H2 stays refuted. Notably
+`dict=896` **beats the committed winner** (k=48/dict=1280) on Chronos
+fidelity (0.7782 vs 0.7556) and dead rate (0.0112 vs 0.0203) at 70% of the
+parameters — `configs/crosscoder_stage0_winner.yaml` was **deliberately
+left untouched**, because its `expected:` block records the k-sweep row and
+rewriting it would break the replay property that config was created to
+establish. **`--grid pinch`** (a new grid, dict ∈ {512, 576, 704}) then
+answered the residual question by measurement rather than extrapolation
+(§2.4): is there *any* dictionary size at which the **Chronos-T5-Base
+baseline** clears both `dead ≤ 0.30` and `alive ≥ 500`? Across all eight
+now-measured sizes — alive 386/355/467/405/473/529/546/576 and dead
+0.2461/0.3837/0.2703/0.4247/0.3841/0.4096/0.4668/0.5500 at dict
+512/576/640/704/768/896/1024/1280 — **no size in [512, 1280] satisfies
+both**; the two rows that clear the rate bar (512, 640) fall 114 and 33
+atoms short of the alive floor. Fidelity is never the blocker (0.858–0.888
+throughout), and TimesFM's baseline passes at every size. Two things
+recorded rather than papered over: the alive counts are **non-monotone in
+dictionary size**, implying ±60-atom single-seed noise against a 33-atom
+decision margin (fix: replicate seeds, as `run_layer_screen_bakeoff.py
+--n-gold-replicates` already does); and the residual is now a **criteria
+question, not a training question** — `MIN_ALIVE = 500` is a global
+constant applied to a layer whose measured effective dimensionality is
+13.93. Two defensible resolutions are named in §6.2.1 (a per-model floor of
+~`20 × eff_dim` → 279 Chronos / 563 TimesFM, or keep the constant and carry
+a quantified caveat into Stage 2) and **neither is decided here** — what is
+not defensible is picking whichever makes the gate pass. **Stage 0 stays
+`[ ]`.**
+
+*Reverse L2 direction (§16 E9, §13).* `compare_l2_depth_curve` gained a
+`direction=` parameter (and `run_null_baseline_test.py` a `--direction`
+flag, with a direction-suffixed default output filename) so the
+non-best-gaining direction is measurable as its own thing — L2 is not
+symmetric, the ridge probe maps one model's states onto the other's, so a
+verdict on one direction says nothing about the reverse. Unknown direction
+names **raise** and list the available ones rather than silently falling
+back to the best (§2.5). Ran `TimesFM->Chronos-T5-Base` at n_boot=500 with
+the nulls supplied in that order. Every src layer's best dst partner is
+`encoder.block.10`. Against Chronos's own floor (−0.1696, *negative*) real
+exceeds at all 10 depths by +0.38 to +0.49, p=0.002. Against TimesFM's own
+floor (which decays 0.3883 → −0.1045 across layers 0→18) the null exceeds
+at layers 0 and 2, the CI spans zero at 4/6/8, and **real exceeds
+decisively at 10/12/14/16/18** (+0.200/+0.263/+0.288/+0.308/+0.340,
+p=0.002 each). This **closes** the earlier recorded pessimistic claim
+("0.318 real vs 0.388 null") as the identical wrong-layer artifact already
+corrected once for the forward direction — comparing a real peak against a
+null's own global best rather than against the null at the matching depth.
+§13's reverse-L2 item is now `[x]`; full table at §16 E9's fourth
+follow-up; `CLAUDE.md` §6.5's "the reverse L2 direction is the named next
+step" was stale and is corrected in place. Tests: 2 new
+(`test_l2_depth_curve_runs_the_reverse_direction_when_asked`,
+`test_l2_depth_curve_rejects_an_unknown_direction`) plus one existing
+regex updated for the reworded error — `tests/test_null_baseline.py`
+**12 passed**.
+
+**Same session, second half — three more items closed, one recorded number
+retracted.**
+
+4. **§16 E19 (multivariate/any-variate support) — decided, not deferred
+   again.** Ratified **univariate-only**, written up as a new bullet in
+   `CLAUDE.md` §12's "Envelope hard edges" list. The decision rests on
+   `pooling_matrix`'s premise (a token maps to a contiguous *time interval
+   within one series*) rather than on cost: a cross-series axis has no time
+   interval, no place on the shared window axis, and no lag in timesteps, so
+   `[series, variate, window, dim]` means re-deriving alignment, not adding a
+   dimension. Names the concrete exclusion (Chronos-2's GROUP attention),
+   states the rule for future adapters, and explicitly records that the
+   *size* of the resulting coverage gap is **unknown**. §16 E19, §13's E19
+   entry, and §0.5 item 8 are `[x]`; §19's landscape table's Moirai row is
+   corrected (the any-variate axis is now a documented exclusion, not a
+   blocker — residual work there is variable-`token_width`, effort
+   downgraded to "medium").
+
+5. **§16 E20a (horizon scaling) — closed with a live real-checkpoint run**,
+   29 s wall clock, both checkpoints loaded and released cleanly. The
+   headline is that **MASE is essentially flat across an 8× horizon range**
+   for both models (TimesFM 0.609–0.622, Chronos-T5-Base 0.646–0.690), with
+   TimesFM lower at every horizon and the two CIs cleanly disjoint at h=64
+   but overlapping at h=8. This **contradicts the mock dry-run**, previously
+   recorded as showing "the expected qualitative shape" — the write-up
+   explains why the *mock* was the misleading one (MASE normalizes by a
+   context-derived naive scale that doesn't depend on horizon length) rather
+   than treating the real result as anomalous, and warns against reading it
+   as "horizon length doesn't matter."
+
+6. **§13's SAE repeat-run variance — measured, and it retracts a number.**
+   New `tsfm_lens/run_sae_repeat_variance.py` retrains both configured SAE
+   targets at seeds 0–4 against `runs/medium_run_chronos_base`'s **frozen,
+   read-only** store. The frozen-store control is exact (`mase_clean` sd
+   **0.0** across all five seeds, both models, both granularities), so
+   everything measured is SAE-training stochasticity alone. Three results:
+   (a) the 0.175→0.1097 swing this item was opened for is **half a standard
+   deviation** (sd 0.1212, range 0.309) — there was never anything to
+   explain; (b) TimesFM's window/token granularity identity replicates
+   bit-for-bit at *all five* seeds, strengthening E15's mechanism claim; and
+   (c) 🔴 **E15's Chronos token-granularity −0.346 is retracted** — it falls
+   outside the five-seed range [−0.112, +0.414] and its sign replicates in
+   1 of 5 seeds. The correct value is **+0.246 ± 0.211**. E15's *conclusion*
+   survives decisively (window +3.897 ± 0.242 vs. token +0.246 ± 0.211 is a
+   ~16× gap against the seed noise). Corrected in place at §16 E15,
+   `CLAUDE.md` §13 item 3, and §0.5 item 6. Residual — rendering the floor
+   beside the numbers in the report — split out as its own §13 item rather
+   than folded into the closed one. Also visible in the same artifact and
+   carried to §6.2.1: both dictionaries are **94.5% / 97.3% dead**, stable
+   across seeds (sd ≤0.005), i.e. reproducibly the condition Stage 0's gate
+   exists to eliminate.
+
+**Test status for the whole session: full `tsfm_lens` suite 289 passed, 2
+warnings** (19 min), against 283 at the last recorded full run — the +6 are
+this session's two reverse-L2 direction tests and four earlier additions.
+Both warnings are pre-existing and unrelated (a deliberate float16-overflow
+probe in `test_nonfinite.py`, and `test_smoke.py::test_end_to_end` returning
+a `Path`).
+
+**Same session, third part — Stage 0's criteria question decided, its
+replicate landed, and the gate still does not open.** The `MIN_ALIVE`
+question the first half deliberately left open was taken: the floor becomes
+`max(100, round(20 × eff_dim))` per source (279 Chronos / 563 TimesFM), on
+the reasoning that the old `MIN_ALIVE = 500` and `MAX_DEAD_RATE = 0.30` were
+**jointly unsatisfiable at any dictionary size** for a model whose alive
+count saturates — a criteria pair no size can satisfy is measuring the
+constants' interaction, not the SAE (§6.2.1 finding (11) + DECISION). Note
+the change makes the crosscoder's bar *stricter* (563 > 500), not looser.
+The argument was then written as an executable assertion
+(`tests/test_stage0_criteria.py`, new, 8 tests) — **and it failed**, because
+the paragraph had stated the cap as `500/0.70 = 714` when the correct bound
+is the model's own saturation ceiling over 0.70 (`576/0.70 = 823`), i.e. the
+looser bound that makes the claim *harder* to prove. Conclusion survived
+(the first size reaching 500 alive is 896 > 823); the stated arithmetic did
+not, and is corrected in place at all three places it appeared. §2.4 in the
+small.
+
+The 5-seed `--grid pinch` replicate (dict 512/576/704, crosscoder + both
+matched baselines, 46382 rows) then landed and **Stage 0 stays `[ ]`** for a
+third, different reason: the same opposite-directions structure recurs
+*between* models. Chronos's untouched rate bar caps a shared dictionary near
+569 atoms; the crosscoder's alive floor needs ~606. All three artifacts pass
+together at **0 of 5 seeds at every size** (findings (12)-(13)). Per-model
+dictionary sizing would close it — every artifact has a passing size on
+record (Chronos 512, TimesFM 576/704, crosscoder 704) — but that is a second
+criteria change in one session in the direction that makes the gate pass, so
+it is written up with its evidence and **not applied** (finding (14)). Also
+newly measured: the crosscoder's failures are **bimodal**, not marginal —
+four seeds cluster at dead 0.0415 ± 0.0088 / fidelity 0.7233/0.7453 while
+one collapses to 0.1804 / 0.6687/0.6343, so Stage 1's scorecard needs
+replicates per variant or a bad basin will be scored as a bad variant
+(finding (15)). Two tests added for the pinch result; `test_stage0_criteria.py`
+now 10, and 25 passed across it plus the winner-config and new budget suites.
+
+One self-inflicted process failure, written up as **`CLAUDE.md` §11.27**:
+seeds 1–3 of the first pinch attempt died with a `TypeError` because the CLI
+they re-invoke per iteration was edited *while the loop was running*, and
+the shell loop still exited 0 — a background job that re-reads its script
+each iteration makes the source, not just the artifacts, part of what §2.8
+says not to touch. All five seeds were relaunched under frozen code and the
+partial run discarded rather than merged.
+
+Also started this session (not yet a pipeline stage): **§18 F2's model
+budget**, `tsfm_lens/analysis/model_budget.py` — parameter census by role,
+FLOPs measured via `torch.utils.flop_counter.FlopCounterMode` (measured, not
+hand-derived, so it works on architectures with no adapter yet), an analytic
+`2 × body_params × tokens × batch` sanity floor, latency and peak VRAM, and
+**per-block cumulative FLOPs recovered from the same measured pass** —
+F1's D2 compute-fraction depth axis needs those and F2's acceptance
+criterion forbids a second measurement pass. Degrades to `None` with a
+warning wherever the counter cannot see the model, because a depth axis
+silently pinned at compute fraction 0 would read as a finding. 11 tests
+(`tests/test_model_budget.py`, CPU-only synthetic stack). Config/pipeline/
+report wiring is the remaining half of F2.
 
 ---
 
@@ -10376,6 +11785,109 @@ non-functional `store_dtype` knob — each found by direct inspection or
 testing, per `CLAUDE.md` §2.4, not assumed from the audit's own wording).
 Nothing in this section remains open; `ROADMAP.md` §16's enhancement
 backlog is the next place forward work on this repo should look.
+**Amended 2026-08-12:** two further audit items, **A20** and **A21**, were
+added below after this closure — both found while building something else
+(§6.2.1 Stage 0's extraction config, and §18 F2's tests), not by a fresh
+audit pass. A1–A19 remain closed; the section is not.
+
+---
+
+### A20 — The impulse-alignment probe's amplitude constant is calibrated per (checkpoint, context length), and silently degrades at other context lengths `[ ]` · **P2** · found 2026-08-12
+
+**Evidence.** `extraction/alignment.py::impulse_alignment_check` perturbs
+its probe signal by `0.25 × base.max()`. That constant is §11.16's fix, and
+§11.16 records it as calibrated against `amazon/chronos-t5-small` at
+`context_len: 512`. Building `configs/crosscoder_stage0.yaml` at
+`context_len: 448` (forced by that corpus's sequence lengths — §6.2.1's
+Stage 0 Findings (b)) drops Chronos-T5-Base's diagonal-hit fraction to
+**0.50**, which passes the `min_diagonal_frac: 0.5` gate with **exactly zero
+margin**. The full depth profile and amplitude sweep are in §6.2.1's Stage 0
+Findings (c) and are not repeated here. The token↔time map itself was
+directly verified correct at 448 (449 tokens = 448 + EOS, mask all 1s,
+`postprocess_tokens` → 448, spans `[0,1]…[447,448]`), and dropping the
+amplitude to 0.05 restores 1.00 at blocks 0–7 and 0.02 restores 1.00 at every
+block — so this measures the probe, not the adapter.
+
+**Blast radius.** Two distinct things, and the second is the reason this is
+P2 rather than P3. (1) A **false-negative gate**: at some other (checkpoint,
+context length) combination the same effect will push the fraction below
+0.5 and fail extraction on a store that is actually fine — or, worse, sit
+just above it and be read as a real alignment warning. (2) A **false-positive
+gate**, which is the dangerous direction: nothing guarantees 0.25 is
+*conservative* at every combination, and a genuinely misaligned adapter
+could clear 0.5 on tokenizer-rescaling noise alone. Note this interacts with
+A2 (already fixed): the in-pipeline check now records its result, so a
+miscalibrated probe now writes a misleading artifact rather than only
+logging one.
+
+**Fix plan.** Do **not** simply lower the constant — every recorded
+alignment number in this repo was measured at 0.25, and changing it silently
+rewrites what "1.00 diagonal hits" has meant historically (a §2.1 downstream
+call, and exactly the §11.24 class of trap where a shared-infrastructure
+change rewrites the meaning of an unchanged config). Instead: (a) make the
+amplitude a parameter with the current `0.25` as its default, so nothing
+recorded moves; (b) have `impulse_alignment_check` *calibrate* it — sweep
+downward (0.25 → 0.15 → 0.10 → 0.05 → 0.02) and pick the largest amplitude
+at which the number of unrelated tokens whose IDs change is below a small
+threshold, which is the direct measurement of the confound rather than a
+proxy for it; (c) record the chosen amplitude and the unrelated-token count
+in the artifact A2 already writes, so a reader can tell a self-calibrated
+run from a fixed-amplitude one; (d) for adapters with no input
+re-quantization (TimesFM, which was 1.00 across the entire sweep in
+§11.16's original measurement), the calibration is a no-op and should
+terminate at the first amplitude. Then re-verify that Chronos-T5-Small at
+512 still reports 1.00 at every layer, i.e. that the calibrated path
+reproduces the recorded result at the recorded setting before anything new
+is trusted.
+
+---
+
+### A21 — An unknown key in any config section is silently dropped `[ ]` · **P2** · found 2026-08-12
+
+**Evidence.** `tsfm_lens/config.py::_build` iterates the target dataclass's
+own fields and copies across only the keys it recognizes:
+
+```python
+for f in dataclasses.fields(cls):
+    if f.name not in data:
+        continue
+```
+
+Anything else in the YAML is discarded without a word. A misspelled knob
+(`capture_layer_stide`, `min_diagonal_fraction`, `verbose_series_count`)
+therefore runs the whole pipeline at the *default* value while the config
+file on disk — and the `config_resolved.yaml` copied next to the run —
+both read as though the setting were in force. Found while writing
+`tests/test_budget_stage.py` for §18 F2, when a test asserting that a
+nonsense `budget:` key raises turned out to assert something the loader
+does not do; the test now pins the actual behavior and points here.
+
+**Blast radius.** Every config section, not `budget:`. This is the same
+failure shape as A3 (stale artifacts) one level earlier: the run is
+internally consistent and looks complete, and nothing distinguishes
+"you set this" from "you meant to set this." It is worse than a stale
+artifact in one respect — `config_resolved.yaml` is the artifact a future
+session reads to find out what a recorded number was measured under, and
+it will show the default, not the typo, so the discrepancy is invisible
+even in hindsight. Note this is *not* how the two standalone experiment
+loaders behave: `run_crosscoder_stage0.py --params` deliberately rejects
+unknown keys (§6.2.1 Stage 0's exit criteria), so the strict behavior
+already exists in this repo and is already the one judged correct where
+someone thought about it.
+
+**Fix.** In `_build`, collect `set(data) - {f.name for f in fields(cls)}`
+and raise a `TypeError` naming the section, the unknown key(s), and the
+closest valid field name by `difflib.get_close_matches` — a typo's whole
+cost is that the right name was nearly typed. Two things to check before
+landing it, both §2.1 downstream questions rather than code questions:
+(a) grep every YAML under `tsfm_lens/configs/` and every config dict in
+`tests/` for keys no dataclass declares, since any that exist today would
+start failing loudly (that is the point, but the list should be *seen*
+first, not discovered by a red suite); and (b) decide explicitly what
+happens to `models[*]`, which is built through the same helper — an
+adapter-specific knob passed through to one adapter would be a legitimate
+reason to allow extras there and nowhere else. Test: a typo'd key in each
+of a nested section, `l3.patching`, and a `models[*]` entry.
 
 ---
 
@@ -11133,7 +12645,23 @@ backlog is the next place forward work on this repo should look.
   delta is itself a little surprising — n=24 series sample noise, or the
   SAE's TopK sparsity acting as a mild denoiser, are the leading guesses,
   neither confirmed. Don't read this as "the SAE is simply excellent"
-  without that follow-up. `CLAUDE.md` §13 item 3 carries the same numbers
+  without that follow-up.
+
+  > 🔴 **Correction (2026-08-12) — that caveat is now resolved, against
+  > this number.** §13's repeat-run-variance measurement retrained this
+  > exact target at five seeds on the same frozen store: Chronos-T5-Base's
+  > token-granularity ΔMASE is **+0.2457 ± 0.2113**, five-seed range
+  > [−0.1118, +0.4136]. The **−0.3458** recorded above falls *outside* that
+  > range, and the negative sign replicates in only **1 of 5** seeds at a
+  > third the magnitude. It was seed noise, not a denoising effect.
+  > **Do not quote −0.346 as Chronos's token-granularity delta.** What
+  > survives — and survives decisively, the gap being ~16× the seed sd — is
+  > this item's actual conclusion: window **+3.897 ± 0.242** vs. token
+  > **+0.246 ± 0.211**, so the window-broadcast confound really was the
+  > dominant driver of every previously-recorded Chronos failure. TimesFM's
+  > granularity-identity claim is likewise strengthened: the two
+  > granularities are bit-for-bit identical at *every one* of the five
+  > seeds, not just in this single run. Numbers in §13's Findings block. `CLAUDE.md` §13 item 3 carries the same numbers
   in a "Correction:" callout. **Feature-level ablation (the item's second
   half) is now started, 2026-08-11 (seventeenth cron-loop firing) — see
   §13's own "Feature-level ablation" bullet's new Findings note for the
@@ -11320,7 +12848,7 @@ backlog is the next place forward work on this repo should look.
 
 ### T4 — Breadth and scale
 
-- [ ] **E19 · Multivariate / covariate envelope.** Moirai and Chronos-2 (both
+- [x] **E19 · Multivariate / covariate envelope.** Moirai and Chronos-2 (both
   §9 Phase 4 candidates) are multivariate-native; the whole pipeline assumes
   univariate `[series, time]`. Decide and document the axis extension *before*
   Phase 4 forces an improvised one: `[series, variate, window, dim]` with
@@ -11329,6 +12857,22 @@ backlog is the next place forward work on this repo should look.
   which analyses are variate-agnostic. Doing this as a design note now is
   cheap; doing it under pressure while adding a model is how abstractions get
   bent (§2.4).
+  **Decided 2026-08-12 (cron loop): ratify univariate-only**, per this item's
+  own reframing below and its stated recommendation. The deliverable — a
+  decision paragraph — is in `CLAUDE.md` §12's "Envelope hard edges" list, not
+  duplicated here. Summary of what was ratified and why: `pooling_matrix`'s
+  premise is that a token maps to a contiguous time interval *within one
+  series*, so a cross-series axis has no interval to pool, no place on the
+  shared window axis every cross-model comparison is defined on, and no lag in
+  timesteps — extending the axis means re-deriving alignment, not adding a
+  dimension. Chronos-2's GROUP attention is recorded as the concrete
+  exclusion (`_scan_attention` resolves to TIME by first-match), converting
+  what was an improvisation at Phase 4 into a documented edge with a stated
+  rule for future adapters. The decision explicitly records that the *size* of
+  the resulting capture-coverage gap is unknown — nothing measures how much of
+  a multivariate model's computation lives on the skipped axis — which is why
+  a Moirai-class any-variate model stays scoped "gated on E19" in §19's
+  landscape table rather than being called supported.
 - [~] **E20 · Context-length and horizon scaling sweeps.** Reuse
   `analysis/parameter_sweep.py`'s machinery on the *config* axis rather than
   the data axis: how do MASE, crystallization depth, and attention lag
@@ -11795,17 +13339,54 @@ axis as the concrete example of what that excludes.
       against a different base run would silently overwrite the first
       one's JSON with no error. Fixed by keying the default filename off
       `run_dir.name` (`horizon_scaling_sweep_{run_dir.name}.json`).
-      **Not yet done, why marked `[~]` not `[x]`:** no live real-checkpoint
-      run yet (TimesFM-2.5-200M / Chronos-T5-Base) — this firing's ~13-minute
-      remaining budget before the loop's own 21:51:56Z deadline was spent on
-      implementation + tests + the mock dry-run + the output-path fix
-      instead, leaving no safe margin to also load real checkpoints. The
-      natural next step for a future firing: `python
-      run_horizon_scaling_sweep.py --run runs/medium_run_chronos_base
-      --min-horizon 8 --max-horizon 64 --n-points 5 --n-series 48` (mirrors
-      the E20 context-length sweep's own real-checkpoint invocation, which
-      took ~37s end-to-end — this should be comparably fast since it is
-      also `predict()`-only).
+      ~~**Not yet done, why marked `[~]` not `[x]`:** no live real-checkpoint
+      run yet~~ — **done 2026-08-12 (cron loop); E20a is now `[x]`.** Ran
+      exactly the invocation this paragraph proposed (`--run
+      runs/medium_run_chronos_base --min-horizon 8 --max-horizon 64
+      --n-points 5 --n-series 48`, `CUDA_VISIBLE_DEVICES=1`) against live
+      TimesFM-2.5-200M / Chronos-T5-Base. **29 seconds end-to-end**, both
+      checkpoints loaded and released, no warnings beyond transformers'
+      `torch_dtype` deprecation notice. Horizons `[8, 13, 23, 38, 64]`,
+      context held at 512. Wrote
+      `runs/horizon_scaling_sweep_medium_run_chronos_base.json`. Result
+      (MASE, mean with series-bootstrap 95% CI):
+
+      | horizon | TimesFM | Chronos-T5-Base |
+      |---|---|---|
+      | 8 | 0.613 [0.568, 0.655] | 0.690 [0.640, 0.737] |
+      | 13 | 0.622 [0.583, 0.662] | 0.664 [0.622, 0.708] |
+      | 23 | 0.610 [0.581, 0.638] | 0.646 [0.613, 0.678] |
+      | 38 | 0.609 [0.587, 0.629] | 0.656 [0.625, 0.693] |
+      | 64 | 0.620 [0.603, 0.639] | 0.688 [0.658, 0.721] |
+
+      **Two things worth reading here, one of them a caveat on the tool
+      rather than a result about the models.** (1) **MASE is essentially
+      flat in horizon for both models** — TimesFM spans 0.609–0.622 and
+      Chronos 0.646–0.690 across an 8× horizon range, with every CI
+      overlapping its neighbours. TimesFM is lower at every horizon, and
+      the two models' CIs are cleanly disjoint at h=64 ([0.603, 0.639] vs
+      [0.658, 0.721]) while overlapping slightly at h=8 — i.e. what little
+      the sweep separates, it separates *more* at long horizon, which is the
+      one directional signal in the table. Chronos's curve is faintly
+      U-shaped (best at h=23) but entirely within noise. (2) **This
+      contradicts the mock dry-run's shape, and the mock was the misleading
+      one.** The dry-run's "MASE rising with horizon for both mock
+      adapters" was recorded above as "the expected qualitative shape" —
+      real checkpoints show no such rise. The reason is the same one that
+      already forced a test assertion to be dropped (see the h=32 > h=16
+      note above): MASE normalizes by a **context-derived** naive scale that
+      does not depend on horizon length, so a flat MASE means per-step
+      absolute error is roughly horizon-independent — which is what a
+      strong forecaster on the sweep's synthetic (largely periodic) series
+      should do. The mock adapters degrade because they are toys, not
+      because horizon degradation is the expected shape. **Do not read this
+      as "horizon length doesn't matter for TSFMs"** on the strength of one
+      synthetic corpus at n=48 and one horizon decade; what it establishes
+      is that the sweep runs on real weights, is cheap enough to run
+      routinely, and that any future claim of horizon degradation needs a
+      corpus whose difficulty actually scales with horizon (E12's
+      horizon-resolved metrics on the real benchmark are the better axis for
+      that, and are where this should be cross-checked next).
       ⚠️ **Also surfaced this firing, not yet reconciled:** E20b's own
       framing above assumes every context-length sweep point needs a fresh
       extraction ("a different `context_len` changes the store's shape, so
@@ -12290,3 +13871,1340 @@ partition wild data similarly" is not read off a bare number.
       replication of this depth-curve result also remain undone, same as
       L1's. `run_null_baseline_test.py --depth-curve l2` makes re-running
       this against a second corpus mechanical once one is extracted.
+  - **Fourth follow-up (2026-08-12, cron loop): the reverse direction
+    (`TimesFM->Chronos-T5-Base`) is now measured, and it reverses the same
+    way the forward one did — the third follow-up's "what this does not
+    overturn" caveat is closed.** `compare_l2_depth_curve` gained a
+    `direction=` parameter (and `run_null_baseline_test.py` a
+    `--direction` flag) so a direction other than the run's own best-gaining
+    one can be tested; L2 is not symmetric — the ridge probe maps one
+    model's states onto the other's — so this is a separate measurement, not
+    a re-read of the same one. Same runs, same n_boot=500, nulls supplied in
+    the reverse order (`--null-run-a runs/null_timesfm_random --null-run-b
+    runs/null_chronos_random`); artifact `runs/medium_run_chronos_base/
+    l2_depth_curve_null_test_TimesFM_to_Chronos-T5-Base.json`.
+
+    | TimesFM src layer | real gain | vs TimesFM's own floor (src) | vs Chronos's own floor (dst) |
+    |---|---|---|---|
+    | `stacked_xf.0` | 0.2132 | 0.3883 → **null exceeds** (−0.175, p=0.002) | −0.1696 → real exceeds (+0.383) |
+    | `stacked_xf.2` | 0.2895 | 0.3841 → **null exceeds** (−0.095, p=0.012) | → real exceeds (+0.459) |
+    | `stacked_xf.4` | 0.3106 | 0.3777 → ambiguous (−0.067, CI [−0.151,+0.009]) | → real exceeds (+0.480) |
+    | `stacked_xf.6` | 0.3143 | 0.3617 → ambiguous (−0.047, p=0.332) | → real exceeds (+0.484) |
+    | `stacked_xf.8` | 0.3178 | 0.3245 → ambiguous (−0.007, p=0.996) | → real exceeds (+0.487) |
+    | `stacked_xf.10` | 0.3179 | 0.1179 → **real exceeds** (+0.200, p=0.002) | → real exceeds (+0.488) |
+    | `stacked_xf.12` | 0.3121 | 0.0488 → **real exceeds** (+0.263, p=0.002) | → real exceeds (+0.482) |
+    | `stacked_xf.14` | 0.2931 | 0.0056 → **real exceeds** (+0.288, p=0.002) | → real exceeds (+0.463) |
+    | `stacked_xf.16` | 0.2695 | −0.0381 → **real exceeds** (+0.308, p=0.002) | → real exceeds (+0.439) |
+    | `stacked_xf.18` | 0.2354 | −0.1045 → **real exceeds** (+0.340, p=0.002) | → real exceeds (+0.405) |
+
+    - **Against Chronos's own untrained-twin floor the result is
+      unambiguous at every depth**: that floor is *negative* at
+      `encoder.block.10` (−0.1696 — a random-init Chronos twin predicts the
+      real Chronos layer *worse* than the hand-crafted input-feature
+      baseline does), and real cross-model gain exceeds it by +0.38 to
+      +0.49 with p=0.002 at all ten TimesFM src layers. Note every src
+      layer's best dst partner is the same Chronos layer, `encoder.block.10`
+      — the same block the forward direction's flagship number sits on.
+    - **Against TimesFM's own untrained-twin floor the shape is the same
+      depth story as L1's, mirrored:** that floor decays monotonically and
+      steeply with TimesFM depth (0.388 → −0.105 across layers 0→18) while
+      the real cross-model gain is a shallow hump peaking at 0.318 around
+      layers 8–10, so the two curves cross once. Real loses at layers 0–2,
+      is statistically indistinguishable at 4–8, and **decisively wins at
+      every layer from 10 through 18 (5 of 10)**.
+    - **This closes the specific pessimistic claim recorded earlier in this
+      block.** The "TimesFM→Chronos real gain (0.318) is numerically *below*
+      TimesFM's own untrained-twin floor (0.388)" comparison used the null
+      run's own *global best pair*, which — exactly as the third follow-up
+      found for the other direction — sits at **layer 0**, where an
+      untrained twin trivially predicts its own same-index untrained twin
+      because both are still close to the raw input. At matching layer
+      index that floor is 0.118 / 0.049 / 0.006 / −0.038 / −0.105 for layers
+      10/12/14/16/18, and the real gain beats it decisively at each. Both
+      L2 directions have now been tested the same way, and both give the
+      same answer: **the wrong-layer artifact, not the L2 gain, was what
+      the original single-peak-pair test measured.**
+    - **Still open, unchanged:** cross-corpus and cross-checkpoint-size
+      replication (both directions), and the same treatment for a third
+      architecture. Nothing here is a second corpus.
+
+---
+
+## 17. Gap analysis — the plan as a whole, measured against the north star (added 2026-08-12)
+
+> **Why this section exists.** §0.5 answers "what do I do next." §15 and §16
+> answer "what's broken" and "what's missing." Nothing answered **"is the
+> plan, taken as a whole, actually pointed at §1's north star?"** This section
+> is that read, done once, honestly. It is a diagnosis, not a work list — each
+> gap below hands off to the new §18/§19/§20/§21 items that fix it.
+>
+> **The verdict in one paragraph.** The repo's *analysis depth* is genuinely
+> ahead of the published TSFM-interpretability state of the art, and its
+> *statistical discipline* (series-level resampling, null baselines, sealed
+> confirmation) is ahead of most interpretability work in any modality. But
+> measured against "a one-button tool that lets anyone compare **any** TSFM on
+> **equal grounds**", three of the four words in that sentence have unfinished
+> business: **one-button** is a real, well-planned gap (§16 T1 — known and
+> sized). **Any** is a narrower envelope than the plan admits: five adapters
+> exist, all five are attention-based transformers over time-localized tokens,
+> and the fastest-growing parts of the TSFM landscape (mixers, MoE, SSMs,
+> API-only, reprogrammed vision/text models) each break an assumption nothing
+> in the plan currently addresses. **Equal grounds** is the largest gap, and
+> the one the plan is *least* aware of — it is treated as a set of prose
+> caveats in `CLAUDE.md` §12 rather than as a measured, reported quantity, and
+> at least one cross-model axis in current use is quietly comparing unlike to
+> unlike.
+
+### 17.1 The five structural gaps
+
+**G-I 🔴 The depth axis is not comparable, and nothing says so numerically.**
+`utils.py::relative_depths` is `arange(n) / (n - 1)` over each model's
+**captured** layers. Two consequences nothing in the repo currently accounts
+for:
+- For Chronos-T5, captured layers are the **encoder only**. So Chronos's
+  "relative depth 1.0" is the *middle* of its computation — the last encoder
+  block, with an entire decoder still to run — while TimesFM's 1.0 is its
+  actual output. Every figure that interpolates both models onto a shared
+  relative-depth axis (L1's CKA depth curves, L3's cross-model fingerprint
+  agreement, crystallization depth, the §16 E9 depth-curve null tests) is
+  therefore comparing "80% of the way through TimesFM's whole computation"
+  against "80% of the way through Chronos's *encoder*." That is not a
+  rounding error; for a T5, encoder and decoder are comparable in size.
+- With `capture_layer_stride: 2` the axis is over *capture points*, not
+  blocks, so two configs of the same model can produce different depth
+  coordinates for the same block.
+`CLAUDE.md` §12 item 4 states the honest version of this ("relative-depth
+interpolation is a convention, not a fact") and then the pipeline proceeds to
+use it as if it were one. **Fixed by §18 F1 (candidate depth axes, empirically
+compared) and F4 (coverage accounting).**
+
+**G-II 🔴 There is no parameter, compute, or latency accounting anywhere in the
+repo.** Verified by grep: no `n_params`, no FLOP estimate, no wall-clock or
+peak-VRAM record in any analysis module. So every "TimesFM beats Chronos at
+X" is confounded with model size, and there is no way to ask the question a
+practitioner actually has — *per unit of compute*, which model wins? §5.3's
+chronos-base-vs-small study is the only size control in the file and it varies
+size within one family rather than normalizing across families. **Fixed by
+§18 F2.**
+
+**G-III The capability matrix degrades per-model, which silently produces
+unequal comparisons.** The doctrine (`CLAUDE.md` §2.5) is right — an
+unsupported capability skips and logs. But when model A supports
+`attention_patterns` and model B does not, the report renders A's attention
+analysis and simply omits B's, and a reader sees a rich result for one model
+and nothing for the other **in a document whose entire purpose is comparison.**
+There is no "compare only what both can do" mode, and no explicit separation
+between the symmetric comparison and the asymmetric extras. **Fixed by §18 F3
+and F9.**
+
+**G-IV The architecture envelope is narrower than "any TSFM", and the plan
+doesn't enumerate what's outside it.** All five adapters are attention
+transformers over contiguous time patches. `CLAUDE.md` §12's "envelope hard
+edges" names the *categories* that break (non-time-localized tokens,
+non-uniform hidden size, multi-pass context) but never names a single real
+model that falls into them, so there is no way to tell whether the envelope
+excludes two obscure architectures or half the field. It excludes more than
+the plan implies: attention-free mixers, MoE routing, state-space models,
+API-only services, and vision/text-reprogrammed models are all real, published
+TSFMs and all fall outside. **Fixed by §19's landscape table and adapter
+tiers.**
+
+**G-V The plan is written for its authors.** This is not a criticism of the
+prose — it is dense because the subject is — but §1's north star says
+*anyone*, and there is currently no on-ramp: no one-sentence "what does this
+stage tell me and why would I care", no glossary independent of the report's
+per-figure notes, no worked example that reads a real result end to end, and no
+progressive disclosure in the report between "I want the headline" and "I want
+the estimator's assumptions." Conversely there is nothing aimed at the
+*advanced* reader either — no methods appendix stating each estimator's
+assumptions and failure modes in one place, which is what a reviewer or a
+sceptical researcher reaches for first. **Fixed by §21.**
+
+### 17.2 What the plan gets right, and should not be "improved"
+
+Recorded explicitly so a future pass doesn't refactor away the parts that are
+load-bearing:
+- **The evidence-class ladder** (L0 behavioral → L1 geometric → L2 translatable
+  → L3 causal-within-model) and the refusal to ever claim cross-model
+  causality. This is the single most defensible thing in the repo.
+- **The L2 input-feature baseline** and the `random_init` null. Most
+  representational-similarity work reports raw similarity; reporting only the
+  *gain over a control* is stricter than the field norm.
+- **The dev/private confirm split.** Nothing comparable exists in
+  interpretability tooling.
+- **The series as the resampling unit.** Easy to "simplify" into a bug.
+- **`ROADMAP.md` §0.2's append-only Findings discipline.** The reason this
+  file can be trusted as a research record at all.
+
+### 17.3 Sequencing these against the existing plan
+
+The gaps above do **not** displace §0.5's Tier 1 (the flagship crosscoder) —
+that is the novel research contribution and stays first. They interleave:
+- **G-I and G-II are cheap and retroactively qualify numbers already recorded**
+  (every depth-axis figure, every cross-model MASE comparison). They belong
+  *before* the next round of cross-model claims, not after — same argument
+  §16 E9 made for the untrained-weights null, which is now the most-cited
+  control in the file.
+- **G-III and G-V are report-layer work** and compose naturally with §16 E6.
+- **G-IV is the long pole** and is best paid down incrementally: one new
+  architecture *class* (not model) per session, each chosen to break a
+  different assumption.
+
+---
+
+## 18. Equal grounds — the fairness contract, made measurable (added 2026-08-12)
+
+> **The principle.** "Fair comparison" in this repo currently means *where
+> claims are grounded* (`CLAUDE.md` §14: behavior, gains over baselines,
+> within-model causal fingerprints). That principle is correct and stays. What
+> it does not cover is **the axes those claims are plotted on and the budgets
+> the models are given** — depth, compute, capture coverage, token resolution,
+> noise floor, and training exposure. An honest grounding on an unequal axis is
+> still an unequal comparison.
+>
+> **The rule this section establishes:** *every cross-model number must either
+> be on an axis both models genuinely share, or must be rendered next to the
+> measured size of the asymmetry.* No prose-only caveats. If an asymmetry
+> cannot be measured, the claim is downgraded, not footnoted.
+>
+> **Beginner framing (used verbatim in the report):** "Comparing two forecasting
+> models is like comparing two runners on different tracks. Before trusting who
+> is faster, you have to know whether the tracks were the same length, whether
+> both ran the whole way, and whether one was allowed to train on the course.
+> This section measures all three."
+>
+> Items are **F1–F9**. F1, F2, F4, F6 are 🔴 — they retroactively qualify
+> numbers already in this file.
+
+### F1 🔴 The depth axis — four candidate definitions, empirically compared `[ ]`
+
+**What's wrong.** See §17.1 G-I. `relative_depths` is index-fraction over
+captured layers, so Chronos's 1.0 is mid-computation and TimesFM's is its
+output; and the axis moves when `capture_layer_stride` changes.
+
+**This is a research question with several defensible answers, so build the
+alternatives and let the data choose** — the same shape as §6.1.1's
+layer-selector bake-off, which is the precedent to copy including its
+null-controlled scoring.
+
+| Axis | Definition | Argument for | Argument against |
+|---|---|---|---|
+| **D0 index fraction** (status quo) | `i / (n_captured - 1)` | Free; what every figure uses today | Not comparable across partial capture; stride-dependent |
+| **D1 block fraction of the full stack** | `block_index / (n_blocks_total - 1)`, over **all** blocks incl. uncaptured, and over the **whole model** incl. decoder | Stride-invariant; honest about truncation — Chronos's encoder ends at ~0.5, not 1.0 | Assumes every block costs the same; leaves the top half of Chronos's axis empty |
+| **D2 compute fraction** | cumulative FLOPs to the end of block *i*, ÷ total forward FLOPs (needs F2) | The most defensible "how much of the computation has happened" reading; handles unequal block cost and embedding/head overhead | Needs a FLOP model per architecture; conflates compute with progress |
+| **D3 functional / intrinsic axis** | order layers by a *measured* property, e.g. CKA-to-input (already computed by `internals.py`) or tuned-lens forecast-R² (already computed by `lens.py`), then align models by matching that property's value rather than by position | Aligns models by **what they've done**, not where they are — the only axis that is architecture-agnostic by construction; needs zero new measurement | Circular if the aligned property is also the thing being compared; must be used only for axes *other than* itself |
+
+**Deliverables.**
+- `tsfm_lens/analysis/depth_axis.py`:
+  - `depth_coordinates(adapter, captured_layers, axis: str, budget=None) -> np.ndarray`
+    returning a coordinate per captured layer for `axis in {"index","block","compute","functional"}`.
+  - `total_stack_size(adapter) -> dict` — `{n_blocks_total, n_blocks_captured,
+    n_blocks_uncaptured_in_captured_surface, n_blocks_outside_captured_surface}`.
+    The last field is the one that catches Chronos's decoder. Uses
+    `all_layer_names()` (exists) plus a new optional
+    `ModelAdapter.uncaptured_surfaces() -> dict[str, int]` (defaults to `{}`,
+    so no adapter breaks) for surfaces the adapter knows about but does not
+    capture — Chronos-T5 returns `{"decoder": 12}`.
+  - `align_on_axis(coords_a, values_a, coords_b, values_b) -> tuple` —
+    interpolation onto the shared axis with **explicit refusal outside the
+    overlap**: if Chronos's block axis only spans [0, 0.5], TimesFM's [0.5, 1.0]
+    is not compared against anything, it is rendered as an unmatched region.
+    Today the interpolation silently stretches one model over the other's range.
+- `config.py`: `alignment.depth_axis: block` as the **new default**, with
+  `index` retained and explicitly labelled legacy so already-recorded numbers
+  remain reproducible (invariant 1's spirit, applied to analysis rather than
+  generation).
+- Every cross-model depth figure prints the axis name in its title and its
+  `_note()` explains what the axis means in one sentence.
+
+**Acceptance criterion.** A cross-model depth figure under `block` shows
+Chronos's curve ending at ~0.5 with the region above it visibly unmatched, and
+the L1/L3 depth-agreement statistics are recomputed over the overlap only.
+Re-run §16 E9's depth-curve null tests on the new axis and record whether any
+verdict changes — **this is the acceptance test that matters**, because if a
+verdict flips, the old axis was materially misleading and that is itself a
+finding worth publishing.
+
+**Cost.** ~1.5 sessions plus one re-analysis run (no re-extraction — depth
+coordinates are metadata over existing artifacts). D2 depends on F2.
+
+**Beginner explanation to ship with it.** "Two models can have a different
+number of layers, and one may only be half-observable. Plotting both on '0 to
+1' hides that. Under the new default axis, a model we can only see half of
+occupies only half the plot, so you can see what we don't know."
+
+### F2 🔴 Parameter, compute, latency and memory accounting `[x]`
+
+**What's wrong.** §17.1 G-II — none of this is measured. Every quality
+comparison is size-confounded and no cost axis exists at all, which is the
+first thing a practitioner asks.
+
+**Deliverables.** `tsfm_lens/analysis/model_budget.py`:
+- `parameter_census(adapter) -> dict` — total, trainable, and a breakdown by
+  role (embedding/tokenizer front-end, body blocks, output head), plus
+  per-block counts. Pure `torch` introspection over `named_parameters()`; no
+  architecture knowledge needed beyond the block-name regex the adapter already
+  provides.
+- `measure_forward_cost(adapter, context_len, batch, device) -> dict` — wall
+  clock (median of N, after warmup), peak allocated VRAM via
+  `torch.cuda.max_memory_allocated`, and **measured** FLOPs via
+  `torch.utils.flop_counter.FlopCounterMode` — measured, not hand-derived, so
+  it works on an unseen architecture with no new code. Record per-block
+  cumulative FLOPs, which is exactly what F1's D2 axis needs.
+- `predict_cost(adapter, context_len, horizon, ...) -> dict` — the same for the
+  full forecast path, which is where Chronos's sampled decoding shows its true
+  cost (`num_samples` × decoder passes) and where a deterministic model looks
+  very different.
+- Written to `budget/model_budget.json` by a new cheap pipeline stage running
+  right after `extract` (it needs a loaded model and nothing else).
+
+**Report additions.** A "Cost and capacity" panel: params, FLOPs/forward,
+latency, peak VRAM per model; then **compute-normalized L0** — MASE plotted
+against FLOPs and against parameter count, so "better" and "better per unit
+cost" are visibly different claims. A model that wins on MASE and loses on
+MASE-per-FLOP is an important, actionable result that the repo currently cannot
+express.
+
+**Acceptance criterion.** Every configured model has a budget record; the
+report renders quality-vs-cost; and F1's D2 axis consumes the per-block
+cumulative FLOPs without a second measurement pass.
+
+**Cost.** ~1 session. `FlopCounterMode` is the load-bearing choice — verify it
+handles each adapter's ops (custom attention kernels can be invisible to it;
+if a model reports implausibly low FLOPs, that is the failure mode, so
+sanity-check against an analytic estimate for one known model and **warn on
+disagreement** rather than trusting silently).
+
+#### Findings — F2 complete (2026-08-12)
+
+The measurement half landed earlier the same session (see §14's entry above:
+`analysis/model_budget.py`, 11 CPU-only tests). This block covers the other
+half — config, stage, report — and what running it actually surfaced.
+
+**What was wired.**
+- `config.py::BudgetConfig` (`enabled: true` by default, `batch: 8`,
+  `repeats: 5`, `warmup: 2`, `measure_predict: true`, `predict_repeats: 3`),
+  registered on `PipelineConfig` and in `_NESTED`.
+- `pipeline.py`: a `budget` stage keyed on `budget/model_budget.json`, placed
+  immediately before `layer_screen`. **`deps=[]` deliberately** — a cost
+  record needs a loaded model and nothing else, so `--stages budget` is a
+  valid standalone run against a checkpoint with no activation store built
+  yet; the *ordering* still puts it early so a full run reuses warm models.
+  Fingerprint keys are `budget`, `data.context_len`, `data.horizon`,
+  `models[*].checkpoint`, `models[*].layer_regex`,
+  `models[*].capture_layer_stride` — context length above all, since
+  attention cost is super-linear in it and a stale cost number under a
+  changed context length is exactly §11.24's failure shape.
+- `report/report.py::_sec_budget`, registered as the "Cost / Cost and
+  capacity" section between L0 and Screen: a cost table, a **compute-completed-
+  by-depth** curve, and the **quality-per-unit-of-compute** panel (MASE vs
+  FLOPs and vs parameters, both on log axes).
+
+**Verified live** on `configs/smoke.yaml` end to end (re-run after the
+`_fmt_flops` fix below, so the checked-in `runs/smoke/report.html` matches the
+code): **12 rendered / 1 skipped** sections (SAE off in that config), **44
+findings**, `Cost` row `rendered`, artifact present for both mock models with
+roles summing exactly to total and `flops_sanity: plausible` for each. 18
+tests green (`tests/test_model_budget.py` 11 + `tests/test_budget_stage.py`
+7).
+
+**Three things the run surfaced that reading the code would not have.**
+
+1. **A fixed `G` unit prints a small model as `0.00 GFLOPs`, which reads as
+   *free* rather than as *small*.** The mock pair made this obvious
+   immediately (`patchy` at 1.22 MFLOPs/series vs `steppy` at 26.75
+   MFLOPs/series both rounded to `0.00 G`). Fixed with `_fmt_flops`, which
+   picks T/G/M/k by magnitude and keeps two significant figures, and by
+   putting both normalized-panel x-axes on **log scale** — the model sizes
+   this panel exists to compare differ by orders of magnitude, and a linear
+   axis renders the smaller one at the origin. Pinned by a test asserting
+   `"0.00 GFLOPs" not in html`. Same class as `CLAUDE.md` §2.5: a number
+   that degrades to a wrong reading rather than to no reading.
+2. **A21** — the config loader silently drops unknown keys. Found because a
+   test asserting a nonsense `budget:` key raises turned out to assert
+   something `config.py::_build` does not do. Repo-wide, not F2-specific;
+   written up as §15 A21 with a fix plan, and the test now pins the current
+   behavior with a pointer there so fixing it fails loudly here.
+3. **The A3 stale-artifact guard fired on the first full-config run** and
+   refused to proceed — `runs/smoke` dated 2026-08-10 had an `l0` fingerprint
+   mismatch from unrelated drift. Working as designed: the guard named the
+   three affected stages and the upstream cause rather than silently mixing
+   configs. The old run directory was moved aside (not deleted) and
+   regenerated clean.
+
+**Acceptance criteria.** Every configured model has a budget record ✅; the
+report renders quality-vs-cost ✅; per-block cumulative FLOPs are recorded
+from the same measured pass, so F1's D2 axis needs no second measurement ✅
+(D2's *consumption* of them is F1's work, not F2's). **Not yet run against
+real checkpoints** — the numbers above are mock-model numbers, and the
+interesting cost result (TimesFM's deterministic single pass vs Chronos-T5's
+`num_samples` × decoder passes in `predict_cost`) needs a live run to state.
+That is a `medium_run` away and is the natural next F-wave action.
+
+### F3 Capability-intersection comparison mode `[ ]`
+
+**What's wrong.** §17.1 G-III — asymmetric capability support silently yields
+one-sided sections in a comparison document.
+
+**Deliverable.** `fairness.mode: intersection | full | both` in config
+(default `both`).
+- `pipeline.py` computes the **capability intersection** across all configured
+  models before any analysis stage runs, using `models/capability_matrix.py`
+  (already built) as the source of truth rather than discovering support
+  per-stage.
+- Under `intersection`, an analysis that only some models support is skipped
+  entirely with a stated reason. Under `both` (default) it runs, but the report
+  places it in a clearly headed **"Asymmetric — available for a subset of
+  models"** part of the document, physically separated from the symmetric
+  comparison, with a one-line statement of which models are missing and why.
+- The findings list marks each finding `symmetric: bool`. A finding derived
+  from an asymmetric section may never be promoted to a headline claim or a
+  `confirm` hypothesis without an explicit override, since it cannot be a
+  comparison.
+
+**Acceptance criterion.** A config pairing Chronos-T5 (has
+`cross_attention_patterns`) with TimesFM (cannot — no encoder/decoder split)
+renders cross-attention under the asymmetric heading, and under
+`mode: intersection` does not render it at all. Smoke test asserts both.
+
+**Cost.** ~0.5 session; composes with §16 E6's findings refactor, so do them
+together.
+
+### F4 🔴 Capture-coverage accounting `[x]`
+
+**What's wrong.** `CLAUDE.md` §12 items 1–2 state the coverage asymmetry in
+prose. `report/coverage.json` is *section* coverage (which report sections
+rendered), not *computational* coverage — verified by reading it. So the single
+most important caveat on every Chronos claim is nowhere in the machine-readable
+output.
+
+**Deliverable.** Extend F2's budget record with a coverage block per model:
+`captured_blocks / total_blocks`, `captured_params / total_params`,
+`captured_flops / total_flops` (the honest headline number), and a list of
+named uncaptured surfaces from F1's `uncaptured_surfaces()`. Render as a
+"Coverage" row in the fairness card (F9), and have every per-model depth figure
+annotate the captured fraction in its subtitle.
+
+**The rule this enables, which should be enforced in code, not prose:** a
+finding whose text asserts a depth-located claim about a model with
+`captured_flops < 0.9` gets an automatic qualifier appended ("…within the
+captured *encoder*; ~48% of this model's forward computation is unobserved").
+Implement as a check in the findings builder, not as author discipline —
+invariant 8's lesson is that discipline-only mechanisms decay.
+
+**Acceptance criterion.** Chronos-T5's report states its captured FLOP
+fraction numerically, and a depth-located Chronos finding carries the automatic
+qualifier.
+
+**Cost.** ~0.5 session on top of F2.
+
+**Findings (2026-08-12) — implemented, and the first live run *failed this
+item's own acceptance criterion*, which is how two real bugs were found.**
+
+`analysis/model_budget.py::capture_coverage` + `report/report.py::
+_coverage_qualifiers`/`_qualify_depth_claims`, 12 tests in
+`tests/test_capture_coverage.py` and 1 in `tests/test_meta_report.py`.
+Measured on `runs/medium_run_chronos_base` (live TimesFM-2.5-200M +
+Chronos-T5-Base, RTX A5000), numbers quoted exactly as the artifact writes
+them:
+
+| | TimesFM | Chronos-T5-Base |
+|---|---|---|
+| `block_fraction` | 0.5 (10 of 20, stride 2) | **1.0** (12 of 12) |
+| `param_fraction` | 0.4252579280803676 | 0.42186707448695115 |
+| `capture_pass_flops` | 59391344640.0 | 774755352576.0 |
+| `forecast_flops` | 59391344640.0 | 5398283452416.0 |
+| `flops_fraction_of_forecast` | 0.4254943502824859 | **`None`** |
+| `capture_pass_fraction_of_forecast` | 1.0 | 0.14351883508993188 |
+| `headline_flops_fraction` | 0.4254943502824859 | 0.14351883508993188 |
+| `headline_is_upper_bound` | `False` | **`True`** |
+| `depth_claims_qualified` | `True` | `True` |
+
+**Three fractions, three different losses — and the flattering one is the
+one an encoder-only model scores best on.** Chronos's `block_fraction` is a
+perfect **1.0**: the layer regex matches every encoder block, so a
+blocks-captured headline would report full coverage for the model this whole
+item exists to qualify. `param_fraction` (0.42) and the FLOPs fractions use
+whole-model denominators and do see the gap. This is why the headline is a
+FLOPs fraction and why `test_encoder_only_regex_is_invisible_to_block_
+fraction_but_not_to_the_others` exists.
+
+**Bug 1 — the item's acceptance criterion failed on the model it was built
+for.** First live run: the qualifier fired on **TimesFM** and not on
+Chronos. `_per_block_flops` resolved **0 of 12** Chronos blocks by name
+(`ChronosAdapter.forward()` calls `self._t5.encoder(...)` directly, so
+`FlopCounterMode` keys blocks relative to that submodule — hypothesis, not
+yet verified), so `captured_flops` was `None`, so every fraction was `None`,
+so `depth_claims_qualified` was `False`. The most under-observed model in the
+repo was silently exempted from its own qualifier by a missing measurement.
+Fixed by adding **`capture_pass_fraction_of_forecast` = `forward.flops /
+predict.flops`**, both of which the record already held. It is an *upper
+bound* on observed computation (the capture pass also does embedding/norm
+work belonging to no captured block, and stride may skip blocks inside it),
+and an upper bound is the right instrument for a *gate*: a model failing the
+90% bar even optimistically has certainly failed it. `headline_basis` and
+`headline_is_upper_bound` record which reading was used, and the rendered
+sentence says **"at least ~86%"**, never "~86%" — a bound rendered as a point
+estimate is the one way this qualifier could overstate its own precision.
+
+**Bug 2 — the parameter surface double-counted stride loss.** TimesFM
+reported *"132.9M parameters (57%) lie outside the 20 blocks this run's layer
+regex matched"* while the very next line reported *"10 of 20 matched blocks
+are skipped by capture_layer_stride=2"* — 98.4M of that 132.9M **was** the
+stride loss, reported twice under two different causes. The regex line's
+denominator is now the *matched* blocks, not the captured ones: **34.6M
+(15%)**. Each surface names a distinct loss.
+
+**Live acceptance criterion, now met** (verbatim from `report.html`, 12
+sections / 31 findings):
+
+> Lens — Chronos-T5-Base: forecast crystallizes at 0.73 of depth (within 10%
+> of final MASE 2.15) — within the captured surface only; **at least ~86% of
+> Chronos-T5-Base's forward computation is unobserved** (116.4M parameters
+> (58%) lie outside the 12 blocks this run's layer regex matched; the captured
+> forward pass performs only 14% of the FLOPs of a full forecast at this run's
+> decode settings; the remainder (a decoder, or repeated sampled decode steps)
+> runs unobserved).
+
+**Two things that fell out and are worth carrying into F1.** The L1 peak-pair
+finding named neither model (`at L4 ↔ L10`), so the qualifier could not
+attribute it — and a reader could not tell which layer belonged to which
+model either. It now reads `at TimesFM L4 ↔ Chronos-T5-Base L10 (relative
+depths 0.22 / 0.91)` and carries both fractions (shared preamble emitted
+once, surface inventories dropped when two models are named, or the finding
+becomes unreadable). **That rendering is now F1's own argument in one line:**
+Chronos's "relative depth 0.91" is 0.91 of a stack that performs ≤14% of its
+forecast's FLOPs. And `report/meta_report.py` inherits the caveat — it
+tabulates crystallization depth and the L1 peak pair across runs, where the
+difference is invisible — so its crystallization cell now annotates
+*"(of the 42% of this model captured)"* for any model under 90%, with runs
+predating the measurement left **unannotated** and a footnote saying that
+means unmeasured rather than complete.
+
+**Correction owed to `CLAUDE.md` §12 item 2.** *"For TimesFM we see
+essentially the whole computation; for Chronos maybe half"* is now measurably
+wrong in **both** halves: TimesFM observes **42.5%** of its forward FLOPs
+under the default `capture_layer_stride: 2`, and Chronos's capture pass is
+**≤14.4%** of a full forecast at `num_samples: 20` — not half. Corrected in
+place there.
+
+**Left open.** `_per_block_flops`'s Chronos key-prefix failure is unfixed, so
+Chronos has no per-block FLOPs and no trace in F2's "Compute completed by
+depth" chart, and its headline is a bound rather than a measurement. A
+suffix match requiring a *unique* candidate would fix it (a bare suffix match
+is ambiguous between `encoder.block.0` and `decoder.block.0`). Tracked as
+part of F1's compute-fraction depth axis, which needs the same per-block
+numbers.
+
+### F5 Token-resolution parity `[ ]`
+
+**What's wrong.** TimesFM resolves lags no finer than one patch (~32 steps);
+Chronos-T5 resolves single steps. `CLAUDE.md` §12 item 5 is right that this is
+a real ceiling, not a plotting artifact. Representation comparison already
+handles it (everything pools to 32-step windows). **Attention comparison does
+not** — the lag-profile taxonomy and periodicity-head analysis operate at each
+model's native resolution, so a "Chronos has sharper seasonal-lag attention"
+finding is partly a statement about patch size.
+
+**Deliverables.**
+- `analysis/attention.py` gains a `resolution_mode: native | matched` knob.
+  Under `matched`, every model's lag axis is binned to the **coarsest**
+  configured model's token width before any taxonomy or periodicity statistic
+  is computed. Both are recorded; `matched` is what cross-model findings may
+  cite.
+- Report a per-model `finest_resolvable_lag` (= `token_width`) in the fairness
+  card, and state in the attention section's `_note()` that a difference
+  smaller than the coarser model's token width is not interpretable.
+
+**Acceptance criterion.** Periodicity-head scores computed both ways on a real
+run; if the cross-model ordering changes under `matched`, that is recorded as a
+finding about the previous result.
+
+**Cost.** ~1 session.
+
+### F6 🔴 Every delta in noise-floor units `[x]`
+
+**What's wrong.** §15 A13 established repeat-run noise floors — a real fix. But
+deltas are still *reported* as raw numbers, and the models have structurally
+different floors (Chronos-T5 samples; TimesFM and Chronos-Bolt are
+deterministic — `CLAUDE.md` §12 item 3). A ΔMASE of +0.2 means something
+different for each. The §13 entry showing an SAE forecast-preservation ΔMASE
+moving 0.175 → 0.1097 across identical configs is the concrete case.
+
+**Deliverable.** A shared helper `analysis/stats.py::in_floor_units(delta,
+floor) -> dict` returning `{raw, floor, ratio, interpretable: bool}` with
+`interpretable = |delta| > 2 * floor`, used by every stage that reports a
+delta: L3 sensitivity and patching restoration, attention head/MLP ablation
+ΔMASE, SAE forecast preservation, steering effects. The report renders
+`Δ = +0.21 (2.6× this model's noise floor)` and greys out any delta below
+`1×`. A finding may not be emitted from an uninterpretable delta at all.
+
+**Acceptance criterion.** Re-render an existing run; count how many current
+findings fall below their own noise floor. **That count is the deliverable** —
+if it is nonzero, this item has retroactively corrected the record, which is
+the whole point.
+
+**Cost.** ~1 session, mostly threading the floor through call sites.
+
+#### Findings — F6 complete (2026-08-12)
+
+**What was built.** `analysis/stats.py::in_floor_units(delta, floor,
+interpretable_ratio=2.0)` plus a companion `format_floor_units(fu)`, consumed by
+`report/report.py` through one `_delta_phrase(run_dir, model, delta)` helper
+rather than by each call site writing its own sentence. That indirection is the
+point, not tidiness: **a delta whose floor was never measured and a delta that
+sits below its floor read almost identically if each site phrases it
+independently, and those are opposite claims.** So `interpretable` is a
+tri-state — `None` (no floor measured for this model), `False` (measured, inside
+2×), `True` — and the report's suppression gate keys on `is False` specifically,
+never on falsiness. `None` must not suppress anything: suppressing a finding
+because of a floor nobody measured is asserting noise on no evidence.
+
+Call sites threaded: attention head ranking (finding **suppressed** when
+uninterpretable, with the suppression stated in the section body — a silently
+missing finding is the exact failure invariant 8 names), attention MLP-ablation
+chart (a dotted `add_hline` at the model's floor, plus a sentence in the note,
+for sampling models only), and SAE forecast preservation in both `window` and
+`token` granularities. A per-run `_FLOOR_AUDIT` counter emits the audit itself as
+a finding, and is reset at the top of `run_report` because the test suite calls
+that function repeatedly in one process.
+
+**Acceptance criterion — the count.** Re-rendered `runs/medium_run_chronos_base`
+report-only (no stage re-run, no model loaded): **0 of 6 ΔMASE values fall at or
+below their own model's repeat-run floor.** The six, verbatim from the rendered
+HTML:
+
+| value | model | floor units |
+|---|---|---|
+| `+0.386` | TimesFM | deterministic → real signal |
+| `+0.110` | TimesFM | deterministic → real signal (window) |
+| `+0.110` | TimesFM | deterministic → real signal (token) |
+| `+1.094` | Chronos-T5-Base | **6.8×** its ±0.160 floor |
+| `+3.869` | Chronos-T5-Base | **24.2×** (SAE window) |
+| `−0.346` | Chronos-T5-Base | **2.2×** (SAE token) |
+
+So the honest answer to F6's own question is **the record needed no retroactive
+correction on this run** — nothing published from it was noise. But the number
+that matters most is the marginal one: §16 E15's headline "Chronos token-
+granularity ΔMASE is *negative*, reconstruction is net better than the clean
+forecast" rests on `−0.346`, which is only **2.2×** the floor — barely past the
+2× interpretability bar, on n=24 series. That claim was already flagged as
+"worth a skeptical look" in `CLAUDE.md` §13 on intuition; F6 now puts a number on
+exactly how thin it is. Read it as directionally confirming the window-broadcast
+confound diagnosis (which the `+3.869` window value, at 24.2×, supports
+overwhelmingly) and **not** as a measurement of SAE quality.
+
+**Deliberate deferral — L3 patching restoration is NOT in floor units.** The
+deliverable above names it, and it cannot be done from the current artifact:
+`l3/patching.json` stores `layers/corruptions/rel_depth/windows/window_size/
+whole_context_patch/verbose/n_requested/n_realized/limited_by` and **no damage
+denominator in MASE units**. Restoration is already a fraction normalized by each
+corruption's own clean-vs-corrupted damage, so converting it to floor units would
+require changing the L3 stage to persist that denominator, not changing the
+report. Stated in the L3 restoration note in the report itself ("read a near-zero
+restoration as *not localized here*, not as *below the noise floor*") rather than
+left as a silent omission. L0 is deliberately out of scope for a different
+reason: its paired-bootstrap CIs are a strictly stronger treatment than a ratio
+against a floor.
+
+**Verification.** New `tests/test_floor_units.py`, 8 tests: ratio/verdict on a
+sampling model in both signs, deterministic models (any nonzero delta is real,
+exactly-zero is not), the tri-state under a missing *and* an empty floor dict,
+the four rendered phrase shapes, and three report-level tests against a synthetic
+attention fixture (below-floor suppresses the finding *and* says so in the body;
+above-floor keeps the finding with its ratio; unmeasured neither suppresses nor
+pretends) plus an audit-counter reset test. `tests/test_floor_units.py` +
+`tests/test_noise_floor.py` green at 13 passed. Full-suite baseline immediately
+before this item: **317 passed, 2 warnings (8:20)**.
+
+### F7 Training-exposure confound, estimated rather than waved at `[ ]`
+
+**What's wrong.** These models saw different, largely undocumented corpora.
+Every "model A is better at seasonal data" is confounded with "model A saw more
+seasonal data." Nothing in the repo mentions this, and it is arguably the
+largest confound in the whole comparison.
+
+**It cannot be eliminated. It can be bounded and reported**, using machinery
+that already exists:
+- `ModelConfig` gains `training_corpora: list[str]` and `training_notes: str` —
+  *declared* provenance from each model's card/paper, with an explicit
+  `"undocumented"` value that the report surfaces as a warning rather than a
+  blank.
+- Reuse `tsfm_benchmark`'s `audit.py` in the opposite direction: for each
+  declared corpus this repo can actually fetch (Monash, ETT via
+  `sources.py`), run the existing realism/leakage comparison **between that
+  corpus and the benchmark**, producing a per-model *distributional overlap*
+  estimate per family. A model whose declared training data overlaps the
+  benchmark's seasonal family heavily has an advantage there that is not a
+  representational finding.
+- Report as a "Training exposure" panel with the standing caveat that declared
+  data is incomplete for every current model, so overlap is a **lower bound**.
+- The `synthetic` tier is the honest control here and should be said so
+  loudly: it is the only part of the corpus no model can have trained on
+  instance-wise, so per-tier result splits (already available) are the
+  cleanest evidence in the whole report. **Add a report line contrasting each
+  finding's strength on `synthetic` vs `real_derived` tiers** — cheap, and it
+  turns an existing data property into a confound control.
+
+**Acceptance criterion.** Every model in a report has either a declared corpus
+list or an explicit "undocumented" marker, and per-tier result splits are
+rendered for L0.
+
+**Cost.** ~1 session for the declared-provenance plumbing and the per-tier
+split; the overlap estimate is a further session and needs the `datasets<3`
+path.
+
+### F8 Multiple comparisons across models, not just across families `[ ]`
+
+**What's wrong.** L0 Holm-corrects across families. With N models the number of
+pairwise comparisons grows as N(N−1)/2 × families × stages, and nothing
+corrects across that. Phase 4 shipped five adapters; the moment three models
+appear in one config, the current correction is insufficient.
+
+**Deliverable.** Extend the A15 claim registry with a **family-wise error
+budget per report**: every registered claim declares its comparison family, and
+Holm (or Benjamini–Hochberg for the exploratory sections, since dev findings are
+explicitly hypothesis-generating) is applied within it. Render the number of
+comparisons made alongside the corrected threshold, so a reader can see the
+multiplicity rather than inferring it. The `confirm` stage is unaffected — it is
+one-shot by construction, which is precisely why it exists.
+
+**Acceptance criterion.** A three-model config's L0 section states the total
+comparison count and corrected alpha; a claim significant under two-model
+correction but not three-model is visibly demoted.
+
+**Cost.** ~1 session.
+
+### F9 The fairness card — one page a reader can check `[ ]`
+
+**The deliverable that makes this section legible.** A single, always-rendered
+report section, auto-generated, listing every measured asymmetry between the
+models in this run and which claims it qualifies:
+
+| Axis | Model A | Model B | Asymmetry | Qualifies |
+|---|---|---|---|---|
+| Parameters / FLOPs per forward | … | … | ratio | all quality claims |
+| Captured FLOP fraction (F4) | … | … | ratio | all depth-located claims |
+| Depth axis used (F1) | … | … | overlap range | all cross-depth figures |
+| Finest resolvable lag (F5) | … | … | ratio | all attention-lag claims |
+| Forecast determinism / noise floor (F6) | … | … | ratio | all delta claims |
+| Declared training exposure (F7) | … | … | overlap or "undocumented" | all behavioral claims |
+| Capability intersection (F3) | … | … | list of asymmetric analyses | the asymmetric section |
+
+Rendered **before** any result section — the fairness statement comes first,
+not in an appendix — and emitted as `fairness/card.json` for E5's registry and
+E6's `findings.json`. This is also the thing to show a sceptical reviewer
+first, and the strongest single argument that this repo's comparisons are
+honest rather than merely careful.
+
+**Acceptance criterion.** Every row is populated from a measured artifact (no
+hand-written values), and the smoke run renders it for two mock architectures.
+
+**Cost.** ~0.5 session once F1–F7 land; **build the card's scaffold first**,
+with rows marked "not yet measured", so each F item has a visible landing slot
+and partial progress is legible.
+
+---
+
+## 19. Architecture adaptivity — covering the actual TSFM landscape (added 2026-08-12)
+
+> **The goal restated concretely.** Not "support more models" — support more
+> *architecture classes*, where a class is defined by **which assumption in
+> `CLAUDE.md` §12's envelope it breaks.** Adding a sixth attention transformer
+> over time patches costs a session and teaches nothing; adding the first
+> attention-free model costs the same session and unlocks a whole family.
+>
+> **Sequencing rule:** one new *class* per session, chosen to break a different
+> assumption, and each one must either (a) work through the existing
+> abstractions unchanged — which is evidence the abstraction is right — or (b)
+> reveal a shared-infrastructure gap fixed *in the shared module*, never
+> per-adapter. Both outcomes already have precedent: Chronos-2 did (b)
+> (`CLAUDE.md` §11.21), Sundial did (a) (§11.22). That contrast is the
+> abstraction's own test suite.
+>
+> ⚠️ **Architecture details in the table below are from model cards and papers,
+> not verified against installed checkpoints.** Marked `[VERIFY]` per this
+> repo's convention. Confirm before writing any adapter — `CLAUDE.md` §11.8 is
+> the cost of trusting a documented API.
+
+### 19.1 The landscape, by assumption broken
+
+| Model / family | Class | Breaks | Effort | Value |
+|---|---|---|---|---|
+| **Chronos-T5, Chronos-Bolt, Chronos-2, TimesFM, Sundial** | attention + time-local tokens | — (in envelope) | done | ✅ shipped |
+| **Timer / Timer-XL** `[VERIFY]` | decoder-only patch transformer | nothing | low | low — confirms generality, no new class |
+| **Toto** `[VERIFY]` | decoder-only patch, robust per-series scaling | nothing structural; a *scaler* front-end worth studying via E17 | low | medium |
+| **Moment** `[VERIFY]` | masked encoder (T5 body), patch | encoder-only capture like Chronos, plus masked (non-causal) reading | low | medium — a second encoder-only point |
+| **Lag-Llama** `[VERIFY]` | decoder-only over **lag features**, not contiguous patches | 🔴 **token→time span is not a contiguous interval** — a token mixes many non-adjacent lags | medium | **high** — the first real test of the pooling premise and of E3's refusal path |
+| **TTM / TinyTimeMixer (Granite)** `[VERIFY]` | **MLP-mixer, no attention at all** | 🔴 the entire attention stage; head ablation; `attention_info` | medium | **highest** — see G3 |
+| **TimeMoE, Moirai-MoE** `[VERIFY]` | MoE feed-forward | routing is a new axis; `mlp_info`/MLP ablation semantics change | medium | **high** — see G4 |
+| **Moirai** `[VERIFY]` | masked encoder, **any-variate attention**, multi-patch-size | ~~multivariate axis (E19)~~ **E19 resolved 2026-08-12: univariate-only ratified**, so the any-variate axis is a *documented exclusion*, not a blocker — Moirai is loadable and analyzable on its time axis with its cross-variate axis unmeasured, exactly as Chronos-2 already is. What remains genuinely open is the second entry here: *variable* patch size means `token_width` is not one number | medium-high | medium — no longer gated; the residual work is variable-`token_width`, and quantifying the coverage the excluded axis costs |
+| **Mamba/SSM-based forecasters** `[VERIFY]` | state-space, recurrent | patching semantics — state carries across positions, so a within-position patch does not isolate | medium | **high** — see G5 |
+| **TimeGPT, hosted/API models** | closed, network-only | weights, hooks, layers — everything but `predict()` | low | **high for practitioners** — see G6 |
+| **VisionTS** `[VERIFY]` | reprogrammed vision MAE; series → 2-D image | tokens are image patches over a folded time grid — localized but not in 1-D | medium | medium-high — genuinely novel envelope test |
+| **Time-LLM, text-reprogrammed** `[VERIFY]` | LLM body with learned text prototypes | tokens are prototype-mixtures, not time intervals | high | medium — likely a documented refusal |
+| **TabPFN-TS** `[VERIFY]` | tabular in-context learner | no time axis in the usual sense; no residual stream over time | high | medium — likely L0-only |
+| **PatchTST, DLinear, N-BEATS** | task-trained baselines, not TSFMs | nothing; they are *supervised* not zero-shot | low | **high as controls** — see G7 |
+
+### G1 Adapter capability tiers, declared and enforced `[ ]`
+
+**Problem.** "Adding a model" is currently all-or-nothing: write the full
+`ModelAdapter` or get nothing. But most of the value of the table above sits at
+partial support, and a practitioner comparing a hosted model wants L0 only.
+
+**Deliverable.** Four declared tiers on `ModelAdapter`, as a class attribute
+`tier: int`, validated by `models/conformance.py` (which already exists and
+already checks the contract — extend it to check *tier consistency*, i.e. a
+tier-2 adapter must actually provide everything tier 1 requires):
+
+| Tier | Requires | Unlocks |
+|---|---|---|
+| **0 — black box** | `predict()` only | L0, calibration (E10), horizon-resolved metrics (E12), context/horizon sweeps (E20), agreement (H4), cost (F2 partial) |
+| **1 — observable** | + `forward()`, `token_time_spans()`, residual layer regex | internals, lens, L1, L2, L4, layer screen, SAE |
+| **2 — steerable** | + `token_patch`-compatible blocks (single-pass context) | L3 patching, steering (E14), feature ablation |
+| **3 — decomposable** | + `attention_info`/`mlp_info`/`attention_patterns` | attention taxonomy, head/MLP ablation, path patching (E18) |
+
+Every report states each model's tier in the fairness card (F9), and F3's
+intersection mode operates on tiers as its coarse-grained input.
+
+**Acceptance criterion.** A tier-0 stub adapter (nothing but `predict`) runs
+end-to-end to a report containing L0, calibration, horizon metrics and cost, and
+skips everything else with a stated reason — no crash, no empty section.
+
+**Cost.** ~1 session, and it makes G6 nearly free.
+
+### G2 Auto-adapter — see §16 E3, not duplicated here `[ ]`
+
+E3's span discovery plus `GenericHFAdapter` is the mechanism that makes half the
+table above reachable without hand-written code, **and its refusal path is what
+correctly excludes Time-LLM/TabPFN-TS rather than silently mis-analysing them.**
+One addition to E3's spec from this section's perspective: `discover_spans`
+should classify its result into E3's diffuseness score **plus a contiguity
+verdict**, because Lag-Llama is the case where spans are *sharp but not
+contiguous* — a distinct failure mode from diffuse, and one that should
+degrade to tier 0 with a specific message ("tokens are time-localized but not
+to contiguous intervals; the pooling premise does not hold"), not be silently
+coerced into an interval.
+
+### G3 Attention-free architectures — the generic mixing-profile abstraction `[ ]`
+
+**The highest-value item in this section.** TTM/TinyTimeMixer has no attention;
+an SSM has no attention; a convolutional forecaster has no attention. Today the
+entire attention stage skips, and with it the lag taxonomy, periodicity heads,
+and head ablation — a third of the report.
+
+**The insight that generalizes it.** Every one of those analyses actually asks
+one question: **how does information at time *t* influence the representation at
+time *t′*?** Attention weights are one way to read that off, available only for
+attention models. But it can be **measured** for any architecture by
+perturbation, which is exactly the machinery `impulse_alignment_check` and E3
+already use:
+
+- **`analysis/mixing_profile.py::mixing_kernel(adapter, layer, context_len,
+  amplitude_frac, device) -> np.ndarray [T_out, T_in]`** — perturb input
+  position *j*, measure the response at every output position *i* of the chosen
+  block, giving an empirical influence matrix. This is a **measured** analog of
+  an attention pattern that exists for attention, convolution, mixing MLPs,
+  SSMs, and MoE alike.
+- Everything the attention stage computes then runs off `mixing_kernel` instead
+  of off `attention_patterns`: lag profiles (row-averaged influence by offset),
+  periodicity scores (excess influence at seasonal-lag multiples), causality
+  check (mass above the diagonal — which for a causal decoder must be zero, the
+  same sanity check TimesFM already passes).
+- For attention models, **validate the abstraction by comparing the measured
+  kernel against the true attention pattern** on a model where both exist. If
+  they agree, the perturbation method is trustworthy on models where only it is
+  available; if they disagree, that disagreement is itself a finding about what
+  attention weights do and don't tell you — a live debate in interpretability,
+  and this repo would have a clean measurement of it.
+
+**Acceptance criterion.** On Chronos-T5 (or TimesFM), `mixing_kernel`'s
+lag-profile taxonomy reproduces the attention-pattern taxonomy's cross-family
+ordering (rank correlation ≥ 0.7); then an attention-free adapter produces a
+full lag/periodicity analysis.
+
+**Cost.** 2 sessions. Cost scales as `O(T / stride)` forward passes per layer,
+so it is genuinely expensive at fine stride — make stride a knob, default coarse
+(one perturbation per alignment window, i.e. 16 passes at `context_len 512`,
+`window 32`), and refine only where the coarse map shows structure.
+
+**Why this is worth two sessions:** it converts "no attention → a third of the
+report is blank" into "every architecture gets an information-flow analysis on
+the same footing," which is precisely §18's equal-grounds thesis applied to the
+architecture axis rather than the metric axis. It is also the single most
+publishable methodological item in this file after the crosscoder.
+
+### G4 MoE architectures — routing as a first-class axis `[ ]`
+
+MoE feed-forward layers (TimeMoE, Moirai-MoE) keep a residual stream, so tiers
+0–2 work unchanged. What changes and what it unlocks:
+- `mlp_info` is ambiguous — "the MLP" is a router plus N experts. Mean-ablating
+  "the MLP" conflates routing with expert computation. Define
+  `moe_info(block) -> {router, experts: list, top_k}` as a new optional
+  capability; MLP ablation on an MoE block ablates *experts*, and a separate
+  **router ablation** (force uniform routing) isolates the routing decision —
+  two distinct interventions the current abstraction cannot express.
+- New analysis: **expert specialization by family.** For each block, the
+  distribution of expert assignment conditioned on generator family, plus
+  routing entropy per family. This is a *labelled* specialization measurement —
+  the benchmark's known ground-truth families make it far cleaner than anything
+  possible on wild data, and it is a natural companion to the SAE work (both ask
+  "what does this model factor its computation into", one architecturally, one
+  learned).
+- **Interpretability payoff:** if experts specialize by seasonality/trend
+  regime, that is a legible, discrete circuit story of a kind dense models don't
+  offer — the highest-ceiling result available in this section.
+
+**Acceptance criterion.** Expert-assignment-by-family with a permutation null
+(shuffle family labels) so "specialization" is not read off routing imbalance
+that exists regardless of input.
+
+**Cost.** ~1.5 sessions once an MoE checkpoint is wired.
+
+### G5 State-space / recurrent models — patching semantics `[ ]`
+
+An SSM's position *i* representation is a function of a carried state, so
+replacing the block output at position *i* does **not** isolate position *i*'s
+contribution — the patch propagates forward through the recurrence in a way an
+attention patch does not. Two consequences to design for **before** claiming an
+L3 result on such a model:
+- `token_patch` remains mechanically fine but its *interpretation* changes;
+  the adapter must declare `carries_state: bool = False` (default keeps every
+  current adapter correct), and L3's report note must state the different
+  reading when it is true.
+- The clean intervention for a stateful model is a **state patch** rather than an
+  output patch. Scope this as tier-2-with-caveat rather than pretending
+  equivalence; G3's measured mixing kernel is the fairer cross-architecture
+  substitute and is unaffected by the issue.
+
+**Cost.** ~1 session of design + adapter, and it is mostly a correctness-of-
+interpretation item, not a code item — which is why it is worth writing down
+before an SSM adapter exists rather than after a wrong number is published.
+
+### G6 Black-box and hosted models `[ ]`
+
+With G1's tier 0 this is nearly free and disproportionately useful: a
+practitioner deciding between a hosted API and a self-hosted checkpoint can get
+L0, calibration, horizon-resolved metrics, cost/latency (F2 — where an API's
+real number is network latency and dollars, both worth reporting), agreement
+(H4), and the recommender (H2), all on the same footing as an open model.
+
+**Design constraints that must be explicit:** a hosted model's inputs leave the
+machine, so (a) **never** send the sealed private corpus to a third-party API —
+`confirm` must refuse tier-0 network adapters by default, since that would leak
+the one consumable the whole method depends on (`CLAUDE.md` §6.7); (b) rate
+limits and cost mean series counts need their own cap; (c) results are not
+reproducible if the endpoint changes silently, so record the response's model
+version if the API exposes one and warn loudly if it does not.
+
+**Cost.** ~1 session for a reference HTTP adapter plus the `confirm` refusal.
+
+### G7 Supervised baselines as controls, not competitors `[ ]`
+
+PatchTST/DLinear/N-BEATS/seasonal-naive are not TSFMs and should not be
+"compared" to one — but they answer a question the repo currently cannot: **how
+much of a foundation model's advantage is foundation-ness?** A per-family
+trained-on-this-corpus baseline, plus seasonal-naive (which MASE already
+implies), turns every L0 result from "A beats B" into "A beats B, and both beat
+/ fail to beat a small model trained directly on this task" — which is the
+context a practitioner needs and a reviewer will ask for.
+
+Slots in as tier 0 with a `zero_shot: false` marker so the report never mixes
+them into the zero-shot comparison. **Cost:** ~1 session; `sktime`/`neuralforecast`
+provide the implementations, so this is wiring, not modelling.
+
+---
+
+## 20. New capability proposals (added 2026-08-12)
+
+> **Filter applied before anything was added here.** §16's own Findings block
+> sets the bar: *state which claim this sharpens.* Several obvious-sounding
+> additions were considered and **rejected** — recorded here so they aren't
+> re-proposed:
+> - *Probe every intermediate representation with a bigger probe family
+>   (MLPs, transformers).* Rejected: a stronger probe answers "is the
+>   information present" more permissively, which weakens rather than sharpens
+>   every decodability claim. Linear probes are the right tool precisely because
+>   they are weak.
+> - *t-SNE/UMAP galleries of activation space.* Rejected: `CLAUDE.md` §5's
+>   single most important rule already forbids quantitative use of embedding
+>   coordinates, and a gallery invites exactly that.
+> - *An LLM-written narrative summary of the report.* Rejected: the report's
+>   value is that every sentence traces to an artifact; generated prose breaks
+>   that and cannot be audited.
+>
+> Items are **H1–H12**, ordered by (value × cheapness) ÷ risk. H1–H4 are the
+> ones to build first: all four are cheap, all four reuse existing artifacts,
+> and all four produce results the repo currently cannot state at all.
+
+### H1 ⭐ The model-family scaling ladder `[ ]`
+
+**The cheapest genuinely novel study available in this repo.** Chronos-T5 ships
+as tiny → mini → small → base → large: a five-point, same-architecture,
+same-training-corpus, same-tokenizer size ladder. §5.3 used two of those points
+once, as a size *control*. Used as a *ladder*, it answers a question nobody has
+published for TSFMs: **which interpretability properties scale with size, and
+which don't?**
+
+Run the identical config at all five sizes and plot against parameter count:
+crystallization depth (relative and absolute), effective dimensionality per
+layer, family-probe decodability, L1 peak CKA against a fixed reference model,
+L2 stitching gain, L4 clustering AMI, SAE dead-feature rate and ground-truth
+alignment, calibration error, and MASE. Every one of these is already computed;
+this is a sweep harness plus a report section, not new analysis.
+
+**Why it's high-value.** Scaling behaviour is the most legible result type in ML,
+and disagreements are the interesting part — `ROADMAP.md` §5's base-vs-small
+entry already found L1/L2 *growing* with size while L4 clustering AMI *shrank*,
+on two points. Five points turn that from a curiosity into a curve. It also
+directly serves the practitioner question "is the bigger checkpoint worth it?",
+in cost-normalized terms once F2 lands.
+
+**Deliverables.** `configs/scaling_ladder_chronos.yaml` (five model blocks or
+five run dirs — five runs is cleaner given VRAM), a
+`run_scaling_ladder.py` cross-run reducer built on the existing
+`report/meta_report.py` (which already aggregates N run dirs — extend, don't
+duplicate), and a report section plotting metric-vs-size with per-point CIs.
+
+**Acceptance criterion.** Monotonicity stated per metric with CIs, and any
+non-monotone metric flagged rather than smoothed. **Explicitly report which
+metrics are flat** — a flat curve is the finding that a metric doesn't measure
+capability.
+
+**Cost.** 1 session of harness + 5 extraction runs (tiny/mini are cheap; large
+is the constraint). Depends on nothing.
+
+### H2 ⭐ The practitioner recommender — "which model for my data?" `[ ]`
+
+**The item that makes this repo useful to people who will never read a CKA
+plot**, and the strongest answer to §1's "anyone".
+
+Given a user's own series (or a described profile: sampling frequency, dominant
+seasonality, trend/intermittency/noise character), return a ranked model
+recommendation with reasons and a confidence, grounded entirely in results the
+repo already produces:
+1. Featurize the user's series with `benchmark_validation`'s existing catch22
+   pipeline.
+2. Map it into the benchmark's family/archetype space — nearest archetypes by
+   the same feature space, with a distance that triggers an **explicit refusal**
+   when the user's data resembles nothing in the corpus ("your data is outside
+   this benchmark's coverage; the recommendation would be extrapolation").
+3. Look up per-family L0 results (MASE, calibration, per-horizon behaviour) for
+   each analyzed model, plus F2's cost, plus F6's noise floor so a
+   recommendation is never made on a difference smaller than run-to-run noise.
+4. Return a ranked list with a plain-language reason per model and the
+   supporting numbers, plus what the user would gain from the runner-up.
+
+**Deliverables.** `tsfm_lens/recommend.py::recommend(series_or_profile,
+results) -> Recommendation`; a CLI `tsfm-lens recommend --series my.csv`; a
+report section demonstrating it on three held-out example series.
+
+**Acceptance criterion.** On held-out synthetic series with *known* archetypes,
+the recommender's top pick matches the empirically best model for that archetype
+at a rate clearly above chance — and the refusal path fires on deliberately
+out-of-coverage input (e.g. a frequency far outside the corpus).
+
+**Risk to state up front.** This is the one item that can be *confidently
+wrong* in a way a reader acts on. It must refuse rather than guess, and every
+recommendation must carry the tier/coverage caveats from F9. Depends on: F2, F6,
+and E4's fixed corpus for comparability.
+
+**Cost.** ~1.5 sessions.
+
+### H3 ⭐ Memorization and verbatim-recall probing `[ ]`
+
+**Novel, cheap, and it inverts machinery this repo already owns.** The benchmark
+exists to prevent leakage *into* evaluation. The same DTW/near-duplicate
+machinery, pointed the other way, asks: **do these models reproduce real series
+they were trained on?**
+
+Method: take real series from published corpora (Monash/ETT via `sources.py`),
+feed a prefix, and compare the model's continuation against the *true* held-out
+continuation using the leakage auditor's own banded-DTW distance — then compare
+that against the distance achieved on **matched synthetic series with the same
+catch22 profile** that no model can have seen. A model that is dramatically
+closer on real-and-plausibly-trained-on series than on statistically matched
+unseen ones is showing memorization rather than generalization.
+
+**Why the control is the whole item:** real series are often *easier* than
+synthetic ones, so raw accuracy on real data proves nothing. The matched-profile
+synthetic control is what turns this from a naive claim into a measurement. Add
+a second control: the same test on the model's own `random_init` twin (E9's
+mechanism, free) bounds how much of the gap is architecture-plus-input-statistics.
+
+**Deliverables.** `analysis/memorization.py::recall_probe(adapter, real_pool,
+matched_synthetic_pool, prefix_frac, ...) -> dict`; report section; findings
+gated on F6's noise floor.
+
+**Acceptance criterion.** The gap is reported with a series-bootstrap CI against
+both controls. **A null result is a perfectly good outcome here and must be
+reported as such** — "no detectable verbatim recall at this prefix length" is a
+publishable, reassuring finding, and pre-committing to publishing it is what
+keeps the item honest.
+
+**Cost.** ~1.5 sessions. Also directly informs F7's training-exposure confound
+and `CLAUDE.md` §4.1's distributional-leakage tier, which currently has no
+empirical measurement at all.
+
+### H4 ⭐ Cross-model agreement as a reliability signal `[ ]`
+
+Nearly free — pure reduction over `predict()` output L0 already holds, zero new
+forward passes. For each series, compute inter-model forecast disagreement
+(pointwise and distributional), then test whether disagreement predicts error.
+If it does, "run two models and check whether they agree" becomes an actionable
+reliability heuristic for practitioners, and a *use* for the comparison rather
+than only a study of it. Report the correlation with CI, per family and per
+horizon step (E12's axis), plus a calibration curve of disagreement→error so a
+user can read a threshold off it.
+
+**Acceptance criterion.** Correlation with a series-bootstrap CI, and an
+explicit comparison against the obvious cheaper baseline (each model's *own*
+quantile width — if self-reported uncertainty predicts error just as well,
+cross-model agreement adds nothing and that should be said).
+
+**Cost.** ~0.5 session. Do this first of the four.
+
+### H5 Temporal-position and phase representation `[ ]`
+
+How does each front-end encode *when*? Probe for absolute position, phase within
+the dominant period, and time-since-changepoint from window states across depth
+(the existing `internals.py` probe harness, new targets — the ground-truth
+labels already exist in `GroundTruth`). Directly relevant to a real architectural
+difference (TimesFM's patch-index positional scheme vs. T5's relative
+attention bias vs. Sundial's scheme) and complements E13's spectral lens: E13
+asks *which frequencies*, this asks *which phase*. **Cost:** ~1 session.
+**Sharpens:** the "where does the forecast crystallize" story, by distinguishing
+"knows the shape" from "knows where in the cycle it is."
+
+### H6 Fine-tuning plasticity — which layers move `[ ]`
+
+§6.3.1 Option E produces fine-tuned children as a *by-product*. For free, ask:
+which layers changed most (weight-delta norm per block), and does that match
+where the interpretability metrics say the task-relevant structure lives? A
+match is a rare, satisfying cross-validation of the whole layer-screening
+enterprise (§6.1.1) from a completely independent signal. **Cost:** ~0.5 session
+on top of E. **Sharpens:** `work_bend`'s production status, which currently
+rests on a single-corpus bake-off.
+
+### H7 Distribution-shift envelope, distinct from L3's corruptions `[ ]`
+
+L3 corrupts a series to find where a property is carried. This asks a different
+question: **where does each model stop working?** Sweep *beyond* the training/
+benchmark envelope — periods shorter and longer than any in the corpus,
+amplitudes and offsets far outside it, sampling frequencies not represented,
+context lengths beyond the model's training context — and map each model's
+degradation curve. Reuses `generators.py` with out-of-range parameters (nothing
+new to build on the data side) and `predict()` only, so it is tier-0 compatible
+and works on hosted models.
+
+**Why it's distinct from E20's context sweep:** E20 varies *how much* input;
+this varies *what kind*. **Cost:** ~1 session. **Sharpens:** every "model A is
+better" claim, by locating the boundary where the ordering reverses — which is
+usually where the practical decision actually sits.
+
+### H8 The seasonality circuit — the flagship mechanistic result `[ ]`
+
+The repo's mechanistic ambition currently tops out at "which heads matter"
+(mean-ablation ΔMASE) and "which layer carries it" (L3 patching). The next rung
+is a **minimal sufficient set**: find the smallest set of heads/MLPs whose
+patching restores period-detection behaviour, and show it is both sufficient
+(patch only these → behaviour restored) and necessary (ablate only these →
+behaviour lost) on the deseasonalize corruption, whose ground-truth period is
+known exactly for every synthetic series.
+
+Composes E18 (path patching), the existing periodicity-head taxonomy (the
+candidate set — no blind search needed), per-window patching (already built),
+and the known-period ground truth. **Greedy search over the candidate set, with
+the necessity/sufficiency pair as the acceptance test**; report the set size and
+the fraction of behaviour it explains. **Cost:** 2 sessions, and it depends on
+E18. **Sharpens:** `CLAUDE.md` §12 item 6 — the stated limitation that nothing
+is component-level below head/MLP granularity. This is the item that would make
+the repo's mechanistic claims comparable to transformer-lens-era LLM work rather
+than adjacent to it.
+
+### H9 Analysis card export `[ ]`
+
+A one-page, citable Markdown/PDF card per analyzed model: identity and
+checkpoint digest, tier, F9's fairness rows, headline L0/calibration/cost
+numbers, coverage, confirmed-vs-exploratory findings, corpus digest, library
+versions, and the run's git SHA. Trivially built on E6's `findings.json` +
+F9's `card.json` + E5's registry, and it is what someone actually attaches to a
+paper or a decision memo. **Cost:** ~0.5 session, after E6/F9.
+
+### H10 Report progressive disclosure `[ ]`
+
+See §21 — kept as an item so it is schedulable, specified there.
+
+### H11 Checkpoint-trajectory analysis `[ ]`
+
+If any TSFM publishes intermediate training checkpoints, the emergence question
+("when during training does seasonality decodability appear?") becomes
+answerable with zero new analysis code — it is H1's ladder with training step
+as the axis instead of parameter count. **Blocked on availability, not on
+design.** Recorded so it is checked rather than rediscovered: verify whether any
+of the five integrated families publish intermediate checkpoints `[VERIFY]`. If
+none do, the fine-tuned children from §6.3.1 Option E give a short, artificial
+trajectory as a fallback. **Cost:** ~0.5 session if checkpoints exist.
+
+### H12 Deterministic-replay and result-provenance mode `[ ]`
+
+An honesty feature, aimed squarely at the reproducibility problems this repo has
+already paid for (`CLAUDE.md` §11.13's golden-hash mystery, §11.24's
+config-meaning drift, §11.25's stale zarr store). One flag that records, per
+run: every library version, the git SHA, CUDA/driver versions, the resolved
+config *after* defaults, corpus digest, every RNG seed actually drawn, and a
+digest of the activation store — written to `provenance.json` and rendered in
+the report. Then `run.py --verify-provenance <run_dir>` re-checks the current
+environment against it and reports every difference.
+
+**Why it earns a slot:** §11.24 cost a full investigation session that a single
+"these two runs differ in these 3 ways" diff would have closed in a minute, and
+that failure mode gets *more* likely as background-agent workflows (`CLAUDE.md`
+§2.8) become the norm. **Cost:** ~1 session. Composes with A3's config
+fingerprint (already built) — extend it rather than adding a parallel mechanism.
+
+---
+
+## 21. Two audiences — a beginner on-ramp and an advanced methods spine (added 2026-08-12)
+
+> **The problem (§17.1 G-V).** This repo's output currently assumes its reader
+> already knows what CKA is, why a stitching gain over a baseline matters, and
+> what "relative depth" means. That reader exists and is well served. Two others
+> are not: the practitioner who wants to know which model to use and whether to
+> believe the answer, and the sceptical expert who wants each estimator's
+> assumptions stated in one place before reading any result.
+>
+> **The design principle: one document, layered — not two documents.** Two
+> documents drift (this repo has already paid for that with `CLAUDE.md` vs.
+> `ROADMAP.md` staleness, corrected repeatedly in both files' headers). Layering
+> means every claim has a one-sentence plain reading, a normal-depth reading,
+> and a methods reading, and the reader chooses the depth.
+
+### J1 The three-layer claim contract `[ ]`
+
+Extend E6's `Finding` dataclass with three text fields instead of one:
+- `plain: str` — one sentence, no jargon, no numbers beyond one. *"TimesFM
+  handles trending data better than Chronos here."*
+- `text: str` — the current register: effect size, CI, correction, evidence
+  class. (What exists today.)
+- `caveat: str` — auto-composed, not hand-written: the evidence class, whether
+  registered or exploratory, whether it cleared its noise floor (F6), which
+  fairness rows qualify it (F9), and coverage (F4).
+
+The report renders `plain` at headline size, `text` beneath, and `caveat` in the
+existing collapsed `<details>` mechanism. **`caveat` must be generated** —
+`CLAUDE.md` invariant 8's lesson is that author discipline decays while
+generated text does not. **Cost:** ~1 session, together with E6.
+
+### J2 "What this tells you" — one page per stage `[ ]`
+
+For each of the 13 stages, four fixed lines, written once and rendered both in
+the report and in the docs: **Question** it answers · **How** in one sentence,
+no formulae · **What a good/bad result looks like** · **What it cannot tell
+you.** The fourth line is the one that matters and is the one most tooling
+omits. Source of truth: a single `stage_docs.py` dict consumed by both the
+report and the docs, so they cannot drift. **Cost:** ~1 session; mostly writing,
+and much of the content already exists scattered across `_note()` blocks —
+consolidate rather than re-author.
+
+### J3 Glossary and the worked example `[ ]`
+
+- A glossary of the ~25 recurring terms (window, relative depth, evidence class,
+  crystallization depth, stitching gain, fingerprint, effective dimensionality,
+  noise floor, tier, coverage fraction, dead feature, …), each in one sentence
+  plus a pointer to the figure where it is used. The report's per-figure
+  `_note()` blocks are contextual and stay; this is the lookup table for someone
+  reading out of order.
+- **One worked example, end to end**: a real report, read paragraph by paragraph
+  in the docs — *this* is the number, *this* is why the CI matters here, *this*
+  is the caveat that changes the conclusion, *this* is the finding I would not
+  act on and why. This teaches the reading skill nothing else in the repo
+  teaches, and it doubles as the regression test for whether the report is
+  actually legible. **Cost:** ~1 session.
+
+### J4 Progressive disclosure in the report (= H10) `[ ]`
+
+A three-position control at the top: **Headline** (fairness card, L0, confirmed
+findings, recommendation) · **Standard** (today's report) · **Methods**
+(everything plus per-figure estimator details, seeds, sample counts, null
+comparisons). Implement as CSS classes toggled by one small inline script — no
+new dependency, and the file stays self-contained (an existing hard constraint).
+Default to **Standard** so no current reader's experience changes. **Cost:**
+~0.5 session.
+
+### J5 The advanced methods appendix `[ ]`
+
+One always-rendered appendix stating, per estimator, the things a reviewer asks
+for and no current document collects: the estimator and its exact form (linear
+CKA, ridge with which regularization selection, banded DTW with which band), the
+resampling unit and design (cluster/paired/held-out-series), what the null is
+and why *that* null, the known failure modes, and the assumption that would
+invalidate it. Roughly one paragraph each for CKA, RSA, ridge stitching, the
+tuned lens, MASE/sMAPE/pinball, the bootstrap designs, AMI, catch22 features,
+SAE fidelity, and `relative_decoder_norm`.
+
+**This is the cheapest credibility item in the whole file** — the content is
+already known to whoever wrote each module, it is currently distributed across
+module docstrings, and its absence is the first thing a sceptical reader
+notices. Generate it *from* the module docstrings where possible so it cannot
+drift. **Cost:** ~1 session.
+
+### J6 Failure-mode gallery `[ ]`
+
+A short, permanent section showing what each analysis looks like **when it goes
+wrong**, using cases this repo already has on record: the misleading pre-fix
+alignment check (`CLAUDE.md` §11.16), the flat whole-layer patching curve that
+resolved under per-window patching, an SAE with a 98% dead-feature rate, a
+depth-agreement figure on the old index axis vs. F1's block axis, a delta below
+its own noise floor. Every one of these is a real artifact already in `runs/`.
+
+Nothing else in the repo teaches a reader to be suspicious of a plausible-looking
+plot, and every one of these fooled someone here first — which is exactly the
+evidence that makes the gallery worth having. **Cost:** ~0.5 session.
+
+---
+
+## 22. How §17–§21 slot into the existing plan (added 2026-08-12)
+
+Not a new phase spine — §3's phases stand. This is the interleaving, and it is
+also the answer to "what should the next ten sessions actually do."
+
+**Wave A — retroactive integrity (do before the next round of cross-model
+claims).** These change how numbers already in this file should be read, which
+is why they come first, exactly as §16 E9's null baseline did.
+`F6` (noise-floor units) → `F2` (budgets) → `F1` (depth axis) → `F4` (coverage)
+→ `F9` scaffold. ~4 sessions. **Highest ratio of corrected-record to effort in
+the file.**
+
+**Wave B — the flagship research deliverable.** Unchanged and still first in
+priority terms: §0.5 Tier 1, i.e. §6.2.1 Stages 0→2. Wave A and Wave B are
+independent and should be run in parallel (Wave A is analysis-layer, Wave B is
+GPU-bound training — the natural background/foreground split `CLAUDE.md` §2.8
+describes).
+
+**Wave C — legibility.** `J1`+`E6` together → `J5` → `J2` → `J4` → `J3` → `J6`.
+~4 sessions. Cheap, and it is what converts the work into something a stranger
+can use and a reviewer can check.
+
+**Wave D — the four cheap novel studies.** `H4` (agreement) → `H1` (scaling
+ladder) → `H3` (memorization) → `H2` (recommender). ~5 sessions. Each produces a
+result the repo currently cannot state; H2 depends on Wave A's F2/F6.
+
+**Wave E — architecture breadth, one class per session.** `G1` (tiers) first
+since it makes the rest cheap, then `G6` (black-box — nearly free after G1),
+then `G3` (the mixing-profile abstraction — the big one), then `G4` (MoE), then
+`G2`/`E3` (auto-adapter), then `G7` (supervised controls), then `G5` (SSM
+design). ~8 sessions, and the most valuable long-term investment after the
+crosscoder.
+
+**Wave F — adoptability.** §16's T1 chain, unchanged: `E4` → `E1` → `E7a`/`E7b`
+→ `E5` → `E6`. Best done *after* Wave C, since E1's one-button promise is worth
+much less if what comes back is unreadable.
+
+**The one ordering constraint worth stating explicitly:** do not run Wave F
+before Wave A. A one-button tool that hands a stranger a depth-axis figure
+comparing 80%-of-TimesFM against 80%-of-Chronos's-encoder, with no coverage
+number and no noise floor, is worse than the current five-command tool — because
+it removes the expert who would have known not to believe it. That is §16's own
+argument about §15's P1 items, applied one level up: **equal grounds is a
+prerequisite for automation, not a refinement of it.**

@@ -264,6 +264,23 @@ class LayerScreenConfig:
 
 
 @dataclass
+class BudgetConfig:
+    """Parameter/FLOPs/latency/VRAM accounting (ROADMAP.md sec 18 F2).
+
+    On by default and deliberately cheap: `batch` series through a handful of
+    forward passes, no activation store, no analysis. The cost is a few
+    seconds per model against the alternative of every quality comparison in
+    the report staying size-confounded.
+    """
+    enabled: bool = True
+    batch: int = 8              # series per timed pass; capped at the corpus size
+    repeats: int = 5            # timed calls (median reported, spread recorded)
+    warmup: int = 2             # untimed calls before timing starts
+    measure_predict: bool = True    # also time the full forecast path
+    predict_repeats: int = 3        # fewer: a sampled decoder's pass is expensive
+
+
+@dataclass
 class SAEConfig:
     enabled: bool = False
     checkpoints: dict = field(default_factory=dict)
@@ -274,6 +291,14 @@ class SAEConfig:
     epochs: int = 20
     batch_size: int = 4096
     resample_dead_every_epochs: int = 0
+    # AuxK dead-atom revival (ROADMAP.md sec 6.2.1 Stage 0, H4). Under TopK an
+    # atom that stops winning the top-k competition gets exactly zero gradient
+    # forever after; `aux_k > 0` adds an auxiliary term making the currently-
+    # dead atoms reconstruct the live model's residual, so they keep receiving
+    # one. `0` disables it (the default, so no recorded run's numbers move).
+    aux_k: int = 0
+    aux_coef: float = 0.03125
+    aux_dead_steps: int = 20
     forecast_preservation_max_series: int = 64
     ground_truth_max_series: int = 2000
     # Label-permutation null for ground-truth alignment (ROADMAP.md sec 16
@@ -357,6 +382,7 @@ class PipelineConfig:
     confirm: ConfirmConfig = field(default_factory=ConfirmConfig)
     clustering: ClusteringConfig = field(default_factory=ClusteringConfig)
     layer_screen: LayerScreenConfig = field(default_factory=LayerScreenConfig)
+    budget: BudgetConfig = field(default_factory=BudgetConfig)
     sae: SAEConfig = field(default_factory=SAEConfig)
     report: ReportConfig = field(default_factory=ReportConfig)
 
@@ -404,6 +430,7 @@ _NESTED = {
     "run": RunConfig, "data": DataConfig, "alignment": AlignmentConfig,
     "extraction": ExtractionConfig, "l0": L0Config, "l1": L1Config, "l2": L2Config,
     "clustering": ClusteringConfig, "layer_screen": LayerScreenConfig,
+    "budget": BudgetConfig,
     "sae": SAEConfig, "report": ReportConfig,
     "stats": StatsConfig, "internals": InternalsConfig, "confirm": ConfirmConfig,
     "lens": LensConfig, "attention": AttentionConfig, "exemplars": ExemplarsConfig,

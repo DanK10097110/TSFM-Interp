@@ -243,6 +243,79 @@
 >    `ROADMAP.md` §12 reclassified it as *deferred with a design* (§16
 >    E21), with the never-CKA-decoder-against-context-states rule as the
 >    binding constraint.
+>
+> **Reconciliation note (2026-08-12) — strategic planning pass; two *code-
+> verified* findings qualify numbers already recorded across both docs.** A
+> second user-directed planning session read the plan as a whole against the
+> repo's stated goal (a one-button tool for comparing any TSFM on equal
+> grounds) and wrote the result up as `ROADMAP.md` **§17** (whole-plan gap
+> analysis), **§18** (equal grounds, F1–F9), **§19** (architecture
+> adaptivity, G1–G7 + a landscape table of what's outside the envelope),
+> **§20** (new capabilities, H1–H12), **§21** (the beginner/advanced
+> layering, J1–J6) and **§22** (a six-wave sequencing that supersedes §0.5's
+> Tier 1+ ordering). No code changed; no Findings block or recorded number
+> was altered. Two of its findings came from grepping this repo's source
+> rather than re-reading either doc, and both change how a fresh session
+> should read statements made *in this file*:
+> 1. 🔴 **The shared relative-depth axis compares unlike to unlike.**
+>    `tsfm_lens/utils.py::relative_depths` is `arange(n)/(n-1)` over each
+>    model's **captured** layers. Chronos-T5's captured surface is the
+>    encoder only (§12 item 1), so Chronos's "relative depth 1.0" is the
+>    *middle* of its computation — last encoder block, entire decoder still
+>    to run — while TimesFM's 1.0 is its actual output. Every figure that
+>    interpolates both models onto a shared depth axis (L1's CKA depth
+>    curves, L3's fingerprint agreement, crystallization depth, and
+>    `ROADMAP.md` §16 E9's depth-curve null tests — including the two
+>    depth-curve corrections in §6.2 above) is therefore comparing
+>    80%-of-TimesFM against 80%-of-Chronos's-*encoder*. It is also
+>    stride-dependent: the same block gets a different depth coordinate
+>    under `capture_layer_stride: 1` vs `2`. **§12 item 4 already states
+>    this honestly as "a convention, not a fact" — what's new is that it is
+>    now a measured problem with a concrete fix plan (`ROADMAP.md` §18 F1,
+>    four candidate axes baked off the way §6.1.1 did for layer selectors),
+>    and that re-running E9's null tests on a corrected axis is F1's
+>    acceptance test.** Until then, read any cross-model depth-*location*
+>    claim (not depth-*curve shape*) as carrying an unquantified offset.
+> 2. 🔴 **Nothing in the repo accounts for parameters, FLOPs, latency or
+>    VRAM** (grep across `tsfm_lens/`: zero hits for `n_params`,
+>    `num_parameters`, `flops`). So every L0/L1/L2/L3 comparison is
+>    size-confounded, and the first question a practitioner asks — *per unit
+>    of compute, which model wins?* — cannot currently be expressed at all.
+>    §8's `configs/medium_run_chronos_base.yaml` "size-variant control"
+>    varies size *within* the Chronos family; it does not normalize across
+>    families. Fix: `ROADMAP.md` §18 F2 (FLOPs **measured** via
+>    `torch.utils.flop_counter.FlopCounterMode`, not hand-derived, so it
+>    works on architectures nobody has written an adapter for yet), which
+>    also supplies F1's compute-fraction depth axis for free.
+>    ✅ **Closed 2026-08-12 (same day):** F2 is implemented end to end —
+>    `analysis/model_budget.py`, a `budget` pipeline stage (on by default),
+>    and a report "Cost and capacity" section that re-plots L0 MASE against
+>    measured FLOPs and against parameters. "Cannot currently be expressed
+>    at all" no longer holds; the size-confound is now *measured and
+>    rendered* rather than unstated. Two caveats that remain: the numbers
+>    verified so far are **mock-model** numbers (a live `medium_run` is what
+>    turns this into a real TimesFM-vs-Chronos cost statement), and F1's D2
+>    compute-fraction depth axis now *has* its per-block cumulative FLOPs but
+>    does not yet *consume* them — finding 1 above is still fully open.
+> Two smaller corrections in the same pass: **`report/coverage.json` is
+> *report-section* coverage** (which sections rendered / skipped / failed),
+> **not** computational coverage of each model — so §12 item 2's coverage
+> asymmetry, the single most important caveat on every Chronos claim, is
+> absent from the machine-readable output entirely (`ROADMAP.md` §18 F4 adds
+> it, and auto-appends a qualifier to depth-located claims for any model
+> under 90% captured FLOPs). And §14's "call it fair with stated caveats —
+> not architecture-blind" framing is upgraded rather than contradicted:
+> §18's rule is that every cross-model number is either on an axis both
+> models genuinely share **or** is rendered next to the *measured size* of
+> the asymmetry, with an unmeasurable asymmetry downgrading the claim
+> instead of footnoting it (§18 F9's auto-generated "fairness card",
+> rendered before any result section). §12's "envelope hard edges for new
+> architectures" list is also now enumerated against real named models in
+> §19's landscape table, including the classes this pipeline currently
+> cannot touch at all (attention-free mixers like TTM, non-contiguous
+> lag-feature tokenization like Lag-Llama, state-space models, hosted/API-
+> only models) — §19 G3's perturbation-measured "mixing profile" is the
+> proposed common footing for the attention-free case.
 
 ---
 
@@ -494,7 +567,17 @@ TSFM-Interp/
         │   │                    # sae.targets: auto) + layer_screen_bakeoff.py (the
         │   │                    # null-controlled bake-off that chose work_bend -- not a
         │   │                    # pipeline stage, invoked via run_layer_screen_bakeoff.py
-        │   │                    # like meta_report.py)
+        │   │                    # like meta_report.py),
+        │   │                    # model_budget.py (ROADMAP.md §18 F2 -- parameters by
+        │   │                    # role, FLOPs MEASURED via torch's FlopCounterMode
+        │   │                    # rather than hand-derived so it works on unseen
+        │   │                    # architectures, latency, peak VRAM; per-block
+        │   │                    # cumulative FLOPs is what F1's compute-fraction
+        │   │                    # depth axis consumes. IS a pipeline stage --
+        │   │                    # `budget`, deps=[] so `--stages budget` is a
+        │   │                    # valid standalone run, ordered just before
+        │   │                    # layer_screen so a full run reuses warm models;
+        │   │                    # renders the report's "Cost" section)
         │   ├── sae/            # interface.py (contract), models.py (TopKSAE baseline),
         │   │                    # train.py (training loop incl. dead-neuron resampling,
         │   │                    #   + pipeline-stage runner), eval.py (fidelity/dead-feature-
@@ -514,8 +597,36 @@ TSFM-Interp/
         ├── run_meta_report.py   # CLI for report/meta_report.py: --runs a,b,c --out path
         ├── run_layer_screen_bakeoff.py # CLI for layer_screen_bakeoff.py (ROADMAP.md §6.1.1-E)
         ├── run_crosscoder_feasibility.py # CLI for sae/crosscoder.py (ROADMAP.md §13/§6.2)
+        ├── run_crosscoder_stage0.py # ROADMAP.md §6.2.1 Stage 0's dead-feature gate:
+        │                        # sweeps dict_size / n_rows / aux_k against the gate's
+        │                        # exit criteria, training the joint crosscoder AND two
+        │                        # matched per-model TopKSAE baselines per grid row on
+        │                        # the same rows at the same budget; writes a JSON +
+        │                        # markdown sweep table. Reads an existing store only.
+        │                        # --params runs a committed config as a single row
+        │                        # instead of a grid (the gate's own exit criterion
+        │                        # that a winner be a config, not a CLI incantation).
+        │                        # Grids: h1/h2/h4/full (the original hypotheses),
+        │                        # k (the sparsity budget -- the one that met the
+        │                        # gate), h2xh4 (dict size WITH AuxK on), pinch
+        │                        # (dict sizes below h2xh4's smallest)
+        ├── run_null_baseline_test.py # CLI for analysis/null_baseline.py: real-vs-
+        │                        # random-init significance tests over two already-
+        │                        # extracted run dirs, no model loaded. Peak-pair
+        │                        # mode (--null-run) or --depth-curve l1|l2 with
+        │                        # --null-run-a/-b; --direction picks a non-default
+        │                        # L2 direction (L2 is not symmetric, so each is its
+        │                        # own measurement -- ROADMAP.md §16 E9)
         ├── run_noise_snr_sweep.py # reruns L3's noise corruption at several SNR values
         │                        # against an already-extracted run (ROADMAP.md §7)
+        ├── run_sae_repeat_variance.py # ROADMAP.md §13's SAE noise floor: retrains
+        │                        # each configured sae.target at N seeds against a
+        │                        # FROZEN, read-only store and reports the seed-to-
+        │                        # seed spread of fidelity / dead rate / forecast-
+        │                        # preservation ΔMASE at both granularities. Also
+        │                        # records mase_clean per seed as a frozen-store
+        │                        # control (must have sd exactly 0). Writes
+        │                        # <run>/sae/repeat_variance.json
         ├── run_capability_matrix.py # CLI for models/capability_matrix.py: prints/writes
         │                        # the auto-generated capability matrix; --verify
         │                        # adapter=run_dir:model_name reads an existing run's
@@ -528,6 +639,15 @@ TSFM-Interp/
         │                        # TimesFM captured at ALL 20 layers (stride 1), not the
         │                        # usual stride-2 10; only extract/l0/internals/l3
         │                        # (sensitivity, no patching) stages enabled
+        ├── configs/crosscoder_stage0.yaml # extract-only config building the ~10x
+        │                        # larger activation store Stage 0's H1 arm needs
+        │                        # (46382 aligned rows vs. the feasibility run's 4608)
+        ├── configs/crosscoder_stage0_winner.yaml # the crosscoder configuration that
+        │                        # actually clears Stage 0's numeric criteria (k=48,
+        │                        # dict 1280, aux_k=64/coef 0.03125 -- 1254 of 1280
+        │                        # atoms alive, fidelity 0.759/0.756), with the
+        │                        # measured result recorded inline for diffing;
+        │                        # executable via run_crosscoder_stage0.py --params
         ├── tests/test_smoke.py  # full end-to-end + confirm hypothesis-path test
         ├── tests/test_meta_report.py # aggregator: missing-stage degrade, null-depth
         ├── tests/test_layer_screen.py # 3 selectors + bake-off scoring, all on synthetic
@@ -535,6 +655,38 @@ TSFM-Interp/
         ├── tests/test_crosscoder.py # joint-normalization invariant, planted shared/
         │                        # specific-cause recovery, engineered mismatched-scale
         │                        # stability check -- all synthetic, planted answers
+        ├── tests/test_aux_k.py  # the AuxK dead-atom auxiliary loss (ROADMAP.md
+        │                        # §6.2.1 Stage 0 H4): gradient reaches only dead
+        │                        # atoms, scale-freeness, aux_k:0 is bit-reproducible
+        │                        # and the flag is not inert, and -- deliberately --
+        │                        # only a "does no harm" claim on real revival, since
+        │                        # that is what the measurements support (§2.4)
+        ├── tests/test_stage0_criteria.py # Stage 0's per-source alive floor
+        │                        # (ROADMAP.md §6.2.1's DECISION): the floor scales
+        │                        # with eff_dim, the crosscoder takes the STRICTEST
+        │                        # source not the loosest (563 > the 500 it replaced),
+        │                        # the change does NOT rescue the failing Chronos
+        │                        # baseline, and the unsatisfiability argument itself
+        │                        # as arithmetic over the measured alive-per-dict table
+        ├── tests/test_model_budget.py # ROADMAP.md §18 F2: dotted-prefix role
+        │                        # matching (blocks.1 must not swallow blocks.11),
+        │                        # roles sum to total, a regex missing MIDDLE blocks
+        │                        # surfaces as `interleaved` rather than a plausible
+        │                        # head -- plus the stated limit that missing TRAILING
+        │                        # blocks cannot be caught this way; CPU-only
+        ├── tests/test_budget_stage.py # the seams that measurement crossed to become
+        │                        # part of a run (ROADMAP.md §18 F2): config surface,
+        │                        # the stage's standalone place in the DAG, and the
+        │                        # report section -- incl. that a disabled budget
+        │                        # leaves a `skipped` row not a failure, that an
+        │                        # untrustworthy FLOP count is named in the BODY not
+        │                        # a collapsed note, and that the compute-normalized
+        │                        # panel degrades in words when L0 is absent
+        ├── tests/test_stage0_winner_config.py # the committed Stage 0 winner config is
+        │                        # executable (parses into the exact swept row, rejects
+        │                        # unknown keys) and faithful (its inline `expected:`
+        │                        # numbers are checked against the real run artifact,
+        │                        # skipped when absent) -- no GPU, no checkpoint
         ├── tests/test_adapter_conformance.py # runs check_adapter_conformance against
         │                        # all 3 mock adapters incl. mock_wave (the unexercised-
         │                        # by-default third architecture), a no-optional-
@@ -752,6 +904,7 @@ stronger question and exists **because of the previous level's limitation**.
 | Stage | Question | Method | Limitation inherited |
 |---|---|---|---|
 | **L0** | Who is better, where? | MASE/sMAPE/pinball per family, paired bootstrap, Holm-corrected | Behavioral only |
+| **Cost** (`budget`) | What does each model cost, and is its quality bought with compute? | Parameters by role, FLOPs **measured** via torch's `FlopCounterMode`, latency, peak VRAM; L0 MASE re-plotted against each | Cost at *this* run's context/horizon only; FLOPs ≠ latency |
 | **Screen** (`layer_screen`) | Which of *this* model's own layers are worth further, expensive analysis? | Residual-trajectory work+bend geometry (default `work_bend`), or coverage/factor-emergence (§6.1.1) | Cheap proxy for interestingness, not interestingness itself |
 | **Profile** (`internals`) | What is in each model? | Effective dimensionality, family-probe decodability, CKA-to-input per layer | Per-model, descriptive |
 | **Lens** | Where in depth does the forecast form? | Skip lens + tuned ridge readout; crystallization depth | Depth-resolved, not component-resolved |
@@ -763,10 +916,12 @@ stronger question and exists **because of the previous level's limitation**.
 | **Exemplars** | What does the difference look like? | Per-family case studies: forecasts, lens curves, attention maps | Illustrative, not statistical |
 | **Confirm** | Which dev findings are real? | One-shot re-test of dev hypotheses on sealed **private** corpus | The gold standard |
 
-Plus `extract` (upstream) and `report` (downstream). 13 stages total in the smoke
-run (12 plus `layer_screen`, added 2026-08-05 and enabled by default); **11
-report sections**, **22 findings** as last measured live (`configs/smoke.yaml`
-via the actual CLI, not just the test suite).
+Plus `extract` (upstream), `register` (freezes dev hypotheses for `confirm`) and
+`report` (downstream). **16 stages** as of 2026-08-12 (`stage_names()` is the
+authority — this line has gone stale twice; check it rather than trusting the
+number). The smoke run renders **12 of 13 report sections** (SAE is off in that
+config) — last measured live via `configs/smoke.yaml` through the actual CLI,
+not just the test suite.
 
 **Why this ordering exists:** an early session explicitly argued down a proposal
 to put SAEs first. Training good SAEs on two models × multiple layers is the
@@ -1038,9 +1193,16 @@ depth-curve corrections immediately below — this superseded an earlier,
 narrower "not yet established for L2" reading of the single-peak-pair test)
 — all now backed by `analysis/null_baseline.py`'s bootstrap tests
 (`ROADMAP.md` §16 E9's Findings has the full numbers), not just point
-estimates. Still scoped to one corpus, one Chronos checkpoint size, and (for
-L2) one direction — cross-corpus/size replication and the reverse L2
-direction are the named next step. Does not apply to L0, L3, L4, attention,
+estimates. Still scoped to one corpus and one Chronos checkpoint size —
+cross-corpus/size replication is the named next step. **The reverse L2
+direction is no longer open (2026-08-12):** `TimesFM→Chronos-T5-Base` was
+measured the same way and gives the same answer — real gain beats Chronos's
+own untrained-twin floor at every TimesFM depth (+0.38 to +0.49, p=0.002)
+and beats TimesFM's own floor at every layer from `stacked_xf.10` through
+`.18`, losing only at the two shallowest. The earlier "0.318 real vs. 0.388
+null" pessimism for this direction was the identical wrong-layer artifact
+described in the next paragraph. `ROADMAP.md` §16 E9's fourth follow-up has
+the per-layer table. Does not apply to L0, L3, L4, attention,
 or the SAE ground-truth alignment score, which the same null check
 confirmed clearly survive it.
 ⚠️ **L1's peak-pair verdict above does not generalize to "L1 fails the
@@ -1320,6 +1482,13 @@ mock-only smoke run and this full default.
 Notable stage knobs: `l3.patching.per_window: true`,
 `l3.patching.window_stride: 2` (every window doubles patching cost);
 `lens.crystallization_tol: 0.1`; `attention.batch_series` (memory-critical);
+`budget.enabled: true` (default on — a handful of extra forward passes buys
+the cost record every cross-model claim is otherwise silently confounded by;
+`batch`/`repeats`/`warmup` size the timing loop, `measure_predict: true`
+additionally times the full `predict()` path, which is where Chronos-T5's
+`num_samples` decoder passes show up and TimesFM's single deterministic pass
+doesn't. The stage has **no dependencies**, so `--stages budget` is a valid
+standalone run against a checkpoint with nothing else built);
 `layer_screen.enabled: true` (default on; `method: work_bend` is the
 §6.1.1 bake-off winner, `budget_frac`/`min_budget` size the per-model
 selection its `selection.json` writes — ⚠️ but it screens only the layers
@@ -1384,7 +1553,10 @@ PYTHONPATH=. python3 example_runs/run_validation.py
 | `tsfm_lens` against real checkpoints (TimesFM 2.5, Chronos-T5) | ✅ **Verified live end-to-end 2026-08-03** (third session) — full `medium_run.yaml` pipeline, 12 stages, real GPU (RTX 5070), ~10.5 min. Found and fixed two real bugs along the way (§11.15–§11.16); see `ROADMAP.md` §5.4 |
 | Layer-screening bake-off (`layer_screen.py`/`layer_screen_bakeoff.py`, ROADMAP.md §6.1.1) | ✅ **First real run 2026-08-05** against live TimesFM 2.5 + Chronos-T5-Small, TimesFM captured at all 20 layers for the first time (not stride-2's usual 10); replicated across two independent SAE seeds (gold-ranking Spearman stability ρ=1.0/0.926). **Provisional result, but wired into production the same day** on explicit user direction: `work_bend` now runs as a default `layer_screen` pipeline stage ahead of `sae` in every config. Extended to a third architecture (Sundial) 2026-08-10 — `work_bend` beats both nulls there too, but the three-architecture picture is "beats a different subset of the two nulls on each," not a clean sweep; `factor_emergence`'s early-layer-bias failure reproduces cleanly on Sundial. ✅ **Root-caused same day:** a fresh re-extraction of the nominally-identical Chronos-T5-Small config had flipped its qualitative verdict (`work_bend` beats-random True→False) while TimesFM's reproduced unchanged — traced not to nondeterminism but to `ROADMAP.md` §15 A4's corpus-sampling fix landing *between* the two runs' dates: the pre-fix run's `max_series: 220` head-sliced a 288-row corpus and silently excluded the entire `mixture` family, so the two runs were never actually comparable populations despite byte-identical YAML. See §11.23–§11.24. ⚠️ **That narrower question is now answered, same day: no, not reliably.** A second sampling seed under the corrected, family-stratified sampler (76.8% row overlap with seed 0 — not a biased or adversarial draw) still flips `work_bend` — the production default — `beats_random` verdict on 2 of 3 architectures (TimesFM True→False, Chronos False→True); `coverage` stays fully stable. In every flip case the selector's own chosen layers are bit-identical across seeds — what moves is the gold-ranking/null-comparison scorecard, not the selection itself, so this reads as a statistical-power gap in the bake-off's evaluation (recall@budget over 220 rows, budget≤5) rather than a bias like A4's. ✅ **Fixed and re-verified same day, on explicit instruction not to leave this as a documented-but-unfixed gap.** Root cause was narrower than "the bake-off in general lacks power": `select_work_bend`/`select_coverage` take no `seed` argument and are fully deterministic given a fixed corpus (confirmed by reading `layer_screen.py` directly), so all the noise traced to `build_gold_ranking` (`layer_screen_bakeoff.py`) training exactly one stochastic SAE per layer as the gold reference. Fixed by (1) averaging `n_replicates=3` independently-seeded SAE-training runs per layer into the gold score instead of trusting one (`run_layer_screen_bakeoff.py --n-gold-replicates`), and (2) new `configs/layer_screen_experiment_v4[.yaml/_seed1.yaml]` dropping the `max_series: 220` corpus cap entirely (288 rows is small enough to use in full, closing the sampling axis of the noise too). Re-verified live against all three real checkpoints on both seeds: every `beats_random` verdict now matches across seeds for all three selectors on all three architectures — `work_bend`'s two prior flips (TimesFM, Chronos-T5-Small) are both closed. Full numbers in `ROADMAP.md` §6.1.1's Findings (fifth block) and §13. |
 | `layer_screen` pipeline stage + `sae.targets: auto` wiring (`config.py`, `pipeline.py`, `sae/train.py::_default_targets`) | ✅ **Verified 2026-08-05** — full `tsfm_lens` suite 34/34 (33 prior + 1 new asserting `_default_targets` resolves exactly what the stage selected), plus a live CLI run of `configs/smoke.yaml` (not only pytest) confirming a real 11-section/22-finding report and a sane `layer_screen/selection.json` for both mock architectures. |
+| Cost/budget stage + report section (`analysis/model_budget.py`, `budget` stage, ROADMAP.md §18 F2) | ✅ **2026-08-12** — 12 rendered / 1 skipped sections, 44 findings on `configs/smoke.yaml` via the real CLI; 18 tests (11 `test_model_budget.py` + 7 `test_budget_stage.py`). ⚠️ **Mock-model numbers only** — no live-checkpoint FLOPs/latency/VRAM measurement yet. |
+| ΔMASE in noise-floor units (`analysis/stats.py::in_floor_units`, ROADMAP.md §18 F6) | ✅ **2026-08-12** — 8 tests (`tests/test_floor_units.py`), and a real report-only re-render of `runs/medium_run_chronos_base` giving the acceptance count: **0 of 6 ΔMASE values below their own model's floor**. L3 patching restoration is a **stated deferral**, not a silent skip (no MASE-unit damage denominator in `l3/patching.json`). |
 | Crosscoder feasibility test (`sae/crosscoder.py`, ROADMAP.md §13/§6.2) | ✅ **First run 2026-08-05** against live `google/timesfm-2.5-200m-pytorch` + `amazon/chronos-t5-base` activations (an already-extracted store, no new model calls) at their L1 peak-CKA layer pair. Joint training is stable (no source-domination collapse across three hyperparameter settings) once a real, found-and-fixed scale-domination instability (§11.19) and a device-mismatch crash are corrected. **Not** an `SAEAdapter` implementation or a pipeline stage — feasibility-gate only. Full numbers in `ROADMAP.md` §6.2's Findings. |
+| Cost/coverage accounting (`analysis/model_budget.py`, ROADMAP.md §18 F2/F4) | ✅ **Verified live 2026-08-12** against `runs/medium_run_chronos_base` (TimesFM-2.5-200M + Chronos-T5-Base). Measured, not hand-derived: TimesFM 231.29M params / 59.39 GFLOPs forward, **42.5%** of its forward FLOPs captured; Chronos-T5-Base 201.37M params / 774.76 GFLOPs forward vs 5398.28 GFLOPs per forecast, capture pass **≤14.4%** of a forecast. F4's acceptance criterion met — a depth-located Chronos finding carries the automatic qualifier. **The first live run *failed* that criterion**, which is how two real bugs were found and fixed (an unmeasurable headline exempting the very model the item exists for, and a parameter surface double-counting stride loss) — see ROADMAP.md §18 F4's Findings. ⚠️ Chronos's headline is an upper bound, not a measurement: its per-block FLOPs don't resolve by name, so it has no trace in F2's compute-by-depth chart. |
 
 **Golden hashes (do not let these change) — ✅ currently matching, see below:**
 ```
@@ -1696,6 +1868,15 @@ one (here: continuous patch embedding vs. context-adaptive quantization) —
 scale test perturbations relative to the signal, not to an absolute
 constant, whenever the thing being probed can itself rescale based on
 input statistics.
+
+**Correction (2026-08-12): the `0.25` in that fix is itself a calibration,
+not a constant, and it does not hold at every context length of the same
+checkpoint.** At `context_len: 448` the same Chronos family drops to a
+diagonal-hit fraction of 0.50 for exactly the reason diagnosed above, and
+only an amplitude of ≤0.05 restores 1.00. This paragraph records the
+calibration as checkpoint-specific; it is also context-length-specific.
+See §11.26 and `ROADMAP.md` §15 A20 — do not read a 1.00 measured at 512 as
+evidence the probe is calibrated for any other context length.
 
 ### 11.17 `write_text`/`read_text` without an explicit encoding is a platform trap
 `report/report.py`'s `out.write_text(html)` (plus a handful of similar calls
@@ -2136,6 +2317,75 @@ and the read path's degrade-to-empty behavior means this shows up as
 suspicious-looking empty store's own `zarr.json`/`.zattrs` presence
 directly before assuming `extract` simply never ran.
 
+### 11.26 §11.16's own fix constant is calibrated per (checkpoint, context length) — and nothing says so at the call site
+Found 2026-08-12 while building `configs/crosscoder_stage0.yaml`, which uses
+`context_len: 448` rather than the repo-wide usual 512 (that corpus's
+sequences are mostly exactly 512 points, so `512 + 64` would have admitted
+108 of 4288 series). `impulse_alignment_check`'s in-pipeline `sanity_check`
+reported a Chronos-T5-Base diagonal-hit fraction of **0.50** — passing the
+`min_diagonal_frac: 0.5` gate with **exactly zero margin**. Diagnosed rather
+than worked around (§2.4), and the obvious first hypothesis was **refuted**:
+at 448 the tokenizer emits 449 tokens (448 + EOS), the mask is all 1s,
+`postprocess_tokens` returns 448, and spans are `[0,1]…[447,448]` — the
+declared token↔time map is correct, so this is not an adapter bug. It is
+§11.16's own mechanism recurring: Chronos's `MeanScaleUniformBins` tokenizer
+derives bin edges from whole-sequence statistics, so a large enough impulse
+re-quantizes tokens far from where it was injected. At 448, the 0.25×
+amplitude §11.16 fixed on changes ~38.6 unrelated tokens per probe; dropping
+to 0.05× changes 1.0 and restores a perfect 1.00 at blocks 0–7, and 0.02×
+restores 1.00 at every block — a clean cliff at the same place. **So §11.16's
+fix was right about the mechanism and about scaling relative to the signal,
+but its chosen constant was calibrated at one checkpoint *and one context
+length*, and §11.16's own write-up records only the checkpoint.** The
+dangerous direction is not the one observed: a miscalibrated probe can also
+clear 0.5 on tokenizer-rescaling noise while the spans are genuinely wrong,
+which is a *false pass* of the very gate invariant 7 depends on. Not fixed —
+changing the constant would silently rewrite what every recorded alignment
+number in this repo has meant (a §2.1 downstream call, and exactly the
+§11.24 class of trap). Tracked with a full fix plan as `ROADMAP.md` §15
+**A20**: parameterize the amplitude with 0.25 as its default, have the check
+*calibrate* it by sweeping down until the unrelated-token-change count drops
+below a threshold, and record the chosen amplitude in the artifact A2 now
+writes. **Lesson:** §11.16 already taught "scale test perturbations relative
+to the signal, not to an absolute constant." The missing half is that the
+*scaling factor itself* is a calibration, not a constant — and a calibration
+recorded without the full set of conditions it was measured under
+(checkpoint **and** context length **and** tokenizer family) will be
+reapplied outside them by the next person, who has no way to know.
+
+### 11.27 A background job that re-invokes a script per iteration reads that script fresh every time — so editing it mid-flight silently kills the remaining iterations
+Self-inflicted 2026-08-12, and a direct consequence of §2.8's own
+background-delegation doctrine rather than an accident despite it. A
+5-seed replicate sweep had been launched as a background job whose command
+was a shell loop calling `python run_crosscoder_stage0.py --seed $i` once
+per seed. While it ran, this session — correctly following §2.8 step 3's
+"do not poll, pick up the next item" — implemented ROADMAP §6.2.1's
+criteria decision by editing that very script, adding a required
+`eff_dims` parameter to `run_row`. Seed 0 had already launched and
+completed under the old code; seeds 1–3 launched in the roughly
+ninety-second window between the signature edit and the call-site edit and
+died immediately with `TypeError: run_row() missing 1 required positional
+argument: 'eff_dims'`; seed 4 launched after both edits landed and
+completed under the new code. The result was a "completed, exit code 0"
+job (the shell loop's own exit status, not the seeds') whose output
+directory held **two artifacts from two different code versions and three
+missing seeds** — precisely the incomparable-population failure §11.24
+warns about, arrived at by a new route. Nothing errored at the session
+level; the job reported success. **Fix applied:** relaunch all five seeds
+fresh so every one is scored under identical code, and discard the partial
+run rather than pooling its two survivors with the new ones. **The general
+rule this adds to §2.8:** a background job holds a *process*, not a
+snapshot of the code — anything that re-invokes an interpreter per
+iteration (a `for` loop over seeds, a `xargs`-driven sweep, a retry
+wrapper) re-reads every source file at each invocation. So before editing
+any file a running background job's command names, or that such a file
+imports, either wait for the job or accept that you are re-running it. The
+cheap habit: when launching a per-iteration background sweep, note which
+files it will re-read, and treat that list as locked for the duration —
+`§2.8`'s "pick up the next item that doesn't touch the same files/artifacts
+the background run is using" already says this, but "the files it is using"
+is easy to read as *artifacts only* when it also means *source*.
+
 ---
 
 ## 12. Known limitations (stated, not hidden)
@@ -2159,8 +2409,24 @@ directly before assuming `extract` simply never ran.
    claim like "Chronos represents X weakly at depth d" is really a claim about
    its **encoder**. Cross-attention opens a window at **decode step one only**;
    decoder self-attention, later steps, and decoder head ablation are unobserved.
-2. **Coverage asymmetry.** For TimesFM we see essentially the whole computation;
-   for Chronos maybe half.
+2. **Coverage asymmetry — now measured, and the prose estimate was wrong in
+   both halves.** This item used to read *"for TimesFM we see essentially the
+   whole computation; for Chronos maybe half."* `ROADMAP.md` §18 F4 measured
+   it on live checkpoints (`runs/medium_run_chronos_base`): TimesFM observes
+   **42.5%** of its own forward FLOPs — not "essentially the whole
+   computation", because `capture_layer_stride: 2` drops half its blocks and
+   34.6M parameters (15%) sit outside the layer regex — and Chronos-T5-Base's
+   entire capture pass is **at most 14.4%** of a full forecast at
+   `num_samples: 20`, not half. Note which knob does what: TimesFM's loss is a
+   *config* choice (stride 1 would recover it), Chronos's is *architectural*
+   (the decoder, run 20 times, is never captured). Every model's fractions are
+   in `budget/model_budget.json` under `coverage`, and any depth-located
+   finding about a model under 90% now carries an automatic qualifier in the
+   report (`report.py::_qualify_depth_claims`) — so this caveat no longer
+   depends on a reader having read this list. ⚠️ Chronos's headline is an
+   **upper bound** (its per-block FLOPs don't resolve by name, F4's "Left
+   open"), which is why its rendered qualifier says "at least ~86%
+   unobserved".
 3. **Forecast stochasticity asymmetry.** Chronos-T5 samples; TimesFM and
    Chronos-Bolt are deterministic. Ablation/patching deltas sit on different
    noise floors. Seeds are pinned and `num_samples` reduced during patching;
@@ -2184,6 +2450,38 @@ directly before assuming `extract` simply never ran.
 - Patching assumes the context is processed in **one forward pass**.
 - No `attention_patterns` → those analyses skip. No `o_proj`-style Linear → no
   head ablation. Cross-attention only fires for encoder-decoder models.
+- 🔵 **Univariate-only, by decision — ratified 2026-08-12** (`ROADMAP.md`
+  §16 E19, which asked for exactly this paragraph and recommended this
+  answer; §13's tracking entry is now closed). Every analysis in this repo
+  operates on `[series, window, dim]`, and that shape is not incidental: it
+  is produced by `pooling_matrix`, whose entire premise is that a token maps
+  to a **contiguous time interval within one series** (§6.3). A cross-series
+  attention axis has no time interval at all, so it cannot be pooled, cannot
+  be placed on the shared window axis every cross-model comparison (L1, L2,
+  L3, clustering) is defined on, and cannot be folded into the attention
+  lag taxonomy — lag is measured in timesteps. Extending to
+  `[series, variate, window, dim]` would therefore mean re-deriving the
+  alignment premise, not adding a dimension.
+  **The concrete thing this excludes**, so the edge is a fact rather than a
+  posture: Chronos-2's **GROUP attention** (`models/chronos2_adapter.py`,
+  §6.2) — each of its blocks runs TIME self-attention *and* a second
+  self-attention across series sharing a `group_id`, along the batch axis.
+  `_scan_attention`'s first-match behavior always resolves to TIME, so the
+  GROUP axis is silently never measured. That was an improvisation when
+  Chronos-2 shipped; as of this decision it is the documented envelope edge,
+  and any future adapter with a cross-series axis inherits the same
+  treatment: **capture and analyze the time axis, declare the cross-series
+  axis out of scope, and say so.** Multivariate models remain *loadable and
+  analyzable* — Chronos-2 has real live-checkpoint numbers on record — they
+  are simply analyzed as univariate models with an unmeasured second axis.
+  The number this costs is unknown and stated as such: nothing here measures
+  how much of a multivariate model's computation lives on the axis being
+  skipped, which is a **capture-coverage** gap of the same kind as the
+  Chronos decoder's (items 1–2 above), and is the honest reason a
+  Moirai-class any-variate model is scoped "gated on E19" in `ROADMAP.md`
+  §19's landscape table rather than simply supported. Reversing this
+  decision is legitimate — it needs a re-derivation of the alignment
+  premise, not a patch.
 
 **Benchmark / validation**
 - xcorr and DTW measure **shape** similarity after z-normalization — two series
@@ -2297,10 +2595,40 @@ directly before assuming `extract` simply never ran.
    > Chronos's token-granularity delta being *negative* is itself a little
    > surprising (n=24 series noise, or TopK sparsity acting as a mild
    > denoiser, are the leading guesses) and worth a skeptical look before
-   > reading it as "the SAE is simply excellent" — but directionally it
+   > reading it as "the SAE is simply excellent" — **and ROADMAP.md §18 F6
+   > (2026-08-12) now puts a number on how thin it is: −0.346 is only 2.2×
+   > Chronos-T5-Base's own ±0.160 repeat-run noise floor, barely past the 2×
+   > interpretability bar, against the +3.869 window value's 24.2×.** So the
+   > window-broadcast diagnosis is carried by the window number, not by this
+   > one — but directionally it
    > unambiguously confirms the confound diagnosis over the alternative
    > "genuine reconstruction quality" explanation. Feature-level ablation
    > (§7 bullet 3, `ROADMAP.md` §16 E15's second half) is now unblocked.
+
+   > 🔴 **Correction to the correction (2026-08-12, `ROADMAP.md` §13's
+   > repeat-run-variance item).** The "skeptical look" the paragraph above
+   > asks for was taken, by retraining this exact target at **five seeds
+   > against a frozen store** (nothing re-extracted; `mase_clean` is
+   > bit-identical across all five, so SAE training seed is the only
+   > variable). Chronos-T5-Base's token-granularity ΔMASE is
+   > **+0.246 ± 0.211** (five-seed range [−0.112, +0.414]); the −0.346
+   > quoted above sits *outside* that range and its negative sign
+   > replicates in **1 of 5** seeds at a third the magnitude. It was seed
+   > noise. **Do not quote −0.346.** The paragraph's actual conclusion is
+   > untouched and is now much better supported: window **+3.897 ± 0.242**
+   > vs. token **+0.246 ± 0.211** is a ~16× gap against the seed noise, so
+   > the window-broadcast confound really was the dominant driver. TimesFM's
+   > bit-for-bit granularity identity also replicates at all five seeds.
+   > **The wider lesson, which applies to every SAE number in this file:**
+   > TimesFM's forecast-preservation ΔMASE has a seed-to-seed **sd of
+   > 0.121** with a 0.309 range, so the +0.05 / +0.110 values quoted above
+   > are single draws from a distribution wide enough to contain both, and
+   > no pass/fail verdict against a small threshold is resolvable at one
+   > seed. Read any single-seed SAE ΔMASE with that floor beside it (§2.6 —
+   > this is the SAE analog of the behavioral-ΔMASE floor `ROADMAP.md` §15
+   > A13 already required). Both dictionaries are also ~95% dead
+   > (**94.5% / 97.3%**, stable across seeds, sd ≤0.005) — reproducibly the
+   > condition `ROADMAP.md` §6.2.1's Stage 0 gate exists to eliminate.
 4. **Validation as CI gates.** Turn the diversity metrics into explicit pass/fail
    gates (redundancy fraction < X, effective dimensionality > Y, no
    near-collision cluster larger than Z) so each benchmark epoch is checked

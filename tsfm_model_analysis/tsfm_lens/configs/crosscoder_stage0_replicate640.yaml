@@ -1,0 +1,74 @@
+# ROADMAP.md §6.2.1 Stage 0 — the replicate-seed probe for the criteria question.
+#
+# Not a candidate winner. This config exists to answer one question with a
+# measurement instead of a judgement call: the `pinch` sweep found that
+# Chronos-T5-Base's per-model baseline clears the dead-rate bar at dict=640
+# (dead 0.2703) but lands **33 atoms short** of the global `MIN_ALIVE = 500`
+# floor (alive 467), while alive counts across the eight sizes swept were
+# *non-monotone* in dictionary size — implying single-seed noise of order
+# ±60 atoms against a 33-atom decision margin. A margin smaller than the
+# noise is not a result, so the criteria decision must not rest on it.
+#
+# Run this at several seeds (`--seed 0..4`) and compare the spread of the
+# Chronos baseline's `n_alive` against the 500 floor. The same discipline
+# ROADMAP.md §13's SAE repeat-run-variance item applied to ΔMASE: measure the
+# floor before reading a difference against it.
+#
+# 🔴 ANSWERED 2026-08-12, and both premises above are refuted — kept in place
+# rather than deleted so the correction is legible (ROADMAP.md §0.2). Seeds
+# 0-4 (`replicate640_seed{0..4}.json`, written up as ROADMAP.md §6.2.1
+# finding (10)) show seed 0 was the most favorable of five draws on BOTH
+# criteria at once:
+#   * `alive >= 500` is cleared in 0 of 5 seeds. Mean 419.4, sd 38.9 -- a
+#     mean shortfall of 80.6 atoms (~2.1 sd), not a 33-atom coin flip. 467
+#     is the MAXIMUM of the five, not a typical draw.
+#   * "clears the dead-rate bar at dict=640" does not replicate either:
+#     dead is 0.3447 +/- 0.0607, over the 0.30 bar in 4 of 5 seeds. Read
+#     dict=640 as a rate-bar FAILURE; the 0.2703 above is one lucky seed.
+#   * the +/-60-atom noise band is Chronos-specific: TimesFM's baseline is
+#     alive 637.2 +/- 3.0, fidelity 0.7913 +/- 0.0026. Inferring one noise
+#     band from a size curve that mixed both models was the error.
+# The criteria question this probe was built to inform is now decided (see
+# §6.2.1's DECISION block) on finding (11)'s unsatisfiability argument
+# rather than on any margin measured here.
+#
+# Everything below is `configs/crosscoder_stage0_winner.yaml`'s configuration
+# with `dict_size` moved 1280 -> 640, so the two are directly comparable and
+# the only variable is the one under test.
+
+run: runs/crosscoder_stage0_bigdata
+
+layer_a: stacked_xf.4        # TimesFM-2.5-200M
+layer_b: encoder.block.10    # Chronos-T5-Base
+
+eff_dims: [28.15, 13.93]
+
+train:
+  # The row under test: the only size in [512, 1280] that cleared the
+  # dead-rate bar while coming within 100 atoms of the alive floor.
+  dict_size: 640
+  k: 48
+  epochs: 60
+  aux_k: 64
+  aux_coef: 0.03125
+  aux_dead_steps: 20
+  resample_every: 0
+
+# Overridden per invocation by `--seed`; 0 reproduces the `pinch` sweep's row.
+seed: 0
+
+# The single-seed `h2xh4:dict=640` result this probe replicates, at full
+# precision, so a rerun at seed 0 can be diffed against it (CLAUDE.md §11.24).
+# The Chronos baseline's own numbers are the ones under test and are recorded
+# in the comment below rather than here, since `expected` mirrors the winner
+# config's schema: dead 0.27031251788139343, n_alive 467, fidelity
+# 0.8880293424795604 -- dead_ok true, alive_ok FALSE by 33 atoms.
+expected:
+  crosscoder:
+    fidelity_a: 0.7346103683566961
+    fidelity_b: 0.7669887293414291
+    dead_feature_rate: 0.020312499999999956
+    n_alive: 627
+    l0_actual: 48.0
+  baseline_a_passes: true
+  baseline_b_passes: false

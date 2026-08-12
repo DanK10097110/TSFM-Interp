@@ -23,7 +23,7 @@ from ..utils import batch_slices, load_json, log, save_json
 from .eval import (dead_feature_rate, feature_ablation_effects, feature_steering_effects,
                    forecast_preservation, reconstruction_fidelity)
 from .ground_truth import ground_truth_alignment, load_ground_truth_table
-from .models import TopKSAE
+from .models import TopKSAE, auxiliary_dead_loss
 from .real_data import extract_real_activations, sample_real_context_windows
 
 
@@ -36,6 +36,17 @@ class SAETrainConfig:
     batch_size: int = 4096
     seed: int = 0
     resample_dead_every_epochs: int = 0  # 0 disables; see resample_dead_neurons
+    # AuxK dead-atom revival (ROADMAP.md sec 6.2.1 Stage 0, H4) -- see
+    # `models.py::auxiliary_dead_loss`. Off by default so no already-recorded
+    # SAE run's numbers shift underneath them.
+    aux_k: int = 0
+    aux_coef: float = 1.0 / 32.0
+    aux_dead_steps: int = 20      # batches without firing before an atom counts as dead
+    # Absolute dictionary size, overriding `dict_size_mult * d_in` when nonzero.
+    # Exists because Stage 0's H2 sweeps dictionary size against a layer's
+    # measured effective dimensionality (~14-28 here), which an integer
+    # multiple of a 768-1280-wide hidden state cannot express at all.
+    dict_size: int = 0
 
 
 def load_all_windows(store: ActivationStore, model: str, layer: str) -> np.ndarray:
@@ -124,27 +135,39 @@ def train_sae(activations: np.ndarray, cfg: SAETrainConfig, device: torch.device
     rng = torch.Generator().manual_seed(cfg.seed)
     x = torch.from_numpy(activations)
     d_in = x.shape[-1]
-    dict_size = cfg.dict_size_mult * d_in
-    sae = TopKSAE(d_in, dict_size, cfg.k).to(device)
+    dict_size = cfg.dict_size or cfg.dict_size_mult * d_in
+    sae = TopKSAE(d_in, dict_size, cfg.k, generator=rng).to(device)
     opt = torch.optim.Adam(sae.parameters(), lr=cfg.lr)
 
     n = x.shape[0]
     history = []
     n_resampled_total = 0
+    steps_since_fired = torch.zeros(dict_size, dtype=torch.long, device=device)
     for epoch in range(cfg.epochs):
         perm = torch.randperm(n, generator=rng)
         epoch_loss = 0.0
         fired = torch.zeros(dict_size, dtype=torch.bool, device=device)
         for s, e in batch_slices(n, cfg.batch_size):
             batch = x[perm[s:e]].to(device)
-            recon, features = sae(batch)
-            loss = torch.mean((recon - batch) ** 2)
+            recon, features, pre = sae.forward_with_pre(batch)
+            mse = torch.mean((recon - batch) ** 2)
+            loss = mse
+            aux = auxiliary_dead_loss(pre, batch - recon, sae.W_dec,
+                                      steps_since_fired >= cfg.aux_dead_steps, cfg.aux_k)
+            if aux is not None:
+                loss = loss + cfg.aux_coef * aux
             opt.zero_grad()
             loss.backward()
             opt.step()
             sae.normalize_decoder_()
-            fired |= (features.detach().abs() > 1e-8).any(dim=0)
-            epoch_loss += loss.item() * (e - s)
+            fired_batch = (features.detach().abs() > 1e-8).any(dim=0)
+            fired |= fired_batch
+            steps_since_fired = torch.where(fired_batch, torch.zeros_like(steps_since_fired),
+                                           steps_since_fired + 1)
+            # History records the reconstruction MSE only, never the aux term,
+            # so an aux_k run's curve stays comparable to every aux-free run
+            # already on record.
+            epoch_loss += mse.item() * (e - s)
         history.append(epoch_loss / n)
         if cfg.resample_dead_every_epochs and (epoch + 1) % cfg.resample_dead_every_epochs == 0:
             sample = x[perm[: min(n, cfg.batch_size * 4)]].to(device)
@@ -184,7 +207,9 @@ def run_sae(cfg: PipelineConfig, hub: ModelHub, store: ActivationStore,
     train_cfg = SAETrainConfig(dict_size_mult=cfg.sae.dict_size_mult, k=cfg.sae.k,
                                lr=cfg.sae.lr, epochs=cfg.sae.epochs,
                                batch_size=cfg.sae.batch_size, seed=cfg.run.seed,
-                               resample_dead_every_epochs=cfg.sae.resample_dead_every_epochs)
+                               resample_dead_every_epochs=cfg.sae.resample_dead_every_epochs,
+                               aux_k=cfg.sae.aux_k, aux_coef=cfg.sae.aux_coef,
+                               aux_dead_steps=cfg.sae.aux_dead_steps)
     targets = cfg.sae.targets or _default_targets(cfg, store)
     results = {}
     real_contexts = _sample_real_contexts(cfg) if cfg.sae.real_data_enabled else None

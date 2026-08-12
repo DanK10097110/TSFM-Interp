@@ -286,7 +286,8 @@ def compare_l1_depth_curve(real_run: Path, null_run_a: Path, null_run_b: Path,
 
 
 def compare_l2_depth_curve(real_run: Path, null_run_a: Path, null_run_b: Path,
-                          n_boot: int = 300, seed: int = 0, ci: float = 0.95) -> list:
+                          n_boot: int = 300, seed: int = 0, ci: float = 0.95,
+                          direction: str | None = None) -> list:
     """Per-src-layer depth curve for L2's gain-over-baseline, extending
     `compare_l2_best_gain`'s single-best-pair test the same way
     `compare_l1_depth_curve` extended L1's peak-pair test.
@@ -302,14 +303,28 @@ def compare_l2_depth_curve(real_run: Path, null_run_a: Path, null_run_b: Path,
     gain (does the dst model's random twin at layer j already predict the
     real dst layer j beyond the baseline?). `null_run_a`'s real-model side
     must equal the real run's src model name and `null_run_b`'s must equal
-    its dst model name (matching the real run's own best direction, not an
-    arbitrary A/B ordering -- `configs/null_*.yaml` name their real side to
-    match `configs/medium_run_chronos_base.yaml`'s model names by
-    construction).
+    its dst model name (matching the direction under test, not an arbitrary
+    A/B ordering -- `configs/null_*.yaml` name their real side to match
+    `configs/medium_run_chronos_base.yaml`'s model names by construction).
+
+    `direction` ("src->dst", as keyed in `stitching.json`) overrides the
+    default choice of the run's own best-gaining direction. L2 is not
+    symmetric -- the ridge probe maps one model's states onto the other's,
+    and a null verdict established on one direction says nothing about the
+    other -- so the reverse direction is its own measurement (ROADMAP.md
+    sec 13). Pass the two null runs in the order matching whichever
+    direction is under test; the check below enforces it rather than
+    silently comparing against the wrong architecture's floor.
     """
     real_cfg, real_store, real_meta = _load_run(real_run)
     real_stitch = load_json(Path(real_run) / "l2" / "stitching.json")
-    best_dir = max(real_stitch["directions"], key=lambda d: real_stitch["directions"][d]["best_gain"])
+    if direction is None:
+        best_dir = max(real_stitch["directions"], key=lambda d: real_stitch["directions"][d]["best_gain"])
+    elif direction in real_stitch["directions"]:
+        best_dir = direction
+    else:
+        raise ValueError(f"compare_l2_depth_curve: direction {direction!r} is not in this run's "
+                         f"stitching.json; available: {sorted(real_stitch['directions'])}")
     src_name, dst_name = best_dir.split("->")
     gain = np.asarray(real_stitch["directions"][best_dir]["gain"])
     layers = real_stitch["layers"]
@@ -322,9 +337,9 @@ def compare_l2_depth_curve(real_run: Path, null_run_a: Path, null_run_b: Path,
     if na_real.name != src_name or nb_real.name != dst_name:
         raise ValueError(
             f"compare_l2_depth_curve: expected null_run_a's real-model side to be "
-            f"{src_name!r} (the real run's best direction's src) and null_run_b's to be "
+            f"{src_name!r} (the src of the direction under test) and null_run_b's to be "
             f"{dst_name!r} (its dst), got {na_real.name!r} and {nb_real.name!r} -- pass the "
-            f"two null runs in the order matching the real run's best direction ({best_dir!r})")
+            f"two null runs in the order matching the direction under test ({best_dir!r})")
 
     def _split_and_baseline(cfg, store):
         n_windows = store.root.attrs["n_windows"]

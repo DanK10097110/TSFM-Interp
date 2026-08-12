@@ -110,6 +110,67 @@ def holm(pvals: Dict[str, float]) -> Dict[str, float]:
     return adjusted
 
 
+def in_floor_units(delta: Optional[float], floor: Optional[dict],
+                   interpretable_ratio: float = 2.0) -> dict:
+    """Express a ΔMASE as a multiple of the model's own repeat-run noise floor.
+
+    A13 measured the floor (`l0/noise_floor.json`); this is the shared reader
+    that turns it into a verdict, so every stage reporting a delta answers the
+    same question the same way (ROADMAP.md sec 18 F6). The two models compared
+    in a run have structurally different floors -- Chronos-T5 samples, TimesFM
+    and Chronos-Bolt do not -- so a raw +0.2 is not one quantity, and the whole
+    point of the ratio is that it is.
+
+    `floor` is one model's entry from that artifact, or None when the floor was
+    never measured. The three outcomes are deliberately distinguishable rather
+    than collapsed into a bool: a *deterministic* model has a floor of exactly
+    zero, so any nonzero delta is real signal and `ratio` is infinite; an
+    *unmeasured* floor yields `interpretable: None`, which is not the same
+    claim as "not interpretable" and must not be rendered as one.
+    """
+    out = {"raw": None if delta is None else float(delta), "floor": None,
+           "ratio": None, "interpretable": None, "deterministic": None,
+           "reason": "no delta"}
+    if delta is None:
+        return out
+    if not floor:
+        out["reason"] = "floor not measured"
+        return out
+    out["deterministic"] = bool(floor.get("deterministic"))
+    f = float(floor.get("mase_abs_delta_mean", 0.0))
+    out["floor"] = f
+    if out["deterministic"] or f <= 0.0:
+        out["ratio"] = float("inf") if delta != 0 else 0.0
+        out["interpretable"] = delta != 0
+        out["reason"] = "deterministic model: floor is exactly zero"
+        return out
+    out["ratio"] = abs(float(delta)) / f
+    out["interpretable"] = bool(out["ratio"] > interpretable_ratio)
+    out["reason"] = (f"{out['ratio']:.1f}x the repeat-run floor "
+                     f"(interpretable above {interpretable_ratio:g}x)")
+    return out
+
+
+def format_floor_units(fu: dict) -> str:
+    """The one rendering of `in_floor_units` every section shares.
+
+    Kept next to the computation on purpose: a delta whose floor is unmeasured
+    and a delta that is below its floor read almost identically if each call
+    site writes its own sentence, and those are opposite claims.
+    """
+    if fu.get("raw") is None:
+        return ""
+    if fu.get("interpretable") is None:
+        return f"{fu['raw']:+.3f} (no repeat-run floor measured; see sec 15 A13)"
+    if fu.get("deterministic"):
+        return f"{fu['raw']:+.3f} (this model is deterministic; the delta is real signal)"
+    ratio = fu["ratio"]
+    verdict = "below its own repeat-run noise floor" if ratio <= 1.0 else (
+        "not distinguishable from repeat-run noise" if not fu["interpretable"] else "")
+    tail = f", {verdict}" if verdict else ""
+    return f"{fu['raw']:+.3f} ({ratio:.1f}× this model's repeat-run floor of ±{fu['floor']:.3f}{tail})"
+
+
 def dominant_period(x: np.ndarray, min_lag: int = 4) -> int:
     """Dominant period of one series via the autocorrelation peak beyond min_lag.
 

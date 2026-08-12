@@ -53,6 +53,7 @@ import torch
 from torch import nn
 
 from ..utils import batch_slices, log
+from .models import auxiliary_dead_loss
 
 
 class CrosscoderSAE(nn.Module):
@@ -63,7 +64,8 @@ class CrosscoderSAE(nn.Module):
     dictionary, not `n_sources` separate ones glued together after the fact.
     """
 
-    def __init__(self, d_ins: list, dict_size: int, k: int, source_scale: list | None = None):
+    def __init__(self, d_ins: list, dict_size: int, k: int, source_scale: list | None = None,
+                 generator: torch.Generator | None = None):
         super().__init__()
         self.d_ins = list(d_ins)
         self.n_sources = len(d_ins)
@@ -72,15 +74,18 @@ class CrosscoderSAE(nn.Module):
         self.source_scale = list(source_scale) if source_scale is not None else [1.0] * len(d_ins)
         self.b_dec = nn.ParameterList([nn.Parameter(torch.zeros(d)) for d in d_ins])
         self.W_enc = nn.ParameterList(
-            [nn.Parameter(self._init_weight(d, dict_size)) for d in d_ins])
+            [nn.Parameter(self._init_weight(d, dict_size, generator)) for d in d_ins])
         self.b_enc = nn.Parameter(torch.zeros(dict_size))
         self.W_dec = nn.ParameterList(
             [nn.Parameter(self.W_enc[i].detach().t().clone()) for i in range(self.n_sources)])
         self.normalize_decoder_()
 
     @staticmethod
-    def _init_weight(d_in: int, dict_size: int) -> torch.Tensor:
-        w = torch.randn(d_in, dict_size)
+    def _init_weight(d_in: int, dict_size: int,
+                     generator: torch.Generator | None = None) -> torch.Tensor:
+        """Unit-norm random dictionary columns; `generator` threaded through
+        for the same reproducibility reason as `TopKSAE._init_weight`."""
+        w = torch.randn(d_in, dict_size, generator=generator)
         return w / w.norm(dim=0, keepdim=True).clamp_min(1e-8)
 
     def normalize_decoder_(self) -> None:
@@ -97,6 +102,28 @@ class CrosscoderSAE(nn.Module):
             for wd in self.W_dec:
                 wd.div_(norm.unsqueeze(1))
 
+    def pre_activations(self, xs: list) -> torch.Tensor:
+        """Summed per-source encoder contributions, before ReLU/TopK -- `[N, dict_size]`.
+
+        Split out of `encode` for the same reason as `TopKSAE`
+        (`models.py`): the training loop needs the signed pre-activations
+        of never-firing atoms to compute `auxiliary_dead_loss`, and
+        recomputing them would double the encoder cost of every step.
+        """
+        pre = self.b_enc
+        for i, x in enumerate(xs):
+            pre = pre + (x / self.source_scale[i] - self.b_dec[i]) @ self.W_enc[i]
+        return pre
+
+    def sparsify(self, pre: torch.Tensor) -> torch.Tensor:
+        """`[N, dict_size]` pre-activations -> exactly `k` nonzero entries per row."""
+        pre = torch.relu(pre)
+        k = min(self.k, pre.shape[-1])
+        top_vals, top_idx = torch.topk(pre, k, dim=-1)
+        features = torch.zeros_like(pre)
+        features.scatter_(-1, top_idx, top_vals)
+        return features
+
     def encode(self, xs: list) -> torch.Tensor:
         """`n_sources`-long list of `[N, d_in_i]` (original scale) -> `[N, dict_size]` features.
 
@@ -105,15 +132,7 @@ class CrosscoderSAE(nn.Module):
         source's larger raw activation magnitude can dominate the joint
         TopK competition or the training loss (see module docstring).
         """
-        pre = self.b_enc
-        for i, x in enumerate(xs):
-            pre = pre + (x / self.source_scale[i] - self.b_dec[i]) @ self.W_enc[i]
-        pre = torch.relu(pre)
-        k = min(self.k, pre.shape[-1])
-        top_vals, top_idx = torch.topk(pre, k, dim=-1)
-        features = torch.zeros_like(pre)
-        features.scatter_(-1, top_idx, top_vals)
-        return features
+        return self.sparsify(self.pre_activations(xs))
 
     def decode(self, features: torch.Tensor) -> list:
         """`[N, dict_size]` -> `n_sources`-long list of `[N, d_in_i]` reconstructions,
@@ -124,6 +143,12 @@ class CrosscoderSAE(nn.Module):
     def forward(self, xs: list) -> tuple:
         features = self.encode(xs)
         return self.decode(features), features
+
+    def forward_with_pre(self, xs: list) -> tuple:
+        """`forward` plus the pre-activations, for training loops using `aux_k`."""
+        pre = self.pre_activations(xs)
+        features = self.sparsify(pre)
+        return self.decode(features), features, pre
 
 
 @torch.no_grad()
@@ -168,6 +193,17 @@ class CrosscoderTrainConfig:
     seed: int = 0
     resample_dead_every_epochs: int = 0
     loss_weights: list = field(default_factory=list)  # per-source loss weight; [] = uniform
+    # AuxK dead-atom revival (ROADMAP.md sec 6.2.1 Stage 0, H4). `aux_k: 0`
+    # disables it, which is the default *specifically* so no already-recorded
+    # crosscoder run's numbers change meaning underneath them
+    # (`CLAUDE.md` sec 11.24's lesson, applied pre-emptively this time).
+    aux_k: int = 0
+    aux_coef: float = 1.0 / 32.0
+    aux_dead_steps: int = 20      # batches without firing before an atom counts as dead
+    # Absolute dictionary size, overriding `dict_size_mult * max(d_ins)` when
+    # nonzero -- see the identical field on `SAETrainConfig` for why an
+    # integer multiplier alone cannot express Stage 0's H2 sweep.
+    dict_size: int = 0
 
 
 @torch.no_grad()
@@ -256,35 +292,59 @@ def train_crosscoder(activations: list, cfg: CrosscoderTrainConfig, device: torc
     if any(x.shape[0] != n for x in xs):
         raise ValueError("crosscoder sources must have the same row count (aligned windows)")
     d_ins = [x.shape[-1] for x in xs]
-    dict_size = cfg.dict_size_mult * max(d_ins)
+    dict_size = cfg.dict_size or cfg.dict_size_mult * max(d_ins)
     weights = cfg.loss_weights or [1.0] * len(xs)
     source_scale = [float(x.std().clamp_min(1e-6)) for x in xs]
-    sae = CrosscoderSAE(d_ins, dict_size, cfg.k, source_scale=source_scale).to(device)
+    sae = CrosscoderSAE(d_ins, dict_size, cfg.k, source_scale=source_scale,
+                        generator=rng).to(device)
     opt = torch.optim.Adam(sae.parameters(), lr=cfg.lr)
 
     history = []
     n_resampled_total = 0
+    steps_since_fired = torch.zeros(dict_size, dtype=torch.long, device=device)
     for epoch in range(cfg.epochs):
         perm = torch.randperm(n, generator=rng)
         epoch_loss = 0.0
+        epoch_aux = 0.0
         epoch_per_source = np.zeros(len(xs))
         fired = torch.zeros(dict_size, dtype=torch.bool, device=device)
         for s, e in batch_slices(n, cfg.batch_size):
             rows = perm[s:e]
             batch = [x[rows].to(device) for x in xs]
-            recons, features = sae(batch)
+            recons, features, pre = sae.forward_with_pre(batch)
             per_source = [torch.mean(((r - b) / sae.source_scale[i]) ** 2)
                          for i, (r, b) in enumerate(zip(recons, batch))]
             loss = sum(w * l for w, l in zip(weights, per_source))
+            main_loss = float(loss.item())
+            # AuxK is summed over sources on the same scale-normalized
+            # residuals the main loss uses, for the reason in the module
+            # docstring: on raw residuals the larger-scale source would own
+            # this term too, reviving atoms only in its own direction.
+            aux_terms = [
+                auxiliary_dead_loss(pre, (b - r) / sae.source_scale[i], sae.W_dec[i],
+                                    steps_since_fired >= cfg.aux_dead_steps, cfg.aux_k)
+                for i, (r, b) in enumerate(zip(recons, batch))]
+            aux_terms = [t for t in aux_terms if t is not None]
+            if aux_terms:
+                aux = sum(aux_terms) / len(aux_terms)
+                loss = loss + cfg.aux_coef * aux
+                epoch_aux += float(aux.item()) * (e - s)
             opt.zero_grad()
             loss.backward()
             opt.step()
             sae.normalize_decoder_()
-            fired |= (features.detach().abs() > 1e-8).any(dim=0)
-            epoch_loss += loss.item() * (e - s)
+            fired_batch = (features.detach().abs() > 1e-8).any(dim=0)
+            fired |= fired_batch
+            steps_since_fired = torch.where(fired_batch, torch.zeros_like(steps_since_fired),
+                                           steps_since_fired + 1)
+            epoch_loss += main_loss * (e - s)
             for i, l in enumerate(per_source):
                 epoch_per_source[i] += l.item() * (e - s)
-        history.append({"loss": epoch_loss / n, "per_source": (epoch_per_source / n).tolist()})
+        # `loss` stays the *reconstruction* objective only, so a history from
+        # an aux_k run is directly comparable against every already-recorded
+        # aux-free run; the aux term is reported alongside, never folded in.
+        history.append({"loss": epoch_loss / n, "per_source": (epoch_per_source / n).tolist(),
+                        "aux": epoch_aux / n})
         if cfg.resample_dead_every_epochs and (epoch + 1) % cfg.resample_dead_every_epochs == 0:
             sample = [x[perm[: min(n, cfg.batch_size * 4)]].to(device) for x in xs]
             n_resampled = _resample_dead_neurons(sae, fired, sample, rng, opt)

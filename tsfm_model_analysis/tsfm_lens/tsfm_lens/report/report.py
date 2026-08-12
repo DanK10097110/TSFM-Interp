@@ -13,6 +13,7 @@ from __future__ import annotations
 import datetime
 import re
 from pathlib import Path
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -45,6 +46,7 @@ def run_report(cfg: PipelineConfig) -> Path:
     exits non-zero; `cfg.report.allow_partial` (CLI `--allow-partial-report`)
     downgrades that to a loud warning.
     """
+    _FLOOR_AUDIT.update(checked=0, below_floor=0, unmeasured=0, suppressed=[])
     run_dir = cfg.run_dir()
     a, b = cfg.comparison_pair()
     model_colors = {a.name: _COLORS["a"], b.name: _COLORS["b"]}
@@ -55,6 +57,10 @@ def run_report(cfg: PipelineConfig) -> Path:
          "Forecast quality per benchmark family: the hypotheses the deeper levels try to explain.",
          ["l0/metrics.parquet", "l0/summary.json"], "l0",
          lambda: _sec_l0(run_dir, model_colors, findings)),
+        ("Cost", "Cost and capacity",
+         "What each model costs to run — parameters, measured FLOPs, latency, VRAM — and what its L0 quality looks like per unit of compute rather than in absolute terms.",
+         ["budget/model_budget.json"], "budget",
+         lambda: _sec_budget(run_dir, model_colors, findings)),
         ("Screen", "Layer screening",
          "Which of each model's own captured layers were flagged as worth further, expensive analysis — and what sae.targets: auto trained on.",
          ["layer_screen/selection.json"], "layer_screen",
@@ -138,6 +144,23 @@ def run_report(cfg: PipelineConfig) -> Path:
                              "detail": "builder returned no content"})
     if n_exploratory[0] is None:
         n_exploratory[0] = len(findings)
+    # ROADMAP.md sec 18 F6's acceptance criterion is a *count*: how many of this
+    # run's own deltas sit below the noise floor they were never compared
+    # against. Emitted as a finding rather than a log line, because the log is
+    # not what anyone reads a month later (CLAUDE.md invariant 8).
+    if _FLOOR_AUDIT["checked"]:
+        parts = [f'{_FLOOR_AUDIT["below_floor"]} of {_FLOOR_AUDIT["checked"]} '
+                 f'ΔMASE values in this report fall at or below their own model\'s '
+                 f'repeat-run noise floor']
+        if _FLOOR_AUDIT["unmeasured"]:
+            parts.append(f'{_FLOOR_AUDIT["unmeasured"]} could not be checked '
+                         f'(no floor measured for that model)')
+        if _FLOOR_AUDIT["suppressed"]:
+            parts.append("findings suppressed as uninterpretable: "
+                         + ", ".join(_FLOOR_AUDIT["suppressed"]))
+        findings.append("Noise floor — " + "; ".join(parts)
+                        + " (ROADMAP.md sec 18 F6).")
+    findings = _qualify_depth_claims(run_dir, findings)
     findings = [(f"[exploratory — not pre-registered] {f}" if i < n_exploratory[0] else f)
                for i, f in enumerate(findings)]
 
@@ -657,6 +680,106 @@ def _horizon_resolved_block(run_dir: Path, model_colors: dict, findings: list) -
     return html
 
 
+_FLOOR_AUDIT: dict = {"checked": 0, "below_floor": 0, "unmeasured": 0, "suppressed": []}
+
+
+def _floor_for(run_dir: Path, model: str) -> Optional[dict]:
+    """One model's entry from A13's artifact, or None when it was never measured."""
+    path = run_dir / "l0" / "noise_floor.json"
+    if not path.exists():
+        return None
+    return load_json(path).get(model)
+
+
+_DEPTH_WORDS = ("depth", "layer", "block", "crystalliz", "peak cka", "peak-cka")
+
+
+def _coverage_qualifiers(run_dir: Path) -> dict:
+    """Model → `(clause, surfaces_tail)` a depth-located claim about it carries.
+
+    Only models whose captured FLOP fraction is under 90% get an entry, so an
+    empty dict is the normal case for a fully-observed model rather than a
+    missing measurement. The clause and its tail are returned separately
+    because a finding naming *both* models (L1's peak pair) needs two clauses
+    but would be unreadable carrying two full surface inventories.
+    """
+    path = run_dir / "budget" / "model_budget.json"
+    if not path.exists():
+        return {}
+    out = {}
+    for name, rec in (load_json(path).get("models") or {}).items():
+        cov = rec.get("coverage") or {}
+        if not cov.get("depth_claims_qualified"):
+            continue
+        frac = cov.get("headline_flops_fraction")
+        surfaces = "; ".join(cov.get("uncaptured_surfaces") or [])
+        # When the fraction is an upper bound on what was observed, the
+        # unobserved share it implies is a *lower* bound -- "at least", never
+        # "about". Rendering a bound as a point estimate is the one way this
+        # sentence could overstate its own precision.
+        hedge = "at least ~" if cov.get("headline_is_upper_bound") else "~"
+        out[name] = (f"{hedge}{100 * (1 - frac):.0f}% of {name}'s forward "
+                     f"computation is unobserved",
+                     f" ({surfaces})" if surfaces else "")
+    return out
+
+
+def _qualify_depth_claims(run_dir: Path, findings: list) -> list:
+    """Append the coverage qualifier to any depth-located finding automatically.
+
+    ROADMAP.md sec 18 F4 asks for this as a check in the findings builder rather
+    than as author discipline, on invariant 8's lesson that discipline-only
+    mechanisms decay: a finding that says "Chronos crystallizes at relative
+    depth 0.8" is a claim about 0.8 of its *encoder*, and nothing but a
+    mechanical rule keeps that caveat attached as findings are added.
+
+    Deliberately conservative on both sides. It fires only when a qualified
+    model's name appears in the text *and* the text uses depth vocabulary, and
+    it never rewrites the claim itself -- an over-broad match adds a true
+    sentence to a finding that did not need it, while a rewrite could change
+    what a recorded number means (sec 2.1).
+    """
+    quals = _coverage_qualifiers(run_dir)
+    if not quals:
+        return findings
+    out = []
+    for f in findings:
+        low = f.lower()
+        add = [q for name, q in quals.items()
+               if name.lower() in low and any(w in low for w in _DEPTH_WORDS)]
+        if not add:
+            out.append(f)
+            continue
+        # The surface inventory rides along only when one model is named. A
+        # finding about both (L1's peak pair) states both fractions -- the
+        # numbers are the qualification -- but sends the reader to the budget
+        # section for the two lists rather than inlining both here.
+        body = "; ".join(clause + (tail if len(add) == 1 else "")
+                         for clause, tail in add)
+        out.append(f"{f.rstrip('.')} — within the captured surface only; {body}.")
+    return out
+
+
+def _delta_phrase(run_dir: Path, model: str, delta) -> tuple:
+    """Render a ΔMASE in its own model's noise-floor units (ROADMAP.md sec 18 F6).
+
+    Returns `(phrase, interpretable)`. `interpretable` is None when no floor
+    exists -- callers must not read that as False, which is why this returns a
+    tri-state rather than a bool. Every call is tallied into `_FLOOR_AUDIT` so
+    the section at the end of the report can state how many of this run's own
+    deltas fall below their floor; that count is F6's actual deliverable.
+    """
+    from ..analysis.stats import format_floor_units, in_floor_units
+    fu = in_floor_units(delta, _floor_for(run_dir, model))
+    if fu["raw"] is not None:
+        _FLOOR_AUDIT["checked"] += 1
+        if fu["interpretable"] is None:
+            _FLOOR_AUDIT["unmeasured"] += 1
+        elif fu["ratio"] is not None and fu["ratio"] <= 1.0:
+            _FLOOR_AUDIT["below_floor"] += 1
+    return format_floor_units(fu), fu["interpretable"]
+
+
 def _noise_floor_block(run_dir: Path, findings: list) -> str:
     """Repeat-run MASE noise floor, shared by L0/L3/SAE report sections (sec 15 A13)."""
     path = run_dir / "l0" / "noise_floor.json"
@@ -816,7 +939,8 @@ def _sec_l1(run_dir: Path, findings: list) -> str:
              f'series bootstrap)' if best.get("ci") else ""
     null_txt = f'; shuffled-series null ≈{null_ci["value"]:.2f}' if null_ci else ""
     findings.append(f'L1 — peak similarity CKA={best["cka"]:.2f}{ci_txt} at '
-                    f'{_short(best["layer_a"])} ↔ {_short(best["layer_b"])} '
+                    f'{meta["model_a"]} {_short(best["layer_a"])} ↔ '
+                    f'{meta["model_b"]} {_short(best["layer_b"])} '
                     f'(relative depths {da:.2f} / {db:.2f}){null_txt}.')
     inner = _frag(heat) + _note(
         "Linear CKA between every layer pair of the two models, in feature "
@@ -1164,7 +1288,14 @@ def _sec_l3(run_dir: Path, model_colors: dict, findings: list) -> str:
             "avoids that ceiling, but values from different corruptions "
             "aren't on a shared physical scale (each is normalized by its "
             "own clean-vs-corrupted damage) — compare shapes/crossovers "
-            "within a corruption, not raw levels across corruptions."
+            "within a corruption, not raw levels across corruptions. "
+            "Unlike the ΔMASE figures elsewhere in this report, these values "
+            "are NOT expressed in repeat-run-noise-floor units (sec 18 F6): "
+            "restoration is already normalized by each corruption's own "
+            "damage, and that denominator is not stored in MASE units, so "
+            "the conversion would need a change to the L3 stage itself "
+            "rather than to this chart. Read a near-zero restoration as "
+            "\"not localized here\", not as \"below the noise floor\"."
             + (" This run has `per_window` disabled for at least one model, "
                "so its curve IS the whole-context patch described above and "
                "should be read only as a sanity check (expect it near 1.0 "
@@ -1647,9 +1778,18 @@ def _sec_attention(run_dir: Path, model_colors: dict, findings: list) -> str:
             top = abl.get("top_heads", [])
             if top:
                 e = top[0]
-                findings.append(f"Attention — {model}: most load-bearing head "
-                                f"{_short(e['layer'])}·h{e['head']} "
-                                f"(ΔMASE {e['delta_mase']:+.3f} when ablated).")
+                phrase, interpretable = _delta_phrase(run_dir, model, e["delta_mase"])
+                if interpretable is False:
+                    parts += (f'<p class="blurb">⚠ {model}\'s most load-bearing head '
+                              f'({_short(e["layer"])}·h{e["head"]}) ablates to ΔMASE '
+                              f'{phrase} — so no head in this model cleared its own '
+                              f'repeat-run noise floor, and no ranking finding is '
+                              f'emitted from this heatmap (ROADMAP.md sec 18 F6).</p>')
+                    _FLOOR_AUDIT["suppressed"].append(f"Attention head ranking ({model})")
+                else:
+                    findings.append(f"Attention — {model}: most load-bearing head "
+                                    f"{_short(e['layer'])}·h{e['head']} "
+                                    f"(ΔMASE {phrase} when ablated).")
         elif abl.get("status") not in ("error", "unsupported"):
             parts += ("<p class='blurb'>Head ablation unavailable: no hookable "
                       "attention output projection found for this "
@@ -1659,6 +1799,14 @@ def _sec_attention(run_dir: Path, model_colors: dict, findings: list) -> str:
             mb = go.Figure(go.Bar(x=[_short(b) for b in abl["mlp_blocks"]], y=md,
                                   marker_color=model_colors.get(model)))
             mb.update_layout(xaxis_title="block", yaxis_title="ΔMASE (MLP ablated)")
+            fv = _floor_for(run_dir, model)
+            floor_line = ""
+            if fv and not fv["deterministic"]:
+                mb.add_hline(y=fv["mase_abs_delta_mean"], line=dict(color="#888", dash="dot"),
+                             annotation_text="repeat-run floor", annotation_font_size=9)
+                floor_line = (" The dotted line is this model's own repeat-run MASE noise "
+                              "floor (sec 15 A13 / sec 18 F6): a bar below it is not "
+                              "distinguishable from calling the model twice.")
             parts += "<h4>MLP mean-ablation ΔMASE</h4>" + _frag(mb, 280)
             parts += _note(
                 "The same mean-ablation causal test as the head heatmap "
@@ -1668,7 +1816,7 @@ def _sec_attention(run_dir: Path, model_colors: dict, findings: list) -> str:
                 "forecast. Comparing this to the head-ablation heatmap "
                 "for the same block shows whether a layer's causal "
                 "contribution is mostly attention-driven, MLP-driven, "
-                "or both.",
+                "or both." + floor_line,
                 "Same caveats as head ablation: mean-ablation is mild, "
                 "and redundancy across blocks can hide a block's true "
                 "importance if another block backs it up.")
@@ -1914,8 +2062,6 @@ def _sec_sae(cfg: PipelineConfig, run_dir: Path, findings: list) -> str:
         return ""
     store = ActivationStore(run_dir / "activations.zarr")
     run_meta = load_meta(run_dir)
-    floor_path = run_dir / "l0" / "noise_floor.json"
-    noise_floor = load_json(floor_path) if floor_path.exists() else {}
     try:
         gt = load_ground_truth_table(cfg.data.path)
     except Exception as exc:
@@ -1929,15 +2075,11 @@ def _sec_sae(cfg: PipelineConfig, run_dir: Path, findings: list) -> str:
         d_mase_token = entry.get("forecast_preservation_token", {}).get("mase_delta")
         stats = f"reconstruction fidelity {fid:.3f} · dead-feature rate {dead:.3f}"
         if d_mase is not None:
-            stats += f" · forecast-preservation ΔMASE (window) {d_mase:+.3f}"
-            fv = noise_floor.get(model)
-            if fv and not fv["deterministic"]:
-                stats += (f' (repeat-run floor ±{fv["mase_abs_delta_mean"]:.3f} -- '
-                         f'sec 15 A13, see L0\'s "Repeat-run noise floor")')
-            elif fv and fv["deterministic"]:
-                stats += " (this model is deterministic; the delta is real signal)"
+            phrase, _ = _delta_phrase(run_dir, model, d_mase)
+            stats += f" · forecast-preservation ΔMASE (window) {phrase}"
         if d_mase_token is not None:
-            stats += (f" · ΔMASE (token, ROADMAP.md sec 16 E15) {d_mase_token:+.3f}")
+            phrase_tok, _ = _delta_phrase(run_dir, model, d_mase_token)
+            stats += f" · ΔMASE (token, ROADMAP.md sec 16 E15) {phrase_tok}"
         gt_align = entry.get("ground_truth_alignment", {})
         rho_mean = gt_align.get("mean_abs_rho_matched")
         null = gt_align.get("permutation_null", {})
@@ -2074,6 +2216,227 @@ _SAE_EXEMPLAR_NOTE = (
     "reading the dictionary's alignment as real structure rather than "
     "search inflation.",
 )
+
+
+_BUDGET_NOTE = (
+    "Measured cost of one forward pass over this run's own context length "
+    "and batch, per model (ROADMAP.md §18 F2). FLOPs are <i>measured</i> "
+    "with <code>torch.utils.flop_counter.FlopCounterMode</code> rather than "
+    "derived from a hand-written formula, so the number is architecture-"
+    "agnostic and works for a model nobody has written a cost model for. "
+    "Parameters are split into front-end / body / head by module position "
+    "relative to the captured blocks.",
+    "Latency is a median over repeated calls on this machine and is the "
+    "least portable row here — read FLOPs and parameters for anything "
+    "meant to transfer. <code>FLOPs/series</code> divides by the measured "
+    "batch, so it is comparable across models even when their batch sizes "
+    "differ. In the compute-normalized panel, <b>down and to the left is "
+    "better</b>: lower MASE for less compute.",
+    "FLOPs are not latency: a model with fewer FLOPs can be slower if its "
+    "shape suits the hardware worse, and a fused or custom kernel the "
+    "counter cannot see is undercounted (the <code>flops_sanity</code> row "
+    "states whether the measurement clears an analytic lower bound — a "
+    "<code>suspicious_low</code> verdict means this model's compute-"
+    "normalized numbers should not be trusted). The parameter role split "
+    "is a positional heuristic, not an architectural fact, and is reported "
+    "as such per model. Cost is measured on this run's context length and "
+    "horizon only; both scale the answer, attention super-linearly.",
+)
+
+
+def _fmt_flops(x) -> str:
+    """FLOPs at a unit that keeps two significant figures.
+
+    A fixed 'G' unit prints a small model as `0.00 GFLOPs`, which reads as
+    free rather than as small -- the exact silent-degradation this repo's
+    doctrine forbids in a rendered number.
+    """
+    if x is None:
+        return "unmeasured"
+    for unit, scale in (("T", 1e12), ("G", 1e9), ("M", 1e6), ("k", 1e3)):
+        if abs(x) >= scale:
+            return f"{x / scale:.2f} {unit}FLOPs"
+    return f"{x:.0f} FLOPs"
+
+
+def _pct(x) -> str:
+    """A fraction as a percentage, with "not measured" kept distinct from 0%."""
+    return "not measured" if x is None else f"{100 * float(x):.1f}%"
+
+
+def _sec_budget(run_dir: Path, model_colors: dict, findings: list) -> str:
+    """Measured cost per model, and L0 quality re-read per unit of compute.
+
+    The normalized panel exists because every other cross-model number in
+    this report is size-confounded (`CLAUDE.md` §12, ROADMAP.md §18 F2):
+    "which model is better" and "which model is better per FLOP" are
+    different questions and the second one was previously unaskable.
+    """
+    budget = load_json(run_dir / "budget" / "model_budget.json")
+    models = budget.get("models", {})
+    rows, warn = [], []
+    for name, rec in models.items():
+        p, f = rec["parameters"], rec["forward"]
+        pred = rec.get("predict") or {}
+        sanity = rec.get("flops_sanity", {})
+        rows.append({
+            "model": name,
+            "params (M)": p["total"] / 1e6,
+            "body (M)": p["body"] / 1e6,
+            "blocks": p["n_blocks"],
+            "FLOPs/series": _fmt_flops(f["flops_per_series"]),
+            "forward (ms)": f["timing"]["median_s"] * 1e3,
+            "predict (ms)": (None if "timing" not in pred
+                             else pred["timing"]["median_s"] * 1e3),
+            "peak VRAM (MB)": (None if f.get("peak_vram_bytes") is None
+                               else f["peak_vram_bytes"] / 1e6),
+            "FLOPs check": sanity.get("verdict", "n/a"),
+        })
+        if sanity.get("verdict") == "suspicious_low":
+            warn.append(f"<b>{name}</b>: measured FLOPs are only "
+                        f"{sanity['measured_over_analytic']:.2f}× the analytic "
+                        f"body-matmul lower bound — the counter is likely missing a "
+                        f"fused kernel, so this model's compute-normalized position "
+                        f"below is unreliable.")
+        elif sanity.get("verdict") == "not_comparable":
+            warn.append(f"<b>{name}</b>: FLOPs could not be measured or bounded, so "
+                        f"this model is absent from the compute-normalized panel.")
+        if p.get("interleaved"):
+            warn.append(f"<b>{name}</b>: {p['interleaved'] / 1e6:.2f}M parameters sit "
+                        f"between captured blocks and could not be assigned a "
+                        f"front-end/body/head role; the role split below is "
+                        f"incomplete for this model.")
+
+    inner = (f'<p class="blurb">Measured over batch {budget["batch"]}, context '
+             f'{budget["context_len"]}, horizon {budget["horizon"]}.</p>')
+    inner += _table(pd.DataFrame(rows))
+    for w in warn:
+        inner += f'<p class="blurb">⚠ {w}</p>'
+
+    cov_rows = []
+    for name, rec in models.items():
+        cov = rec.get("coverage") or {}
+        if not cov:
+            continue
+        cov_rows.append({
+            "model": name,
+            "blocks captured": f'{cov["captured_blocks"]}/{cov["regex_matched_blocks"]}',
+            "params captured": _pct(cov.get("param_fraction")),
+            "FLOPs of capture pass": _pct(cov.get("flops_fraction_of_capture_pass")),
+            "FLOPs of full forecast": _pct(cov.get("flops_fraction_of_forecast")),
+            "capture pass / forecast": _pct(cov.get("capture_pass_fraction_of_forecast")),
+            "observed (headline)": (_pct(cov.get("headline_flops_fraction"))
+                                    + (" or less" if cov.get("headline_is_upper_bound") else "")),
+            "depth claims qualified": bool(cov.get("depth_claims_qualified")),
+        })
+    if cov_rows:
+        inner += "<h4>How much of each model this run actually observed</h4>"
+        inner += _table(pd.DataFrame(cov_rows))
+        for name, rec in models.items():
+            for s in ((rec.get("coverage") or {}).get("uncaptured_surfaces") or []):
+                inner += f'<p class="blurb">⚠ <b>{name}</b>: {s}.</p>'
+        inner += _note(
+            "Computational coverage, as opposed to the section coverage in "
+            "report/coverage.json: what fraction of each model's own forward "
+            "work the capture surface saw (ROADMAP.md §18 F4). This is the "
+            "single most important caveat on any depth-located claim, and "
+            "until now it existed only as prose in CLAUDE.md §12.",
+            "Read the 'observed (headline)' column first. Blocks-captured "
+            "measures capture_layer_stride loss only and is 1/1 even for a "
+            "regex that covers just an encoder; params- and FLOPs-captured "
+            "use whole-model denominators and so do see that. Any model under "
+            "90% gets every depth-located finding qualified automatically in "
+            "the findings list. A headline marked 'or less' is an upper bound "
+            "taken from the capture-pass/forecast ratio, used when per-block "
+            "FLOPs did not resolve by name — it still gates correctly, since a "
+            "model failing the bar even optimistically has certainly failed it.",
+            "The FLOPs denominators come from the same measured counter as "
+            "the table above, so a 'suspicious_low' FLOPs check disarms these "
+            "fractions too. 'FLOPs of full forecast' is measured at this "
+            "run's decoding settings — for a sampled decoder, num_samples "
+            "moves the denominator, so it is a property of this run, not of "
+            "the architecture alone. A blank means not measurable here, "
+            "which is not the same as full coverage.")
+
+    cum = {n: r["forward"].get("blocks") for n, r in models.items()}
+    if any(c for c in cum.values()):
+        fig = go.Figure()
+        for name, blocks in cum.items():
+            if not blocks:
+                continue
+            names = list(blocks["cumulative"].keys())
+            total = models[name]["forward"]["flops"]
+            frac = [blocks["cumulative"][b] / total for b in names]
+            depth = relative_depths(len(names))
+            fig.add_scatter(x=depth, y=frac, mode="lines+markers", name=name,
+                            line=dict(color=model_colors.get(name, _COLORS["a"])))
+        fig.update_layout(xaxis_title="relative depth over this model's blocks",
+                          yaxis_title="fraction of forward FLOPs completed")
+        inner += "<h4>Compute completed by depth</h4>"
+        inner += ('<p class="blurb">How much of each model\'s forward computation has '
+                  'actually happened by a given point on the relative-depth axis every '
+                  'cross-model depth figure in this report uses. Two models at the same '
+                  'relative depth have generally <i>not</i> done the same share of their '
+                  'work — see <code>ROADMAP.md</code> §18 F1.</p>')
+        inner += _frag(fig, 320)
+
+    l0 = run_dir / "l0" / "summary.json"
+    if l0.exists():
+        overall = {r["model"]: r["mase"] for r in load_json(l0)["overall"]}
+        pts = [(n, models[n]["forward"]["flops_per_series"],
+                models[n]["parameters"]["total"], overall[n])
+               for n in models
+               if n in overall and models[n]["forward"]["flops_per_series"] is not None]
+        if pts:
+            fig = make_subplots(rows=1, cols=2, horizontal_spacing=0.12,
+                                subplot_titles=("MASE vs compute", "MASE vs parameters"))
+            for name, flops, params, mase in pts:
+                c = model_colors.get(name, _COLORS["a"])
+                fig.add_scatter(x=[flops], y=[mase], mode="markers+text", text=[name],
+                                textposition="top center", marker=dict(size=13, color=c),
+                                showlegend=False, row=1, col=1,
+                                hovertemplate=f"{name}<br>{_fmt_flops(flops)}/series"
+                                              f"<br>MASE {mase:.3f}<extra></extra>")
+                fig.add_scatter(x=[params], y=[mase], mode="markers+text", text=[name],
+                                textposition="top center", marker=dict(size=13, color=c),
+                                showlegend=False, row=1, col=2,
+                                hovertemplate=f"{name}<br>{params / 1e6:.2f}M params"
+                                              f"<br>MASE {mase:.3f}<extra></extra>")
+            # Log axes: model sizes worth comparing differ by orders of
+            # magnitude, and a linear axis renders the smaller one at zero.
+            fig.update_xaxes(title_text="FLOPs / series (forward, log)", type="log",
+                             row=1, col=1)
+            fig.update_xaxes(title_text="parameters (log)", type="log", row=1, col=2)
+            fig.update_yaxes(title_text="overall MASE (lower better)", row=1, col=1)
+            inner += "<h4>Quality per unit of compute</h4>"
+            inner += _frag(fig, 380)
+            best_q = min(pts, key=lambda t: t[3])
+            cheapest = min(pts, key=lambda t: t[1])
+            if best_q[0] == cheapest[0]:
+                findings.append(
+                    f"Cost — {best_q[0]} is both the more accurate model (MASE "
+                    f"{best_q[3]:.2f}) and the cheaper one ({_fmt_flops(best_q[1])}"
+                    f"/series): its L0 advantage is not bought with compute.")
+            else:
+                findings.append(
+                    f"Cost — {best_q[0]} wins on accuracy (MASE {best_q[3]:.2f} vs "
+                    f"{cheapest[3]:.2f}) while costing {best_q[1] / cheapest[1]:.1f}× "
+                    f"the compute of {cheapest[0]} ({_fmt_flops(best_q[1])} vs "
+                    f"{_fmt_flops(cheapest[1])} per series), so every cross-model "
+                    f"comparison in this report is size-confounded in its favor.")
+    else:
+        inner += ('<p class="blurb">L0 did not run, so quality cannot be normalized by '
+                  'cost in this run — the table above is the raw cost record only.</p>')
+
+    for name, rec in models.items():
+        f = rec["forward"]
+        findings.append(
+            f"Cost — {name}: {rec['parameters']['total'] / 1e6:.2f}M parameters, "
+            f"{_fmt_flops(f['flops_per_series'])}/series forward, "
+            f"{f['timing']['median_s'] * 1e3:.0f} ms median forward "
+            f"at batch {f['batch']}.")
+    inner += _note(*_BUDGET_NOTE)
+    return inner
 
 
 def _sec_layer_screen(run_dir: Path, model_colors: dict, findings: list) -> str:
