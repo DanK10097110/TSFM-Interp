@@ -66,31 +66,48 @@ class _MockNet(nn.Module):
     """Tiny patch-embedding transformer stack with a mean-pooled forecast head."""
 
     def __init__(self, patch: int, dim: int, n_layers: int, n_heads: int,
-                 horizon: int, seed: int):
+                 horizon: int, seed: int, n_decoder_layers: int = 0):
         super().__init__()
         torch.manual_seed(seed)
         self.patch = patch
         self.embed = nn.Linear(patch, dim)
         self.blocks = nn.ModuleList(_MockBlock(dim, n_heads) for _ in range(n_layers))
+        self.decoder_blocks = nn.ModuleList(
+            _MockBlock(dim, n_heads) for _ in range(n_decoder_layers))
         self.head = nn.Linear(dim, horizon)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Map [B, T] series to [B, horizon] forecasts through all blocks."""
+        """Map [B, T] series to [B, horizon] forecasts through all blocks.
+
+        Decoder blocks run after the captured ones and sit outside the capture
+        regex, so they are real computation this pipeline never observes --
+        the property that makes an encoder-decoder mock a faithful stand-in
+        for Chronos-T5's asymmetry rather than a relabelled decoder-only one.
+        A zero-length decoder leaves the module list empty and the forward
+        pass bit-identical to the pre-existing mocks.
+        """
         b, t = x.shape
         h = self.embed(x.view(b, t // self.patch, self.patch))
         for block in self.blocks:
+            h = block(h)
+        for block in self.decoder_blocks:
             h = block(h)
         return self.head(h.mean(dim=1))
 
 
 class _MockAdapterBase(ModelAdapter):
 
-    default_layer_regex = r"blocks\.\d+$"
+    # Anchored at the start: unanchored, `blocks\.\d+$` also matches
+    # `decoder_blocks.0`, which would quietly capture the very surface
+    # `MockEncDecAdapter` exists to leave uncaptured. Existing mocks match
+    # identically either way -- their blocks sit at the module root.
+    default_layer_regex = r"^blocks\.\d+$"
     patch = 32
     dim = 64
     n_layers = 6
     n_heads = 2
     seed = 7
+    n_decoder_layers = 0
 
     # Mocks have no real "pretrained" state -- `seed` alone determines their
     # fixed weights. `random_init` (ROADMAP.md sec 16 E9) is emulated as a
@@ -103,7 +120,8 @@ class _MockAdapterBase(ModelAdapter):
     def load(self) -> None:
         seed = self.seed + self._RANDOM_INIT_SEED_OFFSET if self.cfg.random_init else self.seed
         self._net = _MockNet(self.patch, self.dim, self.n_layers, self.n_heads,
-                             self.data_cfg.horizon, seed).to(self.device)
+                             self.data_cfg.horizon, seed,
+                             self.n_decoder_layers).to(self.device)
 
     @property
     def module(self) -> nn.Module:
@@ -111,6 +129,10 @@ class _MockAdapterBase(ModelAdapter):
 
     def _release(self) -> None:
         self._net = None
+
+    def uncaptured_surfaces(self) -> dict:
+        """Decoder blocks this mock runs and the capture regex never matches."""
+        return {"decoder": self.n_decoder_layers} if self.n_decoder_layers else {}
 
     def prepare(self, contexts: np.ndarray) -> Any:
         return torch.from_numpy(np.ascontiguousarray(contexts)).float().to(self.device)
@@ -172,3 +194,21 @@ class MockWaveAdapter(_MockAdapterBase):
     """Third mock shape (8-step patches, 5 blocks, d=40): exercises the pipeline
     with >2 configured models without adding a real third dependency."""
     patch, dim, n_layers, n_heads, seed = 8, 40, 5, 4, 41
+
+
+class MockEncDecAdapter(_MockAdapterBase):
+    """Encoder-decoder mock: 4 captured blocks over 4 genuinely uncaptured ones.
+
+    The one mock whose captured surface is half its stack, which is what makes
+    Chronos-T5's central asymmetry (`CLAUDE.md` sec 12 items 1-2) reproducible
+    with no checkpoint. Its decoder blocks really run inside `forward` and
+    really fall outside `blocks\\.\\d+$`, so `depth_axis`'s `block` coordinates
+    top out near 0.43 here and the top half of a cross-model depth figure is
+    honestly empty -- rather than a declaration of blocks that do not exist,
+    which would make `total_stack_size` report a fiction.
+
+    Added rather than retrofitted onto `MockStepAdapter` so every already-
+    recorded mock number stays bit-for-bit reproducible (`CLAUDE.md` sec 2.1).
+    """
+    patch, dim, n_layers, n_heads, seed = 1, 48, 4, 3, 23
+    n_decoder_layers = 4

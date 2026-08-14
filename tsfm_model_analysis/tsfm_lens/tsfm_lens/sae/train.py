@@ -21,7 +21,7 @@ from ..extraction.store import ActivationStore
 from ..models import ModelHub
 from ..utils import batch_slices, load_json, log, save_json
 from .eval import (dead_feature_rate, feature_ablation_effects, feature_steering_effects,
-                   forecast_preservation, reconstruction_fidelity)
+                   forecast_preservation, reconstruction_fidelity, seed_spread)
 from .ground_truth import ground_truth_alignment, load_ground_truth_table
 from .models import TopKSAE, auxiliary_dead_loss
 from .real_data import extract_real_activations, sample_real_context_windows
@@ -200,16 +200,69 @@ def sanitize(name: str) -> str:
     return name.replace("/", "_").replace(".", "_")
 
 
+def _train_config(cfg: PipelineConfig, seed: int) -> SAETrainConfig:
+    """This run's SAE hyperparameters at one training seed."""
+    return SAETrainConfig(dict_size_mult=cfg.sae.dict_size_mult, k=cfg.sae.k,
+                          lr=cfg.sae.lr, epochs=cfg.sae.epochs,
+                          batch_size=cfg.sae.batch_size, seed=seed,
+                          resample_dead_every_epochs=cfg.sae.resample_dead_every_epochs,
+                          aux_k=cfg.sae.aux_k, aux_coef=cfg.sae.aux_coef,
+                          aux_dead_steps=cfg.sae.aux_dead_steps)
+
+
+SEED_FLOOR_METRICS = ("reconstruction_fidelity", "dead_feature_rate",
+                      "mase_delta_window", "mase_delta_token",
+                      "mase_clean_window", "mase_clean_token")
+
+
+def _metric_row(seed: int, fidelity: float, dead_rate: float, fp: dict, fp_token: dict) -> dict:
+    """One seed's contribution to the noise floor, as a flat row.
+
+    The primary seed and every replicate go through this same function so the
+    two paths cannot drift into recording different key sets -- `seed_spread`
+    reads `SEED_FLOOR_METRICS` off whatever this returns. A failed
+    forecast-preservation check contributes `None`, which `seed_spread` drops
+    while still reporting how many seeds actually counted.
+    """
+    return {"seed": seed, "reconstruction_fidelity": fidelity, "dead_feature_rate": dead_rate,
+            "mase_delta_window": fp.get("mase_delta"), "mase_clean_window": fp.get("mase_clean"),
+            "mase_delta_token": fp_token.get("mase_delta"),
+            "mase_clean_token": fp_token.get("mase_clean")}
+
+
+def _repeat_metrics(cfg: PipelineConfig, adapter, layer: str, sae, store: ActivationStore,
+                    data: BenchmarkData, device: torch.device,
+                    bench_activations: np.ndarray, key: str, seed: int) -> dict:
+    """One replicate seed's numbers, computed the same way the primary seed's are.
+
+    Deliberately a subset of what the primary seed gets: ground-truth
+    alignment, feature ablation and steering are not repeated, because the
+    floor being sized is the one attached to this stage's *headline* numbers,
+    and repeating the rest would multiply the stage's cost for no rendered
+    output. `mase_clean` is carried along as a control -- the store, rows and
+    checkpoint are all fixed across seeds, so it must not move, and a
+    replicate where it does means something other than the SAE seed varied.
+    """
+    per_granularity = {}
+    for granularity in ("window", "token"):
+        try:
+            per_granularity[granularity] = forecast_preservation(
+                cfg, adapter, layer, sae, store, data, device, granularity=granularity)
+        except Exception as e:
+            log.warning(f"sae: {granularity} forecast-preservation failed for {key} "
+                        f"seed {seed}: {e}")
+            per_granularity[granularity] = {"error": str(e)}
+    return _metric_row(seed,
+                       reconstruction_fidelity(sae, bench_activations, device),
+                       dead_feature_rate(sae, bench_activations, device),
+                       per_granularity["window"], per_granularity["token"])
+
+
 def run_sae(cfg: PipelineConfig, hub: ModelHub, store: ActivationStore,
            data: BenchmarkData, device: torch.device) -> None:
     """Train + evaluate one baseline TopK SAE per configured (model, layer) target."""
     out_dir = cfg.run_dir() / "sae"
-    train_cfg = SAETrainConfig(dict_size_mult=cfg.sae.dict_size_mult, k=cfg.sae.k,
-                               lr=cfg.sae.lr, epochs=cfg.sae.epochs,
-                               batch_size=cfg.sae.batch_size, seed=cfg.run.seed,
-                               resample_dead_every_epochs=cfg.sae.resample_dead_every_epochs,
-                               aux_k=cfg.sae.aux_k, aux_coef=cfg.sae.aux_coef,
-                               aux_dead_steps=cfg.sae.aux_dead_steps)
+    train_cfg = _train_config(cfg, cfg.run.seed)
     targets = cfg.sae.targets or _default_targets(cfg, store)
     results = {}
     real_contexts = _sample_real_contexts(cfg) if cfg.sae.real_data_enabled else None
@@ -355,6 +408,29 @@ def run_sae(cfg: PipelineConfig, hub: ModelHub, store: ActivationStore,
                 log.warning(f"sae: feature-steering failed for {key}: {e}")
                 fs = {"error": str(e)}
 
+        seed_floor = None
+        if cfg.sae.n_seeds > 1:
+            # ROADMAP.md sec 13's SAE repeat-run-variance item: the primary
+            # seed's row is reused rather than retrained, so `n_seeds: 5`
+            # costs four extra trainings, not five.
+            per_seed = [_metric_row(train_cfg.seed, fidelity, dead_rate, fp, fp_token)]
+            for offset in range(1, cfg.sae.n_seeds):
+                seed = train_cfg.seed + offset
+                log.info(f"sae: noise-floor replicate {offset}/{cfg.sae.n_seeds - 1} for {key} "
+                         f"(seed {seed})")
+                replicate, _ = train_sae(train_activations, _train_config(cfg, seed), device)
+                per_seed.append(_repeat_metrics(cfg, adapter, layer, replicate, store, data,
+                                                device, bench_activations, key, seed))
+            seed_floor = {"n_seeds": cfg.sae.n_seeds, "per_seed": per_seed,
+                          "spread": {m: seed_spread([r[m] for r in per_seed])
+                                     for m in SEED_FLOOR_METRICS}}
+            spread = seed_floor["spread"]
+            log.info(f"sae: {key} seed floor over {cfg.sae.n_seeds} seeds -- "
+                     f"dMASE(window) {spread['mase_delta_window'].get('mean', float('nan')):+.4f} "
+                     f"+/- {spread['mase_delta_window'].get('sd', float('nan')):.4f}, "
+                     f"dMASE(token) {spread['mase_delta_token'].get('mean', float('nan')):+.4f} "
+                     f"+/- {spread['mase_delta_token'].get('sd', float('nan')):.4f}")
+
         results[key] = {
             "checkpoint": str(ckpt_path), "d_in": sae.d_in, "dict_size": sae.dict_size,
             "k": sae.k, "n_train_rows": int(train_activations.shape[0]),
@@ -365,6 +441,7 @@ def run_sae(cfg: PipelineConfig, hub: ModelHub, store: ActivationStore,
             "ground_truth_alignment": gt,
             "feature_ablation": fa,
             "feature_steering": fs,
+            "seed_floor": seed_floor,
         }
     save_json(out_dir / "meta.json", results)
     log.info(f"sae: complete, {len(results)} target(s)")

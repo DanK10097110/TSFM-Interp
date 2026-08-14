@@ -181,11 +181,15 @@ def test_no_shared_dictionary_size_satisfies_all_three_artifacts():
     assert ch704 < (1.0 - m.MAX_DEAD_RATE) * 704           # ...where Chronos now fails
 
 
-def test_per_model_sizing_would_close_the_window_but_is_not_in_force():
-    """Finding (14), pinned so the proposal stays legible: every artifact has
-    a passing size individually. This test asserts the *evidence* for the
-    recommended change, not that the change was made -- Stage 0's criteria
-    still require one shared size, which the test above shows fails."""
+def test_per_model_sizing_closes_the_window_the_shared_size_left_empty():
+    """Finding (14), which the 2026-08-13 DECISION acted on: every artifact has
+    a passing size individually, so the emptiness above is a property of the
+    shared *constraint*, not of any artifact. This test asserted the evidence
+    while the change was only a proposal; the change is now in force, and what
+    it enables is pinned next to the mechanism in
+    `test_stage0_baseline_sizing.py`. It stays here as the arithmetic the
+    decision rests on, deliberately adjacent to the unsatisfiability proof it
+    answers -- the pair is only readable together."""
     m = _harness()
     floors = {"cc": m.min_alive_for((EFF_TIMESFM, EFF_CHRONOS)),
               "tf": m.min_alive_for(EFF_TIMESFM),

@@ -153,13 +153,22 @@ def encode_series_level(sae, store: ActivationStore, model: str, layer: str,
 
 
 def best_ground_truth_matches(features: np.ndarray, gt: pd.DataFrame, series_ids: np.ndarray,
-                              gt_cols: list, min_valid: int = _MIN_VALID) -> dict:
+                              gt_cols: list, min_valid: int = _MIN_VALID,
+                              top_features: int = 50) -> dict:
     """Pure per-feature best-match search: no I/O, so this is the part unit tests exercise directly.
 
     `features` is `[N, F]` (one row per series, in the same order as
     `series_ids`); `gt` is indexed by sample_id and reindexed onto
     `series_ids` here so a series with no ground-truth row still gets an
     aligned (all-NaN) row rather than silently shifting every later row.
+
+    `top_features` truncates the returned `features` *list* only -- the
+    headline `n_features_matched`/`mean_abs_rho_matched` are always over the
+    full population. That distinction matters to any consumer that reads the
+    list as a candidate pool rather than as a display top-N (V0's cross-model
+    matcher does exactly that, `sae/matching.py`), so `top_features <= 0`
+    returns every feature. The default is the value every existing caller was
+    hardcoded to, so their artifacts are unchanged.
     """
     joined = gt.reindex(series_ids)
     n_with_gt = int(joined[gt_cols].notna().any(axis=1).sum())
@@ -167,7 +176,8 @@ def best_ground_truth_matches(features: np.ndarray, gt: pd.DataFrame, series_ids
         log.info(f"sae ground-truth alignment: only {n_with_gt} series with any ground "
                  f"truth (real-derived tiers carry none); skipping")
         return {"n_series_with_ground_truth": n_with_gt, "n_features": features.shape[1],
-               "n_features_matched": 0, "mean_abs_rho_matched": 0.0, "features": []}
+               "n_features_matched": 0, "mean_abs_rho_matched": 0.0,
+               "abs_rho_matched": [], "features": []}
 
     results = []
     for f_idx in range(features.shape[1]):
@@ -190,12 +200,14 @@ def best_ground_truth_matches(features: np.ndarray, gt: pd.DataFrame, series_ids
         results.append(best or {"feature": f_idx, "best_field": None, "rho": 0.0, "n": 0})
 
     matched = [r for r in results if r["best_field"] is not None]
+    ranked = sorted(results, key=lambda r: -abs(r["rho"]))
     return {
         "n_series_with_ground_truth": n_with_gt,
         "n_features": len(results),
         "n_features_matched": len(matched),
         "mean_abs_rho_matched": float(np.mean([abs(r["rho"]) for r in matched])) if matched else 0.0,
-        "features": sorted(results, key=lambda r: -abs(r["rho"]))[:50],
+        "abs_rho_matched": [float(abs(r["rho"])) for r in matched],
+        "features": ranked if top_features <= 0 else ranked[:top_features],
     }
 
 

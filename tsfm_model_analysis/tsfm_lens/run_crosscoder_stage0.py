@@ -8,13 +8,37 @@ that dictionary means anything. Stage 0 exists to fix that before any
 variant is built, and this script is its sweep harness.
 
 What it does: for each row of a grid, train one joint `CrosscoderSAE` and
-the two matched per-model `TopKSAE` baselines on the *same* rows at the
-*same* budget, and score all three against Stage 0's exit criteria
-(`dead_feature_rate <= 0.30` AND `n_alive >= 500` AND `per_source_fidelity
->= 0.70` for both sources). The baselines are not decoration: Stage 0's
-gate explicitly applies to them too, because the feasibility run showed the
-per-model baseline hitting the same wall, which is what rules out "the
-crosscoder architecture is the problem" as an explanation.
+the two per-model `TopKSAE` baselines on the *same* rows at the *same*
+budget, and score all three against Stage 0's exit criteria
+(`dead_feature_rate <= 0.30` AND `n_alive >= min_alive_for(...)` AND
+`per_source_fidelity >= 0.70` for both sources). The baselines are not
+decoration: Stage 0's gate explicitly applies to them too, which is what
+rules out "the crosscoder architecture is the problem" as an explanation.
+
+Correction (2026-08-13): the sentence above used to justify that with "the
+feasibility run showed the per-model baseline hitting the same wall." It
+does not. Measured across the recorded sweeps (finding (16)), the Chronos
+baseline is 3.2-5.4x *less* dead than the crosscoder at every shared
+dictionary size, and the two move in opposite directions as the dictionary
+grows. The baselines still belong here -- an attribution control does not
+require the controlled artifact to fail -- but the shared-wall premise was
+inherited rather than measured, and it is what made the shared dictionary
+size look like a fairness device long after it had become a constraint.
+See `CLAUDE.md` §11.29.
+
+**What "matched" means, after ROADMAP.md §6.2.1's second DECISION
+(2026-08-13).** It means matched *rows, k, epochs and AuxK settings* -- the
+training budget. It no longer means a matched *dictionary size*, which
+`baseline_dict_sizes` now lets a row set per model. The reason is measured,
+not stylistic: a shared dictionary size is a shared bar on two artifacts
+whose alive-atom counts behave completely differently (TimesFM's tracks the
+dictionary; Chronos-T5-Base's saturates near 576), so at every size one of
+them fails on the alive floor while the other fails on the dead rate, and
+finding (13) shows the passing window between those two bars is empty. Left
+unset, `baseline_dict_sizes` reproduces the old shared-size behaviour
+exactly -- which is retained deliberately, because those rows are the
+*control* that answers whether joint training costs anything at identical
+budget, a different question from the gate's.
 
 Grids map onto the hypotheses in §6.2.1's table, and are named for them:
 
@@ -49,6 +73,14 @@ Grids map onto the hypotheses in §6.2.1's table, and are named for them:
          (0.55 -> 0.27) while the absolute alive count falls with it
          (576 -> 467) -- so they may cross without ever both holding. This
          grid measures the crossing region instead of extrapolating it.
+    gate the sizes that close it, under per-model dictionary sizing. `pinch`
+         measured that no *shared* size can satisfy all three artifacts, and
+         that each one individually has a size where it does. This grid
+         takes the crosscoder above 704 (where 4 of 5 seeds passed and one
+         collapsed -- finding (15)) while each baseline trains at its own
+         passing size via `--baseline-dict-sizes`. Run it at several seeds:
+         the open question it exists to answer is whether the crosscoder has
+         a size that passes at *every* seed, not merely at most of them.
 
 H3 (dead-atom resampling) is deliberately absent: it was refuted by
 inspection rather than experiment -- `run_crosscoder_feasibility.py:79,94`
@@ -79,10 +111,11 @@ from tsfm_lens.sae.crosscoder import (
     per_source_fidelity,
     train_crosscoder,
 )
+from tsfm_lens.sae.crosscoder_eval import l0_actual
 from tsfm_lens.sae.eval import dead_feature_rate as baseline_dead_rate
 from tsfm_lens.sae.eval import reconstruction_fidelity as baseline_fidelity
 from tsfm_lens.sae.train import SAETrainConfig, load_all_windows, train_sae
-from tsfm_lens.utils import batch_slices, load_json, log, resolve_device, save_json, setup_logging
+from tsfm_lens.utils import load_json, log, resolve_device, save_json, setup_logging
 
 MAX_DEAD_RATE = 0.30
 MIN_FIDELITY = 0.70
@@ -135,9 +168,24 @@ class Row:
     aux_dead_steps: int = 20
     resample_every: int = 0  # 0 = derive as epochs // 5, matching the feasibility run
     k_is_swept: bool = False  # True = this row owns its `k`; `--k` must not override it
+    # Per-model baseline dictionary size, in model order. Empty = every
+    # baseline uses the crosscoder's own `dict_size` (the matched-size
+    # control). See the module docstring's DECISION note.
+    baseline_dict_sizes: tuple = ()
+
+    def __post_init__(self) -> None:
+        self.baseline_dict_sizes = tuple(int(d) for d in self.baseline_dict_sizes)
+
+    def baseline_dict_size(self, i: int, fallback: int) -> int:
+        """The dictionary size baseline `i` trains at, defaulting to the
+        crosscoder's so an unset row behaves exactly as before."""
+        if i < len(self.baseline_dict_sizes):
+            return self.baseline_dict_sizes[i]
+        return fallback
 
 
-def build_grid(name: str, eff_dims: tuple, base_dict: int, epochs: int) -> list:
+def build_grid(name: str, eff_dims: tuple, base_dict: int, epochs: int,
+               baseline_dicts: tuple = ()) -> list:
     """Grid rows for one hypothesis. `eff_dims` is the measured effective
     dimensionality of each source's layer -- H2's whole point is that the
     dictionary should be sized against that, not against hidden width."""
@@ -168,8 +216,14 @@ def build_grid(name: str, eff_dims: tuple, base_dict: int, epochs: int) -> list:
         rows += [Row(f"pinch:dict={d}", dict_size=d, epochs=epochs, k=48,
                      aux_k=64, aux_coef=0.03125, k_is_swept=True)
                  for d in (512, 576, 704)]
+    if name == "gate":
+        rows += [Row(f"gate:dict={d}", dict_size=d, epochs=epochs, k=48,
+                     aux_k=64, aux_coef=0.03125, k_is_swept=True,
+                     baseline_dict_sizes=baseline_dicts)
+                 for d in (896, 1024)]
     if not rows:
-        raise ValueError(f"unknown grid {name!r}; expected one of h1, h2, h4, k, h2xh4, pinch, full")
+        raise ValueError(f"unknown grid {name!r}; expected one of "
+                         f"h1, h2, h4, k, h2xh4, pinch, gate, full")
     return rows
 
 
@@ -189,20 +243,32 @@ def row_from_params(params: dict, label: str = "winner") -> Row:
     return Row(label=label, k_is_swept=True, **train)
 
 
+def train_kwargs(row: Row, seed: int) -> dict:
+    """The training settings a row implies, shared by the crosscoder and by
+    both per-model baselines so `matched budget` is enforced by construction
+    rather than by two call sites agreeing.
+
+    Stage 1's ladder trains its rungs from the same rows (`crosscoder_eval.py`,
+    `run_crosscoder_ladder.py`), and a ladder whose rungs were trained at
+    settings that had drifted from the gate's would compare a scorecard to
+    itself under a different budget without saying so.
+    """
+    return dict(dict_size=row.dict_size, dict_size_mult=row.dict_size_mult, k=row.k,
+                epochs=row.epochs, seed=seed,
+                resample_dead_every_epochs=row.resample_every or max(1, row.epochs // 5),
+                aux_k=row.aux_k, aux_coef=row.aux_coef, aux_dead_steps=row.aux_dead_steps)
+
+
 @torch.no_grad()
 def mean_l0(sae, sources: list, device: torch.device, batch: int = 4096) -> float:
-    """Mean number of nonzero features per row -- a sanity check on `k` that
-    Stage 1's scorecard also asks for. For plain TopK this should equal `k`
-    exactly; anything lower means atoms are being zeroed by the ReLU before
-    the top-k selection, which is itself a dead-dictionary symptom."""
-    tensors = [torch.from_numpy(s) for s in sources]
-    n = tensors[0].shape[0]
-    total = 0.0
-    for s, e in batch_slices(n, batch):
-        chunk = [t[s:e].to(device) for t in tensors]
-        feats = sae.encode(chunk if len(chunk) > 1 else chunk[0])
-        total += float((feats.abs() > 1e-8).sum())
-    return total / n
+    """Mean number of nonzero features per row -- a sanity check on `k`.
+
+    Stage 1's scorecard asks for the same number, so the implementation now
+    lives in `sae/crosscoder_eval.py::l0_actual` and this delegates to it.
+    Two copies of the arithmetic would be two places for a recorded Stage 0
+    number and a Stage 1 number to drift apart while both look right.
+    """
+    return l0_actual(sae, sources, device, batch)
 
 
 def verdict(dead: float, n_alive: int, fidelities: list, dict_size: int,
@@ -229,9 +295,17 @@ def verdict(dead: float, n_alive: int, fidelities: list, dict_size: int,
 
 def run_row(row: Row, xa: np.ndarray, xb: np.ndarray, names: tuple,
             device: torch.device, seed: int, with_baselines: bool,
-            eff_dims: tuple) -> dict:
-    """Train the crosscoder and (optionally) the two matched baselines on one
-    grid row, and score every one of them against the same exit criteria."""
+            eff_dims: tuple, baseline_cache: dict = None) -> dict:
+    """Train the crosscoder and (optionally) the two per-model baselines on one
+    grid row, and score every one of them against the same exit criteria.
+
+    `baseline_cache` memoizes baseline results across rows of the same sweep.
+    It exists because per-model dictionary sizing decouples a baseline from the
+    crosscoder's size: two rows that differ only in `dict_size` train the
+    *identical* baseline (same rows, k, epochs, AuxK settings, seed and now the
+    same baseline dictionary), so recomputing it is pure waste. Pass `None` to
+    disable, which is also the behaviour under matched sizing, where every row
+    trains a genuinely different baseline."""
     n_avail = xa.shape[0]
     n_rows = row.n_rows or n_avail
     if n_rows > n_avail:
@@ -243,13 +317,12 @@ def run_row(row: Row, xa: np.ndarray, xb: np.ndarray, names: tuple,
         sa, sb = np.ascontiguousarray(xa[idx]), np.ascontiguousarray(xb[idx])
     else:
         sa, sb = xa, xb
-    resample = row.resample_every or max(1, row.epochs // 5)
-    shared = dict(dict_size=row.dict_size, dict_size_mult=row.dict_size_mult, k=row.k,
-                  epochs=row.epochs, seed=seed, resample_dead_every_epochs=resample,
-                  aux_k=row.aux_k, aux_coef=row.aux_coef, aux_dead_steps=row.aux_dead_steps)
+    shared = train_kwargs(row, seed)
+    resample = shared["resample_dead_every_epochs"]
 
     log.info(f"stage0 [{row.label}]: {n_rows} rows, dict_size={row.dict_size or 'auto'}, "
-             f"k={row.k}, epochs={row.epochs}, aux_k={row.aux_k}, resample_every={resample}")
+             f"k={row.k}, epochs={row.epochs}, aux_k={row.aux_k}, resample_every={resample}, "
+             f"baseline_dict={row.baseline_dict_sizes or 'matched'}")
     cross, hist = train_crosscoder([sa, sb], CrosscoderTrainConfig(**shared), device)
     fid = per_source_fidelity(cross, [sa, sb], device)
     alive = alive_mask(cross, [sa, sb], device)
@@ -271,18 +344,30 @@ def run_row(row: Row, xa: np.ndarray, xb: np.ndarray, names: tuple,
     }
     if with_baselines:
         result["baseline"] = {}
-        for name, x, eff in zip(names, (sa, sb), eff_dims):
-            sae, bhist = train_sae(x, SAETrainConfig(**shared), device)
+        result["baseline_sizing"] = "own" if row.baseline_dict_sizes else "matched"
+        for i, (name, x, eff) in enumerate(zip(names, (sa, sb), eff_dims)):
+            b_dict = row.baseline_dict_size(i, row.dict_size)
+            key = (name, int(n_rows), b_dict, row.dict_size_mult, row.k, row.epochs,
+                   resample, row.aux_k, row.aux_coef, row.aux_dead_steps, seed)
+            if baseline_cache is not None and key in baseline_cache:
+                log.info(f"stage0 [{row.label}]: reusing baseline {name} dict={b_dict} "
+                         f"(identical training configuration)")
+                result["baseline"][name] = baseline_cache[key]
+                continue
+            sae, bhist = train_sae(x, SAETrainConfig(**{**shared, "dict_size": b_dict}), device)
             b_fid = baseline_fidelity(sae, x, device)
             b_dead = baseline_dead_rate(sae, x, device)
             b_alive = int(round((1.0 - b_dead) * sae.dict_size))
-            result["baseline"][name] = {
+            entry = {
                 "fidelity": b_fid, "dead_feature_rate": b_dead, "n_alive": b_alive,
                 "dict_size": int(sae.dict_size), "l0_actual": mean_l0(sae, [x], device),
                 "final_mse": bhist[-1],
                 "verdict": verdict(b_dead, b_alive, [b_fid], sae.dict_size,
                                    min_alive_for(eff)),
             }
+            result["baseline"][name] = entry
+            if baseline_cache is not None:
+                baseline_cache[key] = entry
     return result
 
 
@@ -311,7 +396,8 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="ROADMAP.md §6.2.1 Stage 0 sweep")
     parser.add_argument("--run", default=None, help="an already-extracted run directory "
                                                     "(required unless --params supplies one)")
-    parser.add_argument("--grid", default="full", choices=["h1", "h2", "h4", "k", "h2xh4", "pinch", "full"])
+    parser.add_argument("--grid", default="full",
+                        choices=["h1", "h2", "h4", "k", "h2xh4", "pinch", "gate", "full"])
     parser.add_argument("--params", default=None,
                         help="a committed params YAML (configs/crosscoder_stage0_winner.yaml) "
                              "to run as a single row instead of a grid; supplies run/layers/"
@@ -327,6 +413,12 @@ def main() -> None:
                         help="measured effective dimensionality per source, for H2's "
                              "dictionary sizing; read from internals/profile.json")
     parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--baseline-dict-sizes", default=None,
+                        help="per-model baseline dictionary size, comma-separated in "
+                             "model order (e.g. 576,512). Unset = each baseline uses the "
+                             "crosscoder's own size, which is the matched-size control "
+                             "rather than the gate (ROADMAP.md §6.2.1's 2026-08-13 "
+                             "DECISION). Consumed by the `gate` grid.")
     parser.add_argument("--no-baselines", action="store_true",
                         help="skip the matched per-model TopKSAE baselines (they are "
                              "part of Stage 0's exit criteria; skip only for a quick probe)")
@@ -370,19 +462,26 @@ def main() -> None:
     log.info(f"stage0: loaded {xa.shape} and {xb.shape}")
 
     eff_dims = tuple(float(v) for v in args.eff_dims.split(","))
+    if args.baseline_dict_sizes is None and params.get("baseline_dict_sizes"):
+        args.baseline_dict_sizes = ",".join(str(v) for v in params["baseline_dict_sizes"])
+    baseline_dicts = tuple(int(v) for v in args.baseline_dict_sizes.split(",")) \
+        if args.baseline_dict_sizes else ()
     if params:
         grid = [row_from_params(params, label=Path(args.params).stem)]
     else:
-        grid = build_grid(args.grid, eff_dims, args.dict_size, args.epochs)
+        grid = build_grid(args.grid, eff_dims, args.dict_size, args.epochs, baseline_dicts)
     for row in grid:
         if not row.k_is_swept:
             row.k = args.k
+        if baseline_dicts and not row.baseline_dict_sizes:
+            row.baseline_dict_sizes = baseline_dicts
     names = (model_a.name, model_b.name)
 
     results = []
+    baseline_cache: dict = {}
     for row in grid:
         results.append(run_row(row, xa, xb, names, device, args.seed,
-                               not args.no_baselines, eff_dims))
+                               not args.no_baselines, eff_dims, baseline_cache))
 
     passing = [r["label"] for r in results if r["crosscoder"]["verdict"]["passes"]]
     payload = {
@@ -396,6 +495,8 @@ def main() -> None:
             "min_alive_per_model": {n: min_alive_for(e) for n, e in zip(names, eff_dims)},
             "alive_per_eff_dim": ALIVE_PER_EFF_DIM, "min_alive_floor": MIN_ALIVE_FLOOR,
             "min_alive_legacy": MIN_ALIVE_LEGACY,
+            "baseline_dict_sizes": {n: d for n, d in zip(names, baseline_dicts)},
+            "baseline_sizing": "own" if baseline_dicts else "matched",
         },
         "rows": results,
         "crosscoder_rows_passing": passing,
@@ -414,9 +515,15 @@ def main() -> None:
     if not args.no_baselines:
         for r in results:
             for name, b in r.get("baseline", {}).items():
-                print(f"  baseline {r['label']:<32} {name:<18} fid={b['fidelity']:.4f} "
-                      f"dead={b['dead_feature_rate']:.4f} alive={b['n_alive']} "
-                      f"pass={b['verdict']['passes']}")
+                print(f"  baseline {r['label']:<32} {name:<18} dict={b['dict_size']:<5} "
+                      f"fid={b['fidelity']:.4f} dead={b['dead_feature_rate']:.4f} "
+                      f"alive={b['n_alive']} pass={b['verdict']['passes']}")
+        sizing = {r.get("baseline_sizing") for r in results}
+        if sizing == {"matched"}:
+            print("\n  Baselines trained at the crosscoder's own dictionary size: this is "
+                  "\n  the matched-size CONTROL, not Stage 0's gate. Pass "
+                  "--baseline-dict-sizes\n  to size each baseline independently "
+                  "(ROADMAP.md §6.2.1, 2026-08-13).")
 
 
 if __name__ == "__main__":

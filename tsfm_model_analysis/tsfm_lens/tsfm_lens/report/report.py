@@ -2045,6 +2045,26 @@ def _sec_clusters(run_dir: Path, model_colors: dict, findings: list) -> str:
     return inner
 
 
+def _seed_floor(entry: dict, metric: str) -> tuple:
+    """One SAE metric's seed-to-seed spread as `(suffix, resolvable)`.
+
+    `resolvable` is tri-state on purpose, the same way `_delta_phrase`'s
+    `interpretable` is: `None` when this run trained a single seed and no
+    floor exists, `False` when the mean is smaller than the seed-to-seed sd
+    (so the sign of a single-seed number is not established by it), `True`
+    otherwise. A caller must never read `None` as `False` -- an unmeasured
+    floor is not a failed one.
+    """
+    floor = entry.get("seed_floor")
+    if not floor:
+        return "", None
+    spread = floor.get("spread", {}).get(metric, {})
+    if not spread.get("n", 0) or spread["n"] < 2:
+        return "", None
+    suffix = f' ± {spread["sd"]:.3f} over {spread["n"]} seeds'
+    return suffix, abs(spread["mean"]) > spread["sd"]
+
+
 def _sec_sae(cfg: PipelineConfig, run_dir: Path, findings: list) -> str:
     """Per-target SAE summary stats plus a ground-truth-matched feature exemplar panel.
 
@@ -2074,12 +2094,28 @@ def _sec_sae(cfg: PipelineConfig, run_dir: Path, findings: list) -> str:
         d_mase = entry.get("forecast_preservation", {}).get("mase_delta")
         d_mase_token = entry.get("forecast_preservation_token", {}).get("mase_delta")
         stats = f"reconstruction fidelity {fid:.3f} · dead-feature rate {dead:.3f}"
+        unresolved = []
         if d_mase is not None:
             phrase, _ = _delta_phrase(run_dir, model, d_mase)
-            stats += f" · forecast-preservation ΔMASE (window) {phrase}"
+            suffix, resolvable = _seed_floor(entry, "mase_delta_window")
+            stats += f" · forecast-preservation ΔMASE (window) {phrase}{suffix}"
+            if resolvable is False:
+                unresolved.append("window")
         if d_mase_token is not None:
             phrase_tok, _ = _delta_phrase(run_dir, model, d_mase_token)
-            stats += f" · ΔMASE (token, ROADMAP.md sec 16 E15) {phrase_tok}"
+            suffix_tok, resolvable_tok = _seed_floor(entry, "mase_delta_token")
+            stats += f" · ΔMASE (token, ROADMAP.md sec 16 E15) {phrase_tok}{suffix_tok}"
+            if resolvable_tok is False:
+                unresolved.append("token")
+        if unresolved:
+            # ROADMAP.md sec 13's SAE repeat-run-variance item: a delta this
+            # run cannot separate from its own retraining noise is stated as
+            # such here rather than left to a reader to notice from the two
+            # numbers, and no finding is emitted for it.
+            seed_n = entry["seed_floor"]["n_seeds"]
+            stats += (f' · ⚠ the {" and ".join(unresolved)} ΔMASE is smaller than its own '
+                      f'seed-to-seed spread over {seed_n} SAE trainings, so its sign is '
+                      f'not established by this run')
         gt_align = entry.get("ground_truth_alignment", {})
         rho_mean = gt_align.get("mean_abs_rho_matched")
         null = gt_align.get("permutation_null", {})
@@ -2102,7 +2138,38 @@ def _sec_sae(cfg: PipelineConfig, run_dir: Path, findings: list) -> str:
                         f"{top['best_field']} (ρ={top['rho']:.2f}); top exemplar series "
                         f"{top['series_id']} (activation {top['activation']:.2f}).")
     inner += _note(*_SAE_EXEMPLAR_NOTE, summary="What is this table?")
+    inner += _sae_seed_floor_block(meta_sae)
     return inner
+
+
+def _sae_seed_floor_block(meta_sae: dict) -> str:
+    """The seed-to-seed spread table, or a statement that no floor was measured.
+
+    ROADMAP.md sec 13's SAE repeat-run-variance item. The absent case renders
+    text rather than nothing, because a bare single-seed ΔMASE with no floor
+    beside it reads exactly like one that has cleared a floor (`CLAUDE.md`
+    §2.5).
+    """
+    rows = []
+    for key, entry in meta_sae.items():
+        floor = entry.get("seed_floor")
+        if not floor:
+            continue
+        for metric, spread in floor["spread"].items():
+            if not spread.get("n", 0):
+                continue
+            rows.append({"target": key, "metric": metric, "seeds": spread["n"],
+                         "mean": spread["mean"], "sd": spread["sd"],
+                         "min": spread["min"], "max": spread["max"]})
+    if not rows:
+        return ("<h4>Seed-to-seed noise floor</h4><p class='blurb'>Not measured — this "
+                "run trained one SAE per target (<code>sae.n_seeds: 1</code>). Every "
+                "number above is therefore a single draw from SAE-training "
+                "stochasticity, with no floor to read it against; set "
+                "<code>sae.n_seeds</code> above 1 to size one "
+                "(ROADMAP.md sec 13).</p>")
+    return ("<h4>Seed-to-seed noise floor</h4>" + _table(pd.DataFrame(rows))
+            + _note(*_SAE_SEED_FLOOR_NOTE, summary="How do I read this floor?"))
 
 
 _INTERNALS_NOTES = {
@@ -2215,6 +2282,30 @@ _SAE_EXEMPLAR_NOTE = (
     "by chance; only a mean |ρ| clearly above the null's p95 supports "
     "reading the dictionary's alignment as real structure rather than "
     "search inflation.",
+)
+
+
+_SAE_SEED_FLOOR_NOTE = (
+    "The same SAE target retrained at several training seeds against the "
+    "identical, already-frozen activations (ROADMAP.md §13). Nothing "
+    "upstream varies — same store, same rows, same checkpoint — so the "
+    "spread here is SAE-training stochasticity alone, and it is the floor "
+    "every headline number in this section has to be read against.",
+    "<code>sd</code> is what a ΔMASE must exceed before its sign means "
+    "anything: a delta smaller than it is one draw from a distribution that "
+    "contains both signs, and this section says so explicitly next to any "
+    "such value rather than leaving it to be inferred. <code>mase_clean</code> "
+    "is a control, not a result — the unpatched forecast cannot depend on "
+    "the SAE seed, so an sd above zero there means something other than the "
+    "seed varied and the rest of the table is suspect. Dead-feature rate "
+    "and reconstruction fidelity are usually far more stable across seeds "
+    "than the forecast deltas are.",
+    "This floor is measured for this run's own targets and settings only; "
+    "it does not transfer to a different layer, corpus, dictionary size, or "
+    "<code>k</code>. It is also not the <i>behavioral</i> repeat-run floor "
+    "shown elsewhere (ROADMAP.md §15 A13) — that one measures the model's "
+    "own forecast nondeterminism, this one measures the SAE's. A ΔMASE has "
+    "to clear both to be a result.",
 )
 
 

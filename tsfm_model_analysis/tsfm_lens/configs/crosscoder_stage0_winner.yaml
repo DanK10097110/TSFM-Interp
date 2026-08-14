@@ -72,7 +72,16 @@ expected:
     l0_actual: 48.0
   # Stage 0's criteria also apply to the matched per-model baselines. The
   # TimesFM one passes outright; the Chronos one fails on dead rate alone
-  # (0.550 vs. the 0.30 bar) at every k tried, which is why Stage 0's
-  # checkbox is still open. See §6.2.1 finding (6) for the candidate fix.
+  # (0.550 vs. the 0.30 bar) at every k tried.
+  #
+  # Correction (2026-08-13): the sentence that used to end the line above —
+  # "which is why Stage 0's checkbox is still open" — is stale. It is not,
+  # and the numbers here are unchanged and still correct: the baseline
+  # failure was an artifact of scoring both baselines at the *crosscoder's*
+  # dictionary size. Under per-model sizing (finding (16)'s DECISION) both
+  # baselines pass, and Stage 0 is cleared by
+  # `crosscoder_stage0_gate.yaml` at 5 of 5 seeds. This file remains the
+  # k sweep's winner under matched sizing, which is a control rather than a
+  # superseded result — `--baseline-dict-sizes` unset still reproduces it.
   baseline_a_passes: true
   baseline_b_passes: false

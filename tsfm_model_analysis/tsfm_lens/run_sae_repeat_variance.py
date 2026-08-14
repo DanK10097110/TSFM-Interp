@@ -26,9 +26,6 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-import numpy as np
-import torch
-
 from tsfm_lens.config import load_config
 from tsfm_lens.data import load_benchmark
 from tsfm_lens.extraction.store import ActivationStore
@@ -37,6 +34,7 @@ from tsfm_lens.sae.eval import (
     dead_feature_rate,
     forecast_preservation,
     reconstruction_fidelity,
+    seed_spread,
 )
 from tsfm_lens.sae.train import (
     SAETrainConfig,
@@ -45,25 +43,6 @@ from tsfm_lens.sae.train import (
     train_sae,
 )
 from tsfm_lens.utils import log, resolve_device, resolve_dtype, save_json, set_seed, setup_logging
-
-
-def _spread(values: list) -> dict:
-    """Mean/sd/min/max/range of a metric across seeds, ignoring failed runs.
-
-    `sd` is the sample (ddof=1) standard deviation, which is the quantity a
-    later run's delta should be read against; `range` is reported alongside
-    because at N=5 the range is the more honest summary of what a single
-    unreplicated number could have been.
-    """
-    finite = [float(v) for v in values if v is not None and np.isfinite(v)]
-    if not finite:
-        return {"n": 0}
-    arr = np.asarray(finite, dtype=np.float64)
-    return {"n": int(arr.size), "mean": float(arr.mean()),
-            "sd": float(arr.std(ddof=1)) if arr.size > 1 else 0.0,
-            "min": float(arr.min()), "max": float(arr.max()),
-            "range": float(arr.max() - arr.min()),
-            "values": [float(v) for v in arr]}
 
 
 def _get(fp: dict, key: str) -> float:
@@ -140,7 +119,7 @@ def main() -> None:
             per_seed.append(row)
         results.append({
             "model": model, "layer": layer, "seeds": seeds, "per_seed": per_seed,
-            "spread": {metric: _spread([r[metric] for r in per_seed])
+            "spread": {metric: seed_spread([r[metric] for r in per_seed])
                        for metric in ("fidelity", "dead_rate",
                                       "mase_delta_window", "mase_delta_token",
                                       "mase_clean_window", "mase_clean_token")},

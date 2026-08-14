@@ -27,7 +27,8 @@ import numpy as np
 import torch
 
 from ..utils import log
-from .base import ModelAdapter, _scan_attention, _scan_mlp, random_init_like
+from .base import (ModelAdapter, _scan_attention, _scan_mlp, count_blocks_matching,
+                   random_init_like)
 
 
 class ChronosBoltAdapter(ModelAdapter):
@@ -67,6 +68,20 @@ class ChronosBoltAdapter(ModelAdapter):
     def _release(self) -> None:
         self.pipeline = None
         self._inner = None
+
+    def uncaptured_surfaces(self) -> dict:
+        """Bolt's decoder blocks, counted from the loaded model.
+
+        Bolt's decoder is a small quantile head rather than an autoregressive
+        stack, so this surface is far smaller than Chronos-T5's -- which is
+        the point of declaring it rather than assuming encoder-decoder models
+        all lose the same fraction. A checkpoint whose head has no
+        `decoder.block.*` modules declares nothing, and its captured surface
+        is then its whole stack.
+        """
+        self.ensure_loaded()
+        n = count_blocks_matching(self.module, r"decoder\.block\.\d+$")
+        return {"decoder": n} if n else {}
 
     def _geometry(self):
         """(kept steps, token count, front pad) for the current data context."""

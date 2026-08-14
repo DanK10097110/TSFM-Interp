@@ -25,6 +25,32 @@ from ..extraction.store import ActivationStore
 from ..utils import batch_slices, capped_take, sample_rows
 
 
+def seed_spread(values) -> dict:
+    """Mean/sd/min/max/range of one metric across SAE training seeds.
+
+    The SAE analog of the behavioral repeat-run noise floor (`ROADMAP.md`
+    §15 A13): a single-seed ΔMASE is one draw from a distribution wide
+    enough, on measured runs, to contain both a "passes" and a "fails"
+    verdict against a small threshold, so the spread is what a later reader
+    has to hold the number against. `sd` is the sample (ddof=1) deviation --
+    the quantity to compare a delta to -- and `range` is reported beside it
+    because at the handful of seeds this is ever run with, the range is the
+    more honest summary of what one unreplicated number could have been.
+
+    Non-finite entries (a failed check's NaN) are dropped rather than
+    poisoning the summary, and `n` records how many actually contributed.
+    """
+    finite = [float(v) for v in values if v is not None and np.isfinite(v)]
+    if not finite:
+        return {"n": 0}
+    arr = np.asarray(finite, dtype=np.float64)
+    return {"n": int(arr.size), "mean": float(arr.mean()),
+            "sd": float(arr.std(ddof=1)) if arr.size > 1 else 0.0,
+            "min": float(arr.min()), "max": float(arr.max()),
+            "range": float(arr.max() - arr.min()),
+            "values": [float(v) for v in arr]}
+
+
 @torch.no_grad()
 def reconstruction_fidelity(sae, activations: np.ndarray, device,
                             batch_size: int = 8192) -> float:

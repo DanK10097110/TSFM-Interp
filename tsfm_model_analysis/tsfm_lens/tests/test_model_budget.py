@@ -213,8 +213,83 @@ def test_per_block_flops_degrade_to_none_when_blocks_cannot_be_resolved(caplog):
     with caplog.at_level("WARNING"):
         assert mb._per_block_flops(measured, adapter.module,
                                    adapter.all_layer_names()) is None
-    assert any("resolved 1 of 4 blocks" in r.getMessage() for r in caplog.records)
+    assert any("could not be matched to this model's 4 blocks" in r.getMessage()
+               for r in caplog.records)
     assert mb._per_block_flops(None, adapter.module, adapter.all_layer_names()) is None
+
+
+class _TwoStack(nn.Module):
+    """The Chronos-T5 shape: two same-class sub-stacks under one root, and an
+    adapter whose forward enters only the first of them."""
+
+    def __init__(self, dim: int = 8, n_blocks: int = 4):
+        super().__init__()
+        self.encoder = _Stack(dim=dim, n_blocks=n_blocks)
+        self.decoder = _Stack(dim=dim, n_blocks=n_blocks)
+
+    def forward(self, x):
+        return self.decoder(self.encoder(x).squeeze(-1))
+
+
+class _EncoderOnlyAdapter(_Adapter):
+    """`ChronosAdapter.forward` calls `self._t5.encoder(...)`, not the model."""
+
+    def forward(self, prepared):
+        self._model.encoder(prepared)
+
+
+def test_per_block_flops_resolve_when_the_adapter_enters_only_a_sub_stack():
+    """The live bug behind ROADMAP.md sec 18 F4's upper-bound headline: nothing
+    resolved 0 of Chronos-T5-Base's 12 blocks because `FlopCounterMode` keys its
+    hierarchy from the module actually *entered*, so an encoder-only forward
+    yields `_Stack.blocks.0`, never `_TwoStack.encoder.blocks.0`. The lookup has
+    to follow the counter's rule rather than assume the model was the root."""
+    model = _TwoStack(n_blocks=4)
+    adapter = _EncoderOnlyAdapter(model, [f"encoder.blocks.{i}" for i in range(4)])
+    cost = mb.measure_forward_cost(adapter, np.zeros((2, 4), dtype=np.float32),
+                                   torch.device("cpu"), repeats=1, warmup=0)
+    blocks = cost["blocks"]
+    assert blocks is not None, "the encoder-only shape must resolve, not degrade"
+    assert list(blocks["per_block"]) == adapter.all_layer_names()
+    assert all(v > 0 for v in blocks["per_block"].values())
+    # The decoder ran in neither the counted pass nor the sum, so the captured
+    # body is a real fraction of a pass that only contains the encoder.
+    assert 0.0 < blocks["fraction_of_forward"] < 1.0
+
+
+def test_same_class_stacks_entered_separately_withhold_per_block_flops(caplog):
+    """A bare suffix match would resolve `blocks.0` here too -- from a key whose
+    value is encoder-plus-decoder, putting decoder FLOPs on an encoder depth
+    axis. That is the exact error F4 exists to prevent, so this must degrade."""
+    model = _TwoStack(n_blocks=4)
+
+    class _BothStacksAdapter(_Adapter):
+        def forward(self, prepared):
+            self._model.encoder(prepared)
+            self._model.decoder(prepared)
+
+    adapter = _BothStacksAdapter(model, [f"encoder.blocks.{i}" for i in range(4)])
+    with caplog.at_level("WARNING"):
+        cost = mb.measure_forward_cost(adapter, np.zeros((2, 4), dtype=np.float32),
+                                       torch.device("cpu"), repeats=1, warmup=0)
+    assert cost["blocks"] is None
+    assert any("entered as a FLOP-counter root" in r.getMessage() for r in caplog.records)
+    # The pass total is still measured -- only the per-block split is withheld.
+    assert cost["flops"] is not None and cost["flops"] > 0
+
+
+def test_entering_the_root_still_uses_the_fully_qualified_keys():
+    """The pre-existing path must be untouched: when the adapter's forward does
+    enter the model, keys are `<model class>.<block path>` and the exact match
+    resolves them without the entry reconstruction ever being consulted."""
+    model = _TwoStack(n_blocks=3)
+    adapter = _Adapter(model, [f"encoder.blocks.{i}" for i in range(3)])
+    cost = mb.measure_forward_cost(adapter, np.zeros((2, 4), dtype=np.float32),
+                                   torch.device("cpu"), repeats=1, warmup=0)
+    assert cost["blocks"] is not None
+    keys = mb._keys_from_entry({"entered": set(), "by_module": {}}, model,
+                               adapter.all_layer_names())
+    assert keys is None, "no entry record must mean no reconstruction, not a guess"
 
 
 def test_measure_flops_degrades_to_none_instead_of_failing_the_run(caplog):

@@ -18,7 +18,7 @@ import numpy as np
 import torch
 
 from ..utils import log
-from .base import ModelAdapter, random_init_like
+from .base import ModelAdapter, count_blocks_matching, random_init_like
 
 
 class ChronosAdapter(ModelAdapter):
@@ -61,6 +61,21 @@ class ChronosAdapter(ModelAdapter):
     def _release(self) -> None:
         self.pipeline = None
         self._t5 = None
+
+    def uncaptured_surfaces(self) -> dict:
+        """The decoder, counted from the loaded model rather than hardcoded.
+
+        This is the single most consequential capture gap in the repo: the
+        layer regex covers the encoder, so every Chronos depth coordinate has
+        historically been a fraction of the half of the model that was
+        observed. Counting the blocks off `named_modules()` keeps it correct
+        across checkpoint sizes (small/base/large differ) instead of pinning a
+        number that a checkpoint swap would silently invalidate -- the same
+        failure mode `CLAUDE.md` sec 11.8 records for hardcoded layer counts.
+        """
+        self.ensure_loaded()
+        n = count_blocks_matching(self.module, r"decoder\.block\.\d+$")
+        return {"decoder": n} if n else {}
 
     def _kept(self) -> int:
         """Number of context steps the tokenizer actually keeps."""

@@ -51,6 +51,23 @@ class AlignmentConfig:
     sanity_check: bool = True
     min_diagonal_frac: float = 0.5   # required hit fraction at the shallowest probed layer
     on_failure: str = "fail"         # fail | warn -- ROADMAP.md sec 15 A2
+    # Which definition of "how deep is this layer" every cross-model depth
+    # figure uses (ROADMAP.md sec 18 F1, `analysis/depth_axis.py`):
+    #   block    -- default. Position within the model's WHOLE stack, incl.
+    #               stride-skipped blocks and surfaces the adapter declares
+    #               but never captures (Chronos-T5's decoder). Truncation
+    #               becomes visible: an encoder-only capture surface occupies
+    #               the bottom half of the plot and the top half is empty.
+    #   index    -- LEGACY, and what every number recorded before 2026-08-13
+    #               was measured on. Index fraction over CAPTURED layers only,
+    #               so a model's 1.0 means "last thing I captured", not "my
+    #               output", and the coordinate moves with capture_layer_stride.
+    #               Set this to reproduce an older run's depth coordinates.
+    #   compute  -- cumulative measured FLOPs over full-forecast FLOPs, from
+    #               the `budget` stage. Degrades to `block` (loudly) without it.
+    #   functional -- align by a measured property rather than position;
+    #               needs a caller-supplied value per layer.
+    depth_axis: str = "block"
 
 
 @dataclass
@@ -299,6 +316,17 @@ class SAEConfig:
     aux_k: int = 0
     aux_coef: float = 0.03125
     aux_dead_steps: int = 20
+    # Seed-to-seed noise floor for this stage's own headline numbers
+    # (ROADMAP.md sec 13's SAE repeat-run-variance item). `1` trains exactly
+    # one SAE per target and changes nothing -- every already-recorded number
+    # stays regenerable. `>1` retrains each target at `run.seed + 0..n-1`
+    # against the same (already-frozen) activations and records the spread of
+    # fidelity / dead rate / forecast-preservation dMASE beside the primary
+    # seed's value, so the report can render "+0.17 +/- 0.12 (5 seeds)"
+    # instead of a bare delta read against zero. Only the primary seed's SAE
+    # is checkpointed and put through ground-truth alignment / ablation /
+    # steering -- the extra seeds exist to size the floor, not to be analyzed.
+    n_seeds: int = 1
     forecast_preservation_max_series: int = 64
     ground_truth_max_series: int = 2000
     # Label-permutation null for ground-truth alignment (ROADMAP.md sec 16

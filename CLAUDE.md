@@ -238,6 +238,36 @@
 >    the 90–98% dead-feature rate makes `relative_decoder_norm` read ~98%
 >    "shared" from dead-atom symmetry alone, so **no shared-vs-specific
 >    split from the existing feasibility run should be quoted.**
+>    🔴 **Resolved 2026-08-13, and not in the direction the ban anticipated.**
+>    Stage 1's ladder has now measured the split on an alive dictionary
+>    (`sae/crosscoder_eval.py` + `run_crosscoder_ladder.py`, artifact
+>    `runs/medium_run_chronos_base/crosscoder/ladder.json`). The metric
+>    itself is sound — the identity rung returns exactly 1.000 shared and
+>    the planted-cause rung recovers its constructed split at F1 1.0 — but
+>    the real TimesFM↔Chronos-T5-Base pair's `frac_shared` is **0.845
+>    against an untrained-twin floor of 0.974** (diff −0.129, CI
+>    [−0.160, −0.101], p=0.002): TimesFM reads as *more* shared with a
+>    randomly-initialized copy of itself than with Chronos. So the ban is
+>    not lifted, it is **replaced by a measurement** — the quantity is
+>    computable and, at the current acausal-TopK crosscoder, does not
+>    separate learned cross-model structure from architecture match. Quote
+>    `frac_shared` only with its L-B floor beside it, exactly as §6.3's
+>    falsified provenance work already taught for a different similarity
+>    number. `ROADMAP.md` §6.2.1 Stage 1's Findings has the full table and
+>    the three next actions, one of which reorders Stage 2.
+>    ✅ **Half-closed 2026-08-13: Stage 0 is `[x]`** — a joint dictionary
+>    over this repo's TimesFM/Chronos-T5-Base pair at their L1 peak-CKA
+>    layers now trains to **3.2% dead / 991 of 1024 alive**, at 5 of 5
+>    seeds (`configs/crosscoder_stage0_gate.yaml`, `ROADMAP.md` §6.2.1
+>    finding (17)). The quoting ban above **still stands** — it is lifted
+>    by Stage *1*'s scorecard measuring the split on this alive
+>    dictionary, not by Stage 0 producing one. Two premises stated here
+>    were also overturned by measurement and are corrected in §6.2.1:
+>    the dead rate was **not** shared with the per-model baseline (the
+>    baseline is 3.2–5.4× *less* dead at every matched size), and larger
+>    dictionaries make the crosscoder *more* stable while making the
+>    baselines *less* so — the two artifacts cannot be sized by one number,
+>    which is what the gate's per-model-baseline-sizing decision rests on.
 > 3. **§12's "which of these are actually fixable" note gains one
 >    correction:** the Chronos-decoder gap is no longer a clean non-goal —
 >    `ROADMAP.md` §12 reclassified it as *deferred with a design* (§16
@@ -550,7 +580,10 @@ TSFM-Interp/
         │   ├── config.py        # typed dataclasses, per-stage enables, YAML load
         │   ├── data.py          # sealed loader + jsonl fallback + smoke generator
         │   ├── utils.py         # log, save_json, batch_slices, relative_depths
-        │   ├── models/          # base.py (ModelAdapter), timesfm/chronos/chronos_bolt/chronos2/mock,
+        │   ├── models/          # base.py (ModelAdapter), timesfm/chronos/chronos_bolt/chronos2/mock
+        │   │                    # (incl. mock_encdec -- 4 captured blocks over 4 genuinely
+        │   │                    # uncaptured decoder blocks, the checkpoint-free stand-in for
+        │   │                    # Chronos-T5's capture asymmetry, ROADMAP.md §18 F1),
         │   │                    # conformance.py (check_adapter_conformance -- ROADMAP.md
         │   │                    # §10's automated adapter-checklist, mocks only),
         │   │                    # capability_matrix.py (declared/verified capability
@@ -568,6 +601,16 @@ TSFM-Interp/
         │   │                    # null-controlled bake-off that chose work_bend -- not a
         │   │                    # pipeline stage, invoked via run_layer_screen_bakeoff.py
         │   │                    # like meta_report.py),
+        │   │                    # depth_axis.py (ROADMAP.md §18 F1 -- four candidate
+        │   │                    # definitions of "how deep is this layer": index (legacy),
+        │   │                    # block (the new `alignment.depth_axis` default, over the
+        │   │                    # WHOLE stack incl. uncaptured surfaces), compute (F2's
+        │   │                    # cumulative FLOPs over FORECAST FLOPs), functional; plus
+        │   │                    # align_on_axis, which grids the overlap only instead of
+        │   │                    # letting np.interp clamp a short curve flat across a range
+        │   │                    # it never reached. NOT a pipeline stage, and NOT yet
+        │   │                    # consumed by any figure -- every depth plot still renders
+        │   │                    # the legacy axis),
         │   │                    # model_budget.py (ROADMAP.md §18 F2 -- parameters by
         │   │                    # role, FLOPs MEASURED via torch's FlopCounterMode
         │   │                    # rather than hand-derived so it works on unseen
@@ -600,16 +643,24 @@ TSFM-Interp/
         ├── run_crosscoder_stage0.py # ROADMAP.md §6.2.1 Stage 0's dead-feature gate:
         │                        # sweeps dict_size / n_rows / aux_k against the gate's
         │                        # exit criteria, training the joint crosscoder AND two
-        │                        # matched per-model TopKSAE baselines per grid row on
-        │                        # the same rows at the same budget; writes a JSON +
-        │                        # markdown sweep table. Reads an existing store only.
+        │                        # per-model TopKSAE baselines per grid row on the same
+        │                        # rows at the same budget; writes a JSON + markdown
+        │                        # sweep table. Reads an existing store only.
         │                        # --params runs a committed config as a single row
         │                        # instead of a grid (the gate's own exit criterion
         │                        # that a winner be a config, not a CLI incantation).
+        │                        # --baseline-dict-sizes gives each baseline its OWN
+        │                        # dictionary size (ROADMAP.md §6.2.1's 2026-08-13
+        │                        # DECISION: matched *budget*, not matched dict);
+        │                        # unset reproduces matched sizing byte for byte as a
+        │                        # control. Every row records baseline_sizing +
+        │                        # each baseline's dict_size so an artifact stays
+        │                        # interpretable after the criteria move (§11.24).
         │                        # Grids: h1/h2/h4/full (the original hypotheses),
         │                        # k (the sparsity budget -- the one that met the
         │                        # gate), h2xh4 (dict size WITH AuxK on), pinch
-        │                        # (dict sizes below h2xh4's smallest)
+        │                        # (dict sizes below h2xh4's smallest), gate (the
+        │                        # 896/1024 replicate that CLOSED Stage 0)
         ├── run_null_baseline_test.py # CLI for analysis/null_baseline.py: real-vs-
         │                        # random-init significance tests over two already-
         │                        # extracted run dirs, no model loaded. Peak-pair
@@ -643,11 +694,19 @@ TSFM-Interp/
         │                        # larger activation store Stage 0's H1 arm needs
         │                        # (46382 aligned rows vs. the feasibility run's 4608)
         ├── configs/crosscoder_stage0_winner.yaml # the crosscoder configuration that
-        │                        # actually clears Stage 0's numeric criteria (k=48,
-        │                        # dict 1280, aux_k=64/coef 0.03125 -- 1254 of 1280
-        │                        # atoms alive, fidelity 0.759/0.756), with the
+        │                        # clears Stage 0's numeric criteria FOR THE CROSSCODER
+        │                        # (k=48, dict 1280, aux_k=64/coef 0.03125 -- 1254 of
+        │                        # 1280 atoms alive, fidelity 0.759/0.756), with the
         │                        # measured result recorded inline for diffing;
-        │                        # executable via run_crosscoder_stage0.py --params
+        │                        # executable via run_crosscoder_stage0.py --params.
+        │                        # Its Chronos baseline fails under MATCHED sizing --
+        │                        # retained as that control, superseded as the answer
+        ├── configs/crosscoder_stage0_gate.yaml # the config that CLOSES Stage 0:
+        │                        # dict 1024 + baselines at their own sizes (576/512),
+        │                        # passing every criterion at 5 of 5 seeds with both
+        │                        # baselines passing too. Carries seed 0's full-precision
+        │                        # values AND the five-seed worst-case bounds inline, so
+        │                        # it can't be misread as a 1/1 result
         ├── tests/test_smoke.py  # full end-to-end + confirm hypothesis-path test
         ├── tests/test_meta_report.py # aggregator: missing-stage degrade, null-depth
         ├── tests/test_layer_screen.py # 3 selectors + bake-off scoring, all on synthetic
@@ -668,6 +727,12 @@ TSFM-Interp/
         │                        # the change does NOT rescue the failing Chronos
         │                        # baseline, and the unsatisfiability argument itself
         │                        # as arithmetic over the measured alive-per-dict table
+        ├── tests/test_depth_axis.py # ROADMAP.md §18 F1: `index` is bit-identical to
+        │                        # utils.relative_depths, `block` is stride-invariant
+        │                        # while `index` provably is not, an encoder-decoder
+        │                        # capture surface tops out at 3/7, and align_on_axis
+        │                        # pins the fabrication it prevents (np.interp's clamped
+        │                        # tail asserted constant) next to the correct behavior
         ├── tests/test_model_budget.py # ROADMAP.md §18 F2: dotted-prefix role
         │                        # matching (blocks.1 must not swallow blocks.11),
         │                        # roles sum to total, a regex missing MIDDLE blocks
@@ -687,6 +752,19 @@ TSFM-Interp/
         │                        # unknown keys) and faithful (its inline `expected:`
         │                        # numbers are checked against the real run artifact,
         │                        # skipped when absent) -- no GPU, no checkpoint
+        ├── tests/test_stage0_baseline_sizing.py # per-model baseline sizing: that it
+        │                        # relaxes NO numeric bar, that the memo reuses a
+        │                        # baseline only when its training is bit-identical
+        │                        # (exercised through the real training path on tiny
+        │                        # CPU data), and the satisfiability arithmetic
+        ├── tests/test_stage0_gate_config.py # the config that CLOSED Stage 0: parses
+        │                        # into the exact row, baseline_dict_sizes must sit
+        │                        # TOP-LEVEL (under `train:` it would train right while
+        │                        # the artifact recorded `baseline_sizing: matched`),
+        │                        # the committed baseline sizes are the STRICT ones,
+        │                        # and both seed 0's values and the five-seed bounds
+        │                        # match the artifacts -- incl. that dict 896's
+        │                        # 3-of-5 failure is recorded rather than omitted
         ├── tests/test_adapter_conformance.py # runs check_adapter_conformance against
         │                        # all 3 mock adapters incl. mock_wave (the unexercised-
         │                        # by-default third architecture), a no-optional-
@@ -1479,6 +1557,11 @@ blocks, stride 1, `num_samples: 20`). `family_key: auto`. Every stage has an
 `configs/medium_run.yaml` gives a mid-scale real-model config between the
 mock-only smoke run and this full default.
 
+`alignment.depth_axis: block` (new default 2026-08-13, `ROADMAP.md` §18 F1;
+`index` is the legacy axis every number recorded before that date was
+measured on — ⚠️ **the knob exists and is tested but nothing reads it yet**,
+so every depth figure currently renders `index` regardless of this setting).
+
 Notable stage knobs: `l3.patching.per_window: true`,
 `l3.patching.window_stride: 2` (every window doubles patching cost);
 `lens.crystallization_tol: 0.1`; `attention.batch_series` (memory-critical);
@@ -1556,7 +1639,8 @@ PYTHONPATH=. python3 example_runs/run_validation.py
 | Cost/budget stage + report section (`analysis/model_budget.py`, `budget` stage, ROADMAP.md §18 F2) | ✅ **2026-08-12** — 12 rendered / 1 skipped sections, 44 findings on `configs/smoke.yaml` via the real CLI; 18 tests (11 `test_model_budget.py` + 7 `test_budget_stage.py`). ⚠️ **Mock-model numbers only** — no live-checkpoint FLOPs/latency/VRAM measurement yet. |
 | ΔMASE in noise-floor units (`analysis/stats.py::in_floor_units`, ROADMAP.md §18 F6) | ✅ **2026-08-12** — 8 tests (`tests/test_floor_units.py`), and a real report-only re-render of `runs/medium_run_chronos_base` giving the acceptance count: **0 of 6 ΔMASE values below their own model's floor**. L3 patching restoration is a **stated deferral**, not a silent skip (no MASE-unit damage denominator in `l3/patching.json`). |
 | Crosscoder feasibility test (`sae/crosscoder.py`, ROADMAP.md §13/§6.2) | ✅ **First run 2026-08-05** against live `google/timesfm-2.5-200m-pytorch` + `amazon/chronos-t5-base` activations (an already-extracted store, no new model calls) at their L1 peak-CKA layer pair. Joint training is stable (no source-domination collapse across three hyperparameter settings) once a real, found-and-fixed scale-domination instability (§11.19) and a device-mismatch crash are corrected. **Not** an `SAEAdapter` implementation or a pipeline stage — feasibility-gate only. Full numbers in `ROADMAP.md` §6.2's Findings. |
-| Cost/coverage accounting (`analysis/model_budget.py`, ROADMAP.md §18 F2/F4) | ✅ **Verified live 2026-08-12** against `runs/medium_run_chronos_base` (TimesFM-2.5-200M + Chronos-T5-Base). Measured, not hand-derived: TimesFM 231.29M params / 59.39 GFLOPs forward, **42.5%** of its forward FLOPs captured; Chronos-T5-Base 201.37M params / 774.76 GFLOPs forward vs 5398.28 GFLOPs per forecast, capture pass **≤14.4%** of a forecast. F4's acceptance criterion met — a depth-located Chronos finding carries the automatic qualifier. **The first live run *failed* that criterion**, which is how two real bugs were found and fixed (an unmeasurable headline exempting the very model the item exists for, and a parameter surface double-counting stride loss) — see ROADMAP.md §18 F4's Findings. ⚠️ Chronos's headline is an upper bound, not a measurement: its per-block FLOPs don't resolve by name, so it has no trace in F2's compute-by-depth chart. |
+| Crosscoder Stage 0 dead-feature gate (`run_crosscoder_stage0.py`, ROADMAP.md §6.2.1) | ✅ **CLOSED 2026-08-13** against the same live checkpoint pair's `runs/crosscoder_stage0_bigdata` store (46382 aligned rows, no new model calls). `configs/crosscoder_stage0_gate.yaml` passes every exit criterion at **5 of 5 seeds** (worst seed: dead 0.185 vs. the 0.30 bar, 835 alive vs. the 563 floor, fidelity 0.724 vs. the 0.70 bar), with both per-model `TopKSAE` baselines passing at every seed at their own sizes. The `dict=896` alternative passes only 3 of 5, on fidelity alone. ⚠️ One layer pair, one corpus, one `k`; says nothing yet about whether the features are *shared* — `relative_decoder_norm` stays unquotable until Stage 1's scorecard. Full tables in `ROADMAP.md` §6.2.1's finding (17); 16 tests across `tests/test_stage0_baseline_sizing.py` + `tests/test_stage0_gate_config.py`, full suite 357 passed. |
+| Cost/coverage accounting (`analysis/model_budget.py`, ROADMAP.md §18 F2/F4) | ✅ **Verified live 2026-08-12** against `runs/medium_run_chronos_base` (TimesFM-2.5-200M + Chronos-T5-Base). Measured, not hand-derived: TimesFM 231.29M params / 59.39 GFLOPs forward, **42.5%** of its forward FLOPs captured; Chronos-T5-Base 201.37M params / 774.76 GFLOPs forward vs 5398.28 GFLOPs per forecast, captured blocks **14.4%** of a forecast (a `≤` bound when first recorded — see the 2026-08-13 correction below). F4's acceptance criterion met — a depth-located Chronos finding carries the automatic qualifier. **The first live run *failed* that criterion**, which is how two real bugs were found and fixed (an unmeasurable headline exempting the very model the item exists for, and a parameter surface double-counting stride loss) — see ROADMAP.md §18 F4's Findings. ✅ **Corrected 2026-08-13:** Chronos's headline was an upper bound only because `_per_block_flops` resolved 0 of its 12 blocks; that is fixed (`FlopCounterMode` keys from the module *entered*, not from `.module` — §11.28), so **14.35% is now a direct measurement**, all 12 blocks resolve, and Chronos has a real trace in F2's compute-by-depth chart. The headline's *value* is unchanged bit-for-bit — the bound was exactly tight — so only its epistemic status moved. |
 
 **Golden hashes (do not let these change) — ✅ currently matching, see below:**
 ```
@@ -2386,6 +2470,102 @@ files it will re-read, and treat that list as locked for the duration —
 the background run is using" already says this, but "the files it is using"
 is easy to read as *artifacts only* when it also means *source*.
 
+### 11.28 `FlopCounterMode` keys its modules from the module *entered*, not from the model
+`analysis/model_budget.py::_per_block_flops` built its lookup keys as
+`f"{type(adapter.module).__name__}.{block_name}"` — reasonable-looking, and
+correct for TimesFM, whose adapter's `forward()` enters `.module` itself. It
+resolved **0 of 12** Chronos-T5-Base blocks, because `ChronosAdapter.forward()`
+calls `self._t5.encoder(...)` while `.module` is the whole
+`T5ForConditionalGeneration`. `FlopCounterMode` (via `ModuleTracker`) roots
+its key hierarchy at **the outermost module actually entered during the
+counted call**, then names descendants by their dotted path relative to *that*
+— so the real keys were `T5Stack.block.0`, never
+`T5ForConditionalGeneration.encoder.block.0`. Note the counter's key is
+*shorter* than the adapter's block name, so the intuitive "does some key end
+with the block name" check fails; the correct direction strips a leading class
+token. **Verified in seconds without a checkpoint** (§2.4 — the question is
+about torch's behavior, not about Chronos): a toy `Root(encoder=Stack,
+decoder=Stack)` keys its children `Stack.block.0` when `root.encoder(x)` is
+entered and `Root.encoder.block.0` when `root(x)` is. The consequence was
+quiet, which is the part worth remembering — no exception, just `None` per-block
+FLOPs, which made the F4 coverage headline fall back to an upper bound and
+silently exempted the single most under-observed model in the repo from the
+depth-claim qualifier built for it. **The obvious fix is unsound and was
+rejected:** a suffix match (even one requiring a *unique* candidate) cannot
+save this, because T5's `encoder` and `decoder` are both `T5Stack` — had both
+been entered, their subtrees would share one key and their counts would be
+*summed*, and resolving it would put decoder FLOPs on an encoder depth axis,
+precisely the error F4 exists to prevent. Fixed by measuring instead of
+guessing: `_measure_flops` registers forward pre-hooks recording which module
+paths actually ran, `_keys_from_entry` reconstructs `ModuleTracker`'s own rule
+from that record, and a same-class root collision withholds per-block FLOPs
+with a WARNING naming the colliding paths rather than resolving them. The
+pre-existing exact-match path is tried first, so already-recorded TimesFM
+numbers cannot drift, and a test asserts that path is still the one used.
+**Lesson:** when a library keys results by a hierarchy you did not construct,
+the key format is a property of *how you invoked it*, not of the object you
+passed — and a lookup that misses returns nothing rather than raising, so it
+degrades into a plausible-looking absence. Where the absence has a fallback
+(here, an upper bound), it can look like a deliberate design choice for weeks.
+
+### 11.29 A control that is also a gate silently sizes one artifact by another's needs
+`run_crosscoder_stage0.py` trained two per-model `TopKSAE` baselines
+alongside every crosscoder row for a good reason: to attribute a bad
+dead-feature rate to *joint* training rather than to the settings, by
+holding rows, `k`, epochs, AuxK and dictionary size identical. Its own
+docstring stated the premise — "the feasibility run showed the per-model
+baseline hitting the same wall." That premise was never measured; it was
+inherited from a single feasibility run and repeated across six sweeps and
+four sessions of Findings. Because the baseline was simultaneously the
+*control* and one of the three artifacts that had to clear the exit
+criteria, the shared dictionary size stopped being a fairness device and
+became a constraint: Stage 0 spent three sessions failing on the Chronos
+baseline, produced a proof that **no** shared size could satisfy all three
+artifacts, and twice declined to move the numeric bars because doing so
+would have been relaxing a gate to make it pass. All correct, and all
+downstream of an unchecked sentence.
+**Measuring it inverted it** (§2.4, again): the Chronos baseline is
+**3.2–5.4× less dead** than the crosscoder at every shared size (0.2387 vs
+0.0754 at dict 512, 0.3716 vs 0.0693 at 704), and the two move in
+**opposite directions** as the dictionary grows — the baseline's dead rate
+rises monotonically while the crosscoder's falls. So the shared size was
+being pulled downward by the artifact that wanted it small, into sizes that
+starved the artifact that wanted it large, and no size could serve both.
+Once the baselines were sized per model at *matched budget* (the thing the
+control actually needs held fixed), every artifact passed at 5 of 5 seeds
+at dict 1024 — with none of the three numeric bars touched. **Lesson:** when
+one measurement plays two roles — a control for attribution *and* a
+threshold that must be cleared — the parameter that makes it a fair control
+is not automatically the parameter that makes it a fair threshold, and the
+conflict shows up as an unsatisfiable criterion rather than as an error. The
+tell here was available for weeks: an exit criterion that grows *harder* as
+you improve the thing it gates is describing a constraint, not a standard.
+And check the premise sentence in a script's docstring the same way you'd
+check a number in a Findings block — it is a claim, it was measured once,
+and it can be wrong.
+
+### 11.30 An unanchored block regex silently swallows a second stack named with the first stack's name as a suffix
+Found 2026-08-13 while building `ROADMAP.md` §18 F1's depth axis. The mock
+adapters' `default_layer_regex` was `blocks\.\d+$`, matched with
+`re.search` — correct and unambiguous for as long as the only module list
+in the net was called `blocks`. Adding `MockEncDecAdapter`, whose whole
+purpose is a decoder that runs and is *not* captured, immediately broke
+that: `search` finds `blocks.0` inside `decoder_blocks.0`, so the decoder
+was captured after all and `total_stack_size` reported 12 blocks where 8
+exist. **Fix:** anchor it — `^blocks\.\d+$`. The three pre-existing mocks
+match identically either way (their blocks sit at the module root), so this
+changed nothing already recorded. **Lesson:** `all_layer_names` uses
+`pattern.search`, not `fullmatch`, so every adapter's layer regex is a
+*substring* test. That is fine today only because each real adapter's regex
+happens to carry a disambiguating prefix (`encoder\.block\.\d+$`,
+`stacked_xf\.\d+$`); a checkpoint that names a second stack with the first
+stack's name as a suffix would silently merge the two, and the failure
+surfaces as a plausible-looking layer count rather than an error. Anchor a
+new adapter's regex, or verify its match list against
+`--discover-layers` — do not assume a `$` alone makes it unambiguous.
+Directly relevant to F1's block accounting, which cannot separate
+"architecturally uncaptured" from "captured" if the regex over-matches.
+
 ---
 
 ## 12. Known limitations (stated, not hidden)
@@ -2416,17 +2596,26 @@ is easy to read as *artifacts only* when it also means *source*.
    **42.5%** of its own forward FLOPs — not "essentially the whole
    computation", because `capture_layer_stride: 2` drops half its blocks and
    34.6M parameters (15%) sit outside the layer regex — and Chronos-T5-Base's
-   entire capture pass is **at most 14.4%** of a full forecast at
+   captured blocks perform **14.4%** of a full forecast's FLOPs at
    `num_samples: 20`, not half. Note which knob does what: TimesFM's loss is a
    *config* choice (stride 1 would recover it), Chronos's is *architectural*
    (the decoder, run 20 times, is never captured). Every model's fractions are
    in `budget/model_budget.json` under `coverage`, and any depth-located
    finding about a model under 90% now carries an automatic qualifier in the
    report (`report.py::_qualify_depth_claims`) — so this caveat no longer
-   depends on a reader having read this list. ⚠️ Chronos's headline is an
-   **upper bound** (its per-block FLOPs don't resolve by name, F4's "Left
-   open"), which is why its rendered qualifier says "at least ~86%
-   unobserved".
+   depends on a reader having read this list. ✅ **Corrected 2026-08-13:**
+   this used to warn that Chronos's headline was an **upper bound** because
+   its per-block FLOPs didn't resolve by name. Fixed (§11.28); all 12 blocks
+   resolve and the rendered qualifier now says "~86% unobserved", not "at
+   least ~86%". The number itself never moved — the bound was exactly tight,
+   since Chronos captures at stride 1 and a T5 encoder has no counted FLOPs
+   outside its blocks. ⚠️ **What replaces that caveat** is a subtler one from
+   the same fix: the report's "Compute completed by depth" chart normalizes
+   each curve by that model's *own measured forward pass*, so Chronos — whose
+   measured forward pass **is** its encoder — reaches a clean 1.0 at depth
+   1.0 while TimesFM honestly tops out at 0.851. On that chart the
+   better-covered model looks worse. `ROADMAP.md` §18 F1 (D2) is where the
+   forecast-level denominator that fixes it belongs.
 3. **Forecast stochasticity asymmetry.** Chronos-T5 samples; TimesFM and
    Chronos-Bolt are deterministic. Ablation/patching deltas sit on different
    noise floors. Seeds are pinned and `num_samples` reduced during patching;
@@ -2629,6 +2818,19 @@ is easy to read as *artifacts only* when it also means *source*.
    > A13 already required). Both dictionaries are also ~95% dead
    > (**94.5% / 97.3%**, stable across seeds, sd ≤0.005) — reproducibly the
    > condition `ROADMAP.md` §6.2.1's Stage 0 gate exists to eliminate.
+
+   > ✅ **The dead-dictionary condition is eliminated (2026-08-13,
+   > ROADMAP.md §6.2.1 finding (17)) — for the crosscoder, at one layer
+   > pair, and by a knob the numbers above predate.** AuxK (the
+   > OpenAI-style dead-latent auxiliary loss, `sae/models.py`) is what did
+   > it: 3.2% dead / 991 of 1024 alive at seed 0, ≤18.5% dead at every one
+   > of five seeds, against the 94.5%/97.3% quoted above. **The pipeline's
+   > own `sae` stage still runs with `aux_k` off by default**, so every
+   > number recorded here and elsewhere in this file stays regenerable and
+   > stays ~95% dead — this is a Stage 0 result, not a change to the SAE
+   > stage. Turning it on repo-wide is a real option now rather than a
+   > hypothesis, and would invalidate prior SAE numbers by design (§2.1),
+   > so it belongs in a deliberate pass, not a default flip.
 4. **Validation as CI gates.** Turn the diversity metrics into explicit pass/fail
    gates (redundancy fraction < X, effective dimensionality > Y, no
    near-collision cluster larger than Z) so each benchmark epoch is checked

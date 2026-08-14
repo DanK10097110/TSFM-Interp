@@ -179,7 +179,7 @@ def _time_calls(fn, repeats: int, warmup: int, device: torch.device) -> dict:
             "max_s": float(arr.max()), "n": int(arr.size)}
 
 
-def _measure_flops(fn) -> Optional[dict]:
+def _measure_flops(fn, module=None) -> Optional[dict]:
     """Measured forward FLOPs for one call: total plus a per-module breakdown.
 
     `FlopCounterMode` is a dispatcher mode, so anything it cannot intercept
@@ -191,22 +191,112 @@ def _measure_flops(fn) -> Optional[dict]:
     which is what lets per-block counts be recovered from the *same* pass that
     measures the total -- F1's D2 depth axis needs those and must not cost a
     second measurement.
+
+    The root of that path is **the outermost module actually entered during the
+    counted call, not the model**, which is the whole reason `module` is taken
+    here: an adapter that captures one sub-stack (`ChronosAdapter.forward` calls
+    `self._t5.encoder(...)`) produces `T5Stack.block.0`, never
+    `T5ForConditionalGeneration.encoder.block.0`. Verified directly rather than
+    inferred: entering a submodule of a two-stack toy model keys its children
+    `Stack.block.0`, while entering the root keys the same children
+    `Root.encoder.block.0`. So `entered` records which module paths ran, and
+    `_per_block_flops` reconstructs the key from that instead of guessing at
+    prefixes -- a guess would be a string heuristic on the one axis where
+    picking the wrong stack (an encoder's depth curve carrying decoder FLOPs) is
+    exactly the error F4 exists to prevent.
     """
     try:
         from torch.utils.flop_counter import FlopCounterMode
     except ImportError:
         log.warning("budget: torch.utils.flop_counter unavailable; FLOPs not measured")
         return None
+    entered: set = set()
+    handles = []
+    if module is not None:
+        for path, sub in module.named_modules():
+            handles.append(sub.register_forward_pre_hook(
+                lambda _m, _a, _p=path: entered.add(_p)))
     try:
         counter = FlopCounterMode(display=False, depth=None)
         with counter:
             fn()
         by_module = {k: float(sum(v.values()))
                      for k, v in counter.get_flop_counts().items()}
-        return {"total": float(counter.get_total_flops()), "by_module": by_module}
+        return {"total": float(counter.get_total_flops()), "by_module": by_module,
+                "entered": entered}
     except Exception as e:
         log.warning("budget: FLOP measurement failed (%s); continuing without it", e)
         return None
+    finally:
+        for h in handles:
+            h.remove()
+
+
+def _tracked_roots(entered: set) -> set:
+    """The entered module paths that have no entered ancestor.
+
+    These are the modules `ModuleTracker` treats as roots, so each one's class
+    name becomes the first component of its subtree's keys.
+    """
+    roots = set()
+    for path in entered:
+        parts = path.split(".") if path else []
+        if not any(".".join(parts[:i]) in entered for i in range(len(parts))):
+            roots.add(path)
+    return roots
+
+
+def _keys_from_entry(measured: dict, module, blocks: list) -> Optional[dict]:
+    """Block name -> FLOP-counter key, reconstructed from what actually ran.
+
+    Applies `ModuleTracker`'s own rule (outermost entered ancestor's class name,
+    then the dotted path relative to it) rather than assuming the counted call
+    entered `module` itself, which is false for any adapter that captures one
+    sub-stack.
+
+    Bails -- loudly, with None -- when two modules of the *same class* were each
+    entered as roots, because their subtrees then share one key and their counts
+    are summed beyond recovery. On a T5 that is the encoder and decoder both
+    keying `T5Stack.block.0`, and silently picking either would attribute
+    decoder FLOPs to an encoder depth axis: the precise failure F4 exists to
+    prevent, so it must degrade rather than resolve (CLAUDE.md sec 2.5).
+    """
+    entered = measured.get("entered") or set()
+    if not entered:
+        return None
+    named = dict(module.named_modules())
+    by_class: dict = {}
+    for r in _tracked_roots(entered):
+        if r in named:
+            by_class.setdefault(type(named[r]).__name__, []).append(r)
+    collided = {c: rs for c, rs in by_class.items() if len(rs) > 1}
+
+    counts = measured["by_module"]
+    out = {}
+    for name in blocks:
+        if name not in named:
+            return None
+        parts = name.split(".")
+        key = None
+        for i in range(len(parts) + 1):
+            anc = ".".join(parts[:i])
+            if anc in entered:
+                cls = type(named[anc]).__name__
+                rel = ".".join(parts[i:])
+                key = f"{cls}.{rel}" if rel else cls
+                break
+        if key is None or key not in counts:
+            return None
+        cls = key.split(".", 1)[0]
+        if cls in collided:
+            log.warning(
+                "budget: %d modules of class '%s' (%s) were each entered as a FLOP-counter "
+                "root, so their blocks share one key and cannot be separated; per-block "
+                "FLOPs withheld rather than attributed to the wrong stack",
+                len(collided[cls]), cls, ", ".join(sorted(collided[cls])))
+            return None
+        out[name] = key
+    return out
 
 
 def _per_block_flops(measured: Optional[dict], module, blocks: list) -> Optional[dict]:
@@ -220,20 +310,16 @@ def _per_block_flops(measured: Optional[dict], module, blocks: list) -> Optional
         return None
     root = type(module).__name__
     counts = measured["by_module"]
-    per_block, missing = {}, 0
-    for name in blocks:
-        key = f"{root}.{name}"
-        if key in counts:
-            per_block[name] = counts[key]
-        else:
-            missing += 1
-            per_block[name] = 0.0
-    if missing:
+    keys = {name: f"{root}.{name}" for name in blocks}
+    if not all(k in counts for k in keys.values()):
+        keys = _keys_from_entry(measured, module, blocks)
+    if keys is None:
         log.warning(
-            "budget: the FLOP counter resolved %d of %d blocks by name; "
-            "per-block FLOPs (and any compute-fraction depth axis built on them) "
-            "are unavailable for this model", len(blocks) - missing, len(blocks))
+            "budget: the FLOP counter's %d module keys could not be matched to this "
+            "model's %d blocks; per-block FLOPs (and any compute-fraction depth axis "
+            "built on them) are unavailable", len(counts), len(blocks))
         return None
+    per_block = {name: counts[key] for name, key in keys.items()}
     running, cumulative = 0.0, {}
     for name in blocks:
         running += per_block[name]
@@ -262,7 +348,7 @@ def measure_forward_cost(adapter, contexts: np.ndarray, device: torch.device,
         torch.cuda.reset_peak_memory_stats(device)
     timing = _time_calls(one, repeats, warmup, device)
     peak = _peak_vram(device)
-    measured = _measure_flops(one)
+    measured = _measure_flops(one, adapter.module)
     total = None if measured is None else measured["total"]
 
     n_tokens = int(adapter.token_time_spans().shape[0])

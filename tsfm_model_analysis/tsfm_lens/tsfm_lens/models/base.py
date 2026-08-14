@@ -108,6 +108,25 @@ class ModelAdapter(ABC):
         """The last block on the residual path, used as the skip-lens patch target."""
         return self.all_layer_names()[-1]
 
+    def uncaptured_surfaces(self) -> dict:
+        """Blocks this model runs that the layer regex never matches, `{name: n}`.
+
+        Optional, defaulting to nothing, so no existing adapter breaks and a
+        model with a fully-captured stack says nothing. The canonical entry is
+        Chronos-T5's decoder: `layer_names()` covers the encoder, so without
+        this declaration nothing downstream can distinguish a 12-block model
+        from the observed half of a 24-block one -- which is precisely the
+        confusion `CLAUDE.md` sec 12 items 1-2 describe and the depth axis
+        (`analysis/depth_axis.py`, ROADMAP.md sec 18 F1) exists to make
+        visible on a plot.
+
+        Declared surfaces are taken to run **after** the matched blocks; see
+        `depth_axis.adapter_uncaptured_surfaces` for why that assumption is
+        stated rather than inferred, and what an adapter with a leading
+        uncaptured surface would need instead.
+        """
+        return {}
+
     def attention_info(self) -> Optional[list]:
         """Standardized per-block attention map for head-level interventions.
 
@@ -215,6 +234,18 @@ def random_init_like(model: nn.Module) -> nn.Module:
     fresh = type(model)(model.config)
     fresh.eval()
     return fresh
+
+
+def count_blocks_matching(root: nn.Module, pattern: str) -> int:
+    """How many of `root`'s named modules match `pattern`.
+
+    Exists so an adapter declaring an uncaptured surface can *count* its
+    blocks off the loaded model rather than hardcode a number that a
+    checkpoint swap would silently invalidate -- the failure mode
+    `CLAUDE.md` sec 11.8 records for hardcoded layer counts.
+    """
+    compiled = re.compile(pattern)
+    return sum(1 for name, _ in root.named_modules() if compiled.search(name))
 
 
 def _scan_attention(root, block_name: str):

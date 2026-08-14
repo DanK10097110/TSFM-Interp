@@ -78,7 +78,13 @@ class TopKSAE(nn.Module):
         return (activations - self.b_dec) @ self.W_enc + self.b_enc
 
     def sparsify(self, pre: torch.Tensor) -> torch.Tensor:
-        """[N, F] pre-activations -> [N, F] with exactly k nonzero entries per row."""
+        """[N, F] pre-activations -> [N, F] with at most k nonzero entries per row.
+
+        At most, not exactly: the ReLU precedes the top-k, so a row with fewer
+        than k positive pre-activations keeps only those. Measured L0 is
+        therefore a real observation about a dictionary's utilization rather
+        than a restatement of the config, and can sit below k.
+        """
         pre = torch.relu(pre)
         k = min(self.k, pre.shape[-1])
         top_vals, top_idx = torch.topk(pre, k, dim=-1)
@@ -87,7 +93,7 @@ class TopKSAE(nn.Module):
         return features
 
     def encode(self, activations: torch.Tensor) -> torch.Tensor:
-        """[N, D] -> [N, F] sparse feature activations (exactly k nonzero per row)."""
+        """[N, D] -> [N, F] sparse feature activations (at most k nonzero per row)."""
         return self.sparsify(self.pre_activations(activations))
 
     def decode(self, features: torch.Tensor) -> torch.Tensor:
