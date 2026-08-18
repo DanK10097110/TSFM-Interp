@@ -8,6 +8,7 @@ the final report.
 from __future__ import annotations
 
 import dataclasses
+import difflib
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Optional
@@ -51,6 +52,15 @@ class AlignmentConfig:
     sanity_check: bool = True
     min_diagonal_frac: float = 0.5   # required hit fraction at the shallowest probed layer
     on_failure: str = "fail"         # fail | warn -- ROADMAP.md sec 15 A2
+    # ROADMAP.md sec 15 A20: the impulse probe's amplitude used to be a
+    # single hardcoded constant (0.25) calibrated against one (checkpoint,
+    # context_len) pair -- it silently under- or over-shoots at others. When
+    # true (default), `run_alignment_gate` self-calibrates the amplitude per
+    # run via `calibrate_impulse_amplitude` before probing; the chosen value
+    # and the sweep that produced it are recorded in the alignment artifact.
+    # Set false to force the historical fixed 0.25 (e.g. to reproduce a
+    # pre-A20 run's exact numbers).
+    calibrate_amplitude: bool = True
     # Which definition of "how deep is this layer" every cross-model depth
     # figure uses (ROADMAP.md sec 18 F1, `analysis/depth_axis.py`):
     #   block    -- default. Position within the model's WHOLE stack, incl.
@@ -365,6 +375,15 @@ class SAEConfig:
     feature_steering_top_k: int = 8
     feature_steering_max_series: int = 64
     feature_steering_strength_sigma: float = 2.0
+    # The encode-store seam (ROADMAP.md sec 6.2.1 Stage 3d): persist each
+    # target's trained encoder's output back into the store
+    # (`sae`/`sae_pooled/{model}/{layer}`) and, once >=2 targets span both
+    # comparison-pair models, compute a feature-space CKA between them
+    # (`l1/cka_sae.json`). Off by default -- a wide dictionary's window-level
+    # feature array (`dict_size_mult` defaults to 8x the raw activation
+    # width) can be many times the raw activation store's own size, so this
+    # should not silently multiply every run's disk footprint.
+    persist_features: bool = False
 
 
 @dataclass
@@ -438,17 +457,38 @@ class PipelineConfig:
                 "extraction and L0 run for all")
 
 
-def _build(cls: type, data: dict):
-    """Recursively construct a dataclass from a plain dict, keeping defaults for absent keys."""
+def _build(cls: type, data: dict, section: str | None = None):
+    """Recursively construct a dataclass from a plain dict, keeping defaults for absent keys.
+
+    Raises on any key that isn't a declared field of `cls` (ROADMAP.md sec 15
+    A21): a misspelled knob (`capture_layer_stide`) used to silently run the
+    whole pipeline at the default value while `config_resolved.yaml` read as
+    though the setting were in force -- the discrepancy was invisible even in
+    hindsight. Naming the closest valid field (`difflib`) targets the actual
+    cost of a typo: the right name was nearly typed.
+    """
     if data is None:
         return cls()
+    section = section or cls.__name__
+    if not isinstance(data, dict):
+        raise TypeError(f"config section {section!r} must be a mapping, got "
+                        f"{type(data).__name__}: {data!r}")
+    declared = {f.name for f in dataclasses.fields(cls)}
+    unknown = set(data) - declared
+    if unknown:
+        parts = []
+        for key in sorted(unknown):
+            close = difflib.get_close_matches(key, declared, n=1)
+            parts.append(f"{key!r}" + (f" (did you mean {close[0]!r}?)" if close else ""))
+        raise TypeError(f"unknown key(s) in config section {section!r}: {', '.join(parts)} "
+                        f"-- valid fields are {sorted(declared)}")
     kwargs = {}
     for f in dataclasses.fields(cls):
         if f.name not in data:
             continue
         v = data[f.name]
         if dataclasses.is_dataclass(f.type) if isinstance(f.type, type) else False:
-            kwargs[f.name] = _build(f.type, v)
+            kwargs[f.name] = _build(f.type, v, section=f"{section}.{f.name}")
         else:
             kwargs[f.name] = v
     return cls(**kwargs)
@@ -476,14 +516,15 @@ def config_from_dict(raw: dict) -> PipelineConfig:
     cfg = PipelineConfig()
     for key, cls in _NESTED.items():
         if key in raw:
-            setattr(cfg, key, _build(cls, raw[key]))
+            setattr(cfg, key, _build(cls, raw[key], section=key))
     if "l3" in raw:
-        l3raw = dict(raw["l3"])
-        patch = _build(PatchingConfig, l3raw.pop("patching", None))
-        cfg.l3 = _build(L3Config, l3raw)
+        l3raw = dict(raw["l3"]) if raw["l3"] is not None else {}
+        patch = _build(PatchingConfig, l3raw.pop("patching", None), section="l3.patching")
+        cfg.l3 = _build(L3Config, l3raw, section="l3")
         cfg.l3.patching = patch
     if "models" in raw:
-        cfg.models = [_build(ModelConfig, m) for m in raw["models"]]
+        cfg.models = [_build(ModelConfig, m, section=f"models[{i}]")
+                     for i, m in enumerate(raw["models"])]
     cfg.validate()
     return cfg
 

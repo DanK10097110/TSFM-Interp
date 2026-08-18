@@ -28,7 +28,7 @@ import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from tsfm_lens.sae.crosscoder import CrosscoderTrainConfig, train_crosscoder
+from tsfm_lens.sae.crosscoder import CrosscoderSAE, CrosscoderTrainConfig, train_crosscoder
 from tsfm_lens.sae.crosscoder_eval import (
     L_A_MIN_FRAC_SHARED,
     L_E_MIN_F1,
@@ -37,6 +37,7 @@ from tsfm_lens.sae.crosscoder_eval import (
     atom_buckets,
     atom_subset_alignment,
     l0_actual,
+    latent_scaling_confirm,
     monotone_decay,
     planted_sources,
     score_variant,
@@ -159,6 +160,110 @@ def test_atom_subset_alignment_on_an_empty_subset_says_so():
     result = atom_subset_alignment(sae, _gt_context(xa, xb, labels), np.array([], dtype=int), CPU)
     assert result["status"] == "no_atoms"
     assert result["mean_abs_rho_matched"] == 0.0
+
+
+def test_latent_scaling_confirm_distinguishes_shrunk_signal_from_real_noise():
+    """V4 (ROADMAP.md sec 6.2.1 Stage 2): `atom_buckets`'s split is read off a
+    decoder *norm*, which cannot tell "this atom carries no information about
+    the other source" apart from "this atom carries information the optimizer
+    emitted at a tiny scale." Hand-build a 2-atom crosscoder (no training, so
+    the scenario is exact and reproducible) where both atoms get an equally
+    tiny B-side decoder weight, but atom 0's tiny weight points at a real
+    linear relationship in the data (B's column 0 = 3 * atom 0's own
+    activation, plus small noise) while atom 1's tiny weight points at a
+    column of B that really is independent noise. A norm-only split would
+    call both 'specific to A'; V4 must tell them apart."""
+    rng = np.random.default_rng(0)
+    n = 4000
+    xa = np.stack([rng.uniform(1.0, 3.0, size=n), rng.uniform(1.0, 3.0, size=n)],
+                  axis=1).astype(np.float32)
+    xb = rng.normal(scale=0.5, size=(n, 3)).astype(np.float32)
+    xb[:, 0] = 3.0 * xa[:, 0] + rng.normal(scale=0.05, size=n)
+    xb = xb.astype(np.float32)
+
+    sae = CrosscoderSAE([2, 3], dict_size=2, k=2)
+    with torch.no_grad():
+        sae.b_enc.zero_()
+        sae.b_dec[0].zero_()
+        sae.b_dec[1].zero_()
+        sae.W_enc[0].copy_(torch.tensor([[1.0, 0.0], [0.0, 1.0]]))
+        sae.W_enc[1].copy_(torch.zeros(3, 2))
+        sae.W_dec[0].copy_(torch.tensor([[0.9999, 0.0], [0.0, 0.9999]]))
+        # Both atoms' B-side decoder weight is the same tiny magnitude (0.01) --
+        # only the *direction* differs (atom 0 -> real signal, atom 1 -> noise).
+        sae.W_dec[1].copy_(torch.tensor([[0.01, 0.0, 0.0], [0.0, 0.0, 0.01]]))
+
+    buckets = {"specific_a": np.array([0, 1]), "specific_b": np.array([], dtype=int)}
+    result = latent_scaling_confirm(sae, [xa, xb], CPU, buckets=buckets, ve_threshold=0.05)
+
+    entries = {e["atom"]: e for e in result["specific_a"]["entries"]}
+    assert entries[0]["variance_explained"] > 0.5, entries[0]
+    assert abs(entries[1]["variance_explained"]) < 0.05, entries[1]
+    assert result["specific_a"]["n_confirmed"] == 1
+    assert result["specific_a"]["frac_specific_confirmed"] == pytest.approx(0.5)
+    assert result["specific_b"]["n_atoms"] == 0
+    assert result["specific_b"]["frac_specific_confirmed"] == 1.0
+
+
+def test_latent_scaling_confirm_on_planted_data_real_specific_atoms_confirm():
+    """The other direction, on the crosscoder's own planted fixture rather
+    than a hand-built one: `planted_sources`'s A-only/B-only causes have
+    *zero* cross-source relationship by construction (`test_crosscoder.py`),
+    so every atom the split calls specific should also be confirmed specific
+    by V4 -- this fixture is the "nothing to catch" control for the
+    adversarial case above."""
+    xa, xb, _ = _planted(n=3000, seed=21)
+    sae = _train(xa, xb, dict_size_mult=2, k=1, epochs=80, seed=22)
+    result = latent_scaling_confirm(sae, [xa, xb], CPU)
+    for side in ("specific_a", "specific_b"):
+        if result[side]["n_atoms"] == 0:
+            continue
+        assert result[side]["frac_specific_confirmed"] >= 0.5, (side, result[side])
+
+
+def test_latent_scaling_confirm_uses_an_uncentered_baseline_for_sparse_atoms():
+    """Regression test for a real bug caught on live checkpoint data: the two
+    tests above only ever exercise *dense* atom activations (`k` equal to
+    `dict_size`, so every atom fires on every row), which never exposes what
+    happens once TopK sparsity is real. On the real crosscoder (k=48 of 1024)
+    an atom with no relationship to the other source at all produced
+    `variance_explained` around -30 to -70 -- deeply negative, not the
+    near-zero the docstring promises -- because `beta` is a through-origin
+    fit (no intercept) but the old R^2 baseline centered `proj` on its own
+    mean, which is a baseline only a *dense* regressor's null model would
+    imply. Reproduce the exact mechanism directly: one atom (of 3, k=1) that
+    only fires on ~5% of rows (TopK-sparse), matched against a B-side signal
+    that is pure noise around a nonzero mean and has *no* real relationship
+    to that atom at all. A correct diagnostic must report this atom as
+    unconfirmed-but-not-alarming (`variance_explained` near zero); the old
+    mean-centered formula reported -93.5 on this exact data."""
+    rng = np.random.default_rng(0)
+    n = 20000
+    spike_mask = rng.random(n) < 0.05
+    xa = np.zeros((n, 3), dtype=np.float32)
+    xa[:, 0] = np.where(spike_mask, 10.0, -1.0)  # atom 0: fires only when spiked
+    xa[:, 1] = 1.0                                 # atom 1: the usual winner
+    xa[:, 2] = 0.5                                 # atom 2: never wins
+    xb = (rng.normal(scale=1.0, size=n) + 10.0).astype(np.float32).reshape(-1, 1)
+
+    sae = CrosscoderSAE([3, 1], dict_size=3, k=1)
+    with torch.no_grad():
+        sae.b_enc.zero_()
+        sae.b_dec[0].zero_()
+        sae.b_dec[1].zero_()
+        sae.W_enc[0].copy_(torch.eye(3))
+        sae.W_enc[1].copy_(torch.zeros(1, 3))
+        sae.W_dec[0].copy_(torch.eye(3))
+        sae.W_dec[1].copy_(torch.tensor([[0.01], [0.0], [0.0]]))  # tiny B weight, atom 0 only
+
+    feats = sae.encode([torch.from_numpy(xa), torch.from_numpy(xb)]).detach().numpy()
+    assert 0.03 < (feats[:, 0] != 0).mean() < 0.07, "atom 0 should fire on a small minority of rows"
+
+    buckets = {"specific_a": np.array([0]), "specific_b": np.array([], dtype=int)}
+    result = latent_scaling_confirm(sae, [xa, xb], CPU, buckets=buckets)
+    e = result["specific_a"]["entries"][0]
+    assert abs(e["variance_explained"]) < 0.2, e
+    assert e["beta"] != pytest.approx(0.0, abs=1e-3), e  # a real, non-degenerate fit -- not the trivial case
 
 
 def test_score_variant_records_an_unsupplied_forecast_check_rather_than_a_zero():

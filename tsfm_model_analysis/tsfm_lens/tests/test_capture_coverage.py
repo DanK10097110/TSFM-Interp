@@ -28,8 +28,17 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from tsfm_lens.analysis.model_budget import capture_coverage
-from tsfm_lens.report.report import _qualify_depth_claims
+from tsfm_lens.report.report import Finding, _qualify_depth_claims
 from tsfm_lens.utils import save_json
+
+
+def _finding(text: str, stage: str = "lens") -> Finding:
+    """A minimal `Finding` for tests exercising `_qualify_depth_claims`
+    directly -- the function operates on `Finding.text`, not a bare string
+    (`ROADMAP.md` sec 21 E6), so these fixtures need the wrapper type even
+    though only `.text` is under test here."""
+    return Finding(claim_id="test.0", stage=stage, evidence_class="descriptive",
+                   text=text, plain=text, registered=False)
 
 
 class _FakeCfg:
@@ -159,8 +168,8 @@ def test_an_upper_bound_qualifier_reads_as_a_bound(tmp_path):
                      "depth_claims_qualified": True,
                      "uncaptured_surfaces": []}}}})
     out = _qualify_depth_claims(tmp_path, [
-        "Lens — Chronos-T5-Base crystallizes at relative depth 0.73."])
-    assert "at least ~86% of Chronos-T5-Base's forward computation is unobserved" in out[0]
+        _finding("Lens — Chronos-T5-Base crystallizes at relative depth 0.73.")])
+    assert "at least ~86% of Chronos-T5-Base's forward computation is unobserved" in out[0].text
 
 
 def test_a_finding_naming_both_models_states_both_fractions_once(tmp_path):
@@ -176,14 +185,14 @@ def test_a_finding_naming_both_models_states_both_fractions_once(tmp_path):
                                          "headline_is_upper_bound": True,
                                          "depth_claims_qualified": True,
                                          "uncaptured_surfaces": ["decoder unobserved"]}}}})
-    out = _qualify_depth_claims(tmp_path, [
+    out = _qualify_depth_claims(tmp_path, [_finding(
         "L1 — peak similarity CKA=0.38 at TimesFM L4 ↔ Chronos-T5-Base L10 "
-        "(relative depths 0.22 / 0.91)."])
+        "(relative depths 0.22 / 0.91).", stage="l1")])
 
-    assert out[0].count("within the captured surface only") == 1
-    assert "~57% of TimesFM's forward computation is unobserved" in out[0]
-    assert "at least ~86% of Chronos-T5-Base's forward computation is unobserved" in out[0]
-    assert "stride drops 10 of 20" not in out[0] and "decoder unobserved" not in out[0]
+    assert out[0].text.count("within the captured surface only") == 1
+    assert "~57% of TimesFM's forward computation is unobserved" in out[0].text
+    assert "at least ~86% of Chronos-T5-Base's forward computation is unobserved" in out[0].text
+    assert "stride drops 10 of 20" not in out[0].text and "decoder unobserved" not in out[0].text
 
 
 def test_missing_measurements_are_none_not_zero():
@@ -216,12 +225,12 @@ def _budget_with_coverage(run_dir: Path, frac: float, surfaces: list) -> Path:
 def test_depth_located_findings_about_an_under_captured_model_are_qualified(tmp_path):
     _budget_with_coverage(tmp_path, 0.52, ["the decoder is not captured"])
     out = _qualify_depth_claims(tmp_path, [
-        "Lens — Chronos-T5-Base crystallizes at relative depth 0.8.",
-        "L1 — peak CKA at Chronos-T5-Base block 10.",
+        _finding("Lens — Chronos-T5-Base crystallizes at relative depth 0.8."),
+        _finding("L1 — peak CKA at Chronos-T5-Base block 10.", stage="l1"),
     ])
-    assert all("within the captured surface only" in f for f in out)
-    assert "~48% of Chronos-T5-Base's forward computation is unobserved" in out[0]
-    assert "the decoder is not captured" in out[0]
+    assert all("within the captured surface only" in f.text for f in out)
+    assert "~48% of Chronos-T5-Base's forward computation is unobserved" in out[0].text
+    assert "the decoder is not captured" in out[0].text
 
 
 def test_non_depth_findings_and_other_models_are_left_alone(tmp_path):
@@ -229,14 +238,12 @@ def test_non_depth_findings_and_other_models_are_left_alone(tmp_path):
     behavioral claim would be false, and rewriting a claim could change what a
     recorded number means (§2.1)."""
     _budget_with_coverage(tmp_path, 0.52, [])
-    out = _qualify_depth_claims(tmp_path, [
-        "L0 — Chronos-T5-Base wins on the seasonal family (MASE ratio 0.81).",
-        "Lens — TimesFM crystallizes at relative depth 0.4.",
-    ])
-    assert out == [
-        "L0 — Chronos-T5-Base wins on the seasonal family (MASE ratio 0.81).",
-        "Lens — TimesFM crystallizes at relative depth 0.4.",
+    findings = [
+        _finding("L0 — Chronos-T5-Base wins on the seasonal family (MASE ratio 0.81).", stage="l0"),
+        _finding("Lens — TimesFM crystallizes at relative depth 0.4."),
     ]
+    out = _qualify_depth_claims(tmp_path, findings)
+    assert out == findings
 
 
 def test_no_budget_artifact_leaves_every_finding_untouched(tmp_path):

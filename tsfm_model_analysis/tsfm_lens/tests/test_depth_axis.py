@@ -208,3 +208,114 @@ def test_depth_axis_config_default_is_block_and_index_is_selectable():
     from tsfm_lens.config import AlignmentConfig
     assert AlignmentConfig().depth_axis == "block"
     assert AlignmentConfig(depth_axis="index").depth_axis == "index"
+
+
+def test_block_axis_from_persisted_meta_matches_the_live_adapter():
+    """`report`/`internals` have no live model -- persisted metadata must
+    reproduce exactly what the live adapter path computes (ROADMAP.md sec
+    18 F1's remaining wiring: `ActivationStore.stack_meta`).
+    """
+    enc_dec = _adapter("chronos_like", "mock_encdec")
+    layers = enc_dec.layer_names()
+    from_adapter = da.depth_axis(enc_dec, layers, "block")
+    from_meta = da.depth_axis(None, layers, "block",
+                              all_layer_names=enc_dec.all_layer_names(),
+                              uncaptured_surfaces=da.adapter_uncaptured_surfaces(enc_dec))
+    assert np.array_equal(from_adapter.coords, from_meta.coords)
+    assert from_meta.coords[-1] == pytest.approx(3 / 7)
+    assert from_meta.fallback_from is None
+
+
+def test_block_axis_falls_back_to_index_with_neither_adapter_nor_meta():
+    """A store predating `stack_meta` (or a model that never reported it)
+    must degrade loudly to `index`, not crash trying to call a method on
+    `None`.
+    """
+    n = 6
+    layers = [f"blocks.{i}" for i in range(n)]
+    out = da.depth_axis(None, layers, "block")
+    assert out.fallback_from == "block"
+    assert out.axis == "index"
+    assert np.array_equal(out.coords, relative_depths(n))
+
+
+def test_compute_and_functional_fallback_to_block_forward_persisted_meta():
+    """The existing compute/functional -> block fallbacks must not silently
+    drop back to `index` just because the caller supplied metadata instead
+    of a live adapter -- a store-metadata-only caller (e.g. a report
+    section) asking for `compute` with no budget should still land on the
+    real `block` axis, not `index`.
+    """
+    enc_dec = _adapter("chronos_like", "mock_encdec")
+    layers = enc_dec.layer_names()
+    meta = {"all_layer_names": enc_dec.all_layer_names(),
+           "uncaptured_surfaces": da.adapter_uncaptured_surfaces(enc_dec)}
+    out = da.depth_axis(None, layers, "compute", budget={},
+                        all_layer_names=meta["all_layer_names"],
+                        uncaptured_surfaces=meta["uncaptured_surfaces"])
+    assert out.fallback_from == "compute"
+    assert out.axis == "block"
+    assert out.coords[-1] == pytest.approx(3 / 7)
+
+
+def test_depth_axis_for_run_prefers_store_meta_over_adapter_and_degrades_without_one():
+    """`depth_axis_for_run` is the one call site every stage should use; pin
+    its two contracts: prefer persisted metadata (works with no model
+    reload), and degrade to `index` when `store` is `None` or has nothing
+    for this model.
+    """
+    class _FakeStore:
+        def __init__(self, meta):
+            self._meta = meta
+
+        def stack_meta(self, model):
+            return self._meta.get(model, {})
+
+    enc_dec = _adapter("chronos_like", "mock_encdec")
+    layers = enc_dec.layer_names()
+    meta = {"m": {"all_layers": enc_dec.all_layer_names(),
+                  "uncaptured_surfaces": da.adapter_uncaptured_surfaces(enc_dec)}}
+    store = _FakeStore(meta)
+
+    with_store = da.depth_axis_for_run("block", store, "m", layers)
+    assert with_store.coords[-1] == pytest.approx(3 / 7)
+    assert with_store.fallback_from is None
+
+    no_store = da.depth_axis_for_run("block", None, "m", layers)
+    assert no_store.axis == "index"
+    assert no_store.fallback_from == "block"
+
+    empty_store = _FakeStore({})
+    no_meta = da.depth_axis_for_run("block", empty_store, "other_model", layers)
+    assert no_meta.axis == "index"
+    assert no_meta.fallback_from == "block"
+
+    # A live adapter still works as the fallback when the store has nothing
+    # for this model.
+    via_adapter = da.depth_axis_for_run("block", empty_store, "m", layers, adapter=enc_dec)
+    assert via_adapter.coords[-1] == pytest.approx(3 / 7)
+    assert via_adapter.fallback_from is None
+
+
+def test_activation_store_stack_meta_round_trip(tmp_path):
+    """`ActivationStore.set_stack_meta`/`.stack_meta` persist per-model stack
+    layout, and a store that predates this metadata (or lacks a model)
+    degrades to `{}` rather than raising.
+    """
+    from tsfm_lens.extraction.store import ActivationStore
+
+    path = tmp_path / "activations.zarr"
+    store = ActivationStore.create(path, n_series=4, n_windows=2, window=32, context_len=64)
+    meta = {"model_a": {"all_layers": ["blocks.0", "blocks.1"],
+                        "uncaptured_surfaces": {"decoder": 2}},
+           "model_b": {"all_layers": ["blocks.0"], "uncaptured_surfaces": {}}}
+    store.set_stack_meta(meta)
+
+    reopened = ActivationStore(path, mode="r")
+    assert reopened.stack_meta("model_a") == meta["model_a"]
+    assert reopened.stack_meta("model_b") == meta["model_b"]
+    assert reopened.stack_meta("never_extracted") == {}
+
+    fresh = ActivationStore.create(tmp_path.parent / "no_meta.zarr", n_series=1, n_windows=1,
+                                   window=32, context_len=32)
+    assert fresh.stack_meta("anything") == {}

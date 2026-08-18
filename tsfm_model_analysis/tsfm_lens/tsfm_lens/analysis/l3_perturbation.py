@@ -48,6 +48,7 @@ from ..extraction.extract import capture_raw_tokens
 from ..extraction.hooks import ActivationCatcher, token_patch
 from ..extraction.store import ActivationStore
 from ..utils import batch_slices, capped_take, log, relative_depths, sample_rows, save_json
+from .depth_axis import align_on_axis, depth_axis_for_run
 from .stats import mean_ci
 
 
@@ -336,6 +337,7 @@ def run_l3(cfg: PipelineConfig, hub, store: ActivationStore, data: BenchmarkData
 
     a, b = cfg.comparison_pair()
     per_series, beh_series, layer_lists, patching = {}, {}, {}, {}
+    depth_axes, patching_depth_axes = {}, {}
     for mcfg in (a, b):
         adapter = hub.get(mcfg.name)
         adapter.ensure_loaded()
@@ -343,17 +345,30 @@ def run_l3(cfg: PipelineConfig, hub, store: ActivationStore, data: BenchmarkData
                                        corrupted, names, scale)
         per_series[mcfg.name], beh_series[mcfg.name] = ps, beh
         layer_lists[mcfg.name] = layers
+        depth_axes[mcfg.name] = depth_axis_for_run(cfg.alignment.depth_axis, store,
+                                                    mcfg.name, layers, adapter=adapter)
         if cfg.l3.patching.enabled:
             patching[mcfg.name] = _patching(
                 cfg, adapter, layers, rows, contexts, corrupted, data.horizon,
                 targets=data.targets()[rows],
                 series_ids=data.meta["series_id"].to_numpy()[rows],
                 families=data.meta["family"].to_numpy()[rows])
+            # `_patching` subsamples `layers` by `l3.patching.layer_stride`, so
+            # its own (coarser) layer list needs its own depth axis -- reusing
+            # `depth_axes[mcfg.name]` (computed over the full sensitivity layer
+            # list) silently mismatches length/values whenever
+            # `layer_stride > 1` (ROADMAP.md sec 18 F1's real-checkpoint
+            # acceptance test caught this; the mock config used stride 1,
+            # where the two lists coincide, which is exactly why it didn't).
+            patching_depth_axes[mcfg.name] = depth_axis_for_run(
+                cfg.alignment.depth_axis, store, mcfg.name,
+                patching[mcfg.name]["layers"], adapter=adapter)
         if not cfg.run.keep_models_loaded:
             hub.release(mcfg.name)
 
     fingerprints = {k: v.mean(axis=0) for k, v in per_series.items()}
-    agreement = _agreement_with_ci(cfg, per_series[a.name], per_series[b.name], names)
+    agreement = _agreement_with_ci(cfg, per_series[a.name], per_series[b.name], names,
+                                   depth_axes[a.name].coords, depth_axes[b.name].coords)
     behavior_ci = {
         model: {names[c]: mean_ci(bs[:, c], cfg.stats.n_boot, cfg.run.seed + 30 + c,
                                   cfg.stats.ci)
@@ -369,6 +384,8 @@ def run_l3(cfg: PipelineConfig, hub, store: ActivationStore, data: BenchmarkData
         "layers": layer_lists, "agreement": agreement, "behavior_ci": behavior_ci,
         "n_series": int(len(rows)), "calibrate": cfg.l3.calibrate,
         "calibration": calibration_meta,
+        "depth_axis": {k: v.axis for k, v in depth_axes.items()},
+        "rel_depth": {k: v.coords.tolist() for k, v in depth_axes.items()},
     })
     if patching:
         win_arrays = {f"restoration_windows_{k}": v["restoration_windows"]
@@ -395,7 +412,8 @@ def run_l3(cfg: PipelineConfig, hub, store: ActivationStore, data: BenchmarkData
                  **win_arrays, **horizon_arrays, **verbose_arrays)
         save_json(out_dir / "patching.json", {
             k: {"layers": v["layers"], "corruptions": v["corruptions"],
-                "rel_depth": relative_depths(len(v["layers"])).tolist(),
+                "rel_depth": patching_depth_axes[k].coords.tolist(),
+                "depth_axis": patching_depth_axes[k].axis,
                 "windows": v.get("windows", []),
                 "window_size": cfg.alignment.window,
                 "whole_context_patch": v.get("whole_context_patch", False),
@@ -646,16 +664,23 @@ def _window_restoration(adapter, layer: str, tok_idx: np.ndarray,
 
 
 def _agreement_with_ci(cfg: PipelineConfig, psa: np.ndarray, psb: np.ndarray,
-                       names: list) -> dict:
+                       names: list, depths_a: np.ndarray = None,
+                       depths_b: np.ndarray = None) -> dict:
     """Fingerprint agreement with paired cluster-bootstrap CIs.
 
     The same series resample is applied to both models before recomputing
     fingerprints, since deltas come from identical series and corruptions.
+    `depths_a`/`depths_b` place each model's layers on the configured depth
+    axis (ROADMAP.md sec 18 F1); omitting them falls back to the legacy
+    index-fraction axis, matching every number recorded before this axis
+    existed.
     """
-    point = _fingerprint_agreement(psa.mean(axis=0), psb.mean(axis=0), names)
+    point = _fingerprint_agreement(psa.mean(axis=0), psb.mean(axis=0), names,
+                                   depths_a, depths_b)
     out = {"overall": {"value": point["overall"]},
            "per_corruption": {c: {"value": v} for c, v in point["per_corruption"].items()},
-           "most_divergent": point["most_divergent"]}
+           "most_divergent": point["most_divergent"],
+           "overlap_fraction": point["overlap_fraction"], "unmatched": point["unmatched"]}
     if not cfg.stats.enabled:
         return out
     n_boot = min(cfg.stats.n_boot, cfg.stats.n_boot_heavy)
@@ -664,7 +689,8 @@ def _agreement_with_ci(cfg: PipelineConfig, psa: np.ndarray, psb: np.ndarray,
     per = {c: np.empty(n_boot) for c in names}
     for i in range(n_boot):
         idx = rng.integers(0, psa.shape[0], psa.shape[0])
-        agr = _fingerprint_agreement(psa[idx].mean(axis=0), psb[idx].mean(axis=0), names)
+        agr = _fingerprint_agreement(psa[idx].mean(axis=0), psb[idx].mean(axis=0), names,
+                                     depths_a, depths_b)
         overall[i] = agr["overall"]
         for c in names:
             per[c][i] = agr["per_corruption"][c]
@@ -677,14 +703,33 @@ def _agreement_with_ci(cfg: PipelineConfig, psa: np.ndarray, psb: np.ndarray,
     return out
 
 
-def _fingerprint_agreement(fp_a: np.ndarray, fp_b: np.ndarray, names: list) -> dict:
-    """Rank agreement of depth profiles per corruption on a shared relative-depth grid."""
+def _fingerprint_agreement(fp_a: np.ndarray, fp_b: np.ndarray, names: list,
+                           depths_a: np.ndarray = None, depths_b: np.ndarray = None) -> dict:
+    """Rank agreement of depth profiles per corruption, over the axes' shared range.
+
+    Uses `align_on_axis` (ROADMAP.md sec 18 F1) rather than a raw
+    `np.interp(np.linspace(0,1,...), ...)` grid: the old grid silently
+    extrapolated a shorter-spanning model's endpoint value flat across the
+    part of `[0,1]` it never reached, which is exactly wrong for an
+    encoder-only model on the `block` axis (it spans roughly the bottom
+    half). Falls back to the legacy `relative_depths` axis when `depths_a`/
+    `depths_b` are omitted, so existing callers/tests are unaffected. A
+    disjoint depth range (n_grid=0) returns a neutral 0.0 agreement with the
+    reason recorded, rather than crashing.
+    """
     from scipy.stats import spearmanr
-    grid = np.linspace(0, 1, 33)
-    ia = np.stack([np.interp(grid, relative_depths(fp_a.shape[0]), fp_a[:, c])
-                   for c in range(fp_a.shape[1])], axis=1)
-    ib = np.stack([np.interp(grid, relative_depths(fp_b.shape[0]), fp_b[:, c])
-                   for c in range(fp_b.shape[1])], axis=1)
+    if depths_a is None:
+        depths_a = relative_depths(fp_a.shape[0])
+    if depths_b is None:
+        depths_b = relative_depths(fp_b.shape[0])
+    aligned = align_on_axis(depths_a, fp_a, depths_b, fp_b, n_grid=33)
+    if aligned["n_grid"] == 0:
+        per = {c: 0.0 for c in names}
+        return {"per_corruption": per, "overall": 0.0,
+                "most_divergent": names[0] if names else None,
+                "overlap_fraction": 0.0, "unmatched": aligned["unmatched"],
+                "note": aligned["note"]}
+    ia, ib = aligned["a"], aligned["b"]
     per = {}
     for ci, cname in enumerate(names):
         rho = spearmanr(ia[:, ci], ib[:, ci]).statistic
@@ -692,7 +737,8 @@ def _fingerprint_agreement(fp_a: np.ndarray, fp_b: np.ndarray, names: list) -> d
     overall = spearmanr(ia.ravel(), ib.ravel()).statistic
     return {"per_corruption": per,
             "overall": float(overall) if np.isfinite(overall) else 0.0,
-            "most_divergent": min(per, key=per.get)}
+            "most_divergent": min(per, key=per.get),
+            "overlap_fraction": aligned["overlap_fraction"], "unmatched": aligned["unmatched"]}
 
 
 def _predict_batched(adapter, contexts: np.ndarray, horizon: int, quantiles: list,

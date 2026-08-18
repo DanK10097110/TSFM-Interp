@@ -260,7 +260,7 @@ def _check_adapters_full(cfg: PipelineConfig) -> list:
     `models/conformance.py::check_adapter_conformance` as one pass, and
     releases each model afterward.
     """
-    from .extraction.alignment import impulse_alignment_check
+    from .extraction.alignment import calibrate_impulse_amplitude, impulse_alignment_check
     from .models.conformance import check_adapter_conformance
     from .pipeline import Context
 
@@ -286,13 +286,16 @@ def _check_adapters_full(cfg: PipelineConfig) -> list:
                 f"conformance: {m.name}", "fail", str(e),
                 "see CLAUDE.md sec 6.2's ModelAdapter contract"))
         try:
-            alignment = impulse_alignment_check(adapter, cfg.alignment.window)
+            calibration = calibrate_impulse_amplitude(adapter, cfg.alignment.window)
+            amplitude = calibration["amplitude"]
+            alignment = impulse_alignment_check(adapter, cfg.alignment.window, amplitude=amplitude)
             min_frac = min(alignment.values())
             ok = min_frac >= cfg.alignment.min_diagonal_frac
             checks.append(DoctorCheck(
                 f"alignment: {m.name}", "pass" if ok else "warn",
                 f"min diagonal-hit fraction {min_frac:.2f} across {len(alignment)} "
-                f"layers (threshold {cfg.alignment.min_diagonal_frac})",
+                f"layers (threshold {cfg.alignment.min_diagonal_frac}, calibrated "
+                f"impulse amplitude {amplitude:.2f} -- ROADMAP.md sec 15 A20)",
                 "" if ok else "run --check-alignment for the full per-layer table "
                 "before trusting any cross-model number (CLAUDE.md sec 6.3/invariant 7)"))
         except Exception as e:

@@ -181,6 +181,36 @@ def train_sae(activations: np.ndarray, cfg: SAETrainConfig, device: torch.device
     return sae, history
 
 
+def encode_and_persist_features(store: ActivationStore, model: str, layer: str,
+                                sae: TopKSAE, device: torch.device,
+                                series_batch: int = 512) -> None:
+    """Encode every stored window-level activation and write features back into the store.
+
+    The encode-store seam (ROADMAP.md sec 6.2.1 Stage 3d): promised in
+    `sae/interface.py`'s module docstring since the baseline SAE landed,
+    wired here. Batches over series (not one [N*W, dict_size] tensor) so
+    this doesn't need a dictionary-sized multiple of the raw activation
+    store's own memory footprint all at once -- the same per-batch
+    chunking `extraction/store.py::write_batch` already uses for raw
+    activations, applied here because a TopK dictionary is typically 8x-16x
+    wider than its input.
+    """
+    n = store.root.attrs["n_series"]
+    store.init_sae_layer(model, layer, sae.dict_size)
+    sae = sae.to(device)
+    sae.eval()
+    for s, e in batch_slices(n, series_batch):
+        rows = np.arange(s, e)
+        acts = store.load(model, layer, level="window", rows=rows)
+        b, w, d = acts.shape
+        flat = torch.from_numpy(acts.reshape(-1, d).astype(np.float32)).to(device)
+        with torch.no_grad():
+            features = sae.encode(flat).cpu().numpy().astype(np.float16).reshape(b, w, -1)
+        store.write_sae_batch(model, layer, s, features)
+    log.info(f"sae: persisted encoded features for {model}/{layer} "
+             f"({n} series x {store.root.attrs['n_windows']} windows x {sae.dict_size} features)")
+
+
 def save_sae(sae: TopKSAE, path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     torch.save({"state_dict": sae.state_dict(), "d_in": sae.d_in,
@@ -302,6 +332,15 @@ def run_sae(cfg: PipelineConfig, hub: ModelHub, store: ActivationStore,
         # regardless of whether real-data augmentation is on.
         fidelity = reconstruction_fidelity(sae, bench_activations, device)
         dead_rate = dead_feature_rate(sae, bench_activations, device)
+
+        features_persisted = False
+        if cfg.sae.persist_features:
+            try:
+                encode_and_persist_features(store, model, layer, sae, device,
+                                            series_batch=cfg.sae.batch_size)
+                features_persisted = True
+            except Exception as e:
+                log.warning(f"sae: encode-store persistence failed for {key}: {e}")
 
         try:
             fp = forecast_preservation(cfg, adapter, layer, sae, store, data, device,
@@ -442,8 +481,17 @@ def run_sae(cfg: PipelineConfig, hub: ModelHub, store: ActivationStore,
             "feature_ablation": fa,
             "feature_steering": fs,
             "seed_floor": seed_floor,
+            "features_persisted": features_persisted,
         }
     save_json(out_dir / "meta.json", results)
+
+    if cfg.sae.persist_features:
+        try:
+            from .feature_geometry import run_sae_feature_cka
+            run_sae_feature_cka(cfg, store, targets, device)
+        except Exception as e:
+            log.warning(f"sae: feature-space CKA failed: {e}")
+
     log.info(f"sae: complete, {len(results)} target(s)")
 
 

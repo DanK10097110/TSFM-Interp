@@ -30,6 +30,7 @@ from pathlib import Path
 
 import numpy as np
 
+from tsfm_lens.analysis.depth_axis import depth_axis_for_run
 from tsfm_lens.analysis.lens import skip_lens_forecasts
 from tsfm_lens.analysis.spectral_lens import spectral_lens_stats
 from tsfm_lens.config import load_config
@@ -86,7 +87,10 @@ def main() -> None:
         layers = store.layers(mcfg.name)[:: max(1, base_cfg.lens.layer_stride)]
         lens_fc, final_fc = skip_lens_forecasts(adapter, layers, contexts, data.horizon,
                                                 base_cfg.l0.quantiles, base_cfg.run.seed + 141)
-        stats = spectral_lens_stats(lens_fc, final_fc, targets, periods, tol=tol)
+        da = depth_axis_for_run(base_cfg.alignment.depth_axis, store, mcfg.name, layers,
+                                adapter=adapter)
+        stats = spectral_lens_stats(lens_fc, final_fc, targets, periods, tol=tol,
+                                    depths=da.coords, depth_axis_name=da.axis)
         stats["layers"] = layers
         results[mcfg.name] = stats
         log.info("%s: trend depth=%s seasonal depth=%s residual depth=%s "

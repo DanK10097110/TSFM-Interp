@@ -1,15 +1,30 @@
 """Chunked on-disk store for aligned activations and forecasts.
 
 Layout (zarr group):
-    act/{model}/{layer}      float16 [N, n_windows, D]   window-level states
-    pooled/{model}/{layer}   float16 [N, D]              window-mean per series
-    pred/{model}/point       float32 [N, H]
-    pred/{model}/quantiles   float32 [N, H, Q]
-    targets                  float32 [N, H]
+    act/{model}/{layer}        float16 [N, n_windows, D]   window-level states
+    pooled/{model}/{layer}     float16 [N, D]              window-mean per series
+    sae/{model}/{layer}        float16 [N, n_windows, F]   window-level SAE features
+    sae_pooled/{model}/{layer} float16 [N, F]              window-mean SAE features per series
+    pred/{model}/point         float32 [N, H]
+    pred/{model}/quantiles     float32 [N, H, Q]
+    targets                    float32 [N, H]
 
 Window-level arrays are chunked along series so analyses can stream row
 subsets without loading whole layers; pooled arrays are small enough to load
 whole. Metadata lives beside the store as meta.parquet.
+
+`sae`/`sae_pooled` are the encode-store seam (ROADMAP.md sec 6.2.1 Stage 3d):
+optional, additive groups a trained baseline SAE's encoded features get
+written into by `sae/train.py::encode_and_persist_features` when
+`sae.persist_features: true`. They mirror `act`/`pooled`'s shape exactly,
+one dictionary-size axis wider, so a store with no SAE features persisted
+yet (the common case -- off by default, since a wide dictionary's window-
+level array can be many times the raw activation store's own size) is
+simply missing those keys, not present-but-empty; `has_sae_features` and
+`load(..., space="sae")` are the two ways a caller distinguishes that from
+a genuine failure. This is purely additive to the schema -- no existing
+key's shape, dtype, or meaning changed -- so it does not bump
+`_SCHEMA_VERSION` below.
 """
 
 from __future__ import annotations
@@ -171,9 +186,78 @@ class ActivationStore:
         """Record extraction-ordered layer names per model."""
         self.root.attrs["layers"] = layer_map
 
+    def set_stack_meta(self, meta: dict) -> None:
+        """Persist each model's full-stack layout at extraction time.
+
+        `meta[model] = {"all_layers": [...], "uncaptured_surfaces": {...}}`,
+        captured once while the adapter is still loaded
+        (`extraction/extract.py`), so artifact-only stages (`report`,
+        post-extraction analyses) can resolve the `block` depth axis
+        (`analysis/depth_axis.py::depth_axis_for_run`, ROADMAP.md sec 18 F1)
+        without reloading a model.
+        """
+        self.root.attrs["stack_meta"] = meta
+
+    def stack_meta(self, model: str) -> dict:
+        """A model's persisted stack layout, or `{}` if this store predates it.
+
+        The empty-dict return (not a raised error) is deliberate: a store
+        extracted before this metadata existed, or a model that failed to
+        report it, should degrade the `block` depth axis to `index`
+        (`depth_axis`'s own fallback), not crash every downstream reader.
+        """
+        return dict(self.root.attrs.get("stack_meta", {}).get(model, {}))
+
+    def init_sae_layer(self, model: str, layer: str, n_features: int,
+                       dtype: str = "float16") -> None:
+        """Allocate window-level and pooled SAE-feature arrays for one (model, layer).
+
+        Mirrors `init_layer`'s act/pooled pair, one dictionary-size axis
+        wider, under `sae`/`sae_pooled` instead -- the encode-store seam
+        (ROADMAP.md sec 6.2.1 Stage 3d).
+        """
+        n, w = self.root.attrs["n_series"], self.root.attrs["n_windows"]
+        chunk = min(256, n)
+        self.root.create_dataset(f"sae/{model}/{layer}", shape=(n, w, n_features),
+                                  chunks=(chunk, w, n_features), dtype=dtype, overwrite=True)
+        self.root.create_dataset(f"sae_pooled/{model}/{layer}", shape=(n, n_features),
+                                  chunks=(min(4096, n), n_features), dtype=dtype, overwrite=True)
+
+    def write_sae_batch(self, model: str, layer: str, start: int, features: np.ndarray) -> None:
+        """Write one batch of window-level SAE features and their series-level pooling.
+
+        `features` is `[batch, n_windows, n_features]`, matching `write_batch`'s
+        `aligned` shape one axis wider -- deliberately mirrored so a reader
+        of one already understands the other.
+        """
+        end = start + features.shape[0]
+        self.root[f"sae/{model}/{layer}"][start:end] = features
+        self.root[f"sae_pooled/{model}/{layer}"][start:end] = features.mean(axis=1)
+
+    def has_sae_features(self, model: str, layer: str) -> bool:
+        """Whether encoded SAE features were persisted for this (model, layer).
+
+        Callers should check this before `load(..., space="sae")` and
+        skip-with-a-log-line if false (CLAUDE.md sec 2.5) -- most (model,
+        layer) pairs never get SAE features written at all
+        (`sae.persist_features` is off by default), so absence here is the
+        expected common case, not a broken store.
+        """
+        return f"sae/{model}/{layer}" in self.root
+
     def load(self, model: str, layer: str, level: str = "series",
-             rows: Optional[np.ndarray] = None, check_finite: bool = True) -> np.ndarray:
+             rows: Optional[np.ndarray] = None, check_finite: bool = True,
+             space: str = "act") -> np.ndarray:
         """Load activations at 'series' ([N, D]) or 'window' ([N, W, D]) granularity.
+
+        `space="act"` (default) reads raw activations (`act`/`pooled`);
+        `space="sae"` reads persisted SAE-encoded features (`sae`/
+        `sae_pooled`, ROADMAP.md sec 6.2.1 Stage 3d) instead. Unlike
+        `stack_meta`'s graceful empty-dict fallback, an absent `space="sae"`
+        array raises with an actionable message rather than degrading
+        silently -- asking for a feature space that was never persisted is
+        a caller bug to fix (check `has_sae_features` first and skip with a
+        log line), not an expected-absent piece of metadata.
 
         `check_finite=True` (default, sec 15 A19) asserts every consumer of
         this store -- every CKA/ridge/PCA call downstream -- gets a loud,
@@ -183,7 +267,17 @@ class ActivationStore:
         `isfinite` scan over data already materialized in memory, negligible
         next to the linear algebra every caller does with the result.
         """
-        key = ("pooled" if level == "series" else "act") + f"/{model}/{layer}"
+        if space not in ("act", "sae"):
+            raise ValueError(f"store.load: space must be 'act' or 'sae', got {space!r}")
+        prefix = "sae" if space == "sae" else "act"
+        pooled_prefix = "sae_pooled" if space == "sae" else "pooled"
+        key = (pooled_prefix if level == "series" else prefix) + f"/{model}/{layer}"
+        if key not in self.root:
+            hint = (f"has_sae_features({model!r}, {layer!r}) is False -- "
+                    f"sae.persist_features was off, or this target was never trained"
+                    if space == "sae" else "this (model, layer) was never extracted")
+            raise KeyError(f"store.load({model!r}, {layer!r}, space={space!r}): no array "
+                           f"at {key!r} -- {hint}.")
         arr = self.root[key]
         out = arr[:] if rows is None else arr.oindex[np.asarray(rows)]
         if check_finite:

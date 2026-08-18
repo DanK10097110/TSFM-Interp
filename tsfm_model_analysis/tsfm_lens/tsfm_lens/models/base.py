@@ -167,6 +167,20 @@ class ModelAdapter(ABC):
         """
         return None
 
+    def token_ids(self, prepared: Any) -> Optional[np.ndarray]:
+        """Discretized token ids for a prepared batch, `[B, n_tokens]`.
+
+        Only meaningful for architectures whose tokenizer re-quantizes the
+        input (e.g. Chronos-T5's context-adaptive scalar quantization,
+        `MeanScaleUniformBins` -- CLAUDE.md sec 11.16). Returns None for
+        continuous-embedding architectures (TimesFM/Sundial/Chronos-Bolt/
+        Chronos-2's patch-MLP tokenizers), which have nothing for an
+        impulse probe to re-quantize -- `calibrate_impulse_amplitude`
+        (ROADMAP.md sec 15 A20) treats None as "not applicable" and skips
+        calibration rather than guessing.
+        """
+        return None
+
     def discover_layers(self, contains: str = "") -> list:
         """List candidate module names, for choosing a layer regex on a new checkpoint."""
         self.ensure_loaded()

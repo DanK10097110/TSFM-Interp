@@ -27,7 +27,8 @@ from sklearn.preprocessing import StandardScaler
 from ..config import PipelineConfig
 from ..data import BenchmarkData
 from ..extraction.store import ActivationStore
-from ..utils import log, relative_depths, sample_rows, save_json
+from ..utils import log, sample_rows, save_json
+from .depth_axis import depth_axis_for_run
 from .l1_geometry import linear_cka
 from .l2_stitching import _baseline_features
 from .stats import bootstrap_ci
@@ -84,9 +85,11 @@ def run_internals(cfg: PipelineConfig, store: ActivationStore, data: BenchmarkDa
             else:
                 probes.append({"value": None})
         counts = np.unique(row_labels[~train_mask], return_counts=True)[1]
+        da = depth_axis_for_run(cfg.alignment.depth_axis, store, model, layers)
         profile[model] = {
             "layers": layers,
-            "rel_depth": relative_depths(len(layers)).tolist(),
+            "rel_depth": da.coords.tolist(),
+            "depth_axis": da.axis, "depth_axis_degraded_from": da.fallback_from,
             "effective_dim": eff_dim,
             "input_cka": input_cka,
             "probe": probes,

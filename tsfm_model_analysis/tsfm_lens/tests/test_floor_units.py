@@ -109,7 +109,7 @@ def test_a_head_ranking_below_its_floor_emits_no_finding(tmp_path):
     """§18 F6's hard rule: an uninterpretable delta may not become a finding.
     A ranking of heads that all sit inside the noise is a ranking of noise."""
     html, findings = _render_attention(_attention_fixture(tmp_path, 0.05, _SAMPLING))
-    assert not any("most load-bearing head" in f for f in findings)
+    assert not any("most load-bearing head" in f.text for f in findings)
     # ...and the suppression is stated in the body, not only in the audit --
     # a silently missing finding is exactly the failure mode invariant 8 names.
     assert "no ranking finding is" in html and "0.5×" in html
@@ -119,8 +119,8 @@ def test_a_head_ranking_below_its_floor_emits_no_finding(tmp_path):
 
 def test_a_head_ranking_above_its_floor_keeps_its_finding_and_the_ratio(tmp_path):
     html, findings = _render_attention(_attention_fixture(tmp_path, 0.9, _SAMPLING))
-    hit = next(f for f in findings if "most load-bearing head" in f)
-    assert "9.0×" in hit
+    hit = next(f for f in findings if "most load-bearing head" in f.text)
+    assert "9.0×" in hit.text
     assert R._FLOOR_AUDIT["suppressed"] == [] and R._FLOOR_AUDIT["below_floor"] == 0
     assert "no ranking finding is" not in html
 
@@ -129,8 +129,8 @@ def test_an_unmeasured_floor_neither_suppresses_nor_pretends(tmp_path):
     """No `l0/noise_floor.json` at all: the finding survives (suppressing it
     would be asserting noise we never measured) but says so in words."""
     html, findings = _render_attention(_attention_fixture(tmp_path, 0.05, None))
-    hit = next(f for f in findings if "most load-bearing head" in f)
-    assert "no repeat-run floor measured" in hit
+    hit = next(f for f in findings if "most load-bearing head" in f.text)
+    assert "no repeat-run floor measured" in hit.text
     assert R._FLOOR_AUDIT["unmeasured"] == 1 and R._FLOOR_AUDIT["below_floor"] == 0
     assert R._FLOOR_AUDIT["suppressed"] == []
 

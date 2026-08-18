@@ -56,14 +56,12 @@ def test_budget_config_defaults_and_yaml_nesting():
     assert cfg.budget.enabled is False and cfg.budget.batch == 3
     assert cfg.budget.measure_predict is False
 
-    # Pinned as *current behavior*, not as correct behavior: `config.py::_build`
-    # drops any key that is not a dataclass field, so a typo'd knob silently
-    # does nothing here exactly as it does for every other config section. That
-    # is a repo-wide gap (ROADMAP.md §15 A21), not a `budget:` one -- this
-    # assertion exists so that fixing it fails here and gets the section
-    # re-checked rather than passing unnoticed.
+    # ROADMAP.md sec 15 A21, fixed: a typo'd/unknown knob now raises loudly at
+    # config-load time instead of silently running at the default while
+    # `config_resolved.yaml` reads as though the setting were in force.
     d["budget"]["nonsense_knob"] = 1
-    assert not hasattr(config_from_dict(d).budget, "nonsense_knob")
+    with pytest.raises(TypeError, match="nonsense_knob"):
+        config_from_dict(d)
 
 
 def test_stage_is_standalone_and_runs_before_the_expensive_stages():
@@ -149,7 +147,7 @@ def test_normalized_panel_says_so_in_words_when_l0_is_absent(tmp_path):
     html = _sec_budget(tmp_path, {"m": "#000"}, findings)
     assert "L0 did not run" in html
     assert "Quality per unit of compute" not in html
-    assert any("1000" in f or "0.0" in f for f in findings)
+    assert any("1000" in f.text or "0.0" in f.text for f in findings)
 
 
 def test_untrustworthy_flop_count_is_named_in_the_body_not_a_collapsed_note(tmp_path):

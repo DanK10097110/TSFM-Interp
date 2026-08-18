@@ -39,13 +39,33 @@ reports that clause unrun without it, and a rule with an unrun clause does not
 pass. V0 is not a rung: it has no known answer to validate the metric against,
 it is the thing a crosscoder has to beat.
 
+`--v4` runs Stage 2's V4 diagnostic (`sae.crosscoder_eval.latent_scaling_confirm`)
+against L-D's own trained crosscoder -- not a retrain, the exact object that
+produced L-D's recorded `frac_shared`. It asks whether the atoms
+`atom_buckets` calls "specific" are really specific, or a real cross-source
+direction the optimizer merely shrank; a diagnostic, not a new model, so it
+needs `D` in `--rungs` and is silently skipped (with a note, not silently)
+otherwise.
+
+`--v2` trains Stage 2's V2 candidate -- a BatchTopK crosscoder
+(`sae.crosscoder.CrosscoderSAE(topk_mode="batch")`) over the *same* real pair
+and the *same* budget as L-D, differing only in that sparsification competes
+across the whole batch (top `k*N` overall) rather than per row, so a
+dense window can use more than `k` atoms and a sparse one fewer while the
+average stays `k`. Unlike V4 it is an independent training run, not a
+diagnostic of L-D's own object, so it does not require `D` in `--rungs` --
+but the comparison this item's spec asks for (dead_feature_rate and
+frac_specific_* moving down relative to V1's per-row incumbent, at matched
+fidelity) is only logged when L-D also ran.
+
     python run_crosscoder_ladder.py --params configs/crosscoder_stage0_gate.yaml \\
-        --null-run runs/null_timesfm_random --v0 --out runs/.../ladder.json
+        --null-run runs/null_timesfm_random --v0 --v2 --v4 --out runs/.../ladder.json
 """
 
 from __future__ import annotations
 
 import argparse
+import dataclasses
 import json
 import sys
 from pathlib import Path
@@ -56,13 +76,16 @@ import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from run_crosscoder_stage0 import Row, load_all_windows, row_from_params, train_kwargs
+from run_crosscoder_stage0 import (
+    Row, load_all_windows, row_from_params, sae_train_kwargs, train_kwargs,
+)
 from tsfm_lens.config import load_config
 from tsfm_lens.extraction.store import ActivationStore, load_meta
 from tsfm_lens.sae.crosscoder import CrosscoderTrainConfig, train_crosscoder
 from tsfm_lens.sae.crosscoder_eval import (
     GroundTruthContext,
     gt_alignment_margin,
+    latent_scaling_confirm,
     monotone_decay,
     planted_sources,
     score_v0,
@@ -118,14 +141,18 @@ def ground_truth_context(cfg, store, run_dir: Path, pair: list, max_series: int,
 
 
 def run_rung(name: str, xa: np.ndarray, xb: np.ndarray, row: Row, device, seed: int,
-             gt: GroundTruthContext | None = None, note: str = "") -> dict:
+             gt: GroundTruthContext | None = None, note: str = "") -> tuple:
+    """Trains and scores one rung. Returns `(score, sae)` -- the trained
+    crosscoder is handed back, not just discarded, so a caller that needs it
+    again (V4 against L-D's own object, not a retrain) doesn't have to pay
+    for a second training pass to get one."""
     log.info(f"ladder [{name}]: {xa.shape} <-> {xb.shape}")
     sae = train_rung(row, xa, xb, device, seed)
     score = score_variant(sae, [xa, xb], gt, device)
     score["rung"] = name
     score["note"] = note
     score["n_rows"] = int(xa.shape[0])
-    return score
+    return score, sae
 
 
 def run_v0(row: Row, xa: np.ndarray, xb: np.ndarray, names: tuple, device, seed: int,
@@ -151,7 +178,8 @@ def run_v0(row: Row, xa: np.ndarray, xb: np.ndarray, names: tuple, device, seed:
     for i, x in enumerate((xa, xb)):
         b_dict = row.baseline_dict_size(i, row.dict_size)
         log.info(f"ladder [V0]: {names[i]} dict={b_dict} rows={x.shape[0]}")
-        sae, _ = train_sae(x, SAETrainConfig(**{**shared, "dict_size": b_dict}), device)
+        sae, _ = train_sae(
+            x, SAETrainConfig(**{**sae_train_kwargs(shared), "dict_size": b_dict}), device)
         saes.append(sae)
     score = score_v0(saes[0], saes[1], [xa, xb], gt, device)
     score["rung"] = "V0"
@@ -160,6 +188,22 @@ def run_v0(row: Row, xa: np.ndarray, xb: np.ndarray, names: tuple, device, seed:
     score["baseline_sizing"] = "own" if row.baseline_dict_sizes else "matched"
     score["note"] = ("the incumbent: independent per-model dictionaries matched post hoc "
                      "(sae/matching.py), scored on the same scorecard")
+    return score
+
+
+def run_v2(row: Row, xa: np.ndarray, xb: np.ndarray, device, seed: int,
+           gt: GroundTruthContext | None = None) -> dict:
+    """V2: BatchTopK crosscoder (ROADMAP.md §6.2.1 Stage 2). Same pair, same
+    training budget as L-D (`train_kwargs(row, seed)`, identical dict_size/k/
+    epochs/aux settings) -- the only difference is `batch_topk=True`, so a
+    difference between V2 and L-D is a difference in the sparsification rule,
+    not in what either was trained with. `dataclasses.replace` builds this
+    off `row` without mutating the object every other rung/variant shares.
+    """
+    batch_row = dataclasses.replace(row, batch_topk=True)
+    score, _ = run_rung("V2", xa, xb, batch_row, device, seed, gt=gt,
+                        note="BatchTopK: batch-level top k*N instead of per-row top k, "
+                             "same real pair and budget as L-D")
     return score
 
 
@@ -202,6 +246,18 @@ def main() -> None:
                              "dictionaries matched post hoc. Stage 1c's second clause is "
                              "a comparison against V0, so without this the verdict "
                              "reports that clause unrun and fails closed.")
+    parser.add_argument("--v4", action="store_true",
+                        help="also run Stage 2's V4 latent-scaling diagnostic against "
+                             "L-D's own trained crosscoder (not a retrain). Requires `D` "
+                             "in --rungs; otherwise skipped with a logged note, not "
+                             "silently.")
+    parser.add_argument("--v2", action="store_true",
+                        help="also train and score V2 -- a BatchTopK crosscoder (batch-"
+                             "level top k*N instead of per-row top k) over the same real "
+                             "pair and budget as L-D. An independent training run, not a "
+                             "diagnostic of L-D's own object like V4; does not require "
+                             "`D` in --rungs, but the V2-vs-L-D delta is only logged when "
+                             "L-D also ran.")
     parser.add_argument("--deltas", default="1,2,4,8", help="L-C captured-layer offsets")
     parser.add_argument("--gt-max-series", type=int, default=400)
     parser.add_argument("--seed", type=int, default=None)
@@ -236,9 +292,9 @@ def main() -> None:
     }
 
     if "A" in wanted:
-        out["rungs"]["L-A"] = run_rung("L-A", xa, xa.copy(), row, device, seed,
-                                       note="model A against itself; 100% shared by "
-                                            "construction")
+        out["rungs"]["L-A"], _ = run_rung("L-A", xa, xa.copy(), row, device, seed,
+                                          note="model A against itself; 100% shared by "
+                                               "construction")
     if "E" in wanted:
         pa, pb, labels = planted_sources()
         torch.manual_seed(seed)
@@ -260,8 +316,8 @@ def main() -> None:
                 skipped.append(delta)
                 continue
             xo = load_all_windows(store, model_a.name, other)
-            score = run_rung(f"L-C:d={delta}", xa, xo, row, device, seed,
-                             note=f"{layer_a} vs {other} ({delta} captured positions)")
+            score, _ = run_rung(f"L-C:d={delta}", xa, xo, row, device, seed,
+                                note=f"{layer_a} vs {other} ({delta} captured positions)")
             score["delta"] = delta
             score["layer_other"] = other
             out["rungs"][f"L-C:d={delta}"] = score
@@ -274,13 +330,14 @@ def main() -> None:
                         f"L-C's decay is read over the deltas that fit")
 
     gt = None
-    if "D" in wanted or args.v0:
+    if "D" in wanted or args.v0 or args.v2:
         gt = ground_truth_context(cfg, store, run_dir,
                                   [(model_a.name, layer_a), (model_b.name, layer_b)],
                                   args.gt_max_series, seed)
+    sae_d = None
     if "D" in wanted:
-        out["rungs"]["L-D"] = run_rung("L-D", xa, xb, row, device, seed, gt=gt,
-                                       note="the real pair; no known answer")
+        out["rungs"]["L-D"], sae_d = run_rung("L-D", xa, xb, row, device, seed, gt=gt,
+                                              note="the real pair; no known answer")
 
     if "B" in wanted and args.null_run:
         null_dir = Path(args.null_run)
@@ -299,17 +356,29 @@ def main() -> None:
                 out["checks"]["L-B"] = {"status": "row_count_mismatch",
                                         "n_real": int(xa.shape[0]), "n_null": int(xn.shape[0])}
             else:
-                out["rungs"]["L-B"] = run_rung("L-B", xa, xn, row, device, seed,
-                                               note=f"{model_a.name} against its own "
-                                                    f"random_init twin at {layer_a}")
+                out["rungs"]["L-B"], _ = run_rung("L-B", xa, xn, row, device, seed,
+                                                  note=f"{model_a.name} against its own "
+                                                       f"random_init twin at {layer_a}")
     elif "B" in wanted:
         log.warning("ladder: --null-run not given; L-B does not run and L-D's shared "
                     "fraction has no floor to be read against")
         out["checks"]["L-B"] = {"status": "not_run", "why": "--null-run not supplied"}
 
     if args.v0:
-        out["variants"] = {"V0": run_v0(row, xa, xb, (model_a.name, model_b.name),
-                                        device, seed, gt)}
+        out.setdefault("variants", {})["V0"] = run_v0(
+            row, xa, xb, (model_a.name, model_b.name), device, seed, gt)
+
+    if args.v2:
+        out.setdefault("variants", {})["V2"] = run_v2(row, xa, xb, device, seed, gt)
+
+    if args.v4:
+        if sae_d is None:
+            log.warning("ladder: --v4 given but L-D did not run (D not in --rungs); "
+                        "V4 skipped -- it diagnoses L-D's own trained crosscoder, "
+                        "not a fresh one")
+            out["checks"]["V4"] = {"status": "not_run", "why": "D not in --rungs"}
+        else:
+            out["checks"]["V4"] = latent_scaling_confirm(sae_d, [xa, xb], device)
 
     l_d, l_b = out["rungs"].get("L-D"), out["rungs"].get("L-B")
     margin = shared_fraction_margin(l_d, l_b, seed=seed) if l_d and l_b else None
@@ -340,6 +409,23 @@ def main() -> None:
                  f"{gt_margin['diff']:+.4f} "
                  f"[{gt_margin['diff_lo']:+.4f}, {gt_margin['diff_hi']:+.4f}] "
                  f"beats_v0={gt_margin['beats_v0']}")
+    v4 = out["checks"].get("V4")
+    if v4 is not None and "specific_a" in v4:
+        for side in ("specific_a", "specific_b"):
+            s = v4[side]
+            log.info(f"  V4 {side}: n_atoms={s['n_atoms']} "
+                     f"frac_specific_confirmed={s['frac_specific_confirmed']:.3f} "
+                     f"mean_ve={s['mean_variance_explained']:.4f}")
+    v2 = out.get("variants", {}).get("V2")
+    if v2 is not None and l_d is not None:
+        d_split, l_split = v2["shared_specific_split"], l_d["shared_specific_split"]
+        d_dead = v2["dead_feature_rate"] - l_d["dead_feature_rate"]
+        d_spec_a = d_split["frac_specific_a"] - l_split["frac_specific_a"]
+        d_spec_b = d_split["frac_specific_b"] - l_split["frac_specific_b"]
+        d_fid = min(v2["fidelity_per_source"]) - min(l_d["fidelity_per_source"])
+        log.info(f"  V2 vs L-D (this item's spec: dead down, specific_* down, "
+                 f"fidelity matched): dead {d_dead:+.3f} specific_a {d_spec_a:+.3f} "
+                 f"specific_b {d_spec_b:+.3f} min_fidelity {d_fid:+.3f}")
     if "verdict" in out:
         v = out["verdict"]
         log.info(f"  verdict: passes={v['passes']} unrun={v['unrun']}")

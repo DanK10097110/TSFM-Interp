@@ -7,11 +7,17 @@ matching over the shared benchmark. Two seams already exist for this:
 
 1. Extraction writes raw aligned activations to the store; an SAE pass
    re-encodes `act/{model}/{layer}` into `sae/{model}/{layer}` without
-   touching adapters. (Not yet wired: the baseline `sae` stage below trains
-   and evaluates a dictionary per target but does not yet persist its
-   encoded features back into the store under that path -- L1/clustering
-   do not read a `level="sae"` today. Flagged as follow-up, not silently
-   dropped.)
+   touching adapters. **Wired (ROADMAP.md sec 6.2.1 Stage 3d):**
+   `sae.persist_features: true` makes `train.py::run_sae` call
+   `encode_and_persist_features` for each target after training, and
+   `extraction/store.py::load(..., space="sae")` reads it back at either
+   granularity. Off by default -- a wide dictionary's window-level feature
+   array can be many times the raw activation store's own size. The one
+   consumer built so far is `sae/feature_geometry.py::run_sae_feature_cka`
+   (series-level CKA between two models' feature spaces, `l1/cka_sae.json`)
+   -- clustering does not yet read `level="sae"`/`space="sae"`, and neither
+   does L1's own main CKA pass (`analysis/l1_geometry.py`); both remain a
+   natural, separately-scoped follow-up.
 2. `extraction.hooks.token_patch` is the intervention primitive: feature
    ablation is patching a reconstruction with selected features zeroed.
    `sae/eval.py::forecast_preservation` already reuses it for the

@@ -8,6 +8,7 @@ which is what `--check-alignment` exists for.
 
 from __future__ import annotations
 
+import json
 import sys
 import tempfile
 from pathlib import Path
@@ -76,7 +77,7 @@ def test_end_to_end(tmp_path=None):
         "clustering/comparison.json",
         "internals/profile.json",
         "hypotheses.json", "confirm/behavioral.parquet", "confirm/confirmation.json",
-        "report.html",
+        "report.html", "report/coverage.json", "report/findings.json",
     ]
     missing = [p for p in expected if not (run_dir / p).exists()]
     assert not missing, f"missing artifacts: {missing}"
@@ -89,6 +90,46 @@ def test_end_to_end(tmp_path=None):
                   "How to read this report", "mask-fraction baseline",
                   "How to read these case studies", "patched at"):
         assert token in html, f"report missing '{token}'"
+
+    # `report/findings.json` (ROADMAP.md sec 21 E6/J1): one structured `Finding`
+    # record per rendered claim -- `plain`/`text`/`caveat`, the three-register
+    # claim contract -- machine-readable without re-parsing the HTML `<li>`
+    # list.
+    findings_payload = json.loads((run_dir / "report" / "findings.json").read_text(encoding="utf-8"))
+    findings_list = findings_payload["findings"]
+    assert findings_list, "findings.json has no entries"
+    # Isolated by the first `<section ` tag, not the first `</div>` -- J1's
+    # per-finding collapsed caveat (`<details class="note">...<div
+    # class="note-body">...</div></details>`) nests a `</div>` inside every
+    # `<li>`, so a naive first-`</div>` split would truncate the block after
+    # the very first finding's caveat instead of at the findings block's own
+    # close (which precedes the first rendered `<section>`).
+    findings_block = html.split('<div class="findings">', 1)[1].split("<section ", 1)[0]
+    n_findings_html = findings_block.count("<li>")
+    assert len(findings_list) == n_findings_html, (
+        f"findings.json has {len(findings_list)} entries but the report "
+        f"rendered {n_findings_html} <li> findings")
+    allowed_evidence_classes = {"geometric", "translatable", "causal_within_model",
+                                "descriptive", "illustrative", "behavioral"}
+    for entry in findings_list:
+        assert entry["evidence_class"] in allowed_evidence_classes, (
+            f"finding {entry.get('claim_id')} has unexpected evidence_class "
+            f"{entry.get('evidence_class')!r}")
+        # J1: every finding must carry a genuine plain-English headline and a
+        # generated caveat -- neither should ever be silently empty.
+        assert entry.get("plain"), f"finding {entry.get('claim_id')} has empty plain"
+        assert entry.get("caveat"), f"finding {entry.get('claim_id')} has empty caveat"
+        assert entry["plain"] != entry["text"], (
+            f"finding {entry.get('claim_id')}: plain should not be identical to text")
+    # The plain headline and the caveat's collapsed <details> must both
+    # actually be present in the rendered HTML, not just in findings.json.
+    assert 'class="finding-plain"' in findings_block
+    assert findings_block.count('class="finding-plain"') == len(findings_list)
+    assert '<details class="note"><summary>Caveats</summary>' in findings_block
+    for entry in findings_list:
+        assert entry["text"], f"finding {entry.get('claim_id')} has empty text"
+        assert isinstance(entry["registered"], bool)
+
     print(f"smoke test passed: {run_dir}")
     return run_dir
 

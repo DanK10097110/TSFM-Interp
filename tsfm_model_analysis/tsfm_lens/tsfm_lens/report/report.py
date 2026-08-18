@@ -12,8 +12,9 @@ from __future__ import annotations
 
 import datetime
 import re
+from dataclasses import asdict, dataclass, replace
 from pathlib import Path
-from typing import Optional
+from typing import Literal, Optional
 
 import numpy as np
 import pandas as pd
@@ -21,8 +22,9 @@ import plotly.graph_objects as go
 from jinja2 import Template
 from plotly.subplots import make_subplots
 
+from .. import stage_docs
 from ..config import PipelineConfig
-from ..utils import load_json, log, relative_depths, save_json
+from ..utils import load_json, log, save_json
 
 _COLORS = {"a": "#2E6E8E", "b": "#9A5B88", "accent": "#C2661B",
            "ink": "#22303A", "muted": "#66727B", "line": "#E2E6E1"}
@@ -30,6 +32,64 @@ _CLUSTER_PALETTE = ["#2E6E8E", "#9A5B88", "#C2661B", "#4E8D6E", "#B04A5A",
                     "#6B6EA8", "#8C7A3F", "#4FA3A5", "#A85E32", "#5C7A99",
                     "#7E9A4E", "#996383", "#3F8C7A", "#A88F4E", "#7A5CA8",
                     "#B07070", "#5E8CA8", "#8CA85E", "#A85E8C", "#708CB0"]
+
+EvidenceClass = Literal["geometric", "translatable", "causal_within_model",
+                        "descriptive", "illustrative", "behavioral"]
+
+
+@dataclass
+class Finding:
+    """One reported claim (`ROADMAP.md` sec 21 E6/J1) — the structured
+    replacement for a bare finding string, rendered in three registers.
+
+    `plain` is a one-sentence, jargon-free gloss (headline size in the HTML);
+    `text` is the register that existed before J1 — effect size, CI,
+    correction, evidence class — rendered beneath the headline unchanged;
+    `caveat` is rendered inside the existing collapsed `<details>` mechanism
+    and is never hand-written at a call site. It is composed once, after
+    every finding exists, by `_compose_caveats` from this finding's own
+    structured fields (`evidence_class`, `registered`, `cleared_noise_floor`)
+    plus already-written run artifacts (the fairness card, the coverage
+    qualifiers) — the same "generated, not authored" discipline
+    `_qualify_depth_claims` already applies to `.text`, extended to a field
+    whose whole point is that author discipline decays (`CLAUDE.md`
+    invariant 8) while a generated function does not.
+
+    `cleared_noise_floor` is populated only at call sites where a per-model
+    repeat-run noise-floor comparison (ROADMAP.md sec 18 F6) actually ran for
+    the delta this finding reports; it stays `None` — not `False` — everywhere
+    else, since `None` and "checked and failed" are different claims. `value`
+    and `ci` remain the still-unpopulated placeholders from the prior pass.
+    """
+    claim_id: str
+    stage: str
+    evidence_class: EvidenceClass
+    text: str
+    plain: str
+    registered: bool
+    cleared_noise_floor: Optional[bool] = None
+    value: Optional[float] = None
+    ci: Optional[tuple] = None
+    caveat: str = ""
+
+
+_CLAIM_COUNTERS: dict = {}
+
+
+def _next_claim_id(stage: str) -> str:
+    """Per-stage incrementing `Finding.claim_id`.
+
+    `analysis/hypotheses.py`'s A15 registry ids (`l0_family::...`,
+    `l1_peak_cka::...`) key the *subset* of dev claims `confirm` replicates,
+    derived structurally from artifact fields — not from the free-form prose
+    built at each `findings.append` call site in this module, so reusing them
+    here would need a nontrivial text-to-hypothesis mapping this pass does
+    not attempt. A plain per-stage counter is unambiguous and stable within
+    one render, which is all `findings.json` needs.
+    """
+    n = _CLAIM_COUNTERS.get(stage, 0) + 1
+    _CLAIM_COUNTERS[stage] = n
+    return f"{stage}.{n}"
 
 
 def run_report(cfg: PipelineConfig) -> Path:
@@ -47,12 +107,17 @@ def run_report(cfg: PipelineConfig) -> Path:
     downgrades that to a loud warning.
     """
     _FLOOR_AUDIT.update(checked=0, below_floor=0, unmeasured=0, suppressed=[])
+    _CLAIM_COUNTERS.clear()
     run_dir = cfg.run_dir()
     a, b = cfg.comparison_pair()
     model_colors = {a.name: _COLORS["a"], b.name: _COLORS["b"]}
     sections, findings, coverage = [], [], []
 
     builders = [
+        ("Fairness", "The fairness card",
+         "Every measured asymmetry between the two models in this run, before any result section (ROADMAP.md §18 F9).",
+         [], "report",
+         lambda: _sec_fairness(cfg, run_dir)),
         ("L0", "Behavioral profile",
          "Forecast quality per benchmark family: the hypotheses the deeper levels try to explain.",
          ["l0/metrics.parquet", "l0/summary.json"], "l0",
@@ -60,7 +125,7 @@ def run_report(cfg: PipelineConfig) -> Path:
         ("Cost", "Cost and capacity",
          "What each model costs to run — parameters, measured FLOPs, latency, VRAM — and what its L0 quality looks like per unit of compute rather than in absolute terms.",
          ["budget/model_budget.json"], "budget",
-         lambda: _sec_budget(run_dir, model_colors, findings)),
+         lambda: _sec_budget(run_dir, model_colors, findings, cfg.alignment.depth_axis)),
         ("Screen", "Layer screening",
          "Which of each model's own captured layers were flagged as worth further, expensive analysis — and what sae.targets: auto trained on.",
          ["layer_screen/selection.json"], "layer_screen",
@@ -101,7 +166,7 @@ def run_report(cfg: PipelineConfig) -> Path:
         ("Exemplars", "Exemplar case studies",
          "A few concrete series per family, told end to end: both forecasts, where each model's answer forms in depth, and where it looks in the context.",
          ["exemplars/exemplars.npz", "exemplars/exemplars.json"], "exemplars",
-         lambda: _sec_exemplars(run_dir, model_colors, findings)),
+         lambda: _sec_exemplars(run_dir, model_colors, findings, cfg.alignment.depth_axis)),
         ("Confirm", "Private benchmark confirmation",
          "One-shot confirmatory tests of the dev findings on a sealed held-out corpus. This is the gold standard: exploration above, evidence here.",
          ["confirm/confirmation.json"], "confirm",
@@ -128,6 +193,13 @@ def run_report(cfg: PipelineConfig) -> Path:
             continue
         try:
             inner = build()
+            if inner:
+                # ROADMAP.md sec 21 J2: every rendered section leads with its
+                # stage's fixed four-line "what this tells you" doc, pulled
+                # from `stage_docs.py` -- same failure path as the figures
+                # below it, so a stage missing an entry shows up as a failed
+                # section in the coverage panel, not a silently blank box.
+                inner = _stage_doc_block(config_attr) + inner
         except Exception as exc:
             detail = f"{type(exc).__name__}: {exc}"
             log.warning("report: section %s failed: %s", eyebrow, detail)
@@ -136,7 +208,7 @@ def run_report(cfg: PipelineConfig) -> Path:
             continue
         if inner:
             sections.append({"eyebrow": eyebrow, "title": title, "blurb": blurb,
-                             "html": inner})
+                             "html": inner, "slug": _section_slug(eyebrow)})
             coverage.append({"eyebrow": eyebrow, "title": title, "status": "rendered",
                              "detail": ""})
         else:
@@ -158,11 +230,22 @@ def run_report(cfg: PipelineConfig) -> Path:
         if _FLOOR_AUDIT["suppressed"]:
             parts.append("findings suppressed as uninterpretable: "
                          + ", ".join(_FLOOR_AUDIT["suppressed"]))
-        findings.append("Noise floor — " + "; ".join(parts)
-                        + " (ROADMAP.md sec 18 F6).")
+        findings.append(Finding(
+            claim_id=_next_claim_id("report"), stage="report", evidence_class="descriptive",
+            text="Noise floor — " + "; ".join(parts) + " (ROADMAP.md sec 18 F6).",
+            plain=(f"All of this report's accuracy-change numbers are bigger than the "
+                   f"random noise you'd see just from calling a model twice."
+                   if _FLOOR_AUDIT["below_floor"] == 0 else
+                   f"{_FLOOR_AUDIT['below_floor']} of this report's accuracy-change "
+                   f"numbers are small enough that they could just be random noise from "
+                   f"calling a model twice, not a real effect."),
+            registered=False,
+            cleared_noise_floor=(_FLOOR_AUDIT["below_floor"] == 0)))
     findings = _qualify_depth_claims(run_dir, findings)
-    findings = [(f"[exploratory — not pre-registered] {f}" if i < n_exploratory[0] else f)
+    findings = [(replace(f, text=f"[exploratory — not pre-registered] {f.text}", registered=False)
+                if i < n_exploratory[0] else f)
                for i, f in enumerate(findings)]
+    findings = _compose_caveats(findings, run_dir)
 
     n_rendered = sum(c["status"] == "rendered" for c in coverage)
     n_skipped = sum(c["status"] == "skipped" for c in coverage)
@@ -189,6 +272,17 @@ def run_report(cfg: PipelineConfig) -> Path:
     (run_dir / "report").mkdir(parents=True, exist_ok=True)
     save_json(run_dir / "report" / "coverage.json",
              {"summary": summary, "sections": coverage})
+    # `findings.json` (ROADMAP.md sec 21 E6/J1): the same per-claim records the
+    # HTML body renders in three registers -- `.plain` (headline), `.text`
+    # (the pre-J1 register), `.caveat` (the collapsed detail) -- serialized in
+    # full, including `claim_id`, `stage`, `evidence_class`, `registered`,
+    # `cleared_noise_floor`, and the still-`None` `value`/`ci` precision
+    # fields, so a claim is deep-linkable and machine-readable without
+    # re-parsing the HTML `<li>` list. Written next to `coverage.json` (same
+    # `report/` subdirectory, same run) since both are report-render
+    # metadata, not run artifacts a downstream analysis stage would read.
+    save_json(run_dir / "report" / "findings.json",
+             {"findings": [asdict(f) for f in findings]})
     if failed:
         log.warning("report: %s", summary)
     else:
@@ -441,6 +535,25 @@ def _frag(fig: go.Figure, height: int = 420) -> str:
                        config={"displayModeBar": False})
 
 
+def _stage_doc_block(stage_key: str) -> str:
+    """Render a stage's fixed four-line "What this tells you" block (`ROADMAP.md` sec 21 J2).
+
+    Pulled directly from `stage_docs.STAGE_DOCS` -- the same dict
+    `render_stage_docs.py` renders into the README -- so the question/how/
+    good-vs-bad/cannot-tell text can never drift between the two surfaces;
+    editing a stage's doc means editing exactly one file, `stage_docs.py`.
+    Open by default (unlike `_note`'s per-figure asides) since this is the
+    section's own framing, meant to be read before the section's numbers,
+    not an optional aside under them.
+    """
+    doc = stage_docs.get(stage_key)
+    return (f'<details class="note stagedoc" open><summary>What this stage tells you</summary>'
+            f'<div class="note-body"><p><b>Question</b><br>{doc.question}</p>'
+            f'<p><b>How</b><br>{doc.how}</p>'
+            f'<p><b>Good vs. bad result</b><br>{doc.good_bad}</p>'
+            f'<p><b>What it cannot tell you</b><br>{doc.cannot_tell}</p></div></details>')
+
+
 def _note(purpose: str, reading: str, limitations: str, summary: str = "What is this chart?") -> str:
     """Collapsed-by-default explanatory block rendered directly under a figure.
 
@@ -458,6 +571,15 @@ def _short(layer: str) -> str:
     """Compact layer tick label from a qualified module name."""
     m = re.search(r"(\d+)$", layer)
     return f"L{m.group(1)}" if m else layer[-10:]
+
+
+def _section_slug(eyebrow: str) -> str:
+    """Stable, lowercase-hyphenated id fragment for a section's `#sec-{slug}`
+    deep link (`ROADMAP.md` sec 21 E6). Derived from `eyebrow` (e.g. "L0",
+    "Layer screen") rather than `title`, since `eyebrow` is the short,
+    already-stage-like label the `builders` list keys sections by.
+    """
+    return re.sub(r"[^a-z0-9]+", "-", eyebrow.lower()).strip("-")
 
 
 def _table(df: pd.DataFrame) -> str:
@@ -542,9 +664,15 @@ def _archetype_block(per_arch: dict, findings: list) -> str:
                  f'Holm-corrected across archetypes, positive Δ favors first model):</p>' + _table(tbl))
         for model, arches in per_arch.get("strengths", {}).items():
             if arches:
-                findings.append(f"L0 — {model} is significantly stronger on archetype(s): "
-                                f"{', '.join(arches)} (paired bootstrap, Holm-corrected "
-                                f"α={per_arch.get('alpha', 0.05)}).")
+                findings.append(Finding(
+                    claim_id=_next_claim_id("l0"), stage="l0", evidence_class="behavioral",
+                    text=f"L0 — {model} is significantly stronger on archetype(s): "
+                        f"{', '.join(arches)} (paired bootstrap, Holm-corrected "
+                        f"α={per_arch.get('alpha', 0.05)}).",
+                    plain=f"{model} forecasts {', '.join(arches)}-style data clearly "
+                        f"better than the other model, and this held up under a "
+                        f"randomization check, not just eyeballing.",
+                    registered=False))
     return html
 
 
@@ -622,10 +750,20 @@ def _calibration_block(run_dir: Path, model_colors: dict, findings: list) -> str
     for model, d in calib.items():
         gap = max(abs(e - n) for n, e in zip(d["calibration_curve"]["nominal"],
                                              d["calibration_curve"]["empirical"]))
-        findings.append(f"L0 calibration — {model}: max reliability-curve gap {gap:.3f}, "
-                        f"outer-interval coverage {d['empirical_coverage']:.3f} "
-                        f"(nominal {d['nominal_coverage']:.3f}), "
-                        f"quantile-crossing rate {d['quantile_crossing_rate']:.3f}.")
+        cross_txt = (" It also produces occasional self-contradictory forecast "
+                    "ranges." if d["quantile_crossing_rate"] > 0 else
+                    " Its uncertainty ranges are internally consistent.")
+        findings.append(Finding(
+            claim_id=_next_claim_id("l0"), stage="l0", evidence_class="behavioral",
+            text=f"L0 calibration — {model}: max reliability-curve gap {gap:.3f}, "
+                f"outer-interval coverage {d['empirical_coverage']:.3f} "
+                f"(nominal {d['nominal_coverage']:.3f}), "
+                f"quantile-crossing rate {d['quantile_crossing_rate']:.3f}.",
+            plain=f"{model}'s stated confidence ranges are "
+                f"{'well' if gap < 0.05 else 'somewhat' if gap < 0.15 else 'poorly'} "
+                f"calibrated — its forecast intervals cover the true value about as "
+                f"often as claimed.{cross_txt}",
+            registered=False))
     return html
 
 
@@ -674,9 +812,16 @@ def _horizon_resolved_block(run_dir: Path, model_colors: dict, findings: list) -
         "Same pooling caveat as the MASE curve above."))
     for model, d in by_model.items():
         mase_h = d["mase_by_horizon"]
-        findings.append(f"L0 horizon profile — {model}: MASE {mase_h[0]:.3f} at h=1 vs "
-                        f"{mase_h[-1]:.3f} at h={len(mase_h)} "
-                        f"(ratio {mase_h[-1] / (mase_h[0] + 1e-8):.2f}x).")
+        findings.append(Finding(
+            claim_id=_next_claim_id("l0"), stage="l0", evidence_class="behavioral",
+            text=f"L0 horizon profile — {model}: MASE {mase_h[0]:.3f} at h=1 vs "
+                f"{mase_h[-1]:.3f} at h={len(mase_h)} "
+                f"(ratio {mase_h[-1] / (mase_h[0] + 1e-8):.2f}x).",
+            plain=f"{model}'s forecasts get "
+                f"{'noticeably' if mase_h[-1] / (mase_h[0] + 1e-8) > 1.3 else 'a little'} "
+                f"less accurate the further ahead it predicts, which is the normal, "
+                f"expected pattern for a forecasting model.",
+            registered=False))
     return html
 
 
@@ -744,7 +889,7 @@ def _qualify_depth_claims(run_dir: Path, findings: list) -> list:
         return findings
     out = []
     for f in findings:
-        low = f.lower()
+        low = f.text.lower()
         add = [q for name, q in quals.items()
                if name.lower() in low and any(w in low for w in _DEPTH_WORDS)]
         if not add:
@@ -756,7 +901,132 @@ def _qualify_depth_claims(run_dir: Path, findings: list) -> list:
         # section for the two lists rather than inlining both here.
         body = "; ".join(clause + (tail if len(add) == 1 else "")
                          for clause, tail in add)
-        out.append(f"{f.rstrip('.')} — within the captured surface only; {body}.")
+        out.append(replace(f, text=f"{f.text.rstrip('.')} — within the captured surface only; {body}."))
+    return out
+
+
+_EVIDENCE_CLASS_CAVEATS = {
+    "geometric": "This is a geometric similarity measure between two models' "
+        "representations (do they organize the data alike), not evidence that "
+        "the models compute anything the same way.",
+    "translatable": "This is a linear-translatability measure -- scored as a gain "
+        "over an input-only baseline specifically so it isn't just \"both models "
+        "saw the same data\" -- not a causal or mechanistic claim.",
+    "causal_within_model": "This is a causal measurement made separately within "
+        "each model; comparing the two models' curves is a comparison of two "
+        "within-model causal results, not a causal claim that spans architectures.",
+    "descriptive": "This is a descriptive measurement of what is present, not a "
+        "claim about which model is better or why.",
+    "illustrative": "This is a single illustrative example chosen to make an "
+        "aggregate pattern concrete, not a statistical claim on its own.",
+    "behavioral": "This is a purely behavioral (input-to-output) comparison and "
+        "needs no interpretability machinery to be trusted on its own terms.",
+}
+
+_MASE_DELTA_RE = re.compile(r"δmase|mase ratio", re.IGNORECASE)
+_OVERLAP_PCT_RE = re.compile(r"([\d.]+)\s*%\s*overlap")
+
+
+def _is_full_overlap(asymmetry: str) -> bool:
+    """True when a fairness-card depth-axis `Asymmetry` string reports (near)
+    100% overlap -- in which case "the two axes only partially overlap" is
+    false, not merely un-emphatic, and the F1 caveat clause must not fire.
+    Parses defensively: an unparseable string is treated as NOT full overlap
+    (sec 2.5 -- when in doubt, keep the qualifier rather than silently drop it).
+    """
+    m = _OVERLAP_PCT_RE.search(asymmetry)
+    if not m:
+        return False
+    try:
+        return float(m.group(1)) >= 99.9
+    except ValueError:
+        return False
+
+
+def _compose_caveats(findings: list, run_dir: Path) -> list:
+    """Generate `Finding.caveat` for every finding (`ROADMAP.md` sec 21 J1).
+
+    Mirrors `_qualify_depth_claims`'s own mechanism immediately above: a
+    whole-list post-pass driven entirely by already-written structured
+    fields and run artifacts, never by prose typed at a `findings.append`
+    call site. That is the point of this field -- `CLAUDE.md` invariant 8's
+    lesson is that author discipline decays while a generated function does
+    not, and a hand-written caveat is exactly the kind of thing that goes
+    stale the next time a call site's numbers change but its caveat text
+    doesn't.
+
+    Four clauses, composed only when they actually apply to a given finding:
+    1. Evidence class -- always. What kind of claim this even is.
+    2. Registered vs. exploratory -- always, from `finding.registered`.
+    3. Noise floor -- only when `cleared_noise_floor` was actually set at the
+       call site (`True`/`False`), or the finding reports a ΔMASE-style
+       quantity for which no floor check ran; other findings (CKA, AMI,
+       cluster labels, ...) have no noise-floor concept to report the
+       absence of, so they get no clause here (sec 2.5's "loud" is not
+       "everywhere").
+    4. Fairness qualifiers, read from `fairness/card.json` (F9) exactly as
+       `_qualify_depth_claims` reads `_coverage_qualifiers` for F4/F1: a
+       depth-located finding about a low-coverage model gets the coverage
+       clause, and a behavioral/quality finding gets the parameter/FLOPs
+       asymmetry clause when the budget stage measured one.
+    """
+    quals = _coverage_qualifiers(run_dir)
+    fairness_path = run_dir / "fairness" / "card.json"
+    fairness_rows = load_json(fairness_path)["rows"] if fairness_path.exists() else []
+    by_axis = {r["Axis"]: r for r in fairness_rows}
+    size_axes = [a for a in ("Parameters", "FLOPs per forward (per series)") if a in by_axis]
+    depth_row = next((r for name, r in by_axis.items() if name.startswith("Depth axis")), None)
+
+    out = []
+    for f in findings:
+        parts = [_EVIDENCE_CLASS_CAVEATS[f.evidence_class]]
+        parts.append(
+            "Pre-registered on the sealed private corpus and tested exactly "
+            "once (CLAUDE.md sec 6.7) -- this is confirmatory evidence, the "
+            "gold standard this report's evidence ladder builds toward."
+            if f.registered else
+            "Exploratory: found by looking at the dev corpus, where many "
+            "comparisons were tried, so treat it as a hypothesis rather than "
+            "an established result unless the Confirm section replicates it.")
+
+        low = f.text.lower()
+        if f.cleared_noise_floor is True:
+            parts.append("The effect exceeds this model's own repeat-run "
+                "noise floor (ROADMAP.md sec 18 F6), so it is not explained "
+                "by ordinary call-to-call variation alone.")
+        elif f.cleared_noise_floor is False:
+            parts.append("This fell at or below the model's own repeat-run "
+                "noise floor (ROADMAP.md sec 18 F6) and should not be read "
+                "as a real effect.")
+        elif _MASE_DELTA_RE.search(low) and "noise floor —" not in low \
+                and "noise floor -" not in low:
+            parts.append("No repeat-run noise floor was checked against this "
+                "specific number (ROADMAP.md sec 18 F6), so it is not yet "
+                "established whether it exceeds ordinary run-to-run noise.")
+
+        if f.evidence_class == "behavioral" and size_axes:
+            facts = "; ".join(f"{a}: {by_axis[a]['Asymmetry']}" for a in size_axes
+                              if by_axis[a]["Asymmetry"] != "n/a")
+            if facts:
+                parts.append(f"The two models are not matched in size or compute "
+                    f"({facts}) -- the fairness card (ROADMAP.md sec 18 F9) treats "
+                    f"parameter/FLOPs asymmetry as qualifying every quality claim.")
+
+        add = [q for name, q in quals.items()
+               if name.lower() in low and any(w in low for w in _DEPTH_WORDS)]
+        if add:
+            body = "; ".join(clause + (tail if len(add) == 1 else "")
+                             for clause, tail in add)
+            parts.append(f"Within the captured surface only ({body}) -- "
+                f"ROADMAP.md sec 18 F4's coverage qualifier.")
+        elif depth_row and any(w in low for w in _DEPTH_WORDS) and \
+                depth_row["Asymmetry"] not in ("n/a", "") and \
+                not _is_full_overlap(depth_row["Asymmetry"]):
+            parts.append(f"The two models' depth axes only partially overlap "
+                f"({depth_row['Asymmetry']}) -- depth comparisons are only valid "
+                f"within that shared range (ROADMAP.md sec 18 F1).")
+
+        out.append(replace(f, caveat=" ".join(parts)))
     return out
 
 
@@ -804,13 +1074,25 @@ def _noise_floor_block(run_dir: Path, findings: list) -> str:
         "uncertainty -- read it as an order-of-magnitude reference, not a precise bound.")
     for m, v in floor.items():
         if v["deterministic"]:
-            findings.append(f"Noise floor — {m} is deterministic (repeat calls identical); "
-                            f"any ΔMASE for this model is real signal, not repeat-run noise.")
+            findings.append(Finding(
+                claim_id=_next_claim_id("l0"), stage="l0", evidence_class="behavioral",
+                text=f"Noise floor — {m} is deterministic (repeat calls identical); "
+                    f"any ΔMASE for this model is real signal, not repeat-run noise.",
+                plain=f"{m} gives the exact same forecast every time you ask it twice, "
+                    f"so any change in its accuracy elsewhere in this report is a real "
+                    f"effect, not random noise.",
+                registered=False))
         else:
-            findings.append(f"Noise floor — {m}: repeat-run MASE varies by "
-                            f"{v['mase_abs_delta_mean']:.4f} on average (p95 "
-                            f"{v['mase_abs_delta_p95']:.4f}); ΔMASE figures for this model "
-                            f"smaller than this are not distinguishable from repeat-run noise.")
+            findings.append(Finding(
+                claim_id=_next_claim_id("l0"), stage="l0", evidence_class="behavioral",
+                text=f"Noise floor — {m}: repeat-run MASE varies by "
+                    f"{v['mase_abs_delta_mean']:.4f} on average (p95 "
+                    f"{v['mase_abs_delta_p95']:.4f}); ΔMASE figures for this model "
+                    f"smaller than this are not distinguishable from repeat-run noise.",
+                plain=f"{m} gives a slightly different forecast every time you ask it "
+                    f"twice, so small accuracy changes for this model elsewhere in this "
+                    f"report could just be that randomness, not a real difference.",
+                registered=False))
     return html
 
 
@@ -852,9 +1134,15 @@ def _sec_l0(run_dir: Path, model_colors: dict, findings: list) -> str:
                   f'(sec 15 A11: heavy intermittency or a near-flat context both degenerate this '
                   f'way). smape/pinball/mae_over_mad below still include them. Per-family/per-'
                   f'archetype breakdown is in the "excluded" column of each table.</p>')
-        findings.append(f'L0 — {rel["n_excluded"]}/{rel["n_total"]} series excluded from MASE '
-                        f'aggregates as unreliable (scale={rel.get("scale")!r}, '
-                        f'min_scale_frac={rel.get("min_scale_frac")}).')
+        findings.append(Finding(
+            claim_id=_next_claim_id("l0"), stage="l0", evidence_class="behavioral",
+            text=f'L0 — {rel["n_excluded"]}/{rel["n_total"]} series excluded from MASE '
+                f'aggregates as unreliable (scale={rel.get("scale")!r}, '
+                f'min_scale_frac={rel.get("min_scale_frac")}).',
+            plain=f'{rel["n_excluded"]} of {rel["n_total"]} test series were too flat or '
+                f'erratic to score fairly, so they were left out of the main accuracy '
+                f'numbers rather than distorting them.',
+            registered=False))
     inner += "<h4>Overall metrics</h4>" + _table(pd.DataFrame(summary["overall"]))
     fam_cols = [c for c in ("model", "family", "mase", "mae_over_mad", "smape", "pinball",
                             "mase_n_excluded") if c in per_fam.columns]
@@ -876,7 +1164,12 @@ def _sec_l0(run_dir: Path, model_colors: dict, findings: list) -> str:
     if fam_comp and not fam_comp.get("applicable", True):
         inner += (f'<h4>Paired family tests</h4>'
                   f'<p class="blurb"><b>Not applicable.</b> {fam_comp["reason"]}</p>')
-        findings.append(f"L0 — per-family comparison not applicable: {fam_comp['reason']}")
+        findings.append(Finding(
+            claim_id=_next_claim_id("l0"), stage="l0", evidence_class="behavioral",
+            text=f"L0 — per-family comparison not applicable: {fam_comp['reason']}",
+            plain="There wasn't a fair way to compare the two models' accuracy on "
+                "individual kinds of data in this run.",
+            registered=False))
         return inner
 
     tests = summary.get("family_tests")
@@ -891,22 +1184,49 @@ def _sec_l0(run_dir: Path, model_colors: dict, findings: list) -> str:
                   f'{_p_note({"n_boot": fam_n_boot}) if fam_n_boot else ""})</h4>' + _table(tbl))
         for model, fams in summary.get("strengths", {}).items():
             if fams:
-                findings.append(f"L0 — {model} is significantly stronger on: "
-                                f"{', '.join(fams)} (paired bootstrap, Holm-corrected "
-                                f"α={summary.get('alpha', 0.05)}).")
+                findings.append(Finding(
+                    claim_id=_next_claim_id("l0"), stage="l0", evidence_class="behavioral",
+                    text=f"L0 — {model} is significantly stronger on: "
+                        f"{', '.join(fams)} (paired bootstrap, Holm-corrected "
+                        f"α={summary.get('alpha', 0.05)}).",
+                    plain=f"{model} clearly forecasts these kinds of data better than "
+                        f"the other model: {', '.join(fams)}.",
+                    registered=False))
         if not any(summary.get("strengths", {}).values()):
-            findings.append("L0 — no family-level performance difference survives "
-                            "Holm correction; treat dev family gaps as noise.")
+            findings.append(Finding(
+                claim_id=_next_claim_id("l0"), stage="l0", evidence_class="behavioral",
+                text="L0 — no family-level performance difference survives "
+                    "Holm correction; treat dev family gaps as noise.",
+                plain="Neither model was reliably more accurate than the other on any "
+                    "specific kind of data — the small gaps we saw could just be chance.",
+                registered=False))
         overall = summary.get("overall_test")
         if overall:
-            findings.append(f'L0 — overall paired ΔMASE {_ci_str(overall, "mean")} '
-                            f'(positive favors the first model, p={overall["p"]:.3f}'
-                            f'{_p_note(overall)}).')
+            model_names = list(model_colors.keys())
+            fav = model_names[0] if overall["mean"] >= 0 else (
+                model_names[1] if len(model_names) > 1 else model_names[0])
+            findings.append(Finding(
+                claim_id=_next_claim_id("l0"), stage="l0", evidence_class="behavioral",
+                text=f'L0 — overall paired ΔMASE {_ci_str(overall, "mean")} '
+                    f'(positive favors the first model, p={overall["p"]:.3f}'
+                    f'{_p_note(overall)}).',
+                plain=f"Averaged across the whole test set, {fav} forecasts a bit "
+                    f"better than the other model, and that gap looks like a real "
+                    f"effect rather than chance." if overall["p"] < 0.05 else
+                    f"Averaged across the whole test set, there's a small overall gap "
+                    f"favoring {fav}, but it isn't strong enough to call a real effect.",
+                registered=False))
     else:
         for model, fams in summary.get("strengths", {}).items():
             if fams:
-                findings.append(f"L0 — {model} looks stronger on {', '.join(fams)} "
-                                "(threshold heuristic; enable stats for tests).")
+                findings.append(Finding(
+                    claim_id=_next_claim_id("l0"), stage="l0", evidence_class="behavioral",
+                    text=f"L0 — {model} looks stronger on {', '.join(fams)} "
+                        "(threshold heuristic; enable stats for tests).",
+                    plain=f"{model} appears to forecast these kinds of data better: "
+                        f"{', '.join(fams)} — though this run didn't check whether "
+                        f"that's a real effect or just chance.",
+                    registered=False))
     return inner
 
 
@@ -921,8 +1241,10 @@ def _sec_l1(run_dir: Path, findings: list) -> str:
     heat.update_layout(xaxis_title=meta["model_b"], yaxis_title=meta["model_a"])
     best = meta["best_pair"]
     null_ci = best.get("null_ci")
+    depth_axis_name = meta.get("depth_axis_a", "index")
+    rel_depth_a = meta.get("rel_depth_a") or np.linspace(0, 1, len(meta["depth_curve"])).tolist()
     curve = go.Figure(go.Scatter(
-        x=np.linspace(0, 1, len(meta["depth_curve"])),
+        x=rel_depth_a,
         y=[d["cka"] for d in meta["depth_curve"]], mode="lines+markers",
         line_color=_COLORS["accent"], name="observed",
         text=[f'{_short(d["layer_a"])} ↔ {_short(d["layer_b"])}'
@@ -931,17 +1253,23 @@ def _sec_l1(run_dir: Path, findings: list) -> str:
     if null_ci:
         curve.add_hline(y=null_ci["value"], line=dict(color=_COLORS["muted"], dash="dot"),
                         annotation_text="shuffled-series null", annotation_font_size=10)
-    curve.update_layout(xaxis_title=f'relative depth in {meta["model_a"]}',
+    curve.update_layout(xaxis_title=f'relative depth in {meta["model_a"]} ({depth_axis_name} axis)',
                         yaxis_title="best-match CKA", yaxis_range=[0, 1])
-    da = la.index(best["layer_a"]) / max(1, len(la) - 1)
-    db = lb.index(best["layer_b"]) / max(1, len(lb) - 1)
+    da = best.get("rel_depth_a", la.index(best["layer_a"]) / max(1, len(la) - 1))
+    db = best.get("rel_depth_b", lb.index(best["layer_b"]) / max(1, len(lb) - 1))
     ci_txt = f' (95% CI [{best["ci"]["lo"]:.2f}, {best["ci"]["hi"]:.2f}], ' \
              f'series bootstrap)' if best.get("ci") else ""
     null_txt = f'; shuffled-series null ≈{null_ci["value"]:.2f}' if null_ci else ""
-    findings.append(f'L1 — peak similarity CKA={best["cka"]:.2f}{ci_txt} at '
-                    f'{meta["model_a"]} {_short(best["layer_a"])} ↔ '
-                    f'{meta["model_b"]} {_short(best["layer_b"])} '
-                    f'(relative depths {da:.2f} / {db:.2f}){null_txt}.')
+    strength = "closely" if best["cka"] > 0.6 else "somewhat" if best["cka"] > 0.3 else "only loosely"
+    findings.append(Finding(
+        claim_id=_next_claim_id("l1"), stage="l1", evidence_class="geometric",
+        text=f'L1 — peak similarity CKA={best["cka"]:.2f}{ci_txt} at '
+            f'{meta["model_a"]} {_short(best["layer_a"])} ↔ '
+            f'{meta["model_b"]} {_short(best["layer_b"])} '
+            f'(relative depths {da:.2f} / {db:.2f}, {depth_axis_name} axis){null_txt}.',
+        plain=f"At their most similar layers, {meta['model_a']} and {meta['model_b']} "
+            f"organize the data {strength} alike.",
+        registered=False))
     inner = _frag(heat) + _note(
         "Linear CKA between every layer pair of the two models, in feature "
         "space (invariant to rotation/scaling of either representation, so "
@@ -981,16 +1309,26 @@ def _sec_l1(run_dir: Path, findings: list) -> str:
         "A flat, uniformly-high line usually means the input's own "
         "structure dominates every layer's geometry about equally — see "
         "the null-line caveat above.",
-        "The 'best match' is a max over the other model's layers, which "
+        f"The 'best match' is a max over the other model's layers, which "
         "mechanically biases the curve upward versus any single fixed "
         "pairing (more candidates to match against) and can look "
         "artificially smooth even when the underlying matrix is noisy — "
-        "always sanity-check against the heatmap above.")
+        "always sanity-check against the heatmap above. The x-axis is the "
+        f"'{depth_axis_name}' depth axis (ROADMAP.md sec 18 F1): 'block' "
+        "places a layer by its position over the model's whole stack "
+        "(including any uncaptured surface, e.g. Chronos-T5's decoder), "
+        "so an encoder-only model's curve legitimately ends short of 1.0 "
+        "instead of being stretched to fill the axis.")
     fam_comp = meta.get("family_comparisons")
     if fam_comp and not fam_comp.get("applicable", True):
         inner += (f'<h4>Family-conditioned agreement</h4>'
                   f'<p class="blurb"><b>Not applicable.</b> {fam_comp["reason"]}</p>')
-        findings.append(f"L1 — family-conditioned agreement not applicable: {fam_comp['reason']}")
+        findings.append(Finding(
+            claim_id=_next_claim_id("l1"), stage="l1", evidence_class="geometric",
+            text=f"L1 — family-conditioned agreement not applicable: {fam_comp['reason']}",
+            plain="There wasn't enough data to check whether the two models organize "
+                "specific kinds of data similarly.",
+            registered=False))
     fam = arrays["cka_family"]
     if fam.shape[0]:
         best_per = fam.reshape(fam.shape[0], -1).max(axis=1)
@@ -1015,9 +1353,14 @@ def _sec_l1(run_dir: Path, findings: list) -> str:
             "dropped entirely (too few series for a stable per-family "
             "CKA), so a family's absence here isn't evidence of anything.")
         lo_f = meta["families"][int(best_per.argmin())]
-        findings.append(f"L1 — representational agreement is weakest on family "
-                        f"'{lo_f}' (best CKA "
-                        f"{_ci_str({'value': float(best_per.min()), **fam_ci.get(str(lo_f), {})})}).")
+        findings.append(Finding(
+            claim_id=_next_claim_id("l1"), stage="l1", evidence_class="geometric",
+            text=f"L1 — representational agreement is weakest on family "
+                f"'{lo_f}' (best CKA "
+                f"{_ci_str({'value': float(best_per.min()), **fam_ci.get(str(lo_f), {})})}).",
+            plain=f"The two models organize '{lo_f}'-type data the most differently "
+                f"of any data type tested.",
+            registered=False))
     if meta.get("rsa"):
         inner += ("<h4>RSA along matched layers</h4>" + _table(pd.DataFrame(meta["rsa"]))
                   + _note(
@@ -1086,14 +1429,32 @@ def _sec_l2(run_dir: Path, findings: list) -> str:
         if best:
             sig = " (CI excludes zero)" if best["gain_ci"]["lo"] > 0 else \
                   " (CI includes zero: no evidence beyond input structure)"
-            findings.append(f'L2 — {src}→{dst}: best stitching gain '
-                            f'{_ci_str(best["gain_ci"])} R² above the input baseline '
-                            f'at {_short(best["src_layer"])}→{_short(best["dst_layer"])}'
-                            f'{sig}.')
+            findings.append(Finding(
+                claim_id=_next_claim_id("l2"), stage="l2", evidence_class="translatable",
+                text=f'L2 — {src}→{dst}: best stitching gain '
+                    f'{_ci_str(best["gain_ci"])} R² above the input baseline '
+                    f'at {_short(best["src_layer"])}→{_short(best["dst_layer"])}'
+                    f'{sig}.',
+                plain=(f"You can predict what {dst} is doing from what {src} is doing "
+                       f"better than you could from the raw input alone — real shared "
+                       f"structure, not just both models seeing the same data."
+                       if best["gain_ci"]["lo"] > 0 else
+                       f"Once you account for both models simply seeing the same input, "
+                       f"there's no clear evidence {src} predicts {dst} any better than "
+                       f"raw input features already do."),
+                registered=False))
         else:
-            findings.append(f"L2 — {src}→{dst}: best stitching gain "
-                            f"{res['best_gain']:+.2f} R² above the input-feature "
-                            f"baseline (absolute R² {res['best_r2']:.2f}).")
+            findings.append(Finding(
+                claim_id=_next_claim_id("l2"), stage="l2", evidence_class="translatable",
+                text=f"L2 — {src}→{dst}: best stitching gain "
+                    f"{res['best_gain']:+.2f} R² above the input-feature "
+                    f"baseline (absolute R² {res['best_r2']:.2f}).",
+                plain=(f"{src} seems to predict {dst} somewhat better than raw input "
+                       f"features alone can, beyond just both models seeing the same data."
+                       if res["best_gain"] > 0 else
+                       f"{src} doesn't predict {dst} any better than raw input features "
+                       f"alone already do."),
+                registered=False))
     return inner
 
 
@@ -1102,15 +1463,18 @@ def _sec_l3(run_dir: Path, model_colors: dict, findings: list) -> str:
     arrays = np.load(run_dir / "l3" / "sensitivity.npz")
     meta = load_json(run_dir / "l3" / "meta.json")
     names, inner = meta["corruptions"], ""
+    rel_depth_by_model = meta.get("rel_depth", {})
+    depth_axis_by_model = meta.get("depth_axis", {})
     fig = make_subplots(cols=2, rows=1, subplot_titles=[meta["model_a"], meta["model_b"]],
                         horizontal_spacing=0.12)
     for col, model in enumerate((meta["model_a"], meta["model_b"]), start=1):
         fp = arrays[f"fingerprint_{model}"]
-        fig.add_trace(go.Heatmap(z=fp, x=names,
-                                 y=np.round(np.linspace(0, 1, fp.shape[0]), 2),
+        y = rel_depth_by_model.get(model) or np.linspace(0, 1, fp.shape[0]).tolist()
+        fig.add_trace(go.Heatmap(z=fp, x=names, y=np.round(y, 2),
                                  colorscale="Magma", showscale=col == 2,
                                  colorbar_title="Δact"), row=1, col=col)
-        fig.update_yaxes(title_text="relative depth" if col == 1 else None,
+        axis_name = depth_axis_by_model.get(model, "index")
+        fig.update_yaxes(title_text=f"relative depth ({axis_name} axis)" if col == 1 else None,
                          row=1, col=col)
     inner += _frag(fig, 400) + _note(
         "For each corruption (columns) and layer (rows), the relative "
@@ -1123,7 +1487,11 @@ def _sec_l3(run_dir: Path, model_colors: dict, findings: list) -> str:
         "across a row shows what a given layer is currently sensitive to. "
         "Two models with similar column shapes react to the same "
         "properties at similar relative depths, even if their absolute "
-        "layer counts differ.",
+        "layer counts differ. The depth axis (ROADMAP.md sec 18 F1, named "
+        "per panel above) places each layer within the model's *whole* "
+        "stack, not just its captured layers — an encoder-only model like "
+        "Chronos-T5 legitimately caps out partway up the axis rather than "
+        "reaching 1.0, since its decoder is real but uncaptured.",
         "This is a magnitude-of-change measure, not a causal one — a "
         "layer can shift a lot without that shift affecting the final "
         "forecast at all (see the behavioral-sensitivity bars and the "
@@ -1138,12 +1506,21 @@ def _sec_l3(run_dir: Path, model_colors: dict, findings: list) -> str:
                            marker_color=_COLORS["accent"], error_y=_err_y(entries)))
     bar.update_layout(yaxis_title="depth-profile agreement (Spearman ρ)",
                       yaxis_range=[-1, 1.05])
+    overlap_frac = meta["agreement"].get("overlap_fraction")
+    overlap_note = ""
+    if overlap_frac is not None and overlap_frac < 0.999:
+        overlap_note = (f" On this run's depth axis the two models' spans overlap over only "
+                        f"{overlap_frac * 100:.0f}% of the full range; agreement is computed "
+                        f"over that overlap only (never extrapolated across it), so the "
+                        f"un-overlapped depth is simply excluded rather than invented.")
     inner += "<h4>Cross-model fingerprint agreement</h4>" + _frag(bar, 300) + _note(
         "Each model's per-corruption fingerprint (the column above) is "
-        "interpolated onto a shared 0-1 relative-depth axis, and the two "
-        "resulting depth profiles are Spearman rank-correlated — one "
-        "number per corruption summarizing whether both models encode "
-        "that property at matching relative depths.",
+        "interpolated onto the depth range the two models actually share "
+        "(ROADMAP.md sec 18 F1's `align_on_axis` — never extrapolated past "
+        "either model's own span), and the two resulting depth profiles "
+        "are Spearman rank-correlated — one number per corruption "
+        "summarizing whether both models encode that property at matching "
+        "relative depths." + overlap_note,
         "+1 means both models' sensitivity peaks at the same relative "
         "depth for that corruption; -1 means they peak at opposite ends; "
         "0 means unrelated depth profiles. The lowest bar is called out "
@@ -1226,16 +1603,29 @@ def _sec_l3(run_dir: Path, model_colors: dict, findings: list) -> str:
         + floor_note)
     overall = meta["agreement"]["overall"]
     worst = meta["agreement"]["most_divergent"]
-    findings.append(f'L3 — fingerprint agreement ρ={_ci_str(overall)}; '
-                    f'most divergent corruption: {worst} '
-                    f'(ρ={_ci_str(agree[worst])}).')
+    findings.append(Finding(
+        claim_id=_next_claim_id("l3"), stage="l3", evidence_class="causal_within_model",
+        text=f'L3 — fingerprint agreement ρ={_ci_str(overall)}; '
+            f'most divergent corruption: {worst} '
+            f'(ρ={_ci_str(agree[worst])}).',
+        plain=f"The two models react to data-corrupting changes at similar points in "
+            f"their depth overall, but they disagree most about where they notice "
+            f"'{worst}'-style corruption.",
+        registered=False))
     for model in (meta["model_a"], meta["model_b"]):
         vals = arrays[f"behavior_{model}"]
         lo, hi = int(np.argmin(vals)), int(np.argmax(vals))
-        findings.append(f'L3 — {model}: least behaviorally-sensitive corruption is '
-                        f'{names[lo]} ({vals[lo]:.2f}), most is {names[hi]} '
-                        f'({vals[hi]:.2f}) — not necessarily comparable, since '
-                        f'corruption strengths are not calibrated to match.')
+        findings.append(Finding(
+            claim_id=_next_claim_id("l3"), stage="l3", evidence_class="causal_within_model",
+            text=f'L3 — {model}: least behaviorally-sensitive corruption is '
+                f'{names[lo]} ({vals[lo]:.2f}), most is {names[hi]} '
+                f'({vals[hi]:.2f}) — not necessarily comparable, since '
+                f'corruption strengths are not calibrated to match.',
+            plain=f"{model}'s forecasts barely change when data is corrupted with "
+                f"'{names[lo]}', but change the most under '{names[hi]}' — though these "
+                f"corruptions weren't all made equally strong, so that comparison is "
+                f"only rough.",
+            registered=False))
 
     patch_meta_path = run_dir / "l3" / "patching.json"
     if patch_meta_path.exists():
@@ -1254,7 +1644,9 @@ def _sec_l3(run_dir: Path, model_colors: dict, findings: list) -> str:
                                  name=f"{model} · {cname}",
                                  line=dict(color=model_colors.get(model),
                                            dash=dashes[ci % len(dashes)]))
-        pfig.update_layout(xaxis_title="relative depth of patched layer",
+        axis_names = {info.get("depth_axis", "index") for info in pmeta.values()}
+        axis_label = axis_names.pop() if len(axis_names) == 1 else "/".join(sorted(axis_names))
+        pfig.update_layout(xaxis_title=f"relative depth of patched layer ({axis_label} axis)",
                            yaxis_title="forecast restoration (window-averaged)",
                            yaxis_range=[min(-0.1, y_min * 1.15), 1.05])
         inner += ("<h4>Activation patching: clean → corrupted restoration</h4>"
@@ -1326,7 +1718,8 @@ def _l3_window_heatmaps(pmeta: dict, parrs) -> str:
                            row=1, col=ci + 1)
             wfig.update_xaxes(title_text="window" if ci == 0 else None,
                               row=1, col=ci + 1)
-        wfig.update_yaxes(title_text="relative depth", row=1, col=1)
+        wfig.update_yaxes(title_text=f"relative depth ({info.get('depth_axis', 'index')} axis)",
+                          row=1, col=1)
         html += (f"<h4>{model}: per-window restoration "
                  f"(window = {info['window_size']} steps)</h4>" + _frag(wfig, 320))
         if not shown_note:
@@ -1379,7 +1772,8 @@ def _l3_horizon_heatmaps(pmeta: dict, parrs, findings: list) -> str:
                            row=1, col=ci + 1)
             hfig.update_xaxes(title_text="horizon step" if ci == 0 else None,
                               row=1, col=ci + 1)
-        hfig.update_yaxes(title_text="relative depth", row=1, col=1)
+        hfig.update_yaxes(title_text=f"relative depth ({info.get('depth_axis', 'index')} axis)",
+                          row=1, col=1)
         html += (f"<h4>{model}: per-horizon-step restoration</h4>"
                  + _frag(hfig, 320))
         if not shown_note:
@@ -1408,13 +1802,20 @@ def _l3_horizon_heatmaps(pmeta: dict, parrs, findings: list) -> str:
                     peak_early = int(np.nanargmax(early))
                     peak_late = int(np.nanargmax(late))
                     if peak_early != peak_late:
-                        findings.append(
-                            f"L3 horizon-resolved patching — {model}/{cname}: "
-                            f"the layer that best restores horizon step 1 "
-                            f"({info['rel_depth'][peak_early]:.2f} relative "
-                            f"depth) differs from the layer that best "
-                            f"restores the final horizon step "
-                            f"({info['rel_depth'][peak_late]:.2f}).")
+                        findings.append(Finding(
+                            claim_id=_next_claim_id("l3"), stage="l3",
+                            evidence_class="causal_within_model",
+                            text=f"L3 horizon-resolved patching — {model}/{cname}: "
+                                f"the layer that best restores horizon step 1 "
+                                f"({info['rel_depth'][peak_early]:.2f} relative "
+                                f"depth) differs from the layer that best "
+                                f"restores the final horizon step "
+                                f"({info['rel_depth'][peak_late]:.2f}).",
+                            plain=f"For {model} under '{cname}'-style corruption, a "
+                                f"different part of the network is responsible for "
+                                f"fixing the near-term forecast versus the far-future "
+                                f"forecast.",
+                            registered=False))
     return html
 
 
@@ -1506,7 +1907,9 @@ def _sec_lens(run_dir: Path, model_colors: dict, findings: list) -> str:
                         line=dict(color=color), error_y=err)
         fig.add_hline(y=m["final_mase"], line=dict(color=color, dash="dot", width=1),
                       annotation_text=f"{model} final", annotation_font_size=10)
-    fig.update_layout(xaxis_title="relative depth of patched layer",
+    axis_names = {m.get("depth_axis", "index") for m in meta.values()}
+    axis_label = axis_names.pop() if len(axis_names) == 1 else "/".join(sorted(axis_names))
+    fig.update_layout(xaxis_title=f"relative depth of patched layer ({axis_label} axis)",
                       yaxis_title="skip-lens MASE")
     inner += _frag(fig, 380) + _note(
         "The logit-lens analog for forecasting: layer-l's token states are "
@@ -1562,9 +1965,18 @@ def _sec_lens(run_dir: Path, model_colors: dict, findings: list) -> str:
     for model, m in meta.items():
         depth = m["crystallization_depth"]
         where = f"{depth:.2f} of depth" if depth is not None else "never (within tolerance)"
-        findings.append(f"Lens — {model}: forecast crystallizes at {where} "
-                        f"(within {m['crystallization_tol']:.0%} of final MASE "
-                        f"{m['final_mase']:.2f}).")
+        findings.append(Finding(
+            claim_id=_next_claim_id("lens"), stage="lens", evidence_class="descriptive",
+            text=f"Lens — {model}: forecast crystallizes at {where} "
+                f"(within {m['crystallization_tol']:.0%} of final MASE "
+                f"{m['final_mase']:.2f}).",
+            plain=(f"{model} has essentially settled on its forecast by "
+                   f"{depth:.0%} of the way through its layers — the rest of the "
+                   f"network only refines it."
+                   if depth is not None else
+                   f"{model} never fully settles on its forecast early — it keeps "
+                   f"revising it all the way through its layers."),
+            registered=False))
 
     if any(f"skip_mase_by_horizon_{m}" in arrays for m in meta):
         inner += _lens_horizon_block(arrays, meta, model_colors, findings)
@@ -1642,11 +2054,18 @@ def _lens_horizon_block(arrays, meta: dict, model_colors: dict, findings: list) 
             curve = m.get("crystallization_depth_by_horizon")
             if not curve or curve[0] is None or curve[-1] is None:
                 continue
-            findings.append(
-                f"Lens horizon-resolved crystallization — {model}: horizon "
-                f"step 1 crystallizes at {curve[0]:.2f} relative depth vs. "
-                f"{curve[-1]:.2f} at the final step "
-                f"({len(curve)}).")
+            findings.append(Finding(
+                claim_id=_next_claim_id("lens"), stage="lens", evidence_class="descriptive",
+                text=f"Lens horizon-resolved crystallization — {model}: horizon "
+                    f"step 1 crystallizes at {curve[0]:.2f} relative depth vs. "
+                    f"{curve[-1]:.2f} at the final step "
+                    f"({len(curve)}).",
+                plain=(f"{model} commits to its very-next-step forecast earlier in "
+                       f"its layers than it commits to its far-future forecast."
+                       if curve[-1] > curve[0] else
+                       f"{model} commits to its near-term and far-future forecasts at "
+                       f"about the same point in its layers."),
+                registered=False))
     return html
 
 
@@ -1719,10 +2138,17 @@ def _sec_attention(run_dir: Path, model_colors: dict, findings: list) -> str:
                     "The reported family is whichever gave that head its "
                     "single highest score, not every family it responds to.")
                 best = tops[0]
-                findings.append(f"Attention — {model}: strongest periodicity head "
-                                f"{_short(best['layer'])}·h{best['head']} "
-                                f"(excess seasonal mass {best['score']:.2f}, "
-                                f"family {best['family']}).")
+                findings.append(Finding(
+                    claim_id=_next_claim_id("attention"), stage="attention",
+                    evidence_class="descriptive",
+                    text=f"Attention — {model}: strongest periodicity head "
+                        f"{_short(best['layer'])}·h{best['head']} "
+                        f"(excess seasonal mass {best['score']:.2f}, "
+                        f"family {best['family']}).",
+                    plain=f"{model} has a specific attention head that specializes in "
+                        f"looking back exactly one season for '{best['family']}'-type "
+                        f"data — a seasonality detector.",
+                    registered=False))
         elif pat.get("status") == "error":
             parts += (f'<p class="blurb">⚠ Attention pattern capture failed for '
                       f'this model: {pat.get("reason", "unknown error")}. '
@@ -1787,9 +2213,17 @@ def _sec_attention(run_dir: Path, model_colors: dict, findings: list) -> str:
                               f'emitted from this heatmap (ROADMAP.md sec 18 F6).</p>')
                     _FLOOR_AUDIT["suppressed"].append(f"Attention head ranking ({model})")
                 else:
-                    findings.append(f"Attention — {model}: most load-bearing head "
-                                    f"{_short(e['layer'])}·h{e['head']} "
-                                    f"(ΔMASE {phrase} when ablated).")
+                    findings.append(Finding(
+                        claim_id=_next_claim_id("attention"), stage="attention",
+                        evidence_class="descriptive",
+                        text=f"Attention — {model}: most load-bearing head "
+                            f"{_short(e['layer'])}·h{e['head']} "
+                            f"(ΔMASE {phrase} when ablated).",
+                        plain=f"{model}'s forecast depends noticeably on one specific "
+                            f"attention head ({_short(e['layer'])}·h{e['head']}) — "
+                            f"disabling it measurably hurts accuracy.",
+                        registered=False,
+                        cleared_noise_floor=interpretable))
         elif abl.get("status") not in ("error", "unsupported"):
             parts += ("<p class='blurb'>Head ablation unavailable: no hookable "
                       "attention output projection found for this "
@@ -1858,12 +2292,19 @@ def _sec_attention(run_dir: Path, model_colors: dict, findings: list) -> str:
     return inner
 
 
-def _sec_exemplars(run_dir: Path, model_colors: dict, findings: list) -> str:
+def _sec_exemplars(run_dir: Path, model_colors: dict, findings: list,
+                   depth_axis_name: str = "index") -> str:
     """Per-family case studies: forecasts, lens trajectories, attention maps."""
+    from ..analysis.depth_axis import depth_axis_for_run
+    from ..extraction.store import ActivationStore
     arrays = np.load(run_dir / "exemplars" / "exemplars.npz")
     meta = load_json(run_dir / "exemplars" / "exemplars.json")
     records = meta["exemplars"]
     models = list(meta["models"])
+    store_path = run_dir / "activations.zarr"
+    store = ActivationStore(store_path, mode="r") if store_path.exists() else None
+    depth_axes = {m: depth_axis_for_run(depth_axis_name, store, m, meta["models"][m]["layers"])
+                 for m in models}
     contexts, targets = arrays["contexts"], arrays["targets"]
     horizon = targets.shape[1]
     tail = min(contexts.shape[1], 4 * horizon)
@@ -1906,10 +2347,12 @@ def _sec_exemplars(run_dir: Path, model_colors: dict, findings: list) -> str:
             key = f"lens_mase_{model}"
             if key not in arrays:
                 continue
-            depths = relative_depths(arrays[key].shape[0])
+            depths = depth_axes[model].coords
             lens_fig.add_scatter(x=depths, y=arrays[key][:, ei], mode="lines+markers",
                                  name=model, line=dict(color=model_colors.get(model)))
-        lens_fig.update_layout(xaxis_title="relative depth",
+        axis_names = {da.axis for da in depth_axes.values()}
+        axis_label = axis_names.pop() if len(axis_names) == 1 else "/".join(sorted(axis_names))
+        lens_fig.update_layout(xaxis_title=f"relative depth ({axis_label} axis)",
                                yaxis_title="skip-lens MASE (this series)")
         inner += _frag(lens_fig, 260)
         if ei == 0:
@@ -1955,8 +2398,14 @@ def _sec_exemplars(run_dir: Path, model_colors: dict, findings: list) -> str:
                 "specialized head's sharp pattern into a diffuse "
                 "average — see the per-head lag-profile heatmap in the "
                 "Attention section for the unaveraged view.")
-    findings.append(f"Exemplars — {len(records)} case studies across "
-                    f"{len(set(r['family'] for r in records))} families.")
+    findings.append(Finding(
+        claim_id=_next_claim_id("exemplars"), stage="exemplars", evidence_class="illustrative",
+        text=f"Exemplars — {len(records)} case studies across "
+            f"{len(set(r['family'] for r in records))} families.",
+        plain=f"This report includes {len(records)} concrete worked examples, spanning "
+            f"{len(set(r['family'] for r in records))} kinds of data, so you can see "
+            f"actual forecasts rather than just summary statistics.",
+        registered=False))
     return inner
 
 
@@ -2005,7 +2454,12 @@ def _sec_clusters(run_dir: Path, model_colors: dict, findings: list) -> str:
     if fam_comp and not fam_comp.get("applicable", True):
         inner += (f'<h4>Cluster family-purity labeling</h4>'
                   f'<p class="blurb"><b>Not applicable.</b> {fam_comp["reason"]}</p>')
-        findings.append(f"Clusters — family-purity labeling not applicable: {fam_comp['reason']}")
+        findings.append(Finding(
+            claim_id=_next_claim_id("clustering"), stage="clustering", evidence_class="descriptive",
+            text=f"Clusters — family-purity labeling not applicable: {fam_comp['reason']}",
+            plain="There wasn't enough data to check how well each model's natural "
+                "groupings line up with the known kinds of data.",
+            registered=False))
     for model in models:
         rows = [{"cluster": c, "size": v["size"], "purity": v["purity"],
                  "label": v["label"]} for c, v in clusters[model]["clusters"].items()]
@@ -2039,9 +2493,16 @@ def _sec_clusters(run_dir: Path, model_colors: dict, findings: list) -> str:
         "benchmark families), so overlap partly reflects how family-like "
         "each model's natural clusters are, not just agreement between "
         "the two models."))
-    findings.append(f'Clusters — partition agreement AMI={_ci_str(ami)}; '
-                    "1.0 means both models carve the benchmark identically, "
-                    "0 means unrelated groupings.")
+    ami_val = ami["value"] if isinstance(ami, dict) else ami
+    findings.append(Finding(
+        claim_id=_next_claim_id("clustering"), stage="clustering", evidence_class="descriptive",
+        text=f'Clusters — partition agreement AMI={_ci_str(ami)}; '
+            "1.0 means both models carve the benchmark identically, "
+            "0 means unrelated groupings.",
+        plain=f"The two models group the data into "
+            f"{'largely the same' if ami_val > 0.5 else 'noticeably different' if ami_val > 0.1 else 'essentially unrelated'} "
+            f"clusters.",
+        registered=False))
     return inner
 
 
@@ -2134,9 +2595,15 @@ def _sec_sae(cfg: PipelineConfig, run_dir: Path, findings: list) -> str:
             continue
         inner += _table(df)
         top = df.iloc[0]
-        findings.append(f"SAE — {key}: feature {int(top['feature'])} best matches "
-                        f"{top['best_field']} (ρ={top['rho']:.2f}); top exemplar series "
-                        f"{top['series_id']} (activation {top['activation']:.2f}).")
+        findings.append(Finding(
+            claim_id=_next_claim_id("sae"), stage="sae", evidence_class="descriptive",
+            text=f"SAE — {key}: feature {int(top['feature'])} best matches "
+                f"{top['best_field']} (ρ={top['rho']:.2f}); top exemplar series "
+                f"{top['series_id']} (activation {top['activation']:.2f}).",
+            plain=f"In {model}, one learned internal feature seems to specifically "
+                f"track '{top['best_field']}' — a concrete example of a human-"
+                f"interpretable concept living inside the network.",
+            registered=False))
     inner += _note(*_SAE_EXEMPLAR_NOTE, summary="What is this table?")
     inner += _sae_seed_floor_block(meta_sae)
     return inner
@@ -2355,7 +2822,8 @@ def _pct(x) -> str:
     return "not measured" if x is None else f"{100 * float(x):.1f}%"
 
 
-def _sec_budget(run_dir: Path, model_colors: dict, findings: list) -> str:
+def _sec_budget(run_dir: Path, model_colors: dict, findings: list,
+                depth_axis_name: str = "index") -> str:
     """Measured cost per model, and L0 quality re-read per unit of compute.
 
     The normalized panel exists because every other cross-model number in
@@ -2363,6 +2831,15 @@ def _sec_budget(run_dir: Path, model_colors: dict, findings: list) -> str:
     "which model is better" and "which model is better per FLOP" are
     different questions and the second one was previously unaskable.
     """
+    from ..analysis.depth_axis import depth_axis_for_run
+    from ..extraction.store import ActivationStore
+    store_path = run_dir / "activations.zarr"
+    # `budget` has no pipeline dependencies (`--stages budget` runs standalone
+    # against a checkpoint with nothing else built), so unlike every other
+    # depth figure in this file this one may run before the store exists at
+    # all -- `depth_axis_for_run(..., store=None, ...)` degrades to `index`
+    # in that case rather than crashing.
+    store = ActivationStore(store_path, mode="r") if store_path.exists() else None
     budget = load_json(run_dir / "budget" / "model_budget.json")
     models = budget.get("models", {})
     rows, warn = [], []
@@ -2458,10 +2935,11 @@ def _sec_budget(run_dir: Path, model_colors: dict, findings: list) -> str:
             names = list(blocks["cumulative"].keys())
             total = models[name]["forward"]["flops"]
             frac = [blocks["cumulative"][b] / total for b in names]
-            depth = relative_depths(len(names))
+            depth = depth_axis_for_run(depth_axis_name, store, name, names).coords
             fig.add_scatter(x=depth, y=frac, mode="lines+markers", name=name,
                             line=dict(color=model_colors.get(name, _COLORS["a"])))
-        fig.update_layout(xaxis_title="relative depth over this model's blocks",
+        fig.update_layout(xaxis_title=f"relative depth over this model's blocks "
+                                     f"({depth_axis_name} axis)",
                           yaxis_title="fraction of forward FLOPs completed")
         inner += "<h4>Compute completed by depth</h4>"
         inner += ('<p class="blurb">How much of each model\'s forward computation has '
@@ -2504,29 +2982,175 @@ def _sec_budget(run_dir: Path, model_colors: dict, findings: list) -> str:
             best_q = min(pts, key=lambda t: t[3])
             cheapest = min(pts, key=lambda t: t[1])
             if best_q[0] == cheapest[0]:
-                findings.append(
-                    f"Cost — {best_q[0]} is both the more accurate model (MASE "
-                    f"{best_q[3]:.2f}) and the cheaper one ({_fmt_flops(best_q[1])}"
-                    f"/series): its L0 advantage is not bought with compute.")
+                findings.append(Finding(
+                    claim_id=_next_claim_id("budget"), stage="budget", evidence_class="descriptive",
+                    text=f"Cost — {best_q[0]} is both the more accurate model (MASE "
+                        f"{best_q[3]:.2f}) and the cheaper one ({_fmt_flops(best_q[1])}"
+                        f"/series): its L0 advantage is not bought with compute.",
+                    plain=f"{best_q[0]} is both more accurate and cheaper to run than "
+                        f"the other model — its accuracy advantage isn't just a matter "
+                        f"of spending more compute.",
+                    registered=False))
             else:
-                findings.append(
-                    f"Cost — {best_q[0]} wins on accuracy (MASE {best_q[3]:.2f} vs "
-                    f"{cheapest[3]:.2f}) while costing {best_q[1] / cheapest[1]:.1f}× "
-                    f"the compute of {cheapest[0]} ({_fmt_flops(best_q[1])} vs "
-                    f"{_fmt_flops(cheapest[1])} per series), so every cross-model "
-                    f"comparison in this report is size-confounded in its favor.")
+                findings.append(Finding(
+                    claim_id=_next_claim_id("budget"), stage="budget", evidence_class="descriptive",
+                    text=f"Cost — {best_q[0]} wins on accuracy (MASE {best_q[3]:.2f} vs "
+                        f"{cheapest[3]:.2f}) while costing {best_q[1] / cheapest[1]:.1f}× "
+                        f"the compute of {cheapest[0]} ({_fmt_flops(best_q[1])} vs "
+                        f"{_fmt_flops(cheapest[1])} per series), so every cross-model "
+                        f"comparison in this report is size-confounded in its favor.",
+                    plain=f"{best_q[0]} is more accurate than {cheapest[0]}, but it also "
+                        f"costs {best_q[1] / cheapest[1]:.1f} times more compute to run — "
+                        f"so some of that accuracy edge may simply be buying more compute, "
+                        f"not a better model.",
+                    registered=False))
     else:
         inner += ('<p class="blurb">L0 did not run, so quality cannot be normalized by '
                   'cost in this run — the table above is the raw cost record only.</p>')
 
     for name, rec in models.items():
         f = rec["forward"]
-        findings.append(
-            f"Cost — {name}: {rec['parameters']['total'] / 1e6:.2f}M parameters, "
-            f"{_fmt_flops(f['flops_per_series'])}/series forward, "
-            f"{f['timing']['median_s'] * 1e3:.0f} ms median forward "
-            f"at batch {f['batch']}.")
+        findings.append(Finding(
+            claim_id=_next_claim_id("budget"), stage="budget", evidence_class="descriptive",
+            text=f"Cost — {name}: {rec['parameters']['total'] / 1e6:.2f}M parameters, "
+                f"{_fmt_flops(f['flops_per_series'])}/series forward, "
+                f"{f['timing']['median_s'] * 1e3:.0f} ms median forward "
+                f"at batch {f['batch']}.",
+            plain=f"{name} has {rec['parameters']['total'] / 1e6:.0f} million parameters "
+                f"and takes about {f['timing']['median_s'] * 1e3:.0f} milliseconds to "
+                f"forecast one series in this run's setup.",
+            registered=False))
     inner += _note(*_BUDGET_NOTE)
+    return inner
+
+
+_FAIRNESS_UNMEASURED = "not yet measured"
+
+
+def _fairness_row(axis: str, a_name: str, a_val: str, b_name: str, b_val: str,
+                  asymmetry: str, qualifies: str) -> dict:
+    return {"Axis": axis, a_name: a_val, b_name: b_val,
+            "Asymmetry": asymmetry, "Qualifies": qualifies}
+
+
+def _sec_fairness(cfg: PipelineConfig, run_dir: Path) -> str:
+    """The fairness card (ROADMAP.md sec 18 F9): every measured asymmetry
+    between the two models in this run, in one place, rendered before any
+    result section -- so a reader checks what is and is not comparable
+    before reading a claim that depends on it, rather than discovering the
+    caveat buried in that claim's own section.
+
+    Every row is read from an already-measured artifact (F1's
+    `align_on_axis` output in `l3/meta.json`, F2/F4's
+    `budget/model_budget.json`, F6's `l0/noise_floor.json`) -- never a
+    hand-written value, per this item's own acceptance criterion. F3, F5,
+    F7, F8 have no landed measurement anywhere in the repo yet, so their
+    rows read "not yet measured" rather than being omitted -- the card's
+    own coverage should be as visible as the asymmetries it reports.
+    """
+    a, b = cfg.comparison_pair()
+    rows = []
+
+    budget = load_json(run_dir / "budget" / "model_budget.json") if (
+        run_dir / "budget" / "model_budget.json").exists() else {}
+    models = budget.get("models", {})
+    ra, rb = models.get(a.name), models.get(b.name)
+    if ra and rb:
+        pa, pb = ra["parameters"]["total"], rb["parameters"]["total"]
+        rows.append(_fairness_row(
+            "Parameters", a.name, f"{pa / 1e6:.1f}M", b.name, f"{pb / 1e6:.1f}M",
+            f"{max(pa, pb) / min(pa, pb):.2f}×", "all quality claims (ROADMAP.md §18 F2)"))
+        fa, fb = ra["forward"].get("flops_per_series"), rb["forward"].get("flops_per_series")
+        rows.append(_fairness_row(
+            "FLOPs per forward (per series)", a.name, _fmt_flops(fa), b.name, _fmt_flops(fb),
+            f"{max(fa, fb) / min(fa, fb):.2f}×" if fa and fb else "n/a",
+            "all quality claims (ROADMAP.md §18 F2)"))
+        cova, covb = ra.get("coverage") or {}, rb.get("coverage") or {}
+        fca, fcb = cova.get("headline_flops_fraction"), covb.get("headline_flops_fraction")
+        rows.append(_fairness_row(
+            "Captured FLOP fraction", a.name,
+            _pct(fca) + (" or less" if cova.get("headline_is_upper_bound") else ""),
+            b.name, _pct(fcb) + (" or less" if covb.get("headline_is_upper_bound") else ""),
+            f"{abs(fca - fcb) * 100:.1f} pt gap" if fca is not None and fcb is not None else "n/a",
+            "all depth-located claims (ROADMAP.md §18 F4)"))
+    else:
+        rows.append(_fairness_row(
+            "Parameters / FLOPs / captured fraction", a.name, _FAIRNESS_UNMEASURED,
+            b.name, _FAIRNESS_UNMEASURED, "n/a",
+            "all quality and depth-located claims (ROADMAP.md §18 F2/F4 -- enable the budget stage)"))
+
+    depth_axis_name = cfg.alignment.depth_axis
+    l3_meta_path = run_dir / "l3" / "meta.json"
+    if l3_meta_path.exists():
+        l3_meta = load_json(l3_meta_path)
+        overlap = (l3_meta.get("agreement") or {}).get("overlap_fraction")
+        rel_depth = l3_meta.get("rel_depth") or {}
+        cap_a = (rel_depth.get(a.name) or [None])[-1]
+        cap_b = (rel_depth.get(b.name) or [None])[-1]
+        rows.append(_fairness_row(
+            f"Depth axis ('{depth_axis_name}')", a.name,
+            f"caps at {cap_a:.3f}" if cap_a is not None else "n/a",
+            b.name, f"caps at {cap_b:.3f}" if cap_b is not None else "n/a",
+            f"{overlap * 100:.1f}% overlap" if overlap is not None else "n/a",
+            "all cross-depth figures (ROADMAP.md §18 F1)"))
+    else:
+        rows.append(_fairness_row(
+            f"Depth axis ('{depth_axis_name}')", a.name, _FAIRNESS_UNMEASURED,
+            b.name, _FAIRNESS_UNMEASURED, "n/a",
+            "all cross-depth figures (ROADMAP.md §18 F1 -- enable the l3 stage)"))
+
+    floor_path = run_dir / "l0" / "noise_floor.json"
+    floor = load_json(floor_path) if floor_path.exists() else {}
+    fla, flb = floor.get(a.name), floor.get(b.name)
+    if fla and flb:
+        da = "deterministic" if fla.get("deterministic") else f"±{fla['mase_abs_delta_mean']:.3f} MASE"
+        db = "deterministic" if flb.get("deterministic") else f"±{flb['mase_abs_delta_mean']:.3f} MASE"
+        asym = ("one deterministic, one sampled"
+                if bool(fla.get("deterministic")) != bool(flb.get("deterministic"))
+                else "both same kind")
+        rows.append(_fairness_row(
+            "Forecast determinism / noise floor", a.name, da, b.name, db, asym,
+            "all delta claims (ROADMAP.md §18 F6)"))
+    else:
+        rows.append(_fairness_row(
+            "Forecast determinism / noise floor", a.name, _FAIRNESS_UNMEASURED,
+            b.name, _FAIRNESS_UNMEASURED, "n/a",
+            "all delta claims (ROADMAP.md §18 F6 -- enable l0.noise_floor_repeats >= 2)"))
+
+    rows.append(_fairness_row(
+        "Finest resolvable lag (token width)", a.name, _FAIRNESS_UNMEASURED,
+        b.name, _FAIRNESS_UNMEASURED, "n/a",
+        "all attention-lag claims (ROADMAP.md §18 F5, unstarted)"))
+    rows.append(_fairness_row(
+        "Declared training exposure", a.name, _FAIRNESS_UNMEASURED,
+        b.name, _FAIRNESS_UNMEASURED, "n/a",
+        "all behavioral claims (ROADMAP.md §18 F7, parked -- see §22.6)"))
+    rows.append(_fairness_row(
+        "Capability intersection", a.name, _FAIRNESS_UNMEASURED,
+        b.name, _FAIRNESS_UNMEASURED, "n/a",
+        "the asymmetric analyses (ROADMAP.md §18 F3, parked -- see §22.6)"))
+
+    save_json(run_dir / "fairness" / "card.json",
+             {"model_a": a.name, "model_b": b.name, "rows": rows})
+
+    inner = _table(pd.DataFrame(rows))
+    inner += _note(
+        "Every measured asymmetry between the two models in this run, in "
+        "one place, before any result section (ROADMAP.md §18 F9). This "
+        "is the page to check first, and the strongest single argument "
+        "that this repo's comparisons are honest rather than merely "
+        "careful.",
+        "Every row is read from an already-measured artifact -- no value "
+        "here is hand-written. A row reading 'not yet measured' means the "
+        "stage or analysis named in Qualifies is either disabled in this "
+        "config or not yet built anywhere in the repo; read any claim that "
+        "row would qualify with the same caution CLAUDE.md §12 states "
+        "for it in prose.",
+        "This card is only as complete as the F-items behind it. F3, F5, "
+        "F7 and F8 have no landed measurement anywhere in the repo yet, so "
+        "their rows are a statement of absence, not a small number -- "
+        "absence of a row here is never evidence of fairness.",
+    )
     return inner
 
 
@@ -2572,11 +3196,18 @@ def _sec_layer_screen(run_dir: Path, model_colors: dict, findings: list) -> str:
                       f'(see run log for why; the run may have silently selected layers '
                       f'with the null the requested method was meant to beat).</p>')
         inner += _frag(fig, 300)
-        findings.append(
-            f"Layer screen — {model}: {method} selected "
-            f"{', '.join(_short(l) for l in sel.get('selected', []))} "
-            f"of {len(layers)} screened layers"
-            f"{'' if fair else f' out of {n_blocks} total model blocks (NOT all screened)'}.")
+        findings.append(Finding(
+            claim_id=_next_claim_id("layer_screen"), stage="layer_screen",
+            evidence_class="descriptive",
+            text=f"Layer screen — {model}: {method} selected "
+                f"{', '.join(_short(l) for l in sel.get('selected', []))} "
+                f"of {len(layers)} screened layers"
+                f"{'' if fair else f' out of {n_blocks} total model blocks (NOT all screened)'}.",
+            plain=f"For {model}, the cheap pre-screen flagged "
+                f"{', '.join(_short(l) for l in sel.get('selected', []))} as the layer(s) "
+                f"most worth spending expensive analysis on"
+                f"{'' if fair else ', though it did not get to look at every layer'}.",
+            registered=False))
     inner += _note(*_LAYER_SCREEN_NOTE)
     return inner
 
@@ -2607,22 +3238,35 @@ def _sec_internals(run_dir: Path, model_colors: dict, findings: list) -> str:
             fig.add_hline(y=chance, line_dash="dot", line_color=_COLORS["muted"],
                           annotation_text="chance (majority class)",
                           annotation_font_size=10)
-        fig.update_layout(xaxis_title="relative depth", yaxis_title=ylabel,
+        axis_names = {prof.get("depth_axis", "index") for prof in profile.values()}
+        axis_label = axis_names.pop() if len(axis_names) == 1 else "/".join(sorted(axis_names))
+        fig.update_layout(xaxis_title=f"relative depth ({axis_label} axis)", yaxis_title=ylabel,
                           yaxis_range=yrange)
         inner += f"<h4>{ylabel}</h4>" + _frag(fig, 320) + _note(*_INTERNALS_NOTES[key])
     fam_comp = next(iter(profile.values())).get("family_comparisons")
     if fam_comp and not fam_comp.get("applicable", True):
         inner += (f'<h4>Family probe</h4>'
                   f'<p class="blurb"><b>Not applicable.</b> {fam_comp["reason"]}</p>')
-        findings.append(f"Profile — family probe not applicable: {fam_comp['reason']}")
+        findings.append(Finding(
+            claim_id=_next_claim_id("internals"), stage="internals", evidence_class="descriptive",
+            text=f"Profile — family probe not applicable: {fam_comp['reason']}",
+            plain="There wasn't enough data to check where each model internally "
+                "represents what kind of data it's looking at.",
+            registered=False))
     else:
         for model, prof in profile.items():
             accs = [p["value"] for p in prof["probe"]]
             peak = int(np.argmax(accs))
-            findings.append(f"Profile — {model}: family information peaks at "
-                            f"{_short(prof['layers'][peak])} "
-                            f"(probe {_ci_str(prof['probe'][peak])} vs chance "
-                            f"{prof['chance']:.2f}).")
+            findings.append(Finding(
+                claim_id=_next_claim_id("internals"), stage="internals",
+                evidence_class="descriptive",
+                text=f"Profile — {model}: family information peaks at "
+                    f"{_short(prof['layers'][peak])} "
+                    f"(probe {_ci_str(prof['probe'][peak])} vs chance "
+                    f"{prof['chance']:.2f}).",
+                plain=f"{model} most clearly 'knows' what kind of data it's looking at "
+                    f"around layer {_short(prof['layers'][peak])} of its network.",
+                registered=False))
     return inner
 
 
@@ -2677,9 +3321,14 @@ def _sec_confirm(run_dir: Path, findings: list, n_exploratory: int) -> str:
         # by index position (see `run_report`'s boundary capture); inserting
         # at the front would have put this genuinely-confirmatory finding
         # before that boundary and mislabeled it.
-        findings.append(f"CONFIRM — {confirmed}/{len(tests)} dev family hypotheses "
-                        f"confirmed on the private benchmark "
-                        f"(paired bootstrap, Holm α={conf['alpha']}).")
+        findings.append(Finding(
+            claim_id=_next_claim_id("confirm"), stage="confirm", evidence_class="behavioral",
+            text=f"CONFIRM — {confirmed}/{len(tests)} dev family hypotheses "
+                f"confirmed on the private benchmark "
+                f"(paired bootstrap, Holm α={conf['alpha']}).",
+            plain=f"{confirmed} of {len(tests)} accuracy differences spotted earlier in "
+                f"this report held up when re-tested on fresh, never-before-seen data.",
+            registered=True))
     else:
         inner += ("<p class='blurb'>No dev family hypotheses to test "
                   "(none were significant on dev).</p>")
@@ -2697,8 +3346,17 @@ def _sec_confirm(run_dir: Path, findings: list, n_exploratory: int) -> str:
                   f'{_short(rep["layer_b"])}; private estimate '
                   f'{_ci_str(rep["private"])} — dev value {verdict} within the '
                   f'private CI.</p>')
-        findings.append(f'CONFIRM — peak-CKA layer pair {verdict} on private data '
-                        f'({_ci_str(rep["private"])}).')
+        findings.append(Finding(
+            claim_id=_next_claim_id("confirm"), stage="confirm", evidence_class="geometric",
+            text=f'CONFIRM — peak-CKA layer pair {verdict} on private data '
+                f'({_ci_str(rep["private"])}).',
+            plain=(f"The strongest similarity found earlier between the two models' "
+                   f"internal representations held up on fresh data."
+                   if rep["replicates"] else
+                   f"The strongest similarity found earlier between the two models' "
+                   f"internal representations did NOT hold up on fresh data — it may "
+                   f"have been a fluke of the original data."),
+            registered=True))
     return inner
 
 
@@ -2733,8 +3391,12 @@ h1 .chip.b{color:{{ colors.b }}}
   border-left:3px solid var(--accent);border-radius:6px;padding:16px 20px;margin:0 0 34px}
 .findings h2{font:600 13px var(--mono);letter-spacing:.1em;text-transform:uppercase;
   margin:0 0 10px;color:var(--accent)}
-.findings ul{margin:0;padding-left:18px}
-.findings li{margin:5px 0}
+.findings ul{margin:0;padding-left:0;list-style:none}
+.findings li{margin:0 0 14px;padding:0 0 14px;border-bottom:1px solid var(--line)}
+.findings li:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none}
+.finding-plain{font:600 15px/1.4 var(--sans);color:var(--ink);margin:0 0 3px}
+.finding-text{font-size:13px;color:var(--muted);margin:0 0 4px}
+.findings details.note{margin:2px 0 0}
 section{background:var(--panel);border:1px solid var(--line);border-radius:6px;
   padding:24px 26px;margin-bottom:26px}
 .eyebrow{font:11px var(--mono);letter-spacing:.16em;color:var(--accent);
@@ -2763,6 +3425,9 @@ details.note .note-body{padding:2px 14px 12px;font-size:13px;color:var(--ink);ma
 details.note .note-body p{margin:6px 0}
 details.note .note-body b{color:var(--muted);font:600 11px var(--mono);
   letter-spacing:.06em;text-transform:uppercase}
+details.note.stagedoc{background:rgba(46,110,142,0.045);border-color:var(--accent);
+  margin:0 0 20px}
+details.note.stagedoc summary{color:var(--ink);font:600 12px var(--mono)}
 .howto .ladder{margin:10px 0;padding-left:20px;max-width:78ch}
 .howto .ladder li{margin:7px 0;color:var(--ink);font-size:13.5px}
 .mockwarn{background:#3a2a12;color:#f3d9a8;border:1px solid #6b4a1a;
@@ -2809,10 +3474,15 @@ Run coverage — {{ coverage_summary }}</summary>
 {% if mock_warning %}{{ mock_warning }}{% endif %}
 {% if findings %}
 <div class="findings"><h2>Findings</h2><ul>
-{% for f in findings %}<li>{{ f }}</li>{% endfor %}
+{% for f in findings %}<li>
+<p class="finding-plain">{{ f.plain }}</p>
+<p class="finding-text">{{ f.text }}</p>
+{% if f.caveat %}<details class="note"><summary>Caveats</summary>
+<div class="note-body"><p>{{ f.caveat }}</p></div></details>{% endif %}
+</li>{% endfor %}
 </ul></div>{% endif %}
 {% for s in sections %}
-<section>
+<section id="sec-{{ s.slug }}">
   <div class="eyebrow">{{ s.eyebrow }}</div>
   <h2 class="sec">{{ s.title }}</h2>
   <p class="blurb">{{ s.blurb }}</p>

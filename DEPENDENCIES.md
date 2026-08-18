@@ -92,7 +92,11 @@ pip install torch==2.9.1+cu130 --index-url https://download.pytorch.org/whl/cu13
 # Model libraries (real-checkpoint adapters)
 pip install transformers==4.57.6 timesfm==2.0.2 chronos-forecasting==2.3.1
 
-# tsfm_benchmark + tsfm_lens themselves, editable
+# tsfm_benchmark + tsfm_lens themselves, editable -- two SEPARATE packages,
+# deliberately (CLAUDE.md sec 3, README.md "Install"): their dependency sets
+# barely overlap and tsfm_lens's (torch/zarr/plotly/sklearn) are an order of
+# magnitude heavier, so a single merged package would force every install to
+# pull both. Install whichever half you need into this one shared env.
 pip install -e .                              # from repo root: tsfm_benchmark + example_runs
 pip install -e tsfm_model_analysis/tsfm_lens   # tsfm_lens
 ```

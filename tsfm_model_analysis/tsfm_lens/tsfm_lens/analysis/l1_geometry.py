@@ -23,6 +23,7 @@ from scipy.stats import spearmanr
 from ..config import PipelineConfig
 from ..extraction.store import ActivationStore, load_meta
 from ..utils import log, sample_rows, save_json
+from .depth_axis import depth_axis_for_run
 from .stats import bootstrap_ci
 
 
@@ -127,17 +128,24 @@ def run_l1(cfg: PipelineConfig, store: ActivationStore, device: torch.device) ->
     rsa = _run_rsa(cfg, store, meta, layers_a, layers_b, cka_window, a.name, b.name) \
         if cfg.l1.rsa else []
 
+    da = depth_axis_for_run(cfg.alignment.depth_axis, store, a.name, layers_a)
+    db = depth_axis_for_run(cfg.alignment.depth_axis, store, b.name, layers_b)
+
     np.savez(out_dir / "cka.npz", cka_window=cka_window,
              cka_family=np.stack(cka_family) if cka_family else np.zeros((0,) + cka_window.shape))
     save_json(out_dir / "meta.json", {
         "model_a": a.name, "model_b": b.name,
         "layers_a": layers_a, "layers_b": layers_b, "families": families,
         "best_pair": {"layer_a": layers_a[best[0]], "layer_b": layers_b[best[1]],
-                      "cka": float(cka_window[best]), "ci": best_ci, "null_ci": null_ci},
+                      "cka": float(cka_window[best]), "ci": best_ci, "null_ci": null_ci,
+                      "rel_depth_a": float(da.coords[best[0]]),
+                      "rel_depth_b": float(db.coords[best[1]])},
         "families_ci": families_ci,
         "depth_curve": depth_curve, "rsa": rsa,
         "n_rows_window": int(n_series * n_windows),
         "family_comparisons": family_comparisons,
+        "depth_axis_a": da.axis, "depth_axis_b": db.axis,
+        "rel_depth_a": da.coords.tolist(), "rel_depth_b": db.coords.tolist(),
     })
 
 

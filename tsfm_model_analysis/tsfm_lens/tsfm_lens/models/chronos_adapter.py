@@ -92,6 +92,12 @@ class ChronosAdapter(ModelAdapter):
         token_ids, attention_mask = prepared
         self._t5.encoder(input_ids=token_ids, attention_mask=attention_mask)
 
+    def token_ids(self, prepared: Any) -> np.ndarray:
+        """`prepare()` already ran the context-adaptive quantization tokenizer
+        this exists to expose (ROADMAP.md sec 15 A20) -- just hand its output back."""
+        token_ids, _attention_mask = prepared
+        return token_ids.detach().cpu().numpy()
+
     def token_time_spans(self) -> np.ndarray:
         """One token per kept context step, right-aligned to the end of the context."""
         kept = self._kept()

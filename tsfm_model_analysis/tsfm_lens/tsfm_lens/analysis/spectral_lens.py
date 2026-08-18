@@ -37,7 +37,8 @@ def _magnitude_spectrum(x: np.ndarray) -> np.ndarray:
 
 
 def spectral_lens_stats(lens_fc: np.ndarray, final_fc: np.ndarray, targets: np.ndarray,
-                        periods: np.ndarray, tol: float = 0.1) -> dict:
+                        periods: np.ndarray, tol: float = 0.1,
+                        depths: np.ndarray = None, depth_axis_name: str = "index") -> dict:
     """Per-layer trend / seasonal / residual spectral-error curves and crystallization depths.
 
     `lens_fc` is `[n_layers, B, horizon]` (skip-lens forecasts, one per
@@ -94,13 +95,15 @@ def spectral_lens_stats(lens_fc: np.ndarray, final_fc: np.ndarray, targets: np.n
     final_trend = float(trend_f.mean())
     final_residual = float(residual_f.mean())
 
-    depths = relative_depths(n_layers)
+    if depths is None:
+        depths = relative_depths(n_layers)
     trend_depth = crystallization_depths(trend_curve, final_trend, tol, depths)
     residual_depth = crystallization_depths(residual_curve, final_residual, tol, depths)
 
     out = {
         "n_layers": int(n_layers), "n_series": int(n_series),
         "n_series_with_period": n_with_period,
+        "depth_axis": depth_axis_name,
         "rel_depth": depths.tolist(),
         "trend_error_curve": trend_curve.tolist(),
         "final_trend_error": final_trend,

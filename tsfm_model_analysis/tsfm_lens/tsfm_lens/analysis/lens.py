@@ -35,7 +35,8 @@ from ..data import BenchmarkData
 from ..extraction.extract import capture_raw_tokens
 from ..extraction.hooks import token_patch
 from ..extraction.store import ActivationStore
-from ..utils import batch_slices, capped_take, log, relative_depths, sample_rows, save_json
+from ..utils import batch_slices, capped_take, log, sample_rows, save_json
+from .depth_axis import depth_axis_for_run
 from .l2_stitching import ridge_r2
 from .stats import mean_ci
 
@@ -138,11 +139,13 @@ def _model_lens(cfg: PipelineConfig, adapter, store: ActivationStore,
                        cfg.stats.ci) for li in range(len(layers))] \
         if cfg.stats.enabled else [{"value": float(v)} for v in mase_curve]
 
-    depths = relative_depths(len(layers))
+    da = depth_axis_for_run(cfg.alignment.depth_axis, store, adapter.name, layers, adapter=adapter)
+    depths = da.coords
     crystallization = crystallization_depths(mase_curve, final_mase,
                                               cfg.lens.crystallization_tol, depths)
 
     meta = {"layers": layers, "rel_depth": depths.tolist(),
+            "depth_axis": da.axis, "depth_axis_degraded_from": da.fallback_from,
             "final_mase": final_mase, "mase_ci": mase_ci,
             "crystallization_depth": crystallization,
             "crystallization_tol": cfg.lens.crystallization_tol,

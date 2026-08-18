@@ -22,5 +22,8 @@ chronos = ["chronos-forecasting>=1.2"]
 # working at timesfm==2.0.2, plain `pip install timesfm` (DEPENDENCIES.md).
 timesfm = ["timesfm>=2.0"]
 
+[project.scripts]
+tsfm-lens = "tsfm_lens.run:main"
+
 [tool.setuptools.packages.find]
 include = ["tsfm_lens*"]

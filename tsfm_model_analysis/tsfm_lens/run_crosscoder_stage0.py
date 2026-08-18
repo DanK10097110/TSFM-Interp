@@ -172,6 +172,10 @@ class Row:
     # baseline uses the crosscoder's own `dict_size` (the matched-size
     # control). See the module docstring's DECISION note.
     baseline_dict_sizes: tuple = ()
+    # ROADMAP.md sec 6.2.1 Stage 2, V2: batch-level TopK (BatchTopK) instead
+    # of per-row hard TopK. False by default so no existing row/config
+    # changes meaning underneath it (`CLAUDE.md` sec 2.1/11.24).
+    batch_topk: bool = False
 
     def __post_init__(self) -> None:
         self.baseline_dict_sizes = tuple(int(d) for d in self.baseline_dict_sizes)
@@ -256,7 +260,20 @@ def train_kwargs(row: Row, seed: int) -> dict:
     return dict(dict_size=row.dict_size, dict_size_mult=row.dict_size_mult, k=row.k,
                 epochs=row.epochs, seed=seed,
                 resample_dead_every_epochs=row.resample_every or max(1, row.epochs // 5),
-                aux_k=row.aux_k, aux_coef=row.aux_coef, aux_dead_steps=row.aux_dead_steps)
+                aux_k=row.aux_k, aux_coef=row.aux_coef, aux_dead_steps=row.aux_dead_steps,
+                batch_topk=row.batch_topk)
+
+
+def sae_train_kwargs(shared: dict) -> dict:
+    """`train_kwargs()`'s dict, minus crosscoder-only keys `SAETrainConfig`
+    doesn't accept (currently just `batch_topk` -- ROADMAP.md sec 6.2.1 Stage
+    2 V2). The per-model baseline SAEs are deliberately the unchanged
+    per-row incumbent regardless of a crosscoder row's `batch_topk` setting,
+    so this must filter rather than let `shared` grow to match whichever
+    config class happens to be spread into last (`CLAUDE.md` sec 2.1/11.24)."""
+    from dataclasses import fields
+    valid = {f.name for f in fields(SAETrainConfig)}
+    return {k: v for k, v in shared.items() if k in valid}
 
 
 @torch.no_grad()
@@ -354,7 +371,8 @@ def run_row(row: Row, xa: np.ndarray, xb: np.ndarray, names: tuple,
                          f"(identical training configuration)")
                 result["baseline"][name] = baseline_cache[key]
                 continue
-            sae, bhist = train_sae(x, SAETrainConfig(**{**shared, "dict_size": b_dict}), device)
+            sae, bhist = train_sae(
+                x, SAETrainConfig(**{**sae_train_kwargs(shared), "dict_size": b_dict}), device)
             b_fid = baseline_fidelity(sae, x, device)
             b_dead = baseline_dead_rate(sae, x, device)
             b_alive = int(round((1.0 - b_dead) * sae.dict_size))

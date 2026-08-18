@@ -347,6 +347,43 @@
 > only models) — §19 G3's perturbation-measured "mixing profile" is the
 > proposed common footing for the attention-free case.
 
+> **Reconciliation note (2026-08-18) — `ROADMAP.md` restructured; no code
+> changed and no recorded number moved.** A user-directed pass streamlined
+> `ROADMAP.md` from ~16.4k to ~10.7k lines. Three things a fresh session needs
+> to know: (1) **`ROADMAP.md` §0.5 is now the only sequencing in that file** —
+> the four competing orderings (§0.5's tiers, §16's T1–T4, §17.3, §22's waves)
+> are collapsed into one queue, and the new **§22 is a parked list** with an
+> explicit un-park trigger per entry, which is where every "possible future
+> feature" judged not-worth-it-for-now now lives. (2) Removed scaffolding —
+> closed fix plans, superseded planning blocks, the long-form session-log
+> narrative — was **relocated verbatim to `ROADMAP_ARCHIVE.md`**, not deleted;
+> every Findings block, number, decision and refutation stayed in
+> `ROADMAP.md`. (3) The crosscoder thread was triaged against the question
+> "is this worth the trouble": **`ROADMAP.md` §6.2.1's new triage block at the
+> top of that section is the answer** — the pre-registered Stage 1c decision
+> rule has already fired against the flagship variant (V1 0.2787 vs V0 0.3204,
+> p=0.002), so the remaining scope is one variant (V2, BatchTopK) plus the
+> writeup, Stage 3's pipeline wiring is deliberately **not authorized**, and
+> V3/V5/V6 are parked. Read that block before adding any crosscoder work back
+> in; it also records which parts of that subsystem are safely delegatable and
+> which four decision points are not.
+>
+> **Reconciliation note (2026-08-18, same-day follow-up) — the "remaining
+> scope" above is now done; §6.2.1 is fully closed.** An autonomous cron
+> firing picked up §0.5's queue item 1: built and scored V2 at 3 seeds (it
+> was already coded from an undocumented earlier session but never run at
+> the required seed count or compared against V0), and it **loses the same
+> way V1 did** — `gt_alignment_margin` beats_v0=False at all 3 seeds, and
+> V2's own stated design goal (lower `frac_specific_a` than V1) doesn't
+> materialize either (it goes up, not down). Stage 4's three-part writeup
+> is in `ROADMAP.md` §6.2.1's Findings. One new finding worth flagging here
+> because it's a correction to a number this note's own paragraph implies is
+> settled: the L-B untrained-twin floor that "already fired against V1" is
+> itself **seed-fragile** (0.696/0.792/0.856 across 3 seeds, real pair's own
+> frac_shared stable at 0.749–0.777) — the single-seed "decisively clears
+> the floor" reading is not reproducible, only the clause-2 scorecard loss
+> is. §13 item 3 below is corrected to match; no other section changed.
+
 ---
 
 ## 1. What this project is
@@ -529,6 +566,8 @@ don't rely on that as the stop condition if a shorter one was requested.
 ```
 TSFM-Interp/
 ├── CLAUDE.md, ROADMAP.md, README.md   # this file, forward plan, one-line repo blurb
+├── ROADMAP_ARCHIVE.md                 # verbatim superseded plans/session narrative moved out of
+│                                      # ROADMAP.md 2026-08-18; append-only, not a source of truth
 ├── DEPENDENCIES.md                    # exact verified library versions + env recreation (§7 invariant 12)
 ├── pyproject.toml                     # root package = tsfm-benchmark only (see below)
 ├── clean_reinstall.sh                 # pinned torch 2.9.1+cu130 / numpy 2.1.0 / transformers
@@ -608,9 +647,13 @@ TSFM-Interp/
         │   │                    # cumulative FLOPs over FORECAST FLOPs), functional; plus
         │   │                    # align_on_axis, which grids the overlap only instead of
         │   │                    # letting np.interp clamp a short curve flat across a range
-        │   │                    # it never reached. NOT a pipeline stage, and NOT yet
-        │   │                    # consumed by any figure -- every depth plot still renders
-        │   │                    # the legacy axis),
+        │   │                    # it never reached. NOT a pipeline stage -- read via the
+        │   │                    # new depth_axis_for_run(axis, store, model, layers,
+        │   │                    # adapter=None), which every depth figure now calls
+        │   │                    # (ROADMAP.md §18 F1, closed 2026-08-18); it prefers
+        │   │                    # ActivationStore.stack_meta -- persisted per model at
+        │   │                    # extraction time -- over a live adapter so report-only
+        │   │                    # stages need no reloaded model),
         │   │                    # model_budget.py (ROADMAP.md §18 F2 -- parameters by
         │   │                    # role, FLOPs MEASURED via torch's FlopCounterMode
         │   │                    # rather than hand-derived so it works on unseen
@@ -631,7 +674,10 @@ TSFM-Interp/
         │   │                    #   SAEAdapter yet, NOT a pipeline stage, invoked via
         │   │                    #   run_crosscoder_feasibility.py against an already-
         │   │                    #   extracted run's store like layer_screen_bakeoff.py) --
-        │   │                    #   ROADMAP.md §6.2
+        │   │                    #   ROADMAP.md §6.2, feature_geometry.py (run_sae_feature_cka --
+        │   │                    #   the encode-store seam's one consumer so far: series-level
+        │   │                    #   linear CKA between two models' PERSISTED SAE FEATURE spaces,
+        │   │                    #   `l1/cka_sae.json`. ROADMAP.md §6.2.1 Stage 3d)
         │   ├── report/report.py # single-file interactive HTML (one run)
         │   ├── report/meta_report.py # cross-run aggregator (ROADMAP.md §5.5);
         │   │                    # reads N run dirs' existing artifacts, no re-run
@@ -1166,7 +1212,17 @@ spans are wrong for your installed version — fix the adapter before trusting a
 cross-model number.** `alignment.sanity_check: true` runs a cheap spot check
 during extraction.
 
-⚠️ **AUDIT (2026-08-06) — that spot check's result is thrown away; see
+✅ **Fixed (`ROADMAP.md` §15 A2) — the AUDIT below is stale, kept per this
+file's own no-deletion doctrine.** `run_alignment_gate` (not the bare
+`impulse_alignment_check`) is now what `run_extraction` calls: it probes
+every captured layer (not the stride-4 subset the audit found), persists
+the full record (`per_layer`, `min`, `mean`, `shallowest_layer`,
+`amplitude`, `calibration`, `passed`, ...) to the run directory, and raises
+`RuntimeError` by default on a failing gate — `alignment.on_failure: warn`
+opts back into the old degrade-and-log behavior explicitly, rather than it
+being the only behavior available.
+
+~~⚠️ **AUDIT (2026-08-06) — that spot check's result is thrown away; see
 `ROADMAP.md` §15 A2.** `extraction/extract.py:50-51` calls the function,
 ignores the returned dict, and probes only `layers[::len//4]`;
 `alignment.py:84-86` logs one INFO line. There is no threshold, nothing
@@ -1177,9 +1233,35 @@ The manual `--check-alignment` path *is* trustworthy (and is how §11.16 was
 caught); the automatic one is decorative. Until A2 lands, treat
 `--check-alignment` as mandatory-by-hand for every new checkpoint and every
 library bump, exactly as invariant 7 says — the config flag does not
-substitute for it. **Also: `extraction/store.py` writes activations as
+substitute for it.~~ **Also: `extraction/store.py` writes activations as
 `float16` with no finiteness check** (§15 A19), so an overflowing layer
 enters CKA/ridge solves as `inf`/`NaN` rather than raising.
+
+✅ **Fixed (`ROADMAP.md` §15 A20, 2026-08-18) — the probe's impulse
+amplitude is no longer one fixed constant.** §11.16 found that a
+0.25x-base-amplitude impulse is safe for `amazon/chronos-t5-small` at
+`context_len: 512`; §11.26 then found the same constant produces a
+diagonal-hit fraction of exactly 0.50 (zero margin over the 0.5 gate) for
+`amazon/chronos-t5-base` at `context_len: 448` — a checkpoint/context-length
+combination the constant was never calibrated against. New
+`extraction/alignment.py::calibrate_impulse_amplitude` sweeps candidate
+amplitudes downward (0.25→0.15→0.10→0.05→0.02) and picks the largest one
+whose tokenizer re-quantization changes no more than a small fraction of
+*unrelated* tokens (outside the perturbed window's own span) — the direct
+measurement §11.16's original diagnosis used, now automatic. It uses a new
+optional `ModelAdapter.token_ids(prepared)` hook (returns `None` for
+architectures with no re-quantizing tokenizer — TimesFM/Sundial/
+Chronos-Bolt/Chronos-2 — which makes calibration a no-op that keeps the
+historical 0.25 default exactly, per §6.2's usual optional-capability
+pattern). `run_alignment_gate` calls it by default
+(`alignment.calibrate_amplitude: true`) and records the chosen amplitude
+and the sweep in its artifact. Live re-verification: chronos-t5-small@512
+now calibrates to 0.05 (0.25 itself turned out to have a small, previously
+unmeasured 3.1% unrelated-token churn there — harmless for that checkpoint's
+diagonal-hit result, which is still a bit-identical 1.00, but a genuine
+"the historical constant already had less margin than it looked" finding);
+chronos-t5-base@448 calibrates to 0.05 and its diagonal-hit fraction rises
+from 0.50 to 0.93. Full numbers in `ROADMAP.md` §15 A20's Findings.
 
 ### 6.4 Extraction & storage
 - `hooks.py`: `ActivationCatcher` (forward hooks) and **`token_patch`** — the
@@ -1193,7 +1275,13 @@ enters CKA/ridge solves as `inf`/`NaN` rather than raising.
 - `store.py`: chunked **zarr v2** store (`zarr>=2.16,<3` — v3 changed the
   group/dataset interface). Activations stored **float16**. Integer-array row
   selection routed through zarr **orthogonal indexing** (the supported v2 path).
-  `load(model, layer, level="series"|"window", rows=...)`.
+  `load(model, layer, level="series"|"window", rows=..., space="act"|"sae")`.
+  `space="sae"` is the encode-store seam (§6.2 item 3, ROADMAP.md §6.2.1 Stage
+  3d): `sae`/`sae_pooled/{model}/{layer}`, written by
+  `sae/train.py::encode_and_persist_features` when `sae.persist_features:
+  true` (off by default). Unlike `stack_meta`'s graceful empty-dict fallback,
+  reading a `space="sae"` array that was never persisted raises rather than
+  degrading silently — check `store.has_sae_features(model, layer)` first.
 - Forward passes batched under **autocast (bf16 default)**; CKA and ridge solves
   closed-form **on-device in fp32**.
 - Models loaded lazily and released between stages
@@ -1394,8 +1482,42 @@ plotly). Sections are built from a `builders` list of
 `(eyebrow, title, blurb, requires, build_fn)`. Each declares its **required
 artifact paths**; missing artifacts → *silent* skip logged as "stage not run",
 a raised exception → **warning** logged as "section failed". This distinction is
-deliberate so logs stay honest. Findings are accumulated into a list and
-surfaced as prose. Almost every figure carries an attached `_note()` block
+deliberate so logs stay honest. ✅ **Findings are structured, not bare
+strings, since 2026-08-18 (`ROADMAP.md` E6).** A `@dataclass Finding`
+(`claim_id`, `stage`, `evidence_class` — one of `geometric`/`translatable`/
+`causal_within_model`/`descriptive`/`illustrative`/`behavioral` — `text`,
+`registered`, `cleared_noise_floor`, `value`, `ci`) is what every section
+builder now appends; `.text` renders as the same prose the HTML always
+showed (verified byte-identical pre/post refactor), and the full list is
+also serialized to `<run_dir>/report/findings.json` — one JSON record per
+claim, with a stable `claim_id`, instead of only living inside the HTML.
+Every section header also carries a stable `id="sec-{slug}"` anchor, so a
+section is directly deep-linkable. ✅ **Extended to three text registers
+per finding, same day (`ROADMAP.md` §21 J1).** `Finding` gained `plain: str`
+(a genuinely jargon-free one-sentence gloss, e.g. *"At their most similar
+layers, patchy and steppy organize the data closely alike."*) and
+`caveat: str`, both rendered per finding — `plain` at headline size, `text`
+(unchanged) beneath it, `caveat` inside the existing collapsed `<details>`
+mechanism. `caveat` is **generated, not hand-written**, by a single
+whole-list post-pass (`_compose_caveats`, mirroring the pre-existing
+`_qualify_depth_claims` pattern) that composes it from the finding's
+`evidence_class`, `registered` status, `cleared_noise_floor` (set at only 2
+of 36 sites — left `None`, not inferred, everywhere a real per-finding floor
+check didn't run), and the fairness card (F9) / coverage (F1/F4)
+qualifiers `_qualify_depth_claims` already reads. Live-verified: all 45
+findings on a regenerated `configs/smoke.yaml` report have non-empty
+`plain`/`caveat`, and `class="finding-plain"`/`class="finding-text"`/
+`Caveats` each appear exactly 45/45/45 times in the rendered HTML. Two real
+bugs were caught and fixed by inspecting live rendered output rather than
+trusting the design: a self-referential "no floor check was run" clause was
+appearing under the very findings that *define* the noise floor, and a
+"depth axes only partially overlap" clause was firing at a measured 100%
+overlap. Confidence badges (a CSS class keyed on `evidence_class`+`registered`) and a
+cross-run diff mode are **still not** built — neither was ever in J1's own
+scope (badges were only ever on E6's "then cheap" wishlist, diff mode is
+gated on E5, which is parked), and `plain`/`caveat` already cover the
+legibility gap those items would additionally style/compare. Almost every
+figure carries an attached `_note()` block
 (purpose / reading values / limitations) rendered as a collapsed-by-default
 `<details>` directly under it — this is the report's actual glossary
 mechanism, contextual per-plot rather than a separate lookup table, added
@@ -1403,7 +1525,15 @@ before `ROADMAP.md` existed and easy to miss if you don't open the file.
 A fixed **"How to read this report"** preamble (`_how_to_read`) renders
 first, unconditionally, stating the evidence-class ladder end to end and the
 one canonical definition of "window" and "relative depth" that recur in
-nearly every section. `report.verbose` (default `false` as of 2026-08-10, ROADMAP.md §10/§16's
+nearly every section. Immediately after it, a **"Fairness"** section
+(`_sec_fairness`, `ROADMAP.md` §18 F9, closed 2026-08-18) renders
+unconditionally too (`requires: []`) — every measured asymmetry between the
+two models in the run (parameters, FLOPs, captured-FLOP fraction, the depth
+axis's overlap range, forecast determinism/noise floor), each row read from
+an already-written artifact (`budget/model_budget.json`, `l3/meta.json`,
+`l0/noise_floor.json`) rather than hand-written, and a row whose backing
+stage never ran renders "not yet measured" instead of being silently
+omitted. Also emitted as `fairness/card.json`. `report.verbose` (default `false` as of 2026-08-10, ROADMAP.md §10/§16's
 "closer to release, verbose stays opt-in" call — was `true`; `run.py --verbose`/
 `--no-verbose` overrides it per-run) additionally gates a narrated
 single-series case-study section for **L3 patching**, matching the
@@ -1471,10 +1601,19 @@ sealed private corpora.
    restoration-by-depth *curve*.
 6. **`confirm` runs once**, on frozen analysis, against a sealed private corpus.
 7. **Alignment is verified empirically** (`--check-alignment`) on every new
-   library version before any cross-model number is trusted. ⚠️ **Enforced by
-   human memory only** — the in-pipeline check discards its own result
-   (`ROADMAP.md` §15 A2, and the marker in §6.3). Run the CLI check by hand,
-   every time, until A2 lands.
+   library version before any cross-model number is trusted. ✅ **Now also
+   machine-enforced in-pipeline** (`ROADMAP.md` §15 A2, closed) —
+   `extraction/alignment.py::run_alignment_gate` runs by default inside
+   `run_extraction`, raises loudly (`alignment.on_failure: fail`, the
+   default) on a diagonal-hit fraction below `min_diagonal_frac`, and
+   persists the full per-layer record rather than discarding it. The manual
+   `--check-alignment` CLI path is still the right tool for *inspecting* a
+   new checkpoint/library version before trusting it (its full per-layer
+   table is more informative than the gate's pass/fail), but the pipeline no
+   longer silently proceeds on a broken mapping the way this note used to
+   warn about. As of 2026-08-18 (`ROADMAP.md` §15 A20) both paths also
+   self-calibrate the probe's impulse amplitude per run rather than trusting
+   one fixed constant — see §6.3 below.
 8. **Unsupported capabilities skip and log; broken assumptions fail loudly.**
    Never silently produce a wrong slice. ⚠️ **"Loudly" is currently
    implemented as a log line in most places, which is not loud once the
@@ -1557,10 +1696,13 @@ blocks, stride 1, `num_samples: 20`). `family_key: auto`. Every stage has an
 `configs/medium_run.yaml` gives a mid-scale real-model config between the
 mock-only smoke run and this full default.
 
-`alignment.depth_axis: block` (new default 2026-08-13, `ROADMAP.md` §18 F1;
+`alignment.depth_axis: block` (default since 2026-08-13, `ROADMAP.md` §18 F1;
 `index` is the legacy axis every number recorded before that date was
-measured on — ⚠️ **the knob exists and is tested but nothing reads it yet**,
-so every depth figure currently renders `index` regardless of this setting).
+measured on). ✅ **Wired 2026-08-18**: every depth figure now resolves its
+axis via `depth_axis_for_run` and this knob is live — a run's report will
+render `block` coordinates (Chronos capped at ~0.48, not 1.0) unless
+`index` is set explicitly for comparison against a pre-2026-08-18 run's
+coordinates.
 
 Notable stage knobs: `l3.patching.per_window: true`,
 `l3.patching.window_stride: 2` (every window doubles patching cost);
@@ -1641,6 +1783,11 @@ PYTHONPATH=. python3 example_runs/run_validation.py
 | Crosscoder feasibility test (`sae/crosscoder.py`, ROADMAP.md §13/§6.2) | ✅ **First run 2026-08-05** against live `google/timesfm-2.5-200m-pytorch` + `amazon/chronos-t5-base` activations (an already-extracted store, no new model calls) at their L1 peak-CKA layer pair. Joint training is stable (no source-domination collapse across three hyperparameter settings) once a real, found-and-fixed scale-domination instability (§11.19) and a device-mismatch crash are corrected. **Not** an `SAEAdapter` implementation or a pipeline stage — feasibility-gate only. Full numbers in `ROADMAP.md` §6.2's Findings. |
 | Crosscoder Stage 0 dead-feature gate (`run_crosscoder_stage0.py`, ROADMAP.md §6.2.1) | ✅ **CLOSED 2026-08-13** against the same live checkpoint pair's `runs/crosscoder_stage0_bigdata` store (46382 aligned rows, no new model calls). `configs/crosscoder_stage0_gate.yaml` passes every exit criterion at **5 of 5 seeds** (worst seed: dead 0.185 vs. the 0.30 bar, 835 alive vs. the 563 floor, fidelity 0.724 vs. the 0.70 bar), with both per-model `TopKSAE` baselines passing at every seed at their own sizes. The `dict=896` alternative passes only 3 of 5, on fidelity alone. ⚠️ One layer pair, one corpus, one `k`; says nothing yet about whether the features are *shared* — `relative_decoder_norm` stays unquotable until Stage 1's scorecard. Full tables in `ROADMAP.md` §6.2.1's finding (17); 16 tests across `tests/test_stage0_baseline_sizing.py` + `tests/test_stage0_gate_config.py`, full suite 357 passed. |
 | Cost/coverage accounting (`analysis/model_budget.py`, ROADMAP.md §18 F2/F4) | ✅ **Verified live 2026-08-12** against `runs/medium_run_chronos_base` (TimesFM-2.5-200M + Chronos-T5-Base). Measured, not hand-derived: TimesFM 231.29M params / 59.39 GFLOPs forward, **42.5%** of its forward FLOPs captured; Chronos-T5-Base 201.37M params / 774.76 GFLOPs forward vs 5398.28 GFLOPs per forecast, captured blocks **14.4%** of a forecast (a `≤` bound when first recorded — see the 2026-08-13 correction below). F4's acceptance criterion met — a depth-located Chronos finding carries the automatic qualifier. **The first live run *failed* that criterion**, which is how two real bugs were found and fixed (an unmeasurable headline exempting the very model the item exists for, and a parameter surface double-counting stride loss) — see ROADMAP.md §18 F4's Findings. ✅ **Corrected 2026-08-13:** Chronos's headline was an upper bound only because `_per_block_flops` resolved 0 of its 12 blocks; that is fixed (`FlopCounterMode` keys from the module *entered*, not from `.module` — §11.28), so **14.35% is now a direct measurement**, all 12 blocks resolve, and Chronos has a real trace in F2's compute-by-depth chart. The headline's *value* is unchanged bit-for-bit — the bound was exactly tight — so only its epistemic status moved. |
+| Depth-axis wiring + acceptance test (`analysis/depth_axis.py::depth_axis_for_run`, `ROADMAP.md` §18 F1) | ✅ **CLOSED 2026-08-18** against live `runs/medium_run_chronos_base` (TimesFM-2.5-200M + Chronos-T5-Base). Chronos's `block`-axis relative depth caps at **0.4782608695652174**, not 1.0, as predicted; TimesFM's own axis independently revealed a `capture_layer_stride`-driven cap at **0.9473684210526315**; `align_on_axis` measures a real **overlap_fraction=0.5048309178743962**; re-running `ROADMAP.md` §16 E9's depth-curve null tests reproduced every prior verdict **bit-identically** (those tests match layers by index/name, never by depth coordinate, so this null result was analytically predicted before it was run). One real bug found and fixed along the way: `l3_perturbation.py`'s `patching.json` reused the full-sensitivity-list depth axis for the stride-subsampled patched-layer list, silently mismatching Plotly array lengths whenever `l3.patching.layer_stride>1` (invisible on every mock config, which uses stride 1) — see §11.32. Full suite 436 passed. |
+| Encode-store seam + feature-space CKA (`extraction/store.py::load(..., space="sae")`, `sae/train.py::encode_and_persist_features`, `sae/feature_geometry.py::run_sae_feature_cka`, `ROADMAP.md` §6.2.1 Stage 3d) | ✅ **DONE 2026-08-18.** Verified against both the mock smoke pipeline (11 new tests, all passing) and live `google/timesfm-2.5-200m-pytorch` + `amazon/chronos-t5-base` checkpoints, rerunning `configs/medium_run_chronos_base.yaml`'s `sae` stage with `persist_features: true` against an **isolated copy** of `runs/medium_run_chronos_base`'s already-extracted store (deleted after reading results, so the canonical run's own recorded numbers weren't disturbed). Both pinned targets (TimesFM `stacked_xf.18`, Chronos-T5-Base `encoder.block.6`) persisted their encoded features (dict_size 6144) cleanly; feature-space CKA at that pair: **0.2625783085823059** (95% CI **[0.22790290378034117, 0.3332766056060791]**, n=288 series) — a new number at a layer pair L1 never optimizes over (pinned for forecast-readability, not peak CKA), so not yet a like-for-like "feature space vs. activation space" verdict against this run's own activation-space peak (0.381 at a different pair). Full suite 452 passed (up from 441). |
+| Impulse-alignment probe self-calibration (`extraction/alignment.py::calibrate_impulse_amplitude`, `ROADMAP.md` §15 A20) | ✅ **CLOSED 2026-08-18.** 7 new tests (`tests/test_alignment_calibration.py`) against a deterministic double covering the no-op path (no `token_ids()`), a confound that never fires (reproduces 0.25), the core sweep-down case, the all-candidates-confound fallback, `impulse_alignment_check`'s default-amplitude backward compatibility, and `run_alignment_gate`'s new artifact fields under both `calibrate=True/False`. Live-reverified against real checkpoints: `amazon/chronos-t5-small`@context_len 512 (the historical calibration point) now calibrates to **0.05** (0.25 itself carries a previously-unmeasured 3.1% unrelated-token churn there) with the diagonal-hit result unchanged at **1.00** across all 6 probed layers; `amazon/chronos-t5-base`@context_len 448 (the case that surfaced this item, §11.26) calibrates to **0.05** and its diagonal-hit fraction rises from the pre-fix **0.50** to **0.93**. Full `tsfm_lens` suite **459 passed** (up from 452). §15 is now fully closed (21/21). |
+| `Finding` dataclass refactor + `findings.json` + section anchors (`report/report.py`, `ROADMAP.md` E6) | ✅ **DONE 2026-08-18**, independently re-verified rather than taken on the implementing agent's report alone (`CLAUDE.md` §2.4): re-ran `tests/test_smoke.py` (5 passed) and hand-inspected a live `runs/smoke/report/findings.json` (45 findings, unique `claim_id`s, all `evidence_class` values within the 6 allowed literals, `registered=True` on exactly `confirm`'s 2 findings). All 36 `findings.append(...)` call sites converted; HTML confirmed byte-identical to the true pre-refactor file (not to a stale `git HEAD`, which had drifted — see `ROADMAP.md` E6's Findings for why that distinction mattered) aside from pre-existing Plotly UUID noise and the intentionally-added `id="sec-{slug}"` anchors. Full suite **459 passed, 0 failed** after fixing 7 tests that called modified functions directly with bare-string fixtures. Confidence badges and the diff mode are deliberately deferred (to J1 and to E5 respectively), not part of this item's stated acceptance criterion. |
+| `Finding.plain`/`Finding.caveat` — the three-layer claim contract (`report/report.py::_compose_caveats`, `ROADMAP.md` §21 J1) | ✅ **DONE 2026-08-18**, independently re-verified: my own first check read a *stale* `findings.json` (predated the implementing agent's final edits by ~47 minutes) and looked like every `plain`/`caveat` was silently missing — regenerating the report fresh (`python run.py --config configs/smoke.yaml --stages report --force report`) resolved it, all 45 findings populated correctly, matching the agent's quoted examples. Re-ran `tests/test_smoke.py` + `test_finding_caveats.py` + `test_capture_coverage.py` directly: **24 passed**. Rendered-HTML grep confirms `class="finding-plain"` / `class="finding-text"` / `Caveats` each appear **45/45/45** times. Full suite **466 passed, 0 failed** per the agent's own run (not independently re-run in full given the ~7-minute cost and that the targeted re-run above covers every file it touched). Two real bugs caught by inspecting live output, not the design: a self-referential "no floor check was run" clause on the findings that *define* the noise floor, and a "depth axes only partially overlap" clause firing at a measured 100% overlap — both fixed (`_is_full_overlap` helper) and reconfirmed still-fixed on the independent regeneration. |
 
 **Golden hashes (do not let these change) — ✅ currently matching, see below:**
 ```
@@ -2437,6 +2584,20 @@ recorded without the full set of conditions it was measured under
 (checkpoint **and** context length **and** tokenizer family) will be
 reapplied outside them by the next person, who has no way to know.
 
+**Fixed 2026-08-18 (`ROADMAP.md` §15 A20), exactly along the fix plan
+tracked above — see §6.3's fix note for the mechanism.** One result the fix
+plan didn't anticipate: re-verifying chronos-t5-small@512 (the setting
+§11.16's constant was originally calibrated against) found calibration
+choosing 0.05, not 0.25 — 0.25 turns out to have a small, real,
+previously-unmeasured 3.1% unrelated-token churn even there. The diagonal-
+hit *result* still reproduces bit-for-bit (1.00 at every layer), so this
+isn't a regression, but it is evidence the original §11.16 calibration was
+closer to its own edge than "perfect 1.00 at amp≤0.3× base amplitude"
+suggested — the safety margin was thinner than the round number implied.
+chronos-t5-base@448 (this section's own motivating case) calibrates to 0.05
+and its diagonal-hit fraction rises from 0.50 to 0.93, clearing the 0.5 gate
+with real margin instead of exactly none.
+
 ### 11.27 A background job that re-invokes a script per iteration reads that script fresh every time — so editing it mid-flight silently kills the remaining iterations
 Self-inflicted 2026-08-12, and a direct consequence of §2.8's own
 background-delegation doctrine rather than an accident despite it. A
@@ -2565,6 +2726,108 @@ new adapter's regex, or verify its match list against
 `--discover-layers` — do not assume a `$` alone makes it unambiguous.
 Directly relevant to F1's block accounting, which cannot separate
 "architecturally uncaptured" from "captured" if the regex over-matches.
+
+### 11.31 A through-origin fit's R² needs an uncentered baseline — a mean-centered one manufactures deep negative scores on sparse regressors
+Found 2026-08-17 verifying `ROADMAP.md` §6.2.1 Stage 2's V4 ("latent
+scaling") diagnostic against real crosscoder data.
+`sae/crosscoder_eval.py::latent_scaling_confirm` fits a single scalar `beta`
+minimizing `||proj - beta*a||^2` with **no intercept** — the whole point is
+to ask "does a real multiple of this atom's own strength explain the other
+source's projected signal," and `beta≈0` is the null answer. Its R²
+(`variance_explained`) was computed as `1 - resid_sq/total_sq` with
+`total_sq` the **mean-centered** second moment of `proj`
+(`sum((proj - proj.mean())**2)`) — the baseline that is only correct for a
+fit **with** an intercept, whose null model is "predict the mean," not
+"predict zero." On the real crosscoder (TopK, k=48 of 1024) `a` is zero on
+the overwhelming majority of rows for any given atom, so the through-origin
+residual on those rows is just `proj` itself, while the mean-centered
+baseline subtracts `proj.mean()` — a value the fit never had access to and
+has no reason to track. Once `proj` has any nonzero mean (routine for real
+activations), this mismatch can make `total_sq` *smaller* than `resid_sq`,
+producing `variance_explained` values in the tens-of-negative range instead
+of the near-zero the diagnostic's own docstring promised for a genuinely
+unrelated atom — individual entries as low as roughly −72 were measured
+live before this was caught. **Not caught by either of the two existing
+unit tests**, because both used dense activations (`k == dict_size`, every
+atom fires on every row), where a sparse `a` never arises and the two
+baselines barely differ — the same shape of gap as §11.16 (a test tuned
+against one regime silently invalid in another) and §11.19 (a synthetic
+test that passed for a reason the real checkpoint doesn't share). Diagnosed
+per §2.4 before touching the fix: a standalone numpy reproduction with a
+hand-built sparse atom (fires on ~5% of rows) against an unrelated
+nonzero-mean noise signal gave `ve = -93.5` under the old formula and
+`ve = 0.049` under the candidate fix on identical data — matching the real
+run's symptom in kind and magnitude before the fix was trusted. **Fix:**
+`total_sq = sum(proj**2)` (uncentered) — the second moment relative to the
+fit's actual null model (`beta=0` ⇒ predict zero everywhere), not the mean.
+Re-verified live: every `variance_explained` value across both source
+buckets on the real run now lands in a small, sane range
+(`[0.000156, 0.10528]` / `[0.0020, 0.0672]`), and every other ladder rung
+(L-A, L-B, L-C, L-D, V0) reproduced bit-for-bit against the pre-fix run,
+confirming the fix's blast radius stayed scoped to this one function
+(the §11.24-class check). New regression test purpose-built for the
+sparsity this bug needs to manifest — see `ROADMAP.md` §6.2.1 Stage 2's V4
+Findings for the exact numbers and the substantive result this unblocked
+(most nominally-"specific" atoms turn out not to survive the corrected
+check). **Lesson:** R² is not one formula — its baseline (mean vs. zero)
+must match whatever null model the fit itself implies. A no-intercept /
+through-origin fit's R² is invalid against a mean-centered baseline, and
+the failure mode (deep negative scores) looks like "this diagnostic is
+telling me something real is very wrong" rather than "this diagnostic's
+own arithmetic is wrong" — exactly the kind of plausible-looking-but-false
+signal that only a real, non-dense data regime exposes, and that dense
+synthetic tests will never catch on their own.
+
+### 11.32 Two derived quantities computed from one shared list silently diverge when a stride config makes the underlying lists unequal length
+Found 2026-08-18 running `ROADMAP.md` §18 F1's real-checkpoint acceptance
+test. `l3_perturbation.py::run_l3` computes one `depth_axis_for_run(...)`
+call per model from `_sensitivity`'s full captured-layer list, then reused
+that same `DepthAxis` object to write `patching.json`'s `rel_depth`/
+`depth_axis` fields — but `_patching`'s own `layers` come from a separate,
+coarser `layer_stride`-subsampled slice of the same underlying layer list
+(`l3.patching.layer_stride: 2` in `configs/medium_run_chronos_base.yaml`).
+Whenever that stride is `>1` the two lists have different lengths (10 vs. 5
+for TimesFM, 12 vs. 6 for Chronos-T5-Base on this config), so
+`patching.json["rel_depth"]` silently carried more entries than
+`patching.json["layers"]`. This produced no exception anywhere in the
+pipeline: `report.py` passes both arrays straight to Plotly, and Plotly.js
+zips mismatched-length `x`/`y` (or `z`/`y`) arrays index-for-index rather
+than raising, so the L3 "clean → corrupted restoration" curve and the
+per-window/per-horizon-step restoration heatmaps silently plotted every
+patched layer past the first at the wrong depth coordinate. The mock smoke
+config (`configs/smoke.yaml`, later `smoke_encdec.yaml`) never exercised
+this because both set `l3.patching.layer_stride: 1`, where the sensitivity
+and patching layer lists coincide by construction and the two lengths can
+never diverge — the bug only manifests when a *real* config's stride
+actually thins the patched subset relative to the full sensitivity list.
+**Fix:** a second, separately-computed `patching_depth_axes[model] =
+depth_axis_for_run(..., patching[model]["layers"], ...)` now feeds
+`patching.json`, distinct from the sensitivity-list axis; a new regression
+test (`tests/test_l3_patching_depth_axis.py`) pins both that the patched
+subset's `rel_depth` length matches its own layer list under
+`layer_stride=2`, and that the values are genuinely recomputed rather than
+a truncated slice of the sensitivity axis — verified to actually catch the
+bug by reverting the fix and confirming the test fails, then restoring it.
+Re-verified on the real checkpoint pair after the fix: `l3/patching.json`
+now shows matching lengths for both models, and parsing the regenerated
+`report.html`'s live Plotly trace data directly confirms every affected
+figure's `x`/`y`/`z` arrays now agree. **Lesson, a new shape distinct from
+§11.24's "shared infrastructure changed between two runs of the same
+config":** here nothing changed between runs — the bug is that *one
+function* derives two related-but-distinct quantities (a full layer list
+and a strided subsample of it) and computed a value for the first list, then
+reused it unchanged for the second, on the tacit assumption the two lists
+would always be the same length. Any config where the strided list actually
+differs from the full list exposes it; any config (including every mock
+verification config, until this session's real-checkpoint run) where they
+happen to coincide hides it completely, with no error to flag the
+coincidence as load-bearing. When a module computes a derived quantity
+(here, a depth axis) intended for one list, and a *different*, independently
+subsampled list from the same source needs that same kind of quantity, treat
+it as a separate computation from the start — do not assume "it's basically
+the same list" survives every config, and check the two lists' lengths
+explicitly rather than relying on a downstream consumer (here, Plotly) to
+either raise or otherwise reveal the mismatch.
 
 ---
 
@@ -2749,6 +3012,31 @@ Directly relevant to F1's block accounting, which cannot separate
    crosscoder or per-model dictionaries on both sides exist — SAELens is
    the precedent for that being a distinct phase.
 
+   > **Correction (2026-08-18, ROADMAP.md §6.2.1 Stage 3d) — the encode-
+   > store seam is now wired, un-gated from the crosscoder entirely.**
+   > `sae.persist_features: true` (off by default — see §6.4's `store.py`
+   > entry) makes `train.py::run_sae` call the new
+   > `encode_and_persist_features` for each target after training, writing
+   > `sae`/`sae_pooled/{model}/{layer}` into the store; `store.load(...,
+   > space="sae")` reads it back at either granularity. The one consumer
+   > built on top so far is new `sae/feature_geometry.py::run_sae_feature_cka`
+   > — series-level linear CKA between two models' *persisted SAE feature*
+   > spaces (reusing `analysis/l1_geometry.py::linear_cka` and
+   > `analysis/stats.py::bootstrap_ci` rather than duplicating them),
+   > written to `l1/cka_sae.json` whenever `>=2` targets span both
+   > comparison-pair models. This is exactly the "CKA in feature space
+   > instead of activation space" measurement `ROADMAP.md` §6.2.1 named as
+   > the payoff — but it is a new, separate artifact, not a change to L1's
+   > own main CKA pass: `analysis/l1_geometry.py` and `clustering.py`
+   > **still read only `space="act"`** and do not yet consume
+   > `level="sae"` themselves, so this correction narrows but does not
+   > close the "L1/clustering still can't read a `level=\"sae\"`" claim
+   > above — read it as "the store can now hold that data and one
+   > standalone consumer reads it," not as "L1 and clustering were wired
+   > to it." Verified against both the mock smoke pipeline and real
+   > TimesFM/Chronos-T5-Base checkpoints; see `ROADMAP.md` §6.2.1 Stage
+   > 3d's Findings for the numbers.
+
    > **Update (2026-08-11, ROADMAP.md §16 E16).** Implemented as
    > `sae/matching.py`, against independently-trained per-model dictionaries
    > (no crosscoder needed) — reframed from "input-space decoder
@@ -2831,6 +3119,37 @@ Directly relevant to F1's block accounting, which cannot separate
    > stage. Turning it on repo-wide is a real option now rather than a
    > hypothesis, and would invalidate prior SAE numbers by design (§2.1),
    > so it belongs in a deliberate pass, not a default flip.
+
+   > 🔴 **The flagship crosscoder is CLOSED (2026-08-18, `ROADMAP.md`
+   > §6.2.1) — as a negative result, not an unstarted item.** This bullet's
+   > "still needs its own design work — joint-training stability... is an
+   > open question" is now stale on both counts: stability was resolved
+   > 2026-08-05 (feasibility test, above), and the flagship deliverable
+   > itself — a full shared/specific decomposition, plus a second variant
+   > (BatchTopK, V2) built specifically to test whether a known TopK
+   > shrinkage artifact was responsible — was built, run through a
+   > pre-registered decision rule at multiple seeds, and **lost**: neither
+   > variant beats independently-trained, post-hoc-matched per-model
+   > dictionaries (`sae/matching.py`, the E16 update above) on ground-truth
+   > alignment (V1: diff −0.0417, CI [−0.0693,−0.0137], p=0.002, 46,382
+   > rows; V2: loses at all 3 tested seeds too). A new methodological
+   > finding came out of finishing it: the shared-fraction number's own
+   > architecture-matched floor (a same-shape `random_init` twin) is itself
+   > **seed-fragile** — 0.696/0.792/0.856 across 3 seeds — so a single-seed
+   > "the real pair clears the floor" claim (recorded here as settled until
+   > this correction) does not generalize even within the same pair and
+   > metric; this repo's existing precedent for needing an untrained-twin
+   > floor at all (§16 E9, and §6.3's "TimesFM reads as more shared with a
+   > random copy of itself than with Chronos" finding) turns out to need
+   > *several* seeds of that floor, not one. No pipeline stage, config
+   > surface, or report section was built for the crosscoder — that
+   > (Stage 3) stays deliberately, confirmedly ungated-off, since building
+   > infrastructure for a mechanism that lost would contradict the result
+   > itself. Full three-part writeup (the shared-fraction number, its
+   > floor, and what the shared/specific atoms ground-truth-align to) in
+   > `ROADMAP.md` §6.2.1's Stage 4 Findings — not repeated here per this
+   > file's own "describe stable architecture, not a moving research
+   > result" doctrine (§5.5's precedent, §10's retirement note).
 4. **Validation as CI gates.** Turn the diversity metrics into explicit pass/fail
    gates (redundancy fraction < X, effective dimensionality > Y, no
    near-collision cluster larger than Z) so each benchmark epoch is checked

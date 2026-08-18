@@ -55,6 +55,7 @@ from .crosscoder import (
     CrosscoderSAE,
     alive_mask,
     classify_features,
+    eval_row_order,
     per_source_fidelity,
     relative_decoder_norm,
 )
@@ -142,9 +143,15 @@ def l0_actual(sae, sources: list, device: torch.device, batch: int = 4096) -> fl
     tensors = [torch.from_numpy(s) for s in sources]
     n = tensors[0].shape[0]
     total = 0.0
+    encode = getattr(sae, "encode_eval", sae.encode)
+    # `eval_row_order` (unconditional, safe for per-row TopK too -- see its
+    # docstring): batch-level TopK's selection depends on batch composition,
+    # and unshuffled dataset-order slices are family-clustered.
+    perm = eval_row_order(n)
     for s, e in batch_slices(n, batch):
-        chunk = [t[s:e].to(device) for t in tensors]
-        feats = sae.encode(chunk if len(chunk) > 1 else chunk[0])
+        rows = perm[s:e]
+        chunk = [t[rows].to(device) for t in tensors]
+        feats = encode(chunk if len(chunk) > 1 else chunk[0])
         total += float((feats.abs() > 1e-8).sum())
     return total / n
 
@@ -173,6 +180,123 @@ def atom_buckets(sae: CrosscoderSAE, sources: list, device: torch.device,
 
 
 @torch.no_grad()
+def latent_scaling_confirm(sae: CrosscoderSAE, sources: list, device: torch.device,
+                           buckets: dict | None = None, batch_size: int = 8192,
+                           ve_threshold: float = 0.01) -> dict:
+    """ROADMAP.md §6.2.1 Stage 2's V4: is a "specific" atom really specific, or
+    did joint training merely shrink its cross-source decoder weight to near
+    zero while keeping a real direction?
+
+    `atom_buckets`'s split is read off `relative_decoder_norm` -- a *norm*,
+    which conflates "this atom carries no information about the other
+    source" with "this atom carries information the optimizer chose to emit
+    at a tiny, individually-negligible scale". Norm alone cannot tell those
+    apart; direction can. For each atom nominally specific to source A, this
+    unit-normalizes its (however small) decoder row in source B,
+    `dhat = W_dec[b][atom] * source_scale[b]`, then fits the one scalar beta
+    that best explains B's actual activity along that direction using the
+    atom's own joint-encoded strength as the regressor:
+    `beta = argmin_beta || (x_b . dhat) - beta * a ||^2`, closed-form as
+    `sum(a * proj) / sum(a * a)`. `variance_explained` is that fit's R^2 in
+    the reduced 1-D projected space, computed against the **uncentered**
+    second moment of `proj` (`sum(proj**2)`), not a mean-centered one --
+    the fit has no intercept, so its actual null model is "predict zero",
+    and the R^2 baseline must match that null or a sparse (TopK-zero-heavy)
+    `a` with a nonzero-mean `proj` produces spuriously deep negative values
+    for atoms with no real relationship at all. This intentionally departs
+    from `per_source_fidelity`'s own (mean-centered) convention in
+    `crosscoder.py`, which fits a full per-atom reconstruction with its own
+    implicit per-row baseline rather than one shared scalar over a sparse
+    regressor -- the two functions' R^2s are not meant to be comparable.
+
+    A direction that is genuinely noise (the decoder never learned to use
+    this atom for B at all) explains no more of B's variance when scaled by
+    `a` than any other random unit direction would -- `variance_explained`
+    stays near zero regardless of how large `beta` needs to be to try.  A
+    direction that is real but suppressed explains a real, atom-specific
+    slice of B's variance once rescaled. `frac_specific_confirmed` is the
+    fraction of nominally-specific atoms whose `variance_explained` stays
+    below `ve_threshold` -- the fraction §6.2.1's shared/specific split gets
+    to keep calling "specific" rather than "shrunk".
+
+    This is a post-hoc diagnostic, not a new model: it needs no retraining
+    and applies unchanged to any TopK crosscoder variant `atom_buckets`
+    already knows how to bucket (V1-V3), which is why it lives beside
+    `atom_buckets` rather than inside any one variant's own module.
+    """
+    if buckets is None:
+        buckets = atom_buckets(sae, sources, device, batch_size=batch_size)
+
+    xs_np = [np.asarray(s, dtype=np.float32) for s in sources]
+    tensors = [torch.from_numpy(s) for s in xs_np]
+    n = tensors[0].shape[0]
+    # Encode over shuffled batches (`eval_row_order` -- batch-level TopK's
+    # selection depends on which rows share a batch), then invert the
+    # permutation so `features` lines up row-for-row with `xs_np` below,
+    # which `check()` needs unshuffled to compute `x_other @ dhat` per row.
+    perm = eval_row_order(n)
+    inv_perm = np.empty(n, dtype=np.int64)
+    inv_perm[perm.numpy()] = np.arange(n)
+    chunks = []
+    for s, e in batch_slices(n, batch_size):
+        rows = perm[s:e]
+        chunk = [t[rows].to(device) for t in tensors]
+        chunks.append(sae.encode_eval(chunk).cpu().numpy())
+    features = np.concatenate(chunks, axis=0)[inv_perm]
+
+    def decoder_direction(other_source: int, atom: int):
+        raw = sae.W_dec[other_source][atom].detach().cpu().numpy() * float(
+            sae.source_scale[other_source])
+        norm = float(np.linalg.norm(raw))
+        return (raw / norm) if norm > 1e-12 else None
+
+    def check(atoms: np.ndarray, other_source: int) -> dict:
+        x_other = xs_np[other_source]
+        entries = []
+        for atom in atoms.tolist():
+            a = features[:, atom]
+            dhat = decoder_direction(other_source, int(atom))
+            if dhat is None or not np.any(a):
+                entries.append({"atom": int(atom), "beta": 0.0,
+                                "variance_explained": 0.0, "status": "degenerate"})
+                continue
+            proj = x_other @ dhat
+            denom = float(np.dot(a, a))
+            beta = float(np.dot(a, proj) / denom) if denom > 1e-12 else 0.0
+            resid = proj - beta * a
+            # `beta` is a through-origin fit (no intercept), so its null model
+            # is "predict 0", not "predict the mean" -- the R^2 baseline must
+            # be the *uncentered* second moment of `proj`, not a mean-centered
+            # one. Atoms are TopK-sparse (`a` is 0 on most rows), so a
+            # mean-centered baseline compares the fit against a predictor
+            # (proj.mean()) the fit never had access to, producing spuriously
+            # deep negative values on rows where `a == 0` whenever `proj`
+            # itself has a nonzero mean -- see CLAUDE.md's crosscoder traps.
+            total_sq = float(np.dot(proj, proj))
+            resid_sq = float(np.dot(resid, resid))
+            ve = 1.0 - resid_sq / max(total_sq, 1e-8)
+            entries.append({"atom": int(atom), "beta": beta,
+                            "variance_explained": float(ve), "status": "ok"})
+        n_atoms = len(entries)
+        confirmed = sum(1 for e in entries if e["variance_explained"] < ve_threshold)
+        return {
+            "n_atoms": n_atoms,
+            "n_confirmed": confirmed,
+            "frac_specific_confirmed": float(confirmed / n_atoms) if n_atoms else 1.0,
+            "mean_variance_explained": (float(np.mean([e["variance_explained"]
+                                                        for e in entries]))
+                                        if entries else 0.0),
+            "entries": entries,
+        }
+
+    return {
+        "ve_threshold": float(ve_threshold),
+        "specific_a": check(buckets["specific_a"], 1),
+        "specific_b": check(buckets["specific_b"], 0),
+    }
+
+
+@torch.no_grad()
 def atom_subset_alignment(sae: CrosscoderSAE, ctx: GroundTruthContext, atoms: np.ndarray,
                           device: torch.device) -> dict:
     """`best_ground_truth_matches` restricted to `atoms`.
@@ -195,7 +319,7 @@ def atom_subset_alignment(sae: CrosscoderSAE, ctx: GroundTruthContext, atoms: np
         return {"status": "no_atoms", "n_atoms": 0, "n_features_matched": 0,
                 "mean_abs_rho_matched": 0.0, "features": []}
     xs = [torch.from_numpy(np.asarray(s, dtype=np.float32)).to(device) for s in ctx.sources]
-    features = sae.encode(xs).cpu().numpy()[:, atoms]
+    features = sae.encode_eval(xs).cpu().numpy()[:, atoms]
     result = best_ground_truth_matches(features, ctx.frame, ctx.series_ids, ctx.columns())
     for row in result.get("features", []):
         row["atom"] = int(atoms[row["feature"]])
@@ -526,7 +650,7 @@ def shared_recovery_score(sae: CrosscoderSAE, sources: list, truth: np.ndarray,
         return {"status": "no_alive_atoms", "precision": 0.0, "recall": 0.0, "f1": 0.0}
 
     xs = [torch.from_numpy(np.asarray(s, dtype=np.float32)).to(device) for s in sources]
-    features = sae.encode(xs).cpu().numpy()[:, alive]
+    features = sae.encode_eval(xs).cpu().numpy()[:, alive]
     classes = list(dict.fromkeys(labels.tolist()))
     per_class = np.stack([features[labels == c].mean(axis=0) for c in classes])
     assigned = np.array([classes[i] for i in per_class.argmax(axis=0)])

@@ -1,0 +1,96 @@
+# ROADMAP.md sec 18 F1's block-axis smoke check: mock_encdec (4 captured
+# encoder blocks over 4 genuinely uncaptured decoder blocks) paired against
+# mock_patch (fully captured) so the `block` depth axis's defining behavior
+# -- an encoder-only model's depth curves stopping at ~3/7 of the axis
+# instead of stretching to 1.0 -- is visible end to end through the real
+# CLI/report path, with no checkpoint and no GPU. Otherwise a lean copy of
+# smoke.yaml (fewer series, RSA/tuned-lens/UMAP off) purely for speed.
+
+run:
+  name: smoke_encdec
+  out_dir: runs
+  device: cpu
+  dtype: float32
+  seed: 0
+
+data:
+  source: smoke
+  context_len: 128
+  horizon: 32
+  smoke_series_per_family: 12
+
+alignment:
+  window: 32
+  sanity_check: true
+  depth_axis: block
+
+models:
+  - name: patchy
+    adapter: mock_patch
+    batch_size: 64
+  - name: encdecy
+    adapter: mock_encdec
+    batch_size: 64
+
+l1:
+  layer_stride: 1
+  max_rows: 8000
+  min_family_series: 6
+  rsa: false
+
+l2:
+  layer_stride: 1
+  max_rows: 4000
+  val_frac: 0.3
+
+l3:
+  max_series: 24
+  patching:
+    layer_stride: 1
+    corruptions: [noise, level_shift]
+    max_series: 16
+    per_window: true
+    window_stride: 2
+
+lens:
+  layer_stride: 1
+  max_series: 16
+  tuned: false
+
+attention:
+  max_series: 24
+  batch_series: 16
+  max_lag_tokens: 32
+  ablation_max_series: 16
+  top_k: 2
+
+exemplars:
+  per_family: 1
+  max_families: 3
+
+clustering:
+  use_umap: false
+  max_series: 100
+
+report:
+  title: Smoke run (encoder-decoder mock) · block depth axis check
+
+stats:
+  enabled: true
+  n_boot: 80
+  n_boot_heavy: 60
+  ci: 0.95
+  alpha: 0.05
+  min_series: 6
+
+internals:
+  enabled: true
+  layer_stride: 1
+  max_rows: 4000
+  probe_pca_dim: 12
+
+confirm:
+  enabled: true
+  source: smoke
+  max_series: 60
+  require_seal: false

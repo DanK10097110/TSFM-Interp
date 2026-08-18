@@ -146,15 +146,51 @@ def _index_coords(n: int) -> np.ndarray:
     return np.arange(n) / (n - 1)
 
 
-def _block_coords(adapter, captured_layers: list) -> tuple:
+def total_stack_size_from_meta(all_layer_names: list, uncaptured_surfaces: Optional[dict],
+                               n_captured: int) -> dict:
+    """`total_stack_size`'s arithmetic from persisted metadata, no adapter needed.
+
+    Exists because the block axis's two non-live-model consumers (`report`,
+    and any post-extraction analysis that reads only the store) never have a
+    loaded adapter to call `all_layer_names()`/`uncaptured_surfaces()` on --
+    `ActivationStore.stack_meta` persists exactly these two values once, at
+    extraction time, when the model is loaded anyway (`extraction/extract.py`).
+    """
+    matched = list(all_layer_names)
+    surfaces = {str(k): int(v) for k, v in (uncaptured_surfaces or {}).items() if int(v) > 0}
+    outside = int(sum(surfaces.values()))
+    return {
+        "n_blocks_total": len(matched) + outside,
+        "n_blocks_matched": len(matched),
+        "n_blocks_captured": n_captured,
+        "n_blocks_uncaptured_in_captured_surface": len(matched) - n_captured,
+        "n_blocks_outside_captured_surface": outside,
+        "uncaptured_surfaces": surfaces,
+    }
+
+
+def _block_coords(adapter, captured_layers: list, all_layer_names: Optional[list] = None,
+                  uncaptured_surfaces: Optional[dict] = None) -> tuple:
     """Each captured block's position within the full stack, in [0, 1].
 
     The denominator is every block the model runs, not every block this run
     captured, which is what makes the coordinate stride-invariant: a block
     keeps its coordinate whether or not the blocks around it were captured.
+
+    Prefers `all_layer_names`/`uncaptured_surfaces` (persisted stack metadata,
+    `ActivationStore.stack_meta`) over `adapter` when both are available --
+    that is the path a report or post-extraction analysis call takes with no
+    live model. An explicit `adapter` is the fallback for a run that predates
+    this metadata; the two must agree by construction, since the metadata is
+    recorded from `adapter.all_layer_names()`/`uncaptured_surfaces()` at
+    extraction time and never touched again.
     """
-    stack = total_stack_size(adapter)
-    matched = list(adapter.all_layer_names())
+    if all_layer_names is not None:
+        matched = list(all_layer_names)
+        stack = total_stack_size_from_meta(matched, uncaptured_surfaces, len(captured_layers))
+    else:
+        stack = total_stack_size(adapter)
+        matched = list(adapter.all_layer_names())
     total = stack["n_blocks_total"]
     positions = []
     for name in captured_layers:
@@ -207,13 +243,22 @@ def _compute_coords(adapter, captured_layers: list, budget: dict) -> tuple:
 
 def depth_axis(adapter, captured_layers: list, axis: str = "block",
                budget: Optional[dict] = None,
-               functional_values: Optional[np.ndarray] = None) -> DepthAxis:
+               functional_values: Optional[np.ndarray] = None,
+               all_layer_names: Optional[list] = None,
+               uncaptured_surfaces: Optional[dict] = None) -> DepthAxis:
     """Depth coordinates for `captured_layers` under one of the four definitions.
 
     `compute` degrades to `block` when F2's per-block FLOPs are unavailable,
     and `functional` degrades to `block` when the caller supplies no measured
     property; both record `fallback_from` so the degradation travels with the
-    numbers instead of vanishing into a log line.
+    numbers instead of vanishing into a log line. `block` itself degrades to
+    `index` when it has neither a live `adapter` nor persisted
+    `all_layer_names`/`uncaptured_surfaces` to place captured layers within
+    the whole stack -- the case a report or post-extraction analysis hits
+    against a run extracted before `ActivationStore.stack_meta` existed.
+    Most callers should go through `depth_axis_for_run` instead of passing
+    `all_layer_names`/`uncaptured_surfaces` directly; this function exists at
+    this level mainly so unit tests can exercise every axis without a store.
     """
     if axis not in AXES:
         raise ValueError(f"unknown depth axis '{axis}'; expected one of {AXES}")
@@ -231,7 +276,9 @@ def depth_axis(adapter, captured_layers: list, axis: str = "block",
         if functional_values is None or len(functional_values) != n:
             log.warning("depth axis 'functional' needs one measured value per captured "
                         "layer; falling back to 'block'")
-            out = depth_axis(adapter, captured_layers, "block", budget)
+            out = depth_axis(adapter, captured_layers, "block", budget,
+                             all_layer_names=all_layer_names,
+                             uncaptured_surfaces=uncaptured_surfaces)
             out.fallback_from = "functional"
             return out
         coords = np.asarray(functional_values, dtype=float)
@@ -244,14 +291,25 @@ def depth_axis(adapter, captured_layers: list, axis: str = "block",
         if coords is None:
             log.warning("depth axis 'compute' unavailable (%s); falling back to 'block'",
                         basis)
-            out = depth_axis(adapter, captured_layers, "block", budget)
+            out = depth_axis(adapter, captured_layers, "block", budget,
+                             all_layer_names=all_layer_names,
+                             uncaptured_surfaces=uncaptured_surfaces)
             out.fallback_from = "compute"
             out.detail["compute_unavailable_because"] = basis
             return out
         return DepthAxis(coords, "compute", _LABELS["compute"], basis,
                          covers=(float(coords[0]), float(coords[-1])), detail=detail)
 
-    coords, stack = _block_coords(adapter, captured_layers)
+    if adapter is None and all_layer_names is None:
+        log.warning("depth axis 'block' needs the adapter or persisted stack metadata "
+                    "(ActivationStore.stack_meta); neither is available for this call -- "
+                    "falling back to 'index'. This run's stack likely predates that "
+                    "metadata; re-run extraction to get 'block' coordinates.")
+        out = depth_axis(adapter, captured_layers, "index")
+        out.fallback_from = "block"
+        return out
+
+    coords, stack = _block_coords(adapter, captured_layers, all_layer_names, uncaptured_surfaces)
     return DepthAxis(coords, "block", _LABELS["block"],
                      f"position over all {stack['n_blocks_total']} blocks this model runs",
                      covers=(float(coords[0]), float(coords[-1])), detail=stack)
@@ -262,6 +320,29 @@ def depth_coordinates(adapter, captured_layers: list, axis: str = "block",
                       functional_values: Optional[np.ndarray] = None) -> np.ndarray:
     """`depth_axis(...).coords`, for callers that want only the array."""
     return depth_axis(adapter, captured_layers, axis, budget, functional_values).coords
+
+
+def depth_axis_for_run(axis: str, store, model: str, captured_layers: list,
+                       adapter=None, budget: Optional[dict] = None,
+                       functional_values: Optional[np.ndarray] = None) -> DepthAxis:
+    """`depth_axis`, resolved the way an actual pipeline/report call site needs.
+
+    Reads `ActivationStore.stack_meta(model)` -- persisted once at extraction
+    time, when the model is loaded anyway (`extraction/extract.py`) -- so
+    'block' works for the artifact-only stages (`report`, and any
+    post-extraction analysis) with no model reload. `adapter`, when supplied,
+    is used only as the fallback for a `store` that predates this metadata
+    (or carries none for this model); the metadata is preferred when present
+    since it is exactly what a live adapter would report anyway, at zero
+    reload cost. This is the one function every depth-figure call site in
+    `analysis/`/`report/` should call, rather than hand-resolving the
+    adapter-vs-metadata question itself (ROADMAP.md sec 18 F1).
+    """
+    meta = store.stack_meta(model) if store is not None else {}
+    return depth_axis(adapter, captured_layers, axis=axis, budget=budget,
+                      functional_values=functional_values,
+                      all_layer_names=meta.get("all_layers"),
+                      uncaptured_surfaces=meta.get("uncaptured_surfaces"))
 
 
 def align_on_axis(coords_a, values_a, coords_b, values_b, n_grid: int = 21) -> dict:

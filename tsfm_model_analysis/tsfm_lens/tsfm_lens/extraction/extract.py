@@ -17,6 +17,7 @@ from ..config import PipelineConfig
 from ..data import BenchmarkData
 from ..manifest import load_manifest, record_extra
 from ..utils import batch_slices, log, save_json
+from ..analysis.depth_axis import adapter_uncaptured_surfaces
 from .alignment import align, pooling_matrix, run_alignment_gate
 from .hooks import ActivationCatcher
 from .store import ActivationStore, save_meta
@@ -43,6 +44,7 @@ def run_extraction(cfg: PipelineConfig, hub, data: BenchmarkData) -> ActivationS
         record_extra(run_dir, "provenance", provenance)
 
     layer_map = {}
+    stack_meta = {}
     alignment_records = {}
     for mcfg in cfg.models:
         adapter = hub.get(mcfg.name)
@@ -51,11 +53,23 @@ def run_extraction(cfg: PipelineConfig, hub, data: BenchmarkData) -> ActivationS
         if cfg.alignment.sanity_check:
             alignment_records[mcfg.name] = run_alignment_gate(
                 adapter, cfg.alignment.window, layers,
-                cfg.alignment.min_diagonal_frac, cfg.alignment.on_failure)
+                cfg.alignment.min_diagonal_frac, cfg.alignment.on_failure,
+                calibrate=cfg.alignment.calibrate_amplitude)
         layer_map[mcfg.name] = _extract_model(adapter, data, store, cfg, layers)
+        # Captured once, here, while the adapter is still loaded -- the
+        # `block` depth axis (analysis/depth_axis.py, ROADMAP.md sec 18 F1)
+        # needs a model's full layer list and uncaptured surfaces to place
+        # captured layers within the whole stack, but `report`/`internals`
+        # and other artifact-only stages never load a model. Persisting it
+        # here lets them resolve it from the store instead of reloading.
+        stack_meta[mcfg.name] = {
+            "all_layers": adapter.all_layer_names(),
+            "uncaptured_surfaces": adapter_uncaptured_surfaces(adapter),
+        }
         if not cfg.run.keep_models_loaded:
             hub.release(mcfg.name)
     store.set_layers(layer_map)
+    store.set_stack_meta(stack_meta)
     if alignment_records:
         save_json(run_dir / "alignment" / "alignment_check.json", alignment_records)
     log.info("extraction complete: %s", {m: len(ls) for m, ls in layer_map.items()})

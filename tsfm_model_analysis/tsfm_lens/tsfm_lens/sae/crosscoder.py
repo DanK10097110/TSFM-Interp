@@ -64,13 +64,20 @@ class CrosscoderSAE(nn.Module):
     dictionary, not `n_sources` separate ones glued together after the fact.
     """
 
+    # EMA momentum for `_batch_topk`'s persisted eval-time threshold -- see
+    # that method's docstring for why a lifetime mean is the wrong estimator.
+    _THRESHOLD_EMA_MOMENTUM = 0.99
+
     def __init__(self, d_ins: list, dict_size: int, k: int, source_scale: list | None = None,
-                 generator: torch.Generator | None = None):
+                 generator: torch.Generator | None = None, topk_mode: str = "per_row"):
         super().__init__()
+        if topk_mode not in ("per_row", "batch"):
+            raise ValueError(f"unknown topk_mode: {topk_mode!r} (expected 'per_row' or 'batch')")
         self.d_ins = list(d_ins)
         self.n_sources = len(d_ins)
         self.dict_size = dict_size
         self.k = k
+        self.topk_mode = topk_mode
         self.source_scale = list(source_scale) if source_scale is not None else [1.0] * len(d_ins)
         self.b_dec = nn.ParameterList([nn.Parameter(torch.zeros(d)) for d in d_ins])
         self.W_enc = nn.ParameterList(
@@ -78,6 +85,14 @@ class CrosscoderSAE(nn.Module):
         self.b_enc = nn.Parameter(torch.zeros(dict_size))
         self.W_dec = nn.ParameterList(
             [nn.Parameter(self.W_enc[i].detach().t().clone()) for i in range(self.n_sources)])
+        # `batch` mode's eval-time JumpReLU threshold (V2, ROADMAP.md sec
+        # 6.2.1 Stage 2) -- a running mean of the k*N-th-largest
+        # pre-activation across training batches, set by `_batch_topk`.
+        # Registered as a buffer (not a Parameter) so it moves with
+        # `.to(device)` and would serialize via `state_dict()` -- inert and
+        # unused in the default `per_row` mode.
+        self.register_buffer("threshold", torch.tensor(0.0))
+        self.register_buffer("_threshold_count", torch.tensor(0.0))
         self.normalize_decoder_()
 
     @staticmethod
@@ -116,12 +131,97 @@ class CrosscoderSAE(nn.Module):
         return pre
 
     def sparsify(self, pre: torch.Tensor) -> torch.Tensor:
-        """`[N, dict_size]` pre-activations -> exactly `k` nonzero entries per row."""
+        """`[N, dict_size]` pre-activations -> sparse features.
+
+        `per_row` mode (V1, the default): exactly `k` nonzero entries per
+        row (hard TopK). `batch` mode (V2, ROADMAP.md §6.2.1 Stage 2): a
+        JumpReLU at the persisted running threshold `self.threshold` --
+        per-row hard TopK needs a full batch to define "top k", which isn't
+        available one row at a time at inference, or when
+        `crosscoder_eval.py`'s `SourceView.encode` calls this directly on a
+        single source's pre-activations. `_batch_topk` is what sets
+        `self.threshold` during training.
+        """
         pre = torch.relu(pre)
+        if self.topk_mode == "batch":
+            return pre * (pre > self.threshold).to(pre.dtype)
         k = min(self.k, pre.shape[-1])
         top_vals, top_idx = torch.topk(pre, k, dim=-1)
         features = torch.zeros_like(pre)
         features.scatter_(-1, top_idx, top_vals)
+        return features
+
+    def _batch_topk_core(self, pre: torch.Tensor) -> tuple:
+        """Pure batch-level top-`k * n_rows` selection, no persisted state
+        touched -- shared by `_batch_topk` (training, which additionally
+        updates the eval-time threshold EMA as a side effect) and
+        `encode_eval` (evaluation, which recomputes this fresh per batch
+        instead of trusting *any* persisted scalar -- see `encode_eval`'s
+        docstring for why that turned out to matter). Returns
+        `(features, batch_threshold)`; `batch_threshold` is the k*N-th
+        largest pre-activation actually selected, i.e. what a JumpReLU cut
+        at exactly this batch's own selection would use.
+        """
+        pre_relu = torch.relu(pre)
+        total_k = min(self.k * pre_relu.shape[0], pre_relu.numel())
+        flat = pre_relu.reshape(-1)
+        top_vals, top_idx = torch.topk(flat, total_k)
+        features = torch.zeros_like(flat)
+        features.scatter_(-1, top_idx, top_vals)
+        features = features.reshape(pre_relu.shape)
+        return features, top_vals.min().detach()
+
+    def _batch_topk(self, pre: torch.Tensor) -> torch.Tensor:
+        """Batch-level top-`k * n_rows` selection across the whole flattened
+        batch (V2's training-time sparsification) -- an information-dense
+        row can use more than `k` atoms and a flat row fewer, with the
+        average across the batch held at `k`. As a side effect, updates the
+        persisted eval-time threshold `self.threshold` that `sparsify`'s
+        JumpReLU uses, since a genuine batch isn't available at inference.
+
+        This is an exponential moving average (`_THRESHOLD_EMA_MOMENTUM`),
+        not a lifetime mean over every batch since training began. The
+        encoder is *not* norm-constrained (only the decoder is, via
+        `normalize_decoder_`), so nothing stops the pre-activation scale
+        from drifting substantially over the course of training -- a
+        lifetime mean would let early, unconverged batches permanently bias
+        the persisted threshold away from what the converged model's own
+        recent batches actually need. Verified live: on the real TimesFM /
+        Chronos-T5-Base crosscoder ladder run this bug (not just a
+        theoretical risk) inflated `dead_feature_rate` to 0.228 against
+        per-row TopK's 0.032 -- see `ROADMAP.md` §6.2.1 Stage 2's V2
+        Findings for the mechanism and the fix's measured effect.
+
+        **A second, empirically-confirmed problem with the EMA that a
+        *more accurate* persisted threshold does not fix, and actively
+        worsens (`ROADMAP.md` §6.2.1 Stage 2's V2 Findings, second entry):**
+        a post-training calibration pass that re-measures the true
+        converged-weight quantile (bypassing the EMA's ~1/(1-momentum)-batch
+        lag entirely) raised the threshold from 1.330 to 1.473 on the real
+        checkpoint pair and made `dead_feature_rate` *worse* (+0.064 ->
+        +0.177 vs. V1), not better. The reason: `dead_feature_rate` asks
+        "did this atom EVER cross the bar at least once across the whole
+        eval set," and raising a *single global* bar concentrates firing
+        onto fewer, more strongly-activating atoms -- exactly the atoms that
+        were already comfortably above the old, lower bar. Atoms that used
+        to clear the bar occasionally now never do. A more accurate
+        estimate of "the average per-row active count `k`" and "the count of
+        atoms that ever fire at all" are different targets, and a single
+        persisted scalar cannot serve both. `encode_eval` is the fix: stop
+        trying to estimate one global cutoff at all for evaluation, and
+        instead recompute this exact batch-level selection fresh per eval
+        batch -- exactly what training would have done had this batch been
+        a training batch.
+        """
+        features, batch_threshold = self._batch_topk_core(pre)
+        with torch.no_grad():
+            batch_threshold = batch_threshold.to(self.threshold.dtype)
+            if float(self._threshold_count) == 0.0:
+                self.threshold.copy_(batch_threshold)
+            else:
+                m = self._THRESHOLD_EMA_MOMENTUM
+                self.threshold.copy_(m * self.threshold + (1.0 - m) * batch_threshold)
+            self._threshold_count += 1.0
         return features
 
     def encode(self, xs: list) -> torch.Tensor:
@@ -134,6 +234,38 @@ class CrosscoderSAE(nn.Module):
         """
         return self.sparsify(self.pre_activations(xs))
 
+    def encode_eval(self, xs: list) -> torch.Tensor:
+        """Like `encode`, but in `batch` mode (V2) recomputes this batch's
+        own top-`k * n_rows` selection fresh (`_batch_topk_core`) instead of
+        thresholding against any persisted scalar (`sparsify`'s JumpReLU).
+
+        This is the fix for the EMA-vs-calibration problem documented on
+        `_batch_topk`: every eval-side consumer that needs V2's dictionary
+        (`alive_mask`, `dead_feature_rate`, `per_source_fidelity`,
+        `crosscoder_eval.py`'s `atom_buckets`/`latent_scaling_confirm`/
+        `atom_subset_alignment`/`score_variant`) already batches rows (8192
+        at a time, per those functions' own defaults) rather than
+        encoding one row in isolation, so there is no need to approximate
+        training's batch-level selection with any single fixed cutoff --
+        it can simply be re-run, exactly, on each eval batch. This
+        reproduces training's own selection semantics on eval data instead
+        of trying to generalize it into one persisted number, which sidesteps
+        the EMA-lag-vs-calibration-overshoot tradeoff entirely.
+
+        `per_row` mode (V1) is unchanged -- `sparsify` already needs no
+        batch context there, so this just delegates. The one path this
+        deliberately does NOT change is `crosscoder_eval.py`'s `SourceView`
+        (used only by `eval.py::forecast_preservation`), which encodes a
+        single source's contribution alone under an adapter's own live
+        forward pass -- a genuinely different, smaller-batch/single-row
+        inference scenario `sparsify`'s persisted threshold exists for.
+        """
+        pre = self.pre_activations(xs)
+        if self.topk_mode == "batch":
+            features, _ = self._batch_topk_core(pre)
+            return features
+        return self.sparsify(pre)
+
     def decode(self, features: torch.Tensor) -> list:
         """`[N, dict_size]` -> `n_sources`-long list of `[N, d_in_i]` reconstructions,
         rescaled back to each source's original activation scale."""
@@ -144,10 +276,21 @@ class CrosscoderSAE(nn.Module):
         features = self.encode(xs)
         return self.decode(features), features
 
+    def forward_eval(self, xs: list) -> tuple:
+        """`forward`, but via `encode_eval` -- see that method's docstring."""
+        features = self.encode_eval(xs)
+        return self.decode(features), features
+
     def forward_with_pre(self, xs: list) -> tuple:
-        """`forward` plus the pre-activations, for training loops using `aux_k`."""
+        """`forward` plus the pre-activations, for training loops using `aux_k`.
+
+        In `batch` mode (V2) this is the training-time entry point: it uses
+        `_batch_topk` (which also advances the running eval-time threshold)
+        instead of `sparsify`'s per-row TopK. `per_row` mode (V1) is
+        unchanged -- this dispatch is the only difference.
+        """
         pre = self.pre_activations(xs)
-        features = self.sparsify(pre)
+        features = self._batch_topk(pre) if self.topk_mode == "batch" else self.sparsify(pre)
         return self.decode(features), features, pre
 
 
@@ -204,6 +347,13 @@ class CrosscoderTrainConfig:
     # nonzero -- see the identical field on `SAETrainConfig` for why an
     # integer multiplier alone cannot express Stage 0's H2 sweep.
     dict_size: int = 0
+    # BatchTopK (ROADMAP.md sec 6.2.1 Stage 2, V2). `False` (the default)
+    # preserves V1's hard per-row TopK exactly, so no already-recorded
+    # crosscoder run changes meaning (CLAUDE.md sec 11.24). `True` trains
+    # with a batch-level top-`k*N` selection instead (`CrosscoderSAE`'s
+    # `topk_mode="batch"`), which also fits the eval-time JumpReLU
+    # threshold used at inference (no full batch available then).
+    batch_topk: bool = False
 
 
 @torch.no_grad()
@@ -295,8 +445,8 @@ def train_crosscoder(activations: list, cfg: CrosscoderTrainConfig, device: torc
     dict_size = cfg.dict_size or cfg.dict_size_mult * max(d_ins)
     weights = cfg.loss_weights or [1.0] * len(xs)
     source_scale = [float(x.std().clamp_min(1e-6)) for x in xs]
-    sae = CrosscoderSAE(d_ins, dict_size, cfg.k, source_scale=source_scale,
-                        generator=rng).to(device)
+    sae = CrosscoderSAE(d_ins, dict_size, cfg.k, source_scale=source_scale, generator=rng,
+                        topk_mode="batch" if cfg.batch_topk else "per_row").to(device)
     opt = torch.optim.Adam(sae.parameters(), lr=cfg.lr)
 
     history = []
@@ -356,12 +506,85 @@ def train_crosscoder(activations: list, cfg: CrosscoderTrainConfig, device: torc
              f"(per-source {[f'{v:.6f}' for v in history[-1]['per_source']]}) "
              f"over {cfg.epochs} epochs, dict_size={dict_size} k={cfg.k}, "
              f"{n_resampled_total} atom-resamples total")
+    if sae.topk_mode == "batch":
+        pre_calib = float(sae.threshold)
+        calibrated = calibrate_batch_threshold(sae, activations, device, batch_size=cfg.batch_size,
+                                               seed=cfg.seed)
+        log.info(f"crosscoder train: calibrated batch-topk threshold {pre_calib:.6f} -> "
+                 f"{calibrated:.6f} via post-training calibration pass")
     return sae, history
 
 
 @torch.no_grad()
+def calibrate_batch_threshold(sae: CrosscoderSAE, activations: list, device,
+                              batch_size: int = 4096, n_passes: int = 3, seed: int = 0) -> float:
+    """Set `sae.threshold` from the FINAL, converged model alone -- a dedicated
+    post-training calibration pass, not the running EMA `_batch_topk`
+    maintains as a training-time side effect. `_batch_topk`'s docstring
+    explains why any estimate blending pre- and post-convergence batches is
+    biased: the encoder is unconstrained (only the decoder is
+    norm-normalized via `normalize_decoder_`), so pre-activation scale can
+    drift substantially over training. This recomputes the per-batch
+    `k*N`-th-largest pre-activation purely at the model's final weights,
+    averaged over `n_passes` full, freshly-shuffled passes through the data,
+    and overwrites `self.threshold` with that average -- discarding
+    whatever the EMA accumulated during training. Called automatically by
+    `train_crosscoder` whenever `topk_mode == "batch"`.
+    """
+    xs = [torch.from_numpy(a) if isinstance(a, np.ndarray) else a for a in activations]
+    n = xs[0].shape[0]
+    rng = torch.Generator().manual_seed(seed)
+    vals = []
+    for _ in range(n_passes):
+        perm = torch.randperm(n, generator=rng)
+        for s, e in batch_slices(n, batch_size):
+            rows = perm[s:e]
+            batch = [x[rows].to(device) for x in xs]
+            pre_relu = torch.relu(sae.pre_activations(batch))
+            total_k = min(sae.k * pre_relu.shape[0], pre_relu.numel())
+            top_vals, _ = torch.topk(pre_relu.reshape(-1), total_k)
+            vals.append(float(top_vals.min()))
+    threshold = sum(vals) / len(vals)
+    sae.threshold.copy_(torch.tensor(threshold, dtype=sae.threshold.dtype, device=sae.threshold.device))
+    return threshold
+
+
+def eval_row_order(n: int, seed: int = 0) -> torch.Tensor:
+    """A fixed pseudo-random permutation of `[0, n)` for eval-side batching.
+
+    Batch-level TopK (`topk_mode="batch"`) selects atoms by competing rows
+    *within a batch* against each other, and training draws a fresh shuffle
+    every epoch (`torch.randperm` in `train_crosscoder`, `calibrate_batch_
+    threshold`) -- so the dictionary has only ever competed over
+    heterogeneous batches. Every eval-side consumer used to slice `x[s:e]`
+    straight off the stored row order instead. That order is not a
+    representative mix: `sae/train.py::load_all_windows` returns rows in
+    corpus order, and corpora are written grouped by family/generator
+    (`CLAUDE.md` §15 A4, §11.24) -- so a batch-level dictionary's eval
+    batches were family-homogeneous in a way its training batches never
+    were, which starves atoms that are strong only for a minority family:
+    within one homogeneous batch they compete only against other atoms
+    tuned to the SAME dominant family rather than against the heterogeneous
+    mix training judged them against. Three fixes at the threshold-
+    estimation level (EMA, post-training calibration, per-batch fresh
+    recomputation) all failed to close this gap because none of them
+    touched batch *composition* -- see `CLAUDE.md`'s crosscoder traps for
+    the full numbers.
+
+    Per-row TopK (`sparsify`'s other branch) is exactly invariant to row
+    order: `alive_mask`'s OR-reduction and `per_source_fidelity`'s additive
+    sums don't care what order rows arrive in or how they're grouped into
+    batches. So permuting unconditionally here -- not only under
+    `topk_mode="batch"` -- is safe and cannot change any already-recorded
+    per-row-TopK number; it is exercised as a regression test rather than
+    assumed.
+    """
+    return torch.randperm(n, generator=torch.Generator().manual_seed(seed))
+
+
+@torch.no_grad()
 def per_source_fidelity(sae: CrosscoderSAE, activations: list, device,
-                        batch_size: int = 8192) -> list:
+                        batch_size: int = 8192, seed: int = 0) -> list:
     """Fraction of variance explained per source -- the direct analog of
     `eval.py::reconstruction_fidelity`, kept per-source rather than pooled so
     a feasibility check can see whether joint training degrades *one*
@@ -374,9 +597,11 @@ def per_source_fidelity(sae: CrosscoderSAE, activations: list, device,
     means = [x.mean(dim=0).to(device) for x in xs]
     total_resid = [0.0] * len(xs)
     total_var = [0.0] * len(xs)
+    perm = eval_row_order(n, seed=seed)
     for s, e in batch_slices(n, batch_size):
-        batch = [x[s:e].to(device) for x in xs]
-        recons, _ = sae(batch)
+        rows = perm[s:e]
+        batch = [x[rows].to(device) for x in xs]
+        recons, _ = sae.forward_eval(batch)
         for i, (b, r, m) in enumerate(zip(batch, recons, means)):
             total_resid[i] += float(((b - r) ** 2).sum())
             total_var[i] += float(((b - m) ** 2).sum())
@@ -385,7 +610,7 @@ def per_source_fidelity(sae: CrosscoderSAE, activations: list, device,
 
 @torch.no_grad()
 def alive_mask(sae: CrosscoderSAE, activations: list, device,
-               batch_size: int = 8192, threshold: float = 1e-8) -> np.ndarray:
+               batch_size: int = 8192, threshold: float = 1e-8, seed: int = 0) -> np.ndarray:
     """`[dict_size]` bool: which atoms fire at least once over the given rows.
 
     A dead atom's decoder columns are whatever random init (or a stale,
@@ -400,15 +625,17 @@ def alive_mask(sae: CrosscoderSAE, activations: list, device,
     xs = [torch.from_numpy(a) for a in activations]
     n = xs[0].shape[0]
     ever_fired = torch.zeros(sae.dict_size, dtype=torch.bool, device=device)
+    perm = eval_row_order(n, seed=seed)
     for s, e in batch_slices(n, batch_size):
-        batch = [x[s:e].to(device) for x in xs]
-        features = sae.encode(batch)
+        rows = perm[s:e]
+        batch = [x[rows].to(device) for x in xs]
+        features = sae.encode_eval(batch)
         ever_fired |= (features.abs() > threshold).any(dim=0)
     return ever_fired.cpu().numpy()
 
 
 @torch.no_grad()
 def dead_feature_rate(sae: CrosscoderSAE, activations: list, device,
-                      batch_size: int = 8192, threshold: float = 1e-8) -> float:
+                      batch_size: int = 8192, threshold: float = 1e-8, seed: int = 0) -> float:
     """Fraction of dictionary atoms that never fire, over all sources jointly."""
-    return float(1.0 - alive_mask(sae, activations, device, batch_size, threshold).mean())
+    return float(1.0 - alive_mask(sae, activations, device, batch_size, threshold, seed).mean())
