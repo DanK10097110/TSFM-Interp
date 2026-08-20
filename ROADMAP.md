@@ -198,24 +198,107 @@ to 0.93). §15 A20's Findings has the full numbers and one honest surprise:
 margin even at the historically "safe" setting. §15 is now fully closed —
 all 21 items `[x]`.
 
-**6. The legibility layer — E6 and J1 done, J2/J3 next.** E6's `Finding`
-dataclass refactor and J1's `plain`/`caveat` extension are both
-✅ **DONE 2026-08-18** — see §21 J1's own Findings and E6's detail-up
-Findings for the full writeup (byte-identical HTML verified pre-J1,
-`findings.json` now carries `plain`+`caveat` on all 45 smoke-run findings,
-466/466 tests). J2 ("what this tells you" per stage) and J3 (glossary +
-worked example) are next; J4–J6 only if those land easily. This is v1's
-third leg; it is also the item most likely to be skipped as cosmetic, which
-it is not — see §0 rule 6.
+**6. ✅ DONE 2026-08-19 — the legibility layer, v1's third leg.** E6, J1,
+J2 and J3 are all `[x]`. E6's `Finding` dataclass and J1's `plain`/`caveat`
+extension landed 2026-08-18; **J2 was found already implemented and
+committed** from an undocumented earlier session and was verified rather
+than rebuilt (all 16 stages covered — not the 13 J2's own text says —
+both surfaces rendering from one dict, `--check` gate passing); **J3 was
+built 2026-08-19** — a 32-term glossary (`tsfm_lens/glossary.py` +
+`render_glossary.py`, same two-surface no-drift shape as J2) and a 308-line
+worked example (`tsfm_lens/docs/worked_example.md`) reading
+`runs/medium_run_chronos_base`'s **real** artifacts section by section,
+including a real "finding I would not act on" (L0's `mixture` gap of 0.010
+MASE against Chronos's own ±0.160 noise floor). 18 new tests (7 glossary +
+11 worked example) make the worked example a regression test rather than
+prose; full suite 491/491.
+**J4–J6 were the conditional "only if those land easily" tail and are not
+queued** — J4 is `= H10`, J5/J6 are additive; nothing in v1's definition
+needs them. See §21 J2/J3's Findings for the full writeup.
 
-**Also live but unsequenced** (pick up when it fits, no dependency):
-§6.3.1 **Option C** (idiosyncratic-error fingerprinting — black-box, zero new
-forward passes, and it passes the architecture control by construction, which
-is exactly what killed §6.3's original method); §16 **E3** (empirical span
-discovery — highest generality-per-hour item in the file); §18 **F5**, **F8**
-and §19 **G1** (each ~1 session, each closes a stated fairness or breadth gap).
+With this, all three legs of v1 (§0.5's own definition) are done.
+
+**7. ✅ DONE 2026-08-19 — E3, adapter correctness becomes measured.**
+§16 E3, picked up off the unsequenced list below. **(a)** and **(d)**:
+`extraction/span_discovery.py` + `--discover-spans` *measures* an adapter's
+token→time map with an impulse sweep and cross-checks it against the declared
+one per token — **all six live checkpoints reproduce their declared spans at
+`mean_iou` exactly 1.0**, 0 flagged, across four tokenization styles, with a
+stride-8 control failing correctly. **(b)** `models/generic_hf_adapter.py` +
+`--probe-adapter`: `thuml/timer-base-84m`, which has **no adapter file**,
+resolves all four probed seams and its 96-step patch spans come out exactly
+right from measurement alone — and then ran the **full pipeline** end to end
+with no Python written (12 sections / 36 findings, peak cross-model CKA
+**0.449** against a 0.063 shuffle null, Timer observing **99.8%** of its own
+forward FLOPs against Chronos-T5-Small's 13.9%). **(c)** closed the same day:
+a diffuse model is now *routed* to L0-only (`routing.json`, a narrowed stage
+set, and a red banner in the report saying why) rather than raising out of
+extraction and killing the run — with a test pinning that only
+`NotTimeLocalized` is caught, so a real defect can never be relabelled as a
+verdict. Three new traps: `CLAUDE.md` §11.33 (a
+share-of-total statistic is a token-count statistic in disguise — my own
+refusal gate would have refused three adapters whose maps it had just proven
+exact), §11.34 (in a probe-based path the plausible candidate is usually the
+wrong one), and §11.35 (the alignment gate's own metric has an arithmetic
+ceiling below 1.0 whenever tokens are wider than the window — it refused
+Timer at a *perfect* score; now gated on `hits / ceiling`, verified a no-op
+for every existing model). Suite 491 → **531 passed**. §16 E3's two Findings
+blocks have everything.
+
+(§6.3.1 **Option C** is ✅ done 2026-08-19, as a **negative result**: built
+black-box and swept over 10 existing runs at zero forward passes, it fails
+three of its own controls — the magnitude channel ranks the *pure untrained
+control* first (0.972), the shape channel's top score goes to an
+independent-lineage pair rather than the same-lineage one, and "architecture
+matching cannot fake it" is false for TimesFM, whose own untrained twin
+scores 0.498. The specified difficulty basis (L2's input-feature probe) was
+also measured at out-of-fold R² **−0.62** and replaced. §6.3.1 Option C's
+Findings has the table; the practical consequence is that **Option E is a
+prerequisite for evaluating any of A–D**, now on two independent failures
+rather than on argument.)
+(§19 **G1** is ✅ done 2026-08-19 — capability tiers are *derived* from what
+each adapter implements rather than declared as an integer, and a tier-0
+black box now runs end to end to a 3-section report with every dropped stage
+naming the tier as its reason. Four defects the diff could not have shown,
+including a dropped-stage list that silently emptied itself on a
+`--stages report` rerun. §19 G1's Findings has them; G6 is now the small
+item it predicted.)
+(§19 **G2** is ✅ done 2026-08-19 — E3's diffuseness gate now has an
+orthogonal **contiguity** gate beside it, because contrast provably cannot
+see a lag-feature tokenizer: each of its lags is a clean peak, so a
+Lag-Llama-shaped model clears E3's gate while `[min, max]` describes a range
+it mostly does not touch. Every surface that renders a refusal now names
+which of the two fired. Verified a no-op for every existing model; never
+exercised against a real non-contiguous checkpoint, since none is
+integrated.)
+(**E3(c)'s routing half** is ✅ done 2026-08-19 — E3 is fully closed.
+§18 **F5** is ✅ done 2026-08-19 — the real-run acceptance found that the
+native cross-model periodicity comparison was scoring the two models on
+*different families*, not merely at different resolutions. §18 **F8** is
+✅ done 2026-08-19 — and found that a bootstrap p-floor caps how many
+comparisons a correction family can hold at all, which the report now
+detects by name.)
 (§16 **E7b**, install docs, is ✅ done 2026-08-18 — both **E7a** and **E7b**
 are now `[x]`.)
+
+**8. ✅ DONE 2026-08-19 — §20 H4, and its own acceptance criterion decided
+against it.** Cross-model disagreement *does* predict error strongly
+(Spearman 0.716; the lowest disagreement decile averages MASE 0.981 against
+the highest decile's 5.787, a 5.9× spread from a label-free signal) — and it
+**loses to each model's own quantile width**, which needs no second
+checkpoint, in **10 of 11** scorable model-runs across 6 existing runs, with
+1 inconclusive by 0.003 and 0 wins. So the honest practitioner line is "read
+the band you already have," and that is the finding. The one apparent win was
+a **false positive from two compounding bugs** — a model with no quantile head
+(zero-width band) scored against a rank transform that broke ties by array
+position, manufacturing a ρ out of a constant column; `CLAUDE.md` §11.37.
+Secondary results worth reading: distributional disagreement beats pointwise
+(0.815 vs 0.716), the signal strengthens monotonically with horizon (0.154 at
+h=1 → 0.624 at h=64), and it is strongly family-dependent (0.286 / 0.465 /
+0.742). §20 H4's Findings has the table. **Next of §20's live four: H1**, the
+five-point Chronos-T5 scaling ladder — the cheapest genuinely novel study
+here, but unlike everything since item 6 it needs real GPU extraction runs
+(5 of them), so per §2.8 it is background work with a foreground harness.
 
 **Not in this queue:** see **§22** — parked features with reasons and un-park
 triggers, and §22.8's short list of things rejected outright.
@@ -5711,7 +5794,7 @@ cross-architecture distillation — which is the *interesting* case and the one
 this repo's TimesFM-vs-Chronos setup is built for. **Best used as the
 high-confidence white-box confirmation**, not the general detector.
 
-#### Option C · Idiosyncratic-error fingerprinting `[ ]` — the most promising, and black-box ⭐
+#### Option C · Idiosyncratic-error fingerprinting `[x]` — built 2026-08-19; **does not separate lineage on this corpus**
 
 **Idea.** Two models trained on the same data with the same recipe make the
 **same specific mistakes on the same specific series**. Two independently
@@ -5754,6 +5837,102 @@ lineage — the same "same era/data confound" §13 item 6 named. Option C
 doesn't escape that confound, it just moves it somewhere more measurable:
 with E's fine-tuned pair you can quantify how much of the correlation
 survives when only the *recipe* is shared vs. when the *initialization* is.
+
+**Findings (2026-08-19) — built, swept across 10 existing runs, and it
+fails its own controls in three separate ways. Read this before reaching for
+it again; the mechanism is sound and reusable, the *detector* is not.**
+
+Built as `tsfm_lens/analysis/error_fingerprint.py` +
+`run_error_fingerprint.py` + `tests/test_error_fingerprint.py` (8 tests).
+It reads `predictions/` and `targets` straight out of an already-extracted
+run's store and re-derives contexts from `config_resolved.yaml`, so the whole
+sweep below cost **zero forward passes and loaded no checkpoint** — the
+black-box property this option was chosen for holds exactly as advertised.
+
+**One deliberate departure from the plan above, forced by measurement (§2.4).**
+Step 3 specifies L2's input-feature probe (`_baseline_features`: raw window +
+FFT magnitudes + summary stats, ~200 columns per window) as the difficulty
+basis. Measured: its **cross-fitted out-of-fold R² is −0.62** — it predicts
+per-series error *worse than the mean does*, so it removes no difficulty at
+all while producing a residual that looks adjusted. Under it the pure negative
+control's magnitude residual correlation came back **0.979**, which reads as
+"these two untrained twins share error idiosyncrasies" and is nothing of the
+kind. Replaced with an 8-column **series-level** basis (`naive_mase`,
+`seasonal_naive_mase`, `log_scale`, `log_target_sd`, `lag1_autocorr`,
+`spectral_centroid`, `zero_fraction`, `norm_slope`) with the ridge alpha
+chosen per model by out-of-fold R² over a 6-point grid; R² rose to **0.26–0.75**
+across the ten runs. `adjustment_ok` is recorded per run and is `False` when
+either model's basis explains nothing out of fold, so a future run cannot
+quietly repeat the −0.62 situation.
+
+**The sweep.** All ten runs are on `benchmark_medium/public_dev`, context 512
+/ horizon 64, n=288 series, except `generic_hf_timer` (context 480, n=120).
+"shape" is the per-step signed-error-vector correlation after residualization,
+with a series-level cluster bootstrap (invariant 2); "mag" is the per-series
+error-magnitude channel.
+
+| run | pair | shape resid [95% CI] | mag resid [95% CI] |
+|---|---|---|---|
+| `chronos2_phase4_check` | TimesFM ↔ Chronos-2 | **0.8999** [0.8724, 0.9277] | 0.8774 [0.8475, 0.9280] |
+| `distill_positive_chronos_small_base` | Chronos-T5-Small ↔ **-Base** (same lineage) | **0.8712** [0.8264, 0.9061] | 0.8792 [0.8076, 0.9231] |
+| `sundial_phase4_check` | TimesFM ↔ Sundial | 0.7484 [0.6728, 0.8239] | 0.3980 [0.1189, 0.7282] |
+| `medium_run` | TimesFM ↔ Chronos-T5-Small | 0.6955 [0.6275, 0.7630] | 0.5200 [0.2844, 0.7375] |
+| `generic_hf_timer` | Timer ↔ Chronos-T5-Small | 0.6365 [0.5704, 0.7096] | 0.0181 [−0.1684, 0.2690] |
+| `medium_run_chronos_base` | TimesFM ↔ Chronos-T5-Base | 0.6358 [0.5346, 0.7332] | 0.4521 [0.1995, 0.6895] |
+| `null_timesfm_random` | TimesFM ↔ its **own** random twin | 0.4977 [0.4184, 0.5886] | −0.1755 [−0.3570, 0.0692] |
+| `distill_negative_random_architecture` | two random twins (zero training) | 0.1413 [0.0887, 0.2015] | **0.9719** [0.9265, 0.9862] |
+| `null_chronos_random` | Chronos-T5-Base ↔ its **own** random twin | 0.1358 [0.0947, 0.1878] | −0.1587 [−0.3775, 0.0760] |
+
+**Three failures, in order of how much each costs the option.**
+
+1. 🔴 **The magnitude channel ranks the pure negative control first.** Two
+   `random_init` twins — zero training, no relationship of any kind — score
+   **0.9719**, above every real pair including the same-lineage one. This is
+   not a residualization bug (the basis reaches R²=0.50/0.51 on that run):
+   two untrained nets emit near-degenerate forecasts, so what survives
+   residualization is the part of each series' difficulty the 8-column basis
+   *doesn't* capture, and both models fail on it identically. **The magnitude
+   channel is unusable as a provenance signal** and is retained in the
+   artifact only so this control stays visible.
+
+2. 🔴 **The shape channel's ordering is wrong at the top.** The one
+   same-lineage pair available (Chronos-T5-Small ↔ Chronos-T5-Base, 0.8712
+   [0.8264, 0.9061]) is **exceeded** by an independent-lineage pair
+   (TimesFM ↔ Chronos-2, 0.8999 [0.8724, 0.9277]) — different vendors,
+   different architectures, no claimed relationship. A detector whose top
+   score goes to a non-pair does not detect lineage, whatever its floor
+   looks like.
+
+3. 🔴 **"Architecture matching cannot fake it" is false for at least one
+   model, and the floor is model-specific.** The option's central claim was
+   that two `random_init` twins' errors are pure noise, so the control that
+   killed §6.3 is passed by construction. Chronos-T5-Base against its own
+   untrained twin does score near zero (0.1358) — but **TimesFM against its
+   own untrained twin scores 0.4977** [0.4184, 0.5886], more than half the
+   way to the trained cross-model pairs and well clear of any noise floor.
+   So the architecture-matched floor is **not one number**: it must be
+   measured per model, exactly as §6.2.1 Stage 1 already found for
+   `frac_shared` and §16 E9 found for L1/L2. Quoting any Option C number
+   without its own model's floor beside it repeats the mistake §6.3 exists
+   to record.
+
+**What it does establish, stated so it isn't over-read.** The shape channel
+separates *trained forecaster vs. untrained network* cleanly (0.136–0.141 for
+the two nulls that behave, 0.64–0.90 for every trained pair). That is a real
+and reproducible contrast, and the module is a fine tool for it. It is not
+provenance.
+
+**The confound the plan predicted is the one that bit.** Every model here is
+trained on large, overlapping public corpora, so "shared error idiosyncrasies
+from the *data*" is the null hypothesis for the entire top of that table and
+nothing in this sweep can rule it out — TimesFM ↔ Chronos-2 outscoring the
+same-family pair is precisely what that confound looks like. And the "positive"
+pair is not a lineage pair at all: it is a **size variant within one family**,
+which §6.3's own deliverable already flagged as insufficient ground truth.
+**So this run does not falsify Option C's underlying idea — it falsifies the
+attempt to evaluate any of A–D without Option E.** Option E's status is
+unchanged and its priority is now supported by a second independent failure,
+not just by argument.
 
 #### Option D · Front-end / tokenizer fingerprinting `[ ]`
 
@@ -7741,6 +7920,18 @@ acknowledged follow-up gets lost.
 | **08-17** (⚠️ unlogged) | Stage 1 completed: L-B and L-C re-run for real at 46,382 rows — **L-B now clears its floor**, and clause 2 resolves **against V1** (loses to V0, p=0.002). V4 built; a real R² baseline bug found on live data and fixed (`CLAUDE.md` §11.31), after which most nominally-"specific" atoms turn out not to survive. | §6.2.1 Stage 1 + V4 Findings |
 | **08-18** | This restructuring pass: `ROADMAP.md` 16.4k → ~5k lines, four competing orderings collapsed into §0.5's single queue, ~25 items parked with un-park triggers in §22, and the crosscoder scoped to its remaining critical path (§6.2.1's triage). No code changed, no recorded number altered. | §22, §6.2.1 |
 | **08-18** (autonomous cron firing, §0.5 queue item 1) | §6.2.1 CLOSED: V2 (BatchTopK) built (already coded, not yet run), scored at 3 seeds — does not flip Stage 1c's clause 2 at any seed, and its own design goal (lower `frac_specific_a`) doesn't materialize either. New finding: the L-B untrained-twin floor is itself seed-fragile (0.696/0.792/0.856), so the prior single-seed "decisively clears" claim was overstated. Stage 4 written up (three-part deliverable + methodological result); Stage 3 confirmed gated shut. Full suite 418 passed. `CLAUDE.md` §13 item 3 corrected to match. | §6.2.1 Stage 2/4 Findings, `CLAUDE.md` §13 |
+| **08-19** (autonomous cron loop, §0.5 queue item 6) | Legibility layer closed. **J2 found already implemented** and verified rather than rebuilt (16 stages covered, not the 13 its own text claims; `--check` gate green). **J3 built**: a 32-term glossary rendering to both README and report from one dict, and a 308-line worked example reading `runs/medium_run_chronos_base`'s real artifacts section by section — including a genuine "finding I would not act on" (L0's `mixture` gap, 0.010 MASE against a ±0.160 noise floor). 18 new tests (7 + 11) make the worked example a regression test; one over-aggressive test was replaced rather than accommodated. Suite 466 → **491 passed**. All three legs of §0.5's v1 definition are now done and the sequenced queue is empty. | §21 J2/J3 Findings |
+| **08-19** (same loop, §16 E3) | **Empirical token→time span discovery built and live-accepted.** New `extraction/span_discovery.py` + `--discover-spans` *measures* the span map instead of trusting an adapter's declaration; **all six live checkpoints** (timesfm, chronos t5-small/t5-base, chronos_bolt, chronos2, sundial) reproduce their declared spans at `mean_iou` **exactly 1.0**, 0 flagged, across four tokenization styles, with a stride-8 control failing correctly (0.016, 448/512 flagged). The run also **falsified my own refusal gate**: `diffuseness>0.5` would have refused three adapters whose maps it had just proven exact, because share-of-mass-off-peak scales with token count — replaced by peak:pedestal contrast, `diffuseness` kept and unchanged. Trap recorded as `CLAUDE.md` §11.33. Suite 491 → **507 passed**. E3 (b) `GenericHFAdapter` and the routing half of (c) remain. | §16 E3 Findings |
+| **08-19** (same loop, §16 E3(b)) | **The zero-code path works.** New `models/generic_hf_adapter.py` (adapter `generic_hf`) + `run.py --probe-adapter`: `thuml/timer-base-84m`, which has **no adapter file**, resolves all four probed seams and its 96-step patch spans come out **exactly** right from measurement alone. **Four probes were wrong on first write and every one was caught by running, not reading** — a block's own residual-width Linear is shape-indistinguishable from the block (would have put every CKA/stitching number on an intra-block projection); `inputs_embeds` is always the wrong input; an all-ones `attention_mask` is fabricated, not neutral; and `CLAUDE.md` §11.22's Sundial `DynamicCache` break turns out to be **lineage-wide** (TimeMoE and Timer break identically, fix identically). Two refusals are the correct answer: a 7-channel PatchTST (§12's univariate edge) and a `*ForPrediction` load that returns ~70 randomly-initialized parameters while printing only a stderr warning. Trap recorded as `CLAUDE.md` §11.34. Suite 507 → **523 passed**. End-to-end pipeline run delegated to a background agent. | §16 E3 Findings (2nd block) |
+| **08-19** (same loop, §16 E3 acceptance) | **A model with no adapter file ran the whole pipeline.** `configs/generic_hf_timer.yaml` (Timer via `generic_hf` vs. hand-written Chronos-T5-Small, context 480, window 96): 12 sections / 2 honest skips / **36 findings**; peak L1 CKA **0.4494** (CI [0.411, 0.507]) vs. a **0.063** shuffle null — the strongest cross-model CKA on record here, with a fourth independent architecture; L2 asymmetric (Timer→Chronos gain **0.222**, reverse **0.063**); Timer captured-FLOP coverage **0.998** vs. Chronos **0.139**. Also the cleanest live demonstration of *why* L2 has a baseline: at Timer's shallowest layers the input-feature baseline hits R² 0.663 and the cross-model gain is **−0.371**. **And it exposed a real gate defect** — the alignment gate refused Timer at 0.3333 against a 0.5 bar for a provably-correct token map, because the diagonal-hit metric's arithmetic ceiling is `n_distinguishable_supports / n_windows` = 1/3 when tokens are 3× the window; now gated on `hits / ceiling`, ceiling measured off the pooling matrix (a token-width rule gets it wrong), verified a **no-op for every existing model**. Trap as `CLAUDE.md` §11.35. Suite 523 → **531 passed**. | §16 E3 Findings (2nd block, extended) |
+| **08-19** (same loop, §16 E3(c)) | **The refusal became a decision; E3 is closed.** `models/base.py::NotTimeLocalized` + `pipeline.resolve_routing`/`_apply_routing`: a model whose measured impulse response is diffuse used to raise mid-extraction and kill the run — it is now routed to `l0`/`budget`/`report`, recorded in `routing.json`, and rendered as a red banner plus a first-row **Analysis eligibility** entry in the fairness card (carrying the contrast that decided it, and distinguishing `full (measured)` from `full (spans declared by adapter)`). Only `NotTimeLocalized` is caught — a test pins that a genuine defect in span resolution still propagates rather than being relabelled as a verdict, which is §11.33's false-refusal cost one layer up. Routing resolves only when `extract` would run; a `--stages report` rerun reuses the record and does not re-widen. 5 new tests (`tests/test_routing.py`). | §16 E3 Findings (3rd block) |
+| **08-19** (same loop, §18 F5) | **Token-resolution parity built and accepted on real checkpoints — and the acceptance found more than the plan predicted.** `analysis/attention.py` gains `rebin_lag_profile` + a `matched_head_scores` post-pass (zero extra forward passes, coarsest model is the identity by construction), `attention.resolution_mode` defaults to `matched`, and the report renders a resolution-matched table plus the fairness card's F5 row. On TimesFM-2.5-200M vs. Chronos-T5-Base the direction holds but the gap nearly halves (**4.89× → 2.93×**), **not one of Chronos's five native top heads survives into the matched top-5**, and the real finding is the family: every native Chronos entry scored on a **4.0-step** period that TimesFM's 32-step token cannot express at all, so the native comparison was TimesFM-on-`mixture` against Chronos-on-`parametric`. Native scores reproduce bit-for-bit against the canonical run. A planted test failing exposed that an entirely-unresolvable ranking rendered as *nothing*; now named explicitly with `unresolvable_families`. Also fixed: a hand-written `Finding.caveat` is discarded by design and was doing so **silently** (invariant 8) — now warns and names the claim. 10 new tests. Suite 546 → **548 passed**. | §18 F5 Findings (2 blocks) |
+| **08-19** (same loop, §18 F8) | **All-pairs L0 + a multiplicity ledger — and a cap on multiplicity nobody had noticed.** `_summarize` now tests every model pair and Holm-corrects across the joint (pair, family) set; the report renders the extra pair tables plus a ledger of every independently-corrected family, emitted as `report/multiplicity.json`. Two-model runs are **bit-identical**, verified by running the committed pre-change module beside the new one — the load-bearing detail is that the old seeding counted families it *skipped*, so the tidier counter would have moved every recorded L0 p-value silently. **The headline finding is a refutation of my own demonstration**: the three-model config's clean 4→0 demotion at `n_boot: 150` is mostly a p-floor artifact — a family of m tests cannot reach an adjusted p below m/n_boot at any effect size, and 18/150 = 0.12 > α, so nothing could have been significant. At n_boot 2000/10000 the demotion vanishes entirely. The report now names this *unsatisfiable correction* case in red and says how large `n_boot` must be. Scopes are counted, never pooled (§6.7). 9 tests, `configs/smoke_three_model.yaml`. Suite 548 → **557 passed**. | §18 F8 Findings |
+| **08-19** (same loop, §19 G1) | **Capability tiers, derived rather than declared — and a tier-0 black box runs end to end.** `ModelAdapter.capability_tier()` reads what a subclass actually overrides instead of trusting a hand-set `tier: int`, because an integer is a claim checked nowhere (§11.34); the derived tiers match `CLAUDE.md` §6.2's support matrix over all 11 registered adapters with no tuning. **The barrier was the contract, not any analysis code** — `module`/`prepare`/`forward`/`token_time_spans` were `@abstractmethod`, so a tier-0 adapter could not be *constructed*; they now raise a typed `CapabilityUnavailable`, deliberately not a `NotTimeLocalized` subclass so a missing implementation can never be caught as a measured verdict about a model. Acceptance: `configs/smoke_blackbox.yaml` (two `mock_blackbox` models, nothing disabled by hand) gives **3 rendered / 11 skipped / 0 failed, 13 findings**, with all eight tier-dropped sections naming the tier as their reason rather than "artifacts missing"; `configs/smoke.yaml` unchanged at `run_tier: 3`, 0 dropped. **Four defects found by running, not reading**, the sharpest being that the dropped-stage list was computed from `selected`, so a `--stages report` rerun silently rewrote the artifact to claim nothing was dropped — erasing the reason each skip prints. Preflight also *failed* the run on a batch cap belonging to a stage the gate was about to drop (§11.35's false-refusal shape again); now tier-aware. 18 tests. | §19 G1 Findings |
+| **08-19** (same loop, §6.3.1 Option C) | **Idiosyncratic-error fingerprinting built black-box and swept over 10 existing runs at zero forward passes — and it fails three of its own controls.** New `analysis/error_fingerprint.py` + `run_error_fingerprint.py`. The magnitude channel ranks the **pure untrained control first** (two `random_init` twins, 0.9719, above every real pair); the shape channel's top score goes to an *independent-lineage* pair (TimesFM↔Chronos-2 **0.8999**) above the only same-lineage pair (Chronos-Small↔Base **0.8712**); and "architecture matching cannot fake it" — the option's central claim — is **false for TimesFM**, whose own untrained twin scores **0.4977** where Chronos's scores 0.1358, so the floor is model-specific, not one number. The plan's specified difficulty basis (L2's input-feature probe) was measured at out-of-fold R² **−0.62** — it removed no difficulty while looking adjusted — and replaced with an 8-column series-level basis at R² 0.26–0.75, with an `adjustment_ok` guard so that cannot recur silently. Consequence: **Option E is a prerequisite for evaluating any of A–D**, now on two independent failures. 8 tests. | §6.3.1 Option C Findings |
+| **08-19** (same loop, §19 G2) | **A second, orthogonal span gate: contiguity.** E3 gated on peak:pedestal contrast; a lag-feature tokenizer is sharply peaked at *each* of its lags, so it clears that gate while `[min, max]` describes a range it mostly does not touch. `_spans_from_argmax` already detected holes but **conflated them with empty tokens** — opposite events (a stripped special vs. a token reading disjoint lags), and pooled into one count the second is invisible. Now separate, with `flagged_tokens` kept as their union so no recorded number moves; `contiguity` is the share of non-empty tokens with no holes at the worst probed amplitude; `refusal_reason()` is the single place that knows both gates so a caller cannot admit a lag-feature model by omission. **Every surface that renders a refusal now names which gate fired** (adapter, `routing.json`, `--discover-spans`, fairness cell, red banner), decided by reading the recorded numbers rather than matching message text — quoting contrast for a contiguity refusal would put a *healthy* number next to a refusal, §11.33/§11.35's exact shape. Verified a no-op for all three localized mocks. 10 tests. Suite 584 → **595 passed**. ⚠️ Never exercised against a real non-contiguous checkpoint — none is integrated. | §19 G2 Findings |
+| **08-19** (same loop, §20 H1) | **Scaling-ladder harness built and tested; the five GPU runs are not done.** `configs/scaling_ladder_chronos.yaml` (a `ladder:` block that expands into five per-rung configs, so the shared body can't drift — §11.24), `analysis/scaling_ladder.py` (extends `meta_report.py::summarize_run`, adds internals / SAE / calibration columns), `run_scaling_ladder.py` (`--emit-configs` and the reducer). Three decisions: the axis is `budget`'s **measured** parameter count and a run without it is excluded, not named (§11.34); significance is an **exact permutation** over all n! orderings with its own **p-floor 2/120 = 0.0167** printed beside every p (§11.35); "flat" is withheld when no within-run CI backs it. One bug found by running it: at one rung `all(diff > 0)` is vacuously True, so a degenerate ladder reported a confident `monotone_increasing` — §11.37's shape, now `too_few_rungs`. 8 tests. | §20 H1 Findings |
+| **08-19** (same loop, §20 H4) | **Cross-model agreement as a reliability signal — built, and its own acceptance criterion decided against it.** Disagreement predicts error strongly (Spearman **0.716**; lowest decile MASE **0.981** vs highest **5.787**) and **loses to each model's own quantile width** in **10 of 11** scorable model-runs across 6 existing runs (1 inconclusive by 0.003, 0 wins) — so the practitioner line is "read the band you already have." Zero forward passes; a standalone reducer, deliberately not wired into the pipeline. Secondary: distributional disagreement beats pointwise (0.815 vs 0.716), the signal grows monotonically with horizon (0.154 at h=1 → 0.624 at h=64), and it is family-dependent (0.286/0.465/0.742 — pooling would have reported the largest family's number as the corpus's). **The one apparent win was a false positive from two compounding bugs**: `GenericHFAdapter` has no quantile head so Timer's band is width 0 for every series, and the rank transform broke ties by array position, turning that constant column into a `0..n−1` ramp with a spurious ρ of −0.192. Ranks now average ties; a zero-spread baseline is `own_width_available: False`, never scored. Trap `CLAUDE.md` §11.37. 12 tests; full suite **607 passed**. | §20 H4 Findings |
 
 ### What the log is actually evidence for
 
@@ -8173,7 +8364,7 @@ came back clean.**
   (A2) per model. Output a table of pass/warn/fail with the exact remediation
   command. This single item would have absorbed most of `CLAUDE.md` §11's
   environment traps. Depends on: A2, A7, A14.
-- [ ] **E3 · Empirical token→time span discovery, and a generic HF adapter.**
+- [x] **E3 · Empirical token→time span discovery, and a generic HF adapter.**
   The largest generality lever in the repo. Today `token_time_spans()` is
   *declared* by an adapter author and verified by a check nobody is forced to
   run; the mapping is the one thing cross-architecture comparison rests on
@@ -8193,6 +8384,21 @@ came back clean.**
   fail on disagreement. This is also a genuinely publishable methodological
   contribution: adapter correctness becomes measured rather than asserted.
   Depends on: A2. Enables: §9 Phase 4 at a fraction of the per-model cost.
+  **Status 2026-08-19: DONE — (a), (b), (c) and (d), end to end.**
+  (c) closed the same day: `NotTimeLocalized` + `pipeline.resolve_routing`
+  turn the refusal into a decision (`routing.json`, run narrowed to
+  `l0`/`budget`/`report`, a red banner and an "Analysis eligibility" row in
+  the report) instead of a stack trace mid-extraction.
+  All six live checkpoints reproduce
+  their declared spans at mean IoU exactly 1.0, and `thuml/timer-base-84m`
+  — which has no adapter file in this repo — ran the **full pipeline**
+  through `generic_hf` with no Python written, producing a 12-section /
+  36-finding report and a peak cross-model CKA of 0.449 against a 0.063
+  shuffle null. See this section's two Findings blocks; `CLAUDE.md` §11.33
+  for the refusal statistic that had to be replaced to get there, §11.34
+  for the four wrong probes, and §11.35 for the alignment-gate ceiling
+  defect this run exposed. **The only remaining scope is (c)'s routing
+  half.**
 - [ ] **E4 · A bundled, versioned reference corpus** — **parked (§22.3).** Ship
   or fetch-on-first-run a small fixed corpus with a pinned digest, so two users'
   numbers are comparable. Carries an unresolved licensing decision, and E1
@@ -9212,6 +9418,405 @@ the refusal path fires on a deliberately non-localized mock.
 
 *Cost.* 2 sessions. Highest generality-per-hour item in the file; it is what
 turns "add a model" from an adapter-writing task into a run.
+
+**Findings — 2026-08-19 (deliverables (a), (c) partial, (d) done; (b) not
+started; the acceptance criterion has since PASSED — see the second Findings
+block below).** Built exactly the algorithm
+the detail-up specifies, and it recovers the known-correct answer on every
+mock without a single fudge factor.
+
+- **`tsfm_lens/extraction/span_discovery.py`** — `discover_spans(adapter,
+  context_len, amplitudes, stride, layer, batch_size) -> SpanDiscovery`
+  carrying `spans [n_tokens,2]`, `diffuseness`, `per_amplitude_agreement`,
+  `flagged_tokens`, `concentration`, `per_amplitude_spans`, `layer`; plus
+  `compare_declared(adapter, discovered)` for (d)'s declared-vs-discovered
+  per-token IoU. `run.py --discover-spans <model> [--span-stride N]` prints
+  the scores, the refusal line, and the full per-token table.
+- **Exact recovery on all three mocks, at mean IoU 1.0000** — not "close":
+  `np.array_equal(discovered, declared)` holds for `MockPatchAdapter`
+  (32-step patches), `MockStepAdapter` (1-step tokens) and `MockWaveAdapter`
+  (8-step patches), with **0 flagged tokens** and
+  `per_amplitude_agreement = 1.000` for each. Diffuseness 0.269 / 0.288 /
+  0.286 respectively.
+- **Diffuseness is not zero even for a provably perfect map**, which is the
+  detail worth writing down before someone calibrates a threshold against a
+  wrong intuition: the probe reads the *first captured block*, whose
+  attention has already mixed positions, so a correct map scores ~0.26–0.29
+  rather than ~0. The refusal threshold has to clear that floor, not sit
+  near zero. The deliberately non-localized control (a linear whole-sequence
+  mixer, every token reading every timestep — `tests/test_span_discovery.py`
+  `_DiffuseNet`) scores **0.982 with all tokens flagged**, so the separation
+  is wide, but it is a separation between 0.29 and 0.98, not between 0 and 1.
+- **Two design calls made against the spec, both to avoid a silent fiction:**
+  (1) a token no probe selected gets a **zero-width span and a flag**, never
+  an interpolated plausible-looking one; (2) `is_time_localized(threshold)`
+  is a **method on the result, not a boolean baked in at discovery time** —
+  freezing a threshold into the artifact is how `CLAUDE.md` §11.24's class of
+  trap starts, where a later recalibration silently rewrites what old
+  artifacts meant.
+- **A third: the unperturbed baseline row is re-run in every batch chunk**,
+  not computed once. Any model whose forward pass depends on batch
+  composition — and Chronos's whole-sequence quantization is exactly one —
+  would otherwise have its baseline measured under different conditions than
+  the perturbed rows subtracted from it, a confound that presents as
+  diffuseness and is not. This is the same failure family as `CLAUDE.md`
+  §11.16, caught at design time here rather than after a misleading number.
+- **14 tests** (`tests/test_span_discovery.py`), including the two stride
+  cases that matter: a stride *dividing* the token width leaves the map
+  bit-identical (so the cost knob is safe to raise on a long context), while
+  a stride *coarser* than the token width flags ~all tokens with zero-width
+  spans rather than inventing them — pinned as a test because the wrong
+  behavior there would look like a working run.
+- **Not done:** (b) `GenericHFAdapter`, and the L0-only routing half of (c) —
+  `discover_spans` computes and exposes the refusal signal and the CLI states
+  it prominently, but nothing yet *consumes* it to force a pipeline into
+  L0-only mode. Those are the second session this item was scoped at.
+
+**Findings — 2026-08-19, live acceptance run (background agent, `CLAUDE.md`
+§2.8). The criterion PASSES, and the run simultaneously falsified the
+refusal gate's own statistic.**
+
+Environment: `cudaPy`, torch 2.12.0+cu, transformers 4.57.6, numpy 2.1.0,
+8× RTX A5000. All five checkpoints cached except `amazon/chronos-bolt-small`
+(19 s download). Every run `context_len: 512`, `--span-stride 1`, amplitudes
+`[0.25, 0.15, 0.05]`, first captured block, 3–13 s wall-clock each — so no
+context-length reduction was needed and the finest stride was affordable
+everywhere.
+
+**(1) The acceptance criterion holds, and not marginally — bit-exact.** All
+six checkpoints returned `mean_iou` **exactly 1.0**, `worst_iou` **1.0**,
+**zero** flagged tokens, amplitude agreement **1.0**, with every edge token
+correct (`timesfm`'s final `[480,512)`, `chronos`'s token 511 `[511,512)`
+with EOS correctly stripped):
+
+| adapter | checkpoint | layer | n_tokens | mean_iou | diffuseness | contrast |
+|---|---|---|---|---|---|---|
+| `timesfm` | google/timesfm-2.5-200m-pytorch | `stacked_xf.0` | 16 | 1.0 | 0.17046985626220704 | 78.86 |
+| `chronos` | amazon/chronos-t5-small | `encoder.block.0` | 512 | 1.0 | 0.794352656474552 | 133.55 |
+| `chronos` | amazon/chronos-t5-base | `encoder.block.0` | 512 | 1.0 | 0.7813995769423593 | — |
+| `chronos_bolt` | amazon/chronos-bolt-small | `encoder.block.0` | 32 | 1.0 | 0.674511622357112 | 16.44 |
+| `chronos2` | amazon/chronos-2 | `encoder.block.0` | 32 | 1.0 | 0.6127646148845715 | 21.22 |
+| `sundial` | thuml/sundial-base-128m | `model.layers.0` | 32 | 1.0 | 0.15387709422778062 | 176.96 |
+
+So the measured map reproduces five independently hand-written declarations
+across four tokenization styles (32-step patches, 1-step quantized, 16-step
+patches, flow-matching patches) with no adapter-specific handling — which is
+the actual claim E3 exists to support.
+
+**(2) 🔴 The refusal gate as first written would have refused three of the
+five adapters whose maps it had just proven exact.** `diffuseness > 0.5`
+(the default shipped hours earlier) fires on `chronos` (0.794),
+`chronos_bolt` (0.675) and `chronos2` (0.613). Diagnosed rather than
+threshold-tweaked (§2.4): `diffuseness` is share-of-response-mass off the
+peak, so a fixed per-token leakage ε costs `(n−1)ε` — a 512-token model is
+penalized ~32× against a 16-token one for identical per-token behavior.
+Chronos's radial profile is a **broad near-flat pedestal, not a local blur**
+(per-token share 0.180 at the peak, 0.0225 at ±1, then 0.0035/0.0026/0.0014/
+0.0011/0.0022 at distances 5/10/50/100/250), so ~80% of the mass sits off-peak
+purely by *count*. Ruled out the obvious confound directly: it is **not** a
+too-large-impulse re-quantization artifact — concentration is
+0.180050/0.180433/0.261113/0.252505 at amplitudes 0.25/0.15/0.05/0.02 and the
+argmax matches the declared span at **1.000000 at every one of those four
+amplitudes**. Pooling Chronos's 512 tokens into 16 window-groups moves
+diffuseness only 0.8216 → 0.7530, so some of the gap is genuinely more
+off-peak mass at a non-causal T5 encoder's first block — and the map is still
+exact regardless. **Span recoverability (is the argmax right) and mass
+concentration (how much leaks) are different properties, and the gate was
+reading the wrong one.**
+
+**(3) Fixed: the gate now reads peak-to-pedestal `contrast`.** One correction
+to the background agent's framing, found by re-deriving its statistics rather
+than accepting them (§2.4): the proposed alternatives are **not**
+"n-independent". A *perfectly* localized `MockStepAdapter` (n=128) scores
+contrast 316.9 where an equally perfect `MockPatchAdapter` (n=4) scores 12.0,
+and PR/n moves 0.0153 vs 0.3845 — both are strongly n-dependent. What makes
+contrast the right gate is a different and stronger property: **its refusal
+end is pinned near 1.0 regardless of token count** (a uniform response has
+peak == mean off-peak by definition), while a localized model's value only
+grows as tokens are added. The dangerous case has a fixed signature and the
+safe case moves further from it — the opposite of `diffuseness`, where the
+safe case drifts *toward* the refusal region as n grows. Measured span:
+**1.074** (non-localized control) vs **12.0** (smallest real localized case,
+a 4-token mock) vs **16.4–316.9** (everything else). Default
+`min_contrast=4.0` sits ~3.7× above the refusal case and ~3× below the lowest
+passing one. `contrast` and `participation_ratio` are now recorded per
+result; **`diffuseness` is still computed and reported unchanged**, so no
+already-quoted value moved (§0.2) — it is simply no longer what the gate
+reads, and the CLI now says so on the line that prints it. The gate takes the
+**worst** amplitude's contrast, not the mean: an impulse size at which the
+response smears is a real property, and averaging it away with two better
+amplitudes is how a probe passes a model it should have flagged.
+
+**(4) Stride control, confirming the flagging machinery is not vacuous.**
+`chronos` (t5-small, 1-step tokens) at `--span-stride 8`: `mean_iou` **0.016**,
+`worst_iou` **0.000**, **448 of 512** flagged, amplitude agreement 0.125 —
+exactly the predicted under-sampling failure, surfacing as flags and
+zero-width spans rather than invented ones. TimesFM at stride 16 (token width
+32) is unaffected: `mean_iou` 1.000, 0 flagged, diffuseness 0.204.
+
+**(5) A `CLAUDE.md` §11.22 sub-finding.** Sundial's documented amplitude
+dependence does **not** appear here: agreement is exactly 1.0 across
+0.25/0.15/0.05. Consistent with that effect being a *depth* phenomenon —
+span discovery reads block 0, `--check-alignment` reads every layer.
+
+Full `tsfm_lens` suite **507 passed** after this addition (was 491).
+2 new tests pin (2) and (3) so they cannot regress (16 total in
+`tests/test_span_discovery.py`); one asserts a synthetic 512-token result with
+diffuseness 0.794 and exact spans still passes, which is the live case
+verbatim. New trap recorded as `CLAUDE.md` §11.33.
+
+**Still not done:** the routing half of (c) — nothing yet *consumes*
+`is_time_localized()` to force a pipeline into L0-only. (b) is below.
+
+---
+
+**Findings — 2026-08-19, deliverable (b): `GenericHFAdapter`. A checkpoint
+with no adapter file now runs, and four separate probes had to be corrected
+before it did — every one of them by measurement, not by reasoning.**
+
+`tsfm_lens/models/generic_hf_adapter.py` + `run.py --probe-adapter <model>` +
+16 tests (`tests/test_generic_hf_adapter.py`). Registered as adapter
+`generic_hf`. Four seams a hand-written adapter *declares* are **probed**, and
+every resolution is recorded in `describe_strategies()` rather than only
+logged — "which path did this checkpoint take" is the one question a reader of
+a generic-adapter run cannot answer from the numbers.
+
+**The headline: `thuml/timer-base-84m` — no adapter file, nothing declared —
+resolves completely.**
+
+```
+  checkpoint          thuml/timer-base-84m
+  input_kwarg         input_ids            input_rank  2
+  layer_regex         ^model\.layers\.\d+$    n_capture_layers  8
+  forecast            forward_field        quantiles   degenerate_point
+  time_localization   localized=True  contrast=2.012e10  diffuseness=0.2785
+                      n_tokens=5  flagged=0  per_amplitude_agreement=1.0
+```
+
+and the discovered spans are **exactly** `[0,96) [96,192) [192,288) [288,384)
+[384,480)` — Timer's 96-timestep patch tokenization, recovered from an impulse
+sweep with zero prior knowledge of it. Nothing read `input_token_len` from its
+config; the number came out of the measurement.
+
+**Four probes that were wrong, and how each was caught.**
+
+1. 🔴 **Shape probing cannot tell a block from its own residual-width
+   component.** `_Block.lin` is a Linear at hidden width inside every block, so
+   `layers.#.lin` has the *identical* member count and the *identical*
+   `[B,T,D]` output shape as `layers.#`. The first version picked the
+   component. Capturing a block's internal projection while calling it the
+   residual stream yields a complete, plausible set of CKA/stitching/patching
+   numbers on the wrong tensor. Caught by a unit test on a synthetic net whose
+   correct answer is known by construction; fixed with a **shallowest-path**
+   tie-break, since a component is by construction nested below the block that
+   contains it. Pinned by
+   `test_the_block_wins_over_its_own_residual_width_component`.
+2. **`inputs_embeds` is a plausible input name and is never the right one.**
+   It takes an already-embedded `[B,T,D]` tensor, so a raw series fed to it
+   skips the model's own patch embedder. Timer accepts it, and picks it over
+   `input_ids` if it is listed — then fails with `mat1 and mat2 shapes cannot
+   be multiplied (960x1 and 1024x1024)`, a matmul error several frames from
+   its cause. Removed from the candidate list entirely.
+3. **`attention_mask` is not safely synthesizable.** All-ones looks neutral,
+   but on a patch-tokenizing model the mask is over *tokens*, not timesteps —
+   an all-ones tensor shaped like the series is the wrong length. Timer fails
+   with `too many values to unpack (expected 2)`; a model that broadcast
+   instead would be silently mis-masked. Only `past_observed_mask` /
+   `observed_mask`, which are defined on the raw series axis, are synthesized.
+4. **`CLAUDE.md` §11.22's Sundial `DynamicCache` break is lineage-wide, not
+   checkpoint-specific.** `Maple728/TimeMoE-50M` and `thuml/timer-base-84m`
+   both crash with the identical `'DynamicCache' object has no attribute
+   'get_usable_length'` under `transformers==4.57.6`, and both are fixed by
+   the identical `use_cache=False` §11.22 records for Sundial. The generic
+   adapter now passes it whenever the signature accepts it — safe in a way the
+   covariate case is not, since disabling a cache cannot change a forecast.
+
+**Two refusals that are the correct answer, not failures.**
+
+- `ibm/patchtst-etth1-pretrain` is **7-channel**. This repo is univariate by
+  decision (`CLAUDE.md` §12's ratified envelope edge), and the adapter refuses
+  at load naming the channel mismatch rather than broadcasting the series
+  across seven channels — which would be inventing six inputs.
+- Loading that same checkpoint as `PatchTSTForPrediction` returns a model with
+  **~70 randomly-initialized parameters** (the whole encoder plus the head):
+  it is a backbone-only pretrain, and HF loads it, prints a warning to stderr,
+  and returns it. A zero-code path that swallowed that would produce
+  real-looking output from an untrained model — `ModelConfig.random_init`'s
+  deliberate null arrived at by accident. Now a hard error via
+  `output_loading_info=True`, overridable with `kwargs.allow_uninitialized`.
+
+**Two things the adapter refuses to fabricate, both stated as design.**
+A required `past_time_features` (TimeSeriesTransformer, Informer, Autoformer)
+is a load-time error: zeros there is a forecast-changing input, not a neutral
+default. And a point-only head gets **degenerate quantiles** with a WARNING on
+every `predict()`, because silence would make L0's calibration section render
+a perfect-looking reliability curve for a model that never produced a
+quantile.
+
+`kwargs.auto_class` names the `transformers` class to build with, because
+`AutoModel` resolves to the *bare backbone* for most time-series
+architectures — `PatchTSTModel`, not `PatchTSTForPrediction`; `TimerModel`,
+not `TimerForPrediction` — which has no forecast head and so cannot produce
+L0 at all. A config line, not adapter code, so the zero-code claim survives;
+guessing at a `ForPrediction` suffix would not, since the naming is not a
+rule.
+
+Full `tsfm_lens` suite **523 passed** after this addition (was 507).
+
+**The end-to-end pipeline run — the claim that was outstanding — is now
+measured.** `configs/generic_hf_timer.yaml`: `thuml/timer-base-84m` through
+the zero-code `generic_hf` adapter versus the hand-written Chronos-T5-Small,
+`context_len: 480`, `max_series: 120`, 8 captured Timer blocks against 6
+Chronos encoder blocks. Every number below was re-read off the run's own
+artifacts rather than taken from the running agent's report.
+
+- **The report renders.** 12 sections rendered, 2 skipped (SAE and Confirm,
+  both disabled in this config — the honest skip path, not a failure), **36
+  findings**. A model with no adapter file in this repo went from a
+  Hugging Face repo id to a full comparative report with no Python written.
+- **L1 — the load-bearing result.** Peak linear CKA **0.4494054317474365**
+  at (`model.layers.2`, `encoder.block.2`), 95% CI
+  **[0.41118523180484773, 0.5065588966012001]**, against a shuffled-series
+  null of **0.063030456751585**. Decisive shared geometry with a *fourth*
+  independent architecture, and the strongest cross-model CKA this repo has
+  recorded (TimesFM↔Chronos-T5-Base peaks at 0.381; Sundial↔TimesFM at
+  0.381). Read with the usual §16 E9 caveat: no untrained-twin floor was run
+  for this pair, so this is "well above the shuffle null", not "above the
+  architecture-only floor".
+- **L2.** `Timer→Chronos` best gain over the input-feature baseline
+  **0.22206515073776245**, CI **[0.1391113680565794, 0.28604987366882784]**,
+  at `model.layers.6`→`encoder.block.4`. The reverse direction is much
+  weaker: `Chronos→Timer` best gain **0.06282740831375122**, CI
+  **[0.01893748175464814, 0.1057259264153764]** — L2 is not symmetric and
+  each direction is its own measurement (§16 E9's own rule), so this is a
+  real asymmetry, not noise.
+- **A live demonstration of *why* L2's baseline exists**, worth recording
+  because it is the cleanest instance in the repo. In
+  `Chronos-T5-Small→Timer`, the input-feature baseline R² at Timer's two
+  shallowest layers is **0.6632283329963684** and **0.51544189453125**, and
+  the cross-model *gain* there is strongly **negative** (−0.37061697244644165,
+  −0.2284032106399536): the raw ridge fit looks respectable and is entirely
+  explained — over-explained — by "both models saw the same input".
+  Reporting raw R² would have made an early-layer nothing look like a
+  finding. This is exactly the failure mode `CLAUDE.md` §6.5's red-flagged
+  baseline rule was written for, observed rather than argued.
+- **L0.** `strengths: {'Timer': [], 'Chronos-T5-Small': ['mixture',
+  'random_parametric']}` — Chronos wins two families with a Holm-corrected
+  significant paired result, Timer wins none. Note Timer's quantiles are
+  **degenerate by construction** here (point-only head, §16 E3(b)'s stated
+  refusal), so pinball/calibration for Timer is uninformative by design and
+  MASE/sMAPE are the only readable L0 columns for it.
+- **Budget/coverage.** Timer captured-FLOP coverage
+  **0.9976640062293167** (`depth_claims_qualified: false` — the first model
+  in this repo to observe essentially its whole forward pass, since the
+  generic adapter's discovered regex covers every block and it is captured
+  at stride 1) against Chronos-T5-Small's **0.13876044330881926**
+  (`true` — automatically qualified, §18 F4 working as designed). The
+  asymmetry is now *measured and rendered* rather than a caveat a reader has
+  to know about.
+- **Alignment.** Timer `passed=True`, per-layer diagonal-hit
+  `{model.layers.0–6: 1.0, model.layers.7: 0.4}`, min 0.4, mean 0.925,
+  calibrated amplitude 0.25, window 96. Chronos: all six blocks 1.0,
+  calibrated amplitude 0.05. **This is the run that found a real defect in
+  the gate itself** — see the next block.
+
+⚠️ **Every number in this run is on a 96-step alignment window, not the
+repo's usual 32.** Window-level row counts (`n_rows_window: 600`) and every
+relative-depth coordinate are therefore **not** directly comparable to any
+previously recorded run. The reason is in the config's own comment: Timer's
+tokens are 96 timesteps wide, and a 32-step window would carry 15 windows
+holding 5 tokens' worth of information — 3× redundancy along the window axis
+of every downstream matrix.
+
+**Gate defect found and fixed: the diagonal-hit fraction has an arithmetic
+ceiling below 1.0 whenever tokens are wider than the alignment window.**
+At window 32 this run failed the alignment gate at exactly **0.3333** against
+`min_diagonal_frac: 0.5` — for a token map that is *provably correct*
+(token-level argmax a perfect diagonal, 0.000 leakage, and §16 E3(a)'s span
+discovery independently confirming Timer's 96-step spans at `mean_iou` 1.0).
+Three consecutive 32-step windows read the same 96-step token, receive
+identical pooled activations, and the argmax tie-breaks to the first of each
+triple: the metric cannot exceed `n_distinguishable_supports / n_windows`,
+here 5/15. The gate was measuring window/token width ratio, not alignment
+correctness, and its failure mode is a **false refusal of a correct
+adapter** — the most expensive direction, since it reads as a considered
+finding. Fixed in `extraction/alignment.py`: new `resolvable_hit_ceiling`
+computes the ceiling from the pooling matrix's own distinct row supports
+(not from a token-width heuristic, which gets it wrong — see the test), and
+`run_alignment_gate` now gates on `hits / ceiling`, records
+`resolvable_ceiling` and `shallowest_frac_of_ceiling`, warns when the
+ceiling is below 1, and names both numbers in the failure message.
+`--check-alignment` prints the ceiling as a NOTE before its table and renders
+`raw` and `/ceil` columns. **Verified to be a no-op for every existing
+model**: a parametrized test asserts a ceiling of exactly 1.0 for every model
+whose tokens fit inside a window, so no recorded alignment number in this
+repo moves. 6 new tests (`tests/test_alignment_ceiling.py`) + 3 more in
+`tests/test_generic_hf_adapter.py` (→18). Lesson written up as `CLAUDE.md`
+§11.35.
+
+Full `tsfm_lens` suite **531 passed** after the gate fix (was 523).
+
+**Findings — E3(c), the routing half (2026-08-19, same loop)**
+
+The last piece of E3. Until now the refusal was computed, printed and exposed
+(`ModelAdapter.time_localization()`) but nothing *consumed* it: a model whose
+measured impulse response is diffuse raised a bare `ValueError` out of
+`token_time_spans()` mid-extraction and **killed the run**. `CLAUDE.md` §12
+promises such a model "degrades to L0 only with a stated reason"; what
+actually happened was a stack trace. Now it is a decision.
+
+- **`models/base.py::NotTimeLocalized`** — a distinct exception carrying the
+  measured facts (`contrast`, `min_contrast`, `diffuseness`, checkpoint), with
+  an `as_record()` for the artifact. It subclasses `ValueError` so every
+  existing guard behaves as before, but the pipeline catches *this type only*.
+  That narrowness is the point and has its own test: catching `ValueError`
+  there would turn any bug in span resolution into a considered-looking "this
+  model has no time structure" verdict — §16 E3(a)'s own §11.33 lesson about
+  what a false refusal costs, one layer up.
+- **`pipeline.py::resolve_routing` + `_apply_routing`** — resolves every
+  model's eligibility once, up front, writes `routing.json`, and narrows the
+  run to `_L0_ONLY_STAGES = ("l0", "budget", "report")` when any model is
+  refused. `l0` is in that set despite declaring an `extract` dependency in
+  the DAG: it reads no activations (it only *writes* predictions into the
+  store), so that edge orders a full run rather than expressing a need.
+  Routing only resolves when `extract` would actually execute — a
+  `--stages report` rerun reuses the recorded decision instead of paying a
+  checkpoint load to rediscover it, and (tested) does **not** silently
+  re-widen the run.
+- **The report says it, in the body.** A red-bordered banner above the
+  fairness card ("This run is restricted to L0 (behavioral) results…") plus a
+  new **Analysis eligibility** row rendered *first* in the card, carrying the
+  contrast that decided it rather than a bare verdict. This matters because
+  invariant 8's known weakness is exactly this case: the log line is invisible
+  by the time someone opens the HTML, and a report that is simply *missing*
+  eight sections looks like a failed run, not a scoped one. The card also
+  distinguishes `full (measured, contrast …)` from `full (spans declared by
+  adapter)` — every hand-written adapter is the latter, and the difference is
+  the whole point of E3.
+- **The refusal floor now lives in one place.** `GenericHFAdapter._min_contrast`
+  reads `SpanDiscovery.is_time_localized`'s own default off its signature
+  (overridable per model via `kwargs.min_contrast`), so the number quoted in
+  the refusal message is provably the number the gate applied — §11.33's
+  statistic cannot drift from its own threshold.
+
+- **The preflight costs nothing for a declared-spans adapter.** A new
+  `ModelAdapter.measures_own_spans` class flag (True only on
+  `GenericHFAdapter`) gates the probe: an adapter that declares its spans
+  cannot refuse itself, so probing it would load a checkpoint to learn
+  nothing — and would hold every model resident at once, which extraction
+  deliberately avoids for VRAM. A measuring adapter is released again right
+  after its probe unless `run.keep_models_loaded`. This was caught by
+  reasoning about the VRAM cost before running it, but it is also pinned by
+  a test that asserts `token_time_spans()` is **never called** on a
+  hand-written adapter during routing.
+
+6 new tests (`tests/test_routing.py`), all on mock adapters raising the real
+exception type — no checkpoint, no discovery pass, because what is under test
+is the routing, not the measurement. The end-to-end one asserts the pipeline
+*completes*, `l1`/`l2`/`l3`/`lens`/`internals`/`clustering` are absent, and
+the banner and its number are in the HTML.
+
+**E3 is now fully done — (a), (b), (c), (d).**
 
 ---
 
@@ -10738,7 +11343,7 @@ findings, unchanged, and the qualifier's `at least ` prefix is gone from all
 **Suite: 341 passed, 2 warnings, 619.33s** — the 338 of the pre-fix baseline
 plus this item's 3, no regressions, both warnings pre-existing.
 
-### F5 Token-resolution parity `[ ]`
+### F5 Token-resolution parity `[x]` — done 2026-08-19
 
 **What's wrong.** TimesFM resolves lags no finer than one patch (~32 steps);
 Chronos-T5 resolves single steps. `CLAUDE.md` §12 item 5 is right that this is
@@ -10763,6 +11368,162 @@ run; if the cross-model ordering changes under `matched`, that is recorded as a
 finding about the previous result.
 
 **Cost.** ~1 session.
+
+#### Findings — F5 built (2026-08-19)
+
+**What landed.** `analysis/attention.py` gains `rebin_lag_profile`,
+`_matched_extras`, `matched_head_scores` and a `_add_matched_resolution`
+post-pass; `config.py` gains `attention.resolution_mode` (default
+`"matched"`); the report gains a resolution-matched periodicity table and the
+fairness card's F5 row. 8 tests (`tests/test_lag_resolution.py`), all on
+synthetic profiles with planted, known-correct answers.
+
+Four design decisions worth stating, because each was a fork:
+
+1. **Both resolutions are always computed; the knob only records which one a
+   *cross-model* claim may cite.** Native scores keep their existing artifact
+   keys with their existing values, so no attention number recorded anywhere
+   in this file moves (§0.2, `CLAUDE.md` §2.1). `resolution_mode` is metadata
+   plus a report-side choice, not a switch that rewrites an artifact.
+2. **Rebinning is by *physical* lag, and mass is summed, not averaged.** Token
+   lag `k` goes to bin `floor(k · token_width / bin_width)`. Every downstream
+   statistic normalizes by the profile's own total, so averaging would rescale
+   each model differently and quietly break exactly the comparison this item
+   exists to make. For the coarsest model the transform is the identity —
+   that is the invariant the tests pin, and it is why the coarser model's
+   numbers provably cannot move.
+3. **It runs as a post-pass, not inside the per-model loop.** The common bin
+   width is the *coarsest* model's token width, which isn't known until every
+   model has been seen — and doing it after the loop needs no model resident,
+   so the stage's VRAM profile is unchanged and the rebinning costs **zero
+   extra forward passes** (it is arithmetic on per-family profiles already in
+   memory).
+4. **`future_mass` is carried across unchanged rather than recomputed.** It is
+   the share of attention pointing *forward* in time; the rebinned axis is the
+   backward-lag axis, so recomputing it would be inventing a number. Said out
+   loud in the code so the carry-over doesn't read as an oversight.
+
+**One real behavior found by a planted test failing, not by reading the code.**
+`_head_scores` skips any family whose `q = round(period / width)` is under 2 —
+sensible, and invisible until matching makes `width` large. On the mock smoke
+corpus (all six families' dominant periods under 64 steps, bin width 32) the
+matched ranking comes back **empty for both models**, which the first
+implementation rendered as *nothing at all*: a missing table, which reads as a
+stage that didn't run. Fixed twice over — `matched_head_scores` now records
+`unresolvable_families`, and the report renders the empty case as an explicit
+statement plus its own `Finding`. This is the more interesting half of F5's
+own thesis: on that corpus `steppy` (1-step tokens) has a native
+top-periodicity table and `patchy` (32-step tokens) has none, and the honest
+reading is not "steppy attends more seasonally" but **"the difference is
+finer than the coarser model can express at all."** The smoke run now says
+exactly that, in the body, with all six families named.
+
+Live-verified through the real CLI (not only pytest) on `configs/smoke.yaml`:
+13 sections / **46 findings** (was 45), `attention: matched lag resolution =
+32.0 steps (coarsest model 'patchy')`, `lag_profile_matched_*` present in
+`arrays.npz` for both models, `patchy.resolution.is_identity: true` (so it
+correctly renders no second table), and the fairness card's F5 row now reads
+`32 steps` / `1 step` / `32.0× — matched at 32 steps` where it read "not yet
+measured" before.
+
+#### Findings — F5 acceptance met on real checkpoints; the ordering does change (2026-08-19)
+
+The acceptance criterion (*"periodicity-head scores computed both ways on a
+real run; if the cross-model ordering changes under `matched`, that is
+recorded as a finding about the previous result"*) was run against
+`configs/medium_run_chronos_base.yaml`'s TimesFM-2.5-200M / Chronos-T5-Base
+pair — into an isolated copy of the extracted store, so
+`runs/medium_run_chronos_base`'s own recorded numbers are untouched
+(verified: its attention artifacts are still dated 2026-08-05). The run's
+config differs from the canonical one on exactly one line (`run.name`),
+confirmed by `diff`. **It changes, and the interesting part is not the
+score.**
+
+**The resolution record.** TimesFM: `bin_width_steps` 32.0,
+`finest_resolvable_lag_steps` 32.0, `is_identity: true` (it *is* the coarsest
+model). Chronos-T5-Base: same 32.0 bin width, `finest_resolvable_lag_steps`
+**1.0**, `is_identity: false`. `n_bins` 16 and 5 respectively.
+
+**Top periodicity head, native vs. matched.**
+
+| | native | matched |
+|---|---|---|
+| TimesFM | `stacked_xf.0` h3, 0.021613717079162598, family `mixture` | **bit-identical**, all five entries |
+| Chronos-T5-Base | `encoder.block.8` h5, 0.10575532168149948, family `parametric` | `encoder.block.6` h3, 0.06341119110584259, family `mixture` |
+
+TimesFM's identity is the invariant the unit tests pin, now confirmed on real
+activations at the array level too (`lag_profile_matched_TimesFM` equals
+`lag_profile_TimesFM` exactly). Rebinning conserved mass exactly for both
+models (Chronos total 58.190757751464844 across 129→5 bins; TimesFM
+414.8992919921875).
+
+**1. The gap survives but nearly halves.** Chronos-T5-Base is the higher model
+both ways, so the *direction* does not flip: native
+0.10575532168149948 / 0.021613717079162598 = **4.892972425527691×**, matched
+0.06341119110584259 / 0.021613717079162598 = **2.9338401568592842×**.
+
+**2. Within Chronos, not one native top-5 head survives into the matched
+top-5.** The native ranking is `h5` five times over
+(`encoder.block.8/10/9/4/7`); the matched ranking is `h3`/`h10` over
+`encoder.block.6/1/8/3/9`. A within-model claim naming *which head is the
+seasonal head* is therefore resolution-dependent in this run, which nothing
+before F5 would have shown.
+
+**3. The substantive finding is the family attribution, and it is stronger
+than either of the above.** `family_periods_steps` is
+`{"mixture": 75.0, "parametric": 4.0, "random_parametric": 4.0}`. Every native
+Chronos entry scores on `parametric`/`random_parametric` — dominant period
+**4.0 steps**. At TimesFM's 32-step token that is `q = round(4/32) = 0`:
+TimesFM cannot express that periodicity *at all*, and indeed its native
+ranking already scores only `mixture`. **So the native cross-model comparison
+was TimesFM-on-`mixture` against Chronos-on-`parametric`** — a family mismatch
+sitting on top of the resolution mismatch, in which part of the 4.89× gap is
+Chronos being credited for a periodicity its rival's tokenizer structurally
+cannot represent. On the one family both models can resolve (`mixture`, 75.0
+steps, `q=2` for both) the gap is 2.93×, and every Chronos head involved is a
+different head. This is exactly the failure mode F5's "What's wrong" paragraph
+predicted, measured: *"a 'Chronos has sharper seasonal-lag attention' finding
+is partly a statement about patch size."* It is partly that, and it is also
+partly a statement about **which family each model was scored on**, which the
+plan did not anticipate.
+
+`unresolvable_families` is `["parametric", "random_parametric"]` for both
+models — the mechanism the smoke run exercised in its total form (everything
+unresolvable) fires here partially, naming precisely the two families that
+carry the discrepancy. The agent also audited `_head_scores`'s *other* skip
+branch (`q >= n_lags`, which `unresolvable_families` does not record): it
+fires for zero families in all four model×mode combinations here, so the
+declared list is complete for this run.
+
+**Regression check.** `top_periodicity_heads` under `head_scores` compares
+**equal bit-for-bit** against `runs/medium_run_chronos_base/attention/
+meta.json` (which has no `resolution` key at all) for both models. F5 adds
+keys and moves nothing prior, as designed (§0.2, `CLAUDE.md` §2.1). Both
+stages exited 0 with zero WARNING/ERROR lines; attention took 6:30.69
+wall-clock at 6.5 GB max RSS, report 0:14.98; 13 sections / 39 findings.
+
+**One real defect found by the run, fixed the same firing.** The F5 finding
+carried a hand-written `caveat=` ("Binning to the coarsest model's token width
+discards finer periodicity by construction") that appears **0 times** in the
+rendered HTML. `_compose_caveats` overwrites `Finding.caveat` wholesale — and
+that is its *stated contract*, not a bug in it: J1 built that field to be
+generated precisely because hand-written caveats go stale. The bug was the
+call site violating the contract, and the second-order bug was that violating
+it is **silent**, which is what invariant 8 forbids. Fixed both ways: the
+sentence moved into `.text` where a reader sees it, and `_compose_caveats` now
+logs a WARNING naming any `claim_id` that arrives with an authored caveat. Two
+tests (`tests/test_finding_caveats.py`) — one that the discard is audible, one
+source-level check that no report call site sets `caveat=` at all. The
+source-level form is deliberate: an authored caveat that gets composed away
+leaves **no trace in the HTML to assert against**, which is exactly how this
+one survived a live smoke verification earlier the same day.
+
+**One asymmetry worth knowing, not a defect.** The artifact carries a matched
+block for *both* models while the HTML renders it for one — the builder gates
+on `not res["is_identity"]`, and TimesFM is the coarsest model, so its matched
+table would be a byte-for-byte copy of the native one directly above it.
+Correct, and stated here so a reader of `attention/meta.json` isn't surprised
+by the extra block.
 
 ### F6 🔴 Every delta in noise-floor units `[x]` — done 2026-08-12
 
@@ -10856,7 +11617,7 @@ that the five sizes share a *recipe* but not initialization) is the evidence.
 question** and is the better instrument if this becomes load-bearing. Original
 write-up in `ROADMAP_ARCHIVE.md`.
 
-### F8 Multiple comparisons across models, not just across families `[ ]`
+### F8 Multiple comparisons across models, not just across families `[x]` — done 2026-08-19
 
 **What's wrong.** L0 Holm-corrects across families. With N models the number of
 pairwise comparisons grows as N(N−1)/2 × families × stages, and nothing
@@ -10876,6 +11637,119 @@ comparison count and corrected alpha; a claim significant under two-model
 correction but not three-model is visibly demoted.
 
 **Cost.** ~1 session.
+
+#### Scope correction before implementing (2026-08-19, read-only pass)
+
+The premise above — *"with N models the number of pairwise comparisons grows
+as N(N−1)/2 × families × stages, and nothing corrects across that"* — is
+wrong in a way that makes the item **easier and more honest**, and it was
+found by grepping rather than by reasoning. `config.py::comparison_pair()`
+returns `self.models[0], self.models[1]`, and **every** cross-model call site
+uses it: `l0_behavioral`, `l1_geometry`, `l2_stitching`, `l3_perturbation`,
+`clustering`, `exemplars`, `confirm`, `null_baseline`, `sae/feature_geometry`.
+A third configured model is extracted, gets L0 *metrics*, and is then never
+compared to anything. `validate()` says so — in a `logging.warning`, which is
+invariant 8's exact failure mode: a log line is not loud once the deliverable
+is an HTML file.
+
+So the uncorrected multiplicity is not the N(N−1)/2 growth this item
+describes. It is two other things:
+
+1. **Within one report, several *separate* Holm families are rendered as if
+   they were one analysis** — L0 per-family tests, L0 per-archetype tests
+   (A9), and `confirm`'s hypothesis set are each corrected *within*
+   themselves and never counted together. A reader sees corrected p-values
+   and has no way to learn how many tests produced them.
+2. **The N>2 case is worse than uncorrected — it is unexamined**, and the
+   report never says which pair it chose or that others exist.
+
+**Revised deliverable, in two parts.**
+- **F8a — the multiplicity ledger.** Count every corrected test the report
+  renders, grouped by its correction family; render (n comparisons, method,
+  alpha, corrected threshold) at the point of use and emit
+  `report/multiplicity.json`. This is the part that closes item 1 and is the
+  real content of F8.
+- **F8b — all-pairs L0.** L0 is the *only* stage that can honestly run for
+  all models (it needs no alignment, store, or shared window axis — just
+  `predict()`), so with N models it runs all N(N−1)/2 paired tests and
+  Holm-corrects across (pair × family) **jointly**. That is what makes the
+  acceptance criterion checkable at all: a claim significant under two-model
+  correction and not under three-model is only observable once the third
+  pair's tests exist. Every other stage stays pair-only **and the report says
+  so in the body**, replacing the `validate()` warning.
+
+#### Findings — F8 done (2026-08-19)
+
+**What landed.** `l0_behavioral._summarize` now tests **every** model pair and
+Holm-corrects across the whole (pair, family) set at once;
+`report.py::_other_pairs_block` renders the extra pairs and
+`_multiplicity_block` renders the ledger, also emitted as
+`report/multiplicity.json`; `configs/smoke_three_model.yaml` is the
+three-model config the acceptance criterion names. 9 tests
+(`tests/test_multiplicity.py`).
+
+**The two-model path is bit-identical, and that was the hard part.** With two
+models the joint (pair, family) set *is* the family set, so no adjusted p can
+move — but only if the generalization preserves the old seeding exactly. The
+old code seeded family *fi* with `seed + 40 + fi` where `enumerate` advanced
+**across** families skipped for having too few series; a running counter over
+only the tested families is tidier, defensible in isolation, and would have
+silently moved every recorded L0 p-value in this repo. Verified by running the
+committed pre-change module side by side with the new one on the same
+synthetic metrics: **`family_tests`, `overall_test`, `strengths` and
+`mase_ratio` compare equal**, including with a deliberately-skipped small
+family present. `tests/test_multiplicity.py` pins the convention against
+`paired_bootstrap` called directly rather than against the old implementation,
+and was confirmed to fail when the tidier version is substituted.
+
+Additional pairs draw from a **disjoint high seed range** rather than
+continuing the low one, because continuing it would have collided with the
+designated pair's own `+90` overall-test seed at three pairs and ~20 families
+— two different tests silently sharing one resample stream.
+
+**The acceptance criterion, and the honest version of it.** On
+`configs/smoke_three_model.yaml` at the two-model run's own `n_boot: 150`, all
+four families the two-model run calls significant (`level_shift`,
+`seasonal_lf`, `spiky`, `trend`, each `p_holm` 0.04) drop to `p_holm` 0.12 and
+**zero** strengths survive. That is a textbook demotion and it is **mostly an
+artifact**, which is the more useful finding:
+
+🔴 **A bootstrap p is floored at 1/n_boot (§6.6), so a correction family of
+m tests cannot produce an adjusted p below m/n_boot — at any effect size.** At
+m=18 and n_boot=150 that floor is 0.12, above α=0.05: *nothing in that family
+could have been significant regardless of the data*. Re-measured at n_boot
+2000 and 10000, the demotion **disappears entirely** — the same three families
+(`level_shift`, `trend`, `seasonal_lf`) survive under both the 6-test and the
+18-test correction, with `p_holm` widening 0.003→0.009, 0.003→0.009 and
+0.016→0.036. The nearest miss is `spiky` at raw p 0.019: 0.057 over six tests,
+0.133 over eighteen — already above α before the third model arrived.
+
+So the report now **detects and names** this case: when `n_tests / n_boot >
+alpha` it renders a red *"Unsatisfiable correction"* block saying no result in
+that family can be significant at any effect size, and how large `n_boot` must
+be for that many comparisons (360, here). This is `CLAUDE.md` §11.29's shape
+in a new place — a criterion that gets *harder* as the analysis gets more
+thorough — and without it, adding a third model would silently convert every
+L0 result into a non-result while every number on the page stayed honestly
+computed. `configs/smoke_three_model.yaml` therefore ships at `n_boot: 2000`,
+with the measurement recorded inline in the config so the choice can't be
+mistaken for an arbitrary default.
+
+**What F8 deliberately does not do.** It does not pool the correction families
+— L0-family, L0-archetype and `confirm` stay separately corrected, and the
+ledger *counts* them rather than merging them. Pooling would be more
+conservative and would also make a pre-registered confirmation pay for every
+exploratory look, which is the exact trade the exploration/confirmation split
+(§6.7) exists to avoid. The ledger's own `_note()` says this at the point of
+use.
+
+Live verification through the real CLI: `configs/smoke.yaml` renders 13
+sections / **47 findings** (was 46) with `report/multiplicity.json` recording
+10 comparisons in 2 families; `configs/smoke_three_model.yaml` renders the
+ledger, both extra pair tables (`patchy vs. wavy`, `steppy vs. wavy`) and
+`n_pairs: 3, n_tests: 18`. Full suite **557 passed, 0 failed** (548 + this
+item's 9); `render_stage_docs.py --check` green after L0's stage doc gained
+the "only stage that compares more than two models" line.
 
 ### F9 The fairness card — one page a reader can check `[x]` — done 2026-08-18
 
@@ -11025,7 +11899,7 @@ and three explicit "not yet measured" rows rather than waiting for all seven.
 | **TabPFN-TS** `[VERIFY]` | tabular in-context learner | no time axis in the usual sense; no residual stream over time | high | medium — likely L0-only |
 | **PatchTST, DLinear, N-BEATS** | task-trained baselines, not TSFMs | nothing; they are *supervised* not zero-shot | low | **high as controls** — see G7 |
 
-### G1 Adapter capability tiers, declared and enforced `[ ]`
+### G1 Adapter capability tiers, declared and enforced `[x]`
 
 **Problem.** "Adding a model" is currently all-or-nothing: write the full
 `ModelAdapter` or get nothing. But most of the value of the table above sits at
@@ -11052,7 +11926,94 @@ skips everything else with a stated reason — no crash, no empty section.
 
 **Cost.** ~1 session, and it makes G6 nearly free.
 
-### G2 Auto-adapter — see §16 E3, not duplicated here `[ ]`
+**Findings (2026-08-19) — done; acceptance criterion met, with one
+deliberate deviation from the spec above.**
+
+**The tier is derived, not declared.** The spec asks for a class attribute
+`tier: int`. It is instead `ModelAdapter.capability_tier()`, a classmethod
+that reads what the subclass actually overrides. A hand-set integer is a
+claim checked nowhere — exactly the shape `CLAUDE.md` §11.34 warns about —
+and it would drift the first time an adapter gained or lost a capability.
+Derivation makes the number unfalsifiable-by-neglect: it cannot disagree
+with the implementation because it *is* the implementation. `conformance.py`
+still does the tier-consistency check the spec asks for, but it checks the
+harder direction — that a tier-0 adapter's refusals are **typed**
+(`CapabilityUnavailable`, the type `resolve_routing`-style gating needs),
+and that an adapter claiming tier 0 does not in fact implement the tier-1
+surface. Two new tests pin both rejections.
+
+**The barrier was the contract, not any analysis code.** `module`,
+`prepare`, `forward` and `token_time_spans` were all `@abstractmethod`, so a
+tier-0 adapter **could not be constructed at all** — this item was blocked
+one level below where it looked blocked. They are now concrete methods
+raising `CapabilityUnavailable`; only `load` and `predict` stay abstract,
+which is exactly tier 0's requirement.
+
+**Derived tiers over the live registry**, matching `CLAUDE.md` §6.2's
+support matrix with no hand-tuning: `chronos` 3, `chronos2` 3,
+`chronos_bolt` 2, `generic_hf` 2, `mock_blackbox` 0, `mock_encdec` 3,
+`mock_patch` 3, `mock_step` 3, `mock_wave` 3, `sundial` 2, `timesfm` 3. The
+three tier-2s are the three adapters that deliberately do not implement
+`attention_patterns`. Tier 3 deliberately does **not** require `mlp_info`:
+TimesFM has none (its feed-forward block is two bare `nn.Linear`s) and has
+full head ablation and pattern analysis, so requiring it would demote the
+model the attention taxonomy works best on.
+
+**Acceptance run** (`configs/smoke_blackbox.yaml`, two `mock_blackbox`
+models, real CLI): **3 sections rendered / 11 skipped / 0 failed, 13
+findings** — Fairness, L0 (including the calibration and horizon-resolved
+panels) and Cost. Ten stages dropped by the gate (`attention`, `cluster`,
+`exemplars`, `extract`, `internals`, `l1`, `l2`, `l3`, `layer_screen`,
+`lens`); every one of the eight corresponding report sections carries the
+tier reason by name, e.g. *"capability tier: this run is capped at tier 0 by
+blackbox_a, blackbox_b, and 'l1' needs more than that adapter exposes"* —
+not "artifacts missing", which would have put the reason in the log and
+nowhere in the deliverable (`CLAUDE.md` invariant 8). The config disables
+**nothing** by hand: the stage list is left at its defaults so the gate is
+what narrows the run, and the config fails loudly if `_STAGE_MIN_TIER` ever
+stops working. Control: `configs/smoke.yaml` re-run end to end gives
+`run_tier: 3`, `dropped_stages: []` — no behavior change for any existing
+run.
+
+**Four real defects found by running it rather than by reading the diff**
+(§2.4), each of which would have been invisible in a mock-free review:
+
+1. `ensure_loaded` called `self.module.eval()` unconditionally, so a
+   tier-0 adapter crashed on load. Guarded on the declared tier, **not** by
+   catching `CapabilityUnavailable` — the latter would also swallow a
+   tier-1 adapter whose `module` is genuinely broken, which a new test pins
+   as still raising.
+2. `run_budget` called `parameter_census` unconditionally. A black box now
+   records **latency only**, with `parameters`/`flops`/`coverage` written as
+   an explicit `unmeasurable: {axis: why}` map rather than as zeros — a zero
+   would make the model nothing could be measured about look like the
+   cheapest one in the comparison.
+3. **The dropped-stage list was computed from `selected`.** A
+   `--stages report` rerun selects one stage, so the artifact was rewritten
+   to claim the tier gate dropped nothing, silently erasing the reason each
+   skipped section prints. It is now computed over every stage *enabled in
+   the config*, which is a property of the config and the models rather than
+   of which stages an invocation happened to ask for. A test pins that the
+   two invocations agree.
+4. Preflight **failed** the run on `attention.ablation_max_series` — a batch
+   cap belonging to a stage the tier gate was about to drop. A false refusal
+   of exactly the §11.35 shape (a check reading as a considered finding while
+   measuring something other than its name). `doctor.py`'s batch-cap check is
+   now tier-aware.
+
+**New surfaces.** `tiers.json` per run (per-model tier, name, adapter class,
+and what each higher tier would additionally require); a **Capability tier**
+row in the fairness card naming which model caps the run and which stages
+that cost; a `tier` column in `run_capability_matrix.py`'s output.
+
+**Scope note.** G6 (hosted/API-only models) is now the small item this
+section predicted — the tier-0 path exists and is exercised end to end; what
+G6 adds is one adapter that calls a remote endpoint. Not built: no real
+hosted model has been requested, and building an adapter against an API
+nobody has asked for would be the same speculative work §22.2 parked
+G3–G7 for.
+
+### G2 Auto-adapter — see §16 E3, not duplicated here `[x]`
 
 E3's span discovery plus `GenericHFAdapter` is the mechanism that makes half the
 table above reachable without hand-written code, **and its refusal path is what
@@ -11064,6 +12025,65 @@ contiguous* — a distinct failure mode from diffuse, and one that should
 degrade to tier 0 with a specific message ("tokens are time-localized but not
 to contiguous intervals; the pooling premise does not hold"), not be silently
 coerced into an interval.
+
+**Findings (2026-08-19) — the contiguity verdict is built; G2 is closed.**
+
+E3 closed the diffuseness half. This is the addition above, and the reason it
+was worth building separately is that **contrast provably cannot see this
+case**: a lag-feature token is sharply peaked at *each* of its lags, so a
+Lag-Llama-shaped model scores a perfectly healthy peak:pedestal contrast and
+sails through E3's gate while `[min, max]` describes a range it mostly does
+not touch. A test pins exactly that (`test_contrast_alone_would_have_admitted_
+the_noncontiguous_model`) — if the first gate could already catch it, the
+second has no reason to exist and the honest thing is to say so rather than
+ship a gate that never fires.
+
+- `_spans_from_argmax` already detected holes; it **conflated them with empty
+  tokens** in one `flagged_tokens` list. Those are opposite events: an empty
+  token is routine and benign (a stripped special, a padding position, a
+  stride that never landed there), a hole means the token reads disjoint
+  lags. Pooled into one count, a model with the second problem is
+  indistinguishable from one with a few of the first. Now returned
+  separately as `empty_tokens` / `noncontiguous_tokens`, with
+  `flagged_tokens` kept as their union so **no existing artifact or recorded
+  number changes meaning** (§2.1).
+- `SpanDiscovery.contiguity` = share of **non-empty** tokens with no holes,
+  at the **worst** probed amplitude (the same convention `contrast` already
+  uses — an amplitude at which tokens start reading disjoint timesteps is a
+  property of the model, not of the probe). Empties are excluded from the
+  denominator, so a coarse probe stride cannot refuse a model for a choice
+  the caller made.
+- `is_contiguous(min_contiguity=0.95)` is a second, orthogonal gate, and
+  `refusal_reason(min_contrast, min_contiguity)` is the single place that
+  knows both — so a caller cannot check contrast, forget contiguity, and
+  admit a lag-feature model by omission. Contrast is reported first when both
+  fail: a diffuse response makes the contiguity number meaningless rather
+  than merely also-bad.
+- **Every surface that renders a refusal now names which gate fired.**
+  `GenericHFAdapter.token_time_spans`, `routing.json` (via
+  `NotTimeLocalized.as_record`), `--discover-spans`, the report's fairness
+  cell and its red banner. This is not cosmetic: quoting contrast for a
+  contiguity refusal puts a *healthy* number next to a refusal, which reads
+  as a broken gate rather than as the model's actual property — §11.33 and
+  §11.35's exact failure shape, twice-burned in this repo already. The
+  report decides which message to render by **reading the recorded numbers**
+  (`_refused_on_contiguity`), never by matching the message text, so a
+  reworded refusal cannot silently change what the report claims.
+- Verified a **no-op for every existing model**: a parametrized test asserts
+  `contiguity == 1.0`, `noncontiguous_tokens == []` and
+  `refusal_reason() is None` for all three localized mocks, and the
+  `_DiffuseAdapter` still refuses on *contrast*, with "contiguous intervals"
+  absent from its message.
+- 10 new tests (8 `tests/test_span_discovery.py`, 2 `tests/test_routing.py`).
+  The decoy — a net where token *i* reads exactly the timesteps congruent to
+  *i* mod `n_tokens` — is built on purpose per §11.34's corollary: a test
+  surface with no confusable case cannot catch a confusion.
+
+⚠️ **Never exercised against a real non-contiguous checkpoint**, for the same
+reason E3(c)'s routing half wasn't: no such model is integrated here.
+Lag-Llama is the named candidate and remains unbuilt (§22.2). The evidence is
+a synthetic decoy with a known-correct answer plus the proof that the
+pre-existing gate admits it.
 
 ### G3–G7 — parked (see §22.2)
 
@@ -11097,7 +12117,7 @@ someone wants analyzed, one class per session, G6 first) in §22.2.
 > moved to §22.8 so a rejection-with-a-reason lives with the parked items
 > rather than in a preamble.
 
-### H4 ⭐ Cross-model agreement as a reliability signal `[ ]` · live
+### H4 ⭐ Cross-model agreement as a reliability signal `[x]` — built 2026-08-19; **the heuristic loses to a free baseline**
 
 **Do this first of the four — ~0.5 session, zero new forward passes.** Pure
 reduction over `predict()` output L0 already holds. For each series, compute
@@ -11114,7 +12134,84 @@ explicit comparison against the obvious cheaper baseline — each model's *own*
 quantile width. If self-reported uncertainty predicts error just as well,
 cross-model agreement adds nothing, and that must be said.
 
-### H1 ⭐ The model-family scaling ladder `[ ]` · live
+**Findings (2026-08-19) — built, swept over 6 existing runs at zero forward
+passes, and the acceptance criterion decides against the heuristic in 10 of 11
+scorable cases.** `tsfm_lens/analysis/agreement.py` + `run_agreement.py` +
+`tests/test_agreement.py` (12 tests).
+
+**The correlation is real and it is not the answer.** Cross-model
+disagreement predicts error strongly everywhere: Spearman **0.716** against
+the pair's mean MASE on `medium_run_chronos_base`, 0.57–0.77 against each
+individual model's own MASE across the sweep, and the calibration curve is
+steep and monotone — the lowest disagreement decile averages MASE **0.981**,
+the highest **5.787**, a **5.9×** spread read off a signal available with no
+labels. Taken alone this is a publishable-looking "run two models and check
+whether they agree" result.
+
+**It loses to each model's own quantile width**, which needs no second
+checkpoint at all. The paired Spearman gap (disagreement − own width, against
+that model's own MASE, bootstrapped over series):
+
+| run | model | disagreement ρ | own-width ρ | gap [95% CI] | verdict |
+|---|---|---|---|---|---|
+| `medium_run_chronos_base` | TimesFM | 0.596 | **0.867** | −0.270 [−0.347, −0.205] | adds nothing |
+| `medium_run_chronos_base` | Chronos-T5-Base | 0.710 | 0.771 | −0.061 [−0.113, −0.014] | adds nothing |
+| `medium_run` | TimesFM | 0.576 | 0.867 | −0.290 [−0.366, −0.222] | adds nothing |
+| `medium_run` | Chronos-T5-Small | 0.702 | 0.741 | −0.039 [−0.084, **+0.003**] | inconclusive |
+| `chronos2_phase4_check` | TimesFM | 0.646 | 0.867 | −0.221 [−0.283, −0.166] | adds nothing |
+| `chronos2_phase4_check` | Chronos-2 | 0.583 | 0.839 | −0.256 [−0.326, −0.189] | adds nothing |
+| `sundial_phase4_check` | TimesFM | 0.570 | 0.867 | −0.297 [−0.384, −0.223] | adds nothing |
+| `sundial_phase4_check` | Sundial | 0.768 | 0.834 | −0.066 [−0.114, −0.024] | adds nothing |
+| `generic_hf_timer` | Chronos-T5-Small | 0.275 | 0.718 | −0.443 [−0.609, −0.292] | adds nothing |
+| `distill_positive_chronos_small_base` | Chronos-T5-Small | 0.667 | 0.741 | −0.074 [−0.118, −0.031] | adds nothing |
+| `distill_positive_chronos_small_base` | Chronos-T5-Base | 0.661 | 0.775 | −0.114 [−0.160, −0.070] | adds nothing |
+| `generic_hf_timer` | Timer | 0.766 | *no baseline* | — | not scorable (see below) |
+
+Ten `adds_nothing` (CI entirely below zero), one inconclusive by 0.003, zero
+wins. **So H4's own acceptance criterion fires against H4**, and the honest
+report line is: *cross-model disagreement is a good error signal and a worse
+one than the quantile band the model already gives you for free.* This is the
+result, not a failed build — the item was written with exactly this
+possibility named, which is why the baseline was required rather than
+optional.
+
+**Secondary findings, all from the same artifact:**
+- **Distributional disagreement beats pointwise** (0.815 vs 0.716 against mean
+  MASE on `medium_run_chronos_base`). Two models differing about *how
+  uncertain they are* is the more informative disagreement — consistent with
+  the headline, since that is also what the winning baseline measures.
+- **The signal strengthens monotonically with horizon**: Spearman 0.154 at
+  h=1, 0.424 at h=8, 0.533 at h=32, 0.624 at h=64. At short horizons the
+  models agree and are both right; the heuristic is a long-horizon instrument.
+- **Family-dependent, in the same direction for both signals**: ρ 0.286
+  (`mixture`, n=60), 0.465 (`parametric`, n=40), 0.742 (`random_parametric`,
+  n=188). Pooling would have reported the largest family's number as the
+  corpus's.
+
+**One defect found by running, and it had produced a false positive.** The
+first sweep reported Timer as the single case where agreement **BEATS** own
+width (gap +0.958). Two separate bugs, compounding: `GenericHFAdapter` has
+only a point head, so Timer's quantile band has width **exactly 0 for every
+series** — and the rank transform broke ties by array position, turning that
+constant column into a clean `0..n−1` ramp that scored a spurious ρ of −0.192
+against error. A confident verdict about a real model, out of a column with no
+information in it. Fixed both ways: ranks now average ties, and a
+zero-spread baseline is reported as `own_width_available: False` with the
+reason, never scored — a model with no self-reported uncertainty has no
+baseline to beat, and letting agreement "win" against one would invert the
+acceptance criterion it exists to serve. Trap recorded as `CLAUDE.md` §11.37.
+The tell was visible in the output before the diagnosis: the point estimate
+(+0.958) sat **outside its own bootstrap CI** [+0.541, +0.946].
+
+⚠️ **Scope.** One corpus (`benchmark_medium/public_dev`), six run directories,
+all pairs including TimesFM or a Chronos-family model. The verdict is about
+this corpus and these pairs; a corpus where models are *badly* calibrated
+would plausibly reverse it, which is precisely the Timer case the bug was
+hiding. Not wired into the pipeline or the report — it is a standalone
+reducer like `run_error_fingerprint.py`, and wiring a heuristic the evidence
+says to prefer a free baseline over would contradict the result.
+
+### H1 ⭐ The model-family scaling ladder `[~]` · live — **harness built and tested 2026-08-19; the five GPU runs are NOT done**
 
 **The cheapest genuinely novel study available in this repo.** Chronos-T5 ships
 as tiny → mini → small → base → large: a five-point, same-architecture,
@@ -11151,6 +12248,69 @@ capability.
 **Cost.** 1 session of harness + 5 extraction runs (tiny/mini are cheap; large
 is the constraint). Depends on nothing. Per `CLAUDE.md` §2.8 the five
 extractions are background work, not foreground.
+
+**Findings (2026-08-19) — the reducer exists and is pinned; the ladder does not exist yet.**
+Built the whole non-GPU half so the five extractions become a single background
+job with nothing left to design around them:
+
+* `configs/scaling_ladder_chronos.yaml` — the shared body plus a `ladder:` block
+  naming the five rungs (tiny/mini/small/base/large, `batch_size` shrinking with
+  size). Deliberately **not** runnable by `run.py` directly: it expands into five
+  ordinary per-rung configs via `run_scaling_ladder.py --emit-configs`, so the
+  shared body cannot drift between rungs the way `CLAUDE.md` §11.24's two
+  "identical" configs did. Two exclusions are stated in the file: `confirm` is
+  **off** (the private corpus is a consumable — a five-rung sweep would spend it
+  five times for one ladder), and `sae.targets` is left `auto`, because a pinned
+  layer name cannot be held fixed across models of different depths — the
+  constant across rungs is the *selection policy*, which is itself a confound on
+  the SAE columns and is reported rather than hidden.
+* `tsfm_lens/analysis/scaling_ladder.py` — calls `report/meta_report.py::
+  summarize_run` for the run-level half (extend, don't duplicate, per this
+  item's own deliverables) and adds only the per-model artifacts a one-model
+  cross-run comparison needs: `internals/profile.json`'s effective dimensionality
+  and probe decodability, `sae/meta.json`'s dead rate / fidelity / ground-truth
+  alignment, `l0/calibration.json`'s coverage error.
+* `run_scaling_ladder.py` — `--emit-configs` (writes the five configs, prints the
+  commands cheapest-first) and `--runs` (the reducer). Verified end to end
+  against a real run directory: it reads all 13 metrics off
+  `runs/medium_run_chronos_base` and correctly **excludes** `runs/medium_run`,
+  which has no budget artifact.
+
+Three decisions worth carrying forward, each a smaller version of a trap this
+repo has already paid for:
+
+1. **The ladder axis is `budget/model_budget.json`'s measured parameter count,
+   never a checkpoint name.** A run without that artifact is excluded with a
+   reason. "chronos-t5-large" is a claim nothing in this repo checks
+   (`CLAUDE.md` §11.34).
+2. **Significance is an exact permutation test over all n! orderings, not a
+   bootstrap** — resampling five numbers estimates nothing. At n=5 the two-sided
+   p-floor is exactly **2/120 = 0.0167**, reported next to every p, so a metric
+   sitting at the floor reads as "as extreme as five rungs permit" rather than
+   as a strong result (the §11.35 lesson, applied before it could bite).
+3. **"Flat" is withheld when unbacked.** A metric is flat iff its across-ladder
+   range is below its own median within-run CI width; metrics whose artifacts
+   carry no CI (crystallization depth, SAE dead rate, mean effective dim, L2
+   gain, MASE) get `flat: None` with a stated reason. H1's acceptance criterion
+   asks which metrics are flat, and an unbacked "not flat" would be the wrong
+   way to answer it.
+
+One real bug, found by running the reducer rather than reading it: at a single
+rung `np.all(np.diff(v) > 0)` is **vacuously True**, so a degenerate ladder
+reported a confident `monotone_increasing` with range 0.000 — `CLAUDE.md`
+§11.37's exact failure shape (an absent measurement producing a confident
+verdict). Fixed to `too_few_rungs` below 3 rungs, and pinned by a test.
+
+8 tests (`tests/test_scaling_ladder.py`), all synthetic with planted answers,
+including three load-bearing negatives: a rung named "large" with no measured
+parameter count is excluded rather than placed on the axis, the p-floor travels
+with every p, and a one-rung ladder abstains.
+
+**Still open, and it is the whole point of the item:** the five extraction runs.
+Per `CLAUDE.md` §2.8 they are a background job — `--emit-configs` then the five
+printed `run.py` commands in order, then `--runs` over the five run dirs. The
+`large` rung is the VRAM constraint. No report section exists yet either; the
+reducer prints a table and writes JSON.
 
 ### H9 Analysis card export `[ ]` · live, after E6/F9
 
@@ -11292,7 +12452,7 @@ independently confirmed via direct grep on the regenerated `report.html`:
 - **Not done, correctly out of scope**: J2 (`stage_docs.py`) and J3
   (glossary/worked example) — separate queue items, next.
 
-### J2 "What this tells you" — one page per stage `[ ]`
+### J2 "What this tells you" — one page per stage ✅ `[x]` — DONE (verified 2026-08-19)
 
 For each of the 13 stages, four fixed lines, written once and rendered both in
 the report and in the docs: **Question** it answers · **How** in one sentence,
@@ -11303,7 +12463,37 @@ report and the docs, so they cannot drift. **Cost:** ~1 session; mostly writing,
 and much of the content already exists scattered across `_note()` blocks —
 consolidate rather than re-author.
 
-### J3 Glossary and the worked example `[ ]`
+**Findings — 2026-08-19 (verification, not implementation).** This item was
+found **already fully implemented and committed** at the time it was picked
+up off §0.5's queue — the same pattern as V2 in §6.2.1 (coded in an
+undocumented earlier session, never marked here). Verified rather than
+assumed (§2.4), since a `[ ]` next to working code is exactly as misleading
+as an `[x]` next to broken code:
+
+- `tsfm_lens/stage_docs.py` (417 lines) holds a frozen `StageDoc` dataclass
+  with J2's four fields (`question`, `how`, `good_bad`, `cannot_tell`) and an
+  entry for **all 16 stages** — checked directly against `pipeline.stage_names()`
+  rather than by eye: `[n for n in stage_names() if not stage_docs.get(n)]`
+  returns `[]`, and `len(STAGE_DOCS) == 16`. An `_ALIASES` map resolves the
+  two historical name mismatches (`clustering`/`l4` → `cluster`) without
+  duplicating an entry, and `get()` raises `KeyError` naming the file to edit
+  rather than rendering a blank box (`CLAUDE.md` §2.5).
+- **Both surfaces render from that one dict**, which was J2's actual
+  requirement: `report/report.py::_stage_doc_block` renders it live per
+  section (open by default, unlike `_note`'s collapsed asides, since it is
+  the section's framing rather than an aside under it), and
+  `render_stage_docs.py` splices it into `README.md` between generated
+  markers with a `--check` mode for a stale-README gate. `render_stage_docs.py
+  --check` passes.
+- `tests/test_stage_docs.py`: **7 passed**.
+
+The one thing worth noting for a future session: J2's own text says "for each
+of the 13 stages," and there are **16**. The count in this file has gone stale
+repeatedly (`CLAUDE.md` §6.1 flags the same drift) — `pipeline.stage_names()`
+is the authority, and `stage_docs.py` is now pinned to it by a test rather
+than by a number written in prose.
+
+### J3 Glossary and the worked example ✅ `[x]` — DONE 2026-08-19
 
 - A glossary of the ~25 recurring terms (window, relative depth, evidence class,
   crystallization depth, stitching gain, fingerprint, effective dimensionality,
@@ -11317,6 +12507,77 @@ consolidate rather than re-author.
   act on and why. This teaches the reading skill nothing else in the repo
   teaches, and it doubles as the regression test for whether the report is
   actually legible. **Cost:** ~1 session.
+
+**Findings — 2026-08-19.** Both halves built, in the shape J2 had already
+established for its own docs so the two cannot drift apart differently.
+
+- **Glossary: `tsfm_lens/glossary.py`, 32 terms** (J3 asked for ~25). A frozen
+  `Term(term, definition, where)` dataclass; `where` names a **report section
+  or artifact, never a source file**, because the reader this exists for is
+  someone who arrived at one section from a deep link, not a maintainer.
+  Rendered by two surfaces from the one dict, exactly like `stage_docs.py`:
+  `report/report.py::_glossary_block` (collapsed under the "How to read this
+  report" preamble — a lookup table is consulted, not read, and 32 open
+  definitions ahead of the first number would push every result below the
+  fold) and `render_glossary.py` → `README.md` with a `--check` stale gate.
+- **A deliberate editorial rule, written into the module docstring** so a
+  later session extends rather than dilutes it: *the limitation goes inside
+  the definition* wherever the term is routinely over-read. "Relative depth"
+  without "a convention, not a claim that the same fraction is the same
+  computational stage" is worse than no entry, because it licenses precisely
+  the misreading `CLAUDE.md` §12 item 4 already records as a real problem.
+  Same for "stitching gain" (the gain, never the raw R²), "linear CKA" (both
+  models seeing the same input inflates it on its own), "noise floor" (under
+  ~2× is not interpretable), and "captured FLOP fraction".
+- **Worked example: `tsfm_lens/docs/worked_example.md`, 308 lines**, written
+  against the **real** `runs/medium_run_chronos_base` artifacts
+  (TimesFM-2.5-200M vs. Chronos-T5-Base, 288 series) and quoting them, not
+  illustrative values — it walks the report in its own section order,
+  fairness card → L0 → cost → lens → L1 → L2 → L3 → confirm.
+- **The part J3 said matters most — "the finding I would not act on" — is a
+  real one from that run, not a constructed teaching example**: L0's
+  `mixture` family gap is **0.010 MASE**, against Chronos-T5-Base's own
+  **±0.160** repeat-run noise floor from the fairness card. Sixteen times
+  under its own floor. The page says plainly that this is not a small effect
+  but *no measurement at all*, and that the only reason to mention it is to
+  say so. Two more of the same kind: L3's **overall** agreement (0.356)
+  averages a per-corruption set running from **+0.964** (`level_shift`) to
+  **−0.953** (`spike`) and describes none of its rows; and L2's direction
+  with the *higher* raw R² (0.545) has the *lower* gain (0.318), so anyone
+  quoting the R² is quoting mostly the benchmark.
+- **The example also carries a methodological lesson this repo paid for
+  once**: comparing against a null run means matching the **layer**, not the
+  peak — the §16 E9 history where a peak-vs-peak comparison produced a wrong
+  "indistinguishable from null" verdict for L2 is retold in place, since a
+  reader with no roadmap access would otherwise repeat it.
+- **11 new tests (`tests/test_worked_example.py`) make the doc a regression
+  test rather than prose**, which was J3's own stated ambition for it. The
+  artifact-backed ones re-derive L0's overall MASE, L1's peak CKA + null +
+  both layer names, **both** L2 directions' best gains, the confirmation's
+  mean/CI/family/n, and that **every** corruption present in `l3/meta.json`
+  appears in the doc's breakdown table (the doc's own argument — that the
+  overall number hides sign changes — only holds if the breakdown is
+  complete). They `pytest.skip` when the gitignored run directory is absent,
+  the pattern `test_stage0_winner_config.py` already set. Structural tests
+  (report-order, "names a finding it would not act on", scope limits, no
+  placeholders, every cited artifact path exists) do not skip.
+- **One test was written, failed, and was replaced rather than accommodated**
+  (§2.4): a "no hand-rounded 1-decimal values" precision guard fired on
+  legitimate content — parameter counts (`231.3M`), percentages (`28.2 pt`),
+  purity (`1.0`). A test that fails on correct content is noise, so it was
+  replaced by one that checks every `**Artifact:**` path the doc hands the
+  reader actually exists in the run it quotes — a citation that reads as
+  verifiable and isn't is worse than no citation.
+- **7 new tests for the glossary** (`tests/test_glossary.py`): README
+  non-staleness (the only check that actually prevents drift), one-sentence
+  definitions, all three fields populated, alphabetization for lookup rather
+  than dict order, loud `KeyError` on an unknown term, and that **every**
+  term reaches the rendered HTML — a "does the page contain the word
+  glossary" test would miss a silently truncated table entirely.
+- **Live-verified, not only unit-tested**: regenerated `runs/smoke`'s report
+  through the real CLI (`--stages report --force report`) — 13 sections, 45
+  findings, the glossary `<details>` present and all 32 terms in the HTML.
+- **Full `tsfm_lens` suite: 491 passed, 0 failed** (up from 466).
 
 ### J4 Progressive disclosure in the report (= H10) `[ ]`
 

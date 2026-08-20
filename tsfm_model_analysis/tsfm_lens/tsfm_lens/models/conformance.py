@@ -18,7 +18,7 @@ import numpy as np
 import torch
 
 from ..config import DataConfig, ModelConfig
-from .base import ModelAdapter
+from .base import TIER_NAMES, CapabilityUnavailable, ModelAdapter
 
 
 def check_adapter_conformance(adapter: ModelAdapter, window: int, n_series: int = 4,
@@ -34,6 +34,20 @@ def check_adapter_conformance(adapter: ModelAdapter, window: int, n_series: int 
 
     quantiles = quantiles or [0.1, 0.5, 0.9]
     report: dict = {"model": adapter.name}
+
+    # The declared tier decides which checks even apply (`ROADMAP.md` sec 19
+    # G1). Running the tier-1 battery against a black box would report a
+    # broken adapter where there is only an absent capability -- the false
+    # refusal `CLAUDE.md` sec 11.35 warns is the expensive direction. The
+    # tier-0 path is not a lighter check, though: it additionally asserts the
+    # refusals are *typed*, since an adapter that raises AttributeError
+    # instead would crash mid-run rather than route.
+    tier = adapter.capability_tier()
+    report["tier"] = tier
+    report["tier_name"] = TIER_NAMES[tier]
+    if tier == 0:
+        _check_tier0(adapter, report, n_series, horizon, quantiles)
+        return report
 
     layers = adapter.all_layer_names()
     if not layers:
@@ -87,6 +101,41 @@ def check_adapter_conformance(adapter: ModelAdapter, window: int, n_series: int 
     prepared = adapter.prepare(contexts)
     _check_optional_degrades_gracefully(adapter, prepared, report)
     return report
+
+
+def _check_tier0(adapter: ModelAdapter, report: dict, n_series: int,
+                 horizon: int, quantiles: list) -> None:
+    """A black box must forecast, and must refuse everything else by type."""
+    context_len = adapter.data_cfg.context_len
+    rng = np.random.default_rng(0)
+    contexts = rng.normal(size=(n_series, context_len)).astype(np.float32)
+    pred = adapter.predict(contexts, horizon, quantiles)
+    if "point" not in pred or pred["point"].shape != (n_series, horizon):
+        raise AssertionError(f"'{adapter.name}': tier-0 predict() must still return "
+                             f"'point' of shape {(n_series, horizon)}")
+    if not np.all(np.isfinite(pred["point"])):
+        raise AssertionError(f"'{adapter.name}': predict()['point'] has non-finite values")
+    report["predict_point_shape"] = list(pred["point"].shape)
+
+    refused = []
+    for name, call in (("module", lambda: adapter.module),
+                       ("prepare", lambda: adapter.prepare(contexts)),
+                       ("forward", lambda: adapter.forward(None)),
+                       ("token_time_spans", adapter.token_time_spans)):
+        try:
+            call()
+        except CapabilityUnavailable:
+            refused.append(name)
+        except Exception as exc:
+            raise AssertionError(
+                f"'{adapter.name}' is tier 0, so `{name}` must raise "
+                f"CapabilityUnavailable -- the pipeline routes on that type. It "
+                f"raised {type(exc).__name__} instead: {exc}") from exc
+        else:
+            raise AssertionError(
+                f"'{adapter.name}' declares tier 0 but `{name}` returned a value; "
+                f"the derived tier and the implementation disagree")
+    report["refused_capabilities"] = refused
 
 
 def _check_optional_degrades_gracefully(adapter: ModelAdapter, prepared, report: dict) -> None:

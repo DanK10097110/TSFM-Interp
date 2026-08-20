@@ -309,31 +309,95 @@ def _summarize(metrics: pd.DataFrame, cfg: PipelineConfig) -> dict:
                                 b.name: [f for f, r in ratio.items() if r > 1.1]}
         return summary
 
-    tests, pvals = {}, {}
-    for i, (fam, grp) in enumerate(wide.groupby("family")):
-        if len(grp) < sc.min_series:
-            continue
-        diff = (grp[b.name] - grp[a.name]).to_numpy()
-        res = paired_bootstrap(diff, sc.n_boot, cfg.run.seed + 40 + i, sc.ci)
-        if res is not None:
-            tests[str(fam)], pvals[str(fam)] = res, res["p"]
-    adjusted = holm(pvals) if pvals else {}
-    family_tests = []
-    for fam, res in tests.items():
-        p_holm = adjusted[fam]
-        favored = "none"
-        if p_holm < sc.alpha and res["lo"] > 0:
-            favored = a.name
-        elif p_holm < sc.alpha and res["hi"] < 0:
-            favored = b.name
-        family_tests.append({"family": fam, "ratio": summary["mase_ratio"].get(fam),
-                             **res, "p_holm": p_holm, "favored": favored})
-    summary["family_tests"] = sorted(family_tests, key=lambda t: t["p_holm"])
-    summary["overall_test"] = paired_bootstrap(
-        (wide[b.name] - wide[a.name]).to_numpy(), sc.n_boot, cfg.run.seed + 90, sc.ci)
-    summary["strengths"] = {
-        a.name: [t["family"] for t in family_tests if t["favored"] == a.name],
-        b.name: [t["family"] for t in family_tests if t["favored"] == b.name],
+    # Every configured model pair, Holm-corrected across the WHOLE (pair,
+    # family) set at once rather than once per pair (`ROADMAP.md` sec 18 F8).
+    # With two models this set is exactly the family set, so every adjusted
+    # p-value is bit-identical to the single-pair correction that preceded
+    # this -- the widening only happens where a third model actually adds
+    # comparisons, which is the point (sec 2.1: no recorded number moves).
+    present = [m for m in cfg.models if m.name in wide.columns]
+    pairs = [(x, y) for i, x in enumerate(present) for y in present[i + 1:]]
+    # Pair 0 is always the designated `comparison_pair()`, and it keeps its
+    # historical seeds EXACTLY -- `+40+fi` with `fi` advancing past skipped
+    # small families just as the old `enumerate` did, and `+90` for the
+    # overall test -- so a two-model run reproduces bit-for-bit (sec 2.1).
+    # Additional pairs draw from a disjoint high range rather than continuing
+    # the low one, because a running counter would both re-seed pair 0 after
+    # any skip and eventually collide with `+90`, silently making two tests
+    # share one resample stream.
+    def _fam_seed(pi: int, fi: int) -> int:
+        return cfg.run.seed + (40 + fi if pi == 0 else 100_000 + pi * 1000 + fi)
+
+    def _overall_seed(pi: int) -> int:
+        return cfg.run.seed + (90 if pi == 0 else 200_000 + pi)
+
+    raw = {}
+    for pi, (x, y) in enumerate(pairs):
+        for fi, (fam, grp) in enumerate(wide.groupby("family")):
+            if len(grp) < sc.min_series:
+                continue
+            diff = (grp[y.name] - grp[x.name]).to_numpy()
+            res = paired_bootstrap(diff, sc.n_boot, _fam_seed(pi, fi), sc.ci)
+            if res is not None:
+                raw[(x.name, y.name, str(fam))] = res
+
+    adjusted = holm({"\u241f".join(k): v["p"] for k, v in raw.items()}) if raw else {}
+
+    def _rows(x_name: str, y_name: str) -> list:
+        out_rows = []
+        for (xn, yn, fam), res in raw.items():
+            if (xn, yn) != (x_name, y_name):
+                continue
+            p_holm = adjusted["\u241f".join((xn, yn, fam))]
+            favored = "none"
+            if p_holm < sc.alpha and res["lo"] > 0:
+                favored = xn
+            elif p_holm < sc.alpha and res["hi"] < 0:
+                favored = yn
+            ratio = None
+            if xn in pivot.columns and yn in pivot.columns:
+                num, den = pivot[xn].get(fam), pivot[yn].get(fam)
+                if num is not None and den not in (None, 0) \
+                        and np.isfinite(num) and np.isfinite(den):
+                    ratio = float(num / den)
+            out_rows.append({"family": fam, "ratio": ratio, **res,
+                             "p_holm": p_holm, "favored": favored})
+        return sorted(out_rows, key=lambda t: t["p_holm"])
+
+    pairwise = []
+    for i, (x, y) in enumerate(pairs):
+        rows = _rows(x.name, y.name)
+        pairwise.append({
+            "a": x.name, "b": y.name, "family_tests": rows,
+            "overall_test": paired_bootstrap((wide[y.name] - wide[x.name]).to_numpy(),
+                                             sc.n_boot, _overall_seed(i), sc.ci),
+            "strengths": {x.name: [t["family"] for t in rows if t["favored"] == x.name],
+                          y.name: [t["family"] for t in rows if t["favored"] == y.name]},
+        })
+    summary["pairwise"] = pairwise
+    summary["multiplicity"] = {
+        "scope": "l0.family", "method": "holm", "alpha": sc.alpha,
+        "n_models": len(present), "n_pairs": len(pairs), "n_tests": len(raw),
+        "most_stringent_threshold": (sc.alpha / len(raw)) if raw else None,
+        "designated_pair": [a.name, b.name],
+        "pairs_examined_by_other_stages": 1,
+        # `n_boot` belongs here because bootstrap p-values are FLOORED at
+        # 1/n_boot (sec 6.6), so the smallest Holm-adjusted p this family can
+        # ever produce is n_tests/n_boot -- independent of the data. Once that
+        # exceeds alpha the correction is unsatisfiable: no effect of any size
+        # can be significant, and the report must say so rather than render a
+        # table of honestly-computed non-results (invariant 8).
+        "n_boot": sc.n_boot,
+        "min_attainable_p_holm": (len(raw) / sc.n_boot) if raw and sc.n_boot else None,
     }
+
+    # The designated pair keeps its existing top-level keys: every consumer
+    # (report, confirm, meta_report) reads these, and a run with two models
+    # must produce byte-identical output to before this change.
+    mine = next((e for e in pairwise if (e["a"], e["b"]) == (a.name, b.name)), None)
+    if mine is not None:
+        summary["family_tests"] = mine["family_tests"]
+        summary["overall_test"] = mine["overall_test"]
+        summary["strengths"] = mine["strengths"]
     summary["alpha"] = sc.alpha
     return summary

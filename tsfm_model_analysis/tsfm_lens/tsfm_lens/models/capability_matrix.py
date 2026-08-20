@@ -31,7 +31,7 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 
-from .base import ModelAdapter
+from .base import TIER_NAMES, ModelAdapter
 
 CAPABILITY_METHODS = ["attention_info", "mlp_info", "attention_patterns",
                       "cross_attention_patterns"]
@@ -90,7 +90,12 @@ def build_capability_matrix(registry: dict, verify: Optional[dict] = None) -> pd
     verify = verify or {}
     rows = []
     for adapter_name, adapter_cls in sorted(registry.items()):
-        row = {"adapter": adapter_name}
+        # Tier first, because it is the coarse answer the per-capability
+        # columns then explain: it is what the pipeline actually gates on
+        # (`ROADMAP.md` sec 19 G1), while the columns say which specific
+        # method is why.
+        row = {"adapter": adapter_name, "tier": adapter_cls.capability_tier(),
+               "tier_name": TIER_NAMES[adapter_cls.capability_tier()]}
         row.update(declared_capabilities(adapter_cls))
         verified = None
         if adapter_name in verify:
@@ -104,10 +109,10 @@ def build_capability_matrix(registry: dict, verify: Optional[dict] = None) -> pd
 
 def render_capability_matrix_markdown(df: pd.DataFrame) -> str:
     """Render as a Markdown table: ✅ verified, 🔶 declared-only (unverified), ❌ neither."""
-    lines = ["| adapter | " + " | ".join(CAPABILITY_METHODS) + " |",
-             "|---" * (len(CAPABILITY_METHODS) + 1) + "|"]
+    lines = ["| adapter | tier | " + " | ".join(CAPABILITY_METHODS) + " |",
+             "|---" * (len(CAPABILITY_METHODS) + 2) + "|"]
     for _, row in df.iterrows():
-        cells = [str(row["adapter"])]
+        cells = [str(row["adapter"]), f'{row["tier"]} ({row["tier_name"]})']
         for m in CAPABILITY_METHODS:
             verified, declared = row[f"{m}_verified"], bool(row[f"{m}_declared"])
             # `verified` may come back as a numpy bool (not Python's `True`/

@@ -128,6 +128,14 @@ attention:
   ablation_max_series: 48       # must be <= every model's batch_size
   head_layer_stride: 2          # ablation cost = blocks/stride x heads forwards
   top_k: 5
+  # Which lag resolution a CROSS-MODEL attention claim may cite. A lag index
+  # means ~32 timesteps for TimesFM and ~1 for Chronos-T5, so reading the two
+  # models' native lag profiles index-for-index makes patch size look like a
+  # finding. `matched` bins every model's lag axis to the coarsest configured
+  # model's token width first. Both are ALWAYS computed and recorded
+  # (`head_scores` vs `head_scores_matched`); this only selects which one the
+  # report's cross-model claim reads, so no recorded number depends on it.
+  resolution_mode: matched
 
 # Exemplar case studies: per-family series picked from the L0 MASE-gap
 # distribution, with forecasts, per-series lens curves, and attention maps.

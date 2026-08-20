@@ -115,6 +115,39 @@ def impulse_alignment_check(adapter: ModelAdapter, window: int,
     return results
 
 
+def resolvable_hit_ceiling(adapter: ModelAdapter, window: int) -> dict:
+    """The largest diagonal-hit fraction this (model, window) pair can reach at all.
+
+    The diagonal-hit test asks whether perturbing window *w* moves aligned
+    window *w* most. That question is only answerable when window *w* is
+    distinguishable from its neighbours in the first place -- and it is not,
+    whenever the model's tokens are **coarser than the analysis window**. Three
+    consecutive 32-step windows reading one 96-step token receive identical
+    pooled activations by construction, so their delta rows are exactly tied
+    and `argmax` awards the hit to whichever index it breaks ties toward. At
+    most one window per indistinguishable group can ever hit.
+
+    So the ceiling is (number of distinct pooled token supports) / (number of
+    windows), computed here from the pooling matrix itself rather than from a
+    token-width heuristic, so it stays correct for overlapping strides and
+    ragged spans. It is exactly 1.0 for every model whose token width is at
+    most the window -- which is every hand-written adapter in this repo at its
+    configured window -- so normalizing by it changes no number ever recorded
+    (`CLAUDE.md` sec 2.1). It is 1/3 for `thuml/timer-base-84m` (96-step
+    tokens) at the repo's usual window of 32, which is how this was found:
+    Timer scored 0.33 against a 0.5 gate while its token-level argmax was a
+    *perfect* diagonal with exactly zero leakage. The gate was failing a
+    correct model, and no amount of reading the adapter would have shown it.
+    """
+    pool = pooling_matrix(adapter.token_time_spans(), adapter.data_cfg.context_len,
+                          window).cpu().numpy()
+    supports = {frozenset(np.nonzero(row)[0].tolist()) for row in pool}
+    n_windows = pool.shape[0]
+    ceiling = len(supports) / n_windows
+    return {"ceiling": float(ceiling), "n_windows": int(n_windows),
+            "n_distinguishable": len(supports), "window": int(window)}
+
+
 def calibrate_impulse_amplitude(adapter: ModelAdapter, window: int,
                                 candidates: tuple = (0.25, 0.15, 0.10, 0.05, 0.02),
                                 max_unrelated_frac: float = 0.02) -> dict:
@@ -210,11 +243,27 @@ def run_alignment_gate(adapter: ModelAdapter, window: int, layers: list,
     calibration = calibrate_impulse_amplitude(adapter, window) if calibrate else None
     amplitude = calibration["amplitude"] if calibration else 0.25
     hits = impulse_alignment_check(adapter, window, layers, amplitude=amplitude)
+    ceiling = resolvable_hit_ceiling(adapter, window)
     names = list(hits.keys())
     values = [hits[n] for n in names]
     shallowest = names[0]
     shallowest_frac = hits[shallowest]
-    passed = shallowest_frac >= min_diagonal_frac
+    # Gate on the fraction of the *achievable* hits, not the raw one. These are
+    # the same number for every model whose tokens are no coarser than the
+    # window (ceiling 1.0), so this re-derives every previously recorded
+    # verdict bit-for-bit; it differs only for the case the raw gate could not
+    # express, where a perfect model is arithmetically barred from passing.
+    scaled = shallowest_frac / ceiling["ceiling"] if ceiling["ceiling"] > 0 else 0.0
+    passed = scaled >= min_diagonal_frac
+    if ceiling["ceiling"] < 1.0:
+        log.warning(
+            "alignment '%s': alignment.window=%d is finer than this model's tokens -- "
+            "only %d of %d windows are distinguishable, so the diagonal-hit fraction "
+            "cannot exceed %.3f no matter how correct the spans are, and the gate is "
+            "applied to hits/ceiling. Every analysis still resolves this model at TOKEN "
+            "granularity; set alignment.window to its token width to stop paying for "
+            "windows it cannot fill.", adapter.name, window,
+            ceiling["n_distinguishable"], ceiling["n_windows"], ceiling["ceiling"])
     record = {
         "per_layer": hits,
         "layers_probed": names,
@@ -224,6 +273,8 @@ def run_alignment_gate(adapter: ModelAdapter, window: int, layers: list,
         "window": window,
         "shallowest_layer": shallowest,
         "shallowest_frac": float(shallowest_frac),
+        "resolvable_ceiling": ceiling,
+        "shallowest_frac_of_ceiling": float(scaled),
         "min_diagonal_frac_threshold": min_diagonal_frac,
         "on_failure": on_failure,
         "passed": passed,
@@ -232,7 +283,8 @@ def run_alignment_gate(adapter: ModelAdapter, window: int, layers: list,
     }
     if not passed:
         msg = (f"alignment check FAILED for model '{adapter.name}': shallowest probed "
-              f"layer '{shallowest}' has diagonal-hit fraction {shallowest_frac:.2f}, "
+              f"layer '{shallowest}' has diagonal-hit fraction {shallowest_frac:.2f} "
+              f"({scaled:.2f} of the {ceiling['ceiling']:.2f} this window can resolve), "
               f"below alignment.min_diagonal_frac={min_diagonal_frac}. This means "
               f"token_time_spans is likely wrong for this checkpoint/library version -- "
               f"CLAUDE.md sec 6.3, sec 7 invariant 7. Inspect every layer with "

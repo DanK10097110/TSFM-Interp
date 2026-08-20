@@ -108,10 +108,11 @@ STAGE_DOCS: dict = {
                       "active,' not 'which is the best layer in the whole model.'")),
     "l0": StageDoc(
         question="Which model actually forecasts more accurately, and on what kinds of data?",
-        how=("Runs both models' native forecasting procedure on every benchmark series, "
-             "scores each series' error against a naive same-scale baseline, and "
-             "statistically compares the paired per-series differences within each data "
-             "family, correcting for testing many families at once."),
+        how=("Runs every model's native forecasting procedure on every benchmark "
+             "series, scores each series' error against a naive same-scale baseline, "
+             "and statistically compares the paired per-series differences within each "
+             "data family, correcting for testing many families -- and, when more than "
+             "two models are configured, many model pairs -- at once."),
         good_bad=("Good: a family where the paired difference's confidence interval "
                    "clearly excludes zero after correction — a real, replicable "
                    "accuracy edge on that kind of data. Bad: every family's interval "
@@ -124,7 +125,11 @@ STAGE_DOCS: dict = {
                       "exists to investigate. It also measures point-forecast accuracy "
                       "only; a model can score well here and still have badly "
                       "miscalibrated uncertainty (a separate calibration diagnostic "
-                      "covers that, but it is not this headline number).")),
+                      "covers that, but it is not this headline number). And it is the "
+                      "ONLY stage that compares more than two models: everything after "
+                      "it compares the designated pair only, so with three models the "
+                      "extra pairs are unexamined there rather than weakly "
+                      "evidenced.")),
     "internals": StageDoc(
         question="What does each model's own internal representation look like at each depth, on its own terms?",
         how=("For each layer of each model separately, measures how many effective "

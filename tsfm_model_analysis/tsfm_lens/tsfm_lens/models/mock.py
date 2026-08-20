@@ -212,3 +212,44 @@ class MockEncDecAdapter(_MockAdapterBase):
     """
     patch, dim, n_layers, n_heads, seed = 1, 48, 4, 3, 23
     n_decoder_layers = 4
+
+
+class MockBlackBoxAdapter(ModelAdapter):
+    """Tier-0 mock: forecasts and nothing else (`ROADMAP.md` sec 19 G1).
+
+    Subclasses `ModelAdapter` directly rather than `_MockAdapterBase`, because
+    the whole point is an adapter that never implements `module`, `prepare`,
+    `forward` or `token_time_spans` -- the stand-in for a hosted/API-only
+    model whose internals are genuinely unreachable, not merely unimplemented.
+    Its forecast is a deterministic seasonal-naive continuation plus a linear
+    drift, which is a real (if weak) forecaster rather than a constant, so L0's
+    per-family MASE actually varies and the behavioral stages have something
+    to separate.
+
+    This adapter is what makes G1's acceptance criterion checkable without a
+    hosted checkpoint: a run configured with it must reach a report carrying
+    L0, calibration and cost, and must SKIP everything else with a stated
+    reason rather than crashing on the first `module` access.
+    """
+
+    period = 24
+    single_pass_context = False
+
+    def load(self) -> None:
+        self.period = int(self.cfg.kwargs.get("period", type(self).period))
+        self._loaded_marker = True
+
+    def _release(self) -> None:
+        self._loaded_marker = None
+
+    def predict(self, contexts: np.ndarray, horizon: int, quantiles: list) -> dict:
+        ctx = np.asarray(contexts, dtype=np.float64)
+        p = min(self.period, ctx.shape[1])
+        reps = int(np.ceil(horizon / p))
+        point = np.tile(ctx[:, -p:], (1, reps))[:, :horizon]
+        drift = (ctx[:, -1] - ctx[:, 0]) / max(ctx.shape[1] - 1, 1)
+        point = point + drift[:, None] * np.arange(1, horizon + 1)[None, :]
+        scale = ctx.std(axis=1, keepdims=True) + 1e-6
+        offsets = np.array([_normal_ppf(q) for q in quantiles], dtype=np.float64)
+        q = point[:, :, None] + offsets[None, None, :] * scale[:, :, None]
+        return {"point": point.astype(np.float32), "quantiles": q.astype(np.float32)}

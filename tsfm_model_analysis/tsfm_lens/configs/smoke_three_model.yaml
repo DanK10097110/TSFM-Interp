@@ -1,0 +1,82 @@
+# Three-model L0 run — the config `ROADMAP.md` §18 F8's acceptance criterion
+# names ("a three-model config's L0 section states the total comparison count
+# and corrected alpha").
+#
+# WHY THIS EXISTS AS A SEPARATE CONFIG. `config.py::comparison_pair()` returns
+# `models[0], models[1]`, and every cross-model stage — L1, L2, L3, clustering,
+# exemplars, confirm — uses it. L0 is the ONE stage that can honestly run for
+# every model, because it needs nothing but each adapter's `predict()`: no
+# alignment, no activation store, no shared window axis. So this config
+# deliberately runs `l0` and `report` only. Adding the other stages would not
+# fail — they would silently compare the first two models and quietly ignore
+# the third, which is exactly the impression F8 exists to remove.
+#
+# What to look for in the rendered report: the "Multiplicity ledger" block
+# under L0, and a "Paired family tests — patchy vs. wavy" table beside the
+# designated pair's own. Every `p (Holm)` in BOTH tables is adjusted over the
+# joint (pair, family) set — 3 pairs, so roughly 3× the comparisons and
+# correspondingly stricter adjustment than the two-model `smoke.yaml` run.
+
+run:
+  name: smoke_three_model
+  out_dir: runs
+  device: cpu
+  dtype: float32
+  seed: 0
+
+data:
+  source: smoke
+  context_len: 128
+  horizon: 32
+  smoke_series_per_family: 20
+
+alignment:
+  window: 32
+  sanity_check: false     # nothing here captures activations
+
+models:
+  - name: patchy
+    adapter: mock_patch
+    batch_size: 64
+  - name: steppy
+    adapter: mock_step
+    batch_size: 64
+  - name: wavy
+    adapter: mock_wave
+    batch_size: 64
+
+stats:
+  enabled: true
+  # NOT the 150 the two-model smoke run uses, and the reason is the point of
+  # this config. A bootstrap p is floored at 1/n_boot (CLAUDE.md §6.6), so the
+  # smallest Holm-adjusted p a family of m tests can produce is m/n_boot no
+  # matter how large the effect. At m=18 and n_boot=150 that is 0.12 > α=0.05:
+  # the correction would be UNSATISFIABLE, and every non-result an arithmetic
+  # consequence rather than evidence. Measured, not assumed — at 150 this run
+  # demoted all four of the two-model run's significant families to none, which
+  # looked like a textbook multiplicity demonstration and was actually the
+  # p-floor. The report now detects and names this case; 2000 clears it
+  # (18/2000 = 0.009 < 0.05) so the ledger demonstrates multiplicity rather
+  # than the floor.
+  n_boot: 2000
+  n_boot_heavy: 100
+  ci: 0.95
+  alpha: 0.05
+  min_series: 8
+
+# Every stage that would silently fall back to the first two models is off.
+l1: {enabled: false}
+l2: {enabled: false}
+l3: {enabled: false}
+lens: {enabled: false}
+attention: {enabled: false}
+clustering: {enabled: false}
+exemplars: {enabled: false}
+internals: {enabled: false}
+confirm: {enabled: false}
+layer_screen: {enabled: false}
+budget: {enabled: false}
+sae: {enabled: false}
+
+report:
+  title: Three-model L0 · multiplicity ledger (ROADMAP.md §18 F8)

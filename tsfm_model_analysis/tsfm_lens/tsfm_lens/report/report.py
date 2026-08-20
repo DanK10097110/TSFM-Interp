@@ -22,7 +22,7 @@ import plotly.graph_objects as go
 from jinja2 import Template
 from plotly.subplots import make_subplots
 
-from .. import stage_docs
+from .. import glossary, stage_docs
 from ..config import PipelineConfig
 from ..utils import load_json, log, save_json
 
@@ -185,8 +185,15 @@ def run_report(cfg: PipelineConfig) -> Path:
         missing = [p for p in requires if not (run_dir / p).exists()]
         if missing:
             enabled = getattr(cfg, config_attr).enabled
-            detail = ("stage not enabled in config" if not enabled
-                      else f"artifacts missing: {', '.join(missing)}")
+            # A stage the tier gate dropped is NOT the same as one whose
+            # artifacts happen to be missing, and the difference is the whole
+            # point of G1: one is a property of the models in this run, the
+            # other is a rerun away. Naming only "artifacts missing" would put
+            # the reason in the log and nowhere in the deliverable, which is
+            # the silent degradation `CLAUDE.md` invariant 8 forbids.
+            detail = (_tier_skip_reason(run_dir, config_attr)
+                      or ("stage not enabled in config" if not enabled
+                          else f"artifacts missing: {', '.join(missing)}"))
             log.info("report: section %s skipped (%s)", eyebrow, detail)
             coverage.append({"eyebrow": eyebrow, "title": title, "status": "skipped",
                              "detail": detail})
@@ -263,6 +270,7 @@ def run_report(cfg: PipelineConfig) -> Path:
         config_text=_config_text(run_dir),
         mock_warning=_mock_warning(mock_models),
         how_to_read=_how_to_read(cfg.alignment.window),
+        glossary_block=_glossary_block(),
         coverage=coverage, coverage_summary=summary, any_failed=bool(failed),
         family_resolution_line=_family_resolution_line(run_dir),
         alignment_provenance=_alignment_provenance_block(run_dir)[0],
@@ -283,6 +291,16 @@ def run_report(cfg: PipelineConfig) -> Path:
     # metadata, not run artifacts a downstream analysis stage would read.
     save_json(run_dir / "report" / "findings.json",
              {"findings": [asdict(f) for f in findings]})
+    # `multiplicity.json` (ROADMAP.md sec 18 F8): one record per independently
+    # Holm-corrected family of tests in this report, machine-readable so a
+    # cross-run reader (meta_report) can compare how many comparisons produced
+    # a given claim rather than only the claim.
+    _l0_summary = (load_json(run_dir / "l0" / "summary.json")
+                   if (run_dir / "l0" / "summary.json").exists() else {})
+    _scopes = _multiplicity_scopes(run_dir, _l0_summary)
+    save_json(run_dir / "report" / "multiplicity.json",
+             {"total_comparisons": sum(sc["n_tests"] for sc in _scopes),
+              "n_correction_families": len(_scopes), "scopes": _scopes})
     if failed:
         log.warning("report: %s", summary)
     else:
@@ -386,6 +404,29 @@ def _how_to_read(window: int) -> str:
         f'before comparing a ΔMASE bar to a ΔR² heatmap.</p>'
         '</section>'
     )
+
+
+def _glossary_block() -> str:
+    """The recurring-vocabulary lookup table, collapsed under the preamble.
+
+    `ROADMAP.md` sec 21 J3. The per-figure `_note()` blocks stay the primary
+    explanation for a reader going through a section in order; this exists for
+    the reader who arrives at one section from a deep link and meets a term
+    cold. Rendered from `glossary.GLOSSARY` -- the same dict
+    `render_glossary.py` splices into the README -- so the two surfaces cannot
+    drift, exactly as `_stage_doc_block` does for sec 21 J2's per-stage docs.
+
+    Collapsed by default (unlike `_stage_doc_block`, which is a section's own
+    framing and opens): a lookup table is consulted, not read, and thirty-odd
+    open definitions between the preamble and the first number would push
+    every result below the fold.
+    """
+    rows = "".join(
+        f'<p><b>{t.term}</b><br>{t.definition} '
+        f'<span class="gloss-where">Where it appears: {t.where}</span></p>'
+        for t in glossary.terms())
+    return ('<details class="note glossary"><summary>Glossary &mdash; the terms that recur below</summary>'
+            f'<div class="note-body">{rows}</div></details>')
 
 
 def _dataset_line(cfg: PipelineConfig, run_dir: Path) -> str:
@@ -977,6 +1018,18 @@ def _compose_caveats(findings: list, run_dir: Path) -> list:
     size_axes = [a for a in ("Parameters", "FLOPs per forward (per series)") if a in by_axis]
     depth_row = next((r for name, r in by_axis.items() if name.startswith("Depth axis")), None)
 
+    # This pass OVERWRITES `caveat` wholesale, which is the stated contract
+    # above -- so a call site that hand-writes one is not merely ignored, its
+    # text never reaches a reader. That is a silent drop, and invariant 8 says
+    # it has to be loud instead. Found 2026-08-19 when F5's own call site did
+    # exactly this and the sentence was absent from the rendered HTML.
+    authored = [f.claim_id for f in findings if f.caveat]
+    if authored:
+        log.warning("report: %d finding(s) set `caveat` at their call site (%s); "
+                    "`caveat` is GENERATED by _compose_caveats and hand-written "
+                    "text is discarded -- move it into `text` if a reader should "
+                    "see it", len(authored), ", ".join(authored))
+
     out = []
     for f in findings:
         parts = [_EVIDENCE_CLASS_CAVEATS[f.evidence_class]]
@@ -1096,6 +1149,187 @@ def _noise_floor_block(run_dir: Path, findings: list) -> str:
     return html
 
 
+def _multiplicity_scopes(run_dir: Path, summary: dict) -> list:
+    """Every independently Holm-corrected family of tests in this report.
+
+    `ROADMAP.md` sec 18 F8. Each entry is one correction family -- a set of
+    p-values adjusted *together* and never across sets. Collecting them in one
+    place is the whole deliverable: three separate Holm corrections rendered in
+    three separate tables read, to anyone who hasn't traced the code, like one
+    corrected analysis. Counting them does not merge them (that would be a
+    different, more conservative decision); it makes the multiplicity legible.
+    """
+    scopes = []
+    mult = summary.get("multiplicity")
+    if mult and mult.get("n_tests"):
+        scopes.append({**mult, "label": "L0 per-family paired tests"})
+    arch = (summary.get("per_archetype") or {}).get("tests")
+    if isinstance(arch, list) and arch:
+        alpha = (summary.get("per_archetype") or {}).get("alpha")
+        nb = next((t.get("n_boot") for t in arch if t.get("n_boot")), None)
+        scopes.append({"scope": "l0.archetype", "method": "holm", "alpha": alpha,
+                       "n_tests": len(arch), "n_boot": nb,
+                       "most_stringent_threshold": (alpha / len(arch)) if alpha else None,
+                       "min_attainable_p_holm": (len(arch) / nb) if nb else None,
+                       "label": "L0 per-archetype paired tests"})
+    conf_path = run_dir / "confirm" / "confirmation.json"
+    conf = load_json(conf_path) if conf_path.exists() else None
+    entries = (conf or {}).get("tests") or []
+    tested = [e for e in entries if isinstance(e, dict) and e.get("p_holm") is not None]
+    if tested:
+        alpha = (conf or {}).get("alpha")
+        nb = next((t.get("n_boot") for t in tested if t.get("n_boot")), None)
+        scopes.append({"scope": "confirm.hypotheses", "method": "holm", "alpha": alpha,
+                       "n_tests": len(tested), "n_boot": nb,
+                       "most_stringent_threshold": (alpha / len(tested)) if alpha else None,
+                       "min_attainable_p_holm": (len(tested) / nb) if nb else None,
+                       "label": "Confirm — pre-registered hypotheses (private corpus)"})
+    return scopes
+
+
+def _other_pairs_block(summary: dict, findings: list) -> str:
+    """L0 paired tests for every model pair beyond the designated one.
+
+    `ROADMAP.md` sec 18 F8's F8b half. With two models this renders nothing at
+    all -- there is no second pair -- which is why a two-model report is
+    unchanged by this addition. `p (Holm)` here is adjusted over the *joint*
+    (pair, family) set, so the designated pair's own column is stricter than it
+    would be in a two-model run: that widening is the finding, not a bug.
+    """
+    pairwise = summary.get("pairwise") or []
+    mult = summary.get("multiplicity") or {}
+    designated = tuple(mult.get("designated_pair") or [])
+    others = [e for e in pairwise if (e["a"], e["b"]) != designated]
+    if not others:
+        return ""
+    out = ""
+    for entry in others:
+        rows = entry.get("family_tests") or []
+        if not rows:
+            continue
+        tbl = pd.DataFrame(rows)[["family", "ratio", "mean", "lo", "hi",
+                                  "p", "p_holm", "favored"]]
+        tbl.columns = ["family", "MASE ratio", "paired ΔMASE", "lo", "hi",
+                       "p (boot)", "p (Holm)", "favored"]
+        out += (f'<h4>Paired family tests — {entry["a"]} vs. {entry["b"]}</h4>'
+                f'<p class="blurb">Positive Δ favors {entry["a"]}. Holm-adjusted '
+                f'across every (pair, family) test in this run, not within this '
+                f'pair alone.</p>' + _table(tbl))
+        for model, fams in (entry.get("strengths") or {}).items():
+            if fams:
+                findings.append(Finding(
+                    claim_id=_next_claim_id("l0"), stage="l0", evidence_class="behavioral",
+                    text=f"L0 — {model} is significantly stronger than "
+                        f"{entry['b'] if model == entry['a'] else entry['a']} on: "
+                        f"{', '.join(fams)} (paired bootstrap, Holm-corrected across "
+                        f"all {mult.get('n_pairs', 1)} model pairs, ROADMAP.md §18 F8).",
+                    plain=f"{model} clearly forecasts these kinds of data better than "
+                        f"{entry['b'] if model == entry['a'] else entry['a']}: "
+                        f"{', '.join(fams)}.",
+                    registered=False))
+    if out:
+        out += _note(
+            "The model pairs this run configures beyond the designated "
+            "comparison pair. L0 is the only stage that can honestly run for "
+            "all of them -- it needs nothing but each model's `predict()`, no "
+            "alignment, no shared window axis (ROADMAP.md sec 18 F8).",
+            "Read these exactly like the designated pair's table above; the "
+            "correction is joint, so a p (Holm) here and one there came out of "
+            "the same adjustment.",
+            "Every OTHER cross-model stage in this report -- L1, L2, L3, "
+            "clustering, exemplars, confirm -- compares the designated pair "
+            "only. The pairs shown here are unexamined there, which is a "
+            "stronger statement than 'weakly evidenced'.")
+    return out
+
+
+def _multiplicity_block(run_dir: Path, summary: dict, findings: list) -> str:
+    """Render the ledger and state what it is NOT (`ROADMAP.md` sec 18 F8)."""
+    scopes = _multiplicity_scopes(run_dir, summary)
+    if not scopes:
+        return ""
+    tbl = pd.DataFrame([{
+        "correction family": sc["label"],
+        "comparisons": sc["n_tests"],
+        "method": sc["method"],
+        "α": sc.get("alpha"),
+        "n_boot": sc.get("n_boot"),
+        "most stringent threshold": (None if sc.get("most_stringent_threshold") is None
+                                     else round(sc["most_stringent_threshold"], 5)),
+        "smallest p (Holm) reachable": (None if sc.get("min_attainable_p_holm") is None
+                                        else round(sc["min_attainable_p_holm"], 5)),
+    } for sc in scopes])
+    total = sum(sc["n_tests"] for sc in scopes)
+    mult = summary.get("multiplicity") or {}
+    pair_line = ""
+    if mult.get("n_models", 0) > 2:
+        pair_line = (f' This run configures <b>{mult["n_models"]} models</b>, so L0 tests '
+                     f'all {mult["n_pairs"]} pairs and corrects across every '
+                     f'(pair, family) test at once. <b>Every other cross-model stage '
+                     f'(L1, L2, L3, clustering, exemplars, confirm) compares only the '
+                     f'designated pair</b> '
+                     f'({" vs. ".join(mult.get("designated_pair", []))}) — the remaining '
+                     f'pairs are not weakly-evidenced there, they are unexamined.')
+    out = (f'<h4>Multiplicity ledger</h4>'
+           f'<p class="blurb">{total} corrected comparisons were made in this report, in '
+           f'{len(scopes)} independent correction families. Holm is applied <i>within</i> '
+           f'each family and never across them, so the counts below do not add up to one '
+           f'test — they are the multiplicity a reader would otherwise have to infer from '
+           f'the tables.{pair_line}</p>' + _table(tbl))
+    # A bootstrap p is floored at 1/n_boot (sec 6.6), so `n_tests/n_boot` is the
+    # smallest Holm-adjusted p a family can produce AT ANY EFFECT SIZE. Past
+    # alpha, the correction is unsatisfiable and every non-result in it is an
+    # arithmetic consequence, not evidence -- exactly the shape of CLAUDE.md
+    # sec 11.29 (a criterion that gets harder as the thing it gates improves).
+    dead = [sc for sc in scopes
+            if sc.get("min_attainable_p_holm") is not None and sc.get("alpha")
+            and sc["min_attainable_p_holm"] > sc["alpha"]]
+    for sc in dead:
+        need = int(-(-sc["n_tests"] // sc["alpha"])) if sc["alpha"] else None
+        out += (f'<p class="blurb" style="border-left:4px solid #b00;padding-left:.7em">'
+                f'<b>Unsatisfiable correction — {sc["label"]}.</b> Bootstrap p-values '
+                f'are floored at 1/n_boot = {1 / sc["n_boot"]:.4f}, so with '
+                f'{sc["n_tests"]} comparisons the smallest Holm-adjusted p this family '
+                f'can produce is {sc["min_attainable_p_holm"]:.3f} — above α='
+                f'{sc["alpha"]}. <b>No result here can be significant at any effect '
+                f'size.</b> Read its non-results as arithmetic, not as evidence of no '
+                f'difference; raise <code>stats.n_boot</code> to at least '
+                f'{need} for this many comparisons.</p>')
+        findings.append(Finding(
+            claim_id=_next_claim_id("l0"), stage="l0", evidence_class="behavioral",
+            text=f"L0 — the {sc['label']} correction family is UNSATISFIABLE at this "
+                f"n_boot: {sc['n_tests']} comparisons against a 1/{sc['n_boot']} "
+                f"p-floor gives a smallest reachable Holm p of "
+                f"{sc['min_attainable_p_holm']:.3f} > α={sc['alpha']}, so its "
+                f"non-results carry no evidential weight (ROADMAP.md §18 F8).",
+            plain="This run did not use enough bootstrap resamples to possibly "
+                "detect anything once corrected for how many comparisons it made.",
+            registered=False))
+    out += _note(
+        "How many statistical comparisons this report actually made, and under "
+        "what correction (ROADMAP.md sec 18 F8).",
+        "'Most stringent threshold' is alpha/n -- the bar the *smallest* p-value "
+        "in that family must clear under Holm's first step. Later steps are "
+        "progressively less strict, so this is the ceiling on severity, not the "
+        "bar every test faced.",
+        "These families are corrected separately, by design: the dev corpus is "
+        "hypothesis-generating (sec 6.7) and Confirm is one-shot by construction. "
+        "Pooling them into one Bonferroni family would be more conservative but "
+        "would also mean a pre-registered confirmation paid for every exploratory "
+        "look, which is exactly the trade the exploration/confirmation split "
+        "exists to avoid.")
+    breakdown = "; ".join(f"{sc['label']}: {sc['n_tests']}" for sc in scopes)
+    findings.append(Finding(
+        claim_id=_next_claim_id("l0"), stage="l0", evidence_class="behavioral",
+        text=f"L0 — this report made {total} corrected comparisons across "
+            f"{len(scopes)} independent Holm families ({breakdown}) "
+            f"(ROADMAP.md §18 F8).",
+        plain=f"We ran {total} statistical comparisons in this report, and corrected "
+            f"for having run several at once.",
+        registered=False))
+    return out
+
+
 def _sec_l0(run_dir: Path, model_colors: dict, findings: list) -> str:
     """Family-level MASE comparison with CIs and Holm-corrected paired tests."""
     summary = load_json(run_dir / "l0" / "summary.json")
@@ -1170,7 +1404,7 @@ def _sec_l0(run_dir: Path, model_colors: dict, findings: list) -> str:
             plain="There wasn't a fair way to compare the two models' accuracy on "
                 "individual kinds of data in this run.",
             registered=False))
-        return inner
+        return inner + _multiplicity_block(run_dir, summary, findings)
 
     tests = summary.get("family_tests")
     if tests:
@@ -1227,6 +1461,11 @@ def _sec_l0(run_dir: Path, model_colors: dict, findings: list) -> str:
                         f"{', '.join(fams)} — though this run didn't check whether "
                         f"that's a real effect or just chance.",
                     registered=False))
+    # Outside the if/else on purpose: the ledger is a statement about the whole
+    # report's multiplicity, so it must render whether or not this particular
+    # run produced a family-test table (ROADMAP.md sec 18 F8).
+    inner += _other_pairs_block(summary, findings)
+    inner += _multiplicity_block(run_dir, summary, findings)
     return inner
 
 
@@ -2137,6 +2376,84 @@ def _sec_attention(run_dir: Path, model_colors: dict, findings: list) -> str:
                     "period would score near zero here despite being real. "
                     "The reported family is whichever gave that head its "
                     "single highest score, not every family it responds to.")
+                res = pat.get("resolution") or {}
+                matched_tops = (pat.get("head_scores_matched") or {}).get(
+                    "top_periodicity_heads", [])
+                matched_scores = pat.get("head_scores_matched") or {}
+                unresolvable = matched_scores.get("unresolvable_families") or []
+                if matched_scores and not res.get("is_identity", True):
+                    parts += "<h4>Top periodicity heads — resolution-matched</h4>"
+                    if matched_tops:
+                        parts += _table(pd.DataFrame(matched_tops))
+                    else:
+                        # An empty matched ranking is a result, not a gap, and
+                        # must not render as a missing table (invariant 8).
+                        parts += (
+                            f'<p class="blurb">No periodicity head is resolvable at '
+                            f'the matched {res.get("bin_width_steps", 0):.0f}-step '
+                            f'lag resolution: every benchmark family in this run has '
+                            f'a dominant period under two bins '
+                            f'({", ".join(unresolvable)}). Any seasonal-attention '
+                            f'difference between these two models is therefore '
+                            f'finer than the coarser model '
+                            f'({res.get("coarsest_model", "?")}) can express at all, '
+                            f'so the native table above is not evidence of one '
+                            f'model attending more seasonally than the other — it '
+                            f'is a statement about token width.</p>')
+                    bw = res.get("bin_width_steps", 0)
+                    if matched_tops:
+                        mb = matched_tops[0]
+                        findings.append(Finding(
+                            claim_id=_next_claim_id("attention"), stage="attention",
+                            evidence_class="descriptive",
+                            text=f"Attention — {model}: at the resolution-matched "
+                                f"{bw:.0f}-step lag axis, the strongest periodicity "
+                                f"head is {_short(mb['layer'])}·h{mb['head']} "
+                                f"(excess seasonal mass {mb['score']:.2f}, family "
+                                f"{mb['family']}). This, not the native ranking, is "
+                                f"the number a cross-model claim may cite — binning "
+                                f"to the coarsest model's token width discards finer "
+                                f"periodicity by construction, which is the cost of "
+                                f"making the two comparable (ROADMAP.md §18 F5).",
+                            plain=f"Judged on the coarser model's own timescale, "
+                                f"{model}'s most seasonal attention head is "
+                                f"{_short(mb['layer'])}·h{mb['head']}.",
+                            registered=False))
+                    else:
+                        findings.append(Finding(
+                            claim_id=_next_claim_id("attention"), stage="attention",
+                            evidence_class="descriptive",
+                            text=f"Attention — {model}: no periodicity head survives "
+                                f"the resolution-matched {bw:.0f}-step lag axis "
+                                f"(every family's dominant period is under two "
+                                f"bins), so no cross-model seasonal-attention "
+                                f"comparison is supported by this run "
+                                f"(ROADMAP.md §18 F5).",
+                            plain=f"The two models' tokens are too different in width "
+                                f"to compare their seasonal attention on this corpus.",
+                            registered=False))
+                    parts += _note(
+                        "The same statistic, recomputed after binning this "
+                        f"model's lag axis to {res.get('bin_width_steps', 0):.0f} "
+                        "time steps — the token width of the coarsest model in "
+                        f"this run ({res.get('coarsest_model', '?')}). Lag index "
+                        "means a different number of timesteps for each model "
+                        f"(this one resolves "
+                        f"{res.get('finest_resolvable_lag_steps', 0):.0f} steps), "
+                        "so the native table above compares unlike to unlike "
+                        "across models (ROADMAP.md §18 F5).",
+                        "This is the table a CROSS-MODEL claim may cite; the "
+                        "native one above is the right axis for a statement "
+                        "about this model alone. If a head's rank differs "
+                        "between the two, the native ranking was partly a "
+                        "statement about patch size.",
+                        "Binning can only lose resolution, never add it, so a "
+                        "genuinely sub-bin-width periodicity in the finer model "
+                        "is invisible here by construction — that is the point: "
+                        "it is not comparable to a model that cannot resolve it "
+                        "at all. A difference smaller than "
+                        f"{res.get('bin_width_steps', 0):.0f} steps is not "
+                        "interpretable across models under any mode.")
                 best = tops[0]
                 findings.append(Finding(
                     claim_id=_next_claim_id("attention"), stage="attention",
@@ -2843,7 +3160,20 @@ def _sec_budget(run_dir: Path, model_colors: dict, findings: list,
     budget = load_json(run_dir / "budget" / "model_budget.json")
     models = budget.get("models", {})
     rows, warn = [], []
+    blackbox = {n: r for n, r in models.items() if "unmeasurable" in r}
     for name, rec in models.items():
+        if name in blackbox:
+            pred = rec.get("predict") or {}
+            rows.append({
+                "model": name, "params (M)": None, "body (M)": None, "blocks": None,
+                "FLOPs/series": "not measurable",
+                "forward (ms)": None,
+                "predict (ms)": (None if "timing" not in pred
+                                 else pred["timing"]["median_s"] * 1e3),
+                "peak VRAM (MB)": None,
+                "FLOPs check": f"tier {rec.get('tier', 0)} (black box)",
+            })
+            continue
         p, f = rec["parameters"], rec["forward"]
         pred = rec.get("predict") or {}
         sanity = rec.get("flops_sanity", {})
@@ -2880,6 +3210,12 @@ def _sec_budget(run_dir: Path, model_colors: dict, findings: list,
     inner += _table(pd.DataFrame(rows))
     for w in warn:
         inner += f'<p class="blurb">⚠ {w}</p>'
+    for name, rec in blackbox.items():
+        why = "; ".join(f"{k}: {v}" for k, v in rec["unmeasurable"].items())
+        inner += (f'<p class="blurb">⚠ <b>{name}</b> is a tier-0 (black box) adapter: '
+                  f'latency is the only cost axis it has. {why}. Its blank cells are '
+                  f'<b>unmeasurable, not zero</b> — do not read this model as cheap '
+                  f'(<code>ROADMAP.md</code> §19 G1).</p>')
 
     cov_rows = []
     for name, rec in models.items():
@@ -2926,7 +3262,8 @@ def _sec_budget(run_dir: Path, model_colors: dict, findings: list,
             "the architecture alone. A blank means not measurable here, "
             "which is not the same as full coverage.")
 
-    cum = {n: r["forward"].get("blocks") for n, r in models.items()}
+    cum = {n: r["forward"].get("blocks") for n, r in models.items()
+           if n not in blackbox}
     if any(c for c in cum.values()):
         fig = go.Figure()
         for name, blocks in cum.items():
@@ -2955,7 +3292,8 @@ def _sec_budget(run_dir: Path, model_colors: dict, findings: list,
         pts = [(n, models[n]["forward"]["flops_per_series"],
                 models[n]["parameters"]["total"], overall[n])
                for n in models
-               if n in overall and models[n]["forward"]["flops_per_series"] is not None]
+               if n in overall and n not in blackbox
+               and models[n]["forward"]["flops_per_series"] is not None]
         if pts:
             fig = make_subplots(rows=1, cols=2, horizontal_spacing=0.12,
                                 subplot_titles=("MASE vs compute", "MASE vs parameters"))
@@ -3008,7 +3346,20 @@ def _sec_budget(run_dir: Path, model_colors: dict, findings: list,
         inner += ('<p class="blurb">L0 did not run, so quality cannot be normalized by '
                   'cost in this run — the table above is the raw cost record only.</p>')
 
+    for name, rec in blackbox.items():
+        pred = (rec.get("predict") or {}).get("timing") or {}
+        ms = f"{pred['median_s'] * 1e3:.0f} ms median forecast" if pred else "no timing"
+        findings.append(Finding(
+            claim_id=_next_claim_id("budget"), stage="budget", evidence_class="descriptive",
+            text=f"Cost — {name} is a tier-0 (black box) adapter: {ms}. Parameters, "
+                f"FLOPs and captured fraction are unmeasurable for it, so no "
+                f"cost-normalized comparison involving this model is possible.",
+            plain=f"{name} only hands back forecasts, so we can time it but cannot "
+                f"see how big it is or how much computation it does.",
+            registered=False))
     for name, rec in models.items():
+        if name in blackbox:
+            continue
         f = rec["forward"]
         findings.append(Finding(
             claim_id=_next_claim_id("budget"), stage="budget", evidence_class="descriptive",
@@ -3024,6 +3375,26 @@ def _sec_budget(run_dir: Path, model_colors: dict, findings: list,
     return inner
 
 
+_CONFIG_ATTR_TO_STAGE = {"clustering": "cluster"}
+
+
+def _tier_skip_reason(run_dir: Path, config_attr: str) -> str:
+    """Why the tier gate dropped this stage, or "" if it did not (§19 G1)."""
+    path = run_dir / "tiers.json"
+    if not path.exists():
+        return ""
+    tiers = load_json(path)
+    stage = _CONFIG_ATTR_TO_STAGE.get(config_attr, config_attr)
+    if stage not in (tiers.get("dropped_stages") or []):
+        return ""
+    run_tier = tiers.get("run_tier")
+    limiting = sorted(m for m, t in (tiers.get("models") or {}).items()
+                      if t.get("tier") == run_tier)
+    return (f"capability tier: this run is capped at tier {run_tier} by "
+            f"{', '.join(limiting)}, and '{stage}' needs more than that adapter "
+            f"exposes (ROADMAP.md §19 G1)")
+
+
 _FAIRNESS_UNMEASURED = "not yet measured"
 
 
@@ -3031,6 +3402,40 @@ def _fairness_row(axis: str, a_name: str, a_val: str, b_name: str, b_val: str,
                   asymmetry: str, qualifies: str) -> dict:
     return {"Axis": axis, a_name: a_val, b_name: b_val,
             "Asymmetry": asymmetry, "Qualifies": qualifies}
+
+
+def _refused_on_contiguity(record: dict) -> bool:
+    """Whether this refusal was the non-contiguity gate rather than the diffuseness one.
+
+    Read off the recorded numbers rather than by matching the message text,
+    so a reworded refusal cannot silently change what the report claims.
+    """
+    g, floor = record.get("contiguity"), record.get("min_contiguity")
+    return g is not None and floor is not None and g < floor
+
+
+def _eligibility_cell(record: dict) -> str:
+    """One model's routing verdict, with the number that produced it.
+
+    A bare "L0 only" would be a verdict without evidence; the number is
+    what a reader needs to tell a genuinely refused model from one sitting
+    just under a floor. **Which** number depends on which of the two gates
+    fired (ROADMAP.md sec 19 G2) -- quoting contrast for a model refused on
+    contiguity would show a healthy number beside a refusal and read as a
+    bug in the gate rather than as the model's actual property.
+    """
+    if not record:
+        return _FAIRNESS_UNMEASURED
+    if record.get("eligible") == "l0_only":
+        if _refused_on_contiguity(record):
+            g = record.get("contiguity")
+            return f"L0 only (contiguity {g:.3f})" if g is not None else "L0 only"
+        c = record.get("contrast")
+        return f"L0 only (contrast {c:.2f})" if c is not None else "L0 only"
+    if record.get("measured"):
+        c = record.get("contrast")
+        return f"full (measured, contrast {c:.2f})" if c is not None else "full (measured)"
+    return "full (spans declared by adapter)"
 
 
 def _sec_fairness(cfg: PipelineConfig, run_dir: Path) -> str:
@@ -3043,19 +3448,63 @@ def _sec_fairness(cfg: PipelineConfig, run_dir: Path) -> str:
     Every row is read from an already-measured artifact (F1's
     `align_on_axis` output in `l3/meta.json`, F2/F4's
     `budget/model_budget.json`, F6's `l0/noise_floor.json`) -- never a
-    hand-written value, per this item's own acceptance criterion. F3, F5,
-    F7, F8 have no landed measurement anywhere in the repo yet, so their
+    hand-written value, per this item's own acceptance criterion. F3, F7
+    and F8 have no landed measurement anywhere in the repo yet, so their
     rows read "not yet measured" rather than being omitted -- the card's
     own coverage should be as visible as the asymmetries it reports.
     """
     a, b = cfg.comparison_pair()
     rows = []
 
+    tiers = load_json(run_dir / "tiers.json") if (run_dir / "tiers.json").exists() else {}
+    routing = load_json(run_dir / "routing.json") if (run_dir / "routing.json").exists() else {}
+    ra_r, rb_r = routing.get(a.name) or {}, routing.get(b.name) or {}
+    if routing:
+        rows.append(_fairness_row(
+            "Analysis eligibility", a.name, _eligibility_cell(ra_r),
+            b.name, _eligibility_cell(rb_r),
+            "restricted run" if "l0_only" in (ra_r.get("eligible"), rb_r.get("eligible"))
+            else "both fully eligible",
+            "every non-L0 section (ROADMAP.md §16 E3(c))"))
+    elif tiers.get("run_tier") == 0:
+        # No routing record exists because `extract` never ran -- the tier
+        # gate dropped it. Saying "not yet measured" here would imply a
+        # measurement is pending when the run is already decided, and the
+        # reader would have to reach the tier row below to learn why.
+        rows.append(_fairness_row(
+            "Analysis eligibility", a.name, "L0 only (tier 0)", b.name, "L0 only (tier 0)",
+            "restricted run", "every non-L0 section (ROADMAP.md §19 G1 -- the token→time "
+            "map was never measured because these adapters expose no internals to map)"))
+    else:
+        rows.append(_fairness_row(
+            "Analysis eligibility", a.name, _FAIRNESS_UNMEASURED,
+            b.name, _FAIRNESS_UNMEASURED, "n/a",
+            "every non-L0 section (ROADMAP.md §16 E3(c) -- only adapters that "
+            "measure their own token→time map record this)"))
+
+    tm = tiers.get("models", {})
+    if tm.get(a.name) and tm.get(b.name):
+        ta, tb = tm[a.name], tm[b.name]
+        dropped = tiers.get("dropped_stages") or []
+        rows.append(_fairness_row(
+            "Capability tier", a.name, f"{ta['tier']} ({ta['name']})",
+            b.name, f"{tb['tier']} ({tb['name']})",
+            "same tier" if ta["tier"] == tb["tier"]
+            else f"run capped at tier {min(ta['tier'], tb['tier'])} by the lower model",
+            ("no stage dropped" if not dropped
+             else "stages dropped for the whole run: " + ", ".join(dropped)
+                  + " (ROADMAP.md §19 G1)")))
+    else:
+        rows.append(_fairness_row(
+            "Capability tier", a.name, _FAIRNESS_UNMEASURED,
+            b.name, _FAIRNESS_UNMEASURED, "n/a",
+            "which stages this run could attempt at all (ROADMAP.md §19 G1)"))
+
     budget = load_json(run_dir / "budget" / "model_budget.json") if (
         run_dir / "budget" / "model_budget.json").exists() else {}
     models = budget.get("models", {})
     ra, rb = models.get(a.name), models.get(b.name)
-    if ra and rb:
+    if ra and rb and "parameters" in ra and "parameters" in rb:
         pa, pb = ra["parameters"]["total"], rb["parameters"]["total"]
         rows.append(_fairness_row(
             "Parameters", a.name, f"{pa / 1e6:.1f}M", b.name, f"{pb / 1e6:.1f}M",
@@ -3074,10 +3523,22 @@ def _sec_fairness(cfg: PipelineConfig, run_dir: Path) -> str:
             f"{abs(fca - fcb) * 100:.1f} pt gap" if fca is not None and fcb is not None else "n/a",
             "all depth-located claims (ROADMAP.md §18 F4)"))
     else:
+        # Two different reasons land here and a reader needs to tell them
+        # apart: the budget stage not having run is fixable by rerunning,
+        # while a tier-0 model has no module to count -- the second is a
+        # property of the model, not of this run's configuration.
+        def _cell(rec):
+            if rec and "unmeasurable" in rec:
+                return f"not measurable (tier {rec.get('tier', 0)})"
+            return _FAIRNESS_UNMEASURED
+        blackbox = any(r and "unmeasurable" in r for r in (ra, rb))
         rows.append(_fairness_row(
-            "Parameters / FLOPs / captured fraction", a.name, _FAIRNESS_UNMEASURED,
-            b.name, _FAIRNESS_UNMEASURED, "n/a",
-            "all quality and depth-located claims (ROADMAP.md §18 F2/F4 -- enable the budget stage)"))
+            "Parameters / FLOPs / captured fraction", a.name, _cell(ra), b.name, _cell(rb),
+            "not comparable" if blackbox else "n/a",
+            "all quality and depth-located claims (ROADMAP.md §18 F2/F4 -- "
+            + ("a black-box adapter exposes no module to count, so cost per unit "
+               "of quality cannot be computed for this pair at all)"
+               if blackbox else "enable the budget stage)")))
 
     depth_axis_name = cfg.alignment.depth_axis
     l3_meta_path = run_dir / "l3" / "meta.json"
@@ -3117,10 +3578,26 @@ def _sec_fairness(cfg: PipelineConfig, run_dir: Path) -> str:
             b.name, _FAIRNESS_UNMEASURED, "n/a",
             "all delta claims (ROADMAP.md §18 F6 -- enable l0.noise_floor_repeats >= 2)"))
 
-    rows.append(_fairness_row(
-        "Finest resolvable lag (token width)", a.name, _FAIRNESS_UNMEASURED,
-        b.name, _FAIRNESS_UNMEASURED, "n/a",
-        "all attention-lag claims (ROADMAP.md §18 F5, unstarted)"))
+    att_path = run_dir / "attention" / "meta.json"
+    att = load_json(att_path) if att_path.exists() else {}
+    lags = {m: ((att.get(m) or {}).get("patterns") or {}).get("resolution") or {}
+            for m in (a.name, b.name)}
+    la, lb = (lags[a.name].get("finest_resolvable_lag_steps"),
+              lags[b.name].get("finest_resolvable_lag_steps"))
+    if la is not None and lb is not None:
+        def _steps(v: float) -> str:
+            return f"{v:.0f} step" + ("" if abs(v - 1.0) < 1e-9 else "s")
+        rows.append(_fairness_row(
+            "Finest resolvable lag (token width)", a.name, _steps(la),
+            b.name, _steps(lb),
+            f"{max(la, lb) / min(la, lb):.1f}× — matched at {max(la, lb):.0f} steps",
+            "all cross-model attention-lag claims (ROADMAP.md §18 F5)"))
+    else:
+        rows.append(_fairness_row(
+            "Finest resolvable lag (token width)", a.name, _FAIRNESS_UNMEASURED,
+            b.name, _FAIRNESS_UNMEASURED, "n/a",
+            "all attention-lag claims (ROADMAP.md §18 F5 -- needs the attention "
+            "stage with pattern capture supported by both adapters)"))
     rows.append(_fairness_row(
         "Declared training exposure", a.name, _FAIRNESS_UNMEASURED,
         b.name, _FAIRNESS_UNMEASURED, "n/a",
@@ -3133,7 +3610,33 @@ def _sec_fairness(cfg: PipelineConfig, run_dir: Path) -> str:
     save_json(run_dir / "fairness" / "card.json",
              {"model_a": a.name, "model_b": b.name, "rows": rows})
 
-    inner = _table(pd.DataFrame(rows))
+    restricted = [m for m, r in routing.items() if (r or {}).get("eligible") == "l0_only"]
+    banner = ""
+    if restricted:
+        def _why(m: str) -> str:
+            r = routing[m] or {}
+            if _refused_on_contiguity(r):
+                return (f"<b>{m}</b>: contiguity "
+                        f"{(r.get('contiguity') if r.get('contiguity') is not None else float('nan')):.3f} "
+                        f"against a floor of "
+                        f"{(r.get('min_contiguity') if r.get('min_contiguity') is not None else float('nan')):.3f} "
+                        f"— its tokens are sharply time-localized but read "
+                        f"disjoint timesteps, not one interval")
+            return (f"<b>{m}</b>: peak:pedestal contrast "
+                    f"{(r.get('contrast') if r.get('contrast') is not None else float('nan')):.2f} "
+                    f"against a floor of "
+                    f"{(r.get('min_contrast') if r.get('min_contrast') is not None else float('nan')):.2f}")
+
+        detail = "; ".join(_why(m) for m in restricted)
+        banner = (
+            "<div class='fairness-restricted'><b>This run is restricted to L0 "
+            "(behavioral) results.</b> Its token→time map was measured, not declared, "
+            "and does not satisfy the pooling premise, so window pooling — and every cross-model "
+            "analysis built on it — is undefined for this model and was not run "
+            f"({detail}). Sections below that are missing are missing for this reason, "
+            "not because the analysis failed. See CLAUDE.md §12's envelope edge.</div>")
+
+    inner = banner + _table(pd.DataFrame(rows))
     inner += _note(
         "Every measured asymmetry between the two models in this run, in "
         "one place, before any result section (ROADMAP.md §18 F9). This "
@@ -3146,8 +3649,8 @@ def _sec_fairness(cfg: PipelineConfig, run_dir: Path) -> str:
         "config or not yet built anywhere in the repo; read any claim that "
         "row would qualify with the same caution CLAUDE.md §12 states "
         "for it in prose.",
-        "This card is only as complete as the F-items behind it. F3, F5, "
-        "F7 and F8 have no landed measurement anywhere in the repo yet, so "
+        "This card is only as complete as the F-items behind it. F3, F7 "
+        "and F8 have no landed measurement anywhere in the repo yet, so "
         "their rows are a statement of absence, not a small number -- "
         "absence of a row here is never evidence of fairness.",
     )
@@ -3414,6 +3917,7 @@ details{margin-top:30px;color:var(--muted)}
 details pre{background:var(--panel);border:1px solid var(--line);border-radius:6px;
   padding:14px;font:12px/1.5 var(--mono);overflow-x:auto;color:var(--ink)}
 footer{color:var(--muted);font:12px var(--mono);margin-top:14px}
+.fairness-restricted{border:2px solid #b03a2e;background:rgba(176,58,46,.08);border-radius:6px;padding:12px 14px;margin:0 0 14px;line-height:1.5}
 details.note{margin:2px 0 18px;border:1px solid var(--line);border-radius:6px;
   background:rgba(0,0,0,0.015)}
 details.note summary{cursor:pointer;padding:7px 12px;font:12px var(--mono);
@@ -3423,6 +3927,8 @@ details.note summary::before{content:"▸ ";color:var(--accent)}
 details.note[open] summary::before{content:"▾ "}
 details.note .note-body{padding:2px 14px 12px;font-size:13px;color:var(--ink);max-width:74ch}
 details.note .note-body p{margin:6px 0}
+.gloss-where{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+details.note.glossary .note-body{max-width:82ch}
 details.note .note-body b{color:var(--muted);font:600 11px var(--mono);
   letter-spacing:.06em;text-transform:uppercase}
 details.note.stagedoc{background:rgba(46,110,142,0.045);border-color:var(--accent);
@@ -3458,6 +3964,7 @@ tr.cov-skipped td{color:var(--muted)}
   </div>
 </header>
 {{ how_to_read }}
+{{ glossary_block }}
 <details class="coverage"{% if any_failed %} open{% endif %}>
 <summary class="{% if any_failed %}coverage-bad{% else %}coverage-ok{% endif %}">
 Run coverage — {{ coverage_summary }}</summary>

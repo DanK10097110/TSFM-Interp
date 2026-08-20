@@ -200,6 +200,14 @@ class AttentionConfig:
     ablation_max_series: int = 128
     head_layer_stride: int = 1
     top_k: int = 5
+    # Which lag resolution a CROSS-MODEL attention claim is allowed to cite
+    # (ROADMAP.md sec 18 F5). Both are always computed and recorded: `native`
+    # is each model's own token lag axis -- the historical behavior, and the
+    # only meaningful axis for a within-model statement -- while `matched`
+    # bins every model's lag axis to the coarsest configured model's token
+    # width first, so a "sharper seasonal attention" claim is not partly a
+    # statement about patch size.
+    resolution_mode: str = "matched"
 
 
 @dataclass
@@ -453,8 +461,13 @@ class PipelineConfig:
         if len(self.models) > 2:
             import logging
             logging.getLogger("tsfm_lens").warning(
-                "more than two models configured; comparisons use the first two, "
-                "extraction and L0 run for all")
+                "more than two models configured: L0 tests ALL %d pairs and Holm-"
+                "corrects across them jointly (ROADMAP.md sec 18 F8), but every "
+                "other cross-model stage (L1, L2, L3, clustering, exemplars, "
+                "confirm) compares only the first two -- the other pairs are "
+                "unexamined there, not weakly evidenced. The report's multiplicity "
+                "ledger states this in the body; this line is not the only notice",
+                len(self.models) * (len(self.models) - 1) // 2)
 
 
 def _build(cls: type, data: dict, section: str | None = None):

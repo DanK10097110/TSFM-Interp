@@ -35,9 +35,11 @@ from .extraction.store import ActivationStore
 from .manifest import (diff_resolved, fingerprint_stage, load_manifest,
                        record_extra, resolve_config_keys, save_manifest)
 from .models import ModelHub
+from .models.base import TIER_NAMES, NotTimeLocalized
 from .report.report import run_report
 from .sae.train import run_sae
-from .utils import log, resolve_device, resolve_dtype, run_provenance, set_seed, setup_logging
+from .utils import (log, resolve_device, resolve_dtype, run_provenance, save_json,
+                    set_seed, setup_logging)
 
 
 class Context:
@@ -180,6 +182,164 @@ def _stages() -> list:
     ]
 
 
+# Stages that need only forecasts and a loaded model -- the whole analysis
+# surface still available to a model whose tokens have no time->window map.
+# `l0` is here despite declaring an `extract` dependency in the DAG: it reads
+# no activations (it only *writes* its predictions into the store), so the
+# dependency exists to order a full run, not because L0 needs a capture.
+_L0_ONLY_STAGES = ("l0", "budget", "report")
+
+# The tier each stage needs from EVERY configured model (`ROADMAP.md` sec 19
+# G1). Tier 0 is forecasts only; 1 adds readable activations; 2 adds
+# single-pass patching; 3 adds attention introspection. Two deliberate
+# choices:
+#   * `attention` sits at 1, not 3. Its head-ablation half works from
+#     `attention_info` alone and its pattern half already skips per-model
+#     (`CLAUDE.md` sec 2.5) -- gating the whole stage at 3 would delete
+#     working analyses for Chronos-Bolt and Sundial to protect one that
+#     already degrades correctly.
+#   * `confirm` sits at 0. Its behavioral half needs only `predict`, and its
+#     CKA half is conditional on a registered geometric hypothesis that a
+#     tier-0 run has no way to produce in the first place.
+# A run is narrowed to the MINIMUM tier across its models, because every
+# stage above tier 0 is either cross-model or feeds one that is.
+_STAGE_MIN_TIER = {
+    "l0": 0, "budget": 0, "report": 0, "register": 0, "confirm": 0,
+    "extract": 1, "layer_screen": 1, "internals": 1, "l1": 1, "l2": 1,
+    "cluster": 1, "sae": 1, "attention": 1, "exemplars": 1,
+    "lens": 2, "l3": 2,
+}
+
+
+def resolve_tiers(cfg: PipelineConfig, hub: ModelHub) -> dict:
+    """Each configured model's declared capability tier -- no checkpoint loaded.
+
+    `capability_tier` is a classmethod over what the adapter subclass
+    implements, so this costs nothing and can therefore run on every stage
+    selection, including a `--stages report` rerun. That matters: the tier
+    decision must not depend on whether `extract` happened to be scheduled,
+    since for a tier-0 model `extract` is precisely the stage being dropped.
+    """
+    return {mcfg.name: hub.get(mcfg.name).tier_report() for mcfg in cfg.models}
+
+
+def resolve_routing(cfg: PipelineConfig, hub: ModelHub) -> dict:
+    """Decide what each model in this run is eligible for, and record it.
+
+    ROADMAP.md sec 16 E3(c)'s routing half. An adapter that *measures* its own
+    token->time map (`GenericHFAdapter`) can find its impulse response
+    diffuse, in which case pooling its activations onto the shared window
+    axis would put every cross-model number on a fiction. Until now that
+    surfaced as a `NotTimeLocalized` escaping mid-extraction and killing the
+    run; here it is caught once, up front, and turned into a *decision*: that
+    model is routed to L0 only, with the measured contrast that drove it
+    written to `routing.json` and rendered in the report's fairness card.
+
+    Only `NotTimeLocalized` is caught. Any other failure while resolving a
+    span table is a real defect and still propagates -- a broad except here
+    would silently relabel bugs as "this model is diffuse", which reads as a
+    considered finding rather than a crash (`CLAUDE.md` sec 11.33's lesson
+    about the cost of a false refusal).
+    """
+    routing = {}
+    for mcfg in cfg.models:
+        adapter = hub.get(mcfg.name)
+        if not adapter.measures_own_spans:
+            routing[mcfg.name] = {"eligible": "full", "measured": False}
+            continue
+        try:
+            adapter.token_time_spans()
+        except NotTimeLocalized as exc:
+            log.warning("ROUTING -- model '%s' is not time-localized; it is restricted to "
+                        "L0-only for this run (stages %s). %s",
+                        mcfg.name, ", ".join(_L0_ONLY_STAGES), exc)
+            routing[mcfg.name] = {"eligible": "l0_only", **exc.as_record()}
+            continue
+        finally:
+            if not cfg.run.keep_models_loaded:
+                hub.release(mcfg.name)
+        loc = adapter.time_localization()
+        routing[mcfg.name] = {
+            "eligible": "full",
+            "measured": loc is not None,
+            **({"contrast": loc.get("contrast"), "min_contrast": loc.get("min_contrast"),
+                "diffuseness": loc.get("diffuseness")} if loc else {}),
+        }
+    return routing
+
+
+def _apply_routing(cfg: PipelineConfig, ctx: "Context", selected: set, force: set) -> dict:
+    """Resolve routing, persist it, and narrow this run's stages to match.
+
+    Deliberately only runs when `extract` is actually going to execute:
+    resolving a span table loads a checkpoint, and a report-only rerun should
+    not pay for a model load to rediscover a decision already on disk. When
+    it is skipped, an existing `routing.json` is reused (and still narrows
+    the run) so the decision survives a `--stages report` rerun rather than
+    quietly reverting to "everything is eligible".
+    """
+    path = cfg.run_dir() / "routing.json"
+    will_extract = "extract" in selected and (
+        not _stage_by_name("extract").done(cfg) or "extract" in force or "all" in force)
+    if will_extract:
+        routing = resolve_routing(cfg, ctx.hub)
+        save_json(path, routing)
+    elif path.exists():
+        from .utils import load_json
+        routing = load_json(path)
+    else:
+        return {}
+
+    l0_only = [m for m, r in routing.items() if r.get("eligible") == "l0_only"]
+    if not l0_only:
+        return routing
+    dropped = sorted(selected - set(_L0_ONLY_STAGES))
+    selected.intersection_update(_L0_ONLY_STAGES)
+    log.warning("ROUTING -- %s not time-localized: this run is restricted to %s; "
+                "dropping %s. Reason and measured contrast in %s, and rendered in the "
+                "report's fairness card.",
+                ", ".join(f"'{m}'" for m in l0_only), ", ".join(sorted(selected)),
+                ", ".join(dropped) or "(nothing)", path)
+    return routing
+
+
+def _apply_tiers(cfg: PipelineConfig, ctx: "Context", selected: set) -> dict:
+    """Narrow this run's stages to what every configured model can support.
+
+    Runs BEFORE `_apply_routing` and unconditionally, because a tier-0 model
+    cannot reach the span measurement routing depends on -- asking a black-box
+    adapter for `token_time_spans` is the exact crash this gate exists to
+    replace with a decision. Persisted into `routing.json` alongside the
+    localization record so one artifact answers "what was this model eligible
+    for, and why" (`CLAUDE.md` invariant 8: a dropped stage that leaves no
+    trace in the deliverable is a silent degradation, not a loud one).
+    """
+    tiers = resolve_tiers(cfg, ctx.hub)
+    run_tier = min(t["tier"] for t in tiers.values())
+    # Computed over every stage ENABLED in the config, not over `selected`.
+    # A `--stages report` rerun selects one stage, and a `dropped_stages` list
+    # derived from that would come back empty -- rewriting the artifact to
+    # claim the tier gate dropped nothing, and erasing the reason the report
+    # prints beside each skipped section. The list is a property of the config
+    # and the models, so it must not depend on which stages this invocation
+    # happened to ask for.
+    dropped = sorted(n for n in stage_names()
+                     if _stage_by_name(n).enabled(cfg) and _STAGE_MIN_TIER.get(n, 1) > run_tier)
+    if dropped:
+        limiting = sorted(m for m, t in tiers.items() if t["tier"] == run_tier)
+        selected.difference_update(dropped)
+        log.warning("TIERS -- this run is capped at tier %d (%s) by %s; dropping %s. "
+                    "Each dropped stage needs a capability those adapters do not "
+                    "implement; see routing.json and the report's fairness card.",
+                    run_tier, TIER_NAMES[run_tier],
+                    ", ".join(f"'{m}'" for m in limiting), ", ".join(dropped))
+    return {"models": tiers, "run_tier": run_tier, "dropped_stages": dropped}
+
+
+def _stage_by_name(name: str) -> Stage:
+    return {s.name: s for s in _stages()}[name]
+
+
 def stage_names() -> list:
     return [s.name for s in _stages()]
 
@@ -224,6 +384,10 @@ def run_pipeline(cfg: PipelineConfig, stages: Optional[list] = None,
                         f"stage '{name}' needs '{dep}', which is disabled and has no artifacts")
                 log.info("adding '%s' (required by '%s')", dep, name)
                 selected.add(dep)
+
+    ctx = Context(cfg)
+    save_json(cfg.run_dir() / "tiers.json", _apply_tiers(cfg, ctx, selected))
+    _apply_routing(cfg, ctx, selected, force)
 
     manifest = load_manifest(cfg.run_dir())
     prev_stages = manifest.get("stages", {})
@@ -271,7 +435,6 @@ def run_pipeline(cfg: PipelineConfig, stages: Optional[list] = None,
               f"{'it' if len(stale_messages) == 1 else 'them'}) to regenerate under the "
               f"current config, or pass --allow-stale to proceed anyway at your own risk.")
 
-    ctx = Context(cfg)
     for stage in all_stages:
         if stage.name not in selected:
             continue

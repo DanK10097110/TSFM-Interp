@@ -13,25 +13,28 @@ import torch
 from ..config import DataConfig, ModelConfig
 from ..utils import log
 from .base import ModelAdapter
-from .mock import (MockEncDecAdapter, MockPatchAdapter, MockStepAdapter,
-                   MockWaveAdapter)
+from .mock import (MockBlackBoxAdapter, MockEncDecAdapter, MockPatchAdapter,
+                   MockStepAdapter, MockWaveAdapter)
 
 ADAPTERS: Dict[str, type] = {
     "mock_patch": MockPatchAdapter,
     "mock_step": MockStepAdapter,
     "mock_wave": MockWaveAdapter,
     "mock_encdec": MockEncDecAdapter,
+    "mock_blackbox": MockBlackBoxAdapter,
 }
 
 
 def _register_optional() -> None:
     """Register real-model adapters; their heavy imports happen only at load()."""
     from .chronos_adapter import ChronosAdapter
+    from .generic_hf_adapter import GenericHFAdapter
     from .chronos_bolt_adapter import ChronosBoltAdapter
     from .chronos2_adapter import Chronos2Adapter
     from .sundial_adapter import SundialAdapter
     from .timesfm_adapter import TimesFMAdapter
     ADAPTERS["chronos"] = ChronosAdapter
+    ADAPTERS["generic_hf"] = GenericHFAdapter
     ADAPTERS["chronos_bolt"] = ChronosBoltAdapter
     ADAPTERS["chronos2"] = Chronos2Adapter
     ADAPTERS["sundial"] = SundialAdapter

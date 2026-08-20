@@ -62,14 +62,28 @@ def test_full_pipeline_populates_the_measured_rows(built):
 
 
 def test_unmeasured_axes_are_named_not_yet_measured_not_omitted(built):
+    """F3 and F7 have no landed measurement anywhere in the repo, so their rows
+    must say so rather than vanish -- the card's own coverage should be as
+    visible as the asymmetries it reports."""
     card = _card(built)
     rows = {r["Axis"]: r for r in card["rows"]}
     a, b = built.comparison_pair()
-    for axis in ("Finest resolvable lag (token width)",
-                "Declared training exposure", "Capability intersection"):
+    for axis in ("Declared training exposure", "Capability intersection"):
         assert axis in rows, f"{axis} row must be present, not omitted"
         assert rows[axis][a.name] == "not yet measured"
         assert rows[axis][b.name] == "not yet measured"
+
+
+def test_finest_resolvable_lag_is_measured_now_that_f5_landed(built):
+    """F5 moved out of the unmeasured list (ROADMAP.md §18 F5): the attention
+    stage records each model's token width, and the asymmetry cell names the
+    width every cross-model attention claim is binned to."""
+    rows = {r["Axis"]: r for r in _card(built)["rows"]}
+    a, b = built.comparison_pair()
+    row = rows["Finest resolvable lag (token width)"]
+    assert row[a.name].endswith(("step", "steps"))
+    assert row[b.name].endswith(("step", "steps"))
+    assert "matched at" in row["Asymmetry"]
 
 
 def test_every_row_names_which_claims_it_qualifies(built):
@@ -90,9 +104,26 @@ def test_missing_artifacts_degrade_to_unmeasured_instead_of_crashing():
 
     card = load_json(cfg.run_dir() / "fairness" / "card.json")
     a, b = cfg.comparison_pair()
-    for row in card["rows"]:
-        assert row[a.name] == "not yet measured"
-        assert row[b.name] == "not yet measured"
+    rows = {r["Axis"]: r for r in card["rows"]}
+
+    # Analysis eligibility is the one row `extract` itself supplies (it writes
+    # `routing.json`), so it is legitimately populated here -- and it must say
+    # which kind of "full" this is, since a hand-written adapter's spans are
+    # declared, not measured (ROADMAP.md sec 16 E3(c)).
+    elig = rows.pop("Analysis eligibility")
+    assert elig[a.name] == "full (spans declared by adapter)"
+    assert elig[b.name] == "full (spans declared by adapter)"
+
+    # Capability tier is the other legitimately-populated row: it is derived
+    # from the adapter class itself (ROADMAP.md sec 19 G1), so it needs no
+    # artifact at all and is never "not yet measured" for a loadable model.
+    tier = rows.pop("Capability tier")
+    assert tier[a.name] == "3 (decomposable)"
+    assert tier[b.name] == "3 (decomposable)"
+
+    for row in rows.values():
+        assert row[a.name] == "not yet measured", row["Axis"]
+        assert row[b.name] == "not yet measured", row["Axis"]
 
 
 def test_fairness_section_is_always_rendered_first(built):

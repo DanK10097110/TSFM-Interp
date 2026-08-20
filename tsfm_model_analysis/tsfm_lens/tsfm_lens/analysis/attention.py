@@ -64,7 +64,7 @@ def run_attention(cfg: PipelineConfig, hub, store: ActivationStore,
     """Pattern, ablation, and cross-attention analyses for every configured model."""
     out_dir = cfg.run_dir() / "attention"
     out_dir.mkdir(parents=True, exist_ok=True)
-    meta, arrays = {}, {}
+    meta, arrays, pattern_results = {}, {}, {}
     for mcfg in cfg.models:
         adapter = hub.get(mcfg.name)
         adapter.ensure_loaded()
@@ -79,6 +79,7 @@ def run_attention(cfg: PipelineConfig, hub, store: ActivationStore,
             else:
                 model_meta["patterns"] = pat["meta"]
                 arrays[f"lag_profile_{mcfg.name}"] = pat["profile"]
+                pattern_results[mcfg.name] = pat
                 if pat.get("cross") is not None:
                     arrays[f"cross_profile_{mcfg.name}"] = pat["cross"]
         if cfg.attention.ablation:
@@ -97,9 +98,46 @@ def run_attention(cfg: PipelineConfig, hub, store: ActivationStore,
         meta[mcfg.name] = model_meta
         if not cfg.run.keep_models_loaded:
             hub.release(mcfg.name)
+    _add_matched_resolution(cfg, meta, arrays, pattern_results)
     np.savez(out_dir / "arrays.npz", **arrays)
     save_json(out_dir / "meta.json", meta)
     log.info("attention complete: %s", {m: sorted(v) for m, v in meta.items()})
+
+
+def _add_matched_resolution(cfg: PipelineConfig, meta: dict, arrays: dict,
+                            pattern_results: dict) -> None:
+    """Add the token-resolution-matched taxonomy alongside the native one.
+
+    ROADMAP.md sec 18 F5. Runs as a post-pass rather than inside the
+    per-model loop for two reasons: the common bin width is the *coarsest*
+    model's token width, which is not known until every model has been seen,
+    and doing it here needs no model resident, so nothing about the stage's
+    VRAM profile changes.
+
+    Native scores are left exactly as they were -- this adds keys, it does
+    not replace any -- so every previously recorded attention number stays
+    reproducible (`CLAUDE.md` sec 2.1). `attention.resolution_mode` records
+    which of the two a cross-model claim in the report may cite.
+    """
+    if not pattern_results:
+        return
+    widths = {m: p["token_width"] for m, p in pattern_results.items()}
+    bin_width = max(widths.values())
+    coarsest = max(widths, key=widths.get)
+    for name, pat in pattern_results.items():
+        matched = matched_head_scores(cfg, pat, bin_width)
+        block = meta[name]["patterns"]
+        block["head_scores_matched"] = matched["head_scores"]
+        block["resolution"] = {
+            "mode": cfg.attention.resolution_mode,
+            "bin_width_steps": float(bin_width),
+            "coarsest_model": coarsest,
+            "finest_resolvable_lag_steps": float(widths[name]),
+            "is_identity": bool(abs(widths[name] - bin_width) < 1e-9),
+        }
+        arrays[f"lag_profile_matched_{name}"] = matched["profile"]
+    log.info("attention: matched lag resolution = %.1f steps (coarsest model '%s')",
+             bin_width, coarsest)
 
 
 def _pattern_analysis(cfg: PipelineConfig, adapter, data: BenchmarkData):
@@ -150,7 +188,14 @@ def _pattern_analysis(cfg: PipelineConfig, adapter, data: BenchmarkData):
             "family_periods_steps": fam_periods,
             "n_series": int(total), "head_scores": heads,
             "cross_attention": cross_meta}
-    return {"meta": meta, "profile": profile.astype(np.float32), "cross": cross}
+    # The per-family pieces are returned so F5's matched-resolution pass can
+    # rerun the taxonomy on a rebinned axis without a second forward pass;
+    # they are in-memory only and never serialized (they are large and the
+    # aggregate profile is what a reader wants).
+    return {"meta": meta, "profile": profile.astype(np.float32), "cross": cross,
+            "fam_profiles": fam_profiles, "fam_counts": fam_counts,
+            "fam_periods": fam_periods, "extra": extra,
+            "token_width": token_width, "layer_names": layer_names}
 
 
 def _batch_profiles(pats: dict, max_lag: int):
@@ -200,6 +245,75 @@ def _head_scores(cfg: PipelineConfig, profile: np.ndarray, extra: np.ndarray,
             "local_mass": extra[:, :, 2].tolist(), "future_mass": extra[:, :, 3].tolist(),
             "periodicity": np.nan_to_num(period_scores, nan=0.0).tolist(),
             "top_periodicity_heads": ranked}
+
+
+def rebin_lag_profile(profile: np.ndarray, token_width: float,
+                      bin_width: float) -> np.ndarray:
+    """Move a token-lag profile onto a coarser *physical-time* lag axis.
+
+    ROADMAP.md sec 18 F5. A lag index means a different number of timesteps
+    for each model (TimesFM ~32, Chronos-T5 ~1), so comparing lag profiles
+    index-for-index compares unlike to unlike -- a "sharper seasonal
+    attention" finding would be partly a statement about patch size
+    (`CLAUDE.md` sec 12 item 5). Here token lag `k` is placed in bin
+    `floor(k * token_width / bin_width)`, i.e. by the physical lag it
+    actually represents.
+
+    Mass is **summed**, not averaged: attention mass is additive over
+    positions, and every downstream statistic normalizes by the profile's
+    own total, so summing is what leaves that normalization meaningful.
+    For the coarsest model (`bin_width == token_width`) this is the
+    identity, which is the invariant the tests pin.
+    """
+    n_lags = profile.shape[-1]
+    idx = np.floor(np.arange(n_lags) * token_width / bin_width).astype(int)
+    n_bins = int(idx[-1]) + 1 if n_lags else 0
+    out = np.zeros(profile.shape[:-1] + (n_bins,), dtype=profile.dtype)
+    np.add.at(out.reshape(-1, n_bins).T, idx, profile.reshape(-1, n_lags).T)
+    return out
+
+
+def _matched_extras(profile: np.ndarray, native_extra: np.ndarray) -> np.ndarray:
+    """Self/prev/local masses recomputed on the matched axis; future carried over.
+
+    `future_mass` is the share of attention pointing forward in time, which
+    no rebinning of the backward-lag axis can change -- so it is carried
+    across unchanged rather than recomputed, and says so here so a reader
+    doesn't mistake the carry-over for an oversight.
+    """
+    n_bins = profile.shape[-1]
+    prev = profile[..., 1] if n_bins > 1 else np.zeros_like(profile[..., 0])
+    local = profile[..., : min(3, n_bins)].sum(axis=-1)
+    return np.stack([profile[..., 0], prev, local, native_extra[..., 3]], axis=-1)
+
+
+def matched_head_scores(cfg: PipelineConfig, pat: dict, bin_width: float) -> dict:
+    """Recompute the head taxonomy with every model's lag axis binned alike.
+
+    Takes the per-family profiles the native pass already produced, so this
+    costs zero extra forward passes -- the rebinning is arithmetic on arrays
+    that are already in memory.
+    """
+    tw = pat["token_width"]
+    fam_binned = {f: rebin_lag_profile(p, tw, bin_width)
+                  for f, p in pat["fam_profiles"].items()}
+    total = sum(pat["fam_counts"].values())
+    profile = sum(fam_binned[f] * pat["fam_counts"][f] for f in fam_binned) / total
+    extra = _matched_extras(profile, pat["extra"])
+    scores = _head_scores(cfg, profile, extra, fam_binned, pat["fam_periods"],
+                          bin_width, pat["layer_names"])
+    scores["bin_width_steps"] = float(bin_width)
+    scores["n_bins"] = int(profile.shape[-1])
+    # A family whose seasonal period is under two bins has no periodicity that
+    # survives matching -- `_head_scores` skips it (q < 2) and would otherwise
+    # just produce a shorter ranking with no trace of why. Naming it here keeps
+    # the degradation loud rather than silent (`CLAUDE.md` sec 2.5): an empty
+    # matched ranking with every family listed means the coarser model cannot
+    # resolve this corpus's seasonality at all, which is a finding, not a gap.
+    scores["unresolvable_families"] = sorted(
+        f for f, period in pat["fam_periods"].items()
+        if int(round(period / bin_width)) < 2)
+    return {"head_scores": scores, "profile": profile.astype(np.float32)}
 
 
 def _periodicity(prof: np.ndarray, q: int) -> np.ndarray:

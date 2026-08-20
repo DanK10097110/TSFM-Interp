@@ -143,3 +143,41 @@ def test_compose_caveats_is_idempotent_shaped_and_never_empty(tmp_path):
     out = _compose_caveats(findings, tmp_path)
     assert len(out) == len(findings)
     assert all(f.caveat for f in out)
+
+
+def test_a_hand_authored_caveat_is_overwritten_but_says_so_loudly(tmp_path, caplog):
+    """A call site that hand-writes `caveat` has its text silently discarded --
+    that is the stated contract, but a silent drop is exactly what invariant 8
+    forbids, so it must warn and name the claim.
+
+    Found live 2026-08-19: F5's own periodicity call site set `caveat=` and its
+    sentence appeared 0 times in the rendered HTML. The fix is not to preserve
+    hand-written caveats (that would contradict this field's whole design) but
+    to make the discard audible, so the next author moves the text into `.text`
+    where a reader will actually see it.
+    """
+    import logging
+
+    authored = _finding(claim_id="attention.9", caveat="hand-typed prose")
+    with caplog.at_level(logging.WARNING, logger="tsfm_lens"):
+        out = _compose_caveats([authored], tmp_path)
+
+    assert "hand-typed prose" not in out[0].caveat
+    assert out[0].caveat
+    assert "attention.9" in caplog.text
+    assert "caveat" in caplog.text.lower()
+
+
+def test_no_report_call_site_hand_authors_a_caveat():
+    """The report's own builders must not set `caveat=` at all -- the warning
+    above is the safety net, this is the property it protects.
+
+    A source-level check rather than a rendered-output one on purpose: an
+    authored caveat that happens to be composed away leaves no trace in the
+    HTML to assert against, which is precisely how F5's went unnoticed.
+    """
+    src = (Path(__file__).resolve().parents[1] / "tsfm_lens" / "report"
+           / "report.py").read_text(encoding="utf-8")
+    offenders = [ln.strip() for ln in src.splitlines()
+                 if "caveat=" in ln and "replace(f, caveat=" not in ln]
+    assert offenders == [], offenders

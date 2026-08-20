@@ -221,14 +221,30 @@ def _check_capped_stages(cfg: PipelineConfig) -> list:
     if not cfg.models:
         return [DoctorCheck("batch caps", "warn", "no models configured")]
     min_batch = min(m.batch_size for m in cfg.models)
+
+    # Gate on the run's capability tier as well as on `enabled`, because a
+    # stage the tier gate is about to drop cannot crash on a batch cap it
+    # will never read. Failing preflight on it would be a false refusal of
+    # exactly the shape `CLAUDE.md` sec 11.35 warns about -- a check that
+    # reads as a considered finding while measuring something other than
+    # what its name says.
+    from .pipeline import _STAGE_MIN_TIER
+    from .models import ADAPTERS
+    tiers = [ADAPTERS[m.adapter].capability_tier() for m in cfg.models
+             if m.adapter in ADAPTERS]
+    run_tier = min(tiers) if tiers else 3
+
+    def runs(stage: str) -> bool:
+        return _STAGE_MIN_TIER.get(stage, 1) <= run_tier
+
     candidates = []
-    if cfg.l3.enabled and cfg.l3.patching.enabled:
+    if cfg.l3.enabled and cfg.l3.patching.enabled and runs("l3"):
         candidates.append(("l3.patching.max_series", cfg.l3.patching.max_series))
-    if cfg.lens.enabled:
+    if cfg.lens.enabled and runs("lens"):
         candidates.append(("lens.max_series", cfg.lens.max_series))
-    if cfg.attention.enabled and cfg.attention.ablation:
+    if cfg.attention.enabled and cfg.attention.ablation and runs("attention"):
         candidates.append(("attention.ablation_max_series", cfg.attention.ablation_max_series))
-    if cfg.sae.enabled:
+    if cfg.sae.enabled and runs("sae"):
         candidates.append(("sae.forecast_preservation_max_series",
                            cfg.sae.forecast_preservation_max_series))
         if cfg.sae.feature_ablation_enabled:
@@ -238,7 +254,8 @@ def _check_capped_stages(cfg: PipelineConfig) -> list:
             candidates.append(("sae.feature_steering_max_series",
                                cfg.sae.feature_steering_max_series))
     if not candidates:
-        return [DoctorCheck("batch caps", "pass", "no batch-per-call stages enabled")]
+        return [DoctorCheck("batch caps", "pass",
+                            f"no batch-per-call stages enabled at tier {run_tier}")]
     checks = []
     for label, value in candidates:
         if value > min_batch:

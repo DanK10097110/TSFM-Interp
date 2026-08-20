@@ -557,6 +557,36 @@ def run_budget(cfg, hub, data, device) -> dict:
     records = {}
     for model_cfg in cfg.models:
         adapter = hub.get(model_cfg.name)
+        if adapter.capability_tier() < 1:
+            # A black box has no module to count parameters over, no block
+            # stack to attribute FLOPs to, and no capture surface to report
+            # coverage of. Latency through `predict` is the one cost axis it
+            # genuinely has, so that is the one recorded -- and every other
+            # field is an explicit "unmeasurable, because" rather than a zero,
+            # which would silently make the cheapest-looking model in a
+            # comparison the one nothing could be measured about
+            # (`ROADMAP.md` sec 19 G1, `CLAUDE.md` sec 2.5).
+            record = {"adapter": model_cfg.adapter, "checkpoint": model_cfg.checkpoint,
+                      "tier": adapter.capability_tier(),
+                      "unmeasurable": {
+                          "parameters": "tier 0 (black box): adapter exposes no `module`",
+                          "flops": "tier 0 (black box): no module to instrument",
+                          "coverage": "tier 0 (black box): nothing is captured, so "
+                                      "captured fraction is undefined rather than 0"}}
+            try:
+                record["predict"] = predict_cost(adapter, contexts, cfg.data.horizon,
+                                                 cfg.l0.quantiles, device,
+                                                 repeats=cfg.budget.predict_repeats,
+                                                 warmup=1)
+            except Exception as e:
+                log.warning("budget: predict cost failed for '%s' (%s)", model_cfg.name, e)
+                record["predict"] = {"error": str(e)}
+            records[model_cfg.name] = record
+            log.info("budget: %s tier 0 -- latency only, params/FLOPs/coverage "
+                     "unmeasurable", model_cfg.name)
+            if not cfg.run.keep_models_loaded:
+                hub.release(model_cfg.name)
+            continue
         census = parameter_census(adapter)
         forward = measure_forward_cost(adapter, contexts, device,
                                        repeats=cfg.budget.repeats,

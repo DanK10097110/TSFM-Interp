@@ -1,0 +1,51 @@
+# Tier-0 acceptance run (ROADMAP.md sec 19 G1): every configured model is a
+# black box that only forecasts.
+#
+# Nothing here disables a stage by hand. That is the point -- the stage list
+# is left at its defaults and the TIER GATE is what narrows the run, so this
+# config fails loudly if `_STAGE_MIN_TIER` ever stops doing its job. A run
+# that needed `enabled: false` on ten stages would be testing the config
+# loader, not the gate.
+#
+# `blackbox_b` is a second, deliberately different black box (a longer
+# seasonal period) rather than a copy: L0's paired per-series tests need two
+# forecasters that actually disagree, and a run with one model would not
+# exercise the comparison path at all.
+
+run:
+  name: smoke_blackbox
+  out_dir: runs
+  device: cpu
+  dtype: float32
+  seed: 0
+
+data:
+  source: smoke
+  context_len: 128
+  horizon: 32
+  smoke_series_per_family: 20
+
+alignment:
+  window: 32
+
+models:
+  - name: blackbox_a
+    adapter: mock_blackbox
+    batch_size: 64
+  - name: blackbox_b
+    adapter: mock_blackbox
+    batch_size: 64
+    kwargs:
+      period: 32
+
+l0:
+  calibration: true
+
+budget:
+  # `measure_predict` is the only cost axis a black box HAS -- there is no
+  # module to count FLOPs over or hook per block, so the stage records
+  # latency and reports the rest as unmeasurable rather than as zero.
+  measure_predict: true
+
+report:
+  verbose: false

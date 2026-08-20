@@ -224,3 +224,30 @@ cd tsfm_model_analysis/tsfm_lens && python tests/test_smoke.py
   code against the new version before trusting Sundial again — this is a
   third-party checkpoint's own code being version-fragile, not something a
   version bump in this repo's control can pre-empt.
+  🔴 **Correction (2026-08-19): this is not Sundial-specific — it is
+  lineage-wide.** Probing two further checkpoints for the generic-adapter work
+  (`ROADMAP.md` §16 E3(b)) found `Maple728/TimeMoE-50M` and
+  `thuml/timer-base-84m` crashing with the **identical**
+  `'DynamicCache' object has no attribute 'get_usable_length'` under this same
+  `transformers==4.57.6`, and both are fixed by the **identical**
+  `use_cache=False`. So the entry above should be read as describing a class
+  of checkpoint (thuml-lineage decoder-only time-series remote code written
+  against pre-4.41 `transformers`), not one model's bug.
+  `models/generic_hf_adapter.py` therefore passes `use_cache=False` to any
+  forward whose signature accepts it, as a default rather than a per-adapter
+  workaround — safe because disabling a cache cannot change a forecast, which
+  is what separates it from the covariates that adapter refuses to fabricate.
+  **Expect the next thuml-lineage checkpoint to need this too**, and expect a
+  future `transformers` bump to change *which* attribute is missing rather
+  than to fix it.
+- **`datasets`/`AutoModel` note for the generic path (2026-08-19).**
+  `transformers.AutoModel` resolves to the **bare backbone** for most
+  time-series architectures (`PatchTSTModel`, not `PatchTSTForPrediction`;
+  `TimerModel`, not `TimerForPrediction`), and a backbone has no forecast head,
+  so a generic-adapter run against one produces no L0 at all. Worse, asking for
+  the `*ForPrediction` class against a *backbone-only pretrain checkpoint*
+  succeeds: `PatchTSTForPrediction.from_pretrained('ibm/patchtst-etth1-pretrain')`
+  returns a model with ~70 randomly-initialized parameters after printing a
+  warning to stderr and continuing. `GenericHFAdapter` turns that into a hard
+  error via `output_loading_info=True`; if a future `transformers` changes the
+  shape of that loading-info dict, that guard is the thing to re-check.
