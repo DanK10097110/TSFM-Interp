@@ -230,9 +230,22 @@ def sanitize(name: str) -> str:
     return name.replace("/", "_").replace(".", "_")
 
 
-def _train_config(cfg: PipelineConfig, seed: int) -> SAETrainConfig:
-    """This run's SAE hyperparameters at one training seed."""
-    return SAETrainConfig(dict_size_mult=cfg.sae.dict_size_mult, k=cfg.sae.k,
+def _train_config(cfg: PipelineConfig, seed: int, dict_size: int = 0) -> SAETrainConfig:
+    """This run's SAE hyperparameters at one training seed.
+
+    `dict_size` is a per-target absolute-size override (ROADMAP.md sec 13
+    item 9): the production `sae.dict_size_mult` sizes every target's
+    dictionary as a multiple of that layer's own hidden width, which can
+    land 10-20x larger than the sizes Stage 0's AuxK gate was calibrated
+    against (576/512) -- at a fixed absolute `aux_k` revival budget, the same
+    number of revival slots covers a much smaller *fraction* of a larger
+    dictionary, so AuxK's dead-rate performance does not transfer across
+    dictionary sizes by default. `0` (the default) reproduces the existing
+    `dict_size_mult`-only behavior exactly -- no already-recorded number
+    moves unless a target explicitly opts in.
+    """
+    return SAETrainConfig(dict_size_mult=cfg.sae.dict_size_mult, dict_size=dict_size,
+                          k=cfg.sae.k,
                           lr=cfg.sae.lr, epochs=cfg.sae.epochs,
                           batch_size=cfg.sae.batch_size, seed=seed,
                           resample_dead_every_epochs=cfg.sae.resample_dead_every_epochs,
@@ -292,7 +305,6 @@ def run_sae(cfg: PipelineConfig, hub: ModelHub, store: ActivationStore,
            data: BenchmarkData, device: torch.device) -> None:
     """Train + evaluate one baseline TopK SAE per configured (model, layer) target."""
     out_dir = cfg.run_dir() / "sae"
-    train_cfg = _train_config(cfg, cfg.run.seed)
     targets = cfg.sae.targets or _default_targets(cfg, store)
     results = {}
     real_contexts = _sample_real_contexts(cfg) if cfg.sae.real_data_enabled else None
@@ -308,6 +320,7 @@ def run_sae(cfg: PipelineConfig, hub: ModelHub, store: ActivationStore,
     for target in targets:
         model, layer = target["model"], target["layer"]
         key = f"{model}/{layer}"
+        train_cfg = _train_config(cfg, cfg.run.seed, dict_size=int(target.get("dict_size", 0)))
         log.info(f"sae: training baseline TopK SAE for {key}")
         adapter = hub.get(model)
         bench_activations = load_all_windows(store, model, layer)
@@ -457,7 +470,8 @@ def run_sae(cfg: PipelineConfig, hub: ModelHub, store: ActivationStore,
                 seed = train_cfg.seed + offset
                 log.info(f"sae: noise-floor replicate {offset}/{cfg.sae.n_seeds - 1} for {key} "
                          f"(seed {seed})")
-                replicate, _ = train_sae(train_activations, _train_config(cfg, seed), device)
+                replicate, _ = train_sae(train_activations, _train_config(
+                    cfg, seed, dict_size=train_cfg.dict_size), device)
                 per_seed.append(_repeat_metrics(cfg, adapter, layer, replicate, store, data,
                                                 device, bench_activations, key, seed))
             seed_floor = {"n_seeds": cfg.sae.n_seeds, "per_seed": per_seed,

@@ -733,6 +733,13 @@ TSFM-Interp/
         │   ├── report/report.py # single-file interactive HTML (one run)
         │   ├── report/meta_report.py # cross-run aggregator (ROADMAP.md §5.5);
         │   │                    # reads N run dirs' existing artifacts, no re-run
+        │   ├── report/scaling_ladder_report.py # renders analysis/scaling_ladder.py's
+        │   │                    # metric-vs-size dict to one HTML file (ROADMAP.md §20 H1,
+        │   │                    # 2026-08-20) -- another cross-run artifact like meta_report.py
+        │   │                    # above, so not one of report.py's per-run `builders`. Reuses
+        │   │                    # report.py's own `_note` (figcap + "What does this mean?"
+        │   │                    # dropdown) rather than a second implementation of the same
+        │   │                    # two-register affordance
         │   ├── stage_docs.py    # ROADMAP.md §21 J2: the four fixed lines per stage
         │   │                    # (Question / How / Good-vs-bad / What it CANNOT tell you),
         │   │                    # one entry per pipeline.stage_names() name. Rendered by BOTH
@@ -805,7 +812,9 @@ TSFM-Interp/
         │                        # `ladder:` block into five ordinary per-rung run.py configs
         │                        # (one run dir each, printed cheapest-first) so the shared
         │                        # body cannot drift between rungs (§11.24); --runs reduces the
-        │                        # finished run dirs into the metric-vs-size table. No model load
+        │                        # finished run dirs into the metric-vs-size table, and its
+        │                        # --html flag additionally renders report/scaling_ladder_report.py
+        │                        # (ROADMAP.md §20 H1's report section, added 2026-08-20). No model load
         ├── run_agreement.py     # CLI for analysis/agreement.py: --runs a,b,c over
         │                        # already-extracted run dirs; prints the gap-vs-own-width
         │                        # verdict table, whose rightmost column is the result
@@ -831,6 +840,13 @@ TSFM-Interp/
         │                        # left at its defaults so the TIER GATE is what narrows the
         │                        # run, and the config fails loudly if it ever stops working
         ├── configs/smoke.yaml   # two mock architectures, CPU, ~minutes
+        ├── configs/full_report_run.yaml # the every-feature live run (2026-08-20):
+        │                        # medium_run_chronos_base's model pair with calibration,
+        │                        # SAE feature persistence and report.verbose all ON.
+        │                        # Its header states the confirm cost explicitly -- it
+        │                        # re-tests the SAME private corpus, so its confirm
+        │                        # verdicts DEMONSTRATE the mechanism and are not a
+        │                        # fresh one-shot confirmation (CLAUDE.md sec 6.7)
         ├── configs/smoke_three_model.yaml # THREE mocks, l0+report only
         │                        # (ROADMAP.md sec 18 F8). Deliberately runs no
         │                        # other stage: L1/L2/L3/clustering/exemplars/
@@ -931,6 +947,14 @@ TSFM-Interp/
         │                        # placed on the axis, the p-floor travels with every p, and a
         │                        # one-rung ladder ABSTAINS instead of reporting the vacuously
         │                        # true monotone verdict `all(diff > 0)` gives on one point
+        ├── tests/test_report_legibility.py # ROADMAP.md §21 J7: that a figure's subject
+        │                        # is readable WITHOUT opening the dropdown, that every
+        │                        # `summary=` override keeps the one uniform affordance,
+        │                        # and three negatives -- a note must not repeat itself,
+        │                        # the Bottom line must DROP lines it has no artifact for,
+        │                        # and it must render EMPTY rather than confident when
+        │                        # nothing ran (a summary layer states things more
+        │                        # prominently than anything else, so it under-claims)
         ├── tests/test_agreement.py # ROADMAP.md §20 H4, all synthetic with planted
         │                        # answers -- incl. a model whose own quantile width is
         │                        # EXACTLY its own error (so `adds_nothing` must be True
@@ -1733,13 +1757,37 @@ cross-run diff mode are **still not** built — neither was ever in J1's own
 scope (badges were only ever on E6's "then cheap" wishlist, diff mode is
 gated on E5, which is parked), and `plain`/`caveat` already cover the
 legibility gap those items would additionally style/compare. Almost every
-figure carries an attached `_note()` block
-(purpose / reading values / limitations) rendered as a collapsed-by-default
-`<details>` directly under it — this is the report's actual glossary
-mechanism, contextual per-plot rather than a separate lookup table, added
-before `ROADMAP.md` existed and easy to miss if you don't open the file.
-A fixed **"How to read this report"** preamble (`_how_to_read`) renders
-first, unconditionally, stating the evidence-class ladder end to end and the
+figure carries an attached `_note(purpose, reading, limitations)` block —
+this is the report's actual glossary mechanism, contextual per-plot rather
+than a separate lookup table. ✅ **Split into two registers 2026-08-20
+(`ROADMAP.md` §21 J7, a user request):** `purpose` renders as an
+always-visible `<p class="figcap">` caption directly under the figure, and
+only `reading`/`limitations` stay in the collapsed `<details>`, now labelled
+uniformly **"What does this mean?"**. Call sites are unchanged, so every
+existing figure gained a caption at once — the previous all-three-fields-
+collapsed form meant a reader who didn't click had no label beyond the
+`<h4>`, which renders perfectly and is therefore invisible as a defect.
+A companion `_figcap(purpose)` emits the visible half **alone**, for the
+gallery case: the 24 L3 per-series case-study panels, one exemplar per
+family, the same heatmap once per model. Those sit under a single
+subsection-level `_note` and were therefore individually unlabelled — 17 of
+the live run's 70 figures — but they do not want the same "how to read it"
+text repeated 24 times either, which is what trains a reader to stop opening
+notes at all. Verbose mode is where this bites: the mock smoke config
+renders 48 figures and never exposed it.
+A **"Bottom line"** block (`_bottom_line`, same item) renders above
+everything else: five or six plain sentences composed from the run's own
+artifacts (who is more accurate and on which families, whether shared
+geometry survives L2's input-feature baseline, where the forecast
+crystallizes, cost and captured-FLOP coverage, how many findings held up on
+the private split). Each line reads one artifact through `_safe_json` and
+**drops independently** when that stage didn't run, and the whole block
+renders empty rather than as a disclaimer-only box when nothing ran — a
+summary layer states things more prominently than anything else in the
+report, so it must under-claim by construction. The findings list is grouped
+by stage (`_group_findings` + `_STAGE_LABELS`, first-appearance order,
+nothing hidden). Then a fixed **"How to read this report"** preamble
+(`_how_to_read`) renders unconditionally, stating the evidence-class ladder end to end and the
 one canonical definition of "window" and "relative depth" that recur in
 nearly every section. Immediately after it, a **"Fairness"** section
 (`_sec_fairness`, `ROADMAP.md` §18 F9, closed 2026-08-18) renders
@@ -2048,6 +2096,7 @@ PYTHONPATH=. python3 example_runs/run_validation.py
 | Capability tiers, derived not declared (`models/base.py::capability_tier`, `pipeline.py::_STAGE_MIN_TIER`, `configs/smoke_blackbox.yaml`, `ROADMAP.md` §19 G1) | ✅ **2026-08-19.** The tier is **derived** from what a subclass actually overrides, not read from a hand-set integer — an integer is a claim checked nowhere (§11.34) — and the derived values match §6.2's support matrix across all **11** registered adapters with no tuning. The real barrier was the *contract*: `module`/`prepare`/`forward`/`token_time_spans` were `@abstractmethod`, so a tier-0 adapter could not be constructed; they now raise a typed `CapabilityUnavailable`, deliberately **not** a `NotTimeLocalized`/`ValueError` subclass so a missing implementation can never be caught as a measured verdict about a model. Acceptance through the real CLI: `configs/smoke_blackbox.yaml` (two `mock_blackbox` models, **nothing disabled by hand**) → **3 rendered / 11 skipped / 0 failed, 13 findings**, every tier-dropped section naming the tier rather than "artifacts missing"; `configs/smoke.yaml` unchanged at `run_tier: 3`, 0 dropped. Four defects found by running rather than reading, the sharpest being a dropped-stage list computed from `selected` — so a `--stages report` rerun silently rewrote `tiers.json` to claim nothing was dropped. Preflight also *failed* a run on a batch cap belonging to a stage the gate was about to drop (§11.35's false-refusal shape again); now tier-aware. 19 tests. Full suite **584 passed**. |
 | Idiosyncratic-error fingerprinting (`analysis/error_fingerprint.py`, `run_error_fingerprint.py`, `ROADMAP.md` §6.3.1 Option C) | ✅ **Built and swept 2026-08-19 — a NEGATIVE result, recorded as one.** Black-box by construction: reads predictions/targets from 10 already-extracted run directories and re-derives contexts from `config_resolved.yaml`, at **zero forward passes and no checkpoint load**. It fails three of its own controls — the magnitude channel ranks the *pure untrained control* first (two `random_init` twins, **0.9719**, above every real pair); the shape channel's top score goes to an **independent-lineage** pair (TimesFM↔Chronos-2 **0.8999** [0.8724, 0.9277]) above the only same-lineage one (Chronos-Small↔Base **0.8712** [0.8264, 0.9061]); and the option's central claim that architecture-matching cannot fake it is **false for TimesFM**, whose own untrained twin scores **0.4977** where Chronos's scores **0.1358**. The plan's specified difficulty basis (L2's input-feature probe) was measured at out-of-fold R² **−0.62** and replaced (§11.36). 8 tests, all synthetic with planted answers. **Do not quote any Option C number without its own model's floor beside it.** || Token-span contiguity gate (`extraction/span_discovery.py::is_contiguous`/`refusal_reason`, `ROADMAP.md` §19 G2) | ✅ **2026-08-19.** A second gate orthogonal to E3's contrast, because contrast **provably cannot** see a lag-feature tokenizer — a test pins that the decoy clears the contrast floor (`contrast > 4.0`) while reading disjoint timesteps, so the new gate is not redundant with the old one. `empty_tokens` and `noncontiguous_tokens` are now separate (they mean opposite things; `flagged_tokens` is kept as their union so **no recorded number moves**), `contiguity` excludes empties from its denominator and takes the worst probed amplitude, and every surface that renders a refusal names **which** gate fired — decided by reading the recorded numbers, never by matching message text. Verified a no-op for all three localized mocks (`contiguity == 1.0`, `refusal_reason() is None`) and that the diffuse control still refuses on *contrast*. 10 tests (8 `test_span_discovery.py`, 2 `test_routing.py`). Full suite **595 passed**. ⚠️ **Never exercised against a real non-contiguous checkpoint** — none is integrated (Lag-Llama is the named candidate, parked); the evidence is a synthetic decoy with a known answer plus the proof the prior gate admits it. |
 | Cross-model agreement as a reliability signal (`analysis/agreement.py`, `run_agreement.py`, `ROADMAP.md` §20 H4) | ✅ **Built and swept 2026-08-19 — the acceptance criterion decided AGAINST the heuristic.** Zero forward passes over 6 existing run directories. Disagreement predicts error strongly (Spearman **0.716** against mean MASE; lowest disagreement decile MASE **0.981** vs highest **5.787**) and **loses to each model's own quantile width** — the free baseline needing no second checkpoint — in **10 of 11** scorable model-runs (1 inconclusive by 0.003, **0 wins**). Secondary: distributional disagreement beats pointwise (0.815 vs 0.716); the signal grows monotonically with horizon (0.154 at h=1 → 0.624 at h=64); it is family-dependent (0.286 / 0.465 / 0.742), so pooling would have reported the largest family's number as the corpus's. The single apparent win was a **false positive from two compounding bugs** (§11.37) whose tell was a point estimate lying outside its own bootstrap CI. 12 tests; full suite **607 passed**. **Deliberately not a pipeline stage** — wiring in a heuristic the evidence says to prefer a free baseline over would contradict the result. || Scaling-ladder harness (`analysis/scaling_ladder.py`, `run_scaling_ladder.py`, `configs/scaling_ladder_chronos.yaml`, `ROADMAP.md` §20 H1) | ⚠️ **Harness only, 2026-08-19 — the five GPU rungs are NOT run.** The reducer works end to end against a real run directory (13 metrics off `runs/medium_run_chronos_base`; `runs/medium_run` correctly **excluded** for having no budget artifact). Three decisions: the axis is `budget`'s **measured** parameter count, never a checkpoint name (§11.34); significance is an **exact permutation** over all n! orderings — a bootstrap over 5 points estimates nothing — with its own **p-floor 2/120 = 0.0167** printed beside every p (§11.35 applied before it could bite); and `flat` is **withheld** (None + reason) for metrics whose artifacts carry no within-run CI, since H1's acceptance criterion asks which metrics are flat and an unbacked "not flat" would be the wrong way to answer. One bug found by running it: at a single rung `np.all(np.diff(v) > 0)` is **vacuously True**, so a degenerate ladder reported a confident `monotone_increasing` — §11.37's shape exactly; now `too_few_rungs`. 8 tests. **No ladder data exists yet and no report section is built.** |
+| Report legibility: visible figure captions, the Bottom line, grouped findings (`report/report.py::_note`/`_figcap`/`_bottom_line`/`_group_findings`, `ROADMAP.md` §21 J7) | ✅ **2026-08-20, user-requested.** `_note` split into a visible `<p class="figcap">` caption + a uniform "What does this mean?" dropdown with **no call-site changes**; new `_bottom_line` block above everything, composed per-line from artifacts and degrading per-line; findings grouped by stage. **Acceptance was met only on the live run, not the mock one** — `configs/full_report_run.yaml` (TimesFM-2.5-200M vs Chronos-T5-Base, all 15 stages, `report.verbose: true`) renders **70** figures where `smoke.yaml` renders 48, and **17 of the 70 were bare**: the L3 per-series case-study panels and the per-family exemplar panels, each sitting under one subsection-level note a reader passed twenty panels ago. The count-based test written the same morning (`captions >= figures`) passed anyway, because surplus captions elsewhere masked the deficit. Fixed with `_figcap` (the visible half of `_note` alone, for the gallery case where every panel needs a *label* but not the same "how to read it" text 24 times) at six sites, and by rewriting the test to walk the document in order. Final: live **14 sections / 48 findings / 70 figures / 0 bare**, smoke **13 sections / 47 findings / 48 figures / 0 bare**. Two Bottom-line bugs caught the same way: the held-out-test line read the wrong artifact key and reported **0 of 4** where the artifact says **3 of 4**, and an empty run still emitted a disclaimer-only block. 7 tests (`tests/test_report_legibility.py`), three of them negatives. Full suite **629 passed** (up from 622). |
 **Golden hashes (do not let these change) — ✅ currently matching, see below:**
 ```
 seed 0   → parametric 2856658d044e4c49  random a45664e176fbb71a  clean_low_noise
@@ -2536,6 +2585,22 @@ thorough the synthetic coverage is, so a real-GPU run before trusting a
 new training loop is not optional.
 
 ### 11.20 Open (not yet fixed) audit items — read before trusting a number 🔴
+
+> ✅ **§15 is fully closed (21/21) as of 2026-08-18** — the list this section
+> was written about no longer has open items. **The live list is now
+> `ROADMAP.md` §23** (added 2026-08-20), a different and in one way more
+> uncomfortable kind of audit: not "where can this silently fail" but "which
+> recorded failures were written down instead of fixed." Its four Tier 1
+> entries each mean a number *currently rendered or currently recorded* is
+> wrong, misleading, or untested — most sharply, **every SAE number in this
+> repo was measured on a dictionary that is 94.5–97.3% dead**, while the same
+> subsystem's Stage 0 already proved those checkpoints reach 3.2% dead with a
+> flag the production stage leaves off (§23.2 A1). Read §23.1's three
+> recurring shapes before adding anything to §11 — the most common one is a
+> fix that exists, is off by default to protect reproducibility, and whose
+> deliberate flip nobody was ever tasked with. The historical §15 text below
+> is preserved per this file's own no-deletion doctrine.
+
 Everything above in §11 is a trap that was **hit and fixed**. As of
 2026-08-06 there is also a list of traps that are **live and unfixed**:
 `ROADMAP.md` §15, produced by a planning-only pass that read this file and
@@ -3381,13 +3446,31 @@ conditions its value has meaning in.
    resolve and the rendered qualifier now says "~86% unobserved", not "at
    least ~86%". The number itself never moved — the bound was exactly tight,
    since Chronos captures at stride 1 and a T5 encoder has no counted FLOPs
-   outside its blocks. ⚠️ **What replaces that caveat** is a subtler one from
-   the same fix: the report's "Compute completed by depth" chart normalizes
-   each curve by that model's *own measured forward pass*, so Chronos — whose
-   measured forward pass **is** its encoder — reaches a clean 1.0 at depth
-   1.0 while TimesFM honestly tops out at 0.851. On that chart the
-   better-covered model looks worse. `ROADMAP.md` §18 F1 (D2) is where the
-   forecast-level denominator that fixes it belongs.
+   outside its blocks. ⚠️→✅ **Fixed 2026-08-20 (`ROADMAP.md` §23.2 B1) —
+   the "what replaces that caveat" paragraph below is now stale.** It used
+   to say the report's "Compute completed by depth" chart normalizes each
+   curve by that model's *own measured forward pass*, so Chronos reaches a
+   clean 1.0 while TimesFM's honest 0.851 makes the better-covered model
+   look worse. `report.py::_sec_budget`'s chart now normalizes by
+   `predict.flops` (the full forecast, every sampled decode pass included)
+   whenever `budget.measure_predict` measured it, falling back to the old
+   capture-pass denominator (named as a fallback in the note, not silent)
+   only when no forecast measurement exists. Live-reverified on
+   `runs/medium_run_chronos_base`: Chronos-T5-Base's curve now tops out at
+   **0.1436**, matching `coverage.flops_fraction_of_forecast` exactly
+   (both count only the captured blocks' own FLOPs against the full
+   forecast). TimesFM's curve still reads **0.851**, not
+   `coverage`'s 0.425 — this is **not** a residual bug: the chart's
+   cumulative curve is a full-stack running total (every block's FLOPs in
+   true model order, including the stride-skipped ones between captured
+   checkpoints), while `coverage.flops_fraction_of_forecast` sums only the
+   *captured* blocks' own FLOPs — two different, both-correct questions
+   ("how far through the model's actual compute" vs. "how much of the
+   forecast did the capture surface itself see") that coincide only when
+   there's no stride loss (true for Chronos here, not for TimesFM). 2 new
+   regression tests (`tests/test_budget_stage.py`) pin an encoder-run-
+   through-a-sampled-decoder case can no longer read 1.0, and that the
+   fallback path names itself when no forecast FLOPs exist.
 3. **Forecast stochasticity asymmetry.** Chronos-T5 samples; TimesFM and
    Chronos-Bolt are deterministic. Ablation/patching deltas sit on different
    noise floors. Seeds are pinned and `num_samples` reduced during patching;

@@ -15,6 +15,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from tsfm_lens.analysis.calibration import (interval_coverage_and_sharpness,
                                             pit_values, quantile_crossing_rate,
+                                            reliability_from_own_width,
                                             summarize_calibration)
 
 LEVELS = [0.1, 0.5, 0.9]
@@ -100,3 +101,42 @@ def test_horizon_resolved_coverage_shape_and_family_breakdown():
     assert set(calib["calibration_curve_by_family"].keys()) == {"a", "b"}
     for fam_result in calib["calibration_curve_by_family"].values():
         assert fam_result["n_series"] == n // 2 or fam_result["n_series"] == n - n // 2
+
+
+def test_reliability_from_own_width_detects_a_planted_relationship():
+    """`ROADMAP.md` sec 23.4 E1: a model whose own quantile width genuinely
+    tracks its error must show a strong positive Spearman and a rising decile
+    curve -- the winning baseline sec 20 H4 found, wired into L0's report."""
+    rng = np.random.default_rng(0)
+    n, h = 300, 4
+    scale = np.full(n, 1.0)
+    width_seed = rng.uniform(0.1, 5.0, size=n)          # this model's own band width
+    point = rng.normal(size=(n, h))
+    targets = point + rng.normal(scale=width_seed[:, None] / 4, size=(n, h))
+    half = width_seed / 2
+    quantiles = np.stack([point - half[:, None], point, point + half[:, None]], axis=-1)
+
+    result = reliability_from_own_width(point, quantiles, targets, scale)
+    assert result["own_width_available"] is True
+    assert result["spearman_own_width_vs_error"] > 0.5
+    bins = result["decile_curve"]["bins"]
+    assert bins[0]["mean_error"] < bins[-1]["mean_error"]
+
+
+def test_reliability_from_own_width_flags_a_zero_width_band_unavailable():
+    """A point-only forecast head (e.g. `GenericHFAdapter`, `CLAUDE.md` sec
+    11.37) reports a quantile band of width 0 for every series -- this must
+    be named as unavailable rather than silently rank-correlated, which is
+    exactly the naive-ranking trap that produced a spurious Spearman -0.192
+    for the analogous cross-model-agreement baseline."""
+    rng = np.random.default_rng(1)
+    n, h = 50, 3
+    point = rng.normal(size=(n, h))
+    targets = point + rng.normal(size=(n, h))
+    quantiles = np.broadcast_to(point[:, :, None], (n, h, 3)).copy()  # width 0 everywhere
+    scale = np.full(n, 1.0)
+
+    result = reliability_from_own_width(point, quantiles, targets, scale)
+    assert result["own_width_available"] is False
+    assert "width of 0" in result["reason"] or "width 0" in result["reason"]
+    assert "spearman_own_width_vs_error" not in result

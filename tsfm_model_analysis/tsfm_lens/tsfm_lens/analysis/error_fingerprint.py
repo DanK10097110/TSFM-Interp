@@ -45,6 +45,15 @@ The mechanism, per the item's spec:
    specific signature than one number per series.
 5. The series is the resampling unit (invariant 2); CIs are cluster
    bootstraps over series.
+6. **Series with an unreliable (near-zero) MASE scale are excluded before
+   anything else is computed**, via the same `mase_reliability` mask L0
+   already uses for its own aggregate MASE (sec 15 A11) -- found necessary
+   by a real run (sec 6.3.1 Option E's lineage-pair experiment), where a
+   handful of near-flat-context series turned any nonzero error into a
+   multi-million-unit value that swamped both the raw and the
+   "difficulty-adjusted" correlation, since ridge regression cannot move an
+   outlier that large anywhere near zero. See `error_fingerprint`'s own
+   docstring for the full mechanism.
 
 **What this cannot establish.** A positive result is consistent with shared
 lineage *and* with two models having been trained on overlapping public
@@ -63,7 +72,7 @@ import numpy as np
 from ..extraction.store import ActivationStore
 from ..utils import log
 from .l0_behavioral import _mase_scale
-from .stats import bootstrap_ci
+from .stats import bootstrap_ci, mase_reliability
 
 
 def difficulty_features(contexts: np.ndarray, targets: np.ndarray,
@@ -155,9 +164,18 @@ def _corr(a: np.ndarray, b: np.ndarray) -> float:
 
 
 def _scaled_errors(store: ActivationStore, model: str, contexts: np.ndarray,
-                   targets: np.ndarray, scale_mode: str) -> np.ndarray:
-    """[n_series, horizon] forecast error in each series' own MASE units."""
+                   targets: np.ndarray, scale_mode: str,
+                   row_mask: Optional[np.ndarray] = None) -> np.ndarray:
+    """[n_series, horizon] forecast error in each series' own MASE units.
+
+    `row_mask` (over the store's full, unfiltered row order) subsets the
+    loaded predictions to match `contexts`/`targets` when the caller has
+    already excluded unreliable-scale rows from those two -- the store
+    itself always returns predictions for every series in the run.
+    """
     point = np.asarray(store.load_predictions(model)["point"], dtype=np.float64)
+    if row_mask is not None:
+        point = point[row_mask]
     scale = np.asarray(_mase_scale(contexts, scale_mode), dtype=np.float64)
     return (point - targets) / scale[:, None]
 
@@ -174,7 +192,8 @@ _ALPHA_GRID = (0.01, 0.1, 1.0, 10.0, 100.0, 1000.0)
 def error_fingerprint(store: ActivationStore, model_a: str, model_b: str,
                       contexts: np.ndarray, targets: np.ndarray,
                       *, scale_mode: str = "mean_abs_diff", n_folds: int = 5,
-                      n_boot: int = 2000, seed: int = 0) -> dict:
+                      n_boot: int = 2000, seed: int = 0,
+                      min_scale_frac: float = 0.05) -> dict:
     """Correlate two models' difficulty-adjusted forecast errors.
 
     Returns both the raw and the residualized correlations. Reporting the raw
@@ -189,10 +208,39 @@ def error_fingerprint(store: ActivationStore, model_a: str, model_b: str,
     "difficulty-adjusted" would be the silent degradation invariant 8
     forbids. `adjustment_ok` is False in that case and callers should treat
     the residual figures as uninterpretable rather than as evidence.
+
+    **Unreliable-scale series are excluded before anything else is computed**
+    (`ROADMAP.md` sec 6.3.1 Option E's first live run, found this the hard
+    way). `_scaled_errors` divides by the same per-series MASE denominator
+    L0 already uses, floored at 1e-8 -- a genuinely near-flat context (this
+    module's own §23.3 D2 lineage-pair run hit it on 16 of 288 series at its
+    short `context_len=64`) turns any nonzero forecast error into a value in
+    the hundreds of thousands to millions once divided by that floor. Two
+    lightly-diverged children of one parent checkpoint produce *nearly
+    identical* absolute error on those same degenerate series, so the
+    resulting scaled values come out bit-identical between the two models --
+    a handful of astronomical, model-agnostic values that dominate both the
+    raw correlation and, because ridge regression cannot move a
+    multi-million-unit outlier's residual anywhere near zero, the
+    "difficulty-adjusted" residual correlation too, defeating the entire
+    point of the adjustment. L0 already solved exactly this for its own
+    aggregate MASE (`mase_reliability`, sec 15 A11, `min_scale_frac`
+    default 0.05) -- reused here rather than re-invented (`CLAUDE.md` §2.2),
+    with the same default so the exclusion threshold matches what L0's own
+    report already applies to this corpus. `n_excluded_unreliable` records
+    how many series were dropped so this can never happen silently again.
     """
-    scale = np.asarray(_mase_scale(contexts, scale_mode), dtype=np.float64)
-    ea = _scaled_errors(store, model_a, contexts, targets, scale_mode)
-    eb = _scaled_errors(store, model_b, contexts, targets, scale_mode)
+    scale_full = np.asarray(_mase_scale(contexts, scale_mode), dtype=np.float64)
+    reliable = mase_reliability(contexts, targets, scale_mode, min_scale_frac=min_scale_frac)
+    n_excluded = int((~reliable).sum())
+    if n_excluded:
+        log.warning("error fingerprint %s vs %s: excluding %d of %d series with an "
+                    "unreliable (near-zero) MASE scale before correlating -- see "
+                    "ROADMAP.md sec 6.3.1 Option E's lineage-pair Findings",
+                    model_a, model_b, n_excluded, len(contexts))
+    contexts, targets, scale = contexts[reliable], targets[reliable], scale_full[reliable]
+    ea = _scaled_errors(store, model_a, contexts, targets, scale_mode, row_mask=reliable)
+    eb = _scaled_errors(store, model_b, contexts, targets, scale_mode, row_mask=reliable)
     n, horizon = ea.shape
 
     raw, names = difficulty_features(contexts, targets, scale)
@@ -219,6 +267,7 @@ def error_fingerprint(store: ActivationStore, model_a: str, model_b: str,
     ok = r2_a > 0.0 and r2_b > 0.0
     out = {
         "model_a": model_a, "model_b": model_b, "n_series": int(n),
+        "n_excluded_unreliable": n_excluded, "min_scale_frac": float(min_scale_frac),
         "horizon": int(horizon), "n_folds": int(n_folds), "scale_mode": scale_mode,
         "difficulty_basis": names,
         "difficulty_oof_r2": {model_a: r2_a, model_b: r2_b},
@@ -288,6 +337,7 @@ def run_error_fingerprint(run_dir, *, models: Optional[list] = None,
     out = error_fingerprint(store, names[0], names[1],
                             np.asarray(data.contexts(), dtype=np.float64),
                             np.asarray(data.targets(), dtype=np.float64),
-                            scale_mode=cfg.l0.scale, n_boot=n_boot, seed=seed)
+                            scale_mode=cfg.l0.scale, n_boot=n_boot, seed=seed,
+                            min_scale_frac=cfg.l0.min_scale_frac)
     out["run_dir"] = str(run_dir)
     return out

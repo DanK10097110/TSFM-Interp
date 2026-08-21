@@ -101,7 +101,7 @@ def test_report_renders_cost_and_normalizes_l0_by_it(built):
     html = (built.run_dir() / "report.html").read_text(encoding="utf-8")
     assert "Cost and capacity" in html
     assert "Quality per unit of compute" in html
-    assert "fraction of forward FLOPs completed" in html
+    assert "fraction of full-forecast FLOPs completed" in html
     coverage = json.loads(
         (built.run_dir() / "report" / "coverage.json").read_text(encoding="utf-8"))
     row = next(c for c in coverage["sections"] if c["eyebrow"] == "Cost")
@@ -171,3 +171,66 @@ def test_untrustworthy_flop_count_is_named_in_the_body_not_a_collapsed_note(tmp_
     body = html.split('<details class="note">')[0]
     assert "unreliable" in body and "0.11" in body
     assert "could not be assigned a" in body           # the interleaved warning too
+
+
+def _budget_model(*, forward_flops, predict_flops, cumulative):
+    rec = {
+        "adapter": "mock", "checkpoint": "",
+        "parameters": {"total": 1000, "trainable": 1000, "body": 800,
+                       "front_end": 100, "head": 100, "interleaved": 0,
+                       "n_blocks": len(cumulative), "per_block": {},
+                       "role_split_is_heuristic": True},
+        "forward": {"batch": 4, "context_len": 128, "n_tokens": 4,
+                    "timing": {"median_s": 0.01, "min_s": 0.01, "max_s": 0.02, "n": 2},
+                    "peak_vram_bytes": None, "flops": forward_flops,
+                    "flops_per_series": forward_flops / 4,
+                    "blocks": {"cumulative": cumulative}},
+        "hidden_size": 8,
+        "flops_sanity": {"verdict": "plausible", "measured_over_analytic": 1.1},
+    }
+    if predict_flops is not None:
+        rec["predict"] = {"flops": predict_flops,
+                          "timing": {"median_s": 0.05, "min_s": 0.05, "max_s": 0.06, "n": 2}}
+    return rec
+
+
+def test_compute_by_depth_uses_the_forecast_denominator_not_the_capture_pass(tmp_path):
+    """ROADMAP.md §23.2 B1: a model whose captured surface IS its whole forward
+    pass (Chronos-T5's encoder) must NOT read as covering 1.0 of the chart once
+    a forecast-level FLOP count (its sampled decoder passes included) exists --
+    that inverted the chart's own conclusion until this fix."""
+    save_json(tmp_path / "budget" / "model_budget.json", {
+        "batch": 4, "context_len": 128, "horizon": 32,
+        "models": {
+            # forward pass IS the captured surface (last cumulative == forward.flops),
+            # but the full forecast (predict.flops) costs 5x that -- an encoder run
+            # through a sampled decoder, same shape as real Chronos-T5.
+            "EncoderOnly": _budget_model(
+                forward_flops=100.0, predict_flops=500.0,
+                cumulative={"b0": 50.0, "b1": 100.0}),
+            # forward pass IS the full forecast (a deterministic single-pass model,
+            # same shape as real TimesFM) -- denominator choice should not matter.
+            "FullyObserved": _budget_model(
+                forward_flops=100.0, predict_flops=100.0,
+                cumulative={"b0": 60.0, "b1": 100.0}),
+        }})
+    html = _sec_budget(tmp_path, {"EncoderOnly": "#000", "FullyObserved": "#111"}, [])
+    assert '"y":[0.1,0.2]' in html          # EncoderOnly: 50/500, 100/500 -- tops out at 0.2
+    assert '"y":[0.6,1.0]' in html          # FullyObserved: 60/100, 100/100 -- reaches 1.0
+    assert "full-forecast FLOPs" in html
+    assert "unbuilt" not in html            # the note used to say the fix didn't exist yet
+
+
+def test_compute_by_depth_falls_back_and_says_so_when_no_forecast_flops_exist(tmp_path):
+    """No `predict.flops` (e.g. `budget.measure_predict: false`) must degrade to the
+    old capture-pass denominator, but say so by name rather than silently reverting."""
+    save_json(tmp_path / "budget" / "model_budget.json", {
+        "batch": 4, "context_len": 128, "horizon": 32,
+        "models": {"m": _budget_model(
+            forward_flops=100.0, predict_flops=None,
+            cumulative={"b0": 50.0, "b1": 100.0})}})
+    html = _sec_budget(tmp_path, {"m": "#000"}, [])
+    assert '"y":[0.5,1.0]' in html
+    body_and_note = html
+    assert "no measured forecast-level FLOPs" in body_and_note
+    assert "<b>m</b>" in body_and_note

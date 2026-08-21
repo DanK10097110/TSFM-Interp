@@ -44,6 +44,30 @@ def _short_hash(values: np.ndarray) -> str:
     return hashlib.sha256(values.tobytes()).hexdigest()[:16]
 
 
+def _env_fingerprint() -> str:
+    """numpy/BLAS identity, for a golden-hash mismatch's failure message
+    (`ROADMAP.md` sec 23.4 G3).
+
+    §11.13 records a 2026-08-03 golden-hash failure against numpy 2.1.0 that
+    was never reproduced and whose leading hypothesis (an `rng.choice(...,
+    replace=False)` instability across numpy versions) was directly refuted
+    by a side-by-side comparison in an isolated venv. That comparison is
+    exactly what this function makes automatic: the *next* occurrence
+    reports its own numpy version and BLAS backend right in the assertion,
+    instead of a bare hash mismatch that requires reconstructing "which
+    numpy was this even run under" from scratch, the way the original
+    report had to be chased down after the fact.
+    """
+    blas = "unknown"
+    try:
+        cfg = np.show_config(mode="dicts")
+        b = cfg.get("Build Dependencies", {}).get("blas", {})
+        blas = f"{b.get('name', '?')} {b.get('version', '?')} ({b.get('lib directory', '?')})"
+    except Exception:
+        pass
+    return f"numpy {np.__version__}, blas={blas}"
+
+
 def test_golden_hashes_pre_extension_outputs_unchanged():
     """Bit-exact regression: outputs captured before the extensions landed.
 
@@ -58,8 +82,14 @@ def test_golden_hashes_pre_extension_outputs_unchanged():
                        ar_coeffs=[0.6, -0.2], noise_scale=0.15,
                        n_changepoints=2, n_anomalies=3)
         r = random_parametric(seed=seed, length=256)
-        assert _short_hash(p.values) == p_hash
-        assert _short_hash(r.values) == r_hash
+        env = _env_fingerprint()
+        assert _short_hash(p.values) == p_hash, (
+            f"parametric hash mismatch at seed {seed} under {env} -- see "
+            f"CLAUDE.md sec 11.13/ROADMAP.md sec 15 A8 before assuming this "
+            f"repo's own code changed")
+        assert _short_hash(r.values) == r_hash, (
+            f"random_parametric hash mismatch at seed {seed} under {env} -- "
+            f"see CLAUDE.md sec 11.13/ROADMAP.md sec 15 A8")
         assert r.ground_truth.generative_params["archetype"] == archetype
 
 
@@ -76,7 +106,9 @@ def test_golden_hashes_normal_only_recipe_unchanged():
         p = parametric(seed=seed, length=256, trend={"order": 2, "scale": 0.5},
                        seasonalities=[{"period": 24, "amplitude": 1.0}],
                        ar_coeffs=[0.6, -0.2], noise_scale=0.15)
-        assert _short_hash(p.values) == p_hash
+        assert _short_hash(p.values) == p_hash, (
+            f"normal-only parametric hash mismatch at seed {seed} under "
+            f"{_env_fingerprint()} -- see CLAUDE.md sec 11.13/ROADMAP.md sec 15 A8")
 
 
 def test_default_pool_excludes_new_archetypes_but_registry_has_them():

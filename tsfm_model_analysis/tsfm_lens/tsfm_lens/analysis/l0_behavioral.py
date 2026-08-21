@@ -17,7 +17,7 @@ from ..config import PipelineConfig
 from ..data import BenchmarkData
 from ..extraction.store import ActivationStore
 from ..utils import batch_slices, log, sample_rows, save_json
-from .calibration import summarize_calibration
+from .calibration import reliability_from_own_width, summarize_calibration
 from .stats import (_mase_scale, holm, mae_over_mad, mase as _mase,
                     mase_pinball_by_horizon, mase_reliability, mean_ci, paired_bootstrap)
 
@@ -31,7 +31,7 @@ def run_l0(cfg: PipelineConfig, hub, data: BenchmarkData, store: ActivationStore
     if cfg.l0.noise_floor_repeats >= 2:
         k = min(data.n, cfg.l0.noise_floor_series)
         nf_rows = sample_rows(data.n, k, cfg.run.seed + 77, strata=data.meta["family"].to_numpy())
-    frames, noise_floor, calibration, horizon_resolved = [], {}, {}, {}
+    frames, noise_floor, calibration, horizon_resolved, reliability = [], {}, {}, {}, {}
     for mcfg in cfg.models:
         adapter = hub.get(mcfg.name)
         adapter.ensure_loaded()
@@ -42,6 +42,8 @@ def run_l0(cfg: PipelineConfig, hub, data: BenchmarkData, store: ActivationStore
         if cfg.l0.calibration and len(cfg.l0.quantiles) >= 2:
             calibration[mcfg.name] = summarize_calibration(
                 quants, cfg.l0.quantiles, targets, data.meta["family"].to_numpy())
+            reliability[mcfg.name] = reliability_from_own_width(
+                point, quants, targets, _mase_scale(contexts, cfg.l0.scale))
         if cfg.l0.horizon_resolved and data.horizon > 1:
             horizon_resolved[mcfg.name] = _summarize_by_horizon(
                 point, quants, targets, contexts, cfg.l0.quantiles, cfg.l0.scale,
@@ -59,6 +61,8 @@ def run_l0(cfg: PipelineConfig, hub, data: BenchmarkData, store: ActivationStore
         save_json(out_dir / "noise_floor.json", noise_floor)
     if calibration:
         save_json(out_dir / "calibration.json", calibration)
+    if reliability:
+        save_json(out_dir / "reliability.json", reliability)
     if horizon_resolved:
         save_json(out_dir / "horizon_resolved.json", horizon_resolved)
     log.info("L0 complete: %d model-series scores", len(metrics))

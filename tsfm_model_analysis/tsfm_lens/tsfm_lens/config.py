@@ -319,7 +319,11 @@ class BudgetConfig:
 class SAEConfig:
     enabled: bool = False
     checkpoints: dict = field(default_factory=dict)
-    targets: list = field(default_factory=list)  # [{"model": "...", "layer": "..."}]
+    targets: list = field(default_factory=list)  # [{"model": "...", "layer": "...", "dict_size": optional int}]
+    # per-target "dict_size" overrides dict_size_mult*d_in for just that target
+    # (ROADMAP.md sec 13 item 9) -- e.g. to reproduce Stage 0's matched dictionary
+    # sizes (576 TimesFM / 512 Chronos-T5-Base) instead of the much larger,
+    # hidden-width-multiple size dict_size_mult produces by default.
     dict_size_mult: int = 8
     k: int = 32
     lr: float = 1e-3

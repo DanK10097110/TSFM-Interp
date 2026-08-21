@@ -168,6 +168,70 @@ def test_every_configured_hyperparameter_reaches_the_replicate_trainings():
         assert getattr(primary, field) == getattr(replicate, field) == getattr(cfg.sae, field)
 
 
+def test_train_config_dict_size_defaults_to_zero_so_dict_size_mult_still_governs():
+    """ROADMAP.md sec 13 item 9: the override must be opt-in -- omitting it
+    must reproduce the pre-existing dict_size_mult-only behavior exactly, so
+    no already-recorded SAE run's dictionary size moves underneath it."""
+    cfg = _cfg(dict_size_mult=8)
+    assert _train_config(cfg, 0).dict_size == 0
+
+
+def test_train_config_dict_size_override_reaches_the_train_config():
+    """A per-target absolute size (e.g. Stage 0's matched 576/512) must reach
+    SAETrainConfig.dict_size, which train_sae's own `cfg.dict_size or
+    cfg.dict_size_mult * d_in` resolution already treats as an override
+    when nonzero -- this only needs to verify the value is plumbed through."""
+    cfg = _cfg(dict_size_mult=8)
+    assert _train_config(cfg, 0, dict_size=576).dict_size == 576
+    # And leaves every other hyperparameter, including dict_size_mult itself
+    # (kept for provenance even though dict_size wins), untouched.
+    assert _train_config(cfg, 0, dict_size=576).dict_size_mult == 8
+
+
+def test_run_sae_resolves_each_targets_own_dict_size_independently():
+    """`run_sae` (tsfm_lens/sae/train.py) must resolve each target's own
+    `dict_size` key separately -- a single train_cfg hoisted above the
+    per-target loop (the pre-fix shape) would apply whichever target
+    computed it last to every target, silently sizing the wrong dictionary
+    for models earlier in the list."""
+    from tests.test_smoke import build_config
+    from tests.test_smoke import test_end_to_end as _build_extracted_run
+    from tsfm_lens.config import config_from_dict
+    from tsfm_lens.extraction.store import ActivationStore
+    from tsfm_lens.pipeline import Context
+    from tsfm_lens.sae.train import run_sae
+    from tsfm_lens.utils import load_json
+
+    run_dir = Path(_build_extracted_run())
+    cfg = config_from_dict(build_config(str(run_dir.parent)))
+    cfg.run.name = run_dir.name
+    store_ro = ActivationStore(run_dir / "activations.zarr", mode="r")
+    layer_a = store_ro.layers("patchy")[-1]
+    layer_b = store_ro.layers("steppy")[-1]
+
+    cfg.sae.enabled = True
+    # patchy gets an explicit absolute override; steppy is left to the
+    # default dict_size_mult -- the pre-fix bug would have carried whichever
+    # target's train_cfg the loop computed last onto the other target too.
+    cfg.sae.targets = [{"model": "patchy", "layer": layer_a, "dict_size": 12},
+                       {"model": "steppy", "layer": layer_b}]
+    cfg.sae.epochs = 2
+    cfg.sae.dict_size_mult = 2
+    cfg.sae.k = 2
+    cfg.sae.forecast_preservation_max_series = 16
+
+    ctx = Context(cfg)
+    d_in_steppy = ctx.store.load("steppy", layer_b, level="window",
+                                 rows=np.array([0])).shape[-1]
+    run_sae(cfg, ctx.hub, ctx.store, ctx.data, ctx.device)
+
+    patchy_ckpt = load_json(run_dir / "sae" / "meta.json")["patchy/" + layer_a]
+    steppy_ckpt = load_json(run_dir / "sae" / "meta.json")["steppy/" + layer_b]
+    assert patchy_ckpt["dict_size"] == 12
+    assert steppy_ckpt["dict_size"] == 2 * d_in_steppy
+    assert steppy_ckpt["dict_size"] != 12
+
+
 if __name__ == "__main__":
     test_default_is_one_seed_so_no_recorded_run_changes()
     test_seed_spread_reports_the_sample_sd_and_the_range_beside_it()

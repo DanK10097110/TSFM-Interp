@@ -28,7 +28,8 @@ models:
   checkpoint: amazon/chronos-t5-small
   batch_size: 32
   capture_layer_stride: 1
-  num_samples: 20
+  kwargs:
+    num_samples: 20
 budget:
   enabled: true
 l0:

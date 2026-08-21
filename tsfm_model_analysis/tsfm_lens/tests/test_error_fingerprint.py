@@ -157,3 +157,72 @@ def test_fingerprint_is_invariant_to_per_series_amplitude_rescaling():
     rescaled = error_fingerprint(scaled, "a", "b", contexts * g, targets * g, n_boot=50)
     assert rescaled["shape"]["residual_corr"] == pytest.approx(
         plain["shape"]["residual_corr"], abs=0.05)
+
+
+def test_near_zero_scale_series_are_excluded_and_do_not_inflate_the_correlation():
+    """ROADMAP.md sec 6.3.1 Option E's lineage-pair run: a handful of
+    near-flat-context series turn any nonzero error into a multi-million-unit
+    scaled value once divided by the (floored) near-zero MASE denominator.
+    Two models with genuinely UNCORRELATED errors on the real series can
+    still look near-perfectly correlated once a few such outliers dominate
+    the sum -- unless they are excluded first, the way L0's own
+    `mase_reliable` already excludes them from its aggregate MASE.
+
+    Uses a constant-scale (not `_corpus`'s heavy-tailed amplitude) clean
+    corpus deliberately: `_corpus`'s own varying amplitude is itself a
+    shared-difficulty confound the residual step is designed to remove, and
+    would muddy this test's actual target -- outlier-driven RAW correlation
+    inflation -- with that unrelated, already-covered mechanism.
+    """
+    rng = np.random.default_rng(21)
+    n, t, h = 200, 64, 16
+    contexts = rng.normal(0, 1.0, (n, t))
+    targets = rng.normal(0, 1.0, (n, h))
+    # The real, non-degenerate series: independent errors, constant scale --
+    # genuinely no relationship between the two models' magnitude/shape.
+    ea = rng.normal(0, 1, (n, h))
+    eb = rng.normal(0, 1, (n, h))
+
+    # Append k near-flat-context series (diff ~ 0 -> scale hits the 1e-8
+    # floor) where both models make the SAME (but otherwise unremarkable)
+    # absolute error -- exactly the "two lightly-diverged children of one
+    # parent" scenario that surfaced this.
+    k = 8
+    flat_contexts = np.full((k, t), 5.0) + rng.normal(0, 1e-10, (k, t))
+    flat_targets = np.full((k, h), 5.0)
+    shared_abs_error = rng.normal(0, 0.5, (k, h))
+
+    all_contexts = np.concatenate([contexts, flat_contexts])
+    all_targets = np.concatenate([targets, flat_targets])
+    a_full = np.concatenate([targets + ea, flat_targets + shared_abs_error])
+    b_full = np.concatenate([targets + eb, flat_targets + shared_abs_error])
+    store = _FakeStore({"a": a_full, "b": b_full})
+
+    filtered = error_fingerprint(store, "a", "b", all_contexts, all_targets, n_boot=200)
+    unfiltered = error_fingerprint(store, "a", "b", all_contexts, all_targets, n_boot=200,
+                                   min_scale_frac=0.0)
+
+    assert filtered["n_excluded_unreliable"] == k
+    assert unfiltered["n_excluded_unreliable"] == 0
+    # With no shared-scale confound in the clean 200 series, the filtered
+    # fingerprint correctly reads low (sampling noise at n=200, nowhere near
+    # the near-perfect outlier-dominated value below)...
+    assert abs(filtered["magnitude"]["raw_corr"]) < 0.3
+    assert abs(filtered["shape"]["raw_corr"]) < 0.3
+    # ...while the unfiltered one is dominated by the bit-identical outlier
+    # values and reads as a near-perfect, entirely spurious correlation.
+    assert unfiltered["magnitude"]["raw_corr"] > 0.9
+    assert unfiltered["shape"]["raw_corr"] > 0.9
+
+
+def test_min_scale_frac_zero_reproduces_no_filtering_default_excludes_nothing_when_clean():
+    """A corpus with no degenerate series must be untouched by the new
+    filter at its default threshold -- the fix must not move any
+    already-recorded number on a healthy corpus."""
+    contexts, targets = _corpus(seed=22)
+    n, h = targets.shape
+    rng = np.random.default_rng(23)
+    store = _FakeStore({"a": targets + rng.normal(0, 1, (n, h)),
+                        "b": targets + rng.normal(0, 1, (n, h))})
+    out = error_fingerprint(store, "a", "b", contexts, targets, n_boot=50)
+    assert out["n_excluded_unreliable"] == 0

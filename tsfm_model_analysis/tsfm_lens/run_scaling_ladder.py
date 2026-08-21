@@ -13,12 +13,17 @@ Two modes, because a ladder is two jobs with a long gap between them:
                        nothing; see analysis/scaling_ladder.py for why the
                        significance test is an exact permutation rather than a
                        bootstrap, and why "flat" is sometimes withheld.
+                       Pass --html to also render the report section
+                       (report/scaling_ladder_report.py) -- one figure per
+                       metric, each with the same figcap + "What does this
+                       mean?" affordance every other report figure uses.
 
 Usage:
     python run_scaling_ladder.py --config configs/scaling_ladder_chronos.yaml \
         --emit-configs configs/_ladder
     python run_scaling_ladder.py --runs runs/ladder_tiny,runs/ladder_base \
-        --model Chronos --out runs/ladder/scaling_ladder.json
+        --model Chronos --out runs/ladder/scaling_ladder.json \
+        --html runs/ladder/scaling_ladder.html
 """
 
 from __future__ import annotations
@@ -34,6 +39,7 @@ import yaml
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from tsfm_lens.analysis.scaling_ladder import run_scaling_ladder  # noqa: E402
+from tsfm_lens.report.scaling_ladder_report import render_scaling_ladder_html  # noqa: E402
 from tsfm_lens.utils import log  # noqa: E402
 
 
@@ -115,6 +121,8 @@ def main() -> None:
     ap.add_argument("--runs", default="", help="comma-separated finished run directories")
     ap.add_argument("--model", default="", help="name of the model whose size varies")
     ap.add_argument("--out", default="", help="path to write the ladder JSON to")
+    ap.add_argument("--html", default="", help="path to write the ladder HTML report to "
+                    "(ROADMAP.md sec 20 H1's report section)")
     args = ap.parse_args()
 
     if args.emit_configs:
@@ -127,7 +135,8 @@ def main() -> None:
         print("\nThen reduce them:\n")
         print("  python run_scaling_ladder.py --runs "
               + ",".join(w["run_dir"] for w in written)
-              + " --model <ladder model> --out runs/scaling_ladder.json")
+              + " --model <ladder model> --out runs/scaling_ladder.json"
+              + " --html runs/scaling_ladder.html")
         return
 
     if not args.runs:
@@ -142,6 +151,8 @@ def main() -> None:
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(json.dumps(result, indent=2, default=float), encoding="utf-8")
         log.info(f"scaling ladder written to {out}")
+    if args.html:
+        render_scaling_ladder_html(result, args.html)
 
 
 if __name__ == "__main__":

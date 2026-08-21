@@ -266,9 +266,11 @@ def run_report(cfg: PipelineConfig) -> Path:
         date=datetime.date.today().isoformat(),
         model_a=a.name, model_b=b.name, colors=_COLORS,
         dataset_line=_dataset_line(cfg, run_dir),
-        findings=findings, sections=sections,
+        findings=findings, finding_groups=_group_findings(findings),
+        sections=sections,
         config_text=_config_text(run_dir),
         mock_warning=_mock_warning(mock_models),
+        bottom_line=_bottom_line(run_dir, cfg),
         how_to_read=_how_to_read(cfg.alignment.window),
         glossary_block=_glossary_block(),
         coverage=coverage, coverage_summary=summary, any_failed=bool(failed),
@@ -345,6 +347,214 @@ def _mock_warning(mock_models: list) -> str:
             f'<code>chronos</code>, …) with its own name and every section '
             f'updates automatically, with forecasts that should actually '
             f'track the target.</div>')
+
+
+def _group_findings(findings: list) -> list[dict]:
+    """Bucket the findings list by stage, in first-appearance order.
+
+    Forty-plus claims in one flat list is a wall, and a wall is read as
+    decoration -- the reader cannot tell which four sentences are the answer.
+    Grouping does not hide anything (every finding still renders, in the same
+    order within its stage) but it makes the list scannable and lets a reader
+    who cares about one stage find its claims without reading the rest.
+    """
+    order, groups = [], {}
+    for f in findings:
+        stage = getattr(f, "stage", "") or "other"
+        if stage not in groups:
+            order.append(stage)
+            groups[stage] = []
+        groups[stage].append(f)
+    return [{"stage": st, "label": _STAGE_LABELS.get(st, st.replace("_", " ").title()),
+             "items": groups[st]} for st in order]
+
+
+_STAGE_LABELS = {
+    "l0": "L0 — forecast accuracy",
+    "budget": "Cost and capacity",
+    "layer_screen": "Layer screen",
+    "internals": "Profile — what is in each model",
+    "lens": "Lens — where the forecast forms",
+    "l1": "L1 — shared geometry",
+    "l2": "L2 — linear translatability",
+    "l3": "L3 — causal structure",
+    "attention": "Attention",
+    "cluster": "L4 — how each model organizes the data",
+    "sae": "SAE features",
+    "exemplars": "Exemplars",
+    "confirm": "Confirm — held-out test",
+    "report": "Report-level checks",
+    "fairness": "Fairness and comparability",
+}
+
+
+def _safe_json(path: Path):
+    """Read a run artifact, or return None. Used by blocks that must degrade
+    per-line rather than per-section: the bottom-line summary drops whichever
+    sentence has no artifact behind it instead of vanishing entirely.
+    """
+    if not path.exists():
+        return None
+    try:
+        return load_json(path)
+    except Exception as exc:
+        log.warning("report: could not read %s: %s", path, exc)
+        return None
+
+
+def _bottom_line(run_dir: Path, cfg: PipelineConfig) -> str:
+    """The report's answer, in plain language, before any evidence.
+
+    Added 2026-08-20 on a user request that "the report's message should be
+    clear to the reader". Everything else in this file is organized by
+    *method* -- which is right for an evidence document and wrong as an
+    opening. A reader who opens a thirteen-section report and meets the
+    evidence ladder first has to reconstruct the conclusion themselves from
+    forty findings; this block states it, then the rest of the report is
+    what backs it up.
+
+    It reads the same artifacts the sections read and says nothing they do
+    not already support. Each line degrades independently: a stage that did
+    not run drops its own sentence instead of blanking the block, so this
+    can never claim more coverage than the run actually has. It deliberately
+    carries no numbers a reader would have to interpret -- the point is the
+    direction of each result and how much weight it can bear.
+    """
+    a, b = cfg.models[0].name, cfg.models[1].name
+    lines: list[str] = []
+
+    l0 = _safe_json(run_dir / "l0" / "summary.json")
+    if l0:
+        overall = {r["model"]: r["mase"] for r in l0.get("overall", [])}
+        if len(overall) >= 2:
+            best = min(overall, key=overall.get)
+            other = [m for m in overall if m != best][0]
+            margin = overall[other] - overall[best]
+            # `strengths` is {model: [family, ...]} -- families where that model
+            # wins with a Holm-corrected p under alpha AND a CI excluding zero.
+            strengths = l0.get("strengths") or {}
+            wins = {m: len(f) for m, f in strengths.items() if f}
+            if wins and len(wins) > 1:
+                split = ("but neither model wins everywhere — "
+                         + " and ".join(f"{m} is reliably better on {n} data "
+                                        f"famil{'y' if n == 1 else 'ies'}"
+                                        for m, n in sorted(wins.items(), key=lambda kv: -kv[1]))
+                         + ".")
+            elif wins:
+                m, n = next(iter(wins.items()))
+                split = (f"and that advantage is statistically reliable on "
+                         f"{n} data famil{'y' if n == 1 else 'ies'}.")
+            else:
+                split = ("but no single data family separates them reliably once "
+                         "multiple comparisons are accounted for.")
+            lines.append(f"<b>Accuracy.</b> {best} forecasts this corpus more accurately "
+                         f"overall (by {margin:.2f} MASE), {split}")
+
+    l1 = _safe_json(run_dir / "l1" / "meta.json")
+    if l1 and l1.get("best_pair"):
+        bp = l1["best_pair"]
+        null = (bp.get("null_ci") or {}).get("value")
+        verdict = ("far above what unrelated data would produce"
+                   if null is not None and bp.get("cka", 0) > 4 * null
+                   else "only modestly above the shuffled-series null")
+        lines.append(f"<b>Shared structure.</b> The two models' internal representations "
+                     f"line up most strongly at layer {_short(bp.get('layer_a', '?'))} "
+                     f"of {a} and layer {_short(bp.get('layer_b', '?'))} of {b}, "
+                     f"{verdict} — so they are organizing this data in related ways, "
+                     f"not identically and not independently. This is a geometric "
+                     f"resemblance, not evidence that either model uses it.")
+
+    l2 = _safe_json(run_dir / "l2" / "stitching.json")
+    if l2:
+        gains = {d: v.get("best_gain") for d, v in (l2.get("directions") or {}).items()
+                 if v.get("best_gain") is not None}
+        if gains:
+            top = max(gains, key=gains.get)
+            positive = gains[top] > 0.05
+            lines.append(f"<b>Is that resemblance more than the shared input?</b> "
+                         + (f"Yes — a linear map from one model's states predicts the "
+                            f"other's better than a probe built from the raw input can "
+                            f"({top.replace('->', ' → ')}, the stronger direction). "
+                            f"Something learned, not just the data itself, is shared."
+                            if positive else
+                            "Not clearly — the cross-model map barely beats a probe built "
+                            "from the raw input, so most of the apparent resemblance may "
+                            "be that both models saw the same series."))
+
+    lens = _safe_json(run_dir / "lens" / "lens.json")
+    if lens:
+        depths = {m: v.get("crystallization_depth") for m, v in lens.items()
+                  if isinstance(v, dict) and v.get("crystallization_depth") is not None}
+        if len(depths) >= 2:
+            early = min(depths, key=depths.get)
+            late = [m for m in depths if m != early][0]
+            same = abs(depths[early] - depths[late]) < 0.1
+            lines.append("<b>Where the forecast forms.</b> "
+                         + ("Both models settle on their forecast at a similar relative "
+                            "depth, so neither is doing its real work noticeably earlier."
+                            if same else
+                            f"{early}'s forecast is essentially decided by "
+                            f"{depths[early]:.0%} of its captured depth, while {late} is "
+                            f"still changing until {depths[late]:.0%} — the later layers "
+                            f"of {early} are refining a forecast it has already made."))
+
+    budget = _safe_json(run_dir / "budget" / "model_budget.json")
+    if budget and l0:
+        models = budget.get("models") or {}
+        costs = {n: (r.get("forward") or {}).get("flops_per_series")
+                 for n, r in models.items()}
+        costs = {n: c for n, c in costs.items() if c}
+        overall = {r["model"]: r["mase"] for r in l0.get("overall", [])}
+        if len(costs) >= 2 and len(overall) >= 2:
+            cheap = min(costs, key=costs.get)
+            best = min(overall, key=overall.get)
+            lines.append("<b>Cost.</b> " + (
+                f"{best} is both the more accurate model and the cheaper one to run, so "
+                f"its advantage here is not bought with compute."
+                if cheap == best else
+                f"{best} is the more accurate model but the more expensive one — "
+                f"{cheap} costs less per series, so the accuracy gap is partly a "
+                f"cost difference rather than a purely architectural one."))
+            worst_cov = min(((r.get("coverage") or {}).get("headline_flops_fraction") or 1.0,
+                             n) for n, r in models.items())
+            if worst_cov[0] < 0.9:
+                lines.append(f"<b>How much we can actually see.</b> Only "
+                             f"{worst_cov[0]:.0%} of {worst_cov[1]}'s computation is "
+                             f"observed by this pipeline, so every statement above about "
+                             f"<i>where inside that model</i> something happens is a "
+                             f"statement about the part we can see. Accuracy and cost "
+                             f"numbers are unaffected.")
+
+    confirm = _safe_json(run_dir / "confirm" / "confirmation.json")
+    if confirm:
+        tests = [t for t in (confirm.get("tests") or []) if t.get("status") == "tested"]
+        held = sum(1 for t in tests if t.get("confirmed"))
+        n_reg = confirm.get("n_registered", len(tests))
+        lines.append(f"<b>What survived a held-out test.</b> Of the {n_reg} finding"
+                     f"{'' if n_reg == 1 else 's'} registered on the public corpus "
+                     f"before anyone looked at the private one, "
+                     f"{len(tests)} could be re-tested, and <b>{held}</b> of those "
+                     f"held up on the sealed private corpus. Those are the only "
+                     f"confirmatory "
+                     f"results here; everything else in this report is exploratory — it "
+                     f"generated hypotheses, it did not test them.")
+    elif lines:
+        # Only worth saying alongside at least one actual claim -- a box whose
+        # sole content is "these claims are exploratory" has no claims in it.
+        lines.append("<b>Status of these claims.</b> Every finding here is "
+                     "<i>exploratory</i> — measured on the public corpus, where many "
+                     "comparisons were looked at. Treat them as hypotheses worth "
+                     "confirming, not as settled results.")
+
+    if not lines:
+        return ""
+    items = "".join(f"<li>{l}</li>" for l in lines)
+    return ('<div class="bottomline"><h2>Bottom line</h2>'
+            f'<ul>{items}</ul>'
+            '<p class="bl-foot">Each line above is backed by one section below, in the '
+            'order the sections appear. If you read nothing else, read this block and '
+            'the “How to read this report” note under it — the ladder it describes is '
+            'what stops a resemblance from being read as a cause.</p></div>')
 
 
 def _how_to_read(window: int) -> str:
@@ -595,17 +805,43 @@ def _stage_doc_block(stage_key: str) -> str:
             f'<p><b>What it cannot tell you</b><br>{doc.cannot_tell}</p></div></details>')
 
 
-def _note(purpose: str, reading: str, limitations: str, summary: str = "What is this chart?") -> str:
-    """Collapsed-by-default explanatory block rendered directly under a figure.
+def _note(purpose: str, reading: str, limitations: str,
+          summary: str = "What does this mean?") -> str:
+    """A figure's two-register explanation: a visible caption, then the detail.
 
     Three fixed fields because that's the question order a reader actually
     has: what am I looking at, how do I read a value, and where would this
-    mislead me for a particular architecture or setup.
+    mislead me for a particular architecture or setup. The split across two
+    registers is deliberate and was a user request (2026-08-20): the first
+    question must be answerable **without clicking anything**, because a
+    reader scrolling a 13-section report will not open a `<details>` under
+    every figure, and a chart whose subject is only legible behind a
+    collapsed element is effectively unlabeled. So `purpose` renders as an
+    always-visible caption directly under the figure, and only the two
+    questions a reader asks *after* deciding the chart is relevant to them --
+    how to read a value, and where it would mislead -- stay collapsed.
+
+    Call sites are unchanged: the same three strings, in the same order.
     """
-    return (f'<details class="note"><summary>{summary}</summary>'
-            f'<div class="note-body"><p><b>Purpose</b><br>{purpose}</p>'
-            f'<p><b>Reading values</b><br>{reading}</p>'
+    return (f'<p class="figcap">{purpose}</p>'
+            f'<details class="note"><summary>{summary}</summary>'
+            f'<div class="note-body"><p><b>How to read it</b><br>{reading}</p>'
             f'<p><b>Limitations</b><br>{limitations}</p></div></details>')
+
+
+def _figcap(purpose: str) -> str:
+    """The visible half of `_note` on its own, for a repeated or per-item figure.
+
+    A gallery -- 24 L3 case-study panels, one exemplar per family, the same
+    heatmap once per model -- needs every panel *labelled*, but it does not
+    need the same "how to read it" and "limitations" text 24 times; that
+    repetition is what makes a reader stop reading notes at all. So the
+    gallery's shared `_note` stays on its first panel and every panel
+    (including the first) additionally carries its own one-line caption
+    saying what *this* panel is. Emits exactly the caption `_note` emits, so
+    the two can never drift apart visually.
+    """
+    return f'<p class="figcap">{purpose}</p>'
 
 
 def _short(layer: str) -> str:
@@ -804,6 +1040,70 @@ def _calibration_block(run_dir: Path, model_colors: dict, findings: list) -> str
                 f"{'well' if gap < 0.05 else 'somewhat' if gap < 0.15 else 'poorly'} "
                 f"calibrated — its forecast intervals cover the true value about as "
                 f"often as claimed.{cross_txt}",
+            registered=False))
+    return html
+
+
+def _reliability_block(run_dir: Path, model_colors: dict, findings: list) -> str:
+    """Each model's own quantile width as a free, label-free reliability signal
+    (`ROADMAP.md` sec 23.4 E1).
+
+    Sec 20 H4 found that cross-model disagreement predicts error but *loses*
+    to this exact signal in 10 of 11 scorable model-runs, and was correctly
+    left out of the pipeline as a stage (building one around the losing
+    heuristic would contradict its own acceptance criterion). This block
+    wires in the winner instead -- something a reader can act on with a
+    single model and zero forward passes beyond what L0 already ran.
+    """
+    path = run_dir / "l0" / "reliability.json"
+    if not path.exists():
+        return ""
+    reliability = load_json(path)
+    available = {m: d for m, d in reliability.items() if d.get("own_width_available")}
+    unavailable = {m: d for m, d in reliability.items() if not d.get("own_width_available")}
+    if not available:
+        html = "<h4>Reliability from own quantile width</h4><p class=\"blurb\">"
+        html += " ".join(f"<b>{m}</b>: {d['reason']}" for m, d in unavailable.items())
+        return html + "</p>"
+
+    fig = go.Figure()
+    for model, d in available.items():
+        bins = d["decile_curve"]["bins"]
+        fig.add_scatter(x=[b["mean_signal"] for b in bins], y=[b["mean_error"] for b in bins],
+                        mode="lines+markers", name=model, marker_color=model_colors.get(model))
+    fig.update_layout(xaxis_title="own quantile width (MASE units, decile mean)",
+                      yaxis_title="realized MASE (decile mean)")
+
+    rows = [{"model": m, "Spearman (own width vs error)": d["spearman_own_width_vs_error"],
+            "deciles": d["decile_curve"]["n_bins"]} for m, d in available.items()]
+    html = ("<h4>Reliability from own quantile width</h4>" + _frag(fig, 340) + _note(
+        "For each model, series are grouped into equal-count deciles by that model's OWN "
+        "quantile-band width, and each decile's mean realized MASE is plotted against it — "
+        "the free reliability check a practitioner already has after one model's forecast, "
+        "needing no second checkpoint.",
+        "A rising line means this model's own stated uncertainty tracks its actual error: "
+        "when its band is wide, expect a bigger miss. `ROADMAP.md` sec 20 H4 found this "
+        "signal beats cross-model disagreement as an error predictor in 10 of 11 scorable "
+        "model-runs across six existing run directories — this panel is that winning "
+        "baseline, not the losing heuristic.",
+        "A model with a flat or non-monotonic line here has an uninformative uncertainty "
+        "band even if its point forecasts are good — width and accuracy are different "
+        "properties. Computed on this run's own dev corpus only; whether the relationship "
+        "holds on a different data distribution is untested (same caveat sec 20 H4 states "
+        "for its own comparison).")
+       + _table(pd.DataFrame(rows)))
+    if unavailable:
+        html += "<p class=\"blurb\">" + " ".join(
+            f"<b>{m}</b>: {d['reason']}" for m, d in unavailable.items()) + "</p>"
+    for model, d in available.items():
+        findings.append(Finding(
+            claim_id=_next_claim_id("l0"), stage="l0", evidence_class="behavioral",
+            text=f"L0 reliability — {model}'s own quantile width predicts its error at "
+                f"Spearman {d['spearman_own_width_vs_error']:.3f} (own-width-vs-error, "
+                f"equal-count deciles, `ROADMAP.md` sec 20 H4's winning baseline).",
+            plain=f"When {model} reports a wider uncertainty range for a series, that "
+                f"series really does tend to have a bigger forecast error — its own "
+                f"confidence band is a useful, free signal.",
             registered=False))
     return html
 
@@ -1392,6 +1692,7 @@ def _sec_l0(run_dir: Path, model_colors: dict, findings: list) -> str:
         "degeneracy this metric doesn't protect against.")
     inner += _archetype_block(summary.get("per_archetype"), findings)
     inner += _calibration_block(run_dir, model_colors, findings)
+    inner += _reliability_block(run_dir, model_colors, findings)
     inner += _horizon_resolved_block(run_dir, model_colors, findings)
 
     fam_comp = summary.get("family_comparisons")
@@ -1960,7 +2261,11 @@ def _l3_window_heatmaps(pmeta: dict, parrs) -> str:
         wfig.update_yaxes(title_text=f"relative depth ({info.get('depth_axis', 'index')} axis)",
                           row=1, col=1)
         html += (f"<h4>{model}: per-window restoration "
-                 f"(window = {info['window_size']} steps)</h4>" + _frag(wfig, 320))
+                 f"(window = {info['window_size']} steps)</h4>" + _frag(wfig, 320)
+                 + _figcap(f"Where in both depth and time each corruption's "
+                           f"effect on {model}'s forecast is causally carried: "
+                           f"one grid per corruption, brighter = patching that "
+                           f"one (layer, window) cell recovered more."))
         if not shown_note:
             html += _note(
                 "The full [depth x time-window] grid the curve above "
@@ -2014,7 +2319,10 @@ def _l3_horizon_heatmaps(pmeta: dict, parrs, findings: list) -> str:
         hfig.update_yaxes(title_text=f"relative depth ({info.get('depth_axis', 'index')} axis)",
                           row=1, col=1)
         html += (f"<h4>{model}: per-horizon-step restoration</h4>"
-                 + _frag(hfig, 320))
+                 + _frag(hfig, 320)
+                 + _figcap(f"The same restoration, resolved by how far ahead "
+                           f"the forecast step is rather than collapsed over "
+                           f"the horizon, for {model}."))
         if not shown_note:
             html += _note(
                 "The same window-averaged restoration curve above, resolved "
@@ -2128,7 +2436,12 @@ def _l3_verbose_cases(pmeta: dict, parrs) -> str:
                 fig.update_yaxes(title_text="relative depth", row=1, col=2)
                 html += (f"<h4>{model} · {cname} · {label}{fam} — patched at "
                          f"{_short(vmeta['layer'])}, window {vmeta['window']}</h4>"
-                         + _frag(fig, 320))
+                         + _frag(fig, 320)
+                         + _figcap(f"One real series under <b>{cname}</b>: left, "
+                                   f"{model}'s clean forecast against its "
+                                   f"corrupted one and against the forecast "
+                                   f"recovered by patching; right, that series' "
+                                   f"own restoration grid."))
     return html
 
 
@@ -2240,7 +2553,10 @@ def _lens_horizon_block(arrays, meta: dict, model_colors: dict, findings: list) 
                                     y=np.round(m["rel_depth"], 2),
                                     colorscale="Viridis_r", colorbar_title="MASE"))
         hfig.update_layout(xaxis_title="horizon step", yaxis_title="relative depth")
-        html += f"<h4>{model}: skip-lens MASE by horizon step</h4>" + _frag(hfig, 340)
+        html += (f"<h4>{model}: skip-lens MASE by horizon step</h4>" + _frag(hfig, 340)
+                 + _figcap(f"How early in {model}'s depth each individual "
+                           f"forecast step becomes readable, instead of the "
+                           f"whole horizon averaged into one curve."))
     html += _note(
         "The skip-lens MASE curve above, resolved by forecast horizon step "
         "instead of averaged over the whole horizon: each cell is that "
@@ -2644,7 +2960,11 @@ def _sec_exemplars(run_dir: Path, model_colors: dict, findings: list,
         fig.update_layout(xaxis_title="steps (0 = forecast start)", yaxis_title="value")
         arch_txt = f" · archetype {rec['archetype']}" if rec.get("archetype") else ""
         inner += (f"<h4>{rec['family']}{arch_txt} · series {rec['series_id']} "
-                  f"(MASE gap {rec['gap']:+.2f})</h4>" + _frag(fig, 300))
+                  f"(MASE gap {rec['gap']:+.2f})</h4>" + _frag(fig, 300)
+                  + _figcap(f"One <b>{rec['family']}</b> series where the two "
+                            f"models disagree by {abs(rec['gap']):.2f} MASE: "
+                            f"its context, what actually happened next, and "
+                            f"what each model predicted."))
         if ei == 0:
             inner += _note(
                 "A concrete, single series per family: raw context, true "
@@ -2671,7 +2991,10 @@ def _sec_exemplars(run_dir: Path, model_colors: dict, findings: list,
         axis_label = axis_names.pop() if len(axis_names) == 1 else "/".join(sorted(axis_names))
         lens_fig.update_layout(xaxis_title=f"relative depth ({axis_label} axis)",
                                yaxis_title="skip-lens MASE (this series)")
-        inner += _frag(lens_fig, 260)
+        inner += (_frag(lens_fig, 260)
+                  + _figcap("Depth at which each model's forecast for "
+                            "<i>this one series</i> settles, against the "
+                            "benchmark-averaged curve's shape."))
         if ei == 0:
             inner += _note(
                 "The same skip-lens depth curve as the Forecast Lens "
@@ -2921,7 +3244,7 @@ def _sec_sae(cfg: PipelineConfig, run_dir: Path, findings: list) -> str:
                 f"track '{top['best_field']}' — a concrete example of a human-"
                 f"interpretable concept living inside the network.",
             registered=False))
-    inner += _note(*_SAE_EXEMPLAR_NOTE, summary="What is this table?")
+    inner += _note(*_SAE_EXEMPLAR_NOTE, summary="What does this table mean?")
     inner += _sae_seed_floor_block(meta_sae)
     return inner
 
@@ -2953,7 +3276,7 @@ def _sae_seed_floor_block(meta_sae: dict) -> str:
                 "<code>sae.n_seeds</code> above 1 to size one "
                 "(ROADMAP.md sec 13).</p>")
     return ("<h4>Seed-to-seed noise floor</h4>" + _table(pd.DataFrame(rows))
-            + _note(*_SAE_SEED_FLOOR_NOTE, summary="How do I read this floor?"))
+            + _note(*_SAE_SEED_FLOOR_NOTE, summary="What does this floor mean?"))
 
 
 _INTERNALS_NOTES = {
@@ -3266,25 +3589,51 @@ def _sec_budget(run_dir: Path, model_colors: dict, findings: list,
            if n not in blackbox}
     if any(c for c in cum.values()):
         fig = go.Figure()
+        denom_is_forecast = {}
         for name, blocks in cum.items():
             if not blocks:
                 continue
             names = list(blocks["cumulative"].keys())
-            total = models[name]["forward"]["flops"]
+            predict_flops = (models[name].get("predict") or {}).get("flops")
+            total = predict_flops or models[name]["forward"]["flops"]
+            denom_is_forecast[name] = bool(predict_flops)
             frac = [blocks["cumulative"][b] / total for b in names]
             depth = depth_axis_for_run(depth_axis_name, store, name, names).coords
             fig.add_scatter(x=depth, y=frac, mode="lines+markers", name=name,
                             line=dict(color=model_colors.get(name, _COLORS["a"])))
         fig.update_layout(xaxis_title=f"relative depth over this model's blocks "
                                      f"({depth_axis_name} axis)",
-                          yaxis_title="fraction of forward FLOPs completed")
+                          yaxis_title="fraction of full-forecast FLOPs completed")
         inner += "<h4>Compute completed by depth</h4>"
-        inner += ('<p class="blurb">How much of each model\'s forward computation has '
-                  'actually happened by a given point on the relative-depth axis every '
-                  'cross-model depth figure in this report uses. Two models at the same '
-                  'relative depth have generally <i>not</i> done the same share of their '
-                  'work — see <code>ROADMAP.md</code> §18 F1.</p>')
-        inner += _frag(fig, 320)
+        fallback_names = [n for n, v in denom_is_forecast.items() if not v]
+        fallback_line = ((" <b>" + ", ".join(fallback_names) + "</b> had no measured "
+                         "forecast-level FLOPs (`budget.measure_predict` was off, or the "
+                         "model is a black box) — for "
+                         + ("it" if len(fallback_names) == 1 else "them")
+                         + " this curve falls back to the capture-pass denominator and "
+                         "CAN reach 1.0 without that meaning full coverage.")
+                        if fallback_names else "")
+        inner += _frag(fig, 320) + _note(
+            "How much of each model's *full forecast* has actually happened by a given "
+            "point on the relative-depth axis that every cross-model depth figure in this "
+            "report shares. It is the honesty check on those figures: two models at the "
+            "same relative depth have generally <i>not</i> done the same share of their "
+            "work.",
+            "Each curve rises from 0 toward the fraction of that model's own measured "
+            "forecast FLOPs its captured blocks account for. Read a depth-located claim "
+            "about a model whose curve is far below another's at the same x as being about "
+            "a different amount of computation — a claim at depth 0.5 is only 'halfway "
+            "through the model' if the curve is near 0.5 there too. An encoder-only model "
+            "run through a sampled decoder (Chronos-T5's `num_samples` passes) tops out "
+            "well short of 1.0 here, matching the coverage table above rather than "
+            "contradicting it.",
+            "Normalized by <code>predict.flops</code> (the full forecast, incl. every "
+            "sampled decode pass) when `budget.measure_predict` measured it — the fix "
+            "`ROADMAP.md` §18 F1 (D2) / §23.2 B1 named, now built — falling back to the "
+            "capture-pass FLOPs only when no forecast measurement exists, in which case a "
+            "curve reaching 1.0 means 'covers its own forward pass', not 'covers the "
+            "forecast'."
+            + fallback_line)
 
     l0 = run_dir / "l0" / "summary.json"
     if l0.exists():
@@ -3316,7 +3665,23 @@ def _sec_budget(run_dir: Path, model_colors: dict, findings: list,
             fig.update_xaxes(title_text="parameters (log)", type="log", row=1, col=2)
             fig.update_yaxes(title_text="overall MASE (lower better)", row=1, col=1)
             inner += "<h4>Quality per unit of compute</h4>"
-            inner += _frag(fig, 380)
+            inner += _frag(fig, 380) + _note(
+                "The practitioner's question, which no accuracy number alone can answer: "
+                "is the more accurate model simply the one that spent more? Overall MASE "
+                "is re-plotted against measured cost — FLOPs per series on the left, "
+                "parameters on the right.",
+                "Lower is better on the y axis; further left is cheaper on the x axis. "
+                "A model in the lower-left is winning outright. A model that is lower but "
+                "further right is buying its accuracy with compute, and whether that is a "
+                "good trade is a deployment decision this chart deliberately does not make "
+                "for you. Both x axes are logarithmic, because model sizes worth comparing "
+                "differ by orders of magnitude.",
+                "FLOPs are a measured proxy for cost, not a measure of wall-clock latency "
+                "— a model can be FLOP-cheap and slow, or FLOP-heavy and fast, depending on "
+                "how well its shapes map onto the hardware. Both are measured at this run's "
+                "single context length and horizon and do not extrapolate to others. Models "
+                "whose internals could not be measured are absent from this chart rather "
+                "than plotted at zero.")
             best_q = min(pts, key=lambda t: t[3])
             cheapest = min(pts, key=lambda t: t[1])
             if best_q[0] == cheapest[0]:
@@ -3698,7 +4063,20 @@ def _sec_layer_screen(run_dir: Path, model_colors: dict, findings: list) -> str:
                       f'was not used for this model — fell back to <code>{method}</code> '
                       f'(see run log for why; the run may have silently selected layers '
                       f'with the null the requested method was meant to beat).</p>')
-        inner += _frag(fig, 300)
+        inner += _frag(fig, 300) + _note(
+            "A cheap score over this model's own layers, used to decide which few layers "
+            "are worth spending an expensive analysis (an SAE) on. The bars are the score; "
+            "the highlighted ones are what the screen selected.",
+            "Height is only meaningful relative to the other bars for the same model — it "
+            "is a ranking device, not a quantity with units. A screen worth trusting picks "
+            "layers in the middle-to-late range and clearly separates them from the rest; a "
+            "flat profile means the screen found nothing to distinguish layers by, and the "
+            "selection is close to arbitrary.",
+            "This is a cheap proxy for interestingness, not interestingness itself — it was "
+            "chosen by a bake-off against random and uniform-stride nulls on one corpus and "
+            "one checkpoint pair. It also scores only the layers this run actually captured, "
+            "so if the header above warns that not every block was screened, a better layer "
+            "may exist that was never looked at.")
         findings.append(Finding(
             claim_id=_next_claim_id("layer_screen"), stage="layer_screen",
             evidence_class="descriptive",
@@ -3890,10 +4268,24 @@ h1 .chip.b{color:{{ colors.b }}}
   border:1px solid var(--line);background:var(--panel);margin-right:6px}
 .chip.a{border-color:{{ colors.a }};color:{{ colors.a }}}
 .chip.b{border-color:{{ colors.b }};color:{{ colors.b }}}
+.bottomline{background:var(--panel);border:1px solid var(--accent);
+  border-top:4px solid var(--accent);border-radius:6px;padding:18px 24px;margin:0 0 26px}
+.bottomline h2{font:600 13px var(--mono);letter-spacing:.1em;text-transform:uppercase;
+  margin:0 0 12px;color:var(--accent)}
+.bottomline ul{margin:0;padding-left:0;list-style:none}
+.bottomline li{margin:0 0 11px;font-size:14.5px;line-height:1.55;color:var(--ink);
+  max-width:84ch}
+.bottomline li b{color:var(--ink)}
+.bottomline .bl-foot{margin:14px 0 0;padding-top:12px;border-top:1px solid var(--line);
+  font-size:12.5px;color:var(--muted);max-width:84ch}
 .findings{background:var(--panel);border:1px solid var(--line);
   border-left:3px solid var(--accent);border-radius:6px;padding:16px 20px;margin:0 0 34px}
 .findings h2{font:600 13px var(--mono);letter-spacing:.1em;text-transform:uppercase;
   margin:0 0 10px;color:var(--accent)}
+.findings h3.fgroup{font:600 11px var(--mono);letter-spacing:.12em;
+  text-transform:uppercase;color:var(--muted);margin:18px 0 8px;
+  padding-bottom:4px;border-bottom:1px solid var(--line)}
+.findings h3.fgroup:first-of-type{margin-top:4px}
 .findings ul{margin:0;padding-left:0;list-style:none}
 .findings li{margin:0 0 14px;padding:0 0 14px;border-bottom:1px solid var(--line)}
 .findings li:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none}
@@ -3918,6 +4310,8 @@ details pre{background:var(--panel);border:1px solid var(--line);border-radius:6
   padding:14px;font:12px/1.5 var(--mono);overflow-x:auto;color:var(--ink)}
 footer{color:var(--muted);font:12px var(--mono);margin-top:14px}
 .fairness-restricted{border:2px solid #b03a2e;background:rgba(176,58,46,.08);border-radius:6px;padding:12px 14px;margin:0 0 14px;line-height:1.5}
+p.figcap{margin:-4px 0 4px;padding:0 2px;font-size:13px;line-height:1.5;
+  color:var(--ink);max-width:82ch}
 details.note{margin:2px 0 18px;border:1px solid var(--line);border-radius:6px;
   background:rgba(0,0,0,0.015)}
 details.note summary{cursor:pointer;padding:7px 12px;font:12px var(--mono);
@@ -3963,6 +4357,7 @@ tr.cov-skipped td{color:var(--muted)}
     {%- if dataset_line %} · {{ dataset_line }}{% endif %}
   </div>
 </header>
+{% if bottom_line %}{{ bottom_line }}{% endif %}
 {{ how_to_read }}
 {{ glossary_block }}
 <details class="coverage"{% if any_failed %} open{% endif %}>
@@ -3980,14 +4375,17 @@ Run coverage — {{ coverage_summary }}</summary>
 {{ alignment_provenance }}
 {% if mock_warning %}{{ mock_warning }}{% endif %}
 {% if findings %}
-<div class="findings"><h2>Findings</h2><ul>
-{% for f in findings %}<li>
+<div class="findings"><h2>Findings &mdash; {{ findings|length }} claims, grouped by stage</h2>
+{% for g in finding_groups %}
+<h3 class="fgroup">{{ g.label }}</h3><ul>
+{% for f in g["items"] %}<li>
 <p class="finding-plain">{{ f.plain }}</p>
 <p class="finding-text">{{ f.text }}</p>
 {% if f.caveat %}<details class="note"><summary>Caveats</summary>
 <div class="note-body"><p>{{ f.caveat }}</p></div></details>{% endif %}
 </li>{% endfor %}
-</ul></div>{% endif %}
+</ul>{% endfor %}
+</div>{% endif %}
 {% for s in sections %}
 <section id="sec-{{ s.slug }}">
   <div class="eyebrow">{{ s.eyebrow }}</div>

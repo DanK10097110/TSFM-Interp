@@ -73,7 +73,8 @@ models:
     checkpoint: amazon/chronos-t5-small   # OVERWRITTEN per rung by --emit-configs
     batch_size: 32                        # OVERWRITTEN per rung by --emit-configs
     capture_layer_stride: 1
-    num_samples: 20
+    kwargs:
+      num_samples: 20
 
 budget:
   enabled: true                   # REQUIRED: the ladder axis is this stage's measured

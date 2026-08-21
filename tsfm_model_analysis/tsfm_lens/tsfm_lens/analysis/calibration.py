@@ -125,3 +125,44 @@ def summarize_calibration(quantiles: np.ndarray, levels: list, targets: np.ndarr
         "quantile_crossing_rate": quantile_crossing_rate(quantiles, levels),
         **interval_coverage_and_sharpness(quantiles, levels, targets),
     }
+
+
+def reliability_from_own_width(point: np.ndarray, quantiles: np.ndarray,
+                               targets: np.ndarray, scale: np.ndarray) -> dict:
+    """A model's own quantile width as a free, label-free error signal (ROADMAP.md
+    sec 23.4 E1).
+
+    `analysis/agreement.py`'s sec 20 H4 study found that cross-model
+    disagreement predicts error (Spearman 0.716) but *loses* to this exact
+    signal -- each model's own quantile width, needing no second checkpoint --
+    in 10 of 11 scorable model-runs. That result was never wired into the
+    report because building a stage around the *losing* heuristic would
+    contradict its own acceptance criterion (sec 23.5). This function wires in
+    the *winner* instead: it costs nothing beyond `predict()` output `run_l0`
+    already holds (zero forward passes), needs only one model, and is exactly
+    what a practitioner can act on today -- "when this model's own band is
+    wide, expect a bigger miss."
+
+    Reuses `agreement.py`'s `quantile_width` (own uncertainty in MASE units)
+    and `calibration_curve` (equal-count decile binning) rather than
+    reimplementing either, and its `_spearman` -- deliberately, since a model
+    with a zero-width quantile band (a point-only forecast head, e.g.
+    `GenericHFAdapter`) is exactly the degenerate case that a naive
+    argsort-based rank correlation mishandles (CLAUDE.md sec 11.37);
+    `agreement.py`'s tie-averaged version is the one already hardened against
+    it, and the same `own_width_available` guard as sec 20 H4's own module is
+    reused here too rather than re-derived.
+    """
+    from .agreement import _spearman, calibration_curve, quantile_width
+
+    own_width = quantile_width(quantiles, scale)
+    if not np.any(own_width > 0):
+        return {"own_width_available": False,
+               "reason": "this model reports a quantile band of width 0 for "
+                         "every series (no quantile head, or an adapter that "
+                         "fills the band with its point forecast) -- there is "
+                         "no self-reported uncertainty signal to show."}
+    error = np.abs(targets - point).mean(axis=1) / scale
+    return {"own_width_available": True,
+           "spearman_own_width_vs_error": _spearman(own_width, error),
+           "decile_curve": calibration_curve(own_width, error)}
