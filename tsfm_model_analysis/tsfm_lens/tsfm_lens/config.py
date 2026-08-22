@@ -338,6 +338,78 @@ class SAEConfig:
     aux_k: int = 0
     aux_coef: float = 0.03125
     aux_dead_steps: int = 20
+    # Optimizer-step budget floor (ROADMAP.md sec 23.2 A1(b)). `0` reproduces
+    # today's behavior bit-for-bit -- no already-recorded number moves.
+    # `epochs` is a step count in disguise: steps_per_epoch = ceil(n_rows /
+    # batch_size), so `epochs: 60` is ~120 optimizer steps on this repo's
+    # ~4600-row production corpus and ~720 on Stage 0's ~46000-row store --
+    # the same config field, a 4-6x different training budget, with nothing
+    # recording which one actually happened until now (`sae/meta.json`'s new
+    # `training_budget` field). When `min_train_steps > 0`, `train_sae` runs
+    # `max(epochs, ceil(min_train_steps / steps_per_epoch))` epochs instead.
+    min_train_steps: int = 0
+    # AuxK's dead-atom warm-up (`aux_dead_steps`) is denominated in optimizer
+    # steps, so a fixed value calibrated on a many-step run silently consumes
+    # a much larger fraction of a few-step run's budget (`CLAUDE.md` sec
+    # 11.26's lesson, recurring: a constant reapplied outside the conditions
+    # it was measured under). `0.0` keeps `aux_dead_steps` an absolute count
+    # (unchanged); `> 0` instead derives
+    # `aux_dead_steps = max(1, int(frac * total_optimizer_steps))`.
+    aux_dead_steps_frac: float = 0.0
+    # Dictionary-size policy (ROADMAP.md sec 23.2 A1(c)). "mult" (default):
+    # today's `dict_size_mult * d_in` behavior, unchanged -- no recorded
+    # number moves. "search": train a ladder of candidate sizes on the
+    # already-cached activations (cheap -- seconds per cell, no checkpoint
+    # load) and keep the LARGEST one whose dead-feature rate clears
+    # `max_dead_rate`. If none clears it, keep the one with the most ALIVE
+    # atoms rather than the largest dictionary outright: a saturated layer
+    # can have more dead atoms in a bigger dictionary with no gain in alive
+    # count (A1 finding 3 -- Chronos `encoder.block.6` plateaus at ~200-400
+    # alive atoms regardless of size), so "biggest, full stop" would
+    # silently prefer a worse dictionary. The full ladder is recorded in
+    # `sae/meta.json` either way.
+    dict_size_policy: str = "mult"
+    dict_size_ladder: list = field(default_factory=lambda: [128, 256, 384, 512, 768, 1024, 1536, 2048])
+    # Dead-feature-rate acceptance bar (ROADMAP.md sec 23.2 A1(d)). Doubles as
+    # `dict_size_policy: "search"`'s target AND as a rendered pass/fail gate
+    # on every target's FINAL dictionary regardless of policy -- recorded as
+    # `dead_rate_gate` in `sae/meta.json` and rendered as a visible warning
+    # (not a collapsed note) in the report's SAE section when it fails.
+    # Today a 97%-dead dictionary is a number in a JSON file nothing reads;
+    # this is what makes it loud instead.
+    max_dead_rate: float = 0.30
+    # `dict_size_policy: "search"`'s own residual gap, found by the
+    # 2026-08-21 `sae_revival` validation run (ROADMAP.md sec 23.2 A1): each
+    # ladder candidate was trained and scored with exactly ONE stochastic
+    # draw, so a boundary-case candidate (Chronos-T5-Base's chosen size later
+    # measured a 5-seed mean dead rate of 0.304 against this single draw's
+    # 0.223) or a collapsed one (TimesFM's own single draw at dict_size 2048
+    # scored fidelity -0.99 against a real 5-seed floor never below 0.90,
+    # because the `passing` filter never looks at fidelity at all) could be
+    # selected by chance. Both default to a no-op (today's single-draw,
+    # dead-rate-only behavior) so no already-recorded search result moves.
+    min_fidelity: float = 0.0
+    dict_size_search_seeds: int = 1
+    # A third gap the two knobs above don't close, found by re-running the
+    # fixed search against real checkpoints (ROADMAP.md sec 23.2 A1, second
+    # validation-run block, 2026-08-21): `search_dict_size`'s own selection
+    # rule -- the LARGEST dict_size whose mean dead rate clears
+    # `max_dead_rate` -- always lands as close to the bar as the ladder's
+    # granularity allows, regardless of measurement quality, whenever dead
+    # rate rises steeply with size (Chronos-T5-Base's real ladder: 128 ->
+    # 0.120 ... 256 -> 0.297 ... 384 -> 0.396 ... 2048 -> 0.820 -- nothing
+    # above 256 clears the bar at all). Its chosen size (256) later measured
+    # a real 5-seed floor of mean 0.304 (sd 0.011) -- one sd over 0.30 --
+    # while size 128 (the only other passing candidate) sat at a comfortable
+    # 0.120 on the same ladder, with no larger comfortably-passing
+    # alternative available (an earlier version of this comment claimed one
+    # existed at 512, quoting TimesFM's ladder values by mistake; corrected
+    # same day). `dict_size_search_margin > 0` tightens the passing filter to
+    # `dead_feature_rate <= max_dead_rate - margin`, trading dictionary size
+    # for headroom -- for Chronos-T5-Base specifically that means falling
+    # back to the much-smaller 128-atom dictionary, not a "free" larger one.
+    # Default 0.0 is a no-op -- no already-recorded search result moves.
+    dict_size_search_margin: float = 0.0
     # Seed-to-seed noise floor for this stage's own headline numbers
     # (ROADMAP.md sec 13's SAE repeat-run-variance item). `1` trains exactly
     # one SAE per target and changes nothing -- every already-recorded number

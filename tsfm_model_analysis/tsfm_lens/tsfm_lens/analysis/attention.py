@@ -358,6 +358,26 @@ def _cross_attention(cfg: PipelineConfig, adapter, data: BenchmarkData, rng,
                  "documented blind spot")}
 
 
+def _ablation_setup(cfg: PipelineConfig, data: BenchmarkData):
+    """Rows/contexts/scale/seed shared by mean-ablation ΔMASE (this module) and
+    H8's single-head seasonal-power scoring (`seasonality_circuit.py`).
+
+    Factored out so the two harnesses provably sample the same rows at the
+    same seed rather than trusting two independent copies to agree
+    (`CLAUDE.md` sec 11.24) -- the seed/row-sampling constants below are the
+    entire contract a reproduction check like H8 Stage 1's depends on.
+    """
+    acfg = cfg.attention
+    take = min(data.n, acfg.ablation_max_series)
+    rows = sample_rows(data.n, take, cfg.run.seed + 10, strata=data.meta["family"].to_numpy())
+    contexts, targets = data.contexts()[rows], data.targets()[rows]
+    scale = np.abs(np.diff(contexts, axis=1)).mean(axis=1) + 1e-8
+    families = data.families[rows]
+    fam_list = sorted(set(families))
+    seed = cfg.run.seed + 11
+    return rows, contexts, targets, scale, families, fam_list, seed
+
+
 def _ablation_analysis(cfg: PipelineConfig, adapter, store: ActivationStore,
                        data: BenchmarkData):
     """Head and MLP mean-ablation ΔMASE, overall and per family."""
@@ -367,13 +387,9 @@ def _ablation_analysis(cfg: PipelineConfig, adapter, store: ActivationStore,
         log.info("attention %s: ablation unsupported by adapter", adapter.name)
         return None
     acfg = cfg.attention
-    take = min(data.n, acfg.ablation_max_series)
-    rows = sample_rows(data.n, take, cfg.run.seed + 10, strata=data.meta["family"].to_numpy())
-    contexts, targets = data.contexts()[rows], data.targets()[rows]
-    scale = np.abs(np.diff(contexts, axis=1)).mean(axis=1) + 1e-8
-    families = data.families[rows]
-    fam_list = sorted(set(families))
-    seed = cfg.run.seed + 11
+    rows, contexts, targets, scale, families, fam_list, seed = \
+        _ablation_setup(cfg, data)
+    take = len(rows)
 
     if store.has_predictions(adapter.name):
         f_clean = store.load_predictions(adapter.name)["point"][rows]
@@ -406,8 +422,19 @@ def _ablation_analysis(cfg: PipelineConfig, adapter, store: ActivationStore,
 
 def _ablate_heads(cfg: PipelineConfig, adapter, blocks: list, contexts: np.ndarray,
                   horizon: int, seed: int, delta, families: np.ndarray,
-                  fam_list: list):
-    """Mean-ablate every (block, head) via its o_proj input slice and score ΔMASE."""
+                  fam_list: list, on_forecast=None):
+    """Mean-ablate every (block, head) via its o_proj input slice and score ΔMASE.
+
+    `on_forecast(block_index, head_index, forecast)`, if given, is called
+    with each head's raw per-position forecast array before `delta` reduces
+    it to a ΔMASE scalar -- ROADMAP.md sec 20 H8 Stage 1 uses this to score a
+    *second* metric (`seasonality_circuit.seasonal_power`) from the exact
+    same forward pass, guaranteeing its `head_delta` output is bit-for-bit
+    the array this function has always returned rather than a second,
+    independently-recomputed copy (`CLAUDE.md` sec 11.24). Default `None` is
+    a no-op -- this function's return value is unchanged for every existing
+    caller.
+    """
     means = _oproj_means(adapter, [b["o_proj"] for b in blocks], contexts)
     n_heads = blocks[0]["n_heads"]
     head_d = np.zeros((len(blocks), n_heads), dtype=np.float32)
@@ -419,6 +446,8 @@ def _ablate_heads(cfg: PipelineConfig, adapter, blocks: list, contexts: np.ndarr
             with input_slice_ablate(adapter.module, block["o_proj"], sl,
                                     means[block["o_proj"]][sl]):
                 f = predict_rows(adapter, contexts, horizon, cfg.l0.quantiles, seed)
+            if on_forecast is not None:
+                on_forecast(bi, h, f)
             d = delta(f)
             head_d[bi, h] = d.mean()
             for fi, fam in enumerate(fam_list):

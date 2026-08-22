@@ -105,7 +105,11 @@ def test_end_to_end(tmp_path=None):
     # the very first finding's caveat instead of at the findings block's own
     # close (which precedes the first rendered `<section>`).
     findings_block = html.split('<div class="findings">', 1)[1].split("<section ", 1)[0]
-    n_findings_html = findings_block.count("<li>")
+    # Each <li> also carries a registered/exploratory class (ROADMAP.md sec 21
+    # J4's Headline mode filters on it), so count both variants rather than a
+    # bare `<li>`.
+    n_findings_html = (findings_block.count('<li class="registered">')
+                       + findings_block.count('<li class="exploratory">'))
     assert len(findings_list) == n_findings_html, (
         f"findings.json has {len(findings_list)} entries but the report "
         f"rendered {n_findings_html} <li> findings")

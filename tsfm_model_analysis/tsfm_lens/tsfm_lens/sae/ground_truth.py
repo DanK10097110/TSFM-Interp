@@ -154,7 +154,8 @@ def encode_series_level(sae, store: ActivationStore, model: str, layer: str,
 
 def best_ground_truth_matches(features: np.ndarray, gt: pd.DataFrame, series_ids: np.ndarray,
                               gt_cols: list, min_valid: int = _MIN_VALID,
-                              top_features: int = 50) -> dict:
+                              top_features: int = 50,
+                              must_include_fields: tuple = ()) -> dict:
     """Pure per-feature best-match search: no I/O, so this is the part unit tests exercise directly.
 
     `features` is `[N, F]` (one row per series, in the same order as
@@ -169,6 +170,19 @@ def best_ground_truth_matches(features: np.ndarray, gt: pd.DataFrame, series_ids
     matcher does exactly that, `sae/matching.py`), so `top_features <= 0`
     returns every feature. The default is the value every existing caller was
     hardcoded to, so their artifacts are unchanged.
+
+    `must_include_fields` (ROADMAP.md sec 16 C1): each named field's own
+    single best full-population match (searched over the untruncated
+    `results`, before the `top_features` slice) is appended to the returned
+    list if it isn't already inside the top-`top_features` slice. This is
+    the fix for a real bug: `sae/train.py::run_sae` used to run this same
+    widening search over the already-truncated top-50 list, which cannot
+    find a field's best match when that match sits outside the top 50 by
+    |rho| entirely -- exactly the case that left every steering feature's
+    `direction_match` null for both models (C1's diagnosis). Doing the
+    search here, against `results` rather than `ranked[:top_features]`, is
+    the only way to see the full population. Default `()` is a no-op --
+    every existing caller's artifact is unchanged.
     """
     joined = gt.reindex(series_ids)
     n_with_gt = int(joined[gt_cols].notna().any(axis=1).sum())
@@ -201,13 +215,29 @@ def best_ground_truth_matches(features: np.ndarray, gt: pd.DataFrame, series_ids
 
     matched = [r for r in results if r["best_field"] is not None]
     ranked = sorted(results, key=lambda r: -abs(r["rho"]))
+    out_features = ranked if top_features <= 0 else list(ranked[:top_features])
+
+    widened_with = []
+    if top_features > 0 and must_include_fields:
+        seen = {r["feature"] for r in out_features}
+        for field in must_include_fields:
+            field_matches = [r for r in matched if r["best_field"] == field]
+            if not field_matches:
+                continue
+            best_for_field = max(field_matches, key=lambda r: abs(r["rho"]))
+            if best_for_field["feature"] not in seen:
+                out_features.append(best_for_field)
+                seen.add(best_for_field["feature"])
+                widened_with.append((field, best_for_field["feature"]))
+
     return {
         "n_series_with_ground_truth": n_with_gt,
         "n_features": len(results),
         "n_features_matched": len(matched),
         "mean_abs_rho_matched": float(np.mean([abs(r["rho"]) for r in matched])) if matched else 0.0,
         "abs_rho_matched": [float(abs(r["rho"])) for r in matched],
-        "features": ranked if top_features <= 0 else ranked[:top_features],
+        "features": out_features,
+        "widened_with": widened_with,
     }
 
 
@@ -255,8 +285,14 @@ def permutation_null_alignment(features: np.ndarray, gt: pd.DataFrame, series_id
 
 
 def ground_truth_alignment(cfg: PipelineConfig, store: ActivationStore, model: str,
-                           layer: str, sae, device) -> dict:
-    """I/O wrapper: load the corpus's ground truth + this model/layer's encoded features."""
+                           layer: str, sae, device,
+                           must_include_fields: tuple = ()) -> dict:
+    """I/O wrapper: load the corpus's ground truth + this model/layer's encoded features.
+
+    `must_include_fields` passes through to `best_ground_truth_matches` --
+    see its docstring and ROADMAP.md sec 16 C1. Default `()` is a no-op, so
+    every caller but `sae/train.py::run_sae`'s steering step is unaffected.
+    """
     meta = load_meta(cfg.run_dir())
     gt = load_ground_truth_table(cfg.data.path)
     gt_cols = [c for c in gt.columns if c != "generator"]
@@ -270,7 +306,8 @@ def ground_truth_alignment(cfg: PipelineConfig, store: ActivationStore, model: s
                        strata=meta["family"].to_numpy())
     series_ids = meta["series_id"].to_numpy()[rows]
     features = encode_series_level(sae, store, model, layer, rows, device)
-    result = best_ground_truth_matches(features, gt, series_ids, gt_cols)
+    result = best_ground_truth_matches(features, gt, series_ids, gt_cols,
+                                       must_include_fields=must_include_fields)
     result["n_requested"] = int(cfg.sae.ground_truth_max_series)
     result["n_realized"] = int(len(rows))
     result["rows"] = [int(r) for r in rows]

@@ -1265,6 +1265,32 @@ _EVIDENCE_CLASS_CAVEATS = {
 }
 
 _MASE_DELTA_RE = re.compile(r"δmase|mase ratio", re.IGNORECASE)
+_SAE_KEY_RE = re.compile(r"SAE — ([^:]+):")
+
+
+def _sae_gate_caveat(text: str, run_dir: Path) -> str:
+    """ROADMAP.md sec 23.2 A1(d): a failing dead-rate gate, stated on the finding.
+
+    `_sec_sae`'s findings all start "SAE — {model}/{layer}: ..."; this pulls
+    that key back out and reads the same `dead_rate_gate` the section's own
+    visible warning reads, so the two surfaces (headline warning, per-finding
+    caveat) can never disagree about which targets failed.
+    """
+    m = _SAE_KEY_RE.search(text)
+    meta_path = run_dir / "sae" / "meta.json"
+    if not m or not meta_path.exists():
+        return ""
+    meta = load_json(meta_path)
+    entry = (meta or {}).get(m.group(1).strip())
+    if not entry:
+        return ""
+    gate = entry.get("dead_rate_gate")
+    if not gate or gate.get("passed", True):
+        return ""
+    return (f"This dictionary is {gate['value']:.1%} dead, above the "
+            f"{gate['threshold']:.0%} acceptance bar (ROADMAP.md sec 23.2 A1(d)) -- "
+            f"read any feature-level claim here as drawn from a small alive "
+            f"minority of the dictionary, not the whole thing.")
 _OVERLAP_PCT_RE = re.compile(r"([\d.]+)\s*%\s*overlap")
 
 
@@ -1356,6 +1382,11 @@ def _compose_caveats(findings: list, run_dir: Path) -> list:
             parts.append("No repeat-run noise floor was checked against this "
                 "specific number (ROADMAP.md sec 18 F6), so it is not yet "
                 "established whether it exceeds ordinary run-to-run noise.")
+
+        if f.stage == "sae":
+            gate_clause = _sae_gate_caveat(f.text, run_dir)
+            if gate_clause:
+                parts.append(gate_clause)
 
         if f.evidence_class == "behavioral" and size_axes:
             facts = "; ".join(f"{a}: {by_axis[a]['Asymmetry']}" for a in size_axes
@@ -3195,6 +3226,16 @@ def _sec_sae(cfg: PipelineConfig, run_dir: Path, findings: list) -> str:
         d_mase = entry.get("forecast_preservation", {}).get("mase_delta")
         d_mase_token = entry.get("forecast_preservation_token", {}).get("mase_delta")
         stats = f"reconstruction fidelity {fid:.3f} · dead-feature rate {dead:.3f}"
+        gate = entry.get("dead_rate_gate")
+        if gate and not gate.get("passed", True):
+            # ROADMAP.md sec 23.2 A1(d): visible in the section BODY, not a
+            # collapsed note (sec 15 A5's lesson) -- a 97%-dead dictionary
+            # used to be a number in a JSON file nothing reads.
+            inner += (f"<p class='mockwarn'>⚠ {key}: dead-feature rate "
+                     f"{gate['value']:.1%} exceeds the {gate['threshold']:.0%} "
+                     f"acceptance bar (ROADMAP.md sec 23.2 A1(d)) -- treat every "
+                     f"feature below as drawn from a small alive minority of "
+                     f"this dictionary, not the whole thing.</p>")
         unresolved = []
         if d_mase is not None:
             phrase, _ = _delta_phrase(run_dir, model, d_mase)
@@ -4348,6 +4389,18 @@ details.coverage summary.coverage-bad{color:#a83232}
 details.coverage table{margin:0 16px 14px;width:calc(100% - 32px)}
 tr.cov-failed td{color:#a83232;font-weight:600}
 tr.cov-skipped td{color:var(--muted)}
+.detail-toggle{display:flex;gap:6px;margin:0 0 22px;font:12px var(--mono)}
+.detail-toggle button{font:12px var(--mono);letter-spacing:.04em;padding:5px 12px;
+  border:1px solid var(--line);background:var(--panel);color:var(--muted);
+  border-radius:999px;cursor:pointer}
+.detail-toggle button.active{background:var(--ink);color:var(--panel);border-color:var(--ink)}
+.detail-toggle .dt-hint{align-self:center;color:var(--muted);margin-left:4px}
+/* ROADMAP.md sec 21 J4: Headline mode keeps only the fairness card, L0, and
+   confirmed (registered) findings -- everything else is the evidence this
+   repo's own doctrine says never to read past a headline alone. */
+body[data-detail="headline"] section:not(.sec-headline){display:none}
+body[data-detail="headline"] .findings li:not(.registered){display:none}
+body[data-detail="headline"] .fgroup-block:not(:has(li.registered)){display:none}
 </style></head><body><div class="wrap">
 <header>
   <div class="kicker">tsfm-lens · cross-architecture comparison</div>
@@ -4357,6 +4410,12 @@ tr.cov-skipped td{color:var(--muted)}
     {%- if dataset_line %} · {{ dataset_line }}{% endif %}
   </div>
 </header>
+<div class="detail-toggle" role="group" aria-label="Level of detail">
+  <button type="button" data-level="headline" onclick="tsfmSetDetail('headline')">Headline</button>
+  <button type="button" data-level="standard" class="active" onclick="tsfmSetDetail('standard')">Standard</button>
+  <button type="button" data-level="methods" onclick="tsfmSetDetail('methods')">Methods</button>
+  <span class="dt-hint">Headline: fairness card + L0 + confirmed findings only · Standard: this report as written · Methods: every collapsed detail expanded</span>
+</div>
 {% if bottom_line %}{{ bottom_line }}{% endif %}
 {{ how_to_read }}
 {{ glossary_block }}
@@ -4377,17 +4436,19 @@ Run coverage — {{ coverage_summary }}</summary>
 {% if findings %}
 <div class="findings"><h2>Findings &mdash; {{ findings|length }} claims, grouped by stage</h2>
 {% for g in finding_groups %}
+<div class="fgroup-block">
 <h3 class="fgroup">{{ g.label }}</h3><ul>
-{% for f in g["items"] %}<li>
+{% for f in g["items"] %}<li class="{{ 'registered' if f.registered else 'exploratory' }}">
 <p class="finding-plain">{{ f.plain }}</p>
 <p class="finding-text">{{ f.text }}</p>
 {% if f.caveat %}<details class="note"><summary>Caveats</summary>
 <div class="note-body"><p>{{ f.caveat }}</p></div></details>{% endif %}
 </li>{% endfor %}
-</ul>{% endfor %}
+</ul>
+</div>{% endfor %}
 </div>{% endif %}
 {% for s in sections %}
-<section id="sec-{{ s.slug }}">
+<section id="sec-{{ s.slug }}"{% if s.eyebrow in ('Fairness', 'L0', 'Confirm') %} class="sec-headline"{% endif %}>
   <div class="eyebrow">{{ s.eyebrow }}</div>
   <h2 class="sec">{{ s.title }}</h2>
   <p class="blurb">{{ s.blurb }}</p>
@@ -4398,4 +4459,21 @@ Run coverage — {{ coverage_summary }}</summary>
 <details><summary>Resolved configuration</summary><pre>{{ config_text }}</pre></details>
 {% endif %}
 <footer>generated by tsfm_lens · sections render only for stages that ran</footer>
+<script>
+// ROADMAP.md sec 21 J4: three-position progressive disclosure. Headline
+// hides every section but Fairness/L0/Confirm (CSS, see body[data-detail=...]
+// rules above) and every non-registered finding; Methods expands every
+// collapsed <details> (note/coverage/config) so nothing needs re-authoring.
+// Default state is Standard -- this report unchanged -- so no existing
+// reader's experience moves unless they click a button.
+function tsfmSetDetail(level) {
+  document.body.setAttribute('data-detail', level);
+  document.querySelectorAll('.detail-toggle button').forEach(function (b) {
+    b.classList.toggle('active', b.getAttribute('data-level') === level);
+  });
+  if (level === 'methods') {
+    document.querySelectorAll('details').forEach(function (d) { d.open = true; });
+  }
+}
+</script>
 </div></body></html>""")

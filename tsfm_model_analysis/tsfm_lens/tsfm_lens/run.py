@@ -5,6 +5,7 @@ Examples:
     tsfm-lens --config configs/default.yaml --stages l1,l2 --force l2
     tsfm-lens --config configs/default.yaml --check-alignment timesfm
     tsfm-lens --config configs/default.yaml --discover-layers chronos --contains block
+    tsfm-lens --verify-provenance runs/medium_run_chronos_base
 
 The top-level `run.py` (sibling to this package, one directory up) is kept as
 a thin shim calling this module's `main()`, so the pre-existing documented
@@ -16,19 +17,49 @@ from __future__ import annotations
 
 import argparse
 
+from pathlib import Path
+
 from tsfm_lens.config import load_config
 from tsfm_lens.doctor import print_preflight, run_preflight
 from tsfm_lens.extraction.alignment import (calibrate_impulse_amplitude,
                                             impulse_alignment_check,
                                             resolvable_hit_ceiling)
 from tsfm_lens.extraction.span_discovery import compare_declared, discover_spans
+from tsfm_lens.manifest import verify_provenance
 from tsfm_lens.pipeline import Context, run_pipeline, stage_names
 from tsfm_lens.utils import setup_logging
 
 
+def _print_provenance_diff(run_dir: Path) -> None:
+    """`--verify-provenance` entry point (ROADMAP.md sec 20 H12)."""
+    result = verify_provenance(run_dir)
+    diffs = result["diffs"]
+    print(f"provenance check: {run_dir}")
+    if not diffs and not result["store_summary_changed"]:
+        print("  no differences found -- environment and store match this run's "
+              "recorded provenance")
+        return
+    for key, saved, current in diffs:
+        print(f"  [DIFF] {key}:")
+        print(f"      recorded: {saved}")
+        print(f"      current:  {current}")
+    if result["store_summary_changed"]:
+        print("  [DIFF] activations.zarr no longer matches its recorded shape/dtype "
+              "summary -- re-extract before trusting anything read from this store "
+              "(CLAUDE.md sec 11.15/11.25)")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Layered cross-model TSFM comparison")
-    parser.add_argument("--config", required=True, help="path to a YAML config")
+    parser.add_argument("--config", default="", help="path to a YAML config "
+                        "(not required with --verify-provenance, which reads "
+                        "the target run's own frozen config_resolved.yaml)")
+    parser.add_argument("--verify-provenance", default="", metavar="RUN_DIR",
+                        help="diff a finished run's recorded provenance "
+                             "(git SHA, library versions, device, config hash, "
+                             "activation-store shape) against the current "
+                             "environment and print every difference, then "
+                             "exit (ROADMAP.md sec 20 H12)")
     parser.add_argument("--stages", default="",
                         help=f"comma-separated subset of {stage_names()}; default: all enabled")
     parser.add_argument("--force", default="",
@@ -77,6 +108,13 @@ def main() -> None:
     args = parser.parse_args()
 
     setup_logging()
+
+    if args.verify_provenance:
+        _print_provenance_diff(Path(args.verify_provenance))
+        return
+
+    if not args.config:
+        parser.error("--config is required (unless using --verify-provenance)")
     cfg = load_config(args.config)
     if args.verbose is not None:
         cfg.report.verbose = args.verbose

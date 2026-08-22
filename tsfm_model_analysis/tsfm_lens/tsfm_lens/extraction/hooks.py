@@ -4,14 +4,17 @@
 inputs during a forward pass; `token_patch` replaces a span of token states
 with cached values mid-forward, the primitive behind activation patching and
 the forecast lens; `input_slice_ablate` and `output_mean_ablate` implement
-attention-head and component mean-ablation for the sub-block analyses.
+attention-head and component mean-ablation for the sub-block analyses;
+`multi_slice_ablate` composes several `input_slice_ablate` contexts into one
+set-level intervention (ROADMAP.md sec 20 H8's minimal-sufficient-set search,
+where a set result cannot be assembled from one-at-a-time deltas).
 """
 
 from __future__ import annotations
 
 import dataclasses
-from contextlib import contextmanager
-from typing import Dict, List
+from contextlib import ExitStack, contextmanager
+from typing import Dict, List, Tuple
 
 import torch
 from torch import nn
@@ -161,16 +164,45 @@ def input_slice_ablate(root: nn.Module, module_name: str, dim_slice: slice,
     """Within the context, replace a feature slice of a module's input with `value`.
 
     Registered as a forward pre-hook on the module (typically an attention
-    output projection): `input[..., dim_slice] = value`, with `value`
-    broadcast over batch and positions. Because the projection is linear,
-    fixing one head's slice to its mean activation is exact mean-ablation of
-    that head's contribution to the block output.
+    output projection): `input[..., dim_slice] = value`. `value` may be a
+    `[head_dim]` vector (every caller through 2026-08, i.e. mean-ablation --
+    broadcasts over batch and positions unchanged) **or** a `[B, T, head_dim]`
+    per-position tensor (ROADMAP.md sec 20 H8's sufficiency arm: a cached
+    clean activation patched back in). The hook body was never actually
+    mean-specific -- only its docstring and every existing caller were --
+    `x[..., dim_slice] = value` assigns identically either way. Because the
+    projection is linear, fixing one head's slice to its mean activation is
+    exact mean-ablation of that head's contribution to the block output;
+    fixing it to a clean per-position value is exact activation patching of
+    that head.
+
+    A per-position `value` carries its own batch dimension, so it can go
+    stale the same way `token_patch`'s replacement cache does if the live
+    forward sees a smaller batch than it was built for (the internal-
+    chunking trap `CLAUDE.md` sec 11.5 already names for `token_patch`,
+    reintroduced here since per-position values never exercised this path
+    before): raises an actionable `RuntimeError` naming
+    `attention.ablation_max_series` rather than silently misaligning rows.
+    A live batch *larger* than the cache is not an error -- exactly like
+    `token_patch` -- only the cache's own leading rows are patched, matching
+    `token_patch`'s identical `patched[: replacement.shape[0]]` convention.
     """
     module = dict(root.named_modules())[module_name]
 
     def hook(_module, inputs):
         x = inputs[0].clone()
-        x[..., dim_slice] = value.to(device=x.device, dtype=x.dtype)
+        v = value
+        if v.dim() == x.dim() and v.shape[0] != x.shape[0]:
+            if x.shape[0] < v.shape[0]:
+                raise RuntimeError(
+                    "input_slice_ablate: forward saw a smaller batch than a "
+                    "per-position replacement cache; the model is chunking "
+                    "internally — lower attention.ablation_max_series to at "
+                    "most the model batch_size")
+            n = v.shape[0]
+            x[:n, ..., dim_slice] = v.to(device=x.device, dtype=x.dtype)
+            return (x,) + tuple(inputs[1:])
+        x[..., dim_slice] = v.to(device=x.device, dtype=x.dtype)
         return (x,) + tuple(inputs[1:])
 
     handle = module.register_forward_pre_hook(hook)
@@ -178,6 +210,25 @@ def input_slice_ablate(root: nn.Module, module_name: str, dim_slice: slice,
         yield
     finally:
         handle.remove()
+
+
+@contextmanager
+def multi_slice_ablate(root: nn.Module, specs: List[Tuple[str, slice, torch.Tensor]]):
+    """Within the context, apply several `input_slice_ablate` interventions at once.
+
+    `specs` is `[(module_name, dim_slice, value), ...]`. Entered through an
+    `ExitStack` of `input_slice_ablate` contexts, all active for the
+    duration of every forward pass inside the `with` block -- this is the
+    set-ablation/set-patching primitive ROADMAP.md sec 20 H8's
+    minimal-sufficient-set search needs: a set's effect cannot be assembled
+    from N one-at-a-time deltas (that assumption is exactly what the search
+    exists to test), so the set must be intervened on jointly in one
+    forward pass.
+    """
+    with ExitStack() as stack:
+        for module_name, dim_slice, value in specs:
+            stack.enter_context(input_slice_ablate(root, module_name, dim_slice, value))
+        yield
 
 
 @contextmanager

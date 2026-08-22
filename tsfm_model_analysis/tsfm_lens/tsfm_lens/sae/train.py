@@ -14,7 +14,7 @@ from pathlib import Path
 import numpy as np
 import torch
 
-from ..analysis.steering import evaluate_direction_match, predicted_direction_metric
+from ..analysis.steering import _DIRECTIONAL_FIELDS, evaluate_direction_match, predicted_direction_metric
 from ..config import PipelineConfig
 from ..data import BenchmarkData
 from ..extraction.store import ActivationStore
@@ -47,6 +47,10 @@ class SAETrainConfig:
     # measured effective dimensionality (~14-28 here), which an integer
     # multiple of a 768-1280-wide hidden state cannot express at all.
     dict_size: int = 0
+    # ROADMAP.md sec 23.2 A1(b): `0` reproduces existing behavior exactly.
+    # See `config.py::SAEConfig.min_train_steps` for why this exists.
+    min_train_steps: int = 0
+    aux_dead_steps_frac: float = 0.0
 
 
 def load_all_windows(store: ActivationStore, model: str, layer: str) -> np.ndarray:
@@ -131,7 +135,18 @@ def resample_dead_neurons(sae: TopKSAE, fired: torch.Tensor, x: torch.Tensor,
 
 
 def train_sae(activations: np.ndarray, cfg: SAETrainConfig, device: torch.device) -> tuple:
-    """Train one TopK SAE on a [N, D] activation matrix; returns (sae, per-epoch MSE history)."""
+    """Train one TopK SAE on a [N, D] activation matrix; returns (sae, per-epoch MSE history).
+
+    `cfg.min_train_steps`/`cfg.aux_dead_steps_frac` (ROADMAP.md sec 23.2
+    A1(b)) let the actual optimizer-step budget be specified directly
+    instead of only through `epochs`, whose meaning otherwise silently
+    depends on how many rows a corpus happens to have. The resolved budget
+    (`epochs_run`, `steps_per_epoch`, `n_optimizer_steps`,
+    `aux_dead_steps_used`) is attached to the returned `sae` as
+    `sae.train_meta` -- not returned as a third tuple element, so every
+    existing `sae, history = train_sae(...)` call site keeps working
+    unchanged; only `run_sae` reads it.
+    """
     rng = torch.Generator().manual_seed(cfg.seed)
     x = torch.from_numpy(activations)
     d_in = x.shape[-1]
@@ -140,10 +155,19 @@ def train_sae(activations: np.ndarray, cfg: SAETrainConfig, device: torch.device
     opt = torch.optim.Adam(sae.parameters(), lr=cfg.lr)
 
     n = x.shape[0]
+    steps_per_epoch = len(list(batch_slices(n, cfg.batch_size)))
+    epochs = cfg.epochs
+    if cfg.min_train_steps > 0:
+        epochs = max(epochs, -(-cfg.min_train_steps // max(1, steps_per_epoch)))  # ceil div
+    total_steps = epochs * steps_per_epoch
+    aux_dead_steps = cfg.aux_dead_steps
+    if cfg.aux_dead_steps_frac > 0:
+        aux_dead_steps = max(1, int(cfg.aux_dead_steps_frac * total_steps))
+
     history = []
     n_resampled_total = 0
     steps_since_fired = torch.zeros(dict_size, dtype=torch.long, device=device)
-    for epoch in range(cfg.epochs):
+    for epoch in range(epochs):
         perm = torch.randperm(n, generator=rng)
         epoch_loss = 0.0
         fired = torch.zeros(dict_size, dtype=torch.bool, device=device)
@@ -153,7 +177,7 @@ def train_sae(activations: np.ndarray, cfg: SAETrainConfig, device: torch.device
             mse = torch.mean((recon - batch) ** 2)
             loss = mse
             aux = auxiliary_dead_loss(pre, batch - recon, sae.W_dec,
-                                      steps_since_fired >= cfg.aux_dead_steps, cfg.aux_k)
+                                      steps_since_fired >= aux_dead_steps, cfg.aux_k)
             if aux is not None:
                 loss = loss + cfg.aux_coef * aux
             opt.zero_grad()
@@ -176,9 +200,123 @@ def train_sae(activations: np.ndarray, cfg: SAETrainConfig, device: torch.device
             if n_resampled:
                 log.info(f"sae train: resampled {n_resampled}/{dict_size} dead atoms "
                          f"after epoch {epoch + 1}")
-    log.info(f"sae train: final MSE {history[-1]:.6f} over {cfg.epochs} epochs, "
+    sae.train_meta = {"epochs_configured": cfg.epochs, "epochs_run": epochs,
+                      "steps_per_epoch": steps_per_epoch, "n_optimizer_steps": total_steps,
+                      "aux_dead_steps_used": aux_dead_steps}
+    log.info(f"sae train: final MSE {history[-1]:.6f} over {epochs} epochs "
+             f"({total_steps} optimizer steps, {steps_per_epoch}/epoch), "
              f"dict_size={dict_size} k={cfg.k} n={n}, {n_resampled_total} atom-resamples total")
     return sae, history
+
+
+def search_dict_size(train_activations: np.ndarray, base_cfg: SAETrainConfig, ladder: list,
+                     max_dead_rate: float, device: torch.device,
+                     eval_activations: np.ndarray = None,
+                     min_fidelity: float = 0.0, n_seeds: int = 1,
+                     margin: float = 0.0) -> dict:
+    """Train one SAE per candidate dictionary size and pick one (ROADMAP.md sec 23.2 A1(c)).
+
+    Runs entirely on already-cached activations -- no checkpoint load, no
+    re-extraction -- so a full ladder costs seconds, matching the pattern
+    `run_sae_capacity_sweep.py` established. Picks the LARGEST size whose
+    measured dead-feature rate clears `max_dead_rate`; if none clears it,
+    picks the size with the most ALIVE atoms rather than the largest
+    dictionary outright (see `SAEConfig.dict_size_policy`'s docstring for
+    why -- a saturated layer can have more dead atoms in a bigger
+    dictionary with no gain in alive count).
+
+    `train_activations` is what each candidate is actually TRAINED on --
+    when real-data augmentation is enabled this must be the augmented set,
+    not the benchmark-only one, because training-set composition changes
+    both the per-epoch batch structure (`steps_per_epoch` depends on `n`)
+    and the resulting dead-feature rate. `eval_activations` (default: the
+    same array) is what each candidate's dead-feature rate/fidelity is
+    *scored* on, matching `run_sae`'s own convention of reporting final
+    numbers against the benchmark corpus regardless of augmentation.
+    Found live 2026-08-21 (`ROADMAP.md` sec 23.2 A1): searching on
+    benchmark-only activations while the final model trains on benchmark +
+    real-data-augmented activations gave a single-seed dead-rate estimate
+    (0.223) for Chronos-T5-Base's chosen size that the actual deployed
+    training (augmented data) missed by +0.078 (0.301) -- enough to flip a
+    boundary-case candidate from "clears the bar" to "at the bar" once
+    5-seed variance was measured.
+
+    `n_seeds` (default 1, a no-op reproducing today's single-draw behavior)
+    and `min_fidelity` (default 0.0, also a no-op) close the residual gap the
+    same validation run's own writeup named: a single stochastic draw per
+    candidate can land on either side of a boundary case (Chronos's chosen
+    size later measured a 5-seed mean dead rate of 0.304 against this
+    search's own single-draw 0.223), and the `dead_feature_rate`-only filter
+    can pick a candidate whose reconstruction collapsed (TimesFM's own
+    single-draw fidelity of -0.99 at dict_size 2048, against a real 5-seed
+    floor never below 0.90). `n_seeds > 1` trains each candidate that many
+    times at `base_cfg.seed + i` and selects/filters on the MEAN of each
+    metric across those seeds (still recorded per-seed via `seed_spread`, not
+    just as a mean, so the spread stays auditable); `min_fidelity > 0` adds a
+    second requirement to the `passing` filter alongside `max_dead_rate`.
+
+    `margin` (default 0.0, also a no-op) fixes a THIRD gap the multi-seed
+    fix alone does not close, found by re-running the fixed search against
+    real checkpoints (`ROADMAP.md` sec 23.2 A1, second validation-run block,
+    2026-08-21): the `passing` filter's own selection rule --
+    `max(passing, key=dict_size)`, the largest size that clears the bar --
+    always lands as close to `max_dead_rate` as the ladder's granularity
+    allows, *regardless* of how well-measured that boundary is, whenever the
+    dead-rate-vs-size curve rises steeply with size (the normal case, and
+    what Chronos-T5-Base's real ladder showed: 128->0.120 ... 256->0.297 ...
+    384->0.396 ... 2048->0.820, all monotone -- nothing above 256 clears the
+    bar at all). Averaging away seed noise cannot fix a policy that
+    deliberately spends the only available margin choosing the riskiest
+    passing point on the curve -- Chronos's real 5-seed floor at its chosen
+    size (256) measured mean 0.304, sd 0.011, just one sd over the 0.30 bar,
+    while dict_size 128 (the only other passing candidate) sat at a
+    comfortable 0.120 mean on the same ladder, with no comfortably-passing
+    LARGER alternative available (a first draft of this docstring claimed
+    one existed at 512, quoting TimesFM's ladder values by mistake; see
+    ROADMAP.md sec 23.2 A1's same-day correction). Setting `margin > 0`
+    tightens the passing filter to
+    `dead_feature_rate <= max_dead_rate - margin`, so the selection is
+    pushed toward a size with real headroom instead of the bare minimum.
+    """
+    from dataclasses import replace
+    from .eval import seed_spread
+    if eval_activations is None:
+        eval_activations = train_activations
+    ladder_results = []
+    for size in sorted({int(s) for s in ladder}):
+        dead_draws, fid_draws = [], []
+        for i in range(max(1, n_seeds)):
+            cell_cfg = replace(base_cfg, dict_size=size, seed=base_cfg.seed + i)
+            sae, _ = train_sae(train_activations, cell_cfg, device)
+            dead_draws.append(dead_feature_rate(sae, eval_activations, device))
+            fid_draws.append(reconstruction_fidelity(sae, eval_activations, device))
+        dead_stats = seed_spread(dead_draws)
+        fid_stats = seed_spread(fid_draws)
+        dead, fid = dead_stats["mean"], fid_stats["mean"]
+        n_alive = int(round(size * (1 - dead)))
+        ladder_results.append({"dict_size": size, "dead_feature_rate": dead,
+                               "n_alive": n_alive, "reconstruction_fidelity": fid,
+                               "dead_feature_rate_seeds": dead_stats,
+                               "reconstruction_fidelity_seeds": fid_stats})
+        log.info(f"sae dict-size search: size={size} dead={dead:.4f} alive={n_alive} "
+                 f"fid={fid:.4f} (n_seeds={max(1, n_seeds)})")
+    # min_fidelity <= 0 means "no floor" (matches this file's existing
+    # 0-means-off convention, e.g. aux_dead_steps_frac) -- otherwise a
+    # default of exactly 0.0 would silently start excluding any candidate
+    # whose fidelity happens to be negative (a real, observed collapse; see
+    # ROADMAP.md sec 23.2 A1's 2026-08-21 finding), which is not a no-op.
+    passing = [r for r in ladder_results
+              if r["dead_feature_rate"] <= max_dead_rate - margin
+              and (min_fidelity <= 0 or r["reconstruction_fidelity"] >= min_fidelity)]
+    if passing:
+        chosen = max(passing, key=lambda r: r["dict_size"])
+        target_met = True
+    else:
+        chosen = max(ladder_results, key=lambda r: r["n_alive"])
+        target_met = False
+    return {"ladder": ladder_results, "chosen_dict_size": chosen["dict_size"],
+           "target_met": target_met, "max_dead_rate": max_dead_rate,
+           "min_fidelity": min_fidelity, "margin": margin}
 
 
 def encode_and_persist_features(store: ActivationStore, model: str, layer: str,
@@ -250,7 +388,9 @@ def _train_config(cfg: PipelineConfig, seed: int, dict_size: int = 0) -> SAETrai
                           batch_size=cfg.sae.batch_size, seed=seed,
                           resample_dead_every_epochs=cfg.sae.resample_dead_every_epochs,
                           aux_k=cfg.sae.aux_k, aux_coef=cfg.sae.aux_coef,
-                          aux_dead_steps=cfg.sae.aux_dead_steps)
+                          aux_dead_steps=cfg.sae.aux_dead_steps,
+                          min_train_steps=cfg.sae.min_train_steps,
+                          aux_dead_steps_frac=cfg.sae.aux_dead_steps_frac)
 
 
 SEED_FLOOR_METRICS = ("reconstruction_fidelity", "dead_feature_rate",
@@ -320,7 +460,8 @@ def run_sae(cfg: PipelineConfig, hub: ModelHub, store: ActivationStore,
     for target in targets:
         model, layer = target["model"], target["layer"]
         key = f"{model}/{layer}"
-        train_cfg = _train_config(cfg, cfg.run.seed, dict_size=int(target.get("dict_size", 0)))
+        explicit_dict_size = int(target.get("dict_size", 0))
+        train_cfg = _train_config(cfg, cfg.run.seed, dict_size=explicit_dict_size)
         log.info(f"sae: training baseline TopK SAE for {key}")
         adapter = hub.get(model)
         bench_activations = load_all_windows(store, model, layer)
@@ -334,6 +475,32 @@ def run_sae(cfg: PipelineConfig, hub: ModelHub, store: ActivationStore,
             log.info(f"sae: augmented {key} training set with {n_real} real-data rows "
                      f"({bench_activations.shape[0]} benchmark + {n_real} real = "
                      f"{train_activations.shape[0]} total)")
+
+        dict_size_search = None
+        if cfg.sae.dict_size_policy == "search" and explicit_dict_size == 0:
+            # ROADMAP.md sec 23.2 A1(c). An explicit per-target `dict_size`
+            # override always wins over the auto search -- a target that
+            # opted into a specific size did so on purpose (item 9's
+            # matched-to-Stage-0 retest is exactly that case).
+            log.info(f"sae: {key} dict_size_policy=search -- sweeping "
+                     f"{cfg.sae.dict_size_ladder}")
+            dict_size_search = search_dict_size(train_activations, train_cfg,
+                                                cfg.sae.dict_size_ladder,
+                                                cfg.sae.max_dead_rate, device,
+                                                eval_activations=bench_activations,
+                                                min_fidelity=cfg.sae.min_fidelity,
+                                                n_seeds=cfg.sae.dict_size_search_seeds,
+                                                margin=cfg.sae.dict_size_search_margin)
+            train_cfg.dict_size = dict_size_search["chosen_dict_size"]
+            if not dict_size_search["target_met"]:
+                log.warning(f"sae: {key} dict-size search found NO ladder size clearing "
+                           f"max_dead_rate={cfg.sae.max_dead_rate} -- kept "
+                           f"{train_cfg.dict_size} (most alive atoms); see "
+                           f"dict_size_search.ladder in sae/meta.json")
+        elif cfg.sae.dict_size_policy == "search" and explicit_dict_size != 0:
+            log.info(f"sae: {key} dict_size_policy=search skipped -- explicit "
+                     f"dict_size={explicit_dict_size} on this target takes priority")
+
         sae, history = train_sae(train_activations, train_cfg, device)
 
         ckpt_path = out_dir / sanitize(model) / f"{sanitize(layer)}.pt"
@@ -345,6 +512,13 @@ def run_sae(cfg: PipelineConfig, hub: ModelHub, store: ActivationStore,
         # regardless of whether real-data augmentation is on.
         fidelity = reconstruction_fidelity(sae, bench_activations, device)
         dead_rate = dead_feature_rate(sae, bench_activations, device)
+        # ROADMAP.md sec 23.2 A1(d): a rendered pass/fail gate, not just a
+        # number in a JSON file nothing reads (report.py::_sec_sae renders a
+        # visible warning on a failing gate; `_compose_caveats` attaches an
+        # automatic caveat to every SAE-derived Finding).
+        dead_rate_gate = {"threshold": cfg.sae.max_dead_rate, "value": dead_rate,
+                          "passed": dead_rate <= cfg.sae.max_dead_rate}
+        training_budget = dict(getattr(sae, "train_meta", {}))
 
         features_persisted = False
         if cfg.sae.persist_features:
@@ -375,7 +549,15 @@ def run_sae(cfg: PipelineConfig, hub: ModelHub, store: ActivationStore,
             fp_token = {"error": str(e)}
 
         try:
-            gt = ground_truth_alignment(cfg, store, model, layer, sae, device)
+            # ROADMAP.md sec 16 E14 / CLAUDE.md sec 13 item 13 C1: without
+            # must_include_fields, best_ground_truth_matches's top-50 default
+            # can silently drop both directional fields (trend_scale,
+            # seasonal_amplitude_max) from gt["features"] entirely, starving
+            # the feature-steering widening logic below of anything to widen
+            # -- direction_match then reads None for every feature, not
+            # because steering failed but because it was never evaluated.
+            gt = ground_truth_alignment(cfg, store, model, layer, sae, device,
+                                        must_include_fields=tuple(_DIRECTIONAL_FIELDS.keys()))
         except Exception as e:
             log.warning(f"sae: ground-truth alignment failed for {key}: {e}")
             gt = {"error": str(e)}
@@ -415,19 +597,15 @@ def run_sae(cfg: PipelineConfig, hub: ModelHub, store: ActivationStore,
                 # this run already found a ground-truth correlate for).
                 matched = [f for f in gt.get("features", []) if f.get("best_field") is not None]
                 candidates = [f["feature"] for f in matched[:cfg.sae.feature_steering_top_k]]
-                # ROADMAP.md sec 16 E14's named next step: the top-|rho| set
-                # above can miss trend_scale/seasonal_amplitude_max entirely
-                # (the only two fields predicted_direction_metric maps to a
-                # directional claim) if neither is any feature's *global*
-                # top-k match on this run. Explicitly add each field's own
-                # single best-|rho| match (matched is already sorted by
-                # -|rho|, so [0] is the best) so the directional claim gets
-                # at least one evaluable example per model whenever
-                # ground_truth_alignment found one at all, without
-                # displacing the existing top-k set.
+                # ROADMAP.md sec 16 E14 / CLAUDE.md sec 13 item 13 C1: each
+                # directional field's true best match is now guaranteed to be
+                # present somewhere in `matched` (must_include_fields on the
+                # ground_truth_alignment call above), so widen the same way
+                # the top-k set was built -- add it if the top-k slice above
+                # didn't already include it.
                 seen = set(candidates)
                 widened = []
-                for field in ("trend_scale", "seasonal_amplitude_max"):
+                for field in _DIRECTIONAL_FIELDS:
                     field_matches = [f for f in matched if f["best_field"] == field]
                     if field_matches and field_matches[0]["feature"] not in seen:
                         candidates.append(field_matches[0]["feature"])
@@ -496,6 +674,9 @@ def run_sae(cfg: PipelineConfig, hub: ModelHub, store: ActivationStore,
             "feature_steering": fs,
             "seed_floor": seed_floor,
             "features_persisted": features_persisted,
+            "training_budget": training_budget,
+            "dead_rate_gate": dead_rate_gate,
+            "dict_size_search": dict_size_search,
         }
     save_json(out_dir / "meta.json", results)
 

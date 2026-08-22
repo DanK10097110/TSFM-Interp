@@ -72,6 +72,14 @@ def run_extraction(cfg: PipelineConfig, hub, data: BenchmarkData) -> ActivationS
     store.set_stack_meta(stack_meta)
     if alignment_records:
         save_json(run_dir / "alignment" / "alignment_check.json", alignment_records)
+    # Merged into `provenance` the same way `corpus_digest` is above
+    # (ROADMAP.md sec 20 H12): a cheap shape/dtype fingerprint of the
+    # finished store, so `manifest.py::verify_provenance` can flag a store
+    # that no longer looks like it did when this run's provenance was
+    # written -- without hashing gigabytes of activation content.
+    provenance = load_manifest(run_dir).get("provenance", {})
+    provenance["store_summary"] = store.summary()
+    record_extra(run_dir, "provenance", provenance)
     log.info("extraction complete: %s", {m: len(ls) for m, ls in layer_map.items()})
     return store
 

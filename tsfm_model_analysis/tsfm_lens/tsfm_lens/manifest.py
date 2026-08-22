@@ -97,3 +97,72 @@ def diff_resolved(old: dict, new: dict) -> list:
         if old.get(key) != new.get(key):
             changed.append((key, old.get(key), new.get(key)))
     return changed
+
+
+# ROADMAP.md sec 20 H12: environment/config keys `verify_provenance` diffs.
+# Deliberately excludes `models` (hf_revision needs a network call every
+# invocation -- a cost this cheap check should not impose by default) and
+# `corpus_digest` (unchanged by definition here, since verification loads
+# the exact `config_resolved.yaml` the run itself wrote, not a fresh corpus
+# build) -- both are still visible side by side in the raw saved/current
+# dicts `verify_provenance` returns, just not auto-diffed.
+_PROVENANCE_DIFF_KEYS = ("tsfm_lens_version", "git_sha", "git_dirty",
+                        "python_version", "packages", "device", "config_hash")
+
+
+def verify_provenance(run_dir: Path) -> dict:
+    """Compare a finished run's saved provenance against the current environment.
+
+    An honesty feature for the reproducibility failures this repo has
+    already paid full investigation sessions for (`CLAUDE.md` sec 11.13's
+    golden-hash mystery, sec 11.24's config-meaning-drift-between-two-runs,
+    sec 11.25's stale-zarr-store trap) -- each of those would have been a
+    one-line diff instead of a session had this existed at the time. Loads
+    the run's own frozen `config_resolved.yaml` (never the live `--config`
+    path, which may have moved on since the run) and recomputes today's
+    environment against it, then diffs against what `run_pipeline` recorded
+    at run start (`utils.py::run_provenance`).
+
+    Returns `{"saved": {...}, "current": {...}, "diffs": [(key, saved, current), ...],
+    "store_summary_changed": bool}` -- never raises on a real difference
+    (a difference is exactly what this function exists to surface), only on
+    a run directory that never wrote a manifest/provenance record at all
+    (nothing to verify against).
+    """
+    from .config import load_config
+    from .utils import run_provenance
+
+    manifest = load_manifest(run_dir)
+    saved = manifest.get("provenance")
+    if saved is None:
+        raise FileNotFoundError(
+            f"{run_dir} has no recorded provenance (run_manifest.json has no "
+            f"'provenance' key) -- nothing to verify against. Provenance is "
+            f"recorded automatically at the start of every `run_pipeline` "
+            f"call since ROADMAP.md sec 15 A7; this run predates that or "
+            f"never completed stage 'extract'.")
+
+    config_path = run_dir / "config_resolved.yaml"
+    cfg = load_config(config_path) if config_path.exists() else None
+    current = run_provenance(cfg, corpus_digest=saved.get("corpus_digest"))
+
+    diff_keys = _PROVENANCE_DIFF_KEYS if cfg is not None else tuple(
+        k for k in _PROVENANCE_DIFF_KEYS if k != "config_hash")
+    diffs = [(k, saved.get(k), current.get(k)) for k in diff_keys
+            if saved.get(k) != current.get(k)]
+    if cfg is None:
+        diffs.append(("config_resolved_missing", None,
+                      f"{config_path} not found -- config_hash not re-checked"))
+
+    store_summary_changed = False
+    store_path = run_dir / "activations.zarr"
+    if saved.get("store_summary") and store_path.exists():
+        from .extraction.store import ActivationStore
+        try:
+            live_summary = ActivationStore(store_path, mode="r").summary()
+            store_summary_changed = live_summary != saved["store_summary"]
+        except Exception as e:  # noqa: BLE001 -- degrade to "couldn't check", not a crash
+            diffs.append(("store_summary_error", None, str(e)))
+
+    return {"saved": saved, "current": current, "diffs": diffs,
+           "store_summary_changed": store_summary_changed}

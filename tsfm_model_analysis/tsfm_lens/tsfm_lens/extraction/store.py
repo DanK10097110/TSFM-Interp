@@ -208,6 +208,36 @@ class ActivationStore:
         """
         return dict(self.root.attrs.get("stack_meta", {}).get(model, {}))
 
+    def summary(self) -> dict:
+        """Cheap, content-free shape/dtype fingerprint of the whole store.
+
+        Reads only zarr array *metadata* (shape/dtype/chunks), never the
+        underlying activation data, so this is safe to call on a
+        many-gigabyte real store. Exists for `manifest.py::verify_provenance`
+        (ROADMAP.md sec 20 H12): a store that silently opened empty or under
+        a different on-disk format (`CLAUDE.md` sec 11.15/11.25 -- the
+        create_array-vs-create_dataset and stale-zarr-v3-directory traps)
+        still reports *some* shape here, so a provenance diff against a
+        recorded summary catches "this store no longer looks like it did
+        when its provenance was written" even though `_check_schema` above
+        already catches an outright schema_version mismatch on open.
+        """
+        out = {"n_series": self.root.attrs.get("n_series"),
+              "n_windows": self.root.attrs.get("n_windows"),
+              "window": self.root.attrs.get("window"),
+              "context_len": self.root.attrs.get("context_len"),
+              "schema_version": self.root.attrs.get("schema_version"),
+              "models": {}}
+        for model in self.models():
+            layers = self.layers(model)
+            shapes = {}
+            for layer in layers:
+                arr = self.root.get(f"act/{model}/{layer}")
+                if arr is not None:
+                    shapes[layer] = {"shape": list(arr.shape), "dtype": str(arr.dtype)}
+            out["models"][model] = {"n_layers": len(layers), "shapes": shapes}
+        return out
+
     def init_sae_layer(self, model: str, layer: str, n_features: int,
                        dtype: str = "float16") -> None:
         """Allocate window-level and pooled SAE-feature arrays for one (model, layer).

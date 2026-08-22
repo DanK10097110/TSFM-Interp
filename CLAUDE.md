@@ -618,7 +618,19 @@ TSFM-Interp/
         ├── tsfm_lens/
         │   ├── config.py        # typed dataclasses, per-stage enables, YAML load
         │   ├── data.py          # sealed loader + jsonl fallback + smoke generator
-        │   ├── utils.py         # log, save_json, batch_slices, relative_depths
+        │   ├── utils.py         # log, save_json, batch_slices, relative_depths,
+        │   │                    # run_provenance() (git/library/device/checkpoint
+        │   │                    # snapshot, ROADMAP.md sec 15 A7)
+        │   ├── manifest.py      # per-stage config fingerprints (ROADMAP.md sec 15
+        │   │                    # A3: resolve_config_keys/fingerprint_stage/
+        │   │                    # diff_resolved -- refuses a stale stage-skip
+        │   │                    # rather than silently mixing two configs'
+        │   │                    # artifacts) + verify_provenance() (ROADMAP.md sec
+        │   │                    # 20 H12: diffs a finished run's recorded git SHA/
+        │   │                    # library versions/device/config hash against the
+        │   │                    # CURRENT environment, plus a cheap activation-
+        │   │                    # store shape/dtype fingerprint -- `run.py
+        │   │                    # --verify-provenance <run_dir>`, no model load)
         │   ├── models/          # base.py (ModelAdapter), timesfm/chronos/chronos_bolt/chronos2/mock
         │   │                    # generic_hf_adapter.py (GenericHFAdapter -- ROADMAP.md
         │   │                    # §16 E3(b): the ZERO-CODE path. PROBES the four things
@@ -740,6 +752,11 @@ TSFM-Interp/
         │   │                    # report.py's own `_note` (figcap + "What does this mean?"
         │   │                    # dropdown) rather than a second implementation of the same
         │   │                    # two-register affordance
+        │   ├── report/analysis_card.py # ROADMAP.md §16 H9: a one-page Markdown+JSON
+        │   │                    # analysis card per run, another pure reduction over
+        │   │                    # already-written artifacts (provenance, tiers, F9's
+        │   │                    # fairness card, L0, budget, confirm, report coverage/
+        │   │                    # findings) like meta_report.py above -- no model load
         │   ├── stage_docs.py    # ROADMAP.md §21 J2: the four fixed lines per stage
         │   │                    # (Question / How / Good-vs-bad / What it CANNOT tell you),
         │   │                    # one entry per pipeline.stage_names() name. Rendered by BOTH
@@ -758,6 +775,8 @@ TSFM-Interp/
         │                        # raise out of extraction mid-run
         ├── run.py               # CLI
         ├── run_meta_report.py   # CLI for report/meta_report.py: --runs a,b,c --out path
+        ├── run_analysis_card.py # CLI for report/analysis_card.py: --run <dir> --out <stem>,
+        │                        # writes <stem>.md + <stem>.json for one existing run
         ├── render_stage_docs.py # splices stage_docs.py into README.md; --check = stale gate
         ├── render_glossary.py   # same, for glossary.py; --check = stale gate
         ├── docs/worked_example.md # ROADMAP.md §21 J3's second half: one REAL run
@@ -1979,6 +1998,13 @@ python run.py --config configs/smoke_three_model.yaml --stages l0,report
 # Cross-run comparison (ROADMAP.md §5.5): reads N existing run directories'
 # artifacts as-is, writes one comparison JSON + HTML, re-runs nothing.
 python run_meta_report.py --runs runs/medium_run,runs/medium_run_chronos_base
+
+# Provenance verification (ROADMAP.md §20 H12): diff a finished run's recorded
+# git SHA / library versions / device / config hash / activation-store shape
+# against the CURRENT environment. No --config needed -- reads the run's own
+# frozen config_resolved.yaml. This is the one-line diff that would have
+# closed §11.24's investigation session in a minute instead of a session.
+python run.py --verify-provenance runs/medium_run_chronos_base
 ```
 
 **Key `default.yaml` values (corrected — TimesFM moved to 2.5 since this file
