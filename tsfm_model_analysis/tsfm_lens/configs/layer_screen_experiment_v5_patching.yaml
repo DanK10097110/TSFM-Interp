@@ -1,0 +1,152 @@
+# Layer-screening bake-off experiment, v5 -- per-window L3 PATCHING secondary
+# gold (ROADMAP.md §6.1.1, the still-open "does `work_bend` remain the
+# bake-off winner ... against the per-window-patching secondary gold"
+# follow-up).
+#
+# Modeled directly on configs/layer_screen_experiment_v4.yaml (fixed
+# 288-row corpus, no row-sampling noise, capture_layer_stride: 1 for a fair
+# all-layers comparison) with two deliberate changes:
+#
+#   1. `l3.patching.enabled: true`. The original bake-off (2026-08-05) used
+#      only the cheap L3 *sensitivity* fingerprint as a secondary cross-check
+#      on the expensive SAE-mass primary gold, explicitly because the
+#      design's originally-preferred secondary gold -- per-window causal
+#      restoration -- was "disabled in this experiment's config for cost".
+#      TimesFM's cross-check agreement with the sensitivity-based secondary
+#      gold was weak (rho=0.14-0.20 across seeds) versus Chronos-T5-Small's
+#      strong 0.714; this config finally runs the causal (patching) version
+#      of that same cross-check to see whether it confirms the weakness or
+#      closes the gap. `l3.patching.layer_stride: 1` (not the repo's usual
+#      default of 2, and not medium_run_chronos_base.yaml's precedent of 2)
+#      is a deliberate choice, not an oversight: the patching-based secondary
+#      gold must cover the SAME full layer set the SAE-mass primary gold and
+#      the sensitivity secondary gold already cover (both computed at
+#      capture_layer_stride: 1 -- every layer), so a Spearman correlation
+#      between "primary gold" and "patching gold" is over the same n layers
+#      with no subset-alignment ambiguity. Halving layer coverage would save
+#      compute but would make the new cross-check answer a different,
+#      narrower question than the existing sensitivity cross-check it's
+#      being compared against. `window_stride: 1` and `max_series: 24`
+#      otherwise match configs/medium_run_chronos_base.yaml's own
+#      `l3.patching` block (the one other real-checkpoint config in this
+#      repo with patching enabled) -- `24` is <= every model's batch_size
+#      (32 for both models below), as `_patching` requires.
+#   2. Sundial is DROPPED, deviating from a literal v4 copy. This run's
+#      whole purpose is re-testing TimesFM's and Chronos-T5-Small's specific,
+#      already-quantified weak/strong secondary-gold agreement -- the
+#      "ORIGINAL Chronos-T5-Small pairing" -- and Sundial is not part of
+#      that comparison. Per-window patching is the most expensive stage in
+#      this repo; dropping an architecture that adds nothing to the question
+#      being asked here is the cheapest-path choice, not a shortcut on the
+#      actual experiment.
+#
+# Stage set: extract, l0 (forecasts), internals (eff-dim/probe cross-check),
+# l3 (sensitivity AND per-window patching this time) -- lens, attention,
+# clustering, sae, confirm, l1, l2 all off, same as v4.
+
+run:
+  name: layer_screen_experiment_v5_patching
+  out_dir: runs
+  device: cuda
+  dtype: bfloat16
+  seed: 0
+  keep_models_loaded: false
+
+data:
+  source: sealed
+  path: ../../benchmark_medium/public_dev  # relative to tsfm_lens/ (where run.py is invoked from)
+  context_len: 512
+  horizon: 64
+  # max_series intentionally omitted -- full 288-row corpus, no sampling (matches v4).
+  family_key: auto
+
+alignment:
+  window: 32
+  sanity_check: true
+
+models:
+  - name: TimesFM
+    adapter: timesfm
+    checkpoint: google/timesfm-2.5-200m-pytorch
+    batch_size: 32
+    capture_layer_stride: 1      # ALL 20 layers -- unchanged from v4
+  - name: Chronos-T5-Small
+    adapter: chronos
+    checkpoint: amazon/chronos-t5-small
+    batch_size: 32
+    capture_layer_stride: 1      # 6 encoder blocks, already all of them
+
+l0:
+  enabled: true
+  quantiles: [0.1, 0.5, 0.9]
+
+l1:
+  enabled: false
+
+l2:
+  enabled: false
+
+l3:
+  enabled: true
+  # max_series intentionally omitted -- see v4's header note; l3's own default
+  # (512) already exceeds the corpus size.
+  corruptions:
+    noise: {snr_db: 6.0}
+    detrend: {}
+    deseasonalize: {top_k: 2}
+    level_shift: {position_frac: 0.6, scale: 3.0}
+    spike: {count: 3, scale: 6.0}
+    warp: {strength: 0.15}
+    dropout: {frac: 0.15, n_blocks: 3}
+  patching:
+    enabled: true
+    layer_stride: 1                # ALL layers -- see header note (must match the
+                                    # sensitivity/primary-gold layer coverage exactly)
+    corruptions: [deseasonalize, noise, level_shift, spike, warp, dropout]
+    max_series: 24                 # must be <= every model's batch_size (32 here)
+    per_window: true               # layer x window restoration heatmaps (causal secondary gold)
+    window_stride: 1               # full time resolution -- matches medium_run_chronos_base.yaml
+
+lens:
+  enabled: false
+
+attention:
+  enabled: false
+
+exemplars:
+  enabled: false
+
+clustering:
+  enabled: false
+
+# See v4's header note -- only relevant if `layer_screen` is included in
+# `--stages` explicitly; the documented `--stages extract,l0,internals,l3`
+# command does not run it.
+layer_screen:
+  enabled: true
+  method: work_bend
+  budget_frac: 0.25
+  min_budget: 2
+
+sae:
+  enabled: false  # run_layer_screen_bakeoff.py trains its own per-layer SAEs directly
+
+report:
+  enabled: false
+
+stats:
+  enabled: true
+  n_boot: 200
+  n_boot_heavy: 100
+  ci: 0.95
+  alpha: 0.05
+  min_series: 8
+
+internals:
+  enabled: true
+  layer_stride: 1
+  max_rows: 15000
+  probe_pca_dim: 50
+
+confirm:
+  enabled: false

@@ -401,7 +401,7 @@ def shared_fraction_margin(score_real: dict, score_null: dict, n_boot: int = 500
     out = bootstrap_ci_diff(lambda idx: float(real[idx].mean()),
                             lambda idx: float(null[idx].mean()),
                             n_a=len(real), n_b=len(null), n_boot=n_boot, seed=seed,
-                            paired=False)
+                            paired=False, unit="atom")
     out["status"] = "ok"
     out["clears_floor"] = bool(out["diff_lo"] > 0)
     return out
@@ -577,7 +577,8 @@ def gt_alignment_margin(score_real: dict, score_v0: dict, key: str = "gt_alignme
         return {"status": "too_few_features", "n_real": int(len(real)), "n_v0": int(len(v0))}
     out = bootstrap_ci_diff(lambda idx: float(real[idx].mean()),
                             lambda idx: float(v0[idx].mean()),
-                            n_a=len(real), n_b=len(v0), n_boot=n_boot, seed=seed, paired=False)
+                            n_a=len(real), n_b=len(v0), n_boot=n_boot, seed=seed, paired=False,
+                            unit="feature")
     out["status"] = "ok"
     out["n_real"], out["n_v0"] = int(len(real)), int(len(v0))
     out["n_alive_real"] = int(score_real.get("n_alive", 0))

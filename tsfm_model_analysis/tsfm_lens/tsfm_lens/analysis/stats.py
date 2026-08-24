@@ -17,11 +17,22 @@ import numpy as np
 
 
 def bootstrap_ci(stat_fn: Callable[[np.ndarray], float], n_units: int,
-                 n_boot: int = 500, seed: int = 0, ci: float = 0.95) -> dict:
+                 n_boot: int = 500, seed: int = 0, ci: float = 0.95,
+                 unit: str = "series") -> dict:
     """Percentile bootstrap CI for a statistic computed from unit indices.
 
     `stat_fn` receives an integer index array selecting units (with
     replacement) and returns a scalar; the point estimate uses all units.
+
+    `unit` names what one resampled index actually is and is carried into
+    the returned dict as `resample_unit` (`ROADMAP.md` sec 16 E11) so a
+    reader of the artifact -- not just the code that produced it -- can
+    check invariant 2 (the series is the resampling unit) was actually
+    followed, rather than trusting the default. Every call site in this
+    repo that genuinely resamples series leaves this at its default;
+    the handful that resample something else (e.g. SAE atoms, or
+    (run, model) groups in a cross-run meta-analysis) pass their real unit
+    explicitly.
     """
     rng = np.random.default_rng(seed)
     point = float(stat_fn(np.arange(n_units)))
@@ -29,25 +40,30 @@ def bootstrap_ci(stat_fn: Callable[[np.ndarray], float], n_units: int,
     for i in range(n_boot):
         samples[i] = stat_fn(rng.integers(0, n_units, n_units))
     lo, hi = np.quantile(samples, [(1 - ci) / 2, 1 - (1 - ci) / 2])
-    return {"value": point, "lo": float(lo), "hi": float(hi)}
+    return {"value": point, "lo": float(lo), "hi": float(hi), "resample_unit": unit}
 
 
 def mean_ci(values: np.ndarray, n_boot: int = 500, seed: int = 0,
-            ci: float = 0.95) -> dict:
-    """Vectorized percentile bootstrap CI for a mean."""
+            ci: float = 0.95, unit: str = "series") -> dict:
+    """Vectorized percentile bootstrap CI for a mean.
+
+    See `bootstrap_ci`'s docstring for what `unit`/`resample_unit` mean and
+    why (`ROADMAP.md` sec 16 E11).
+    """
     v = np.asarray(values, dtype=np.float64)
     rng = np.random.default_rng(seed)
     boots = v[rng.integers(0, len(v), (n_boot, len(v)))].mean(axis=1)
     lo, hi = np.quantile(boots, [(1 - ci) / 2, 1 - (1 - ci) / 2])
-    return {"value": float(v.mean()), "lo": float(lo), "hi": float(hi)}
+    return {"value": float(v.mean()), "lo": float(lo), "hi": float(hi), "resample_unit": unit}
 
 
 def paired_bootstrap(diff: np.ndarray, n_boot: int = 500, seed: int = 0,
-                     ci: float = 0.95) -> Optional[dict]:
+                     ci: float = 0.95, unit: str = "series") -> Optional[dict]:
     """CI and two-sided bootstrap p-value for the mean of paired differences.
 
     Returns None when fewer than three pairs exist, which callers report as
-    untestable rather than pretending at significance.
+    untestable rather than pretending at significance. See `bootstrap_ci`'s
+    docstring for what `unit`/`resample_unit` mean (`ROADMAP.md` sec 16 E11).
     """
     d = np.asarray(diff, dtype=np.float64)
     if len(d) < 3:
@@ -58,12 +74,12 @@ def paired_bootstrap(diff: np.ndarray, n_boot: int = 500, seed: int = 0,
     p = 2.0 * min((boots <= 0).mean(), (boots >= 0).mean())
     p = float(np.clip(p, 1.0 / n_boot, 1.0))
     return {"mean": float(d.mean()), "lo": float(lo), "hi": float(hi),
-            "p": p, "n": int(len(d)), "n_boot": n_boot}
+            "p": p, "n": int(len(d)), "n_boot": n_boot, "resample_unit": unit}
 
 
 def bootstrap_ci_diff(stat_a: Callable[[np.ndarray], float], stat_b: Callable[[np.ndarray], float],
                       n_a: int, n_b: Optional[int] = None, n_boot: int = 500, seed: int = 0,
-                      ci: float = 0.95, paired: bool = True) -> dict:
+                      ci: float = 0.95, paired: bool = True, unit: str = "series") -> dict:
     """Bootstrap CI and two-sided p-value for the difference `stat_a() - stat_b()`
     of two independently computed statistics (e.g. a real run's and a null
     run's version of the same metric).
@@ -77,6 +93,9 @@ def bootstrap_ci_diff(stat_a: Callable[[np.ndarray], float], stat_b: Callable[[n
     draws independent index arrays of size `n_a`/`n_b` for each side every
     iteration -- the always-valid fallback when the two statistics are not
     computed over matched units.
+
+    See `bootstrap_ci`'s docstring for what `unit`/`resample_unit` mean and
+    why (`ROADMAP.md` sec 16 E11).
     """
     rng = np.random.default_rng(seed)
     point_a = float(stat_a(np.arange(n_a)))
@@ -96,7 +115,8 @@ def bootstrap_ci_diff(stat_a: Callable[[np.ndarray], float], stat_b: Callable[[n
     p = float(np.clip(p, 1.0 / n_boot, 1.0))
     return {"a": point_a, "b": point_b, "diff": point_a - point_b,
             "diff_lo": float(lo), "diff_hi": float(hi), "p": p,
-            "a_exceeds_b": bool(lo > 0), "paired": paired, "n_boot": n_boot}
+            "a_exceeds_b": bool(lo > 0), "paired": paired, "n_boot": n_boot,
+            "resample_unit": unit}
 
 
 def holm(pvals: Dict[str, float]) -> Dict[str, float]:

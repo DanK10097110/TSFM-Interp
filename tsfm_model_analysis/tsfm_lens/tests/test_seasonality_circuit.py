@@ -44,6 +44,8 @@ from tsfm_lens.analysis.seasonality_circuit import (best_prefix_from_trace,
                                                     candidate_head_set,
                                                     greedy_minimal_set,
                                                     minimal_set_search,
+                                                    path_decompose_head,
+                                                    path_patch_circuit,
                                                     periodicity_power_rank_correlation,
                                                     random_set_null,
                                                     restoration, score_single_head_effects,
@@ -472,6 +474,126 @@ def test_minimal_set_search_returns_none_when_ablation_unsupported():
     assert result is None
 
 
+def _real_adapter_and_pipeline():
+    """Shared scaffolding for the Stage 3 / E18 tests below -- the same
+    `build_config`/`Context` pattern `test_minimal_set_search_end_to_end_
+    against_mock_pipeline` already uses (CLAUDE.md sec 11.24: reuse, don't
+    re-derive)."""
+    from tests.test_smoke import build_config
+    from tsfm_lens.config import config_from_dict
+    from tsfm_lens.pipeline import Context, run_pipeline
+
+    import tempfile
+    out = tempfile.mkdtemp()
+    cfg_dict = build_config(out)
+    cfg = config_from_dict(cfg_dict)
+    run_pipeline(cfg)
+    return cfg
+
+
+def test_path_decompose_head_degenerates_exactly_for_a_single_head_set():
+    """ROADMAP.md sec 20 H8 Stage 3 / E18: a size-1 `head_set` has no path to
+    decompose -- `effect_direct` must be BIT-IDENTICAL to `effect_total`
+    (the same forecast array is reused, not a second, floating-point-
+    equivalent-but-not-identical forward), `effect_via` must be empty, and
+    the conservation gap must be exactly 0.0, not merely small."""
+    cfg = _real_adapter_and_pipeline()
+    from tsfm_lens.pipeline import Context
+
+    ctx = Context(cfg)
+    mcfg = cfg.models[0]
+    adapter = ctx.hub.get(mcfg.name)
+    adapter.ensure_loaded()
+    info = adapter.attention_info()
+    blocks = info[:: max(1, cfg.attention.head_layer_stride)]
+    blocks_by_name = {b["block"]: b for b in blocks}
+    head_set = [{"layer": blocks[0]["block"], "head": 0}]
+
+    from tsfm_lens.analysis.attention import _ablation_setup
+    from tsfm_lens.analysis.l3_perturbation import corrupt_deseasonalize as _corrupt
+    rows, contexts, targets, scale, families, fam_list, seed = _ablation_setup(cfg, ctx.data)
+    corrupted = _corrupt(contexts, np.random.default_rng(seed))
+
+    result = path_decompose_head(cfg, adapter, blocks_by_name, head_set[0], head_set,
+                                 contexts, corrupted, ctx.data.horizon, seed,
+                                 metric_fn=lambda f: float(np.nanmean(f)))
+
+    assert result["degenerate"] is True
+    assert result["effect_via"] == {}
+    assert result["effect_direct"] == result["effect_total"]
+    assert result["conservation_gap"] == 0.0
+    assert result["sum_paths"] == result["effect_total"]
+
+
+def test_path_patch_circuit_end_to_end_against_mock_pipeline():
+    """Stage 3 / E18's own acceptance criterion: on a multi-head selected
+    set, `sum_paths` (`effect_direct` + every `effect_via`) must equal
+    `effect_direct + sum(effect_via.values())` by construction (an
+    arithmetic check that would catch a wiring bug), and the top-level
+    reduction (`mean_abs_conservation_gap`/`mean_abs_effect_total`) must be
+    well-formed finite floats across every head in the set."""
+    cfg = _real_adapter_and_pipeline()
+    from tsfm_lens.pipeline import Context
+
+    for mcfg in cfg.models:
+        ctx = Context(cfg)
+        adapter = ctx.hub.get(mcfg.name)
+        adapter.ensure_loaded()
+        info = adapter.attention_info()
+        blocks = info[:: max(1, cfg.attention.head_layer_stride)]
+        if len(blocks) < 2:
+            continue
+        selected_set = [{"layer": blocks[0]["block"], "head": 0},
+                        {"layer": blocks[1]["block"], "head": 0}]
+
+        result = path_patch_circuit(cfg, adapter, ctx.data, selected_set)
+
+        assert result is not None, mcfg.name
+        assert result["selected_set"] == selected_set
+        assert len(result["per_src"]) == len(selected_set)
+        for r in result["per_src"]:
+            assert np.isfinite(r["effect_total"])
+            assert np.isfinite(r["effect_direct"])
+            assert set(r["effect_via"]) == {
+                f"{e['layer']}#{e['head']}" for e in selected_set
+                if e != {"layer": r["src"]["layer"], "head": r["src"]["head"]}}
+            expected_sum = r["effect_direct"] + sum(r["effect_via"].values())
+            assert r["sum_paths"] == pytest.approx(expected_sum)
+            assert r["conservation_gap"] == pytest.approx(r["sum_paths"] - r["effect_total"])
+        assert np.isfinite(result["mean_abs_conservation_gap"])
+        assert np.isfinite(result["mean_abs_effect_total"])
+
+
+def test_path_patch_circuit_returns_none_when_ablation_unsupported():
+    class _NoAttentionAdapter:
+        name = "no_attn"
+
+        def attention_info(self):
+            return None
+
+    from tests.test_smoke import build_config
+    from tsfm_lens.config import config_from_dict
+    cfg = config_from_dict(build_config("/tmp/unused_h8_stage3_test"))
+    result = path_patch_circuit(cfg, _NoAttentionAdapter(), None, [])
+    assert result is None
+
+
+def test_path_patch_circuit_returns_none_on_an_empty_selected_set():
+    from tests.test_smoke import build_config
+    from tsfm_lens.config import config_from_dict
+
+    class _StubAdapter:
+        name = "stub"
+
+        def attention_info(self):
+            return [{"block": "blocks.0", "o_proj": "blocks.0.attn.o_proj",
+                    "n_heads": 2, "head_dim": 4}]
+
+    cfg = config_from_dict(build_config("/tmp/unused_h8_stage3_test2"))
+    result = path_patch_circuit(cfg, _StubAdapter(), None, [])
+    assert result is None
+
+
 if __name__ == "__main__":
     test_seasonal_power_peaks_at_the_planted_period_not_a_wrong_one()
     test_seasonal_power_is_nan_for_an_invalid_or_absent_period()
@@ -492,4 +614,8 @@ if __name__ == "__main__":
     test_random_set_null_draws_from_every_scanned_head_not_just_candidates(None)
     test_minimal_set_search_end_to_end_against_mock_pipeline()
     test_minimal_set_search_returns_none_when_ablation_unsupported()
+    test_path_decompose_head_degenerates_exactly_for_a_single_head_set()
+    test_path_patch_circuit_end_to_end_against_mock_pipeline()
+    test_path_patch_circuit_returns_none_when_ablation_unsupported()
+    test_path_patch_circuit_returns_none_on_an_empty_selected_set()
     print("seasonality_circuit tests passed")

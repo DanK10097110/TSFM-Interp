@@ -1,0 +1,70 @@
+# Live-checkpoint verification for the `frontend` stage (ROADMAP.md sec 16
+# E17). Reuses medium_run_chronos_base.yaml's exact model/data/alignment
+# sections (the already-verified TimesFM-2.5-200M + Chronos-T5-Base pair) but
+# under a DIFFERENT run.name so this never touches runs/medium_run_chronos_base.
+# `frontend` has no `extract` dependency, so this is invoked as:
+#   python run.py --config configs/frontend_check.yaml --stages frontend,report
+
+run:
+  name: frontend_check
+  out_dir: runs
+  device: cuda
+  dtype: bfloat16
+  seed: 0
+  keep_models_loaded: false
+
+data:
+  source: sealed
+  path: ../../benchmark_medium/public_dev
+  context_len: 512
+  horizon: 64
+  family_key: auto
+
+alignment:
+  window: 32
+  sanity_check: true
+
+models:
+  - name: TimesFM
+    adapter: timesfm
+    checkpoint: google/timesfm-2.5-200m-pytorch
+    batch_size: 32
+    capture_layer_stride: 2
+  - name: Chronos-T5-Base
+    adapter: chronos
+    checkpoint: amazon/chronos-t5-base
+    batch_size: 24
+    capture_layer_stride: 1
+
+# Not selected via --stages frontend,report anyway, but disabled explicitly
+# so the preflight doctor's batch-cap checks (which run over every ENABLED
+# stage's config regardless of --stages selection) don't fail on unrelated
+# defaults this run never touches.
+l3:
+  enabled: false
+lens:
+  enabled: false
+attention:
+  enabled: false
+
+frontend:
+  enabled: true
+  max_series: 64
+  quantization_resolution: true
+  scale_equivariance: true
+  scale_factors: [1000.0, 0.001]
+  context_truncation: true
+  context_truncation_n_points: 5
+  context_truncation_min_frac: 0.125
+  nan_handling: true
+  nan_frac: 0.05
+  nan_series: 8
+
+report:
+  enabled: true
+  title: Frontend diagnostics check -- TimesFM 2.5 vs Chronos-T5-Base
+
+stats:
+  enabled: true
+  n_boot: 500
+  n_boot_heavy: 200

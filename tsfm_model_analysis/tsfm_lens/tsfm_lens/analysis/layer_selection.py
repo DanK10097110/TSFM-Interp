@@ -144,7 +144,8 @@ def cluster_bootstrap_spearman(records: list[dict], x_key: str, y_key: str,
         rho, _ = spearmanr(xs, ys)
         return float(rho) if np.isfinite(rho) else 0.0
 
-    ci = bootstrap_ci(stat_fn, n_units=len(group_list), n_boot=n_boot, seed=seed)
+    ci = bootstrap_ci(stat_fn, n_units=len(group_list), n_boot=n_boot, seed=seed,
+                      unit="(run, model) group")
     boots_zero_straddle = ci["lo"] <= 0.0 <= ci["hi"]
     return {**ci, "n_records": len(usable), "n_groups": len(group_list),
             "significant": not boots_zero_straddle}

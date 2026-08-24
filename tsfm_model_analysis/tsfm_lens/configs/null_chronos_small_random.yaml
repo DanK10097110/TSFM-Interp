@@ -1,0 +1,106 @@
+# Untrained-weights null baseline for Chronos-T5-Small (ROADMAP.md §16 E9's
+# "cross-corpus/size replication" remaining scope, §13's open-questions
+# list): the same architecture paired against an identical architecture with
+# fresh random weights (random_init: true) instead of a second real model.
+# Mirrors configs/medium_run.yaml's Chronos side exactly (same checkpoint,
+# corpus, context/window, capture_layer_stride) so these numbers are
+# directly comparable to runs/medium_run's already-recorded ones -- the
+# whole point is a same-corpus, second-Chronos-*size* replication of the
+# chronos-t5-base null test already on record (configs/null_chronos_random.yaml).
+#
+# configs/null_timesfm_random.yaml is reused unmodified as the TimesFM-side
+# twin here -- it already matches medium_run.yaml's TimesFM config
+# (google/timesfm-2.5-200m-pytorch, capture_layer_stride: 2, same corpus),
+# so no new TimesFM null run is needed.
+#
+# SAE is deliberately left off, matching medium_run.yaml's own choice (it
+# has no pinned sae.targets to compare against) -- this run's job is the
+# L1/L2 depth-curve null-baseline replication only.
+
+run:
+  name: null_chronos_small_random
+  out_dir: runs
+  device: cuda
+  dtype: bfloat16
+  seed: 0
+  keep_models_loaded: false
+
+data:
+  source: sealed
+  path: ../../benchmark_medium/public_dev  # relative to tsfm_lens/ (where run.py is invoked from)
+  context_len: 512
+  horizon: 64
+  family_key: auto
+
+alignment:
+  window: 32
+  sanity_check: true
+
+models:
+  # NOTE: named "Chronos-T5" (not "Chronos-T5-Small") deliberately -- this
+  # must match configs/medium_run.yaml's model name exactly, because
+  # analysis/null_baseline.py::compare_l1_depth_curve/compare_l2_depth_curve
+  # require the null run's real-model-side name to equal the real run's
+  # comparison_pair() name (same convention as null_chronos_random.yaml
+  # naming its real side "Chronos-T5-Base" to match
+  # medium_run_chronos_base.yaml). A mismatch raises ValueError only after
+  # a full extraction -- caught and fixed here before running.
+  - name: Chronos-T5
+    adapter: chronos
+    checkpoint: amazon/chronos-t5-small
+    batch_size: 32
+    capture_layer_stride: 1      # 6 encoder blocks, matches medium_run.yaml
+  - name: Chronos-T5-random
+    adapter: chronos
+    checkpoint: amazon/chronos-t5-small  # architecture + tokenizer only -- weights never loaded
+    random_init: true
+    batch_size: 32
+    capture_layer_stride: 1
+
+l0:
+  enabled: true
+  quantiles: [0.1, 0.5, 0.9]
+
+l1:
+  enabled: true
+  layer_stride: 1
+  max_rows: 20000
+  family_conditioned: true
+  min_family_series: 15
+  rsa: true
+  rsa_max_series: 300
+
+l2:
+  enabled: true
+  layer_stride: 1
+  lambdas: [0.001, 0.01, 0.1, 1.0]
+  val_frac: 0.25
+  max_rows: 15000
+  input_baseline: true
+
+l3: {enabled: false}
+lens: {enabled: false}
+attention: {enabled: false}
+exemplars: {enabled: false}
+clustering: {enabled: false}
+confirm: {enabled: false}
+layer_screen: {enabled: false}
+sae: {enabled: false}
+
+report:
+  enabled: true
+  title: "Untrained-weights null baseline (ROADMAP.md sec 16 E9) · Chronos-T5-Small, real vs random-init twin"
+
+stats:
+  enabled: true
+  n_boot: 500
+  n_boot_heavy: 200
+  ci: 0.95
+  alpha: 0.05
+  min_series: 8
+
+internals:
+  enabled: true
+  layer_stride: 1
+  max_rows: 15000
+  probe_pca_dim: 50

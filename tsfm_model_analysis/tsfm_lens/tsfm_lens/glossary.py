@@ -315,6 +315,40 @@ GLOSSARY: dict = {
             "afterwards cannot be rescued by the confirmation stage no matter how "
             "strong it looks."),
         where="Private benchmark confirmation; the \"[exploratory]\" prefix marks everything that is not one."),
+    "minimal-sufficient-set": Term(
+        term="Minimal sufficient set",
+        definition=(
+            "The smallest set of a model's own attention heads found by a greedy search "
+            "whose patching restores most of a corruption's damage — sufficient because "
+            "patching it works, but never proven the unique or provably smallest such "
+            "set, since a greedy search only ever finds *a* small set, not *the* "
+            "smallest."),
+        where="The seasonality circuit."),
+    "necessity": Term(
+        term="Necessity",
+        definition=(
+            "Whether ablating a candidate head set on an otherwise-clean forecast "
+            "damages it toward the fully-corrupted level — the complement of "
+            "sufficiency, and required alongside it because either alone is a weaker "
+            "claim than both together."),
+        where="The seasonality circuit."),
+    "sufficiency": Term(
+        term="Sufficiency",
+        definition=(
+            "Whether patching a candidate head set's clean values into an otherwise-"
+            "corrupted forecast restores it toward the clean level — the complement of "
+            "necessity."),
+        where="The seasonality circuit."),
+    "path-patching": Term(
+        term="Path patching",
+        definition=(
+            "Decomposing one head's total causal effect into a direct part (measured "
+            "with every other head in the found set frozen at its clean value) plus a "
+            "part routed through each other head individually, then checking whether "
+            "the parts sum back to the total — a check that can fail even for a "
+            "correctly-implemented decomposition, if the heads genuinely interact "
+            "nonlinearly rather than contributing independent, additive paths."),
+        where="The seasonality circuit."),
 }
 
 

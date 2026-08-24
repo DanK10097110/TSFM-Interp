@@ -27,6 +27,7 @@ from .analysis.l1_geometry import run_l1
 from .analysis.l2_stitching import run_l2
 from .analysis.l3_perturbation import run_l3
 from .analysis.lens import run_lens
+from .analysis.frontend import run_frontend
 from .analysis.model_budget import run_budget
 from .config import PipelineConfig, dump_config
 from .data import BenchmarkData, load_benchmark
@@ -109,6 +110,17 @@ def _stages() -> list:
               ("budget", "data.context_len", "data.horizon",
                "models[*].checkpoint", "models[*].layer_regex",
                "models[*].capture_layer_stride")),
+        # No `extract` dependency on purpose, same reasoning as `budget`: a
+        # front-end diagnostic needs only a loaded model and `predict()`, so
+        # `--stages frontend` is a valid standalone run. Placed right after
+        # `budget` so a full run reuses the already-warm models.
+        Stage("frontend", [],
+              lambda c: c.frontend.enabled,
+              lambda c: (c.run_dir() / "frontend" / "frontend.json").exists(),
+              lambda ctx: run_frontend(ctx.cfg, ctx.hub, ctx.data, ctx.device),
+              ("frontend", "data.context_len", "data.horizon", "alignment.window",
+               "models[*].checkpoint", "models[*].layer_regex",
+               "models[*].capture_layer_stride")),
         Stage("layer_screen", ["extract"],
               lambda c: c.layer_screen.enabled,
               lambda c: (c.run_dir() / "layer_screen" / "selection.json").exists(),
@@ -187,7 +199,7 @@ def _stages() -> list:
 # `l0` is here despite declaring an `extract` dependency in the DAG: it reads
 # no activations (it only *writes* its predictions into the store), so the
 # dependency exists to order a full run, not because L0 needs a capture.
-_L0_ONLY_STAGES = ("l0", "budget", "report")
+_L0_ONLY_STAGES = ("l0", "budget", "frontend", "report")
 
 # The tier each stage needs from EVERY configured model (`ROADMAP.md` sec 19
 # G1). Tier 0 is forecasts only; 1 adds readable activations; 2 adds
@@ -204,7 +216,7 @@ _L0_ONLY_STAGES = ("l0", "budget", "report")
 # A run is narrowed to the MINIMUM tier across its models, because every
 # stage above tier 0 is either cross-model or feeds one that is.
 _STAGE_MIN_TIER = {
-    "l0": 0, "budget": 0, "report": 0, "register": 0, "confirm": 0,
+    "l0": 0, "budget": 0, "frontend": 0, "report": 0, "register": 0, "confirm": 0,
     "extract": 1, "layer_screen": 1, "internals": 1, "l1": 1, "l2": 1,
     "cluster": 1, "sae": 1, "attention": 1, "exemplars": 1,
     "lens": 2, "l3": 2,

@@ -226,6 +226,29 @@ sae:
                                    # search from ever picking a collapsed-reconstruction
                                    # candidate the way the original validation run's TimesFM
                                    # single-draw (fidelity -0.99 at dict_size 2048) could have
+  feature_ablation_enabled: true   # ROADMAP.md sec 7 bullet 3 / sec 16 E15's second half,
+                                   # sec 23.2 C1: both were never evaluated once against this
+                                   # ~95%-dead production dictionary (candidates come from
+                                   # ground-truth-matched features, which barely exist in a
+                                   # near-dead dictionary) -- now that item 9 (A1) has this
+                                   # target's dictionary verified alive (dead 0.22/0.18), this
+                                   # is the first live-checkpoint test of either check.
+  feature_ablation_max_series: 24  # must be <= every target model's batch_size, same rule as
+                                   # forecast_preservation_max_series above -- CORRECTED: this
+                                   # was first left at the 64 default on the (wrong) assumption
+                                   # that capped_take clamps it silently at runtime; the real
+                                   # preflight check hard-FAILs instead (`CLAUDE.md` sec 2.5's
+                                   # "never silently produce a wrong value" doctrine applied to
+                                   # this exact knob), caught immediately by the first live run.
+  feature_steering_enabled: true   # ROADMAP.md sec 23.2 C1: E14's directional-steering claim
+                                   # has never produced one non-null direction_match, diagnosed
+                                   # as (a) the top-50 truncation dropping both directional
+                                   # fields entirely -- fixed via must_include_fields, already
+                                   # in sae/train.py -- and (b) depends on A1 (an alive
+                                   # dictionary), now closed. This is that dependency clearing.
+  feature_steering_max_series: 24  # must be <= every target model's batch_size -- see the
+                                   # feature_ablation_max_series comment above for why this
+                                   # isn't left at the 64 default.
 
 report:
   enabled: true

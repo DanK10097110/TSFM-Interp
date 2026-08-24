@@ -74,6 +74,16 @@ Four fixed questions per stage (`ROADMAP.md` sec 21 J2), generated from `tsfm_le
 
 **What it cannot tell you.** Cost is measured only at this run's own context length, batch, and horizon — it does not generalize to a different sequence length, and FLOPs are not the same thing as latency (a model with fewer FLOPs can still be slower on real hardware). It also only tells you the price of a forward pass, never whether that price bought anything mechanistically interesting — that's what every later stage is for.
 
+### `frontend`
+
+**Question.** What does each model do to its input BEFORE any layer runs -- how coarsely does it quantize the series, does scaling the input scale the forecast back out cleanly, how does accuracy degrade as recent context goes missing, and what happens when a context value is NaN?
+
+**How.** Reads each re-quantizing tokenizer's own bin geometry to score how coarse one quantization step is relative to a series' own amplitude; calls `predict()` on the input scaled up/down by large factors and compares the rescaled-back forecast to the original; calls `predict()` with the most recent context progressively withheld (a staleness scenario, not a front-trim) to trace a degradation curve; and injects NaN at the front, middle, and back of the context to see whether `predict()` errors, silently produces a non-finite forecast, or genuinely handles it.
+
+**Good vs. bad result.** Good: a re-quantizing tokenizer's bin width is a small fraction of the series' own amplitude with little saturating clipping, near-zero scale-equivariance residual, graceful (not cliff-shaped) accuracy degradation as recent context is withheld, and a NaN verdict of 'handled' or an explicit, clean error rather than a silently corrupted forecast. Bad: heavy clipping or a large quantization step relative to signal amplitude, a scale-equivariance residual that grows with the scale factor, a sharp cliff at a specific context length, or a 'propagates' NaN verdict -- a non-finite input silently becomes a non-finite forecast with no error to flag it.
+
+**What it cannot tell you.** Every diagnostic here is about the FRONT DOOR only -- what happens before or around a forward pass, never what happens inside one (that's every other stage's job). Quantization resolution is meaningful only for a re-quantizing tokenizer and is reported as 'not applicable', never a fabricated zero, for a continuous-embedding architecture. NaN handling is checked at only a handful of hand-placed positions and one missing-fraction, not exhaustively; and none of these four probes says anything about forecast quality on ordinary, well-formed input -- L0 is what answers that.
+
 ### `layer_screen`
 
 **Question.** Which of this model's own layers are worth spending the expensive stages (Lens, L1, L2, L3, attention, SAE) on?
@@ -288,9 +298,21 @@ The recurring vocabulary of this repo's report, one sentence each (`ROADMAP.md` 
 
 *Where it appears:* Attention analysis' head and MLP ΔMASE rankings.
 
+**Minimal sufficient set.** The smallest set of a model's own attention heads found by a greedy search whose patching restores most of a corruption's damage — sufficient because patching it works, but never proven the unique or provably smallest such set, since a greedy search only ever finds *a* small set, not *the* smallest.
+
+*Where it appears:* The seasonality circuit.
+
+**Necessity.** Whether ablating a candidate head set on an otherwise-clean forecast damages it toward the fully-corrupted level — the complement of sufficiency, and required alongside it because either alone is a weaker claim than both together.
+
+*Where it appears:* The seasonality circuit.
+
 **Noise floor.** How much a model's own metric moves between two identical repeat runs (nonzero for a sampled decoder, zero for a deterministic one), measured so that a delta can be reported as a multiple of it rather than against an implied zero — a ΔMASE under about 2× its own floor is not interpretable.
 
 *Where it appears:* The fairness card's determinism row; every ΔMASE in ablation, patching and SAE sections.
+
+**Path patching.** Decomposing one head's total causal effect into a direct part (measured with every other head in the found set frozen at its clean value) plus a part routed through each other head individually, then checking whether the parts sum back to the total — a check that can fail even for a correctly-implemented decomposition, if the heads genuinely interact nonlinearly rather than contributing independent, additive paths.
+
+*Where it appears:* The seasonality circuit.
 
 **Periodicity head.** An attention head that puts more mass than a uniform-baseline share at multiples of a series' dominant seasonal lag — the time-series analogue of an induction head, identified by lag profile rather than by what it is named.
 
@@ -327,6 +349,10 @@ The recurring vocabulary of this repo's report, one sentence each (`ROADMAP.md` 
 **Stitching gain.** The extra held-out R² a ridge map from one model's layer to the other's achieves *above* a hand-crafted input-feature probe on the same targets — the gain, never the raw R², is the evidence, because both models read the same input and a raw R² is therefore partly trivial.
 
 *Where it appears:* Stitching probes (both directions, A→B and B→A, reported separately).
+
+**Sufficiency.** Whether patching a candidate head set's clean values into an otherwise-corrupted forecast restores it toward the clean level — the complement of necessity.
+
+*Where it appears:* The seasonality circuit.
 
 **The series as the resampling unit.** Every bootstrap and every train/test split in this repo resamples whole series, never windows, because windows within one series are strongly dependent and both models score the same series — splitting on windows would make every interval far too narrow.
 

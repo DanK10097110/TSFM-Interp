@@ -22,7 +22,7 @@ import plotly.graph_objects as go
 from jinja2 import Template
 from plotly.subplots import make_subplots
 
-from .. import glossary, stage_docs
+from .. import failure_gallery, glossary, methods_appendix, stage_docs
 from ..config import PipelineConfig
 from ..utils import load_json, log, save_json
 
@@ -126,6 +126,10 @@ def run_report(cfg: PipelineConfig) -> Path:
          "What each model costs to run — parameters, measured FLOPs, latency, VRAM — and what its L0 quality looks like per unit of compute rather than in absolute terms.",
          ["budget/model_budget.json"], "budget",
          lambda: _sec_budget(run_dir, model_colors, findings, cfg.alignment.depth_axis)),
+        ("Frontend", "Input front-end diagnostics",
+         "What each model does to its input before any layer runs: quantization resolution, scale-equivariance, context-truncation-from-the-back, and NaN handling (ROADMAP.md §16 E17).",
+         ["frontend/frontend.json"], "frontend",
+         lambda: _sec_frontend(run_dir, model_colors, findings)),
         ("Screen", "Layer screening",
          "Which of each model's own captured layers were flagged as worth further, expensive analysis — and what sae.targets: auto trained on.",
          ["layer_screen/selection.json"], "layer_screen",
@@ -159,6 +163,10 @@ def run_report(cfg: PipelineConfig) -> Path:
          ["clustering/embedding.parquet", "clustering/clusters.json",
           "clustering/comparison.json"], "clustering",
          lambda: _sec_clusters(run_dir, model_colors, findings)),
+        ("Circuit", "The seasonality circuit",
+         "The smallest set of attention heads that is causally sufficient/necessary for a model's own seasonal forecasting, and whether noising one head's effect decomposes additively across the others (ROADMAP.md §20 H8).",
+         [], "seasonality_circuit",
+         lambda: _sec_seasonality_circuit(run_dir, model_colors, findings)),
         ("SAE", "Sparse feature dictionary",
          "Per-target reconstruction/dead-feature/forecast-preservation summary, plus exemplar series for the dictionary's ground-truth-matched features.",
          ["sae/meta.json"], "sae",
@@ -273,6 +281,8 @@ def run_report(cfg: PipelineConfig) -> Path:
         bottom_line=_bottom_line(run_dir, cfg),
         how_to_read=_how_to_read(cfg.alignment.window),
         glossary_block=_glossary_block(),
+        methods_appendix_block=_methods_appendix_block(),
+        failure_gallery_block=_failure_gallery_block(),
         coverage=coverage, coverage_summary=summary, any_failed=bool(failed),
         family_resolution_line=_family_resolution_line(run_dir),
         alignment_provenance=_alignment_provenance_block(run_dir)[0],
@@ -372,6 +382,7 @@ def _group_findings(findings: list) -> list[dict]:
 _STAGE_LABELS = {
     "l0": "L0 — forecast accuracy",
     "budget": "Cost and capacity",
+    "frontend": "Input front-end diagnostics",
     "layer_screen": "Layer screen",
     "internals": "Profile — what is in each model",
     "lens": "Lens — where the forecast forms",
@@ -385,6 +396,7 @@ _STAGE_LABELS = {
     "confirm": "Confirm — held-out test",
     "report": "Report-level checks",
     "fairness": "Fairness and comparability",
+    "seasonality_circuit": "Circuit — the seasonality heads",
 }
 
 
@@ -636,6 +648,53 @@ def _glossary_block() -> str:
         f'<span class="gloss-where">Where it appears: {t.where}</span></p>'
         for t in glossary.terms())
     return ('<details class="note glossary"><summary>Glossary &mdash; the terms that recur below</summary>'
+            f'<div class="note-body">{rows}</div></details>')
+
+
+def _methods_appendix_block() -> str:
+    """ROADMAP.md sec 21 J5: the reviewer-facing methods appendix.
+
+    Rendered once, unconditionally, after every result section (an
+    appendix, not a claim about this run) -- entries come from
+    `methods_appendix.build_methods_appendix()`, most pulled verbatim from
+    the cited module's own docstring so this cannot drift from the code
+    the way a hand-duplicated summary could. Collapsed by default, matching
+    `_glossary_block`'s own "consulted, not read" placement.
+    """
+    entries = methods_appendix.build_methods_appendix()
+    rows = ""
+    for e in entries:
+        source = (f' <span class="gloss-where">Source: '
+                  f'<code>{e["module"].replace(".", "/")}.py</code>\'s own '
+                  f'module docstring</span>' if e["generated"] else "")
+        rows += f'<p><b>{e["label"]}</b>{source}<br>{e["text"]}</p>'
+    return ('<details class="note methods-appendix">'
+            '<summary>Methods appendix &mdash; estimator details for reviewers</summary>'
+            f'<div class="note-body">{rows}</div></details>')
+
+
+def _failure_gallery_block() -> str:
+    """ROADMAP.md sec 21 J6: five real cases, already on record, of an
+    analysis in this report looking wrong before it was diagnosed.
+
+    Rendered once, unconditionally, after the methods appendix. Frozen and
+    hand-written (`failure_gallery.GALLERY`) rather than derived from any
+    live artifact -- these are historical narratives about specific past
+    runs, several predating the fixes that make today's numbers
+    trustworthy, so this section teaches a reader what to be suspicious of
+    rather than reporting anything about the current run.
+    Evidence class: illustrative (same sense as the Exemplars section).
+    """
+    rows = "".join(
+        f'<p><b>{g.title}</b><br>'
+        f'<i>Looked like:</i> {g.looked_like}<br>'
+        f'<i>Actually was:</i> {g.actually_was}<br>'
+        f'<i>Lesson:</i> {g.lesson}<br>'
+        f'<span class="gloss-where">Source: {g.source}</span></p>'
+        for g in failure_gallery.gallery_entries())
+    return ('<details class="note failure-gallery">'
+            '<summary>Failure-mode gallery &mdash; five cases that fooled '
+            'someone here first</summary>'
             f'<div class="note-body">{rows}</div></details>')
 
 
@@ -3365,16 +3424,24 @@ _INTERNALS_NOTES = {
         "validation — where in depth family identity becomes linearly "
         "decodable.",
         "The dotted line is chance (majority-class baseline for however "
-        "many families exist); a peak well above it means that depth "
-        "linearly encodes which kind of series this is. The peak layer is "
-        "called out in the findings below as where family information is "
-        "most accessible.",
+        "many families exist); the dash-dot line per model is a "
+        "permutation null — the identical probe refit with family labels "
+        "reshuffled at the series level, showing how high accuracy can get "
+        "by chance alone on this exact split and architecture. A peak well "
+        "above *both* lines means that depth linearly encodes which kind "
+        "of series this is. The peak layer is called out in the findings "
+        "below as where family information is most accessible.",
         "'Decodable' is not the same as 'used by the forecast' — a layer "
         "can carry perfect family information the model never actually "
         "reads out (cross-check against the tuned lens and behavioral "
         "sensitivity to see what's causally load-bearing). Accuracy is "
         "also capped by how separable the configured families actually "
-        "are in the benchmark, not just by the model."),
+        "are in the benchmark, not just by the model. The permutation null "
+        "is the stronger of the two floors — the majority-class chance "
+        "line ignores the classifier and split entirely, so a probe can "
+        "clear it while still scoring within the null's own p95, which "
+        "means its apparent decodability could be search/split artifact "
+        "rather than real information."),
 }
 
 
@@ -4063,6 +4130,259 @@ def _sec_fairness(cfg: PipelineConfig, run_dir: Path) -> str:
     return inner
 
 
+def _sec_frontend(run_dir: Path, model_colors: dict, findings: list) -> str:
+    """What each model does to its input before any layer runs (ROADMAP.md
+    sec 16 E17): quantization resolution, scale-equivariance, context-
+    truncation-from-the-back, and NaN handling. Needs only a loaded model, so
+    like `budget` it can be the only stage in a run.
+    """
+    payload = load_json(run_dir / "frontend" / "frontend.json")
+    models = payload.get("models", {})
+    inner = (f'<p class="blurb">Measured over {payload.get("n_series")} sampled series, '
+             f'context {payload.get("context_len")}, horizon {payload.get("horizon")}.</p>')
+
+    quant_rows = []
+    for name, rec in models.items():
+        q = rec.get("quantization_resolution") or {}
+        if q.get("status") == "measured":
+            quant_rows.append({
+                "model": name, "status": "measured",
+                "bin width (frac of amplitude)": f'{q["resolution_frac"]["value"]:.4f}',
+                "series with any clipping": _pct(q["frac_series_with_any_clipping"]),
+                "mean clip fraction": f'{q["clip_frac"]["value"]:.4f}',
+            })
+            findings.append(Finding(
+                claim_id=_next_claim_id("frontend"), stage="frontend", evidence_class="descriptive",
+                text=f"Frontend — {name}'s re-quantizing tokenizer's bin width is a mean "
+                    f"{q['resolution_frac']['value']:.4f} of a series' own amplitude "
+                    f"(95% CI [{q['resolution_frac']['lo']:.4f}, {q['resolution_frac']['hi']:.4f}], "
+                    f"resample unit: {q['resolution_frac']['resample_unit']}), and "
+                    f"{_pct(q['frac_series_with_any_clipping'])} of series saturate at least "
+                    f"one context step into the tokenizer's extreme bin.",
+                plain=f"{name} quantizes its input into discrete bins; on this sample, one "
+                    f"bin step is about {q['resolution_frac']['value'] * 100:.1f}% of a "
+                    f"typical series' own swing, and "
+                    f"{_pct(q['frac_series_with_any_clipping'])} of series have at least one "
+                    f"point pushed into the coarsest bin at the extreme.",
+                registered=False))
+        else:
+            quant_rows.append({"model": name, "status": q.get("status", "not_run"),
+                               "bin width (frac of amplitude)": "—",
+                               "series with any clipping": "—", "mean clip fraction": "—"})
+    if quant_rows:
+        inner += "<h4>Quantization resolution</h4>"
+        inner += _table(pd.DataFrame(quant_rows))
+        for name, rec in models.items():
+            q = rec.get("quantization_resolution") or {}
+            if q.get("status") == "not_applicable":
+                inner += (f'<p class="blurb">{name}: not applicable — {q.get("reason")}</p>')
+        inner += _note(
+            "Chronos-T5's tokenizer re-quantizes each context into a fixed number of "
+            "bins whose edges are set from that series' own statistics (CLAUDE.md sec "
+            "11.16). This asks how coarse one bin actually is relative to a series' own "
+            "amplitude, and how often the tokenizer's saturating clamp is hit.",
+            "A small 'bin width' fraction means the tokenizer can distinguish fine "
+            "detail; a large one means real amplitude differences within a series "
+            "collapse onto the same token. Read 'series with any clipping' alongside "
+            "it — clipping means a value was extreme enough to fall entirely outside "
+            "the tokenizer's bin range, not just coarsely binned.",
+            "Only meaningful for a re-quantizing tokenizer — a continuous patch-MLP "
+            "embedding (TimesFM, Sundial, Chronos-Bolt, Chronos-2) has no bin geometry "
+            "for this probe to measure and is reported as 'not applicable', never a "
+            "fabricated zero. The bin geometry is read directly from the checkpoint's "
+            "own tokenizer, never hardcoded.")
+
+    def _per_factor_scale_equivariance(rec: dict) -> dict:
+        """`rec.get("scale_equivariance")` is normally `{factor_str: {status,
+        ...}, ...}`. When `_run_scale_equivariance` fails before producing ANY
+        per-factor result (e.g. its baseline `predict()` call itself raised),
+        `frontend.py`'s outer handler instead stores a FLAT `{"status":
+        "error", "error": ...}` dict -- no factor keys at all. Iterating that
+        flat shape's `.items()` yields bare strings for `stats`, and
+        `stats.get(...)` on a string raises `AttributeError`
+        (`CLAUDE.md`-style trap: a log/report line crashing the very code
+        path meant to report a failure loudly). Normalize both shapes to the
+        per-factor dict here, once, so nothing downstream needs to re-derive
+        this distinction."""
+        se = rec.get("scale_equivariance") or {}
+        if not isinstance(se, dict):
+            return {}
+        if "status" in se and not any(isinstance(v, dict) for v in se.values()):
+            return {"—": {"status": se.get("status", "error"),
+                          "error_type": se.get("error", "error")}}
+        return se
+
+    se_rows = []
+    for name, rec in models.items():
+        se = _per_factor_scale_equivariance(rec)
+        for factor, stats in se.items():
+            if stats.get("status") == "measured":
+                se_rows.append({"model": name, "factor": factor,
+                               "residual (× context scale)": f'{stats["residual"]["value"]:.4f}',
+                               "max residual": f'{stats["max_residual"]:.4f}',
+                               "non-finite series": stats["n_series_nonfinite"]})
+            else:
+                se_rows.append({"model": name, "factor": factor,
+                               "residual (× context scale)": "error",
+                               "max residual": stats.get("error_type", "—"),
+                               "non-finite series": "—"})
+    if se_rows:
+        inner += "<h4>Scale-equivariance</h4>"
+        inner += _table(pd.DataFrame(se_rows))
+        for name, rec in models.items():
+            se = _per_factor_scale_equivariance(rec)
+            measured = [(f, s) for f, s in se.items() if s.get("status") == "measured"]
+            if measured:
+                worst_factor, worst = max(measured, key=lambda fs: fs[1]["residual"]["value"])
+                findings.append(Finding(
+                    claim_id=_next_claim_id("frontend"), stage="frontend", evidence_class="descriptive",
+                    text=f"Frontend — {name}'s worst scale-equivariance residual across "
+                        f"tested factors is {worst['residual']['value']:.4f} context-scale "
+                        f"units, at scale factor {worst_factor} "
+                        f"(95% CI [{worst['residual']['lo']:.4f}, {worst['residual']['hi']:.4f}]).",
+                    plain=f"Scaling {name}'s input up or down and unscaling the forecast "
+                        f"back doesn't perfectly reproduce the original forecast — the "
+                        f"worst mismatch measured was about "
+                        f"{worst['residual']['value']:.3f} times the series' own typical "
+                        f"step size, at a {worst_factor}× scale change.",
+                    registered=False))
+        inner += _note(
+            "A forecaster that only cares about a series' shape should predict the same "
+            "thing (after unscaling) whether the input arrives as raw units or "
+            "multiplied by 1000 or 0.001 — this checks whether that holds in practice.",
+            "The residual is the mean absolute difference between the original forecast "
+            "and the rescaled-then-unscaled one, normalized by each series' own typical "
+            "step size (the same scale MASE uses) so it's comparable across series. Near "
+            "zero means the model is effectively scale-equivariant at that factor; a "
+            "residual that grows with the scale factor means extreme scales genuinely "
+            "confuse the model's own internal normalization, not just numerical noise.",
+            "Non-finite series (overflow/underflow at an extreme scale factor) are "
+            "excluded from the residual average but counted separately — a model that "
+            "fails outright at 1000× is a different, more severe finding than one that "
+            "degrades gracefully, and averaging the two together would hide which one "
+            "happened.")
+
+    ct_rows = []
+    for name, rec in models.items():
+        ct = rec.get("context_truncation") or {}
+        if ct.get("status") == "measured":
+            mean_seq = ct.get("mean_mase_by_length_desc")
+            mean_most_truncated = mean_seq[-1] if mean_seq else None
+            ct_rows.append({
+                "model": name, "shape": ct["shape"],
+                "baseline MASE (median)": f'{ct["baseline_mase"]:.3f}',
+                "most-truncated MASE (median)": f'{ct["most_truncated_mase"]:.3f}',
+                "most-truncated MASE (raw mean)": (
+                    "—" if mean_most_truncated is None else f'{mean_most_truncated:.3g}'),
+                "worst step (frac of total degradation)": (
+                    "—" if ct["worst_step_frac_of_total"] is None
+                    else f'{ct["worst_step_frac_of_total"]:.2f}'),
+            })
+        else:
+            ct_rows.append({"model": name, "shape": ct.get("status", "not_run"),
+                           "baseline MASE (median)": "—", "most-truncated MASE (median)": "—",
+                           "most-truncated MASE (raw mean)": "—",
+                           "worst step (frac of total degradation)": "—"})
+    if ct_rows:
+        inner += "<h4>Context truncation from the back</h4>"
+        inner += _table(pd.DataFrame(ct_rows))
+        for name, rec in models.items():
+            ct = rec.get("context_truncation") or {}
+            if ct.get("status") == "measured" and ct["shape"] != "no_degradation":
+                findings.append(Finding(
+                    claim_id=_next_claim_id("frontend"), stage="frontend", evidence_class="descriptive",
+                    text=f"Frontend — {name}'s accuracy degrades in a "
+                        f"'{ct['shape']}' shape as the most recent context is "
+                        f"withheld: MASE {ct['baseline_mase']:.3f} at full context vs. "
+                        f"{ct['most_truncated_mase']:.3f} at the shortest tested "
+                        f"available length ({ct['available_context_lengths_desc'][-1]} of "
+                        f"{ct['context_len']} points).",
+                    plain=f"When {name} is missing its most recent context (a data-"
+                        f"staleness scenario, not just a shorter history), its accuracy "
+                        f"degrades {'sharply at one point' if ct['shape'] == 'cliff' else 'gradually'} "
+                        f"rather than the other way around.",
+                    registered=False))
+        inner += _note(
+            "Unlike the existing phase-sensitivity and context-scaling diagnostics "
+            "(which both trim OLD history from the front), this asks what happens when "
+            "the most RECENT context is what's missing — a data-staleness or reporting-"
+            "lag scenario — by keeping the front of the context and asking the model to "
+            "forecast further ahead to reach the same fixed target.",
+            "'Graceful' means accuracy degrades roughly evenly as more recent context "
+            "goes missing; 'cliff' means it stays flat until one specific length, then "
+            "jumps sharply — a hard floor below which the model has almost nothing "
+            "useful left to work with. 'no_degradation' means withholding recent context "
+            "didn't measurably hurt this model on this corpus.",
+            "This is a genuinely different axis from phase-sensitivity (sub-patch-width "
+            "front shifts) and context-scaling/E20 (which keeps recent history intact and "
+            "only drops old history) — do not read this section as a duplicate or a "
+            "replacement for either. A model that cannot forecast far enough to bridge a "
+            "large staleness gap has that length point skipped rather than crashing the "
+            "whole diagnostic; fewer than 3 surviving points means the shape could not be "
+            "characterized at all for that model. Baseline/most-truncated MASE and the "
+            "shape classification all use the per-length MEDIAN, not the raw mean, over "
+            "series — at the shortest available-context lengths, a handful of series are "
+            "locally near-flat over that short a window, which sends MASE's own "
+            "denominator toward its floor and that series' MASE toward an astronomical, "
+            "non-representative value regardless of forecast quality. The raw mean is "
+            "shown alongside specifically so a large gap between the two columns is "
+            "visible as the tell that this is happening, rather than silently absorbed "
+            "into one number.")
+
+    nan_rows = []
+    for name, rec in models.items():
+        nh = rec.get("nan_handling") or {}
+        if nh.get("status") == "measured":
+            nan_rows.append({"model": name, "verdict": nh["verdict"],
+                            "raised": nh["n_raised"], "propagated non-finite": nh["n_propagated_nonfinite"],
+                            "clean": nh["n_clean"], "scenarios": nh["n_scenarios"]})
+        else:
+            nan_rows.append({"model": name, "verdict": nh.get("status", "not_run"),
+                            "raised": "—", "propagated non-finite": "—", "clean": "—",
+                            "scenarios": "—"})
+    if nan_rows:
+        inner += "<h4>NaN / missing-timestep handling</h4>"
+        inner += _table(pd.DataFrame(nan_rows))
+        for name, rec in models.items():
+            nh = rec.get("nan_handling") or {}
+            if nh.get("status") == "measured":
+                findings.append(Finding(
+                    claim_id=_next_claim_id("frontend"), stage="frontend", evidence_class="descriptive",
+                    text=f"Frontend — {name}'s NaN-handling verdict is '{nh['verdict']}' "
+                        f"across {nh['n_scenarios']} injection scenarios (front/middle/back "
+                        f"of context): {nh['n_raised']} raised an error, "
+                        f"{nh['n_propagated_nonfinite']} silently produced a non-finite "
+                        f"forecast, {nh['n_clean']} handled it cleanly.",
+                    plain=({"errors": f"{name} refuses to forecast at all when a context "
+                                     f"value is missing (NaN) — a clean, loud failure.",
+                            "propagates": f"{name} silently turns a missing context value "
+                                         f"into a broken (non-finite) forecast, with no "
+                                         f"error to flag it.",
+                            "handled": f"{name} produces a normal, finite forecast even "
+                                      f"when a context value is missing.",
+                            "mixed": f"{name}'s behavior on a missing context value "
+                                    f"depends on where in the context it's missing — "
+                                    f"sometimes it errors, sometimes it doesn't."}
+                           [nh["verdict"]]),
+                    registered=False))
+        inner += _note(
+            "Whether each model errors, silently propagates a NaN into its forecast, or "
+            "genuinely handles a missing timestep in its context — three very different "
+            "outcomes this repo does not assume in advance.",
+            "'errors' and 'handled' are both acceptable outcomes (a loud failure is "
+            "honest; genuine handling is a real capability). 'propagates' is the "
+            "dangerous case: a non-finite forecast with no error raised looks like an "
+            "ordinary result until something downstream notices the NaN. 'mixed' means "
+            "the verdict depends on where in the context the value went missing.",
+            "Checked at only three hand-placed positions (front/middle/back of context) "
+            "and one missing-fraction (default 5% of context) — not exhaustive. A model "
+            "verdict here says nothing about forecast QUALITY on ordinary, well-formed "
+            "input; it only characterizes what happens at this one specific failure "
+            "mode.")
+
+    return inner
+
+
 def _sec_layer_screen(run_dir: Path, model_colors: dict, findings: list) -> str:
     """Per-model layer-screening bars: selector score per layer, selected layers highlighted.
 
@@ -4134,6 +4454,180 @@ def _sec_layer_screen(run_dir: Path, model_colors: dict, findings: list) -> str:
     return inner
 
 
+def _sec_seasonality_circuit(run_dir: Path, model_colors: dict, findings: list) -> str:
+    """ROADMAP.md sec 20 H8 Stage 4: the minimal-sufficient-head-set circuit.
+
+    Not a pipeline stage (`seasonality_circuit/` is written by the standalone
+    `run_seasonality_circuit.py`, mirroring `layer_screen_bakeoff.py`'s own
+    "not every analysis needs to be wired into `pipeline.py`" precedent), so
+    this degrades to "" — logged, per `CLAUDE.md` sec 2.5 — rather than
+    reading a config `enabled` flag that does not exist for this analysis.
+    Degrades per model and per stage within a model: a model with only Stage
+    3's conservation table (no Stage 1/2 trace) still renders that table.
+
+    Every claim here is `evidence_class="causal_within_model"` (invariant 5:
+    the ablation/patching is within one model's own forward pass; nothing
+    here compares causal structure ACROSS models) -- stated explicitly in
+    each finding's text rather than left to the reader to infer from the
+    stage name.
+    """
+    circuit_dir = run_dir / "seasonality_circuit"
+    if not circuit_dir.exists():
+        log.info("report: seasonality_circuit section skipped (no seasonality_circuit/ "
+                 "directory -- run run_seasonality_circuit.py first)")
+        return ""
+
+    models = sorted({p.name.split("_stage")[0] for p in circuit_dir.glob("*_stage*.json")})
+    if not models:
+        log.info("report: seasonality_circuit section skipped (directory exists but "
+                 "no *_stageN_*.json artifacts found)")
+        return ""
+
+    inner = ""
+    any_content = False
+    for model in models:
+        s1_path = circuit_dir / f"{model}_stage1_single_component.json"
+        s2_path = circuit_dir / f"{model}_stage2_minimal_set.json"
+        s3_path = circuit_dir / f"{model}_stage3_path_patch.json"
+        s2 = load_json(s2_path) if s2_path.exists() else None
+        s3 = load_json(s3_path) if s3_path.exists() else None
+        if s2 is None and s3 is None:
+            continue
+        any_content = True
+        color = model_colors.get(model, _COLORS["a"])
+        inner += f"<h4>{model}</h4>"
+
+        if s2 is not None:
+            res = s2.get("minimal_set_search_result", s2)
+            trace = res.get("trace", [])
+            sizes = [t["set_size"] for t in trace]
+            restorations = [t["restoration"] for t in trace]
+            null_mean = res.get("null_floor_mean")
+            null_draws = res.get("null_draws_restoration_mean", [])
+            selected_set = res.get("selected_set", [])
+            best_size = res.get("best_prefix_size", len(selected_set))
+
+            fig = go.Figure()
+            fig.add_scatter(x=sizes, y=restorations, mode="lines+markers",
+                            name="greedy trace", line=dict(color=color))
+            if null_draws:
+                lo, hi = min(null_draws), max(null_draws)
+                fig.add_hrect(y0=lo, y1=hi, fillcolor="gray", opacity=0.2, line_width=0,
+                             annotation_text="random-set null range")
+            if null_mean is not None:
+                fig.add_hline(y=null_mean, line_dash="dot", line_color="gray",
+                             annotation_text="null mean")
+            if best_size in sizes:
+                fig.add_vline(x=best_size, line_dash="dash", line_color=_COLORS["accent"],
+                             annotation_text="selected set")
+            fig.update_layout(xaxis_title="greedy set size", yaxis_title="restoration")
+            inner += _frag(fig, 320)
+
+            gap = res.get("gap_vs_null", {})
+            suff, nec = res.get("sufficiency_restoration"), res.get("necessity_restoration")
+            fig2 = go.Figure()
+            fig2.add_bar(x=["sufficiency\n(patch selected set)", "necessity\n(ablate selected set)"],
+                        y=[suff, nec], marker_color=color)
+            fig2.add_hline(y=1.0, line_dash="dot", line_color="green", annotation_text="clean")
+            fig2.add_hline(y=0.0, line_dash="dot", line_color="red", annotation_text="corrupted")
+            fig2.update_layout(yaxis_title="restoration")
+            inner += _frag(fig2, 300)
+
+            inner += _note(
+                f"How much of the deseasonalize corruption's damage does the smallest "
+                f"causally-important head set explain, for {model}?",
+                "The top chart is the greedy search: each point adds the single head that "
+                "most raises restoration, against a gray band of what random head sets of "
+                "the same size achieve. A real circuit's curve should rise clearly above "
+                "that band before it saturates. The bottom chart's two bars answer two "
+                "different questions at the found set: sufficiency (does patching just "
+                "these heads on a corrupted forecast restore it toward the clean 1.0 line?) "
+                "and necessity (does ablating just these heads on a clean forecast damage it "
+                "toward the corrupted 0.0 line?). Both being high is a stronger claim than "
+                "either alone.",
+                "This is within-model causal evidence only (invariant 5) — it says nothing "
+                "about whether the other model's seasonal circuit looks anything like this "
+                "one. A sufficient set found by greedy search is not proven to be the unique "
+                "or smallest such set, only the smallest this particular search found.")
+
+            set_desc = ", ".join(f"{h['layer']}#{h['head']}" for h in selected_set) or "none"
+            cleared = res.get("cleared_null")
+            gm, glo, ghi, gp = gap.get("mean"), gap.get("lo"), gap.get("hi"), gap.get("p")
+            findings.append(Finding(
+                claim_id=_next_claim_id("seasonality_circuit"), stage="seasonality_circuit",
+                evidence_class="causal_within_model",
+                text=(f"Seasonality circuit — {model}: a {len(selected_set)}-head set "
+                      f"({set_desc}) {'clears' if cleared else 'does not clear'} its "
+                      f"random-set null (gap {gm:.3f}, 95% CI [{glo:.3f}, {ghi:.3f}], "
+                      f"p={gp}) at restoration {res.get('sufficiency_restoration', 0.0):.3f}."
+                      if gm is not None else
+                      f"Seasonality circuit — {model}: a {len(selected_set)}-head set "
+                      f"({set_desc}) found via greedy search."),
+                plain=(f"For {model}, just {len(selected_set)} attention head(s) "
+                      f"({set_desc}) account for most of what makes its forecasts seasonal, "
+                      f"clearly more than the same number of randomly chosen heads would."
+                      if cleared else
+                      f"For {model}, the smallest head set greedy search could find did not "
+                      f"clearly beat a random head set of the same size."),
+                registered=False, value=gm, ci=((glo, ghi) if glo is not None else None)))
+
+        if s3 is not None:
+            per_src = s3.get("per_src", [])
+            rows = "".join(
+                f"<tr><td>{r['src']['layer']}#{r['src']['head']}</td>"
+                f"<td>{r['effect_total']:.5f}</td><td>{r['effect_direct']:.5f}</td>"
+                f"<td>{r['sum_paths']:.5f}</td><td>{r['conservation_gap']:.5f}</td>"
+                f"<td>{'degenerate' if r.get('degenerate') else ''}</td></tr>"
+                for r in per_src)
+            inner += (f'<table class="datatable"><thead><tr><th>head (src)</th>'
+                     f'<th>effect_total</th><th>effect_direct</th><th>sum_paths</th>'
+                     f'<th>conservation_gap</th><th></th></tr></thead>'
+                     f'<tbody>{rows}</tbody></table>')
+            mean_gap = s3.get("mean_abs_conservation_gap")
+            mean_eff = s3.get("mean_abs_effect_total")
+            conserves = (mean_gap is not None and mean_eff is not None
+                        and mean_gap <= mean_eff)
+            inner += _note(
+                f"Path patching (E18): does noising one head's effect on {model}'s seasonal "
+                f"forecast decompose additively into a direct path plus one path through "
+                f"each other head in the found set?",
+                "`effect_total` is noising this head alone; `effect_direct` is the same "
+                "noise with every other set member frozen at its clean value, so none of "
+                "the effect can be credited via a path through them; `sum_paths` is "
+                "`effect_direct` plus the per-other-head `effect_via` deltas. If the "
+                "decomposition is additive, `sum_paths` should sit close to `effect_total` "
+                "(`conservation_gap` near zero). A set with only one head conserves exactly "
+                "by construction — there is nothing to decompose.",
+                "A large conservation gap does not necessarily mean the primitive is "
+                "broken — it can mean the found heads interact nonlinearly (attention/MLP "
+                "nonlinearities break simple additive path decomposition), which is itself "
+                "a real finding about the circuit, not an error. See ROADMAP.md sec 20 H8 "
+                "Stage 3's Findings for how that distinction was checked on this run before "
+                "being reported either way.")
+            findings.append(Finding(
+                claim_id=_next_claim_id("seasonality_circuit"), stage="seasonality_circuit",
+                evidence_class="causal_within_model",
+                text=(f"Path-patch conservation — {model}: mean |conservation_gap| "
+                      f"{mean_gap:.4f} vs. mean |effect_total| {mean_eff:.4f} "
+                      f"({'the decomposition conserves' if conserves else 'the decomposition does NOT conserve'})."
+                      if mean_gap is not None else
+                      f"Path-patch conservation — {model}: no summary available."),
+                plain=(f"For {model}, splitting each found head's effect into a direct part "
+                      f"plus a part routed through the other found heads adds back up to "
+                      f"close to the original effect."
+                      if conserves else
+                      f"For {model}, splitting each found head's effect into pieces does "
+                      f"NOT cleanly add back up to the original effect — the heads likely "
+                      f"interact with each other rather than acting independently."),
+                registered=False, value=mean_gap))
+
+    if not any_content:
+        log.info("report: seasonality_circuit section skipped (no model had usable "
+                 "Stage 2 or Stage 3 artifacts)")
+        return ""
+    return inner
+
+
 def _sec_internals(run_dir: Path, model_colors: dict, findings: list) -> str:
     """Three per-model depth profiles on shared relative-depth axes."""
     profile = load_json(run_dir / "internals" / "profile.json")
@@ -4160,6 +4654,17 @@ def _sec_internals(run_dir: Path, model_colors: dict, findings: list) -> str:
             fig.add_hline(y=chance, line_dash="dot", line_color=_COLORS["muted"],
                           annotation_text="chance (majority class)",
                           annotation_font_size=10)
+            for model, prof in profile.items():
+                nulls = prof.get("probe_permutation_null")
+                accs = [p["value"] for p in prof["probe"]]
+                if not nulls or any(a is None for a in accs):
+                    continue  # single-family corpus: probe/null are None (ROADMAP.md sec 15 A6)
+                peak = int(np.argmax(accs))
+                p95 = nulls[peak].get("acc_null_p95")
+                if p95 is not None:
+                    fig.add_hline(y=p95, line_dash="dashdot", line_color=model_colors.get(model),
+                                  annotation_text=f"{model} permutation-null p95",
+                                  annotation_font_size=9)
         axis_names = {prof.get("depth_axis", "index") for prof in profile.values()}
         axis_label = axis_names.pop() if len(axis_names) == 1 else "/".join(sorted(axis_names))
         fig.update_layout(xaxis_title=f"relative depth ({axis_label} axis)", yaxis_title=ylabel,
@@ -4179,13 +4684,18 @@ def _sec_internals(run_dir: Path, model_colors: dict, findings: list) -> str:
         for model, prof in profile.items():
             accs = [p["value"] for p in prof["probe"]]
             peak = int(np.argmax(accs))
+            null_at_peak = (prof.get("probe_permutation_null") or [{}] * len(accs))[peak]
+            null_p95 = null_at_peak.get("acc_null_p95")
+            null_clause = (f", permutation-null p95 {null_p95:.2f} "
+                           f"({null_at_peak.get('n_perm', 0)} reshuffles)"
+                           if null_p95 is not None else "")
             findings.append(Finding(
                 claim_id=_next_claim_id("internals"), stage="internals",
                 evidence_class="descriptive",
                 text=f"Profile — {model}: family information peaks at "
                     f"{_short(prof['layers'][peak])} "
                     f"(probe {_ci_str(prof['probe'][peak])} vs chance "
-                    f"{prof['chance']:.2f}).",
+                    f"{prof['chance']:.2f}{null_clause}).",
                 plain=f"{model} most clearly 'knows' what kind of data it's looking at "
                     f"around layer {_short(prof['layers'][peak])} of its network.",
                 registered=False))
@@ -4455,6 +4965,8 @@ Run coverage — {{ coverage_summary }}</summary>
   {{ s.html }}
 </section>
 {% endfor %}
+{{ methods_appendix_block }}
+{{ failure_gallery_block }}
 {% if config_text %}
 <details><summary>Resolved configuration</summary><pre>{{ config_text }}</pre></details>
 {% endif %}

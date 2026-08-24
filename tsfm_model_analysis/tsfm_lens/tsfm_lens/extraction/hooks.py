@@ -7,7 +7,10 @@ the forecast lens; `input_slice_ablate` and `output_mean_ablate` implement
 attention-head and component mean-ablation for the sub-block analyses;
 `multi_slice_ablate` composes several `input_slice_ablate` contexts into one
 set-level intervention (ROADMAP.md sec 20 H8's minimal-sufficient-set search,
-where a set result cannot be assembled from one-at-a-time deltas).
+where a set result cannot be assembled from one-at-a-time deltas);
+`path_patch_delta` is the two-forward path-patching primitive (ROADMAP.md
+sec 20 H8 Stage 3 / E18), isolating the residual contribution one named
+component's patched value delivers specifically to a second, downstream one.
 """
 
 from __future__ import annotations
@@ -229,6 +232,47 @@ def multi_slice_ablate(root: nn.Module, specs: List[Tuple[str, slice, torch.Tens
         for module_name, dim_slice, value in specs:
             stack.enter_context(input_slice_ablate(root, module_name, dim_slice, value))
         yield
+
+
+def path_patch_delta(root: nn.Module, forward_fn, src_name: str, src_slice: slice,
+                     src_value: torch.Tensor, dst_name: str, dst_slice: slice,
+                     dst_clean: torch.Tensor) -> torch.Tensor:
+    """Forward 1 of path patching's two-forward scheme (ROADMAP.md sec 20 H8
+    Stage 3 / E18): with `src`'s input slice pinned to `src_value`
+    (typically its corrupted-run value) and every other input left to
+    `forward_fn`'s own (clean) contexts, capture `dst`'s input slice and
+    return the delta against its already-known clean value `dst_clean` --
+    i.e. exactly the residual contribution arriving at `dst` via the
+    src->dst path, and nothing else. `dst_clean` is passed in rather than
+    captured here because a caller decomposing several src->dst pairs
+    against the same head set already has it from one shared clean forward
+    (`analysis.seasonality_circuit._capture_oproj_inputs`) -- recomputing it
+    per pair would be a second, redundant forward for a value that never
+    changes.
+
+    The caller performs forward 2 itself: inject `dst_clean + delta` at
+    `dst` (via `input_slice_ablate`, optionally composed with
+    `multi_slice_ablate` to also freeze any other node the decomposition
+    wants excluded from crediting this path) around a clean forward, and
+    reads off whatever final metric that forward produces. Keeping forward 2
+    at the call site -- rather than folding both into one black-box function
+    -- keeps this primitive model-agnostic (it knows nothing about
+    forecasting or metrics) and the delta-injection step visible rather than
+    hidden.
+
+    No causal-order check is needed or performed: if `dst`'s module executes
+    at or before `src`'s in the forward pass (same block, or an earlier
+    one), `dst`'s captured input slice is necessarily unaffected by a patch
+    applied to `src`'s module later in the same pass, so this correctly
+    returns an all-zero delta rather than requiring the caller to know or
+    check block ordering up front.
+    """
+    with input_slice_ablate(root, src_name, src_slice, src_value):
+        with InputCatcher(root, [dst_name]) as catcher:
+            with torch.no_grad():
+                forward_fn()
+            dst_patched = catcher.collect()[dst_name][..., dst_slice].clone()
+    return dst_patched - dst_clean.to(device=dst_patched.device, dtype=dst_patched.dtype)
 
 
 @contextmanager

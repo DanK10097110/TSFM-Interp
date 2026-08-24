@@ -262,6 +262,13 @@ class InternalsConfig:
     layer_stride: int = 1
     max_rows: int = 40_000
     probe_pca_dim: int = 50
+    # Label-permutation null for family-probe decodability (ROADMAP.md sec 16
+    # E9's remaining scope -- the majority-class `chance` line is a weaker,
+    # related control; this reruns the identical probe fit `n_perm` times
+    # with the family label shuffled at the SERIES level, mirroring
+    # sae/ground_truth.py::permutation_null_alignment's "rerun the identical
+    # search" pattern. `0` disables it, matching that function's convention.
+    probe_permutation_repeats: int = 5
 
 
 @dataclass
@@ -313,6 +320,48 @@ class BudgetConfig:
     warmup: int = 2             # untimed calls before timing starts
     measure_predict: bool = True    # also time the full forecast path
     predict_repeats: int = 3        # fewer: a sampled decoder's pass is expensive
+
+
+@dataclass
+class FrontendConfig:
+    """Input front-end diagnostics (ROADMAP.md sec 16 E17): what does each
+    model do to its input BEFORE any layer runs? On by default and cheap --
+    mostly tokenizer calls and a handful of `predict()` calls, no activation
+    store, no `extract` dependency (`--stages frontend` is a valid
+    standalone run against a checkpoint with nothing else built, same
+    pattern as `budget`).
+
+    Each of the four diagnostics has its own enable flag: a model whose
+    architecture makes one inapplicable (e.g. `quantization_resolution` on
+    a continuous-embedding model with no re-quantizing tokenizer) degrades
+    to an explicit `not_applicable` record rather than skipping the whole
+    stage (`CLAUDE.md` sec 2.5).
+    """
+    enabled: bool = True
+    max_series: int = 64            # series sampled for every sub-diagnostic below
+
+    quantization_resolution: bool = True   # Chronos-style re-quantizing tokenizers only
+
+    scale_equivariance: bool = True
+    # Multiplicative factors applied to the raw context before predicting;
+    # the forecast is divided back by the same factor before comparing
+    # against the unscaled prediction. 1000x/0.001x are deliberately extreme
+    # (three orders of magnitude each way) to stress internal normalization.
+    scale_factors: list = field(default_factory=lambda: [1000.0, 0.001])
+
+    context_truncation: bool = True
+    context_truncation_n_points: int = 5
+    # Smallest AVAILABLE (non-stale) context length tested, as a fraction of
+    # data.context_len -- the "small fraction of normal" end of the sweep.
+    context_truncation_min_frac: float = 0.125
+
+    nan_handling: bool = True
+    # Fraction of context timesteps set to NaN per injection scenario
+    # (front/middle/back), and how many series to test it on -- deliberately
+    # small since this is a mechanism probe (does it raise / propagate /
+    # handle), not an effect-size estimate needing a bootstrap CI.
+    nan_frac: float = 0.05
+    nan_series: int = 8
 
 
 @dataclass
@@ -514,6 +563,7 @@ class PipelineConfig:
     clustering: ClusteringConfig = field(default_factory=ClusteringConfig)
     layer_screen: LayerScreenConfig = field(default_factory=LayerScreenConfig)
     budget: BudgetConfig = field(default_factory=BudgetConfig)
+    frontend: FrontendConfig = field(default_factory=FrontendConfig)
     sae: SAEConfig = field(default_factory=SAEConfig)
     report: ReportConfig = field(default_factory=ReportConfig)
 
@@ -587,7 +637,7 @@ _NESTED = {
     "run": RunConfig, "data": DataConfig, "alignment": AlignmentConfig,
     "extraction": ExtractionConfig, "l0": L0Config, "l1": L1Config, "l2": L2Config,
     "clustering": ClusteringConfig, "layer_screen": LayerScreenConfig,
-    "budget": BudgetConfig,
+    "budget": BudgetConfig, "frontend": FrontendConfig,
     "sae": SAEConfig, "report": ReportConfig,
     "stats": StatsConfig, "internals": InternalsConfig, "confirm": ConfirmConfig,
     "lens": LensConfig, "attention": AttentionConfig, "exemplars": ExemplarsConfig,

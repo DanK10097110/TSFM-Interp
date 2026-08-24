@@ -86,6 +86,40 @@ STAGE_DOCS: dict = {
                       "only tells you the price of a forward pass, never whether that "
                       "price bought anything mechanistically interesting — that's what "
                       "every later stage is for.")),
+    "frontend": StageDoc(
+        question=("What does each model do to its input BEFORE any layer runs -- how "
+                   "coarsely does it quantize the series, does scaling the input scale "
+                   "the forecast back out cleanly, how does accuracy degrade as recent "
+                   "context goes missing, and what happens when a context value is "
+                   "NaN?"),
+        how=("Reads each re-quantizing tokenizer's own bin geometry to score how coarse "
+             "one quantization step is relative to a series' own amplitude; calls "
+             "`predict()` on the input scaled up/down by large factors and compares the "
+             "rescaled-back forecast to the original; calls `predict()` with the most "
+             "recent context progressively withheld (a staleness scenario, not a front-"
+             "trim) to trace a degradation curve; and injects NaN at the front, middle, "
+             "and back of the context to see whether `predict()` errors, silently "
+             "produces a non-finite forecast, or genuinely handles it."),
+        good_bad=("Good: a re-quantizing tokenizer's bin width is a small fraction of "
+                   "the series' own amplitude with little saturating clipping, near-zero "
+                   "scale-equivariance residual, graceful (not cliff-shaped) accuracy "
+                   "degradation as recent context is withheld, and a NaN verdict of "
+                   "'handled' or an explicit, clean error rather than a silently "
+                   "corrupted forecast. Bad: heavy clipping or a large quantization "
+                   "step relative to signal amplitude, a scale-equivariance residual "
+                   "that grows with the scale factor, a sharp cliff at a specific "
+                   "context length, or a 'propagates' NaN verdict -- a non-finite input "
+                   "silently becomes a non-finite forecast with no error to flag it."),
+        cannot_tell=("Every diagnostic here is about the FRONT DOOR only -- what happens "
+                      "before or around a forward pass, never what happens inside one "
+                      "(that's every other stage's job). Quantization resolution is "
+                      "meaningful only for a re-quantizing tokenizer and is reported as "
+                      "'not applicable', never a fabricated zero, for a continuous-"
+                      "embedding architecture. NaN handling is checked at only a "
+                      "handful of hand-placed positions and one missing-fraction, not "
+                      "exhaustively; and none of these four probes says anything about "
+                      "forecast quality on ordinary, well-formed input -- L0 is what "
+                      "answers that.")),
     "layer_screen": StageDoc(
         question=("Which of this model's own layers are worth spending the expensive "
                    "stages (Lens, L1, L2, L3, attention, SAE) on?"),
@@ -278,6 +312,37 @@ STAGE_DOCS: dict = {
                       "descriptive: it says how each model happens to partition the "
                       "data, not why, and not whether that partition is causally "
                       "meaningful to either model's forecast.")),
+    "seasonality_circuit": StageDoc(
+        question=("What is the smallest set of a model's own attention heads that is "
+                   "causally sufficient and necessary to carry its seasonal forecasting, "
+                   "and does each head's effect act independently of the others in that "
+                   "set, or do they interact?"),
+        how=("Scores every candidate head's own effect on a seasonal-power metric under "
+             "the `deseasonalize` corruption, greedily grows a minimal set by always "
+             "adding the head that most raises restoration, checks that set against a "
+             "random-same-size-set null (the mandatory acceptance bar), then — only for "
+             "a set that clears the null — path-patches inside it: noising one head "
+             "alone, then again with every other set member frozen clean, then again "
+             "re-injecting just the isolated delta into each other member one at a time, "
+             "to see whether the total effect is the sum of its parts."),
+        good_bad=("Good: a small selected set whose restoration clearly beats the "
+                   "random-set null with a real confidence-interval margin, and (for a "
+                   "multi-head set) a path-decomposition whose parts sum close to the "
+                   "whole. Bad: a selected set that never separates from the null (the "
+                   "circuit isn't well captured by attention heads alone, or this "
+                   "particular greedy search missed it), or a large conservation gap, "
+                   "which does not necessarily mean the method is broken — it can mean "
+                   "the heads found genuinely interact nonlinearly rather than "
+                   "contributing independent, additive paths."),
+        cannot_tell=("This is within-model causal evidence only (invariant 5) — nothing "
+                      "here compares one model's circuit to another's, and a set that is "
+                      "*sufficient* is not proven *unique*: a greedy search finds a small "
+                      "set, never provably the smallest, and a different search order "
+                      "could find a different set of the same size. The scope is "
+                      "attention heads only — an MLP-mediated circuit component would be "
+                      "invisible to this analysis entirely, and it is a single benchmark "
+                      "corpus's own seasonal families, not a claim about seasonality in "
+                      "general.")),
     "sae": StageDoc(
         question="Can each model's layer be decomposed into a small number of individually interpretable features, and do those features actually matter to the forecast?",
         how=("Trains a sparse dictionary that reconstructs a layer's activations from "

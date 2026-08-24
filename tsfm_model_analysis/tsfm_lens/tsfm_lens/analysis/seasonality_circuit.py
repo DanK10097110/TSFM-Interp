@@ -508,6 +508,182 @@ def minimal_set_search(cfg: PipelineConfig, adapter, store: ActivationStore,
     }
 
 
+def path_decompose_head(cfg: PipelineConfig, adapter, blocks_by_name: dict, src: dict,
+                        head_set: list, clean_contexts: np.ndarray,
+                        corrupted_contexts: np.ndarray, horizon: int, seed: int,
+                        metric_fn) -> dict:
+    """H8 Stage 3 / E18 (ROADMAP.md sec 20): decompose `src`'s total noising
+    effect on `metric_fn` into a path through each OTHER member of
+    `head_set` (`effect_via`) plus a direct residual not mediated by any of
+    them (`effect_direct`), and report the conservation gap against `src`'s
+    measured total effect (`effect_total`) -- the archive's stated
+    acceptance criterion ("the path decomposition must sum to approximately
+    the total effect").
+
+    Scoped entirely to `head_set` (Stage 2's own found minimal set), so this
+    costs `O(|head_set|)` forwards per `src`, not the ~102k (source,
+    receiver) pairs a full-circuit sweep would need -- exactly the
+    complexity reduction ROADMAP.md sec 20 H8's own sequencing argument
+    (find the minimal set first, path-patch only inside it) was for.
+
+    All three quantities are NOISING interventions against the same clean
+    baseline (`src`'s corrupted-context value injected into an otherwise
+    clean forward -- the opposite direction from Stage 2's denoising
+    sufficiency arm, which patches clean values into a corrupted forward):
+    - `effect_total`: the ordinary single-head noise of `src` alone, nothing
+      else in `head_set` frozen (Stage 1/2's own single-head convention).
+    - `effect_direct`: `src` noised, every OTHER `head_set` member frozen at
+      ITS clean value (via `multi_slice_ablate`) so credit cannot leak
+      through a set-mate on its way to the metric.
+    - `effect_via[dst]`, for each other member `dst`: `src`'s corrupted-run
+      delta at `dst` (via `hooks.path_patch_delta`) injected alone, every
+      OTHER member besides `src`/`dst` frozen clean, `dst` itself left to
+      propagate the injected delta onward normally.
+
+    Degenerates by construction, not by a special case in this function's
+    own control flow, when `head_set` has only `src`: `others` is empty, so
+    `effect_direct` is set (not merely expected) bit-identical to
+    `effect_total` by reusing its own forecast array rather than running a
+    second, floating-point-equivalent-but-not-identical forward, and
+    `effect_via` is `{}` -- there is no path to decompose, and the
+    conservation gap is exactly zero, not "approximately zero" (CLAUDE.md
+    sec 2.5).
+    """
+    from .lens import predict_rows
+    from ..extraction.hooks import multi_slice_ablate, path_patch_delta
+
+    others = [e for e in head_set if e != src]
+    names = sorted({e["layer"] for e in head_set})
+    clean_vals = _capture_oproj_inputs(adapter, [blocks_by_name[n]["o_proj"] for n in names],
+                                       clean_contexts)
+    corrupt_vals = _capture_oproj_inputs(adapter, [blocks_by_name[n]["o_proj"] for n in names],
+                                         corrupted_contexts)
+
+    src_spec = _head_specs(blocks_by_name, [src], corrupt_vals)[0]
+    with multi_slice_ablate(adapter.module, [src_spec]):
+        f_total = predict_rows(adapter, clean_contexts, horizon, cfg.l0.quantiles, seed)
+    effect_total = float(metric_fn(f_total))
+
+    if not others:
+        effect_direct = effect_total
+    else:
+        freeze_specs = _head_specs(blocks_by_name, others, clean_vals)
+        with multi_slice_ablate(adapter.module, [src_spec] + freeze_specs):
+            f_direct = predict_rows(adapter, clean_contexts, horizon, cfg.l0.quantiles, seed)
+        effect_direct = float(metric_fn(f_direct))
+
+    src_block = blocks_by_name[src["layer"]]
+    src_dh = src_block["head_dim"]
+    src_h = int(src["head"])
+    src_slice = slice(src_h * src_dh, (src_h + 1) * src_dh)
+    src_value = corrupt_vals[src_block["o_proj"]][..., src_slice]
+
+    effect_via = {}
+    for dst in others:
+        dst_block = blocks_by_name[dst["layer"]]
+        dst_dh = dst_block["head_dim"]
+        dst_h = int(dst["head"])
+        dst_slice = slice(dst_h * dst_dh, (dst_h + 1) * dst_dh)
+        dst_clean = clean_vals[dst_block["o_proj"]][..., dst_slice]
+
+        def forward_fn():
+            adapter.forward(adapter.prepare(clean_contexts))
+
+        delta = path_patch_delta(adapter.module, forward_fn,
+                                 src_block["o_proj"], src_slice, src_value,
+                                 dst_block["o_proj"], dst_slice, dst_clean)
+
+        other_freeze = _head_specs(blocks_by_name, [e for e in others if e != dst], clean_vals)
+        with multi_slice_ablate(adapter.module,
+                                [(dst_block["o_proj"], dst_slice, dst_clean + delta)] + other_freeze):
+            f_via = predict_rows(adapter, clean_contexts, horizon, cfg.l0.quantiles, seed)
+        effect_via[f"{dst['layer']}#{dst['head']}"] = float(metric_fn(f_via))
+
+    sum_paths = effect_direct + sum(effect_via.values())
+    return {
+        "src": {"layer": src["layer"], "head": int(src["head"])},
+        "effect_total": effect_total,
+        "effect_direct": effect_direct,
+        "effect_via": effect_via,
+        "sum_paths": float(sum_paths),
+        "conservation_gap": float(sum_paths - effect_total),
+        "degenerate": not others,
+    }
+
+
+def path_patch_circuit(cfg: PipelineConfig, adapter,
+                       data: BenchmarkData, selected_set: list) -> Optional[dict]:
+    """H8 Stage 3 / E18 (ROADMAP.md sec 20): run `path_decompose_head` for
+    every head in Stage 2's own `selected_set` (the minimal sufficient set
+    that already cleared its random-set null) and report each one's
+    conservation gap, plus a summary across the set.
+
+    Reuses `attention.py::_ablation_setup`'s exact rows/contexts/seed
+    (CLAUDE.md sec 11.24's same-inputs discipline, as Stage 1/2 already do)
+    and `l3_perturbation.py::corrupt_deseasonalize` for the corrupted
+    contexts, so this Stage's numbers sit on the identical basis Stage 2's
+    `minimal_set_search` already used to find `selected_set` in the first
+    place -- not a second, independently-sampled population that could
+    silently disagree with it.
+
+    The tracked metric is seasonal-POWER LOSS relative to the clean
+    baseline (`power_clean - seasonal_power(forecast)`, matching Stage 1's
+    own `on_forecast` convention in `score_single_head_effects`) rather than
+    Stage 2's `restoration` ratio -- `restoration` is defined against a
+    CORRUPTED baseline (denoising), while this Stage's interventions are all
+    NOISING a clean baseline, so a loss-from-clean is the metric that is
+    actually additive across `effect_direct`/`effect_via` in the sense the
+    conservation check needs.
+
+    Returns `None` (logged, degrading per CLAUDE.md sec 2.5) when the
+    adapter has no `attention_info()`, or when `selected_set` is empty --
+    there is nothing to decompose.
+    """
+    from . import attention as _attn
+    from .lens import predict_rows
+    from .stats import dominant_period
+    from .l3_perturbation import corrupt_deseasonalize
+
+    info = adapter.attention_info()
+    if info is None:
+        log.info("seasonality_circuit %s: path-patch decomposition unsupported "
+                 "(no attention_info)", adapter.name)
+        return None
+    if not selected_set:
+        log.info("seasonality_circuit %s: path-patch decomposition skipped "
+                 "(empty selected_set)", adapter.name)
+        return None
+
+    acfg = cfg.attention
+    rows, contexts, targets, scale, families, fam_list, seed = \
+        _attn._ablation_setup(cfg, data)
+    periods = np.array([dominant_period(c) for c in contexts], dtype=np.float64)
+    blocks = info[:: max(1, acfg.head_layer_stride)]
+    blocks_by_name = {b["block"]: b for b in blocks}
+
+    corrupted_contexts = corrupt_deseasonalize(contexts, np.random.default_rng(seed))
+    f_clean = predict_rows(adapter, contexts, data.horizon, cfg.l0.quantiles, seed)
+    power_clean = seasonal_power(f_clean, periods)
+
+    def loss_metric(f: np.ndarray) -> float:
+        return float(np.nanmean(power_clean - seasonal_power(f, periods)))
+
+    per_src = [path_decompose_head(cfg, adapter, blocks_by_name, src, selected_set,
+                                   contexts, corrupted_contexts, data.horizon, seed,
+                                   loss_metric)
+              for src in selected_set]
+
+    gaps = [r["conservation_gap"] for r in per_src]
+    totals = [r["effect_total"] for r in per_src]
+    return {
+        "selected_set": selected_set,
+        "per_src": per_src,
+        "n_series": int(len(rows)),
+        "mean_abs_conservation_gap": float(np.mean(np.abs(gaps))),
+        "mean_abs_effect_total": float(np.mean(np.abs(totals))),
+    }
+
+
 def periodicity_power_rank_correlation(periodicity_scores: np.ndarray,
                                        periodicity_layers: list,
                                        power_loss: np.ndarray,

@@ -7,10 +7,17 @@ candidate selectors (work_bend, coverage, factor_emergence) for every model
 in the run, builds the expensive gold reference ranking (one small SAE
 trained per layer, scored by ground-truth feature-alignment mass --
 `sae/ground_truth.py`, reused rather than reinvented), cross-checks that
-gold against the cheaper L3 sensitivity-fingerprint signal if present, scores
-every selector and three combinations of them (union, >=2-vote, rank-average)
-against the gold ranking with uniform-stride and random-k null controls, and
-writes one JSON summary plus a printed leaderboard.
+gold against the cheaper L3 sensitivity-fingerprint signal if present, and
+(additively, if the run also has `l3.patching` enabled at
+`layer_stride: 1`) against the causal per-window L3 PATCHING restoration
+signal -- the design doc's originally-preferred secondary gold, added
+2026-08 to re-test whether it confirms or closes TimesFM's historically weak
+sensitivity-based cross-check agreement (ROADMAP.md §6.1.1). Both secondary
+golds are independent, additive cross-checks; neither replaces the other or
+the primary SAE-mass gold. Scores every selector and three combinations of
+them (union, >=2-vote, rank-average) against the gold ranking with
+uniform-stride and random-k null controls, and writes one JSON summary plus
+a printed leaderboard.
 
 Example:
     python run.py --config configs/layer_screen_experiment.yaml \\
@@ -63,6 +70,52 @@ def _load_l3_secondary_gold(run_dir: Path, model: str, layers: list) -> np.ndarr
     return arrs[key].mean(axis=1)
 
 
+def _load_l3_patching_secondary_gold(run_dir: Path, model: str, layers: list) -> np.ndarray | None:
+    """Mean per-window PATCHING restoration per layer, if `l3.patching` ran.
+
+    The design doc's originally-preferred secondary gold (ROADMAP.md
+    §6.1.1-E), additive to `_load_l3_secondary_gold` above -- that function
+    stays exactly as it is, this is a second, independent cross-check, not a
+    replacement (per this repo's "don't silently replace a measurement, add
+    a second one and compare" doctrine). Sensitivity is *correlational*
+    (how much does a layer's activation change under a corruption); patching
+    is *causal* (how much of the clean forecast is restored when a
+    corrupted forward has this layer's clean token states written back in,
+    one alignment window at a time -- `l3_perturbation.py::_patching`'s own
+    docstring explains why whole-context patching would be a trivial 100%
+    at every layer and is not what this measures).
+
+    `l3/patching.npz`'s `restoration_{model}` array (written by `_patching`)
+    has shape `[n_corruptions, n_layers_p]`, where `n_layers_p` is the
+    model's OWN layer list subsampled by `l3.patching.layer_stride` -- not
+    necessarily every layer `_sensitivity`/the SAE-mass gold cover (checked
+    directly against `_patching`'s actual return dict, not assumed: `out =
+    {"restoration": restoration, "layers": layers_p, ...}`). Mirroring
+    `_load_l3_secondary_gold`'s own strict-shape contract, this degrades to
+    None (rather than attempting a partial reindex that would silently
+    change what the resulting Spearman correlation means) whenever the
+    patched layer list is not *exactly* the full `layers` list this bake-off
+    is scoring against -- i.e. the caller's `l3.patching.layer_stride` must
+    be 1 for this cross-check to fire at all. `restoration.mean(axis=0)`
+    averages across the corruption axis to get one causal-restoration score
+    per layer, the same reduction `_load_l3_secondary_gold` already applies
+    to the sensitivity fingerprint's own corruption axis.
+    """
+    npz_path = run_dir / "l3" / "patching.npz"
+    json_path = run_dir / "l3" / "patching.json"
+    if not npz_path.exists() or not json_path.exists():
+        return None
+    import json as _json
+    meta = _json.loads(json_path.read_text(encoding="utf-8"))
+    if model not in meta or meta[model].get("layers") != list(layers):
+        return None
+    arrs = np.load(npz_path)
+    key = f"restoration_{model}"
+    if key not in arrs or arrs[key].shape[1] != len(layers):
+        return None
+    return arrs[key].mean(axis=0)
+
+
 def run_bakeoff_for_model(store, model: str, layers: list, gt, series_ids: np.ndarray,
                           gt_cols: list, device, budget: int, sae_cfg: SAETrainConfig,
                           seed: int, run_dir: Path, n_gold_replicates: int = 3) -> dict:
@@ -85,11 +138,21 @@ def run_bakeoff_for_model(store, model: str, layers: list, gt, series_ids: np.nd
         rho, _ = spearmanr(gold_score, secondary_gold)
         gold_agreement = {"spearman_primary_vs_l3_sensitivity": float(rho) if np.isfinite(rho) else 0.0}
 
+    patching_gold = _load_l3_patching_secondary_gold(run_dir, model, layers)
+    gold_vs_patching_gold_rho = None
+    if patching_gold is not None and gold_score.std() > 1e-9 and patching_gold.std() > 1e-9:
+        rho_p, _ = spearmanr(gold_score, patching_gold)
+        gold_vs_patching_gold_rho = float(rho_p) if np.isfinite(rho_p) else 0.0
+
     scored = {m: score_selector(sel, gold_score, budget, seed=seed) for m, sel in selections.items()}
     scored_secondary = None
     if secondary_gold is not None and secondary_gold.std() > 1e-9:
         scored_secondary = {m: score_selector(sel, secondary_gold, budget, seed=seed)
                             for m, sel in selections.items()}
+    scored_vs_patching_gold = None
+    if patching_gold is not None and patching_gold.std() > 1e-9:
+        scored_vs_patching_gold = {m: score_selector(sel, patching_gold, budget, seed=seed)
+                                   for m, sel in selections.items()}
 
     idx_by_method = {m: sel["selected_idx"] for m, sel in selections.items()}
     score_by_method = {m: sel["score_per_layer"] for m, sel in selections.items()}
@@ -116,7 +179,10 @@ def run_bakeoff_for_model(store, model: str, layers: list, gt, series_ids: np.nd
         "n_gold_replicates": gold["n_gold_replicates"], "gold_detail": gold["detail"],
         "secondary_gold_score": secondary_gold.tolist() if secondary_gold is not None else None,
         "gold_agreement": gold_agreement,
+        "patching_secondary_gold_score": patching_gold.tolist() if patching_gold is not None else None,
+        "gold_vs_patching_gold_rho": gold_vs_patching_gold_rho,
         "selections": selections, "scored": scored, "scored_vs_secondary_gold": scored_secondary,
+        "scored_vs_patching_gold": scored_vs_patching_gold,
         "ensembles": ensembles,
     }
 
@@ -172,9 +238,16 @@ def main() -> None:
         if r["gold_agreement"]:
             print(f"  gold cross-check (SAE-mass vs L3-sensitivity): "
                  f"rho={r['gold_agreement']['spearman_primary_vs_l3_sensitivity']:.3f}")
+        if r["gold_vs_patching_gold_rho"] is not None:
+            print(f"  gold cross-check (SAE-mass vs L3-patching):    "
+                 f"rho={r['gold_vs_patching_gold_rho']:.3f}")
         for method, s in r["scored"].items():
             print(f"  {method:18s} recall@budget={s['recall_at_budget']:.2f}  "
                  f"beats_uniform={s['beats_uniform_stride']!s:5s} beats_random={s['beats_random']!s:5s}")
+        if r["scored_vs_patching_gold"]:
+            for method, s in r["scored_vs_patching_gold"].items():
+                print(f"  {method:18s} vs-patching-gold: recall@budget={s['recall_at_budget']:.2f}  "
+                     f"beats_uniform={s['beats_uniform_stride']!s:5s} beats_random={s['beats_random']!s:5s}")
         for ename, e in r["ensembles"].items():
             print(f"  ensemble:{ename:16s} recall@budget={e['recall_at_budget']:.2f}  "
                  f"n_selected={e['n_selected']}")
