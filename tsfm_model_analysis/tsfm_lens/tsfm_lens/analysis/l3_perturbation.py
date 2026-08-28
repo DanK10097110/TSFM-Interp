@@ -509,6 +509,17 @@ def _patching(cfg: PipelineConfig, adapter, layers: list, rows: np.ndarray,
     windows = list(range(0, n_windows, max(1, pcfg.window_stride))) \
         if pcfg.per_window else []
     n_verbose = min(cfg.report.verbose_series, take) if cfg.report.verbose else 0
+    # The narrated case studies are picked STRATIFIED across families, not as
+    # a head slice of the already-sampled rows. The comment on `sel` above
+    # explains exactly why a `[:take]` head slice is wrong there; the verbose
+    # pick used `[:n_verbose]` and re-introduced the same bias one level
+    # further down (ROADMAP.md sec 15 A4). It is visible in the artifacts of
+    # any run made before this fix: every narrated series came from whichever
+    # family sorts first in the corpus, so a reader saw one family's case
+    # studies repeated once per corruption per model and no others.
+    verbose_idx = (sample_rows(len(ctx_clean), n_verbose, cfg.run.seed + 78,
+                               strata=families if families is not None else None)
+                   if n_verbose else np.zeros(0, dtype=np.int64))
 
     restoration = np.zeros((len(corr_names), len(layers_p)), dtype=np.float32)
     rest_win = np.zeros((len(corr_names), len(layers_p), len(windows)), dtype=np.float32)
@@ -539,7 +550,7 @@ def _patching(cfg: PipelineConfig, adapter, layers: list, rows: np.ndarray,
                     if v_h is not None:
                         vals_h.append(v_h)
                     if verbose_grid is not None:
-                        verbose_grid[ci, li, wi] = v_series[:n_verbose]
+                        verbose_grid[ci, li, wi] = v_series[verbose_idx]
                 restoration[ci, li] = float(np.mean(vals)) if vals else float("nan")
                 if rest_h is not None:
                     rest_h[ci, li] = (np.mean(vals_h, axis=0) if vals_h
@@ -555,7 +566,7 @@ def _patching(cfg: PipelineConfig, adapter, layers: list, rows: np.ndarray,
             verbose[cname] = _verbose_case(
                 adapter, layers_p, windows, win_of_token, clean_tokens, ctx_corr,
                 horizon, cfg.l0.quantiles, seed, f_clean, f_corr, damage, rest_win[ci],
-                verbose_grid[ci], n_verbose, ctx_clean, targets, series_ids, families)
+                verbose_grid[ci], verbose_idx, ctx_clean, targets, series_ids, families)
     out = {"restoration": restoration, "layers": layers_p, "corruptions": corr_names,
            "whole_context_patch": not bool(windows),
            "n_requested": cap["n_requested"], "n_realized": cap["n_realized"],
@@ -573,13 +584,15 @@ def _patching(cfg: PipelineConfig, adapter, layers: list, rows: np.ndarray,
 def _verbose_case(adapter, layers_p: list, windows: list, win_of_token: np.ndarray,
                   clean_tokens: dict, ctx_corr: np.ndarray, horizon: int, quantiles: list,
                   seed: int, f_clean: np.ndarray, f_corr: np.ndarray, damage: float,
-                  rest_win_ci: np.ndarray, verbose_grid_ci: np.ndarray, n_verbose: int,
+                  rest_win_ci: np.ndarray, verbose_grid_ci: np.ndarray,
+                  verbose_idx: np.ndarray,
                   ctx_clean: np.ndarray, targets, series_ids, families) -> dict:
     """A concrete before/after for a handful of series at one corruption.
 
     Reuses the corpus-wide restoration grid to pick the single (layer, window)
     cell that restored the most on average across the whole sampled batch, then
-    replays *only* the patch at that one cell for the first `n_verbose` series
+    replays *only* the patch at that one cell for the `verbose_idx` series
+    -- a family-stratified pick, not the first n (see `run_patching`) --
     to recover their actual patched forecast (everything else needed — clean
     and corrupted forecasts, and this cell's full per-series restoration grid
     from `verbose_grid_ci` — is already in hand at no extra cost). This is a
@@ -589,19 +602,19 @@ def _verbose_case(adapter, layers_p: list, windows: list, win_of_token: np.ndarr
     best_li, best_wi = np.unravel_index(int(np.argmax(rest_win_ci)), rest_win_ci.shape)
     best_layer, best_window = layers_p[best_li], windows[best_wi]
     tok_idx = np.flatnonzero(win_of_token == best_window)
-    ex = slice(0, n_verbose)
+    ex = np.asarray(verbose_idx, dtype=np.int64)
     _, _, f_patch_ex, _ = _window_restoration(
         adapter, best_layer, tok_idx, clean_tokens[best_layer][ex], ctx_corr[ex],
         horizon, quantiles, seed, f_clean[ex], damage)
     return {
         "layer": best_layer, "window": int(best_window),
         "restoration_grid": verbose_grid_ci.copy(),
-        "series_ids": [str(s) for s in series_ids[:n_verbose]] if series_ids is not None else [],
-        "families": [str(f) for f in families[:n_verbose]] if families is not None else [],
-        "context": ctx_clean[:n_verbose].astype(np.float32),
-        "target": targets[:n_verbose].astype(np.float32) if targets is not None else None,
-        "forecast_clean": f_clean[:n_verbose].astype(np.float32),
-        "forecast_corrupted": f_corr[:n_verbose].astype(np.float32),
+        "series_ids": [str(s) for s in series_ids[ex]] if series_ids is not None else [],
+        "families": [str(f) for f in families[ex]] if families is not None else [],
+        "context": ctx_clean[ex].astype(np.float32),
+        "target": targets[ex].astype(np.float32) if targets is not None else None,
+        "forecast_clean": f_clean[ex].astype(np.float32),
+        "forecast_corrupted": f_corr[ex].astype(np.float32),
         "forecast_patched": f_patch_ex.astype(np.float32),
     }
 

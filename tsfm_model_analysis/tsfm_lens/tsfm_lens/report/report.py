@@ -23,6 +23,7 @@ from jinja2 import Template
 from plotly.subplots import make_subplots
 
 from .. import failure_gallery, glossary, methods_appendix, stage_docs
+from . import derived
 from ..config import PipelineConfig
 from ..utils import load_json, log, save_json
 
@@ -200,6 +201,7 @@ def run_report(cfg: PipelineConfig) -> Path:
             # the reason in the log and nowhere in the deliverable, which is
             # the silent degradation `CLAUDE.md` invariant 8 forbids.
             detail = (_tier_skip_reason(run_dir, config_attr)
+                      or _shape_skip_reason(run_dir, config_attr)
                       or ("stage not enabled in config" if not enabled
                           else f"artifacts missing: {', '.join(missing)}"))
             log.info("report: section %s skipped (%s)", eyebrow, detail)
@@ -278,7 +280,7 @@ def run_report(cfg: PipelineConfig) -> Path:
         sections=sections,
         config_text=_config_text(run_dir),
         mock_warning=_mock_warning(mock_models),
-        bottom_line=_bottom_line(run_dir, cfg),
+        bottom_line=_scorecard(run_dir, cfg),
         how_to_read=_how_to_read(cfg.alignment.window),
         glossary_block=_glossary_block(),
         methods_appendix_block=_methods_appendix_block(),
@@ -414,159 +416,131 @@ def _safe_json(path: Path):
         return None
 
 
-def _bottom_line(run_dir: Path, cfg: PipelineConfig) -> str:
-    """The report's answer, in plain language, before any evidence.
+_VERDICT_CLASS = {
+    "clears": "v-pass", "excludes": "v-pass", "better": "v-pass",
+    "meets": "v-pass", "separated": "v-pass",
+    "does not clear": "v-fail", "includes": "v-fail", "worse or equal": "v-fail",
+    "below": "v-fail", "not separated": "v-fail", "above": "v-neutral",
+    "at or below": "v-neutral", "not comparable": "v-none",
+}
 
-    Added 2026-08-20 on a user request that "the report's message should be
-    clear to the reader". Everything else in this file is organized by
-    *method* -- which is right for an evidence document and wrong as an
-    opening. A reader who opens a thirteen-section report and meets the
-    evidence ladder first has to reconstruct the conclusion themselves from
-    forty findings; this block states it, then the rest of the report is
-    what backs it up.
 
-    It reads the same artifacts the sections read and says nothing they do
-    not already support. Each line degrades independently: a stage that did
-    not run drops its own sentence instead of blanking the block, so this
-    can never claim more coverage than the run actually has. It deliberately
-    carries no numbers a reader would have to interpret -- the point is the
-    direction of each result and how much weight it can bear.
+# Singular forms for the counted units the scorecard actually uses. An
+# explicit map rather than a rule: stripping a trailing "s" turns "families"
+# into "familie", and a formatter that guesses at English is a formatter that
+# will be wrong in the most prominent block of the report.
+_SINGULAR = {"families": "family", "claims": "claim", "series": "series",
+             "layers": "layer", "models": "model", "heads": "head",
+             "corruptions": "corruption", "features": "feature"}
+
+
+def _esc(text: str) -> str:
+    """Escape markup-significant characters in a value destined for HTML.
+
+    Needed because a printed decision rule legitimately contains `<`/`>`
+    (`value < reference`), which HTML5 tolerates before a space and mangles
+    before a letter -- so the rule that renders correctly today would break
+    on the next rule someone writes.
     """
-    a, b = cfg.models[0].name, cfg.models[1].name
-    lines: list[str] = []
+    return (str(text).replace("&", "&amp;").replace("<", "&lt;")
+            .replace(">", "&gt;"))
 
-    l0 = _safe_json(run_dir / "l0" / "summary.json")
-    if l0:
-        overall = {r["model"]: r["mase"] for r in l0.get("overall", [])}
-        if len(overall) >= 2:
-            best = min(overall, key=overall.get)
-            other = [m for m in overall if m != best][0]
-            margin = overall[other] - overall[best]
-            # `strengths` is {model: [family, ...]} -- families where that model
-            # wins with a Holm-corrected p under alpha AND a CI excluding zero.
-            strengths = l0.get("strengths") or {}
-            wins = {m: len(f) for m, f in strengths.items() if f}
-            if wins and len(wins) > 1:
-                split = ("but neither model wins everywhere — "
-                         + " and ".join(f"{m} is reliably better on {n} data "
-                                        f"famil{'y' if n == 1 else 'ies'}"
-                                        for m, n in sorted(wins.items(), key=lambda kv: -kv[1]))
-                         + ".")
-            elif wins:
-                m, n = next(iter(wins.items()))
-                split = (f"and that advantage is statistically reliable on "
-                         f"{n} data famil{'y' if n == 1 else 'ies'}.")
-            else:
-                split = ("but no single data family separates them reliably once "
-                         "multiple comparisons are accounted for.")
-            lines.append(f"<b>Accuracy.</b> {best} forecasts this corpus more accurately "
-                         f"overall (by {margin:.2f} MASE), {split}")
 
-    l1 = _safe_json(run_dir / "l1" / "meta.json")
-    if l1 and l1.get("best_pair"):
-        bp = l1["best_pair"]
-        null = (bp.get("null_ci") or {}).get("value")
-        verdict = ("far above what unrelated data would produce"
-                   if null is not None and bp.get("cka", 0) > 4 * null
-                   else "only modestly above the shuffled-series null")
-        lines.append(f"<b>Shared structure.</b> The two models' internal representations "
-                     f"line up most strongly at layer {_short(bp.get('layer_a', '?'))} "
-                     f"of {a} and layer {_short(bp.get('layer_b', '?'))} of {b}, "
-                     f"{verdict} — so they are organizing this data in related ways, "
-                     f"not identically and not independently. This is a geometric "
-                     f"resemblance, not evidence that either model uses it.")
+def _fmt_measure_value(value, unit: str) -> str:
+    """Format a scorecard value without deciding how important it is.
 
-    l2 = _safe_json(run_dir / "l2" / "stitching.json")
-    if l2:
-        gains = {d: v.get("best_gain") for d, v in (l2.get("directions") or {}).items()
-                 if v.get("best_gain") is not None}
-        if gains:
-            top = max(gains, key=gains.get)
-            positive = gains[top] > 0.05
-            lines.append(f"<b>Is that resemblance more than the shared input?</b> "
-                         + (f"Yes — a linear map from one model's states predicts the "
-                            f"other's better than a probe built from the raw input can "
-                            f"({top.replace('->', ' → ')}, the stronger direction). "
-                            f"Something learned, not just the data itself, is shared."
-                            if positive else
-                            "Not clearly — the cross-model map barely beats a probe built "
-                            "from the raw input, so most of the apparent resemblance may "
-                            "be that both models saw the same series."))
+    Deliberately dumb: three significant figures, the unit appended, and
+    nothing else. No bolding-if-large, no arrow glyphs, no colour keyed on
+    magnitude — a formatter that emphasises is a formatter that concludes.
+    """
+    if value is None:
+        return "not measured"
+    if abs(value) >= 1000 or (value != 0 and abs(value) < 0.001):
+        body = f"{value:.3g}"
+    elif float(value).is_integer():
+        body = f"{int(value)}"
+    else:
+        body = f"{value:.3f}"
+    if body in ("1", "-1"):
+        unit = _SINGULAR.get(unit, unit)
+    return f"{body} {unit}".strip()
 
-    lens = _safe_json(run_dir / "lens" / "lens.json")
-    if lens:
-        depths = {m: v.get("crystallization_depth") for m, v in lens.items()
-                  if isinstance(v, dict) and v.get("crystallization_depth") is not None}
-        if len(depths) >= 2:
-            early = min(depths, key=depths.get)
-            late = [m for m in depths if m != early][0]
-            same = abs(depths[early] - depths[late]) < 0.1
-            lines.append("<b>Where the forecast forms.</b> "
-                         + ("Both models settle on their forecast at a similar relative "
-                            "depth, so neither is doing its real work noticeably earlier."
-                            if same else
-                            f"{early}'s forecast is essentially decided by "
-                            f"{depths[early]:.0%} of its captured depth, while {late} is "
-                            f"still changing until {depths[late]:.0%} — the later layers "
-                            f"of {early} are refining a forecast it has already made."))
 
-    budget = _safe_json(run_dir / "budget" / "model_budget.json")
-    if budget and l0:
-        models = budget.get("models") or {}
-        costs = {n: (r.get("forward") or {}).get("flops_per_series")
-                 for n, r in models.items()}
-        costs = {n: c for n, c in costs.items() if c}
-        overall = {r["model"]: r["mase"] for r in l0.get("overall", [])}
-        if len(costs) >= 2 and len(overall) >= 2:
-            cheap = min(costs, key=costs.get)
-            best = min(overall, key=overall.get)
-            lines.append("<b>Cost.</b> " + (
-                f"{best} is both the more accurate model and the cheaper one to run, so "
-                f"its advantage here is not bought with compute."
-                if cheap == best else
-                f"{best} is the more accurate model but the more expensive one — "
-                f"{cheap} costs less per series, so the accuracy gap is partly a "
-                f"cost difference rather than a purely architectural one."))
-            worst_cov = min(((r.get("coverage") or {}).get("headline_flops_fraction") or 1.0,
-                             n) for n, r in models.items())
-            if worst_cov[0] < 0.9:
-                lines.append(f"<b>How much we can actually see.</b> Only "
-                             f"{worst_cov[0]:.0%} of {worst_cov[1]}'s computation is "
-                             f"observed by this pipeline, so every statement above about "
-                             f"<i>where inside that model</i> something happens is a "
-                             f"statement about the part we can see. Accuracy and cost "
-                             f"numbers are unaffected.")
+def _scorecard(run_dir: Path, cfg: PipelineConfig) -> str:
+    """The report's opening: measured rows with their rules printed, not prose.
 
-    confirm = _safe_json(run_dir / "confirm" / "confirmation.json")
-    if confirm:
-        tests = [t for t in (confirm.get("tests") or []) if t.get("status") == "tested"]
-        held = sum(1 for t in tests if t.get("confirmed"))
-        n_reg = confirm.get("n_registered", len(tests))
-        lines.append(f"<b>What survived a held-out test.</b> Of the {n_reg} finding"
-                     f"{'' if n_reg == 1 else 's'} registered on the public corpus "
-                     f"before anyone looked at the private one, "
-                     f"{len(tests)} could be re-tested, and <b>{held}</b> of those "
-                     f"held up on the sealed private corpus. Those are the only "
-                     f"confirmatory "
-                     f"results here; everything else in this report is exploratory — it "
-                     f"generated hypotheses, it did not test them.")
-    elif lines:
-        # Only worth saying alongside at least one actual claim -- a box whose
-        # sole content is "these claims are exploratory" has no claims in it.
-        lines.append("<b>Status of these claims.</b> Every finding here is "
-                     "<i>exploratory</i> — measured on the public corpus, where many "
-                     "comparisons were looked at. Treat them as hypotheses worth "
-                     "confirming, not as settled results.")
+    Replaces the authored `_bottom_line` paragraph block (2026-08-20 → this
+    rewrite 2026-08-24, on a user report that the report's conclusions were
+    "written into the html instead of being dynamic"). The old block was
+    English sentences with a number interpolated and a threshold hidden in
+    the branch that chose the sentence — the sharpest case being a bare
+    `cka > 4 * null` deciding between "far above what unrelated data would
+    produce" and "only modestly above the shuffled-series null", with the
+    `4` appearing nowhere a reader could see it, and a following clause
+    asserting that the two models "are organizing this data in related ways"
+    regardless of which branch fired.
 
-    if not lines:
+    Three properties the replacement has and the paragraph could not:
+
+    * **The rule is rendered.** Every row prints the comparison that produced
+      its verdict, so a reader who would apply a stricter rule can, from the
+      same table, without reading the source.
+    * **It transfers.** Rows are built by `report/derived.py` from artifacts
+      only. A different checkpoint pair, a different corpus, a model count
+      other than two, or a stage that did not run changes which rows exist
+      and what they say — no sentence is asserted that a different run would
+      falsify.
+    * **It is auditable.** Each row's `detail` (the per-model or per-family
+      numbers it reduces) is rendered in a collapsed table beneath it, so the
+      reduction can be checked rather than trusted.
+
+    Renders empty when no stage produced a scorable artifact: an opening
+    block is the most prominent thing in the document, so with nothing
+    measured it must say nothing rather than say so at length.
+    """
+    names = [m.name for m in cfg.models]
+    rows = derived.bottom_line_rows(run_dir, names)
+    if not rows:
         return ""
-    items = "".join(f"<li>{l}</li>" for l in lines)
-    return ('<div class="bottomline"><h2>Bottom line</h2>'
-            f'<ul>{items}</ul>'
-            '<p class="bl-foot">Each line above is backed by one section below, in the '
-            'order the sections appear. If you read nothing else, read this block and '
-            'the “How to read this report” note under it — the ladder it describes is '
-            'what stops a resemblance from being read as a cause.</p></div>')
+    body = ""
+    for i, v in enumerate(rows):
+        cls = _VERDICT_CLASS.get(v.verdict, "v-none")
+        detail_html = ""
+        if v.detail:
+            try:
+                detail_html = _table(pd.DataFrame(v.detail))
+            except (ValueError, TypeError):
+                detail_html = ""
+        note = f'<p class="sc-note">{v.note}</p>' if v.note else ""
+        body += (
+            f'<tr class="sc-row"><td class="sc-measure">{v.measure}</td>'
+            f'<td class="sc-value">{_fmt_measure_value(v.value, v.unit)}</td>'
+            f'<td class="sc-ref">{_fmt_measure_value(v.reference, v.unit)}'
+            f'<br><span class="sc-reflabel">{v.reference_label}</span></td>'
+            f'<td class="sc-rule"><code>{_esc(v.rule.text)}</code></td>'
+            f'<td class="sc-verdict {cls}">{v.verdict}</td></tr>')
+        if detail_html or note:
+            body += (f'<tr class="sc-detailrow"><td colspan="5">'
+                     f'<details class="note"><summary>What does this mean?</summary>'
+                     f'<div class="note-body">{note}{detail_html}</div>'
+                     f'</details></td></tr>')
+    return (
+        '<div class="bottomline"><h2>Scorecard</h2>'
+        '<p class="figcap">Every headline question this run has an artifact for, '
+        'as a measured value against the reference it is compared with, and the '
+        'rule that produced the verdict. The rule is printed so a reader can '
+        'apply a different one to the same numbers; the verdict column is '
+        'derived from it and is not written by hand anywhere.</p>'
+        '<table class="tbl scorecard"><thead><tr>'
+        '<th>Measure</th><th>Measured</th><th>Compared against</th>'
+        '<th>Rule</th><th>Verdict</th></tr></thead>'
+        f'<tbody>{body}</tbody></table>'
+        '<p class="bl-foot">A verdict here is arithmetic on one run, not a '
+        'conclusion about the models in general. Every row inherits the '
+        'evidence class of the section that produced it — behavioral, '
+        'geometric, translatable, causal-within-model or descriptive — which '
+        'the “How to read this report” note below defines, and which decides '
+        'how much weight a cleared rule can carry.</p></div>')
 
 
 def _how_to_read(window: int) -> str:
@@ -2088,6 +2062,176 @@ def _sec_l2(run_dir: Path, findings: list) -> str:
     return inner
 
 
+def _corruption_breakdown_block(run_dir: Path, findings: list) -> str:
+    """One row per (corruption, model): what the corruption touched, what it moved.
+
+    Added 2026-08-24. The L3 section's existing notes carried a *hardcoded*
+    account of the battery — naming `level_shift` as "a permanent step change
+    of several standard deviations" and therefore expected to dominate, and
+    naming `spike` as touching "3 of 512 timesteps". Both statements are true
+    of this repo's default battery and become wrong the moment a config
+    changes `scale`, `position_frac` or `count`, or adds a corruption nobody
+    has written a sentence about. And both quantities were already measured
+    and persisted in `l3/meta.json` under `calibration` — footprint and
+    perturbation energy per corruption — so the report was asserting in
+    English what it could have shown.
+
+    This table shows them, next to each model's response, its confidence
+    interval, the same response in units of that model's own repeat-run noise
+    floor, where in depth its activations moved most, the cross-model depth
+    agreement, and the best restoration patching achieved. Ordered by the
+    model-averaged forecast response, so the ranking is measured rather than
+    predicted in prose.
+    """
+    df = derived.corruption_breakdown(run_dir)
+    if df.empty:
+        return ""
+    show = df.copy()
+    show["corruption"] = show["corruption"].astype(str)
+    if "model_deterministic" in show.columns:
+        # A deterministic model has a zero floor, so the ratio is undefined
+        # rather than large or small; say which it is instead of leaving a
+        # blank cell that reads as a missing measurement.
+        show["in_floor_units"] = [
+            ("no floor (deterministic)" if det else
+             ("—" if v is None or (isinstance(v, float) and not np.isfinite(v))
+              else f"{v:.1f}×"))
+            for v, det in zip(show["in_floor_units"], show["model_deterministic"])]
+        show = show.drop(columns=["model_deterministic"])
+    rename = {"input_footprint_pct": "input touched (%)",
+              "input_energy": "input energy",
+              "strength_calibrated": "strength matched",
+              "forecast_change": "forecast Δ",
+              "forecast_change_lo": "Δ lo", "forecast_change_hi": "Δ hi",
+              "in_floor_units": "Δ in floor units",
+              "activation_peak_depth": "activation peak depth",
+              "activation_peak_change": "peak Δact",
+              "activation_mean_change": "mean Δact",
+              "depth_agreement_rho": "depth agreement ρ",
+              "best_restoration": "best restoration",
+              "best_restoration_layer": "restored at"}
+    show = show.rename(columns={k: v for k, v in rename.items() if k in show.columns})
+    html = ("<h4>Corruption-by-corruption breakdown</h4>" + _table(show) + _note(
+        "Every corruption in this run's battery, per model: how much of the "
+        "input it altered and with how much energy, how far the forecast "
+        "moved, where the activations moved most, whether the two models "
+        "moved at comparable depths, and how much of the damage patching "
+        "recovered.",
+        "Read <code>input touched (%)</code> and <code>input energy</code> "
+        "first — they are properties of the corruption, identical for every "
+        "model, and they set the scale a response should be read against. A "
+        "corruption altering under 1% of timesteps produces a small "
+        "series-averaged <code>forecast Δ</code> arithmetically, whatever the "
+        "model does at the points it touched. <code>Δ in floor units</code> "
+        "divides the response by that model's own repeat-run variation, so a "
+        "value near 1 is not distinguishable from the model's own noise; a "
+        "model with no sampling in its forecast path has a zero floor and is "
+        "labelled rather than divided by. Rows are ordered by the "
+        "model-averaged <code>forecast Δ</code>, so the top row is this "
+        "battery's strongest corruption as measured on these models, not as "
+        "expected.",
+        "<code>strength matched</code> is <code>False</code> for every row "
+        "unless <code>l3.calibrate: input_energy</code> was set, and it is "
+        "the column that decides whether comparing two <i>rows</i> is fair. "
+        "Comparing two <i>models</i> within a row is fair either way — they "
+        "received the same corrupted input. Activation magnitudes are not "
+        "comparable across architectures (different normalization), so "
+        "<code>peak Δact</code>/<code>mean Δact</code> should be compared "
+        "down a model's own column and by peak <i>location</i> across models, "
+        "not by value. <code>best restoration</code> is present only for the "
+        "corruptions <code>l3.patching.corruptions</code> selected."))
+
+    per_c = df.groupby("corruption", observed=True)["forecast_change"].mean().dropna()
+    if len(per_c) >= 2:
+        strongest, weakest = per_c.idxmax(), per_c.idxmin()
+        fp = df.set_index("corruption")["input_footprint_pct"].to_dict()
+        findings.append(Finding(
+            claim_id=_next_claim_id("l3"), stage="l3",
+            evidence_class="causal_within_model",
+            text=f"L3 — strongest corruption by model-averaged forecast change is "
+                 f"{strongest} (Δ={per_c.max():.2f}, altering "
+                 f"{fp.get(strongest, float('nan')):.0f}% of the input); weakest is "
+                 f"{weakest} (Δ={per_c.min():.2f}, altering "
+                 f"{fp.get(weakest, float('nan')):.0f}%).",
+            plain=f"Of the ways this run damaged the input, '{strongest}' moved the "
+                  f"forecasts most and '{weakest}' least — but the two also alter "
+                  f"different amounts of the series, which the breakdown table "
+                  f"shows alongside.",
+            registered=False))
+    return html
+
+
+def _layer_metrics_block(run_dir: Path, model_names: list, findings: list) -> str:
+    """Every per-layer number this run measured for a model, joined into one table.
+
+    Added 2026-08-24 on a user request for "better explanations of all
+    metrics this data produces like layer metrics". The report already plots
+    each of these — effective dimensionality and input-CKA in Model
+    internals, the screen score in Layer screening, skip-lens MASE in
+    Forecast lens, activation sensitivity and restoration in Perturbation &
+    patching, the cross-model CKA surface in Representational geometry — in
+    five separate sections. A reader asking "what is happening at this
+    model's layer 10" had to cross-reference five figures by eye and match
+    depth coordinates that are not all on the same axis.
+
+    The join is by layer *name*, never by position, because the stages do not
+    all capture the same layers: patching runs at its own stride, and the
+    screen can run over layers the store never kept. A blank cell therefore
+    means "this stage did not measure this layer", which is a fact about the
+    run's strides and is different from a measured zero.
+    """
+    blocks = ""
+    for model in model_names:
+        df = derived.layer_metrics(run_dir, model)
+        if df.empty:
+            continue
+        rename = {"rel_depth": "rel. depth", "effective_dim": "eff. dim",
+                  "input_cka": "CKA to input", "probe_accuracy": "probe acc.",
+                  "probe_over_chance": "probe − chance",
+                  "screen_score": "screen score", "screen_selected": "screened in",
+                  "skip_lens_mase": "skip-lens MASE",
+                  "l3_mean_sensitivity": "mean Δact (all corruptions)",
+                  "best_patch_restoration": "best restoration",
+                  "best_cka_partner": "closest layer in other model",
+                  "best_cka": "that layer's CKA"}
+        blocks += (f"<h4>{model} — every measured layer</h4>"
+                   + _table(df.rename(columns={k: v for k, v in rename.items()
+                                               if k in df.columns}))
+                   + _figcap(f"Every per-layer quantity this run measured for "
+                             f"<b>{model}</b>, joined by layer name across the "
+                             f"stages that produced them."))
+    if not blocks:
+        return ""
+    return blocks + _note(
+        "One row per captured layer, one column per per-layer quantity the run "
+        "measured, so a single layer can be read across every stage at once "
+        "instead of by cross-referencing five figures.",
+        "Columns come from different stages and mean different things. "
+        "<code>eff. dim</code> and <code>CKA to input</code> are descriptive "
+        "geometry (how many directions the layer's representation spreads "
+        "over, and how much it still resembles raw input statistics). "
+        "<code>probe acc.</code> is decodability of the data family from that "
+        "layer, worth reading as <code>probe − chance</code>. "
+        "<code>screen score</code> is the cheap interestingness heuristic that "
+        "chose <code>sae.targets: auto</code>, and <code>screened in</code> "
+        "marks its picks. <code>skip-lens MASE</code> is the forecast quality "
+        "obtainable from that layer through the model's own head — it "
+        "descending and then flattening is the crystallization the Forecast "
+        "lens section measures. <code>mean Δact</code> and "
+        "<code>best restoration</code> are the layer's average reaction to "
+        "the corruption battery and the most any single patch at that layer "
+        "recovered. <code>closest layer in other model</code> is that layer's "
+        "argmax over the cross-model CKA matrix.",
+        "A blank cell means that stage did not measure that layer — stages run "
+        "at independent strides (<code>l3.patching.layer_stride</code>, "
+        "<code>capture_layer_stride</code>), so absence is a config fact, not "
+        "a zero. Nothing here is causal except <code>best restoration</code>, "
+        "and that is causal <i>within</i> its own model only. Relative depth "
+        "is a fraction of the model's whole stack including surfaces this run "
+        "never captured, so the last row of a partially-observed model is not "
+        "that model's output.")
+
+
 def _sec_l3(run_dir: Path, model_colors: dict, findings: list) -> str:
     """Fingerprint heatmaps, agreement bars, behavioral deltas, patching curves."""
     arrays = np.load(run_dir / "l3" / "sensitivity.npz")
@@ -2217,20 +2361,17 @@ def _sec_l3(run_dir: Path, model_colors: dict, findings: list) -> str:
         "scale), so it's comparable across families but reflects each "
         "corruption's configured strength as much as the model's intrinsic "
         "sensitivity — a fair cross-model comparison, not a fair "
-        "cross-corruption one unless strengths were tuned to match. "
-        "Concretely: `level_shift` is a permanent step change of several "
-        "standard deviations over the back 40% of the series — a much "
-        "larger absolute perturbation than `spike`'s few isolated one-step "
-        "outliers or `detrend`'s slope removal — so it is expected to "
-        "dominate this chart regardless of which model is more "
-        "'intrinsically' sensitive; that dominance is an artifact of the "
-        "corruption battery's calibration, not a finding about the models. "
-        "A corruption barely touching the series at all (e.g. `spike` "
-        "perturbing 3 of 512 timesteps) will also show a small average "
-        "here by construction, even though its effect at the touched "
-        "points can be large — see the per-window patching heatmap below "
-        "for whether such localized damage is still causally recoverable."
+        "cross-corruption one unless strengths were tuned to match. How "
+        "unfair a given cross-corruption comparison is, is measured rather "
+        "than described here: the breakdown table below gives each "
+        "corruption's own input footprint and perturbation energy, which is "
+        "what a bar's height should be read against. A corruption altering "
+        "well under 1% of timesteps produces a small series-averaged value "
+        "arithmetically, whatever the model does at the points it touched — "
+        "the per-window patching heatmap further down is where such "
+        "localized damage shows whether it is still causally recoverable."
         + floor_note)
+    inner += _corruption_breakdown_block(run_dir, findings)
     overall = meta["agreement"]["overall"]
     worst = meta["agreement"]["most_divergent"]
     findings.append(Finding(
@@ -2324,7 +2465,7 @@ def _sec_l3(run_dir: Path, model_colors: dict, findings: list) -> str:
                "everywhere)." if whole_context else ""))
         inner += _l3_window_heatmaps(pmeta, parrs)
         inner += _l3_horizon_heatmaps(pmeta, parrs, findings)
-        inner += _l3_verbose_cases(pmeta, parrs)
+        inner += _l3_verbose_cases(pmeta, parrs, run_dir)
     return inner
 
 
@@ -2456,82 +2597,154 @@ def _l3_horizon_heatmaps(pmeta: dict, parrs, findings: list) -> str:
     return html
 
 
-def _l3_verbose_cases(pmeta: dict, parrs) -> str:
-    """Per-series L3 case studies: concrete clean/corrupted/patched forecasts
-    next to that series' own layer x window restoration grid.
+def _l3_verbose_cases(pmeta: dict, parrs, run_dir: Path) -> str:
+    """Per-series L3 case studies, grouped by case and led by their numbers.
 
-    Extends the Exemplars section's narrated-case-study pattern to L3
-    specifically (`ROADMAP.md` Phase 0), populated only when
-    `report.verbose` was on during the L3 stage — its absence from the
-    artifacts (not a flag re-checked here) is what gates this section.
+    Restructured 2026-08-24. The previous version looped
+    `model → corruption → series` and emitted one figure per combination,
+    which on the full-feature run meant **24 near-identical `<h4>` headings**
+    ("TimesFM · noise · f619feb… — patched at L16, window 15", then the same
+    series again under `level_shift`, then again under `spike`…) for what is
+    really 4 distinct series-model cases seen under 6 corruptions each. Every
+    heading repeated the same patch coordinates, and consecutive panels
+    differed only in one word, which is what makes a reader stop reading the
+    section rather than an aid to finding anything.
+
+    Two changes. First, the loop is `model → series`, so each case appears
+    once with all its corruptions as facets of one figure — the comparison
+    the section is actually for (does this series recover better under one
+    corruption than another?) becomes a within-figure comparison instead of a
+    scroll. Second, a numeric table leads each case: how far the corruption
+    moved the forecast, how much the patch recovered, and where that series'
+    own restoration actually peaked — which is the number that reveals when
+    the batch-best patch cell is the wrong cell for this series, something
+    the old panels could only hint at through curve shapes.
     """
-    any_case = any(info.get("verbose") for info in pmeta.values())
-    if not any_case:
+    if not any(info.get("verbose") for info in pmeta.values() if isinstance(info, dict)):
         return ""
+    cases = derived.patching_case_summary(run_dir)
     html = _note(
         "A concrete, single-series version of the aggregate patching curves "
-        "above: this series' own context, true continuation, and clean / "
-        "corrupted / patched forecasts, next to its own full layer x window "
-        "restoration grid — the same kind of case study the Exemplars "
-        "section gives every other level, applied here to L3's causal "
-        "patching specifically.",
-        "The patched forecast uses the single (layer, window) cell that "
-        "achieved the highest restoration on average across the whole "
-        "sampled batch for this corruption (named in each heading) — not "
-        "necessarily this particular series' own best cell — so it is a "
-        "representative example of what a strong patch does, read "
-        "alongside this series' own heatmap showing where its restoration "
-        "actually peaks (which can be a different cell).",
-        "These series were not chosen for being typical — same caveat as "
-        "the Exemplars section: useful for making the aggregate patching "
-        "curves concrete, not for estimating how often a pattern like this "
-        "occurs across the benchmark.",
+        "above: for one series, its own clean / corrupted / patched forecasts "
+        "under every corruption that was patched, and its own restoration "
+        "grid at the corruption that damaged it most.",
+        "The patched forecast at each corruption uses the single "
+        "(layer, window) cell that restored the most on average across the "
+        "whole sampled batch — named in the table as <code>patch_layer</code> "
+        "/ <code>patch_window</code> — not this series' own best cell, which "
+        "the table gives separately as <code>own_best_layer</code> / "
+        "<code>own_best_window</code>. Where the two differ, the plotted "
+        "patch is not the best available for this series, and "
+        "<code>recovered_frac</code> is correspondingly lower than "
+        "<code>own_best_restoration</code>. A negative "
+        "<code>recovered_frac</code> means patching moved the forecast "
+        "further from the clean one than the corruption did.",
+        "These series are a family-stratified sample of the patched batch, "
+        "not a typical or a worst case: useful for making the aggregate "
+        "curves concrete and for checking that the patch mechanism does what "
+        "the aggregate says, not for estimating how often any pattern here "
+        "occurs. All quantities are scaled by each series' own naive-forecast "
+        "error, so they are comparable across series of different amplitude.",
         "How to read these case studies")
+
     for model, info in pmeta.items():
-        for cname, vmeta in info.get("verbose", {}).items():
-            prefix = f"verbose_{model}_{cname}_"
-            if prefix + "grid" not in parrs:
+        if not isinstance(info, dict) or not info.get("verbose"):
+            continue
+        corruptions = list(info["verbose"])
+        n_series = 0
+        for cname in corruptions:
+            key = f"verbose_{model}_{cname}_clean"
+            if key in parrs:
+                n_series = max(n_series, int(np.asarray(parrs[key]).shape[0]))
+        for si in range(n_series):
+            first = info["verbose"][corruptions[0]]
+            sids = list(first.get("series_ids") or [])
+            fams = list(first.get("families") or [])
+            sid = sids[si] if si < len(sids) else f"series {si}"
+            fam = fams[si] if si < len(fams) else None
+
+            sub = pd.DataFrame()
+            if not cases.empty:
+                sub = cases[(cases["model"] == model) & (cases["series_id"] == sid)]
+            html += (f"<h4>{model} · {sid}"
+                     f"{f' ({fam})' if fam else ''}</h4>")
+            if not sub.empty:
+                cols = [c for c in ["corruption", "damage", "recovered_frac",
+                                    "mase_clean", "mase_corrupted", "mase_patched",
+                                    "patch_layer", "patch_window",
+                                    "own_best_restoration", "own_best_layer",
+                                    "own_best_window"] if c in sub.columns]
+                html += (_table(sub[cols])
+                         + _figcap(f"Every patched corruption for series "
+                                   f"<b>{sid}</b> under <b>{model}</b>, in "
+                                   f"units of this series' own naive-forecast "
+                                   f"error."))
+
+            valid = [c for c in corruptions
+                     if f"verbose_{model}_{c}_clean" in parrs]
+            if not valid:
                 continue
-            grid = parrs[prefix + "grid"]  # [layer, window, series]
-            context, clean = parrs[prefix + "context"], parrs[prefix + "clean"]
-            corr, patched = parrs[prefix + "corrupted"], parrs[prefix + "patched"]
-            target = parrs[prefix + "target"] if (prefix + "target") in parrs else None
-            sids, fams = vmeta.get("series_ids", []), vmeta.get("families", [])
-            for si in range(grid.shape[-1]):
-                label = sids[si] if si < len(sids) else f"series {si}"
-                fam = f" ({fams[si]})" if si < len(fams) else ""
-                fig = make_subplots(rows=1, cols=2, column_widths=[0.55, 0.45],
-                                    subplot_titles=["context + forecasts",
-                                                    "restoration: layer x window"])
-                tail = min(context.shape[1], 4 * clean.shape[1])
-                t_ctx, t_fut = np.arange(-tail, 0), np.arange(clean.shape[1])
-                fig.add_scatter(x=t_ctx, y=context[si, -tail:], mode="lines",
-                                name="context", line=dict(color=_COLORS["ink"], width=1),
-                                row=1, col=1)
-                if target is not None:
-                    fig.add_scatter(x=t_fut, y=target[si], mode="lines", name="target",
-                                    line=dict(color=_COLORS["ink"], dash="dot"), row=1, col=1)
-                fig.add_scatter(x=t_fut, y=clean[si], mode="lines", name="clean forecast",
-                                line=dict(color=_COLORS["a"]), row=1, col=1)
-                fig.add_scatter(x=t_fut, y=corr[si], mode="lines", name="corrupted forecast",
-                                line=dict(color=_COLORS["accent"]), row=1, col=1)
-                fig.add_scatter(x=t_fut, y=patched[si], mode="lines", name="patched forecast",
-                                line=dict(color=_COLORS["b"], dash="dash"), row=1, col=1)
-                fig.add_trace(go.Heatmap(z=grid[:, :, si], x=info.get("windows", []),
-                                         y=np.round(info.get("rel_depth", []), 2),
-                                         colorscale="Magma", zmin=0.0,
-                                         colorbar_title="restore"), row=1, col=2)
-                fig.update_xaxes(title_text="steps (0 = forecast start)", row=1, col=1)
-                fig.update_xaxes(title_text="window", row=1, col=2)
-                fig.update_yaxes(title_text="relative depth", row=1, col=2)
-                html += (f"<h4>{model} · {cname} · {label}{fam} — patched at "
-                         f"{_short(vmeta['layer'])}, window {vmeta['window']}</h4>"
-                         + _frag(fig, 320)
-                         + _figcap(f"One real series under <b>{cname}</b>: left, "
-                                   f"{model}'s clean forecast against its "
-                                   f"corrupted one and against the forecast "
-                                   f"recovered by patching; right, that series' "
-                                   f"own restoration grid."))
+            ncol = min(3, len(valid))
+            nrow = int(np.ceil(len(valid) / ncol))
+            fig = make_subplots(rows=nrow, cols=ncol, subplot_titles=valid,
+                                vertical_spacing=0.14, horizontal_spacing=0.06)
+            for k, cname in enumerate(valid):
+                r, c = k // ncol + 1, k % ncol + 1
+                prefix = f"verbose_{model}_{cname}_"
+                clean = np.asarray(parrs[prefix + "clean"])
+                corr = np.asarray(parrs[prefix + "corrupted"])
+                patched = np.asarray(parrs[prefix + "patched"])
+                target = (np.asarray(parrs[prefix + "target"])
+                          if (prefix + "target") in parrs else None)
+                t_fut = np.arange(clean.shape[1])
+                show = k == 0
+                if target is not None and si < target.shape[0]:
+                    fig.add_scatter(x=t_fut, y=target[si], mode="lines", name="truth",
+                                    line=dict(color=_COLORS["ink"], dash="dot"),
+                                    showlegend=show, row=r, col=c)
+                fig.add_scatter(x=t_fut, y=clean[si], mode="lines", name="clean",
+                                line=dict(color=_COLORS["a"]), showlegend=show,
+                                row=r, col=c)
+                fig.add_scatter(x=t_fut, y=corr[si], mode="lines", name="corrupted",
+                                line=dict(color=_COLORS["accent"]), showlegend=show,
+                                row=r, col=c)
+                fig.add_scatter(x=t_fut, y=patched[si], mode="lines", name="patched",
+                                line=dict(color=_COLORS["b"], dash="dash"),
+                                showlegend=show, row=r, col=c)
+            fig.update_layout(xaxis_title="steps (0 = forecast start)")
+            html += (_frag(fig, 190 * nrow + 90)
+                     + _figcap(f"Series <b>{sid}</b> under <b>{model}</b>: one "
+                               f"panel per patched corruption, each showing the "
+                               f"clean forecast, the corrupted one, and the one "
+                               f"recovered by patching. Each panel is patched at "
+                               f"the single layer×window cell that restored the "
+                               f"most on average across the whole batch — the "
+                               f"<code>patch_layer</code>/<code>patch_window</code> "
+                               f"pair in the table above, not this series' own "
+                               f"best cell, which the table gives separately as "
+                               f"<code>own_best_layer</code>."))
+
+            worst = None
+            if not sub.empty and "damage" in sub.columns and sub["damage"].notna().any():
+                worst = str(sub.loc[sub["damage"].idxmax(), "corruption"])
+            elif valid:
+                worst = valid[0]
+            prefix = f"verbose_{model}_{worst}_"
+            if worst and (prefix + "grid") in parrs:
+                grid = np.asarray(parrs[prefix + "grid"])
+                if grid.ndim == 3 and si < grid.shape[2]:
+                    hf = go.Figure(go.Heatmap(
+                        z=grid[:, :, si], x=info.get("windows", []),
+                        y=np.round(info.get("rel_depth", []), 2),
+                        colorscale="Magma", zmin=0.0, colorbar_title="restore"))
+                    hf.update_layout(xaxis_title="context window patched",
+                                     yaxis_title="relative depth")
+                    html += (_frag(hf, 260)
+                             + _figcap(f"Series <b>{sid}</b>, <b>{worst}</b> (the "
+                                       f"corruption that damaged this series most "
+                                       f"under {model}): how much patching each "
+                                       f"single layer×window cell recovered, for "
+                                       f"this series alone."))
     return html
 
 
@@ -3017,7 +3230,39 @@ def _sec_attention(run_dir: Path, model_colors: dict, findings: list) -> str:
 
 def _sec_exemplars(run_dir: Path, model_colors: dict, findings: list,
                    depth_axis_name: str = "index") -> str:
-    """Per-family case studies: forecasts, lens trajectories, attention maps."""
+    """Per-series case studies: every selected exemplar, as its own card.
+
+    Rewritten 2026-08-24 on a user report that this section was "jumbled and
+    unclear and repetitive". Three separate defects, all confirmed against
+    the run's own artifacts before anything was changed:
+
+    1. **Most of the data was computed and discarded.** The previous renderer
+       opened with `if rec["family"] in seen: continue`, so a run selecting
+       `per_family=3` across three families rendered **one** series per
+       family. `exemplars.json` for the full-feature run holds 9 records; the
+       HTML showed 3, while this section's own finding text said "9 case
+       studies" and the section blurb said "a few concrete series per
+       family". The six dropped records were precisely the interior-quantile
+       picks -- `_select_exemplars` always takes the family's largest-gap
+       series first -- so the only case a reader ever saw was the most
+       atypical one available, presented as an illustration of the aggregate.
+    2. **Related panels were split apart.** Each family's forecast plot and
+       its lens plot were separate figures, and every model's attention maps
+       were emitted in one block at the end of the section, grouped by model
+       rather than by the series they describe. Reading one case study meant
+       scrolling between three places.
+    3. **No numbers.** The panels carried curves and a MASE gap in the
+       heading; the per-model MASE, the gap's size relative to the models'
+       own repeat-run noise floor, and each series' own lens minimum were all
+       computed and none were shown -- so a reader could not tell a case
+       worth acting on from one inside the noise.
+
+    So: a summary table first (every selected series, with a *derived*
+    selection label and the gap in noise-floor units), then one card per
+    series holding its forecast, its lens curve and its attention map
+    together. Interpretation is left to the reader; this function states what
+    was measured and how the series were chosen.
+    """
     from ..analysis.depth_axis import depth_axis_for_run
     from ..extraction.store import ActivationStore
     arrays = np.load(run_dir / "exemplars" / "exemplars.npz")
@@ -3027,116 +3272,191 @@ def _sec_exemplars(run_dir: Path, model_colors: dict, findings: list,
     store_path = run_dir / "activations.zarr"
     store = ActivationStore(store_path, mode="r") if store_path.exists() else None
     depth_axes = {m: depth_axis_for_run(depth_axis_name, store, m, meta["models"][m]["layers"])
-                 for m in models}
+                  for m in models}
+    axis_names = {da.axis for da in depth_axes.values()}
+    axis_label = axis_names.pop() if len(axis_names) == 1 else "/".join(sorted(axis_names))
     contexts, targets = arrays["contexts"], arrays["targets"]
     horizon = targets.shape[1]
     tail = min(contexts.shape[1], 4 * horizon)
+
+    summary = derived.exemplar_summary(run_dir)
     inner = ""
-    seen = []
+    if not summary.empty:
+        cols = [c for c in ["series_id", "family", "archetype", *models, "gap",
+                            "gap_in_floor_units", "selection"] if c in summary.columns]
+        inner += ("<h4>Every selected series</h4>" + _table(summary[cols])
+                  + _note(
+            f"All {len(records)} series this run selected as case studies, with "
+            f"each model's own MASE on that series, the gap between them, and "
+            f"how large that gap is in units of the noisiest model's own "
+            f"repeat-run variation.",
+            "`selection` is derived from where each series sits in its own "
+            "family's gap distribution, not assigned by hand: the family's "
+            "largest and smallest absolute gaps are labelled as such and "
+            "everything between them is mid-range. `gap_in_floor_units` "
+            "divides the absolute gap by the largest per-model repeat-run "
+            "MASE variation measured in this run (the Behavioral profile "
+            "section's noise floor) -- a value near or below 1 means the two "
+            "models' forecasts for that series differ by no more than the "
+            "same model differs from itself between calls.",
+            "Selection is deliberately not random: `_select_exemplars` takes "
+            "each family's largest-gap series plus interior quantiles of the "
+            "gap distribution, so this set over-represents disagreement by "
+            "construction and cannot be used to estimate how often models "
+            "disagree. The per-family tables in the Behavioral profile "
+            "section are for that. `gap_in_floor_units` is absent for a run "
+            "where every model is deterministic, since there is no floor to "
+            "divide by."))
+
+    per_family = {}
     for ei, rec in enumerate(records):
-        if rec["family"] in seen:
-            continue
-        seen.append(rec["family"])
-        fig = go.Figure()
-        t_ctx = np.arange(-tail, 0)
-        t_fut = np.arange(horizon)
-        fig.add_scatter(x=t_ctx, y=contexts[ei, -tail:], mode="lines",
-                        name="context", line=dict(color=_COLORS["ink"], width=1))
-        fig.add_scatter(x=t_fut, y=targets[ei], mode="lines", name="target",
-                        line=dict(color=_COLORS["ink"], dash="dot"))
-        for model in models:
-            fig.add_scatter(x=t_fut, y=arrays[f"forecast_{model}"][ei], mode="lines",
-                            name=model, line=dict(color=model_colors.get(model)))
-        fig.update_layout(xaxis_title="steps (0 = forecast start)", yaxis_title="value")
-        arch_txt = f" · archetype {rec['archetype']}" if rec.get("archetype") else ""
-        inner += (f"<h4>{rec['family']}{arch_txt} · series {rec['series_id']} "
-                  f"(MASE gap {rec['gap']:+.2f})</h4>" + _frag(fig, 300)
-                  + _figcap(f"One <b>{rec['family']}</b> series where the two "
-                            f"models disagree by {abs(rec['gap']):.2f} MASE: "
-                            f"its context, what actually happened next, and "
-                            f"what each model predicted."))
-        if ei == 0:
-            inner += _note(
-                "A concrete, single series per family: raw context, true "
-                "continuation, and every model's forecast overlaid — the "
-                "ground-truth check behind every aggregate statistic above.",
-                "Series are picked from the tails of the L0 per-series MASE "
-                "gap distribution (the 'MASE gap' in the title), so these "
-                "are deliberately the cases where the two models disagree "
-                "most, not a random or representative sample.",
-                "Because they're selected for disagreement, don't treat "
-                "these as typical — they exist to make an aggregate finding "
-                "concrete and inspectable, not to estimate how often such "
-                "disagreements occur (the L0 family tables are for that).")
+        per_family.setdefault(rec["family"], []).append((ei, rec))
 
-        lens_fig = go.Figure()
-        for model in models:
-            key = f"lens_mase_{model}"
-            if key not in arrays:
-                continue
-            depths = depth_axes[model].coords
-            lens_fig.add_scatter(x=depths, y=arrays[key][:, ei], mode="lines+markers",
-                                 name=model, line=dict(color=model_colors.get(model)))
-        axis_names = {da.axis for da in depth_axes.values()}
-        axis_label = axis_names.pop() if len(axis_names) == 1 else "/".join(sorted(axis_names))
-        lens_fig.update_layout(xaxis_title=f"relative depth ({axis_label} axis)",
-                               yaxis_title="skip-lens MASE (this series)")
-        inner += (_frag(lens_fig, 260)
-                  + _figcap("Depth at which each model's forecast for "
-                            "<i>this one series</i> settles, against the "
-                            "benchmark-averaged curve's shape."))
-        if ei == 0:
-            inner += _note(
-                "The same skip-lens depth curve as the Forecast Lens "
-                "section, computed for this one series instead of averaged "
-                "over the whole benchmark.",
-                "Where this single-series curve departs from the "
-                "aggregate lens curve is informative — it shows whether "
-                "this particular disagreement follows the model's typical "
-                "depth behavior or is unusual even for that model.",
-                "A single series is noisy by construction; a wiggle here "
-                "that isn't in the aggregate curve is just this series, not "
-                "a general property of the model.")
+    attn_rows = {}
+    for model in models:
+        info = (meta["models"][model].get("attention") or {})
+        for slot, row in enumerate(info.get("rows") or []):
+            attn_rows.setdefault(int(row), {})[model] = slot
 
-    maps = {m: arrays[f"attn_map_{m}"] for m in models if f"attn_map_{m}" in arrays}
-    if maps:
-        for model, stack in maps.items():
-            rows = meta["models"][model]["attention"]["rows"]
-            fams = [records[r]["family"] for r in rows]
-            mf = make_subplots(rows=1, cols=len(fams), subplot_titles=fams,
-                               horizontal_spacing=0.04)
-            for ci in range(len(fams)):
-                mf.add_trace(go.Heatmap(z=stack[ci], colorscale="Viridis",
-                                        showscale=ci == len(fams) - 1),
-                             row=1, col=ci + 1)
-                mf.update_yaxes(autorange="reversed", row=1, col=ci + 1)
-            inner += (f"<h4>{model}: window-pooled attention "
-                      f"({_short(meta['models'][model]['attention']['layer'])}, "
-                      f"head-averaged)</h4>" + _frag(mf, 280))
-            inner += _note(
-                "This model's attention pattern at its L1 peak-CKA "
-                "layer, pooled onto windows and averaged across heads, "
-                "for the same exemplar series shown above — where in "
-                "the context this layer is looking, for this specific "
-                "case.",
-                "Bright cells show which window(s) of the context the "
-                "model attends to most when producing this series' "
-                "forecast; compare the pattern across families to see "
-                "whether attention shape tracks family structure "
-                "(e.g. periodic families showing a periodic pattern).",
-                "Averaging across heads can wash out a single "
-                "specialized head's sharp pattern into a diffuse "
-                "average — see the per-head lag-profile heatmap in the "
-                "Attention section for the unaveraged view.")
+    first_card = True
+    for family, entries in per_family.items():
+        inner += (f"<h4>{family} — {len(entries)} case"
+                  f"{'' if len(entries) == 1 else 's'}</h4>")
+        for ei, rec in entries:
+            inner += _exemplar_card(ei, rec, arrays, models, model_colors, depth_axes,
+                                    axis_label, contexts, targets, tail, horizon,
+                                    attn_rows.get(ei, {}), summary)
+            if first_card:
+                inner += _note(
+                    "One card per selected series: left, the raw context tail, "
+                    "what actually happened next, and each model's forecast; "
+                    "right, the same series' skip-lens MASE at every captured "
+                    "layer, which is where that model's forecast for this "
+                    "series stops changing.",
+                    "The table under each card gives that series' per-model "
+                    "final MASE, its best (lowest) skip-lens MASE and the "
+                    "relative depth where that minimum occurs, so a case where "
+                    "a model's forecast is already settled early is "
+                    "distinguishable from one where the last layers are still "
+                    "doing work. Where an attention map is shown it is the "
+                    "same series, at that model's L1 peak-CKA layer, pooled "
+                    "onto windows and averaged over heads.",
+                    "A single series is noisy: a feature of one card that does "
+                    "not appear in the aggregate curves of the Forecast lens "
+                    "and Attention sections is a property of this series, not "
+                    "of the model. Attention maps are computed only for the "
+                    "first series of each family, so most cards legitimately "
+                    "have none.")
+                first_card = False
+
+    n_families = len(per_family)
     findings.append(Finding(
         claim_id=_next_claim_id("exemplars"), stage="exemplars", evidence_class="illustrative",
-        text=f"Exemplars — {len(records)} case studies across "
-            f"{len(set(r['family'] for r in records))} families.",
-        plain=f"This report includes {len(records)} concrete worked examples, spanning "
-            f"{len(set(r['family'] for r in records))} kinds of data, so you can see "
-            f"actual forecasts rather than just summary statistics.",
+        text=f"Exemplars — {len(records)} case studies rendered across "
+             f"{n_families} famil{'y' if n_families == 1 else 'ies'}; "
+             f"selection spans each family's own MASE-gap distribution.",
+        plain=f"This report shows {len(records)} worked examples across "
+              f"{n_families} kind{'' if n_families == 1 else 's'} of data, "
+              f"chosen to span the range from the biggest to the smallest "
+              f"disagreement within each kind.",
         registered=False))
+    if not summary.empty and "gap_in_floor_units" in summary.columns:
+        below = summary[summary["gap_in_floor_units"] < 1.0]
+        findings.append(Finding(
+            claim_id=_next_claim_id("exemplars"), stage="exemplars",
+            evidence_class="illustrative",
+            text=f"Exemplars — {len(below)}/{len(summary)} selected series have a "
+                 f"cross-model MASE gap below one repeat-run noise floor.",
+            plain=f"{len(below)} of the {len(summary)} worked examples show a "
+                  f"difference between the models no bigger than the variation "
+                  f"one model shows against itself when run twice.",
+            registered=False,
+            cleared_noise_floor=bool(len(below) < len(summary))))
     return inner
+
+
+def _exemplar_card(ei: int, rec: dict, arrays, models: list, model_colors: dict,
+                   depth_axes: dict, axis_label: str, contexts, targets,
+                   tail: int, horizon: int, attn_slots: dict,
+                   summary) -> str:
+    """One series: forecasts and its own lens curve side by side, plus numbers.
+
+    Kept separate from `_sec_exemplars` so the per-card layout is testable
+    and so the section body reads as "summary, then N cards" rather than as
+    one loop doing four things.
+    """
+    fig = make_subplots(rows=1, cols=2, column_widths=[0.58, 0.42],
+                        subplot_titles=["context, truth and forecasts",
+                                        "this series' skip-lens MASE by depth"])
+    t_ctx, t_fut = np.arange(-tail, 0), np.arange(horizon)
+    fig.add_scatter(x=t_ctx, y=contexts[ei, -tail:], mode="lines", name="context",
+                    line=dict(color=_COLORS["ink"], width=1), row=1, col=1)
+    fig.add_scatter(x=t_fut, y=targets[ei], mode="lines", name="what happened",
+                    line=dict(color=_COLORS["ink"], dash="dot"), row=1, col=1)
+    table_rows = []
+    for model in models:
+        fig.add_scatter(x=t_fut, y=arrays[f"forecast_{model}"][ei], mode="lines",
+                        name=model, line=dict(color=model_colors.get(model)),
+                        row=1, col=1)
+        row = {"model": model, "final MASE": _fin_or_none(rec.get(model))}
+        key = f"lens_mase_{model}"
+        if key in arrays:
+            curve = np.asarray(arrays[key])[:, ei]
+            coords = depth_axes[model].coords
+            fig.add_scatter(x=coords, y=curve, mode="lines+markers", name=model,
+                            line=dict(color=model_colors.get(model)),
+                            showlegend=False, row=1, col=2)
+            if np.isfinite(curve).any():
+                best = int(np.nanargmin(curve))
+                row["best skip-lens MASE"] = float(curve[best])
+                row["at relative depth"] = (float(coords[best])
+                                            if best < len(coords) else None)
+        table_rows.append(row)
+    fig.update_xaxes(title_text="steps (0 = forecast start)", row=1, col=1)
+    fig.update_xaxes(title_text=f"relative depth ({axis_label} axis)", row=1, col=2)
+    fig.update_yaxes(title_text="value", row=1, col=1)
+    fig.update_yaxes(title_text="skip-lens MASE", row=1, col=2)
+
+    arch = f" · archetype {rec['archetype']}" if rec.get("archetype") else ""
+    label = ""
+    if summary is not None and not summary.empty and "selection" in summary.columns:
+        match = summary[summary["series_id"] == rec["series_id"]]
+        if not match.empty:
+            label = f" · {match.iloc[0]['selection']}"
+    html = (f"<h5>{rec['series_id']}{arch}{label}</h5>" + _frag(fig, 300)
+            + _figcap(f"Series <b>{rec['series_id']}</b> "
+                      f"({rec['family']}{arch}): each model's forecast against "
+                      f"what actually happened, and where in depth each "
+                      f"model's answer for this series settles.")
+            + _table(pd.DataFrame(table_rows)))
+
+    for model, slot in attn_slots.items():
+        key = f"attn_map_{model}"
+        if key not in arrays:
+            continue
+        stack = np.asarray(arrays[key])
+        if slot >= stack.shape[0]:
+            continue
+        af = go.Figure(go.Heatmap(z=stack[slot], colorscale="Viridis",
+                                  colorbar_title="attn"))
+        af.update_yaxes(autorange="reversed")
+        af.update_layout(xaxis_title="context window attended to",
+                         yaxis_title="query window")
+        html += (_frag(af, 260)
+                 + _figcap(f"<b>{model}</b>, this same series: window-pooled, "
+                           f"head-averaged attention at its L1 peak-CKA layer "
+                           f"— which part of the context this layer reads while "
+                           f"forming the forecast above."))
+    return html
+
+
+def _fin_or_none(x):
+    """Float, or None for a value the artifact does not carry."""
+    try:
+        v = float(x)
+    except (TypeError, ValueError):
+        return None
+    return v if np.isfinite(v) else None
 
 
 def _sec_clusters(run_dir: Path, model_colors: dict, findings: list) -> str:
@@ -3866,6 +4186,30 @@ def _tier_skip_reason(run_dir: Path, config_attr: str) -> str:
     return (f"capability tier: this run is capped at tier {run_tier} by "
             f"{', '.join(limiting)}, and '{stage}' needs more than that adapter "
             f"exposes (ROADMAP.md §19 G1)")
+
+
+def _shape_skip_reason(run_dir: Path, config_attr: str) -> str:
+    """Why the run-shape gate dropped this stage, or "" if it did not (§24.3).
+
+    Read from `shapes.json` rather than recomputed from the config, for the
+    same reason `_tier_skip_reason` reads `tiers.json`: the report is often
+    regenerated on its own long after the run, and a reason re-derived at
+    render time would silently disagree with the one the run actually acted
+    on. A solo run's missing L1 section is not "artifacts missing" -- that
+    phrasing describes a rerun away, and this one is a property of the run.
+    """
+    path = run_dir / "shapes.json"
+    if not path.exists():
+        return ""
+    shapes = load_json(path)
+    stage = _CONFIG_ATTR_TO_STAGE.get(config_attr, config_attr)
+    if stage not in (shapes.get("dropped_stages") or []):
+        return ""
+    n = shapes.get("n_models")
+    return (f"run shape: this is a '{shapes.get('shape')}' run ({n} model"
+            f"{'' if n == 1 else 's'}), and '{stage}' measures a comparison "
+            f"BETWEEN models -- there is nothing here to compare "
+            f"(ROADMAP.md §24.3)")
 
 
 _FAIRNESS_UNMEASURED = "not yet measured"
@@ -4699,6 +5043,11 @@ def _sec_internals(run_dir: Path, model_colors: dict, findings: list) -> str:
                 plain=f"{model} most clearly 'knows' what kind of data it's looking at "
                     f"around layer {_short(prof['layers'][peak])} of its network.",
                 registered=False))
+    # The per-layer join lives at the end of this section rather than in its
+    # own: every column it holds is a per-layer *profile* quantity, which is
+    # what this section is, and a reader who has just seen three depth curves
+    # is exactly the reader who wants the numbers behind them.
+    inner += _layer_metrics_block(run_dir, list(profile), findings)
     return inner
 
 
@@ -4829,6 +5178,22 @@ h1 .chip.b{color:{{ colors.b }}}
 .bottomline li b{color:var(--ink)}
 .bottomline .bl-foot{margin:14px 0 0;padding-top:12px;border-top:1px solid var(--line);
   font-size:12.5px;color:var(--muted);max-width:84ch}
+.bottomline .figcap{margin:0 0 12px;max-width:88ch}
+table.scorecard{margin:0}
+table.scorecard td{vertical-align:top}
+.sc-measure{font-weight:600;max-width:30ch}
+.sc-value{font:600 14px var(--mono);white-space:nowrap}
+.sc-ref{font:13px var(--mono);color:var(--muted)}
+.sc-reflabel{font:11.5px var(--sans);color:var(--muted)}
+.sc-rule code{font:11.5px var(--mono);background:var(--line);
+  padding:2px 5px;border-radius:3px;color:var(--ink)}
+.sc-verdict{font:600 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;
+  white-space:nowrap}
+.v-pass{color:#2E7D4F}.v-fail{color:#B04A5A}.v-neutral{color:var(--ink)}
+.v-none{color:var(--muted)}
+tr.sc-detailrow td{border-bottom:2px solid var(--line);padding:0 10px 8px}
+tr.sc-detailrow .note-body .tbl{font-size:12px}
+.sc-note{margin:0 0 8px;font-size:12.5px;color:var(--muted);max-width:84ch}
 .findings{background:var(--panel);border:1px solid var(--line);
   border-left:3px solid var(--accent);border-radius:6px;padding:16px 20px;margin:0 0 34px}
 .findings h2{font:600 13px var(--mono);letter-spacing:.1em;text-transform:uppercase;

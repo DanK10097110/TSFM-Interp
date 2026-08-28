@@ -88,7 +88,13 @@ def test_end_to_end(tmp_path=None):
                   "Forecast lens", "Attention structure", "Exemplar case studies",
                   "Layer screening", "per-window restoration", "p (Holm)", "plotly",
                   "How to read this report", "mask-fraction baseline",
-                  "How to read these case studies", "patched at"):
+                  "How to read these case studies",
+                  # The verbose L3 case studies. `patched at` pins that the
+                  # panels state WHERE the shown patch was applied -- it moved
+                  # from a per-case <h4> into the figure caption when the
+                  # section was regrouped by series (ROADMAP.md sec 24), and
+                  # the summary-table caption pins the regrouping itself.
+                  "patched at", "Every patched corruption for series"):
         assert token in html, f"report missing '{token}'"
 
     # `report/findings.json` (ROADMAP.md sec 21 E6/J1): one structured `Finding`

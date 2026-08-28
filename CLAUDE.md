@@ -768,6 +768,16 @@ TSFM-Interp/
         │   │                    # Same two-surface no-drift shape as stage_docs.py:
         │   │                    # report.py::_glossary_block + render_glossary.py
         │   └── pipeline.py      # stage DAG, artifact skipping, dependency resolution,
+        │                        # ROADMAP.md sec 24.3's RUN-SHAPE gate (_STAGE_MIN_MODELS
+        │                        # / _apply_shape -> shapes.json): solo/pair/panel is
+        │                        # DERIVED from len(cfg.models) via config.run_shape(),
+        │                        # never declared, and a stage whose entire product is a
+        │                        # comparison (l1/l2/cluster/exemplars/confirm) is DROPPED
+        │                        # WITH A STATED REASON on a solo run rather than raising
+        │                        # out of comparison_pair() mid-run. Same machinery as the
+        │                        # tier gate, deliberately not a second one. l0/l3/sae are
+        │                        # absent from that map on purpose -- they degrade
+        │                        # INTERNALLY (l3 keeps within-model patching, invariant 5),
         │                        # and ROADMAP.md sec 16 E3(c)'s routing: resolve_routing
         │                        # catches NotTimeLocalized once up front, writes
         │                        # routing.json, and narrows the run to l0/budget/report
@@ -1698,7 +1708,16 @@ the per-window patching heatmap, not the aggregate bar, for whether the
 touched region's damage is still causally recoverable). The report's own
 `_note()` blocks state this, and the Behavioral sensitivity chart prints
 each bar's value as text specifically so a reader isn't relying on bar
-height alone. **Do not drop these corruptions for showing weak aggregate
+height alone. ✅ **Since 2026-08-24 the report also *measures* it rather than
+asserting it** (`ROADMAP.md` §24): the L3 section's new corruption-by-
+corruption breakdown table renders each corruption's own
+`calibration.footprint`/`.energy` in the row next to that model's response,
+so this whole paragraph's reasoning is checkable per run. The two numbers
+this paragraph names in prose are exactly what that table now reads off the
+artifact — on `runs/full_report_run`, `level_shift` touches **40.04%** of
+the input at energy **2.614** where `spike` touches **0.583%**. Prefer the
+table to this paragraph: the paragraph is true of the default battery, the
+table is true of whatever battery was configured. **Do not drop these corruptions for showing weak aggregate
 signal** — the battery's value is contrastive (which properties a model is
 comparatively robust vs. sensitive to), and a genuinely low-signal
 corruption is the "null" end of that contrast, not dead weight.
@@ -1797,16 +1816,67 @@ the live run's 70 figures — but they do not want the same "how to read it"
 text repeated 24 times either, which is what trains a reader to stop opening
 notes at all. Verbose mode is where this bites: the mock smoke config
 renders 48 figures and never exposed it.
-A **"Bottom line"** block (`_bottom_line`, same item) renders above
+A **"Bottom line"** block (`_bottom_line`, same item) rendered above
 everything else: five or six plain sentences composed from the run's own
 artifacts (who is more accurate and on which families, whether shared
 geometry survives L2's input-feature baseline, where the forecast
 crystallizes, cost and captured-FLOP coverage, how many findings held up on
-the private split). Each line reads one artifact through `_safe_json` and
-**drops independently** when that stage didn't run, and the whole block
-renders empty rather than as a disclaimer-only box when nothing ran — a
+the private split). Each line read one artifact through `_safe_json` and
+**dropped independently** when that stage didn't run, and the whole block
+rendered empty rather than as a disclaimer-only box when nothing ran — a
 summary layer states things more prominently than anything else in the
-report, so it must under-claim by construction. The findings list is grouped
+report, so it must under-claim by construction.
+✅ **Replaced 2026-08-24 by a measured scorecard (`_scorecard`, `ROADMAP.md`
+§24), on user review — the paragraph above describes what it replaced, kept
+per this file's no-deletion doctrine.** Those sentences were *authored*, with
+their thresholds invisible: one line chose between "far above what unrelated
+data would produce" and "only modestly above the shuffled-series null" on a
+bare `cka > 4 * null`, and one indexed `cfg.models[0]`/`[1]` directly, so a
+third model changed a sentence's meaning without changing the sentence. The
+scorecard is a table instead — one row per headline question, each rendering
+**measure, value, reference, the rule that decided it, and the derived
+verdict**, so a reader can disagree with the arithmetic rather than only with
+the English. Rows are built by `report/derived.py::bottom_line_rows`, a pure
+reduction over artifacts with **no HTML, no model name, no architecture
+family, no corruption name and no `cfg.models[i]` index anywhere in it** —
+that constraint is the adaptivity contract, and it is what makes the block
+transfer to a model pair nobody has run. The verdict is derived in
+`Verdict.__post_init__` from `Rule.apply`, so a call site *structurally
+cannot* author one (passing `verdict=` is overwritten — pinned by a test), and
+a missing reference renders `"not comparable"` rather than a pass or a fail,
+which is what lets a single-model run render honestly. Same per-row
+degradation as before: a row appears only when its artifact exists, and the
+block renders empty rather than confident when nothing ran. It covers **ten
+stages** (l0, l1, l2, lens, budget, l3, clustering, attention, sae, confirm),
+each row referenced against something the run itself measured rather than a
+constant: L3's pooled fingerprint agreement against zero *by its CI* (with
+every per-corruption ρ in the expandable detail, because a pooled positive
+number can average a strong agreement and a strong disagreement — it does on
+`runs/full_report_run`), clustering against AMI's own chance-corrected zero,
+each model's most load-bearing attention head against **that model's own
+repeat-run noise floor** (one row per model — a head effect is a within-model
+measurement, so pooling it would invent a comparison), and each SAE target's
+ground-truth alignment against its **label-permutation null** rather than
+zero, since every feature is matched to its best of ~30 candidate fields and
+that search inflates the mean even on shuffled labels. The attention row is
+the clearest demonstration of why the reference has to be printed:
+Chronos-T5-Base's single most load-bearing head moves MASE by 0.1368 against
+its own floor of 0.1409 — i.e. **below its own sampling noise**, rendered
+`does not clear`, where the same number read against an implicit zero looks
+like a result.
+Two further prose-to-measurement replacements landed with it, both in sections
+that had been asserting numbers already persisted in the artifact they were
+describing: `_corruption_breakdown_block` (in L3) renders one row per
+(corruption, model) with the corruption's **measured** input footprint and
+perturbation energy beside the model's response, its noise-floor multiple, its
+activation-peak depth and its best patch restoration — **ordered by measured
+response**, where the old note named its expected winner in advance; and
+`_layer_metrics_block` (one per model, in internals) is the per-layer join of
+five previously-separate figures — rel_depth, effective dim, input-CKA, probe
+accuracy/over-chance, screen score and selection, skip-lens MASE, mean L3
+sensitivity, best patch restoration, best cross-model CKA partner — **joined
+by layer name, never by position**, so a stage that measured a strided subset
+leaves blanks instead of plausible values on the wrong rows. The findings list is grouped
 by stage (`_group_findings` + `_STAGE_LABELS`, first-appearance order,
 nothing hidden). Then a fixed **"How to read this report"** preamble
 (`_how_to_read`) renders unconditionally, stating the evidence-class ladder end to end and the
@@ -1819,7 +1889,25 @@ axis's overlap range, forecast determinism/noise floor), each row read from
 an already-written artifact (`budget/model_budget.json`, `l3/meta.json`,
 `l0/noise_floor.json`) rather than hand-written, and a row whose backing
 stage never ran renders "not yet measured" instead of being silently
-omitted. Also emitted as `fairness/card.json`. `report.verbose` (default `false` as of 2026-08-10, ROADMAP.md §10/§16's
+omitted. Also emitted as `fairness/card.json`. ✅ **`_sec_exemplars` and `_l3_verbose_cases` were both rewritten 2026-08-24
+(`ROADMAP.md` §24) after a user review found them "jumbled and unclear and
+repetetive" — and the review was right about a mechanism, not just a
+presentation.** Exemplars rendered **3 of the 9 series the stage computes**: a
+`continue` kept only the first per family, so a reader saw each family's *most
+atypical* case while the section blurb and its own `Finding` both described a
+spread across the gap distribution. Now every selected series renders, under a
+summary table whose `selection` label is **derived** from where that series
+sits in its family's own gap distribution ("largest disagreement in family" /
+"closest agreement" / "mid-range" / "only case for this family"), with each gap
+also expressed in **noise-floor units** — which immediately surfaced a selected
+series whose 0.002 MASE gap is 0.017 floors, i.e. not a difference at all, in
+the section whose purpose is showing where the models differ. Each series then
+gets one card: forecast + lens as a single 1×2 subplot, a numeric table, and
+that series' own attention map. `_l3_verbose_cases` was regrouped `model →
+series` instead of `model → corruption → series`, with all corruptions faceted
+into one figure and `derived.patching_case_summary`'s numbers leading each case
+— 24 near-identical headings for 4 distinct cases became 4.
+`report.verbose` (default `false` as of 2026-08-10, ROADMAP.md §10/§16's
 "closer to release, verbose stays opt-in" call — was `true`; `run.py --verbose`/
 `--no-verbose` overrides it per-run) additionally gates a narrated
 single-series case-study section for **L3 patching**, matching the
@@ -2126,6 +2214,7 @@ PYTHONPATH=. python3 example_runs/run_validation.py
 | Idiosyncratic-error fingerprinting (`analysis/error_fingerprint.py`, `run_error_fingerprint.py`, `ROADMAP.md` §6.3.1 Option C) | ✅ **Built and swept 2026-08-19 — a NEGATIVE result, recorded as one.** Black-box by construction: reads predictions/targets from 10 already-extracted run directories and re-derives contexts from `config_resolved.yaml`, at **zero forward passes and no checkpoint load**. It fails three of its own controls — the magnitude channel ranks the *pure untrained control* first (two `random_init` twins, **0.9719**, above every real pair); the shape channel's top score goes to an **independent-lineage** pair (TimesFM↔Chronos-2 **0.8999** [0.8724, 0.9277]) above the only same-lineage one (Chronos-Small↔Base **0.8712** [0.8264, 0.9061]); and the option's central claim that architecture-matching cannot fake it is **false for TimesFM**, whose own untrained twin scores **0.4977** where Chronos's scores **0.1358**. The plan's specified difficulty basis (L2's input-feature probe) was measured at out-of-fold R² **−0.62** and replaced (§11.36). 8 tests, all synthetic with planted answers. **Do not quote any Option C number without its own model's floor beside it.** || Token-span contiguity gate (`extraction/span_discovery.py::is_contiguous`/`refusal_reason`, `ROADMAP.md` §19 G2) | ✅ **2026-08-19.** A second gate orthogonal to E3's contrast, because contrast **provably cannot** see a lag-feature tokenizer — a test pins that the decoy clears the contrast floor (`contrast > 4.0`) while reading disjoint timesteps, so the new gate is not redundant with the old one. `empty_tokens` and `noncontiguous_tokens` are now separate (they mean opposite things; `flagged_tokens` is kept as their union so **no recorded number moves**), `contiguity` excludes empties from its denominator and takes the worst probed amplitude, and every surface that renders a refusal names **which** gate fired — decided by reading the recorded numbers, never by matching message text. Verified a no-op for all three localized mocks (`contiguity == 1.0`, `refusal_reason() is None`) and that the diffuse control still refuses on *contrast*. 10 tests (8 `test_span_discovery.py`, 2 `test_routing.py`). Full suite **595 passed**. ⚠️ **Never exercised against a real non-contiguous checkpoint** — none is integrated (Lag-Llama is the named candidate, parked); the evidence is a synthetic decoy with a known answer plus the proof the prior gate admits it. |
 | Cross-model agreement as a reliability signal (`analysis/agreement.py`, `run_agreement.py`, `ROADMAP.md` §20 H4) | ✅ **Built and swept 2026-08-19 — the acceptance criterion decided AGAINST the heuristic.** Zero forward passes over 6 existing run directories. Disagreement predicts error strongly (Spearman **0.716** against mean MASE; lowest disagreement decile MASE **0.981** vs highest **5.787**) and **loses to each model's own quantile width** — the free baseline needing no second checkpoint — in **10 of 11** scorable model-runs (1 inconclusive by 0.003, **0 wins**). Secondary: distributional disagreement beats pointwise (0.815 vs 0.716); the signal grows monotonically with horizon (0.154 at h=1 → 0.624 at h=64); it is family-dependent (0.286 / 0.465 / 0.742), so pooling would have reported the largest family's number as the corpus's. The single apparent win was a **false positive from two compounding bugs** (§11.37) whose tell was a point estimate lying outside its own bootstrap CI. 12 tests; full suite **607 passed**. **Deliberately not a pipeline stage** — wiring in a heuristic the evidence says to prefer a free baseline over would contradict the result. || Scaling-ladder harness (`analysis/scaling_ladder.py`, `run_scaling_ladder.py`, `configs/scaling_ladder_chronos.yaml`, `ROADMAP.md` §20 H1) | ⚠️ **Harness only, 2026-08-19 — the five GPU rungs are NOT run.** The reducer works end to end against a real run directory (13 metrics off `runs/medium_run_chronos_base`; `runs/medium_run` correctly **excluded** for having no budget artifact). Three decisions: the axis is `budget`'s **measured** parameter count, never a checkpoint name (§11.34); significance is an **exact permutation** over all n! orderings — a bootstrap over 5 points estimates nothing — with its own **p-floor 2/120 = 0.0167** printed beside every p (§11.35 applied before it could bite); and `flat` is **withheld** (None + reason) for metrics whose artifacts carry no within-run CI, since H1's acceptance criterion asks which metrics are flat and an unbacked "not flat" would be the wrong way to answer. One bug found by running it: at a single rung `np.all(np.diff(v) > 0)` is **vacuously True**, so a degenerate ladder reported a confident `monotone_increasing` — §11.37's shape exactly; now `too_few_rungs`. 8 tests. **No ladder data exists yet and no report section is built.** |
 | Report legibility: visible figure captions, the Bottom line, grouped findings (`report/report.py::_note`/`_figcap`/`_bottom_line`/`_group_findings`, `ROADMAP.md` §21 J7) | ✅ **2026-08-20, user-requested.** `_note` split into a visible `<p class="figcap">` caption + a uniform "What does this mean?" dropdown with **no call-site changes**; new `_bottom_line` block above everything, composed per-line from artifacts and degrading per-line; findings grouped by stage. **Acceptance was met only on the live run, not the mock one** — `configs/full_report_run.yaml` (TimesFM-2.5-200M vs Chronos-T5-Base, all 15 stages, `report.verbose: true`) renders **70** figures where `smoke.yaml` renders 48, and **17 of the 70 were bare**: the L3 per-series case-study panels and the per-family exemplar panels, each sitting under one subsection-level note a reader passed twenty panels ago. The count-based test written the same morning (`captions >= figures`) passed anyway, because surplus captions elsewhere masked the deficit. Fixed with `_figcap` (the visible half of `_note` alone, for the gallery case where every panel needs a *label* but not the same "how to read it" text 24 times) at six sites, and by rewriting the test to walk the document in order. Final: live **14 sections / 48 findings / 70 figures / 0 bare**, smoke **13 sections / 47 findings / 48 figures / 0 bare**. Two Bottom-line bugs caught the same way: the held-out-test line read the wrong artifact key and reported **0 of 4** where the artifact says **3 of 4**, and an empty run still emitted a disclaimer-only block. 7 tests (`tests/test_report_legibility.py`), three of them negatives. Full suite **629 passed** (up from 622). |
+| The report's conclusions become measurements (`report/derived.py`, `report.py::_scorecard`/`_corruption_breakdown_block`/`_layer_metrics_block`, `ROADMAP.md` §24) | ✅ **2026-08-24, user-requested.** Each of the four complaints was first grounded in an artifact-verified defect (§2.4), and two were real bugs rather than tone: `_sec_exemplars` had a `continue` **discarding 6 of the 9 exemplars the stage computes**, and `_verbose_case` head-sliced a task-grouped corpus (§11.38). `Verdict.verdict` is derived in `__post_init__` from a `Rule` whose text renders in the same row — a call site *structurally* cannot author one, which is pinned by a test. Scorecard covers **ten stages / 14 rows**; every value was additionally **re-derived by hand from the raw artifacts rather than through `derived.py`** and matches. Live on `runs/full_report_run` (TimesFM-2.5-200M vs Chronos-T5-Base): **14 sections / 50 findings / 61 figures / 89 captions / 0 bare / 56 tables**; exemplars **9 rendered** (was 3), L3 verbose **4 headings** (was 24). The added rows immediately produced a negative result the report had never stated: **Chronos-T5-Base's most load-bearing attention head moves MASE by 0.1368 against its own repeat-run floor of 0.1409** — below its own sampling noise. One regression, worth its shape: the rewrite stopped emitting the phrase `patched at`, which `tests/test_smoke.py` asserts and **five other modules inherit through that shared helper**, so one dropped token reported as 9 failed / 802 passed across four unrelated files; the assertion was *not* deleted — the information had genuinely left the figure and was restored to its caption. Full suite **816 passed, 0 failed** (3:06:16). 38 new tests. |
 **Golden hashes (do not let these change) — ✅ currently matching, see below:**
 ```
 seed 0   → parametric 2856658d044e4c49  random a45664e176fbb71a  clean_low_noise
@@ -3431,6 +3520,42 @@ built to be honest about. §11.33 and §11.35 are the same failure viewed from
 the other side: there, a gate refused a correct model; here, a gate approved
 an unsupported claim. Both come from applying a statistic outside the
 conditions its value has meaning in.
+
+### 11.38 A head slice sat directly beneath the comment explaining why head slices are wrong
+Found 2026-08-24 by a user review of the report, not by a test. `ROADMAP.md`
+§15 A4 fixed a whole class of this in 2026-08-06: `tsfm_benchmark` writes
+corpora **grouped by task**, so `kept[:max_series]` selects a family-skewed
+prefix rather than a sample, and the fix was `utils.sample_rows(n, k, seed,
+strata=families)`. `analysis/l3_perturbation.py::run_l3` was one of the call
+sites fixed, and it carries the explanatory comment. Nine lines further down,
+`_verbose_case` — the selector for the narrated per-series patching panels
+`report.verbose` renders — still did `ctx_clean[:n_verbose]`. So every
+narrated series in every run ever made came from whichever family sorts first
+in the corpus: all four in `runs/full_report_run` are `random_parametric`,
+which is *most* of that corpus and therefore looks like a plausible draw
+rather than a bug. Nothing errored; the panels are correct **about the series
+they show**, which is exactly why this survived the A4 sweep, two report
+rewrites and a full-feature acceptance run.
+**Fix:** the same `sample_rows(..., strata=families)` call the enclosing
+function already used, with the selected indices threaded through
+(`_verbose_case` now takes `verbose_idx: np.ndarray` rather than `n_verbose:
+int`, and the grid write uses `v_series[verbose_idx]` rather than
+`v_series[:n_verbose]`) — a fancy-index rather than a slice, so a future
+reader cannot re-introduce the slice by "simplifying" a variable back to an
+integer.
+**Lesson, and it is the reason to record a trap in `CLAUDE.md` rather than
+only fixing the file.** A sweep that fixes a pattern by *call site* leaves the
+pattern intact in every helper the swept function calls — and the fixed site's
+own explanatory comment then reads as coverage for the whole function. The
+cheap check when landing a fix of this kind: `grep` the *pattern* across the
+module after fixing the sites, not just the sites you set out to fix
+(`grep -n '\[:.*max_series\]\|\[:n_' analysis/*.py` would have found this
+in 2026-08-06). And note which review caught it: not the test suite, which had
+no way to know four `random_parametric` panels were not four *sampled* panels,
+but a human reading the rendered output and finding it repetitive. A
+presentation complaint is worth taking as a possible measurement complaint
+(§2.4) — three of the four defects in that review turned out to be mechanisms,
+not tone.
 
 ---
 

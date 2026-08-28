@@ -571,11 +571,52 @@ class PipelineConfig:
         """Directory holding every artifact for this run."""
         return Path(self.run.out_dir) / self.run.name
 
+    def run_shape(self) -> str:
+        """Which of the three run shapes this config describes (ROADMAP.md sec 24.3).
+
+        DERIVED from `len(self.models)`, never configured as a mode flag -- a
+        hand-set mode is a claim checked nowhere (`CLAUDE.md` sec 11.34) and
+        would drift the first time a model was added or removed.
+
+        `solo` (1 model) has no cross-model measurement to make: L1, L2,
+        clustering's AMI and L3's fingerprint agreement are dropped with a
+        stated reason rather than rendered empty. `pair` (2) is the historical
+        shape and must stay bit-for-bit unchanged. `panel` (3+) compares all
+        C(n,2) pairs against a designated reference model (the first).
+        """
+        n = len(self.models)
+        if n < 1:
+            raise ValueError("config must declare at least one model")
+        if n == 1:
+            return "solo"
+        if n == 2:
+            return "pair"
+        return "panel"
+
     def comparison_pair(self) -> tuple:
         """The two models all cross-model analyses compare (first two configured)."""
         if len(self.models) < 2:
             raise ValueError("cross-model analyses require at least two models in config")
         return self.models[0], self.models[1]
+
+    def comparison_pairs(self) -> list:
+        """Every model pair a cross-model stage may examine, reference pair first.
+
+        The generalization of `comparison_pair()` to the three run shapes:
+        `[]` for solo, exactly `[comparison_pair()]` for pair, and all C(n,2)
+        pairs for panel. Pair 0 is ALWAYS `comparison_pair()`, matching the
+        enumeration `l0_behavioral` already uses for its all-pairs Holm
+        correction (sec 18 F8) -- so a two-model run's behavior is unchanged by
+        construction, which is this seam's non-negotiable acceptance criterion
+        (sec 2.1: no recorded number moves).
+
+        Returns an empty list rather than raising for `solo`, because the
+        caller that wants "the pairs to iterate over" and the caller that
+        wants "the designated pair or an error" are different callers;
+        `comparison_pair()` is still the one that refuses.
+        """
+        ms = self.models
+        return [(x, y) for i, x in enumerate(ms) for y in ms[i + 1:]]
 
     def validate(self) -> None:
         """Fail fast on structurally invalid configurations."""

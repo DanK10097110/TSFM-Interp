@@ -19,7 +19,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from tsfm_lens.report.report import _bottom_line, _group_findings, _note  # noqa: E402
+from tsfm_lens.report.report import _group_findings, _note, _scorecard  # noqa: E402
 
 SMOKE = Path(__file__).resolve().parents[1] / "runs" / "smoke" / "report.html"
 
@@ -65,23 +65,71 @@ class _Cfg:
         self.models = [self._M("Alpha"), self._M("Beta")]
 
 
-def test_the_bottom_line_drops_the_lines_it_has_no_artifact_for(tmp_path):
-    """It must never claim coverage the run does not have (CLAUDE.md sec 2.5)."""
+def _write_l0(tmp_path):
     (tmp_path / "l0").mkdir()
     (tmp_path / "l0" / "summary.json").write_text(json.dumps({
         "overall": [{"model": "Alpha", "mase": 1.0}, {"model": "Beta", "mase": 1.5}],
+        "alpha": 0.05,
+        "family_tests": [{"family": "seasonal", "favored": "Alpha", "ratio": 0.7,
+                          "p_holm": 0.01}],
         "strengths": {"Alpha": ["seasonal"], "Beta": []}}), encoding="utf-8")
-    html = _bottom_line(tmp_path, _Cfg())
-    assert "Alpha forecasts this corpus more accurately" in html
-    assert "Shared structure" not in html        # no l1 artifact -> no such claim
-    assert "Where the forecast forms" not in html
-    # With no confirm artifact the block must SAY everything is exploratory
-    # rather than staying silent about the status of its own claims.
-    assert "exploratory" in html
 
 
-def test_the_bottom_line_is_empty_rather_than_confident_when_nothing_ran(tmp_path):
-    assert _bottom_line(tmp_path, _Cfg()) == ""
+def test_the_scorecard_drops_the_rows_it_has_no_artifact_for(tmp_path):
+    """It must never claim coverage the run does not have (CLAUDE.md sec 2.5)."""
+    _write_l0(tmp_path)
+    html = _scorecard(tmp_path, _Cfg())
+    assert "Lowest overall MASE (Alpha)" in html
+    assert "CKA" not in html            # no l1 artifact -> no such row
+    assert "Crystallization" not in html  # no lens artifact -> no such row
+    assert "captured FLOP" not in html    # no budget artifact -> no such row
+
+
+def test_the_scorecard_is_empty_rather_than_confident_when_nothing_ran(tmp_path):
+    assert _scorecard(tmp_path, _Cfg()) == ""
+
+
+def test_every_scorecard_row_prints_the_rule_that_decided_its_verdict(tmp_path):
+    """The point of the scorecard: no invisible threshold anywhere in it.
+
+    The block it replaced chose between two authored sentences on a bare
+    `cka > 4 * null`, so a reader could disagree with the English but never
+    with the `4`. Here the rule text must be rendered in the same row as the
+    verdict it produced, for every row, or the block has regressed to prose
+    with a number in it.
+    """
+    _write_l0(tmp_path)
+    (tmp_path / "l1").mkdir()
+    (tmp_path / "l1" / "meta.json").write_text(json.dumps({
+        "best_pair": {"layer_a": "a.0", "layer_b": "b.0", "cka": 0.4,
+                      "ci": {"lo": 0.35, "hi": 0.45},
+                      "null_ci": {"value": 0.02, "lo": 0.01, "hi": 0.03}}}),
+        encoding="utf-8")
+    html = _scorecard(tmp_path, _Cfg())
+    rows = re.findall(r'<tr class="sc-row">(.*?)</tr>', html, re.S)
+    assert len(rows) >= 3, len(rows)
+    for row in rows:
+        assert '<code>' in row, row          # the rule is printed...
+        assert 'sc-verdict' in row, row      # ...beside the verdict it produced
+    assert "value &ge; 4&times; reference" in html or "value ≥ 4× reference" in html
+
+
+def test_a_scorecard_verdict_cannot_be_set_by_a_call_site(tmp_path):
+    """`Verdict.verdict` is derived in __post_init__, never assigned by hand.
+
+    This is the structural reason the block cannot drift back into authored
+    conclusions: there is no parameter to write one into.
+    """
+    from tsfm_lens.report.derived import RULES, Verdict
+    v = Verdict(measure="m", value=10.0, reference=2.0, reference_label="r",
+                rule=RULES["ratio_at_least"](4.0), verdict="whatever the author says")
+    assert v.verdict == "clears"
+    below = Verdict(measure="m", value=3.0, reference=2.0, reference_label="r",
+                    rule=RULES["ratio_at_least"](4.0))
+    assert below.verdict == "does not clear"
+    absent = Verdict(measure="m", value=3.0, reference=None, reference_label="r",
+                     rule=RULES["ratio_at_least"](4.0))
+    assert absent.verdict == "not comparable"
 
 
 @pytest.mark.skipif(not SMOKE.exists(), reason="runs/smoke/report.html not built")

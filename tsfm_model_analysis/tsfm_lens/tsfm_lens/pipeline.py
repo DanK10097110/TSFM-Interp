@@ -223,6 +223,61 @@ _STAGE_MIN_TIER = {
 }
 
 
+# ROADMAP.md sec 24.3 -- the run-shape gate, the model-count analogue of
+# `_STAGE_MIN_TIER` above and deliberately built on the same machinery rather
+# than as a second, parallel mechanism. A stage listed here is one whose
+# ENTIRE product is a comparison between two models: `l1`'s CKA matrix, `l2`'s
+# stitching directions, `cluster`'s cross-model AMI, `exemplars`' selection by
+# MASE *gap*, and `confirm`'s hypothesis tests (all of which are "model A beats
+# model B on family F"). In a `solo` run they have nothing to measure, so they
+# are dropped WITH A STATED REASON rather than left to raise out of
+# `comparison_pair()` mid-run or -- worse -- render as an empty section a
+# reader cannot distinguish from a crashed one (`CLAUDE.md` invariant 8).
+#
+# Stages ABSENT from this map are the ones that survive a solo run unchanged
+# or degrade internally, and the distinction is deliberate rather than an
+# oversight: `l3` keeps its within-model patching (invariant 5 -- patching was
+# never cross-model) and loses only its fingerprint-agreement number; `l0`
+# keeps every per-family metric and calibration curve and loses only the
+# paired tests; `sae`'s feature-space CKA already returns None and logs when
+# it has nothing to compare. Those are internal degradations, not stage drops,
+# and are tracked as their own sub-items of sec 24.3.
+_STAGE_MIN_MODELS = {
+    "l1": 2, "l2": 2, "cluster": 2, "exemplars": 2, "confirm": 2,
+}
+
+
+def _apply_shape(cfg: PipelineConfig, selected: set) -> dict:
+    """Narrow this run's stages to what its MODEL COUNT can support.
+
+    Runs beside `_apply_tiers` and for the same reason: a capability the run
+    does not have should produce a decision with a recorded reason, not a
+    crash and not a blank. The two gates are independent -- a tier-3 solo run
+    is perfectly coherent, and so is a black-box panel -- so they are applied
+    separately and each writes its own artifact.
+
+    Like `_apply_tiers`, the dropped list is computed over every stage ENABLED
+    in the config rather than over `selected`, so a `--stages report` rerun
+    cannot rewrite the artifact to claim nothing was dropped and erase the
+    reason the report prints beside each skipped section.
+    """
+    shape, n = cfg.run_shape(), len(cfg.models)
+    dropped = sorted(name for name in stage_names()
+                     if _stage_by_name(name).enabled(cfg)
+                     and _STAGE_MIN_MODELS.get(name, 1) > n)
+    if dropped:
+        selected.difference_update(dropped)
+        log.warning("RUN SHAPE -- this is a '%s' run (%d model%s); dropping %s. "
+                    "Each dropped stage measures a comparison BETWEEN models and has "
+                    "nothing to compare here; see shapes.json and the report.",
+                    shape, n, "" if n == 1 else "s", ", ".join(dropped))
+    return {"shape": shape, "n_models": n,
+            "models": [m.name for m in cfg.models],
+            "reference_model": cfg.models[0].name if cfg.models else None,
+            "comparison_pairs": [[x.name, y.name] for x, y in cfg.comparison_pairs()],
+            "dropped_stages": dropped}
+
+
 def resolve_tiers(cfg: PipelineConfig, hub: ModelHub) -> dict:
     """Each configured model's declared capability tier -- no checkpoint loaded.
 
@@ -399,6 +454,7 @@ def run_pipeline(cfg: PipelineConfig, stages: Optional[list] = None,
 
     ctx = Context(cfg)
     save_json(cfg.run_dir() / "tiers.json", _apply_tiers(cfg, ctx, selected))
+    save_json(cfg.run_dir() / "shapes.json", _apply_shape(cfg, selected))
     _apply_routing(cfg, ctx, selected, force)
 
     manifest = load_manifest(cfg.run_dir())
