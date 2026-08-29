@@ -17337,7 +17337,7 @@ from the pre-fix artifact, so all four are still `random_parametric` — the
 stratification fix appears only after `l3` is re-run (GPU work; a config edit
 means a new `run.name` per §15 A3).
 
-### 24.3 [x] One model, and three or more, as first-class run shapes
+### 24.3 [~] One model, and three or more, as first-class run shapes
 
 > **User-directed, 2026-08-24, and explicitly scoped as roadmap-only:**
 > *"Do not implement this next part, write it into the roadmap only: 'Also,
@@ -17511,8 +17511,11 @@ most of them are negatives:
   `shapes.json`, and does not attribute an undropped stage to itself.
 
 **Still open in §24.3, in dependency order** (the numbering below continues
-this item's own list) — ✅ **all of these are now closed; see the final
-Findings block of this section:** the internal degradations for `l0`/`l3`/`report`/`sae`
+this item's own list) — ⚠️ **corrected 2026-08-28: an earlier edit in this
+same session marked this header `[x]` and this list "all closed", and both
+were wrong. Only the first entry below is closed** (the internal
+degradations, in the Findings block that follows); sub-items 3, 4, 5 and
+`smoke_panel.yaml` are open and unstarted: the internal degradations for `l0`/`l3`/`report`/`sae`
 that make sub-item 2's acceptance criterion ("a solo run renders with no
 empty comparison sections and no 'artifacts missing' text anywhere")
 actually checkable end-to-end; sub-item 3's pair-*indexed* artifacts, whose
