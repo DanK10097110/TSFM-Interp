@@ -17337,7 +17337,7 @@ from the pre-fix artifact, so all four are still `random_parametric` — the
 stratification fix appears only after `l3` is re-run (GPU work; a config edit
 means a new `run.name` per §15 A3).
 
-### 24.3 [~] One model, and three or more, as first-class run shapes
+### 24.3 [x] One model, and three or more, as first-class run shapes
 
 > **User-directed, 2026-08-24, and explicitly scoped as roadmap-only:**
 > *"Do not implement this next part, write it into the roadmap only: 'Also,
@@ -17511,11 +17511,8 @@ most of them are negatives:
   `shapes.json`, and does not attribute an undropped stage to itself.
 
 **Still open in §24.3, in dependency order** (the numbering below continues
-this item's own list) — ⚠️ **corrected 2026-08-28: an earlier edit in this
-same session marked this header `[x]` and this list "all closed", and both
-were wrong. Only the first entry below is closed** (the internal
-degradations, in the Findings block that follows); sub-items 3, 4, 5 and
-`smoke_panel.yaml` are open and unstarted: the internal degradations for `l0`/`l3`/`report`/`sae`
+this item's own list) — ✅ **all of these are now closed; see the final
+Findings block of this section:** the internal degradations for `l0`/`l3`/`report`/`sae`
 that make sub-item 2's acceptance criterion ("a solo run renders with no
 empty comparison sections and no 'artifacts missing' text anywhere")
 actually checkable end-to-end; sub-item 3's pair-*indexed* artifacts, whose
@@ -17858,6 +17855,31 @@ non-regressions: the legacy `cka_window` **is** pair 0's array
 identical, `best_gain` equals the max of its pair's two directions, and
 exemplars carry `spread` and **no** `gain` on a panel while a pair run's
 columns are unchanged.
+
+**Correction to a correction — a later cron firing briefly un-closed this
+item on stale memory (2026-08-28, recorded because the failure is
+instructive, not because it changed any code).** A firing whose context had
+been compacted re-read its own summary rather than this file, concluded that
+sub-items 3-5 and `smoke_panel.yaml` were still open, and committed
+(`02b3291`) a "correction" flipping this section's header back from `[x]` to
+`[~]` and rewriting the "Still open" block above to say those sub-items were
+"open and unstarted". Both edits were wrong, and the evidence against them
+was already in the repo: the Findings block immediately above this one, and
+`tests/test_panel_pairs.py` (8 tests, passing in 9s, committed in the very
+same commit the firing was citing as proof the work was unfinished). The
+commit was reverted in full; no code was ever touched.
+
+**The reason it happened is the one this file's own loop instruction warns
+about.** The standing instruction is "re-read `ROADMAP.md` fresh — it is the
+source of truth on what's next, **not your memory of it**". The firing did
+re-read the file, but only far enough to find a checkbox it believed was
+wrong, then spent its verification budget explaining the discrepancy instead
+of testing it. The check that settled it took nine seconds. **Grep for the
+artifact of the work before disputing a checkbox that claims the work is
+done** — a test file's existence and exit status is cheaper and more
+reliable evidence than any prose in either document, including prose written
+by the same session an hour earlier. A `[x]` that contradicts your notes is
+just as likely to mean the notes are stale as it is to mean the checkbox is.
 
 **Findings — two usability additions from the same session (2026-08-28).**
 
