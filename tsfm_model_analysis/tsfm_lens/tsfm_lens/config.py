@@ -627,14 +627,26 @@ class PipelineConfig:
             raise ValueError("model names must be unique")
         if len(self.models) > 2:
             import logging
+            # This used to warn that every cross-model stage but L0 silently
+            # compared models[0:2] and ignored the rest. That is no longer
+            # true (sec 24.3 sub-item 3): L1, L2 and clustering now measure
+            # every pair. The warning stays, with its content replaced rather
+            # than deleted, because a panel still carries two real costs a
+            # two-model run does not -- a multiplicity burden that grows as
+            # C(n,2), and stages whose product remains inherently
+            # pair-shaped -- and silently dropping the notice would read as
+            # "a panel is just a bigger pair run".
+            n_pairs = len(self.models) * (len(self.models) - 1) // 2
             logging.getLogger("tsfm_lens").warning(
-                "more than two models configured: L0 tests ALL %d pairs and Holm-"
-                "corrects across them jointly (ROADMAP.md sec 18 F8), but every "
-                "other cross-model stage (L1, L2, L3, clustering, exemplars, "
-                "confirm) compares only the first two -- the other pairs are "
-                "unexamined there, not weakly evidenced. The report's multiplicity "
-                "ledger states this in the body; this line is not the only notice",
-                len(self.models) * (len(self.models) - 1) // 2)
+                "panel run: %d models, %d pairs. L0, L1, L2 and clustering measure "
+                "EVERY pair; L3's fingerprint agreement, exemplar selection and "
+                "`confirm` are reported against the designated reference pair "
+                "(%s vs %s) or, for exemplars, against the spread across all "
+                "models. Multiplicity grows as C(n,2): a bootstrap p is floored at "
+                "1/n_boot, so raise stats.n_boot (currently %d) before adding "
+                "models -- see the report's multiplicity ledger",
+                len(self.models), n_pairs, self.models[0].name, self.models[1].name,
+                self.stats.n_boot)
 
 
 def _build(cls: type, data: dict, section: str | None = None):

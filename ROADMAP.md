@@ -8878,6 +8878,7 @@ Append below, three lines maximum, newest last.
 | **08-23** (same cron loop, next firing, §13 layer-screen bake-off open question) | **With §16's T2 triage list fully closed (E9, E11, E17 all Done), re-audited the whole file by grepping every `[ ]`/`[~]` checkbox rather than trusting any prior summary line, and found §13's own "Open questions" still carried one genuinely unaddressed, well-scoped item: does `work_bend` remain the bake-off winner on a second Chronos size (only `-small` had been tested) and against a genuinely causal secondary gold (the existing secondary gold, `l3/sensitivity.npz`'s per-layer activation-change fingerprint, is itself only correlational — L3's own per-window activation-*patching* restoration score is the causal one and had never been wired in)?** Confirmed via grep across every `configs/layer_screen_experiment*.yaml` that no config had ever used a non-`-small` Chronos checkpoint, and confirmed (context around the file's Sundial discussion) that the third-architecture question was already separately closed, so this item's scope was exactly the two named axes and nothing already answered elsewhere. Delegated to a background agent per `CLAUDE.md` §2.8, explicitly briefed with the §11.27-class file-locking lesson and this session's own earlier end-of-turn-and-wait anti-pattern (§2.8, reinforced after the E17 cycle) so it would block synchronously rather than report false completions — it ran to completion in one continuous pass with no recovery needed this time. Built `configs/layer_screen_experiment_base.yaml` (TimesFM + Chronos-T5-**Base**, both `capture_layer_stride: 1`, mirroring `_v4.yaml`'s no-corpus-cap fix) and `configs/layer_screen_experiment_v5_patching.yaml` (TimesFM + Chronos-T5-Small, `l3.patching.enabled: true` at full layer coverage) plus a new `run_layer_screen_bakeoff.py::_load_l3_patching_secondary_gold(run_dir, model, layers)` — reads `l3/patching.npz`'s `restoration_{model}` array (`[n_corruptions, n_layers]`, averaged over corruptions), matched by exact layer-name list rather than by a strict length check like its sibling `_load_l3_secondary_gold` (patching can be layer-strided, so shape alone isn't a safe match key) — wired into `run_bakeoff_for_model` as `patching_secondary_gold_score`/`gold_vs_patching_gold_rho`/`scored_vs_patching_gold` and into the leaderboard printer. **Independently re-verified rather than taken on the agent's report alone** (`CLAUDE.md` §2.4): read `runs/layer_screen_bakeoff_base.json` and `runs/layer_screen_bakeoff_v5_patching.json` directly via Python and matched every number below against them, and independently re-ran the new/affected test files — `tests/test_l3_patching_secondary_gold.py` (6 new tests) + `tests/test_layer_screen.py` — **20/20 passed**; the agent's own full-suite run came back **780 passed, 0 failed** (up from 749, the +31 covering this item's 6 new tests plus the E9/E11/E17 cycle's tests already merged in by this point in the loop). **Part 1 (second Chronos size) result: TimesFM reproduces the original bake-off exactly** (`gold_vs_sensitivity_rho=0.5909774436090225`, `work_bend` recall@budget=0.2/beats_uniform=False/beats_random=False — bit-identical to the historical `_v4.yaml` numbers, confirming the new config's TimesFM half is a faithful re-derivation, not a different measurement). **Chronos-T5-Base is a materially different case from Chronos-T5-Small, not just a size variant**: `gold_vs_sensitivity_rho=0.34965034965034975` (barely half of Small's 0.714 correlation strength), the gold score itself is nearly flat across layers (19.71–26.44, a narrow ~1.3× range vs. Small's much wider spread), and **all three selectors — `work_bend`, `coverage`, and `factor_emergence` alike — tie at `recall@budget=0.3333333333333333`**, each `beats_uniform=True`/`beats_random=True` but only marginally, since a near-flat gold makes almost any selection look like it beats a null. **Part 2 (per-window-patching causal secondary gold) result, on Chronos-T5-Small vs. TimesFM: the two models disagree in kind, not just degree.** Chronos-Small: `gold_vs_patching_gold_rho=0.5428571428571429` — a positive, moderate correlation with the original SAE-mass gold, and no selector verdict changes when scored against the causal gold instead. **TimesFM: `gold_vs_patching_gold_rho=-0.8390977443609022` — a strong *negative* correlation, and every one of TimesFM's three selector `beats_uniform`/`beats_random` verdicts flips sign** relative to scoring against the original (correlational) secondary gold, because the causal per-window restoration signal ranks TimesFM's layers in close to the opposite order of the activation-change-magnitude fingerprint. Full before/after verdict table (all three selectors × both `beats_*` flags × both secondary golds) is in this item's own closing paragraph at line ~8325, not repeated here. **Net answer: this does not reverse the 2026-08-05 production-wiring decision** (`work_bend` stays the pipeline default, still cheapest and still tied for fewest failure modes across everything tested so far) **but it materially widens the uncertainty band around that decision** — the original single-corpus, single-Chronos-size bake-off's confidence was narrower than it read: a second, larger Chronos checkpoint erases nearly all discriminating power between all three candidate selectors, and the one model where a causal (not just correlational) secondary gold exists disagrees sharply with the correlational one about which layers are actually good. Checkbox flipped `[ ]`→`[x]` at §13's "Open questions" list; `CLAUDE.md` §9's layer-screening-bake-off verification-table row (the long single-cell entry ending "...Full numbers in `ROADMAP.md` §6.1.1's Findings (fifth block) and §13.") got a new `⚠️` paragraph appended summarizing both parts' findings for readers of that file directly. | §13's closing paragraph (line ~8325), `CLAUDE.md` §9 |
 | **08-24** (user-directed, §24) | **Picked up a direct user review of `configs/full_report_run.yaml`'s report ("conclusions were written into the html instead of being dynamic"; exemplars "jumbled and unclear and repetetive"; make it "adaptive to any tsfm model") and grounded each complaint in an artifact-verified defect before changing code (§2.4) — four of them, two of which were real bugs and not tone: `_sec_exemplars` had a `continue` discarding 6 of the 9 exemplars the stage computes (so a reader only ever saw each family's most atypical case, while the blurb and the `Finding` both described a spread), and `_verbose_case` head-sliced a task-grouped corpus, directly beneath the enclosing function's own comment explaining why that is wrong (§15 A4) — every narrated series in every prior run came from whichever family sorts first.** Built `report/derived.py` (~880 lines, pure artifact reductions, no HTML and no `cfg.models[i]` index anywhere in it) whose load-bearing primitive is that `Verdict.verdict` is derived in `__post_init__` from a `Rule` whose text is rendered in the same row — there is no parameter a call site can write a conclusion into, and a missing reference is `"not comparable"` rather than a pass or a fail, which is what makes a single-model run render honestly. `_bottom_line`'s authored paragraph (which chose between two sentences on a bare `cka > 4 * null`, the `4` invisible) became an 8-row scorecard; two new tables replaced prose that asserted numbers already persisted in the same artifacts (per-corruption footprint/energy/response/restoration, and the per-model per-layer join of five previously-separate figures, joined by layer *name*); `_sec_exemplars` and `_l3_verbose_cases` were rewritten to group by case rather than by corruption. Live-verified through the real CLI on `runs/full_report_run` (14 sections, 50 findings, 61 figures / 89 captions / 0 bare, exemplars 9-of-9 rendered where 3 were before, L3 verbose 4 headings where 24 were before). 33 tests (29 new `test_derived_report.py` + 4 in `test_report_legibility.py`), the load-bearing negatives being that a verdict cannot be authored, a reordered strided subset leaves blanks rather than values on the wrong layers, and a deterministic model's floor ratio is `None` rather than `inf`. Per explicit user instruction, the requested solo/3+-model run shapes were written into §24.3 as a design **and not implemented**. New trap: `CLAUDE.md` §11.38. | §24.1/§24.2 Findings, §24.3 (unimplemented by instruction) |
 | **08-28** (autonomous cron loop, §24.3 sub-items 1–2) | **Picked up §24.3 (solo/pair/panel run shapes) as the next unfinished item, after a whole-file `[ ]`/`[~]` grep confirmed §0.5's queue is still empty and §22's un-park triggers still unfired.** ⚠️ **Scope judgment, stated rather than assumed:** the 08-24 row directly above records "per explicit user instruction... not implemented" — that instruction was scoped to *that* session's writeup, and this firing's standing instruction is "work on the next unfinished item." §24.3 is that item. If the no-implement instruction was meant to stand indefinitely, this is the work to revert. Built the item's own sub-items 1 and 2 and nothing beyond them, starting — as §24.3's closing paragraph demands — with the pair-reproduction criterion: `config.run_shape()` (derived from `len(models)`, no config key exists to declare one) and `comparison_pairs()` beside an **unchanged** `comparison_pair()`, so none of the 23 existing call sites were touched and a two-model run is unchanged *by construction* rather than by verification; then `pipeline._STAGE_MIN_MODELS` + `_apply_shape` on `_apply_tiers`'s machinery, writing `shapes.json`, plus `report._shape_skip_reason` so a solo run's missing L1 section names the run shape instead of `"artifacts missing"` (which describes a rerun away and would send a reader to rerun a stage that can never produce anything). Five stages gated at 2 (`l1`/`l2`/`cluster`/`exemplars`/`confirm` — the ones whose entire product IS a comparison); `l0`/`l3`/`sae` deliberately **left out of the map**, because they degrade internally rather than drop, and conflating the two would delete a solo run's per-family metrics and its within-model patching (invariant 5). 10 new tests (`tests/test_run_shape.py`), mostly negatives against this gate's real failure mode, a *false* drop: a pair run drops nothing and leaves `selected` set-identical; a panel drops nothing either; the dropped list does not depend on which stages an invocation selected (the exact bug that once emptied the tier gate's own list); a config-disabled stage is not attributed to the shape gate; `comparison_pairs()` is empty for solo **while `comparison_pair()` still raises**. Suite **826 passed, 0 failed**. **Operational finding worth acting on:** the full suite now takes **2h50m**, not the ~7 minutes `CLAUDE.md` §9 implies — `test_smoke.py` alone is ~20 min — so "run the full suite" does not fit inside one 15-minute loop firing and must be backgrounded while other work proceeds. Sub-items 3–6 (pair-indexed artifacts and their §11.24 reproduction check, multiplicity scaling, panel figures, the two mock acceptance configs) and the `l0`/`l3`/`report`/`sae` internal degradations remain open; §24.3 is `[~]`, not `[x]`. | §24.3 Findings (sub-items 1–2) |
+| **08-28** (user-directed, §24.3 sub-items 3–6 + usability) | **User instruction: read both docs, write `Functionality_Summary.md`, then "think through any potential improvements and add them in if needed... if anything is unfinished, or marked as closed but exited in failure (but shouldn't be) try to design implementations in different ways, *if and only if* you believe it is worth it."** Wrote the summary (the first end-to-end description of this repo from the position of someone who did not build it) and used it as the audit instrument. Nothing marked closed turned out to be a should-not-have-failed failure — the crosscoder loss (§6.2.1) and the agreement heuristic (§20 H4) are both correctly-recorded negatives whose acceptance criteria decided against them, and reopening either would be arguing with the evidence. **§24.3 was the only open non-parked item, and its unfinished half was a live silent-wrong-answer**: `_apply_shape` drops nothing on a panel, so `l1`/`l2`/`cluster`/`exemplars` silently analyzed `models[0:2]` and reported it as the run. Closed all four remaining sub-items following the previous firing's own mandatory rule (add a canonical key, leave legacy keys untouched, read new-then-legacy), with the pair path verified rather than assumed: every L1/L2/clustering finding text on `runs/medium_run_chronos_base` reproduces byte-for-byte, and `cka_window` is `np.array_equal` to pair 0's suffixed array in both a pair and a 4-model panel run — the check `analysis/null_baseline.py` and the two `run_crosscoder_*.py` scripts actually depend on. Sub-item 5 turned out to be **one crash** (`_sec_clusters`'s hardcoded `make_subplots(cols=2)`, out-of-range on the third model) plus tables; the several sections that looked like they narrowed to the reference pair were a name-counting artifact, confirmed by re-reading heading structure rather than trusting the first count. Two usability additions from the summary pass: `doctor._check_store_format` (the module docstring **claimed** §11.25 coverage that did not exist — verified against the real stale `runs/real_run`, which now fails with the right remediation) and `run.py --list-configs` (46 flat YAMLs, derived from the files, because a `configs/README.md` would be a claim checked nowhere). 17 new tests; 116 passed across the nine affected modules and 52 across `test_smoke`+`test_panel_pairs`+`test_doctor`+`test_config_listing`+`test_worked_example`. One test caught passing for the wrong reason (an assertion loose enough to be satisfied by a different element) and pinned. Two pieces of stale prose fixed, both asserting the behavior this change removed. | §24.3 Findings (sub-items 3–6 + usability), `Functionality_Summary.md` |
 ---
 
 ## 15. Audit — silent-failure paths and fragile mechanisms
@@ -17336,7 +17337,7 @@ from the pre-fix artifact, so all four are still `random_parametric` — the
 stratification fix appears only after `l3` is re-run (GPU work; a config edit
 means a new `run.name` per §15 A3).
 
-### 24.3 [~] One model, and three or more, as first-class run shapes
+### 24.3 [x] One model, and three or more, as first-class run shapes
 
 > **User-directed, 2026-08-24, and explicitly scoped as roadmap-only:**
 > *"Do not implement this next part, write it into the roadmap only: 'Also,
@@ -17510,7 +17511,8 @@ most of them are negatives:
   `shapes.json`, and does not attribute an undropped stage to itself.
 
 **Still open in §24.3, in dependency order** (the numbering below continues
-this item's own list): the internal degradations for `l0`/`l3`/`report`/`sae`
+this item's own list) — ✅ **all of these are now closed; see the final
+Findings block of this section:** the internal degradations for `l0`/`l3`/`report`/`sae`
 that make sub-item 2's acceptance criterion ("a solo run renders with no
 empty comparison sections and no 'artifacts missing' text anywhere")
 actually checkable end-to-end; sub-item 3's pair-*indexed* artifacts, whose
@@ -17527,3 +17529,363 @@ now takes **2h50m**, not the ~7 minutes `CLAUDE.md` §9 implies — `test_smoke.
 alone is ~20 minutes, and it is the module a report or pipeline edit most needs.
 Run `tests/test_smoke.py` first and the remainder in the background; do not
 treat "run the full suite" as a step that fits inside one loop firing.
+
+**Findings — sub-item 2's second half, the internal degradations (2026-08-28,
+same cron loop).**
+
+The stage gate above decides which stages *vanish* on a solo run. This is the
+other half: the four stages deliberately **left out** of `_STAGE_MIN_MODELS`
+because dropping them would delete within-model work, and which therefore had
+to learn to lose only their cross-model half.
+
+- **`l0_behavioral.py`** (both sites) — every per-family and per-archetype
+  metric, the calibration block and the reliability accounting are
+  within-model and survive untouched; only the paired strength tests are
+  withheld, in the `applicable: False` shape those guards already used.
+- **`l3_perturbation.py`** — iterates `cfg.models`; `l3/meta.json` gains a
+  canonical `models` list while `model_a`/`model_b` stay exactly as they were
+  for a pair run, and `agreement` becomes a named `applicable: False` with a
+  reason rather than being computed. The sensitivity fingerprints and the
+  within-model patching — invariant 5, patching was never cross-model — are
+  untouched, which is the whole reason `l3` is not in the drop map.
+- **`report.py`** — `_l3_models()` (canonical key, legacy fallback, `None`
+  filtered so a solo artifact's `model_b: null` becomes a one-model list
+  rather than crashing on `arrays["fingerprint_None"]`); the two
+  agreement-specific regions of `_sec_l3` guarded so the subsection renders
+  as a **named absence** instead of vanishing (a vanished subsection reads as
+  a crashed stage); `_MODEL_PALETTE` replacing the two-key `model_colors`
+  dict, with `_MODEL_PALETTE[:2] == [_COLORS["a"], _COLORS["b"]]` pinned by a
+  test so no existing two-model figure changes color; `_sec_fairness` states
+  the solo shape rather than returning an empty card.
+- **`sae/feature_geometry.py`** — a solo guard ahead of `comparison_pair()`;
+  it already returned `None` and logged for the analogous "no features on
+  both sides" case, so this is the same path, reached earlier.
+
+**`report/derived.py` needed no changes at all.** Its §24.2 constraint — no
+model name, no architecture family, no `cfg.models[i]` index anywhere in the
+module — held up under a run shape it was never written or tested against.
+That is the first independent evidence the adaptivity contract does the thing
+it claims rather than merely describing the code that existed when it was
+written.
+
+**Two defects found by running rather than reading**, which is the point of
+`configs/smoke_solo.yaml` disabling nothing by hand:
+1. `run_l3`'s **closing log line** still read `agreement["most_divergent"]`
+   unconditionally, so a solo run completed every forward pass, wrote every
+   artifact, and then died with a `KeyError` on a log statement. Every
+   *computation* had been guarded and the one line that only *reports* had
+   not — the cheap grep (`agreement[`) would have caught it and reading the
+   guarded regions did not.
+2. A first version of `l0`'s solo status wrote into `summary["pairwise"]`.
+   `report.py` iterates that key as a list of `{"a", "b"}` entries, so a
+   status dict there would have iterated its **keys** and raised on `e["a"]`
+   — the report-key-drift class `CLAUDE.md` §11.6 already records. Caught
+   before it ran, by checking the key's consumers rather than its producers;
+   it now uses a dedicated `comparison` key, which is the precedent the
+   `n_families < 2` branch had already set.
+
+**Two existing tests broke and were fixed at the double, not at the guard.**
+`tests/test_archetype_reporting.py` and `test_mase_reliability.py` each use a
+`_Cfg` stub exposing `comparison_pair()` and nothing else, so the new
+`cfg.run_shape()` call raised `AttributeError`. The stub returns two models,
+so it *is* a pair config and now says so. Weakening the production guard to
+tolerate a config that cannot answer what shape it is would have been
+accommodating an incomplete double at the cost of the real check.
+
+`configs/smoke_solo.yaml` is sub-item 6's first config: `smoke.yaml` with one
+model deleted and **nothing else changed**, so the gate is what narrows the
+run — the discipline `configs/smoke_blackbox.yaml` already enforces for
+tiers. Its live `shapes.json` is exactly right (`dropped_stages` =
+`cluster`, `confirm`, `exemplars`, `l1`, `l2`) and `tiers.json` independently
+drops nothing at tier 3, confirming the two gates are independent as designed.
+
+**Acceptance — a solo run renders end to end (2026-08-28, same cron loop).**
+
+`configs/smoke_solo.yaml` through the real CLI: **10 sections rendered, 6
+skipped, 0 failed, 22 findings**, and every skip names the run shape rather
+than "artifacts missing" —
+
+```
+report: section L1 skipped (run shape: this is a 'solo' run (1 model), and
+'l1' measures a comparison BETWEEN models -- there is nothing here to compare
+(ROADMAP.md sec 24.3))
+```
+
+Checked in the rendered HTML rather than inferred from the log: the `<title>`
+is `patchy — Solo smoke run` (not `patchy vs None`), the `<h1>` renders one
+chip, the fairness card states the solo shape in prose, and L3's agreement
+subsection renders as a **named absence** carrying its own reason instead of
+vanishing. That is sub-item 2's stated acceptance criterion met.
+
+**The §2.1 pair check: 98 passed** across `test_smoke`,
+`test_report_legibility`, `test_derived_report`, `test_fairness_card`,
+`test_run_shape`, `test_capability_tiers` and `test_routing` — a two-model run
+is unmoved. `tests/test_run_shape.py` is now 19.
+
+**Full suite: 835 passed, 0 failed**, run in two halves because a single
+invocation exceeds this loop's firing interval and was killed once at a
+session boundary — 718 (every file except the nine already verified, 2h36m)
+plus 117 (those nine, 30m). The baseline before this increment was 826, and
+`test_run_shape.py` grew by exactly 9 since the commit that recorded it, so
+the arithmetic closes.
+
+**A THIRD defect found by running rather than reading, and the three together
+are one lesson.** `run_report`'s template call still passed
+`model_a=a.name, model_b=b.name` after the `a, b` unpacking was replaced, so a
+solo run completed every stage and died with a `NameError` in the final
+render. With the `KeyError` on `run_l3`'s closing log line, that is **two
+crashes in sites that only REPORT the pair**, plus one near-miss in a site
+that only *keys* on it (`summary["pairwise"]`). Every site that *computed*
+something from the pair was guarded correctly on the first pass.
+
+> **The lesson, and it belongs beside `CLAUDE.md` §11.6.** When a variable
+> that used to be unconditional becomes conditional, the dangerous sites are
+> not the ones that compute with it — those are what you are thinking about
+> while editing — but the ones that merely *mention* it: a log line, a
+> template argument, an f-string in a title. They are invisible to a reading
+> of the logic and they fail late, after the expensive work is already done
+> and the artifacts are already written, which reads as "the analysis broke"
+> rather than "a string interpolation broke". The cheap check is mechanical
+> and takes seconds: **grep the removed variable across the module** (`agreement[`,
+> `\ba\.name`, `model_b`) before running anything. Doing that after the first
+> crash would have found the second and third at once.
+
+The report header was generalized rather than patched: `models_title` plus a
+`model_chips` list whose first two entries keep the `a`/`b` CSS classes, so a
+two-model run's markup is unchanged and a panel run gets distinct palette
+colors instead of falling through to Plotly's default cycle (which collides
+with `accent`/`muted`).
+
+**Sub-item 2 is now complete** — the gate, the four internal degradations, the
+report's stated reasons, and one of sub-item 6's two acceptance configs.
+✅ **Superseded 2026-08-28 (same day, user-directed session): sub-items 3, 4,
+5 and 6 are all now closed too — see this section's final Findings block. The
+paragraph below is preserved because its design instruction is what that work
+followed, and because its risk assessment was right.**
+**Sub-items 3, 4, 5 and the `smoke_panel.yaml` half of 6 remain open**, and
+sub-item 3 is where the risk actually is: `l1/cka.npz`'s `[layers_a x
+layers_b]` arrays and `l2/stitching.json`'s `"A->B"` keys are pair artifacts
+that every recorded number in this file lives in, and its acceptance is the
+§11.24 check (a report-only rerun of `configs/medium_run_chronos_base.yaml`
+reproducing its recorded numbers exactly). L3's `models` key added here is the
+pattern to follow: **add a canonical key, leave the legacy keys untouched,
+read new-then-legacy.** That kept every pair artifact byte-compatible at zero
+cost, and is why the 98-test pair check passed on the first try.
+
+**Preparatory inventory for sub-item 3 — every reader of the pair artifacts
+(2026-08-28, same cron loop; read-only, no code changed).**
+
+Sub-item 3 is the one with real §2.1 blast radius, so the readers were
+enumerated by grep before any design was committed to, rather than after. The
+count is larger than §24.3's own text implies and, more importantly, several
+readers are **not** in the pipeline at all:
+
+| Artifact | Read sites | Notable readers outside the pipeline |
+|---|---|---|
+| `l1/meta.json` | 14 | `run_crosscoder_feasibility.py`, `run_crosscoder_stage0.py` (both read `best_pair`), `report/meta_report.py`, `analysis/scaling_ladder.py` |
+| `l1/cka.npz` | 3 | `analysis/null_baseline.py` (`cka_window`) |
+| `l2/stitching.json` | 9 | `analysis/null_baseline.py` (2 sites), `report/meta_report.py` |
+
+**Why that inventory changes the design rather than merely sizing it.**
+`null_baseline.py` is what produced §16 E9's recorded significance tests, and
+the two `run_crosscoder_*.py` scripts are what produced §6.2.1's — so
+`best_pair` and `cka_window` are not merely "keys some code reads", they are
+the inputs to numbers already written into this file's Findings blocks. A
+reshape that renamed or re-nested either would silently invalidate recorded
+results in **two** separate research threads, and neither script is exercised
+by the pipeline's own tests, so nothing would have failed.
+
+So the rule L3 already validated this session is **mandatory** here, not
+merely preferable: `cka_window`, `cka_family`, `best_pair`, `model_a`,
+`model_b`, `layers_a`, `layers_b` and `directions`' `"A->B"` keys all stay
+exactly where they are and mean exactly what they mean; a panel run **adds**
+`cka_window__{a}__{b}`-style keys beside them, and every reader tries the
+suffixed key first and falls back. Sub-item 3's acceptance (the §11.24 check
+— a report-only rerun of `configs/medium_run_chronos_base.yaml` reproducing
+its recorded numbers exactly) is necessary but **not sufficient** on this
+evidence: it exercises the report path only. It should be paired with a
+re-run of `run_null_baseline_test.py` against the existing null run dirs,
+since that is the reader most likely to break silently and least likely to be
+noticed.
+
+**Findings — sub-items 3, 4, 5 and 6 (2026-08-28, user-directed session).**
+
+All four remaining sub-items are now implemented, and §24.3 is `[x]`. The
+work was picked up as part of a user instruction to write
+`Functionality_Summary.md` and then "go through and think through any
+potential improvements and add them in if needed... if anything is unfinished
+... try to design implementations in different ways, *if and only if* you
+believe it is worth it" — §24.3 was the only open, non-parked item in the
+whole file, and its unfinished half was a live silent-wrong-answer: because
+`_apply_shape` drops nothing on a panel run, `l1`/`l2`/`cluster`/`exemplars`
+silently analyzed `models[0:2]` and reported it as the run. A three-model run
+therefore produced a complete-looking report about two of its models. That is
+the failure mode this repo names most often (`CLAUDE.md` §2.5) and it was
+worth fixing.
+
+**Sub-item 3 — pair-indexed artifacts.** Implemented exactly along the rule
+the inventory above made mandatory: **add a canonical key, leave the legacy
+keys untouched, read new-then-legacy.**
+
+- `l1_geometry.py` — `run_l1` loops `cfg.comparison_pairs()` through an
+  extracted `_one_pair()`, with a `_LayerBank` memo so a panel's C(n,2) pairs
+  load each model's activations **once**, not once per pair. `cka.npz` gains
+  `cka_window__{a}__{b}` / `cka_family__{a}__{b}` beside an untouched
+  `cka_window`/`cka_family`; `meta.json` gains `pairs` and `run_shape` beside
+  an untouched `best_pair`/`model_a`/`layers_a`/... The three bootstrap seeds
+  are deliberately **not** indexed by pair, so pair 0 reproduces bit-for-bit.
+- `l2_stitching.py` — `directions` was already keyed `"{src}->{dst}"`, so a
+  panel simply adds entries; `layers` covers every involved model; `pairs`
+  records each pair's two direction keys and its `best_gain`.
+- `clustering.py` — clusters every model, then computes AMI + contingency per
+  pair. `_choose_layers` now returns a dict: for `auto` it walks L1's `pairs`
+  with `setdefault` (falling back to the legacy flat dict), then fills any
+  model absent from every peak pair with its middle layer **and logs that it
+  did**, since a silently-chosen layer is a worse failure than a stated one.
+- `exemplars.py` — a panel has no single "gap", so the selection key becomes
+  `spread` (max − min across models). A **pair run keeps exactly the
+  historical columns**: an early version added `spread` to both and would have
+  changed `exemplars.json` for every two-model run, caught before it ran.
+- `report/derived.py` — `exemplar_summary` accepts either key;
+  `_cka_partners` iterates `l1["pairs"]`, keeps the best partner per layer
+  **across pairs**, and qualifies the label as `{model}:{layer}` when more
+  than one pair exists, because a bare layer name is ambiguous the moment
+  three models are present.
+- `report/report.py` — a shared `_all_pairs_block` renders every-pair
+  overview tables for L1, L2 and clustering, and **returns `""` when there is
+  fewer than one extra pair**, so a two-model report gains and loses nothing.
+  `_l1_panel_block` renders a small-multiples CKA grid (not an N×N wall) on
+  one **shared** `coloraxis` (cmin 0, cmax 1) — per-figure autoscaling would
+  make the least similar pair look identical to the most similar, which is
+  the figure's whole point.
+
+**Acceptance (§11.24 check, met).** A report-only rerun of
+`configs/medium_run_chronos_base.yaml` — the canonical real-checkpoint pair
+run — reproduces **every L1, L2 and clustering finding text byte-for-byte**
+(2/2, 2/2, 1/1 identical). The only findings that moved are `exemplars`, and
+they moved because of §24's own 2026-08-24 rewrite, not this change (the
+baseline on disk predated it). Independently, on regenerated runs: every
+legacy `l1/meta.json` key is present, and `cka_window` is `np.array_equal` to
+pair 0's suffixed array in **both** the pair run and the 4-model panel run —
+which is the check that matters for `analysis/null_baseline.py` and the two
+`run_crosscoder_*.py` scripts, the readers the inventory flagged as most
+likely to break silently and least likely to be noticed.
+
+**The full `run_null_baseline_test.py` re-run completed, and every point
+estimate reproduces §16 E9's recorded values exactly** (real-vs-
+`runs/null_chronos_random`, ~50 min): L1 peak CKA real **0.3812** / null
+**0.1739** / diff **+0.2072** against the recorded 0.381 / 0.174 / +0.207;
+L2 best gain real **0.4132** / null **0.4442** / diff **−0.0310** against the
+recorded 0.413 / 0.444 / −0.031. Both verdicts are unchanged (L1 REAL EXCEEDS
+NULL; L2 CI spans zero). The CIs and p-values differ in their last digits
+because this re-run used the CLI default `n_boot`=500 where the recorded run
+used 1000 — visible directly in the p-floor (`p=0.0020` = 1/500 here,
+`p=0.001` = 1/1000 there), i.e. resampling resolution, not a moved number.
+That is the strongest available evidence that the reader most likely to break
+silently did not: `null_baseline.py` reads `best_pair` and `cka_window` and
+found both exactly where and as they were.
+
+**Sub-item 4 — multiplicity scaling.** New `doctor._check_multiplicity_budget`
+states the arithmetic **before** the run rather than after. It deliberately
+does **not** guess a family count — that is a property of the corpus, not of
+the config, and a guessed one would be a claim checked nowhere (§11.34).
+Instead it reports the *carrying capacity*: at this pair count and
+`stats.n_boot`, how many families the Holm correction can hold before
+`m/n_boot > alpha` makes it unsatisfiable. Live: `smoke.yaml` 1 pair @
+n_boot 150 → 7 families; `smoke_panel.yaml` 6 pairs @ 2000 → 16;
+`medium_run_chronos_base.yaml` 1 pair @ 500 → 25. It **fails** (not warns)
+when the capacity is below one family, because in that state every L0
+non-result in the run is arithmetic at any effect size. The value of moving
+this earlier is concrete: the report already reddens the unsatisfiable case,
+but learning it at the end of an extraction costs the extraction.
+
+**Sub-item 5 — panel figures, verified rather than assumed.** A per-section
+audit of `runs/smoke_panel/report.html` initially showed several sections with
+zero occurrences of any model name, which looked like the reference-pair
+narrowing the item was written to prevent. It was a **counting artifact**:
+`screen`, `l2` and `l4` label each panel in an `<h4>` and `attention` in an
+`<h3>`, so all four models are covered under headings the name-count missed —
+confirmed by re-reading the heading structure rather than by trusting the
+first count (§2.4). The per-model curve sections (`l0`, `cost`, `profile`,
+`lens`, `l3`, `exemplars`) already carried all four via `_MODEL_PALETTE`, and
+`_sec_clusters`'s hardcoded `make_subplots(cols=2)` — which **crashed** on the
+third model with "The (row, col) pair sent is out of range" — is now
+`cols=len(models)`. So the item's real content was one crash, one CKA grid,
+three overview tables, and a fairness-card scope banner naming the models the
+card does not cover.
+
+**Sub-item 6 — `configs/smoke_panel.yaml`.** Four mocks, **nothing disabled by
+hand**, so the shape gate (and nothing else) decides what runs — the
+discipline `smoke_blackbox.yaml` set for tiers. `mock_encdec` is included
+deliberately, so a shared `block` depth axis must place a model topping out
+near 3/7 beside three fully captured ones. It ships at `n_boot: 2000` with the
+unsatisfiability arithmetic recorded inline (6 pairs × 6 families = 36;
+36/2000 = 0.018 < 0.05), which sub-item 4's new check now derives
+independently.
+
+Live: **14 sections rendered, 2 skipped, 0 failed, 89 findings, 77 figures,
+110 captions, 61 tables**; `shapes.json` = `{shape: panel, n_models: 4,
+reference_model: patchy, comparison_pairs: 6, dropped_stages: []}`; L1 6 pairs
+(peak CKA 0.976 / 0.981 / 0.976 / 0.993 / 1.000 / 0.993), L2 12 directions,
+clustering 6 distinct AMIs (0.627 / 0.525 / 0.627 / 0.869 / 1.000 / 0.869).
+
+**A test that passed for the wrong reason, caught and pinned.** The panel
+acceptance test asserted `"designated reference pair" in html` to check the
+fairness card's new scope banner. It passed **before the banner existed**,
+because I had used the same phrase in the L4 all-pairs note — an assertion
+loose enough to be satisfied by the wrong element is not a check. Replaced
+with the card's own distinctive sentence, with the reason recorded next to it.
+
+**Two pieces of stale prose fixed, both of the class this repo keeps
+catching.** `config.py::validate()`'s >2-model warning and
+`configs/smoke_three_model.yaml`'s header both asserted the behavior this
+change had just removed ("every non-L0 stage compares only the first two").
+Left alone, each would have told the next reader that a fixed defect was still
+live. The warning now names the two costs a panel genuinely has — C(n,2)
+multiplicity growth, and the stages that remain pair-shaped by design (L3's
+fingerprint agreement, exemplar selection, `confirm`) — and reports the
+current `n_boot`.
+
+**Tests: 8 new (`tests/test_panel_pairs.py`), full modules green.** 116 passed
+across the nine affected modules; 52 passed across `test_smoke` +
+`test_panel_pairs` + `test_doctor` + `test_config_listing` +
+`test_worked_example`. The load-bearing assertions are the *pair*
+non-regressions: the legacy `cka_window` **is** pair 0's array
+(`np.array_equal`, not merely present), the six matrices are not all
+identical, `best_gain` equals the max of its pair's two directions, and
+exemplars carry `spread` and **no** `gain` on a panel while a pair run's
+columns are unchanged.
+
+**Findings — two usability additions from the same session (2026-08-28).**
+
+Both came out of writing `Functionality_Summary.md`, which is the first time
+this repo has been described end-to-end from the position of someone who did
+not build it. Two things were hard to state honestly, and both were fixable.
+
+1. **`doctor._check_store_format`** — the preflight doctor's own module
+   docstring claimed it covered `CLAUDE.md` §11.25 (a zarr **v3** store opens
+   under the pinned v2 **without error** and reads back as an empty group) and
+   it did not. That is the worst shape of gap: a documented check that does
+   not exist reads as coverage. Now implemented, and it names §11.25 and the
+   correct remediation ("delete the store and re-run `extract`", explicitly
+   **not** "reinstall zarr", which is the intuitive and wrong fix). Verified
+   against the real known-stale directory: `runs/real_run` **fails** with the
+   exact diagnosis, while `smoke`, `medium_run_chronos_base` and `smoke_panel`
+   pass. It deletes nothing — the doctor reports, the operator decides.
+2. **`run.py --list-configs`** — 46 flat YAML files with no entry point was
+   the single largest remaining usability cost, and grepping the directory was
+   genuinely the fastest way to find the right one. The listing is **derived**
+   from the files (run shape from model count, adapters, `enabled: false`
+   stages, each file's own leading comment sentence), grouped solo/pair/panel.
+   A `configs/README.md` was the obvious alternative and was rejected for the
+   reason this file records repeatedly: a hand-maintained index is a claim
+   checked nowhere, stale the first time a config is added without one. It
+   parses with `yaml.safe_load` rather than `load_config` on purpose, so
+   `scaling_ladder_chronos.yaml`'s deliberately-out-of-schema `ladder:` block
+   is listed with a note instead of being the one config the listing cannot
+   show. One bug caught by running it: splitting the header on any `.`
+   truncated every roadmap-citing config to `"Phase 4 (ROADMAP"` — i.e. it was
+   least legible for exactly the configs that most needed explaining. 9 tests
+   (`test_config_listing.py` 5, `test_doctor.py` +4), including that each
+   check is actually **wired into** `run_preflight`, since a check that exists
+   but never runs is not a check.

@@ -146,6 +146,109 @@ def _check_disk(cfg: PipelineConfig) -> DoctorCheck:
                        f"{free_gb:.1f} GB free on the filesystem holding {out_dir}")
 
 
+def _check_store_format(cfg: PipelineConfig) -> DoctorCheck:
+    """Whether an existing activation store is readable by the pinned zarr major.
+
+    This module's own docstring has claimed since it was written that it
+    catches "a stale on-disk store format (sec 11.25)". It did not -- there
+    was no such check. Added 2026-08-28 after re-reading that claim as a
+    claim rather than as documentation (`CLAUDE.md` sec 11.29: a premise in a
+    docstring was measured once and can be wrong).
+
+    The failure it catches is the nastiest shape in this repo, because it
+    produces no error at all. `zarr.open_group` under the pinned v2 against a
+    directory written by zarr **v3** finds no v2 metadata (`.zgroup`/
+    `.zattrs`), treats the directory as an EMPTY v2 group, and returns it.
+    Every downstream read then sees zero models and zero layers, so the run
+    looks like one where `extract` simply never happened -- and because
+    stages self-skip on missing artifacts, it can proceed a long way looking
+    normal. `CLAUDE.md` sec 11.25 is the session that cost.
+
+    Deliberately does NOT delete anything: a stale store is real data written
+    by a real run, and which run directories are expendable is the operator's
+    call, not a preflight check's (`ROADMAP.md` sec 0.5 item 13's G1 makes the
+    same call about `runs/real_run`). It reports and names the fix.
+    """
+    store = cfg.run_dir() / "activations.zarr"
+    if not store.exists():
+        return DoctorCheck("activation store format", "pass",
+                           f"no store at {store} yet; extract will create one")
+    v3 = (store / "zarr.json").exists()
+    v2 = (store / ".zgroup").exists()
+    if v3 and not v2:
+        return DoctorCheck(
+            "activation store format", "fail",
+            f"{store} is a zarr v3 store (zarr.json present, .zgroup absent), but this "
+            f"package pins zarr<3. v2 does NOT raise on it -- it reads the directory "
+            f"back as an EMPTY group, so every stage would report zero rows and the "
+            f"run would look like one where extract never ran (CLAUDE.md sec 11.25)",
+            f"delete {store} and re-run the extract stage "
+            f"(--stages extract --force extract), or point run.name at a fresh run dir")
+    if v3 and v2:
+        return DoctorCheck(
+            "activation store format", "warn",
+            f"{store} carries BOTH v2 (.zgroup) and v3 (zarr.json) metadata -- most "
+            f"likely a v3 store that a later v2 open partially initialized on top of, "
+            f"which reads back empty rather than raising",
+            f"delete {store} and re-run the extract stage; do not trust a partial read")
+    if not v2:
+        return DoctorCheck(
+            "activation store format", "warn",
+            f"{store} exists but has no zarr v2 root metadata (.zgroup); it is not a "
+            f"store this package can read",
+            f"delete {store} and re-run the extract stage")
+    return DoctorCheck("activation store format", "pass",
+                       f"{store} is a zarr v2 store, readable by the pinned zarr major")
+
+
+def _check_multiplicity_budget(cfg: PipelineConfig) -> DoctorCheck:
+    """Whether this run's bootstrap resolution can support its comparison count.
+
+    `ROADMAP.md` sec 24.3 sub-item 4. A bootstrap p-value is floored at
+    1/`n_boot`, so a family of `m` Holm-corrected tests cannot produce an
+    adjusted p below `m / n_boot` AT ANY EFFECT SIZE. Once `m / n_boot >
+    alpha` the correction is unsatisfiable and every non-result in it is
+    arithmetic rather than evidence -- which is exactly how a three-model run
+    once produced a textbook-looking 4-significant-families-to-0 demotion that
+    was the p-floor and not multiplicity (`CLAUDE.md` sec 6.6).
+
+    L0 now Holm-corrects across the joint (pair, family) set, so `m` grows as
+    C(n,2) x families. The report already detects and reddens the
+    unsatisfiable case -- AFTER the run. This says it before, which is the
+    point: the fix is to raise `stats.n_boot`, and learning that at the end of
+    an extraction costs the extraction.
+
+    It does NOT guess the family count, which is a property of the corpus and
+    not of the config. It reports the arithmetic instead: how many families
+    this `n_boot` can carry at this pair count. An operator who knows their
+    corpus can read the verdict off one number; a check that guessed would be
+    a claim checked nowhere (`CLAUDE.md` sec 11.34).
+    """
+    n_models = len(cfg.models)
+    pairs = max(1, n_models * (n_models - 1) // 2)
+    if not cfg.stats.enabled:
+        return DoctorCheck("multiplicity budget", "pass",
+                           "stats.enabled is false; no corrected tests are run")
+    n_boot, alpha = cfg.stats.n_boot, cfg.stats.alpha
+    max_families = int(n_boot * alpha // pairs)
+    detail = (f"{n_models} model(s) -> {pairs} pair(s); L0 Holm-corrects over "
+              f"pairs x families jointly. At stats.n_boot={n_boot} and alpha={alpha} "
+              f"the smallest attainable adjusted p is (pairs x families)/n_boot, so "
+              f"this run can carry at most {max_families} famil"
+              f"{'y' if max_families == 1 else 'ies'} before the correction becomes "
+              f"unsatisfiable")
+    remedy = (f"raise stats.n_boot (>= pairs x families / alpha, i.e. "
+              f">= {int(pairs / alpha)} x families) before the run, not after")
+    if max_families < 1:
+        return DoctorCheck("multiplicity budget", "fail", detail +
+                           " -- it cannot carry even ONE family: every L0 "
+                           "non-result would be a p-floor artifact", remedy)
+    if max_families < 4:
+        return DoctorCheck("multiplicity budget", "warn", detail +
+                           " -- most benchmark corpora here have 6", remedy)
+    return DoctorCheck("multiplicity budget", "pass", detail)
+
+
 def _check_corpus_seal(cfg: PipelineConfig, full: bool = False) -> list:
     checks = []
     sources = [("data", cfg.data.source, cfg.data.path)]
@@ -332,6 +435,8 @@ def run_preflight(cfg: PipelineConfig, full: bool = False) -> list:
         _check_vram(cfg),
         _check_disk(cfg),
     ]
+    checks.append(_check_store_format(cfg))
+    checks.append(_check_multiplicity_budget(cfg))
     checks.extend(_check_corpus_seal(cfg, full=full))
     checks.append(_check_context_alignment(cfg))
     checks.extend(_check_capped_stages(cfg))

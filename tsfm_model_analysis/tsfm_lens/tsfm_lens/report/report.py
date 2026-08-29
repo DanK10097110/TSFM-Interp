@@ -29,6 +29,11 @@ from ..utils import load_json, log, save_json
 
 _COLORS = {"a": "#2E6E8E", "b": "#9A5B88", "accent": "#C2661B",
            "ink": "#22303A", "muted": "#66727B", "line": "#E2E6E1"}
+# Model trace colors, in configured order. The first two are `_COLORS["a"]`
+# and `_COLORS["b"]` unchanged, so no existing two-model figure moves; the
+# rest exist so a panel run (sec 24.3) does not fall through to Plotly's
+# default cycle, which would collide with `accent` and `muted`.
+_MODEL_PALETTE = ["#2E6E8E", "#9A5B88", "#3F7F5F", "#8A6D3B", "#6B5B95", "#A0522D"]
 _CLUSTER_PALETTE = ["#2E6E8E", "#9A5B88", "#C2661B", "#4E8D6E", "#B04A5A",
                     "#6B6EA8", "#8C7A3F", "#4FA3A5", "#A85E32", "#5C7A99",
                     "#7E9A4E", "#996383", "#3F8C7A", "#A88F4E", "#7A5CA8",
@@ -110,8 +115,14 @@ def run_report(cfg: PipelineConfig) -> Path:
     _FLOOR_AUDIT.update(checked=0, below_floor=0, unmeasured=0, suppressed=[])
     _CLAIM_COUNTERS.clear()
     run_dir = cfg.run_dir()
-    a, b = cfg.comparison_pair()
-    model_colors = {a.name: _COLORS["a"], b.name: _COLORS["b"]}
+    # ROADMAP.md sec 24.3: keyed off `cfg.models` rather than the comparison
+    # pair, so a solo run has a color and a panel run does not silently give
+    # its third model whatever Plotly's default cycle hands out. The first two
+    # keep the exact hues every existing figure and recorded screenshot use --
+    # `_MODEL_PALETTE[:2]` IS `(_COLORS["a"], _COLORS["b"])`, pinned by a test
+    # rather than by these two lines agreeing by eye.
+    model_colors = {m.name: _MODEL_PALETTE[i % len(_MODEL_PALETTE)]
+                    for i, m in enumerate(cfg.models)}
     sections, findings, coverage = [], [], []
 
     builders = [
@@ -274,7 +285,17 @@ def run_report(cfg: PipelineConfig) -> Path:
     html = _TEMPLATE.render(
         title=cfg.report.title, run=cfg.run.name,
         date=datetime.date.today().isoformat(),
-        model_a=a.name, model_b=b.name, colors=_COLORS,
+        # ROADMAP.md sec 24.3: the header is built from every configured
+        # model rather than from a hard pair. For a two-model run the rendered
+        # markup is unchanged -- the first two chips keep the `a`/`b` classes
+        # and " vs ".join reproduces the old literal " vs " -- so this is a
+        # generalization, not a restyling (sec 2.1).
+        models_title=" vs ".join(m.name for m in cfg.models),
+        model_chips=[{"name": m.name,
+                      "cls": ("a", "b")[i] if i < 2 else "extra",
+                      "color": model_colors[m.name]}
+                     for i, m in enumerate(cfg.models)],
+        colors=_COLORS,
         dataset_line=_dataset_line(cfg, run_dir),
         findings=findings, finding_groups=_group_findings(findings),
         sections=sections,
@@ -1834,6 +1855,95 @@ def _sec_l0(run_dir: Path, model_colors: dict, findings: list) -> str:
     return inner
 
 
+def _all_pairs_block(pairs, primary: dict, row_fn, title: str,
+                     purpose: str, reading: str, limitations: str) -> str:
+    """A cross-model section's every-pair table, rendered only when there IS more than one.
+
+    Every cross-model artifact now carries a `pairs` list -- one entry for a
+    two-model run, C(n,2) for a panel (`ROADMAP.md` sec 24.3 sub-item 3). A
+    two-model run's `pairs` therefore holds exactly the pair the section
+    already renders in full above, so repeating it as a one-row table would
+    add a heading and no information; this returns `""` there. The section's
+    existing figures keep describing the designated reference pair, and this
+    table is the thing a panel adds rather than a thing a panel changes -- so
+    no two-model report gains or loses a single element.
+
+    `pairs` missing entirely means a pre-panel artifact; that reads as one
+    pair, which is what it was.
+    """
+    records = pairs or [primary]
+    if len(records) < 2:
+        return ""
+    df = pd.DataFrame([row_fn(r) for r in records])
+    return (f"<h4>{title}</h4>" + _table(df)
+            + _note(purpose, reading, limitations))
+
+
+def _l1_panel_block(arrays, meta: dict) -> str:
+    """Every pair's peak CKA and its own heatmap, for a panel run.
+
+    The heatmap and depth curve above are the designated reference pair's,
+    unchanged. This adds what a panel actually measures beyond it: a peak
+    table over all C(n,2) pairs, then one small heatmap per pair on a SHARED
+    0-1 colour scale, because the whole point of putting them side by side is
+    that a reader compares them -- per-figure autoscaling would make the
+    least similar pair look identical to the most similar one.
+    """
+    records = meta.get("pairs") or []
+    if len(records) < 2:
+        return ""
+    rows = []
+    for r in records:
+        best = r["best_pair"]
+        null = best.get("null_ci")
+        rows.append({
+            "model A": r["model_a"], "model B": r["model_b"],
+            "peak CKA": _ci_str({"value": best["cka"], **(best.get("ci") or {})}),
+            "at": f'{_short(best["layer_a"])} ↔ {_short(best["layer_b"])}',
+            "rel. depth": f'{best.get("rel_depth_a", float("nan")):.2f} / '
+                          f'{best.get("rel_depth_b", float("nan")):.2f}',
+            "shuffled null": f'{null["value"]:.3f}' if null else "n/a",
+        })
+    inner = "<h4>Peak similarity, every pair</h4>" + _table(pd.DataFrame(rows)) + _note(
+        "The peak-CKA layer pair for every model pair in this run, each "
+        "against its own shuffled-series null. The heatmap at the top of "
+        "this section is the first row of this table.",
+        "Compare each pair's peak against ITS OWN null column, never against "
+        "another pair's peak: the null absorbs how much similarity the shared "
+        "input alone produces for that particular pair of architectures, and "
+        "that quantity is not the same for two pairs.",
+        "Every value is a maximum over the two models' layer grids, so larger "
+        "models offer more candidates to maximize over and their peaks are "
+        "biased upward relative to smaller ones. The relative depths use "
+        f'the \'{meta.get("depth_axis_a", "index")}\' axis, so a model with an '
+        "uncaptured surface legitimately never reaches 1.0.")
+
+    n = len(records)
+    cols = min(3, n)
+    rowsn = (n + cols - 1) // cols
+    grid = make_subplots(rows=rowsn, cols=cols, horizontal_spacing=0.09,
+                         vertical_spacing=0.14,
+                         subplot_titles=[f'{r["model_a"]} × {r["model_b"]}'
+                                         for r in records])
+    for i, r in enumerate(records):
+        key = f'cka_window__{r["model_a"]}__{r["model_b"]}'
+        if key not in arrays:
+            continue
+        grid.add_trace(go.Heatmap(
+            z=arrays[key], x=[_short(x) for x in r["layers_b"]],
+            y=[_short(y) for y in r["layers_a"]], zmin=0, zmax=1,
+            coloraxis="coloraxis"), row=i // cols + 1, col=i % cols + 1)
+    grid.update_layout(coloraxis=dict(colorscale="Viridis", cmin=0, cmax=1,
+                                      colorbar_title="CKA"))
+    grid.update_xaxes(tickfont_size=8)
+    grid.update_yaxes(tickfont_size=8)
+    return inner + "<h4>Layer-pair similarity, every pair</h4>" + \
+        _frag(grid, 260 * rowsn + 80) + _figcap(
+            "The same layer-by-layer CKA matrix as the heatmap at the top of "
+            "this section, for every model pair, on one shared 0-1 colour "
+            "scale so the panels are comparable to each other.")
+
+
 def _sec_l1(run_dir: Path, findings: list) -> str:
     """CKA heatmap, depth-correspondence curve, family agreement, optional RSA."""
     arrays = np.load(run_dir / "l1" / "cka.npz")
@@ -1965,6 +2075,7 @@ def _sec_l1(run_dir: Path, findings: list) -> str:
             plain=f"The two models organize '{lo_f}'-type data the most differently "
                 f"of any data type tested.",
             registered=False))
+    inner += _l1_panel_block(arrays, meta)
     if meta.get("rsa"):
         inner += ("<h4>RSA along matched layers</h4>" + _table(pd.DataFrame(meta["rsa"]))
                   + _note(
@@ -1991,7 +2102,26 @@ def _sec_l1(run_dir: Path, findings: list) -> str:
 def _sec_l2(run_dir: Path, findings: list) -> str:
     """Gain-over-baseline heatmaps for both stitching directions."""
     data = load_json(run_dir / "l2" / "stitching.json")
-    inner = ""
+    inner = _all_pairs_block(
+        data.get("pairs"), {"directions": list(data["directions"])},
+        lambda r: {"model A": r["model_a"], "model B": r["model_b"],
+                   **{f'{d.split("->")[0]} → {d.split("->")[1]}':
+                      f'{data["directions"][d]["best_gain"]:+.3f}'
+                      for d in r["directions"]},
+                   "best of the two": f'{r["best_gain"]:+.3f}'},
+        "Stitching gain, every pair",
+        "Each pair's best gain over the input-feature baseline, in both "
+        "directions. The per-direction heatmaps below give the full layer "
+        "grid behind each of these numbers.",
+        "Only the gain ABOVE the input baseline is evidence of shared learned "
+        "structure, so a value at or below zero means that direction carries "
+        "no stitching evidence regardless of how high its raw R² is. The two "
+        "directions of one pair are fit independently and are not expected to "
+        "match.",
+        "A point estimate without its CI: the per-direction headings below "
+        "carry the interval, and a gain whose CI straddles zero is not "
+        "evidence no matter what this column shows. Nothing here corrects "
+        "for having looked at C(n,2) x 2 directions.")
     for direction, res in data["directions"].items():
         src, dst = direction.split("->")
         gain = np.array(res["gain"])
@@ -2192,7 +2322,7 @@ def _layer_metrics_block(run_dir: Path, model_names: list, findings: list) -> st
                   "skip_lens_mase": "skip-lens MASE",
                   "l3_mean_sensitivity": "mean Δact (all corruptions)",
                   "best_patch_restoration": "best restoration",
-                  "best_cka_partner": "closest layer in other model",
+                  "best_cka_partner": "closest layer in another model",
                   "best_cka": "that layer's CKA"}
         blocks += (f"<h4>{model} — every measured layer</h4>"
                    + _table(df.rename(columns={k: v for k, v in rename.items()
@@ -2232,6 +2362,21 @@ def _layer_metrics_block(run_dir: Path, model_names: list, findings: list) -> st
         "that model's output.")
 
 
+def _l3_models(meta: dict) -> list:
+    """Every model L3 measured, from the canonical key with a legacy fallback.
+
+    `l3/meta.json` gained a `models` list in ROADMAP.md sec 24.3; artifacts
+    written before that carry only `model_a`/`model_b`. Reading the new key
+    first and falling back keeps an older run's report renderable, and
+    filtering `None` is what makes a solo run's `model_b: null` a one-model
+    list rather than a crash two lines later.
+    """
+    models = meta.get("models")
+    if not models:
+        models = [meta.get("model_a"), meta.get("model_b")]
+    return [m for m in models if m]
+
+
 def _sec_l3(run_dir: Path, model_colors: dict, findings: list) -> str:
     """Fingerprint heatmaps, agreement bars, behavioral deltas, patching curves."""
     arrays = np.load(run_dir / "l3" / "sensitivity.npz")
@@ -2239,13 +2384,14 @@ def _sec_l3(run_dir: Path, model_colors: dict, findings: list) -> str:
     names, inner = meta["corruptions"], ""
     rel_depth_by_model = meta.get("rel_depth", {})
     depth_axis_by_model = meta.get("depth_axis", {})
-    fig = make_subplots(cols=2, rows=1, subplot_titles=[meta["model_a"], meta["model_b"]],
+    l3_models = _l3_models(meta)
+    fig = make_subplots(cols=len(l3_models), rows=1, subplot_titles=l3_models,
                         horizontal_spacing=0.12)
-    for col, model in enumerate((meta["model_a"], meta["model_b"]), start=1):
+    for col, model in enumerate(l3_models, start=1):
         fp = arrays[f"fingerprint_{model}"]
         y = rel_depth_by_model.get(model) or np.linspace(0, 1, fp.shape[0]).tolist()
         fig.add_trace(go.Heatmap(z=fp, x=names, y=np.round(y, 2),
-                                 colorscale="Magma", showscale=col == 2,
+                                 colorscale="Magma", showscale=col == len(l3_models),
                                  colorbar_title="Δact"), row=1, col=col)
         axis_name = depth_axis_by_model.get(model, "index")
         fig.update_yaxes(title_text=f"relative depth ({axis_name} axis)" if col == 1 else None,
@@ -2274,116 +2420,128 @@ def _sec_l3(run_dir: Path, model_colors: dict, findings: list) -> str:
         "magnitudes are not directly comparable across models — only the "
         "column *shape* (where the peak is) should be compared.")
 
-    agree = meta["agreement"]["per_corruption"]
-    entries = [agree[c] for c in names]
-    bar = go.Figure(go.Bar(x=names, y=[e["value"] for e in entries],
-                           marker_color=_COLORS["accent"], error_y=_err_y(entries)))
-    bar.update_layout(yaxis_title="depth-profile agreement (Spearman ρ)",
-                      yaxis_range=[-1, 1.05])
-    overlap_frac = meta["agreement"].get("overlap_fraction")
-    overlap_note = ""
-    if overlap_frac is not None and overlap_frac < 0.999:
-        overlap_note = (f" On this run's depth axis the two models' spans overlap over only "
-                        f"{overlap_frac * 100:.0f}% of the full range; agreement is computed "
-                        f"over that overlap only (never extrapolated across it), so the "
-                        f"un-overlapped depth is simply excluded rather than invented.")
-    inner += "<h4>Cross-model fingerprint agreement</h4>" + _frag(bar, 300) + _note(
-        "Each model's per-corruption fingerprint (the column above) is "
-        "interpolated onto the depth range the two models actually share "
-        "(ROADMAP.md sec 18 F1's `align_on_axis` — never extrapolated past "
-        "either model's own span), and the two resulting depth profiles "
-        "are Spearman rank-correlated — one number per corruption "
-        "summarizing whether both models encode that property at matching "
-        "relative depths." + overlap_note,
-        "+1 means both models' sensitivity peaks at the same relative "
-        "depth for that corruption; -1 means they peak at opposite ends; "
-        "0 means unrelated depth profiles. The lowest bar is called out "
-        "in the findings as the most divergent corruption — the one "
-        "structural property these two architectures seem to handle at "
-        "meaningfully different points in depth.",
-        "Rank correlation over a coarse 33-point depth grid can be noisy "
-        "for very shallow models (few layers to interpolate between), and "
-        "says nothing about whether the property matters to the forecast "
-        "at all — cross-reference with behavioral sensitivity below.")
+    agreement = meta.get("agreement") or {}
+    # ROADMAP.md sec 24.3. Rendered as a NAMED absence, not omitted: a section
+    # that simply vanishes reads as a stage that failed, and everything else
+    # in L3 -- the fingerprints above, the behavioral deltas and the
+    # within-model patching below -- is unaffected by there being one model.
+    has_agreement = agreement.get("applicable") is not False
+    if not has_agreement:
+        inner += ("<h4>Cross-model fingerprint agreement</h4>"
+                  + _figcap("Not measured in this run. "
+                            + str(agreement.get("reason") or "")))
+    agree = agreement.get("per_corruption") or {}
+    if has_agreement:
+        entries = [agree[c] for c in names]
+        bar = go.Figure(go.Bar(x=names, y=[e["value"] for e in entries],
+                               marker_color=_COLORS["accent"], error_y=_err_y(entries)))
+        bar.update_layout(yaxis_title="depth-profile agreement (Spearman ρ)",
+                          yaxis_range=[-1, 1.05])
+        overlap_frac = meta["agreement"].get("overlap_fraction")
+        overlap_note = ""
+        if overlap_frac is not None and overlap_frac < 0.999:
+            overlap_note = (f" On this run's depth axis the two models' spans overlap over only "
+                            f"{overlap_frac * 100:.0f}% of the full range; agreement is computed "
+                            f"over that overlap only (never extrapolated across it), so the "
+                            f"un-overlapped depth is simply excluded rather than invented.")
+        inner += "<h4>Cross-model fingerprint agreement</h4>" + _frag(bar, 300) + _note(
+            "Each model's per-corruption fingerprint (the column above) is "
+            "interpolated onto the depth range the two models actually share "
+            "(ROADMAP.md sec 18 F1's `align_on_axis` — never extrapolated past "
+            "either model's own span), and the two resulting depth profiles "
+            "are Spearman rank-correlated — one number per corruption "
+            "summarizing whether both models encode that property at matching "
+            "relative depths." + overlap_note,
+            "+1 means both models' sensitivity peaks at the same relative "
+            "depth for that corruption; -1 means they peak at opposite ends; "
+            "0 means unrelated depth profiles. The lowest bar is called out "
+            "in the findings as the most divergent corruption — the one "
+            "structural property these two architectures seem to handle at "
+            "meaningfully different points in depth.",
+            "Rank correlation over a coarse 33-point depth grid can be noisy "
+            "for very shallow models (few layers to interpolate between), and "
+            "says nothing about whether the property matters to the forecast "
+            "at all — cross-reference with behavioral sensitivity below.")
 
-    calib = meta.get("calibration") or {}
-    x_labels = [(f"{n}<br><span style='font-size:0.75em;color:#66727B'>"
-                f"{calib[n]['footprint'] * 100:.0f}% touched</span>" if n in calib else n)
-               for n in names]
-    beh = go.Figure()
-    beh_ci = meta.get("behavior_ci", {})
-    for model in (meta["model_a"], meta["model_b"]):
-        cis = beh_ci.get(model, {})
-        err = _err_y([cis[c] for c in names]) if cis else None
-        vals = arrays[f"behavior_{model}"]
-        beh.add_bar(x=x_labels, y=vals, name=model, marker_color=model_colors.get(model),
-                    error_y=err, text=[f"{v:.2f}" for v in vals], textposition="outside")
-    beh.update_layout(barmode="group", yaxis_title="forecast change (scaled MAE)")
-    floor_path = run_dir / "l0" / "noise_floor.json"
-    floor_note = ""
-    if floor_path.exists():
-        floor = load_json(floor_path)
-        for model in (meta["model_a"], meta["model_b"]):
-            fv = floor.get(model)
-            if fv and not fv["deterministic"]:
-                beh.add_hline(y=fv["mase_abs_delta_mean"],
-                             line=dict(color=model_colors.get(model), dash="dot"),
-                             annotation_text=f"{model} repeat-run floor", annotation_font_size=9)
-        floor_note = (' Dotted reference lines (sec 15 A13) mark each sampling model\'s own '
-                     'repeat-run MASE noise floor (see the Overall metrics section above) -- a '
-                     'bar below its model\'s line is not distinguishable from repeat-run noise.')
-    calib_note = ""
-    if meta.get("calibrate") == "input_energy":
-        calibrated_names = [n for n in names if calib.get(n, {}).get("calibrated")]
-        uncalibrated_names = [n for n in names if not calib.get(n, {}).get("calibrated")]
-        calib_note = (f'<p class="blurb"><b>l3.calibrate: input_energy</b> — '
-                      f'{", ".join(calibrated_names)} were re-solved to a common per-series '
-                      f'perturbation-energy budget ({calib[names[0]]["target_energy"]:.3g}, '
-                      f'the median of this battery\'s own configured strengths); '
-                      f'{", ".join(uncalibrated_names)} have no continuous magnitude knob '
-                      f'and are reported as configured.</p>')
-    inner += calib_note + "<h4>Behavioral sensitivity</h4>" + _frag(beh, 300) + _note(
-        "How much each corruption changes the final *forecast* (scaled "
-        "mean absolute change), independent of any internals — the "
-        "behavioral counterpart to the activation fingerprints above. "
-        "Value labels are drawn on every bar specifically because this "
-        "battery's corruptions are not strength-matched (next note) — a "
-        "shared linear axis dominated by one outsized corruption can make "
-        "every other bar look flat even when its own value is not small.",
-        "Taller bars mean that corruption matters more to this model's "
-        "output. A corruption with a tall activation fingerprint but a "
-        "short bar here is being represented internally without much "
-        "consequence for the forecast — an interesting mismatch worth "
-        "checking against the patching curve below, which is the causal "
-        "version of this same question. Read the printed value, not just "
-        "bar height, before concluding a corruption 'does nothing.'",
-        "Scale is in MASE-like units (MAE over each series' own naive "
-        "scale), so it's comparable across families but reflects each "
-        "corruption's configured strength as much as the model's intrinsic "
-        "sensitivity — a fair cross-model comparison, not a fair "
-        "cross-corruption one unless strengths were tuned to match. How "
-        "unfair a given cross-corruption comparison is, is measured rather "
-        "than described here: the breakdown table below gives each "
-        "corruption's own input footprint and perturbation energy, which is "
-        "what a bar's height should be read against. A corruption altering "
-        "well under 1% of timesteps produces a small series-averaged value "
-        "arithmetically, whatever the model does at the points it touched — "
-        "the per-window patching heatmap further down is where such "
-        "localized damage shows whether it is still causally recoverable."
-        + floor_note)
+        calib = meta.get("calibration") or {}
+        x_labels = [(f"{n}<br><span style='font-size:0.75em;color:#66727B'>"
+                    f"{calib[n]['footprint'] * 100:.0f}% touched</span>" if n in calib else n)
+                   for n in names]
+        beh = go.Figure()
+        beh_ci = meta.get("behavior_ci", {})
+        for model in l3_models:
+            cis = beh_ci.get(model, {})
+            err = _err_y([cis[c] for c in names]) if cis else None
+            vals = arrays[f"behavior_{model}"]
+            beh.add_bar(x=x_labels, y=vals, name=model, marker_color=model_colors.get(model),
+                        error_y=err, text=[f"{v:.2f}" for v in vals], textposition="outside")
+        beh.update_layout(barmode="group", yaxis_title="forecast change (scaled MAE)")
+        floor_path = run_dir / "l0" / "noise_floor.json"
+        floor_note = ""
+        if floor_path.exists():
+            floor = load_json(floor_path)
+            for model in l3_models:
+                fv = floor.get(model)
+                if fv and not fv["deterministic"]:
+                    beh.add_hline(y=fv["mase_abs_delta_mean"],
+                                 line=dict(color=model_colors.get(model), dash="dot"),
+                                 annotation_text=f"{model} repeat-run floor", annotation_font_size=9)
+            floor_note = (' Dotted reference lines (sec 15 A13) mark each sampling model\'s own '
+                         'repeat-run MASE noise floor (see the Overall metrics section above) -- a '
+                         'bar below its model\'s line is not distinguishable from repeat-run noise.')
+        calib_note = ""
+        if meta.get("calibrate") == "input_energy":
+            calibrated_names = [n for n in names if calib.get(n, {}).get("calibrated")]
+            uncalibrated_names = [n for n in names if not calib.get(n, {}).get("calibrated")]
+            calib_note = (f'<p class="blurb"><b>l3.calibrate: input_energy</b> — '
+                          f'{", ".join(calibrated_names)} were re-solved to a common per-series '
+                          f'perturbation-energy budget ({calib[names[0]]["target_energy"]:.3g}, '
+                          f'the median of this battery\'s own configured strengths); '
+                          f'{", ".join(uncalibrated_names)} have no continuous magnitude knob '
+                          f'and are reported as configured.</p>')
+        inner += calib_note + "<h4>Behavioral sensitivity</h4>" + _frag(beh, 300) + _note(
+            "How much each corruption changes the final *forecast* (scaled "
+            "mean absolute change), independent of any internals — the "
+            "behavioral counterpart to the activation fingerprints above. "
+            "Value labels are drawn on every bar specifically because this "
+            "battery's corruptions are not strength-matched (next note) — a "
+            "shared linear axis dominated by one outsized corruption can make "
+            "every other bar look flat even when its own value is not small.",
+            "Taller bars mean that corruption matters more to this model's "
+            "output. A corruption with a tall activation fingerprint but a "
+            "short bar here is being represented internally without much "
+            "consequence for the forecast — an interesting mismatch worth "
+            "checking against the patching curve below, which is the causal "
+            "version of this same question. Read the printed value, not just "
+            "bar height, before concluding a corruption 'does nothing.'",
+            "Scale is in MASE-like units (MAE over each series' own naive "
+            "scale), so it's comparable across families but reflects each "
+            "corruption's configured strength as much as the model's intrinsic "
+            "sensitivity — a fair cross-model comparison, not a fair "
+            "cross-corruption one unless strengths were tuned to match. How "
+            "unfair a given cross-corruption comparison is, is measured rather "
+            "than described here: the breakdown table below gives each "
+            "corruption's own input footprint and perturbation energy, which is "
+            "what a bar's height should be read against. A corruption altering "
+            "well under 1% of timesteps produces a small series-averaged value "
+            "arithmetically, whatever the model does at the points it touched — "
+            "the per-window patching heatmap further down is where such "
+            "localized damage shows whether it is still causally recoverable."
+            + floor_note)
     inner += _corruption_breakdown_block(run_dir, findings)
-    overall = meta["agreement"]["overall"]
-    worst = meta["agreement"]["most_divergent"]
-    findings.append(Finding(
-        claim_id=_next_claim_id("l3"), stage="l3", evidence_class="causal_within_model",
-        text=f'L3 — fingerprint agreement ρ={_ci_str(overall)}; '
-            f'most divergent corruption: {worst} '
-            f'(ρ={_ci_str(agree[worst])}).',
-        plain=f"The two models react to data-corrupting changes at similar points in "
-            f"their depth overall, but they disagree most about where they notice "
-            f"'{worst}'-style corruption.",
-        registered=False))
-    for model in (meta["model_a"], meta["model_b"]):
+    if has_agreement:
+        overall = meta["agreement"]["overall"]
+        worst = meta["agreement"]["most_divergent"]
+        findings.append(Finding(
+            claim_id=_next_claim_id("l3"), stage="l3", evidence_class="causal_within_model",
+            text=f'L3 — fingerprint agreement ρ={_ci_str(overall)}; '
+                f'most divergent corruption: {worst} '
+                f'(ρ={_ci_str(agree[worst])}).',
+            plain=f"The two models react to data-corrupting changes at similar points in "
+                f"their depth overall, but they disagree most about where they notice "
+                f"'{worst}'-style corruption.",
+            registered=False))
+    for model in l3_models:
         vals = arrays[f"behavior_{model}"]
         lo, hi = int(np.argmin(vals)), int(np.argmax(vals))
         findings.append(Finding(
@@ -3283,7 +3441,8 @@ def _sec_exemplars(run_dir: Path, model_colors: dict, findings: list,
     inner = ""
     if not summary.empty:
         cols = [c for c in ["series_id", "family", "archetype", *models, "gap",
-                            "gap_in_floor_units", "selection"] if c in summary.columns]
+                            "spread", "gap_in_floor_units", "selection"]
+                if c in summary.columns]
         inner += ("<h4>Every selected series</h4>" + _table(summary[cols])
                   + _note(
             f"All {len(records)} series this run selected as case studies, with "
@@ -3465,8 +3624,13 @@ def _sec_clusters(run_dir: Path, model_colors: dict, findings: list) -> str:
     clusters = load_json(run_dir / "clustering" / "clusters.json")
     comp = load_json(run_dir / "clustering" / "comparison.json")
     models = list(clusters.keys())
-    fig = make_subplots(cols=2, rows=1, subplot_titles=[
-        f'{m} @ {clusters[m]["layer"]}' for m in models], horizontal_spacing=0.08)
+    # cols=len(models), not a hardcoded 2: a panel run clusters every
+    # configured model, and a fixed two-column grid would raise on the third
+    # rather than quietly dropping it -- but either way it would be the
+    # renderer, not the analysis, deciding how many models this run has.
+    fig = make_subplots(cols=len(models), rows=1, subplot_titles=[
+        f'{m} @ {clusters[m]["layer"]}' for m in models],
+        horizontal_spacing=min(0.08, 0.6 / max(1, len(models))))
     for col, model in enumerate(models, start=1):
         sub = emb[emb["model"] == model]
         for c in sorted(sub["cluster"].unique()):
@@ -3543,6 +3707,20 @@ def _sec_clusters(run_dir: Path, model_colors: dict, findings: list) -> str:
         "benchmark families), so overlap partly reflects how family-like "
         "each model's natural clusters are, not just agreement between "
         "the two models."))
+    inner += _all_pairs_block(
+        comp.get("pairs"), comp,
+        lambda r: {"model A": r["model_a"], "model B": r["model_b"],
+                   "AMI": _ci_str(r["ami"])},
+        "Partition agreement, every pair",
+        "Adjusted mutual information between each pair of models' cluster "
+        "assignments. The heatmap above is the designated reference pair; "
+        "this table is every pair the run measured.",
+        "AMI is chance-corrected, so 0 is what independent partitions of the "
+        "same sizes would give and the values are directly comparable across "
+        "rows even when the pairs have different cluster counts.",
+        "Each row is an independent statistic with its own CI; nothing here "
+        "corrects for the fact that C(n,2) of them were looked at, so read "
+        "the spread across rows rather than singling out the largest.")
     ami_val = ami["value"] if isinstance(ami, dict) else ami
     findings.append(Finding(
         claim_id=_next_claim_id("clustering"), stage="clustering", evidence_class="descriptive",
@@ -4270,6 +4448,18 @@ def _sec_fairness(cfg: PipelineConfig, run_dir: Path) -> str:
     rows read "not yet measured" rather than being omitted -- the card's
     own coverage should be as visible as the asymmetries it reports.
     """
+    # ROADMAP.md sec 24.3: the card's whole job is to render the asymmetry
+    # BETWEEN models, so a solo run has no asymmetry to report -- and saying
+    # so is more useful than an omitted section, which reads as a stage that
+    # failed. Rendered unconditionally (`requires: []`), so this is the one
+    # place a solo run's shape has to be stated rather than inferred.
+    if cfg.run_shape() == "solo":
+        only = cfg.models[0].name
+        return ("<p class=\"figcap\">This is a solo run: only "
+                f"<b>{only}</b> was analyzed, so there is no between-model "
+                "asymmetry to report. Every number in this report is a "
+                "within-model measurement, and none of it is a comparison "
+                "(ROADMAP.md \u00a724.3).</p>")
     a, b = cfg.comparison_pair()
     rows = []
 
@@ -4452,6 +4642,26 @@ def _sec_fairness(cfg: PipelineConfig, run_dir: Path) -> str:
             "analysis built on it — is undefined for this model and was not run "
             f"({detail}). Sections below that are missing are missing for this reason, "
             "not because the analysis failed. See CLAUDE.md §12's envelope edge.</div>")
+
+    if cfg.run_shape() == "panel":
+        # Every row of this card names exactly two models, because each
+        # asymmetry it reports (parameters, FLOPs, captured fraction, depth
+        # overlap, noise floor) is a two-way comparison. Widening the table to
+        # N columns would let a reader read a row across four models as though
+        # the "Asymmetry" column described all of them; it describes the pair.
+        # So the scope is STATED rather than the table silently narrowed --
+        # a panel reader is told which pair they are looking at and which
+        # models are absent from it, which is the honest version of the same
+        # limitation (`ROADMAP.md` sec 24.3, `CLAUDE.md` sec 2.5).
+        others = ", ".join(m.name for m in cfg.models if m.name not in (a.name, b.name))
+        banner += (
+            f'<p class="figcap">This is a panel run of {len(cfg.models)} models. '
+            f'Each row below compares the <b>designated reference pair</b> '
+            f'({a.name} vs {b.name}); {others} '
+            f'{"is" if len(cfg.models) == 3 else "are"} not on this card. '
+            f'Their cross-model results are in the every-pair tables inside the '
+            f'L1, L2 and L4 sections, and their own within-model cost and '
+            f'coverage numbers are in the Cost section.</p>')
 
     inner = banner + _table(pd.DataFrame(rows))
     inner += _note(
@@ -5144,7 +5354,7 @@ def _sec_confirm(run_dir: Path, findings: list, n_exploratory: int) -> str:
 _TEMPLATE = Template(r"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{{ model_a }} vs {{ model_b }} — {{ title }}</title>
+<title>{{ models_title }} — {{ title }}</title>
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
 <style>
 :root{
@@ -5279,7 +5489,7 @@ body[data-detail="headline"] .fgroup-block:not(:has(li.registered)){display:none
 </style></head><body><div class="wrap">
 <header>
   <div class="kicker">tsfm-lens · cross-architecture comparison</div>
-  <h1><span class="chip a">{{ model_a }}</span> vs <span class="chip b">{{ model_b }}</span></h1>
+  <h1>{% for m in model_chips %}{% if not loop.first %} vs {% endif %}<span class="chip {{ m.cls }}"{% if m.cls == "extra" %} style="color:{{ m.color }}"{% endif %}>{{ m.name }}</span>{% endfor %}</h1>
   <div class="meta">
     {{ title }} &nbsp;· run <b>{{ run }}</b> · {{ date }}
     {%- if dataset_line %} · {{ dataset_line }}{% endif %}

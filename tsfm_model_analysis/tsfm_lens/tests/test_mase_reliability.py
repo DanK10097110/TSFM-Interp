@@ -128,6 +128,14 @@ class _Cfg:
     l0 = _L0()
     stats = _Stats()
 
+    def run_shape(self):
+        # This double returns two models from `comparison_pair()`, so it IS a
+        # pair config and must say so -- `l0`'s solo guards (ROADMAP.md sec
+        # 24.3) ask the config its shape before pairing, and a double that
+        # answers only half the question would take the solo branch here and
+        # silently stop testing the paired path this file exists to cover.
+        return "pair"
+
     def comparison_pair(self):
         return _Model("m1"), _Model("m2")
 

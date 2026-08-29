@@ -18,9 +18,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from tsfm_lens.config import PipelineConfig, load_config
 from tsfm_lens.doctor import (_check_capped_stages, _check_context_alignment,
-                              _check_corpus_seal, _check_disk, _check_torch_cuda,
-                              _check_vram, _check_zarr_version, print_preflight,
-                              run_preflight)
+                              _check_corpus_seal, _check_disk, _check_store_format,
+                              _check_multiplicity_budget, _check_torch_cuda,
+                              _check_vram, _check_zarr_version,
+                              print_preflight, run_preflight)
 
 SMOKE_CONFIG = str(Path(__file__).resolve().parents[1] / "configs" / "smoke.yaml")
 
@@ -182,3 +183,152 @@ if __name__ == "__main__":
     test_print_preflight_returns_false_iff_any_check_failed()
     test_run_preflight_full_mode_loads_real_mock_adapters_and_runs_conformance()
     print("All doctor preflight tests passed")
+
+
+# --- activation store format (CLAUDE.md sec 11.25) -------------------------
+#
+# The failure this guards has no exception anywhere in it: a v3-written store
+# opened under the pinned v2 reads back as an EMPTY group, so the run looks
+# like one where extract never happened. The tests below therefore build the
+# on-disk METADATA shapes directly rather than asserting on a message -- the
+# check's whole value is that it distinguishes states that are otherwise
+# indistinguishable at runtime.
+
+def _cfg_at(tmp_path: Path, name: str = "r") -> PipelineConfig:
+    cfg = _cpu_cfg()
+    cfg.run.out_dir = str(tmp_path)
+    cfg.run.name = name
+    return cfg
+
+
+def test_store_format_passes_when_no_store_exists_yet():
+    # A run that has not extracted yet must not be reported as broken;
+    # "nothing here" and "something unreadable here" are different states.
+    import tempfile
+    with tempfile.TemporaryDirectory() as td:
+        check = _check_store_format(_cfg_at(Path(td)))
+    assert check.status == "pass"
+    assert "extract will create one" in check.detail
+
+
+def test_store_format_fails_on_a_v3_store_under_the_v2_pin():
+    import tempfile
+    with tempfile.TemporaryDirectory() as td:
+        cfg = _cfg_at(Path(td))
+        store = cfg.run_dir() / "activations.zarr"
+        store.mkdir(parents=True)
+        (store / "zarr.json").write_text('{"zarr_format": 3, "node_type": "group"}')
+        check = _check_store_format(cfg)
+    assert check.status == "fail"
+    assert "11.25" in check.detail
+    # The remediation must not be "reinstall zarr": the installed version is
+    # correct and the STORE is the stale artifact.
+    assert "extract" in check.remediation
+
+
+def test_store_format_passes_on_a_v2_store():
+    import tempfile
+    with tempfile.TemporaryDirectory() as td:
+        cfg = _cfg_at(Path(td))
+        store = cfg.run_dir() / "activations.zarr"
+        store.mkdir(parents=True)
+        (store / ".zgroup").write_text('{"zarr_format": 2}')
+        check = _check_store_format(cfg)
+    assert check.status == "pass"
+
+
+def test_store_format_warns_when_both_metadata_kinds_are_present():
+    # The exact state CLAUDE.md sec 11.25 describes being left behind when a
+    # v2 process opens a v3 directory: the v3 manifest is still there and a
+    # bare v2 `.zgroup` has been written beside it. It reads back empty, so
+    # it must not pass.
+    import tempfile
+    with tempfile.TemporaryDirectory() as td:
+        cfg = _cfg_at(Path(td))
+        store = cfg.run_dir() / "activations.zarr"
+        store.mkdir(parents=True)
+        (store / "zarr.json").write_text('{"zarr_format": 3}')
+        (store / ".zgroup").write_text('{"zarr_format": 2}')
+        check = _check_store_format(cfg)
+    assert check.status == "warn"
+    assert check.remediation
+
+
+def test_store_format_check_is_wired_into_preflight():
+    # The check existing is not the same as the check running: this module's
+    # docstring claimed sec 11.25 coverage for months while no check existed.
+    names = [c.name for c in run_preflight(_cpu_cfg())]
+    assert "activation store format" in names
+
+
+def _cfg_with_models(n: int) -> PipelineConfig:
+    """`smoke.yaml` plus (n - 2) clones of its second model, renamed.
+
+    Cloning keeps every other field of a real, valid config intact -- the
+    check under test reads only `len(cfg.models)` and `cfg.stats`, and a
+    hand-built stub would be a different object from the one preflight
+    actually runs against.
+    """
+    import copy
+    cfg = _cpu_cfg()
+    while len(cfg.models) < n:
+        extra = copy.deepcopy(cfg.models[1])
+        extra.name = f"clone{len(cfg.models)}"
+        cfg.models.append(extra)
+    cfg.models = cfg.models[:n]
+    return cfg
+
+
+def test_multiplicity_budget_states_arithmetic_not_a_guess():
+    """The check must report the CARRYING CAPACITY, never guess a family count.
+
+    A family count is a property of the corpus, not of the config, so a check
+    that assumed one would be a claim checked nowhere (`CLAUDE.md` sec 11.34).
+    What it can state exactly is the arithmetic: pairs x families / n_boot vs
+    alpha.
+    """
+    cfg = _cfg_with_models(3)
+    cfg.stats.n_boot, cfg.stats.alpha = 2000, 0.05
+    check = _check_multiplicity_budget(cfg)
+    assert check.status == "pass"
+    assert "3 pair(s)" in check.detail
+    assert "at most 33 families" in check.detail
+
+
+def test_multiplicity_budget_fails_when_not_even_one_family_fits():
+    """The condition that matters is unsatisfiability, and it must FAIL loudly.
+
+    At 6 pairs and n_boot=100 the smallest attainable adjusted p for a single
+    family is 6/100 = 0.06 > alpha -- so every L0 non-result in that run would
+    be arithmetic, not evidence, at any effect size.
+    """
+    cfg = _cfg_with_models(4)
+    cfg.stats.n_boot, cfg.stats.alpha = 100, 0.05
+    check = _check_multiplicity_budget(cfg)
+    assert check.status == "fail"
+    assert "cannot carry even ONE family" in check.detail
+    assert "stats.n_boot" in check.remediation
+
+
+def test_multiplicity_budget_scales_with_pair_count_not_model_count():
+    """Growth is C(n,2), so capacity must fall QUADRATICALLY, not linearly.
+
+    Pinning the ratio rather than the raw numbers: 2 -> 4 models is 1 -> 6
+    pairs, so capacity must drop 6x, not 2x. A check that divided by model
+    count would pass every other assertion in this file.
+    """
+    def capacity(n: int) -> int:
+        cfg = _cfg_with_models(n)
+        cfg.stats.n_boot, cfg.stats.alpha = 6000, 0.05
+        detail = _check_multiplicity_budget(cfg).detail
+        return int(detail.split("at most ")[1].split()[0])
+
+    assert capacity(2) == 300
+    assert capacity(4) == 50
+
+
+def test_multiplicity_budget_is_wired_into_preflight():
+    """A check that exists but never runs is not a check -- same reason the
+    store-format test above pins its wiring."""
+    names = [c.name for c in run_preflight(_cpu_cfg())]
+    assert "multiplicity budget" in names

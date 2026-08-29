@@ -70,38 +70,54 @@ def run_exemplars(cfg: PipelineConfig, hub, store: ActivationStore,
 
 
 def _select_exemplars(cfg: PipelineConfig, data: BenchmarkData) -> pd.DataFrame:
-    """Pick per-family series spanning the cross-model MASE gap distribution.
+    """Pick per-family series spanning the cross-model MASE disagreement distribution.
 
-    Families are ranked by mean absolute gap between the comparison pair and
-    capped at `max_families`. Within a family the series at the largest
-    absolute gap is always taken; remaining slots go to series nearest evenly
-    spaced interior quantiles of the gap, so `per_family=2` yields the extreme
-    and the median case.
+    For a two-model run the ranking quantity is the signed gap
+    `mase[a] - mase[b]`, unchanged. For a panel it is the SPREAD across every
+    configured model (`max - min`), which is the same quantity when there are
+    two models -- up to sign, and only the magnitude was ever used for
+    ranking -- and is the only generalization that does not privilege an
+    arbitrary pair (`ROADMAP.md` sec 24.3). `gap` keeps its name and its
+    two-model meaning; `spread` is the panel column, and the interior
+    quantiles are taken on whichever one this run's shape uses.
+
+    Families are ranked by mean disagreement and capped at `max_families`.
+    Within a family the series at the largest disagreement is always taken;
+    remaining slots go to series nearest evenly spaced interior quantiles, so
+    `per_family=2` yields the extreme and the median case.
     """
-    a, b = cfg.comparison_pair()
+    names = [m.name for m in cfg.models]
     metrics = pd.read_parquet(cfg.run_dir() / "l0" / "metrics.parquet")
     wide = metrics.pivot_table(index=["series_id", "family"], columns="model",
                                values="mase").reset_index()
-    if a.name not in wide.columns or b.name not in wide.columns:
-        raise RuntimeError("exemplars require L0 metrics for the comparison pair")
-    wide["gap"] = wide[a.name] - wide[b.name]
+    missing = [n for n in names if n not in wide.columns]
+    if missing:
+        raise RuntimeError(f"exemplars require L0 metrics for every model; missing {missing}")
+
+    if cfg.run_shape() == "panel":
+        key = "spread"
+        wide[key] = wide[names].max(axis=1) - wide[names].min(axis=1)
+    else:
+        key = "gap"
+        a, b = cfg.comparison_pair()
+        wide[key] = wide[a.name] - wide[b.name]
 
     row_of = {sid: i for i, sid in enumerate(data.meta["series_id"])}
-    fam_rank = (wide.groupby("family")["gap"].apply(lambda g: g.abs().mean())
+    fam_rank = (wide.groupby("family")[key].apply(lambda g: g.abs().mean())
                 .sort_values(ascending=False).index[: cfg.exemplars.max_families])
+    keep = ["series_id", "family", *names, key]
     picked = []
     for fam in fam_rank:
-        grp = wide[wide["family"] == fam].sort_values("gap")
-        take = [grp["gap"].abs().idxmax()]
+        grp = wide[wide["family"] == fam].sort_values(key)
+        take = [grp[key].abs().idxmax()]
         interior = grp.drop(index=take)
         for q in np.linspace(0.5, 0.25, max(0, cfg.exemplars.per_family - 1)):
             if interior.empty:
                 break
-            idx = (interior["gap"] - interior["gap"].quantile(q)).abs().idxmin()
+            idx = (interior[key] - interior[key].quantile(q)).abs().idxmin()
             take.append(idx)
             interior = interior.drop(index=idx)
-        sub = grp.loc[take, ["series_id", "family", a.name, b.name, "gap"]]
-        picked.append(sub)
+        picked.append(grp.loc[take, keep])
     picks = pd.concat(picked, ignore_index=True)
     picks["row"] = picks["series_id"].map(row_of)
     if picks["row"].isna().any():

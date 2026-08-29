@@ -335,10 +335,21 @@ def run_l3(cfg: PipelineConfig, hub, store: ActivationStore, data: BenchmarkData
                                    **corruption_configs[c])
                  for i, c in enumerate(names)}
 
-    a, b = cfg.comparison_pair()
+    # ROADMAP.md sec 24.3: L3 is deliberately NOT in `_STAGE_MIN_MODELS` --
+    # its sensitivity fingerprints and its within-model activation patching
+    # (invariant 5: patching was never cross-model) are the two most
+    # substantive things in the report and neither needs a second model.
+    # Only the cross-model fingerprint AGREEMENT does, so only that is
+    # withheld on a solo run. `models` is every configured model, which for a
+    # `pair` run is exactly `(a, b)` in the same order -- so no artifact,
+    # figure or recorded number moves (sec 2.1).
+    shape = cfg.run_shape()
+    models = list(cfg.models)
+    a = models[0]
+    b = models[1] if len(models) > 1 else None
     per_series, beh_series, layer_lists, patching = {}, {}, {}, {}
     depth_axes, patching_depth_axes = {}, {}
-    for mcfg in (a, b):
+    for mcfg in models:
         adapter = hub.get(mcfg.name)
         adapter.ensure_loaded()
         ps, beh, layers = _sensitivity(cfg, adapter, store, rows, contexts,
@@ -367,8 +378,14 @@ def run_l3(cfg: PipelineConfig, hub, store: ActivationStore, data: BenchmarkData
             hub.release(mcfg.name)
 
     fingerprints = {k: v.mean(axis=0) for k, v in per_series.items()}
-    agreement = _agreement_with_ci(cfg, per_series[a.name], per_series[b.name], names,
-                                   depth_axes[a.name].coords, depth_axes[b.name].coords)
+    if b is None:
+        agreement = {"applicable": False,
+                     "reason": f"{shape} run (1 model): the fingerprints and the patching "
+                               f"curves above are within-model and stand, but agreement "
+                               f"correlates one model's depth profile against another's"}
+    else:
+        agreement = _agreement_with_ci(cfg, per_series[a.name], per_series[b.name], names,
+                                       depth_axes[a.name].coords, depth_axes[b.name].coords)
     behavior_ci = {
         model: {names[c]: mean_ci(bs[:, c], cfg.stats.n_boot, cfg.run.seed + 30 + c,
                                   cfg.stats.ci)
@@ -380,7 +397,12 @@ def run_l3(cfg: PipelineConfig, hub, store: ActivationStore, data: BenchmarkData
              **{f"per_series_{k}": v for k, v in per_series.items()},
              **{f"behavior_{k}": v.mean(axis=0) for k, v in beh_series.items()})
     save_json(out_dir / "meta.json", {
-        "model_a": a.name, "model_b": b.name, "corruptions": names,
+        # `models` is the canonical list; `model_a`/`model_b` are retained
+        # unchanged so every pre-2026-08-28 reader and artifact comparison
+        # keeps working on a pair run. `model_b` is None only for solo.
+        "models": [m.name for m in models],
+        "model_a": a.name, "model_b": b.name if b is not None else None,
+        "corruptions": names,
         "layers": layer_lists, "agreement": agreement, "behavior_ci": behavior_ci,
         "n_series": int(len(rows)), "calibrate": cfg.l3.calibrate,
         "calibration": calibration_meta,
@@ -421,7 +443,11 @@ def run_l3(cfg: PipelineConfig, hub, store: ActivationStore, data: BenchmarkData
                 "n_requested": v.get("n_requested"), "n_realized": v.get("n_realized"),
                 "limited_by": v.get("limited_by")}
             for k, v in patching.items()})
-    log.info("L3 complete: most divergent corruption = %s", agreement["most_divergent"])
+    if b is None:
+        log.info("L3 complete: %d model, fingerprints + within-model patching only "
+                 "(no cross-model agreement)", len(models))
+    else:
+        log.info("L3 complete: most divergent corruption = %s", agreement["most_divergent"])
 
 
 def _sensitivity(cfg: PipelineConfig, adapter, store: ActivationStore, rows: np.ndarray,

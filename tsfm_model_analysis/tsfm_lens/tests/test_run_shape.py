@@ -147,3 +147,131 @@ def test_report_names_the_run_shape_as_the_skip_reason(tmp_path):
     assert "cluster" in _shape_skip_reason(tmp_path, "clustering")
     # A stage the gate did NOT drop must not be attributed to it.
     assert _shape_skip_reason(tmp_path, "l3") == ""
+
+
+# --- internal degradations: stages that survive solo by losing only their
+# --- cross-model half, rather than being dropped whole.
+
+def _solo_metrics():
+    import numpy as np
+    import pandas as pd
+    rng = np.random.default_rng(0)
+    rows = []
+    for fam in ("trend", "seasonal"):
+        for i in range(12):
+            rows.append({"model": "m0", "series_id": f"{fam}{i}", "family": fam,
+                         "archetype": f"{fam}_arch", "mase": float(rng.uniform(0.5, 2.0)),
+                         "smape": 0.2, "pinball": 0.1, "mae_over_mad": 0.9,
+                         "mase_reliable": True})
+    return pd.DataFrame(rows)
+
+
+def test_l0_keeps_its_within_model_half_on_a_solo_run():
+    # The whole point of leaving `l0` OUT of `_STAGE_MIN_MODELS`: dropping it
+    # would delete every per-family metric and the calibration block, none of
+    # which needs a second model. Only the paired tests have nothing to pair.
+    from tsfm_lens.analysis.l0_behavioral import _summarize
+    cfg = _cfg(1)
+    summary = _summarize(_solo_metrics(), cfg)
+    assert len(summary["per_family"]) == 2 and summary["overall"]
+    assert summary["comparison"]["applicable"] is False
+    assert "solo" in summary["comparison"]["reason"]
+    # The paired artifacts must be ABSENT, not present-and-empty: an empty
+    # `strengths` reads as "we tested and found none".
+    assert "strengths" not in summary and "family_tests" not in summary
+
+
+def test_l0_solo_status_does_not_overload_the_pairwise_key():
+    # `report.py` iterates `pairwise` as a list of {"a","b"} entries. Putting
+    # a status dict there iterates its KEYS and raises on `e["a"]` -- the
+    # report-key-drift failure `CLAUDE.md` sec 11.6 records.
+    from tsfm_lens.analysis.l0_behavioral import _summarize
+    summary = _summarize(_solo_metrics(), _cfg(1))
+    assert not isinstance(summary.get("pairwise"), dict)
+    for entry in summary.get("pairwise") or []:
+        assert "a" in entry and "b" in entry
+
+
+def test_l0_per_archetype_reports_solo_in_its_own_applicable_guard():
+    from tsfm_lens.analysis.l0_behavioral import _archetype_summary
+    out = _archetype_summary(_solo_metrics(), _cfg(1))
+    assert out["rows"]                      # within-model metrics survive
+    assert out["tests"]["applicable"] is False
+    assert "solo" in out["tests"]["reason"]
+
+
+def test_l0_two_model_summary_still_carries_its_paired_results():
+    # The negative that makes the three tests above meaningful: the solo
+    # guards must not fire on a pair run.
+    import pandas as pd
+    from tsfm_lens.analysis.l0_behavioral import _summarize
+    solo = _solo_metrics()
+    both = pd.concat([solo, solo.assign(model="m1", mase=solo["mase"] * 1.5)])
+    summary = _summarize(both, _cfg(2))
+    assert "comparison" not in summary
+    assert summary.get("mase_ratio")
+
+
+def test_model_palette_preserves_the_two_historical_hues():
+    # Every existing two-model figure uses _COLORS["a"]/["b"]. If the palette
+    # that replaced them ever drifts, every recorded figure changes color
+    # without any figure code changing -- so pin it here rather than trusting
+    # the two definitions to agree by eye.
+    from tsfm_lens.report.report import _COLORS, _MODEL_PALETTE
+    assert _MODEL_PALETTE[:2] == [_COLORS["a"], _COLORS["b"]]
+    assert len(set(_MODEL_PALETTE)) == len(_MODEL_PALETTE)
+    assert not ({_COLORS["accent"], _COLORS["muted"]} & set(_MODEL_PALETTE))
+
+
+def test_l3_models_reads_the_canonical_key_and_falls_back():
+    # An artifact written before sec 24.3 carries only model_a/model_b; one
+    # written after carries `models`. Both must render, and a solo run's
+    # `model_b: null` must become a one-model list rather than a [name, None]
+    # that crashes two lines later on `arrays[f"fingerprint_{None}"]`.
+    from tsfm_lens.report.report import _l3_models
+    assert _l3_models({"models": ["x", "y", "z"]}) == ["x", "y", "z"]
+    assert _l3_models({"model_a": "x", "model_b": "y"}) == ["x", "y"]   # legacy
+    assert _l3_models({"model_a": "x", "model_b": None}) == ["x"]
+    assert _l3_models({"models": ["x"], "model_a": "x", "model_b": None}) == ["x"]
+
+
+def test_l3_solo_agreement_is_a_named_absence_not_a_missing_key():
+    # `applicable: False` with a reason, so the report can say WHY rather
+    # than dropping the subsection -- a vanished subsection reads as a
+    # crashed stage. `derived.py` must also stay quiet rather than emit a
+    # scorecard row built on a missing number.
+    from tsfm_lens.report.derived import bottom_line_rows
+    meta = {"models": ["x"], "model_a": "x", "model_b": None,
+            "agreement": {"applicable": False, "reason": "solo run (1 model): ..."}}
+    assert meta["agreement"]["applicable"] is False
+    # The scorecard's own guard keys on `overall`, which a solo artifact
+    # never has -- assert the guard rather than assuming it.
+    assert not (meta["agreement"].get("overall"))
+
+
+def test_smoke_solo_config_disables_nothing_by_hand():
+    # The acceptance config's whole value is that the GATE is what narrows the
+    # run. If a future edit disables l1/l2/cluster/exemplars/confirm here, the
+    # config still "passes" while testing nothing -- the same discipline
+    # `configs/smoke_blackbox.yaml` enforces for capability tiers.
+    solo = load_config(CONFIGS / "smoke_solo.yaml")
+    pair = load_config(CONFIGS / "smoke.yaml")
+    assert solo.run_shape() == "solo" and len(solo.models) == 1
+    from tsfm_lens.pipeline import _stage_by_name
+    for name in _STAGE_MIN_MODELS:
+        assert _stage_by_name(name).enabled(solo), (
+            f"'{name}' is disabled in smoke_solo.yaml, so the shape gate is not "
+            f"what drops it and this config tests nothing")
+    # And it differs from smoke.yaml only by the missing model -- every other
+    # stage's enablement must match, or the two are not comparable runs.
+    assert ({n for n in stage_names() if _stage_by_name(n).enabled(solo)}
+            == {n for n in stage_names() if _stage_by_name(n).enabled(pair)})
+
+
+def test_solo_run_leaves_no_stage_both_selected_and_undroppable():
+    # End-to-end shape check without paying for an end-to-end run: after the
+    # gate, nothing left in `selected` may call `comparison_pair()`, which is
+    # what turned into a mid-run crash before this item existed.
+    selected = _enabled()
+    _apply_shape(_cfg(1), selected)
+    assert not (selected & set(_STAGE_MIN_MODELS))

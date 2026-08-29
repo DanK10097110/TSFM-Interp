@@ -47,12 +47,27 @@ def series_split(cfg: PipelineConfig, data_n: int, n_windows: int) -> tuple:
 
 def run_l2(cfg: PipelineConfig, store: ActivationStore, data: BenchmarkData,
            device: torch.device) -> None:
-    """Fit stitching and baseline probes for both directions of the model pair."""
+    """Fit stitching and baseline probes for both directions of every model pair.
+
+    `directions` was always keyed `"{src}->{dst}"`, so a panel run needs only
+    MORE entries in the same dict -- no key means anything different than it
+    did (`ROADMAP.md` sec 24.3 sub-item 3). `model_a`/`model_b` keep naming
+    pair 0, `layers` keeps its per-model shape (it now covers every configured
+    model rather than two), and the new `pairs` list records which directions
+    belong to which pair so a reader does not have to parse the arrow keys.
+    """
     out_dir = cfg.run_dir() / "l2"
     out_dir.mkdir(parents=True, exist_ok=True)
-    a, b = cfg.comparison_pair()
-    layers = {a.name: store.layers(a.name)[:: cfg.l2.layer_stride],
-              b.name: store.layers(b.name)[:: cfg.l2.layer_stride]}
+    pairs = cfg.comparison_pairs()
+    if not pairs:
+        raise ValueError(
+            "l2 measures a comparison BETWEEN models and this run has "
+            f"{len(cfg.models)}; pipeline._apply_shape should have dropped the "
+            "stage with a stated reason before reaching here "
+            "(ROADMAP.md sec 24.3)")
+    involved = [m for m in cfg.models
+                if any(m.name in (x.name, y.name) for x, y in pairs)]
+    layers = {m.name: store.layers(m.name)[:: cfg.l2.layer_stride] for m in involved}
     n_windows = store.root.attrs["n_windows"]
 
     train_series, val_series = series_split(cfg, data.n, n_windows)
@@ -60,16 +75,24 @@ def run_l2(cfg: PipelineConfig, store: ActivationStore, data: BenchmarkData,
     baseline = _baseline_features(data.contexts(), store.root.attrs["window"]) \
         if cfg.l2.input_baseline else None
 
-    results = {}
-    for src, dst in ((a.name, b.name), (b.name, a.name)):
-        results[f"{src}->{dst}"] = _direction(
-            cfg, store, src, dst, layers, train_series, val_series, baseline, device)
+    results, pair_records = {}, []
+    for a, b in pairs:
+        keys = []
+        for src, dst in ((a.name, b.name), (b.name, a.name)):
+            key = f"{src}->{dst}"
+            results[key] = _direction(
+                cfg, store, src, dst, layers, train_series, val_series, baseline, device)
+            keys.append(key)
+        pair_records.append({"model_a": a.name, "model_b": b.name, "directions": keys,
+                             "best_gain": max(results[k]["best_gain"] for k in keys)})
+
+    first = pairs[0]
     save_json(out_dir / "stitching.json", {
-        "model_a": a.name, "model_b": b.name, "layers": layers,
-        "directions": results,
+        "model_a": first[0].name, "model_b": first[1].name, "layers": layers,
+        "directions": results, "pairs": pair_records, "run_shape": cfg.run_shape(),
         "n_train_series": int(len(train_series)), "n_val_series": int(len(val_series)),
     })
-    log.info("L2 complete")
+    log.info("L2 complete: %d direction(s) across %d pair(s)", len(results), len(pairs))
 
 
 def _direction(cfg: PipelineConfig, store: ActivationStore, src: str, dst: str,

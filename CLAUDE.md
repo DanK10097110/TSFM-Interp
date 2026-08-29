@@ -783,7 +783,13 @@ TSFM-Interp/
         │                        # routing.json, and narrows the run to l0/budget/report
         │                        # rather than letting a model with no token->time map
         │                        # raise out of extraction mid-run
-        ├── run.py               # CLI
+        ├── run.py               # CLI. `--list-configs` prints every configs/*.yaml
+        │                        # DERIVED from the files themselves (run shape from
+        │                        # model count, adapters, `enabled: false` stages, the
+        │                        # file's own leading comment) -- 46 flat YAMLs with no
+        │                        # entry point was the repo's largest remaining
+        │                        # usability cost, and a hand-written configs/README.md
+        │                        # would be a claim checked nowhere (sec 11.34)
         ├── run_meta_report.py   # CLI for report/meta_report.py: --runs a,b,c --out path
         ├── run_analysis_card.py # CLI for report/analysis_card.py: --run <dir> --out <stem>,
         │                        # writes <stem>.md + <stem>.json for one existing run
@@ -877,13 +883,23 @@ TSFM-Interp/
         │                        # verdicts DEMONSTRATE the mechanism and are not a
         │                        # fresh one-shot confirmation (CLAUDE.md sec 6.7)
         ├── configs/smoke_three_model.yaml # THREE mocks, l0+report only
-        │                        # (ROADMAP.md sec 18 F8). Deliberately runs no
-        │                        # other stage: L1/L2/L3/clustering/exemplars/
-        │                        # confirm would silently compare models[0:2] and
-        │                        # ignore the third. Ships at n_boot 2000, not
-        │                        # smoke's 150, because 18 tests against a 1/150
-        │                        # p-floor is an UNSATISFIABLE correction -- the
+        │                        # (ROADMAP.md sec 18 F8) -- deliberately narrow, to keep
+        │                        # F8's own acceptance run reproducible. Its header used to
+        │                        # say the other stages would "silently compare models[0:2]";
+        │                        # that WAS true and is fixed (sec 24.3 sub-item 3), so the
+        │                        # full-panel config is smoke_panel.yaml below. Ships at
+        │                        # n_boot 2000, not smoke's 150, because 18 tests against a
+        │                        # 1/150 p-floor is an UNSATISFIABLE correction -- the
         │                        # measurement is recorded inline in the config
+        ├── configs/smoke_solo.yaml  # ROADMAP.md sec 24.3: ONE mock. smoke.yaml with a model
+        │                        # deleted and NOTHING else changed, so the run-shape gate is
+        │                        # what narrows the run (smoke_blackbox.yaml's discipline)
+        ├── configs/smoke_panel.yaml # ROADMAP.md sec 24.3: FOUR mocks, nothing disabled by
+        │                        # hand -- the acceptance run for panel shape. Includes
+        │                        # mock_encdec deliberately, so a shared block depth axis must
+        │                        # place a model topping out near 3/7 beside three fully
+        │                        # captured ones. n_boot 2000: 6 pairs x 6 families = 36
+        │                        # tests, and 36/2000 = 0.018 < alpha (sec 6.6's p-floor)
         ├── configs/layer_screen_experiment.yaml # the layer-screening bake-off config --
         │                        # TimesFM captured at ALL 20 layers (stride 1), not the
         │                        # usual stride-2 10; only extract/l0/internals/l3
@@ -1545,10 +1561,18 @@ from 0.50 to 0.93. Full numbers in `ROADMAP.md` §15 A20's Findings.
 
 **L0** — MASE/sMAPE/pinball per family. Paired bootstrap of per-series MASE
 differences, Holm-corrected across families **and, since 2026-08-19
-(`ROADMAP.md` §18 F8), across every model pair jointly** — L0 is the only
-stage that compares more than the designated pair, because it needs nothing
-but each adapter's `predict()` (no alignment, no store, no shared window
-axis). With two models the joint set *is* the family set, so every
+(`ROADMAP.md` §18 F8), across every model pair jointly** — L0 was for a
+while the only stage that compared more than the designated pair, because it
+needs nothing but each adapter's `predict()` (no alignment, no store, no
+shared window axis). ✅ **No longer the only one, since 2026-08-28
+(`ROADMAP.md` §24.3 sub-item 3): L1, L2 and clustering measure every pair
+too.** What is still true, and is the reason to keep that sentence's
+distinction rather than delete it, is that L0 is the only one that needs
+*nothing* to do so — the other three had to grow pair-suffixed artifact keys
+beside their legacy ones. Three stages remain deliberately pair-shaped: L3's
+fingerprint agreement, exemplar selection (which uses `spread` across all
+models on a panel, but still selects one series set), and `confirm`. With
+two models the joint set *is* the family set, so every
 pre-2026-08-19 number is unchanged bit-for-bit. A "strength" requires
 corrected p < alpha **and** a CI excluding zero. Ratios kept as effect sizes.
 Artifacts: `l0/metrics.parquet`, `l0/summary.json` (now also `pairwise` and
@@ -2080,11 +2104,26 @@ python run.py --config configs/smoke_blackbox.yaml
 # any library bump (invariant 7's companion to --check-alignment).
 python run.py --config configs/default.yaml --discover-spans chronos --span-stride 1
 
-# Three models: L0 tests all 3 pairs, Holm-corrected jointly, and the report
-# renders a multiplicity ledger (ROADMAP.md §18 F8). Every OTHER cross-model
-# stage compares models[0:2] only, which is why this config disables them
-# rather than letting them quietly ignore the third model.
+# Three models, L0 only: the focused acceptance run for the joint Holm
+# correction + multiplicity ledger (ROADMAP.md sec 18 F8). Kept narrow so F8's
+# own recorded numbers stay reproducible -- NOT because the other stages would
+# ignore the third model. They no longer do (sec 24.3 sub-item 3).
 python run.py --config configs/smoke_three_model.yaml --stages l0,report
+
+# PANEL: N models, nothing disabled by hand. L1/L2/clustering measure EVERY
+# pair (C(n,2) of them); L3's fingerprint agreement, exemplar selection and
+# confirm stay pair-shaped BY DESIGN and are reported against the designated
+# reference pair, which the fairness card states by name. Raise stats.n_boot
+# before adding models -- sec 6.6's p-floor, which --list-configs' sibling
+# preflight check ("multiplicity budget") now computes for you.
+python run.py --config configs/smoke_panel.yaml
+
+# SOLO: one model. The run-shape gate drops the five stages whose entire
+# product IS a comparison, each naming the run shape as its reason.
+python run.py --config configs/smoke_solo.yaml
+
+# Which config do I want? Derived from the files, so it cannot go stale.
+python run.py --list-configs
 
 # Cross-run comparison (ROADMAP.md §5.5): reads N existing run directories'
 # artifacts as-is, writes one comparison JSON + HTML, re-runs nothing.
@@ -2215,6 +2254,8 @@ PYTHONPATH=. python3 example_runs/run_validation.py
 | Cross-model agreement as a reliability signal (`analysis/agreement.py`, `run_agreement.py`, `ROADMAP.md` §20 H4) | ✅ **Built and swept 2026-08-19 — the acceptance criterion decided AGAINST the heuristic.** Zero forward passes over 6 existing run directories. Disagreement predicts error strongly (Spearman **0.716** against mean MASE; lowest disagreement decile MASE **0.981** vs highest **5.787**) and **loses to each model's own quantile width** — the free baseline needing no second checkpoint — in **10 of 11** scorable model-runs (1 inconclusive by 0.003, **0 wins**). Secondary: distributional disagreement beats pointwise (0.815 vs 0.716); the signal grows monotonically with horizon (0.154 at h=1 → 0.624 at h=64); it is family-dependent (0.286 / 0.465 / 0.742), so pooling would have reported the largest family's number as the corpus's. The single apparent win was a **false positive from two compounding bugs** (§11.37) whose tell was a point estimate lying outside its own bootstrap CI. 12 tests; full suite **607 passed**. **Deliberately not a pipeline stage** — wiring in a heuristic the evidence says to prefer a free baseline over would contradict the result. || Scaling-ladder harness (`analysis/scaling_ladder.py`, `run_scaling_ladder.py`, `configs/scaling_ladder_chronos.yaml`, `ROADMAP.md` §20 H1) | ⚠️ **Harness only, 2026-08-19 — the five GPU rungs are NOT run.** The reducer works end to end against a real run directory (13 metrics off `runs/medium_run_chronos_base`; `runs/medium_run` correctly **excluded** for having no budget artifact). Three decisions: the axis is `budget`'s **measured** parameter count, never a checkpoint name (§11.34); significance is an **exact permutation** over all n! orderings — a bootstrap over 5 points estimates nothing — with its own **p-floor 2/120 = 0.0167** printed beside every p (§11.35 applied before it could bite); and `flat` is **withheld** (None + reason) for metrics whose artifacts carry no within-run CI, since H1's acceptance criterion asks which metrics are flat and an unbacked "not flat" would be the wrong way to answer. One bug found by running it: at a single rung `np.all(np.diff(v) > 0)` is **vacuously True**, so a degenerate ladder reported a confident `monotone_increasing` — §11.37's shape exactly; now `too_few_rungs`. 8 tests. **No ladder data exists yet and no report section is built.** |
 | Report legibility: visible figure captions, the Bottom line, grouped findings (`report/report.py::_note`/`_figcap`/`_bottom_line`/`_group_findings`, `ROADMAP.md` §21 J7) | ✅ **2026-08-20, user-requested.** `_note` split into a visible `<p class="figcap">` caption + a uniform "What does this mean?" dropdown with **no call-site changes**; new `_bottom_line` block above everything, composed per-line from artifacts and degrading per-line; findings grouped by stage. **Acceptance was met only on the live run, not the mock one** — `configs/full_report_run.yaml` (TimesFM-2.5-200M vs Chronos-T5-Base, all 15 stages, `report.verbose: true`) renders **70** figures where `smoke.yaml` renders 48, and **17 of the 70 were bare**: the L3 per-series case-study panels and the per-family exemplar panels, each sitting under one subsection-level note a reader passed twenty panels ago. The count-based test written the same morning (`captions >= figures`) passed anyway, because surplus captions elsewhere masked the deficit. Fixed with `_figcap` (the visible half of `_note` alone, for the gallery case where every panel needs a *label* but not the same "how to read it" text 24 times) at six sites, and by rewriting the test to walk the document in order. Final: live **14 sections / 48 findings / 70 figures / 0 bare**, smoke **13 sections / 47 findings / 48 figures / 0 bare**. Two Bottom-line bugs caught the same way: the held-out-test line read the wrong artifact key and reported **0 of 4** where the artifact says **3 of 4**, and an empty run still emitted a disclaimer-only block. 7 tests (`tests/test_report_legibility.py`), three of them negatives. Full suite **629 passed** (up from 622). |
 | The report's conclusions become measurements (`report/derived.py`, `report.py::_scorecard`/`_corruption_breakdown_block`/`_layer_metrics_block`, `ROADMAP.md` §24) | ✅ **2026-08-24, user-requested.** Each of the four complaints was first grounded in an artifact-verified defect (§2.4), and two were real bugs rather than tone: `_sec_exemplars` had a `continue` **discarding 6 of the 9 exemplars the stage computes**, and `_verbose_case` head-sliced a task-grouped corpus (§11.38). `Verdict.verdict` is derived in `__post_init__` from a `Rule` whose text renders in the same row — a call site *structurally* cannot author one, which is pinned by a test. Scorecard covers **ten stages / 14 rows**; every value was additionally **re-derived by hand from the raw artifacts rather than through `derived.py`** and matches. Live on `runs/full_report_run` (TimesFM-2.5-200M vs Chronos-T5-Base): **14 sections / 50 findings / 61 figures / 89 captions / 0 bare / 56 tables**; exemplars **9 rendered** (was 3), L3 verbose **4 headings** (was 24). The added rows immediately produced a negative result the report had never stated: **Chronos-T5-Base's most load-bearing attention head moves MASE by 0.1368 against its own repeat-run floor of 0.1409** — below its own sampling noise. One regression, worth its shape: the rewrite stopped emitting the phrase `patched at`, which `tests/test_smoke.py` asserts and **five other modules inherit through that shared helper**, so one dropped token reported as 9 failed / 802 passed across four unrelated files; the assertion was *not* deleted — the information had genuinely left the figure and was restored to its caption. Full suite **816 passed, 0 failed** (3:06:16). 38 new tests. |
+| Panel (3+ model) run shape — all-pairs L1/L2/clustering, spread-based exemplars, panel report blocks (`ROADMAP.md` §24.3 sub-items 3–6) | ✅ **2026-08-28.** Before this, `_apply_shape` dropped nothing on a panel, so `l1`/`l2`/`cluster`/`exemplars` silently analyzed `models[0:2]` and rendered a complete-looking report about two of a run's models. Every pair artifact stays byte-compatible by the L3 rule (**add a canonical key, leave the legacy keys untouched, read new-then-legacy**): a panel *adds* `cka_window__{a}__{b}`, `pairs`, `run_shape`. Pair non-regression verified two ways — a report-only rerun of `configs/medium_run_chronos_base.yaml` reproduces **every L1/L2/clustering finding text byte-for-byte**, and `cka_window` is `np.array_equal` to pair 0's suffixed array in both a pair and a 4-model panel run (the check `analysis/null_baseline.py` and the two `run_crosscoder_*.py` scripts actually depend on — none of them is exercised by the pipeline's tests). `configs/smoke_panel.yaml` live: **14 rendered / 2 skipped / 0 failed, 89 findings, 77 figures**, 6 pairs at L1, 12 directions at L2, 6 distinct AMIs. One real crash found by running rather than reading (`_sec_clusters`'s hardcoded `make_subplots(cols=2)`), and one test caught **passing for the wrong reason** — its assertion phrase also appeared in an unrelated note, so it was green before the feature existed. 8 tests (`tests/test_panel_pairs.py`). |
+| Preflight store-format + multiplicity-budget checks, `--list-configs` (`ROADMAP.md` §24.3 usability follow-on) | ✅ **2026-08-28.** `doctor._check_store_format` closes a gap the doctor's own docstring **claimed was covered**: a zarr v3 store opens under the pinned v2 without error and reads back EMPTY (§11.25). Verified against the real stale directory — `runs/real_run` fails with the correct remediation (delete + re-`extract`, explicitly not "reinstall zarr") while `smoke`/`medium_run_chronos_base`/`smoke_panel` pass; it deletes nothing. `_check_multiplicity_budget` states §6.6's p-floor arithmetic **before** the run (1 pair @ n_boot 150 → 7 families; 6 pairs @ 2000 → 16) and refuses to guess a family count, which is a property of the corpus. `run.py --list-configs` derives its listing from the 46 config files themselves. 9 tests. |
 **Golden hashes (do not let these change) — ✅ currently matching, see below:**
 ```
 seed 0   → parametric 2856658d044e4c49  random a45664e176fbb71a  clean_low_noise
@@ -3556,6 +3597,44 @@ but a human reading the rendered output and finding it repetitive. A
 presentation complaint is worth taking as a possible measurement complaint
 (§2.4) — three of the four defects in that review turned out to be mechanisms,
 not tone.
+
+### 11.39 Making a variable conditional breaks the sites that only *mention* it, and those fail last
+Found 2026-08-28 implementing `ROADMAP.md` §24.3's solo run shape, three
+times in one afternoon. `a, b = cfg.comparison_pair()` had been
+unconditional everywhere; making it conditional on a run having two models
+meant auditing every consumer. Every site that *computed* something from the
+pair was guarded correctly on the first pass — the sensitivity loop, the
+agreement statistic, the stitching directions. What broke, twice, were sites
+that merely **mention** the pair: `run_l3`'s closing `log.info(...,
+agreement["most_divergent"])`, which let a solo run complete every forward
+pass and write every artifact before dying on a `KeyError` **in a log
+statement**; and `run_report`'s template call `model_a=a.name,
+model_b=b.name`, which died with a `NameError` after every section had
+already been built. A third of the same family was caught before running,
+only because its *consumer* was checked rather than its producer: writing a
+status dict into `summary["pairwise"]`, a key `report.py` iterates as a list
+of `{"a", "b"}` entries, would have iterated the dict's keys and raised on
+`e["a"]` (§11.6's report-key-drift, one level over).
+**Why this class is expensive out of proportion to its difficulty.** These
+sites are invisible to a reading of the logic — you are thinking about the
+computation while you edit, and a log line or a template argument is not part
+of it. They fail *late*, after the expensive work is done and the artifacts
+are on disk, so the traceback reads as "the analysis broke" rather than "a
+string interpolation broke". And in a pipeline whose stages take minutes
+each, every one costs a full rerun to find the next.
+**Fix, and it is mechanical.** Before running anything, **grep the removed or
+newly-conditional variable across the module** — here `agreement[`, `\ba\.name`,
+`model_b` — not just the functions you edited. One grep after the first crash
+would have found the second and third together. This is the same shape as
+§11.38 (a sweep that fixed a pattern *by call site* left the pattern intact in
+a helper), stated for the case where the pattern is a *variable* rather than an
+idiom: fix by symbol, verify by grep, and only then run.
+**Corollary that did work.** The artifact half of the same change caused zero
+breakage, because it followed a rule worth reusing: **add a canonical key,
+leave the legacy keys untouched, read new-then-legacy.** `l3/meta.json` gained
+a `models` list while `model_a`/`model_b` stayed exactly as they were, so every
+pair artifact stayed byte-compatible and a 98-test pair-run regression check
+passed on the first attempt.
 
 ---
 

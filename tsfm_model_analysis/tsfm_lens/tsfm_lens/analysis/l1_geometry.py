@@ -53,30 +53,86 @@ class _LayerBank:
 
 
 def run_l1(cfg: PipelineConfig, store: ActivationStore, device: torch.device) -> None:
-    """Compute CKA matrices, the depth-correspondence curve, and optional RSA."""
+    """Compute CKA matrices, the depth-correspondence curve, and optional RSA.
+
+    Runs over every pair `cfg.comparison_pairs()` yields, which is exactly
+    `[comparison_pair()]` for a two-model run and all C(n,2) pairs for a
+    panel (`ROADMAP.md` sec 24.3 sub-item 3). Artifacts stay byte-compatible
+    for a pair run: the historical unsuffixed keys (`cka_window`,
+    `cka_family`, `model_a`, `best_pair`, ...) are still written and still
+    describe pair 0, and every pair -- pair 0 included -- ALSO gets a
+    `__{a}__{b}`-suffixed entry plus a record in the new `pairs` list. Readers
+    try the suffixed key and fall back, per the rule L3's `models` key already
+    validated: add a canonical key, leave the legacy keys untouched.
+
+    Layer banks are cached per (model, level) rather than per pair, so a
+    4-model panel loads each model's activations once across its six pairs
+    instead of six times.
+    """
     out_dir = cfg.run_dir() / "l1"
     out_dir.mkdir(parents=True, exist_ok=True)
-    a, b = cfg.comparison_pair()
-    layers_a = store.layers(a.name)[:: cfg.l1.layer_stride]
-    layers_b = store.layers(b.name)[:: cfg.l1.layer_stride]
+    pairs = cfg.comparison_pairs()
+    if not pairs:
+        raise ValueError(
+            "l1 measures a comparison BETWEEN models and this run has "
+            f"{len(cfg.models)}; pipeline._apply_shape should have dropped the "
+            "stage with a stated reason before reaching here "
+            "(ROADMAP.md sec 24.3)")
     meta = load_meta(cfg.run_dir())
     n = len(meta)
     n_windows = store.root.attrs["n_windows"]
 
     n_series = min(n, max(1, cfg.l1.max_rows // n_windows))
     rows = sample_rows(n, n_series, cfg.run.seed, strata=meta["family"].to_numpy())
-    bank_a = _LayerBank(store, a.name, layers_a, "window", rows, device)
-    bank_b = _LayerBank(store, b.name, layers_b, "window", rows, device)
+    n_families = int(meta["family"].nunique())
+
+    layers_of = {m.name: store.layers(m.name)[:: cfg.l1.layer_stride] for m in cfg.models}
+    banks: dict = {}
+
+    def bank(name: str, level: str) -> _LayerBank:
+        key = (name, level)
+        if key not in banks:
+            banks[key] = _LayerBank(store, name, layers_of[name], level,
+                                    rows if level == "window" else None, device)
+        return banks[key]
+
+    arrays, records = {}, []
+    for a, b in pairs:
+        rec, cka_window, cka_family = _one_pair(
+            cfg, store, meta, a.name, b.name, layers_of, bank, rows,
+            n_series, n_windows, n_families, device)
+        records.append(rec)
+        suffix = f"__{a.name}__{b.name}"
+        arrays["cka_window" + suffix] = cka_window
+        arrays["cka_family" + suffix] = cka_family
+
+    first = records[0]
+    arrays["cka_window"] = arrays[f"cka_window__{first['model_a']}__{first['model_b']}"]
+    arrays["cka_family"] = arrays[f"cka_family__{first['model_a']}__{first['model_b']}"]
+    np.savez(out_dir / "cka.npz", **arrays)
+
+    payload = dict(first)
+    payload["pairs"] = records
+    payload["run_shape"] = cfg.run_shape()
+    save_json(out_dir / "meta.json", payload)
+
+
+def _one_pair(cfg: PipelineConfig, store: ActivationStore, meta, name_a: str, name_b: str,
+              layers_of: dict, bank, rows: np.ndarray, n_series: int, n_windows: int,
+              n_families: int, device: torch.device) -> tuple:
+    """Every L1 quantity for one ordered model pair; returns (record, window, family)."""
+    layers_a, layers_b = layers_of[name_a], layers_of[name_b]
+    bank_a, bank_b = bank(name_a, "window"), bank(name_b, "window")
     cka_window = np.zeros((len(layers_a), len(layers_b)), dtype=np.float32)
     for i, la in enumerate(layers_a):
         xa = bank_a.get(la)
         for j, lb in enumerate(layers_b):
             cka_window[i, j] = linear_cka(xa, bank_b.get(lb))
-    log.info("L1: window-level CKA over %d rows, peak=%.3f", n_series * n_windows,
-             cka_window.max())
+    log.info("L1 %s vs %s: window-level CKA over %d rows, peak=%.3f", name_a, name_b,
+             n_series * n_windows, cka_window.max())
 
     families, cka_family, family_comparisons = [], [], None
-    n_families = int(meta["family"].nunique())
+    pooled_a = pooled_b = None
     if cfg.l1.family_conditioned and n_families < 2:
         # "Per-family" CKA compares families' geometry *to each other*; with
         # one family it would just be a second, differently-pooled measure of
@@ -90,8 +146,7 @@ def run_l1(cfg: PipelineConfig, store: ActivationStore, device: torch.device) ->
                       f"family-conditioned CKA needs >=2 families to compare",
         }
     elif cfg.l1.family_conditioned:
-        pooled_a = _LayerBank(store, a.name, layers_a, "series", None, device)
-        pooled_b = _LayerBank(store, b.name, layers_b, "series", None, device)
+        pooled_a, pooled_b = bank(name_a, "series"), bank(name_b, "series")
         for fam, group in meta.groupby("family"):
             if len(group) < cfg.l1.min_family_series:
                 continue
@@ -125,16 +180,14 @@ def run_l1(cfg: PipelineConfig, store: ActivationStore, device: torch.device) ->
                 len(fam_idx), min(cfg.stats.n_boot, cfg.stats.n_boot_heavy),
                 cfg.run.seed + 11, cfg.stats.ci)
 
-    rsa = _run_rsa(cfg, store, meta, layers_a, layers_b, cka_window, a.name, b.name) \
+    rsa = _run_rsa(cfg, store, meta, layers_a, layers_b, cka_window, name_a, name_b) \
         if cfg.l1.rsa else []
 
-    da = depth_axis_for_run(cfg.alignment.depth_axis, store, a.name, layers_a)
-    db = depth_axis_for_run(cfg.alignment.depth_axis, store, b.name, layers_b)
+    da = depth_axis_for_run(cfg.alignment.depth_axis, store, name_a, layers_a)
+    db = depth_axis_for_run(cfg.alignment.depth_axis, store, name_b, layers_b)
 
-    np.savez(out_dir / "cka.npz", cka_window=cka_window,
-             cka_family=np.stack(cka_family) if cka_family else np.zeros((0,) + cka_window.shape))
-    save_json(out_dir / "meta.json", {
-        "model_a": a.name, "model_b": b.name,
+    record = {
+        "model_a": name_a, "model_b": name_b,
         "layers_a": layers_a, "layers_b": layers_b, "families": families,
         "best_pair": {"layer_a": layers_a[best[0]], "layer_b": layers_b[best[1]],
                       "cka": float(cka_window[best]), "ci": best_ci, "null_ci": null_ci,
@@ -146,7 +199,10 @@ def run_l1(cfg: PipelineConfig, store: ActivationStore, device: torch.device) ->
         "family_comparisons": family_comparisons,
         "depth_axis_a": da.axis, "depth_axis_b": db.axis,
         "rel_depth_a": da.coords.tolist(), "rel_depth_b": db.coords.tolist(),
-    })
+    }
+    stacked = np.stack(cka_family) if cka_family else np.zeros((0,) + cka_window.shape,
+                                                              dtype=np.float32)
+    return record, cka_window, stacked
 
 
 def _best_pair_ci(cfg: PipelineConfig, bank_a: _LayerBank, bank_b: _LayerBank,

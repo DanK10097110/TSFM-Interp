@@ -2,14 +2,17 @@
 # names ("a three-model config's L0 section states the total comparison count
 # and corrected alpha").
 #
-# WHY THIS EXISTS AS A SEPARATE CONFIG. `config.py::comparison_pair()` returns
-# `models[0], models[1]`, and every cross-model stage — L1, L2, L3, clustering,
-# exemplars, confirm — uses it. L0 is the ONE stage that can honestly run for
-# every model, because it needs nothing but each adapter's `predict()`: no
-# alignment, no activation store, no shared window axis. So this config
-# deliberately runs `l0` and `report` only. Adding the other stages would not
-# fail — they would silently compare the first two models and quietly ignore
-# the third, which is exactly the impression F8 exists to remove.
+# WHY THIS EXISTS AS A SEPARATE CONFIG. L0 is the stage F8 is about, and this
+# config isolates it: `l0` and `report` only, so the multiplicity ledger is
+# read against nothing else.
+#
+# CORRECTED 2026-08-28 (ROADMAP.md §24.3 sub-item 3). This header used to say
+# the other stages were disabled because they "would silently compare the
+# first two models and quietly ignore the third". That is no longer true —
+# L1, L2 and clustering now measure every pair, and `configs/smoke_panel.yaml`
+# is the config that exercises them with nothing disabled. This one stays
+# L0-only for the original reason (a focused F8 acceptance run), not because
+# the rest would be wrong.
 #
 # What to look for in the rendered report: the "Multiplicity ledger" block
 # under L0, and a "Paired family tests — patchy vs. wavy" table beside the

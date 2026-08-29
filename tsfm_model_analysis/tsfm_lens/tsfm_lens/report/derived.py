@@ -940,41 +940,61 @@ def layer_metrics(run_dir: Path, model: str) -> pd.DataFrame:
 
 
 def _cka_partners(run_dir: Path, l1: dict, model: str) -> dict:
-    """For each of this model's layers, its best-matching layer in the other model.
+    """For each of this model's layers, its best-matching layer in ANY other model.
 
-    Returns `{}` for a single-model run, or when this model is not one of the
-    two L1 compared — both are "there is no partner to report", which is a
-    fact about the run and not a missing measurement.
+    On a two-model run "any other model" is the one other model, so this is
+    unchanged. On a panel it searches every pair the model participates in and
+    keeps the single best partner per layer, which is why the partner column
+    names the model as well as the layer -- a bare layer name would be
+    ambiguous once there is more than one candidate model
+    (`ROADMAP.md` sec 24.3 sub-item 3).
+
+    Returns `{}` for a single-model run, or when this model took part in no
+    measured pair -- both are "there is no partner to report", which is a fact
+    about the run and not a missing measurement.
     """
-    a, b = l1.get("model_a"), l1.get("model_b")
-    if model not in (a, b):
+    records = l1.get("pairs") or ([l1] if l1.get("model_a") else [])
+    records = [r for r in records if model in (r.get("model_a"), r.get("model_b"))]
+    if not records:
         return {}
     try:
         arrs = np.load(run_dir / "l1" / "cka.npz")
+    except (OSError, ValueError):
+        return {}
+    multi = len(l1.get("pairs") or []) > 1
+
+    out: dict = {}
+    for rec in records:
+        a, b = rec.get("model_a"), rec.get("model_b")
         # `cka_window` is the global [layers_a x layers_b] matrix; `cka_family`
         # is [family x layers_a x layers_b] and is a different measurement,
         # not a fallback for it. Named explicitly so a future added key
-        # cannot silently become the one this reads.
-        cka = np.asarray(arrs["cka_window"])
-    except (OSError, ValueError, KeyError):
-        return {}
-    layers_a = list(l1.get("layers_a") or [])
-    layers_b = list(l1.get("layers_b") or [])
-    if cka.shape != (len(layers_a), len(layers_b)):
-        return {}
-    out = {}
-    if model == a:
-        for i, la in enumerate(layers_a):
-            row = cka[i]
-            if row.size:
-                j = int(np.nanargmax(row))
-                out[la] = (layers_b[j], _fin(row[j]))
-    else:
-        for j, lb in enumerate(layers_b):
-            col = cka[:, j]
-            if col.size:
-                i = int(np.nanargmax(col))
-                out[lb] = (layers_a[i], _fin(col[i]))
+        # cannot silently become the one this reads. The suffixed key is this
+        # pair's own matrix; the unsuffixed one is pair 0's, which is the
+        # same array for a two-model run and the WRONG one for any later pair.
+        try:
+            cka = np.asarray(arrs[f"cka_window__{a}__{b}"])
+        except KeyError:
+            try:
+                cka = np.asarray(arrs["cka_window"])
+            except KeyError:
+                continue
+        layers_a = list(rec.get("layers_a") or [])
+        layers_b = list(rec.get("layers_b") or [])
+        if cka.shape != (len(layers_a), len(layers_b)):
+            continue
+        own, other, other_name = ((layers_a, layers_b, b) if model == a
+                                  else (layers_b, layers_a, a))
+        for i, layer in enumerate(own):
+            vec = cka[i] if model == a else cka[:, i]
+            if not vec.size:
+                continue
+            j = int(np.nanargmax(vec))
+            value = _fin(vec[j])
+            best = out.get(layer)
+            if value is not None and (best is None or best[1] is None or value > best[1]):
+                name = f"{other_name}:{other[j]}" if multi else other[j]
+                out[layer] = (name, value)
     return out
 
 
@@ -999,9 +1019,15 @@ def exemplar_summary(run_dir: Path) -> pd.DataFrame:
     if not meta or not meta.get("exemplars"):
         return pd.DataFrame()
     df = pd.DataFrame(meta["exemplars"])
-    if "gap" not in df:
+    # A panel run ranks by `spread` (max - min MASE across every model) rather
+    # than by a two-model signed `gap`, because a designated pair's gap would
+    # privilege an arbitrary pair (`ROADMAP.md` sec 24.3). Only the magnitude
+    # was ever used for ranking, and for two models the two agree, so the rest
+    # of this function is unchanged.
+    key = "gap" if "gap" in df else ("spread" if "spread" in df else None)
+    if key is None:
         return df
-    df["abs_gap"] = df["gap"].abs()
+    df["abs_gap"] = df[key].abs()
     labels = []
     for _, rec in df.iterrows():
         fam = df[df["family"] == rec["family"]]

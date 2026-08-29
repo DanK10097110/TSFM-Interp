@@ -201,6 +201,17 @@ def _archetype_summary(metrics: pd.DataFrame, cfg: PipelineConfig) -> dict:
           "fallback_to_family": sorted(metrics.loc[metrics["archetype"].isna(), "family"].unique().tolist()),
           "dropped_min_n": dropped, "min_n": sc.min_series}
     n_groups = kept["archetype_group"].nunique()
+    # ROADMAP.md sec 24.3: a solo run has per-archetype METRICS but no paired
+    # test to run, and `comparison_pair()` raises before the `applicable`
+    # guard below could say so. Answer in the guard's own shape rather than
+    # letting the stage die -- every row above this line is a within-model
+    # measurement and survives untouched.
+    if cfg.run_shape() == "solo":
+        out["tests"] = {"applicable": False,
+                        "reason": "solo run (1 model): the per-archetype metrics above "
+                                  "are within-model and stand, but a paired test needs "
+                                  "two models to pair"}
+        return out
     a, b = cfg.comparison_pair()
     wide = reliable.pivot_table(index=["series_id", "archetype_group"], columns="model",
                                values="mase").reset_index()
@@ -298,6 +309,21 @@ def _summarize(metrics: pd.DataFrame, cfg: PipelineConfig) -> dict:
                       f"families. The Overall metrics above still reflect the full "
                       f"pooled comparison.",
         }
+        return summary
+    # ROADMAP.md sec 24.3, as above: the per-family table, the calibration
+    # block and every quantile metric are within-model and already in
+    # `summary`; only the paired strength tests need a second model.
+    if cfg.run_shape() == "solo":
+        # A DEDICATED key, not `pairwise`. `report.py` iterates `pairwise` as
+        # a list of `{"a": ..., "b": ...}` entries, so overloading it with a
+        # status dict would iterate its KEYS and raise on `e["a"]` -- the
+        # report-key-drift failure `CLAUDE.md` sec 11.6 already records, and
+        # the reason `n_families < 2` above uses `family_comparisons` rather
+        # than reusing an existing key too.
+        summary["comparison"] = {"applicable": False,
+                                 "reason": "solo run (1 model): per-family metrics above are "
+                                           "within-model and stand; strength tests compare "
+                                           "two models and have nothing to pair"}
         return summary
     a, b = cfg.comparison_pair()
     wide = reliable.pivot_table(index=["series_id", "family"], columns="model",

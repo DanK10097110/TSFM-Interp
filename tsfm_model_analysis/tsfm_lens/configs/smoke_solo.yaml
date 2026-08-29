@@ -1,0 +1,111 @@
+# End-to-end SOLO smoke run: ONE mock architecture (ROADMAP.md sec 24.3).
+#
+# Nothing is disabled by hand -- the stage list is left exactly as
+# `smoke.yaml` has it, so the RUN-SHAPE GATE is what narrows the run. That is
+# the same discipline `smoke_blackbox.yaml` enforces for capability tiers: if
+# the gate ever stops working, this config fails loudly instead of quietly
+# passing because a human had already removed the stages it was meant to drop.
+# The expected drop set is l1, l2, cluster, exemplars and confirm; l0, l3,
+# lens, internals, attention, sae, budget and frontend must all still run.
+
+run:
+  name: smoke_solo
+  out_dir: runs
+  device: cpu
+  dtype: float32
+  seed: 0
+
+data:
+  source: smoke
+  context_len: 128
+  horizon: 32
+  smoke_series_per_family: 20
+
+alignment:
+  window: 32
+  sanity_check: true
+
+models:
+  - name: patchy
+    adapter: mock_patch
+    batch_size: 64
+
+l1:
+  layer_stride: 1
+  max_rows: 20000
+  min_family_series: 10
+  rsa: true
+  rsa_max_series: 120
+
+l2:
+  layer_stride: 1
+  max_rows: 8000
+  val_frac: 0.3
+
+l3:
+  max_series: 48
+  patching:
+    layer_stride: 1
+    corruptions: [deseasonalize, noise, level_shift, spike, warp, dropout]
+    max_series: 32
+    per_window: true
+    window_stride: 1
+
+lens:
+  layer_stride: 1
+  max_series: 24
+  tuned: true
+  tuned_max_series: 200
+  lambdas: [0.01, 0.1, 1.0]
+
+attention:
+  max_series: 40
+  batch_series: 16
+  max_lag_tokens: 64
+  ablation_max_series: 32
+  top_k: 3
+  # Which lag resolution a CROSS-MODEL attention claim may cite. A lag index
+  # means ~32 timesteps for TimesFM and ~1 for Chronos-T5, so reading the two
+  # models' native lag profiles index-for-index makes patch size look like a
+  # finding. `matched` bins every model's lag axis to the coarsest configured
+  # model's token width first. Both are ALWAYS computed and recorded
+  # (`head_scores` vs `head_scores_matched`); this only selects which one the
+  # report's cross-model claim reads, so no recorded number depends on it.
+  resolution_mode: matched
+
+exemplars:
+  per_family: 2
+  max_families: 4
+
+clustering:
+  use_umap: false
+  max_series: 200
+
+report:
+  # Model identity in the report (chips, H1, section text) always comes from
+  # the `models[*].name` entries above, never from this string — swap models
+  # or rename them freely and the report stays correct without touching this.
+  title: Solo smoke run · one model, no comparison
+
+stats:
+  enabled: true
+  n_boot: 150          # reduced for smoke speed; default is 500
+  n_boot_heavy: 100
+  ci: 0.95
+  alpha: 0.05
+  min_series: 8
+
+internals:
+  enabled: true
+  layer_stride: 1
+  max_rows: 8000
+  probe_pca_dim: 20
+
+# Smoke-mode confirmation generates a fresh "private" corpus from the same
+# generators with a shifted seed — it validates mechanics, not distribution
+# shift. Real runs point at a sealed private directory instead.
+confirm:
+  enabled: true
+  source: smoke
+  max_series: 120
+  require_seal: false

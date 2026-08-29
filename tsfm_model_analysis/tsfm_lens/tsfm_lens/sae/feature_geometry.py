@@ -42,6 +42,11 @@ def run_sae_feature_cka(cfg: PipelineConfig, store: ActivationStore, targets: li
     failing for every target of one model (CLAUDE.md sec 2.5: skip and log,
     don't crash the whole `sae` stage over an optional, additive measurement).
     """
+    if cfg.run_shape() == "solo":
+        log.info("sae: feature-space CKA skipped -- solo run (1 model), and this "
+                 "measurement compares two models' persisted feature spaces "
+                 "(ROADMAP.md sec 24.3)")
+        return None
     a, b = cfg.comparison_pair()
     targets_a = [t["layer"] for t in targets
                 if t["model"] == a.name and store.has_sae_features(a.name, t["layer"])]

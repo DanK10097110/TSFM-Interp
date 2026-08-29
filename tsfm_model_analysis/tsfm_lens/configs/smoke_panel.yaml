@@ -1,0 +1,119 @@
+# End-to-end PANEL smoke run: FOUR mock architectures (ROADMAP.md sec 24.3).
+#
+# The companion to `smoke_solo.yaml` at the other end of the run-shape range,
+# and the acceptance config for sub-items 3-6. Nothing is disabled by hand:
+# every cross-model stage is left on, so if `comparison_pairs()` ever
+# regresses to `comparison_pair()` this config quietly comparing only the
+# first two models is exactly what the run is here to catch. Four models means
+# six pairs -- the smallest count at which "all pairs" and "the pair" are
+# unambiguously different AND a model (`wavy`) appears in pairs that do not
+# include the reference model, which a three-model run cannot exercise as
+# sharply.
+#
+# `encdecy` is deliberately in the panel: its four captured encoder blocks sit
+# over four genuinely uncaptured decoder blocks, so the shared `block` depth
+# axis has to place a model that tops out around 3/7 on the same axes as three
+# fully-captured ones. A panel figure that silently rescaled each model to
+# [0, 1] would look fine here and be wrong.
+
+run:
+  name: smoke_panel
+  out_dir: runs
+  device: cpu
+  dtype: float32
+  seed: 0
+
+data:
+  source: smoke
+  context_len: 128
+  horizon: 32
+  smoke_series_per_family: 12
+
+alignment:
+  window: 32
+  sanity_check: true
+  depth_axis: block
+
+models:
+  - name: patchy
+    adapter: mock_patch
+    batch_size: 64
+  - name: steppy
+    adapter: mock_step
+    batch_size: 64
+  - name: wavy
+    adapter: mock_wave
+    batch_size: 64
+  - name: encdecy
+    adapter: mock_encdec
+    batch_size: 64
+
+l1:
+  layer_stride: 1
+  max_rows: 8000
+  min_family_series: 6
+  rsa: false
+
+l2:
+  layer_stride: 1
+  max_rows: 4000
+  val_frac: 0.3
+
+l3:
+  max_series: 24
+  patching:
+    layer_stride: 1
+    corruptions: [deseasonalize, noise]
+    max_series: 24
+    per_window: false
+
+lens:
+  layer_stride: 1
+  max_series: 24
+  tuned: false
+
+attention:
+  max_series: 24
+  batch_series: 8
+  max_lag_tokens: 32
+  ablation_max_series: 24
+  top_k: 2
+  resolution_mode: matched
+
+exemplars:
+  per_family: 2
+  max_families: 3
+
+clustering:
+  use_umap: false
+  max_series: 120
+
+internals:
+  enabled: true
+  layer_stride: 1
+  max_rows: 4000
+  probe_pca_dim: 20
+
+stats:
+  enabled: true
+  # Six pairs x six families = 36 jointly Holm-corrected L0 tests. A bootstrap
+  # p is floored at 1/n_boot, so the smallest attainable adjusted p is
+  # 36/n_boot; at the two-model smoke run's 150 that is 0.24 > alpha and the
+  # whole correction would be UNSATISFIABLE arithmetic rather than evidence
+  # (CLAUDE.md sec 6.6, measured on the three-model run). 2000 clears it
+  # (36/2000 = 0.018 < 0.05). This is sub-item 4's rule made concrete: raise
+  # n_boot with model count, before adding models rather than after.
+  n_boot: 2000
+  n_boot_heavy: 100
+  ci: 0.95
+  alpha: 0.05
+  min_series: 8
+
+confirm:
+  enabled: true
+  source: smoke
+  max_series: 72
+  require_seal: false
+
+report:
+  title: Panel run · four architectures, six pairs (ROADMAP.md sec 24.3)

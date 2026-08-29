@@ -89,6 +89,14 @@ class _Cfg:
         self.stats = stats
         self.run = _Run()
 
+    def run_shape(self):
+        # This double returns two models from `comparison_pair()`, so it IS a
+        # pair config and must say so -- `l0`'s solo guards (ROADMAP.md sec
+        # 24.3) ask the config its shape before pairing, and a double that
+        # answers only half the question would take the solo branch here and
+        # silently stop testing the paired path this file exists to cover.
+        return "pair"
+
     def comparison_pair(self):
         class M:
             def __init__(self, name):

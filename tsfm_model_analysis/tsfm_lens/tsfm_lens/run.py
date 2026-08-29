@@ -16,6 +16,7 @@ that holds `configs/`) keeps working unchanged.
 from __future__ import annotations
 
 import argparse
+import re
 
 from pathlib import Path
 
@@ -49,11 +50,105 @@ def _print_provenance_diff(run_dir: Path) -> None:
               "(CLAUDE.md sec 11.15/11.25)")
 
 
+def _config_summary(path: Path) -> dict:
+    """One row of `--list-configs`, read from the file rather than a registry.
+
+    Everything here is DERIVED: the run shape from how many models the file
+    declares, the narrowed stage list from its own `enabled:` flags, the
+    purpose from its leading comment block. A hand-maintained index
+    (`configs/README.md`) would be a claim checked nowhere and would go stale
+    the first time a config was added without one (`CLAUDE.md` sec 11.34, and
+    the two stale-prose corrections this repo has already had to make).
+
+    Parsed with `yaml.safe_load`, not `load_config`, on purpose:
+    `scaling_ladder_chronos.yaml`'s `ladder:` block is deliberately outside
+    the config schema, and a listing that could not show the configs that
+    need explaining most would be the wrong trade.
+    """
+    import yaml
+
+    purpose = ""
+    for line in path.read_text(encoding="utf-8").splitlines():
+        stripped = line.strip()
+        if not stripped:
+            continue
+        if not stripped.startswith("#"):
+            break
+        text = stripped.lstrip("#").strip()
+        if text:
+            purpose = f"{purpose} {text}".strip()
+        # A sentence ends at a period followed by space or end-of-line -- NOT
+        # at any period, or every header citing "ROADMAP.md" truncates to
+        # "Phase 4 (ROADMAP".
+        end = re.search(r"\.(?=\s|$)", purpose)
+        if end:
+            purpose = purpose[: end.start()]
+            break
+
+    row = {"name": path.stem, "purpose": purpose, "models": [], "shape": "?",
+           "stages": "", "note": ""}
+    try:
+        raw = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    except Exception as exc:  # a malformed config is a fact worth showing
+        row["note"] = f"unparseable: {type(exc).__name__}"
+        return row
+    if not isinstance(raw, dict):
+        row["note"] = "not a mapping"
+        return row
+
+    models = raw.get("models") or []
+    row["models"] = [str(m.get("adapter", "?")) for m in models if isinstance(m, dict)]
+    n = len(models)
+    row["shape"] = {0: "-", 1: "solo", 2: "pair"}.get(n, "panel")
+    off = sorted(k for k, v in raw.items()
+                 if isinstance(v, dict) and v.get("enabled") is False)
+    if off:
+        row["stages"] = "off: " + ",".join(off)
+    if "ladder" in raw:
+        row["note"] = "expand with run_scaling_ladder.py --emit-configs"
+    return row
+
+
+def _print_config_listing(config_dir: Path) -> None:
+    """`--list-configs` (Functionality_Summary.md's config-sprawl finding).
+
+    ~46 flat YAML files with no entry point is a real usability cost for
+    someone who did not write them: the fastest way to find the right one was
+    to grep the directory. This prints them grouped by run shape with each
+    file's own header sentence, so the answer to "which config do I run" is a
+    command rather than a directory listing.
+    """
+    paths = sorted(config_dir.glob("*.yaml"))
+    if not paths:
+        print(f"no configs found in {config_dir}")
+        return
+    rows = [_config_summary(p) for p in paths]
+    order = {"solo": 0, "pair": 1, "panel": 2, "-": 3, "?": 4}
+    rows.sort(key=lambda r: (order.get(r["shape"], 9), r["name"]))
+    width = max(len(r["name"]) for r in rows)
+    print(f"{len(rows)} configs in {config_dir}\n")
+    shape = None
+    for row in rows:
+        if row["shape"] != shape:
+            shape = row["shape"]
+            label = {"-": "no models declared", "?": "unreadable"}.get(shape, shape)
+            print(f"  [{label}]")
+        adapters = ",".join(row["models"])
+        tail = " · ".join(x for x in (adapters, row["stages"], row["note"]) if x)
+        print(f"    {row['name']:<{width}}  {row['purpose'][:78]}")
+        if tail:
+            print(f"    {'':<{width}}  ({tail})")
+    print("\n  run one with:  python run.py --config configs/<name>.yaml")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Layered cross-model TSFM comparison")
     parser.add_argument("--config", default="", help="path to a YAML config "
                         "(not required with --verify-provenance, which reads "
                         "the target run's own frozen config_resolved.yaml)")
+    parser.add_argument("--list-configs", action="store_true",
+                        help="list every config in configs/ with its run shape, "
+                             "adapters and purpose, then exit (no config needed)")
     parser.add_argument("--verify-provenance", default="", metavar="RUN_DIR",
                         help="diff a finished run's recorded provenance "
                              "(git SHA, library versions, device, config hash, "
@@ -108,6 +203,11 @@ def main() -> None:
     args = parser.parse_args()
 
     setup_logging()
+
+    if args.list_configs:
+        _print_config_listing(Path(args.config).parent if args.config
+                              else Path(__file__).resolve().parents[1] / "configs")
+        return
 
     if args.verify_provenance:
         _print_provenance_diff(Path(args.verify_provenance))
