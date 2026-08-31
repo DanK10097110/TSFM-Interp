@@ -285,6 +285,20 @@ tasks:
       # sampled (default 500) -- e.g. 300 split across 6 sampled domains is
       # 50 series each.
 
+      # min_length: 576
+      # OPTIONAL, off by default. Drop source series shorter than this BEFORE
+      # any generator sees them. Set it whenever the task's generator inherits
+      # its output length from its source -- `block_bootstrap` reorders one
+      # real series in place and has no length parameter at all, so its output
+      # length IS its source's, and `mixture` aligns its inputs to their common
+      # (i.e. shortest) length. A pooled real catalog spans yearly series of
+      # ~14 points beside multi-thousand-point hourly ones, so without this a
+      # task can emit an entire family shorter than `context_len + horizon` --
+      # which the analysis then silently drops, leaving a family this config
+      # promises and nothing measures. Set it to your analysis's
+      # context_len + horizon (576 for this repo's tsfm_lens configs).
+      # Raises if NO source survives, rather than handing on an empty pool.
+
       n_domains: 6
       # OPTIONAL, only used in bootstrap mode (no `subset` pinned). How many
       # of the dataset's configs to randomly sample. Leaving this unset

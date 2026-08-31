@@ -1,0 +1,195 @@
+# ============================================================================
+# Large benchmark configuration (~1000 series per split)
+# ============================================================================
+# A ~3.3x scale-up of configs/medium_run.yaml, built to answer a specific
+# weakness in that corpus rather than merely to be bigger. medium_run.yaml is
+# 300 series across three families, and its entire real-derived contribution
+# comes from ONE generator (`mixture`) against ONE Monash domain (`weather`),
+# at 20% of the corpus. So every real-data claim measured on it rests on a
+# single generator's single source domain, and the two remaining families are
+# both synthetic.
+#
+# What changes here, and why each change is worth its build cost:
+#
+#   * ALL THREE real-derived generators, not just `mixture`. tsfm_lens groups
+#     families by generator name, so `mixture` / `block_bootstrap` /
+#     `sequential_par` are three distinct families to L0's paired family
+#     tests and L1's family-conditioned CKA -- where medium_run.yaml's two
+#     mixture tasks collapse into one. These three carry structurally
+#     different real signal: `mixture` recombines whole real series,
+#     `block_bootstrap` resamples contiguous real blocks (preserving local
+#     autocorrelation, destroying long-range structure), and
+#     `sequential_par` fits a generative RNN to real cohorts (learned
+#     dynamics, no verbatim real subsequence at all).
+#
+#   * TWO independent real corpora. Monash (`weather`) plus ETT (Electricity
+#     Transformer Temperature) -- so a "real-derived" finding cannot be an
+#     artifact of one corpus's idiosyncrasies. Verified live against both
+#     (see CLAUDE.md sec 4.3). Both are PINNED to a named subset rather than
+#     sampling Monash's cross-domain catalog, because that catalog cannot
+#     serve this corpus: see the note on `real_block_bootstrap` below for
+#     the measured pool sizes. The cost is honest and worth stating -- the
+#     Monash side of this corpus is one domain, so "real-derived" here means
+#     two corpora, not many domains.
+#
+#   * ~41% real-derived, up from 20%. Each real-derived family clears
+#     tsfm_lens's `min_family_series: 15` with real margin at BOTH splits,
+#     which is what makes per-family (not just corpus-wide) statistics
+#     resolvable on the real side rather than only on the synthetic side.
+#
+#   * TWO distinct synthetic families with deliberately different diversity.
+#     `random_parametric` draws a fresh recipe per series across all 12
+#     archetypes; `parametric` repeats one fixed recipe with only the noise
+#     draw varying. Keeping both means L0/L1/L4 have a homogeneous synthetic
+#     reference against a maximally diverse one -- the contrast is the
+#     point, so `parametric` is NOT scaled up proportionally.
+#
+# Length is 576 (512 context + 64 horizon), matching the tsfm_lens configs.
+# Every real-derived task pins `min_length: 576` on its source pool, and that
+# is load-bearing rather than defensive: `block_bootstrap` reorders one real
+# series in place and has no length parameter at all, so its output length IS
+# its source's. A smoke build of this config without the pin emitted a
+# `block_bootstrap` family whose series ran 27-152 points -- every one of them
+# below context+horizon, so `tsfm_lens`'s loader would have silently dropped
+# the entire family (data.py skips short series with only a WARNING) leaving a
+# family this config promises and no analysis ever sees. `mixture` inherits
+# source length the same way; long sources are harmless (the loader takes the
+# leading 576) but short ones are not.
+# `sequential_par` bounds its own training cost via `max_train_length` (see
+# generators.py and CLAUDE.md sec 11.14) -- without that bound its cost scales
+# with raw real-series length and this task alone would dominate the build.
+#
+# Build both splits (~2x the listed counts is attempted, since the audit
+# rejects and retries; each task's source pool is loaded once and cached):
+#
+#   cd "TSFM Interp"
+#   PYTHONPATH=. python3 tsfm_benchmark/example_runs/run_full.py \
+#       --config tsfm_benchmark/configs/large_run.yaml \
+#       --out ./benchmark_large --references monash --reference-limit 120
+#
+# Then validate diversity before trusting it as an analysis corpus:
+#
+#   PYTHONPATH=. python3 tsfm_benchmark/example_runs/run_validation.py \
+#       --corpus ./benchmark_large/public_dev --out validation_large \
+#       --enforce-gates
+#
+# ============================================================================
+
+tasks:
+  # ---------------------------------------------------------------- synthetic
+  - name: diverse_synthetic_backbone
+    generator: random_parametric
+    count: 460
+    tier: synthetic
+    generator_params:
+      length: 576
+      archetypes: [trend_dominant, seasonal_dominant, multi_seasonal_complex,
+                   regime_switching, ar_colored_noise, anomaly_heavy,
+                   clean_low_noise, noisy_chaotic, random_walk_drift,
+                   intermittent_bursts, amplitude_modulated,
+                   nonsinusoidal_seasonal]
+    corruption_pool:
+      - {op: jitter, sigma: [0.01, 0.08]}
+      - {op: scaling, sigma: [0.05, 0.2]}
+      - {op: time_warp, strength: [0.05, 0.25], n_knots: [3, 6]}
+      - {op: dropout, rate: [0.02, 0.1]}
+    n_corruptions: [0, 3]
+
+  # Deliberately NOT scaled with the corpus: this family exists to be the
+  # homogeneous reference against the diverse backbone above, and inflating
+  # it would only add near-duplicates (which the validation gates would then
+  # correctly flag as redundancy).
+  - name: seasonal_trend_fixed
+    generator: parametric
+    count: 130
+    tier: synthetic
+    generator_params:
+      length: 576
+      trend: {order: 2, scale: 0.5}
+      seasonalities:
+        - {period: 24, amplitude: 1.0}
+        - {period: 168, amplitude: 0.4}
+      ar_coeffs: [0.6, -0.2]
+      noise_scale: 0.15
+      n_changepoints: 2
+      n_anomalies: 3
+    corruptions:
+      - {op: jitter, sigma: 0.03}
+      - {op: time_warp, strength: 0.1}
+
+  # ------------------------------------------------------------ real-derived
+  # `mixture`: recombines whole real series. Three tasks rather than one so
+  # the family spans two mixing modes and two independent real corpora --
+  # they share the family name (and so pool for per-family statistics) while
+  # differing in construction.
+  - name: real_weather_weighted_sum
+    generator: mixture
+    count: 140
+    tier: realism_stress
+    generator_params: {mode: weighted_sum, weight_concentration: 0.7}
+    source_sample_size: [3, 8]
+    source_config: {kind: monash, subset: weather, limit: 600, seed: 1, min_length: 576}
+
+  - name: real_weather_multiplicative
+    generator: mixture
+    count: 110
+    tier: realism_stress
+    generator_params: {mode: multiplicative, weight_concentration: 0.5}
+    source_sample_size: [2, 6]
+    source_config: {kind: monash, subset: weather, limit: 600, seed: 2, min_length: 576}
+
+  # Second real corpus: ETT. A "real-derived" result that holds on Monash
+  # and NOT here (or vice versa) is a corpus effect, not a data-realism one,
+  # and with one corpus that distinction is unmeasurable.
+  # NOTE the deliberately small count. ETT is a *four-series* dataset -- one
+  # per subset (h1/h2/m1/m2), measured directly, not four hundred -- so every
+  # sample here is a re-weighted combination of at most 4 distinct sources.
+  # Asking for many more would not buy variety; it would buy near-duplicates
+  # that the audit's cross-split duplicate detection rejects anyway. It is
+  # here to make "real-derived" span two independent corpora rather than to
+  # carry volume, and 40 is enough to clear `min_family_series: 15` at both
+  # splits on its own.
+  - name: real_ett_mixture
+    generator: mixture
+    count: 40
+    tier: realism_stress
+    generator_params: {mode: weighted_sum, weight_concentration: 0.8}
+    source_sample_size: [2, 4]
+    source_config: {kind: huggingface, dataset: ETDataset/ett, limit: 200, seed: 3, min_length: 576}
+
+  # `block_bootstrap`: contiguous real blocks resampled. Preserves local
+  # autocorrelation while destroying long-range structure -- the sharpest
+  # available probe of whether a model leans on short-range or long-range
+  # dependence. block_length 24 is one daily cycle at hourly sampling.
+  # Pinned to `weather` rather than left to sample the cross-domain catalog,
+  # and that is a measurement, not a preference. `block_bootstrap` draws ONE
+  # source per sample, so it needs a large pool of long series. A cross-domain
+  # Monash draw supplies neither: measured here, `limit: 400` pooled 110-122
+  # series of which `min_length: 576` kept **2 and 14** -- most Monash domains
+  # are yearly/quarterly/weekly and inherently short (traffic_weekly 88 points,
+  # covid_deaths 152, solar_weekly 42), and every long *hourly* domain fails to
+  # load at all in this environment on the frequency-alias bug in Monash's own
+  # loader script (`'h'`), which full_multidomain.yaml's docstring already
+  # records. `weather` measures 600 series, ALL >= 576 (min 1273, median
+  # 11865) -- so it is the one Monash domain that can actually feed this
+  # generator. Different `seed` from the mixture tasks above, so the tasks
+  # draw different subsets of the same cached pool.
+  - name: real_block_bootstrap
+    generator: block_bootstrap
+    count: 70
+    tier: realism_stress
+    generator_params: {block_length: 24}
+    source_sample_size: [1, 1]
+    source_config: {kind: monash, subset: weather, limit: 600, seed: 4, min_length: 576}
+
+  # `sequential_par`: a generative RNN fit to real cohorts. Contains no
+  # verbatim real subsequence at all -- only learned dynamics -- so it is the
+  # one real-derived family whose leakage exposure is structurally different
+  # from the other two. `max_train_length` bounds its per-fit cost.
+  - name: real_sequential_par
+    generator: sequential_par
+    count: 50
+    tier: realism_stress
+    generator_params: {epochs: 64, max_train_length: 512, length: 576}
+    source_sample_size: [4, 8]
+    source_config: {kind: monash, subset: weather, limit: 600, seed: 5, min_length: 576}

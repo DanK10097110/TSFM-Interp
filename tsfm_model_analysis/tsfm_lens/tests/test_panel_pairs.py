@@ -217,3 +217,46 @@ def test_panel_report_renders_every_pair_and_states_the_fairness_scope():
     assert "not on this card" in html
     for name in ("patchy", "steppy", "wavy", "encdecy"):
         assert name in html
+
+
+def test_stitching_pair_table_has_no_structurally_empty_cells():
+    """A column per NAMED direction unions across pairs; a column per ROLE does not.
+
+    On a three-model run there are six named directions and each pair fills
+    only two of them, so a direction-keyed table leaves 8 of 18 cells blank --
+    which reads as missing data rather than as a column that never applied to
+    that row. The role-keyed table ("A -> B" / "B -> A") is always complete.
+    """
+    import pandas as pd
+
+    models = ["M1", "M2", "M3"]
+    directions = {}
+    pairs = []
+    for i, a in enumerate(models):
+        for b in models[i + 1:]:
+            directions[f"{a}->{b}"] = {"best_gain": 0.10}
+            directions[f"{b}->{a}"] = {"best_gain": 0.20}
+            pairs.append({"model_a": a, "model_b": b, "best_gain": 0.20,
+                          "directions": [f"{a}->{b}", f"{b}->{a}"]})
+    data = {"directions": directions, "pairs": pairs}
+
+    def role_row(r):
+        gf = data["directions"].get(f'{r["model_a"]}->{r["model_b"]}', {}).get("best_gain")
+        gr = data["directions"].get(f'{r["model_b"]}->{r["model_a"]}', {}).get("best_gain")
+        return {"model A": r["model_a"], "model B": r["model_b"],
+                "A → B": f"{gf:+.3f}" if gf is not None else "—",
+                "B → A": f"{gr:+.3f}" if gr is not None else "—",
+                "best of the two": f'{r["best_gain"]:+.3f}'}
+
+    df = pd.DataFrame([role_row(r) for r in pairs])
+    assert not df.isna().any().any()
+    assert (df.values != "—").all()
+    assert len(df) == 3 and list(df.columns)[2:4] == ["A → B", "B → A"]
+
+    # The shape that was wrong, kept as the contrast: one column per named
+    # direction leaves most of the grid empty on a panel run.
+    legacy = pd.DataFrame([
+        {"model A": r["model_a"], "model B": r["model_b"],
+         **{d: f'{data["directions"][d]["best_gain"]:+.3f}' for d in r["directions"]}}
+        for r in pairs])
+    assert legacy.isna().sum().sum() == 12   # 3 pairs x 4 columns that never applied

@@ -48,6 +48,15 @@ class Context:
 
     def __init__(self, cfg: PipelineConfig):
         self.cfg = cfg
+        # Which stage names this invocation was asked to re-run (`--force`).
+        # `run_pipeline` fills it in; a stage that guards a *consumable*
+        # resource of its own -- `confirm` and the private benchmark -- reads
+        # it, because the pipeline-level skip predicate cannot express "the
+        # artifacts exist AND re-running them costs something irreversible".
+        # Without this the guard's own remediation ("rerun with --force
+        # confirm") is unreachable: force bypasses the skip, the stage runs,
+        # and the guard raises anyway.
+        self.forced: set = set()
         self.device = resolve_device(cfg.run.device)
         self.dtype = resolve_dtype(cfg.run.dtype, self.device)
         self.hub = ModelHub(cfg.models, cfg.data, self.device, self.dtype)
@@ -184,7 +193,8 @@ def _stages() -> list:
         Stage("confirm", ["register"],
               lambda c: c.confirm.enabled,
               lambda c: (c.run_dir() / "confirm" / "confirmation.json").exists(),
-              lambda ctx: run_confirm(ctx.cfg, ctx.hub),
+              lambda ctx: run_confirm(ctx.cfg, ctx.hub, forced=(
+                  "confirm" in ctx.forced or "all" in ctx.forced)),
               ("confirm",)),
         Stage("report", [],
               lambda c: c.report.enabled,
@@ -453,6 +463,7 @@ def run_pipeline(cfg: PipelineConfig, stages: Optional[list] = None,
                 selected.add(dep)
 
     ctx = Context(cfg)
+    ctx.forced = set(force)
     save_json(cfg.run_dir() / "tiers.json", _apply_tiers(cfg, ctx, selected))
     save_json(cfg.run_dir() / "shapes.json", _apply_shape(cfg, selected))
     _apply_routing(cfg, ctx, selected, force)
@@ -467,8 +478,18 @@ def run_pipeline(cfg: PipelineConfig, stages: Optional[list] = None,
         current_fp[stage.name] = fingerprint_stage(own, dep_fps)
 
     stale_messages = []
+    # Every stage with artifacts on disk is checked, not only the selected
+    # ones. `report` declares `deps=[]` on purpose -- it must render whatever
+    # exists, which is what makes partial runs useful -- so a stale upstream
+    # stage it *reads* is invisible to a dependency-based check. Before this,
+    # `--stages report` after a config edit rendered new artifacts beside old
+    # ones from a different config, with no warning: exactly the "looks
+    # complete, isn't" failure sec 15 A3 exists to prevent, on the one path
+    # that skipped the guard because it skipped the stage.
+    renders_everything = any(s_.name == "report" for s_ in all_stages
+                             if s_.name in selected)
     for stage in all_stages:
-        if stage.name not in selected:
+        if stage.name not in selected and not (renders_everything and stage.done(cfg)):
             continue
         will_skip = stage.done(cfg) and stage.name not in force and "all" not in force
         if not will_skip:
@@ -496,10 +517,15 @@ def run_pipeline(cfg: PipelineConfig, stages: Optional[list] = None,
             stale_messages.append(msg)
     if stale_messages:
         names = ", ".join(m.split("'")[1] for m in stale_messages)
+        # `--force X` only bypasses the skip for a stage that is SELECTED, so
+        # for a stale stage outside the selection the remediation has to name
+        # `--stages` too. Getting this wrong sends the reader in a circle:
+        # they force the stage, nothing re-runs, and the same error returns.
         raise ValueError(
             "refusing to run with stale artifacts (ROADMAP.md sec 15 A3):\n  "
             + "\n  ".join(stale_messages)
-            + f"\nRerun with --force {names} (and everything downstream that depends on "
+            + f"\nRerun with --stages {names},report --force {names},report (and "
+              f"anything downstream that depends on "
               f"{'it' if len(stale_messages) == 1 else 'them'}) to regenerate under the "
               f"current config, or pass --allow-stale to proceed anyway at your own risk.")
 

@@ -23,9 +23,12 @@ models on shared relative-depth axes is itself informative.
 
 from __future__ import annotations
 
+import warnings
+
 import numpy as np
 import torch
 from sklearn.decomposition import PCA
+from sklearn.exceptions import ConvergenceWarning
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
 
@@ -137,16 +140,22 @@ def _family_probe(cfg: PipelineConfig, x: np.ndarray, labels: np.ndarray,
     pca = PCA(n_components=min(cfg.internals.probe_pca_dim, x.shape[1],
                                train_mask.sum() - 1),
               random_state=cfg.run.seed).fit(scaler.transform(x[train_mask]))
-    clf = LogisticRegression(max_iter=300, random_state=cfg.run.seed)
-    clf.fit(pca.transform(scaler.transform(x[train_mask])), labels[train_mask])
+    clf = LogisticRegression(max_iter=cfg.internals.probe_max_iter,
+                             random_state=cfg.run.seed)
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always", ConvergenceWarning)
+        clf.fit(pca.transform(scaler.transform(x[train_mask])), labels[train_mask])
+    converged = not any(issubclass(w.category, ConvergenceWarning) for w in caught)
     correct = (clf.predict(pca.transform(scaler.transform(x[~train_mask])))
                == labels[~train_mask])
     per_series_acc = correct.reshape(len(val_series), n_windows).mean(axis=1)
     if not cfg.stats.enabled:
-        return {"value": float(correct.mean())}
-    return bootstrap_ci(lambda idx: float(per_series_acc[idx].mean()),
-                        len(per_series_acc), cfg.stats.n_boot,
-                        cfg.run.seed + 62, cfg.stats.ci)
+        return {"value": float(correct.mean()), "converged": converged}
+    out = bootstrap_ci(lambda idx: float(per_series_acc[idx].mean()),
+                       len(per_series_acc), cfg.stats.n_boot,
+                       cfg.run.seed + 62, cfg.stats.ci)
+    out["converged"] = converged
+    return out
 
 
 def _family_probe_permutation_null(cfg: PipelineConfig, x: np.ndarray,

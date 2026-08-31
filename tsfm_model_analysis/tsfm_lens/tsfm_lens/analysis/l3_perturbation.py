@@ -36,6 +36,8 @@ corruption costs one forward pass per model.
 
 from __future__ import annotations
 
+import warnings
+
 import numpy as np
 import torch
 from scipy.ndimage import uniform_filter1d
@@ -378,6 +380,7 @@ def run_l3(cfg: PipelineConfig, hub, store: ActivationStore, data: BenchmarkData
             hub.release(mcfg.name)
 
     fingerprints = {k: v.mean(axis=0) for k, v in per_series.items()}
+    pairwise: list = []
     if b is None:
         agreement = {"applicable": False,
                      "reason": f"{shape} run (1 model): the fingerprints and the patching "
@@ -386,6 +389,20 @@ def run_l3(cfg: PipelineConfig, hub, store: ActivationStore, data: BenchmarkData
     else:
         agreement = _agreement_with_ci(cfg, per_series[a.name], per_series[b.name], names,
                                        depth_axes[a.name].coords, depth_axes[b.name].coords)
+    # Every pair, not just the designated one (sec 24.3's all-pairs rule applied
+    # to L3's agreement statistic). `agreement` above is left byte-identical so
+    # every existing reader of the pair-shaped key keeps working; `pairwise`
+    # is the canonical all-pairs key, and on a two-model run its single entry
+    # reproduces `agreement` exactly.
+    for pa, pb in cfg.comparison_pairs():
+        if pa.name not in per_series or pb.name not in per_series:
+            continue
+        pairwise.append({
+            "a": pa.name, "b": pb.name,
+            "agreement": _agreement_with_ci(
+                cfg, per_series[pa.name], per_series[pb.name], names,
+                depth_axes[pa.name].coords, depth_axes[pb.name].coords),
+        })
     behavior_ci = {
         model: {names[c]: mean_ci(bs[:, c], cfg.stats.n_boot, cfg.run.seed + 30 + c,
                                   cfg.stats.ci)
@@ -403,7 +420,8 @@ def run_l3(cfg: PipelineConfig, hub, store: ActivationStore, data: BenchmarkData
         "models": [m.name for m in models],
         "model_a": a.name, "model_b": b.name if b is not None else None,
         "corruptions": names,
-        "layers": layer_lists, "agreement": agreement, "behavior_ci": behavior_ci,
+        "layers": layer_lists, "agreement": agreement, "pairwise": pairwise,
+        "behavior_ci": behavior_ci,
         "n_series": int(len(rows)), "calibrate": cfg.l3.calibrate,
         "calibration": calibration_meta,
         "depth_axis": {k: v.axis for k, v in depth_axes.items()},
@@ -426,9 +444,12 @@ def run_l3(cfg: PipelineConfig, hub, store: ActivationStore, data: BenchmarkData
                 verbose_arrays[prefix + "clean"] = entry["forecast_clean"]
                 verbose_arrays[prefix + "corrupted"] = entry["forecast_corrupted"]
                 verbose_arrays[prefix + "patched"] = entry["forecast_patched"]
+                exc = entry.get("future_excursion")
                 verbose_meta[model][cname] = {"layer": entry["layer"], "window": entry["window"],
                                               "series_ids": entry["series_ids"],
-                                              "families": entry["families"]}
+                                              "families": entry["families"],
+                                              "future_excursion": ([float(x) for x in exc]
+                                                                   if exc is not None else [])}
         np.savez(out_dir / "patching.npz",
                  **{f"restoration_{k}": v["restoration"] for k, v in patching.items()},
                  **win_arrays, **horizon_arrays, **verbose_arrays)
@@ -642,7 +663,50 @@ def _verbose_case(adapter, layers_p: list, windows: list, win_of_token: np.ndarr
         "forecast_clean": f_clean[ex].astype(np.float32),
         "forecast_corrupted": f_corr[ex].astype(np.float32),
         "forecast_patched": f_patch_ex.astype(np.float32),
+        "future_excursion": (future_excursion(ctx_clean[ex], targets[ex]).astype(np.float32)
+                             if targets is not None else None),
     }
+
+
+def future_excursion(context: np.ndarray, target: np.ndarray) -> np.ndarray:
+    """How far each series' future leaves the range its own context establishes.
+
+    Per series: the largest excursion of the target **beyond the interval the
+    context actually visited** (`[min, max]`), expressed in context standard
+    deviations, and 0 for a future that stays inside it. A large value means
+    the continuation contains a level the model was never shown -- a burst, a
+    spike, a regime change -- whose *timing* is not recoverable from the
+    context at all.
+
+    Measured against the context's observed **range**, deliberately not its
+    mean. Deviation-from-mean was the first implementation and is wrong for
+    this purpose: a series with an ordinary strong seasonal swing sits several
+    standard deviations from its own mean at every peak without being remotely
+    surprising, so on this repo's own corpus that version flags **21.9%** of
+    series above 3 sd (median 2.15) where the range-based one flags **1.4%**
+    (median 0.00). The first measures amplitude; only the second measures
+    novelty, which is the thing that makes a series unforecastable.
+
+    This exists because the existing MASE reliability guard (`mase_reliable`,
+    `min_scale_frac`) catches a degenerate *denominator* -- a series so flat
+    that its naive-forecast error is near zero -- and is arithmetically
+    incapable of catching the opposite failure, an unforecastable *numerator*.
+    On such a series a correct model emits a near-flat forecast and scores a
+    large MASE, which reads in a case study as a broken forecast rather than
+    as the ceiling it actually is. Reported alongside the case, never used to
+    drop a series: these series are real, they belong in the aggregate, and
+    dropping them would flatter every model equally.
+    """
+    ctx = np.asarray(context, dtype=np.float64)
+    tgt = np.asarray(target, dtype=np.float64)
+    lo = ctx.min(axis=1, keepdims=True)
+    hi = ctx.max(axis=1, keepdims=True)
+    sd = ctx.std(axis=1, keepdims=True)
+    sd = np.where(sd > 0, sd, np.nan)
+    beyond = np.maximum(tgt - hi, lo - tgt)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", RuntimeWarning)
+        return np.maximum(beyond.max(axis=1) / sd[:, 0], 0.0)
 
 
 def restoration_by_horizon(f_patch: np.ndarray, f_clean: np.ndarray,

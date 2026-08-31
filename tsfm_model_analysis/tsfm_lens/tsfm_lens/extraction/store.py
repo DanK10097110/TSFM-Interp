@@ -80,7 +80,9 @@ class ActivationStore:
             f"{stored} by tsfm_lens {writer.get('tsfm_lens_version', 'unknown')} / "
             f"zarr {writer.get('zarr_version', 'unknown')}; this environment's "
             f"tsfm_lens expects schema_version={_SCHEMA_VERSION}. Re-extract "
-            f"(`--force extract` and everything downstream) in this environment "
+            f"(`--stages extract --force extract`, then everything downstream; "
+            f"`--force extract` alone does nothing unless extract is also "
+            f"selected) in this environment "
             f"rather than reading a store from a different tsfm_lens version "
             f"(ROADMAP.md sec 15 A7).")
 

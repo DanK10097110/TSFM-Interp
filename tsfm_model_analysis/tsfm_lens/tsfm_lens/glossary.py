@@ -174,7 +174,7 @@ GLOSSARY: dict = {
         definition=(
             "The extra held-out R² a ridge map from one model's layer to the other's "
             "achieves *above* a hand-crafted input-feature probe on the same targets — "
-            "the gain, never the raw R², is the evidence, because both models read the "
+            "the gain, never the raw R², is the evidence, because the models read the "
             "same input and a raw R² is therefore partly trivial."),
         where="Stitching probes (both directions, A→B and B→A, reported separately)."),
     "input-feature-baseline": Term(
@@ -247,7 +247,7 @@ GLOSSARY: dict = {
             "How many timesteps one of a model's tokens covers (about 32 for a patch "
             "tokenizer, 1 for a per-timestep quantizer), which sets the finest lag that "
             "model's attention can express and is multiplied into every plotted lag axis "
-            "so a lag of 300 means the same 300 timesteps for both models."),
+            "so a lag of 300 means the same 300 timesteps for every model."),
         where="Attention analysis' lag axes; the fairness card's finest-resolvable-lag row."),
     "diagonal-hit-fraction": Term(
         term="Diagonal-hit fraction (alignment)",
@@ -296,7 +296,7 @@ GLOSSARY: dict = {
         definition=(
             "Every bootstrap and every train/test split in this repo resamples whole "
             "series, never windows, because windows within one series are strongly "
-            "dependent and both models score the same series — splitting on windows "
+            "dependent and every model scores the same series — splitting on windows "
             "would make every interval far too narrow."),
         where="Every confidence interval and p-value in the report."),
     "holm": Term(

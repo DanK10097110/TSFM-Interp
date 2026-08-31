@@ -332,25 +332,55 @@ def _shared_geometry_row(l1: dict) -> Verdict:
     itself worth a reader seeing, and is why `detail` carries both CIs so
     the reader can apply a stricter rule than this one.
     """
-    bp = l1["best_pair"]
+    # Every configured pair, weakest first by its own ratio over its own
+    # shuffled-series null -- the same reduction the clustering row uses. A
+    # run of any size gets one row: reporting only the first pair's peak
+    # would let a three-model run's headline describe two of its models
+    # while a stronger or weaker pair went unmentioned.
+    records = l1.get("pairs") or [{"model_a": l1.get("model_a"),
+                                   "model_b": l1.get("model_b"),
+                                   "best_pair": l1["best_pair"]}]
+
+    def _ratio(rec: dict) -> float:
+        b = rec.get("best_pair") or {}
+        c, n = _fin(b.get("cka")), _fin((b.get("null_ci") or {}).get("value"))
+        if c is None or not n:
+            return float("inf")
+        return c / n
+
+    weakest = min(records, key=_ratio)
+    bp = weakest.get("best_pair") or {}
     cka = _fin(bp.get("cka"))
     null = _fin((bp.get("null_ci") or {}).get("value"))
     ci = bp.get("ci") or {}
     null_ci = bp.get("null_ci") or {}
+    n_pairs = len(records)
+    scope = (f"weakest of {n_pairs} pairs: {weakest.get('model_a')} \u2194 "
+             f"{weakest.get('model_b')}, " if n_pairs > 1 else "")
+    detail = ([{"quantity": f"{r.get('model_a')} \u2194 {r.get('model_b')}",
+                "layers": f"{(r.get('best_pair') or {}).get('layer_a')} \u2194 "
+                          f"{(r.get('best_pair') or {}).get('layer_b')}",
+                "value": _fin((r.get("best_pair") or {}).get("cka")),
+                "shuffled_null": _fin(((r.get("best_pair") or {}).get("null_ci")
+                                       or {}).get("value")),
+                "ci_lo": _fin(((r.get("best_pair") or {}).get("ci") or {}).get("lo")),
+                "ci_hi": _fin(((r.get("best_pair") or {}).get("ci") or {}).get("hi"))}
+               for r in records] if n_pairs > 1 else
+              [{"quantity": "measured", "value": cka,
+                "ci_lo": _fin(ci.get("lo")), "ci_hi": _fin(ci.get("hi"))},
+               {"quantity": "shuffled null", "value": null,
+                "ci_lo": _fin(null_ci.get("lo")), "ci_hi": _fin(null_ci.get("hi"))}])
     return Verdict(
-        measure=(f"Peak cross-model CKA "
-                 f"({bp.get('layer_a', '?')} ↔ {bp.get('layer_b', '?')})"),
+        measure=(f"Peak cross-model CKA ({scope}"
+                 f"{bp.get('layer_a', '?')} \u2194 {bp.get('layer_b', '?')})"),
         value=cka, reference=null,
         reference_label="shuffled-series null at the same layer pair",
         rule=RULES["ratio_at_least"](4.0), unit="CKA",
-        detail=[{"quantity": "measured", "value": cka,
-                 "ci_lo": _fin(ci.get("lo")), "ci_hi": _fin(ci.get("hi"))},
-                {"quantity": "shuffled null", "value": null,
-                 "ci_lo": _fin(null_ci.get("lo")), "ci_hi": _fin(null_ci.get("hi"))}],
+        detail=detail,
         note="Geometric evidence. A ratio over the shuffle null says the "
              "alignment is not an artifact of series statistics; it does not "
-             "say either model uses the shared geometry. The 4× in the rule "
-             "is a stated convention — both CIs are given so a stricter or "
+             "say either model uses the shared geometry. The 4\u00d7 in the rule "
+             "is a stated convention \u2014 the CIs are given so a stricter or "
              "looser rule can be applied to the same numbers.")
 
 
@@ -596,25 +626,46 @@ def _organization_row(clustering: dict) -> Verdict:
     *is* the reference and the rule is about the CI rather than about a
     convention chosen here.
     """
-    ami = clustering.get("ami") or {}
+    # Read the all-pairs `pairs` list when present, falling back to the
+    # legacy top-level keys so a pre-panel artifact reads identically. The
+    # headline is the WEAKEST pair: "these models organize the data alike" is
+    # only true of the run if it is true of every pair in it.
+    records = clustering.get("pairs") or [{
+        "model_a": clustering.get("model_a"), "model_b": clustering.get("model_b"),
+        "ami": clustering.get("ami") or {},
+        "contingency": clustering.get("contingency") or []}]
+    scored = [r for r in records if _fin((r.get("ami") or {}).get("lo")) is not None]
+    weakest = (min(scored, key=lambda r: _fin(r["ami"]["lo"])) if scored
+               else records[0])
+    ami = weakest.get("ami") or {}
     value = _fin(ami.get("value"))
     lo = _fin(ami.get("lo"))
-    cont = clustering.get("contingency") or []
+    cont = weakest.get("contingency") or []
+    n = len(records)
+    scope = (f"weakest of {n} pairs: " if n > 1 else "")
     return Verdict(
-        measure=(f"Clustering agreement between "
-                 f"{clustering.get('model_a', 'model A')} and "
-                 f"{clustering.get('model_b', 'model B')} (AMI)"),
+        measure=(f"Clustering agreement ({scope}"
+                 f"{weakest.get('model_a', 'model A')} and "
+                 f"{weakest.get('model_b', 'model B')}, AMI)"),
         value=lo if lo is not None else value, reference=0.0,
         reference_label="zero (chance agreement — AMI is chance-corrected)",
         rule=RULES["ci_excludes"](0.0), unit="AMI", detail=[
+            {"quantity": f"{r.get('model_a')} vs {r.get('model_b')}",
+             "value": _fin((r.get("ami") or {}).get("value")),
+             "ci_lo": _fin((r.get("ami") or {}).get("lo")),
+             "ci_hi": _fin((r.get("ami") or {}).get("hi")),
+             "clusters_a": len(r.get("contingency") or []),
+             "clusters_b": (len((r.get("contingency") or [[]])[0])
+                            if r.get("contingency") else None)}
+            for r in records] if n > 1 else [
             {"quantity": "AMI", "value": value, "ci_lo": lo,
              "ci_hi": _fin(ami.get("hi")),
              "clusters_a": len(cont),
              "clusters_b": (len(cont[0]) if cont else None)}],
         note="Descriptive evidence. Clusters are matched by label overlap, so "
-             "a high AMI says the two models partition this corpus alike; it "
+             "a high AMI says two models partition this corpus alike; it "
              "says nothing about *why*, and cluster labels are approximate by "
-             "construction.")
+             "construction. Every pair's own AMI is in the table beneath.")
 
 
 def _ablation_rows(attention: dict, floor: dict) -> list:
@@ -669,7 +720,7 @@ def _sae_alignment_rows(sae: dict) -> list:
     null is how far that search gets on shuffled labels, which is the only
     reference this number has.
     """
-    rows: list = []
+    per_model: dict[str, list[dict]] = {}
     for target, rec in sae.items():
         if not isinstance(rec, dict):
             continue
@@ -678,30 +729,55 @@ def _sae_alignment_rows(sae: dict) -> list:
         if value is None:
             continue
         null = gt.get("permutation_null") or {}
+        model = str(target).split("/", 1)[0]
+        per_model.setdefault(model, []).append({
+            "layer": str(target).split("/", 1)[-1],
+            "measured": value,
+            "null_p95": _fin(null.get("mean_abs_rho_null_p95")),
+            "null_mean": _fin(null.get("mean_abs_rho_null_mean")),
+            "n_permutations": _fin(null.get("n_perm")),
+            "n_features_matched": _fin(gt.get("n_features_matched")),
+            "dead_feature_rate": _fin(rec.get("dead_feature_rate")),
+            "reconstruction_fidelity": _fin(rec.get("reconstruction_fidelity"))})
+
+    # One row per MODEL, not per (model, layer). A model analyzed at five
+    # layers used to contribute five scorecard rows saying the same thing with
+    # a different layer name, which on a three-model run made SAE eleven of
+    # the scorecard's twenty-four rows -- the sparse-dictionary stage
+    # outweighing every other stage combined purely by how many layers it was
+    # pointed at. The headline is that model's WEAKEST layer against its own
+    # null, because "these features track labelled properties" is a claim
+    # about the dictionary, and the per-layer numbers are the detail.
+    rows: list = []
+    for model, entries in per_model.items():
+        scored = [e for e in entries if e["null_p95"] is not None]
+        worst = min(scored, key=lambda e: e["measured"] - e["null_p95"]) if scored \
+            else min(entries, key=lambda e: e["measured"])
+        n = len(entries)
         rows.append(Verdict(
-            measure=f"SAE feature alignment to ground truth ({target})",
-            value=value, reference=_fin(null.get("mean_abs_rho_null_p95")),
+            measure=(f"SAE feature alignment to ground truth, {model} "
+                     f"(weakest of {n} layer{'' if n == 1 else 's'}: "
+                     f"{worst['layer']})"),
+            value=worst["measured"], reference=worst["null_p95"],
             reference_label="label-permutation null (p95 over shuffles)",
             rule=RULES["greater_than"](), unit="mean |ρ| of matched features",
-            detail=[{"quantity": "measured", "value": value,
-                     "n_features": _fin(gt.get("n_features")),
-                     "n_features_matched": _fin(gt.get("n_features_matched")),
-                     # `dead_feature_rate` / `reconstruction_fidelity` are
-                     # `sae/eval.py`'s own key names -- read the artifact's
-                     # convention rather than guessing a tidier one (CLAUDE.md
-                     # sec 11.34).
-                     "dead_feature_rate": _fin(rec.get("dead_feature_rate")),
-                     "reconstruction_fidelity": _fin(rec.get("reconstruction_fidelity"))},
-                    {"quantity": "permutation null",
-                     "value": _fin(null.get("mean_abs_rho_null_mean")),
-                     "null_p95": _fin(null.get("mean_abs_rho_null_p95")),
-                     "n_permutations": _fin(null.get("n_perm"))}],
+            detail=[{"quantity": f"{e['layer']} measured",
+                     "value": e["measured"], "null_p95": e["null_p95"],
+                     "null_mean": e["null_mean"],
+                     "n_permutations": e["n_permutations"],
+                     "n_features_matched": e["n_features_matched"],
+                     "dead_feature_rate": e["dead_feature_rate"],
+                     "reconstruction_fidelity": e["reconstruction_fidelity"]}
+                    for e in entries],
             note="Each feature is matched to whichever ground-truth field it "
                  "correlates with best, so the mean is inflated by that search "
                  "even under pure noise — the permutation null is how large "
-                 "the same search gets on shuffled labels. Read the dead "
-                 "feature rate beside it: alignment computed over a mostly-"
-                 "dead dictionary describes very few live features."))
+                 "the same search gets on shuffled labels. The headline is "
+                 "this model's weakest layer against its own null, so a pass "
+                 "means every analyzed layer cleared it; the per-layer table "
+                 "is beneath. Read the dead feature rate beside it: alignment "
+                 "computed over a mostly-dead dictionary describes very few "
+                 "live features."))
     return rows
 
 
@@ -1117,4 +1193,71 @@ def patching_case_summary(run_dir: Path) -> pd.DataFrame:
                         row["own_best_layer"] = plays[li] if li < len(plays) else int(li)
                         row["own_best_window"] = wins[wi] if wi < len(wins) else int(wi)
                 rows.append(row)
+    return pd.DataFrame(rows)
+
+
+def replication_summary(run_dir: Path) -> pd.DataFrame:
+    """One row per KIND of replication the confirm stage performed.
+
+    The confirm section reports three independent replications -- accuracy
+    claims, per-corruption depth agreement, and the peak-CKA layer pair --
+    each in its own block with its own table. That is the right level of
+    detail for someone auditing a particular claim, and the wrong level for
+    the question the section actually exists to answer: *what held up?* A
+    reader had to assemble that from three places and could not see, for
+    instance, that behavioral claims replicated while geometric ones did
+    not, which is a substantive difference in what a run supports.
+
+    Pure reduction over `confirm/confirmation.json` -- no model name, no
+    architecture, no positional index, so it transfers to any set of models
+    (the same contract `bottom_line_rows` holds to).
+    """
+    conf = load_json_or_none(run_dir / "confirm" / "confirmation.json")
+    if not conf:
+        return pd.DataFrame()
+
+    rows = []
+
+    tests = conf.get("tests") or []
+    testable = [t for t in tests if t.get("status") != "untestable"]
+    if tests:
+        held = sum(1 for t in testable if t.get("confirmed"))
+        rows.append({
+            "what was re-tested": "Accuracy differences (per family)",
+            "evidence class": "behavioral",
+            "held up": held,
+            "did not": len(testable) - held,
+            "not testable": len(tests) - len(testable),
+            "what a failure would mean": (
+                "the accuracy gap was specific to the exploratory data, not to the models"),
+        })
+
+    l3 = conf.get("l3_replication") or {}
+    l3_tests = l3.get("tests") or []
+    if l3.get("status") == "tested" and l3_tests:
+        held = sum(1 for t in l3_tests if t.get("replicates"))
+        rows.append({
+            "what was re-tested": "Where in depth models react to corruption",
+            "evidence class": "causal within model",
+            "held up": held,
+            "did not": len(l3_tests) - held,
+            "not testable": 0,
+            "what a failure would mean": (
+                "the depth agreement was a property of those particular series, "
+                "not of the models"),
+        })
+
+    cka = conf.get("cka_replication") or {}
+    if cka.get("status") == "tested":
+        held = 1 if cka.get("replicates") else 0
+        rows.append({
+            "what was re-tested": "Strongest representational similarity",
+            "evidence class": "geometric",
+            "held up": held,
+            "did not": 1 - held,
+            "not testable": 0,
+            "what a failure would mean": (
+                "the peak similarity was a coincidence of the exploratory sample"),
+        })
+
     return pd.DataFrame(rows)

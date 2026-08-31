@@ -12,11 +12,11 @@ dimension-invariant signals -- so it is fair to run on any architecture
 before any lens/L3/SAE stage exists, at every captured layer, not a strided
 subset.
 
-Idea A (`select_work_bend`) -- residual-trajectory geometry: where does the
+`work_bend` (`select_work_bend`) -- residual-trajectory geometry: where does the
 representation change the most, and where does its trajectory bend.
-Idea B (`select_factor_emergence`) -- where do known generative factors
+`factor_emergence` (`select_factor_emergence`) -- where do known generative factors
 become linearly readable or get discarded (needs benchmark ground truth).
-Idea C (`select_coverage`) -- the smallest set of layers whose pairwise CKA
+`coverage` (`select_coverage`) -- the smallest set of layers whose pairwise CKA
 covers every layer's own representational band (submodular greedy).
 
 `ROADMAP.md` §6.1.1-E's bake-off (`layer_screen_bakeoff.py`) is what actually

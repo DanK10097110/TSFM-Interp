@@ -220,13 +220,25 @@ class ExemplarsConfig:
 @dataclass
 class L3Config:
     enabled: bool = True
+    # `noise` and `spike` were the two weakest members of the battery under the
+    # previous defaults (snr_db 6.0 / count 3, scale 6.0), at perturbation
+    # energies of 0.199 and 0.167 against `level_shift`'s 2.853 and
+    # `deseasonalize`'s 0.564 -- weak enough that both read as "this corruption
+    # does nothing" on a shared linear axis when what was actually being
+    # measured was a very small perturbation. Raised to a measured 0.790 and
+    # 1.230 respectively (`spike` also from 0.58% to 1.55% of timesteps
+    # touched), which puts them in the same range as the rest of the battery
+    # without reaching `level_shift`'s outsized value. Measured on this repo's
+    # own corpus over 200 series, not assumed; `l3.calibrate` remains the way
+    # to equalize energies exactly, and these defaults are what an
+    # uncalibrated run gets.
     corruptions: dict = field(default_factory=lambda: {
-        "noise": {"snr_db": 6.0},
+        "noise": {"snr_db": 0.0},
         "detrend": {},
         "deseasonalize": {"top_k": 2},
         "frequency_shift": {"factor": 2.0},
         "level_shift": {"position_frac": 0.6, "scale": 3.0},
-        "spike": {"count": 3, "scale": 6.0},
+        "spike": {"count": 8, "scale": 10.0},
         "smooth": {"kernel": 9},
         "warp": {"strength": 0.15},
         "dropout": {"frac": 0.15, "n_blocks": 3},
@@ -269,6 +281,17 @@ class InternalsConfig:
     # sae/ground_truth.py::permutation_null_alignment's "rerun the identical
     # search" pattern. `0` disables it, matching that function's convention.
     probe_permutation_repeats: int = 5
+    # Iteration budget for the family probe's logistic solver. 300 was the
+    # historical value and does NOT converge on a ~1000-series corpus (14
+    # ConvergenceWarnings on `benchmark_large`). Raised rather than left to
+    # warn on stderr: an under-converged fit UNDERSTATES probe accuracy, so
+    # a too-small budget makes a model's internals look less decodable than
+    # they are, and the permutation null reruns the identical fit -- so the
+    # bias applies to both sides and is invisible in the real-vs-null gap
+    # that the report actually renders. `probe_converged` is recorded per
+    # layer so a future corpus outgrowing this budget says so in the
+    # artifact instead of only in a log line nobody reads (sec 2.5).
+    probe_max_iter: int = 2000
 
 
 @dataclass

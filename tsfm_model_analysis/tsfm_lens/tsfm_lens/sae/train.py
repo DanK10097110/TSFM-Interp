@@ -704,6 +704,26 @@ def _sample_real_contexts(cfg: PipelineConfig) -> np.ndarray:
         dataset_name=cfg.sae.real_data_source, total_limit=cfg.sae.real_data_pool_limit)
 
 
+def _screen_ranked_captured(sel: dict, available: list) -> list:
+    """`available`, ordered by the screen's OWN score, best first.
+
+    `layer_screen` deliberately screens every block of a model -- since
+    `ROADMAP.md` sec 15 A1 it runs a dedicated stride-1 extraction into a
+    separate store precisely so its choice is fair to layers the main run
+    never captured, and it deletes that store afterwards. So its selection can
+    legitimately name a layer that does not exist in the analysis store. When
+    that happens the screen's RANKING is still the best information available
+    about which captured layer to prefer, and is used rather than falling back
+    to an arbitrary one; layers the screen never scored sort last, in their
+    existing order.
+    """
+    scores = sel.get("score_per_layer") or []
+    layers = sel.get("layers") or []
+    by_layer = {l: s for l, s in zip(layers, scores) if s is not None}
+    return sorted(available, key=lambda l: (-by_layer[l], l) if l in by_layer
+                  else (float("inf"), l))
+
+
 def _default_targets(cfg: PipelineConfig, store: ActivationStore) -> list:
     """If `sae.targets` is empty ("auto"), resolve targets from `layer_screen`'s
     per-model selection (ROADMAP.md §6.1.1) -- every layer it picked for a
@@ -711,6 +731,15 @@ def _default_targets(cfg: PipelineConfig, store: ActivationStore) -> list:
     captured layer, with a warning, only when the layer_screen stage didn't
     run (disabled, or `--stages sae` skipped it) -- the old, arbitrary
     default this replaces (§2.5: degrade gracefully, but say so loudly).
+
+    Every resolved layer is checked against what the analysis store ACTUALLY
+    holds. The two lists are not the same list: `layer_screen` screens all of
+    a model's blocks (sec 15 A1) while extraction captures
+    `models[*].capture_layer_stride` of them, so under any stride > 1 the
+    screen can pick a layer this store never extracted. Passing it through
+    raised `KeyError` from `store.load` deep inside training, after every
+    earlier stage had already run -- see `CLAUDE.md` sec 11.40. The
+    substitution is logged at WARNING with the remedy, never made silently.
     """
     screen_path = cfg.run_dir() / "layer_screen" / "selection.json"
     if screen_path.exists():
@@ -718,7 +747,26 @@ def _default_targets(cfg: PipelineConfig, store: ActivationStore) -> list:
         out = []
         for m in cfg.models:
             sel = screen.get(m.name) or {}
-            for layer in sel.get("selected", []):
+            selected = list(sel.get("selected", []))
+            if not selected:
+                continue
+            available = list(store.layers(m.name))
+            keep = [l for l in selected if l in available]
+            missing = [l for l in selected if l not in available]
+            if missing:
+                subs = [l for l in _screen_ranked_captured(sel, available)
+                        if l not in keep][: len(selected) - len(keep)]
+                log.warning(
+                    f"sae: targets=auto -- layer_screen picked {missing} for "
+                    f"{m.name!r}, which this run never extracted "
+                    f"(capture_layer_stride={m.capture_layer_stride}; the screen "
+                    f"scores every block by design, ROADMAP.md sec 15 A1). "
+                    f"Substituting the best-scoring CAPTURED layer(s) {subs} from "
+                    f"the screen's own ranking. To train on exactly what the screen "
+                    f"picked, set capture_layer_stride: 1 for this model, or pin "
+                    f"sae.targets explicitly.")
+                keep = keep + subs
+            for layer in keep:
                 out.append({"model": m.name, "layer": layer})
         if out:
             log.info(f"sae: targets=auto resolved via layer_screen -- {out}")

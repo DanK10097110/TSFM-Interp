@@ -24,9 +24,11 @@ from plotly.subplots import make_subplots
 
 from .. import failure_gallery, glossary, methods_appendix, stage_docs
 from . import derived
+from .sanitize import strip_internal_refs, strip_refs_in_place
 from ..config import PipelineConfig
 from ..utils import load_json, log, save_json
 
+_PAIR_COLORS = ["#C2661B", "#2E6E8E", "#9A5B88", "#4B7F52", "#8A6D3B", "#6A4C93"]
 _COLORS = {"a": "#2E6E8E", "b": "#9A5B88", "accent": "#C2661B",
            "ink": "#22303A", "muted": "#66727B", "line": "#E2E6E1"}
 # Model trace colors, in configured order. The first two are `_COLORS["a"]`
@@ -82,6 +84,14 @@ class Finding:
 _CLAIM_COUNTERS: dict = {}
 
 
+def _join_and(items: list) -> str:
+    """`a`, `a and b`, `a, b and c` -- for a list whose length varies by run."""
+    items = [str(i) for i in items]
+    if len(items) <= 1:
+        return items[0] if items else ""
+    return ", ".join(items[:-1]) + " and " + items[-1]
+
+
 def _next_claim_id(stage: str) -> str:
     """Per-stage incrementing `Finding.claim_id`.
 
@@ -127,7 +137,7 @@ def run_report(cfg: PipelineConfig) -> Path:
 
     builders = [
         ("Fairness", "The fairness card",
-         "Every measured asymmetry between the two models in this run, before any result section (ROADMAP.md §18 F9).",
+         "Every measured asymmetry between each pair of models in this run, before any result section (ROADMAP.md §18 F9).",
          [], "report",
          lambda: _sec_fairness(cfg, run_dir)),
         ("L0", "Behavioral profile",
@@ -282,6 +292,8 @@ def run_report(cfg: PipelineConfig) -> Path:
         f", {len(failed)} FAILED: {', '.join(c['eyebrow'] for c in failed)}" if failed else "")
 
     mock_models = [m.name for m in cfg.models if m.adapter.startswith("mock_")]
+    global _MODEL_NAMES_FOR_TEMPLATES
+    _MODEL_NAMES_FOR_TEMPLATES = [m.name for m in cfg.models]
     html = _TEMPLATE.render(
         title=cfg.report.title, run=cfg.run.name,
         date=datetime.date.today().isoformat(),
@@ -310,6 +322,12 @@ def run_report(cfg: PipelineConfig) -> Path:
         family_resolution_line=_family_resolution_line(run_dir),
         alignment_provenance=_alignment_provenance_block(run_dir)[0],
     )
+    # Internal planning-document citations are stripped HERE, at the render
+    # boundary, rather than in the ~76 report strings that carry them: the
+    # reader has never seen those documents, and the methods appendix renders
+    # analysis modules' `__doc__` verbatim, so editing report literals alone
+    # could never reach all of it. See `report/sanitize.py`.
+    html = strip_internal_refs(html)
     out = run_dir / "report.html"
     out.write_text(html, encoding="utf-8")
     (run_dir / "report").mkdir(parents=True, exist_ok=True)
@@ -325,7 +343,7 @@ def run_report(cfg: PipelineConfig) -> Path:
     # `report/` subdirectory, same run) since both are report-render
     # metadata, not run artifacts a downstream analysis stage would read.
     save_json(run_dir / "report" / "findings.json",
-             {"findings": [asdict(f) for f in findings]})
+             strip_refs_in_place({"findings": [asdict(f) for f in findings]}))
     # `multiplicity.json` (ROADMAP.md sec 18 F8): one record per independently
     # Holm-corrected family of tests in this report, machine-readable so a
     # cross-run reader (meta_report) can compare how many comparisons produced
@@ -382,6 +400,9 @@ def _mock_warning(mock_models: list) -> str:
             f'track the target.</div>')
 
 
+_MODEL_NAMES_FOR_TEMPLATES: list = []
+
+
 def _group_findings(findings: list) -> list[dict]:
     """Bucket the findings list by stage, in first-appearance order.
 
@@ -399,7 +420,64 @@ def _group_findings(findings: list) -> list[dict]:
             groups[stage] = []
         groups[stage].append(f)
     return [{"stage": st, "label": _STAGE_LABELS.get(st, st.replace("_", " ").title()),
-             "items": groups[st]} for st in order]
+             "items": _cluster_lookalikes(groups[st])} for st in order]
+
+
+def _finding_template(text: str, model_names: list) -> str:
+    """`text` with model names and numbers masked, for look-alike detection.
+
+    Model names are masked FIRST and longest-first: a name containing a digit
+    (`Chronos-2`) or a version token (`Chronos-T5-Base`) would otherwise be
+    half-eaten by the number mask and never match its siblings, which is
+    exactly the bug that made a 19-family repetition problem look like one
+    family.
+    """
+    out = text
+    for name in sorted(model_names, key=len, reverse=True):
+        out = out.replace(name, "\x00")
+    out = re.sub(r"'[^']*'", "'\x01'", out)
+    out = re.sub(r"[-+]?\d*\.?\d+", "\x02", out)
+    return out
+
+
+def _cluster_lookalikes(items: list, model_names: list | None = None) -> list:
+    """Group consecutive findings that differ only by which model they describe.
+
+    A stage that measures every model emits one claim per model, which is
+    structurally right -- each is a separate measurement -- and reads as the
+    same sentence three times. On a three-model run 19 of 44 claim templates
+    repeated this way, and the fix cannot be to drop any of them.
+
+    So the FIRST of each look-alike group renders as it always did and the
+    rest move into a collapsed block beneath it. Nothing is summarized, so
+    nothing can be summarized wrongly; the reader sees the claim once and
+    expands to see whether it held for the other models. Order within a group
+    is config order, which is neutral -- it is not a ranking, and the
+    collapsed block says how many followed.
+
+    Look-alikes are gathered across the WHOLE stage, not only when adjacent.
+    A stage that loops family-then-model interleaves its per-model claims, so
+    an adjacency-only pass caught 13 of the 33 repeats on a three-model run
+    -- the reader still met the same sentence three times, just further
+    apart. Templates keep first-appearance order, so the stage's own ordering
+    still decides what a reader reads first.
+    """
+    if model_names is None:
+        model_names = _MODEL_NAMES_FOR_TEMPLATES
+    order: list = []
+    buckets: dict = {}
+    for f in items:
+        # `registered` is part of the key so a pre-registered claim can never
+        # be collapsed behind an exploratory one: headline mode hides the
+        # non-registered `<li>` and would take the registered sibling nested
+        # inside it, which is the one finding the report must never hide.
+        k = (_finding_template(getattr(f, "plain", "") or "", model_names),
+             bool(getattr(f, "registered", False)))
+        if k not in buckets:
+            order.append(k)
+            buckets[k] = []
+        buckets[k].append(f)
+    return [{"finding": buckets[k][0], "siblings": buckets[k][1:]} for k in order]
 
 
 _STAGE_LABELS = {
@@ -518,6 +596,14 @@ def _scorecard(run_dir: Path, cfg: PipelineConfig) -> str:
     Renders empty when no stage produced a scorable artifact: an opening
     block is the most prominent thing in the document, so with nothing
     measured it must say nothing rather than say so at length.
+
+    The rows themselves are **collapsed by default** (2026-08-30, on user
+    request), leaving only the description visible. A scorecard opening a
+    long report reads as the report's findings rather than as an index into
+    them, which inverts what it is: every row is a reduction of a section
+    below, and the section is where the figure, the caveats and the full
+    numbers live. Collapsed, it announces what it is and what it summarizes;
+    expanded, it is unchanged.
     """
     names = [m.name for m in cfg.models]
     rows = derived.bottom_line_rows(run_dir, names)
@@ -545,13 +631,8 @@ def _scorecard(run_dir: Path, cfg: PipelineConfig) -> str:
                      f'<details class="note"><summary>What does this mean?</summary>'
                      f'<div class="note-body">{note}{detail_html}</div>'
                      f'</details></td></tr>')
-    return (
-        '<div class="bottomline"><h2>Scorecard</h2>'
-        '<p class="figcap">Every headline question this run has an artifact for, '
-        'as a measured value against the reference it is compared with, and the '
-        'rule that produced the verdict. The rule is printed so a reader can '
-        'apply a different one to the same numbers; the verdict column is '
-        'derived from it and is not written by hand anywhere.</p>'
+    n = len(rows)
+    inner = (
         '<table class="tbl scorecard"><thead><tr>'
         '<th>Measure</th><th>Measured</th><th>Compared against</th>'
         '<th>Rule</th><th>Verdict</th></tr></thead>'
@@ -561,7 +642,21 @@ def _scorecard(run_dir: Path, cfg: PipelineConfig) -> str:
         'evidence class of the section that produced it — behavioral, '
         'geometric, translatable, causal-within-model or descriptive — which '
         'the “How to read this report” note below defines, and which decides '
-        'how much weight a cleared rule can carry.</p></div>')
+        'how much weight a cleared rule can carry.</p>')
+    return (
+        '<div class="bottomline"><h2>Scorecard</h2>'
+        '<p class="figcap">This is a <b>summary of conclusions drawn from the '
+        'sections below</b> — it introduces no evidence of its own. Every '
+        'headline question this run has an artifact for appears as a measured '
+        'value, the reference it is compared with, and the rule that produced '
+        'the verdict; each row is computed from the same artifact as the '
+        'section it summarizes, and that section is where the figures, the '
+        'caveats and the full numbers are. The rule is printed so a reader can '
+        'apply a different one to the same numbers; the verdict column is '
+        'derived from it and is not written by hand anywhere.</p>'
+        + _details(f'Show the {n} scored '
+                   f'{"row" if n == 1 else "rows"}', inner)
+        + '</div>')
 
 
 def _how_to_read(window: int) -> str:
@@ -581,8 +676,8 @@ def _how_to_read(window: int) -> str:
         'question before it. Read a number\'s strength according to which rung '
         'it sits on, not by how confident its chart looks:</p>'
         '<ul class="ladder">'
-        '<li><b>Geometric</b> (Representational geometry) — do the two models\' '
-        'layers organize the benchmark similarly at all? Correlational; both '
+        '<li><b>Geometric</b> (Representational geometry) — do two models\' '
+        'layers organize the benchmark similarly at all? Correlational; the '
         'models seeing the same input inflates this on its own.</li>'
         '<li><b>Linearly-translatable</b> (Stitching probes) — can one model\'s '
         'layer be linearly mapped to the other\'s, <i>beyond</i> what a plain '
@@ -608,7 +703,7 @@ def _how_to_read(window: int) -> str:
         '</ul>'
         f'<p class="blurb">Two terms recur in almost every chart below. A '
         f'<b>window</b> is a pooled ~{window}-timestep interval '
-        f'(`alignment.window`), not one raw model timestep — both models\' '
+        f'(`alignment.window`), not one raw model timestep — every model\'s '
         f'tokens are pooled onto this same axis specifically so an '
         f'architecture reading one timestep per token and one reading many '
         f'become comparable at all. <b>Relative depth</b> rescales each '
@@ -883,6 +978,33 @@ def _note(purpose: str, reading: str, limitations: str,
             f'<p><b>Limitations</b><br>{limitations}</p></div></details>')
 
 
+def _excursion_clause(exc, threshold: float = 3.0) -> str:
+    """Name an unforecastable future, on the case studies where there is one.
+
+    A series whose continuation leaves the range its own context establishes
+    -- a burst with no in-context precedent -- has a *timing* no model can
+    recover, so a correct forecast is a flat one near the context mean and a
+    correct MASE is large. Read without that context, such a panel looks
+    like the model failed or the pipeline plotted the wrong target; both
+    readings have been made here. So the clause appears only above the
+    threshold, and says what the excursion is rather than excusing the
+    error: a caveat on every panel is a caveat nobody reads.
+
+    Deliberately not a filter. These series are real, they belong in the
+    aggregate, and dropping them would flatter every model equally.
+    """
+    if exc is None or not np.isfinite(exc) or float(exc) < threshold:
+        return ""
+    return (f' This series\' future leaves the range its own context '
+            f'establishes, reaching <b>{float(exc):.1f}×</b> the context\'s '
+            f'standard deviation from its mean. The <i>timing</i> of an '
+            f'excursion with no in-context precedent is not recoverable from '
+            f'the context, so a near-flat forecast here is the correct '
+            f'response and the resulting error is a ceiling rather than a '
+            f'failure — read the clean-vs-corrupted gap, not the '
+            f'clean-vs-truth gap, on this panel.')
+
+
 def _figcap(purpose: str) -> str:
     """The visible half of `_note` on its own, for a repeated or per-item figure.
 
@@ -911,6 +1033,18 @@ def _section_slug(eyebrow: str) -> str:
     already-stage-like label the `builders` list keys sections by.
     """
     return re.sub(r"[^a-z0-9]+", "-", eyebrow.lower()).strip("-")
+
+
+def _details(summary: str, body: str, open_: bool = False) -> str:
+    """One collapsed block: detail a reader may want, off the default path.
+
+    The report's own default is to show everything, which is right for a
+    figure and wrong for the twentieth near-identical panel. Anything a
+    reader would skim past belongs behind one of these, with the conclusion
+    it supports rendered in the open above it.
+    """
+    return (f'<details class="note"{" open" if open_ else ""}>'
+            f'<summary>{summary}</summary>{body}</details>')
 
 
 def _table(df: pd.DataFrame) -> str:
@@ -1364,6 +1498,63 @@ def _is_full_overlap(asymmetry: str) -> bool:
         return False
 
 
+def _name_phrase(names: list, empty: str = "") -> str:
+    """`"a"` / `"a and b"` / `"a, b and c"` -- for prose composed from a run's
+    own model list rather than from an example written at authoring time."""
+    names = [str(n) for n in names]
+    if not names:
+        return empty
+    if len(names) == 1:
+        return names[0]
+    return ", ".join(names[:-1]) + " and " + names[-1]
+
+
+def _axis_tops(run_dir: Path) -> dict:
+    """Each model's largest depth coordinate, from whichever artifact has it.
+
+    A model whose captured surface stops partway up its own stack tops out
+    below 1.0 on the `block` axis -- the fact several depth notes need in
+    order to explain themselves. Those notes used to illustrate it with a
+    hardcoded architecture name, which reads as a claim about a model that may
+    not be in the run at all. This reads it off the run (`ROADMAP.md` sec 24).
+    Returns `{}` when no depth-bearing artifact exists, and every caller then
+    states the mechanism WITHOUT an example rather than inventing one.
+    """
+    for rel, key in ((Path("l3") / "meta.json", "rel_depth"),
+                     (Path("internals") / "meta.json", "rel_depth")):
+        payload = _safe_json(run_dir / rel)
+        depths = (payload or {}).get(key) or {}
+        if isinstance(depths, dict) and depths:
+            out = {}
+            for name, coords in depths.items():
+                try:
+                    out[name] = float(max(coords))
+                except (TypeError, ValueError):
+                    continue
+            if out:
+                return out
+    meta = _safe_json(run_dir / "l1" / "meta.json") or {}
+    out = {}
+    for m_key, d_key in (("model_a", "rel_depth_a"), ("model_b", "rel_depth_b")):
+        name, coords = meta.get(m_key), meta.get(d_key)
+        if name and coords:
+            try:
+                out[name] = float(max(coords))
+            except (TypeError, ValueError):
+                pass
+    return out
+
+
+def _short_axis_clause(run_dir: Path, tol: float = 0.99) -> str:
+    """"..., as <names> do<es> in this run" -- or "" when nothing is measured."""
+    tops = _axis_tops(run_dir)
+    short = sorted(n for n, v in tops.items() if v < tol)
+    if not short:
+        return ""
+    verb = "does" if len(short) == 1 else "do"
+    return f", as <b>{_name_phrase(short)}</b> {verb} in this run"
+
+
 def _compose_caveats(findings: list, run_dir: Path) -> list:
     """Generate `Finding.caveat` for every finding (`ROADMAP.md` sec 21 J1).
 
@@ -1498,6 +1689,18 @@ def _noise_floor_block(run_dir: Path, findings: list) -> str:
             "deterministic": v["deterministic"], "mean |ΔMASE|": v["mase_abs_delta_mean"],
             "p95 |ΔMASE|": v["mase_abs_delta_p95"], "max |ΔMASE|": v["mase_abs_delta_max"]}
            for m, v in floor.items()]
+    # The examples in this note are the RUN's own models, split by what was
+    # measured -- naming fixed architectures here would state something about a
+    # model that may not be in the run (ROADMAP.md sec 24).
+    _det = sorted(m for m, v in floor.items() if v.get("deterministic"))
+    _samp = sorted(m for m, v in floor.items() if not v.get("deterministic"))
+    _det_clause = ""
+    if _det:
+        _det_clause = f" (here: {_name_phrase(_det)})"
+    if _samp:
+        _det_clause += (f"; {_name_phrase(_samp)} "
+                        f"{'samples' if len(_samp) == 1 else 'sample'} and so "
+                        f"{'does' if len(_samp) == 1 else 'do'} not")
     html = "<h4>Repeat-run noise floor</h4>" + _table(pd.DataFrame(rows)) + _note(
         "Each model forecasts the same small series subset "
         f"({rows[0]['n_series'] if rows else '?'} series) {rows[0]['repeats'] if rows else '?'} "
@@ -1505,8 +1708,8 @@ def _noise_floor_block(run_dir: Path, findings: list) -> str:
         "identical. Every ΔMASE elsewhere in this report (head/MLP ablation, SAE "
         "forecast-preservation, L3 restoration) is otherwise implicitly compared against zero.",
         "`deterministic: true` with a floor of exactly 0 is expected and correct for a model "
-        "with no sampling in its forecast path (e.g. TimesFM, Chronos-Bolt) -- a free wiring "
-        "sanity check. A sampling model (Chronos-T5) will show a nonzero floor; a ΔMASE smaller "
+        "with no sampling in its forecast path -- a free wiring sanity check" + _det_clause
+        + ". A model that samples its forecast will show a nonzero floor; a ΔMASE smaller "
         "than that floor is not distinguishable from noise.",
         "Measured on a small subset for speed, so the floor estimate itself has some "
         "uncertainty -- read it as an order-of-magnitude reference, not a precise bound.")
@@ -1614,16 +1817,16 @@ def _other_pairs_block(summary: dict, findings: list) -> str:
                     registered=False))
     if out:
         out += _note(
-            "The model pairs this run configures beyond the designated "
-            "comparison pair. L0 is the only stage that can honestly run for "
+            "The model pairs this run configures beyond the first. "
+            "L0 is the only stage that can honestly run for "
             "all of them -- it needs nothing but each model's `predict()`, no "
             "alignment, no shared window axis (ROADMAP.md sec 18 F8).",
-            "Read these exactly like the designated pair's table above; the "
+            "Read these exactly like the first pair's table above; the "
             "correction is joint, so a p (Holm) here and one there came out of "
             "the same adjustment.",
-            "Every OTHER cross-model stage in this report -- L1, L2, L3, "
-            "clustering, exemplars, confirm -- compares the designated pair "
-            "only. The pairs shown here are unexamined there, which is a "
+            "A few stages report one pair only -- named in the multiplicity "
+            "ledger below, and read from the run's own record rather than "
+            "listed here. The pairs they omit are unexamined there, which is a "
             "stronger statement than 'weakly evidenced'.")
     return out
 
@@ -1648,13 +1851,22 @@ def _multiplicity_block(run_dir: Path, summary: dict, findings: list) -> str:
     mult = summary.get("multiplicity") or {}
     pair_line = ""
     if mult.get("n_models", 0) > 2:
+        # Which stages are pair-shaped is READ from the artifact, never listed
+        # here: L1, L2 and clustering were pair-only once and now measure every
+        # pair, and a hand-written list is a claim that goes stale silently.
+        _LABELS = {"l3_agreement": "L3's cross-model fingerprint agreement",
+                   "exemplars": "the per-family exemplars",
+                   "confirm": "the held-out confirmation"}
+        only = [_LABELS.get(s, s) for s in mult.get("designated_pair_only_stages", [])]
         pair_line = (f' This run configures <b>{mult["n_models"]} models</b>, so L0 tests '
                      f'all {mult["n_pairs"]} pairs and corrects across every '
-                     f'(pair, family) test at once. <b>Every other cross-model stage '
-                     f'(L1, L2, L3, clustering, exemplars, confirm) compares only the '
-                     f'designated pair</b> '
-                     f'({" vs. ".join(mult.get("designated_pair", []))}) — the remaining '
-                     f'pairs are not weakly-evidenced there, they are unexamined.')
+                     f'(pair, family) test at once.')
+        if only:
+            pair_line += (f' {_join_and(only).capitalize()} report one pair only '
+                          f'({" vs. ".join(mult.get("designated_pair", []))}), because '
+                          f'each produces a single artifact rather than a per-pair one; '
+                          f'the remaining pairs are not weakly-evidenced there, they are '
+                          f'unexamined.')
     out = (f'<h4>Multiplicity ledger</h4>'
            f'<p class="blurb">{total} corrected comparisons were made in this report, in '
            f'{len(scopes)} independent correction families. Holm is applied <i>within</i> '
@@ -2029,10 +2241,11 @@ def _sec_l1(run_dir: Path, findings: list) -> str:
         "artificially smooth even when the underlying matrix is noisy — "
         "always sanity-check against the heatmap above. The x-axis is the "
         f"'{depth_axis_name}' depth axis (ROADMAP.md sec 18 F1): 'block' "
-        "places a layer by its position over the model's whole stack "
-        "(including any uncaptured surface, e.g. Chronos-T5's decoder), "
-        "so an encoder-only model's curve legitimately ends short of 1.0 "
-        "instead of being stretched to fill the axis.")
+        "places a layer by its position over the model's whole stack, "
+        "including any surface this run never captured, so a model whose "
+        "captured layers stop partway up it legitimately ends short of 1.0 "
+        "instead of being stretched to fill the axis"
+        + _short_axis_clause(run_dir) + ".")
     fam_comp = meta.get("family_comparisons")
     if fam_comp and not fam_comp.get("applicable", True):
         inner += (f'<h4>Family-conditioned agreement</h4>'
@@ -2102,17 +2315,31 @@ def _sec_l1(run_dir: Path, findings: list) -> str:
 def _sec_l2(run_dir: Path, findings: list) -> str:
     """Gain-over-baseline heatmaps for both stitching directions."""
     data = load_json(run_dir / "l2" / "stitching.json")
+    def _pair_row(r):
+        # One column per ROLE (A->B, B->A), not one per named direction.
+        # A column per named direction unions across pairs, so on a panel run
+        # every pair is blank in the columns belonging to the other pairs --
+        # on a three-model run that is 12 empty cells across six direction
+        # columns, which reads as missing data rather than as a column that
+        # never applied to that row.
+        fwd = f'{r["model_a"]}->{r["model_b"]}'
+        rev = f'{r["model_b"]}->{r["model_a"]}'
+        gf = data["directions"].get(fwd, {}).get("best_gain")
+        gr = data["directions"].get(rev, {}).get("best_gain")
+        return {"model A": r["model_a"], "model B": r["model_b"],
+                "A → B": f"{gf:+.3f}" if gf is not None else "—",
+                "B → A": f"{gr:+.3f}" if gr is not None else "—",
+                "best of the two": f'{r["best_gain"]:+.3f}'}
+
     inner = _all_pairs_block(
         data.get("pairs"), {"directions": list(data["directions"])},
-        lambda r: {"model A": r["model_a"], "model B": r["model_b"],
-                   **{f'{d.split("->")[0]} → {d.split("->")[1]}':
-                      f'{data["directions"][d]["best_gain"]:+.3f}'
-                      for d in r["directions"]},
-                   "best of the two": f'{r["best_gain"]:+.3f}'},
+        _pair_row,
         "Stitching gain, every pair",
-        "Each pair's best gain over the input-feature baseline, in both "
-        "directions. The per-direction heatmaps below give the full layer "
-        "grid behind each of these numbers.",
+        "One row per model pair. <b>A → B</b> is the gain when that row's "
+        "model A is stitched into its model B, <b>B → A</b> the reverse — so "
+        "each row is self-contained and the two columns always refer to that "
+        "row's own two models, never to another pair's. The per-direction "
+        "heatmaps below give the full layer grid behind each number.",
         "Only the gain ABOVE the input baseline is evidence of shared learned "
         "structure, so a value at or below zero means that direction carries "
         "no stitching evidence regardless of how high its raw R² is. The two "
@@ -2409,9 +2636,9 @@ def _sec_l3(run_dir: Path, model_colors: dict, findings: list) -> str:
         "properties at similar relative depths, even if their absolute "
         "layer counts differ. The depth axis (ROADMAP.md sec 18 F1, named "
         "per panel above) places each layer within the model's *whole* "
-        "stack, not just its captured layers — an encoder-only model like "
-        "Chronos-T5 legitimately caps out partway up the axis rather than "
-        "reaching 1.0, since its decoder is real but uncaptured.",
+        "stack, not just its captured layers, so a model with a real but "
+        "uncaptured surface legitimately caps out partway up the axis "
+        "rather than reaching 1.0" + _short_axis_clause(run_dir) + ".",
         "This is a magnitude-of-change measure, not a causal one — a "
         "layer can shift a lot without that shift affecting the final "
         "forecast at all (see the behavioral-sensitivity bars and the "
@@ -2432,21 +2659,48 @@ def _sec_l3(run_dir: Path, model_colors: dict, findings: list) -> str:
                             + str(agreement.get("reason") or "")))
     agree = agreement.get("per_corruption") or {}
     if has_agreement:
-        entries = [agree[c] for c in names]
-        bar = go.Figure(go.Bar(x=names, y=[e["value"] for e in entries],
-                               marker_color=_COLORS["accent"], error_y=_err_y(entries)))
+        # Every pair, named. A single unlabelled bar chart on a panel run
+        # silently showed the designated pair only, which reads as a
+        # statement about the whole run.
+        pw = meta.get("pairwise") or []
+        if not pw:
+            pw = [{"a": meta.get("model_a"), "b": meta.get("model_b"),
+                   "agreement": agreement}]
+        bar = go.Figure()
+        for pi, entry in enumerate(pw):
+            per = (entry.get("agreement") or {}).get("per_corruption") or {}
+            ents = [per[c] for c in names if c in per]
+            if not ents:
+                continue
+            bar.add_bar(x=[c for c in names if c in per],
+                        y=[e["value"] for e in ents],
+                        name=f"{entry['a']} vs {entry['b']}",
+                        marker_color=_PAIR_COLORS[pi % len(_PAIR_COLORS)],
+                        error_y=_err_y(ents))
         bar.update_layout(yaxis_title="depth-profile agreement (Spearman ρ)",
-                          yaxis_range=[-1, 1.05])
-        overlap_frac = meta["agreement"].get("overlap_fraction")
+                          yaxis_range=[-1, 1.05], barmode="group",
+                          legend=dict(orientation="h", y=1.12))
+        overlaps = [(e["a"], e["b"], (e.get("agreement") or {}).get("overlap_fraction"))
+                    for e in pw]
+        partial = [(a, b, f) for a, b, f in overlaps
+                   if f is not None and f < 0.999]
         overlap_note = ""
-        if overlap_frac is not None and overlap_frac < 0.999:
-            overlap_note = (f" On this run's depth axis the two models' spans overlap over only "
-                            f"{overlap_frac * 100:.0f}% of the full range; agreement is computed "
-                            f"over that overlap only (never extrapolated across it), so the "
-                            f"un-overlapped depth is simply excluded rather than invented.")
-        inner += "<h4>Cross-model fingerprint agreement</h4>" + _frag(bar, 300) + _note(
+        if partial:
+            overlap_note = (" On this run's depth axis some pairs' spans only partly "
+                            "overlap ("
+                            + "; ".join(f"{a} vs {b}: {f * 100:.0f}%"
+                                        for a, b, f in partial)
+                            + "); agreement is computed over that overlap only (never "
+                              "extrapolated across it), so the un-overlapped depth is "
+                              "excluded rather than invented.")
+        inner += ("<h4>Cross-model fingerprint agreement</h4>" + _frag(bar, 320)
+                  + _figcap("One bar group per corruption, one bar per model pair — "
+                            "every pair in the run is shown and named, so a bar is "
+                            "never read as a statement about models it does not "
+                            "compare.")
+                  + _note(
             "Each model's per-corruption fingerprint (the column above) is "
-            "interpolated onto the depth range the two models actually share "
+            "interpolated onto the depth range each pair of models actually shares "
             "(ROADMAP.md sec 18 F1's `align_on_axis` — never extrapolated past "
             "either model's own span), and the two resulting depth profiles "
             "are Spearman rank-correlated — one number per corruption "
@@ -2455,13 +2709,13 @@ def _sec_l3(run_dir: Path, model_colors: dict, findings: list) -> str:
             "+1 means both models' sensitivity peaks at the same relative "
             "depth for that corruption; -1 means they peak at opposite ends; "
             "0 means unrelated depth profiles. The lowest bar is called out "
-            "in the findings as the most divergent corruption — the one "
-            "structural property these two architectures seem to handle at "
+            "in the findings as the most divergent corruption for each pair — the "
+            "structural property that pair's architectures seem to handle at "
             "meaningfully different points in depth.",
             "Rank correlation over a coarse 33-point depth grid can be noisy "
             "for very shallow models (few layers to interpolate between), and "
             "says nothing about whether the property matters to the forecast "
-            "at all — cross-reference with behavioral sensitivity below.")
+            "at all — cross-reference with behavioral sensitivity below."))
 
         calib = meta.get("calibration") or {}
         x_labels = [(f"{n}<br><span style='font-size:0.75em;color:#66727B'>"
@@ -2529,17 +2783,36 @@ def _sec_l3(run_dir: Path, model_colors: dict, findings: list) -> str:
             "localized damage shows whether it is still causally recoverable."
             + floor_note)
     inner += _corruption_breakdown_block(run_dir, findings)
-    if has_agreement:
-        overall = meta["agreement"]["overall"]
-        worst = meta["agreement"]["most_divergent"]
+    for _entry in (meta.get("pairwise") or ([{"a": meta.get("model_a"),
+                                             "b": meta.get("model_b"),
+                                             "agreement": meta.get("agreement")}]
+                                            if has_agreement else [])):
+        _ag = _entry.get("agreement") or {}
+        if _ag.get("applicable") is False or not _ag.get("per_corruption"):
+            continue
+        overall = _ag["overall"]
+        worst = _ag["most_divergent"]
+        agree = _ag["per_corruption"]
+        a_name = _entry.get("a") or "model A"
+        b_name = _entry.get("b") or "model B"
         findings.append(Finding(
             claim_id=_next_claim_id("l3"), stage="l3", evidence_class="causal_within_model",
             text=f'L3 — fingerprint agreement ρ={_ci_str(overall)}; '
                 f'most divergent corruption: {worst} '
                 f'(ρ={_ci_str(agree[worst])}).',
-            plain=f"The two models react to data-corrupting changes at similar points in "
-                f"their depth overall, but they disagree most about where they notice "
-                f"'{worst}'-style corruption.",
+            # Name the pair rather than saying "the two models": this stage is
+            # pair-shaped even on a panel run, so on a three-model run that
+            # phrase describes two of three models without saying which.
+            # Whether the agreement is "similar" is read from the CI, not
+            # asserted -- a pooled rho whose CI contains zero is not agreement.
+            plain=(f"{a_name} and {b_name} "
+                   + ("react to data-corrupting changes at similar points in "
+                      "their depth overall, but they"
+                      if (overall.get("lo") or 0.0) > 0 else
+                      "cannot be shown to react to data-corrupting changes at "
+                      "similar points in their depth overall; they")
+                   + f" disagree most about where they notice "
+                     f"'{worst}'-style corruption."),
             registered=False))
     for model in l3_models:
         vals = arrays[f"behavior_{model}"]
@@ -2560,26 +2833,51 @@ def _sec_l3(run_dir: Path, model_colors: dict, findings: list) -> str:
     if patch_meta_path.exists():
         pmeta = load_json(patch_meta_path)
         parrs = np.load(run_dir / "l3" / "patching.npz")
-        pfig = go.Figure()
-        dashes = ["solid", "dash", "dot", "dashdot"]
         whole_context = any(info.get("whole_context_patch") for info in pmeta.values())
         y_min = 0.0
+        all_corr = []
+        for info in pmeta.values():
+            for cname in info["corruptions"]:
+                if cname not in all_corr:
+                    all_corr.append(cname)
         for model, info in pmeta.items():
-            rest = parrs[f"restoration_{model}"]
-            y_min = min(y_min, float(np.nanmin(rest)))
-            for ci, cname in enumerate(info["corruptions"]):
-                pfig.add_scatter(x=info["rel_depth"], y=rest[ci],
-                                 mode="lines+markers",
-                                 name=f"{model} · {cname}",
-                                 line=dict(color=model_colors.get(model),
-                                           dash=dashes[ci % len(dashes)]))
+            y_min = min(y_min, float(np.nanmin(parrs[f"restoration_{model}"])))
+        ncol = min(3, max(1, len(all_corr)))
+        nrow = int(np.ceil(len(all_corr) / ncol))
+        pfig = make_subplots(rows=nrow, cols=ncol, subplot_titles=all_corr,
+                             shared_yaxes=True, vertical_spacing=0.10,
+                             horizontal_spacing=0.05)
+        for k, cname in enumerate(all_corr):
+            r, c = k // ncol + 1, k % ncol + 1
+            for model, info in pmeta.items():
+                if cname not in info["corruptions"]:
+                    continue
+                ci = info["corruptions"].index(cname)
+                pfig.add_scatter(x=info["rel_depth"],
+                                 y=parrs[f"restoration_{model}"][ci],
+                                 mode="lines+markers", name=model,
+                                 legendgroup=model, showlegend=k == 0,
+                                 line=dict(color=model_colors.get(model)),
+                                 row=r, col=c)
         axis_names = {info.get("depth_axis", "index") for info in pmeta.values()}
         axis_label = axis_names.pop() if len(axis_names) == 1 else "/".join(sorted(axis_names))
-        pfig.update_layout(xaxis_title=f"relative depth of patched layer ({axis_label} axis)",
-                           yaxis_title="forecast restoration (window-averaged)",
-                           yaxis_range=[min(-0.1, y_min * 1.15), 1.05])
+        pfig.update_yaxes(range=[min(-0.1, y_min * 1.15), 1.05])
+        pfig.update_layout(height=max(260, 210 * nrow),
+                           margin=dict(t=48, b=52, l=56, r=12))
+        pfig.add_annotation(text=f"relative depth of patched layer ({axis_label} axis)",
+                            x=0.5, y=-0.06, xref="paper", yref="paper",
+                            showarrow=False, font=dict(size=11))
+        pfig.add_annotation(text="forecast restoration (window-averaged)",
+                            x=-0.055, y=0.5, xref="paper", yref="paper",
+                            textangle=-90, showarrow=False, font=dict(size=11))
         inner += ("<h4>Activation patching: clean → corrupted restoration</h4>"
-                  + _frag(pfig, 380))
+                  + _frag(pfig, max(260, 210 * nrow))
+                  + _figcap("One panel per corruption, every model overlaid on a "
+                            "shared restoration scale — so a model's depth profile "
+                            "is read down a single panel, and two corruptions are "
+                            "compared by putting their panels side by side. "
+                            "Clicking a model in the legend hides it in every "
+                            "panel at once."))
         inner += _note(
             "At each layer, clean (uncorrupted) token states are spliced "
             "into an otherwise-corrupted forward pass, one alignment "
@@ -2636,21 +2934,30 @@ def _l3_window_heatmaps(pmeta: dict, parrs) -> str:
             continue
         rest = parrs[key]
         names = info["corruptions"]
-        wfig = make_subplots(rows=1, cols=len(names), subplot_titles=names,
-                             horizontal_spacing=0.05)
+        # Wrapped into a grid rather than one row: at nine corruptions a
+        # single row gives each panel about a tenth of the page width, which
+        # is too narrow to read a [depth x window] grid in.
+        ncol = min(3, len(names))
+        nrow = int(np.ceil(len(names) / ncol))
+        wfig = make_subplots(rows=nrow, cols=ncol, subplot_titles=names,
+                             horizontal_spacing=0.08, vertical_spacing=0.11)
         for ci in range(len(names)):
+            r, c = ci // ncol + 1, ci % ncol + 1
             wfig.add_trace(go.Heatmap(z=rest[ci], x=info["windows"],
                                       y=np.round(info["rel_depth"], 2),
                                       colorscale="Magma", zmin=0.0,
                                       showscale=ci == len(names) - 1,
                                       colorbar_title="restore"),
-                           row=1, col=ci + 1)
-            wfig.update_xaxes(title_text="window" if ci == 0 else None,
-                              row=1, col=ci + 1)
-        wfig.update_yaxes(title_text=f"relative depth ({info.get('depth_axis', 'index')} axis)",
-                          row=1, col=1)
+                           row=r, col=c)
+            if r == nrow:
+                wfig.update_xaxes(title_text="window", row=r, col=c)
+        for r in range(1, nrow + 1):
+            wfig.update_yaxes(title_text=f"rel. depth ({info.get('depth_axis', 'index')})",
+                              row=r, col=1)
+        wfig.update_layout(margin=dict(t=48, b=44, l=56, r=12))
+        _wh = max(300, 230 * nrow)
         html += (f"<h4>{model}: per-window restoration "
-                 f"(window = {info['window_size']} steps)</h4>" + _frag(wfig, 320)
+                 f"(window = {info['window_size']} steps)</h4>" + _frag(wfig, _wh)
                  + _figcap(f"Where in both depth and time each corruption's "
                            f"effect on {model}'s forecast is causally carried: "
                            f"one grid per corruption, brighter = patching that "
@@ -2686,7 +2993,8 @@ def _l3_horizon_heatmaps(pmeta: dict, parrs, findings: list) -> str:
     the top-of-section figure plots, but resolved by *which forecast step*
     was restored instead of collapsed over the whole horizon.
     """
-    html, shown_note = "", False
+    figs, shown_note = "", False
+    split: dict[str, dict[str, tuple]] = {}
     for model, info in pmeta.items():
         key = f"restoration_by_horizon_{model}"
         if key not in parrs:
@@ -2707,13 +3015,13 @@ def _l3_horizon_heatmaps(pmeta: dict, parrs, findings: list) -> str:
                               row=1, col=ci + 1)
         hfig.update_yaxes(title_text=f"relative depth ({info.get('depth_axis', 'index')} axis)",
                           row=1, col=1)
-        html += (f"<h4>{model}: per-horizon-step restoration</h4>"
+        figs += (f"<h4>{model}: per-horizon-step restoration</h4>"
                  + _frag(hfig, 320)
                  + _figcap(f"The same restoration, resolved by how far ahead "
                            f"the forecast step is rather than collapsed over "
                            f"the horizon, for {model}."))
         if not shown_note:
-            html += _note(
+            figs += _note(
                 "The same window-averaged restoration curve above, resolved "
                 "by forecast horizon step instead of collapsed over it: each "
                 "cell asks how much of the clean-vs-corrupted gap AT THAT "
@@ -2732,27 +3040,75 @@ def _l3_horizon_heatmaps(pmeta: dict, parrs, findings: list) -> str:
             shown_note = True
         for ci, cname in enumerate(names):
             row = rest[ci]
+            entry = None
             if not np.all(np.isnan(row)):
                 early, late = row[:, 0], row[:, -1]
                 if np.any(~np.isnan(early)) and np.any(~np.isnan(late)):
-                    peak_early = int(np.nanargmax(early))
-                    peak_late = int(np.nanargmax(late))
-                    if peak_early != peak_late:
-                        findings.append(Finding(
-                            claim_id=_next_claim_id("l3"), stage="l3",
-                            evidence_class="causal_within_model",
-                            text=f"L3 horizon-resolved patching — {model}/{cname}: "
-                                f"the layer that best restores horizon step 1 "
-                                f"({info['rel_depth'][peak_early]:.2f} relative "
-                                f"depth) differs from the layer that best "
-                                f"restores the final horizon step "
-                                f"({info['rel_depth'][peak_late]:.2f}).",
-                            plain=f"For {model} under '{cname}'-style corruption, a "
-                                f"different part of the network is responsible for "
-                                f"fixing the near-term forecast versus the far-future "
-                                f"forecast.",
-                            registered=False))
-    return html
+                    pe, pl = int(np.nanargmax(early)), int(np.nanargmax(late))
+                    entry = (pe, pl, float(info["rel_depth"][pe]),
+                             float(info["rel_depth"][pl]))
+            split.setdefault(model, {})[cname] = entry
+
+    if not split:
+        return figs
+
+    # One table and one finding per model, replacing what used to be one
+    # near-identical finding per (model, corruption) -- twelve of them on a
+    # three-model run, all saying the same sentence with two words changed.
+    # The question a reader has is "which corruptions split?", which is a
+    # list, not twelve separate claims.
+    corruptions: list[str] = []
+    for per in split.values():
+        for cname in per:
+            if cname not in corruptions:
+                corruptions.append(cname)
+    table = pd.DataFrame(index=corruptions)
+    for model, per in split.items():
+        col = []
+        for cname in corruptions:
+            e = per.get(cname)
+            if e is None:
+                col.append("not measured")
+            elif e[0] != e[1]:
+                col.append(f"differs ({e[2]:.2f} \u2192 {e[3]:.2f})")
+            else:
+                col.append(f"same depth ({e[2]:.2f})")
+        table[model] = col
+    table.index.name = "corruption"
+
+    for model, per in split.items():
+        measured = [c for c, e in per.items() if e is not None]
+        differ = [c for c in measured if per[c][0] != per[c][1]]
+        if not measured:
+            continue
+        if differ:
+            plain = (f"In {model}, {len(differ)} of {len(measured)} corruption "
+                     f"types are repaired by a different part of the network "
+                     f"near-term than far-future.")
+            detail = (f"the layer best restoring horizon step 1 differs from the "
+                      f"layer best restoring the final step for: "
+                      f"{', '.join(sorted(differ))}. The remaining "
+                      f"{len(measured) - len(differ)} share one depth.")
+        else:
+            plain = (f"In {model}, every corruption type is repaired at the same "
+                     f"depth near-term and far-future.")
+            detail = (f"across all {len(measured)} corruptions the layer best "
+                      f"restoring horizon step 1 is also the layer best "
+                      f"restoring the final step.")
+        findings.append(Finding(
+            claim_id=_next_claim_id("l3"), stage="l3",
+            evidence_class="causal_within_model",
+            text=f"L3 horizon-resolved patching \u2014 {model}: {detail}",
+            plain=plain, registered=False))
+
+    body = ("<h4>Which corruptions split near-term from far-future repair</h4>"
+            + _table(table.reset_index())
+            + _figcap("For each corruption, whether the layer that best repairs "
+                      "the first forecast step is the same layer that best "
+                      "repairs the last one. Depths are on each model's own "
+                      "relative-depth axis.")
+            + _details("Per-model horizon heatmaps", figs))
+    return body
 
 
 def _l3_verbose_cases(pmeta: dict, parrs, run_dir: Path) -> str:
@@ -2820,6 +3176,8 @@ def _l3_verbose_cases(pmeta: dict, parrs, run_dir: Path) -> str:
             fams = list(first.get("families") or [])
             sid = sids[si] if si < len(sids) else f"series {si}"
             fam = fams[si] if si < len(fams) else None
+            excs = list(first.get("future_excursion") or [])
+            exc = excs[si] if si < len(excs) else None
 
             sub = pd.DataFrame()
             if not cases.empty:
@@ -2857,16 +3215,21 @@ def _l3_verbose_cases(pmeta: dict, parrs, run_dir: Path) -> str:
                 t_fut = np.arange(clean.shape[1])
                 show = k == 0
                 if target is not None and si < target.shape[0]:
-                    fig.add_scatter(x=t_fut, y=target[si], mode="lines", name="truth",
+                    fig.add_scatter(x=t_fut, y=target[si], mode="lines",
+                                    name="true continuation", legendgroup="truth",
                                     line=dict(color=_COLORS["ink"], dash="dot"),
                                     showlegend=show, row=r, col=c)
-                fig.add_scatter(x=t_fut, y=clean[si], mode="lines", name="clean",
+                fig.add_scatter(x=t_fut, y=clean[si], mode="lines",
+                                name="forecast from clean input", legendgroup="clean",
                                 line=dict(color=_COLORS["a"]), showlegend=show,
                                 row=r, col=c)
-                fig.add_scatter(x=t_fut, y=corr[si], mode="lines", name="corrupted",
+                fig.add_scatter(x=t_fut, y=corr[si], mode="lines",
+                                name="forecast from corrupted input",
+                                legendgroup="corrupted",
                                 line=dict(color=_COLORS["accent"]), showlegend=show,
                                 row=r, col=c)
-                fig.add_scatter(x=t_fut, y=patched[si], mode="lines", name="patched",
+                fig.add_scatter(x=t_fut, y=patched[si], mode="lines",
+                                name="forecast after patching", legendgroup="patched",
                                 line=dict(color=_COLORS["b"], dash="dash"),
                                 showlegend=show, row=r, col=c)
             fig.update_layout(xaxis_title="steps (0 = forecast start)")
@@ -2880,7 +3243,16 @@ def _l3_verbose_cases(pmeta: dict, parrs, run_dir: Path) -> str:
                                f"<code>patch_layer</code>/<code>patch_window</code> "
                                f"pair in the table above, not this series' own "
                                f"best cell, which the table gives separately as "
-                               f"<code>own_best_layer</code>."))
+                               f"<code>own_best_layer</code>. All four traces are "
+                               f"forecasts or ground truth over the same horizon; "
+                               f"the gap between <i>true continuation</i> and "
+                               f"<i>forecast from clean input</i> is this model's "
+                               f"ordinary forecast error on this series, which the "
+                               f"corruption experiment neither creates nor removes "
+                               f"— the quantity under study is the gap between the "
+                               f"clean and corrupted forecasts. Legend clicks apply "
+                               f"to every panel."
+                               + _excursion_clause(exc)))
 
             worst = None
             if not sub.empty and "damage" in sub.columns and sub["damage"].notna().any():
@@ -2911,8 +3283,24 @@ def _sec_lens(run_dir: Path, model_colors: dict, findings: list) -> str:
     arrays = np.load(run_dir / "lens" / "curves.npz")
     meta = load_json(run_dir / "lens" / "lens.json")
     inner = ""
+    skip_meta = {k: v for k, v in meta.items() if v.get("skip_lens_available", True)}
+    no_skip = {k: v for k, v in meta.items() if not v.get("skip_lens_available", True)}
+    if no_skip:
+        inner += _details(
+            f"Skip lens unavailable for {_join_and(sorted(no_skip))}",
+            "<p>" + " ".join(
+                f"<b>{k}</b>: {v.get('skip_lens_unavailable_reason', 'not measured')}."
+                for k, v in sorted(no_skip.items()))
+            + " A skip-lens curve is produced by overwriting a layer's states and "
+              "reading the model's own forecast; where the forecast head does not "
+              "read the overwritten positions, every layer returns the identical "
+              "forecast, so the curve would be flat by construction rather than as "
+              "a finding. It is withheld instead. The tuned lens below is a "
+              "separate mechanism (a probe fit on stored states, no patching) and "
+              "does cover " + _join_and(sorted(no_skip)) + ".</p>",
+            open_=True)
     fig = go.Figure()
-    for model, m in meta.items():
+    for model, m in skip_meta.items():
         color = model_colors.get(model)
         err = _err_y(m["mase_ci"])
         fig.add_scatter(x=m["rel_depth"], y=arrays[f"skip_mase_{model}"],
@@ -2975,7 +3363,7 @@ def _sec_lens(run_dir: Path, model_colors: dict, findings: list) -> str:
             "discipline), so R² reflects generalization to new series, not "
             "in-sample fit.")
 
-    for model, m in meta.items():
+    for model, m in skip_meta.items():
         depth = m["crystallization_depth"]
         where = f"{depth:.2f} of depth" if depth is not None else "never (within tolerance)"
         findings.append(Finding(
@@ -3004,20 +3392,33 @@ def _lens_horizon_block(arrays, meta: dict, model_colors: dict, findings: list) 
     over all of them.
     """
     html = ""
-    for model, m in meta.items():
-        key = f"skip_mase_by_horizon_{model}"
-        if key not in arrays:
-            continue
-        rest = arrays[key]  # [n_layers, horizon]
-        horizon = rest.shape[1]
-        hfig = go.Figure(go.Heatmap(z=rest, x=list(range(1, horizon + 1)),
-                                    y=np.round(m["rel_depth"], 2),
-                                    colorscale="Viridis_r", colorbar_title="MASE"))
-        hfig.update_layout(xaxis_title="horizon step", yaxis_title="relative depth")
-        html += (f"<h4>{model}: skip-lens MASE by horizon step</h4>" + _frag(hfig, 340)
-                 + _figcap(f"How early in {model}'s depth each individual "
-                           f"forecast step becomes readable, instead of the "
-                           f"whole horizon averaged into one curve."))
+    # One row of panels rather than one full-width figure per model: these are
+    # read by comparing models, and stacking them vertically puts the
+    # comparison a scroll apart.
+    have = [(model, m) for model, m in meta.items()
+            if f"skip_mase_by_horizon_{model}" in arrays]
+    if have:
+        hfig = make_subplots(rows=1, cols=len(have),
+                             subplot_titles=[mo for mo, _ in have],
+                             horizontal_spacing=0.07)
+        for k, (model, m) in enumerate(have):
+            rest = arrays[f"skip_mase_by_horizon_{model}"]
+            horizon = rest.shape[1]
+            hfig.add_trace(go.Heatmap(z=rest, x=list(range(1, horizon + 1)),
+                                      y=np.round(m["rel_depth"], 2),
+                                      colorscale="Viridis_r",
+                                      showscale=k == len(have) - 1,
+                                      colorbar_title="MASE"),
+                           row=1, col=k + 1)
+            hfig.update_xaxes(title_text="horizon step", row=1, col=k + 1)
+        hfig.update_yaxes(title_text="relative depth", row=1, col=1)
+        hfig.update_layout(margin=dict(t=46, b=48, l=56, r=12))
+        html += ("<h4>Skip-lens MASE by horizon step</h4>" + _frag(hfig, 340)
+                 + _figcap("How early in each model's depth an individual "
+                           "forecast step becomes readable, instead of the "
+                           "whole horizon averaged into one curve. Each model "
+                           "has its own colour scale — compare the pattern "
+                           "within a panel, not the shade across panels."))
     html += _note(
         "The skip-lens MASE curve above, resolved by forecast horizon step "
         "instead of averaged over the whole horizon: each cell is that "
@@ -3050,7 +3451,40 @@ def _lens_horizon_block(arrays, meta: dict, model_colors: dict, findings: list) 
         cfig.update_layout(xaxis_title="horizon step",
                            yaxis_title="crystallization depth (relative)",
                            yaxis_range=[-0.05, 1.05])
-        html += "<h4>Crystallization depth by horizon step</h4>" + _frag(cfig, 320)
+        gaps = {model: (sum(1 for d in (m.get("crystallization_depth_by_horizon") or [])
+                            if d is None),
+                        len(m.get("crystallization_depth_by_horizon") or []))
+                for model, m in meta.items()
+                if m.get("crystallization_depth_by_horizon")}
+        gap_txt = ""
+        if any(n for n, _ in gaps.values()):
+            reach = []
+            for mo, (n, tot) in sorted(gaps.items()):
+                if not n:
+                    continue
+                mm = meta[mo]
+                bit = (f"<b>{mo}</b> {n} of {tot} step{'s' if n != 1 else ''}")
+                last = mm.get("layers", [None])[-1]
+                agr = arrays.get(f"skip_agreement_{mo}")
+                if last is not None and agr is not None and float(agr[-1]) > 0:
+                    bit += (f" (its deepest captured layer, <code>{last}</code>, is "
+                            f"still {float(agr[-1]):.2f} MASE away from reproducing "
+                            f"the model's own forecast)")
+                reach.append(bit)
+            gap_txt = _figcap(
+                "Gaps are unresolved steps, not missing data: " + "; ".join(reach)
+                + ". At those horizon steps the skip-lens MASE never came within "
+                  "tolerance of that step's own final-layer MASE at any captured "
+                  "layer, so there is no crossing depth to plot. The usual cause is "
+                  "that the deepest <i>captured</i> layer is not the model's true "
+                  "final block — under a capture stride above 1 the last blocks are "
+                  "skipped, so the curve stops short of where the forecast actually "
+                  "finishes forming, and the steps that finish latest are the ones "
+                  "left unresolved. Capturing at stride 1 closes it. Read a gap as "
+                  "'not resolved within the layers measured', never as a deeper "
+                  "crystallization point.")
+        html += ("<h4>Crystallization depth by horizon step</h4>" + _frag(cfig, 320)
+                 + gap_txt)
         html += _note(
             "For each forecast horizon step independently, the first "
             "relative depth whose skip-lens MASE at that step lands within "
@@ -3777,6 +4211,7 @@ def _sec_sae(cfg: PipelineConfig, run_dir: Path, findings: list) -> str:
         log.info(f"report: SAE section has no ground truth to draw exemplars from: {exc}")
         gt = pd.DataFrame()
     inner = ""
+    tops: dict[str, list[dict]] = {}
     for key, entry in meta_sae.items():
         model, layer = key.split("/", 1)
         fid, dead = entry.get("reconstruction_fidelity"), entry.get("dead_feature_rate")
@@ -3831,17 +4266,49 @@ def _sec_sae(cfg: PipelineConfig, run_dir: Path, findings: list) -> str:
         if df.empty:
             inner += "<p class='blurb'>no ground-truth-matched features to illustrate.</p>"
             continue
-        inner += _table(df)
+        inner += _details(f"{key}: best-matched features", _table(df))
         top = df.iloc[0]
+        tops.setdefault(model, []).append(
+            {"layer": layer, "feature": int(top["feature"]),
+             "tracks": str(top["best_field"]), "rho": float(top["rho"]),
+             "top exemplar series": top["series_id"],
+             "activation": float(top["activation"])})
+
+    # One finding per model, not one per (model, layer). Each layer's
+    # dictionary is trained separately, so the same labelled property being
+    # the best match at three of a model's layers is one observation about
+    # that model, not three independent ones -- and rendered as three near-
+    # identical sentences it read as a repeated claim rather than a
+    # replication. The per-layer detail is the table above.
+    for model, rows in tops.items():
+        fields = sorted({r["tracks"] for r in rows})
+        best = max(rows, key=lambda r: abs(r["rho"]))
+        if len(fields) == 1 and len(rows) > 1:
+            plain = (f"In {model}, the same labelled property "
+                     f"('{fields[0]}') is the best match at all "
+                     f"{len(rows)} analyzed layers.")
+        else:
+            plain = (f"In {model}, learned internal features track "
+                     f"{len(fields)} labelled propert"
+                     f"{'y' if len(fields) == 1 else 'ies'}: "
+                     f"{', '.join(fields)}.")
         findings.append(Finding(
             claim_id=_next_claim_id("sae"), stage="sae", evidence_class="descriptive",
-            text=f"SAE — {key}: feature {int(top['feature'])} best matches "
-                f"{top['best_field']} (ρ={top['rho']:.2f}); top exemplar series "
-                f"{top['series_id']} (activation {top['activation']:.2f}).",
-            plain=f"In {model}, one learned internal feature seems to specifically "
-                f"track '{top['best_field']}' — a concrete example of a human-"
-                f"interpretable concept living inside the network.",
-            registered=False))
+            text=f"SAE \u2014 {model}: across {len(rows)} analyzed layer"
+                f"{'' if len(rows) == 1 else 's'} the best-matched features "
+                f"track {', '.join(fields)}; strongest is feature "
+                f"{best['feature']} at {best['layer']} matching "
+                f"{best['tracks']} (\u03c1={best['rho']:.2f}).",
+            plain=plain, registered=False))
+
+    if tops:
+        summary = pd.DataFrame([{"model": m, **r} for m, rows in tops.items()
+                                for r in rows])
+        inner = ("<h4>Best-matched feature per analyzed layer</h4>"
+                 + _table(summary)
+                 + _figcap("For each model and layer, the single sparse feature "
+                           "whose activation best correlates with a labelled "
+                           "property of the input series.") + inner)
     inner += _note(*_SAE_EXEMPLAR_NOTE, summary="What does this table mean?")
     inner += _sae_seed_floor_block(meta_sae)
     return inner
@@ -3955,12 +4422,12 @@ _LAYER_SCREEN_NOTE = (
     "compute\", not as a finished interpretability claim -- nothing else in "
     "the report depends on it being right, only on what gets trained "
     "downstream if `sae.targets` is left empty.",
-    "The default method (`work_bend`, Idea A) won a single-corpus, "
+    "The default method (`work_bend`) won a single-corpus, "
     "single-checkpoint-pair bake-off (ROADMAP.md §6.1.1 Findings, "
     "2026-08-05) — real signal, not a settled cross-architecture rule. On "
     "some models/corpora the theoretical best possible selector has "
     "little room to beat a free uniform-stride null; a method not beating "
-    "it there is not necessarily broken. `factor_emergence` (Idea B) has a "
+    "it there is not necessarily broken. `factor_emergence` has a "
     "known, diagnosed weighting flaw and underperformed in that bake-off.",
 )
 
@@ -4195,7 +4662,7 @@ def _sec_budget(run_dir: Path, model_colors: dict, findings: list,
            if n not in blackbox}
     if any(c for c in cum.values()):
         fig = go.Figure()
-        denom_is_forecast = {}
+        denom_is_forecast, curve_tops = {}, {}
         for name, blocks in cum.items():
             if not blocks:
                 continue
@@ -4204,6 +4671,7 @@ def _sec_budget(run_dir: Path, model_colors: dict, findings: list,
             total = predict_flops or models[name]["forward"]["flops"]
             denom_is_forecast[name] = bool(predict_flops)
             frac = [blocks["cumulative"][b] / total for b in names]
+            curve_tops[name] = frac[-1] if frac else None
             depth = depth_axis_for_run(depth_axis_name, store, name, names).coords
             fig.add_scatter(x=depth, y=frac, mode="lines+markers", name=name,
                             line=dict(color=model_colors.get(name, _COLORS["a"])))
@@ -4219,6 +4687,20 @@ def _sec_budget(run_dir: Path, model_colors: dict, findings: list,
                          + " this curve falls back to the capture-pass denominator and "
                          "CAN reach 1.0 without that meaning full coverage.")
                         if fallback_names else "")
+        # Which curves stop short is a MEASUREMENT of this run, not an example
+        # chosen when the note was written (ROADMAP.md sec 24) -- a model whose
+        # captured blocks are a small share of its full forecast (an uncaptured
+        # decoder, a sampled decode loop run many times) shows up here.
+        _short = sorted(n for n, v in curve_tops.items() if v is not None and v < 0.9)
+        short_curve_line = ""
+        if _short:
+            short_curve_line = (" <b>" + _name_phrase(_short) + "</b> top"
+                                + ("s" if len(_short) == 1 else "")
+                                + " out well short of 1.0 here — that matches the coverage "
+                                  "table above rather than contradicting it, and is the "
+                                  "reason a depth-located claim about "
+                                + ("that model" if len(_short) == 1 else "those models")
+                                + " carries an automatic qualifier.")
         inner += _frag(fig, 320) + _note(
             "How much of each model's *full forecast* has actually happened by a given "
             "point on the relative-depth axis that every cross-model depth figure in this "
@@ -4229,10 +4711,7 @@ def _sec_budget(run_dir: Path, model_colors: dict, findings: list,
             "forecast FLOPs its captured blocks account for. Read a depth-located claim "
             "about a model whose curve is far below another's at the same x as being about "
             "a different amount of computation — a claim at depth 0.5 is only 'halfway "
-            "through the model' if the curve is near 0.5 there too. An encoder-only model "
-            "run through a sampled decoder (Chronos-T5's `num_samples` passes) tops out "
-            "well short of 1.0 here, matching the coverage table above rather than "
-            "contradicting it.",
+            "through the model' if the curve is near 0.5 there too." + short_curve_line,
             "Normalized by <code>predict.flops</code> (the full forecast, incl. every "
             "sampled decode pass) when `budget.measure_predict` measured it — the fix "
             "`ROADMAP.md` §18 F1 (D2) / §23.2 B1 named, now built — falling back to the "
@@ -4433,34 +4912,15 @@ def _eligibility_cell(record: dict) -> str:
     return "full (spans declared by adapter)"
 
 
-def _sec_fairness(cfg: PipelineConfig, run_dir: Path) -> str:
-    """The fairness card (ROADMAP.md sec 18 F9): every measured asymmetry
-    between the two models in this run, in one place, rendered before any
-    result section -- so a reader checks what is and is not comparable
-    before reading a claim that depends on it, rather than discovering the
-    caveat buried in that claim's own section.
+def _fairness_rows_for_pair(cfg: PipelineConfig, run_dir: Path, a, b) -> list:
+    """Every measured asymmetry between ONE pair of models.
 
-    Every row is read from an already-measured artifact (F1's
-    `align_on_axis` output in `l3/meta.json`, F2/F4's
-    `budget/model_budget.json`, F6's `l0/noise_floor.json`) -- never a
-    hand-written value, per this item's own acceptance criterion. F3, F7
-    and F8 have no landed measurement anywhere in the repo yet, so their
-    rows read "not yet measured" rather than being omitted -- the card's
-    own coverage should be as visible as the asymmetries it reports.
+    Split out of `_sec_fairness` so a run of any size renders one card
+    per pair. Fairness is a property of a pair -- "captured FLOP
+    fraction" or "depth-axis overlap" is a two-way quantity, and a row
+    widened to N columns would invite reading its Asymmetry cell as
+    describing all of them. So the card is repeated, not widened.
     """
-    # ROADMAP.md sec 24.3: the card's whole job is to render the asymmetry
-    # BETWEEN models, so a solo run has no asymmetry to report -- and saying
-    # so is more useful than an omitted section, which reads as a stage that
-    # failed. Rendered unconditionally (`requires: []`), so this is the one
-    # place a solo run's shape has to be stated rather than inferred.
-    if cfg.run_shape() == "solo":
-        only = cfg.models[0].name
-        return ("<p class=\"figcap\">This is a solo run: only "
-                f"<b>{only}</b> was analyzed, so there is no between-model "
-                "asymmetry to report. Every number in this report is a "
-                "within-model measurement, and none of it is a comparison "
-                "(ROADMAP.md \u00a724.3).</p>")
-    a, b = cfg.comparison_pair()
     rows = []
 
     tiers = load_json(run_dir / "tiers.json") if (run_dir / "tiers.json").exists() else {}
@@ -4614,8 +5074,50 @@ def _sec_fairness(cfg: PipelineConfig, run_dir: Path) -> str:
         b.name, _FAIRNESS_UNMEASURED, "n/a",
         "the asymmetric analyses (ROADMAP.md §18 F3, parked -- see §22.6)"))
 
+    return rows
+
+
+def _sec_fairness(cfg: PipelineConfig, run_dir: Path) -> str:
+    """The fairness card (ROADMAP.md sec 18 F9): every measured asymmetry
+    between the two models in this run, in one place, rendered before any
+    result section -- so a reader checks what is and is not comparable
+    before reading a claim that depends on it, rather than discovering the
+    caveat buried in that claim's own section.
+
+    Every row is read from an already-measured artifact (F1's
+    `align_on_axis` output in `l3/meta.json`, F2/F4's
+    `budget/model_budget.json`, F6's `l0/noise_floor.json`) -- never a
+    hand-written value, per this item's own acceptance criterion. F3, F7
+    and F8 have no landed measurement anywhere in the repo yet, so their
+    rows read "not yet measured" rather than being omitted -- the card's
+    own coverage should be as visible as the asymmetries it reports.
+    """
+    # ROADMAP.md sec 24.3: the card's whole job is to render the asymmetry
+    # BETWEEN models, so a solo run has no asymmetry to report -- and saying
+    # so is more useful than an omitted section, which reads as a stage that
+    # failed. Rendered unconditionally (`requires: []`), so this is the one
+    # place a solo run's shape has to be stated rather than inferred.
+    if cfg.run_shape() == "solo":
+        only = cfg.models[0].name
+        return ("<p class=\"figcap\">This is a solo run: only "
+                f"<b>{only}</b> was analyzed, so there is no between-model "
+                "asymmetry to report. Every number in this report is a "
+                "within-model measurement, and none of it is a comparison "
+                "(ROADMAP.md \u00a724.3).</p>")
+    routing = load_json(run_dir / "routing.json") if (run_dir / "routing.json").exists() else {}
+    pairs = cfg.comparison_pairs()
+    a, b = pairs[0]
+    per_pair = [(pa, pb, _fairness_rows_for_pair(cfg, run_dir, pa, pb))
+                for pa, pb in pairs]
+    rows = per_pair[0][2]
+
+    # Legacy keys (`model_a`/`model_b`/`rows`) describe pair 0 exactly as they
+    # always did; `pairs` is the added canonical key. Any existing reader of
+    # this artifact is unaffected.
     save_json(run_dir / "fairness" / "card.json",
-             {"model_a": a.name, "model_b": b.name, "rows": rows})
+             {"model_a": a.name, "model_b": b.name, "rows": rows,
+              "pairs": [{"a": pa.name, "b": pb.name, "rows": r}
+                        for pa, pb, r in per_pair]})
 
     restricted = [m for m, r in routing.items() if (r or {}).get("eligible") == "l0_only"]
     banner = ""
@@ -4643,30 +5145,32 @@ def _sec_fairness(cfg: PipelineConfig, run_dir: Path) -> str:
             f"({detail}). Sections below that are missing are missing for this reason, "
             "not because the analysis failed. See CLAUDE.md §12's envelope edge.</div>")
 
-    if cfg.run_shape() == "panel":
-        # Every row of this card names exactly two models, because each
-        # asymmetry it reports (parameters, FLOPs, captured fraction, depth
-        # overlap, noise floor) is a two-way comparison. Widening the table to
-        # N columns would let a reader read a row across four models as though
-        # the "Asymmetry" column described all of them; it describes the pair.
-        # So the scope is STATED rather than the table silently narrowed --
-        # a panel reader is told which pair they are looking at and which
-        # models are absent from it, which is the honest version of the same
-        # limitation (`ROADMAP.md` sec 24.3, `CLAUDE.md` sec 2.5).
-        others = ", ".join(m.name for m in cfg.models if m.name not in (a.name, b.name))
+    if len(per_pair) > 1:
+        # Every row of a card names exactly two models, because each asymmetry
+        # it reports (parameters, FLOPs, captured fraction, depth overlap,
+        # noise floor) is a two-way comparison. Widening one table to N columns
+        # would let a reader read a row across four models as though the
+        # "Asymmetry" column described all of them; it describes the pair. So
+        # the card is REPEATED per pair, and no pair is designated as the one
+        # the reader must care about -- the report cannot know which two models
+        # a reader wants to compare.
         banner += (
-            f'<p class="figcap">This is a panel run of {len(cfg.models)} models. '
-            f'Each row below compares the <b>designated reference pair</b> '
-            f'({a.name} vs {b.name}); {others} '
-            f'{"is" if len(cfg.models) == 3 else "are"} not on this card. '
-            f'Their cross-model results are in the every-pair tables inside the '
-            f'L1, L2 and L4 sections, and their own within-model cost and '
-            f'coverage numbers are in the Cost section.</p>')
+            f'<p class="figcap">This run compares {len(cfg.models)} models, so '
+            f'there are {len(per_pair)} pairs. Fairness is a property of a '
+            f'pair, so each gets its own card below; the first is open and the '
+            f'rest are collapsed.</p>')
 
-    inner = banner + _table(pd.DataFrame(rows))
+    cards = ""
+    for i, (pa, pb, prows) in enumerate(per_pair):
+        table = _table(pd.DataFrame(prows))
+        if len(per_pair) == 1:
+            cards += table
+        else:
+            cards += _details(f"{pa.name} vs {pb.name}", table, open_=i == 0)
+    inner = banner + cards
     inner += _note(
-        "Every measured asymmetry between the two models in this run, in "
-        "one place, before any result section (ROADMAP.md §18 F9). This "
+        "Every measured asymmetry between the models in this run, one card "
+        "per pair, before any result section (ROADMAP.md §18 F9). This "
         "is the page to check first, and the strongest single argument "
         "that this repo's comparisons are honest rather than merely "
         "careful.",
@@ -4730,8 +5234,18 @@ def _sec_frontend(run_dir: Path, model_colors: dict, findings: list) -> str:
             q = rec.get("quantization_resolution") or {}
             if q.get("status") == "not_applicable":
                 inner += (f'<p class="blurb">{name}: not applicable — {q.get("reason")}</p>')
+        # Named from the run's own probe results, so this note cannot describe a
+        # tokenizer family no model here has (ROADMAP.md sec 24).
+        _requant = sorted(n for n, r in models.items()
+                          if (r.get("quantization_resolution") or {}).get("status")
+                          not in (None, "not_applicable"))
+        _cont = sorted(n for n, r in models.items()
+                       if (r.get("quantization_resolution") or {}).get("status")
+                       == "not_applicable")
         inner += _note(
-            "Chronos-T5's tokenizer re-quantizes each context into a fixed number of "
+            ("A re-quantizing tokenizer" if not _requant
+             else _name_phrase(_requant) + "'s tokenizer")
+            + " maps each context onto a fixed number of "
             "bins whose edges are set from that series' own statistics (CLAUDE.md sec "
             "11.16). This asks how coarse one bin actually is relative to a series' own "
             "amplitude, and how often the tokenizer's saturating clamp is hit.",
@@ -4740,10 +5254,11 @@ def _sec_frontend(run_dir: Path, model_colors: dict, findings: list) -> str:
             "collapse onto the same token. Read 'series with any clipping' alongside "
             "it — clipping means a value was extreme enough to fall entirely outside "
             "the tokenizer's bin range, not just coarsely binned.",
-            "Only meaningful for a re-quantizing tokenizer — a continuous patch-MLP "
-            "embedding (TimesFM, Sundial, Chronos-Bolt, Chronos-2) has no bin geometry "
-            "for this probe to measure and is reported as 'not applicable', never a "
-            "fabricated zero. The bin geometry is read directly from the checkpoint's "
+            "Only meaningful for a re-quantizing tokenizer — a continuous embedding has "
+            "no bin geometry for this probe to measure and is reported as 'not "
+            "applicable', never a fabricated zero"
+            + (f" ({_name_phrase(_cont)} in this run)" if _cont else "")
+            + ". The bin geometry is read directly from the checkpoint's "
             "own tokenizer, never hardcoded.")
 
     def _per_factor_scale_equivariance(rec: dict) -> dict:
@@ -5243,6 +5758,17 @@ def _sec_internals(run_dir: Path, model_colors: dict, findings: list) -> str:
             null_clause = (f", permutation-null p95 {null_p95:.2f} "
                            f"({null_at_peak.get('n_perm', 0)} reshuffles)"
                            if null_p95 is not None else "")
+            # An under-converged solver understates decodability, and the
+            # permutation null reruns the identical fit -- so the bias cancels
+            # in the real-vs-null gap rendered above and is invisible there
+            # (CLAUDE.md sec 11.47). Say so where it happens, not in a log.
+            n_unconverged = sum(1 for q in prof["probe"]
+                                if q.get("converged") is False)
+            if n_unconverged:
+                null_clause += (f"; the probe's solver hit its iteration cap at "
+                                f"{n_unconverged} of {len(accs)} layers, which "
+                                f"understates accuracy -- raise "
+                                f"internals.probe_max_iter")
             findings.append(Finding(
                 claim_id=_next_claim_id("internals"), stage="internals",
                 evidence_class="descriptive",
@@ -5268,6 +5794,26 @@ def _sec_confirm(run_dir: Path, findings: list, n_exploratory: int) -> str:
              f'series, tested once at α={conf["alpha"]} (Holm-corrected across '
              f'hypotheses). Everything above this section is exploratory; this is '
              f'the confirmatory evidence.</p>')
+    if conf.get("repeated_look"):
+        # A second look is still worth rendering -- it just is not the thing
+        # this section otherwise claims to be, and nothing else in the
+        # artifact distinguishes the two.
+        inner += ('<p class="blurb" style="color:#b00"><b>These verdicts are not a '
+                  'one-shot confirmation.</b> This stage was re-run against a private '
+                  'corpus it had already consumed, so the hypotheses below were '
+                  'checked against these same held-out series more than once. Read '
+                  'them as exploratory until a fresh private epoch is generated.</p>')
+    rep_summary = derived.replication_summary(run_dir)
+    if not rep_summary.empty:
+        held = int(rep_summary["held up"].sum())
+        total = held + int(rep_summary["did not"].sum())
+        inner += (f'<h4>What held up ({held} of {total})</h4>'
+                  f'<p class="blurb">Every re-test this stage ran, by kind. Each row '
+                  f'is an independent replication on the same held-out series, so a '
+                  f'row that fails does not undermine the others — it narrows what '
+                  f'this run supports. The detailed tables for each row follow '
+                  f'below.</p>' + _table(rep_summary))
+
     registry_path = run_dir / "hypotheses.json"
     if registry_path.exists():
         registry = load_json(registry_path)
@@ -5287,13 +5833,30 @@ def _sec_confirm(run_dir: Path, findings: list, n_exploratory: int) -> str:
                   f'formal comparison tally.</p>')
         not_replicable = [h for h in registry["hypotheses"] if not h["replicable"]]
         if not_replicable:
-            df = pd.DataFrame([{"stage": h["stage"], "statement": h["statement"],
-                               "why not replicated": h.get("not_replicable_reason", "")}
-                              for h in not_replicable])
+            # Grouped by reason: the reason is a property of the STAGE, so a
+            # flat table repeated the same sentence once per claim -- six
+            # identical rows for L2, nine for L3 -- which buries which
+            # stages are covered under how many claims each one raised.
+            by_reason: dict = {}
+            for h in not_replicable:
+                by_reason.setdefault(h.get("not_replicable_reason", "unstated"),
+                                     []).append(h)
+            df = pd.DataFrame([
+                {"stage(s)": ", ".join(sorted({h["stage"] for h in hs})),
+                 "claims": len(hs),
+                 "why not replicated on private data": reason}
+                for reason, hs in sorted(by_reason.items(),
+                                         key=lambda kv: -len(kv[1]))])
             inner += (f'<h4>Registered but not yet replicated ({len(not_replicable)})</h4>'
                       f'<p class="blurb">Counted in the ledger above (they were real dev '
                       f'comparisons), but this stage does not yet re-test them on private '
-                      f'data — a stated gap, not a silent one.</p>' + _table(df))
+                      f'data — a stated gap, not a silent one. Grouped by reason, since '
+                      f'the reason belongs to the stage rather than to the individual '
+                      f'claim.</p>' + _table(df)
+                      + _details("The individual claims not replicated",
+                                 _table(pd.DataFrame(
+                                     [{"stage": h["stage"], "claim": h["statement"]}
+                                      for h in not_replicable]))))
     tests = conf.get("tests", [])
     if tests:
         rows = []
@@ -5305,8 +5868,27 @@ def _sec_confirm(run_dir: Path, findings: list, n_exploratory: int) -> str:
                          "private ΔMASE": t.get("mean"),
                          "lo": t.get("lo"), "hi": t.get("hi"),
                          "p (Holm)": t.get("p_holm"), "verdict": verdict})
-        inner += "<h4>Dev hypotheses on private data</h4>" + _table(pd.DataFrame(rows))
         confirmed = sum(1 for t in tests if t["confirmed"])
+        won = [t["family"] for t in tests if t["confirmed"]]
+        lost = [t["family"] for t in tests
+                if not t["confirmed"] and t["status"] != "untestable"]
+        untestable = [t["family"] for t in tests if t["status"] == "untestable"]
+        verdict_bits = []
+        if won:
+            verdict_bits.append(f"<b>held up</b> on {_join_and(won)}")
+        if lost:
+            verdict_bits.append(f"<b>did not hold up</b> on {_join_and(lost)}")
+        if untestable:
+            verdict_bits.append(f"could not be tested on {_join_and(untestable)} "
+                                f"(absent or too small on the private split)")
+        inner += ("<h4>Dev hypotheses on private data</h4>"
+                  + (f'<p class="blurb">Of {len(tests)} registered accuracy claim'
+                     f'{"s" if len(tests) != 1 else ""}, '
+                     + "; ".join(verdict_bits) + ". A claim counts as confirmed only "
+                     "when its Holm-corrected p clears α <i>and</i> its interval "
+                     "excludes zero — a direction that merely repeats is not enough."
+                     "</p>" if verdict_bits else "")
+                  + _table(pd.DataFrame(rows)))
         # `append`, not the old `insert(0, ...)` (sec 15 A15) -- every
         # finding added before this section runs gets tagged "exploratory"
         # by index position (see `run_report`'s boundary capture); inserting
@@ -5329,6 +5911,34 @@ def _sec_confirm(run_dir: Path, findings: list, n_exploratory: int) -> str:
                   f'<p class="blurb">{_ci_str(overall, "mean")} '
                   f'(p={overall["p"]:.3f}{_p_note(overall)}; '
                   f'{conf.get("overall_direction", "")}).</p>')
+    l3rep = conf.get("l3_replication", {})
+    if l3rep.get("status") == "tested" and l3rep.get("tests"):
+        rows = [{"corruption": t["corruption"],
+                 "dev ρ": f'{t["dev_rho"]:+.3f}',
+                 "private ρ (95% CI)": _ci_str(t["private"]),
+                 "verdict": "replicates" if t["replicates"] else "does NOT replicate"}
+                for t in l3rep["tests"]]
+        n_ok = sum(1 for t in l3rep["tests"] if t["replicates"])
+        inner += (f'<h4>Perturbation replication ({n_ok} of {len(rows)} replicate)</h4>'
+                  f'<p class="blurb">The whole corruption battery re-run on '
+                  f'{l3rep["n_private_series"]} private series — same corruptions at the '
+                  f'same strengths, same fingerprint, same paired cluster bootstrap — and '
+                  f'each registered per-corruption depth agreement between '
+                  f'{l3rep["model_a"]} and {l3rep["model_b"]} re-tested. A dev value counts '
+                  f'as replicated when it falls inside the private interval, the same rule '
+                  f'the representational replication below uses.</p>'
+                  + _table(pd.DataFrame(rows)))
+        findings.append(Finding(
+            claim_id=_next_claim_id("confirm"), stage="confirm",
+            evidence_class="causal_within_model",
+            text=f'CONFIRM — L3 fingerprint agreement: {n_ok}/{len(rows)} registered '
+                f'per-corruption values replicate on private data '
+                f'(overall ρ={_ci_str(l3rep["overall"])}).',
+            plain=(f"{n_ok} of {len(rows)} claims about where in depth the two models "
+                   f"react to a given kind of data corruption held up on fresh, "
+                   f"never-before-seen data."),
+            registered=True))
+
     rep = conf.get("cka_replication", {})
     if rep.get("status") == "tested":
         verdict = "replicates" if rep["replicates"] else "does NOT replicate"
@@ -5523,11 +6133,18 @@ Run coverage — {{ coverage_summary }}</summary>
 {% for g in finding_groups %}
 <div class="fgroup-block">
 <h3 class="fgroup">{{ g.label }}</h3><ul>
-{% for f in g["items"] %}<li class="{{ 'registered' if f.registered else 'exploratory' }}">
+{% for item in g["items"] %}{% set f = item.finding %}<li class="{{ 'registered' if f.registered else 'exploratory' }}">
 <p class="finding-plain">{{ f.plain }}</p>
 <p class="finding-text">{{ f.text }}</p>
 {% if f.caveat %}<details class="note"><summary>Caveats</summary>
 <div class="note-body"><p>{{ f.caveat }}</p></div></details>{% endif %}
+{% if item.siblings %}<details class="note lookalike"><summary>{{ item.siblings|length }} more of the same kind</summary>
+<div class="note-body"><ul>{% for s in item.siblings %}<li class="{{ 'registered' if s.registered else 'exploratory' }}">
+<p class="finding-plain">{{ s.plain }}</p>
+<p class="finding-text">{{ s.text }}</p>
+{% if s.caveat %}<details class="note"><summary>Caveats</summary>
+<div class="note-body"><p>{{ s.caveat }}</p></div></details>{% endif %}
+</li>{% endfor %}</ul></div></details>{% endif %}
 </li>{% endfor %}
 </ul>
 </div>{% endfor %}

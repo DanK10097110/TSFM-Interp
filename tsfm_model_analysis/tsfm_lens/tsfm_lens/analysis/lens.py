@@ -5,8 +5,9 @@ missing bridge between the behavioral level (L0) and every
 representation-level analysis. Two complementary lenses per layer:
 
 1. Skip lens: layer-l token states are patched in as the final block's
-   output and the model's own head (for Chronos, the full decoder) produces
-   a forecast from them. This is the direct logit-lens translation — it uses
+   output and the model's own head produces a forecast from them -- "head"
+   meaning whatever that architecture actually uses, which for an
+   encoder-decoder is its entire decoder. This is the direct logit-lens translation — it uses
    the model's real output pathway and needs no access to head internals,
    only the existing `token_patch` primitive. Like classic logit lens it can
    be miscalibrated at early layers, which is exactly what the second lens
@@ -16,9 +17,13 @@ representation-level analysis. Two complementary lenses per layer:
    against the final forecast at layer l means the forecast is already
    linearly readable there even if the raw head cannot decode it.
 
-Both models get both lenses, so "TimesFM front-loads then compresses" versus
-"Chronos accumulates" becomes a testable statement about where forecast
-quality appears in depth, not just where family information does. The skip
+Every model in a run gets both lenses, so a claim of the form "this one
+front-loads then compresses, that one accumulates" becomes a testable
+statement about where forecast quality appears in depth, not just where
+family information does. The shapes are named from the measured curves; no
+architecture is described here in advance, since this docstring is rendered
+verbatim into the report's methods appendix and would otherwise assert
+something about models the run may not contain. The skip
 lens inherits L3 patching's constraints: one batch per call (contexts capped
 at the model batch size) and a forecasting path that calls the backbone once
 per prediction.
@@ -60,6 +65,10 @@ def run_lens(cfg: PipelineConfig, hub, store: ActivationStore, data: BenchmarkDa
     np.savez(out_dir / "curves.npz", **arrays)
     save_json(out_dir / "lens.json", meta)
     for model, m in meta.items():
+        if not m.get("skip_lens_available", True):
+            log.info("lens %s: skip lens unavailable (%s); tuned lens only",
+                     model, m["skip_lens_unavailable_reason"])
+            continue
         log.info("lens %s: final MASE %.3f, crystallization depth %s",
                  model, m["final_mase"], m["crystallization_depth"])
 
@@ -120,11 +129,46 @@ def _model_lens(cfg: PipelineConfig, adapter, store: ActivationStore,
     samples; sampling deterministically in `(n, k, seed, strata)` and sharing
     the seed across models removes that confound (`ROADMAP.md` sec 15 A4).
     """
+    skip_ok = adapter.forecast_reads_patched_positions()
+    if not skip_ok:
+        log.warning(
+            "lens %s: skip lens withheld -- this model's forecast head reads positions "
+            "that a FINAL-BLOCK patch of the token_slice span cannot reach, so every "
+            "layer would return the same forecast and the flat curve would render as a "
+            "result. Widening the patch to the whole sequence is not a fix either: it "
+            "does vary by layer, but non-monotonically, so it does not answer how much "
+            "of the forecast is formed by depth l -- and norm-matching the patched "
+            "positions to the final block does not repair that (measured: <0.0002 MASE "
+            "change at any block). The tuned lens is unaffected and still runs.",
+            adapter.name)
+
     cap = capped_take(cfg.lens.max_series, n_available=data.n, batch_size=adapter.cfg.batch_size)
     take = cap["n_realized"]
     rows = sample_rows(data.n, take, cfg.run.seed + 8, strata=data.meta["family"].to_numpy())
     contexts, targets = data.contexts()[rows], data.targets()[rows]
     scale = np.abs(np.diff(contexts, axis=1)).mean(axis=1) + 1e-8
+
+    if not skip_ok:
+        meta = {"layers": layers,
+                "skip_lens_available": False,
+                "skip_lens_unavailable_reason":
+                    "the forecast head reads positions that a final-block patch of this "
+                    "adapter's token_slice span cannot reach, so every layer would "
+                    "return an identical forecast",
+                "n_series_skip": 0, "n_requested_skip": cap["n_requested"]}
+        da0 = depth_axis_for_run(cfg.alignment.depth_axis, store, adapter.name,
+                                 layers, adapter=adapter)
+        meta["rel_depth"] = da0.coords.tolist()
+        meta["depth_axis"] = da0.axis
+        meta["depth_axis_degraded_from"] = da0.fallback_from
+        arrays = {}
+        if cfg.lens.tuned:
+            r2_model, r2_true, n_tuned = _tuned_lens(cfg, adapter, store, data,
+                                                     layers, device)
+            meta["n_series_tuned"] = n_tuned
+            arrays["tuned_r2_model"] = r2_model
+            arrays["tuned_r2_true"] = r2_true
+        return {"meta": meta, "arrays": arrays}
 
     lens_fc, final_fc = skip_lens_forecasts(adapter, layers, contexts,
                                             data.horizon, cfg.l0.quantiles,
@@ -145,6 +189,7 @@ def _model_lens(cfg: PipelineConfig, adapter, store: ActivationStore,
                                               cfg.lens.crystallization_tol, depths)
 
     meta = {"layers": layers, "rel_depth": depths.tolist(),
+            "skip_lens_available": True,
             "depth_axis": da.axis, "depth_axis_degraded_from": da.fallback_from,
             "final_mase": final_mase, "mase_ci": mase_ci,
             "crystallization_depth": crystallization,

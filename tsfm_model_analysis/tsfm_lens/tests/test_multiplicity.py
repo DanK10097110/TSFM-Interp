@@ -226,3 +226,26 @@ def test_other_pairs_block_states_that_other_stages_never_saw_these_pairs(tmp_pa
     assert "Paired family tests — A vs. C" in html
     assert "unexamined" in html
     assert any("stronger than C" in f.text for f in findings)
+
+
+def test_the_ledger_names_the_pair_shaped_stages_rather_than_counting_them():
+    """`ROADMAP.md` sec 24.3 made L1/L2/clustering measure every pair, which
+    silently falsified the ledger's hardcoded `pairs_examined_by_other_stages:
+    1` -- a site that only MENTIONS the pair convention, so the sweep that
+    fixed every site COMPUTING from it missed this one (`CLAUDE.md` sec 11.39).
+    The replacement is a named list, so the next stage to change shape edits
+    something it is already editing.
+
+    The load-bearing assertions are the two NEGATIVES: no all-pairs stage may
+    appear (that is the bug, restated), and the field may not be an integer
+    (which is what allowed it to be wrong while looking maintained)."""
+    from tsfm_lens.analysis.l0_behavioral import _DESIGNATED_PAIR_ONLY_STAGES
+
+    named = set(_DESIGNATED_PAIR_ONLY_STAGES)
+    assert not isinstance(_DESIGNATED_PAIR_ONLY_STAGES, (int, float)), (
+        "a count cannot say WHICH stages; that is how the old field went stale")
+    assert {"l3_agreement", "exemplars", "confirm"} <= named, sorted(named)
+    for all_pairs_stage in ("l0", "l1", "l2", "cluster", "clustering"):
+        assert all_pairs_stage not in named, (
+            f"{all_pairs_stage!r} measures every pair since sec 24.3; listing it "
+            "here would reproduce the exact staleness this field replaced")

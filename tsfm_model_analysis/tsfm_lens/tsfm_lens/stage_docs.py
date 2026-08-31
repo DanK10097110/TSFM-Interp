@@ -61,10 +61,10 @@ STAGE_DOCS: dict = {
                    "contain non-finite values that would silently poison every "
                    "downstream computation that reads it."),
         cannot_tell=("This stage doesn't evaluate or compare anything — it only says "
-                      "whether the two models' computations were captured and time-"
+                      "whether each model's computation was captured and time-"
                       "aligned correctly. A passing alignment check means the token-to-"
                       "time mapping is trustworthy; it says nothing about whether the "
-                      "captured activations are interesting, whether the two models are "
+                      "captured activations are interesting, whether the models are "
                       "similar, or whether any later stage will find anything at all.")),
     "budget": StageDoc(
         question="What does each model cost to run, and is its forecast quality bought with more compute?",
@@ -178,7 +178,7 @@ STAGE_DOCS: dict = {
                    "this per-model view has nothing to say about that model's depth "
                    "behavior."),
         cannot_tell=("Everything here is per-model and descriptive — it never directly "
-                      "compares the two models against each other (L1 exists for "
+                      "compares models against each other (L1 exists for "
                       "that). 'Decodable' does not mean 'used by the forecast': a "
                       "layer can carry perfect family information the model itself "
                       "never reads out. It's also limited to the window-pooled "
@@ -206,7 +206,7 @@ STAGE_DOCS: dict = {
                       "structure; a forecast could be present in a layer in a form no "
                       "linear readout can see.")),
     "l1": StageDoc(
-        question="Do the two models represent this data similarly at all?",
+        question="Do the models represent this data similarly at all?",
         how=("Compares every pair of layers, one from each model, by how similarly "
              "they organize the same set of series geometrically — a comparison that "
              "ignores each layer's own arbitrary rotation and scale — and checks the "
@@ -215,7 +215,7 @@ STAGE_DOCS: dict = {
                    "series null, especially one that follows a sensible pattern by "
                    "depth (early layers matching early layers). Bad: a similarity "
                    "score that's high everywhere and barely rises above the null — a "
-                   "sign the number mostly reflects that both models see the same "
+                   "sign the number mostly reflects that the models see the same "
                    "input, not that they've learned anything in common."),
         cannot_tell=("This is correlational: a high score never establishes that the "
                       "two models compute the same thing, only that their "
@@ -235,7 +235,7 @@ STAGE_DOCS: dict = {
                    "confidence interval that clearly sits above zero — real evidence "
                    "the source layer predicts the target layer better than raw input "
                    "alone could. Bad: that interval includes zero — the apparent "
-                   "shared structure could just be an artifact of both models seeing "
+                   "shared structure could just be an artifact of the models seeing "
                    "the same series."),
         cannot_tell=("Only the gain over the input baseline counts as evidence here — "
                       "raw predictive accuracy alone is untrustworthy, since both "
@@ -268,7 +268,7 @@ STAGE_DOCS: dict = {
                       "lot without that shift ever affecting the final forecast, which "
                       "is exactly why the patching curve exists alongside it. Even the "
                       "patching curve is causal only *within* one model: this stage "
-                      "never transplants activations between the two models, so any "
+                      "never transplants activations between models, so any "
                       "cross-model comparison here is two separately-measured within-"
                       "model curves side by side, never a joint causal test.")),
     "attention": StageDoc(
@@ -292,15 +292,15 @@ STAGE_DOCS: dict = {
                       "'unsupported' result here is a capability gap, not evidence the "
                       "model lacks that structure.")),
     "cluster": StageDoc(
-        question="How does each model organize the whole benchmark on its own terms, and do the two models group the data the same way?",
+        question="How does each model organize the whole benchmark on its own terms, and do the models group the data the same way?",
         how=("Projects each model's activations, at its own side of the strongest "
              "cross-model layer pair, down to a small number of dimensions, clusters "
              "them, labels each cluster by what kind of data dominates it, and "
-             "compares how much the two models' groupings agree using a chance-"
+             "compares how much each pair's groupings agree using a chance-"
              "corrected overlap score."),
         good_bad=("Good: clean, well-separated clusters that line up with real, "
                    "interpretable properties of the data, and a partition-agreement "
-                   "score meaningfully above chance between the two models. Bad: a "
+                   "score meaningfully above chance between a pair of models. Bad: a "
                    "single smeared blob with no real separation, or cluster labels "
                    "that don't correspond to anything a human would recognize as a "
                    "coherent group."),
@@ -369,9 +369,9 @@ STAGE_DOCS: dict = {
                       "ground-truth fields per feature, so it must always be read "
                       "next to its permutation-null control, never on its own.")),
     "exemplars": StageDoc(
-        question="What does an aggregate difference between the two models actually look like on one real series?",
+        question="What does an aggregate difference between models actually look like on one real series?",
         how=("Picks a handful of concrete series per data family — specifically ones "
-             "where the two models' forecasts disagree the most — and shows each "
+             "where the models' forecasts disagree the most — and shows each "
              "one's context, true continuation, both forecasts, per-layer lens "
              "curves, and pooled attention pattern side by side."),
         good_bad=("Good: a case that makes an aggregate statistic from an earlier "
@@ -425,7 +425,7 @@ STAGE_DOCS: dict = {
     "report": StageDoc(
         question="Given everything the other stages found, is this a fair comparison, and what's actually solid enough to act on?",
         how=("Collects every stage's artifacts into one document, states upfront "
-             "which measured asymmetries between the two models (parameters, "
+             "which measured asymmetries between each pair of models (parameters, "
              "compute, coverage, forecast determinism) apply before any result is "
              "read, and marks every section as rendered, skipped, or failed rather "
              "than silently omitting anything."),

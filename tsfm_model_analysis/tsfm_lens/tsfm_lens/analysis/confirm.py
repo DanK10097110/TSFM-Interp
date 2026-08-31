@@ -39,7 +39,7 @@ from .l1_geometry import linear_cka
 from .stats import bootstrap_ci, holm, paired_bootstrap
 
 
-def run_confirm(cfg: PipelineConfig, hub) -> None:
+def run_confirm(cfg: PipelineConfig, hub, forced: bool = False) -> None:
     """Load the private corpus, re-test exactly the registered hypotheses, spot-check the CKA peak.
 
     Requires `hypotheses.json` (the `register` stage, which runs
@@ -50,11 +50,22 @@ def run_confirm(cfg: PipelineConfig, hub) -> None:
     enforced by convention alone.
     """
     out_dir = cfg.run_dir() / "confirm"
-    if (out_dir / "confirmation.json").exists():
-        raise RuntimeError(
-            "confirmation artifacts already exist; the private benchmark is meant to be "
-            "consumed once. Rerun with --force confirm only if you understand that this "
-            "constitutes a second look (and consider a fresh private epoch).")
+    repeated = (out_dir / "confirmation.json").exists()
+    if repeated:
+        if not forced:
+            raise RuntimeError(
+                "confirmation artifacts already exist; the private benchmark is meant to be "
+                "consumed once. Rerun with --force confirm only if you understand that this "
+                "constitutes a second look (and consider a fresh private epoch).")
+        # `--force confirm` was passed deliberately. Proceed, but say so at
+        # WARNING: the resource being spent is the *independence* of the
+        # verdicts, and nothing downstream can tell a first look from a
+        # second one once the artifact is overwritten.
+        log.warning(
+            "CONFIRM: overwriting existing confirmation artifacts because --force confirm "
+            "was passed. This is a SECOND look at the private benchmark -- the verdicts "
+            "below are no longer a one-shot confirmation. Regenerate a fresh private epoch "
+            "before treating them as such.")
     registry_path = cfg.run_dir() / "hypotheses.json"
     if not registry_path.exists():
         raise RuntimeError(
@@ -74,6 +85,7 @@ def run_confirm(cfg: PipelineConfig, hub) -> None:
     metrics = _private_behavioral(cfg, hub, private, out_dir)
     hypotheses = _test_registered_hypotheses(cfg, metrics, registry, a.name, b.name)
     replication = _replicate_registered_cka(cfg, hub, private, registry)
+    l3_replication = _replicate_registered_l3(cfg, hub, private, registry)
 
     confirmed = sum(1 for h in hypotheses["tests"] if h["confirmed"])
     n_replicable = sum(1 for h in registry["hypotheses"] if h["replicable"])
@@ -84,8 +96,14 @@ def run_confirm(cfg: PipelineConfig, hub) -> None:
         "n_registered": len(registry["hypotheses"]),
         "n_replicable": n_replicable,
         "registry_sha256": hashlib.sha256(registry_path.read_bytes()).hexdigest(),
+        # False for the one-shot confirmation this stage is designed around;
+        # True when --force confirm overwrote an earlier one. Recorded rather
+        # than only logged, so a reader of the artifact (or the report) can
+        # tell the two apart after the log has scrolled away.
+        "repeated_look": bool(forced and repeated),
         **hypotheses,
         "cka_replication": replication,
+        "l3_replication": l3_replication,
     })
     log.info("confirm complete: %d/%d dev hypotheses confirmed on private data "
             "(%d registered, %d replicable)", confirmed, len(hypotheses["tests"]),
@@ -174,6 +192,115 @@ def _test_registered_hypotheses(cfg: PipelineConfig, metrics: pd.DataFrame, regi
                                sc.n_boot, cfg.run.seed + 299, sc.ci)
     return {"tests": tests, "overall": overall,
             "overall_direction": f"positive favors {name_a}"}
+
+
+def _clean_and_corrupted_fingerprint(cfg: PipelineConfig, adapter, contexts: np.ndarray,
+                                     corrupted: dict, names: list) -> np.ndarray:
+    """Per-series, per-layer relative activation deltas on private contexts.
+
+    The same quantity `l3_perturbation._sensitivity` computes on dev, minus
+    its one dependency this stage cannot satisfy: that function reads clean
+    activations from the extraction store, which exists only for the dev
+    corpus. Here the clean pass is simply run, so nothing else about the
+    measurement changes.
+    """
+    from ..extraction.hooks import ActivationCatcher as _Catcher
+
+    # The dev run screened this model at its own configured capture stride;
+    # matching it here keeps the two fingerprints the same shape, which the
+    # depth-profile comparison requires.
+    layers = adapter.all_layer_names()[:: max(1, adapter.cfg.capture_layer_stride)]
+    pool = pooling_matrix(adapter.token_time_spans(), cfg.data.context_len,
+                          cfg.alignment.window)
+
+    def _pass(ctx: np.ndarray) -> dict:
+        acc = {layer: [] for layer in layers}
+        with _Catcher(adapter.module, layers) as catcher:
+            for s, e in batch_slices(len(ctx), adapter.cfg.batch_size):
+                with torch.no_grad(), torch.autocast(device_type=adapter.device.type,
+                                                     dtype=adapter.dtype,
+                                                     enabled=adapter.device.type == "cuda"):
+                    adapter.forward(adapter.prepare(ctx[s:e]))
+                got = catcher.collect()
+                for layer in layers:
+                    acc[layer].append(
+                        align(adapter.postprocess_tokens(layer, got[layer]).float(),
+                              pool).cpu().numpy())
+        return {layer: np.concatenate(v) for layer, v in acc.items()}
+
+    clean = _pass(contexts)
+    per_series = np.zeros((len(contexts), len(layers), len(names)), dtype=np.float32)
+    for ci, cname in enumerate(names):
+        corr = _pass(corrupted[cname])
+        for li, layer in enumerate(layers):
+            num = np.linalg.norm(corr[layer] - clean[layer], axis=-1)
+            den = np.linalg.norm(clean[layer], axis=-1) + 1e-6
+            per_series[:, li, ci] = (num / den).mean(axis=1)
+    return per_series, layers
+
+
+def _replicate_registered_l3(cfg: PipelineConfig, hub, private: BenchmarkData,
+                             registry: dict) -> dict:
+    """Re-run the corruption battery on private series and re-test each
+    registered per-corruption fingerprint agreement.
+
+    Exactly the dev computation on different data -- the same corruptions at
+    the same configured strengths, the same relative-activation-delta
+    fingerprint, the same `align_on_axis` depth matching and the same paired
+    cluster bootstrap. A dev rho is called replicated when it falls inside
+    the private CI, the same rule `_replicate_registered_cka` uses, so the
+    two replications are read the same way.
+    """
+    from .depth_axis import depth_axis_for_run
+    from .l3_perturbation import (CORRUPTIONS, _agreement_with_ci)
+
+    hyps = [h for h in registry["hypotheses"] if h["stage"] == "l3"]
+    if not hyps:
+        return {"status": "skipped", "reason": "no registered L3 hypothesis"}
+    meta_path = cfg.run_dir() / "l3" / "meta.json"
+    if not meta_path.exists():
+        return {"status": "skipped", "reason": "no dev L3 artifact to replicate"}
+    dev = load_json(meta_path)
+    names = [n for n in dev["corruptions"] if n in CORRUPTIONS]
+    a, b = cfg.comparison_pair()
+    if b is None:
+        return {"status": "skipped", "reason": "solo run: agreement needs two models"}
+
+    cap = min(cfg.l3.max_series, private.n)
+    rows = np.arange(cap)
+    contexts = private.contexts()[rows]
+    corrupted = {n: CORRUPTIONS[n](contexts.copy(),
+                                   np.random.default_rng(cfg.run.seed + 300 + i),
+                                   **cfg.l3.corruptions.get(n, {}))
+                 for i, n in enumerate(names)}
+
+    per_series, depths = {}, {}
+    for mcfg in (a, b):
+        adapter = hub.get(mcfg.name)
+        adapter.ensure_loaded()
+        ps, layers = _clean_and_corrupted_fingerprint(cfg, adapter, contexts,
+                                                      corrupted, names)
+        per_series[mcfg.name] = ps
+        depths[mcfg.name] = depth_axis_for_run(cfg.alignment.depth_axis, None,
+                                               mcfg.name, layers,
+                                               adapter=adapter).coords
+        if not cfg.run.keep_models_loaded:
+            hub.release(mcfg.name)
+
+    got = _agreement_with_ci(cfg, per_series[a.name], per_series[b.name], names,
+                             depths[a.name], depths[b.name])
+    dev_per = ((dev.get("agreement") or {}).get("per_corruption") or {})
+    tests = []
+    for h in hyps:
+        cname = h.get("corruption")
+        if cname not in got["per_corruption"] or cname not in dev_per:
+            continue
+        priv = got["per_corruption"][cname]
+        dev_rho = dev_per[cname]["value"]
+        tests.append({"corruption": cname, "dev_rho": dev_rho, "private": priv,
+                      "replicates": bool(priv["lo"] <= dev_rho <= priv["hi"])})
+    return {"status": "tested", "model_a": a.name, "model_b": b.name,
+            "n_private_series": int(cap), "overall": got["overall"], "tests": tests}
 
 
 def _replicate_registered_cka(cfg: PipelineConfig, hub, private: BenchmarkData,

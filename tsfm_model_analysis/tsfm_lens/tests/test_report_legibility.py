@@ -52,9 +52,48 @@ def test_findings_group_by_stage_in_first_appearance_order_and_lose_nothing():
     fs = [_F("l0", "a"), _F("l1", "b"), _F("l0", "c"), _F("confirm", "d")]
     groups = _group_findings(fs)
     assert [g["stage"] for g in groups] == ["l0", "l1", "confirm"]
-    assert sum(len(g["items"]) for g in groups) == len(fs)   # grouping hides nothing
-    assert [f.plain for f in groups[0]["items"]] == ["a", "c"]
+    # Grouping hides nothing. Each item is a head finding plus the look-alikes
+    # collapsed under it, so "lose nothing" counts both -- the assertion this
+    # file has always made, restated for the shape rather than relaxed.
+    total = sum(1 + len(it["siblings"]) for g in groups for it in g["items"])
+    assert total == len(fs)
+    assert [it["finding"].plain for it in groups[0]["items"]] == ["a", "c"]
     assert groups[0]["label"].startswith("L0")
+
+
+def test_lookalike_findings_collapse_under_the_first_and_none_is_dropped():
+    """A stage that measures every model emits the same sentence per model.
+    The first renders normally; the rest move into a collapsed block -- none
+    is summarized away, which is what makes the collapse safe."""
+    import tsfm_lens.report.report as R
+    fs = [_F("l3", "In Alpha, 3 of 6 corruptions split."),
+          _F("l3", "In Beta, 5 of 6 corruptions split."),
+          _F("l3", "A different claim entirely.")]
+    items = R._cluster_lookalikes(fs, ["Alpha", "Beta"])
+    assert len(items) == 2
+    assert items[0]["finding"].plain.startswith("In Alpha")
+    assert [s.plain for s in items[0]["siblings"]] == ["In Beta, 5 of 6 corruptions split."]
+    assert items[1]["siblings"] == []
+
+
+def test_a_model_name_containing_digits_still_matches_its_siblings():
+    """NEGATIVE, and the bug this was written from: masking numbers BEFORE
+    model names turns `Chronos-2` into `Chronos-N`, so it never matches its
+    own siblings and a repetition family looks like three unique claims."""
+    import tsfm_lens.report.report as R
+    names = ["Chronos-T5-Base", "Chronos-2", "TimesFM"]
+    tmpls = {R._finding_template(f"In {m}, 4 of 6 corruptions split.", names)
+             for m in names}
+    assert len(tmpls) == 1
+
+
+def test_findings_that_only_look_alike_after_masking_numbers_are_not_merged_wrongly():
+    """NEGATIVE: masking must not merge claims that differ in their words."""
+    import tsfm_lens.report.report as R
+    fs = [_F("l0", "Alpha is more accurate on 3 families."),
+          _F("l0", "Alpha is less accurate on 3 families.")]
+    items = R._cluster_lookalikes(fs, ["Alpha"])
+    assert len(items) == 2
 
 
 class _Cfg:
@@ -172,3 +211,67 @@ def test_the_rendered_report_opens_with_its_conclusion():
     body = html[html.index("<body"):]
     assert body.index('class="bottomline"') < body.index("How to read this report")
     assert body.index('class="bottomline"') < body.index('class="findings"')
+
+
+def test_a_registered_finding_is_never_collapsed_behind_an_exploratory_one():
+    """NEGATIVE. Headline mode hides every non-registered `<li>`, and a
+    sibling nested inside one goes with it — so a pre-registered claim
+    collapsed behind an exploratory look-alike would vanish from the one view
+    that exists to show only pre-registered claims."""
+    import tsfm_lens.report.report as R
+    fs = [_F("confirm", "In Alpha, the claim held."),
+          _F("confirm", "In Beta, the claim held.")]
+    fs[1].registered = True
+    items = R._cluster_lookalikes(fs, ["Alpha", "Beta"])
+    assert len(items) == 2
+    assert items[1]["finding"].registered is True
+    assert items[0]["siblings"] == []
+
+
+def test_lookalikes_are_gathered_even_when_not_adjacent():
+    """A stage that loops family-then-model interleaves its per-model claims,
+    so an adjacency-only pass leaves the reader meeting the same sentence
+    three times, just further apart. Template order is first-appearance, so
+    the stage's own ordering still decides what is read first."""
+    import tsfm_lens.report.report as R
+    fs = [_F("l3", "In Alpha, 3 of 6 split."),
+          _F("l3", "Something else entirely."),
+          _F("l3", "In Beta, 5 of 6 split.")]
+    items = R._cluster_lookalikes(fs, ["Alpha", "Beta"])
+    assert len(items) == 2
+    assert items[0]["finding"].plain.startswith("In Alpha")
+    assert len(items[0]["siblings"]) == 1
+    assert items[1]["finding"].plain == "Something else entirely."
+    # nothing lost
+    assert sum(1 + len(i["siblings"]) for i in items) == len(fs)
+
+
+def test_the_scorecard_collapses_its_rows_but_not_its_description(tmp_path):
+    """Only the description is on the default path (user request, 2026-08-30).
+
+    A scorecard rendered open at the top of a long report reads as the
+    report's findings rather than as an index into them. Collapsed, it has to
+    still say -- visibly, above the fold -- what it is and that the evidence
+    is below; a `<details>` whose summary is the only visible text would
+    trade one legibility defect for another.
+    """
+    _write_l0(tmp_path)
+    html = _scorecard(tmp_path, _Cfg())
+    before = html.split("<details", 1)[0]
+    assert "summary of conclusions" in before, \
+        "the description must render outside the collapsed block"
+    assert "sections below" in before
+    assert "<details" in html, "the rows must be collapsed"
+    assert "<table" not in before, "the table must be inside the collapsed block"
+    # And a `<details>` with no `open` attribute is closed by default.
+    summary_tag = html.split("<details", 1)[1].split(">", 1)[0]
+    assert "open" not in summary_tag, summary_tag
+
+
+def test_the_collapsed_scorecard_still_contains_every_row(tmp_path):
+    """Collapsing is a presentation change and must lose no content."""
+    _write_l0(tmp_path)
+    html = _scorecard(tmp_path, _Cfg())
+    assert "Lowest overall MASE (Alpha)" in html
+    assert "Verdict" in html and "Rule" in html
+    assert "one run, not a" in html, "the footnote moved but must survive"

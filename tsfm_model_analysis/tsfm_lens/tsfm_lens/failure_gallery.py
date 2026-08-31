@@ -44,7 +44,7 @@ GALLERY = [
             "diagonal-hit fraction of 0.06 -- barely above the 1-in-16 chance "
             "floor -- with a non-monotonic per-layer pattern (0.50, 0.06, "
             "0.88, 0.62, 0.44, 0.38). Read at face value this says exactly "
-            "what invariant 7 warns about: the declared token-to-time map is "
+            "what a failed alignment check is meant to mean: the declared map is "
             "wrong, and no cross-model number built on it should be trusted."),
         actually_was=(
             "The probe added a fixed absolute impulse (+8.0, 8x the probe "

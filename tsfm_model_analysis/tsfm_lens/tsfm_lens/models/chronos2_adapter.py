@@ -134,6 +134,59 @@ class Chronos2Adapter(ModelAdapter):
         point = interpolate_quantiles([0.5], self._levels, preds_hq)[..., 0]
         return {"point": point.numpy(), "quantiles": q_out.numpy()}
 
+    def forecast_reads_patched_positions(self) -> bool:
+        """False -- but for a narrower reason than "the head ignores context".
+
+        `Chronos2Model.forward` slices `hidden_states[:, -num_output_patches:]`
+        into `output_patch_embedding` (`chronos2/model.py:731`), so the head
+        reads only the trailing forecast placeholders, never the leading
+        context patches `token_slice` writes. Since the skip lens patches at
+        `final_block_name()` *by construction*, its write can never reach the
+        head: at the final block no layer remains to mix context positions
+        into the placeholders. That is why the curve came out byte-identical
+        at all 12 blocks.
+
+        **Corrected 2026-08-31.** An earlier version of this docstring said
+        the context positions are "never read by the forecast head" and cited
+        an exactly-0.0 delta "at every block". Both overstated the case: that
+        0.0 was only ever measured at the FINAL block, where it is a tautology.
+        Patching context-only at *earlier* blocks does move the forecast --
+        0.737 / 0.643 / 0.282 / 0.095 / 0.000 at blocks 0 / 3 / 6 / 9 / 11 --
+        decaying with depth exactly as context->placeholder attention
+        propagation predicts. The context representation IS causally connected
+        to the forecast; a final-block patch of it simply cannot be.
+
+        **Widening the patch to the whole live sequence is not the fix, and was
+        rejected on measurement rather than on principle.** It does produce a
+        non-degenerate curve (12 of 12 distinct MASE values, spread 3.65,
+        passing the layer-into-itself check exactly at 0.731050). But that
+        curve is non-monotonic -- 4.38 at block 0 down to 1.11 at block 5,
+        back up to 2.77 by block 9, then discontinuously to the true 0.731 at
+        block 11 -- so it does not answer "how much of the forecast is formed
+        by depth l", which is the only question a skip lens exists to ask. A
+        smooth, plausible curve that answers a different question is a worse
+        outcome than no curve (sec 11.42's own lesson), so the skip lens stays
+        withheld.
+
+        Two candidate explanations for that non-monotonicity were tested and
+        the obvious one is **refuted**, which is worth recording so nobody
+        re-proposes it. Mean placeholder activation norm does grow ~25x across
+        depth (1.11 -> 27.83, a 7.4x jump at the final block alone), and the
+        `[REG]` separator's norm is larger still (~115-130, the highest-norm
+        position in the sequence), so scale mismatch looked like the cause.
+        Rescaling each patched position's layer-l vector to the final block's
+        own per-position norm -- keeping layer l's direction, removing the
+        scale error entirely -- changes the curve by at most **0.0002 MASE at
+        any block**, and leaves spread (3.648), argmin (block 11) and fraction
+        of decreasing steps (0.64) bit-identical. So the non-monotonicity is
+        a property of the *direction* of these representations under this
+        head, not of their magnitude, and no norm-matching or rescaling
+        variant will recover a monotone curve.
+
+        The tuned lens is unaffected and still runs -- it patches nothing.
+        """
+        return False
+
     def attention_info(self) -> list:
         """Best-effort head map via the shared block scan -- resolves to each
         block's TIME self-attention (the first attention submodule found);

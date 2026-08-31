@@ -72,6 +72,43 @@ def _iter_series_candidates(obj: Any) -> list[np.ndarray]:
     return []
 
 
+def _filter_min_length(sources: list, source_config: dict) -> list:
+    """Drop source series shorter than ``min_length``, loudly.
+
+    Several real-derived generators inherit their output length from the real
+    series they consume -- ``block_bootstrap`` reorders one source in place and
+    has no length parameter at all. A pooled Monash catalog spans yearly series
+    of ~14 points alongside multi-thousand-point hourly ones, so without this
+    filter a task can emit an entire family whose every member is shorter than
+    the analysis needs. That failure is silent at both ends: the builder admits
+    the samples happily, and ``tsfm_lens``'s loader drops every one of them as
+    "shorter than context+horizon", leaving a family the config promises and no
+    analysis ever sees.
+
+    Off unless asked for (no ``min_length`` key leaves every pool byte-identical,
+    so no existing config's corpus changes). Raises rather than returning an
+    empty pool: a task configured against a source pool that cannot satisfy it
+    is a config error, and returning nothing would surface much later as an
+    unexplained empty family.
+    """
+    min_length = source_config.get("min_length")
+    if not min_length:
+        return sources
+    min_length = int(min_length)
+    kept = [(ref, arr) for ref, arr in sources if len(np.asarray(arr)) >= min_length]
+    dropped = len(sources) - len(kept)
+    if dropped:
+        print(f"load_sources: dropped {dropped} of {len(sources)} source series "
+              f"shorter than min_length={min_length}")
+    if not kept:
+        raise ValueError(
+            f"no source series survived min_length={min_length} (of {len(sources)} "
+            f"loaded). Lower min_length, raise the source limit, or pin a `subset` "
+            f"whose series are long enough."
+        )
+    return kept
+
+
 def load_sources(source_config: dict[str, Any], limit: int | None = None, license: str = "unknown") -> list[tuple[SourceRef, np.ndarray]]:
     """Load time-series sources from a declarative config.
 
@@ -119,7 +156,7 @@ def load_sources(source_config: dict[str, Any], limit: int | None = None, licens
         n_domains = source_config.get("n_domains")
         if isinstance(n_domains, str) and n_domains.lower() == "all":
             n_domains = None
-        return bootstrap_catalog(
+        return _filter_min_length(bootstrap_catalog(
             dataset_name=dataset_name,
             n_domains=n_domains,
             total_limit=total_limit,
@@ -130,10 +167,13 @@ def load_sources(source_config: dict[str, Any], limit: int | None = None, licens
             domain_timeout_s=float(source_config.get("domain_timeout_s", 30.0)),
             streaming=streaming,
             trust_remote_code=trust_remote_code,
-        )
+        ), source_config)
 
     limit = limit if limit is not None else int(source_config.get("limit", 100))
-    return _load_single_config(dataset_name, subset, split, field_name, streaming, trust_remote_code, limit, license)
+    return _filter_min_length(
+        _load_single_config(dataset_name, subset, split, field_name, streaming,
+                            trust_remote_code, limit, license),
+        source_config)
 
 
 def _load_single_config(

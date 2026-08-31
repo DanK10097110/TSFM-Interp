@@ -100,7 +100,92 @@ def check_adapter_conformance(adapter: ModelAdapter, window: int, n_series: int 
 
     prepared = adapter.prepare(contexts)
     _check_optional_degrades_gracefully(adapter, prepared, report)
+    _check_patch_reaches_the_forecast(adapter, contexts, horizon, quantiles, report)
     return report
+
+
+def _check_patch_reaches_the_forecast(adapter: ModelAdapter, contexts, horizon: int,
+                                      quantiles: list, report: dict) -> None:
+    """The two-sided control for `token_patch`: no effect vs. no reach.
+
+    `CLAUDE.md` sec 11.42 -- an intervention that writes positions the
+    forecast head never reads returns a bit-identical forecast, which is a
+    well-formed number and renders as a perfectly flat depth curve. There is
+    no exception anywhere in that failure, so it is caught only by asking two
+    questions rather than one:
+
+      1. patching the final block's own captured state back into itself must
+         move the forecast by exactly 0.0 (the wiring is correct), and
+      2. patching some *other* layer's state into it must move it by more
+         than 0.0 (the write is actually reached).
+
+    Check 1 alone passes for a hook writing into the void, which is exactly
+    what happened. An adapter that declares
+    `forecast_reads_patched_positions() is False` is exempt from check 2 --
+    for such a model the zero IS the declared behavior -- but is then held to
+    the stronger requirement that check 2 genuinely fails, so the
+    declaration cannot go stale in the permissive direction.
+    """
+    from ..extraction.extract import capture_raw_tokens
+    from ..extraction.hooks import token_patch
+
+    layers = adapter.all_layer_names()
+    if len(layers) < 2:
+        report["patch_reaches_forecast"] = None
+        return
+    final = adapter.final_block_name()
+    clean = capture_raw_tokens(adapter, contexts, [layers[0], final])
+    base = adapter.predict(contexts, horizon, quantiles)["point"]
+
+    with token_patch(adapter.module, final, adapter.token_slice, clean[final]):
+        same = adapter.predict(contexts, horizon, quantiles)["point"]
+    identity_delta = float(np.abs(same - base).max())
+    if identity_delta > 1e-3:
+        raise AssertionError(
+            f"'{adapter.name}': patching the final block's own state into itself "
+            f"changed the forecast by {identity_delta:.3g}, which should be exactly "
+            f"0 -- token_slice or postprocess_tokens disagree about which positions "
+            f"hold the captured tokens")
+
+    with token_patch(adapter.module, final, adapter.token_slice, clean[layers[0]]):
+        other = adapter.predict(contexts, horizon, quantiles)["point"]
+    reach_delta = float(np.abs(other - base).max())
+    declared = adapter.forecast_reads_patched_positions()
+    report["patch_identity_delta"] = identity_delta
+    report["patch_reach_delta"] = reach_delta
+    report["patch_reaches_forecast"] = reach_delta > 0.0
+    if declared and reach_delta == 0.0:
+        raise AssertionError(
+            f"'{adapter.name}': patching a different layer's state into the final "
+            f"block left the forecast bit-identical, so no intervention built on "
+            f"token_patch (skip lens, L3 patching, SAE forecast-preservation) can "
+            f"measure anything for this model. Either token_slice names the wrong "
+            f"positions, or this model's head reads elsewhere -- if the latter, "
+            f"override forecast_reads_patched_positions() to return False")
+    if not declared and reach_delta > 0.0:
+        raise AssertionError(
+            f"'{adapter.name}': declares forecast_reads_patched_positions() False, "
+            f"but patching a different layer moved the forecast by {reach_delta:.3g} "
+            f"-- the declaration is stale and is needlessly withholding the skip lens")
+
+    # Both probes above patch AT THE FINAL BLOCK, because that is where the
+    # skip lens patches. For a model whose head reads positions token_slice
+    # does not name, both are 0.0 *tautologically*: at the final block no
+    # layer remains to mix the written positions into the read ones. So the
+    # two of them cannot separate "the head never reads this span" from "a
+    # final-block patch of this span cannot reach it" -- and an earlier
+    # version of Chronos-2's declaration asserted the former on exactly this
+    # evidence, which measurement later contradicted (sec 11.42's correction).
+    # This third probe patches an EARLY block, where downstream layers can
+    # still propagate, and records the answer instead of leaving it implied.
+    if not declared and len(layers) > 3:
+        early = layers[1]
+        early_clean = capture_raw_tokens(adapter, contexts, [early])[early]
+        with token_patch(adapter.module, early, adapter.token_slice, early_clean + 5.0):
+            moved = adapter.predict(contexts, horizon, quantiles)["point"]
+        early_delta = float(np.abs(moved - base).max())
+        report["patch_early_block_delta"] = early_delta
+        report["patched_span_is_causally_connected"] = early_delta > 0.0
 
 
 def _check_tier0(adapter: ModelAdapter, report: dict, n_series: int,

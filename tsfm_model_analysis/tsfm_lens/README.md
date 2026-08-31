@@ -62,7 +62,7 @@ Four fixed questions per stage (`ROADMAP.md` sec 21 J2), generated from `tsfm_le
 
 **Good vs. bad result.** Good: the alignment check's diagonal-hit fraction sits near 1.0 at every captured layer, and no non-finite (inf/NaN) activations are recorded. Bad: the alignment gate fails outright — the declared mapping between token position and true time is wrong for this checkpoint or library version — or a layer's stored activations contain non-finite values that would silently poison every downstream computation that reads it.
 
-**What it cannot tell you.** This stage doesn't evaluate or compare anything — it only says whether the two models' computations were captured and time-aligned correctly. A passing alignment check means the token-to-time mapping is trustworthy; it says nothing about whether the captured activations are interesting, whether the two models are similar, or whether any later stage will find anything at all.
+**What it cannot tell you.** This stage doesn't evaluate or compare anything — it only says whether each model's computation was captured and time-aligned correctly. A passing alignment check means the token-to-time mapping is trustworthy; it says nothing about whether the captured activations are interesting, whether the models are similar, or whether any later stage will find anything at all.
 
 ### `budget`
 
@@ -112,7 +112,7 @@ Four fixed questions per stage (`ROADMAP.md` sec 21 J2), generated from `tsfm_le
 
 **Good vs. bad result.** Good: a clear expand-then-compress effective-dimensionality curve, a family-decodability curve that rises well above chance at some depth, and a representation that visibly moves away from raw-input statistics with depth. Bad: a flat effective-dimensionality curve or a family-probe accuracy that never clears chance — either means this per-model view has nothing to say about that model's depth behavior.
 
-**What it cannot tell you.** Everything here is per-model and descriptive — it never directly compares the two models against each other (L1 exists for that). 'Decodable' does not mean 'used by the forecast': a layer can carry perfect family information the model itself never reads out. It's also limited to the window-pooled representation, so structure that lives only within a window and not across windows is invisible to it.
+**What it cannot tell you.** Everything here is per-model and descriptive — it never directly compares models against each other (L1 exists for that). 'Decodable' does not mean 'used by the forecast': a layer can carry perfect family information the model itself never reads out. It's also limited to the window-pooled representation, so structure that lives only within a window and not across windows is invisible to it.
 
 ### `lens`
 
@@ -126,11 +126,11 @@ Four fixed questions per stage (`ROADMAP.md` sec 21 J2), generated from `tsfm_le
 
 ### `l1`
 
-**Question.** Do the two models represent this data similarly at all?
+**Question.** Do the models represent this data similarly at all?
 
 **How.** Compares every pair of layers, one from each model, by how similarly they organize the same set of series geometrically — a comparison that ignores each layer's own arbitrary rotation and scale — and checks the result against a shuffled-series control.
 
-**Good vs. bad result.** Good: a peak similarity that sits clearly above the shuffled-series null, especially one that follows a sensible pattern by depth (early layers matching early layers). Bad: a similarity score that's high everywhere and barely rises above the null — a sign the number mostly reflects that both models see the same input, not that they've learned anything in common.
+**Good vs. bad result.** Good: a peak similarity that sits clearly above the shuffled-series null, especially one that follows a sensible pattern by depth (early layers matching early layers). Bad: a similarity score that's high everywhere and barely rises above the null — a sign the number mostly reflects that the models see the same input, not that they've learned anything in common.
 
 **What it cannot tell you.** This is correlational: a high score never establishes that the two models compute the same thing, only that their representations are geometrically similar — which two under-trained or too-simple networks can also produce for reasons that have nothing to do with shared learning. It says nothing about mechanism; L2 and L3 exist specifically because this stage can't answer that.
 
@@ -140,7 +140,7 @@ Four fixed questions per stage (`ROADMAP.md` sec 21 J2), generated from `tsfm_le
 
 **How.** Fits a simple linear map from one model's layer activations to the other's, compares how well it predicts against a hand-built baseline that only ever sees the raw input (never the other model), and reports the gap between the two as the real evidence.
 
-**Good vs. bad result.** Good: the best pair's gain over the input baseline has a confidence interval that clearly sits above zero — real evidence the source layer predicts the target layer better than raw input alone could. Bad: that interval includes zero — the apparent shared structure could just be an artifact of both models seeing the same series.
+**Good vs. bad result.** Good: the best pair's gain over the input baseline has a confidence interval that clearly sits above zero — real evidence the source layer predicts the target layer better than raw input alone could. Bad: that interval includes zero — the apparent shared structure could just be an artifact of the models seeing the same series.
 
 **What it cannot tell you.** Only the gain over the input baseline counts as evidence here — raw predictive accuracy alone is untrustworthy, since both models process the same input and would score well on that basis alone. This also only detects *linear* translatability (a genuine nonlinear correspondence between two layers can score zero gain), and it is still not a causal claim: a good stitch means the two layers' information is compatible, not that either model's forecast actually depends on it.
 
@@ -152,7 +152,7 @@ Four fixed questions per stage (`ROADMAP.md` sec 21 J2), generated from `tsfm_le
 
 **Good vs. bad result.** Good: a restoration curve that rises toward 1.0 at some depth for a given corruption — that layer causally carries the fix for that property — and two models whose sensitivity fingerprints peak at matching relative depths for the same corruption. Bad: a restoration curve that never clears a small fraction anywhere, or a corruption whose measured sensitivity is small only because it touches a tiny fraction of the input's timesteps in the first place, not because the model is robust to it.
 
-**What it cannot tell you.** The activation-shift fingerprints are a magnitude-of-change measure by themselves, not a causal one — a layer can shift a lot without that shift ever affecting the final forecast, which is exactly why the patching curve exists alongside it. Even the patching curve is causal only *within* one model: this stage never transplants activations between the two models, so any cross-model comparison here is two separately-measured within-model curves side by side, never a joint causal test.
+**What it cannot tell you.** The activation-shift fingerprints are a magnitude-of-change measure by themselves, not a causal one — a layer can shift a lot without that shift ever affecting the final forecast, which is exactly why the patching curve exists alongside it. Even the patching curve is causal only *within* one model: this stage never transplants activations between models, so any cross-model comparison here is two separately-measured within-model curves side by side, never a joint causal test.
 
 ### `attention`
 
@@ -166,11 +166,11 @@ Four fixed questions per stage (`ROADMAP.md` sec 21 J2), generated from `tsfm_le
 
 ### `cluster`
 
-**Question.** How does each model organize the whole benchmark on its own terms, and do the two models group the data the same way?
+**Question.** How does each model organize the whole benchmark on its own terms, and do the models group the data the same way?
 
-**How.** Projects each model's activations, at its own side of the strongest cross-model layer pair, down to a small number of dimensions, clusters them, labels each cluster by what kind of data dominates it, and compares how much the two models' groupings agree using a chance-corrected overlap score.
+**How.** Projects each model's activations, at its own side of the strongest cross-model layer pair, down to a small number of dimensions, clusters them, labels each cluster by what kind of data dominates it, and compares how much each pair's groupings agree using a chance-corrected overlap score.
 
-**Good vs. bad result.** Good: clean, well-separated clusters that line up with real, interpretable properties of the data, and a partition-agreement score meaningfully above chance between the two models. Bad: a single smeared blob with no real separation, or cluster labels that don't correspond to anything a human would recognize as a coherent group.
+**Good vs. bad result.** Good: clean, well-separated clusters that line up with real, interpretable properties of the data, and a partition-agreement score meaningfully above chance between a pair of models. Bad: a single smeared blob with no real separation, or cluster labels that don't correspond to anything a human would recognize as a coherent group.
 
 **What it cannot tell you.** The 2D map is a visualization only — apparent distances or gaps between clusters on the plot are not quantitative and should never be read as a diversity or separation measure. Cluster labels are approximate (majority family plus salient statistics), not ground truth, and everything here is descriptive: it says how each model happens to partition the data, not why, and not whether that partition is causally meaningful to either model's forecast.
 
@@ -186,9 +186,9 @@ Four fixed questions per stage (`ROADMAP.md` sec 21 J2), generated from `tsfm_le
 
 ### `exemplars`
 
-**Question.** What does an aggregate difference between the two models actually look like on one real series?
+**Question.** What does an aggregate difference between models actually look like on one real series?
 
-**How.** Picks a handful of concrete series per data family — specifically ones where the two models' forecasts disagree the most — and shows each one's context, true continuation, both forecasts, per-layer lens curves, and pooled attention pattern side by side.
+**How.** Picks a handful of concrete series per data family — specifically ones where the models' forecasts disagree the most — and shows each one's context, true continuation, both forecasts, per-layer lens curves, and pooled attention pattern side by side.
 
 **Good vs. bad result.** Good: a case that makes an aggregate statistic from an earlier section tangible — you can see exactly where one model's forecast goes wrong on a concrete series. Bad: a case that reads as an ordinary, unremarkable series despite being flagged as the most divergent — worth treating skeptically rather than trusting the selection blindly.
 
@@ -218,7 +218,7 @@ Four fixed questions per stage (`ROADMAP.md` sec 21 J2), generated from `tsfm_le
 
 **Question.** Given everything the other stages found, is this a fair comparison, and what's actually solid enough to act on?
 
-**How.** Collects every stage's artifacts into one document, states upfront which measured asymmetries between the two models (parameters, compute, coverage, forecast determinism) apply before any result is read, and marks every section as rendered, skipped, or failed rather than silently omitting anything.
+**How.** Collects every stage's artifacts into one document, states upfront which measured asymmetries between each pair of models (parameters, compute, coverage, forecast determinism) apply before any result is read, and marks every section as rendered, skipped, or failed rather than silently omitting anything.
 
 **Good vs. bad result.** Good: every enabled stage's section actually rendered (no 'failed' rows in the coverage panel) and the fairness card names its asymmetries with real measured values rather than 'not yet measured'. Bad: any section marked 'failed' (a bug, not an expected degrade) or a fairness row that couldn't be measured, which should downgrade how much weight a depth-located claim in that section deserves.
 
@@ -346,7 +346,7 @@ The recurring vocabulary of this repo's report, one sentence each (`ROADMAP.md` 
 
 *Where it appears:* Behavioral profile's per-family metric table.
 
-**Stitching gain.** The extra held-out R² a ridge map from one model's layer to the other's achieves *above* a hand-crafted input-feature probe on the same targets — the gain, never the raw R², is the evidence, because both models read the same input and a raw R² is therefore partly trivial.
+**Stitching gain.** The extra held-out R² a ridge map from one model's layer to the other's achieves *above* a hand-crafted input-feature probe on the same targets — the gain, never the raw R², is the evidence, because the models read the same input and a raw R² is therefore partly trivial.
 
 *Where it appears:* Stitching probes (both directions, A→B and B→A, reported separately).
 
@@ -354,7 +354,7 @@ The recurring vocabulary of this repo's report, one sentence each (`ROADMAP.md` 
 
 *Where it appears:* The seasonality circuit.
 
-**The series as the resampling unit.** Every bootstrap and every train/test split in this repo resamples whole series, never windows, because windows within one series are strongly dependent and both models score the same series — splitting on windows would make every interval far too narrow.
+**The series as the resampling unit.** Every bootstrap and every train/test split in this repo resamples whole series, never windows, because windows within one series are strongly dependent and every model scores the same series — splitting on windows would make every interval far too narrow.
 
 *Where it appears:* Every confidence interval and p-value in the report.
 
@@ -362,7 +362,7 @@ The recurring vocabulary of this repo's report, one sentence each (`ROADMAP.md` 
 
 *Where it appears:* The corpus this run reads; recorded per sample in the sealed manifest.
 
-**Token width.** How many timesteps one of a model's tokens covers (about 32 for a patch tokenizer, 1 for a per-timestep quantizer), which sets the finest lag that model's attention can express and is multiplied into every plotted lag axis so a lag of 300 means the same 300 timesteps for both models.
+**Token width.** How many timesteps one of a model's tokens covers (about 32 for a patch tokenizer, 1 for a per-timestep quantizer), which sets the finest lag that model's attention can express and is multiplied into every plotted lag axis so a lag of 300 means the same 300 timesteps for every model.
 
 *Where it appears:* Attention analysis' lag axes; the fairness card's finest-resolvable-lag row.
 

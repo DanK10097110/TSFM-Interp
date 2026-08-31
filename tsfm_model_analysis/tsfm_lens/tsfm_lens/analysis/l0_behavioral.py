@@ -68,6 +68,13 @@ def run_l0(cfg: PipelineConfig, hub, data: BenchmarkData, store: ActivationStore
     log.info("L0 complete: %d model-series scores", len(metrics))
 
 
+# Stages whose product is defined for exactly ONE pair, by design -- L3's
+# fingerprint agreement, exemplar selection and `confirm` are each a
+# comparison between two named models, not a reduction over all of them
+# (`CLAUDE.md` sec 6.5). L0/L1/L2/clustering measure every pair.
+_DESIGNATED_PAIR_ONLY_STAGES = ("l3_agreement", "exemplars", "confirm")
+
+
 def _summarize_by_horizon(point: np.ndarray, quants: np.ndarray, targets: np.ndarray,
                           contexts: np.ndarray, quantiles: list, scale_mode: str,
                           families: np.ndarray) -> dict:
@@ -410,7 +417,16 @@ def _summarize(metrics: pd.DataFrame, cfg: PipelineConfig) -> dict:
         "n_models": len(present), "n_pairs": len(pairs), "n_tests": len(raw),
         "most_stringent_threshold": (sc.alpha / len(raw)) if raw else None,
         "designated_pair": [a.name, b.name],
-        "pairs_examined_by_other_stages": 1,
+        # Which stages stay pair-shaped, so a reader of the ledger alone knows
+        # which numbers in the report come from ONE pair rather than all of
+        # them. This used to be a hardcoded `pairs_examined_by_other_stages: 1`,
+        # true until sec 24.3 made L1/L2/clustering measure every pair and
+        # false afterwards -- a site that only MENTIONS the pair convention and
+        # is therefore invisible to a sweep that fixes the sites which COMPUTE
+        # from it (`CLAUDE.md` sec 11.39). Naming the stages instead of counting
+        # pairs means the next stage to change shape edits a list it is already
+        # editing, rather than silently invalidating an integer.
+        "designated_pair_only_stages": list(_DESIGNATED_PAIR_ONLY_STAGES),
         # `n_boot` belongs here because bootstrap p-values are FLOORED at
         # 1/n_boot (sec 6.6), so the smallest Holm-adjusted p this family can
         # ever produce is n_tests/n_boot -- independent of the data. Once that

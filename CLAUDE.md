@@ -611,7 +611,13 @@ TSFM-Interp/
 │   ├── tests/                   # 40 passed / 1 failed (golden-hash, see §9/§11.13); includes
 │   │                            # test_generator_extensions.py (opt-in archetypes) and
 │   │                            # test_real_derived_generators.py (block_bootstrap/sequential_par,
-│   │                            # now also sequential_par's length-truncation, §11.14)
+│   │                            # now also sequential_par's length-truncation, §11.14).
+│   │                            # conftest.py caps the BLAS/OpenMP pools (sec 9) -- a
+│   │                            # DELIBERATE duplicate of tsfm_lens's, since the two
+│   │                            # packages install independently and share no import
+│   │                            # path; test_thread_cap.py pins that the two files'
+│   │                            # code halves stay byte-identical, because a duplicate
+│   │                            # nobody checks is the sec 11.24 shape
 │   └── README.md
 └── tsfm_model_analysis/
     └── tsfm_lens/
@@ -743,6 +749,16 @@ TSFM-Interp/
         │   │                    #   linear CKA between two models' PERSISTED SAE FEATURE spaces,
         │   │                    #   `l1/cka_sae.json`. ROADMAP.md §6.2.1 Stage 3d)
         │   ├── report/report.py # single-file interactive HTML (one run)
+        │   ├── report/sanitize.py # ROADMAP.md sec 24.6: strips internal
+        │   │                    # planning-doc citations at the RENDER BOUNDARY
+        │   │                    # (report.py's two write points), not from the ~76
+        │   │                    # strings carrying them -- editing literals would
+        │   │                    # regress on the next note written in house style and
+        │   │                    # could not reach methods_appendix.py, which renders
+        │   │                    # analysis modules' `__doc__` VERBATIM. Keeps a
+        │   │                    # citation's ACTIONABLE half, works clause-by-clause
+        │   │                    # inside a parenthetical, and leaves the `sec-*` HTML
+        │   │                    # anchors the report's deep links use untouched
         │   ├── report/meta_report.py # cross-run aggregator (ROADMAP.md §5.5);
         │   │                    # reads N run dirs' existing artifacts, no re-run
         │   ├── report/scaling_ladder_report.py # renders analysis/scaling_ladder.py's
@@ -882,6 +898,18 @@ TSFM-Interp/
         │                        # re-tests the SAME private corpus, so its confirm
         │                        # verdicts DEMONSTRATE the mechanism and are not a
         │                        # fresh one-shot confirmation (CLAUDE.md sec 6.7)
+        ├── configs/full_report_run_3model.yaml # the above plus Chronos-2 -- the
+        │                        # every-feature run at PANEL shape (ROADMAP.md sec 24.5,
+        │                        # 2026-08-30). Chronos-2 over Sundial because Sundial's
+        │                        # diagonal-hit fraction decays by mid-depth at the default
+        │                        # probe amplitude (sec 11.22), which would put an
+        │                        # unresolved alignment caveat on every cross-model number;
+        │                        # Chronos-2 measures 1.00 at all 12 blocks. Two values are
+        │                        # forced away from the pair config AND the header says why:
+        │                        # n_boot 2000 (3 pairs x 3 families = 9 tests, and 9/150
+        │                        # exceeds alpha -- sec 6.6's p-floor) and sae.targets []
+        │                        # (a pinned pair target cannot name a layer of a model that
+        │                        # did not exist in that config)
         ├── configs/smoke_three_model.yaml # THREE mocks, l0+report only
         │                        # (ROADMAP.md sec 18 F8) -- deliberately narrow, to keep
         │                        # F8's own acceptance run reproducible. Its header used to
@@ -921,6 +949,30 @@ TSFM-Interp/
         │                        # baselines passing too. Carries seed 0's full-precision
         │                        # values AND the five-seed worst-case bounds inline, so
         │                        # it can't be misread as a 1/1 result
+        ├── tests/conftest.py   # caps OMP/MKL/OpenBLAS/NumExpr/vecLib at 4 at
+        │                        # IMPORT time -- the backends read their variable once,
+        │                        # when the shared library loads at the first `import
+        │                        # numpy`, so a fixture would be far too late. It
+        │                        # reliably buys CORE FOOTPRINT (42 -> 14 peak threads);
+        │                        # what it buys in TIME is workload-dependent and is not
+        │                        # one number -- test_crosscoder.py 1.78x, the whole
+        │                        # benchmark suite unchanged. An exported thread
+        │                        # variable defers WHOLESALE, never per-variable -- the
+        │                        # mixed state (OpenMP 7, MKL 4) is what that avoids
+        ├── tests/test_thread_cap.py # 10 tests. The load-bearing one keys off the
+        │                        # REPORTED policy, not off the environment: an inert
+        │                        # cap leaves the variable unset, which a test reading
+        │                        # the environment cannot tell from a deliberately
+        │                        # uncapped run -- so it would SKIP where it must fail
+        ├── tests/test_sae_target_resolution.py # sec 11.40: `layer_screen` and the
+        │                        # analysis store do not hold the same layer list -- the
+        │                        # screen deliberately scores every block via its OWN
+        │                        # stride-1 store (ROADMAP.md sec 15 A1), so under any
+        │                        # stride > 1 it can pick a layer the SAE cannot load.
+        │                        # Synthetic (a stub store exposes one method), and the
+        │                        # load-bearing negative plants a ranking where the best
+        │                        # CAPTURED layer is not the last one, since picking by
+        │                        # position would pass every other assertion in the file
         ├── tests/test_smoke.py  # full end-to-end + confirm hypothesis-path test
         ├── tests/test_multiplicity.py # all-pairs L0 + the ledger: that a
         │                        # two-model run is UNWIDENED, that the seed
@@ -1252,10 +1304,14 @@ Plus `extract` (upstream), `register` (freezes dev hypotheses for `confirm`) and
 `report` (downstream). **17 stages** as of 2026-08-23 (`stage_names()` is the
 authority — this line has gone stale three times now; check it rather than
 trusting the number), up from 16 with the addition of `frontend` (ROADMAP.md
-§16 E17). The smoke run renders **12 of 13 report sections** (SAE is off in that
-config) — last measured live via `configs/smoke.yaml` through the actual CLI,
-not just the test suite; this line has not been re-measured since `frontend`
-landed, so a fresh session should re-check the section count before quoting it.
+§16 E17). The smoke run renders **14 of 16 report sections** (SAE is off in that
+config; the seasonality-circuit section additionally returns no content on mock
+adapters) and **54 findings / 55 figures** — re-measured live
+2026-08-30 via `configs/smoke.yaml` through the actual CLI, not just the test
+suite, and it takes **29 s** cold on CPU. **Corrected** from this line's prior
+"12 of 13", which predated `frontend` and had already flagged itself as needing
+a re-check; §9's dated rows below keep their own historical counts (13/47/48)
+because those are measurements *on their dates*, not claims about today.
 
 **Why this ordering exists:** an early session explicitly argued down a proposal
 to put SAEs first. Training good SAEs on two models × multiple layers is the
@@ -1821,7 +1877,22 @@ overlap. Confidence badges (a CSS class keyed on `evidence_class`+`registered`) 
 cross-run diff mode are **still not** built — neither was ever in J1's own
 scope (badges were only ever on E6's "then cheap" wishlist, diff mode is
 gated on E5, which is parked), and `plain`/`caveat` already cover the
-legibility gap those items would additionally style/compare. Almost every
+legibility gap those items would additionally style/compare.
+✅ **The notes' own *examples* became measurements too, 2026-08-29
+(`ROADMAP.md` §24.4).** Five rendered notes used to illustrate a mechanism
+with a fixed architecture name ("an encoder-only model like Chronos-T5 caps
+out partway up the axis"), which reads as a claim about a model that may not
+be in the run — and on a panel of unfamiliar checkpoints, as a claim about
+the wrong one. They now name the run's own models, derived per site from data
+already in scope (measured `deterministic` for the noise floor, each curve's
+own final fraction for compute-by-depth, the probe's `not_applicable` list
+for the frontend, `_short_axis_clause`'s largest measured depth coordinate
+for the two depth notes) — and where nothing is measured they state the
+mechanism with **no example at all** rather than falling back to a written-in
+one. `analysis/lens.py`'s **module docstring** was the same defect one
+surface over: it is rendered verbatim into the methods appendix, so its
+"TimesFM front-loads then compresses" example was a claim in every mock-only
+report. Almost every
 figure carries an attached `_note(purpose, reading, limitations)` block —
 this is the report's actual glossary mechanism, contextual per-plot rather
 than a separate lookup table. ✅ **Split into two registers 2026-08-20
@@ -2256,6 +2327,23 @@ PYTHONPATH=. python3 example_runs/run_validation.py
 | The report's conclusions become measurements (`report/derived.py`, `report.py::_scorecard`/`_corruption_breakdown_block`/`_layer_metrics_block`, `ROADMAP.md` §24) | ✅ **2026-08-24, user-requested.** Each of the four complaints was first grounded in an artifact-verified defect (§2.4), and two were real bugs rather than tone: `_sec_exemplars` had a `continue` **discarding 6 of the 9 exemplars the stage computes**, and `_verbose_case` head-sliced a task-grouped corpus (§11.38). `Verdict.verdict` is derived in `__post_init__` from a `Rule` whose text renders in the same row — a call site *structurally* cannot author one, which is pinned by a test. Scorecard covers **ten stages / 14 rows**; every value was additionally **re-derived by hand from the raw artifacts rather than through `derived.py`** and matches. Live on `runs/full_report_run` (TimesFM-2.5-200M vs Chronos-T5-Base): **14 sections / 50 findings / 61 figures / 89 captions / 0 bare / 56 tables**; exemplars **9 rendered** (was 3), L3 verbose **4 headings** (was 24). The added rows immediately produced a negative result the report had never stated: **Chronos-T5-Base's most load-bearing attention head moves MASE by 0.1368 against its own repeat-run floor of 0.1409** — below its own sampling noise. One regression, worth its shape: the rewrite stopped emitting the phrase `patched at`, which `tests/test_smoke.py` asserts and **five other modules inherit through that shared helper**, so one dropped token reported as 9 failed / 802 passed across four unrelated files; the assertion was *not* deleted — the information had genuinely left the figure and was restored to its caption. Full suite **816 passed, 0 failed** (3:06:16). 38 new tests. |
 | Panel (3+ model) run shape — all-pairs L1/L2/clustering, spread-based exemplars, panel report blocks (`ROADMAP.md` §24.3 sub-items 3–6) | ✅ **2026-08-28.** Before this, `_apply_shape` dropped nothing on a panel, so `l1`/`l2`/`cluster`/`exemplars` silently analyzed `models[0:2]` and rendered a complete-looking report about two of a run's models. Every pair artifact stays byte-compatible by the L3 rule (**add a canonical key, leave the legacy keys untouched, read new-then-legacy**): a panel *adds* `cka_window__{a}__{b}`, `pairs`, `run_shape`. Pair non-regression verified two ways — a report-only rerun of `configs/medium_run_chronos_base.yaml` reproduces **every L1/L2/clustering finding text byte-for-byte**, and `cka_window` is `np.array_equal` to pair 0's suffixed array in both a pair and a 4-model panel run (the check `analysis/null_baseline.py` and the two `run_crosscoder_*.py` scripts actually depend on — none of them is exercised by the pipeline's tests). `configs/smoke_panel.yaml` live: **14 rendered / 2 skipped / 0 failed, 89 findings, 77 figures**, 6 pairs at L1, 12 directions at L2, 6 distinct AMIs. One real crash found by running rather than reading (`_sec_clusters`'s hardcoded `make_subplots(cols=2)`), and one test caught **passing for the wrong reason** — its assertion phrase also appeared in an unrelated note, so it was green before the feature existed. 8 tests (`tests/test_panel_pairs.py`). |
 | Preflight store-format + multiplicity-budget checks, `--list-configs` (`ROADMAP.md` §24.3 usability follow-on) | ✅ **2026-08-28.** `doctor._check_store_format` closes a gap the doctor's own docstring **claimed was covered**: a zarr v3 store opens under the pinned v2 without error and reads back EMPTY (§11.25). Verified against the real stale directory — `runs/real_run` fails with the correct remediation (delete + re-`extract`, explicitly not "reinstall zarr") while `smoke`/`medium_run_chronos_base`/`smoke_panel` pass; it deletes nothing. `_check_multiplicity_budget` states §6.6's p-floor arithmetic **before** the run (1 pair @ n_boot 150 → 7 families; 6 pairs @ 2000 → 16) and refuses to guess a family count, which is a property of the corpus. `run.py --list-configs` derives its listing from the 46 config files themselves. 9 tests. |
+| Three-model full-feature run on real checkpoints (`configs/full_report_run_3model.yaml`, `ROADMAP.md` §24.5) | ✅ **2026-08-30.** TimesFM-2.5-200M + Chronos-T5-Base + Chronos-2, every stage on, `report.verbose: true`: **15 sections rendered / 1 skipped / 0 failed, 94 findings, 81 figures, 123 captions, 0 bare** (positional walk). The pair path is bit-exact inside the panel — L1 peak CKA **0.38115179538726807** and L2 gains **0.4132**/**0.3179** reproduce the recorded two-model values exactly — while the third model adds what a pair cannot: the two Chronos models are far closer geometrically (CKA **0.7400** vs 0.3812/0.4297) yet clustering AMI **disagrees** with that ordering (TimesFM×Chronos-2 **0.6057** highest). All 3 models named in 32/31/30 findings; **no finding names an architecture absent from the run**. `confirm` 2/2 registered claims CONFIRM on the private split. Scorecard scales to **24 rows across ten stages**, per-model rows multiplying correctly (3 attention, 11 SAE). At `n_boot: 2000` the 9-test L0 family's `min_attainable_p_holm` is **0.0045** — at the inherited 150 it would have been unsatisfiable (§6.6). One real bug found only because the run is long (§11.40). |
+| SAE dead-feature rate is a property of the model, not the recipe (`ROADMAP.md` §23.2 A1's new Findings) | 🔴 **2026-08-30, unplanned controlled result.** Chronos-2 and Chronos-T5-Base trained at **identical** settings (`d_in` 768, `dict_size` 6144, `k` 32, 8608 rows, `aux_k` off) give dead rates **0.108–0.134** vs **0.951–0.973** — ~9× apart with every hyperparameter held fixed, so the ~95%-dead condition recorded for every SAE in this repo is **not** caused by the training recipe. Read the second half before acting on it: the alive dictionaries align to ground truth **worse** (0.243–0.271 vs 0.325–0.379) and sit far closer to their own permutation nulls (+0.045–0.079 vs +0.14–0.21). Alive ≠ interpretable on this evidence; A1's question is reframed, not answered. |
+| `_default_targets` uncaptured-layer substitution (`sae/train.py`, `CLAUDE.md` §11.40) | ✅ **2026-08-30.** `layer_screen` legitimately picks layers the analysis store never captured (§15 A1 gives it its own stride-1 store), and passing them through raised `KeyError` inside training after twelve stages had run. Now intersected against `store.layers()`, substituting the best-scoring **captured** layer from the screen's own ranking, logged at WARNING with both remedies. 5 tests (`tests/test_sae_target_resolution.py`), synthetic; the load-bearing negative plants a ranking where the screen's best captured layer is not the last one, and the discriminating power was confirmed by executing the pre-fix resolution against the same fixture rather than assumed. `test_smoke.py` 5 passed. |
+| Multiplicity ledger names the pair-shaped stages instead of counting them (`analysis/l0_behavioral.py`) | ✅ **2026-08-30.** `"pairs_examined_by_other_stages": 1` was hardcoded, true until §24.3 made L1/L2/clustering measure every pair and false after — a site that only *mentions* the pair convention, so the sweep that fixed every site computing from it missed this one (§11.39). It had **no consumer anywhere in the repo**, which is why nothing caught it. Replaced with a named `_DESIGNATED_PAIR_ONLY_STAGES` list; the regression test's load-bearing assertions are that no all-pairs stage may appear and that the field may not be an integer. `tests/test_multiplicity.py` 10 passed. |
+| Thread caps in both test suites (`tsfm_benchmark/tests/conftest.py`, `tsfm_model_analysis/tsfm_lens/tests/conftest.py`) | ✅ **2026-08-30.** Caps the five BLAS/OpenMP variables at 4 at conftest-import time, which is before any test module imports numpy — the backends read their variable once, at shared-library load. What it reliably buys is **core footprint**: 42 → 14 peak threads for `tsfm_lens`, 43 → 15 for `tsfm_benchmark`. What it buys in **time is workload-dependent and must not be quoted as one number** — `test_crosscoder.py` is **1.78× faster** capped (17.4s vs 31.0s, warm both ways) while the whole `tsfm_benchmark` suite is **unchanged** (24.5s either way across repeats). ⚠️ **A single-module speedup was generalized to the suite in this row's first draft, and the first full capped suite run came back SLOWER (714s vs the 551s recorded uncapped this morning) — confounded by concurrent pytest work of my own, so it settles nothing either way. A clean sequential A/B is the pending measurement; until it lands no suite-level time claim here is supported.** An explicitly exported thread variable **defers wholesale** rather than per-variable: filling the other four in around a pre-set `OMP_NUM_THREADS=7` would run OpenMP at 7 and MKL at 4, a state nobody asked for. Visible under `-q` (via `pytest_sessionstart`, since `-q` suppresses `pytest_report_header` and `-q` is the documented invocation). Renicing is opt-in (`TSFM_TEST_NICE`) because `os.nice` is one-way. 13 tests; every one confirmed to *fail* against a planted regression, including a truly inert cap — which the first version of that test would have **skipped** rather than failed, since an unset variable is indistinguishable from a deliberately-uncapped run unless the test keys off the reported policy. ⚠️ **Two measurements were wrong before they were right** (§11.41): `timeout` and a `cd && …` compound each fork, so `$!` named the wrong process and peak-thread counts read `1` — which would have recorded "the benchmark suite spawns no threads" as a finding. It spawns 43. |
+| Report legibility rework — dedup, per-pair fairness, citation stripping (`report/sanitize.py`, `report.py::_cluster_lookalikes`/`_fairness_rows_for_pair`, `report/derived.py`, `ROADMAP.md` §24.6) | ✅ **2026-08-30, user-requested.** Each of the four complaints was grounded in an artifact-verified mechanism before being treated as tone (§2.4). Live on `runs/full_report_run_3model`: findings **94 → 77** (SAE 11 → 3, one per model over a layer×field table; L3 horizon 12 → 3 over a corruption×model table), scorecard rows **24 → 16** (SAE one row per model at its *weakest* layer; peak-CKA and clustering-AMI now report the weakest of all C(n,2) pairs, not pair 0), fairness renders **one expandable card per pair** with `card.json` gaining `pairs` while its legacy keys still describe pair 0 byte-for-byte, and internal citations go **153 doc names / 150 bare `sec N` / 34 `§N` → 0** with all 15 section anchors intact and zero orphaned punctuation in the raw HTML. The repetition count was itself measured wrong first: masking numbers before model names turned `Chronos-2` into `Chronos-N`, so a digit-bearing name never matched its siblings and **19 repeating templates read as 1** — the corrected count is what motivated render-time clustering over 19 separate site edits. 20 new tests; every load-bearing negative confirmed to discriminate by planting the regression (removing the possessive branch fails exactly one; making the section pattern's digit optional fails exactly the anchor and seconds tests). |
+| Skip lens withheld where the head does not read patched positions (`models/base.py::forecast_reads_patched_positions`, `analysis/lens.py`, sec 24.7) | 🔴 **2026-08-30, a real bug that had been rendering as a finding.** Chronos-2's skip-lens MASE was byte-identical at all 12 layers and its crystallization depth exactly 0.0 at all 64 horizon steps, because its head reads `hidden_states[:, -num_output_patches:]` while `token_slice` writes the leading context patches. Diagnosed by instrumenting the hook, not by reading code: the hook fires and writes a genuinely different tensor (`post_delta` 4.1875) and the forecast still moves by **exactly 0.0**; patching the whole live sequence instead moves it 0.904/0.852/0.675/0.598 at blocks 0/3/6/9 and exactly 0.0 at the final block, which is the layer-into-itself correctness check the context-only patch never passed. Now a declared capability (default True) that withholds the skip lens with a stated reason; **the tuned lens is unaffected** and still runs, since it patches nothing. The same `token_slice` is used by L3 patching and SAE forecast-preservation, so those were no-ops for that model too. 5 tests, the load-bearing one confirmed to fail against the pre-fix declaration. ⚠️ **Twice corrected on 2026-08-31, both times by measurement contradicting a stated mechanism (sec 11.42).** (a) The claim that context positions are "never read" was too strong: a context-only patch at blocks 0/3/6/9 moves the forecast **0.737/0.643/0.282/0.095**, decaying with depth as attention propagation predicts — the 0.000 was only ever measured at the FINAL block, where it is a tautology. The withholding survives on the narrower ground that `skip_lens_forecasts` patches at `final_block_name()` *by construction*. `models/conformance.py` gained a third probe that patches an **early** block, since both existing probes are tautologically 0.0 for such a model; it **records** `patched_span_is_causally_connected` rather than asserting it, because a non-zero early delta beside a `False` declaration is the correct state. (b) The reason given for rejecting the whole-sequence widening — activation-norm mismatch — is **refuted**: norm-matching each patched position to the final block's own per-position norm changes the curve by **≤0.0002 MASE at any block** (spread 3.648, argmin block 11, frac_decreasing 0.64 all bit-identical). The ~25x norm growth is real and stays on record; it is simply not the cause. The rejection now rests on the curve being **non-monotonic**, i.e. answering a different question than a skip lens asks. 4 new patch-reach tests + 2 refutation-guard tests, all six confirmed to fail against planted regressions. ⚠️ `runs/full_report_run_large`'s `lens/lens.json` predates (a) and still carries the superseded reason string ("the forecast head does not read the positions activation patching writes"), which its rendered report therefore displays; the code emits the corrected wording and the next run will show it. Not regenerated, because re-running `lens` there costs a full extraction pass to change one sentence. |
+| L3 replication on the private corpus (`analysis/confirm.py::_replicate_registered_l3`, sec 24.7) | ✅ **2026-08-30.** The corruption battery re-run on private series — same corruptions at the same strengths, same fingerprint, same `align_on_axis` matching, same paired cluster bootstrap, with the clean pass simply run rather than read from the extraction store (its one dev-only dependency). Registered L3 hypotheses move to `replicable: True`, taking coverage from **2/19 to 11/19** on the three-model run and 2→14 of 17 on smoke. Verified end to end through the real CLI: **7 of 9 corruptions replicate**, with `noise` and `level_shift` genuinely not — a discriminating result, not a rubber stamp. L2 and clustering replication remain unimplemented, with stated reasons. |
+| Report review round 2 — all-pairs L3 agreement, NaN-free stitching table, faceted figures (sec 24.7) | ✅ **2026-08-30, user-requested.** `l3/meta.json` gains a canonical `pairwise` key (every C(n,2) pair) while `agreement` stays byte-identical, per sec 11.39's rule. The "Stitching gain, every pair" table's 12 structurally-empty cells (one column per *named* direction unions across pairs) become role columns that always describe that row's own two models — the 12 was measured, an earlier draft said 8 and was wrong. Restoration goes from 27 lines in one figure to a per-corruption grid with one legend driving every panel; per-window heatmaps wrap to 3 columns; lens horizon heatmaps sit side by side. Two refuted user hypotheses recorded as such: mixture-family MASE is **not** deflated (100% `mase_reliable`, `mae_over_mad` 1.055, the *highest* of the three families — the confusion was the trace name "clean", now "forecast from clean input"), and TimesFM's 13 crystallization gaps are a `capture_layer_stride: 2` artifact, **not** the narrow-tolerance explanation tried first, which measurement refuted. |
+| `--force confirm` reaches the guard that names it (`pipeline.py::Context.forced`, `analysis/confirm.py::run_confirm`, `CLAUDE.md` §11.43) | ✅ **2026-08-30.** The consumable guard (§6.7) is unchanged and still refuses by default; what was broken is that its own stated remediation was unreachable — `force` is a skip-predicate concept and never reached `run_confirm`, so `--force confirm` ran the stage and hit the same raise, leaving hand-deletion as the only path. Now threaded through `Context`, warns once that it is a **second look**, and records `repeated_look` in the artifact so the report can qualify the verdicts after the log has scrolled away. Verified through the real CLI on `configs/smoke.yaml`, not only pytest. 6 tests (`tests/test_confirm_force.py`); the load-bearing one asserts the **pipeline** passes the flag — a test calling `run_confirm(forced=True)` would pass while the CLI stayed broken — confirmed to discriminate by planting `ctx.forced = set()`. |
+| Replication roll-up (`report/derived.py::replication_summary`, `ROADMAP.md` §24.7 finding 11) | ✅ **2026-08-30.** The confirm section ran three independent replications and never said what held up across them. One "What held up (N of M)" table, one row per kind, each with its evidence class and what a failure of that row would mean; untestable claims are a third column rather than folded into either verdict. Live on `runs/smoke`: **11 of 14** (behavioral 3/4, causal-within-model 7/9, geometric 1/1). Pure reduction, no model name / architecture / positional index — pinned by a test, the same adaptivity contract `bottom_line_rows` holds to. 4 tests, one confirmed to discriminate by planting the untestable-as-failure simplification. |
+| L3 perturbation replication on private data (`analysis/confirm.py::_replicate_registered_l3`) | ✅ **2026-08-30, live.** The user's read that this is "the same thing just over different data" was correct: same corruptions at the same strengths, same relative-activation-delta fingerprint, same `align_on_axis` matching, same paired cluster bootstrap, with only the clean pass re-run rather than read from the dev extraction store. Registered L3 hypotheses move `replicable: False → True`, coverage **2/19 → 11/19**. Discriminating rather than a blanket pass on `runs/smoke`: **7 of 9 replicate**, with `noise` (dev −1.000 vs private −0.778 [−0.965, −0.583]) and `level_shift` (dev +0.623 vs private +0.430 [+0.239, +0.608]) falling outside their private CIs. |
+| Stale-artifact guard covers report-only reruns (`pipeline.py`, `ROADMAP.md` §24.7 finding 12) | ✅ **2026-08-30.** §15 A3's check considered only stages in the **selection**, and `report` declares `deps=[]` on purpose (it must render whatever exists — that is what makes partial runs useful), so a stale upstream stage it *reads* was invisible. Found by running it: after a corruption-strength edit, `--stages report` rendered **15 sections / 75 findings with no warning**, mixing fresh lens artifacts with L3 artifacts from the previous config — on the most common invocation anyone makes. Now every stage with artifacts on disk is fingerprint-checked whenever `report` is selected; the remediation text was also wrong (`--force <name>` does nothing outside the selection) and now names `--stages` too. 3 tests against the real end-to-end pipeline, including the negative that an unchanged config must still allow a cheap re-render; both positives confirmed to discriminate. |
+| Remediation messages name a flag that works (`tests/test_remediation_messages.py`, `ROADMAP.md` §24.7 finding 14) | ✅ **2026-08-30.** `--force` bypasses a **selected** stage's skip predicate, and **four** guards told the reader to rerun with `--force <stage>` for a stage that would not be selected (`confirm`'s consumable guard, the stale-artifact refusal, the A15 registry-freshness guard, and `extraction/store.py`'s schema mismatch — the fourth found by grepping the pattern rather than tripping it). Following any of them re-runs nothing and returns the identical error. Now a class-level test: every user-facing message naming `--force` must also name `--stages`, with a two-entry exemption list for the sites where the stage is selected by construction. Groups **statements, not lines** — the first version judged wrapped continuation lines alone and flagged the fixes as the defect — and carries a third test that the scan finds ≥3 messages, since an over-narrow scan passes by finding nothing. Confirmed to discriminate by reverting one fix. |
+| Three-model run after the corruption-strength fix (`configs/full_report_run_3model.yaml`) | ✅ **2026-08-30, live.** `noise` energy **0.183 → 0.728** and `spike` **0.153 → 1.134** (footprint 0.58% → 1.55%), recorded in `l3/meta.json`'s own `calibration` block so the report's breakdown table reads them off the artifact; an independent 200-series re-measurement outside the pipeline gives 0.790/1.230/1.55%, agreeing to sampling noise. Report: **15 sections / 78 findings**. L3 replication on **286 private series: 7 of 9 replicate**, with `noise` (dev −0.828 vs private −0.774 [−0.827, −0.723]) and `frequency_shift` (dev −0.178 vs −0.276 [−0.316, −0.214]) genuinely outside their intervals. Peak CKA **0.3812 → 0.3737** [0.3549, 0.4083], replicates. `register` had to be re-run first — recomputing `l3` after registration correctly trips the A15 freshness guard (§24.7 finding 13). |
+| Three-model run on `benchmark_large` (`configs/full_report_run_large.yaml`) | ✅ **2026-08-30, live — the largest run this repo has done.** 3 models x **965 dev / 800 private** series over **five** generator families (42.5% real-derived): **15 sections rendered / 1 skipped / 0 failed, 78 findings**. Three results worth reading rather than counting. **(a) Cost inverts the accuracy story's usual shape:** Chronos-2 is simultaneously the most accurate (MASE **1.6774** vs TimesFM 1.7345, Chronos-T5-Base 1.9948), the cheapest (**119.5M** params, **69.2** GF, **22.9 ms**), and the best observed (**97.5%** of forecast FLOPs captured — the only model needing no depth-coverage qualifier), while Chronos-T5-Base is least accurate at **78x** the forecast FLOPs and **50x** the latency. **(b) Geometry and organization disagree, and the disagreement now replicates across two corpora:** the two Chronos models are much the closest pair by CKA (**0.6975** vs 0.4362 / 0.3767) yet cluster the data the *least* alike (AMI **0.4977** vs 0.6484 / 0.5393). **(c) The pair path replicates a third time:** peak CKA **0.3767**, against 0.3812 and 0.3737 on `benchmark_medium`, and it holds out — private **0.3797** [0.3678, 0.3961]. All six L2 directions clear the input-feature baseline (+0.3614 to +0.5164). Both registered hypotheses CONFIRM; **L3 replicates 8 of 9** corruptions on 800 private series, the exception being `level_shift` (dev +0.972 vs private +0.955 [+0.947, +0.963] — a 0.017 gap that only registers because 800 series makes the CI that tight). TimesFM's `sequential_par` strength is a finding `benchmark_medium` could not express, having no such family. `internals` was regenerated after the probe-convergence fix (sec 11.47): **34 of 34 layers converge** where the first pass emitted 14 warnings, and every probe value moved by at most **0.0026** — in both directions, so the textbook "under-convergence understates accuracy" reasoning is the right mechanism but not a per-layer guarantee. All three models' probes clear their own permutation null decisively (0.94-0.98 vs a null p95 of 0.44-0.45, chance 0.43). |
+| Full `tsfm_lens` suite after this session's changes | ✅ **2026-08-31: 945 passed, 1 skipped, 0 failed, 930.08s (15m 30s)** — 940 the prior day, +6 new tests for the probe-convergence fix (sec 11.47) less one rewritten; the count rose from 870 across this session's additions (skip-lens readout, patch-reach conformance, panel pairs, confirm force, replication roll-up, report-only staleness, remediation messages, unforecastable-series excursion, collapsed scorecard), 2 pre-existing warnings (the float32 cast overflow and `test_end_to_end`'s return-value warning). ⚠️ **The 3:06:16 recorded for this suite on 2026-08-24 could not be reproduced and is left unexplained rather than overwritten** — a controlled A/B on one module with warm caches (`test_crosscoder.py`: 17.4s capped vs 31.7s uncapped) shows thread capping is worth **1.8×**, nowhere near the ~20× gap, so the cap is *not* the explanation; competing load on this shared 32-core box (30 users) or a cold cache are the untested candidates. **Separately and independently useful:** the suite spawns **57 threads at nice 0 and takes 18 of 32 cores** by default, because numpy/OpenBLAS/MKL/torch each grab every core — run it as `OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 OPENBLAS_NUM_THREADS=4 nice -n 19 python -m pytest tests/ -q` (load average 54.5 → 32.1). ✅ **A `conftest.py` now does this for both suites — see the row below; the manual prefix is still needed for `run_*.py` studies and pipeline runs.** |
 **Golden hashes (do not let these change) — ✅ currently matching, see below:**
 ```
 seed 0   → parametric 2856658d044e4c49  random a45664e176fbb71a  clean_low_noise
@@ -3635,6 +3723,439 @@ leave the legacy keys untouched, read new-then-legacy.** `l3/meta.json` gained
 a `models` list while `model_a`/`model_b` stayed exactly as they were, so every
 pair artifact stayed byte-compatible and a 98-test pair-run regression check
 passed on the first attempt.
+
+### 11.40 A fix that widened one stage's view silently widened what it hands the next stage
+Found 2026-08-30 by the first three-model full-feature run
+(`configs/full_report_run_3model.yaml`), which crashed at the **`sae`
+stage** — after `extract`, `budget`, `frontend`, `layer_screen`, `l0`,
+`internals`, `lens`, `l1`, `l2`, `l3`, `attention` and `cluster` had all
+completed, i.e. after roughly an hour of GPU work:
+```
+KeyError: "store.load('TimesFM', 'stacked_xf.15', space='act'): no array at
+'act/TimesFM/stacked_xf.15' -- this (model, layer) was never extracted."
+```
+The layer is real; the store is correct; both stages are behaving exactly as
+designed. `ROADMAP.md` §15 A1 fixed a genuine defect — `layer_screen` used to
+screen only the layers `capture_layer_stride` happened to capture, so it could
+not satisfy its own all-layers-fair requirement — by giving the screen its
+**own dedicated stride-1 extraction into a separate store**, which it deletes
+when it is done. That fix is right, and it means `layer_screen/selection.json`
+now legitimately names layers that exist nowhere else on disk:
+`stacked_xf.0..19` for a model the analysis store holds at stride 2 (10 even
+blocks). `sae/train.py::_default_targets` — written when the two lists could
+not diverge — passed the selection straight through as SAE targets.
+**The two lists were never the same list, and after A1 they are not even the
+same size**; nothing in either stage compares them, so the mismatch surfaces
+as a `KeyError` from `store.load` three call frames inside a training loop.
+**Fix:** `_default_targets` intersects the screen's selection with
+`store.layers(model)` and, for each dropped pick, substitutes the
+best-scoring **captured** layer from the screen's *own* ranking
+(`_screen_ranked_captured`) rather than an arbitrary one — logging at WARNING
+which layer was dropped, which replaced it, and both remedies
+(`capture_layer_stride: 1`, or pin `sae.targets`). Live on the three-model
+run: `stacked_xf.15` → `stacked_xf.16`, 11 targets across 3 models, no other
+target moved. 5 regression tests
+(`tests/test_sae_target_resolution.py`), synthetic — `_default_targets` reads
+exactly one method off a store, so stubs pin the logic with no checkpoint and
+no zarr. The load-bearing negative plants a ranking where the screen's best
+captured layer is *not* the last captured one, since picking by position would
+pass every other assertion in the file; the discriminating power was confirmed
+by re-running the pre-fix resolution against the same fixture rather than by
+assuming it.
+**Lesson, and it is §11.32's shape one stage further apart.** §11.32 was one
+function computing a value for one list and reusing it for a strided subsample
+of that list. This is the same assumption held **across a stage boundary** —
+and it was introduced not by writing new code but by *fixing* an upstream
+stage so that it correctly sees more than it used to. A fix that widens what a
+stage measures also widens what it **hands downstream**, and the downstream
+consumer's assumption ("everything in this artifact exists in the store") was
+never written down anywhere, because it was true for as long as both stages
+read the same store. So: when a fix changes the *domain* of an artifact —
+which layers, which series, which families it can now mention — grep the
+artifact's filename to find every consumer and check each one's implicit
+assumption about that domain, exactly as §11.39 says to grep a symbol rather
+than reason about it. And note the cost asymmetry that makes this worth a
+trap: a stage-boundary mismatch cannot fail early, because the consumer does
+not run until every stage before it has. The same defect in a preflight check
+would have cost seconds.
+
+### 11.42 An intervention whose write the model never reads returns a clean, flat, entirely plausible curve
+Found 2026-08-30 by a user reading the three-model report and noticing that
+Chronos-2's skip-lens depth curve was "unusually uniform" where the other two
+models' were not. It was not unusual, it was constant: `skip_mase` byte-
+identical at all 12 layers (1.564247...), `skip_agreement` exactly 0.0
+everywhere, and `crystallization_depth` exactly 0.0 at all 64 horizon steps.
+Every intervention this repo builds on `token_patch` — the skip lens, L3
+activation patching, SAE forecast-preservation — overwrites the positions
+`ModelAdapter.token_slice` names and then reads `predict()`. That measures
+nothing whatsoever if the forecast head reads somewhere else, and **the
+failure is silent in the worst possible way: the forecast comes back
+bit-identical, which is a perfectly well-formed number.** A flat curve is a
+publishable shape ("this model's forecast is fully formed at layer 0"), so
+nothing downstream had any reason to object.
+Diagnosed by instrumenting the hook rather than reading the model source
+(sec 2.4), which mattered because the code reads correctly at every layer
+one might check: the hook fires (once, confirmed by counting), `_primary`
+finds the right tensor, the written tensor genuinely differs from what was
+there (`post_delta` 4.1875), and `_rebuild` preserves that difference through
+the `ModelOutput` dataclass (`rebuilt_delta` 4.1875) — and the forecast still
+moved by exactly 0.0. Only then did the cause become findable:
+`chronos/chronos2/model.py:731`, `forecast_embeds = hidden_states[:,
+-num_output_patches:]`. Chronos-2's head reads only the trailing forecast
+placeholders; `token_slice` writes the leading context patches; the two sets
+are disjoint. The confirming measurement is the one the broken path could
+never produce: patching the *whole* live sequence moves the forecast by
+0.904/0.852/0.675/0.598 at blocks 0/3/6/9 and by **exactly 0.0 at the final
+block** — patching a layer into itself, which is the correctness check.
+**Fix is a declared capability, not a change to shared patching.** New
+`ModelAdapter.forecast_reads_patched_positions()`, default `True` (a model
+whose forecast continues its context necessarily reads context positions),
+`False` on Chronos-2 with the measured evidence in its docstring. The lens
+stage withholds the skip lens with a stated reason and — the part worth
+keeping — **still runs the tuned lens**, which is a ridge probe over stored
+states and patches nothing, so it was never affected. Patching the
+placeholders instead was considered and rejected: they carry no time span, so
+nothing cached at a window has a value for them, and a lens over them would
+answer a different question than "where in depth does the forecast form".
+**Correction (2026-08-31), from a user's four-hypothesis review.** The
+paragraph above says the confirming measurement is "patching the *whole* live
+sequence" moving the forecast at blocks 0/3/6/9 and exactly 0.0 at the final
+block. That is accurate but it varies the wrong axis: it changes patch *width*
+across blocks while only ever testing **context-only at the final block**. So
+"the head reads somewhere else" was generalized from a number that is a
+**tautology** — at the final block no layer remains to mix the written positions
+into the read ones. Holding width fixed at context-only and varying depth gives
+**0.737 / 0.643 / 0.282 / 0.095 / 0.000 at blocks 0 / 3 / 6 / 9 / 11**: the
+context representation *is* causally connected to the forecast, decaying exactly
+as context->placeholder attention propagation predicts.
+
+The withholding is still right, for a narrower reason: `skip_lens_forecasts`
+patches at `final_block_name()` **by construction**, so this model always lands
+on the tautological case. The three stated reasons (adapter docstring, lens
+WARNING, `skip_lens_unavailable_reason`) are corrected accordingly.
+
+And widening the patch to the whole live sequence — the obvious fix — was
+**rejected on measurement**. It yields 12 of 12 distinct MASE values (spread
+3.65) that pass the layer-into-itself check exactly, yet the curve is
+non-monotonic (4.38 -> 1.11 at block 5 -> 2.77 at block 9 -> 0.731 at block 11),
+so it does not answer *how much of the forecast is formed by depth l* — the only
+question a skip lens exists to ask. **A smooth, plausible curve answering a
+different question is worse than no curve** — this trap's own lesson, one step
+further on.
+
+🔴 **And the obvious explanation for that non-monotonicity is refuted, which is
+the part worth carrying.** Mean placeholder activation norm does grow **~25x
+across depth** (1.11 -> 27.83, a 7.4x jump at the final block alone) and the
+`[REG]` separator's norm is larger still (~115-130, the highest-norm position in
+the sequence), so scale mismatch was the natural diagnosis and was written down
+as one. Testing it killed it: rescaling every patched position's layer-l vector
+to the final block's own per-position norm — keeping direction, removing the
+scale error entirely — changes the curve by **at most 0.0002 MASE at any
+block**, with spread (3.648), argmin (block 11) and fraction of decreasing steps
+(0.64) all bit-identical. The non-monotonicity lives in the *direction* of these
+representations under this head, not their magnitude, so no rescaling variant
+recovers a monotone curve. Note the shape of the near-miss: a plausible
+mechanism, stated with real supporting numbers (the 25x is genuine), that simply
+is not the cause — and the only thing separating the two was a five-line
+experiment (sec 2.4, sec 11.3).
+
+The conformance check built to prevent recurrence could not have caught this:
+both of `_check_patch_reaches_the_forecast`'s probes patch *at the final block*,
+where both are tautologically 0.0 for such a model. A third probe now patches an
+**early** block and records `patched_span_is_causally_connected` — recorded,
+never asserted, since a non-zero early delta beside a `False` declaration is the
+*correct* state here and raising would restore the flat curve.
+
+**Lesson, and it is sec 11.37's shape at a different layer of the stack.**
+There, a degenerate baseline produced a *confident* verdict rather than a
+cautious one. Here, an intervention that reaches nothing produces a *clean*
+curve rather than an error. Both are cases of a measurement applied outside
+the conditions under which its value means anything, and in both the output
+is well-formed enough to read as a result. The general guard: for any
+intervention that writes into a forward pass and reads an output, there is
+one free control that distinguishes "no effect" from "no reach" — **patch the
+final layer into itself and require exactly 0.0, then patch some other layer
+into it and require non-zero.** The second half is the one that was missing;
+the first half alone passes for a hook that writes into the void. Run both
+whenever an adapter is added, and note that a stack trace will never prompt
+you to: this failure has no exception anywhere in it.
+
+### 11.41 A backgrounded shell pipeline names the wrong PID, and a thread count read off it is silently plausible
+Found 2026-08-30 while measuring whether a `conftest.py` thread cap was worth
+adding to both packages. The measurement was a shell loop sampling
+`ls /proc/$!/task | wc -l` while a suite ran. It reported a peak of **1 thread**
+for every configuration — capped, uncapped, both packages — and 1 is a
+*perfectly plausible* answer for a suite that does no parallel work, so it read
+as a finding rather than as an instrument failure. On that basis
+`tsfm_benchmark` was about to be recorded as not needing the cap at all. It
+peaks at **43**.
+Two independent causes, each of which makes `$!` name something other than the
+Python process: **`timeout 900 python3 …` forks** — `$!` is `timeout`, which is
+single-threaded and lives exactly as long as the thing you wanted to measure, so
+the loop samples happily and reports 1. And **`( cd "$dir" && env … python3 … & )`
+backgrounds the whole `cd && env` list as one subshell**, so `$!` is the
+subshell. Both survive `kill -0 $P` and both produce a full, non-empty sample
+series. The tell was available and was ignored for two rounds: a *capped* and an
+*uncapped* run reporting the identical thread count while their wall-clock
+differed by 1.8× is not a measurement, it is a constant.
+**Fix:** `cd` first as its own statement, background the bare interpreter with no
+wrapper, and take `$!` from that. Then the same loop reports 14 capped / 42
+uncapped for `tsfm_lens` and 15 / 43 for `tsfm_benchmark`, which is what the
+1.8× was always consistent with.
+**Lesson, and it is §11.3's ("measure first") failure mode one level in — the
+measurement itself was the thing that needed measuring.** Whenever a probe reads
+a process, a file, or an environment *indirectly*, validate it against a case
+whose answer you already know before believing any case whose answer you don't.
+Here that was free: a run known to be 1.8× faster must differ in the quantity
+being sampled, so a probe returning the same number for both had already failed a
+control that was sitting in the same terminal. Note the direction of the damage,
+which matches §11.33 and §11.37: the broken instrument did not error or return
+nothing — it returned a *specific, small, entirely reasonable* number, and would
+have been written into `CLAUDE.md` as a measured reason to skip work.
+
+### 11.43 A guard that names its own escape hatch, where the escape hatch was never wired
+Found 2026-08-30 by running `configs/smoke.yaml --force all` end to end rather
+than trusting that a flag documented in an error message works. `confirm`
+refuses to overwrite an existing `confirmation.json` — correct, load-bearing,
+and exactly what §6.7's "the private corpus is a consumable" requires. Its
+error message says: *"Rerun with --force confirm only if you understand that
+this constitutes a second look."* That did nothing. `--force` is a
+`pipeline.py` concept — it bypasses a stage's **skip predicate** — and
+`run_confirm` never received it, so `--force confirm` skipped the skip, ran
+the stage, and hit the same unconditional `raise`. `--force all` did not
+reach it either. The only way to re-run a confirmation was to delete the
+artifact by hand: an undocumented, unlogged, unrecorded path, which is
+precisely the one the guard exists to prevent. The guard did not fail open —
+it failed **closed onto a worse door**.
+**Fix:** thread the flag to where the guard lives (`Context.forced`, filled by
+`run_pipeline`; `run_confirm(..., forced: bool = False)` so every other caller
+keeps the guard by default), warn once at WARNING on a forced re-run, and
+record `repeated_look: true` in the artifact — because a log line scrolls away
+while the verdicts outlive it, and nothing else distinguishes a one-shot
+confirmation from a second look at the same series. The report renders that as
+a qualifier; a genuine first run carries none, since a banner that always
+renders trains a reader to ignore it.
+**Lesson, and it is a shape this file has not recorded before.** Every trap in
+§11 so far is a mechanism that produced a wrong number or a wrong refusal. This
+one produced *correct behavior with an unreachable remedy* — which is worse
+than a plain refusal, because the message convinces the reader the supported
+path exists and sends them to work around it instead. So: **an error message
+naming a flag is a claim about the code, and it must be tested like one.** The
+test that pins it has to assert the *pipeline* passes the flag, not that the
+function accepts it — a test calling `run_confirm(forced=True)` directly passes
+while the CLI stays broken, which was the actual state for as long as this
+existed. And note what found it: not the 906-test suite, which never invoked
+the CLI with that flag, but one end-to-end run of the cheapest config in the
+repo.
+
+### 11.44 A correctness guard scoped to "what you are running" misses what you are reading
+Found 2026-08-30, immediately after §11.43 and by the same method — running the
+cheapest config end to end instead of trusting a mechanism's description.
+`ROADMAP.md` §15 A3 built config fingerprinting so that editing a config and
+rerunning into the same `run.name` cannot silently mix two configs' artifacts.
+It works, and this file has recommended it for months. Its loop begins
+`if stage.name not in selected: continue` — it checks the stages **being run**.
+`report` declares `deps=[]` *deliberately*: it must render whatever artifacts
+happen to exist, which is exactly what makes `--stages l1,report` useful. So
+the one stage whose correctness depends entirely on *other* stages' artifacts
+was also the one stage the guard could not protect. `--stages report` after a
+config edit rendered a complete-looking 15-section report mixing fresh
+artifacts with stale ones and printed no warning at all.
+**Fix:** when `report` is selected, fingerprint-check every stage with
+artifacts on disk, not only the selected ones. The error message needed fixing
+in the same breath and for a related reason — it said "Rerun with `--force
+<name>`", but `--force` only bypasses the *skip predicate* of a **selected**
+stage, so following the instruction literally re-runs nothing and returns the
+identical error. It now names `--stages` as well.
+**Lesson.** A guard's scope is a design decision that must be stated in terms
+of *what could be wrong*, not *what is executing*. Dependency graphs answer
+"what must run before this"; they do not answer "what does this read", and for
+a renderer those are different sets — deliberately so. Two corollaries worth
+carrying: the negative case is as load-bearing as the positive (a guard that
+refused every report-only rerun would be worse than the bug, since re-rendering
+without recomputing is the most common thing anyone does here, so the test
+suite pins that too); and this is the second trap in two hours where a
+mechanism was correct and its *stated remediation* was not — see §11.43. When
+adding a guard, run its own error message as a command.
+**Postscript, same session: it was four, not two.** Grepping the package for
+the *pattern* rather than waiting to trip it found the A15 registry-freshness
+guard and `extraction/store.py`'s schema-version mismatch saying the same
+thing. All four are now covered by `tests/test_remediation_messages.py`, which
+requires any user-facing message naming `--force` to also name `--stages`,
+with a short exemption list for the sites where the stage is selected by
+construction. The general form is worth stating once: **`--force` is scoped to
+the selection, so any instruction to force a stage the reader has not selected
+is inert** — and more broadly, in a pipeline whose stages are individually
+selectable, any guard, dependency, or remedy expressed over *the selection* is
+silently narrower than one expressed over *the artifacts on disk*. That single
+sentence covers §11.43, §11.44, and the registry-freshness ordering trap
+(recompute a dev stage after `register` and `confirm` correctly refuses, but
+only `--stages register,confirm,report` fixes it — `register` declares no
+dependency on the dev stages, by the same design that gives `report`
+`deps=[]`).
+
+### 11.45 A reliability guard that catches a degenerate denominator cannot see an unforecastable numerator
+
+Found 2026-08-30 by a user reading an L3 case-study panel: the *forecast from
+clean input* was a near-flat line while the *true continuation* spiked, and the
+natural reading was that the pipeline plots one series as truth while feeding
+the model a different one — which, if true, would invalidate every MASE in the
+repo. Checked before being believed **or** dismissed (§2.4): keyed by the
+recorded `series_ids`, the stored target matches the corpus target exactly
+(`np.allclose` True) for both plotted series. The plumbing is correct.
+
+What the panel actually showed is one genuinely unforecastable series
+(`646d435a1d6c41a7`, mixture): context sd 0.443, future spiking to 11.31 — a
+**25.5× context-sd** excursion whose *timing* no model can recover from the
+context. So the flat forecast is the correct response and the large MASE is a
+ceiling, not a failure. Aggregate impact is small (4 of 288 series, 1.39%;
+corpus mean MASE 2.065 vs 2.042 excluding them), so no conclusion was at risk.
+
+**The gap this exposes is a blind spot in the existing guard, and it is
+structural rather than a missing threshold.** `mase_reliable` /
+`min_scale_frac` protects against a degenerate **denominator** — a series so
+flat that its naive-forecast error is near zero, making any MASE explode. It
+is arithmetically incapable of catching the *opposite* failure: a well-scaled
+denominator with an unforecastable **numerator**. Both produce a large MASE
+for a reason that is not model quality, and only one of them was measured.
+`future_excursion` (`analysis/l3_perturbation.py`) is the other half, rendered
+by `_excursion_clause` only above 3 sd — a caveat on every panel is read by
+nobody — and deliberately **not** a filter: these series are real, they belong
+in the aggregate, and dropping them would flatter every model equally.
+
+**A third defect, found only by calibrating against the real corpus rather
+than against the synthetic tests (§2.4 again, in the same session).** The first
+implementation measured deviation from the context *mean*. That is amplitude,
+not novelty — a series with an ordinary strong seasonal swing sits several
+standard deviations from its own mean at every peak. On this repo's own corpus
+it flags **21.88%** of series above 3 sd at a **median of 2.15**, versus
+**1.39%** at a median of **0.00** for the range-based version now shipped. The
+synthetic tests all passed against the wrong one, because every plant put its
+spike far from a *flat* context where the two definitions agree. Only a real
+corpus has strong seasonality, which is exactly where they diverge.
+
+**Three lessons; the last two generalize past this repo.**
+(1) A guard that normalizes by a quantity protects against that quantity being
+degenerate, in one direction. Ask explicitly what the *other* direction looks
+like and whether anything measures it; here nobody had, for as long as the
+metric has existed. (2) The report's own sampling can manufacture the
+appearance of a defect: the verbose picker samples family-stratified
+(correctly, since §11.38) but with no regard for forecastability, so it put a
+pathological series in 1 of 2 narrated panels where it read as representative.
+A gallery that selects *fairly* on one axis can still select *misleadingly* on
+an axis nobody thought to stratify — and the reader has no way to know which,
+so the panel has to say. Note what found it, again: not the 936-test suite,
+but a human reading rendered output and finding a picture that did not make
+sense.
+
+### 11.46 Two components can each degrade gracefully and jointly lose a whole family
+
+Found 2026-08-30 by smoke-building a new corpus config (`--max-count 6`)
+rather than launching the full build — the entire purpose of a smoke build,
+and it paid on the first run. All 7 tasks produced samples and all 5
+generators worked, so every per-component check passed. But
+`block_bootstrap`'s series ran **27–152 points** against an analysis needing
+**576**, and every one of them would have been dropped downstream.
+
+Neither side is buggy. `block_bootstrap` reorders **one** real series in place
+and has no `length` parameter, so its output length *is* its source's — a
+pooled Monash catalog spans yearly series of ~14 points beside
+multi-thousand-point hourly ones. And `tsfm_lens/data.py:95` skipping series
+below `context_len + horizon` is correct, deliberate, and exactly the
+graceful degradation §2.5 asks for. Each component does the right thing with
+what it is handed. The composition loses a family that the corpus manifest
+promises, the config documents at length, and no analysis ever sees — while
+the run completes normally and a full report renders.
+
+**Fixed at the seam, not in either component** (`sources.py::_filter_min_length`,
+opt-in `min_length` on a `source_config`), since every generator that inherits
+source length has the same exposure. Two properties are load-bearing: an absent
+key returns the *same list object*, so no sealed corpus's hashes move
+(invariant 1); and an empty result **raises**, because a task configured
+against sources that cannot satisfy it is a config error, and returning
+nothing resurfaces later as an unexplained empty family — the very failure
+being fixed.
+
+**Lesson, and it is the counterpart to §11.40.** There, a fix that widened one
+stage's view silently widened what it handed the next. Here, two stages each
+degrade *correctly* and the composition still loses data, because "I dropped
+what I could not use" and "I emitted what my source allowed" are individually
+reasonable and jointly a silent hole. So a graceful-degradation path is not
+self-evidently safe: for each one, ask what *else* has already degraded
+upstream, and whether the two together can empty a category rather than thin
+it. The cheap detector is the one that worked here — smoke-build any new
+corpus config at `--max-count` and check the **per-family length range**
+against the analysis's own `context_len + horizon`, before spending an hour
+on the full build. A per-family count alone would have passed: all five
+families were present, and four of the five were fine.
+
+**Postscript, same session: fixing it exposed the thing underneath it.** With
+`min_length: 576` on, the filter's own log line reported dropping **108 of 110**
+and **108 of 122** — the family was no longer short, but `block_bootstrap`
+(one source per sample) was now drawing from a pool of **two**. Surveying the
+catalog rather than raising the limit and hoping explained why and closed the
+workaround: most Monash domains are yearly/quarterly/weekly and inherently
+short, and every long *hourly* domain fails to load in this environment on the
+`'h'` frequency-alias bug in Monash's own loader script. `weather` is
+effectively the only Monash domain that can serve a 512-context analysis here
+(600 series, all ≥576). **So the second check belongs beside the first: a
+filter that saves a family can leave it technically present and statistically
+empty, and only the pool size says which.** Read the filter's own drop counts —
+they were printed both times and are the whole diagnosis.
+
+
+### 11.47 A bias that cancels in the comparison you render is invisible in the comparison you render
+
+Found 2026-08-30 by 14 `ConvergenceWarning`s in a 965-series run's log.
+`analysis/internals.py` fit the family probe with a hardcoded
+`LogisticRegression(max_iter=300)`, sized when corpora were ~288 series and
+never revisited. At 965 it stops at the cap rather than at the optimum.
+
+Measured before being changed (sec 2.4), against the run's own activation
+store at both budgets. An isolated harness over three layers of each of three
+models showed **every delta non-negative** (+0.0000 to +0.0078), the three
+already-converged layers moving **exactly 0.0** — consistent with the textbook
+reasoning that an under-converged fit *understates* accuracy. **Re-running the
+real stage end to end corrected that**: the deltas go **both ways** (−0.0026 to
++0.0026 over all 34 layers), since the stage samples and splits differently
+than the harness. The mechanism was right and the sign claim was not, which is
+worth keeping as its own small lesson: an isolated reproduction of a stage is
+evidence about the *mechanism*, not about the numbers the stage will actually
+produce. What holds either way is the magnitude — **max |delta| 0.0026**, an
+order of magnitude inside the bootstrap CIs — so nothing rendered changes, and
+**34 of 34 layers now converge** against 14 warnings before.
+
+**What makes this worth a trap is why it could have run indefinitely.** The
+permutation null (sec 16 E9) reruns the *identical* fit with shuffled labels,
+deliberately, so that the real probe is read against how high this exact
+architecture and split can score by chance. That is the right design. But it
+means an under-converged solver handicaps **both sides equally**, so the
+real-vs-null gap — the only quantity the report actually renders — is
+approximately unbiased while both of its terms are biased. A defect that
+cancels in the displayed comparison leaves no trace in the display. The one
+symptom was a stderr warning inside a run whose log is thousands of lines,
+which sec 2.5 already predicts is not "loud" for anything that outlives the
+terminal.
+
+**Fix:** the budget is a config knob (`internals.probe_max_iter`, default
+2000) and, more importantly, `converged` is **recorded per layer in the
+artifact**. The knob alone would have deferred this exact situation to the
+next corpus that outgrows 2000; recording the flag means that corpus says so
+in a file rather than in a log line. The test that pins it asserts the two
+budgets *disagree* — a flag that is always `True` records nothing.
+
+**Lesson, and it generalizes past this solver.** When a control is built by
+rerunning the identical procedure — a permutation null, a paired bootstrap, a
+matched baseline, an untrained twin — it buys robustness to any defect shared
+by both arms, and pays for it by making that defect unobservable in the
+result. So the shared procedure needs its **own** health check, reported
+separately from the comparison it serves: convergence, out-of-fold R2
+(sec 11.36's `adjustment_ok`, the same lesson for a difficulty basis),
+attainable ceiling (sec 11.35), degenerate spread (sec 11.37). Ask of any
+control: *if this step silently did nothing, or did something badly, which
+rendered number would look wrong?* If the honest answer is "none of them,"
+that step must publish a diagnostic of its own.
+
 
 ---
 

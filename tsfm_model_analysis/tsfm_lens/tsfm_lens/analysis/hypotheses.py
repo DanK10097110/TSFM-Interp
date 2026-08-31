@@ -137,9 +137,7 @@ def _l3_entries(run_dir: Path) -> list:
             "artifact": "l3/meta.json", "artifact_sha256": art_hash,
             "statement": f"Cross-model fingerprint agreement for corruption "
                         f"'{corruption}' = {val.get('value')}.",
-            "replicable": False,
-            "not_replicable_reason": "L3 replication (re-running the corruption battery on "
-                                    "private data) not yet implemented (sec 15 A15).",
+            "replicable": True,
         })
     return entries
 
@@ -205,6 +203,9 @@ def check_registry_freshness(cfg: PipelineConfig, registry: dict) -> None:
             "have since changed -- " + "; ".join(sorted(set(drifted))) + ". This means a dev "
             "stage ran again after registration, exactly the repeated-peeking discipline "
             "confirm exists to prevent (CLAUDE.md sec 6.7, ROADMAP.md sec 15 A15). Re-run "
-            "the 'register' stage (--force register) to re-register against the current "
-            "artifacts -- understanding that this starts a fresh pre-registration, not a "
-            "continuation of the old one -- or restore the original dev artifacts.")
+            "the 'register' stage to re-register against the current artifacts:\n  "
+            "--stages register,confirm,report --force register,confirm,report\n"
+            "-- understanding that this starts a fresh pre-registration, not a "
+            "continuation of the old one -- or restore the original dev artifacts. "
+            "(--force register ALONE does nothing: force bypasses a SELECTED stage's "
+            "skip, so 'register' has to be in --stages too.)")

@@ -49,6 +49,57 @@ def test_changed_config_key_is_refused_then_force_resolves():
     assert manifest_window == 16
 
 
+def test_report_only_rerun_is_refused_when_an_upstream_stage_went_stale():
+    """The gap this closes: `--stages report` skipped the guard by skipping the stage.
+
+    The staleness check used to consider only SELECTED stages. `report`
+    declares `deps=[]` on purpose -- it must render whatever artifacts exist,
+    which is what makes partial runs useful -- so a stale upstream stage it
+    *reads* was invisible to a dependency-based check. Editing a config and
+    rerunning `--stages report` therefore rendered new artifacts beside old
+    ones from a different config, with no warning: exactly the "looks
+    complete, isn't" failure sec 15 A3 exists to prevent, on the one path
+    that avoided the guard entirely.
+    """
+    out = tempfile.mkdtemp()
+    run_pipeline(_cfg(out, window=32))
+
+    with pytest.raises(ValueError, match="stale artifacts"):
+        run_pipeline(_cfg(out, window=16), stages=["report"])
+
+
+def test_report_only_remediation_names_stages_not_only_force():
+    """`--force X` alone does nothing for a stage outside the selection.
+
+    Load-bearing: the message must not send a reader in a circle -- force the
+    named stage, watch nothing re-run, hit the identical error.
+    """
+    out = tempfile.mkdtemp()
+    run_pipeline(_cfg(out, window=32))
+
+    with pytest.raises(ValueError) as exc:
+        run_pipeline(_cfg(out, window=16), stages=["report"])
+    msg = str(exc.value)
+    assert "--stages" in msg and "--force" in msg
+    assert "--allow-stale" in msg
+    # The remediation must actually work, which is the only thing that
+    # makes it a remediation rather than a suggestion.
+    stale = [n for n in stage_names() if n in msg.split("Rerun with")[1]]
+    assert "extract" in stale
+
+
+def test_report_only_rerun_is_fine_when_nothing_upstream_changed():
+    """The negative: an unchanged config must still allow a cheap re-render.
+
+    A guard that refused every report-only rerun would be worse than the bug
+    -- re-rendering a report without recomputing anything is the single most
+    common thing anyone does with this pipeline.
+    """
+    out = tempfile.mkdtemp()
+    run_pipeline(_cfg(out, window=32))
+    run_pipeline(_cfg(out, window=32), stages=["report"], force={"report"})
+
+
 def test_allow_stale_proceeds_without_raising():
     out = tempfile.mkdtemp()
     run_pipeline(_cfg(out, window=32))

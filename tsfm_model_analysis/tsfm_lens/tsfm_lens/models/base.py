@@ -398,6 +398,25 @@ class ModelAdapter(ABC):
                              f"than expected {expected} tokens")
         return slice(0, expected)
 
+    def forecast_reads_patched_positions(self) -> bool:
+        """Whether the forecast head reads the positions `token_slice` writes.
+
+        Load-bearing for every intervention built on `token_patch` -- the skip
+        lens, L3 activation patching, and the SAE forecast-preservation check
+        all overwrite `token_slice` positions and then read `predict()`. That
+        measures nothing at all if the head's readout is somewhere else, and
+        the failure is silent: the forecast simply comes back bit-identical,
+        which renders as a flat depth curve rather than as an error.
+
+        Default True, because a model whose forecast continues its context
+        necessarily reads context positions. An adapter must return False when
+        its head reads positions that carry no time span -- an encoder that
+        appends forecast placeholders and slices only those, say -- so the
+        pipeline can decline the measurement instead of reporting a
+        no-op as a result.
+        """
+        return True
+
     def hidden_size(self) -> Optional[int]:
         """Best-effort hidden dimension, resolved from the first capture on the fly if unknown."""
         return None

@@ -114,3 +114,106 @@ def test_permutation_shuffles_at_the_series_level_not_the_window_level():
     null = _family_probe_permutation_null(cfg, x, families, train_mask, val_s,
                                           n_windows, n_perm=3, seed=10)
     assert null["n_perm"] == 3
+
+
+def _hard_to_converge(n_series: int = 80, n_windows: int = 4, d: int = 6,
+                      seed: int = 11):
+    """Near-separable data: the logistic loss has no finite minimizer, so the
+    solver runs until it hits its iteration cap rather than converging."""
+    rng = np.random.default_rng(seed)
+    families = np.where(rng.integers(0, 2, size=n_series) == 0, "A", "B")
+    row_labels = np.repeat(families, n_windows)
+    x = rng.normal(scale=0.01, size=(n_series * n_windows, d)).astype(np.float32)
+    x[:, 0] += np.where(row_labels == "A", 50.0, -50.0)
+    return x, families, row_labels
+
+
+def test_probe_records_whether_its_solver_converged():
+    """`converged` is a recorded fact, not a log line (`CLAUDE.md` sec 2.5).
+
+    An under-converged fit UNDERSTATES probe accuracy, so a corpus that
+    outgrows the iteration budget makes a model's internals look less
+    decodable than they are -- and because the permutation null reruns the
+    identical fit, the bias cancels in the real-vs-null gap the report
+    renders and is invisible there. The artifact has to say so.
+    """
+    x, families, row_labels = _hard_to_converge()
+    cfg = _cfg()
+    train_mask, val_s = _series_split(len(families), 4, seed=12)
+
+    cfg.internals.probe_max_iter = 1
+    starved = _family_probe(cfg, x, row_labels, train_mask, val_s, 4)
+    assert starved["converged"] is False, "a 1-iteration budget must report False"
+
+    cfg.internals.probe_max_iter = 5000
+    ample = _family_probe(cfg, x, row_labels, train_mask, val_s, 4)
+    assert ample["converged"] is True
+
+    # The flag must not be a constant: the two runs disagree, which is the
+    # only thing that makes recording it worth anything.
+    assert starved["converged"] != ample["converged"]
+
+
+def test_probe_max_iter_is_read_from_config_not_hardcoded():
+    """The budget is a config knob. Pinned because the historical value was a
+    literal `300` that silently failed to converge on a ~1000-series corpus.
+    """
+    x, families, row_labels = _hard_to_converge(seed=13)
+    cfg = _cfg()
+    train_mask, val_s = _series_split(len(families), 4, seed=14)
+
+    cfg.internals.probe_max_iter = 1
+    assert _family_probe(cfg, x, row_labels, train_mask, val_s, 4)["converged"] is False
+    # If the call site ignored the config and used its own constant, raising
+    # the knob could not change the outcome.
+    cfg.internals.probe_max_iter = 5000
+    assert _family_probe(cfg, x, row_labels, train_mask, val_s, 4)["converged"] is True
+
+
+def test_converged_is_reported_on_the_bootstrap_path_too():
+    """`cfg.stats.enabled` picks a different return path; both must carry it."""
+    x, families, row_labels = _hard_to_converge(seed=15)
+    cfg = _cfg()
+    cfg.stats.enabled = True
+    cfg.stats.n_boot = 20
+    cfg.internals.probe_max_iter = 1
+    train_mask, val_s = _series_split(len(families), 4, seed=16)
+    out = _family_probe(cfg, x, row_labels, train_mask, val_s, 4)
+    assert "value" in out and "lo" in out, "bootstrap fields must survive"
+    assert out["converged"] is False
+
+
+def test_permutation_null_is_unaffected_by_the_extra_key():
+    """The null reads only `result["value"]`; adding a key must not break it."""
+    x, families, row_labels = _hard_to_converge(seed=17)
+    cfg = _cfg()
+    cfg.internals.probe_max_iter = 50
+    train_mask, val_s = _series_split(len(families), 4, seed=18)
+    null = _family_probe_permutation_null(cfg, x, families, train_mask, val_s,
+                                          4, n_perm=5, seed=19)
+    assert null["n_perm"] == 5
+    assert len(null["acc_null_values"]) == 5
+    assert all(0.0 <= a <= 1.0 for a in null["acc_null_values"])
+
+
+def test_report_names_a_capped_solver_only_when_one_was_capped():
+    """The clause is a diagnostic, so it must be absent on a healthy run.
+
+    A caveat that always renders trains a reader to skip it (`CLAUDE.md`
+    sec 11.43's banner lesson), and this one exists precisely because the
+    defect it names is invisible in the real-vs-null gap beside it
+    (sec 11.47).
+    """
+    import re
+    src = Path(__file__).resolve().parents[1] / "tsfm_lens" / "report" / "report.py"
+    text = src.read_text(encoding="utf-8")
+    assert "hit its iteration cap at" in text, "the clause must exist"
+    # It must be guarded by a count of actually-unconverged layers, not
+    # appended unconditionally.
+    guard = re.search(r"n_unconverged = sum\(.*?if n_unconverged:", text, re.S)
+    assert guard, "the clause must be gated on a measured count"
+    assert "hit its iteration cap at" not in guard.group(0), \
+        "the clause must sit inside the guard, not before it"
+    # And the count must key off `is False` -- a layer whose flag is missing
+    # (an older artifact) is unknown, not unconverged.
+    assert 'q.get("converged") is False' in text
