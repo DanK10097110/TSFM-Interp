@@ -16,6 +16,7 @@ import pandas as pd
 
 from ..sae.ground_truth import encode_series_level
 from ..sae.train import load_sae_checkpoint, sanitize
+from ..utils import sample_rows
 
 
 def select_feature_exemplars(features: np.ndarray, series_ids: np.ndarray, feature_idx: int,
@@ -69,11 +70,22 @@ def build_exemplar_table(features: np.ndarray, series_ids: np.ndarray, matched_f
 def build_run_exemplars(cfg, store, model: str, layer: str, sae_entry: dict, gt: pd.DataFrame,
                         meta: pd.DataFrame, top_features: int = 5,
                         top_examples: int = 5) -> pd.DataFrame:
-    """I/O wrapper: load the run's saved checkpoint, encode series-level features, build the table."""
+    """I/O wrapper: load the run's saved checkpoint, encode series-level features, build the table.
+
+    `rows` is drawn with the same family-stratified `sample_rows` call
+    `ground_truth.py::ground_truth_alignment` uses (same `n`, same
+    `cfg.run.seed + 12` offset) rather than a `[:n]` head slice on a corpus
+    written grouped by task (`ROADMAP.md` §11.38/§25.1(8)) -- the two calls
+    coincide today only because `ground_truth_max_series` (2000) exceeds
+    every corpus built so far (965 max); the first corpus above 2000 series
+    would otherwise put this table's `activation` column and the artifact's
+    `rho` column on different series sets.
+    """
     ckpt_path = cfg.run_dir() / "sae" / sanitize(model) / f"{sanitize(layer)}.pt"
     sae = load_sae_checkpoint(str(ckpt_path))
     matched = sae_entry.get("ground_truth_alignment", {}).get("features", [])
-    n = min(len(meta), cfg.sae.ground_truth_max_series)
-    series_ids = meta["series_id"].to_numpy()[:n]
-    features = encode_series_level(sae, store, model, layer, np.arange(n), "cpu")
+    rows = sample_rows(len(meta), cfg.sae.ground_truth_max_series, cfg.run.seed + 12,
+                       strata=meta["family"].to_numpy())
+    series_ids = meta["series_id"].to_numpy()[rows]
+    features = encode_series_level(sae, store, model, layer, rows, "cpu")
     return build_exemplar_table(features, series_ids, matched, meta, gt, top_features, top_examples)

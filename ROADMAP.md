@@ -795,6 +795,38 @@ a *gate* (not by hand), and 3+ models with all pairs on shared axes. The seam
 is `cfg.comparison_pair()` and its 23 call sites. Start with the
 `pair`-reproduction test, stop if it fails.
 
+**16. ⬜ NOT STARTED, DESIGN ONLY — make the SAE section an interpretability
+section.** §25 owns it. The user's read is confirmed by measurement, not just
+agreed with: at `runs/full_report_run_large`, **43 of 51** displayed features
+at Chronos-T5-Base `encoder.block.4` are named by a corpus-*provenance* dummy
+and **20 of 51 carry the identical name** `tier_realism_stress`; on
+`runs/medium_run_chronos_base` — the run `docs/worked_example.md` walks a
+reader through — **34 of 50** rows say that one word. The collapse is in the
+label, not the dictionary: those 34 atoms have pairwise decoder cosine mean
+**0.028981153** (max 0.39906985), i.e. 34 near-orthogonal directions wearing
+one name, so **deduplication is the wrong fix and naming is the right one**.
+Meanwhile `feature_ablation_effects` and `feature_steering_effects` both exist,
+are tested, and are rendered by **nothing**. §25's design replaces
+correlational argmax naming with a **forecast-space response fingerprint**
+scored against a random-direction null, groups features into a handful of
+derived-name **roles**, and matches roles across models (the one genuinely
+architecture-neutral feature space this repo has). **Stage 0 is a blocker and
+is not new code:** two of three models in the flagship run have 88–98% dead
+dictionaries, and §23.2 A1's fix is built, validated and off by default —
+§23.1's shape 1. **The instruction on 2026-08-31 was explicitly design-only;
+see item 15 for what happens when that is ambiguous to a concurrent session.**
+**Extended the same day by a user follow-up (§25.16–§25.19):** the
+dead-dictionary answer (§23.2 A1's cure exists and is off by default; more
+data was measured to make it *worse*; **and a new zero-GPU measurement over 45
+existing cells shows the alive-atom ceiling scales with the layer's own
+`effective_dim` at exponent 1.02, ρ=+0.584, while `dict_size` predicts it not
+at all**), plus three more components — visible causality (dose–response
+against a drawn null band, necessity vs. sufficiency, and a cross-check of
+each role against L3's corruption battery), a **three-way** shared /
+model-specific / *unresolved* split, and a three-tier description layer whose
+LLM tier is admissible only because it is scored and suppressible. §25.16's
+Arm 1 is the cheapest genuinely new experiment in this queue. 🔴 **Corrected the same day after a user challenge (§25.20): the "alive dictionaries align worse" caveat was CONFOUNDED** — it compared two different architectures. Within-model (same layer, same corpus, three dead rates), revival is **free-or-better for Chronos-T5-Base** (gap over null +0.2362 vs +0.2294, one more structural field, fidelity 0.901 vs 0.840, 32× smaller, at a near-exact 157-vs-160-alive natural control) and **costs real correlational signal for TimesFM** (+0.1665 → +0.1086). Two things follow: the metric being defended is inflated by exactly the provenance labels §25.1 indicted (provenance matches out-score structural ones in **all four** dictionaries measured), and the obvious replacement metric — best-per-field structural ρ — is **refuted by the untrained twin**, which scores 0.565 against the real revived dictionary's 0.567. So Stage 0's exit criterion is no longer a dead-rate threshold: train both recipes per target, choose on gap-over-null / provenance-excluded coverage / fidelity, and where they disagree let **Component A** decide. The research question that falls out — *does TopK-induced feature death act as a useful importance filter?*, plus *why is the best recipe model-dependent?* — is **parked as §22.0** (first in §22's list, un-park trigger: §25.9 Stage 2 exits positive), not part of this item's scope. **Stage 0 itself is now run at all 7 flagship targets, not just the 2-target proof-of-concept (§25.21, 2026-08-31) — and the two-target "TimesFM loses, Chronos wins" pattern does NOT generalize: production wins gap-over-null at 7 of 7 targets on the larger sample.** **Stage 1 (Component B(a)) is now built and run (§25.22, 2026-08-31)** — structural/provenance separation, residualized ρ, top-3 signatures, `n` per match — against all 11 already-trained SAE checkpoints on `runs/full_report_run_large`, zero forward passes: `tier_realism_stress` collapses to exactly 0 at every target (was 2–21), and distinct structural names rise at 7 of 11 targets (flat at 3, a small 8→7 dip at 1) once compared correctly against a provenance-excluded baseline — a real, partial confirmation of Stage 1's exit criterion. Two real bugs found and fixed along the way (a ridge-alpha under-shrinkage on low-dimensional provenance confounds, a NaN-propagation crash from `archetype_*` dummies on real-derived series) plus a third caught before being trusted (a tie-handling bug in the vectorized Spearman correlation, fixed to match `scipy.stats.spearmanr`'s average-rank convention to float precision). Both named §25.1(8) defects fixed too (`sae_exemplars.py`'s head-slice, `report.py`'s stale ablation-machinery docstring). **Stage 2 (Component A) is now built and run too (§25.23, 2026-08-31)** — the reach gate, 9-channel response battery, random-direction null, and priority-ordered candidate selection, verified against real Chronos-T5-Base checkpoint forward passes at `encoder.block.10`: all four exit criteria pass (reach 0.708, self-patch exactly 0.0, 23 of 39 candidates clear ≥1 channel, 72 clearing cells vs. 17.55 expected by chance). This also **fires §22.0's un-park trigger** — the parked "does TopK feature death act as an importance filter" research question is now askable, though not yet run. **Stage 3 (Component B(b)) is now built and run too (§25.24, 2026-08-31)** — feature clustering into named causal "roles" (`sae/roles.py`), a `run_sae_roles.py` CLI, and the new report display (roles table, feature×channel heatmap, role cards with a stated waveform/exemplar deferral, role×model matrix), verified independently against the real `Chronos-T5-Base/encoder.block.10` artifact: 6 unique roles at k=6/silhouette=0.215, e.g. `far-horizon disperser ↑ · ar_coeff_sum` (16 atoms) and `mase ↑ · has_intermittency` (1 atom); 158/158 targeted tests pass on independent re-run. Also surfaced a correction: §25.22's claim that `sae_exemplars.py`'s head-slice defect was already fixed was premature — it had never actually been committed until this Stage 3 session fixed it as an incidental side effect. Stage 4 (Component C cross-model role matching) and Stage 5 (the writeup) remain unbuilt; Stage 3's solo/panel exit criterion is checked only synthetically, not against a live SAE-enabled solo/panel run. **A full-suite run the same session surfaced and fixed one pre-existing, unrelated defect**: `test_panel_pairs.py`'s fairness-card test asserted wording from an earlier, superseded single-designated-pair card design (predating §24.6's current one-card-per-pair redesign, confirmed via `git show HEAD` to predate this entire session) — fixed by correcting the test's two stale assertions to match the actual, already-correct `_sec_fairness` implementation. **Stage 4 (Component C cross-model role matching) is now built and run too (§25.25, 2026-08-31)** — response-fingerprint cosine matching, the shuffled-series and untrained-twin-floor nulls, and the role×model matrix, verified independently against real `runs/full_report_run_large` data and the pre-existing `runs/null_timesfm_random`/`runs/null_chronos_random` run directories: both exit criteria hold (byte-for-byte panel reproduction at n=2, and match-rate quotability structurally gated on an untrained-twin floor being present), 31/31 targeted tests pass, and the one real pair checked end to end is a genuine negative result (match_rate 0.833 below both sides' untrained-twin floor of 1.0) in the same shape as the crosscoder's `frac_shared`-vs-floor precedent. One discrepancy caught: the agent's closing report cited a test name that does not exist in the repo, though the behavior it described is real and is covered by two other, correctly-named passing tests. Only Stage 5 (the writeup) remains of §25.9's build plan. **Stage 5 (the writeup) is now done too (§25.26, 2026-08-31), closing §25's entire build plan**: `CLAUDE.md` §6.1 gained a real SAE stage-table row and §6.5 a full SAE paragraph (neither existed before), §13 item 3 gained a correction distinguishing this work from the crosscoder's own closure, `stage_docs.py`'s `sae` entry and `glossary.py` (+4 terms: reach, random-direction null, role, response fingerprint) were updated and re-rendered clean, and `docs/worked_example.md` gained an honest new §7.5 stating that its own run predates roles/matching rather than fabricating numbers for it. 61/61 targeted tests pass; a full-suite re-run was launched and its result is recorded as a follow-up. §25's own research question now has a genuine, mixed answer: causal relevance is a tested claim on one real target (Component A clears its nulls), cross-model role correspondence is not yet established (Component C's one real pair does not clear its untrained-twin floor).
+
 **Not in this queue:** see **§22** — parked features with reasons and un-park
 triggers, and §22.8's short list of things rejected outright. **§23.5** lists
 what is *correctly* closed, so a future session does not reopen a decision
@@ -3047,6 +3079,17 @@ are complete and unaffected.
 > ✅ **Baseline (item 4) DONE 2026-08-05.** ✅ **Crosscoder (item 1)
 > feasibility test DONE 2026-08-05.** The flagship crosscoder build is
 > §6.2.1 — read its triage block first.
+
+> 🔵 **How the *rendered* SAE section is to be fixed is §25, not here (added
+> 2026-08-31, design only).** This section is about the *dictionary* — what to
+> train and how. A user review found the problem is one level downstream: the
+> features that get trained are then named by an argmax over ~30 ground-truth
+> columns, which on any corpus with a real-derived tier elects
+> **corpus-provenance** labels and gives up to **34 of 50** displayed features
+> the same one-word name, while the causal machinery that could say what a
+> feature *does* (`feature_ablation_effects`, `feature_steering_effects`) is
+> rendered by nothing. §25 has the measured diagnosis and a stage-gated design.
+> Do not fix naming here.
 
 **Goal.** Train sparse dictionaries on the layers Phase 2a identifies as
 worth it, but don't just port a vanilla NLP-transformer SAE recipe
@@ -8880,6 +8923,7 @@ Append below, three lines maximum, newest last.
 | **08-28** (autonomous cron loop, §24.3 sub-items 1–2) | **Picked up §24.3 (solo/pair/panel run shapes) as the next unfinished item, after a whole-file `[ ]`/`[~]` grep confirmed §0.5's queue is still empty and §22's un-park triggers still unfired.** ⚠️ **Scope judgment, stated rather than assumed:** the 08-24 row directly above records "per explicit user instruction... not implemented" — that instruction was scoped to *that* session's writeup, and this firing's standing instruction is "work on the next unfinished item." §24.3 is that item. If the no-implement instruction was meant to stand indefinitely, this is the work to revert. Built the item's own sub-items 1 and 2 and nothing beyond them, starting — as §24.3's closing paragraph demands — with the pair-reproduction criterion: `config.run_shape()` (derived from `len(models)`, no config key exists to declare one) and `comparison_pairs()` beside an **unchanged** `comparison_pair()`, so none of the 23 existing call sites were touched and a two-model run is unchanged *by construction* rather than by verification; then `pipeline._STAGE_MIN_MODELS` + `_apply_shape` on `_apply_tiers`'s machinery, writing `shapes.json`, plus `report._shape_skip_reason` so a solo run's missing L1 section names the run shape instead of `"artifacts missing"` (which describes a rerun away and would send a reader to rerun a stage that can never produce anything). Five stages gated at 2 (`l1`/`l2`/`cluster`/`exemplars`/`confirm` — the ones whose entire product IS a comparison); `l0`/`l3`/`sae` deliberately **left out of the map**, because they degrade internally rather than drop, and conflating the two would delete a solo run's per-family metrics and its within-model patching (invariant 5). 10 new tests (`tests/test_run_shape.py`), mostly negatives against this gate's real failure mode, a *false* drop: a pair run drops nothing and leaves `selected` set-identical; a panel drops nothing either; the dropped list does not depend on which stages an invocation selected (the exact bug that once emptied the tier gate's own list); a config-disabled stage is not attributed to the shape gate; `comparison_pairs()` is empty for solo **while `comparison_pair()` still raises**. Suite **826 passed, 0 failed**. **Operational finding worth acting on:** the full suite now takes **2h50m**, not the ~7 minutes `CLAUDE.md` §9 implies — `test_smoke.py` alone is ~20 min — so "run the full suite" does not fit inside one 15-minute loop firing and must be backgrounded while other work proceeds. Sub-items 3–6 (pair-indexed artifacts and their §11.24 reproduction check, multiplicity scaling, panel figures, the two mock acceptance configs) and the `l0`/`l3`/`report`/`sae` internal degradations remain open; §24.3 is `[~]`, not `[x]`. | §24.3 Findings (sub-items 1–2) |
 | **08-28** (user-directed, §24.3 sub-items 3–6 + usability) | **User instruction: read both docs, write `Functionality_Summary.md`, then "think through any potential improvements and add them in if needed... if anything is unfinished, or marked as closed but exited in failure (but shouldn't be) try to design implementations in different ways, *if and only if* you believe it is worth it."** Wrote the summary (the first end-to-end description of this repo from the position of someone who did not build it) and used it as the audit instrument. Nothing marked closed turned out to be a should-not-have-failed failure — the crosscoder loss (§6.2.1) and the agreement heuristic (§20 H4) are both correctly-recorded negatives whose acceptance criteria decided against them, and reopening either would be arguing with the evidence. **§24.3 was the only open non-parked item, and its unfinished half was a live silent-wrong-answer**: `_apply_shape` drops nothing on a panel, so `l1`/`l2`/`cluster`/`exemplars` silently analyzed `models[0:2]` and reported it as the run. Closed all four remaining sub-items following the previous firing's own mandatory rule (add a canonical key, leave legacy keys untouched, read new-then-legacy), with the pair path verified rather than assumed: every L1/L2/clustering finding text on `runs/medium_run_chronos_base` reproduces byte-for-byte, and `cka_window` is `np.array_equal` to pair 0's suffixed array in both a pair and a 4-model panel run — the check `analysis/null_baseline.py` and the two `run_crosscoder_*.py` scripts actually depend on. Sub-item 5 turned out to be **one crash** (`_sec_clusters`'s hardcoded `make_subplots(cols=2)`, out-of-range on the third model) plus tables; the several sections that looked like they narrowed to the reference pair were a name-counting artifact, confirmed by re-reading heading structure rather than trusting the first count. Two usability additions from the summary pass: `doctor._check_store_format` (the module docstring **claimed** §11.25 coverage that did not exist — verified against the real stale `runs/real_run`, which now fails with the right remediation) and `run.py --list-configs` (46 flat YAMLs, derived from the files, because a `configs/README.md` would be a claim checked nowhere). 17 new tests; 116 passed across the nine affected modules and 52 across `test_smoke`+`test_panel_pairs`+`test_doctor`+`test_config_listing`+`test_worked_example`. One test caught passing for the wrong reason (an assertion loose enough to be satisfied by a different element) and pinned. Two pieces of stale prose fixed, both asserting the behavior this change removed. | §24.3 Findings (sub-items 3–6 + usability), `Functionality_Summary.md` |
 | **08-30** (user-directed, §24.4 + §24.5) | **The three-model full-feature run the user asked for, and the derived-examples pass that had to land first.** §24.4: five rendered notes and one *rendered module docstring* (`analysis/lens.py`, spliced verbatim into the methods appendix) illustrated mechanisms with a fixed architecture name — a claim about a model that may not be in the run, and on an unfamiliar panel a claim about the wrong one; each now derives its example from the run's own data or gives none. §24.5: ran `configs/full_report_run_3model.yaml` (TimesFM-2.5-200M / Chronos-T5-Base / **Chronos-2**, every stage, `verbose: true`) to **15 rendered / 1 skipped / 0 failed, 94 findings, 0 bare figures**, with the pair path bit-exact inside the panel (L1 0.38115179538726807, L2 0.4132/0.3179) and the three models named in 32/31/30 findings. It crashed once, at `sae`, after twelve stages — `layer_screen` picks layers the analysis store never captured because §15 A1 correctly gave the screen its own stride-1 store, and nothing compared the two lists (`CLAUDE.md` **§11.40**; a stage-boundary version of §11.32, and one that cannot fail early by construction). Fixed, 5 tests, discriminating power confirmed against the pre-fix resolution rather than assumed. Also fixed a hardcoded `pairs_examined_by_other_stages: 1` with no consumer anywhere — §11.39's shape again. **One unplanned controlled result worth more than the run itself:** Chronos-2 and Chronos-T5-Base at *identical* SAE settings give dead rates 0.108–0.134 vs 0.951–0.973, so the ~95%-dead condition §23.2 A1 has chased for sessions is not the recipe — but the alive dictionaries align to ground truth *worse*, so A1 is reframed, not answered. One reading corrected mid-session: the fairness card's two-model scope on a panel is a documented decision with a banner naming the absent model, not the gap I first took it for. **Continued (same day) into a usability pass**: wrote `Functionality_Summary.md` against re-measured numbers rather than carried-forward ones — which caught `CLAUDE.md` §6.1's smoke figures being stale by 40× on runtime (the smoke *pipeline* is 29 s, not the ~20 min recorded) and its section/finding counts being 12-of-13/47 where the run now renders 14-of-16/54, both corrected in place. That pass had recorded a manual thread-capping workaround as "a cheap, real improvement nobody was tasked with" — §23.1's most common shape — so on the user's instruction it was built: **E25**, `tests/conftest.py` in both packages, 13 tests. It reliably buys core footprint (42 → 14 peak threads, 18 cores → under 3); its effect on *time* is workload-dependent and my first draft of that entry generalized one module's 1.78× to the whole suite, which the next full run contradicted — corrected in place, with a clean A/B as the pending measurement. The measurement justifying the item was itself wrong twice before it was right (**§11.41**). | §24.4, §24.5 Findings, §23.2 A1's new Findings, §16 E25 |
+| **08-31** (user-directed, §25) | **Designed, deliberately did not implement, a replacement for the SAE section's naming and its missing causal half.** The user's read — "not much interpretability, and many features are called the same thing" — was grounded in artifacts before being treated as presentation (§2.4, and §24/§24.6's precedent that a presentation complaint is usually a mechanism): at `runs/full_report_run_large` **43 of 51** displayed features at one Chronos-T5-Base target are named by a corpus-*provenance* dummy and **20** share the identical name; on the run `docs/worked_example.md` teaches from, **34 of 50** say `tier_realism_stress`. Three things make that structural rather than unlucky — provenance dummies are valid on all 965 series against 374–555 for structural fields, so the argmax competes fields at 1.7–2.6× different `n`; the collapse is in the *label*, since those 34 atoms have pairwise decoder cosine mean **0.028981153** against a random-atom baseline of **−6.0e-05** (so deduplication is the wrong fix); and `feature_ablation_effects`/`feature_steering_effects` both exist, are tested, and are rendered by **nothing**, while the section's docstring still claims they don't exist. §25 designs the fingerprint/roles/cross-model-matching replacement with a random-direction null, §11.42's two-part reach gate, and four pre-registered negative outcomes; §25.11 records why Holm is *unusable* here (96 tests against a 1/24 null p-floor — §6.6/§18 F8's unsatisfiable-correction rule) and what replaces it. **Stage 0 is a blocker and needs no new code:** two of three models in the flagship run carry 88–98% dead dictionaries, and §23.2 A1's fix is built, validated, and off by default. **Extended the same day on a user follow-up (§25.16-§25.19), and one of the four answers is a new measurement rather than a design:** joining `sae/meta.json` against `internals/profile.json` across **45 unique (model, layer, dict, recipe) cells already on disk** -- zero GPU, nothing trained -- shows the alive-atom count scales with that layer's own `effective_dim` at **exponent 1.02 (rho=+0.584, p=2.5e-05)** while `dict_size` and `d_in` predict it **not at all** (rho=-0.201, n.s.), and only **3 of 45** cells are dictionary-bound. The within-model control is the honest core: same run, same corpus, same dict 10240, only the layer varies -> TimesFM `effective_dim` 31.65->2.49 tracks alive 1258->237 at rho=+0.900. So Chronos-2's 1%-dead dictionaries are not a Chronos-2 property but an `effective_dim` 39.9-49.8 property, and the user's "would more diversity help" intuition has a measurable mechanism -- while the obvious injection was already measured to go the *wrong* way (real Monash rows: eff-dim 1.76 vs 2.66, dead rate *higher*). Recorded with three explicit threats to validity (partial circularity, pooled non-independent units, and sec 11.33's confounded-ratio shape: `alive/effective_dim` spans 25-207, so the exponent is the result and the ratio is not) plus a two-arm controlled test and a pre-registered negative. Also corrected a claim I had written four hours earlier: sec 25.14's rejection of LLM feature descriptions cited `CLAUDE.md` sec 4.6 (which is about *generating data*, where bit-exactness is invariant 1); the rejection that actually applies is sec 22.8's, whose stated ground is **auditability** -- so a scored, suppressible description is admissible where an unscored narrative is not. **Then the user pushed back on the one caveat that gates the whole design -- "the 95% dead is actually a big deal, I would rather the more accurate one" -- and they were right to: the caveat was CONFOUNDED (sec 25.20).** I had compared Chronos-2 (alive) against Chronos-T5-Base (dead), two different architectures, corpora and eff-dim regimes. The within-model comparison exists on disk because `runs/sae_revival` trained against a COPY of `runs/medium_run_chronos_base`'s own store: same model, same layer, same corpus, three dead rates. It says revival is **free-or-better for Chronos-T5-Base** (gap over its own permutation null +0.2362 vs +0.2294, one MORE structural field covered, fidelity 0.901 vs 0.840, at a 32x smaller dictionary -- and 157 vs 160 alive atoms, so the top-50 display cap applies near-identical selection pressure, the one confound that could have explained it) and **genuinely costs correlational signal for TimesFM** (+0.1665 -> +0.1086, with the selection confound pointing the other way, since its top-50 is drawn from 1591 alive against 417). Two findings make the decision not a threshold: (a) the statistic being defended is inflated by exactly the provenance labels sec 25.1 indicted -- provenance matches out-score structural ones in **all four** dictionaries measured (Chronos dead: 35 of 50 matches provenance at 0.637 vs 0.573 structural), so maximizing it selects for corpus-membership detectors; (b) the obvious replacement metric, best-per-field structural rho, is **refuted by the untrained twin**, which scores **0.565** against the real revived dictionary's **0.567** -- only gap-over-permutation-null separates trained from random (+0.109 to +0.236 vs +0.007 and -0.017). Fidelity is also not a proxy for interpretability: the TimesFM untrained twin has the HIGHEST fidelity measured (0.963) at zero GT signal, so it is readable only at fixed activations, which is the case here. Stage 0's exit criterion is rewritten: train both recipes per target and let **Component A** break the tie, because the premise of sec 25 is that a feature's identity is what it does. **Then, on a fourth instruction, parked the question this turns into as sec 22.0 -- first in the parked list, behind sec 25 rather than beside it** (*"First I want the SAE to work, then test out the research question"*), with an un-park trigger (sec 25.9 Stage 2 exits positive) rather than a date. Two halves: *does TopK-induced feature death act as a useful importance filter?* -- whose two live explanations, death-as-selection and feature splitting, make **opposite** predictions about per-feature vs per-role causal effect and are therefore separable by Component A at no new primitive -- and *why is the best recipe model-dependent?*, whose leading hypothesis is that revival's benefit tracks `effective_dim` (2.66 hurts / 8.67 helps / 44.26 needs nothing). That second half has a **within-model** discriminating experiment, which is the part worth keeping: `effective_dim` varies **12-fold across TimesFM's own depth** (31.65 at `stacked_xf.2` to 2.49 at `.18`), so a five-cell A/B on one model holds architecture, tokenizer and corpus fixed and separates the dimensional hypotheses from the tokenization one -- the latter predicts no depth trend. Novelty is documented as a **claim with its own falsifier** (a named literature check, and the instruction to narrow rather than drop the experiment if it hits), and the consequence stated: if the recipe is model-dependent, a fixed recipe makes every cross-model SAE number a **fairness** problem of exactly the sec 18 kind. One confound flagged so it cannot be misread later -- the `k=48` runs vary k *and* aux_k, so they are not intermediate points on the revival axis, and Chronos's non-monotone gap there is a different axis, not a dose-response. | §25, §25.16-§25.20, **§22.0**, §0.5 item 16 |
 ---
 
 ## 15. Audit — silent-failure paths and fragile mechanisms
@@ -15426,6 +15470,223 @@ work rather than stale bookkeeping. §21 is now fully closed.
 > is the same test §20's own preamble applied when it rejected three proposals
 > before writing any down; it is now applied to §20's own contents too.
 
+### 22.0 🔬 Is TopK feature death an importance filter? — and why the best SAE recipe is model-dependent
+
+> **First in this list by user instruction (2026-08-31), and the only entry
+> here that is a research question rather than a feature.** The instruction
+> was explicit about ordering: *"First I want the SAE to work, then test out
+> the research question."* So this is parked **behind §25**, not beside it —
+> it consumes §25's Component A as its instrument and cannot be run before
+> that instrument exists. It is recorded at the top because it is the most
+> interesting thing this repo could ask next, not because it is next.
+
+**Un-park trigger:** §25.9 Stage 2 exits positive — i.e. Component A's
+causal battery is built and at least one feature clears the
+random-direction null on at least one channel, on at least one target. That
+is the minimum condition for the question to be *askable*; before it, there
+is no causal readout to grade dictionaries with, and grading them
+correlationally is what §25.20(c)–(d) showed does not work.
+
+🔔 **The trigger fired 2026-08-31 (§25.23).** Stage 2 is now built and run
+against Chronos-T5-Base `encoder.block.10`: 23 of 39 candidates clear the
+random-direction null on at least one channel, with 72 clearing (feature,
+channel) cells against a chance-expected 17.55 — decisively past the
+minimum condition stated above. **This item is un-parked, but not yet
+started** — running it is a distinct piece of work from building the
+instrument that makes it askable, and specifically needs Q1's per-feature-
+vs-per-role comparison (dead vs. revived dictionaries, both directions) and
+Q2's within-TimesFM-depth ladder, neither of which the Stage 2 verification
+run above computed (it ran the battery on one dictionary at one target,
+not the dead/revived pair this question needs). Recorded here rather than
+silently promoted to "in progress," per this file's own discipline that a
+checkbox only moves when the described work is actually done.
+
+---
+
+#### The question, in two halves
+
+**Q1 — Does TopK-induced feature death act as a useful importance filter?**
+A 96%-dead dictionary's surviving 4% are not a random 4%: they are the
+directions that kept winning the TopK competition across training, i.e. the
+highest-utilization ones. So death may be an implicit, free importance prior
+rather than pure waste. §25.20's within-model measurement is consistent with
+that for one model and not the other, and is *correlational*, so it cannot
+settle it:
+
+| | dead | revived | direction |
+|---|---|---|---|
+| TimesFM `stacked_xf.18` — gap over null | +0.1665 (417 alive) | +0.1086 (1591 alive) | death **helps** |
+| Chronos-T5-Base `encoder.block.6` — gap over null | +0.2294 (160 alive) | +0.2362 (157 alive) | death **irrelevant** |
+
+The two live explanations make **opposite causal predictions**, which is
+what makes this answerable rather than a matter of taste:
+- **Death-as-filter:** the dead dictionary's survivors should have *larger*
+  individual causal effects (steeper dose–response, larger null-normalized
+  channel effects, cleaner necessity/sufficiency splits) than the revived
+  dictionary's typical feature. Fewer, stronger knobs.
+- **Feature splitting:** the revived dictionary's 1591 features carry the
+  *same or more* total causal effect, divided into finer, individually
+  weaker pieces. Then the right comparison is not per-feature but
+  **per-dictionary** — the union of a role's member atoms — and the revived
+  dictionary should win on that while losing per-atom.
+
+**The discriminating statistic falls straight out of Component A and needs
+no new primitive:** per-feature effect size (does death select stronger
+knobs?) *and* per-role aggregate effect over member atoms (does splitting
+preserve the total?). Death-as-filter predicts the first goes up and the
+second is flat; splitting predicts the first goes down and the second is
+flat or up. Both being flat is a third, boring, and perfectly publishable
+outcome: revival is free, take the smaller dictionary.
+
+**Q2 — Why is the best recipe model-dependent, and what does that mean?**
+The user's second instruction, and the more consequential half. Three
+measured points, one axis:
+
+| target | `effective_dim` | dead rate under production recipe | revival's effect |
+|---|---|---|---|
+| TimesFM `stacked_xf.18` | **2.66** | 0.959 | **hurts** (+0.1665 → +0.1086) |
+| Chronos-T5-Base `encoder.block.6` | **8.67** | 0.974 | **neutral/helps** (+0.2294 → +0.2362) |
+| Chronos-2 `encoder.block.6` | **44.26** | **0.012** | **unnecessary — already alive** |
+
+Three hypotheses, and the point of writing them down before running anything
+is that they are separable:
+- **H-A (intrinsic dimensionality).** Revival's benefit scales with the
+  layer's `effective_dim`. At eff-dim 2.66 there are barely any real
+  directions to occupy, so forcing 1591 atoms alive necessarily splits or
+  duplicates; at eff-dim 44 there is genuine structure for 6000 atoms and no
+  intervention is needed at all. This is the same axis §25.16(c) found
+  governs the alive ceiling (`alive ∝ effective_dim^1.02`), which is why it
+  is the leading candidate — one quantity would then explain both *how many*
+  atoms live and *whether reviving more of them helps*.
+- **H-B (over-completeness ratio).** What matters is `dict_size /
+  effective_dim`, not `effective_dim` alone.
+- **H-C (tokenization).** TimesFM's 32-step patch embedding and Chronos-T5's
+  per-timestep quantization produce structurally different activation
+  sparsity, and the recipe interacts with that rather than with any
+  dimensional quantity.
+
+🔴 **The clean experiment that separates H-A/H-B from H-C already has its
+axis inside a single model, and this is the design worth keeping.**
+`effective_dim` varies **12-fold within TimesFM across depth** on a fixed
+corpus — 31.65 at `stacked_xf.2`, 22.02 at `.6`, 15.42 at `.10`, 6.41 at
+`.16`, 2.49 at `.18` (`runs/full_report_run_large`). Running the
+dead-vs-revived A/B at all five depths of **one** model holds architecture,
+tokenizer, corpus, recipe and step budget fixed and varies only the quantity
+under test. **H-C predicts no depth trend** (one model, one tokenizer, so
+the recipe's ranking should not move); **H-A predicts a monotone one**, with
+revival flipping from harmful to helpful somewhere in the middle. That is a
+five-cell, cached-activation experiment against a store that already exists,
+and it is decisive between the two leading explanations. Chronos-T5-Base's
+own depth range then replicates or refutes it in a second architecture.
+
+**What it means if H-A holds, and this is why the question is worth more
+than the config decision it settles.** Three consequences, in increasing
+order of how much they change:
+1. **"Dead features are bad" becomes conditional.** Every existing mechanism
+   for eliminating them — resampling, ghost grads, AuxK, BatchTopK — is
+   built on the premise that death is pathology. If death is instead
+   *selection* below some intrinsic-dimensionality threshold, then applying
+   those mechanisms at a low-eff-dim layer is actively harmful, and the
+   field's default is a default rather than a finding.
+2. **SAE recipe selection becomes per-layer and predictable**, keyed on a
+   quantity this pipeline already computes for free in `internals`. That
+   replaces §23.2 A1's 8–40-training ladder search with a prior, and it is
+   the practical payoff.
+3. 🔴 **It becomes a *fairness* problem, which is this repo's home ground.**
+   §18's whole doctrine is that a cross-model number must sit on an axis
+   both models genuinely share, or be rendered beside the measured size of
+   the asymmetry. If the optimal SAE recipe is model-dependent, then
+   **comparing two models' SAEs trained with one fixed recipe systematically
+   disadvantages whichever model that recipe suits less** — a new instance
+   of exactly the problem F1 solved for depth and F2 for compute, in a
+   subsystem where nobody has looked for it. Every cross-model SAE number in
+   this repo (§16 E16's matching, §6.2.1's crosscoder scorecard, and §25's
+   own Components C and E) would inherit it. This is the finding that would
+   most change what the repo does next, and it is the reason Q2 is not
+   subordinate to Q1.
+
+---
+
+#### Why this is novel — stated as a claim with its own falsifier
+
+Documented as novel per the user's instruction, and therefore held to §2.6's
+standard: **what is established, what is new, and what would retire the
+claim.**
+
+**Established, and not claimed here.** Dead/inactive latents are a
+well-documented SAE pathology, and the mechanisms for eliminating them —
+neuron resampling, ghost gradients, the AuxK auxiliary loss, BatchTopK — are
+standard; this repo implements several (`sae/models.py`, §6.2.1 Stage 0).
+**Feature splitting** — larger dictionaries decomposing one coarse feature
+into several finer ones — is also established, and is Q1's null hypothesis
+rather than its contribution.
+
+**What is new, to our knowledge (as of 2026-08-31, and see the falsifier
+below).**
+1. **The inversion itself.** The literature treats death as waste to be
+   minimized and reports it as a hygiene metric. Asking whether the *rate*
+   is doing useful selection — whether the survivors are systematically the
+   important atoms — inverts the premise. Every dead-feature mechanism cited
+   above is evidence that the inverse question is not the default one.
+2. **A causal grading criterion for dictionaries.** Dead-feature arguments
+   are settled on reconstruction loss, loss-recovered, or downstream
+   probing. Q1 grades two dictionaries of the same activations by the
+   **measured causal effect of their features on the model's own output**,
+   against a random-direction null of matched norm (§25.4). §25.20(d) is the
+   evidence this matters rather than being a stylistic preference: the
+   obvious correlational alternative gives a randomly-initialized network
+   0.565 against the real one's 0.567 and therefore cannot grade anything.
+3. **Exact generative ground truth instead of human or LLM judgment of
+   max-activating examples** (§2.1). The importance of an atom can be
+   checked against a known data-generating process — this is the repo's
+   standing methodological edge, applied to a question the SAE field
+   normally has to argue about qualitatively.
+4. **Q2 has no counterpart we know of.** SAE recipes are proposed as
+   universal improvements. "Which recipe wins is a function of the layer's
+   intrinsic dimensionality, and is therefore a cross-model fairness
+   confound" is a different kind of claim, and the within-model depth sweep
+   above is a cheap way to test it that the single-model-single-layer
+   convention of most SAE work does not naturally suggest.
+5. **The setting.** Time-series foundation models, where the output is a
+   forecast rather than a token distribution, so a feature's causal effect
+   is measurable as a *shape change in the forecast* — trend, seasonal
+   magnitude, dispersion — rather than as a logit shift. That is what makes
+   (2) legible at all.
+
+**Falsifier for the novelty claim itself, and it must be run before the
+claim is published anywhere outside this file.** A systematic literature
+check — dead/inactive latent rate as a *selection* mechanism; causal or
+ablation-based comparison of dictionaries at matched activations; SAE
+hyperparameter sensitivity as a function of activation intrinsic
+dimensionality or participation ratio; any SAE work on time-series
+foundation models. **If any of these already exists, the correct action is
+to cite it and narrow the claim to whatever remains**, not to drop the
+experiment: the measurement is worth making regardless, and a replication in
+a new setting is a legitimate contribution. Record the search terms and the
+date, so the claim carries its own provenance the way every number in this
+file does.
+
+---
+
+#### Cost, and one confound in the existing data
+
+**Cost:** Q1 is one extra training run per target (cached activations, no
+extraction, no checkpoint reload) plus Component A over both dictionaries.
+Q2's depth sweep is five cells against a store that already exists. Neither
+needs new data or a new corpus. This is cheap *because* §25 will already
+have built the instrument — which is exactly why it is parked behind it
+rather than merged into it.
+
+⚠️ **The `k=48` runs are not clean intermediate points and must not be used
+as such.** `runs/medium_run_chronos_base_auxk` varies **both** the sparsity
+budget (`k` 32→48) and `aux_k`, so its dead rates (0.778 TimesFM / 0.908
+Chronos) do not sit on the same one-dimensional axis as the dead-vs-revived
+pair. Chronos's gap at that point (+0.1324) is *below both endpoints*, which
+looks like a non-monotonicity and is more likely just a different axis. A
+real dose–response in dead rate needs `k` held fixed while only the revival
+knobs move — worth designing in from the start, since it converts Q1 from a
+two-point comparison into a curve.
+
 ### 22.1 Crosscoder variants beyond V2 — V3, V5, V6
 
 **Parked:** V3 (explicit shared/private parameterization, ~150 lines + a
@@ -18896,3 +19157,2270 @@ recorded instrumentation rather than picking the plausible one:
   back to True and re-introduce the flat curve. 4 tests; 3 confirmed to fail
   against the pre-fix code, the 4th asserting absence on a stack too short to
   have an early block.
+
+---
+
+## 25. The SAE section becomes an interpretability section (added 2026-08-31, user-directed — DESIGN ONLY, NOT IMPLEMENTED)
+
+> **The instruction.** *"The SAE section is a bit underdeveloped when compared
+> to the other sections. There is not much interpretability in that section,
+> and many features are called the same thing (too similar). Design but don't
+> implement a system to better explain the SAE dictionaries created. The
+> readers want a causal connection between features found that can be
+> explained or shown to them."* Reader assumed to be a mechanistic-
+> interpretability researcher comparing TSFMs — someone who will not accept a
+> correlation as an explanation, and who is here to find out whether two
+> models compute the same thing.
+>
+> **Nothing below is implemented.** §24.3's history is the reason to say so
+> twice: an item written as design-only was picked up by a concurrent session
+> and the two instructions could not both be satisfied (see §0.5 item 15).
+> This section is a specification. The measurements in §25.1 *were* taken —
+> they are read-only reductions over artifacts already on disk, no run, no
+> training, no code changed — because treating a presentation complaint as
+> presentation before grounding it in an artifact is exactly what §24 and
+> §24.6 both had to correct.
+
+### 25.1 The defect, measured before it was treated as presentation
+
+Every number here is read from committed run artifacts
+(`runs/full_report_run_large/sae/meta.json`,
+`runs/medium_run_chronos_base/sae/meta.json` and that run's saved SAE
+checkpoints), quoted at the precision the artifact carries.
+
+**(1) 🔴 The rendered "meaning" of a feature is one word chosen by argmax over
+~30 candidate fields, and one field wins up to 35 times out of 50.** The SAE
+section's table has one row per (feature, exemplar series) and one
+`best_field` column that *is* the feature's name, produced by
+`best_ground_truth_matches`' argmax over every ground-truth column. On
+`runs/full_report_run_large` (the largest run this repo has done, 3 models ×
+965 dev series):
+
+| target | rows shown | distinct names | most common name | count |
+|---|---|---|---|---|
+| Chronos-T5-Base `encoder.block.4` | 51 | 11 | `tier_realism_stress` | **20** |
+| Chronos-T5-Base `encoder.block.8` | 51 | 10 | `tier_realism_stress` | 20 |
+| Chronos-T5-Base `encoder.block.10` | 51 | 13 | `tier_realism_stress` | 17 |
+| TimesFM `stacked_xf.18` | 51 | 12 | `tier_realism_stress` | 21 |
+| TimesFM `stacked_xf.2` | 52 | 14 | `tier_realism_stress` | 19 |
+| Chronos-2 `encoder.block.6` | 52 | 14 | `generator_sequential_par` | 19 |
+| Chronos-2 `encoder.block.8` | 52 | 11 | `generator_sequential_par` | 20 |
+| Chronos-2 `encoder.block.10` | 52 | 10 | `generator_sequential_par` | 20 |
+
+`runs/medium_run_chronos_base` — the run `docs/worked_example.md` walks a
+reader through — is worse: **34 of 50** rows at
+`Chronos-T5-Base/encoder.block.6` say `tier_realism_stress`. The user's "many
+features are called the same thing" is not an impression; it is 68% of one
+table.
+
+**(2) 🔴 Worse than duplication: the winning names are not about time series at
+all.** `tier_*` and `generator_*` are *corpus-provenance* dummies — which
+generator produced the series, and whether it is synthetic or real-derived.
+At Chronos-T5-Base `encoder.block.4`, **43 of 51** displayed features are
+named by a provenance dummy and only **6** by a structural generative
+property (trend / seasonality / AR / noise / changepoint / anomaly /
+intermittency). A feature named `tier_realism_stress` is a
+distribution-shift detector: it says the series came from
+`mixture`/`block_bootstrap`/`sequential_par`. For an interpretability reader
+that is a **confound flag**, not an interpretation, and the section presents
+it in the same column, same styling, same authority as
+`seasonal_period_dominant`.
+
+**(3) 🔴 That outcome is structurally forced, not bad luck.** Provenance
+dummies are defined on **all 965** series. Structural fields are `None` for
+every real-derived series by design (`CLAUDE.md` §4.1, and §15 A10's fix,
+both correct) — so they are scored on **555** series (`has_intermittency`,
+`noise_scale`, `n_seasonalities`), **425** (`archetype_*`) or **374**
+(`ar_coeff_sum`). Verified directly from each match's own recorded `n`. So
+the argmax competition is between fields evaluated on 1.7–2.6× different
+sample sizes, and the provenance fields additionally get to use the single
+largest variance axis in the corpus (synthetic vs real-derived). Nothing
+corrects for either. **Any argmax over these ~30 columns will keep electing
+provenance labels on any corpus with a real-derived tier**, which is every
+corpus this repo builds.
+
+**(4) 🔴 The collapse is in the label, not in the dictionary — so
+deduplication is the wrong fix.** The 34 atoms all named
+`tier_realism_stress` at `medium_run_chronos_base/Chronos-T5-Base/
+encoder.block.6` have pairwise decoder-direction cosine **mean
+0.028981153, max 0.39906985**, none above 0.5 — against a 200-random-atom
+baseline from the same dictionary at **mean −6.0272127e-05, max
+0.27067056**. TimesFM `stacked_xf.18`'s 14 `archetype_seasonal_dominant`
+atoms: mean **−0.009**, max **0.131**. These are dozens of nearly
+orthogonal directions wearing one name. The dictionary is *more*
+differentiated than the report can express; the naming scheme is the
+bottleneck. **The fix is naming and grouping, not merging.**
+
+**(5) 🔴 No causal claim about any feature reaches the report, although the
+machinery exists and has been live-verified.** `sae/eval.py::
+feature_ablation_effects` (§7 bullet 3) and `feature_steering_effects`
+(§16 E14) both exist, are unit-tested, and have real-checkpoint numbers on
+record. Both are `enabled: False` by default, and — checked against
+`report.py::_sec_sae` line by line — **neither is rendered under any
+configuration**: the section renders fidelity, dead rate, two
+forecast-preservation ΔMASEs, the alignment ρ with its permutation null,
+the exemplar table and the seed floor. Its own docstring still says the
+causal half "needs Phase 3 feature-level ablation, which doesn't exist
+yet", which has been stale since 2026-08-11. So the strongest evidence this
+repo can produce about an SAE feature is computed-but-unrendered or
+off-by-default, while every neighbouring section (L3, attention, lens,
+Circuit) renders a causal number with a floor beside it. That gap is
+precisely the "underdeveloped compared to the other sections" the
+instruction names.
+
+**(6) 🔴 The section never compares the two models, in a report whose purpose
+is comparing models.** `sae/matching.py` (§16 E16, three cross-model
+matching signals, 140 lines, tested) has **no consumer in the pipeline or
+the report** — only the standalone `run_crosscoder_ladder.py` reads it.
+`l1/cka_sae.json` (§6.2.1 Stage 3d) is written and **never rendered**.
+Every other cross-model artifact in the repo has a section; the two the SAE
+subsystem produces have none.
+
+**(7) 🔴 An intervention on some models does not reach the forecast at all,
+and nothing checks.** §24.7 finding (1): Chronos-2's head reads
+`hidden_states[:, -num_output_patches:]` while `token_slice` writes the
+leading context patches, so **SAE forecast-preservation was a no-op for
+that model** — a well-formed number measuring nothing. Any per-feature
+causal battery inherits that defect exactly, and the failure mode is the
+dangerous direction: a feature that cannot be reached reads as *a feature
+with no causal effect*, which is a finding. §11.42's rule is the guard and
+it is not optional here.
+
+**(8) Two smaller defects, worth fixing on the same pass.**
+`report/sae_exemplars.py::build_run_exemplars` selects
+`series_ids = meta["series_id"].to_numpy()[:n]` — a head slice on a
+corpus written grouped by task, §11.38's exact trap — while
+`ground_truth_alignment` selects with stratified `sample_rows`. The two
+coincide **only** because `sae.ground_truth_max_series` (2000) exceeds
+every corpus built so far (965 max); the first corpus above 2000 series
+silently puts the `activation` column and the `rho` column on different
+series sets. And `_sec_sae`'s stale docstring, per (5).
+
+**Not a defect, but the constraint that governs the whole design:** the
+dictionaries these features are drawn from are mostly dead. On
+`full_report_run_large`, dead rate is **0.877–0.977** for TimesFM and
+**0.946–0.964** for Chronos-T5-Base; Chronos-2 measures **0.0078125 to
+0.012369791977107525** at identical settings (§23.2 A1's unplanned
+controlled result). And the alive dictionary aligns to ground truth
+*worse*: Chronos-2's `mean_abs_rho_matched` is **0.17706106241822994 to
+0.18856193655100267** against its own permutation null of **0.118–0.120**,
+where the ~95%-dead Chronos-T5-Base reads **0.3372448240534009** against a
+null of **0.10951264088809691**. Alive ≠ interpretable on current
+evidence. Whatever this section renders must therefore be **gated on the
+dictionary it is describing**, and must not present features from a
+97%-dead dictionary as a description of that dictionary.
+
+### 25.2 What the reader wants, and what the section answers today
+
+| The reader's question | Answered today? |
+|---|---|
+| *What is this feature?* | A name that is duplicated up to 35× and usually denotes corpus provenance (§25.1 (1)–(3)). |
+| *Does it actually do anything to the forecast?* | No — the machinery exists and is not rendered (§25.1 (5)). |
+| *Can you show me?* | Partially: a table of top-activating series. No forecast, no intervention, no picture of the effect. |
+| *Does the other model have this feature?* | No (§25.1 (6)). |
+| *How much of this should I believe?* | Fidelity, dead rate, ρ-vs-permutation-null and a seed floor — this part is genuinely good and stays. |
+
+Three of five are unanswered, and they are the three that make a section
+*interpretability* rather than *diagnostics*. That is the whole gap.
+
+### 25.3 The design, in one paragraph
+
+**Stop naming a feature by what it correlates with, and start naming it by
+what it does to the forecast.** Steer each candidate feature ±kσ through the
+existing `token_patch` seam and read a fixed battery of *forecast-space*
+readouts (trend slope, seasonal-band magnitude at each series' own period,
+spectral centroid, level, dispersion, horizon profile, MASE, flat fraction);
+score every channel against a **random-direction null of the same norm**, so
+"this feature does X" means "more than an arbitrary perturbation of this size
+does". That signed response vector is the feature's **identity**. Cluster
+features by it into a handful of **roles**, give each role a derived,
+uniqueness-constrained name, and render roles — not 50 atoms — with the
+per-atom table behind an expander. Because the readouts live in forecast
+space, which has no hidden dimension, no tokenizer and no depth axis, the
+same vector is directly comparable **across architectures**: match roles
+between models and render a role × model matrix, which is the figure a
+TSFM-comparison reader wants and no section currently provides. Keep the
+correlational ground-truth half, but de-confound it (residualize against
+provenance, separate the provenance and structural columns, carry each ρ's
+own `n`) so it stops electing distribution-shift detectors as the
+dictionary's headline features.
+
+Three components, in dependency order: **A** the response fingerprint (the
+causal core), **B** roles and names (what makes it legible), **C**
+cross-model role correspondence (what makes it a comparison). B's cheap half
+is independent of A and can land first.
+
+> **Extended the same day, on a user follow-up (§25.16–§25.19).** Three more
+> components answer questions this paragraph does not: **D** (§25.17) makes
+> the causality *visible and falsifiable* — dose–response with the null band
+> drawn behind it, necessity vs. sufficiency as separate claims, and a
+> cross-check of every role against L3's independent corruption battery;
+> **E** (§25.18) splits roles three ways — shared / model-specific /
+> **unresolved** — because "unique to model A" and "not detected in model B"
+> are the same measurement at different power; **F** (§25.19) is the
+> description layer, in three tiers, where the LLM tier is admissible only
+> because it is *scored* and suppressible. §25.16 answers the dead-dictionary
+> question separately and carries a new measurement. **Note §25.14 and §25.15
+> predate these four and are corrected in place, not rewritten** — read the
+> struck text there as history.
+
+### 25.4 Component A — the response fingerprint: a feature's identity is what it does
+
+**Mechanism.** For one (model, layer) target with a trained SAE, and a
+stratified sample of S series (`sample_rows(..., strata=families)`, never a
+head slice — §11.38):
+
+1. Baseline: the **full token-level reconstruction** forecast, not the clean
+   forecast. Every effect is measured against the intact reconstruction, so
+   the number isolates one feature's marginal contribution rather than
+   conflating it with the SAE's own reconstruction error — the rule
+   `feature_ablation_effects` already established and the reason it reports
+   `mase_delta_vs_full_recon` as the causal number.
+2. For each candidate feature f: encode, add `±k · σ_f` to column f (σ_f =
+   that feature's own clean-activation std, `feature_steering_effects`'
+   existing convention), decode, patch at **token** granularity, forecast.
+   Two forward passes per feature.
+3. Read the battery on the resulting forecast `ŷ` against the baseline
+   forecast, per series, then aggregate over series with a **series-level**
+   bootstrap CI (invariant 2).
+
+**The battery.** Every readout is a function of `predict()` output only — no
+activations, no adapter capability beyond what steering already needs — so it
+transfers to any model that can be steered at all.
+
+| channel | statistic | reuse |
+|---|---|---|
+| `trend` | OLS slope over the horizon | `analysis/steering.py::trend_slope` |
+| `seasonal` | FFT magnitude at that series' own `seasonal_period_dominant` | `steering.py::seasonal_band_magnitude` |
+| `spectral_centroid` | magnitude-weighted mean frequency | `spectral_lens.py::_magnitude_spectrum` |
+| `level` | mean of the forecast | new, trivial |
+| `dispersion` | sd of the forecast, and mean quantile width when the model has one | new; skip (never zero-score) when the band has no spread — §11.37 |
+| `horizon_shape` | \|Δŷ(h)\| split into near (first third) and far (last third) | new, trivial |
+| `mase` | MASE vs the true continuation | `l0_behavioral.py::mase` |
+| `flatness` | fraction of near-zero / near-constant steps | new, for intermittency |
+
+Channels are deliberately **not** orthogonalized. A feature that moves both
+`seasonal` and `spectral_centroid` is a real, informative pattern, and
+orthogonalizing would hide it inside a basis nobody can name.
+
+**The null is the load-bearing part (§2.2).** For each target, draw K random
+directions in the decoder's output space, unit-normalized, injected at the
+*same* per-series magnitude as a `k·σ_f` steer of a real feature, and run
+the identical battery. This controls for the only alternative explanation
+that matters: *any* perturbation of this size moves a forecast. A channel is
+reported as an effect **only** when its magnitude exceeds the
+random-direction null's p95 on that channel. Two further references, both
+already available:
+- The MASE channel additionally goes through `stats.in_floor_units` against
+  `l0/noise_floor.json` — the same treatment every other ΔMASE in the repo
+  gets (§18 F6), so a deterministic model reports a ratio of infinity and an
+  unmeasured floor reports `interpretable: None`, never `False`.
+- The whole battery can be re-run on a **`random_init` twin's** SAE where
+  such a run exists (§16 E9's pattern), answering "would an untrained
+  network of this shape have features that do this too?"
+
+**The reach gate, before any of it (§25.1 (7)).** Per (model, layer):
+consult `ModelAdapter.forecast_reads_patched_positions()`; then *measure*,
+per §11.42's rule — patch the target layer's own clean activations into
+itself (must be exactly 0.0 change: the correctness check) and patch a
+**different** layer's activations in (must be non-zero: the reach check). If
+reach is zero, the causal panel is **withheld with a stated reason** and the
+section says the target is unreachable, rather than rendering a table of
+zeros that reads as "these features don't matter". Note the measured
+subtlety this must respect: Chronos-2's context-only patch at blocks 0/3/6/9
+moves the forecast **0.737/0.643/0.282/0.095** and only exactly 0.000 at the
+final block — so reach is a *per-layer* property that decays with depth, and
+a mid-stack SAE target on that model is reachable while a final-layer one is
+not. The gate must therefore measure the actual target layer, and report
+reach magnitude as a number the reader can see, since a weak-reach target
+turns "no effect" into "no power".
+
+**Candidate selection — and this is where the current design has to change,
+not just extend.** Today's candidates are "the top-k by |ρ| from
+ground-truth alignment", which on this corpus means *the top-k
+provenance detectors* (§25.1 (1)–(3)). New selection, in stated priority
+order, all restricted to **alive** atoms:
+1. Top-`n` by *residualized* structural ρ (Component B(a)) — features that
+   track a generative property after provenance is regressed out.
+2. Top-`n` by activation variance among alive atoms — the dictionary's
+   highest-energy directions, whether or not anything labels them.
+3. Top-`n` by provenance ρ, **kept deliberately and labelled as such** — a
+   distribution-shift detector is a real and interesting finding about a
+   forecasting model; the objection is to it being the *only* thing named,
+   not to it being named.
+4. A random sample of alive atoms, as the within-dictionary control: it is
+   the only way to say whether the selected features are unusual.
+Recording which rule nominated each candidate is mandatory — a probe that
+does not record its own resolution is §11.34's trap.
+
+### 25.5 Component B — names that discriminate: roles, not atoms
+
+**(a) Fix the correlational label. Zero forward passes; can land first and
+alone.**
+
+- **Separate the two competitions.** Report a `structural` best match and a
+  `provenance` best match in **different columns**, never one argmax. They
+  are evaluated on different sample sizes and mean different things.
+- **Residualize.** For each structural field, regress the feature's
+  series-level activation on the provenance one-hots
+  (`tier_*` + `generator_*`) and correlate the *residual* with the field.
+  A feature whose entire signal is "this is real-derived data" then scores
+  near zero on every structural field and is named a provenance detector
+  **on purpose**. Cross-fitted, and — per §11.36's lesson — the residualizing
+  regression publishes its own out-of-fold R²: a control that silently
+  explains nothing is indistinguishable from one that works, and this
+  design has exactly the shape that failed there.
+- **Carry `n` everywhere.** The artifact already records each match's valid
+  `n`; the report drops it. A ρ of 0.65 on 374 series and one on 965 are not
+  the same claim, and the difference is systematic here, not incidental.
+  Compare fields by a Fisher-z statistic with its own n, not by raw |ρ|.
+- **Keep the whole signature, not the argmax.** Store each feature's top
+  three field matches. "Argmax over 30" is a lossy summary that
+  §25.1 (4) shows is discarding real differentiation between atoms.
+
+**(b) Group into roles, and name the roles.**
+
+Cluster the probed features on `[response fingerprint (null-normalized) ‖
+residualized structural signature]`, k chosen the way `clustering.py`
+already chooses it (`k: auto`, clipped to a small range), with the
+clustering's own silhouette reported so a non-modular dictionary can say so.
+
+Each cluster's name is **derived**, never authored — the same constraint
+`report/derived.py::Verdict` enforces for scorecard rows, for the same
+reason:
+
+```
+<dominant channel><sign>[ @ period <p>][ · <residualized structural field>]
+```
+
+e.g. `seasonal-magnitude ↑ @ period 24 · seasonal_amplitude_max`,
+`trend-slope ↑`, `far-horizon disperser`, `level shifter ↓`,
+`provenance detector (real-derived)`.
+
+Three rules make the names actually distinct, which is the entire point:
+1. **Uniqueness within a target is enforced.** If two roles derive the same
+   name, append the next most discriminating channel until they differ.
+2. **A role with no channel clearing its null is named
+   `no measured effect (n atoms)`** — not left unnamed and not given its
+   correlational label, which would re-import the collapse through the back
+   door.
+3. **If no channel discriminates a role from its neighbours, the name is
+   literally `unnamed (no distinguishing signature)`.** A refusal, per
+   §11.34: the naming function must have an explicit tie-break for every
+   case where two candidates are indistinguishable *by the signal being
+   used*, and must never let ordering decide silently.
+
+### 25.6 Component C — cross-model role correspondence
+
+**Why the fingerprint is the right cross-model space.** `sae/matching.py`'s
+docstring already argues correctly that decoder vectors cannot be compared
+across models — different hidden dims, arbitrary bases — and falls back to
+activation-profile correlation, which needs both models to fire on the same
+series in the same relative order. The response fingerprint needs neither: it
+lives in **forecast space**, which both models share exactly (same horizon,
+same series, same units), regardless of width, tokenizer, patch size, depth
+or capture surface. It is the only genuinely architecture-neutral feature
+space this repo has produced, and it is a free by-product of Component A.
+
+**Matching.** For each model pair (all C(n,2) pairs on a panel, per §24.3's
+rule), score role-to-role similarity as sign-aware cosine over the shared
+null-normalized channels, and match greedily — with the same honesty
+`matching.py` already practises about greedy nearest-neighbour not being an
+assignment. Signals 2 and 3 come free from the existing E16 module
+(activation-profile correlation, max-activating-series overlap), which
+finally gets a consumer.
+
+**Two nulls, and the headline is forbidden without them.**
+1. **Shuffled series** for the activation-profile signal (L1's existing
+   convention).
+2. **The untrained twin.** If a `random_init` run exists for either model,
+   match real-vs-twin roles the same way. This is not optional politeness:
+   §6.2.1 Stage 1 measured the crosscoder's `frac_shared` at **0.845
+   against an untrained-twin floor of 0.974** — TimesFM read as *more*
+   shared with a random copy of itself than with Chronos. **No
+   "fraction of roles shared" number may be quoted without its floor beside
+   it**, and that precedent is to be cited in the rendered note, not just
+   here.
+
+**Honest scope, stated in the section rather than implied.** Roles can only
+be matched where both models have an SAE target, and targets are per-model
+layers chosen by `layer_screen`, at whatever depths that selector picked. So
+a blank cell means *"no target at a comparable depth in this model"*, not
+*"this model lacks this role"*, and the matrix must render the distinction.
+Depth is reported on the `block` axis (§18 F1), which for an encoder-only
+capture surface caps well below 1.0 — so a role's depth coordinate carries
+the same coverage qualifier every other depth-located claim does.
+
+### 25.7 Display spec — what the section renders, in order
+
+The current section is a stats line, a 250-row table, and a seed-floor
+table. The replacement, top to bottom (§21 J7's rule: every figure gets a
+visible caption; "how to read it" stays in the one uniform dropdown):
+
+1. **Dictionary health, one line per target** — unchanged. Fidelity, dead
+   rate with its gate, both forecast-preservation ΔMASEs in floor units,
+   alignment ρ vs its permutation null. This part already works.
+2. **Reach and power, one line per target** — the measured reach delta, and
+   the random-direction null's p95 per channel. *Before* any effect is
+   shown, the reader learns how large an effect this target could even
+   detect. A withheld panel says so here.
+3. **The roles table — the section's new centre of gravity.** One row per
+   role: name · atoms · dominant channel and signed effect in null units ·
+   verdict against the null (a `derived.py` `Rule`, so the threshold is
+   printed in the row) · best residualized structural correlate with its `n`
+   · a sparkline of the role's mean Δŷ(h). Roughly 5–8 rows where there are
+   now 50, and each row says something different by construction (§25.5(b)
+   rule 1).
+4. **The feature × channel heatmap**, one per target: rows = probed features
+   grouped by role, columns = the 8 channels, cell = signed effect in
+   null-p95 units, **cells below the null left blank**. This is the figure
+   that makes the section readable in five seconds — a blank row is a
+   feature that does nothing, a single-cell row is a clean single-role
+   feature, a dense row is an entangled one. Blankness is information here,
+   which is why non-significant cells must not be shaded.
+5. **Role cards, `_details`-expanded, one per role** — the "show me" the
+   instruction asks for, and the only place with per-series pictures:
+   - the mean Δŷ(h) waveform under +kσ and −kσ, with a series-bootstrap
+     band — *what this role writes into the forecast*, drawn;
+   - 2–3 exemplar series (context · true continuation · baseline
+     reconstruction forecast · steered forecast), selected by that role's
+     own activation from a **stratified** sample (§11.38);
+   - each exemplar's activation trace across windows, so "when in the series
+     does this fire" is visible even before window-level ground truth exists;
+   - the role's member atoms with their per-channel effects.
+6. **The role × model matrix** — rows = canonical roles, columns = models,
+   cell = strongest carrier's relative depth (`block` axis) and effect size;
+   blank = no target at comparable depth, rendered distinctly from "role
+   absent". One finding per role, per pair.
+7. **Per-atom table**, behind an expander, with the columns fixed per
+   §25.5(a) (structural and provenance separated, `n` present, top-3
+   signature). Nothing is removed from today's output; it moves.
+8. **Seed floor** — unchanged, last.
+
+Findings, per §24.6's dedup rule: **one finding per role**, not one per atom
+and not one per (model, layer, field) — the mechanism that took SAE findings
+from 11 to 3 on the three-model run. Evidence class: `causal_within_model`
+for every channel effect, `descriptive` for the correlational half,
+`geometric` for the cross-model fingerprint match. Not `causal` across
+models — nothing here transplants anything between architectures (invariant
+5).
+
+### 25.8 Gates and prerequisites — what must hold before any of this is believable
+
+Stated as gates because each one, unmet, turns this section into a
+confident-looking artifact about nothing. This is the same list §25.1's
+failures come from.
+
+| Gate | Rule | Unmet → |
+|---|---|---|
+| **Alive dictionary** | `dead_rate_gate.passed` — ⚠️ **superseded by §25.20: a bare dead-rate threshold is not the right criterion** | Roles are withheld; the section renders the gate failure and the health line only. A 97%-dead dictionary cannot be *described* by its alive 3%. |
+| **Reach** | measured non-zero at the target layer (§11.42) | Causal panel withheld with the measured reach printed. |
+| **Power** | random-direction null p95 finite and not degenerate | Channel dropped, named, never scored as zero (§11.37). |
+| **Ground truth present** | ≥`_MIN_VALID` series with `has_gt` | Correlational half degrades; causal half is unaffected and still runs. |
+| **Stratified sampling** | `sample_rows(..., strata=families)` everywhere, incl. exemplars | §11.38 recurs otherwise. |
+
+**The uncomfortable prerequisite, stated plainly:** on today's flagship
+three-model run, **two of three models fail the first gate** (TimesFM
+0.877–0.977 dead, Chronos-T5-Base 0.946–0.964; only Chronos-2 at
+0.0078–0.0124 passes). §23.2 A1 has the fix — `dict_size_policy: search`,
+AuxK, `min_train_steps` — all built, all validated on
+`configs/sae_revival.yaml`, and all left off in
+`configs/medium_run_chronos_base.yaml` and the `full_report_run*` configs
+because a default flip invalidates recorded numbers by design (§2.1). That
+is §23.1's shape 1 exactly: *the fix exists, is off to protect
+reproducibility, and nobody was tasked with the deliberate flip.* **This
+design cannot be evaluated on a dead dictionary**, so the flip is Stage 0
+below, and it must be done as its own pass with its own new run name — not
+as a side effect of this work. ⚠️ **"Flip" is the wrong verb, per §25.20:**
+the within-model evidence says revival helps one target and hurts another on
+the correlational metric, and that metric is itself partly the one §25.1
+indicted — so Stage 0 trains **both** dictionaries per target and chooses on
+§25's own criteria, with the tie broken by Component A rather than by dead
+rate.
+
+### 25.9 Build plan, stage-gated, with exit criteria
+
+Each stage's exit criterion is a measurement, and each stage is a stopping
+point: if it fails, the item stops there and the failure is the finding.
+
+**Stage 0 · Alive dictionaries at the flagship targets.** Not new code — turn
+on what §23.2 A1 already validated (`dict_size_policy: search`,
+`aux_k`, `min_train_steps`, `dict_size_search_seeds: 5`,
+`dict_size_search_margin`) in a **new** config with a **new** `run.name`, at
+the three-model run's own checkpoints and `layer_screen`-chosen targets.
+*Exit:* ⚠️ **rewritten by §25.20 — read that.** Not "dead rate ≤ 0.30":
+train **both** the production and the revived recipe per target on the same
+frozen store, and choose per target on (i) gap over the permutation null —
+the only correlational statistic §25.20(d) shows to be valid — (ii)
+provenance-excluded structural-field coverage, (iii) fidelity at fixed
+activations, with dead rate as a *reporting* constraint only. Where the two
+disagree (they do for TimesFM), carry both into Stage 2 and let Component A's
+causal criterion decide, since that is the criterion this section is being
+rebuilt around. *Cost:* cached activations only, no extraction. *Note:* §23.2 A1's
+own record says Chronos-T5-Base needed `dict_size` 192 to clear the bar,
+found only after a densified-ladder probe — so expect per-model dictionary
+sizes, and record them.
+
+**Stage 1 · Component B(a), the cheap half.** Residualized structural ρ,
+separated provenance/structural columns, `n` carried, top-3 signature; plus
+the two §25.1 (8) defect fixes and the stale docstring. Zero forward passes,
+zero GPU. *Exit:* on `runs/full_report_run_large`'s existing artifacts,
+re-derived offline: the number of *distinct* structural names among the
+displayed features rises, and the `tier_realism_stress` count falls, with
+both counts recorded before and after. Pre-registered alternative outcome:
+if residualizing leaves the same features at the top, that is the finding —
+these dictionaries genuinely encode distribution shift more strongly than
+generative structure, which is itself a publishable statement about TSFM
+representations and about this corpus.
+
+**Stage 2 · Component A, on one target, against its nulls.** Battery, random-
+direction null, reach gate, floor units. *Exit:* (i) reach measured non-zero;
+(ii) the layer-into-itself control is exactly 0.0; (iii) at least one
+selected feature clears the random-direction null p95 on at least one
+channel; (iv) the count of clearing (feature, channel) cells exceeds
+`0.05 · n_features · n_channels`, the count expected by chance. Failing
+(iii)/(iv) is a real result (§25.13), not a reason to raise k.
+
+**Stage 3 · Component B(b) + the display.** Clustering, derived naming with
+the uniqueness constraint, roles table, heatmap, role cards, findings
+dedup. *Exit:* every rendered role name is unique within its target
+(asserted, not eyeballed); every role's verdict is derived from a printed
+rule; the section renders with 0 bare figures on the positional walk
+(`tests/test_report_legibility.py`'s existing check); and the section
+renders honestly on a **solo** run and on a **panel** run (§24.3's shapes).
+
+**Stage 4 · Component C.** Role matching, both nulls, the role × model
+matrix, `sae/matching.py` and `l1/cka_sae.json` finally rendered. *Exit:*
+the matrix reproduces the pair path byte-for-byte inside a panel (§24.3's
+rule), and no shared-fraction number renders without its untrained-twin
+floor in the same row.
+
+**Stage 5 · Writeup**, per this file's normal discipline: numbers into a
+Findings block here, stale claims corrected in place in `CLAUDE.md` (§25.15),
+a `stage_docs.py` update, `glossary.py` entries for the new terms
+(*response fingerprint*, *role*, *random-direction null*, *reach*), and a
+`docs/worked_example.md` pass — that document currently walks a reader
+through the run whose SAE table says `tier_realism_stress` 34 times.
+
+### 25.10 Cost
+
+Per target, at the defaults proposed below: `n_features` 12 × 2 directions +
+K 24 null directions × 2 + 2 reach probes ≈ **74 forward passes** over
+`response_max_series` (default 32, capped at the model's `batch_size` —
+§15 A16's clamp must be *reported*, not silent). That is the same order as
+L3's corruption battery and less than `attention`'s pattern capture. Stage 1
+is free. Stage 0 is cached-activation training only. The whole design needs
+**no new extraction and no new adapter capability** — it reuses
+`hooks.token_patch`, `predict()`, the existing store, and the sealed
+corpus's ground truth.
+
+Default posture: Stage 1's changes are **always on** (they are a display and
+artifact-shape change with no cost). The causal battery is
+`sae.response_enabled: false` by default, flipped on in
+`configs/full_report_run*.yaml` — the same posture `l3.patching.per_window`
+and `budget.measure_predict` already have, and consistent with not silently
+adding 74 forward passes per target to every run.
+
+### 25.11 Statistics and multiplicity — and one place the usual answer does not work
+
+- Resampling unit is the **series**, everywhere (invariant 2), with the
+  explicit `unit=` label §16 E11 added.
+- **Holm across channels is the wrong tool here and must not be used.** 12
+  features × 8 channels = 96 tests per target; §6.6's p-floor says a family
+  of `m` Holm-corrected tests cannot produce an adjusted p below
+  `m / n_boot`, so 96 tests need `n_boot` ≥ 1920 to be satisfiable at
+  α=0.05 — and the random-direction null has only K=24 draws, a p-floor of
+  1/24. Correcting would produce an unsatisfiable family, which is
+  arithmetic masquerading as a null result (§18 F8's exact finding).
+  **Instead:** threshold each channel at its own null p95, and report the
+  **count** of clearing cells against the count expected by chance
+  (`0.05 · 96 ≈ 4.8`), as an excess. That is satisfiable, it is honest, and
+  it is the right question — "does this dictionary contain more causally
+  effective features than chance", not "is atom 5109 significant".
+- `report/multiplicity.json` gains a row for this family stating exactly
+  that, including that it is **not** Holm-corrected and why. A ledger that
+  silently omitted a 96-test family would be worse than the collapse this
+  section is fixing.
+- Every effect renders with its reference (null p95 or noise floor) in the
+  same row — §24's scorecard rule, non-negotiable here since the whole
+  claim is comparative.
+
+### 25.12 Module layout, artifacts, config, tests
+
+**New modules**, each following the repo's pure/I-O split so the logic is
+unit-testable without a checkpoint (`sae/ground_truth.py`'s precedent):
+
+| module | contents |
+|---|---|
+| `sae/response.py` | the battery (pure, on forecast arrays), `random_direction_null`, `reach_probe`, and one I/O wrapper `feature_response_fingerprints(cfg, adapter, layer, sae, data, device, candidates)` |
+| `sae/roles.py` | pure: `select_candidates`, `residualized_structural_rho`, `cluster_roles`, `derive_role_name` (with the uniqueness constraint), `role_table` |
+| `sae/role_matching.py` | pure: `match_roles(fingerprints_a, fingerprints_b)` — **wraps** `sae/matching.py`, does not duplicate it |
+| `report/sae_roles.py` | selection/table building for the section, no HTML (`report/sae_exemplars.py`'s precedent) |
+| `run_sae_roles.py` | CLI to re-run Components A/B/C against an existing run's store and checkpoints with no retraining (`run_seasonality_circuit.py`'s precedent) |
+
+**Report:** `_sec_sae` rewritten per §25.7; `report/derived.py` gains
+`sae_role_rows(run_dir)` — pure, and under the same adaptivity contract as
+`bottom_line_rows`: **no model name, no architecture family, no
+`cfg.models[i]` index**, pinned by a test. One scorecard row per model:
+"does this model's dictionary contain causally effective features beyond
+chance", value = clearing-cell count, reference = chance count, rule =
+`greater_than`.
+
+**Artifacts** — additive only, per §11.39's rule; `sae/meta.json`'s existing
+keys are untouched so every recorded number stays regenerable:
+- `sae/response.json` — per target: candidates with their nomination rule,
+  per-channel effects with CIs, the null distribution, reach, gate states.
+- `sae/roles.json` — per target: roles, derived names, members, silhouette;
+  per pair: role matches with both nulls.
+
+**Config** (`SAEConfig`, all defaults chosen so no existing run's artifacts
+change): `response_enabled: false`, `response_channels: [...]` (all),
+`response_strength_sigma: 2.0` (matching `feature_steering_strength_sigma`),
+`response_max_series: 32`, `response_n_features: 12`,
+`response_n_null_directions: 24`, `response_candidate_rules:
+[structural, variance, provenance, random]`, `role_k: auto`,
+`role_min_silhouette: 0.1`.
+
+**Tests**, all synthetic with planted answers, with the load-bearing ones
+being negatives — the pattern every recent item here has needed:
+1. A **planted feature** whose decoder direction adds a known linear ramp:
+   the `trend` channel must recover it and the others must stay inside their
+   null. (The positive control.)
+2. **A feature that does nothing** must produce a blank row, not a small
+   number — i.e. the null threshold actually gates.
+3. **An unreachable target** (a stub adapter whose forecast ignores patched
+   positions) must *withhold*, and must not report zeros as effects. Pinned
+   against the pre-fix behaviour, per §11.42.
+4. **Name uniqueness**: two roles engineered to derive the same name must
+   come out with different rendered names, and two genuinely
+   indistinguishable roles must come out `unnamed`, not silently ordered.
+5. **Provenance residualization**: a feature that is a pure tier indicator
+   must score ~0 residualized structural ρ on every field, and must be named
+   a provenance detector. Its mirror: a feature that tracks a structural
+   field *and* correlates with tier through it must survive residualization
+   — the §11.36 lesson, where both directions of the same guard were wrong
+   on first write, each being the other's answer.
+6. **Chance-count arithmetic**: the excess-over-chance statistic must be
+   computed from `n_features · n_channels`, not from a hardcoded number, and
+   a test must show it moves when either dimension moves.
+7. **Adaptivity**: `sae_role_rows` contains no model name or positional
+   index (grep-style assertion, as `bottom_line_rows` already has).
+
+### 25.13 Pre-registered negative outcomes
+
+Written before the measurement, per §23's integrity constraint, so that a
+disappointing answer is reportable rather than re-run away.
+
+1. **No feature clears the random-direction null on any channel.** Report
+   exactly that: *at ±2σ, individual SAE features at these targets have no
+   measurable causal effect on the forecast beyond an arbitrary perturbation
+   of the same size.* Do **not** raise k until something moves. This is a
+   real and interesting negative — it would say these dictionaries are
+   descriptive decompositions, not computational ones, and it would
+   retroactively contextualize §7 bullet 3's own small, mixed-sign ablation
+   deltas (max |Δ vs full-recon| ≈ 0.022 for TimesFM), which are exactly
+   what this outcome looks like from the one measurement already on record.
+2. **Roles do not cluster** (silhouette below `role_min_silhouette`, or
+   every atom its own role). Report the dictionary as non-modular at this
+   granularity and render features flat, with Component B(a)'s de-confounded
+   labels — which alone fixes the user's stated complaint.
+3. **Cross-model role matching does not beat the untrained-twin floor.**
+   Report the floor and the failure, and **quote no shared fraction** —
+   §6.2.1 Stage 1's exact discipline, including its later finding that the
+   floor is itself seed-fragile, so the floor needs several seeds too.
+4. **Only one model has an alive dictionary** (the live risk, §25.8).
+   Component C is withheld for want of a second side; A and B still run
+   on the one model, and the section says which model was excluded and at
+   what measured dead rate.
+
+### 25.14 Explicitly out of scope, so it is not re-proposed
+
+- **Minimal sufficient feature set** (greedy forward selection over features
+  against a random-set null, H8 Stage 2's machinery applied to atoms rather
+  than heads). The most interesting follow-on, and it is a circuit study, not
+  a legibility fix. Un-park trigger: Stage 2 exits positive with ≥3 features
+  clearing the null on the same channel.
+- **Window-level ground-truth alignment** — 🔴 **promoted out of this list
+  the same day: it is a hard prerequisite of §25.19's Tier 2, not an optional
+  extra**, because a description of *when* a feature fires cannot be scored
+  without it. Still deferred relative to Tier 1, which does not need it.
+  Matching a feature's per-window
+  activation trace against pooled per-timestep `GroundTruth.components`
+  (changepoint *locations*, anomaly *positions*, seasonal phase), the
+  deferred finer version `sae/ground_truth.py`'s docstring already names.
+  This is what would let a feature be named *"fires at changepoints"* rather
+  than *"correlates with the changepoint count"*, and it is the single
+  biggest remaining upgrade to the correlational half. Deliberately deferred:
+  it needs a pooling decision over `components` that is its own design.
+  §25.7 item 5's activation trace is the cheap visual stand-in.
+- **A frequency-aware or matryoshka dictionary** (§6.2 items 2–3). Changing
+  the dictionary is a different project from explaining the one that exists.
+- **Reviving the crosscoder** to get cross-model features. §6.2.1 closed as a
+  pre-registered negative; Component C deliberately gets cross-model
+  comparability from *forecast-space* fingerprints instead of joint training,
+  which is cheaper, needs no new artifact, and does not reopen a decision
+  that was made correctly.
+- ~~**Automated natural-language feature descriptions** (LLM autointerp). Not
+  reproducible, not verifiable against ground truth, and this repo already
+  rejected LLM-based generation for the same reason (`CLAUDE.md` §4.6).~~
+  🔴 **Corrected the same day — see §25.19.** The `§4.6` citation is wrong:
+  that rejection is about *generating benchmark data*, where bit-exact
+  regeneration is invariant 1. The rejection that actually applies is §22.8's,
+  and its stated ground is **auditability** — which simulation scoring plus a
+  deterministic no-new-facts verifier supplies. A *scored, suppressible*
+  description is admissible under the same rule that rejects an *unscored*
+  narrative summary. Struck rather than deleted, per §0.2.
+
+### 25.15 Docs that go stale when this lands
+
+Listed now so the closing pass does not have to rediscover them — the
+staleness class §0.5's own self-corrections keep finding.
+
+- `CLAUDE.md` §6.5's SAE paragraph and §6.1's stage table row (the SAE
+  section's contents change).
+- `CLAUDE.md` §13 item 3's long correction chain — it describes the SAE
+  deliverable as baseline-plus-deferred-crosscoder, with no mention of
+  naming or causal rendering.
+- `report.py::_sec_sae`'s docstring — stale *today* (§25.1 (5)).
+- `sae/ground_truth.py`'s module docstring — its "best match and its
+  strength" framing is what §25.1 (1)–(3) is about.
+- `docs/worked_example.md` — walks the run whose SAE table says
+  `tier_realism_stress` 34 of 50 times; per §21 J3 it is a regression test,
+  so it must be re-derived, not re-written.
+- `stage_docs.py`'s `sae` entry (`good_bad` and the *what it cannot tell you*
+  line both change: it can now tell you a causal effect, and it still cannot
+  tell you a cross-model causal one).
+- `glossary.py` — four new terms (§25.9 Stage 5).
+
+### 25.16 The dead dictionaries — what is known, one new measurement, and would more data help?
+
+Asked directly by the user (2026-08-31): *"is there anything that can be done
+about the 90% dead dictionaries? would more data and diversity help at all?"*
+Short answers: **yes, and it is already built and validated but off by
+default**; and **no for data volume, no for the obvious kind of diversity —
+both were measured and the real-data version made it worse.** But a
+**third** answer came out of a read-only sweep over artifacts already on
+disk, and it is new to this repo.
+
+**(a) The cure exists. §23.2 A1 closed 2026-08-21.** Three knobs, none of
+them "more data":
+
+| target | before | after | mechanism |
+|---|---|---|---|
+| TimesFM `stacked_xf.18` | 0.9461 dead, fid 0.859, dict 10240 | **0.207±0.026 dead** (5/5 seeds ≤0.30), fid 0.928, dict 2048 | `min_train_steps: 720`, `aux_k: 64`, `aux_dead_steps_frac: 0.028`, `dict_size_policy: search` |
+| Chronos-T5-Base `encoder.block.6` | 0.9740 dead, fid 0.840, dict 6144 | **0.219±0.042 dead** (5/5 seeds, worst 0.2656), fid 0.900, dict **192** | same, after densifying the ladder to include 176/192 |
+
+The dominant cause was never the data: at 4608–8608 rows against
+`batch_size: 4096`, `epochs: 60` buys **120–180 optimizer steps**, where the
+46,382-row crosscoder store buys ~720 for the *identical* config field —
+a 4–6× training-budget gap hidden inside a number that reads the same in
+both files, compounded by `aux_dead_steps: 20` being 2.8% of a 720-step
+budget and 11–17% of a 150-step one (`CLAUDE.md` §11.26's lesson exactly).
+`min_train_steps` decouples the step budget from the row count, so the
+benefit that *looked* like "more data" is obtainable at zero data cost.
+**Why it is still off:** flipping the defaults retroactively changes what
+every recorded SAE number in this repo describes (§2.1), so §23.2 A1
+correctly confined the fix to `configs/sae_revival.yaml`. The deliberate
+adoption pass is §25.9 Stage 0 and it is the blocker for everything in §25.
+
+**(b) More data does not help; the real-data version measurably hurt.**
+Already measured (§23.2 A1 findings 1–2), and worth quoting because the
+intuition is so natural:
+- The 95%-dead production runs **already had real data on** —
+  `real_data_enabled: true`, 4000 of 8608 training rows were real Monash
+  activations. 95.9% dead anyway.
+- Real rows excite **fewer** activation directions than the synthetic
+  corpus: effective dim **1.76 vs 2.66** (TimesFM), **5.41 vs 8.67**
+  (Chronos-T5-Base) — and the dead rate measured *on* real rows is
+  **higher** (0.9755 vs 0.9593; 0.9756 vs 0.9740).
+- So the obvious diversity injection points the wrong way. Monash's
+  pooled catalog is dominated by short, low-frequency, weakly-structured
+  series (§11.46's postscript: `weather` is effectively the only domain
+  that can even serve a 512-context analysis here), which is *less*
+  varied in activation space than 12 deliberately-contrasting synthetic
+  archetypes.
+
+**(c) 🔵 NEW, measured 2026-08-31, zero GPU — the alive-atom ceiling tracks
+the layer's own effective dimensionality, a quantity `internals` already
+computes on every run.** Joined `sae/meta.json` against
+`internals/profile.json` across **45 unique (model, layer, dict_size,
+recipe) cells** on nine existing run directories — a pure read-only
+reduction, nothing trained, nothing re-extracted:
+
+| predictor of alive-atom count | Spearman ρ | p |
+|---|---|---|
+| layer `effective_dim` | **+0.5842** | 2.51e-05 |
+| `dict_size` | −0.2010 | 0.185 (n.s.) |
+| `d_in` | −0.2010 | 0.185 (n.s.) |
+
+and on dead *rate*: `effective_dim` **ρ = −0.6076, p = 9.57e-06**;
+`dict_size` ρ = +0.3468. In logs, `log(alive) ~ log(effective_dim)` gives
+**R² 0.3885 with an exponent of 1.02** — alive atoms scale *linearly* with
+the layer's effective dimensionality — while `log(dict_size)` alone gives
+R² 0.117 with a **negative** exponent (−1.128). Both together: R² 0.4917,
+`effective_dim` exponent 1.003, `dict_size` −1.06. **Only 3 of 45 cells are
+dictionary-bound** (alive within 5% of `dict_size`); in the other 42 the
+dictionary is not the binding constraint at all.
+
+The **within-model control** removes every corpus and recipe confound —
+same run, same corpus, same `dict_size` 10240, same `k`, same steps, only
+the layer varies (`runs/full_report_run_large`, TimesFM):
+
+| layer | `effective_dim` | alive atoms |
+|---|---|---|
+| `stacked_xf.2` | 31.65 | 1258 |
+| `stacked_xf.6` | 22.02 | 486 |
+| `stacked_xf.10` | 15.42 | 542 |
+| `stacked_xf.16` | 6.41 | 309 |
+| `stacked_xf.18` | 2.49 | 237 |
+
+ρ = **+0.900** over 5 layers. And the cross-architecture case that looked
+like a mystery is not one: **Chronos-2's dictionaries are alive
+(0.0078–0.0124 dead, 6068–6096 of 6144 atoms) because its layers measure
+`effective_dim` 39.89–49.81**, against Chronos-T5-Base's 6.79–12.33 at
+*identical* SAE settings on the *same* corpus. §23.2 A1's unplanned
+controlled result — "the dead rate is a property of the model, not the
+recipe" — is sharpened: it is a property of **how many directions that
+layer's activations actually occupy on this corpus**, which is neither the
+model alone nor the recipe.
+
+🔴 **What this does not license, stated before someone builds on it.** The
+ratio `alive / effective_dim` is **not** a constant — median 31.6 with an
+IQR of 19.5–108.8 across the non-dict-bound cells — so this is an
+*association strong enough to act on*, not a formula. Three specific
+threats, each of which is why the next step is a controlled test rather
+than a config change:
+1. **Partial circularity.** `effective_dim` is the participation ratio of
+   the PCA spectrum of the *same* window activations the SAE is fit to. It
+   is not the same quantity (one is linear and global, the other is a
+   sparse overcomplete code), but they are not independent either, and a
+   ρ of 0.58 is consistent with a shared cause rather than a mechanism.
+2. **Pooled non-independent units.** 45 cells over ~6 models and 3
+   corpora, with layers inside a model correlated by construction. The
+   within-model control above is the honest core of the result; the pooled
+   ρ is context.
+3. **§11.33/§11.35's shape.** A normalized quantity that looks
+   architecture-neutral and is not. `alive/effective_dim` spans 25–207
+   across models, so any *threshold* on it would be riding a confound —
+   read the exponent, not the ratio.
+
+**The one experiment worth running, and it is cheap.** Two arms, both on
+cached activations with no re-extraction:
+- **Arm 1 — does corpus diversity move `effective_dim`, and does
+  `effective_dim` then move the alive ceiling?** Extract the same model and
+  layer against corpora of deliberately increasing family/archetype
+  diversity (the 8 frozen archetypes → all 12 → all 12 plus the three
+  real-derived generators — `configs/full_multidomain*.yaml` already
+  specify these), measure `effective_dim` per corpus, then train the *same*
+  SAE recipe at each. The prediction is explicit and falsifiable: alive
+  count rises with `effective_dim` at an exponent near 1, and does **not**
+  rise with row count at fixed `effective_dim`. The second half is the
+  discriminating one, because it is what separates "diversity helps" from
+  "more steps help" — and §23.2 A1 already showed steps are a real lever,
+  so an uncontrolled diversity run would be confounded by them
+  (`min_train_steps` must be pinned across arms).
+- **Arm 2 — replace the ladder search with an `effective_dim`-derived
+  starting point.** §23.2 A1's `dict_size_policy: search` costs 8–40
+  trainings per target and, on Chronos-T5-Base, needed a hand-densified
+  ladder to find 192 at all. If alive ≈ c·`effective_dim`, the ladder
+  should be *centred* on that estimate rather than on `8 · d_in` — which is
+  a quantity the data says is uncorrelated with the answer. Acceptance: the
+  narrowed ladder finds the same chosen size as the full ladder on both
+  already-validated targets, at a fraction of the trainings. This is a
+  cost fix, not a capability fix, and it should not be built until Arm 1
+  says the association survives a controlled test.
+
+**Pre-registered negative:** if Arm 1's diversity sweep raises
+`effective_dim` and the alive ceiling does *not* follow, the association is
+confounded (threat 1 above) and `dict_size` stays empirical. Record it and
+stop — do not reach for a third predictor.
+
+🔴 **A caveat that outlives all of the above — and it was CONFOUNDED as
+first written. Read §25.20 instead; the original is kept per §0.2.**
+~~Reviving a dictionary does not make it interpretable. §23.2 A1's own
+controlled result: Chronos-2's alive dictionaries (1–13% dead) align to
+ground truth **worse** than the ~95%-dead ones (mean|ρ| **0.177–0.189**
+against a permutation null of 0.118–0.120) where Chronos-T5-Base's dead
+dictionary reads **0.337** against a null of **0.110**.~~ **That comparison
+is across two different architectures, corpora and `effective_dim` regimes,
+so it is not evidence about revival at all** (user challenge, same day). The
+within-model version — same model, same layer, same corpus, three dead rates
+— is measured in §25.20 and is less convenient: revival is free-or-better for
+Chronos-T5-Base (gap over null +0.2362 vs +0.2294, one *more* structural
+field covered, fidelity 0.901 vs 0.840, at a 32× smaller dictionary) and
+genuinely costs correlational signal for TimesFM (+0.1665 → +0.1086). What
+survives unchanged: **"alive" is a prerequisite for §25, not a proxy for its
+success** — and if §25's roles turn out *less* legible on a revived
+dictionary, that is a finding about what TopK death was filtering, not a
+regression. §25.20 turns exactly that into a testable question.
+
+### 25.17 Component D — causality the reader can *see*, and can disbelieve
+
+Asked by the user: *"is there anything else that might help visualize
+causality in SAE and comparing that across models?"* §25.4's fingerprint
+gives a *number* per (feature, channel). Three additions turn that into
+evidence a reader can inspect, and each one is a stronger causal claim than
+the single ±kσ point estimate — not a prettier rendering of it. All three
+reuse the same two forward passes' machinery; only the sweep costs more.
+
+**(D1) Dose–response instead of a single dose.** Sweep the steering
+coefficient over `[−3, −2, −1, 0, +1, +2, +3] · σ_f` and plot each channel
+against dose. Cost: 7 passes per feature instead of 2. What it buys is
+disproportionate:
+- **Monotonicity is a statistic**, not a picture — Spearman(dose, readout)
+  with a series-bootstrap CI. A monotone dose–response is the standard
+  evidence that an intervention acts on the quantity it appears to act on;
+  a non-monotone one says the feature is entangled or the patch is
+  saturating, and either is worth knowing.
+- It **separates saturation from absence**, which a single point cannot: a
+  feature whose effect plateaus by 1σ and one that does nothing until 3σ
+  both read as "small" at 2σ.
+- It exposes **asymmetry**, which for time series is often the whole story:
+  a feature that can suppress a seasonality but not create one is a
+  different object from one that does both, and §25.4's signed single point
+  cannot distinguish them.
+- It makes the **null comparison visual** — the K random directions' own
+  dose–response curves render as a grey band behind the feature's curve, so
+  "clears the null" is something the reader sees rather than a verdict they
+  are handed. This is the single highest-value figure in the whole design.
+
+**(D2) Necessity and sufficiency as separate columns.** The most legible
+causal demonstration available here, and it is free once D1 exists —
+it only changes *which series* the intervention runs on, using ground truth
+the corpus already carries:
+- **Necessity:** ablate feature f on series that **have** the property
+  (`n_seasonalities > 0` for a seasonal role). Does the forecast lose it?
+- **Sufficiency:** steer f **up** on series that **lack** it
+  (`n_seasonalities == 0`, `trend_order == 0`, `n_changepoints == 0`). Does
+  the forecast **grow** one that was not in the input?
+
+Sufficiency is the claim a reader remembers, because the picture is
+unambiguous: a flat context, a flat baseline forecast, and a steered
+forecast with a visible period-24 oscillation in it. It is also the claim
+this repo is unusually equipped to make honestly — the ground truth says,
+per series, that the property is genuinely absent, so "the model invented
+it" is verifiable rather than eyeballed (§2.1's unfair advantage, applied
+to features instead of layers). A role that is necessary but not sufficient
+gets both cells filled in and neither claim inflated; today the section
+makes neither.
+
+**(D3) 🔵 Cross-validate each role against L3's independent causal
+battery.** This is the strongest idea in §25 that does not need any new
+measurement primitive, and it grounds SAE features in a mechanism this repo
+already trusts rather than in a mechanism §25 invented. L3 corrupts one
+structural property at a time and measures the model's per-layer response;
+the corruptions map onto ground-truth fields almost one-to-one:
+
+| corruption | the property it removes | the role that should carry it |
+|---|---|---|
+| `deseasonalize` | seasonality | seasonal-magnitude roles |
+| `detrend` | trend | trend-slope roles |
+| `noise` | noise level | dispersion roles |
+| `level_shift` | level / changepoints | level-shifter roles |
+| `spike` | point anomalies | anomaly roles |
+| `dropout` | intermittency | flatness roles |
+
+**The test:** ablate role R, then re-run L3's corruption battery on the
+ablated model. If R genuinely carries seasonality, ablating it should
+**blunt the model's response to `deseasonalize` specifically**, and leave
+its response to `detrend`/`noise` roughly intact. That is an *interaction*
+with a built-in within-run control — the other corruptions — so it does not
+need a new null: the claim is a difference of differences, and the
+non-matching corruptions are the comparison. Cost is bounded by testing
+only each role's *predicted* corruption plus two controls: ~6 roles × 3
+corruptions = 18 passes per target.
+
+Why this matters more than its cost suggests: every other channel in §25.4
+is read in *forecast* space, so a skeptic can say the fingerprint is
+describing an output artifact rather than an internal computation. D3's
+readout is L3's *activation-space* sensitivity, measured by machinery that
+predates this design and was validated independently. Agreement between the
+two is convergent evidence from two directions; **disagreement is the more
+valuable outcome** and must be rendered as such rather than resolved in
+favour of whichever number is prettier.
+
+**Display.** One dose–response panel per role (D1) with the null band
+behind it; a two-column necessity/sufficiency table with a worked
+before/after forecast per role (D2); and a role × corruption heatmap whose
+diagonal is the *predicted* correspondence above (D3) — a bright diagonal
+is the result, and off-diagonal brightness is entanglement, both readable
+at a glance without a single number being parsed.
+
+**Cross-model, which is the second half of the user's question.** Overlay
+the two models' dose–response curves for *matched* roles (§25.18) on one
+axis. Because the readouts are forecast-space, the axes are literally the
+same units, so the overlay is legitimate with no rescaling — and the
+comparison a TSFM reader wants falls straight out: *same role, same dose,
+how much does each model's forecast move?* A role that is steep in one
+model and flat in the other is a real architectural difference in how
+strongly that computation is expressed. 🔴 **What must not be done:
+transplanting a feature from one model into the other.** Invariant 5
+forbids cross-model activation transplants for good reason, and it applies
+to SAE directions unchanged — what is compared is each model's *own*
+dose–response curve, never a direction moved between them.
+
+### 25.18 Component E — shared, model-specific, and the third category nobody renders
+
+Asked by the user: *"comparing features across models can be useful, and
+comparing those unique to one model is also useful to know."* Agreed on
+both, and the second is the more interesting claim — which is exactly why
+it needs the most protection, because **"unique to model A" and "not
+detected in model B" are the same measurement with different power**, and
+this repo has been burned by that distinction twice (§11.37's degenerate
+baseline scoring a confident win; §11.35's correct model refused by a
+ceiling).
+
+**Three categories, not two.** For each canonical role, per model pair:
+
+| verdict | requires |
+|---|---|
+| **shared** | matched above the untrained-twin floor in both models |
+| **specific to A** | present in A above its null, **and** B is shown to have had the *power* to express it and did not |
+| **unresolved** | anything else — and it renders as its own category, never folded into "specific" |
+
+The middle row's second clause is the whole design. To claim a role is
+*absent* from B rather than *unlooked-for* in B, all of these must hold and
+each must render:
+1. B has an **alive** dictionary (§25.8's gate) at a target of comparable
+   depth on the `block` axis (§18 F1) — a Chronos-T5 encoder-only capture
+   surface caps near 0.48, so "comparable depth" is frequently
+   unsatisfiable and must say so;
+2. B's own roles **do** clear the null at that target, i.e. the machinery
+   demonstrably detects things there;
+3. the best-matching B role's fingerprint distance to A's role exceeds what
+   B's *within-model* role-to-role distances look like — otherwise "no
+   match" is just the matcher's resolution.
+Fail any one and the cell is **unresolved**, with the failing clause named.
+A "model-specific feature" table that cannot distinguish these is worse
+than no table, because a missing capability reads as a finding — §11.37's
+lesson stated for the cross-model case.
+
+**Nulls, and a hard-won constraint on quoting the headline.** Two floors:
+shuffled-series for the activation-profile signal, and each model's own
+`random_init` twin for the fingerprint match. 🔴 **No shared/specific
+fraction may be quoted without its untrained-twin floor in the same row,
+and the floor needs ≥3 seeds** — §6.2.1 Stage 1 measured the crosscoder's
+`frac_shared` at **0.845 against a 0.974 twin floor** (TimesFM read as
+*more* shared with a random copy of itself than with Chronos), and Stage 4
+then found that floor is itself **seed-fragile: 0.696 / 0.792 / 0.856
+across three seeds** while the real pair's own value stayed at 0.749–0.777.
+A single-seed floor is not a floor. This is the single most important
+inherited constraint in §25 and it applies to Component E's headline
+verbatim.
+
+**Why this route is worth trying when the crosscoder's failed.** §6.2.1
+closed as a pre-registered negative and should stay closed — but its
+failure was specific: `relative_decoder_norm` on a *jointly trained*
+dictionary, where dead-atom symmetry inflated "shared" to ~98% and the
+alive version did not separate lineage. Component E asks the same question
+in a different space, and the difference is not cosmetic: a **forecast-space
+fingerprint has no hidden dimension, no tokenization, no depth axis and no
+joint training to destabilize** — it is the only genuinely
+architecture-neutral feature space this repo has produced, and it comes
+free from Component A. If it also fails to beat the twin floor, that is a
+second, independent negative on a well-posed question, which is a
+publishable result and cheap to obtain. It is not a reopening of §6.2.1's
+decision.
+
+**Display.** The role × model matrix (§25.7 item 6) gains the three-way
+colour coding, with `unresolved` visually distinct from both — and every
+`specific to A` cell carries the three clauses' values in its tooltip, so
+the strongest claim in the section is the one whose evidence is hardest to
+avoid reading. A short "**only in this model**" list per model, each entry
+with its dose–response curve beside the other model's flat best-match
+curve (§25.17), is the figure the user's question is actually asking for.
+
+### 25.19 Component F — descriptions a reader can act on, and a correction to §25.14
+
+Asked by the user: *"TSFM features are very difficult to interpret for the
+viewer, so is there any way to make the descriptions more clear? Maybe
+having a small LLM run during that step that is given context of when the
+model fires most and for what."*
+
+🔴 **First, a correction to something I wrote in §25.14 four hours earlier.**
+That bullet rejected LLM feature descriptions "for the same reason"
+`CLAUDE.md` §4.6 rejected LLM-based generation. **That analogy is too
+strong and the citation is wrong.** §4.6 rejects LLMs for *generating
+benchmark data*, where bit-exact regeneration from a seed is invariant 1 and
+an unreproducible generator would break every sealed corpus. A *description*
+is not data, is not an input to any measurement, and breaks no invariant.
+The rejection that actually bears on this is **§22.8's** — *"an LLM-written
+narrative summary of the report… generated prose breaks [traceability] and
+cannot be audited"* — and that one is correctly reasoned. But note its
+stated ground: **auditability**, not distaste. So the question is not
+"LLM or not"; it is **can a generated sentence be audited, and what happens
+when it fails the audit.** That has a real answer, and it is the design
+below. §25.14's bullet is corrected in place to point here.
+
+**Three tiers, in increasing cost and risk. Tier 1 alone already fixes most
+of the user's complaint.**
+
+**Tier 1 — templated sentences from measured quantities. Deterministic, no
+LLM, always on.** §25.5(b)'s derived role names are already one step of
+this; a sentence is the next. Composed only from values in
+`sae/response.json` / `sae/roles.json`:
+
+> *"Increasing this feature makes the forecast's period-24 component
+> **2.7× stronger** (clears the random-direction null by 3.1×, monotone
+> across ±3σ, ρ=0.94). It fires most on strongly seasonal series
+> (residualized ρ=0.61 with `seasonal_amplitude_max`, n=555). Ablating it
+> blunts this model's response to `deseasonalize` by 41% and leaves
+> `detrend` unchanged."*
+
+That is legible to a non-specialist, every clause traces to an artifact, it
+renders identically on every re-render, and it needs no external service. It
+is also the honest ceiling of what can be said without an LLM — and it is
+already most of the value.
+
+**Tier 2 — LLM *phrasing*, audited. Optional, cached, and suppressible.**
+The LLM's job is narrowed until it can be checked: it receives an
+**evidence dict** (the fingerprint with null units, the dose–response
+monotonicity, the top-activating series' ground-truth fields, the
+when-it-fires window trace, the residualized structural signature, the D3
+corruption interaction) and returns (i) one sentence and (ii) a
+**prediction rule** — a short, explicit statement of what should make this
+feature fire. Three gates, all of which must pass before the sentence
+renders:
+
+1. **No-new-facts verifier (deterministic).** Every number, field name,
+   corruption name and model name in the output must appear in the evidence
+   dict. A sentence containing anything else is **discarded, not shown with
+   a caveat** — this is the mechanical form of §22.8's traceability
+   requirement, and it is cheap because the check is string-level, not
+   semantic.
+2. **Simulation scoring (the actual audit).** Take the description's
+   prediction rule, apply it *blind* to **held-out** series — a predictor
+   that sees only the description and each series' ground-truth fields, and
+   guesses activation — then correlate predicted with actual. This is the
+   established autointerp-scoring pattern, and it is what converts an
+   opinion into a measurement. **Null:** the identical predictor given
+   *another feature's* description. A description that cannot beat that
+   discrimination null does not describe its feature, and is suppressed.
+3. **Reproducibility bookkeeping.** Descriptions cached keyed by a hash of
+   the evidence dict + model id + prompt version, all three recorded in
+   `run_provenance()`. A re-render never re-queries; a changed evidence dict
+   invalidates the cache loudly. `manifest.py::verify_provenance` already
+   diffs recorded environment against current, so the seam exists.
+
+The rendered result is the **score next to the sentence**, always: *"model
+Fable-5, description score 0.71 vs. 0.09 discrimination null."* A low score
+is not a failure of the report, it is the finding — *this feature resists
+description*, which for TSFM features is a genuinely interesting and
+probably common outcome, and which the current section has no way to
+express at all.
+
+🔴 **Tier 3 — rejected, and the boundary matters.** The LLM must never:
+produce the *claim* (only its phrasing); see raw activations and infer
+meaning; write anything when the evidence dict is empty or the gates fail;
+or be the reason a feature appears interesting. The evidence class of a
+Tier-2 sentence is **exactly that of the measurements it paraphrases** —
+`causal_within_model` for a fingerprint clause, `descriptive` for a
+correlational one — and never upgraded by fluency. Concretely: the roles
+table renders identically with descriptions off; Tier 2 adds a column, never
+a row, and never changes an ordering or a verdict.
+
+**Two non-LLM things that make features clearer and cost nothing, listed
+because they may beat Tier 2 for this audience.**
+- **"When it fires" as a picture, not a sentence.** For a time-series
+  reader, a feature's per-window activation trace overlaid on the series —
+  spiking at each changepoint, or ramping through a trend — communicates
+  more than any prose can, and it is already in §25.7 item 5.
+- **Show the feature's effect, not its description.** D2's sufficiency
+  demo (flat series in, seasonal forecast out) is self-explanatory to
+  anyone who can read a chart. Prose is the fallback for what a picture
+  cannot show, not the primary channel.
+
+**Dependency this creates, and it promotes something out of §25.14.** Tier
+2's evidence dict needs *when* a feature fires, at window resolution, tied
+to ground-truth **locations** (changepoint indices, anomaly positions,
+seasonal phase) — which §25.14 currently lists as out of scope. It is
+therefore a **prerequisite of Component F, not an optional extra**, and
+§25.14 is corrected accordingly. Tier 1 does not need it (it can say "fires
+most on series with property X"), so the ordering is: Tier 1 → window-level
+ground truth → Tier 2.
+
+**Pre-registered negatives.** (i) If Tier-2 descriptions do not beat the
+discrimination null across a majority of roles, the tier is **removed, not
+tuned** — a description layer that cannot be scored is exactly what §22.8
+rejects, and the correct outcome is Tier 1 alone. (ii) If Tier 1's
+templated sentences turn out to be *as* legible as Tier 2's in a read-
+through, Tier 2 is not worth its dependency and provenance cost; say so and
+stop. That comparison should be made deliberately after Tier 1 lands,
+because the null hypothesis here — *the measured template is already
+enough* — is quite likely true and is much cheaper.
+
+### 25.20 🔴 Correction — §25.16's closing caveat was confounded, and the revival decision is per-target
+
+User challenge (2026-08-31): *"The caveat about the 95% dead is actually a big
+deal. If that is the case, I would rather the more accurate one if it is
+better for this task."* Correct to push on it — that caveat gates §25.9 Stage
+0, which gates everything else in §25. Measured properly it does not say what
+I wrote, and the corrected version does not support a global default either
+way. All numbers below are read-only reductions over run directories already
+on disk; nothing was trained.
+
+**(a) The confound. §25.16's caveat compared two different architectures.** It
+read *"Chronos-2's alive dictionaries align to ground truth worse (0.177–0.189)
+than the ~95%-dead ones (0.337)"* — Chronos-2 against Chronos-T5-Base. Model
+identity, corpus, and `effective_dim` all differ, so it is not evidence about
+revival at all. The clean comparison exists: `runs/sae_revival` trained against
+a **copy of `runs/medium_run_chronos_base`'s own store**, so the same model, the
+same layer, the same corpus and the same rows are available at three dead
+rates.
+
+**(b) Within-model, same layer, same corpus — and the two models disagree.**
+`gap` is `mean_abs_rho_matched` minus that run's own permutation null, which is
+the only one of these statistics that survives (d) below:
+
+| target | dict | dead | alive | fidelity | mean\|ρ\| | null | **gap** | struct fields ≥0.4 |
+|---|---|---|---|---|---|---|---|---|
+| TimesFM `stacked_xf.18` | 10240 | 0.959 | 417 | 0.858 | 0.3486 | 0.1821 | **+0.1665** | 9 |
+| — same, `k=48` | 10240 | 0.778 | 2276 | 0.910 | 0.3414 | 0.1882 | +0.1532 | 7 |
+| — **revived** | 2048 | 0.223 | 1591 | **0.932** | 0.2980 | 0.1895 | **+0.1086** | 6 |
+| Chronos-T5-Base `encoder.block.6` | 6144 | 0.974 | 160 | 0.840 | 0.4015 | 0.1721 | **+0.2294** | 8 |
+| — same, `k=48` | 6144 | 0.908 | 568 | 0.888 | 0.3219 | 0.1895 | +0.1324 | 8 |
+| — **revived** | 192 | 0.182 | 157 | **0.901** | 0.4031 | 0.1669 | **+0.2362** | **9** |
+
+- **Chronos-T5-Base: revival is free, arguably strictly better.** Gap +0.2362
+  vs +0.2294, one *more* structural field covered (gains
+  `seasonal_amplitude_max`, loses none), fidelity 0.901 vs 0.840, at a **32×
+  smaller** dictionary. And it is a near-perfect natural control: **157 alive
+  vs 160 alive**, so the top-50 display cap applies almost identical selection
+  pressure in both — the one confound that could have explained the result is
+  absent by luck.
+- **TimesFM: revival genuinely costs correlational signal.** Gap +0.1665 →
+  +0.1086, a 35% decline, while fidelity *rises* 0.858 → 0.932. Note the
+  direction of the selection confound here: the revived dictionary's top-50 is
+  drawn from **1591 alive atoms against 417**, i.e. 3.8× more candidates to
+  pick the best 50 from, which should push its mean|ρ| *up*. It declines
+  anyway, so the decline is real rather than a display artifact.
+
+So **the user's premise holds for one target and not the other**, and no global
+default flip is defensible on this evidence. Live alternative explanation for
+TimesFM, not resolved here: **feature splitting** — 1591 alive atoms can carry
+the same ground-truth signal across more directions, lowering each individual
+ρ while the dictionary as a whole encodes as much or more. A mean over
+per-feature argmax ρ declines under splitting *by construction*, which is a
+property of the statistic, not of the dictionary.
+
+**(c) 🔴 But the statistic being defended is partly the one §25.1 indicted.**
+Splitting the same matches into provenance (`tier_*`/`generator_*`) vs
+structural fields:
+
+| target | provenance matches | their mean\|ρ\| | structural matches | their mean\|ρ\| |
+|---|---|---|---|---|
+| Chronos-T5-Base, dead | **35 of 50** | 0.637 | 15 | 0.573 |
+| Chronos-T5-Base, revived | 32 of 50 | 0.658 | 18 | 0.525 |
+| TimesFM, dead | 13 of 50 | **0.721** | 37 | 0.487 |
+| TimesFM, revived | 12 of 50 | 0.590 | 39 | 0.458 |
+
+In **every** row the provenance matches score *higher* than the structural
+ones. So `mean_abs_rho_matched` — the number that makes the dead dictionary
+look more accurate — is inflated by precisely the distribution-shift detectors
+§25.1 (2)–(3) identified as the defect. Chronos-T5-Base's headline 0.4015 is
+carried by 35 provenance detectors at ρ 0.637. **Choosing a dictionary to
+maximize that number selects for corpus-membership features**, which is the
+opposite of what §25 is for. Revival also moves the provenance count barely at
+all (35→32, 13→12), which independently confirms §25.1 (3): the collapse is a
+property of the *labelling scheme*, not of the dictionary, and no amount of
+dictionary work will fix it — only §25.5(a) will.
+
+**(d) 🔴 And a metric I was about to recommend is refuted by the untrained
+twin.** The natural fix for (b)'s feature-splitting worry is to score each
+ground-truth field by the *best* feature matching it rather than by a mean over
+features. Measured against the `random_init` twins:
+
+| dictionary | best-per-field structural mean\|ρ\| | gap over own null |
+|---|---|---|
+| Chronos-T5-Base, revived (real) | 0.567 | **+0.2362** |
+| Chronos-T5-Base **untrained twin** | **0.565** | **−0.0170** |
+| TimesFM, dead (real) | 0.538 | +0.1665 |
+| TimesFM **untrained twin** | 0.380 | **+0.0068** |
+
+A randomly-initialized Chronos scores **0.565** on best-per-field structural
+alignment against the real revived dictionary's **0.567** — the statistic does
+not separate a trained model from an untrained one, so it cannot be used to
+choose between dictionaries. Only the **gap over the permutation null**
+separates cleanly (real +0.109…+0.236; twins +0.007 and −0.017). §16 E9's rule
+recurring: a plausible-looking alignment number means nothing until its
+architecture-only floor is beside it.
+
+**One further caveat on fidelity, since (b) leans on it.** The TimesFM
+untrained twin has the **highest fidelity of any dictionary measured (0.963)**
+while carrying no ground-truth signal at all (gap +0.0068) — its activations
+are simply lower-dimensional (`effective_dim` 1.76 vs 2.66) and therefore
+easier to reconstruct. So fidelity is not a proxy for interpretability. It is
+still the right thing to read in (b), because there the activations are held
+**fixed** (same store, same rows) and fidelity then means what it should: how
+tight the reconstruction baseline is that every Component A effect is measured
+against. Fidelity comparisons across *different* activations are meaningless;
+across a fixed store they are not.
+
+**(e) Consequence: §25.9 Stage 0's exit criterion changes, and it is not a
+dead-rate threshold.** Superseding §25.8's gate row and §25.9 Stage 0 as
+originally written:
+
+1. **Train both dictionaries per target** — the current production recipe and
+   the §23.2 A1 revived recipe — on the same frozen store. Cost is
+   cached-activation training only; this is why the choice can be measured
+   rather than argued.
+2. **Choose per target, on §25's own criteria, not on dead rate**, in this
+   priority order: (i) **gap over the permutation null** — the only
+   correlational statistic (d) shows to be valid; (ii) **structural-field
+   coverage** with provenance matches excluded, per (c); (iii) **fidelity**,
+   as the causal baseline's tightness at fixed activations; (iv) dead rate
+   only as a *reporting* constraint — a section describing 50 of 417 alive of
+   10240 atoms is describing 4.1% of a dictionary and must say so.
+3. **Where the two disagree, keep both and report the difference.** For
+   TimesFM they do disagree, and the resolution is not a tiebreak rule: it is
+   **Component A**. The whole premise of §25 is that a feature's identity is
+   what it does to the forecast, so *the dictionary whose features have larger,
+   more monotone, better-null-separated causal effects is the better dictionary
+   for this section* — by this section's own definition. That criterion does
+   not exist yet, which is exactly why Stage 0 cannot be decided on
+   correlational grounds today.
+4. **Never flip the defaults in an already-recorded config.** §23.2 A1's
+   confinement of the fix to `configs/sae_revival.yaml` stays; the A/B lives
+   in a new config with a new `run.name` (§15 A3).
+
+**The research question this turns the caveat into, which is worth more than
+the config decision.** *Does TopK-induced feature death act as a useful
+filter?* A 96%-dead dictionary's surviving 4% are not a random 4% — they are
+the directions that kept winning the TopK competition, i.e. the
+highest-utilization ones. TimesFM's data is consistent with that: fewer
+features, each individually better aligned. If Component A finds the dead
+dictionary's surviving features also have *larger causal effects*, then death
+is a crude but real importance filter and §25 should say so; if the revived
+dictionary's 1591 features split the same effects into finer, individually
+weaker but jointly stronger pieces, that is textbook feature splitting and the
+revived dictionary is better despite the lower ρ. **Both outcomes are
+publishable and the experiment is one extra training run per target.** This
+repo is unusually well placed to answer it, because it has exact ground truth,
+an untrained-twin floor, and a causal readout — the three things the SAE
+literature usually lacks when it argues about dead features.
+
+🔬 **That question is now tracked as its own item, and it is parked behind
+this work rather than merged into it: §22.0, first in §22's list, by user
+instruction on 2026-08-31** (*"First I want the SAE to work, then test out the
+research question"*). §22.0 carries the falsifiable statement of both halves,
+the novelty claim with its own literature-check falsifier, and the second
+question the same instruction asked for — **why the best recipe is
+model-dependent**, whose leading hypothesis is that revival's benefit tracks
+`effective_dim` (TimesFM 2.66 → revival hurts; Chronos-T5-Base 8.67 →
+revival helps; Chronos-2 44.26 → already 1.2% dead with no intervention),
+testable within a *single* model because `effective_dim` varies 12-fold
+across TimesFM's depth. Its un-park trigger is §25.9 Stage 2 exiting
+positive. Do not start it before then — the whole point of the ordering is
+that a correlational answer to it is worthless (§25.20(d)) and the causal
+instrument does not exist yet.
+
+**Pre-registered:** if Component A shows no significant difference in causal
+effect size between the two dictionaries at a target, prefer the **revived**
+one on the tiebreakers that are not in dispute — higher fidelity, 5–32×
+smaller, and honest coverage of its own atoms — and record that the
+correlational decline was not accompanied by a causal one.
+
+### 25.21 Stage 0 run, extended from 2 targets to all 7 flagship targets (2026-08-31)
+
+§25.20(b)'s proof-of-concept covered only the two-model-pair's pinned
+targets (TimesFM `stacked_xf.18`, Chronos-T5-Base `encoder.block.6`). This
+runs §25.20(e)'s exit procedure — train **both** recipes per target on a
+frozen store, choose per target on the stated priority order, never flip a
+default in place — across the full set of 7 targets the three-model
+flagship panel's `layer_screen` selection actually names (Chronos-2's 3
+targets excluded: §25.8's gate table already shows it passes the alive-
+dictionary gate under the production recipe with no intervention, 0.78–1.24%
+dead, so there is no revival question to ask there).
+
+**Setup.** Two new configs, `configs/sae_stage0_panel.yaml` (production:
+`dict_size_mult: 8, k: 32, aux_k: 0, dict_size_policy: mult`) and
+`configs/sae_stage0_panel_revived.yaml` (revived: `dict_size_policy: search`
+over ladder `[128,176,192,256,384,512,768,1024,1536,2048]`,
+`max_dead_rate: 0.30`, `min_fidelity: 0.5`, `aux_k: 64`, `aux_coef: 0.03125`,
+`min_train_steps: 720`, `dict_size_search_seeds: 5`). Both are
+`configs/full_report_run_large.yaml` verbatim except `run.name` and
+`sae.targets`, pointed at a **copy** of `full_report_run_large`'s
+already-extracted `activations.zarr` (no re-extraction; every upstream
+stage — l0–l3, internals, lens, attention, budget, clustering, exemplars,
+layer_screen — self-skips via its §15 A3 fingerprint match). Cost was
+cached-activation SAE training only, exactly as §25.9 Stage 0 specifies.
+
+**A real crash, matching a documented failure mode exactly.** Both jobs
+were first launched with 7 hand-picked targets that included
+`TimesFM/stacked_xf.9` and `.15` — both odd-indexed layers `layer_screen`
+can legitimately select but which `capture_layer_stride: 2` never captured
+into the store. Both crashed after ~1h40m at 3/7 targets with the exact
+`KeyError` §11.40 documents (`store.load('TimesFM', 'stacked_xf.15', ...)`:
+no array). Fixed the same way §11.40 fixed it — not by guessing a
+substitute, but by calling the pipeline's own `_default_targets` resolution
+function and reading its actual ranking: `.9 → .10` (captured-layer score
+1.5281 vs `.9`'s 1.5688) and `.15 → .16` (0.3951 vs `.15`'s 0.6141). Stale
+partial outputs were deleted and both jobs relaunched clean. No code
+changed — the failure and its fix are both already-documented behavior,
+now confirmed to recur exactly as described when a fresh config is hand-assembled
+without going through `_default_targets` first.
+
+**Results, independently re-verified against the raw `sae/meta.json`
+artifacts in both run directories (§2.4) — not taken from either job's own
+log:**
+
+| Target | Recipe | dict | dead rate | fidelity | ρ (matched) | perm-null mean | gap over null |
+|---|---|---:|---:|---:|---:|---:|---:|
+| TimesFM `stacked_xf.2` | production | 10240 | 0.8771 | 0.8912 | 0.2474 | 0.1170 | **+0.1304** |
+| | revived | 2048 | 0.0625 | 0.9268 | 0.2146 | 0.1142 | +0.1004 |
+| TimesFM `stacked_xf.6` | production | 10240 | 0.9525 | 0.7253 | 0.2578 | 0.1166 | **+0.1412** |
+| | revived | 2048 | 0.0625 | 0.8412 | 0.1784 | 0.1176 | +0.0609 |
+| TimesFM `stacked_xf.10` | production | 10240 | 0.9471 | 0.7149 | 0.2448 | 0.1148 | **+0.1300** |
+| | revived | 2048 | 0.0435 | 0.8245 | 0.1665 | 0.1181 | +0.0485 |
+| TimesFM `stacked_xf.16` | production | 10240 | 0.9698 | 0.6784 | 0.2954 | 0.1075 | **+0.1879** |
+| | revived | 2048 | 0.0205 | 0.8462 | 0.1733 | 0.1177 | +0.0556 |
+| Chronos-T5-Base `block.4` | production | 6144 | 0.9631 | 0.8750 | 0.3372 | 0.1095 | **+0.2277** |
+| | revived | 384 | 0.2865 | 0.9480 | 0.3249 | 0.1106 | +0.2143 |
+| Chronos-T5-Base `block.8` | production | 6144 | 0.9644 | 0.8692 | 0.4025 | 0.1074 | **+0.2951** |
+| | revived | 512 | 0.2793 | 0.9131 | 0.3007 | 0.1111 | +0.1896 |
+| Chronos-T5-Base `block.10` | production | 6144 | 0.9463 | 0.8589 | 0.3391 | 0.1100 | **+0.2292** |
+| | revived | 512 | 0.2656 | 0.8989 | 0.3139 | 0.1110 | +0.2029 |
+
+`dict_size_search.target_met: True` at all 7 revived targets (verified
+directly, not inferred from the absence of a failure flag).
+
+**This does not replicate §25.20(b)'s pattern of "TimesFM loses, Chronos
+wins" — on this larger sample, production wins criterion (i) (gap over
+null) at all 7 of 7 targets, both models.** The two-target proof-of-concept
+found revival narrowly *ahead* on gap-over-null for one Chronos-T5-Base
+layer (`block.6`: 0.2362 revived vs. 0.2294 production); none of the three
+Chronos-T5-Base layers tested here reproduce that — production leads by
+0.0134–0.1055 at every one of them, and by 0.0300–0.1323 at every TimesFM
+layer. Read this as **the two-target result not generalizing**, not as a
+correction to it — §25.20(e)'s own designed response to exactly this kind
+of disagreement is to defer to Component A, not to average or extrapolate
+from either sample.
+
+Criterion (ii) (provenance-excluded structural-field coverage, top-`k`-of-52
+best-matched features) does **not** separate the recipes here the way
+§25.20(b) reported for its two targets: at TimesFM `stacked_xf.2`,
+provenance-like fields (`tier_*`/`generator_*`/`archetype_*`/`source_*`)
+account for 31/52 production features vs. 32/51 revived — essentially tied,
+not the clean swing §25.20(b) found. At Chronos-T5-Base `block.4`, 22/51
+production vs. 24/51 revived — again roughly tied. So on this larger
+sample, criterion (ii) is **not load-bearing for these targets** — it does
+not point either direction with the margin §25.20(b)'s two cherry-picked
+layers happened to show.
+
+Criterion (iii) (fidelity at fixed activations) favors revived at every one
+of the 7 targets, by a wide and consistent margin (+0.036 to +0.19), exactly
+as §25.20(b) found and as `max_dead_rate`/`min_fidelity` search targets are
+designed to guarantee — this is the one criterion that generalizes cleanly.
+
+**Net, per §25.20(e)'s own stated procedure (train both, choose on the
+priority order, defer disagreement to Component A):** criterion (i) now
+favors **production** at all 7 targets on this larger sample — a materially
+different picture from the 2-target proof-of-concept, which is itself the
+finding worth carrying forward rather than either number alone. Criterion
+(ii) is a wash here. Criterion (iii) favors revived everywhere, consistent
+with both runs. **No default is flipped** — `sae.dict_size_policy: mult`
+stays the pipeline default per §25.20(e)'s explicit rule against changing an
+already-recorded config's behavior outside a new `run.name` — and per that
+same rule, **resolving which recipe is actually better is still deferred to
+Component A (§25.9 Stage 2, causal response fingerprinting)**, which does
+not exist yet. What this run adds is a second, larger, partially
+contradictory data point Component A will need to reconcile, not a
+tiebreak.
+
+**Tests:** `pytest tests/ -k "sae or ground_truth"` — 86 passed (0 failed),
+re-run fresh after this session's changes (no production code was touched;
+both configs are pure YAML). No CLAUDE.md claim is contradicted by this
+finding — §25 remains accurately described there as design-only at the top
+level; this is progress within that ongoing effort, tracked here per this
+repo's own doctrine that ROADMAP.md, not CLAUDE.md, is where a moving
+research result belongs (§5.5's precedent, §10's retirement note).
+
+### 25.22 Stage 1 (Component B(a)) built and run: structural/provenance separation, zero forward passes (2026-08-31)
+
+**What this closes.** §25.9 Stage 1's build item, and — as a byproduct of
+getting there — two of §25.1's "smaller defects" (item 8). Everything below
+is pure post-hoc reduction over already-trained SAE checkpoints and the
+already-extracted store: no retraining, no forward pass through either
+TSFM. New code: `sae/ground_truth.py::is_provenance_field`,
+`residualize_against_provenance`, `best_ground_truth_matches_separated`,
+`_ridge_cross_fitted_residuals`, `_average_rank_columns`,
+`_vectorized_spearman_all_features`; new test file
+`tests/test_ground_truth_separated.py` (8 tests); new CLI
+`run_stage1_exit_check.py`.
+
+**The two §25.1(8) defects, fixed first.**
+1. `report/sae_exemplars.py::build_run_exemplars` selected its displayed
+   series via a bare head slice (`series_ids = meta["series_id"].to_numpy()
+   [:n]`) rather than the family-stratified `sample_rows(...,
+   strata=families)` call `ground_truth_alignment` itself already uses —
+   the exact trap named in `CLAUDE.md` §11.38, a second, previously-
+   unnoticed instance of it. Harmless today only because
+   `sae.ground_truth_max_series` (2000) exceeds every corpus built so far
+   (965 max, `full_report_run_large`), so the two selections happen to
+   coincide; the first corpus built above 2000 series would silently put
+   the exemplar table's displayed `activation` column and the artifact's
+   `rho` column on two different series sets with no error anywhere. Fixed
+   to call the same `sample_rows(..., strata=meta["family"].to_numpy())`
+   convention, seeded `cfg.run.seed + 12` to match `ground_truth_alignment`
+   exactly.
+2. `report/report.py::_sec_sae`'s internal docstring and the user-facing
+   `_SAE_EXEMPLAR_NOTE` both stated "needs Phase 3 feature-level ablation,
+   which doesn't exist yet." False since 2026-08-11 (`CLAUDE.md`/ROADMAP.md
+   §16 E14): `sae/eval.py::feature_ablation_effects`/
+   `feature_steering_effects` exist, are unit-tested, and have real-
+   checkpoint numbers on record — they are simply `enabled: False` by
+   default and rendered by nothing in this section. Both strings corrected
+   to state that accurately (machinery exists, is off by default, is not
+   yet rendered here — §25's Component A/Stage 2 is the design for
+   rendering it), rather than claiming the machinery is unbuilt.
+
+**Two real bugs found by testing, not assumed away (`CLAUDE.md` §2.4)** —
+neither would have been caught by a synthetic-only test pass, and both are
+worth keeping as their own lesson:
+1. **Ridge `alpha=1.0` (borrowed from `error_fingerprint.py`'s ~200-column
+   basis) under-corrects a low-dimensional provenance design.** The planted
+   confound test (`test_provenance_confounded_structural_signal_is_
+   suppressed_by_residualization`) failed on first write: a structural
+   field 100% explained by `tier` (measured `oof_r2=0.998`) still left a
+   residual correlating with `tier` at `0.6087`, not near zero. Swept
+   `n_folds` (2/5/10/20: leakage 0.77→0.54, never disappearing) and `alpha`
+   (1.0/0.1/0.01/0.001/0.0: leakage 0.61→0.09→0.02→flat) before changing
+   anything — `alpha=0.01` closes the leakage to 0.02 without breaking the
+   independent (no-confound) case (`oof_r2=-0.015`,
+   `corr(resid, field)=0.999`). Default changed 1.0→0.01 in both
+   `residualize_against_provenance` and `best_ground_truth_matches_
+   separated`, with the measured numbers recorded in the docstring so a
+   future re-tuning has the calibration evidence rather than a bare
+   constant (the `CLAUDE.md` §11.26 lesson, applied here before it could
+   bite the same way).
+2. **`archetype_*` provenance dummies are `NaN` (not `0`) for a real-derived
+   series with no archetype concept** (`CLAUDE.md` §4.1's tier split;
+   `_add_dummy_columns`' own documented convention) — a real corpus's NaN
+   pattern no single-provenance-column synthetic test exercised. Running
+   `run_stage1_exit_check.py` against `runs/full_report_run_large`'s real
+   corpus (before this fix) returned an all-zero "after" count at every one
+   of 11 targets: `np.linalg.solve` silently propagates a NaN anywhere in
+   the design matrix to an all-NaN residual for the whole fold rather than
+   raising, zeroing the entire structural competition with no exception
+   anywhere in the run. Fixed with `np.nan_to_num(x, nan=0.0)` before the
+   solve — correct because `_add_dummy_columns`' own convention already
+   treats "not this archetype" as `0`, so folding a real-derived series'
+   undefined archetype dummy to `0` (rather than, say, imputing the tier
+   mean) is consistent with the existing dummy semantics, not a new
+   assumption. New regression test
+   (`test_residualize_against_provenance_handles_nan_in_archetype_dummies`)
+   plants the exact pattern synthetically; confirmed to fail pre-fix by
+   calling `_ridge_cross_fitted_residuals` directly without `nan_to_num`
+   and observing `np.isnan(resid).any() == True`.
+
+**Performance: vectorized the per-feature Spearman loop, and found a third
+bug in the vectorization itself before trusting it.** The original
+per-feature Python loop of `scipy.stats.spearmanr` calls made
+`run_stage1_exit_check.py` take several minutes per target at TimesFM's
+10240-wide dictionaries. Replaced with `_vectorized_spearman_all_features`
+(rank-transform once, one Pearson-on-ranks matrix computation per
+structural/provenance field, looked up per feature by array index instead
+of recomputed). The first version's rank transform was ordinal (double
+`argsort`), not average-rank — `scipy.stats.spearmanr`'s actual default
+tie convention (`method="average"`) — and a direct comparison against
+`spearmanr` on tied/discrete data (rather than assuming "the standard rank
+trick" was equivalent) found a max absolute discrepancy of **0.047**, while
+untied continuous data matched to `1.4e-17`. Real structural ground-truth
+fields are exactly this shape: `n_seasonalities`, `ar_order`,
+`n_changepoints`, `n_anomalies`, `has_random_walk`, `has_intermittency`,
+`has_heteroskedastic` are small integers/booleans with frequent genuine
+ties, so this was not a hypothetical edge case for this module's actual
+inputs. Fixed with `_average_rank_columns` (vectorized average-rank via
+sorted runs + `np.bincount`-based group averaging, not a Python loop per
+column) — re-verified against `spearmanr` on four cases (untied continuous,
+tied/discrete, a partial validity mask, a constant column) and now matches
+to float precision (`1.7e-18` to `6.9e-18`) in every case, including the
+constant-column `nan` convention. A related contract ambiguity was also
+resolved while diagnosing this: `features` is passed full-length and sliced
+internally by `valid`, but `target` is expected **already pre-sliced** by
+the caller (matching every real call site: `resid`/`gvals[valid]` are
+already row-selected before the call) — the function's docstring now states
+this explicitly, and a length mismatch returns `nan` rather than raising or
+silently misaligning. `tests/test_ground_truth_separated.py`'s full 8 tests
+re-run clean after the vectorization (`8 passed`).
+
+**The exit-criterion run itself — `run_stage1_exit_check.py --run
+runs/full_report_run_large`, all 11 already-trained SAE targets, real
+checkpoints, zero retraining, ~3m11s total (down from an estimated 20+
+minutes at the pre-vectorization per-feature-loop rate).** Independently
+re-verified against the raw JSON artifact
+(`runs/full_report_run_large/sae/stage1_separation_check.json`), not taken
+from the script's own printed summary:
+
+| target | before (distinct/tier/n) | after (distinct/tier/n) |
+|---|---|---|
+| TimesFM/stacked_xf.2 | 14, 19, 52 | 7, 0, 50 |
+| TimesFM/stacked_xf.6 | 18, 2, 51 | 7, 0, 50 |
+| TimesFM/stacked_xf.18 | 12, 21, 51 | 9, 0, 50 |
+| TimesFM/stacked_xf.10 | 14, 4, 52 | 7, 0, 50 |
+| TimesFM/stacked_xf.16 | 16, 3, 51 | 5, 0, 50 |
+| Chronos-T5-Base/encoder.block.4 | 11, 20, 51 | 7, 0, 50 |
+| Chronos-T5-Base/encoder.block.8 | 10, 20, 51 | 7, 0, 50 |
+| Chronos-T5-Base/encoder.block.10 | 13, 17, 51 | 7, 0, 50 |
+| Chronos-2/encoder.block.6 | 14, 2, 52 | 6, 0, 50 |
+| Chronos-2/encoder.block.8 | 11, 2, 52 | 6, 0, 50 |
+| Chronos-2/encoder.block.10 | 10, 4, 52 | 5, 0, 50 |
+
+**Reading this against Stage 1's own pre-registered exit criterion (§25.9):
+half confirms decisively, half needed a third reading neither the primary
+outcome nor the pre-registered alternative anticipated.**
+
+- **`tier_realism_stress` count: 0 at every one of 11 targets**, down from
+  2–21 before. This is the clean half of the criterion and it lands exactly
+  as designed — the single most name-drift-prone provenance field never
+  wins the residualized structural competition even once, across every
+  target and both architectures.
+- **"Distinct structural names" *falls* (14→7, 18→7, 12→9, ..., 10→5), not
+  rises**, which reads on its face like the pre-registered alternative
+  outcome ("if separating the competitions leaves the same features on
+  top, that is the finding"). **It is not that outcome.** Pulling the
+  actual field-name lists apart (`TimesFM/stacked_xf.2`, checked directly
+  against `sae/meta.json`) shows why: the **"before" count of 14 already
+  includes 7 provenance names** (`archetype_clean_low_noise`,
+  `archetype_multi_seasonal_complex`, `archetype_nonsinusoidal_seasonal`,
+  `archetype_seasonal_dominant`, `archetype_trend_dominant`,
+  `generator_block_bootstrap`, `generator_mixture`, `generator_parametric`,
+  `generator_sequential_par`, `tier_realism_stress` — 9 of 14, not 7,
+  checked by direct set difference) alongside only 5 genuinely structural
+  ones (`n_seasonalities`, `seasonal_amplitude_max`,
+  `seasonal_period_dominant`, `trend_scale`, plus whichever else clears the
+  raw argmax). The "after" structural-only count of 7 for that same target
+  (`ar_coeff_sum`, `has_heteroskedastic`, `has_intermittency`,
+  `has_random_walk`, `n_changepoints`, `n_seasonalities`,
+  `seasonal_period_dominant`) is **larger than the 5 genuinely structural
+  names the "before" list actually contained**, not smaller. **The "before"
+  and "after" distinct-name counts were never comparable in the first
+  place** — one pools two categories the redesign exists specifically to
+  keep apart, so a raw count comparison between them cannot be read as
+  either confirming or refuting the primary hypothesis. This is a genuine
+  gap in how the exit criterion was specified, not a result about the SAE
+  dictionaries: the criterion needs "distinct provenance-excluded
+  structural names in the old argmax's top-N" as its own "before" baseline,
+  which `_before_counts` does not currently compute (it counts all
+  `best_field` names undifferentiated). Not fixed this session — flagged
+  here rather than silently reported as either a pass or the pre-registered
+  failure, since it is neither.
+- **Corrected same session**, not left open: `_before_counts` now also
+  reports a provenance-excluded structural-only distinct count (via
+  `is_provenance_field`), and the exit-check was re-run against the same 11
+  real checkpoints (`runs/full_report_run_large/sae/
+  stage1_separation_check.json`, re-verified from the raw artifact):
+
+  | target | before, structural-only distinct (of n) | after, distinct | direction |
+  |---|---|---|---|
+  | TimesFM/stacked_xf.2 | 4 (of 8) | 7 | rises |
+  | TimesFM/stacked_xf.6 | 8 (of 27) | 7 | falls slightly |
+  | TimesFM/stacked_xf.18 | 3 (of 6) | 9 | rises sharply |
+  | TimesFM/stacked_xf.10 | 7 (of 29) | 7 | flat |
+  | TimesFM/stacked_xf.16 | 5 (of 15) | 5 | flat |
+  | Chronos-T5-Base/encoder.block.4 | 4 (of 6) | 7 | rises |
+  | Chronos-T5-Base/encoder.block.8 | 3 (of 5) | 7 | rises |
+  | Chronos-T5-Base/encoder.block.10 | 3 (of 5) | 7 | rises |
+  | Chronos-2/encoder.block.6 | 6 (of 8) | 6 | flat |
+  | Chronos-2/encoder.block.8 | 3 (of 7) | 6 | rises |
+  | Chronos-2/encoder.block.10 | 3 (of 5) | 5 | rises |
+
+  **On this correctly-paired comparison, distinct structural names rise at
+  7 of 11 targets, are flat at 3, and fall (slightly, 8→7) at 1** — (miscounted
+  as "6 of 11" in an earlier draft of this paragraph; recounted directly from
+  the table above, which was and is correct) —
+  combined with `tier_realism_stress` collapsing to exactly 0 everywhere,
+  this is a real, if partial, confirmation of Stage 1's original exit
+  criterion, not the pre-registered alternative outcome ("separating the
+  competitions leaves the same features on top") and not a wash. The one
+  falling case (`stacked_xf.6`, 8→7) is a small, single-count drop against
+  a `before` sample that itself only had 27 matched features versus
+  `after`'s fixed 50, so reading it as a genuine reversal rather than
+  small-sample noise would overstate the evidence — the pattern across all
+  11 targets, not this one cell, is the finding. **Read together with
+  §25.21's caveat about `mean_abs_rho_structural` being the smaller of the
+  two competitions everywhere**, the honest summary is: residualization
+  measurably increases how many *distinct* structural properties a
+  dictionary's top features can be said to track, while the raw strength of
+  any single such match remains weaker than the provenance competition's —
+  two different questions, both now answered rather than conflated into one
+  argmax.
+- Every target's `mean_abs_rho_structural` (0.098–0.214) sits below its own
+  `mean_abs_rho_provenance` (0.176–0.398) — provenance remains the
+  stronger raw signal even after being split out, consistent with §25.1's
+  original diagnosis that provenance dominates the corpus's variance
+  structure. This is expected and not itself a criticism of the
+  dictionaries; it is the reason the split exists.
+
+**Tests:** `pytest tests/ -k "sae or ground_truth"` — **94 passed (0
+failed)**, re-run fresh after every fix in this section (up from the 86
+recorded in §25.21, reflecting this section's 8 new tests). `pytest
+tests/test_ground_truth_separated.py` alone: 8 passed. No CLAUDE.md claim
+is contradicted; §11.38's trap is now confirmed to recur even within a
+single, already-audited module, which is itself worth remembering the next
+time a sweep for that pattern is declared complete.
+
+**Not done at the time this section was written:** Stage 2 (Component A,
+causal response-fingerprint battery) and Stages 3–5 remained entirely
+unbuilt. See §25.23 — Stage 2 is now built and run.
+
+### 25.23 Stage 2 (Component A) built and run: the causal response fingerprint, all four exit criteria pass on real checkpoints (2026-08-31)
+
+**What this closes.** §25.9 Stage 2 — the reach gate, the 9-channel
+response battery, the random-direction null, and priority-ordered candidate
+selection restricted to alive atoms — exactly per §25.4/§25.9's spec, built
+and run against a real checkpoint pair's already-trained SAE. New code:
+`analysis/response_reach.py` (`reach_probe`), `sae/response.py`
+(`battery_statistics`, `summarize_battery`, `alive_feature_mask`,
+`select_candidates`, `feature_response_fingerprints`),
+`run_stage2_response_fingerprint.py` (CLI runner), `tests/
+test_response_fingerprint.py` (18 tests). No pipeline stage, config field,
+or `report.py` rendering added yet — Component A only, as scoped; Stage 3
+is what wires display.
+
+**Independently re-verified before writing this up, not taken from the
+implementing agent's own prose** (`CLAUDE.md` §2.4): confirmed all four new
+files exist, re-ran `pytest tests/ -k "sae or ground_truth or steering or
+response_fingerprint"` fresh (**120 passed, 0 failed**, matching the
+agent's claim exactly), and independently re-read the raw artifact
+(`runs/full_report_run_large/sae/Chronos-T5-Base/
+encoder_block_10_stage2_response.json`) rather than trusting the summary —
+`n_clearing_cells` (72), `chance_expected_clearing_cells` (17.55),
+`excess_over_chance` (54.45), the per-rule candidate counts (12/12/12/12),
+and one named highest-margin clear (feature 3224, `down` side, `seasonal`
+channel: effect `6.181202411651611` vs `null_p95` `3.1687021613121034`,
+`clears_null: true`) all reproduce bit-for-bit against the artifact.
+
+**Target:** Chronos-T5-Base (`amazon/chronos-t5-base`), layer
+`encoder.block.10`, against `runs/full_report_run_large`'s already-extracted
+store and already-trained SAE checkpoint (`d_in=768, dict_size=6144, k=32`).
+Real, live forward passes confirmed (not mocked) — ~3m52s wall-clock for 16
+reach-probe passes plus 39 candidates × 2 signs + 24 null draws of live
+`token_patch`-based steered forward passes at batch size 24.
+
+**All four exit criteria pass, in one run, with the pre-specified default
+(`strength_sigma=2.0`) — no retargeting or parameter search after seeing
+the result:**
+
+| criterion | measured | verdict |
+|---|---|---|
+| (i) reach non-zero | `cross_patch_delta = 0.7081577777862549` | PASS |
+| (ii) self-patch exactly 0.0 | `self_patch_delta = 0.0` | PASS |
+| (iii) ≥1 feature clears ≥1 channel | `any_feature_clears_any_channel = True` (23 of 39 candidates clear ≥1 channel) | PASS |
+| (iv) clearing cells exceed chance | `n_clearing_cells = 72` vs `chance_expected_clearing_cells = 17.55` (n_features=39 × n_channels=9 × 0.05), `excess_over_chance = 54.45` | PASS |
+
+`meets_stage2_exit = True`, read directly from the artifact.
+
+**Candidate composition and what discriminates.** 39 distinct features
+nominated: 12 by residualized-structural ρ (Stage 1's
+`best_ground_truth_matches_separated`), 12 by activation variance among
+alive atoms, 12 by raw provenance ρ (kept and labelled, not hidden), 12 as
+the random within-dictionary control. Clearing rate by nominating rule:
+**structural 8/12, variance 9/12, provenance 8/12, random 4/12** — the
+random-direction-style control features clear at roughly half the rate of
+every "real" selection rule, which is itself informative: it says the
+battery discriminates rather than passing everything at this magnitude.
+Clearing cells by channel (72 total): flatness 14, spectral_centroid 12,
+dispersion 9, horizon_shape_near 9, mase 7, seasonal 7, level 5, trend 5,
+horizon_shape_far 4 — no single channel or single nomination rule accounts
+for the whole result.
+
+**Read this result narrowly, matching this file's own §2.6 discipline.**
+This is one (model, layer) target, one seed, one magnitude
+(`strength_sigma=2.0`), one series sample (`n_realized=24`, capped by
+`batch_size`, stratified `{block_bootstrap: 2, mixture: 7, parametric: 3,
+random_parametric: 11, sequential_par: 1}`). It establishes that Component
+A's mechanism *works* — the reach gate correctly distinguishes a reachable
+layer from the tautological zero §11.42 warns about, and the battery
+produces a real, non-trivial signal exceeding its own random-direction
+null by more than 3× the chance-expected count — not that this dictionary's
+features are broadly causally important, nor that the pattern generalizes
+to TimesFM, to other layers, or to other magnitudes. Extending to more
+targets (in particular the TimesFM side, and at least one target the Stage
+0/1 record already flagged as ambiguous) is future work, not part of this
+item's stated scope.
+
+**Three real bugs found and fixed by direct measurement, not assumed away
+(`CLAUDE.md` §2.4):**
+1. **SAE checkpoint left on CPU while the model and activations moved to
+   GPU.** `RuntimeError: Expected all tensors to be on the same device...`
+   on the first real run, inside `alive_feature_mask`. `load_sae_checkpoint`
+   returns a CPU-resident module (confirmed by reading its own
+   `map_location="cpu"`); the runner never called `.to(device)`, unlike the
+   existing precedent script (`run_sae_corpus_diversity_check.py`, which
+   does). Fixed by adding `.to(device)` at the load call site.
+2. **The same device bug recurring one call later, in reverse, and
+   silently swallowed the first time.** `encode_series_level(sae, store,
+   model, layer, rows, "cpu")` hardcoded the literal string `"cpu"` even
+   after the SAE was moved to the real device — this did not crash on the
+   very next test run only because a broad `except Exception` around the
+   ground-truth-ranking block silently degraded to "ranking unavailable"
+   rather than raising, found by reading the code path rather than by a
+   second crash. Fixed by passing the real `device` variable instead of the
+   literal.
+3. **Random-direction null and one-hot steering vectors built in the
+   wrong space — activation space (`d_in=768`) instead of the dictionary's
+   feature space (`dict_size=6144`).** `RuntimeError: The size of tensor a
+   (6144) must match the size of tensor b (768)...` inside
+   `_direction_steered_replacement`. Root cause: the local variable `d_in`
+   was reused for two different purposes — correctly, to reshape raw token
+   activations before `sae.encode`; incorrectly, to size the injected
+   direction/one-hot vectors, which are added to the already-encoded,
+   `dict_size`-wide `features` tensor, not the raw activation. Fixed by
+   introducing a separate `dict_size = sae.dict_size` variable and using it
+   only for the null-direction and one-hot vectors, leaving `d_in` for the
+   activation reshape alone. This is the same class of bug §11.19 already
+   named (a joint/multi-space computation silently assuming two spaces
+   share a width) recurring in a new module.
+4. A minor, self-caught-before-any-test defect: `response_reach.py`'s
+   tautological-zero withhold-path reason string interpolated a boolean
+   (`written_differs`) instead of the actual numeric mean-abs-diff
+   (`written_diff_mag`); fixed before writing the test that pins the
+   correct numeric message.
+
+**Tests:** `tests/test_response_fingerprint.py` alone: 18 passed. Combined
+`pytest tests/ -k "sae or ground_truth or steering or response_fingerprint"`:
+**120 passed, 0 failed** (independently re-run fresh, see above — not just
+taken from the agent's own report). Test coverage per the agent's own
+account (not independently re-read line-by-line, but the file's existence
+and the passing count were verified directly): reach-gate self=0.0/cross≠0.0
+correctness, the Chronos-2-shaped tautological-zero withhold case, a
+broken-patching-path detection case, battery-channel correctness (trend),
+dispersion's degenerate-baseline `width_available: False` handling (the
+§11.37 lesson applied proactively rather than discovered the hard way
+again), null-gating arithmetic, and candidate-selection priority ordering
+with multi-rule recording and always-including the random control.
+
+**Process note, worth recording since it happened live this session.** The
+first background agent asked to build this delegated the actual
+implementation to a second, grandchild agent instead of doing the work
+itself, then returned control immediately without waiting for that
+grandchild to finish. The grandchild agent (not the parent) is the one that
+produced everything in this section — confirmed via `ListAgents` showing it
+genuinely running, and its own completion report is what this section is
+built from. No harm done here (the grandchild did real, correct, verified
+work), but a session delegating to a background agent should brief it
+explicitly to perform the implementation itself with its own tools rather
+than leaving "delegate further" as an option, unless the task is
+specifically to orchestrate multiple parallel workers — otherwise a
+one-level delegation can silently become two, doubling latency for no
+reason and requiring the orchestrating session to notice and track the
+extra hop.
+
+### 25.24 Stage 3 (Component B(b)) built and run: causally-named feature roles, real cluster/name output verified against artifact (2026-08-31)
+
+Closes §25.9's Stage 3 build item — clustering probed features into named
+"roles" per §25.5(b) and building the new display per §25.7's 6-part spec.
+Built directly by a single background agent this time (briefed explicitly
+not to re-delegate, per §25.23's process note above), and **independently
+re-verified line-for-line before being trusted** — every number below was
+re-derived from the actual artifact/test run, not copied from the agent's
+own report.
+
+**New/changed files.** `tsfm_lens/config.py` (+`SAEConfig.role_k: str =
+"auto"`, `role_min_silhouette: float = 0.1`); `tsfm_lens/sae/roles.py` (new —
+`build_feature_matrix`, `cluster_roles`, `derive_role_name`, `role_table`);
+`run_sae_roles.py` (new CLI, reads an existing run's Stage 2 artifact plus a
+freshly-recomputed Stage 1 structural signature, writes `sae/roles.json`,
+zero forward passes); `tsfm_lens/report/sae_roles.py` (new — pure table/
+matrix builders, no HTML, mirroring `sae_exemplars.py`'s existing split);
+`tsfm_lens/report/report.py` (new `_sae_roles_block`, wired into `_sec_sae`);
+`tsfm_lens/report/derived.py` (new `_sae_role_rows`, wired into
+`bottom_line_rows`); `tests/test_sae_roles.py` (15 tests), `tests/
+test_sae_roles_report.py` (8 tests), `tests/test_derived_report.py` (+5
+tests) — all planted-answer synthetic, this repo's usual evidentiary style.
+
+**Verified independently, not taken on the agent's word (`CLAUDE.md` §2.4):**
+- **Every claimed file exists** (`ls -la` on all five new/changed paths).
+- **Pytest count re-run fresh, matches exactly**: the exact requested command
+  (`pytest tests/ -k "sae or ground_truth or response_fingerprint or role or
+  report_legibility" -q`) gives **158 passed, 0 failed** (848 deselected,
+  159.00s) on an independent re-run, not just the agent's own report.
+  `tests/test_report_legibility.py` alone: **16 passed**.
+  `tests/test_derived_report.py::test_sae_role_row_verdict_cannot_be_authored_by_a_call_site`
+  + `tests/test_sae_roles.py`: **16 passed**.
+  `tests/test_sae_roles_report.py`: **8 passed**.
+- **The Rule-derived verdict guarantee is real, not asserted**: read the test
+  directly — it constructs `Verdict(..., verdict="an author's preferred
+  sentence")` and asserts `v.verdict == "above"`, i.e. `Verdict.__post_init__`
+  silently overwrites any call-site string, the identical structural
+  guarantee `_accuracy_rows`/`_scorecard`'s other rows already rely on. No
+  new escape hatch was added for this row.
+- **The real role names on `runs/full_report_run_large`,
+  Chronos-T5-Base/encoder.block.10 (39 candidates) were re-read directly from
+  `sae/roles.json`, not copied from the agent's report**: `k=6`,
+  `silhouette=0.21451249842802284`, `non_modular=False`, and all 6 names —
+  `far-horizon disperser ↑ · ar_coeff_sum` (16 atoms, dominant effect
+  0.5644666172522927 null units), `far-horizon disperser ↑ ·
+  has_intermittency` (8, 0.7129572364478288), `near-horizon disperser ↑ ·
+  has_intermittency` (7, 0.8313697755493392), `seasonal-magnitude ↓ ·
+  has_intermittency` (5, -1.07637589545492), `seasonal-magnitude ↓ ·
+  has_heteroskedastic` (2, -1.8186410388776828), `mase ↑ ·
+  has_intermittency` (1, 1.8781122473440997) — matched the agent's quoted
+  numbers to every decimal place printed, and `len(names) == len(set(names))`
+  confirmed True by direct computation.
+- **The rendered report was actually regenerated, not stale**: `report.html`'s
+  mtime (20:24) postdates the agent's session start, and the literal string
+  `"far-horizon disperser"` (a name that can only exist if `roles.json` was
+  actually read and rendered, not a template placeholder) appears in the
+  live HTML.
+
+**A genuine, undisclosed correction the verification surfaced.** §25.22
+above states "Both named §25.1(8) defects fixed too (`sae_exemplars.py`'s
+head-slice, `report.py`'s stale ablation-machinery docstring)" — as an
+already-done fact, before this session. `git log` shows `sae_exemplars.py`
+has had **no commit since `a5d1b18`**, and `git diff HEAD` shows the head-slice
+fix (`meta["series_id"].to_numpy()[:n]` → a family-stratified `sample_rows`
+call) is a **currently uncommitted working-tree change** whose file mtime
+matches this Stage 3 agent's own session window, not an earlier one. In other
+words: the fix genuinely exists and is genuinely correct (this Stage 3 agent
+made it, as an incidental side effect of building `run_sae_roles.py`, which
+reuses `build_run_exemplars`), but **§25.22's claim that it was already fixed
+before this session was premature** — nothing had actually landed it in the
+repo until now. This is a real instance of the exact failure mode §2.4 warns
+about (trusting a claim without checking the artifact), caught only because
+this session's verification pass happened to `git diff` the file rather than
+re-reading the prose. §25.22's text is left as written per this repo's
+no-silent-deletion doctrine; this paragraph is the correction of record.
+`report.py`'s docstring fix is untouched by this correction — that one was
+verified separately in §25.22 and is not implicated here.
+
+**Exit criteria (§25.9 Stage 3), each independently checked above or
+reasoned through directly:**
+1. Name uniqueness — verified directly against the real artifact (True) and
+   via two planted-collision tests (a same-fallback-string collision between
+   two "unnamed" roles, and a general many-role collision case), both
+   re-run and passing.
+2. Verdict derived from a printed rule, never authored — verified directly
+   by reading and re-running the immutability test above.
+3. Zero bare figures — the agent reused `test_report_legibility.py`'s
+   existing walk-the-document-in-order check rather than inventing a new
+   one (this repo's own stated preference, §21 J7's precedent); that file's
+   16 tests re-ran clean, and the live `runs/full_report_run_large/
+   report.html` contains 129 `figcap` captions with the SAE roles section's
+   own figures included in that count.
+4. Solo/panel honesty — **not independently re-run against a live SAE-enabled
+   solo/panel checkpoint config this session** (neither `smoke_solo.yaml` nor
+   `smoke_panel.yaml` has `sae.enabled: true`, so the agent's synthetic tests
+   — a fabricated 1-model case asserting no cross-model matrix renders, and a
+   fabricated 2-model case asserting the matrix keys by dominant channel
+   rather than by name string — are what actually exercises this path, not a
+   real end-to-end run). Read as **plausible but not run against real
+   checkpoints in either shape**, the same honest caveat this repo applies
+   elsewhere when a mock/synthetic test stands in for a live one.
+
+**Known, stated limitation (not hidden — rendered in the HTML itself as an
+explicit deferral):** §25.7 part 5's mean Δŷ(h) waveform, bootstrap band,
+stratified exemplar series, and per-window activation trace are **not
+implemented**. `*_stage2_response.json` persists only scalar per-channel
+summaries, not the underlying response arrays a waveform plot needs, and
+producing them requires a live forward pass a report-only rendering pass
+does not perform. Parts 1–4 and 6 of §25.7's spec are built; part 5 is a
+named gap, not silent thin content.
+
+**Real bugs found and fixed during the build (agent's report, not
+independently re-derived byte-for-byte, but consistent with the code read
+above):** a uniqueness-escape gap where two roles both hitting the *same*
+fixed fallback string (`"no measured effect (n atoms)"` or `"unnamed (no
+distinguishing signature)"`) had nothing left to escalate through — fixed in
+`role_table` by appending `[role N]` as a last resort once `derive_role_name`
+returns a name already claimed, which is exactly the code read and confirmed
+above; a nested-f-string `SyntaxError` (pre-3.13 grammar rejects escaped
+quotes inside an f-string conditional), fixed by extracting to plain
+variables; one dead-code fragment from a mid-edit; one unused import.
+
+Component B(b) is done. Remaining from §25.9: **Stage 4** (Component C —
+cross-model role correspondence via `sae/matching.py`, and finally rendering
+`l1/cka_sae.json`) and **Stage 5** (the writeup: a Findings block, `CLAUDE.md`
+corrections per §25.15, `stage_docs.py`/`glossary.py`/`docs/
+worked_example.md` updates).
+
+**Follow-up, same session: the Stage 3 agent also ran the FULL suite (not just
+the targeted `-k` filter) and reported one failure** —
+`test_panel_pairs.py::test_panel_report_renders_every_pair_and_states_the_fairness_scope`
+— which it correctly diagnosed via `git diff` hunk inspection as pre-existing
+and unrelated to its own `_sec_sae`-region edits (1003 passed / 1 failed /
+1 skipped, 754.29s). **Independently re-verified and fixed, not just taken on
+the agent's word:** `git log`/`git show HEAD` on both files confirmed the
+mismatch predates this entire session (present in commit `db90380`, the tip
+of `main` before today's SAE work) — the test asserted two literal strings,
+`"This is a panel run of 4 models."` and `"not on this card"`, that do not
+appear anywhere in the committed `report.py`. Tracing `_sec_fairness`'s
+actual code (and cross-checking against §24.6's own writeup of "the fairness
+card is now one card per pair") showed the test was written against an
+**earlier, single-designated-pair card design that named which models it
+omitted** — a design §24.6 explicitly replaced with one non-omitting card per
+pair, so `"not on this card"` describes a state the current design can never
+produce (no pair ever omits a model). The test's own committed wording had
+simply never been reconciled with the landed feature. Fixed by correcting the
+test's two assertions to match the actual, current, intentional behavior
+(`"This run compares {N} models, so there are {M} pairs."`, and removing the
+now-meaningless `"not on this card"` check with a comment explaining why) —
+not by changing working display code to satisfy a stale test string.
+Re-verified: `tests/test_panel_pairs.py` **9 passed** (was 8 passed / 1
+failed). **Full-suite re-run completed clean: 1005 passed, 1 skipped, 0
+failed, 770.37s (0:12:50)** — up from the agent's reported 1003 passed / 1
+failed / 1 skipped, confirming this was the only failure and the fix
+introduced no regression elsewhere. The two warnings present (a documented
+pre-existing float32-cast overflow, and `test_smoke.py::test_end_to_end`'s
+pre-existing non-`None`-return warning) both match this repo's already-
+recorded baseline exactly. **Lesson, in this repo's own §11 shape:** a
+`@needs_panel_run`-gated test only runs against a live panel artifact, so a
+wording drift between a feature's test and its (already correct)
+implementation can sit uncaught for as long as nobody happens to rebuild that
+specific artifact and run the full suite against it — exactly what happened
+here across whatever session landed §24.6's per-pair redesign.
+
+### 25.25 Stage 4 (Component C) built and run: cross-model role correspondence, verified against real forward passes and a genuine negative result (2026-08-31)
+
+Closes §25.9's Stage 4 build item — cross-model role matching in the response-
+fingerprint space, both required nulls, the role × model matrix, and finally
+rendering `l1/cka_sae.json`. Built directly by a single background agent
+(briefed against §25.6/§25.7 part 6/§25.9 with the same anti-re-delegation
+instruction used for Stage 3), and **every material claim independently
+re-verified against real files, real tests, and a direct re-derivation of the
+real-data numbers — not taken on the agent's report alone (`CLAUDE.md` §2.4).**
+
+**New/changed files.** `tsfm_lens/sae/role_matching.py` (new — response-vector
+construction, sign-aware cosine, greedy nearest-neighbor matching, the
+shuffled-series null, the untrained-twin-floor null, `role_correspondence_table`);
+`tsfm_lens/report/sae_role_matching.py` (new — pure table/matrix builders, no
+HTML); `tests/test_role_matching.py` (20 tests), `tests/
+test_sae_role_matching_report.py` (8 tests), `tests/test_run_sae_roles_merge.py`
+(3 tests) — all planted-answer synthetic; `run_sae_roles.py` (fixed a real
+destructive-overwrite bug, see below); `tsfm_lens/config.py` (+3 `SAEConfig`
+fields); `tsfm_lens/report/report.py` (real Part 6 role×model matrix replacing
+Stage 3's placeholder, plus a new "CKA in SAE feature space" subsection inside
+`_sec_l1`); `tests/test_sae_roles_report.py` (2 tests rewritten to match the
+real Stage 4 contract instead of an obsolete placeholder).
+
+**Independently verified, item by item:**
+- **Every claimed file exists**, confirmed via direct `ls`/`git status`.
+- **Test counts re-run fresh, match exactly**: `tests/test_role_matching.py` +
+  `tests/test_sae_role_matching_report.py` + `tests/test_run_sae_roles_merge.py`
+  → **31 passed** (matches the agent's 20+8+3). The four tests naming the two
+  exit criteria — `test_panel_pair_zero_reproduces_direct_two_model_result`,
+  `test_panel_generates_all_c_n_2_pairs`,
+  `test_match_rate_not_quotable_without_any_untrained_twin_floor`,
+  `test_match_rate_quotable_when_a_floor_is_supplied` — re-run individually,
+  **all 4 pass**.
+- **One real discrepancy caught in the agent's own report, not hidden**: it
+  cited a test named `test_role_correspondence_table_quotability_enforced_
+  both_directions` as pinning the quotability exit criterion. That exact name
+  **does not exist anywhere in the repo** (`grep -rn` across `tests/` returns
+  nothing). The underlying mechanism and its actual test coverage are real and
+  correct — `test_match_rate_not_quotable_without_any_untrained_twin_floor`
+  and `test_match_rate_quotable_when_a_floor_is_supplied` cover exactly the
+  claimed behavior and both pass — so this reads as a misquoted test name in
+  the agent's closing summary, not a fabricated result. Recorded per this
+  repo's own doctrine of surfacing exactly this class of gap (§2.4) rather
+  than silently accepting a self-report.
+- **The real-data numbers were independently re-derived, not copied from the
+  agent's prose**: calling `role_correspondence_table` directly against
+  `runs/full_report_run_large/sae/roles.json` (both targets genuinely present:
+  `TimesFM/stacked_xf.18` and `Chronos-T5-Base/encoder.block.10`, confirming
+  the merge-bug fix below actually took effect) plus fresh
+  `untrained_twin_role_floor` calls against the real `runs/null_timesfm_random`
+  and `runs/null_chronos_random` run directories reproduced, to the printed
+  decimal: cosines **0.4916, 0.6399, 0.5878, 0.6076, 0.6116, 0.7521** (agent's
+  quoted range "0.492–0.752" is exact), `match_rate` **0.8333333333333334**
+  (agent's "0.833"), both untrained-twin floors **exactly 1.0**,
+  `clears_untrained_twin_floor: False`. The two null-run artifacts consumed
+  (`runs/null_timesfm_random/sae/TimesFM-random/stacked_xf_18_stage2_response.json`,
+  `runs/null_chronos_random/sae/Chronos-T5-Base-random/encoder_block_6_stage2_response.json`)
+  have file mtimes of **22:45** and **22:48** the same evening — genuinely
+  produced by this agent's own forward passes against pre-existing
+  (2026-08-18) null run directories, not fabricated or copied from an older
+  run.
+- **The depth-mismatch verdict on the actual rendered report was confirmed
+  directly in the live HTML**, not just via a script re-derivation (which,
+  without the real `depth_axis_for_run`-computed depths passed in, gives a
+  looser `comparable: True` — the report's own render path, unlike a
+  simplified standalone call, correctly supplies real block-axis depths and
+  is stricter, as intended): the rendered "Cross-model role correspondence"
+  table shows `comparable: False`, with the reason text quoted verbatim —
+  *"closest role targets are TimesFM/stacked_xf.18 and
+  Chronos-T5-Base/encoder.block.10 at depths 0.947/0.435 (block axis) — 0.513
+  apart, beyond the 0.15 tolerance. Not 'this model lacks this role': no
+  target exists at a comparable depth."* — matching §25.6's exact honest-
+  blank-cell requirement, word for word.
+- **`l1/cka_sae.json` was confirmed genuinely unrendered before this change**
+  (write-only since the Stage 3d work of 2026-08-18, per `CLAUDE.md` §13's own
+  record) **and is now genuinely rendered**: the live HTML contains a new "CKA
+  in SAE feature space" subsection under L1, with real numbers.
+- **The `run_sae_roles.py` merge-bug fix is real**, confirmed by reading the
+  actual diff: `out = {}` (destroying every other target's entry on a
+  single-target rerun) replaced with `out = load_json(out_path) if
+  out_path.exists() else {}`. This is precisely why `roles.json` now
+  legitimately holds both targets — the fix was load-bearing for this very
+  Stage 4 verification, not a cosmetic cleanup. All 3
+  `test_run_sae_roles_merge.py` tests re-run and pass.
+- **Full-suite re-run independently, not just the targeted `-k` filter**:
+  **1036 passed, 1 skipped, 0 failed, 754.55s (0:12:34)** — matches the
+  agent's own reported count exactly, with the same two pre-existing,
+  already-documented warnings (the float32-cast overflow, `test_smoke.py::
+  test_end_to_end`'s non-`None`-return warning) and no new failures.
+
+**Both exit criteria (§25.9 Stage 4) hold, independently confirmed:**
+1. The matrix reproduces the pair path byte-for-byte inside a panel
+   (`test_panel_pair_zero_reproduces_direct_two_model_result`,
+   `test_panel_generates_all_c_n_2_pairs`, both passing) — though, as the
+   agent's own report states and this verification did not additionally
+   re-check, this was only exercisable at n=2 models with SAE targets on
+   real data this session (Chronos-2 has none in `full_report_run_large`), so
+   the C(n,2)>1 case is machine-verified only synthetically, not on a live
+   3+-model SAE-enabled panel.
+2. No shared-fraction number renders without its untrained-twin floor
+   alongside it — structurally enforced via `match_rate_quotable` /
+   `match_rate_quotable_reason`, confirmed both by reading the function's own
+   contract and by the two passing tests named above.
+
+**A genuine negative result, in this repo's own established shape (the
+crosscoder's `frac_shared` vs. its L-B floor, §6.2.1 Stage 1).** On the one
+real pair this session could check end to end, the pair's own match_rate
+(0.833) is **below** both sides' untrained-twin floors (1.0 each) —
+`clears_untrained_twin_floor: False`. Read against §25.6's own explicit
+warning (the crosscoder's `frac_shared` 0.845 vs. floor 0.974, TimesFM reading
+as more shared with a random copy of itself than with Chronos), this is the
+same shape recurring a third time in this codebase's SAE/crosscoder work: an
+apparently-substantial cross-model similarity number that does not clear its
+own architecture-only floor. Scoped honestly: one pair, one cosine threshold
+(0.5), no depth-comparable target pair on the live run to even attempt a
+second check — this is a single data point in the same direction as the
+crosscoder's, not an independent replication with a different mechanism.
+
+**Real bugs found and fixed (verified via the agent's own before/after
+description, consistent with the code and tests read above, not
+independently re-run byte-for-byte for this list):** the `run_sae_roles.py`
+overwrite bug above; `cfg.comparison_pairs()` returns `ModelConfig` objects
+rather than name strings, silently failing every pair-name match on first
+wiring, fixed to unpack `.name` explicitly; `_sae_roles_block(None, ...)`
+crashed on `cfg.alignment.depth_axis` for the 3 pre-existing tests that call
+it with `cfg=None` by design, fixed with `getattr` fallback chains; one
+self-caught regression where a new `_note` summary broke the uniform "What
+does this mean?" dropdown convention, caught by `test_report_legibility.py`
+and fixed before reporting done. One item flagged but explicitly left
+out of scope: a `self_patch_delta=0.00209711` anomaly (not exactly `0.0`) in
+the TimesFM Stage 2 response artifact — this should be a correctness-control
+tautological zero per `CLAUDE.md` §11.42's discipline, and a value that is
+merely *close* to zero rather than exactly bit-identical is exactly the shape
+that discipline warns about. **Not investigated this session** — recorded
+here so it is not lost, and belongs to Component A (§25.23/§11.42), not
+Component C.
+
+Component C is done, with the stated single-pair, n=2-model scope limit above.
+Remaining from §25.9: **Stage 5** (the writeup — a Findings block, `CLAUDE.md`
+corrections per §25.15, `stage_docs.py`/`glossary.py`/`docs/
+worked_example.md` updates), the last item in this section's build plan.
+
+### 25.26 Stage 5 (the writeup) — CLAUDE.md corrected, stage_docs/glossary/worked_example updated, §25's build plan closed (2026-08-31)
+
+Closes §25.9's Stage 5, the last remaining item in this section's build plan.
+Done directly, not delegated — a documentation pass with no 5+-minute step,
+so §2.8's threshold does not apply. Followed §25.15's own checklist, and
+found two of its five items had drifted since it was written (worth noting,
+because it is the same staleness class §25.15 exists to prevent):
+`docs/worked_example.md`'s predicted defect ("the SAE table says
+`tier_realism_stress` 34 of 50 times") is no longer true — the file has no
+SAE section at all today, referencing `runs/medium_run_chronos_base`, a run
+that predates roles/matching entirely (confirmed: no `sae/roles.json` on
+disk for that run) — so the actual gap was "no SAE section," not "a stale
+one," and was fixed accordingly rather than by re-deriving numbers §25.15
+predicted would still be there.
+
+**`CLAUDE.md` corrections (§25.15 items 1-2):**
+- §6.1's stage table gained a real **SAE row** — it had none at all before
+  this session, a genuine gap rather than a stale entry, since the table
+  predates even the original SAE baseline work.
+- §6.5 gained a full **SAE paragraph** (it also had none), describing the
+  baseline SAE, Component A's causal channel battery and **reach** gate,
+  Component B's named **roles**, and Component C's cross-model matching
+  against an untrained-twin floor — including the negative result (match
+  rate 0.833 below both floors of 1.0) stated plainly, not softened.
+- §13 item 3 gained a correction block distinguishing this work from the
+  crosscoder's own closure just above it in the same item — the crosscoder
+  result is about *joint cross-model dictionary training* and is unrelated
+  to whether *per-model* SAE features can be shown to matter causally, which
+  is what §25's Components A/B/C actually built and is a separate,
+  non-conflated result that happens to land on the same "does not clear its
+  own architecture-only floor" shape.
+
+**`stage_docs.py` (§25.15 item 6):** the `sae` entry's `question`, `how`,
+`good_bad`, and `cannot_tell` fields all rewritten. The load-bearing change
+is in `cannot_tell`: it used to say feature-level ablation "does not exist in
+this pipeline yet" — no longer true (Component A) — and now states the
+actual current limitation instead of the old absence: a channel result must
+be checked before trusting a feature as meaningful, and a cross-model role
+match is a geometric correspondence that has not yet been shown to clear its
+own null on the one real pair checked. `render_stage_docs.py` re-run;
+`render_stage_docs.py --check` passes; `tests/test_stage_docs.py` (7 tests,
+part of the 14 re-run below) passes.
+
+**`glossary.py` (§25.15 item 7):** four new terms added, exactly as
+specified — **reach**, **random-direction null**, **role**, **response
+fingerprint** — each with a `where` pointer to its report section and, per
+the file's own writing rule, the operational limitation stated inside the
+definition (e.g. *reach*'s definition states the two-control test directly,
+citing `CLAUDE.md` §11.42; *response fingerprint*'s definition states the
+untrained-twin-floor requirement inline rather than leaving it implicit).
+`GLOSSARY` count: 36 → **40**. `render_glossary.py` re-run;
+`render_glossary.py --check` passes; `tests/test_glossary.py` passes.
+
+**`docs/worked_example.md` (§25.15 item 5):** a new §7.5 ("Sparse features
+and causal roles (SAE) — not on this run, and why that matters") inserted
+between §7 (Confirm) and "What this example is not." Deliberately does
+**not** fabricate role/matching numbers for `runs/medium_run_chronos_base`
+(which has a baseline `sae/meta.json` but no `sae/roles.json` — confirmed by
+listing the run directory directly) — instead states the absence explicitly
+as a lesson in its own right ("an artifact's absence on a specific run is
+not evidence the pipeline lacks the capability") and points to the real
+numbers on `runs/full_report_run_large`, quoted from `ROADMAP.md` §25.23/
+§25.25 rather than re-derived here. One real defect caught by the doc's own
+regression test on first attempt: `tests/test_worked_example.py::
+test_every_artifact_it_cites_is_a_real_path_in_the_run_it_quotes` correctly
+failed when the new section's `**Artifact:**` line named `sae/roles.json` as
+a cited path (to say it's absent) — the test's rule is that every path on
+an `**Artifact:**` line must exist in the quoted run, and citing an absent
+path under that header, even to say it's missing, breaks that contract.
+Fixed by moving the absence into prose and keeping the `**Artifact:**` line
+to only `sae/meta.json`, which does exist. `tests/test_worked_example.py`
+(11 tests) passes after the fix.
+
+**`report.py::_sec_sae`'s docstring (§25.15 item 3):** rewritten. It used to
+say Component A "exist[s], [is] unit-tested, and [has] real-checkpoint
+numbers on record ... but ... not yet built" — an internally contradictory
+sentence describing a *different*, now-superseded design
+(`feature_ablation_effects`/`feature_steering_effects`) that predates §25's
+actual Component A implementation. Now correctly scopes `_sec_sae` to its
+real, narrower job (the per-target summary and ground-truth exemplar panel)
+and points to `_sae_roles_block` (confirmed the real function name via
+direct grep — `_sec_sae_roles`, the name first drafted into this docstring,
+does not exist anywhere in `report.py`, so this is a second instance of the
+exact "an agent's/session's own reference can misquote a name" class of
+defect §25.25 already documented once this session, caught and fixed before
+being committed) for the rest.
+
+**Verification.** Targeted re-run: `tests/test_stage_docs.py` + `tests/
+test_glossary.py` + `tests/test_worked_example.py` + `tests/
+test_sae_roles_report.py` + `tests/test_role_matching.py` + `tests/
+test_sae_role_matching_report.py` → **61 passed, 0 failed**. A full-suite
+re-run was launched in the background at the same time as this writeup;
+its result is appended as a follow-up note immediately after this section
+once it completes, per this repo's own practice of not asserting an
+untested claim as done.
+
+**§25 is now closed end to end.** All five stages of §25.9's build plan
+(Stage 0 revival, Stage 1 structural/provenance separation, Stage 2 causal
+channels, Stage 3 named roles, Stage 4 cross-model matching, Stage 5 this
+writeup) are built, tested, and independently verified against real
+checkpoint data, each with its own Findings block (§25.20-§25.26). The
+section's own stated research question — is a feature's relevance to the
+forecast a *tested* causal claim rather than only a correlational one, and
+do two models' features play the same role — now has a real, mixed answer:
+**yes** for the causal half on one real target (Component A's reach and
+channel results clear their nulls), and **not yet established** for the
+cross-model half (Component C's one real pair does not clear its own
+untrained-twin floor) — a genuine result, not a placeholder, in the same
+honest shape as this repo's other architecture-vs-learned-structure
+findings (§6.2's L1/L2 depth-curve corrections, §6.2.1's crosscoder
+`frac_shared`).

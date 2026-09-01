@@ -176,13 +176,13 @@ Four fixed questions per stage (`ROADMAP.md` sec 21 J2), generated from `tsfm_le
 
 ### `sae`
 
-**Question.** Can each model's layer be decomposed into a small number of individually interpretable features, and do those features actually matter to the forecast?
+**Question.** Can each model's layer be decomposed into a small number of individually interpretable features, do those features actually matter to the forecast, and do the two models' features play the same role?
 
-**How.** Trains a sparse dictionary that reconstructs a layer's activations from only a handful of active 'feature' directions at a time, then checks reconstruction quality, how many learned features ever fire at all, whether swapping in the reconstruction changes the forecast, and whether any feature's activation tracks a known ground-truth property of the data (like a trend order or a seasonal period).
+**How.** Trains a sparse dictionary that reconstructs a layer's activations from only a handful of active 'feature' directions at a time, then checks reconstruction quality, how many learned features ever fire at all, whether swapping in the reconstruction changes the forecast, and whether any feature's activation tracks a known ground-truth property of the data (like a trend order or a seasonal period). A causal channel battery then patches each alive feature's direction into a clean forward pass and measures a real, per-channel response (not just correlation with a label), scored against a random-direction null. Features are clustered into named 'roles' by their shared response and structural signature, and each model's roles are matched against the other model's by cosine similarity of their null-normalized response fingerprints, checked against an untrained-twin floor.
 
-**Good vs. bad result.** Good: high reconstruction fidelity, a low dead-feature rate, forecast-preservation deltas that stay within the SAE's own seed-to-seed noise floor, and features whose activation clearly tracks a real ground-truth field well above what random label shuffling would produce by chance. Bad: the large majority of features never firing at all (a common failure mode), a forecast-preservation delta far outside the noise floor, or a ground-truth alignment score that isn't meaningfully above its own permutation-null control.
+**Good vs. bad result.** Good: high reconstruction fidelity, a low dead-feature rate, forecast-preservation deltas that stay within the SAE's own seed-to-seed noise floor, and features whose activation clearly tracks a real ground-truth field well above what random label shuffling would produce by chance. For the causal layer: a channel response that clears the random-direction null, and a cross-model role match rate that clears its own untrained-twin floor (not just zero). Bad: the large majority of features never firing at all (a common failure mode), a forecast-preservation delta far outside the noise floor, a ground-truth alignment score that isn't meaningfully above its own permutation-null control, or a role match rate that looks large but sits below the untrained-twin floor — architecture match alone can produce that, not shared learned structure.
 
-**What it cannot tell you.** A feature firing on a particular kind of series is illustrative, not a causal claim about the forecast — establishing that needs feature-level ablation, which does not exist in this pipeline yet. Only the small alive fraction of the dictionary (often under 10%) can ever show up as an example, and the headline alignment number is inflated by searching many candidate ground-truth fields per feature, so it must always be read next to its permutation-null control, never on its own.
+**What it cannot tell you.** A feature firing on a particular kind of series is illustrative correlation unless the causal channel battery has confirmed a real patched response for that feature — check the channel result, not just the ground-truth alignment score, before reading any feature as meaningful. A cross-model role match is a geometric correspondence in response space, not evidence the two models use that role the same way causally — and on the one real pair checked so far, the match rate did not clear its own untrained-twin floor, so 'the models share this feature' is not yet an established claim for any pair. Only the small alive fraction of the dictionary (often under 10%) can ever show up as an example, and the headline alignment number is inflated by searching many candidate ground-truth fields per feature, so it must always be read next to its permutation-null control, never on its own.
 
 ### `exemplars`
 
@@ -322,6 +322,14 @@ The recurring vocabulary of this repo's report, one sentence each (`ROADMAP.md` 
 
 *Where it appears:* Model internals; the SAE section's ground-truth alignment.
 
+**Random-direction null.** The same causal channel battery re-run on directions drawn at random from the same activation space instead of a trained SAE feature's decoder direction, so a channel response is only quotable once it is compared against how large a response chance alone produces, not against zero.
+
+*Where it appears:* SAE causal channel testing (Component A).
+
+**Reach.** Whether a patched-in intervention (a feature direction, a layer's activations) actually changes anything the forecast head reads, checked before any effect is trusted — confirmed by two controls: patching a layer into itself must move the forecast by exactly 0.0, and patching an earlier layer into a later read must move it by something nonzero; a clean, flat, entirely plausible-looking curve can still mean the intervention never reached anywhere the model reads (`CLAUDE.md` sec 11.42).
+
+*Where it appears:* SAE causal channel testing (Component A).
+
 **Registered hypothesis.** A dev-corpus finding written down *before* the private corpus is opened; only registered hypotheses can be confirmed, and a finding discovered afterwards cannot be rescued by the confirmation stage no matter how strong it looks.
 
 *Where it appears:* Private benchmark confirmation; the "[exploratory]" prefix marks everything that is not one.
@@ -329,6 +337,14 @@ The recurring vocabulary of this repo's report, one sentence each (`ROADMAP.md` 
 **Relative depth.** A layer's position rescaled to 0–1 so models with different layer counts share one axis — a convention that makes the comparison drawable, not a claim that the same fraction is the same computational stage in two architectures.
 
 *Where it appears:* Model internals, Forecast lens, Representational geometry, Perturbation — any curve plotted against depth.
+
+**Response fingerprint.** A feature's or role's vector of null-normalized responses across the causal channel battery, used as the primary signal for matching one model's roles against another's by cosine similarity — a match rate computed this way is never rendered without its own untrained-twin floor beside it, because two architecturally similar but never-jointly-trained models can already look substantially 'matched' by chance.
+
+*Where it appears:* Cross-model role correspondence table (Component C).
+
+**Role.** A cluster of a single model's SAE features that share a similar structural signature and causal response profile, named from its dominant response channel and its best-matching ground-truth field — a description of that model's own feature space, not a claim that any other model has an equivalent role until cross-model matching (see response fingerprint) has actually checked.
+
+*Where it appears:* SAE roles table and role cards (Component B).
 
 **RSA (representational similarity analysis).** The rank-correlation companion to CKA: instead of comparing representations directly it compares each model's *matrix of series-to-series distances*, so it survives any monotone rescaling CKA would not.
 

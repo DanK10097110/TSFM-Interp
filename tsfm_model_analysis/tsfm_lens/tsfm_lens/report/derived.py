@@ -264,6 +264,10 @@ def bottom_line_rows(run_dir: Path, model_names: list) -> list:
     if sae:
         rows.extend(_sae_alignment_rows(sae))
 
+    roles = load_json_or_none(run_dir / "sae" / "roles.json")
+    if roles:
+        rows.extend(_sae_role_rows(roles))
+
     confirm = load_json_or_none(run_dir / "confirm" / "confirmation.json")
     if confirm:
         rows.append(_confirmation_row(confirm))
@@ -778,6 +782,50 @@ def _sae_alignment_rows(sae: dict) -> list:
                  "is beneath. Read the dead feature rate beside it: alignment "
                  "computed over a mostly-dead dictionary describes very few "
                  "live features."))
+    return rows
+
+
+def _sae_role_rows(roles: dict) -> list:
+    """ROADMAP.md sec 25.9 Stage 3 (Component B(b)): does at least one
+    causally-named role's dominant channel effect clear its own
+    random-direction null, for each SAE target this run built roles for?
+
+    `value` is the strongest role's dominant effect already expressed in
+    "multiples of null p95" units (`sae/roles.py::build_feature_matrix`'s own
+    normalization), so `reference=1.0` is not a magic number picked for this
+    row -- it is the null boundary that unit is defined against. A target
+    the reach gate withheld, or one with too few candidates to cluster,
+    contributes no row -- absence of a causal claim, not a claim of zero
+    effect (`CLAUDE.md` sec 11.42's lesson: a withheld target has no
+    measurement to report, not a negative one).
+    """
+    rows: list = []
+    for target, rec in roles.items():
+        if not isinstance(rec, dict) or rec.get("withheld") or rec.get("skipped"):
+            continue
+        role_list = rec.get("roles") or []
+        named = [r for r in role_list if r.get("clears_null")]
+        if not named:
+            continue
+        best = max(named, key=lambda r: abs(r.get("dominant_effect_null_units") or 0.0))
+        value = abs(best.get("dominant_effect_null_units") or 0.0)
+        rows.append(Verdict(
+            measure=f"SAE causal roles, {target}: strongest role's effect vs. its null",
+            value=value, reference=1.0,
+            reference_label="random-direction steering null (p95, same magnitude)",
+            rule=RULES["greater_than"](), unit="multiples of null p95",
+            detail=[{"role": r["name"], "n_atoms": r["n_atoms"],
+                     "dominant_channel": r.get("dominant_channel"),
+                     "effect_null_units": r.get("dominant_effect_null_units"),
+                     "structural_field": r.get("structural_field")}
+                    for r in role_list],
+            note="Each role's name and its dominant channel are DERIVED from "
+                 "the same steering battery this row scores, never authored "
+                 "(ROADMAP.md sec 25.5(b)) -- a role named 'no measured "
+                 "effect (n atoms)' is excluded from the max here by "
+                 "construction, not by a separate filter. The per-role "
+                 "detail is every role this target's dictionary clustered "
+                 "into, not only the winner."))
     return rows
 
 

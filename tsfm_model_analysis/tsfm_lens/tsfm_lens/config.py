@@ -540,6 +540,32 @@ class SAEConfig:
     # width) can be many times the raw activation store's own size, so this
     # should not silently multiply every run's disk footprint.
     persist_features: bool = False
+    # ROADMAP.md sec 25.9 Stage 3 (Component B(b)): the number of ROLES a
+    # target's probed candidate features are clustered into, chosen the way
+    # `clustering.py::_resolve_k` already chooses its own k -- "auto" clips
+    # to a small range rather than the family count (there is no analogous
+    # "family count" for a set of ~40 candidate features), an explicit int
+    # pins it. `role_min_silhouette` is the bar `sae/roles.py::cluster_roles`
+    # reports against, not a hard gate -- a dictionary that clusters poorly
+    # at this granularity is a real finding (sec 25.13 item 2), rendered as
+    # "non-modular" rather than silently forcing a partition anyway.
+    role_k: str = "auto"
+    role_min_silhouette: float = 0.1
+    # ROADMAP.md sec 25.9 Stage 4 (Component C): explicit paths to a
+    # `random_init` untrained-twin RUN DIRECTORY for one or more of this
+    # run's models, keyed by the model name as configured HERE (e.g.
+    # {"TimesFM": "runs/null_timesfm_random"}). There is no auto-discovery
+    # mechanism anywhere in this repo (`analysis/null_baseline.py`'s own
+    # convention already requires an explicit run path) -- a twin lives in a
+    # SEPARATE run directory containing both the real model and its
+    # `random_init: true` copy as two models of one small config, with its
+    # own `sae`/roles.json built the same way as this run's. Empty (the
+    # default) means no floor is available and any role-matching
+    # shared-fraction number is rendered non-quotable with a stated reason
+    # rather than silently omitted (sec 25.6's mandatory pairing).
+    role_matching_untrained_twin_runs: dict = field(default_factory=dict)
+    role_matching_cosine_threshold: float = 0.5
+    role_matching_depth_tolerance: float = 0.15
 
 
 @dataclass

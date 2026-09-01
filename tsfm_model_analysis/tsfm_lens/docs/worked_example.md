@@ -294,6 +294,31 @@ raw R² where a gain was the honest quantity.
 
 ---
 
+## 7.5. Sparse features and causal roles (SAE) — not on this run, and why that matters
+
+**Artifact:** `sae/meta.json`. (This run has no role/channel artifacts — see below.)
+
+This run trained a baseline `TopKSAE` on both models (`sae/meta.json` above),
+but predates the causal channel battery, named "roles," and cross-model role
+matching this section describes today (`ROADMAP.md` §25's Component A/B/C
+work) — so its own report renders no roles table, no role×model matrix, and
+no "CKA in SAE feature space" subsection, and this page cannot quote numbers
+for them from this run without fabricating data that was never computed here.
+That is itself the lesson worth stating explicitly: **an artifact's absence
+on a specific run is not evidence the pipeline lacks the capability** — check
+`stage_docs.py`'s `sae` entry (or this repo's current `ROADMAP.md` §25.24/
+§25.25) for what the stage can do *today*, and check the run directory's own
+files for what that *particular* run actually has, before concluding either
+way. The real numbers for the causal-channel and role-matching work — a
+reach of 0.708, 23 of 39 candidates clearing at least one channel, and a
+cross-model match rate of 0.833 that does *not* clear its own untrained-twin
+floor of 1.0 — are quoted from `runs/full_report_run_large`, a different,
+newer run, in `ROADMAP.md` §25.23 and §25.25; they are not reproduced here
+because reproducing them against this page's own run would require re-running
+that run's SAE stage with the new machinery, which has not been done.
+
+---
+
 ## What this example is not
 
 - **Not a claim about TimesFM and Chronos in general.** One corpus, one

@@ -257,7 +257,7 @@ does not silently rewrite the pair's results.
   usually want are `smoke.yaml`, `smoke_solo.yaml`, `smoke_panel.yaml`,
   `default.yaml`.
 - **The full suite runs in ~14 min, not the ~3 hours previously recorded.** Measured
-  2026-08-31: **945 passed, 1 skipped, 0 failed, 930.08s**, with 2 long-standing warnings.
+  2026-08-31: **951 passed, 1 skipped, 0 failed, 779.31s**, with 2 long-standing warnings.
   The repo's recorded 3:06:16 could **not** be reproduced and is left unexplained
   rather than quietly overwritten — competing load on a shared box or a cold cache are
   the untested candidates. Treat the wall clock as a range, not a constant: the same

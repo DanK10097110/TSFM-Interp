@@ -40,6 +40,7 @@ from ..extraction.store import ActivationStore, load_meta
 from ..utils import batch_slices, log, sample_rows
 
 _MIN_VALID = 10
+_PROVENANCE_PREFIXES = ("tier_", "generator_", "archetype_")
 
 
 def _scalar_ground_truth(gt) -> dict:
@@ -238,6 +239,326 @@ def best_ground_truth_matches(features: np.ndarray, gt: pd.DataFrame, series_ids
         "abs_rho_matched": [float(abs(r["rho"])) for r in matched],
         "features": out_features,
         "widened_with": widened_with,
+    }
+
+
+def is_provenance_field(field: str) -> bool:
+    """True for a corpus-provenance dummy (`tier_*`/`generator_*`/`archetype_*`).
+
+    These are defined on every series (ROADMAP.md §25.1 (3)) and encode
+    which generator produced a series / whether it is synthetic or
+    real-derived -- a confound flag for an interpretability reader, not a
+    structural generative property (trend/seasonality/AR/changepoint/
+    anomaly/intermittency). The one place this repo needs the distinction
+    by name rather than by re-deriving it from `_add_dummy_columns`'
+    prefixes at each call site.
+    """
+    return field.startswith(_PROVENANCE_PREFIXES)
+
+
+def _ridge_cross_fitted_residuals(x: np.ndarray, y: np.ndarray, n_folds: int,
+                                  alpha: float, seed: int) -> np.ndarray:
+    """Residuals of `y` on one-hot provenance columns `x`, each row predicted out of fold.
+
+    Closed-form ridge on the normal equations, the same pattern
+    `analysis/error_fingerprint.py::_cross_fitted_residuals` already uses for
+    exactly the reason ROADMAP.md sec 11.36 names: a control that silently
+    explains nothing is indistinguishable from one that works unless it is
+    scored out of fold, and this residualization has precisely that shape
+    (few provenance columns, many rows -- the opposite failure direction
+    from sec 11.36's ~200-column basis, but the same principle: publish the
+    OOF R2, do not assume the fit worked).
+    """
+    n = x.shape[0]
+    rng = np.random.default_rng(seed)
+    folds = rng.permutation(n) % n_folds
+    xb = np.concatenate([x, np.ones((n, 1), dtype=np.float64)], axis=1)
+    resid = np.empty(n, dtype=np.float64)
+    eye = np.eye(xb.shape[1])
+    eye[-1, -1] = 0.0
+    for f in range(n_folds):
+        te = folds == f
+        tr = ~te
+        if tr.sum() < 2 or not te.any():
+            resid[te] = y[te]
+            continue
+        xt = xb[tr]
+        beta = np.linalg.solve(xt.T @ xt + alpha * eye, xt.T @ y[tr])
+        resid[te] = y[te] - xb[te] @ beta
+    return resid
+
+
+def residualize_against_provenance(gt: pd.DataFrame, structural_field: str,
+                                   provenance_cols: list, valid: np.ndarray,
+                                   n_folds: int = 5, alpha: float = 0.01,
+                                   seed: int = 0) -> tuple:
+    """Residual of one structural field after regressing out the provenance one-hots.
+
+    A feature whose entire correlation with a structural field is really
+    "this is real-derived data" (ROADMAP.md §25.1 (2)-(3)) scores near zero
+    here even if its raw correlation with that field was large, because the
+    provenance signal has already been removed from the field itself, not
+    from the feature. Returns `(residual, oof_r2)` -- `oof_r2` is the
+    provenance basis's own out-of-fold R2 predicting the structural field, so
+    a caller can tell "this field has no provenance confound to remove" (R2
+    near 0) apart from "the regression silently did nothing" (also R2 near
+    0) only by checking whether removing it changes anything; recorded so
+    neither is asserted silently (§11.36's rule).
+
+    `valid` is a boolean mask over `gt`'s row order selecting rows where
+    `structural_field` is non-NaN -- provenance columns are always defined,
+    so the regression is fit only on rows the structural field can itself be
+    evaluated on.
+
+    `alpha` defaults far lower than `analysis/error_fingerprint.py`'s
+    same-shaped `_cross_fitted_residuals` (1.0, tuned for a ~200-column
+    basis): the provenance basis here is a handful of one-hot columns, and a
+    fixed `alpha=1.0` ridge penalty measurably under-corrects it. Confirmed
+    directly (not assumed) with a fully-confounded synthetic case (a binary
+    `tier` dummy explaining a structural field almost exactly,
+    `oof_r2 > 0.99`): at `alpha=1.0` the cross-fitted residual still
+    correlates with `tier` at 0.61 -- the ridge shrinkage pulls each fold's
+    fitted coefficient toward zero, systematically under-removing the
+    confound on every held-out point -- while `alpha=0.01` drops that
+    leakage to 0.02 with no cost to the independent (no-confound) case. This
+    is the opposite failure direction from `CLAUDE.md` §11.36's own basis
+    (many columns, needs real shrinkage to avoid overfitting a tiny sample);
+    a shared default across both would have been wrong for one of them.
+
+    `provenance_cols` includes `archetype_*` dummies, which are `NaN` (not
+    0) for a series with no archetype concept at all (`_add_dummy_columns`'
+    documented distinction between "not this archetype" and "not
+    archetype-bearing"). That NaN is a real, meaningful "not applicable" --
+    but `np.linalg.solve` propagates any NaN in `x` to every entry of the
+    fitted coefficient, silently returning an all-NaN residual for the
+    *entire* fold rather than raising (caught empirically: 130 of 555
+    `trend_order`-valid rows carry at least one `archetype_*` NaN on
+    `runs/full_report_run_large`'s real corpus, which a 1-provenance-column
+    synthetic test has no way to exercise). Filled with 0 here, consistent
+    with every other row's own `archetype_*` encoding of "not this
+    archetype" -- a non-archetype-bearing row already reads as all-zero
+    across every `archetype_*` column it CAN take a value on, so this only
+    extends that same convention to columns it cannot.
+    """
+    y = gt.loc[valid, structural_field].to_numpy(dtype=np.float64)
+    x = gt.loc[valid, list(provenance_cols)].to_numpy(dtype=np.float64)
+    x = np.nan_to_num(x, nan=0.0)
+    if len(y) < n_folds or np.std(y) == 0:
+        return y - y.mean() if len(y) else y, 0.0
+    resid = _ridge_cross_fitted_residuals(x, y, n_folds, alpha, seed)
+    oof_r2 = 1.0 - float(np.sum(resid ** 2) / (np.sum((y - y.mean()) ** 2) + 1e-12))
+    return resid, oof_r2
+
+
+def _average_rank_columns(a: np.ndarray) -> np.ndarray:
+    """Column-wise average rank (`scipy.stats.rankdata(..., method="average")`'s
+    tie convention), vectorized across all columns at once.
+
+    A first version used plain ordinal rank (`argsort` twice, no tie
+    averaging) and was silently wrong on tied data -- checked directly
+    against `scipy.stats.spearmanr` (`CLAUDE.md` §2.4) rather than assumed
+    correct because it "looked like the standard rank trick": max abs
+    difference 0.047 on integer-valued test data, versus <1e-12 once average
+    ranking was implemented. Real SAE dictionary activations are continuous
+    and rarely exactly tied, but ground-truth fields like `n_seasonalities`/
+    `ar_order`/`n_changepoints` are small integers with many genuine ties, so
+    this is not a hypothetical edge case for this module's actual inputs.
+
+    Implementation: sort each column, use the sorted order's inverse to place
+    ordinal ranks, then average the ordinal ranks within each run of equal
+    values (found via `np.diff` on the sorted values) -- O(n log n) per
+    column via one vectorized sort across all columns at once, not a
+    Python-level loop over columns.
+    """
+    order = np.argsort(a, axis=0, kind="mergesort")
+    sorted_a = np.take_along_axis(a, order, axis=0)
+    n = a.shape[0]
+    ordinal = np.arange(1, n + 1, dtype=np.float64)
+    if a.ndim == 1:
+        sorted_a = sorted_a[:, None]
+        order = order[:, None]
+    # For each column, find run boundaries where consecutive sorted values
+    # differ, then average the ordinal ranks within each run.
+    out = np.empty_like(sorted_a, dtype=np.float64)
+    for j in range(sorted_a.shape[1]):
+        col = sorted_a[:, j]
+        is_new = np.empty(n, dtype=bool)
+        is_new[0] = True
+        is_new[1:] = col[1:] != col[:-1]
+        group_id = np.cumsum(is_new) - 1
+        group_sum = np.bincount(group_id, weights=ordinal)
+        group_count = np.bincount(group_id)
+        avg_rank = group_sum / group_count
+        out[:, j] = avg_rank[group_id]
+    ranks = np.empty_like(out)
+    np.put_along_axis(ranks, order, out, axis=0)
+    return ranks[:, 0] if a.ndim == 1 else ranks
+
+
+def _vectorized_spearman_all_features(features: np.ndarray, valid: np.ndarray,
+                                      target: np.ndarray) -> np.ndarray:
+    """Spearman rho of every column of `features[valid]` against `target`, vectorized.
+
+    `features` is the FULL `[n_rows, n_features]` array; `valid` selects the
+    rows to use. `target` must already be pre-sliced to those same `valid`
+    rows (matching every existing caller's convention -- `resid`/`gvals[valid]`
+    are already row-selected before this is called).
+
+    Average-rank Spearman (`_average_rank_columns`) computed once across all
+    features simultaneously via a single Pearson-on-ranks matrix computation,
+    replacing an O(n_features) Python loop of `scipy.stats.spearmanr` calls --
+    each of which carries real per-call overhead that dominates at dictionary
+    sizes up to 10240 (§25.9 Stage 1's own real-corpus offline check took
+    several minutes per target before this change).
+
+    Returns `nan` for a constant column (correlation undefined), matching
+    `scipy.stats.spearmanr`'s own behavior there.
+    """
+    x = features[valid]
+    y = target
+    n = x.shape[0]
+    if n < 2 or n != y.shape[0]:
+        return np.full(x.shape[1], np.nan)
+    rx = _average_rank_columns(x)
+    ry = _average_rank_columns(y)
+    rx_c = rx - rx.mean(axis=0, keepdims=True)
+    ry_c = ry - ry.mean()
+    num = (rx_c * ry_c[:, None]).sum(axis=0)
+    den = np.sqrt((rx_c ** 2).sum(axis=0) * (ry_c ** 2).sum())
+    with np.errstate(invalid="ignore", divide="ignore"):
+        rho = num / den
+    rho[den == 0] = np.nan
+    return rho
+
+
+def best_ground_truth_matches_separated(features: np.ndarray, gt: pd.DataFrame,
+                                        series_ids: np.ndarray, gt_cols: list,
+                                        min_valid: int = _MIN_VALID,
+                                        top_features: int = 50,
+                                        n_folds: int = 5, alpha: float = 0.01,
+                                        seed: int = 0) -> dict:
+    """Per-feature best match, reported as separate `structural`/`provenance` columns.
+
+    ROADMAP.md §25.5(a): stop running one argmax over ~30 mixed fields
+    (§25.1 shows this structurally favors provenance dummies, which are
+    defined on every series and carry the corpus's single largest variance
+    axis, over structural fields that are `None` for every real-derived
+    series). Instead:
+
+    - `provenance`: this feature's best match among `tier_*`/`generator_*`/
+      `archetype_*` fields, on the RAW (non-residualized) correlation --
+      exactly `best_ground_truth_matches`' existing search, restricted to
+      provenance columns.
+    - `structural`: this feature's best match among every other field, on
+      the RESIDUAL correlation after regressing that field on the
+      provenance one-hots (`residualize_against_provenance`) -- so a feature
+      whose apparent structural match is really a provenance detector in
+      disguise scores near zero here, on purpose (§25.5(a)'s stated design).
+    - `n`: each match's own valid sample size, carried through rather than
+      dropped, since a rho on 374 series and one on 965 are not the same
+      claim (§25.5(a) -- structural fields are `None` for every real-derived
+      series by construction, so their `n` is always <= the provenance
+      fields' `n`).
+    - `top3_structural`/`top3_provenance`: each feature's top-3 field
+      matches per competition, not just the argmax -- §25.1 (4) shows a
+      single best-of name discards real differentiation between atoms that
+      an argmax collapses onto one label.
+
+    Pure function, zero forward passes (`ROADMAP.md` §25.9 Stage 1's own
+    stated cost bound) -- everything here is a transform of already-encoded
+    `features` and the corpus's own ground-truth table.
+    """
+    provenance_cols = [c for c in gt_cols if is_provenance_field(c)]
+    structural_cols = [c for c in gt_cols if not is_provenance_field(c)]
+    joined = gt.reindex(series_ids)
+    n_with_gt = int(joined[gt_cols].notna().any(axis=1).sum())
+    if n_with_gt < min_valid:
+        log.info(f"sae ground-truth alignment (separated): only {n_with_gt} series with any "
+                 f"ground truth; skipping")
+        return {"n_series_with_ground_truth": n_with_gt, "n_features": features.shape[1],
+               "n_features_matched": 0, "mean_abs_rho_structural": 0.0,
+               "mean_abs_rho_provenance": 0.0, "residualization_oof_r2": {}, "features": []}
+
+    # Cache each structural field's provenance-residual once (shared across
+    # every feature) rather than refitting the same regression per feature.
+    residual_cache: dict = {}
+    oof_r2_by_field: dict = {}
+    for field in structural_cols:
+        gvals = joined[field].to_numpy(dtype=np.float64)
+        valid = ~np.isnan(gvals)
+        if valid.sum() < min_valid or np.std(gvals[valid]) == 0:
+            continue
+        resid, oof_r2 = residualize_against_provenance(
+            joined, field, provenance_cols, valid, n_folds=n_folds, alpha=alpha, seed=seed)
+        residual_cache[field] = (valid, resid)
+        oof_r2_by_field[field] = oof_r2
+
+    n_features = features.shape[1]
+    # One vectorized pass per field (not per feature-per-field): rho_by_field
+    # is {field: (rho_array[n_features], n)}, computed once and sliced per
+    # feature below -- the same total work as the old per-feature Python
+    # loop, done in O(n_fields) numpy calls instead of O(n_features * n_fields)
+    # scipy calls.
+    struct_rho_by_field: dict = {}
+    for field, (valid, resid) in residual_cache.items():
+        rho = _vectorized_spearman_all_features(features, valid, resid)
+        struct_rho_by_field[field] = (rho, int(valid.sum()))
+
+    prov_rho_by_field: dict = {}
+    for field in provenance_cols:
+        gvals = joined[field].to_numpy(dtype=np.float64)
+        valid = ~np.isnan(gvals)
+        if valid.sum() < min_valid or np.std(gvals[valid]) == 0:
+            continue
+        rho = _vectorized_spearman_all_features(features, valid, gvals[valid])
+        prov_rho_by_field[field] = (rho, int(valid.sum()))
+
+    results = []
+    for f_idx in range(n_features):
+        if np.std(features[:, f_idx]) == 0:
+            results.append({"feature": f_idx, "structural": None, "provenance": None,
+                            "top3_structural": [], "top3_provenance": []})
+            continue
+
+        struct_candidates = []
+        for field, (rho_arr, n) in struct_rho_by_field.items():
+            rho = rho_arr[f_idx]
+            if not np.isfinite(rho):
+                continue
+            struct_candidates.append({"field": field, "rho": float(rho), "n": n})
+        struct_candidates.sort(key=lambda r: -abs(r["rho"]))
+
+        prov_candidates = []
+        for field, (rho_arr, n) in prov_rho_by_field.items():
+            rho = rho_arr[f_idx]
+            if not np.isfinite(rho):
+                continue
+            prov_candidates.append({"field": field, "rho": float(rho), "n": n})
+        prov_candidates.sort(key=lambda r: -abs(r["rho"]))
+
+        results.append({
+            "feature": f_idx,
+            "structural": struct_candidates[0] if struct_candidates else None,
+            "provenance": prov_candidates[0] if prov_candidates else None,
+            "top3_structural": struct_candidates[:3],
+            "top3_provenance": prov_candidates[:3],
+        })
+
+    struct_matched = [r["structural"]["rho"] for r in results if r["structural"] is not None]
+    prov_matched = [r["provenance"]["rho"] for r in results if r["provenance"] is not None]
+    ranked = sorted(results, key=lambda r: -abs(r["structural"]["rho"]) if r["structural"] else 0.0)
+    out_features = ranked if top_features <= 0 else list(ranked[:top_features])
+
+    return {
+        "n_series_with_ground_truth": n_with_gt,
+        "n_features": len(results),
+        "n_features_matched": sum(1 for r in results if r["structural"] or r["provenance"]),
+        "n_features_structural_matched": len(struct_matched),
+        "n_features_provenance_matched": len(prov_matched),
+        "mean_abs_rho_structural": float(np.mean(np.abs(struct_matched))) if struct_matched else 0.0,
+        "mean_abs_rho_provenance": float(np.mean(np.abs(prov_matched))) if prov_matched else 0.0,
+        "residualization_oof_r2": {k: float(v) for k, v in oof_r2_by_field.items()},
+        "features": out_features,
     }
 
 

@@ -110,7 +110,7 @@ def test_end_to_end(tmp_path=None):
     # `<li>`, so a naive first-`</div>` split would truncate the block after
     # the very first finding's caveat instead of at the findings block's own
     # close (which precedes the first rendered `<section>`).
-    findings_block = html.split('<div class="findings">', 1)[1].split("<section ", 1)[0]
+    findings_block = html.split('<details class="findings">', 1)[1].split("<section ", 1)[0]
     # Each <li> also carries a registered/exploratory class (ROADMAP.md sec 21
     # J4's Headline mode filters on it), so count both variants rather than a
     # bare `<li>`.

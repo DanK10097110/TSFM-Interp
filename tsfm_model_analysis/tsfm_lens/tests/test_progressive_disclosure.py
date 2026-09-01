@@ -77,7 +77,7 @@ def test_rendered_report_finding_items_are_all_tagged_registered_or_exploratory(
     # (bounded by the first rendered <section>, since the findings <div> has
     # nested <div>s of its own and a naive first-</div> split would truncate
     # too early)
-    findings_block = html.split('<div class="findings">', 1)[1].split('<section id="sec-', 1)[0]
+    findings_block = html.split('<details class="findings">', 1)[1].split('<section id="sec-', 1)[0]
     untagged = re.findall(r"<li(?![^>]*class=\"(?:registered|exploratory)\")", findings_block)
     assert untagged == []
 

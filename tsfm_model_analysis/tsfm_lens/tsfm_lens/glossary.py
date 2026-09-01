@@ -349,6 +349,48 @@ GLOSSARY: dict = {
             "correctly-implemented decomposition, if the heads genuinely interact "
             "nonlinearly rather than contributing independent, additive paths."),
         where="The seasonality circuit."),
+    "reach": Term(
+        term="Reach",
+        definition=(
+            "Whether a patched-in intervention (a feature direction, a layer's "
+            "activations) actually changes anything the forecast head reads, checked "
+            "before any effect is trusted — confirmed by two controls: patching a "
+            "layer into itself must move the forecast by exactly 0.0, and patching an "
+            "earlier layer into a later read must move it by something nonzero; a "
+            "clean, flat, entirely plausible-looking curve can still mean the "
+            "intervention never reached anywhere the model reads (`CLAUDE.md` sec "
+            "11.42)."),
+        where="SAE causal channel testing (Component A)."),
+    "random-direction null": Term(
+        term="Random-direction null",
+        definition=(
+            "The same causal channel battery re-run on directions drawn at random "
+            "from the same activation space instead of a trained SAE feature's "
+            "decoder direction, so a channel response is only quotable once it is "
+            "compared against how large a response chance alone produces, not "
+            "against zero."),
+        where="SAE causal channel testing (Component A)."),
+    "role": Term(
+        term="Role",
+        definition=(
+            "A cluster of a single model's SAE features that share a similar "
+            "structural signature and causal response profile, named from its "
+            "dominant response channel and its best-matching ground-truth field — a "
+            "description of that model's own feature space, not a claim that any "
+            "other model has an equivalent role until cross-model matching (see "
+            "response fingerprint) has actually checked."),
+        where="SAE roles table and role cards (Component B)."),
+    "response fingerprint": Term(
+        term="Response fingerprint",
+        definition=(
+            "A feature's or role's vector of null-normalized responses across the "
+            "causal channel battery, used as the primary signal for matching one "
+            "model's roles against another's by cosine similarity — a match rate "
+            "computed this way is never rendered without its own untrained-twin "
+            "floor beside it, because two architecturally similar but never-"
+            "jointly-trained models can already look substantially 'matched' by "
+            "chance."),
+        where="Cross-model role correspondence table (Component C)."),
 }
 
 

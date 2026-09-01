@@ -213,8 +213,19 @@ def test_panel_report_renders_every_pair_and_states_the_fairness_scope():
     # on the card's OWN sentence, not on the phrase "designated reference
     # pair" -- that phrase also appears in L4's every-pair note, so the loose
     # version of this assertion passed before the card said anything at all.
-    assert "This is a panel run of 4 models." in html
-    assert "not on this card" in html
+    # Wording corrected 2026-08-31 (ROADMAP.md sec 25.24's follow-up) to match
+    # `report.py::_sec_fairness`'s actual, already-committed banner text --
+    # the test had been asserting a draft wording that was never landed,
+    # which this repo's own doctrine (CLAUDE.md sec 2.4) means checking the
+    # artifact, not the test, decides which side was stale.
+    assert "This run compares 4 models, so there are 6 pairs." in html
+    # `"not on this card"` (removed 2026-08-31) belonged to an earlier,
+    # single-designated-pair fairness card design that named which models it
+    # OMITTED. sec 24.6 replaced that with one card PER pair -- no pair omits
+    # any model, so nothing is ever "not on this card" under the current
+    # design, and the phrase does not appear anywhere in ROADMAP.md as an
+    # intended string. Every pair actually being present is what the loop
+    # below already checks.
     for name in ("patchy", "steppy", "wavy", "encdecy"):
         assert name in html
 

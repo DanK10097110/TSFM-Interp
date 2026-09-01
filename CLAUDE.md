@@ -1298,6 +1298,7 @@ stronger question and exists **because of the previous level's limitation**.
 | **Attention** | Which heads look where, and which matter? | Lag-profile taxonomy, periodicity heads, head/MLP mean-ablation ΔMASE, first-step cross-attention | Pattern support varies by architecture |
 | **L4** (`clustering`) | How does each model organize the data? | Activation clustering + approximate labels, AMI across models | Descriptive |
 | **Exemplars** | What does the difference look like? | Per-family case studies: forecasts, lens curves, attention maps | Illustrative, not statistical |
+| **SAE** | Can a layer be decomposed into individually interpretable, causally-real features, and do the two models' features play the same role? | Sparse dictionary + reconstruction/dead-rate/forecast-preservation checks; a causal channel battery patches each alive feature against a random-direction null; features cluster into named roles; roles are matched cross-model by response-fingerprint cosine against an untrained-twin floor | Ground-truth alignment is correlational until the channel battery confirms a real patched response; cross-model role matching is geometric correspondence, not a causal or architectural claim, and is not yet shown to clear its own untrained-twin floor on the one real pair checked |
 | **Confirm** | Which dev findings are real? | One-shot re-test of dev hypotheses on sealed **private** corpus | The gold standard |
 
 Plus `extract` (upstream), `register` (freezes dev hypotheses for `confirm`) and
@@ -1827,6 +1828,41 @@ maps, not feature attributions. AMI across models with a series-bootstrap CI.
 (**max-gap + median-gap**), showing both forecasts, per-series lens curves, and
 window-pooled attention maps.
 
+**SAE** (`sae/`, §16 E15/E16, §25's Components A/B/C) — trains a sparse
+`TopKSAE` dictionary per pinned target (`sae.targets`, resolved via
+`layer_screen` when left empty, §11.40) directly from the store's window-level
+activations, with an optional real-data augmentation
+(`sae/real_data.py`). Evaluated on reconstruction fidelity, dead-feature rate,
+dead-neuron resampling, forecast-preservation (both `window` and `token`
+granularity — §13's own correction chain on why `window` alone is
+architecture-confounded for Chronos), and ground-truth feature alignment
+against a permutation-null control (`sae/ground_truth.py`). **Component A**
+(`sae/causal_channels.py`-class work, §25.23) adds a causal channel battery:
+each alive feature's decoder direction is patched into a clean forward pass
+and its effect on a fixed set of response channels is measured, scored
+against a random-direction null — this is what makes a feature's relevance
+a *tested* claim rather than only a correlational one, gated by a **reach**
+check (patching a layer into itself must move the forecast by exactly 0.0;
+patching an earlier layer into a later read must move it by something
+nonzero — `CLAUDE.md` §11.42's discipline, applied here as a precondition
+rather than discovered as a bug). **Component B** (`sae/roles.py`, §25.24)
+clusters features sharing a structural/causal signature into named **roles**
+(`run_sae_roles.py`, `roles.json`), rendered as a roles table, a
+feature×channel heatmap, and role cards. **Component C**
+(`sae/role_matching.py`, §25.25) matches one model's roles against another's
+by cosine similarity of their null-normalized **response fingerprints**,
+checked against **two** required nulls (a shuffled-series null for the
+activation-profile signal, and an **untrained-twin floor** — the same
+`random_init`-twin mechanism as §16 E9 — for the match rate itself): a
+match-rate number is never rendered without its own untrained-twin floor
+beside it, following the same discipline the crosscoder's `frac_shared`
+already established (§6.2.1 Stage 1). On the one real pair checked so far,
+the match rate (0.833) sits *below* both sides' untrained-twin floors (1.0
+each) — a genuine negative result in the same shape, not yet a confirmed
+cross-model correspondence for any feature. `l1/cka_sae.json` (written since
+Stage 3d, 2026-08-18) is rendered in the report as of Stage 4 (§25.25); it
+had been write-only for over two weeks before that.
+
 **Multiplicity ledger** (`report.py::_multiplicity_block`, `ROADMAP.md` §18
 F8) — rendered inside the L0 section and emitted as
 `report/multiplicity.json`: one row per *independently* Holm-corrected family
@@ -2343,7 +2379,7 @@ PYTHONPATH=. python3 example_runs/run_validation.py
 | Remediation messages name a flag that works (`tests/test_remediation_messages.py`, `ROADMAP.md` §24.7 finding 14) | ✅ **2026-08-30.** `--force` bypasses a **selected** stage's skip predicate, and **four** guards told the reader to rerun with `--force <stage>` for a stage that would not be selected (`confirm`'s consumable guard, the stale-artifact refusal, the A15 registry-freshness guard, and `extraction/store.py`'s schema mismatch — the fourth found by grepping the pattern rather than tripping it). Following any of them re-runs nothing and returns the identical error. Now a class-level test: every user-facing message naming `--force` must also name `--stages`, with a two-entry exemption list for the sites where the stage is selected by construction. Groups **statements, not lines** — the first version judged wrapped continuation lines alone and flagged the fixes as the defect — and carries a third test that the scan finds ≥3 messages, since an over-narrow scan passes by finding nothing. Confirmed to discriminate by reverting one fix. |
 | Three-model run after the corruption-strength fix (`configs/full_report_run_3model.yaml`) | ✅ **2026-08-30, live.** `noise` energy **0.183 → 0.728** and `spike` **0.153 → 1.134** (footprint 0.58% → 1.55%), recorded in `l3/meta.json`'s own `calibration` block so the report's breakdown table reads them off the artifact; an independent 200-series re-measurement outside the pipeline gives 0.790/1.230/1.55%, agreeing to sampling noise. Report: **15 sections / 78 findings**. L3 replication on **286 private series: 7 of 9 replicate**, with `noise` (dev −0.828 vs private −0.774 [−0.827, −0.723]) and `frequency_shift` (dev −0.178 vs −0.276 [−0.316, −0.214]) genuinely outside their intervals. Peak CKA **0.3812 → 0.3737** [0.3549, 0.4083], replicates. `register` had to be re-run first — recomputing `l3` after registration correctly trips the A15 freshness guard (§24.7 finding 13). |
 | Three-model run on `benchmark_large` (`configs/full_report_run_large.yaml`) | ✅ **2026-08-30, live — the largest run this repo has done.** 3 models x **965 dev / 800 private** series over **five** generator families (42.5% real-derived): **15 sections rendered / 1 skipped / 0 failed, 78 findings**. Three results worth reading rather than counting. **(a) Cost inverts the accuracy story's usual shape:** Chronos-2 is simultaneously the most accurate (MASE **1.6774** vs TimesFM 1.7345, Chronos-T5-Base 1.9948), the cheapest (**119.5M** params, **69.2** GF, **22.9 ms**), and the best observed (**97.5%** of forecast FLOPs captured — the only model needing no depth-coverage qualifier), while Chronos-T5-Base is least accurate at **78x** the forecast FLOPs and **50x** the latency. **(b) Geometry and organization disagree, and the disagreement now replicates across two corpora:** the two Chronos models are much the closest pair by CKA (**0.6975** vs 0.4362 / 0.3767) yet cluster the data the *least* alike (AMI **0.4977** vs 0.6484 / 0.5393). **(c) The pair path replicates a third time:** peak CKA **0.3767**, against 0.3812 and 0.3737 on `benchmark_medium`, and it holds out — private **0.3797** [0.3678, 0.3961]. All six L2 directions clear the input-feature baseline (+0.3614 to +0.5164). Both registered hypotheses CONFIRM; **L3 replicates 8 of 9** corruptions on 800 private series, the exception being `level_shift` (dev +0.972 vs private +0.955 [+0.947, +0.963] — a 0.017 gap that only registers because 800 series makes the CI that tight). TimesFM's `sequential_par` strength is a finding `benchmark_medium` could not express, having no such family. `internals` was regenerated after the probe-convergence fix (sec 11.47): **34 of 34 layers converge** where the first pass emitted 14 warnings, and every probe value moved by at most **0.0026** — in both directions, so the textbook "under-convergence understates accuracy" reasoning is the right mechanism but not a per-layer guarantee. All three models' probes clear their own permutation null decisively (0.94-0.98 vs a null p95 of 0.44-0.45, chance 0.43). |
-| Full `tsfm_lens` suite after this session's changes | ✅ **2026-08-31: 945 passed, 1 skipped, 0 failed, 930.08s (15m 30s)** — 940 the prior day, +6 new tests for the probe-convergence fix (sec 11.47) less one rewritten; the count rose from 870 across this session's additions (skip-lens readout, patch-reach conformance, panel pairs, confirm force, replication roll-up, report-only staleness, remediation messages, unforecastable-series excursion, collapsed scorecard), 2 pre-existing warnings (the float32 cast overflow and `test_end_to_end`'s return-value warning). ⚠️ **The 3:06:16 recorded for this suite on 2026-08-24 could not be reproduced and is left unexplained rather than overwritten** — a controlled A/B on one module with warm caches (`test_crosscoder.py`: 17.4s capped vs 31.7s uncapped) shows thread capping is worth **1.8×**, nowhere near the ~20× gap, so the cap is *not* the explanation; competing load on this shared 32-core box (30 users) or a cold cache are the untested candidates. **Separately and independently useful:** the suite spawns **57 threads at nice 0 and takes 18 of 32 cores** by default, because numpy/OpenBLAS/MKL/torch each grab every core — run it as `OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 OPENBLAS_NUM_THREADS=4 nice -n 19 python -m pytest tests/ -q` (load average 54.5 → 32.1). ✅ **A `conftest.py` now does this for both suites — see the row below; the manual prefix is still needed for `run_*.py` studies and pipeline runs.** |
+| Full `tsfm_lens` suite after this session's changes | ✅ **2026-08-31: 951 passed, 1 skipped, 0 failed, 779.31s (12m 59s)** — 945 earlier the same day, +4 patch-reach conformance tests and +2 refutation guards for the Chronos-2 skip-lens corrections (sec 11.42), each of the six confirmed to fail against a planted regression rather than assumed to discriminate; 940 the prior day, +6 for the probe-convergence fix (sec 11.47) less one rewritten; the count rose from 870 across this session's additions (skip-lens readout, patch-reach conformance, panel pairs, confirm force, replication roll-up, report-only staleness, remediation messages, unforecastable-series excursion, collapsed scorecard), 2 pre-existing warnings (the float32 cast overflow and `test_end_to_end`'s return-value warning). ⚠️ **Run-to-run wall clock on this box is not a stable number and should not be read as a regression signal:** two full green runs an hour apart today measured **773.50s** and **779.31s** against **930.08s** this morning, on code differing only by six added tests — a ~20% spread from competing load alone. ⚠️ **The 3:06:16 recorded for this suite on 2026-08-24 could not be reproduced and is left unexplained rather than overwritten** — a controlled A/B on one module with warm caches (`test_crosscoder.py`: 17.4s capped vs 31.7s uncapped) shows thread capping is worth **1.8×**, nowhere near the ~20× gap, so the cap is *not* the explanation; competing load on this shared 32-core box (30 users) or a cold cache are the untested candidates. **Separately and independently useful:** the suite spawns **57 threads at nice 0 and takes 18 of 32 cores** by default, because numpy/OpenBLAS/MKL/torch each grab every core — run it as `OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 OPENBLAS_NUM_THREADS=4 nice -n 19 python -m pytest tests/ -q` (load average 54.5 → 32.1). ✅ **A `conftest.py` now does this for both suites — see the row below; the manual prefix is still needed for `run_*.py` studies and pipeline runs.** |
 **Golden hashes (do not let these change) — ✅ currently matching, see below:**
 ```
 seed 0   → parametric 2856658d044e4c49  random a45664e176fbb71a  clean_low_noise
@@ -4554,6 +4590,28 @@ that step must publish a diagnostic of its own.
    > `ROADMAP.md` §6.2.1's Stage 4 Findings — not repeated here per this
    > file's own "describe stable architecture, not a moving research
    > result" doctrine (§5.5's precedent, §10's retirement note).
+
+   > **Correction (2026-08-31, `ROADMAP.md` §25) — a separate SAE effort,
+   > not a revival of the crosscoder, built causal feature interpretation
+   > on top of the baseline `TopKSAE` from this item's first paragraph.**
+   > The crosscoder closure just above is about *joint cross-model
+   > dictionary training*; it says nothing about whether a *per-model*
+   > SAE's individual features can be shown to matter causally, which this
+   > item's original text also left as future work ("§7 bullet 3,
+   > `ROADMAP.md` §16 E15's second half"). That is now built: a causal
+   > channel battery patches each alive feature and scores its effect
+   > against a random-direction null (Component A, `ROADMAP.md` §25.23,
+   > confirmed on real `Chronos-T5-Base/encoder.block.10` activations —
+   > reach 0.708, 23 of 39 candidates clearing ≥1 channel); features
+   > cluster into named causal "roles" (Component B, §25.24); and one
+   > model's roles are matched against another's by response-fingerprint
+   > cosine, checked against an untrained-twin floor exactly like the
+   > crosscoder's own `frac_shared` (Component C, §25.25) — which produced
+   > the same shape of negative result the crosscoder did: a real pair's
+   > match rate (0.833) sits below both sides' untrained-twin floor (1.0
+   > each). See `CLAUDE.md` §6.1's new SAE stage-table row and §6.5's new
+   > SAE paragraph for the stable description; `ROADMAP.md` §25 for the
+   > full build and Findings.
 4. **Validation as CI gates.** Turn the diversity metrics into explicit pass/fail
    gates (redundancy fraction < X, effective dimensionality > Y, no
    near-collision cluster larger than Z) so each benchmark epoch is checked
