@@ -15,6 +15,7 @@ from tsfm_lens.report.sae_role_matching import (
     correspondence_summary_rows,
     pair_match_table,
     role_by_model_matrix,
+    shared_vs_specific_rows,
 )
 
 
@@ -146,3 +147,31 @@ def test_matrix_keeps_best_cosine_partner_when_multiple_pairs_target_same_row():
     df = role_by_model_matrix(table, ["A", "X", "B"])
     row = df[df["role"] == "canon"].iloc[0]
     assert "0.90" in row["B"] or "+0.90" in row["B"]
+
+
+# ---------------------------------------------------------------------------
+# shared_vs_specific_rows (ROADMAP.md sec 26 D1's per-role split)
+# ---------------------------------------------------------------------------
+
+def test_shared_vs_specific_rows_none_when_population_null_unavailable():
+    """A pair whose population null could not be estimated must return
+    `None`, not an empty list -- "we could not check" must stay
+    distinguishable from "we checked, and nothing cleared".
+    """
+    pair = _comparable_pair()
+    pair["population_null_p95"] = None
+    assert shared_vs_specific_rows(pair) is None
+
+
+def test_shared_vs_specific_rows_splits_by_verdict_and_model():
+    pair = _comparable_pair()
+    pair["population_null_p95"] = 0.6
+    pair["roles_shared_a"] = ["r-shared"]
+    pair["roles_specific_to_a"] = ["r-specific"]
+    pair["roles_shared_b"] = []
+    pair["roles_specific_to_b"] = ["b-only"]
+    rows = shared_vs_specific_rows(pair)
+    assert {"model": "A", "role": "r-shared", "verdict": "shared"} in rows
+    assert {"model": "A", "role": "r-specific", "verdict": "specific"} in rows
+    assert {"model": "B", "role": "b-only", "verdict": "specific"} in rows
+    assert len(rows) == 3

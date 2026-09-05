@@ -113,7 +113,7 @@ def _patched_capture_raw_tokens(token_written_differs: bool):
     `written_diff_mag` computation has something real to measure."""
     import torch as _torch
 
-    def _fn(adapter, contexts, layers):
+    def _fn(adapter, contexts, layers, **_kw):
         base = _torch.zeros(len(contexts), 2, 3)
         out = {}
         for i, l in enumerate(layers):
@@ -180,6 +180,27 @@ def test_reach_probe_flags_a_broken_patching_path_via_nonzero_self_delta(_stub_p
     rep = response_reach.reach_probe(_Cfg, stub, "blocks.0", _Data(), device=None)
     assert rep["self_patch_delta"] == pytest.approx(0.4)
     assert "correctness control failed" in rep["reason"]
+    # The load-bearing half, and the one that was missing: a broken
+    # instrument must also come back UNREACHABLE. Before `CLAUDE.md`
+    # sec 11.49 this asserted only the reason string, so `reachable` stayed
+    # True on a nonzero cross-delta, the battery ran, `withheld` never
+    # fired, and roles clustered on a fingerprint measured with a wrong
+    # clean cache. A stated reason nothing acts on is not a guard.
+    assert rep["reachable"] is False
+
+
+def test_reach_probe_broken_control_outranks_a_large_cross_delta(_stub_patch_machinery):
+    """Order matters: a big, healthy-looking cross-patch delta must NOT
+    rescue a failed correctness control. The cross probe is measured with
+    the same machinery the control just proved broken, so its magnitude
+    carries no information -- pinning this because the natural reading of a
+    0.5 cross-delta beside a 0.4 self-delta is "mostly reaching"."""
+    _stub_patch_machinery(token_written_differs=True)
+    rep = response_reach.reach_probe(_Cfg, _ReachStub(self_delta=1e-6, cross_delta=99.0),
+                                     "blocks.0", _Data(), device=None)
+    assert rep["reachable"] is False
+    assert "correctness control failed" in rep["reason"]
+    assert rep["cross_patch_delta"] == pytest.approx(99.0)
 
 
 def test_reach_probe_a_tautological_zero_is_not_read_as_unreachable(_stub_patch_machinery):

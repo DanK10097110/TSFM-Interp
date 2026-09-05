@@ -1,0 +1,304 @@
+# Full-feature run, FOUR models, on the LARGE corpus (2026-09-04, user
+# request): "another full run with the same benchmark but with 4 models,
+# timesfm, chronos2, sundial, and another untested one."
+#
+# THE FOURTH MODEL IS CHRONOS-BOLT. Confirmed before picking it (not assumed):
+# `grep -l chronos_bolt configs/*.yaml` across every config in this directory
+# finds exactly one hit -- `default.yaml`, where the whole block is commented
+# out (lines 48-49, "swap in for the chronos entry; run --check-alignment
+# first"). It has a real, registered, individually-verified adapter
+# (`chronos_bolt_adapter.py`, CLAUDE.md sec 6.2's "compact worked example for
+# a new adapter file") but has NEVER been part of a live multi-model pipeline
+# comparison run in this repo -- only the standalone --check-alignment /
+# --discover-spans verification CLAUDE.md's support matrix already records.
+# This run is its first.
+#
+# Architecturally this also closes a real gap in the panel: Chronos-Bolt is
+# encoder-plus-small-quantile-head, patch-based (patch=16 from the
+# checkpoint's own chronos_config) and fully DETERMINISTIC -- distinct from
+# all three others (TimesFM decoder-only, Chronos-2 encoder-only with a
+# second cross-series GROUP-attention axis, Sundial decoder-only with a
+# flow-matching one-shot forecast head) and, per CLAUDE.md sec 12 item 3, a
+# genuinely useful deterministic control the sampled/stochastic corners of
+# this repo's own comparisons keep asking for.
+#
+# SUNDIAL'S KNOWN ALIGNMENT CAVEAT, CARRIED FORWARD EXPLICITLY (CLAUDE.md sec
+# 6.2's Sundial paragraph, sec 11.22): its --check-alignment diagonal-hit
+# fraction is amplitude-dependent -- a perfect 1.00 at every layer at small
+# impulse amplitudes, decaying by mid-depth at this repo's default 0.25x
+# amplitude, for a diagnosed and benign reason (plain-residual, no-QK-norm
+# blocks; zero backward/future leakage at any amplitude, tracks amplitude
+# cleanly exactly as ordinary forward causal accumulation predicts -- not a
+# broken token_time_spans). configs/sundial_phase4_check.yaml's own comment
+# noted the in-pipeline gate "only checks the shallowest captured layer
+# regardless" and so needed no override -- that is STALE as of CLAUDE.md sec
+# 7 invariant 7's ROADMAP.md sec 15 A2 fix: `run_alignment_gate` now probes
+# EVERY captured layer, not a stride-4 subset, and raises by default
+# (`alignment.on_failure: fail`) on any layer below `min_diagonal_frac`. So
+# THIS run, unlike that one, sets `alignment.on_failure: warn` explicitly --
+# not to bypass invariant 7, but because the failure mode at Sundial's
+# mid-depth layers is already diagnosed and documented as benign, and a hard
+# crash mid-extraction on a multi-hour four-model run over a single,
+# previously-characterized layer would cost far more than logging it. The
+# recorded per-layer diagonal-hit table (still written to the run directory
+# regardless of on_failure) is what a fresh session should actually read
+# before trusting any Sundial depth-located claim, per invariant 7's own text.
+#
+# EVERYTHING ELSE follows configs/full_report_run_large_revived.yaml's
+# already-validated pattern byte-for-byte where it still applies: same
+# corpus (benchmark_large, 965 dev / 800 private series, 5 families, 41%
+# real-derived), same SAE revival recipe (aux_k + dict_size_policy: search +
+# min_train_steps -- ROADMAP.md sec 23.2 A1 / sec 6.2.1 Stage 0's cure for
+# the ~95%-dead dictionaries the pre-revival recipe produces), same
+# report.verbose narrated case studies. Three things change because a FOURTH
+# model with a smaller batch_size than any of the prior three-model panels
+# forces them, all stated rather than silent (mirroring
+# full_report_run_3model.yaml's own precedent for what a model count change
+# forces):
+#
+#   batch-capped values   24 -> 16. Every "must be <= every model's
+#                         batch_size" cap (l3.patching.max_series,
+#                         lens.max_series, attention.ablation_max_series,
+#                         sae.forecast_preservation_max_series) is bound by
+#                         the SMALLEST batch_size across all four models,
+#                         which is Sundial's 16 (unchanged from every prior
+#                         Sundial config in this repo).
+#   stats.n_boot          unchanged at 2000, but the arithmetic it must
+#                         satisfy is new: a panel now measures C(4,2) = 6
+#                         pairs, and this corpus has 5 families, so L0's
+#                         joint Holm correction spans 6 x 5 = 30 tests.
+#                         30/2000 = 0.015 < alpha (0.05), so 2000 remains
+#                         satisfiable with real margin -- `--doctor` confirms
+#                         this before the run starts, not after.
+#   exemplars.max_families   set to 5, not 3. Found while building this file:
+#                         BOTH full_report_run_large.yaml and
+#                         full_report_run_3model.yaml carry the comment
+#                         "this corpus has 3 families" on `max_families: 3`
+#                         -- true of full_report_run_3model's own
+#                         benchmark_medium corpus, but stale on
+#                         full_report_run_large.yaml, which points at
+#                         benchmark_large (verified directly against the
+#                         corpus file: 965 samples, 5 distinct
+#                         `provenance.generator` values --
+#                         {mixture, block_bootstrap, random_parametric,
+#                         sequential_par, parametric}). That earlier
+#                         config's comment was simply copied forward from
+#                         the medium-corpus config without being re-checked
+#                         against the corpus it was actually pointed at --
+#                         not fixed in either of those two run directories
+#                         (re-running them to change one exemplar count is
+#                         not warranted), but fixed here since this file is
+#                         new and the correct value costs nothing extra.
+#
+# CONFIRM / PRIVATE-SPLIT STATUS -- stated honestly rather than presented as
+# a fresh one-shot confirmation. `benchmark_large`'s private_test split has
+# already been used twice (full_report_run_large, full_report_run_large_revived),
+# both against a strict SUBSET of this run's models (TimesFM, Chronos-T5-Base,
+# Chronos-2). CLAUDE.md sec 6.7 says the private corpus is a consumable and
+# to mint a fresh epoch once peeked at; this run does not do that (minting a
+# fresh benchmark_large private epoch is a separate, real-data-network-
+# dependent build step outside this run's own scope, and was judged not
+# worth deferring the four-model analysis run for). Instead this run relies
+# on the mechanism CLAUDE.md sec 11.43 built for exactly this situation:
+# `analysis/confirm.py` records `repeated_look: true` in its artifact on any
+# re-run against already-touched private data, and the report renders that
+# as an explicit qualifier rather than silently presenting the verdicts as a
+# first look. Two of the four models here (TimesFM, Chronos-2) are a THIRD
+# look; Sundial and Chronos-Bolt are effectively a first look at this split
+# for a model of their kind, but the pair-shaped confirm stage runs against
+# the SAME designated reference pair mechanism as always
+# (`cfg.comparison_pair()`), so read the confirm section's own stated
+# `repeated_look` status before quoting any verdict from this run as fresh
+# confirmation evidence.
+
+run:
+  name: full_report_run_4model
+  out_dir: runs
+  device: cuda
+  dtype: bfloat16
+  seed: 0
+  keep_models_loaded: false
+
+data:
+  source: sealed
+  path: ../../benchmark_large/public_dev  # relative to tsfm_lens/ (where run.py is invoked from)
+  context_len: 512
+  horizon: 64
+  family_key: auto
+
+alignment:
+  window: 32
+  sanity_check: true
+  on_failure: warn   # Sundial's diagnosed, benign mid-depth decay -- see header
+
+models:
+  - name: TimesFM
+    adapter: timesfm
+    checkpoint: google/timesfm-2.5-200m-pytorch
+    batch_size: 32
+    capture_layer_stride: 2      # 20 layers -> 10 capture points
+  - name: Chronos-2
+    adapter: chronos2
+    checkpoint: amazon/chronos-2
+    batch_size: 24
+    capture_layer_stride: 1      # 12 encoder blocks, no decoder to capture
+  - name: Sundial
+    adapter: sundial
+    checkpoint: thuml/sundial-base-128m
+    batch_size: 16               # smallest of the four -- binds every
+                                 # "<= every model's batch_size" cap below
+    capture_layer_stride: 1      # 12 decoder blocks
+  - name: Chronos-Bolt
+    adapter: chronos_bolt
+    checkpoint: amazon/chronos-bolt-small
+    batch_size: 32
+    capture_layer_stride: 1      # encoder blocks, deterministic quantile head
+
+l0:
+  enabled: true
+  quantiles: [0.1, 0.5, 0.9]
+  calibration: true
+
+l1:
+  enabled: true
+  layer_stride: 1
+  max_rows: 20000
+  family_conditioned: true
+  min_family_series: 15
+  rsa: true
+  rsa_max_series: 800
+
+l2:
+  enabled: true
+  layer_stride: 1
+  lambdas: [0.001, 0.01, 0.1, 1.0]
+  val_frac: 0.25
+  max_rows: 40000
+  input_baseline: true
+
+l3:
+  enabled: true
+  max_series: 800
+  corruptions:
+    # Same measured, non-default strengths as full_report_run_large*.yaml
+    # (measured over 200 series of this repo's own corpus -- see that
+    # file's header for the energy numbers). Restated here because this
+    # file overrides the whole corruptions block.
+    noise: {snr_db: 0.0}
+    detrend: {}
+    deseasonalize: {top_k: 2}
+    frequency_shift: {factor: 2.0}
+    level_shift: {position_frac: 0.6, scale: 3.0}
+    spike: {count: 8, scale: 10.0}
+    smooth: {kernel: 9}
+    warp: {strength: 0.15}
+    dropout: {frac: 0.15, n_blocks: 3}
+  patching:
+    enabled: true
+    layer_stride: 2
+    corruptions: [deseasonalize, noise, level_shift, spike, warp, dropout]
+    max_series: 16                # must be <= every model's batch_size (Sundial: 16)
+    per_window: true
+    window_stride: 1
+
+lens:
+  enabled: true
+  layer_stride: 1
+  max_series: 16                  # must be <= every model's batch_size (Sundial: 16)
+  tuned: true
+  tuned_max_series: 800
+  val_frac: 0.25
+  lambdas: [0.001, 0.01, 0.1, 1.0]
+  crystallization_tol: 0.1
+
+attention:
+  enabled: true
+  patterns: true                  # TimesFM/Chronos-2 real patterns; Sundial/
+                                  # Chronos-Bolt degrade to "unsupported" and
+                                  # skip, per invariant 8 -- both adapters'
+                                  # docstrings declare attention_patterns
+                                  # unsupported deliberately
+  max_series: 400
+  batch_series: 16
+  max_lag_tokens: 128
+  ablation: true
+  ablation_max_series: 16         # must be <= every model's batch_size (Sundial: 16)
+  head_layer_stride: 1
+  top_k: 5
+
+exemplars:
+  enabled: true
+  per_family: 3
+  max_families: 5                 # this corpus has 5 families -- see header
+
+clustering:
+  enabled: true
+  layer: auto
+  k: auto
+  pca_dim: 50
+  max_series: 800
+  use_umap: true
+
+layer_screen:
+  enabled: true
+  method: work_bend
+  budget_frac: 0.25
+  min_budget: 2
+
+sae:
+  enabled: true
+  targets: []                     # "auto" -- layer_screen's own selection, all 4 models
+  dict_size_mult: 8
+  dict_size_policy: search
+  dict_size_ladder: [192, 384, 768, 1536, 3072, 6144]
+  max_dead_rate: 0.30
+  dict_size_search_margin: 0.03
+  dict_size_search_seeds: 2
+  min_fidelity: 0.5
+  k: 32
+  lr: 0.001
+  epochs: 60
+  min_train_steps: 720
+  aux_k: 64
+  aux_coef: 0.03125
+  aux_dead_steps_frac: 0.028
+  n_seeds: 3
+  batch_size: 4096
+  resample_dead_every_epochs: 5
+  forecast_preservation_max_series: 16   # must be <= every model's batch_size (Sundial: 16)
+  ground_truth_max_series: 2000
+  persist_features: true
+  real_data_enabled: true
+  real_data_source: "Monash-University/monash_tsf"
+  real_data_n_windows: 4000
+  real_data_pool_limit: 500
+
+report:
+  enabled: true
+  verbose: true
+  verbose_series: 2
+  title: TimesFM 2.5 vs Chronos-2 vs Sundial vs Chronos-Bolt — four-model panel run
+
+stats:
+  enabled: true
+  n_boot: 2000              # 6 pairs x 5 families = 30 tests -- see header
+  n_boot_heavy: 200
+  ci: 0.95
+  alpha: 0.05
+  min_series: 8
+
+internals:
+  enabled: true
+  layer_stride: 1
+  max_rows: 40000
+  probe_pca_dim: 50
+  probe_max_iter: 2000        # CLAUDE.md sec 11.47: the historical 300 does
+                              # not converge at this corpus size
+
+confirm:
+  enabled: true
+  source: sealed
+  path: ../../benchmark_large/private_test  # relative to tsfm_lens/ -- see header's repeated-look note
+  max_series: 800
+  require_seal: true
+  alpha: 0.05

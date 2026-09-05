@@ -134,17 +134,38 @@ def _extract_model(adapter, data: BenchmarkData, store: ActivationStore,
     return layers
 
 
-def capture_raw_tokens(adapter, contexts: np.ndarray, layers: list) -> dict:
+def capture_raw_tokens(adapter, contexts: np.ndarray, layers: list,
+                       autocast: bool = False) -> dict:
     """Capture postprocessed token-level states for a small batch, kept in fp32 on cpu.
 
-    Used by L3 activation patching, which needs token-granular clean caches
-    rather than the window-pooled store contents.
+    Used by L3 activation patching, the skip lens, the SAE forecast-
+    preservation check and the reach probe -- all of which need token-granular
+    clean caches rather than the window-pooled store contents.
+
+    `autocast` must match the numerical regime of the forward the cache will be
+    written back into, and that is why it defaults to **off**: every patching
+    consumer pairs this cache with `adapter.predict()`, which runs in the
+    model's own weight precision under a bare `no_grad`. Capturing under
+    `torch.autocast(bf16)` and patching into an fp32 forward writes values the
+    model never computed -- a "self"-patch that must be exactly 0.0 by
+    construction (`CLAUDE.md` sec 11.42) instead moves the forecast.
+
+    Measured, not reasoned (`CLAUDE.md` sec 11.49): at
+    `TimesFM/stacked_xf.10` the two regimes' caches differ by mean 0.0119 and
+    the self-patch control reads 0.00214 with autocast on, exactly 0.0 with it
+    off. `Chronos-T5-Base/encoder.block.10` is bit-identical either way and
+    was structurally unable to expose this -- its weights are already bf16, so
+    autocast is inert for it. The asymmetry is weight dtype, not architecture.
+
+    Pass `autocast=True` only when the cache is destined to be *compared or
+    concatenated with the store* rather than patched -- `sae/real_data.py` is
+    the one such consumer, since the store itself is written under autocast.
     """
     adapter.ensure_loaded()
     out = {}
     with torch.no_grad(), ActivationCatcher(adapter.module, layers) as catcher, \
             torch.autocast(device_type=adapter.device.type, dtype=adapter.dtype,
-                           enabled=adapter.device.type == "cuda"):
+                           enabled=autocast and adapter.device.type == "cuda"):
         adapter.forward(adapter.prepare(contexts))
         acts = catcher.collect()
     for name in layers:

@@ -29,7 +29,8 @@ import torch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from tsfm_lens.config import SAEConfig
-from tsfm_lens.report.report import _sae_seed_floor_block, _seed_floor
+from tsfm_lens.report.report import _sae_seed_floor_block
+from tsfm_lens.report.derived import seed_floor_verdict
 from tsfm_lens.sae.eval import reconstruction_fidelity, seed_spread
 from tsfm_lens.sae.train import SEED_FLOOR_METRICS, _metric_row, _train_config, train_sae
 
@@ -89,20 +90,20 @@ def test_the_floor_lookup_is_tri_state_and_unmeasured_is_not_failed():
     `False`, every single-seed run would sprout a warning it has no evidence
     for; if it collapsed to `True`, a genuinely unresolvable delta would read
     as cleared. Neither is acceptable, so this stays tri-state the way
-    `_delta_phrase`'s `interpretable` does."""
-    suffix, resolvable = _seed_floor({}, "mase_delta_window")
+    `in_floor_units`' `interpretable` does."""
+    suffix, resolvable = seed_floor_verdict({}, "mase_delta_window")
     assert (suffix, resolvable) == ("", None)
 
     one_seed = {"seed_floor": {"n_seeds": 1, "spread": {"mase_delta_window": seed_spread([0.5])}}}
-    assert _seed_floor(one_seed, "mase_delta_window") == ("", None)
+    assert seed_floor_verdict(one_seed, "mase_delta_window") == ("", None)
 
     clear = _entry(None, [0.90, 0.95, 1.00, 1.05, 1.10])
-    suffix, resolvable = _seed_floor(clear, "mase_delta_window")
+    suffix, resolvable = seed_floor_verdict(clear, "mase_delta_window")
     assert resolvable is True
     assert "over 5 seeds" in suffix and "±" in suffix
 
     swamped = _entry(None, [-0.20, 0.35, 0.02, -0.30, 0.18])
-    assert _seed_floor(swamped, "mase_delta_window")[1] is False
+    assert seed_floor_verdict(swamped, "mase_delta_window")[1] is False
 
 
 def test_an_unmeasured_floor_renders_a_sentence_not_an_empty_block():

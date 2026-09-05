@@ -28,8 +28,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from tsfm_lens.sae.response import CHANNELS
 from tsfm_lens.sae.role_matching import (
     greedy_match_roles,
+    match_roles_across_models,
     match_roles_for_pair,
+    permutation_null_cosine,
     role_correspondence_table,
+    role_population_vectors,
     role_response_vector,
     shuffled_series_null_activation_profile,
     sign_aware_cosine,
@@ -427,3 +430,170 @@ def test_panel_generates_all_c_n_2_pairs():
     table = role_correspondence_table(pairs, roles_json)
     assert table["n_pairs"] == 3
     assert [(p["model_a"], p["model_b"]) for p in table["pairs"]] == pairs
+
+
+# ---------------------------------------------------------------------------
+# 8. permutation_null_cosine / the per-role population-null split (sec 26
+#    D1) -- the fix for a real, rendered defect: on a live run every
+#    observed role-matching cosine cleared the fixed 0.5 threshold, forcing
+#    `match_rate` to an uninformative 1.000 at every pair regardless of
+#    which roles actually corresponded. These tests are the load-bearing
+#    negative for THAT defect, distinct from (and not a replacement for)
+#    the untrained-twin-floor tests above, which answer a different
+#    question (architecture alone, not "is this cosine typical of two
+#    arbitrary trained roles in this run's 9-channel response space").
+# ---------------------------------------------------------------------------
+
+def test_permutation_null_cosine_none_when_pool_too_small():
+    """A population with only one vector outside the excluded targets --
+    the null cannot be estimated, and the function must say so with `None`,
+    not fabricate a value from a single point (sec 2.5's degrade-loudly
+    doctrine, applied here to a null estimate rather than a capability).
+    """
+    population = {"ModelC/layer0": [(_role(0, "r", [0]), np.array([1.0, 0.0]))]}
+    p95, n_pool = permutation_null_cosine(population, exclude_targets=(), n_samples=50)
+    assert p95 is None
+    assert n_pool == 1
+
+
+def test_permutation_null_cosine_excludes_named_targets_from_the_pool():
+    """The two targets being matched must not contribute to their own null
+    -- a population containing ONLY the excluded targets' vectors must
+    behave exactly as if the population were empty (`None`, not a null
+    silently estimated from the very roles under test).
+    """
+    population = {
+        "ModelA/layer0": [(_role(0, "a", [0]), np.array([1.0, 0.0]))],
+        "ModelB/layer0": [(_role(0, "b", [0]), np.array([0.0, 1.0]))],
+    }
+    p95, n_pool = permutation_null_cosine(
+        population, exclude_targets=("ModelA/layer0", "ModelB/layer0"), n_samples=50)
+    assert p95 is None
+    assert n_pool == 0
+
+
+def test_permutation_null_cosine_is_exactly_one_for_a_uniform_pool():
+    """Every pool vector pointing the same direction (a stand-in for "every
+    role in this run pushes the same generic effect") must give a null p95
+    of EXACTLY 1.0, deterministically -- any two draws from the pool are
+    the same direction by construction, so there is no sampling noise to
+    account for in this assertion.
+    """
+    v = np.array([1.0, 0.0, 0.0])
+    population = {"ModelC/layer0": [(_role(0, "r", [0]), v.copy()) for _ in range(3)]}
+    p95, n_pool = permutation_null_cosine(population, exclude_targets=(), n_samples=100, seed=0)
+    assert p95 == pytest.approx(1.0)
+    assert n_pool == 3
+
+
+def test_population_null_rejects_a_match_the_fixed_threshold_accepts():
+    """THE load-bearing negative for the sec 26 D1 fix. Population roles
+    (ModelC, ModelD -- not the pair under test) are all built in one
+    direction, so two arbitrary trained roles in this run's response space
+    are, by construction, indistinguishable -- null p95 = 1.0 exactly. The
+    real A/B pair's own role match ALSO scores cosine 1.0 (its two roles
+    are planted to align perfectly) -- comfortably clearing the legacy
+    fixed `cosine_threshold=0.5`, so `match_rate` (unaffected by this fix)
+    still reads 1.0. But `clears_population_null` must be False: a real
+    cosine of 1.0 does not exceed a null whose OWN ceiling is also 1.0, so
+    this match cannot be told apart from chance in this run's response
+    space -- exactly the defect a bare `match_rate` hid on the real run
+    that motivated this fix.
+    """
+    cand_a = [_candidate(0, {"level": 5.0})]
+    cand_b = [_candidate(0, {"level": 5.0})]
+    roles_json = {
+        "ModelA/layer0": {"withheld": False, "skipped": False, "roles": [_role(0, "r", [0])]},
+        "ModelB/layer0": {"withheld": False, "skipped": False, "roles": [_role(0, "r", [0])]},
+    }
+    vec_a = role_response_vector(roles_json["ModelA/layer0"]["roles"][0], cand_a, _NULL_P95)
+    vec_b = role_response_vector(roles_json["ModelB/layer0"]["roles"][0], cand_b, _NULL_P95)
+
+    uniform = np.zeros(len(CHANNELS))
+    uniform[CHANNELS.index("trend")] = 1.0
+    population = {
+        "ModelC/layer0": [(_role(0, "r", [0]), uniform.copy()),
+                          (_role(1, "r2", [1]), uniform.copy())],
+        "ModelD/layer0": [(_role(0, "r", [0]), uniform.copy()),
+                          (_role(1, "r2", [1]), uniform.copy())],
+    }
+
+    import tsfm_lens.sae.role_matching as rm
+    orig = rm._candidates_and_null_p95
+    lookup = {("ModelA", "layer0"): (cand_a, _NULL_P95), ("ModelB", "layer0"): (cand_b, _NULL_P95)}
+    rm._candidates_and_null_p95 = lambda run_dir, model, layer: lookup.get((model, layer), ([], {}))
+    try:
+        result = match_roles_for_pair("ModelA", "ModelB", roles_json, population=population,
+                                      n_population_samples=100, null_seed=0)
+    finally:
+        rm._candidates_and_null_p95 = orig
+
+    assert result["comparable"] is True
+    assert result["matches"][0]["cosine"] == pytest.approx(1.0)
+    assert result["population_null_p95"] == pytest.approx(1.0)
+    assert result["population_null_n_pool"] == 4
+    assert result["matches"][0]["clears_population_null"] is False
+    assert result["frac_shared_by_population_null_a"] == pytest.approx(0.0)
+    assert result["roles_specific_to_a"] == ["r"]
+    assert result["roles_shared_a"] == []
+    # And the pre-existing, threshold-based statistic is untouched by this
+    # fix -- still reads a clean 1.0, which is exactly the number this test
+    # exists to show is uninformative on its own.
+    assert (result["matches"][0]["cosine"] or 0.0) >= 0.5
+
+
+def test_role_correspondence_table_surfaces_null_based_match_rate(tmp_path):
+    """The same scenario through the real entry point
+    (`role_correspondence_table`, via `match_roles_across_models`'s default
+    `use_population_null=True`) rather than by hand-building `population` --
+    confirms the population is actually assembled from `roles_json` end to
+    end, not only exercised through the lower-level function above.
+    """
+    cand_a = [_candidate(0, {"level": 5.0})]
+    cand_b = [_candidate(0, {"level": 5.0})]
+    uniform_cand = [_candidate(0, {"trend": 5.0}), _candidate(1, {"trend": 5.0})]
+    _write_stage2(tmp_path, "ModelA", "layer0", cand_a)
+    _write_stage2(tmp_path, "ModelB", "layer0", cand_b)
+    _write_stage2(tmp_path, "ModelC", "layer0", uniform_cand)
+    _write_stage2(tmp_path, "ModelD", "layer0", uniform_cand)
+    roles_json = {
+        "ModelA/layer0": {"withheld": False, "skipped": False, "roles": [_role(0, "r", [0])]},
+        "ModelB/layer0": {"withheld": False, "skipped": False, "roles": [_role(0, "r", [0])]},
+        "ModelC/layer0": {"withheld": False, "skipped": False,
+                          "roles": [_role(0, "c0", [0]), _role(1, "c1", [1])]},
+        "ModelD/layer0": {"withheld": False, "skipped": False,
+                          "roles": [_role(0, "d0", [0]), _role(1, "d1", [1])]},
+    }
+    table = role_correspondence_table([("ModelA", "ModelB")], roles_json, run_dir=tmp_path,
+                                      null_seed=0)
+    pair = table["pairs"][0]
+    assert pair["match_rate"] == pytest.approx(1.0)  # legacy statistic: unchanged
+    assert pair["match_rate_null_based_quotable"] is True
+    assert pair["population_null_n_pool"] == 4
+    assert pair["match_rate_null_based"] == pytest.approx(0.0)
+
+
+def test_use_population_null_false_leaves_new_fields_none():
+    """The escape hatch: `use_population_null=False` must reproduce the
+    pre-fix behaviour exactly (every new field `None`), never silently
+    computing a null anyway.
+    """
+    roles_json = {
+        "ModelA/layer0": {"withheld": False, "skipped": False, "roles": [_role(0, "r", [0])]},
+        "ModelB/layer0": {"withheld": False, "skipped": False, "roles": [_role(0, "r", [0])]},
+    }
+    pairs = match_roles_across_models([("ModelA", "ModelB")], roles_json, use_population_null=False)
+    pair = pairs[0]
+    assert pair["population_null_p95"] is None
+    assert pair["frac_shared_by_population_null_a"] is None
+    assert pair["matches"][0]["clears_population_null"] is None
+
+
+def test_role_population_vectors_skips_withheld_and_skipped_targets():
+    roles_json = {
+        "ModelA/layer0": {"withheld": False, "skipped": False, "roles": [_role(0, "r", [0])]},
+        "ModelB/layer0": {"withheld": True, "roles": [_role(0, "r", [0])]},
+        "ModelC/layer0": {"skipped": True, "roles": [_role(0, "r", [0])]},
+    }
+    population = role_population_vectors(roles_json)
+    assert set(population.keys()) == {"ModelA/layer0"}

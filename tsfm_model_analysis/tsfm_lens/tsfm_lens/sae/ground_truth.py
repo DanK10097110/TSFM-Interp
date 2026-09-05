@@ -436,7 +436,8 @@ def best_ground_truth_matches_separated(features: np.ndarray, gt: pd.DataFrame,
                                         min_valid: int = _MIN_VALID,
                                         top_features: int = 50,
                                         n_folds: int = 5, alpha: float = 0.01,
-                                        seed: int = 0) -> dict:
+                                        seed: int = 0,
+                                        min_residual_scale: float = 0.01) -> dict:
     """Per-feature best match, reported as separate `structural`/`provenance` columns.
 
     ROADMAP.md §25.5(a): stop running one argmax over ~30 mixed fields
@@ -483,6 +484,7 @@ def best_ground_truth_matches_separated(features: np.ndarray, gt: pd.DataFrame,
     # every feature) rather than refitting the same regression per feature.
     residual_cache: dict = {}
     oof_r2_by_field: dict = {}
+    not_separable: list = []
     for field in structural_cols:
         gvals = joined[field].to_numpy(dtype=np.float64)
         valid = ~np.isnan(gvals)
@@ -490,6 +492,39 @@ def best_ground_truth_matches_separated(features: np.ndarray, gt: pd.DataFrame,
             continue
         resid, oof_r2 = residualize_against_provenance(
             joined, field, provenance_cols, valid, n_folds=n_folds, alpha=alpha, seed=seed)
+        # ROADMAP.md sec 26 A3. A field the provenance one-hots predict
+        # PERFECTLY has no residual left to correlate against -- and
+        # Spearman, being rank-based, does not degrade gracefully there: it
+        # ranks whatever floating-point rounding survives and returns a
+        # large, confident-looking rho computed on numerical noise.
+        #
+        # This is not hypothetical. On this repo's own corpus the three
+        # binary flags `has_intermittency` / `has_random_walk` /
+        # `has_heteroskedastic` are determined by the archetype that
+        # generated the series, so oof_r2 is exactly 1.0000, the residual's
+        # scale collapses to ~3e-4 of the field's own, and those three
+        # fields supplied 82 of the 88 (93%) top matches the report
+        # rendered -- at rho +0.43..+0.63, where the RAW-field correlation
+        # was only +0.16..+0.20. Residualizing inflated a weak real
+        # association into a strong fake one by dividing out everything
+        # real and ranking the remainder.
+        #
+        # The gate is on the residual's surviving SCALE rather than on
+        # oof_r2, because scale is the quantity that actually decides
+        # whether there is anything to correlate with; oof_r2 is a proxy for
+        # it. Measured separation on that corpus is unambiguous -- every
+        # usable field keeps >= 0.42 of its sd, every degenerate one <=
+        # 0.0004, a factor of ~1200 with nothing in between -- so the
+        # default sits well inside the gap rather than on a knife edge.
+        scale = float(np.std(resid) / np.std(gvals[valid]))
+        if scale < min_residual_scale:
+            not_separable.append({"field": field, "oof_r2": float(oof_r2),
+                                  "residual_scale": scale})
+            log.info(f"sae ground-truth (separated): dropping `{field}` from the "
+                     f"structural competition -- provenance predicts it at "
+                     f"oof_r2={oof_r2:.4f}, leaving {scale:.2e} of its own scale, "
+                     f"so any residual correlation would be rounding noise")
+            continue
         residual_cache[field] = (valid, resid)
         oof_r2_by_field[field] = oof_r2
 
@@ -558,6 +593,10 @@ def best_ground_truth_matches_separated(features: np.ndarray, gt: pd.DataFrame,
         "mean_abs_rho_structural": float(np.mean(np.abs(struct_matched))) if struct_matched else 0.0,
         "mean_abs_rho_provenance": float(np.mean(np.abs(prov_matched))) if prov_matched else 0.0,
         "residualization_oof_r2": {k: float(v) for k, v in oof_r2_by_field.items()},
+        # Reported, never silently dropped: a field excluded here is one the
+        # corpus CANNOT separate from provenance, which is a fact about the
+        # benchmark's design worth surfacing rather than an empty slot.
+        "fields_not_separable_from_provenance": not_separable,
         "features": out_features,
     }
 
@@ -629,6 +668,20 @@ def ground_truth_alignment(cfg: PipelineConfig, store: ActivationStore, model: s
     features = encode_series_level(sae, store, model, layer, rows, device)
     result = best_ground_truth_matches(features, gt, series_ids, gt_cols,
                                        must_include_fields=must_include_fields)
+    # ROADMAP.md sec 26 A1: the legacy single-argmax result above is KEPT
+    # byte-for-byte (every recorded number stays regenerable, sec 2.1), and
+    # the structural/provenance-separated view is ADDED beside it under
+    # `separated` -- the sec 11.39 rule, "add a canonical key, leave the
+    # legacy keys untouched, read new-then-legacy". The report reads
+    # `separated` as its headline: on `runs/full_report_run_large`, 445 of
+    # 566 (78.6%) of the legacy matches -- and 11 of 11 headline rows --
+    # were `generator_*`/`tier_*`/`archetype_*` provenance dummies, i.e. a
+    # feature that detects which generator wrote the series, which is a
+    # corpus artifact and not a model finding. `best_ground_truth_matches_
+    # separated` has existed and been unit-tested since Stage 1 (sec 25.22)
+    # but only ever ran as a standalone check; nothing consumed it.
+    result["separated"] = best_ground_truth_matches_separated(
+        features, gt, series_ids, gt_cols, seed=cfg.run.seed + 14)
     result["n_requested"] = int(cfg.sae.ground_truth_max_series)
     result["n_realized"] = int(len(rows))
     result["rows"] = [int(r) for r in rows]

@@ -102,6 +102,8 @@ __all__ = [
     "sign_aware_cosine",
     "greedy_match_roles",
     "shuffled_series_null_activation_profile",
+    "role_population_vectors",
+    "permutation_null_cosine",
     "match_roles_for_pair",
     "match_roles_across_models",
     "untrained_twin_role_floor",
@@ -297,12 +299,84 @@ def _candidates_and_null_p95(run_dir: Optional[Path], model: str, layer: str) ->
     return stage2.get("candidates", []), stage2.get("null_p95", {})
 
 
+# ---------------------------------------------------------------------------
+# The within-run population null for the PRIMARY cosine signal itself.
+#
+# The two nulls above answer "does architecture alone explain this" (the
+# untrained-twin floor) and "does input-statistics-alone explain the
+# ACTIVATION-PROFILE signal" (the shuffled-series null). Neither answers a
+# third, narrower question the response fingerprint's own low dimension
+# raises: `CHANNELS` has only 9 entries, so two roles that both push a
+# generic effect (e.g. "dispersion up") can score a high cosine purely from
+# sharing that one axis, with no correspondence implied. `_match_rate`'s
+# fixed `cosine_threshold` (default 0.5) has no such calibration -- on a
+# real run every observed cosine cleared it, forcing `match_rate` to a
+# content-free 1.0 regardless of which roles matched which (found by
+# reading the rendered report, not the code -- sec 2.4/11.48's practice).
+# `permutation_null_cosine` below answers "how similar do two ARBITRARY
+# trained roles from elsewhere in this run look, absent any claim they
+# correspond" -- a population-level reference computed from roles this run
+# already built, needing no extra forward pass or twin run.
+# ---------------------------------------------------------------------------
+
+def role_population_vectors(roles_json: dict, run_dir: Optional[Path] = None) -> dict:
+    """`{target: [(role, vector), ...]}` for every non-skipped, non-withheld
+    role target in this run's `roles.json` -- the pool `permutation_null_cosine`
+    draws from. Computed once per run (not once per pair) so
+    `match_roles_across_models` can share a single population across every
+    pair it evaluates.
+    """
+    out = {}
+    for target, rec in roles_json.items():
+        if not isinstance(rec, dict) or rec.get("skipped") or rec.get("withheld"):
+            continue
+        roles = rec.get("roles") or []
+        if not roles:
+            continue
+        model, _, layer = target.partition("/")
+        cand, p95 = _candidates_and_null_p95(run_dir, model, layer)
+        out[target] = [(r, role_response_vector(r, cand, p95)) for r in roles]
+    return out
+
+
+def permutation_null_cosine(population: dict, exclude_targets: tuple = (),
+                            n_samples: int = 200, seed: int = 0) -> tuple:
+    """`|sign-aware cosine|` null over `n_samples` random PAIRS of role
+    vectors drawn (with replacement) from every target in `population`
+    EXCEPT `exclude_targets` -- normally the two targets being matched, so
+    the null is estimated from roles elsewhere in the run rather than from
+    the very roles under test. Absolute value because the null asks "how
+    large can a chance cosine get", and a real match's own sign is judged
+    against that magnitude regardless of direction (sec 25.6's sign-aware
+    cosine stays the primary signal; only the null's own spread is
+    unsigned).
+
+    Returns `(p95, n_pool)`. `p95` is `None` when fewer than 2 vectors are
+    available outside `exclude_targets` -- sec 2.5's degrade-loudly
+    doctrine: a caller must be able to tell "the null could not be
+    estimated" apart from "the null is zero". `n_pool` is recorded even
+    when `p95` is `None` (0 or 1), and always when it succeeds, so a reader
+    can judge the estimate's quality -- a run with only two SAE role
+    targets has a pool this small by construction, not by a bug, and the
+    artifact should say so rather than hide it behind a number.
+    """
+    pool = [v for t, rvs in population.items() if t not in exclude_targets for _, v in rvs]
+    if len(pool) < 2:
+        return None, len(pool)
+    rng = np.random.default_rng(seed)
+    idx = rng.integers(0, len(pool), size=(n_samples, 2))
+    cos = np.array([abs(sign_aware_cosine(pool[i], pool[j])) for i, j in idx])
+    return float(np.percentile(cos, 95)), len(pool)
+
+
 def match_roles_for_pair(model_a: str, model_b: str, roles_json: dict,
                          depths: Optional[dict] = None,
                          depth_tolerance: float = 0.15,
                          features_by_target: Optional[dict] = None,
                          null_seed: int = 0,
-                         run_dir: Optional[Path] = None) -> dict:
+                         run_dir: Optional[Path] = None,
+                         population: Optional[dict] = None,
+                         n_population_samples: int = 200) -> dict:
     """The full Component C record for one model pair.
 
     `depths` (optional): `{f"{model}/{layer}": float}` on the `block` axis
@@ -319,6 +393,19 @@ def match_roles_for_pair(model_a: str, model_b: str, roles_json: dict,
     secondary signal and its shuffled-series null. `None` skips both,
     degrading to the response-fingerprint signal alone (still the primary
     one, per sec 25.6).
+
+    `population` (optional): `role_population_vectors(roles_json, run_dir)`'s
+    output, shared across every pair `match_roles_across_models` evaluates so
+    it is computed once per run, not once per pair -- when supplied, each
+    match (both A->B and the reverse B->A pass this function also computes)
+    is checked against `permutation_null_cosine`'s within-run population
+    null (see that function's docstring), attaching `clears_population_null`
+    per match and `population_null_p95`/`population_null_n_pool`/
+    `frac_shared_by_population_null_a`/`_b` at the pair level -- the
+    per-role-group shared/specific split `ROADMAP.md` sec 26 D1 named as the
+    correct shape, in place of one pooled `match_rate` number. `None` skips
+    this (both null fields become `None`), never silently substituting a
+    threshold-only verdict for a null-calibrated one.
 
     Returns `{"model_a", "model_b", "comparable": bool, "reason": str, ...}`
     -- `comparable=False` with a stated reason is the honest "no target at a
@@ -395,6 +482,40 @@ def match_roles_for_pair(model_a: str, model_b: str, roles_json: dict,
                           "n_role_pairs_nulled": len(null_vals)}
 
     matches = greedy_match_roles(roles_a, vecs_a, roles_b, vecs_b, secondary=secondary)
+    matches_b_to_a_raw = greedy_match_roles(roles_b, vecs_b, roles_a, vecs_a)
+    # Relabel so "role_a"/"role_b" always name a model_a/model_b role
+    # respectively, regardless of which side was the query -- the raw
+    # greedy_match_roles output always calls its query side "role_a", which
+    # would otherwise make a B-side query read as an A-side role.
+    matches_b_to_a = [
+        {"role_b": m["role_a"], "role_b_index": m["role_a_index"],
+        "role_a": m["role_b"], "role_a_index": m["role_b_index"],
+        "cosine": m["cosine"]}
+        for m in matches_b_to_a_raw]
+
+    pop_null_p95, pop_n_pool = (None, 0)
+    if population is not None:
+        pop_null_p95, pop_n_pool = permutation_null_cosine(
+            population, exclude_targets=(key_a, key_b),
+            n_samples=n_population_samples, seed=null_seed)
+    if pop_null_p95 is not None:
+        for m in matches:
+            m["clears_population_null"] = bool(abs(m["cosine"]) > pop_null_p95)
+        for m in matches_b_to_a:
+            m["clears_population_null"] = bool(abs(m["cosine"]) > pop_null_p95)
+        frac_shared_a = sum(1 for m in matches if m["clears_population_null"]) / len(matches)
+        frac_shared_b = sum(1 for m in matches_b_to_a if m["clears_population_null"]) / len(matches_b_to_a)
+        roles_shared_a = [m["role_a"] for m in matches if m["clears_population_null"]]
+        roles_specific_a = [m["role_a"] for m in matches if not m["clears_population_null"]]
+        roles_shared_b = [m["role_b"] for m in matches_b_to_a if m["clears_population_null"]]
+        roles_specific_b = [m["role_b"] for m in matches_b_to_a if not m["clears_population_null"]]
+    else:
+        for m in matches:
+            m["clears_population_null"] = None
+        for m in matches_b_to_a:
+            m["clears_population_null"] = None
+        frac_shared_a = frac_shared_b = None
+        roles_shared_a = roles_specific_a = roles_shared_b = roles_specific_b = None
 
     return {"model_a": model_a, "model_b": model_b, "comparable": True,
            "target_a": key_a, "target_b": key_b,
@@ -403,6 +524,15 @@ def match_roles_for_pair(model_a: str, model_b: str, roles_json: dict,
            "depth_axis": "block" if depths else None,
            "n_roles_a": len(roles_a), "n_roles_b": len(roles_b),
            "matches": matches,
+           "matches_b_to_a": matches_b_to_a,
+           "population_null_p95": pop_null_p95,
+           "population_null_n_pool": pop_n_pool,
+           "frac_shared_by_population_null_a": frac_shared_a,
+           "frac_shared_by_population_null_b": frac_shared_b,
+           "roles_shared_a": roles_shared_a,
+           "roles_specific_to_a": roles_specific_a,
+           "roles_shared_b": roles_shared_b,
+           "roles_specific_to_b": roles_specific_b,
            "activation_profile_shuffled_series_null": null_result,
            "note": "primary signal is sign-aware cosine over the null-normalized "
                    "response fingerprint (sec 25.6); activation-profile "
@@ -410,7 +540,11 @@ def match_roles_for_pair(model_a: str, model_b: str, roles_json: dict,
                    "informational context computed only when both targets share "
                    "one run's row sample, never used to re-rank the primary match. "
                    "Matching is greedy nearest-neighbour, not an optimal assignment "
-                   "-- a role_b may be claimed by more than one role_a."}
+                   "-- a role_b may be claimed by more than one role_a. "
+                   "roles_shared_a/roles_specific_to_a (and the _b mirror) are the "
+                   "per-role-group split gated on the within-run population null, "
+                   "not on the fixed cosine_threshold match_rate uses -- None "
+                   "throughout when population was not supplied."}
 
 
 # ---------------------------------------------------------------------------
@@ -422,7 +556,8 @@ def match_roles_across_models(model_pairs: list, roles_json: dict,
                               depth_tolerance: float = 0.15,
                               features_by_target: Optional[dict] = None,
                               null_seed: int = 0,
-                              run_dir: Optional[Path] = None) -> list:
+                              run_dir: Optional[Path] = None,
+                              use_population_null: bool = True) -> list:
     """`match_roles_for_pair` for every `(model_a, model_b)` in `model_pairs`
     -- the generalization to `cfg.comparison_pairs()` (sec 24.3's rule: all
     C(n,2) pairs on a panel, pair 0 always the designated reference pair).
@@ -430,11 +565,21 @@ def match_roles_across_models(model_pairs: list, roles_json: dict,
     pair, matching every other panel-pairs artifact in this repo
     (`ROADMAP.md` sec 24.3 sub-item 3's convention, `tests/
     test_panel_pairs.py`'s own load-bearing assertion about pair ordering).
+
+    `use_population_null` (default `True`): builds `role_population_vectors`
+    once from `roles_json` and shares it across every pair, so the
+    within-run population null (see `permutation_null_cosine`) is computed
+    from one pass over the run's roles rather than once per pair. `False`
+    reproduces the pre-population-null behaviour exactly (all the new
+    fields on each pair become `None`) -- kept for callers that only want
+    the cheap path.
     """
+    population = role_population_vectors(roles_json, run_dir) if use_population_null else None
     return [match_roles_for_pair(a, b, roles_json, depths=depths,
                                  depth_tolerance=depth_tolerance,
                                  features_by_target=features_by_target,
-                                 null_seed=null_seed, run_dir=run_dir)
+                                 null_seed=null_seed, run_dir=run_dir,
+                                 population=population)
            for a, b in model_pairs]
 
 
@@ -560,6 +705,24 @@ def role_correspondence_table(model_pairs: list, roles_json: dict,
         if available_floors:
             best_floor = max(v for _, v in available_floors)
             rec["clears_untrained_twin_floor"] = rate > best_floor
+        # Null-calibrated alternative to the fixed-threshold `match_rate`
+        # above (sec 26 D1): quotable whenever the within-run population
+        # pool was large enough to estimate a null from at all -- unlike
+        # `match_rate_quotable`, this does NOT need a random_init twin run,
+        # since it answers a different question (is this cosine typical
+        # among arbitrary trained roles in this run, not whether
+        # architecture alone explains it). Both gates are independent and
+        # both must be checked; neither substitutes for the other.
+        n_pool = rec.get("population_null_n_pool") or 0
+        rec["match_rate_null_based"] = rec.get("frac_shared_by_population_null_a")
+        rec["match_rate_null_based_quotable"] = n_pool >= 4
+        rec["match_rate_null_based_reason"] = (
+            f"population null estimated from {n_pool} role vectors drawn from "
+            "this run's other SAE targets"
+            if n_pool >= 4 else
+            f"only {n_pool} role vectors available outside this pair's own two "
+            "targets -- too small a population in this run to estimate a "
+            "meaningful chance level from")
         out_pairs.append(rec)
     return {"pairs": out_pairs, "cosine_threshold": cosine_threshold,
            "n_pairs": len(out_pairs)}

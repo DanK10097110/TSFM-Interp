@@ -42,7 +42,7 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Mapping, Optional
 
 import numpy as np
 import pandas as pd
@@ -1308,4 +1308,250 @@ def replication_summary(run_dir: Path) -> pd.DataFrame:
                 "the peak similarity was a coincidence of the exploratory sample"),
         })
 
+    return pd.DataFrame(rows)
+
+
+
+def seed_floor_verdict(entry: Mapping, metric: str) -> tuple:
+    """One SAE metric's seed-to-seed spread as `(suffix, resolvable)`.
+
+    `resolvable` is tri-state on purpose, the same way `in_floor_units`'
+    `interpretable` is: `None` when this run trained a single seed and no
+    floor exists, `False` when the metric's own mean is smaller than the
+    seed-to-seed sd (so the sign of a single-seed number is not established
+    by it), `True` otherwise. A caller must never read `None` as `False` --
+    an unmeasured floor is not a failed one (CLAUDE.md sec 11.37: absent and
+    bad have to be different outcomes, because a degenerate baseline yields a
+    CONFIDENT verdict rather than a cautious one).
+
+    This is the single implementation of that rule. `report.py` held a second
+    copy (`_seed_floor`) until 2026-09-03, consumed by nothing but its own
+    test after the per-target stats paragraph it served was replaced by
+    `sae_health` -- and the replacement's inline re-derivation read
+    `seed_floor[metric]` where the artifact writes
+    `seed_floor["spread"][metric]` (`sae/train.py`), so a run that HAD
+    measured a floor would have rendered as one that had not. Exactly the
+    shape the tri-state exists to prevent, arrived at by duplicating the
+    rule rather than by getting it wrong.
+    """
+    floor = (entry or {}).get("seed_floor")
+    if not floor:
+        return "", None
+    spread = (floor.get("spread") or {}).get(metric) or {}
+    if not spread.get("n", 0) or spread["n"] < 2:
+        return "", None
+    suffix = f' ±{spread["sd"]:.3f} over {spread["n"]} seeds'
+    return suffix, abs(spread["mean"]) > spread["sd"]
+
+def sae_health(run_dir: Path) -> pd.DataFrame:
+    """One row per SAE target: is this dictionary worth reading features off?
+
+    Added 2026-09-03 on user review of the SAE section ("there is a lot of
+    excess information ... I don't want the viewer to be confused"). The
+    complaint was grounded in an artifact-verified mechanism before being
+    treated as tone (sec 2.4): `_sec_sae` rendered ONE run-on paragraph per
+    target, `·`-separated, ~350 characters, in a fixed field order -- eleven
+    of them on `runs/full_report_run_large`. Every number a reader needs to
+    compare targets was present and none of it was comparable, because
+    comparing two targets meant diffing two paragraphs of prose. Worse, the
+    section's single most important fact was buried in the eighth of them:
+    dead-feature rate is **0.008-0.012** for one model and **0.877-0.977**
+    for the other two at identical settings, which is a property of the model
+    rather than of the recipe (`CLAUDE.md` sec 9's already-recorded finding,
+    replicated here on a third corpus).
+
+    So this is the same move sec 24 made for L3 and internals: the paragraph
+    becomes a table, and each verdict is derived from a printed rule rather
+    than authored. Pure reduction over `sae/meta.json` -- no model name, no
+    architecture, no positional index (the adaptivity contract above), and a
+    target missing any one measurement leaves that cell `None` rather than
+    dropping the row, since the dead rate is worth seeing even when forecast
+    preservation was not measured.
+
+    Two columns exist to be read together and are ordered to force it:
+    `dead rate` and `alignment vs null`. A dictionary can be almost entirely
+    alive and align to ground truth WORSE than a mostly-dead one -- measured,
+    not hypothetical -- so neither column alone answers "is this worth
+    reading", and a reader who sees only the dead rate draws the wrong
+    conclusion.
+    """
+    meta = load_json_or_none(run_dir / "sae" / "meta.json")
+    if not meta:
+        return pd.DataFrame()
+    from ..analysis.stats import format_floor_units, in_floor_units
+    floors = load_json_or_none(run_dir / "l0" / "noise_floor.json") or {}
+
+    rows = []
+    thresholds: dict[str, float | None] = {}
+    for key, entry in meta.items():
+        if not isinstance(entry, dict):
+            continue
+        gt = entry.get("ground_truth_alignment") or {}
+        null = gt.get("permutation_null") or {}
+        rho = _fin(gt.get("mean_abs_rho_matched"))
+        p95 = _fin(null.get("mean_abs_rho_null_p95"))
+        gate = entry.get("dead_rate_gate") or {}
+        dead = _fin(entry.get("dead_feature_rate"))
+
+        # The gate's own threshold travels with the verdict -- a bare
+        # "fails" is the invisible-threshold defect this module exists to
+        # prevent. `passed` absent means no gate was configured, which is
+        # not the same as passing.
+        thresholds[str(key)] = _fin(gate.get("threshold")) if gate else None
+        if not gate:
+            dead_verdict = "no gate configured"
+        elif gate.get("passed", True):
+            dead_verdict = f"passes (under {_pct(gate.get('threshold'))})"
+        else:
+            dead_verdict = f"FAILS (over {_pct(gate.get('threshold'))})"
+
+        # Never against zero: every feature is matched to its best of ~30
+        # candidate fields, and that search inflates the mean even on
+        # shuffled labels, so the permutation null is the only honest
+        # reference (ROADMAP.md sec 16 E9).
+        if rho is None or p95 is None:
+            align_verdict = "not comparable"
+        elif rho > p95:
+            align_verdict = f"clears null p95 by {rho - p95:+.3f}"
+        else:
+            align_verdict = f"does NOT clear null p95 ({rho - p95:+.3f})"
+
+        win = _fin((entry.get("forecast_preservation") or {}).get("mase_delta"))
+        tok = _fin((entry.get("forecast_preservation_token") or {}).get("mase_delta"))
+
+        # A raw ΔMASE is not one quantity across models -- a sampled decoder
+        # and a deterministic one sit on structurally different floors -- so
+        # F6's shared reader turns it into a multiple of THIS model's own
+        # repeat-run floor. The model comes from the target key, which is data
+        # read out of the artifact, not a name written here (the adaptivity
+        # contract above). Removing the run-on paragraph this table replaced
+        # would otherwise have silently dropped F6's units from the section.
+        model = str(key).split("/", 1)[0]
+        fu = in_floor_units(win, (floors or {}).get(model))
+        # The compact form, matching `corruption_breakdown`'s existing
+        # convention rather than inventing a second one: the full
+        # `format_floor_units` phrase restates the raw delta, which is
+        # already its own column, so in a table it is duplication.
+        if fu["raw"] is None:
+            floor_units = None
+        elif fu["deterministic"]:
+            floor_units = "no floor (deterministic)"
+        elif fu["ratio"] is None or not np.isfinite(fu["ratio"]):
+            floor_units = fu.get("reason") or "not measured"
+        else:
+            floor_units = f"{fu['ratio']:.1f}×"
+
+        # Whether the run itself can resolve the delta's SIGN. Distinct from
+        # the floor above: that is sampling noise inside one trained SAE, this
+        # is spread ACROSS retrainings. `seed_floor: None` means one SAE was
+        # trained, so there is no spread to compare against -- reported as
+        # its own state rather than as "resolvable" (sec 11.37).
+        suffix, resolvable = seed_floor_verdict(entry, "mase_delta_window")
+        if resolvable is None:
+            sign = "no seed spread measured (1 training)"
+        elif resolvable:
+            sign = f"resolvable (spread{suffix})"
+        else:
+            sign = f"NOT resolvable (spread{suffix})"
+
+        rows.append({
+            "target": str(key),
+            # Spelled out rather than "fidelity": `tests/test_smoke.py`
+            # asserts the phrase is present in the rendered HTML, and the
+            # information genuinely belongs there -- §24's lesson is that a
+            # dropped token means the information left the figure, not that
+            # the assertion was stale.
+            "reconstruction fidelity": _fin(entry.get("reconstruction_fidelity")),
+            "dead rate": dead,
+            "dead-rate gate": dead_verdict,
+            "ΔMASE (window)": win,
+            "ΔMASE (token)": tok,
+            "granularity gap": (None if win is None or tok is None
+                                else abs(win - tok)),
+            "ΔMASE vs own floor": floor_units,
+            "ΔMASE sign": sign,
+            "alignment mean abs rho": rho,
+            "permutation null p95": p95,
+            "alignment vs null": align_verdict,
+        })
+
+    df = pd.DataFrame(rows)
+    if df.empty:
+        return df
+    # A column carrying one value at every target is noise in a comparison
+    # table, and the run-level seed situation is already stated once by the
+    # section's own seed-floor block -- so this column appears only when some
+    # target actually has a spread to report. The condition is measured, not
+    # a config switch.
+    if not any(str(r).startswith(("resolvable", "NOT resolvable"))
+               for r in df["ΔMASE sign"]):
+        df = df.drop(columns=["ΔMASE sign"])
+
+    # The gate's numeric threshold rides along in `attrs` rather than as a
+    # twelfth column: the reader already sees it inside the verdict string,
+    # but the FIGURE needs it as a number to draw the bar the bars are
+    # judged against. Data, not display -- so it stays out of the table and
+    # out of `report.py`, which must not re-derive a threshold it could read.
+    df.attrs["dead_rate_thresholds"] = thresholds
+
+    # Worst dictionary first: the reader's question is which of these to
+    # distrust, and a table sorted by insertion order answers nothing.
+    # `dead rate` is the sort key rather than fidelity because a dead
+    # dictionary invalidates every feature read off it, where low fidelity
+    # only weakens them.
+    return df.sort_values("dead rate", ascending=False,
+                          na_position="last").reset_index(drop=True)
+
+
+def _pct(x) -> str:
+    v = _fin(x)
+    return "an unstated threshold" if v is None else f"{v:.0%}"
+
+
+def sae_structural_profile(run_dir: Path) -> pd.DataFrame:
+    """target x structural-field counts of ground-truth-matched SAE features.
+
+    Added 2026-09-03 alongside `sae_health`, on the same user instruction
+    ("good graphs in final report"). The section already rendered ONE row per
+    target naming that target's single strongest structural correlate, which
+    answers "what is the best feature here" and cannot answer the question a
+    reader of a cross-model section actually has: *which* properties of the
+    data does each dictionary organize itself around, and do the models
+    differ? That is a target x field matrix, and a matrix wants a heatmap.
+
+    Reads `ground_truth_alignment.separated.features[*].structural.field` --
+    the PROVENANCE-RESIDUALIZED field (ROADMAP.md sec 26 A2/A3), never the
+    raw best match. That distinction is the whole point: before A3, 78.6% of
+    matched features named a corpus-provenance dummy (`generator_*`,
+    `tier_*`), so a heatmap built on the raw field would render a picture of
+    how the benchmark was built rather than of what the model learned.
+
+    Returns tidy rows `{target, field, n_features, mean_abs_rho,
+    share_of_matched}`, empty frame when no target carries a `separated`
+    block. `share_of_matched` is per-target, so two targets whose
+    dictionaries matched different numbers of features are still comparable
+    -- a raw count heatmap would read dictionary size as signal.
+    """
+    meta = load_json_or_none(run_dir / "sae" / "meta.json")
+    if not meta:
+        return pd.DataFrame()
+    rows = []
+    for key, entry in meta.items():
+        if not isinstance(entry, dict):
+            continue
+        sep = ((entry.get("ground_truth_alignment") or {}).get("separated") or {})
+        feats = sep.get("features") or []
+        by_field: dict[str, list[float]] = {}
+        for f in feats:
+            st = (f or {}).get("structural") or {}
+            field, rho = st.get("field"), _fin(st.get("rho"))
+            if not field or rho is None:
+                continue
+            by_field.setdefault(str(field), []).append(abs(rho))
+        total = sum(len(v) for v in by_field.values())
+        for field, rhos in by_field.items():
+            rows.append({"target": str(key), "field": field,
+                         "n_features": len(rhos),
+                         "mean_abs_rho": float(np.mean(rhos)),
+                         "share_of_matched": (len(rhos) / total) if total else None})
     return pd.DataFrame(rows)

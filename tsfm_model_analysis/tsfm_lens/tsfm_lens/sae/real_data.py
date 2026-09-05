@@ -58,7 +58,12 @@ def extract_real_activations(adapter, layer: str, contexts: np.ndarray, alignmen
     take = min(batch_size, adapter.cfg.batch_size)
     out = []
     for s, e in batch_slices(len(contexts), take):
-        tokens = capture_raw_tokens(adapter, contexts[s:e], [layer])[layer]
+        # autocast=True (not the patching default): this cache is pooled and
+        # concatenated with the STORE's own activations, which are written under
+        # autocast -- so matching the store is what keeps the two halves of the
+        # SAE's training set on one numerical footing (extract.py's docstring).
+        tokens = capture_raw_tokens(adapter, contexts[s:e], [layer],
+                                    autocast=True)[layer]
         out.append(align(tokens, pool).numpy())
     pooled = np.concatenate(out, axis=0)
     return pooled.reshape(-1, pooled.shape[-1]).astype(np.float32)

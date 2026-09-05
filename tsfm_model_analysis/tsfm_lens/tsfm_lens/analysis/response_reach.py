@@ -125,6 +125,14 @@ def reach_probe(cfg, adapter, target_layer: str, data, device,
 
     reachable = cross_delta > _EPS
     if self_delta > _EPS:
+        # A failed correctness control is a broken instrument, so nothing
+        # downstream may be derived from it -- `reachable` has to go False
+        # here, not just carry a reason string. Before this, the reason said
+        # "bug in the patching path" while `reachable` stayed True, so the
+        # battery ran, `withheld` never fired, and roles were clustered on
+        # top of a fingerprint measured with a demonstrably wrong clean cache
+        # (`CLAUDE.md` sec 11.49). §2.4: not a tolerance to loosen.
+        reachable = False
         reason = (f"correctness control failed: patching {target_layer} into itself "
                  f"moved the forecast by {self_delta:.6g} (expected exactly 0.0) -- "
                  f"this is a bug in the patching path, not a property of the model")

@@ -30,6 +30,8 @@ def pair_match_table(pair: dict) -> pd.DataFrame:
             f"{pair['model_b']} role (best match)": m["role_b"],
             "cosine": m.get("cosine"),
         }
+        if "clears_population_null" in m:
+            row["shared (clears population null)"] = m["clears_population_null"]
         if "activation_profile_correlation" in m:
             row["activation profile ρ"] = m["activation_profile_correlation"]
             row["max-activating overlap (Jaccard)"] = m.get("max_activating_series_jaccard")
@@ -68,7 +70,36 @@ def correspondence_summary_rows(table: dict) -> list:
             "clears floor": pair.get("clears_untrained_twin_floor"),
             "quotable": pair["match_rate_quotable"],
             "quotable reason": pair["match_rate_quotable_reason"],
+            "match rate (population-null-based)": pair.get("match_rate_null_based"),
+            "population-null quotable": pair.get("match_rate_null_based_quotable"),
+            "population pool size": pair.get("population_null_n_pool"),
         })
+    return rows
+
+
+def shared_vs_specific_rows(pair: dict) -> list:
+    """ROADMAP.md sec 26 D1's deliverable: for one comparable pair, which
+    named roles are SHARED (their best cross-model match clears the
+    within-run population null, `sae/role_matching.py
+    ::permutation_null_cosine`) versus SPECIFIC to one side (it does not) --
+    a per-role verdict, not the single pooled `match_rate` number sec 26
+    D1 named as "the wrong shape". `None` (not an empty list) when the
+    pair's population null could not be estimated (`population_null_p95`
+    is `None`) -- distinguishes "we checked, and no roles cleared" from
+    "we could not check", the same distinction `match_rate_quotable`
+    already draws for the untrained-twin floor.
+    """
+    if pair.get("population_null_p95") is None:
+        return None
+    rows = []
+    for role_name in pair.get("roles_shared_a") or []:
+        rows.append({"model": pair["model_a"], "role": role_name, "verdict": "shared"})
+    for role_name in pair.get("roles_specific_to_a") or []:
+        rows.append({"model": pair["model_a"], "role": role_name, "verdict": "specific"})
+    for role_name in pair.get("roles_shared_b") or []:
+        rows.append({"model": pair["model_b"], "role": role_name, "verdict": "shared"})
+    for role_name in pair.get("roles_specific_to_b") or []:
+        rows.append({"model": pair["model_b"], "role": role_name, "verdict": "specific"})
     return rows
 
 

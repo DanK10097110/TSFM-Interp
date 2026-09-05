@@ -21,6 +21,29 @@ from ..config import DataConfig, ModelConfig
 from .base import TIER_NAMES, CapabilityUnavailable, ModelAdapter
 
 
+_CONFORMANCE_SEED = 0
+
+
+def _seeded_predict(adapter: ModelAdapter, contexts, horizon: int, quantiles: list):
+    """`adapter.predict()`, with the RNG reset to the same fixed seed immediately
+    before the call (`analysis/response_reach.py::_predict_point`'s own pattern,
+    which this module's docstring already credits as precedent).
+
+    Some adapters sample their forecast rather than compute it deterministically
+    -- Chronos-T5 (`CLAUDE.md` sec 12 item 3) and, discovered by this check
+    against real Sundial weights, Sundial's flow-matching head (`FlowLoss.sample`
+    draws a fresh, unseeded `torch.randn` every call). Two bare, unseeded
+    `predict()` calls on identical input then differ by chance alone -- measured
+    directly against `thuml/sundial-base-128m`: two back-to-back calls with no
+    patch and no seeding differ by max abs 0.50, collapsing to exactly 0.0 once
+    both calls reset the same seed first. Without this, the identity check below
+    cannot tell "the patch broke something" from "the model rolled new dice,"
+    and reported the latter as the former.
+    """
+    torch.manual_seed(_CONFORMANCE_SEED)
+    return adapter.predict(contexts, horizon, quantiles)["point"]
+
+
 def check_adapter_conformance(adapter: ModelAdapter, window: int, n_series: int = 4,
                               horizon: int = 8, quantiles: list | None = None) -> dict:
     """Run every check; raise loudly on the first broken one (`CLAUDE.md` §2.5).
@@ -125,6 +148,14 @@ def _check_patch_reaches_the_forecast(adapter: ModelAdapter, contexts, horizon: 
     for such a model the zero IS the declared behavior -- but is then held to
     the stronger requirement that check 2 genuinely fails, so the
     declaration cannot go stale in the permissive direction.
+
+    Every `predict()` call below goes through `_seeded_predict`, not a bare
+    call -- a model whose forecast is itself sampled (Chronos-T5's decoder,
+    and, found running this check against real `thuml/sundial-base-128m`
+    weights, Sundial's flow-matching head) otherwise fails check 1 on pure
+    RNG noise: two unpatched calls with no seed pinning differed by 0.42-0.50
+    with zero intervention involved, which is indistinguishable from a real
+    identity-check failure unless the RNG is controlled for.
     """
     from ..extraction.extract import capture_raw_tokens
     from ..extraction.hooks import token_patch
@@ -135,10 +166,10 @@ def _check_patch_reaches_the_forecast(adapter: ModelAdapter, contexts, horizon: 
         return
     final = adapter.final_block_name()
     clean = capture_raw_tokens(adapter, contexts, [layers[0], final])
-    base = adapter.predict(contexts, horizon, quantiles)["point"]
+    base = _seeded_predict(adapter, contexts, horizon, quantiles)
 
     with token_patch(adapter.module, final, adapter.token_slice, clean[final]):
-        same = adapter.predict(contexts, horizon, quantiles)["point"]
+        same = _seeded_predict(adapter, contexts, horizon, quantiles)
     identity_delta = float(np.abs(same - base).max())
     if identity_delta > 1e-3:
         raise AssertionError(
@@ -148,7 +179,7 @@ def _check_patch_reaches_the_forecast(adapter: ModelAdapter, contexts, horizon: 
             f"hold the captured tokens")
 
     with token_patch(adapter.module, final, adapter.token_slice, clean[layers[0]]):
-        other = adapter.predict(contexts, horizon, quantiles)["point"]
+        other = _seeded_predict(adapter, contexts, horizon, quantiles)
     reach_delta = float(np.abs(other - base).max())
     declared = adapter.forecast_reads_patched_positions()
     report["patch_identity_delta"] = identity_delta
@@ -182,7 +213,7 @@ def _check_patch_reaches_the_forecast(adapter: ModelAdapter, contexts, horizon: 
         early = layers[1]
         early_clean = capture_raw_tokens(adapter, contexts, [early])[early]
         with token_patch(adapter.module, early, adapter.token_slice, early_clean + 5.0):
-            moved = adapter.predict(contexts, horizon, quantiles)["point"]
+            moved = _seeded_predict(adapter, contexts, horizon, quantiles)
         early_delta = float(np.abs(moved - base).max())
         report["patch_early_block_delta"] = early_delta
         report["patched_span_is_causally_connected"] = early_delta > 0.0

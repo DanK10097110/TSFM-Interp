@@ -4245,24 +4245,400 @@ def _sec_clusters(run_dir: Path, model_colors: dict, findings: list) -> str:
     return inner
 
 
-def _seed_floor(entry: dict, metric: str) -> tuple:
-    """One SAE metric's seed-to-seed spread as `(suffix, resolvable)`.
+def _vocab_pretty(name) -> str:
+    """Short human label for a ground-truth field (ROADMAP.md sec 26 B1)."""
+    from ..sae.vocab import pretty
+    return pretty(str(name)) if name else "—"
 
-    `resolvable` is tri-state on purpose, the same way `_delta_phrase`'s
-    `interpretable` is: `None` when this run trained a single seed and no
-    floor exists, `False` when the mean is smaller than the seed-to-seed sd
-    (so the sign of a single-seed number is not established by it), `True`
-    otherwise. A caller must never read `None` as `False` -- an unmeasured
-    floor is not a failed one.
+
+def _corpus_series_lookup(cfg):
+    """`(lookup, context_len)` for drawing exemplar series, or `(None, ctx)` if unavailable.
+
+    The raw series live only in the corpus -- the run directory keeps
+    activations and metadata, not inputs -- so the SAE section loads it
+    once. A corpus that cannot be read is a missing PICTURE, never a
+    missing measurement, so this returns `None` and the table falls back to
+    printing series ids (ROADMAP.md sec 26 B3).
     """
-    floor = entry.get("seed_floor")
-    if not floor:
-        return "", None
-    spread = floor.get("spread", {}).get(metric, {})
-    if not spread.get("n", 0) or spread["n"] < 2:
-        return "", None
-    suffix = f' ± {spread["sd"]:.3f} over {spread["n"]} seeds'
-    return suffix, abs(spread["mean"]) > spread["sd"]
+    ctx = int(getattr(cfg.data, "context_len", 0) or 0)
+    try:
+        from ..data import load_benchmark
+        bench = load_benchmark(cfg.data, cfg.run.seed)
+    except Exception as exc:
+        log.info(f"report: SAE exemplar sparklines unavailable ({exc}); "
+                 f"falling back to series ids")
+        return None, ctx
+    ids = bench.meta["series_id"].to_numpy()
+    index = {str(sid): i for i, sid in enumerate(ids)}
+    values = bench.values
+
+    def lookup(sid):
+        i = index.get(str(sid))
+        return None if i is None else values[i]
+
+    return lookup, int(bench.context_len or ctx)
+
+
+def _feature_cards_for(cfg, store, model: str, layer: str, entry: dict,
+                       separated: dict, run_meta):
+    """Encode this target's features from its saved checkpoint and build the cards.
+
+    Uses the row set the artifact itself recorded rather than recomputing a
+    stratified draw, so the activations behind the exemplar thumbnails are
+    the same series the recorded rho was measured on (CLAUDE.md sec 11.24's
+    trap: two "identical" sampling calls that stopped agreeing).
+    """
+    import numpy as np
+
+    from ..sae.ground_truth import encode_series_level
+    from ..sae.train import load_sae_checkpoint, sanitize
+    from ..utils import sample_rows
+    from .sae_exemplars import build_feature_cards
+
+    ga = entry.get("ground_truth_alignment", {})
+    rows = ga.get("rows")
+    if rows is None:
+        rows = sample_rows(len(run_meta), cfg.sae.ground_truth_max_series,
+                           cfg.run.seed + 12, strata=run_meta["family"].to_numpy())
+    rows = np.asarray(rows, dtype=int)
+    ckpt = cfg.run_dir() / "sae" / sanitize(model) / f"{sanitize(layer)}.pt"
+    sae = load_sae_checkpoint(str(ckpt))
+    features = encode_series_level(sae, store, model, layer, rows, "cpu")
+    series_ids = run_meta["series_id"].to_numpy()[rows]
+    return build_feature_cards(features, series_ids, separated, run_meta)
+
+
+def _feature_descriptions(run_dir: Path, key: str) -> dict:
+    """Generated per-feature descriptions for one target, if the run produced any.
+
+    Optional by construction: the table is complete without them, so a run
+    with no narrator available loses a convenience column and nothing else.
+    Keyed by feature index.
+    """
+    # `load_json` RAISES on a missing file rather than returning None, so
+    # the existence check is what actually makes this column optional --
+    # without it a run that never generated descriptions fails the whole
+    # SAE section, which is the opposite of the stated contract.
+    path = run_dir / "sae" / "descriptions.json"
+    if not path.exists():
+        return {}
+    doc = load_json(path) or {}
+    entry = doc.get(key) or {}
+    out = {}
+    for k, v in (entry.get("features") or {}).items():
+        text = v.get("text") if isinstance(v, dict) else v
+        if text:
+            try:
+                out[int(k)] = str(text)
+            except (TypeError, ValueError):
+                continue
+    return out
+
+
+def _role_descriptions(run_dir: Path, key: str) -> dict:
+    """Generated per-role descriptions for one target, if the run produced any.
+
+    Mirrors `_feature_descriptions` exactly, reading the same
+    `sae/descriptions.json` artifact's "roles" bucket instead of
+    "features" -- `run_sae_describe.py` keys role packets by
+    `str(role["role"])`, the same integer id `sae/roles.py::role_table`
+    assigns and `roles.json` persists as each role dict's "role" field, so
+    the lookup key here is `str(role["role"])`, not the role's display
+    name (which is not stable -- `derive_role_name` derives it from the
+    role's own mean effect and can collide across roles).
+    """
+    path = run_dir / "sae" / "descriptions.json"
+    if not path.exists():
+        return {}
+    doc = load_json(path) or {}
+    entry = doc.get(key) or {}
+    out = {}
+    for k, v in (entry.get("roles") or {}).items():
+        text = v.get("text") if isinstance(v, dict) else v
+        if text:
+            out[str(k)] = str(text)
+    return out
+
+
+
+
+def _depth_ordered_targets(targets: list) -> list:
+    """`{model}/{layer}` keys grouped by model, shallowest layer first.
+
+    Models keep their first-appearance order (the artifact's model order);
+    within a model, sort by the layer name's trailing `.<int>`. A layer with
+    no such suffix sorts by its artifact position instead of being assigned a
+    guessed depth -- every adapter in this repo happens to end its block
+    names with an index (`stacked_xf.7`, `encoder.block.7`), but a future one
+    need not, and inventing an order for it would misrepresent depth rather
+    than decline to show it.
+    """
+    models: list = []
+    for t in targets:
+        m = str(t).split("/", 1)[0]
+        if m not in models:
+            models.append(m)
+
+    def key(item):
+        i, t = item
+        model, _, layer = str(t).partition("/")
+        hit = re.search(r"\.(\d+)$", layer)
+        return (models.index(model), 0, int(hit.group(1))) if hit else (models.index(model), 1, i)
+
+    return [t for _, t in sorted(enumerate(targets), key=key)]
+
+
+def _sae_structural_figure(run_dir: Path) -> str:
+    """`derived.sae_structural_profile` as one target x field heatmap.
+
+    The section already had a one-row-per-target table naming each target's
+    single strongest structural correlate. That answers "what is the best
+    feature here"; it cannot answer the question a cross-model section is
+    for, which is whether the models organize themselves around DIFFERENT
+    properties of the data. That is a matrix, and eleven rows x nine fields
+    of decimals is not readable as one.
+
+    Cells are each target's SHARE of its own matched features, not raw
+    counts, so a dictionary that matched more features does not read as more
+    structured; the raw count is printed in the cell and carried in the
+    hover, because a share of a small denominator deserves to be seen as
+    one. Fields are ordered by total matches across the run, so the
+    left-hand columns are the properties this corpus actually exercises.
+
+    Rows group by model in the artifact's own model order, and WITHIN a
+    model run shallowest-to-deepest by the layer name's trailing index --
+    not by any data column, because a column sort destroys the depth trend
+    that is the single thing most worth seeing here.
+
+    Depth ordering is not the same as artifact order and this figure needed
+    it stated: under `sae.targets: auto` the artifact's key order is
+    `layer_screen`'s SCORE ranking, which on `runs/full_report_run_large` is
+    `stacked_xf.` 2, 6, 18, 10, 16 -- so the rows a reader would scan as a
+    depth trend jumped from block 18 back to 10. A layer whose name carries
+    no trailing `.<int>` keeps its artifact position rather than being
+    guessed at.
+    """
+    prof = derived.sae_structural_profile(run_dir)
+    if prof.empty:
+        return ""
+    piv_n = prof.pivot_table(index="target", columns="field", values="n_features",
+                             aggfunc="sum", fill_value=0)
+    piv_s = prof.pivot_table(index="target", columns="field", values="share_of_matched",
+                             aggfunc="sum", fill_value=0.0)
+    order = _depth_ordered_targets([t for t in dict.fromkeys(prof["target"])
+                                    if t in piv_n.index])
+    piv_n, piv_s = piv_n.loc[order], piv_s.loc[order]
+    cols = list(piv_n.sum(axis=0).sort_values(ascending=False).index)
+    piv_n, piv_s = piv_n[cols], piv_s[cols]
+    # Plotly builds a category axis upward, so the artifact's first target
+    # would land at the bottom; reversed once here so the reading order in
+    # the figure matches the reading order in every other per-target surface.
+    yv = list(piv_n.index)[::-1]
+    zn = piv_n.values[::-1]
+    zs = piv_s.values[::-1]
+
+    fig = go.Figure(go.Heatmap(
+        z=zs, x=[_vocab_pretty(c) for c in cols], y=yv,
+        colorscale=[[0.0, "#F4F6F5"], [0.25, "#BFD4DD"], [0.6, "#5E93AB"], [1.0, "#1F4E63"]],
+        zmin=0.0, colorbar=dict(title=dict(text="share of<br>matched", side="right"),
+                                tickformat=".0%", thickness=12, len=0.85),
+        text=[[("" if v == 0 else str(int(v))) for v in row] for row in zn],
+        texttemplate="%{text}", textfont=dict(size=11),
+        customdata=zn,
+        hovertemplate=("%{y}<br>%{x}<br>%{customdata:.0f} features "
+                       "(%{z:.1%} of this dictionary's matches)<extra></extra>")))
+    fig.update_xaxes(tickangle=-30, side="top")
+    fig.update_yaxes(tickfont=dict(size=11))
+    return _frag(fig, height=max(300, 40 * len(yv) + 150))
+
+def _sae_health_figure(df: pd.DataFrame) -> str:
+    """`derived.sae_health`'s table as three aligned panels, one row per target.
+
+    Added 2026-09-03 on user instruction ("good graphs in final report").
+    The table it accompanies is not redundant -- it carries the rule behind
+    every verdict, which a bar cannot -- but three of its eleven columns
+    answer questions that are *comparisons across targets*, and a reader
+    cannot do eleven-way comparison down a column of decimals. Those three
+    become panels; the rest stay in the table.
+
+    The third panel is the one worth the space. It draws each target's
+    alignment as a SEGMENT from its own label-permutation null p95 to its
+    measured mean|rho|, so the margin is a visible length rather than a
+    number a reader has to subtract. That is the difference this section
+    exists to show and the one the old prose buried: a dictionary can be
+    almost entirely alive and sit closer to its own null than a mostly-dead
+    one. Both facts are in the same picture, on the same row ordering.
+
+    Bars are colored by the GATE's own verdict, not by a hardcoded
+    threshold -- `sae_health` puts the numeric threshold in `df.attrs` for
+    exactly this reason, so the reference line and the coloring cannot
+    disagree with the table's printed rule. A target with no gate
+    configured is drawn in the muted color and no line is claimed for it.
+    """
+    if df.empty:
+        return ""
+    thresholds = df.attrs.get("dead_rate_thresholds") or {}
+    # Worst-first in the table means top-down in the figure: Plotly's
+    # category axis builds upward, so the frame is reversed once here rather
+    # than every trace being reversed independently.
+    d = df.iloc[::-1].reset_index(drop=True)
+    y = list(d["target"])
+
+    fig = make_subplots(
+        rows=1, cols=3, shared_yaxes=True, horizontal_spacing=0.055,
+        subplot_titles=("Dead features (share of dictionary)",
+                        "Reconstruction fidelity",
+                        "Ground-truth alignment vs its own null"))
+
+    dead = [None if pd.isna(v) else float(v) for v in d["dead rate"]]
+    verdicts = list(d["dead-rate gate"])
+    colors = ["#B04A5A" if str(v).startswith("FAILS")
+              else (_COLORS["muted"] if str(v).startswith("no gate")
+                    else "#4E8D6E") for v in verdicts]
+    fig.add_trace(go.Bar(
+        x=dead, y=y, orientation="h", marker_color=colors, showlegend=False,
+        text=[("" if v is None else f"{v:.1%}") for v in dead],
+        textposition="outside", cliponaxis=False,
+        customdata=verdicts,
+        hovertemplate="%{y}<br>%{x:.3f} dead · %{customdata}<extra></extra>",
+    ), row=1, col=1)
+    # One reference line only when every gated target shares a threshold --
+    # otherwise a single line would misdescribe some row it crosses.
+    have = {t for t in thresholds.values() if t is not None}
+    if len(have) == 1:
+        thr = have.pop()
+        fig.add_vline(x=thr, line=dict(color=_COLORS["accent"], width=1.5, dash="dash"),
+                      annotation_text=f"gate {thr:.0%}", annotation_position="top",
+                      annotation_font_size=11, row=1, col=1)
+
+    fid = [None if pd.isna(v) else float(v) for v in d["reconstruction fidelity"]]
+    fig.add_trace(go.Bar(
+        x=fid, y=y, orientation="h", marker_color=_COLORS["a"], showlegend=False,
+        text=[("" if v is None else f"{v:.3f}") for v in fid],
+        textposition="outside", cliponaxis=False,
+        hovertemplate="%{y}<br>fidelity %{x:.4f}<extra></extra>",
+    ), row=1, col=2)
+
+    rho = [None if pd.isna(v) else float(v) for v in d["alignment mean abs rho"]]
+    p95 = [None if pd.isna(v) else float(v) for v in d["permutation null p95"]]
+    for label, lo, hi in zip(y, p95, rho):
+        if lo is None or hi is None:
+            continue
+        fig.add_trace(go.Scatter(
+            x=[lo, hi], y=[label, label], mode="lines", showlegend=False,
+            line=dict(color=(_COLORS["muted"] if hi <= lo else "#4E8D6E"), width=2.5),
+            hoverinfo="skip"), row=1, col=3)
+    fig.add_trace(go.Scatter(
+        x=p95, y=y, mode="markers", name="label-permutation null (p95)",
+        marker=dict(color=_COLORS["muted"], size=8, symbol="line-ns-open",
+                    line=dict(width=2, color=_COLORS["muted"])),
+        hovertemplate="%{y}<br>null p95 %{x:.4f}<extra></extra>"), row=1, col=3)
+    fig.add_trace(go.Scatter(
+        x=rho, y=y, mode="markers", name="measured mean|ρ|",
+        marker=dict(color=_COLORS["accent"], size=9),
+        hovertemplate="%{y}<br>mean|ρ| %{x:.4f}<extra></extra>"), row=1, col=3)
+
+    fig.update_xaxes(range=[0, max([v for v in dead if v is not None] + [0.35]) * 1.18],
+                     tickformat=".0%", row=1, col=1)
+    fig.update_xaxes(row=1, col=2)
+    fig.update_xaxes(row=1, col=3)
+    fig.update_yaxes(tickfont=dict(size=11))
+    for ann in fig.layout.annotations:
+        ann.font.size = 12
+    return _frag(fig, height=max(300, 46 * len(d) + 120))
+
+def _sae_health_block(run_dir: Path, findings: list) -> str:
+    """One row per SAE target: is this dictionary worth reading features off?
+
+    Replaces the eleven run-on per-target stats paragraphs `_sec_sae` used to
+    build (user review, 2026-09-03: "there is a lot of excess information ...
+    I don't want the viewer to be confused"). Same move as sec 24's
+    `_corruption_breakdown_block`: the numbers were already in
+    `sae/meta.json`, the paragraph made them incomparable, and the verdicts
+    were authored in Python rather than derived from a printed rule.
+
+    Two warnings that used to render once per affected target are grouped into
+    one line each, naming every target they apply to. That is deliberate and
+    is not a downgrade of sec 23.2 A1(d)'s "visible in the section BODY, not a
+    collapsed note": they are still red, still in the body, still above the
+    table. What changes is that eight near-identical red paragraphs -- which
+    train a reader to skip red paragraphs -- become one that says which eight.
+    """
+    df = derived.sae_health(run_dir)
+    if df.empty:
+        return ""
+
+    failing = [r["target"] for _, r in df.iterrows()
+               if str(r["dead-rate gate"]).startswith("FAILS")]
+    ungated = [r["target"] for _, r in df.iterrows()
+               if str(r["dead-rate gate"]) == "no gate configured"]
+    not_clearing = [r["target"] for _, r in df.iterrows()
+                    if "does NOT clear" in str(r["alignment vs null"])]
+
+    out = ""
+    if failing:
+        out += (f"<p class='mockwarn'>⚠ {len(failing)} of {len(df)} dictionaries "
+                f"exceed the dead-feature acceptance bar, so every feature shown "
+                f"for them is drawn from a small alive minority rather than the "
+                f"whole dictionary: {', '.join(failing)}.</p>")
+    if ungated:
+        out += (f"<p class='mockwarn'>⚠ {len(ungated)} of {len(df)} dictionaries "
+                f"had no dead-feature gate configured, so their rate was recorded "
+                f"but never checked against a bar: {', '.join(ungated)}.</p>")
+    if not_clearing:
+        out += (f"<p class='mockwarn'>⚠ {len(not_clearing)} of {len(df)} "
+                f"dictionaries align to ground truth no better than their own "
+                f"label-permutation null, so their feature names carry no more "
+                f"signal than shuffled labels would: "
+                f"{', '.join(not_clearing)}.</p>")
+
+    # Figure first, then the table. The figure answers the three questions
+    # that are comparisons ACROSS targets, which is what a reader cannot do
+    # down a column of decimals; the table answers "on what rule" for each
+    # row, which a bar cannot carry. Neither is redundant and the order
+    # follows which one a reader needs first.
+    out += _sae_health_figure(df)
+    out += _figcap(
+        "Every trained dictionary on one row, worst first. LEFT: how much of "
+        "each dictionary is dead, against the acceptance bar it was judged "
+        "on. MIDDLE: how well the live part reconstructs the layer. RIGHT: "
+        "each dictionary's ground-truth alignment (orange) against ITS OWN "
+        "label-permutation null (grey tick) -- the bar's length is the "
+        "margin, and a grey tick to the right of the orange dot means the "
+        "names carry no more signal than shuffled labels would.")
+    out += _table(df)
+    out += _note(
+        "The same eleven numbers per dictionary as the figure above, plus the "
+        "rule that decided each verdict -- which is the part a bar cannot carry.",
+        "Worst dictionary first, sorted by dead-feature rate, because a dead "
+        "dictionary invalidates every feature read off it where low fidelity "
+        "only weakens them. Read the dead rate and the alignment verdict "
+        "TOGETHER: a dictionary can be almost entirely alive and still align "
+        "to labelled properties no better than a mostly-dead one, so neither "
+        "column alone answers whether a target is worth reading. The alignment "
+        "column is referenced against each target's own label-permutation "
+        "null, never against zero, because every feature is matched to its "
+        "best of many candidate fields and that search inflates the mean even "
+        "on shuffled labels. `granularity gap` is the distance between the two "
+        "forecast-preservation numbers: it is exactly 0 for a model whose "
+        "token width equals the alignment window and grows with the mismatch, "
+        "so it measures an architecture difference rather than a difference in "
+        "reconstruction quality.",
+        "Every column is a property of one dictionary, so nothing here is a "
+        "cross-model comparison: two targets differ in the model, the layer, "
+        "and the dictionary that was trained on them at once. A passing "
+        "dead-rate gate is a floor, not a finding.")
+
+    n_alive = len(df) - len(failing) - len(ungated)
+    findings.append(Finding(
+        claim_id=_next_claim_id("sae"), stage="sae", evidence_class="descriptive",
+        plain=(f"Of {len(df)} sparse dictionaries trained, {n_alive} have enough "
+               f"live features to read from."),
+        text=(f"SAE dictionary health: {n_alive} of {len(df)} targets pass their "
+              f"dead-feature bar; {len(not_clearing)} of {len(df)} fail to align "
+              f"to labelled properties above their own permutation null."),
+        registered=False, cleared_noise_floor=None))
+    return out
 
 
 def _sec_sae(cfg: PipelineConfig, run_dir: Path, findings: list) -> str:
@@ -4283,81 +4659,100 @@ def _sec_sae(cfg: PipelineConfig, run_dir: Path, findings: list) -> str:
     """
     from ..extraction.store import ActivationStore, load_meta
     from ..sae.ground_truth import load_ground_truth_table
-    from .sae_exemplars import build_run_exemplars
+    from .sae_exemplars import build_feature_cards
+    from .sae_features import MODAL_ASSETS, feature_table_html
 
     meta_sae = load_json(run_dir / "sae" / "meta.json")
     if not meta_sae:
         return ""
     store = ActivationStore(run_dir / "activations.zarr")
     run_meta = load_meta(run_dir)
+    # The exemplar sparklines need the raw series, which no artifact in the
+    # run directory carries -- the store holds activations, `meta` holds ids
+    # and families. Load the corpus once for the whole section, and degrade
+    # to id-only text if it is unavailable rather than dropping the rows
+    # (ROADMAP.md sec 26 B3).
+    series_lookup, ctx_len = _corpus_series_lookup(cfg)
     try:
         gt = load_ground_truth_table(cfg.data.path)
     except Exception as exc:
         log.info(f"report: SAE section has no ground truth to draw exemplars from: {exc}")
         gt = pd.DataFrame()
+    # Built now, composed FIRST below: whether a dictionary is sound enough to
+    # read features off is the gate on everything else in this section, so it
+    # must not end up beneath a table of features drawn from a dead one.
+    health = _sae_health_block(run_dir, findings)
     inner = ""
     tops: dict[str, list[dict]] = {}
     for key, entry in meta_sae.items():
         model, layer = key.split("/", 1)
-        fid, dead = entry.get("reconstruction_fidelity"), entry.get("dead_feature_rate")
-        d_mase = entry.get("forecast_preservation", {}).get("mase_delta")
-        d_mase_token = entry.get("forecast_preservation_token", {}).get("mase_delta")
-        stats = f"reconstruction fidelity {fid:.3f} · dead-feature rate {dead:.3f}"
-        gate = entry.get("dead_rate_gate")
-        if gate and not gate.get("passed", True):
-            # ROADMAP.md sec 23.2 A1(d): visible in the section BODY, not a
-            # collapsed note (sec 15 A5's lesson) -- a 97%-dead dictionary
-            # used to be a number in a JSON file nothing reads.
-            inner += (f"<p class='mockwarn'>⚠ {key}: dead-feature rate "
-                     f"{gate['value']:.1%} exceeds the {gate['threshold']:.0%} "
-                     f"acceptance bar (ROADMAP.md sec 23.2 A1(d)) -- treat every "
-                     f"feature below as drawn from a small alive minority of "
-                     f"this dictionary, not the whole thing.</p>")
-        unresolved = []
-        if d_mase is not None:
-            phrase, _ = _delta_phrase(run_dir, model, d_mase)
-            suffix, resolvable = _seed_floor(entry, "mase_delta_window")
-            stats += f" · forecast-preservation ΔMASE (window) {phrase}{suffix}"
-            if resolvable is False:
-                unresolved.append("window")
-        if d_mase_token is not None:
-            phrase_tok, _ = _delta_phrase(run_dir, model, d_mase_token)
-            suffix_tok, resolvable_tok = _seed_floor(entry, "mase_delta_token")
-            stats += f" · ΔMASE (token, ROADMAP.md sec 16 E15) {phrase_tok}{suffix_tok}"
-            if resolvable_tok is False:
-                unresolved.append("token")
-        if unresolved:
-            # ROADMAP.md sec 13's SAE repeat-run-variance item: a delta this
-            # run cannot separate from its own retraining noise is stated as
-            # such here rather than left to a reader to notice from the two
-            # numbers, and no finding is emitted for it.
-            seed_n = entry["seed_floor"]["n_seeds"]
-            stats += (f' · ⚠ the {" and ".join(unresolved)} ΔMASE is smaller than its own '
-                      f'seed-to-seed spread over {seed_n} SAE trainings, so its sign is '
-                      f'not established by this run')
+        # The per-target run-on stats paragraph this loop used to build lived
+        # here: ~350 characters, `·`-separated, in a fixed field order, eleven
+        # of them on a three-model run. Every number was present and none was
+        # comparable, because comparing two targets meant diffing two
+        # paragraphs. It is now one sorted table plus grouped warnings,
+        # rendered once above this loop by `_sae_health_block` -- the same move
+        # sec 24 made for L3 and internals. The `<h4>` stays because it is the
+        # exemplar panel's heading, not a stats header.
+        inner += f"<h4>{key}</h4>"
+        # Kept from the removed stats block: the exemplar panel below reads it.
         gt_align = entry.get("ground_truth_alignment", {})
-        rho_mean = gt_align.get("mean_abs_rho_matched")
-        null = gt_align.get("permutation_null", {})
-        if rho_mean is not None and null.get("n_perm"):
-            stats += (f' · ground-truth alignment mean |ρ| {rho_mean:.3f} '
-                      f'(label-permutation null mean {null["mean_abs_rho_null_mean"]:.3f}, '
-                      f'p95 {null["mean_abs_rho_null_p95"]:.3f} -- ROADMAP.md sec 16 E9)')
-        inner += f"<h4>{key}</h4><p class='blurb'>{stats}</p>"
+        separated = gt_align.get("separated")
+        if gt_align.get("error") or not gt_align.get("features"):
+            # No ground truth to match against at all (the smoke corpus has
+            # none). Distinct from the predates-the-split case below, and
+            # they must not share a message: one says the corpus carries no
+            # labels, the other says this run's artifacts are stale.
+            inner += ("<p class='blurb'>no ground-truth-matched features to "
+                      "illustrate \u2014 this corpus carries no labelled "
+                      "generative properties to correlate features against.</p>")
+            continue
+        if not separated:
+            # ROADMAP.md sec 26 A2: refuse to fall back to the legacy
+            # all-fields argmax as a HEADLINE. On this repo's own corpus
+            # that argmax names a `generator_*` provenance dummy for 11 of
+            # 11 targets, so silently using it would put a corpus artifact
+            # in the position the reader reads as "what this feature does".
+            # Say the run predates the split instead, and name the fix.
+            inner += ("<p class='mockwarn'>⚠ This run's SAE artifacts predate the "
+                      "structural/provenance split (ROADMAP.md sec 26 A2), so the "
+                      "per-feature table is omitted rather than shown against the "
+                      "legacy all-fields match -- that match reports corpus "
+                      "bookkeeping labels (which generator wrote the series) as if "
+                      "they were model findings. Run "
+                      "<code>backfill_separated.py --run &lt;run&gt;</code>, or "
+                      "re-run the <code>sae</code> stage, to populate it.</p>")
+            continue
         try:
-            df = build_run_exemplars(cfg, store, model, layer, entry, gt, run_meta)
+            cards = _feature_cards_for(cfg, store, model, layer, entry,
+                                       separated, run_meta)
         except Exception as exc:
             inner += f"<p class='blurb'>exemplar panel unavailable: {exc}</p>"
             continue
-        if df.empty:
-            inner += "<p class='blurb'>no ground-truth-matched features to illustrate.</p>"
+        if not cards:
+            inner += "<p class='blurb'>no features to illustrate.</p>"
             continue
-        inner += _details(f"{key}: best-matched features", _table(df))
-        top = df.iloc[0]
-        tops.setdefault(model, []).append(
-            {"layer": layer, "feature": int(top["feature"]),
-             "tracks": str(top["best_field"]), "rho": float(top["rho"]),
-             "top exemplar series": top["series_id"],
-             "activation": float(top["activation"])})
+        n_struct = separated.get("n_features_structural_matched", 0)
+        n_prov = separated.get("n_features_provenance_matched", 0)
+        inner += (f"<p class='blurb'>Of {separated.get('n_features', 0)} probed "
+                  f"features, {n_struct} correlate with a structural property of "
+                  f"the series and {n_prov} with a corpus bookkeeping label "
+                  f"(mean |ρ| {separated.get('mean_abs_rho_structural', 0):.3f} vs "
+                  f"{separated.get('mean_abs_rho_provenance', 0):.3f}). Only the "
+                  f"structural column is a statement about the model.</p>")
+        inner += feature_table_html(cards, series_lookup, ctx_len,
+                                    descriptions=_feature_descriptions(run_dir, key))
+        inner += _figcap("One row per sparse feature, strongest structural "
+                         "correlate first. Each thumbnail is a series this "
+                         "feature fires hardest on -- grey is the context the "
+                         "model saw, dark the true continuation.")
+        best_struct = next((c for c in cards if c["structural_field"]), None)
+        if best_struct is not None:
+            tops.setdefault(model, []).append(
+                {"layer": layer, "feature": best_struct["feature"],
+                 "tracks": str(best_struct["structural_field"]),
+                 "rho": float(best_struct["structural_rho"]),
+                 "n": best_struct["structural_n"]})
 
     # One finding per model, not one per (model, layer). Each layer's
     # dictionary is trained separately, so the same labelled property being
@@ -4368,32 +4763,78 @@ def _sec_sae(cfg: PipelineConfig, run_dir: Path, findings: list) -> str:
     for model, rows in tops.items():
         fields = sorted({r["tracks"] for r in rows})
         best = max(rows, key=lambda r: abs(r["rho"]))
+        pretty_fields = [_vocab_pretty(f) for f in fields]
         if len(fields) == 1 and len(rows) > 1:
-            plain = (f"In {model}, the same labelled property "
-                     f"('{fields[0]}') is the best match at all "
-                     f"{len(rows)} analyzed layers.")
+            plain = (f"In {model}, the same real property of the input series "
+                     f"({pretty_fields[0].lower()}) is the strongest match at "
+                     f"all {len(rows)} analyzed layers.")
         else:
             plain = (f"In {model}, learned internal features track "
-                     f"{len(fields)} labelled propert"
-                     f"{'y' if len(fields) == 1 else 'ies'}: "
-                     f"{', '.join(fields)}.")
+                     f"{len(fields)} real propert"
+                     f"{'y' if len(fields) == 1 else 'ies'} of the input series: "
+                     f"{', '.join(p.lower() for p in pretty_fields)}.")
         findings.append(Finding(
             claim_id=_next_claim_id("sae"), stage="sae", evidence_class="descriptive",
             text=f"SAE \u2014 {model}: across {len(rows)} analyzed layer"
-                f"{'' if len(rows) == 1 else 's'} the best-matched features "
-                f"track {', '.join(fields)}; strongest is feature "
+                f"{'' if len(rows) == 1 else 's'} the strongest STRUCTURAL "
+                f"correlates (provenance regressed out, ROADMAP.md sec 26 A2) "
+                f"are {', '.join(fields)}; strongest is feature "
                 f"{best['feature']} at {best['layer']} matching "
-                f"{best['tracks']} (\u03c1={best['rho']:.2f}).",
+                f"{best['tracks']} (\u03c1={best['rho']:.2f}, n={best['n']}).",
             plain=plain, registered=False))
 
     if tops:
-        summary = pd.DataFrame([{"model": m, **r} for m, rows in tops.items()
-                                for r in rows])
-        inner = ("<h4>Best-matched feature per analyzed layer</h4>"
+        summary = pd.DataFrame([
+            {"model": m, "layer": r["layer"], "feature": f"#{r['feature']}",
+             "structural correlate": _vocab_pretty(r["tracks"]),
+             "ρ": round(r["rho"], 3), "n series": r["n"]}
+            for m, rows in tops.items() for r in rows])
+        # The heatmap goes ABOVE the single-best-feature table, because the
+        # question it answers is prior: which properties does each
+        # dictionary organize itself around at all. The table then names the
+        # strongest individual feature within that picture.
+        inner = ("<h4>What each dictionary's features track</h4>"
+                 + _sae_structural_figure(run_dir)
+                 + _figcap("One row per analyzed layer, one column per "
+                           "STRUCTURAL property of the input series (corpus "
+                           "provenance regressed out first, so no column here "
+                           "is a fact about how the benchmark was built). "
+                           "Colour is the share of that dictionary's matched "
+                           "features tracking that property; the number in the "
+                           "cell is how many. Read DOWN a model's own layers "
+                           "for a depth trend and ACROSS models for a "
+                           "difference in what they organize around.")
+                 + _note("Which properties of the data each layer's sparse "
+                         "features latch onto, and whether the models differ.",
+                         "A column that is dark for one model and pale for "
+                         "another is the interesting case: it says the two "
+                         "dictionaries decompose the same corpus around "
+                         "different properties. Within one model, a property "
+                         "that strengthens or fades down the rows is a depth "
+                         "trend in what that model represents. Fields are "
+                         "ordered by total matches across the whole run, so "
+                         "the leftmost columns are the properties this corpus "
+                         "actually exercises -- a pale column on the right may "
+                         "simply be a property few series in this corpus have.",
+                         "Correlational, and only that: a cell says a "
+                         "feature's activation covaries with a labelled "
+                         "property after provenance is regressed out, not "
+                         "that the feature causally carries it. The causal "
+                         "claim is the channel battery in the roles block "
+                         "below, which has been run on a subset of targets. "
+                         "Each feature is also matched to its BEST candidate "
+                         "field, so a feature whose two best fields are "
+                         "nearly tied is assigned to one of them "
+                         "arbitrarily.",
+                         summary="What does this heatmap mean?")
+                 + "<h4>Strongest structural feature per analyzed layer</h4>"
                  + _table(summary)
-                 + _figcap("For each model and layer, the single sparse feature "
-                           "whose activation best correlates with a labelled "
-                           "property of the input series.") + inner)
+                 + _figcap("Within that picture, the single strongest feature "
+                           "per model and layer: the one whose activation best "
+                           "correlates with a structural property of the input "
+                           "series, after regressing out which generator "
+                           "produced it.") + inner)
+    inner = MODAL_ASSETS + health + inner
     inner += _note(*_SAE_EXEMPLAR_NOTE, summary="What does this table mean?")
     inner += _sae_seed_floor_block(meta_sae)
     model_names = [m.name for m in cfg.models]
@@ -4445,6 +4886,8 @@ def _sae_roles_block(cfg, run_dir: Path, findings: list, model_names: list) -> s
     standalone artifact.
     """
     from ..sae.response import CHANNELS
+    from ..sae.vocab import describe_term
+    from .sae_features import term_legend_html
     from .sae_roles import (
         feature_channel_matrix,
         role_card_summary,
@@ -4502,15 +4945,30 @@ def _sae_roles_block(cfg, run_dir: Path, findings: list, model_names: list) -> s
         feature_ids, channel_cols, values, clears = feature_channel_matrix(candidates, list(CHANNELS))
         if len(feature_ids):
             masked = np.where(clears, values, np.nan)
+            # ROADMAP.md sec 26 B1: the axis said `spectral_centroid` /
+            # `horizon_shape_far`, which is precise and unreadable. Ticks
+            # now carry the human label, the raw identifier and definition
+            # ride along in the hover, and a definition table sits under
+            # the figure -- a reader should not have to leave the heatmap
+            # to find out what a column means.
+            pretty_x = [_vocab_pretty(c) for c in channel_cols]
+            meanings = np.array(
+                [[f"{c}<br>{describe_term(c).what}" for c in channel_cols]],
+                dtype=object).repeat(len(feature_ids), axis=0)
             fig = go.Figure(data=go.Heatmap(
-                z=masked, x=channel_cols, y=[str(f) for f in feature_ids],
+                z=masked, x=pretty_x, y=[str(f) for f in feature_ids],
                 colorscale="RdBu", zmid=0,
                 colorbar=dict(title="signed effect<br>(null units)"),
+                customdata=meanings,
+                hovertemplate=("feature %{y}<br>%{customdata}"
+                               "<br><b>effect %{z:.2f}x null p95</b><extra></extra>"),
                 hoverongaps=False))
             fig.update_layout(title=f"{target}: feature × channel response (blank = did not clear null)",
                               yaxis=dict(title="feature", type="category"),
-                              xaxis=dict(title="channel"))
+                              xaxis=dict(title="forecast property the feature moves"))
             inner += _frag(fig, height=max(320, 24 * len(feature_ids)))
+            inner += _details("What each column means",
+                              term_legend_html(channel_cols))
             inner += _note(
                 "Every probed candidate feature's signed, null-normalized "
                 "steering effect on every channel. A blank cell is not zero "
@@ -4530,6 +4988,7 @@ def _sae_roles_block(cfg, run_dir: Path, findings: list, model_names: list) -> s
                 summary="What does this heatmap mean?")
 
         # Part 5: per-role cards (member atoms, dominant-channel agreement).
+        role_desc = _role_descriptions(run_dir, target)
         card_body = ""
         for role in role_list:
             members = role_member_candidates(role, candidates)
@@ -4538,12 +4997,17 @@ def _sae_roles_block(cfg, run_dir: Path, findings: list, model_names: list) -> s
             if role.get("structural_field"):
                 struct_clause = (f" (structural correlate: {role['structural_field']}, "
                                  f"ρ={role['structural_rho']:.2f}, n={role['structural_n']})")
+            desc_clause = ""
+            desc_text = role_desc.get(str(role.get("role")))
+            if desc_text:
+                desc_clause = f"<p class='blurb'><i>{desc_text}</i></p>"
             card_body += (f"<h6>{role['name']}</h6>"
                          f"<p class='blurb'>{role['n_atoms']} atoms: "
                          f"{', '.join(str(f) for f in role['features'])}. "
                          f"{summary['n_members_clearing_dominant']} of "
                          f"{summary['n_members']} members individually clear "
-                         f"the dominant channel's own null{struct_clause}.</p>")
+                         f"the dominant channel's own null{struct_clause}.</p>"
+                         f"{desc_clause}")
         if card_body:
             inner += _details(f"{target}: per-role member detail ({len(role_list)} roles)", card_body)
             inner += _figcap(
@@ -4578,6 +5042,7 @@ def _sae_roles_block(cfg, run_dir: Path, findings: list, model_names: list) -> s
             correspondence_summary_rows,
             pair_match_table,
             role_by_model_matrix,
+            shared_vs_specific_rows,
         )
 
         # `cfg` is optional here (this block's own tests, and any purely
@@ -4657,6 +5122,16 @@ def _sae_roles_block(cfg, run_dir: Path, findings: list, model_names: list) -> s
                           f"{pair['model_b']} ({pair['target_b']}), greedy nearest-neighbour "
                           f"(not an optimal assignment):</p>")
                 inner += _table(pt)
+            split_rows = shared_vs_specific_rows(pair)
+            if split_rows is None:
+                n_pool = pair.get("population_null_n_pool") or 0
+                inner += (f"<p class='blurb'>Shared-vs-specific role split not available for "
+                          f"{pair['model_a']} × {pair['model_b']}: only {n_pool} role "
+                          f"vector(s) exist elsewhere in this run to estimate a chance level "
+                          f"from.</p>")
+            elif split_rows:
+                inner += "<h6>Shared vs. specific roles (population-null-based)</h6>"
+                inner += _table(pd.DataFrame(split_rows))
         inner += _note(
             "For each pair of models with SAE role targets, every role on one "
             "side is matched to its single best-scoring role on the other "
@@ -4686,7 +5161,20 @@ def _sae_roles_block(cfg, run_dir: Path, findings: list, model_names: list) -> s
             "target exists at a comparable depth in that model for this "
             "run, never that the model lacks the role. Depth-located claims "
             "here inherit every coverage caveat the Cost section states for "
-            "an encoder-only or partially-captured model.",
+            "an encoder-only or partially-captured model. The threshold-based "
+            "'match rate' (cosine ≥ a fixed value, default 0.5) can read as a "
+            "clean 100% even when it is uninformative — the response "
+            "fingerprint has only 9 channels, so two roles that both push one "
+            "generic effect (e.g. dispersion up) can score a high cosine with "
+            "no real correspondence implied. The 'shared vs. specific roles' "
+            "table instead checks each match against a WITHIN-RUN population "
+            "null (`permutation_null_cosine`): how similar do two ARBITRARY "
+            "trained roles elsewhere in this run look, absent any claim they "
+            "correspond. A role is 'shared' only if its match clears that "
+            "chance level — this is the per-role-group split with its own "
+            "null ROADMAP.md sec 26 D1 asks for, and is independent of (not a "
+            "substitute for) the untrained-twin floor, which asks a different "
+            "question (architecture alone, not response-space richness).",
             summary="What does this correspondence table mean?")
 
         for pair in table["pairs"]:
@@ -4702,17 +5190,33 @@ def _sae_roles_block(cfg, run_dir: Path, findings: list, model_names: list) -> s
                                 f"clears floor: {pair.get('clears_untrained_twin_floor')})")
             else:
                 floor_clause = " — NOT quotable as evidence of shared structure: no untrained-twin floor available"
+            null_rate = pair.get("match_rate_null_based")
+            null_quotable = pair.get("match_rate_null_based_quotable")
+            if null_quotable and null_rate is not None:
+                null_clause = (f" Against the within-run population null "
+                               f"(p95 cosine {pair['population_null_p95']:.3f} over "
+                               f"{pair['population_null_n_pool']} other role vectors in this run), "
+                               f"only {null_rate:.0%} of {pair['model_a']}'s roles clear chance "
+                               f"level — the null-calibrated read, not the "
+                               f"{pair['match_rate']:.0%} fixed-threshold figure above.")
+            else:
+                null_clause = " Population-null-based split not available for this pair (too few other roles in this run to estimate a chance level from)."
             findings.append(Finding(
                 claim_id=_next_claim_id("sae"), stage="sae", evidence_class="descriptive",
                 text=f"SAE role correspondence — {pair['model_a']} ({pair['target_a']}) × "
                     f"{pair['model_b']} ({pair['target_b']}): {len(pair['matches'])} roles "
                     f"matched, {pair['match_rate']:.0%} at cosine ≥ {pair['cosine_threshold']:g}; "
                     f"strongest single match '{best['role_a']}' ↔ '{best['role_b']}' "
-                    f"(cosine {best['cosine']:+.3f}){floor_clause}.",
-                plain=f"In {pair['model_a']} and {pair['model_b']}, "
-                     f"{pair['match_rate']:.0%} of causal roles found a "
-                     f"reasonably similar counterpart in the other model's "
-                     f"dictionary, judged by how each role moves the forecast.",
+                    f"(cosine {best['cosine']:+.3f}){floor_clause}.{null_clause}",
+                plain=(f"In {pair['model_a']} and {pair['model_b']}, "
+                      f"{null_rate:.0%} of causal roles are more similar across models than "
+                      f"two unrelated roles from this same run typically are — judged against "
+                      f"a measured chance level, not a fixed cutoff."
+                      if null_quotable and null_rate is not None else
+                      f"In {pair['model_a']} and {pair['model_b']}, {pair['match_rate']:.0%} of "
+                      f"causal roles found a reasonably similar counterpart in the other "
+                      f"model's dictionary, judged by how each role moves the forecast — this "
+                      f"run has too few other roles to check whether that is more than chance."),
                 registered=False))
 
     # One finding per target with at least one named (clears_null) role.

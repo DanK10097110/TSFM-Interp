@@ -89,3 +89,60 @@ def build_run_exemplars(cfg, store, model: str, layer: str, sae_entry: dict, gt:
     series_ids = meta["series_id"].to_numpy()[rows]
     features = encode_series_level(sae, store, model, layer, rows, "cpu")
     return build_exemplar_table(features, series_ids, matched, meta, gt, top_features, top_examples)
+
+
+def build_feature_cards(features: np.ndarray, series_ids: np.ndarray, separated: dict,
+                        meta: pd.DataFrame, top_features: int = 8,
+                        top_examples: int = 4) -> list:
+    """One record per FEATURE (not per feature x exemplar), for the compact table.
+
+    ROADMAP.md sec 26 B2. `build_exemplar_table` above emits one row per
+    (feature, exemplar) and repeats the feature's own field/rho in each --
+    five near-identical rows per feature, 25 per layer, 275 across a
+    three-model run. This returns the same information shaped the way it is
+    actually read: the feature once, its exemplars as a list.
+
+    Two substantive differences beyond shape, both from sec 26 A1:
+
+    - It reads `separated` (structural vs provenance as SEPARATE
+      competitions) rather than the legacy single argmax over all ~30 mixed
+      fields. On `runs/full_report_run_large` that argmax returned a
+      `generator_*`/`tier_*` corpus bookkeeping dummy for 445 of 566
+      matched features and for 11 of 11 headline rows -- a feature that
+      detects which generator wrote a series is an artifact of how the
+      benchmark was built, not a property of the model.
+    - The provenance match is carried through rather than dropped, so the
+      report can show it LABELLED as bookkeeping. Dropping it silently
+      would hide that some features have no structural correlate at all and
+      are, as far as this measurement goes, provenance detectors.
+
+    Returns records ordered by |structural rho| descending, matching
+    `separated`'s own ranking. A feature with no structural match still
+    appears (with `structural_field=None`) when it is inside `top_features`,
+    because "measured, nothing cleared" is a result and rendering only the
+    matches would make every dictionary look equally interpretable.
+    """
+    meta_by_id = meta.set_index("series_id")
+    family_col = meta_by_id["family"] if "family" in meta_by_id.columns else None
+    cards = []
+    for entry in (separated.get("features") or [])[:top_features]:
+        f_idx = int(entry["feature"])
+        struct, prov = entry.get("structural"), entry.get("provenance")
+        exemplars = []
+        for ex in select_feature_exemplars(features, series_ids, f_idx, top_examples):
+            sid = ex["series_id"]
+            exemplars.append({
+                "series_id": sid,
+                "family": family_col.get(sid, "?") if family_col is not None else "?",
+                "activation": ex["activation"],
+            })
+        cards.append({
+            "feature": f_idx,
+            "structural_field": struct["field"] if struct else None,
+            "structural_rho": struct["rho"] if struct else None,
+            "structural_n": struct["n"] if struct else None,
+            "provenance_field": prov["field"] if prov else None,
+            "provenance_rho": prov["rho"] if prov else None,
+            "exemplars": exemplars,
+        })
+    return cards

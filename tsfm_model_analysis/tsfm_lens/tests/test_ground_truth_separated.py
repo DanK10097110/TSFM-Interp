@@ -223,3 +223,81 @@ if __name__ == "__main__":
     test_residualize_against_provenance_handles_nan_in_archetype_dummies()
     test_residualize_against_provenance_reports_high_r2_when_fully_confounded()
     print("All tests passed!")
+
+
+def test_field_fully_determined_by_provenance_is_refused_not_correlated_with_noise():
+    """ROADMAP.md sec 26 A3: the failure that made 93% of rendered matches fake.
+
+    A structural flag that the archetype dummies determine EXACTLY has no
+    residual left. Spearman does not degrade gracefully there -- being
+    rank-based, it ranks the surviving floating-point rounding and returns
+    a large, confident rho. The field must be excluded from the structural
+    competition and REPORTED as inseparable, not scored.
+
+    Planted so the degenerate field would otherwise WIN: the feature is
+    built to correlate with its rounding residue, which is what produced
+    rho +0.43..+0.63 on the real corpus.
+    """
+    rng = np.random.default_rng(0)
+    n = 300
+    ids = np.array([f"s{i}" for i in range(n)])
+    arche = (np.arange(n) % 3 == 0).astype(float)
+
+    gt = pd.DataFrame({
+        # Determined EXACTLY by the provenance dummy -> residual is noise.
+        "confounded": arche.copy(),
+        # Genuinely independent of provenance -> residual survives.
+        "independent": rng.normal(size=n),
+        "archetype_x": arche,
+        "tier_synthetic": np.ones(n),
+    }, index=ids)
+
+    features = np.column_stack([
+        gt["independent"].to_numpy() + 0.05 * rng.normal(size=n),
+        rng.normal(size=n),
+    ])
+
+    res = best_ground_truth_matches_separated(
+        features, gt, ids, ["confounded", "independent", "archetype_x", "tier_synthetic"],
+        min_valid=10, seed=0)
+
+    dropped = [d["field"] for d in res["fields_not_separable_from_provenance"]]
+    assert "confounded" in dropped, (
+        "a field the provenance dummies predict exactly must be refused; "
+        f"got dropped={dropped}")
+    assert "independent" not in dropped
+    assert "independent" in res["residualization_oof_r2"]
+    assert "confounded" not in res["residualization_oof_r2"]
+
+    # No feature may report the refused field as its structural correlate.
+    named = {f["structural"]["field"] for f in res["features"] if f.get("structural")}
+    assert "confounded" not in named, f"refused field still reported: {named}"
+    assert "independent" in named, "the genuinely separable field should still match"
+
+    rec = next(d for d in res["fields_not_separable_from_provenance"]
+               if d["field"] == "confounded")
+    assert rec["oof_r2"] > 0.95 and rec["residual_scale"] < 0.01, rec
+
+
+def test_a_partially_confounded_field_is_kept_not_over_pruned():
+    """The negative: the guard must not delete every field with SOME confound.
+
+    Most real structural fields are partly predictable from provenance
+    (0.27-0.82 on this repo's corpus) and are still usable -- a guard that
+    dropped those would leave nothing and would be worse than the bug.
+    """
+    rng = np.random.default_rng(1)
+    n = 400
+    ids = np.array([f"s{i}" for i in range(n)])
+    arche = (np.arange(n) % 2 == 0).astype(float)
+    partial = arche + rng.normal(scale=1.0, size=n)   # correlated, not determined
+
+    gt = pd.DataFrame({"partial": partial, "archetype_x": arche,
+                       "tier_synthetic": np.ones(n)}, index=ids)
+    features = np.column_stack([partial + 0.1 * rng.normal(size=n), rng.normal(size=n)])
+
+    res = best_ground_truth_matches_separated(
+        features, gt, ids, ["partial", "archetype_x", "tier_synthetic"],
+        min_valid=10, seed=1)
+    assert [d["field"] for d in res["fields_not_separable_from_provenance"]] == []
+    assert "partial" in res["residualization_oof_r2"]
