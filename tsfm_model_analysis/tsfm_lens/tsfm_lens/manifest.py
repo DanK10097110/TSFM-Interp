@@ -46,8 +46,35 @@ def resolve_config_keys(cfg, keys: tuple) -> dict:
             out[key] = getattr(getattr(cfg, obj_name), field)
         else:
             obj = getattr(cfg, key)
-            out[key] = dataclasses.asdict(obj) if dataclasses.is_dataclass(obj) else obj
+            out[key] = _asdict_stage_inputs(obj) if dataclasses.is_dataclass(obj) else obj
     return out
+
+
+def _asdict_stage_inputs(obj) -> dict:
+    """`dataclasses.asdict`, minus fields marked `metadata={"stage_input": False}`.
+
+    A whole-section key is deliberately coarse (see above), which is right
+    for a stage's real inputs and wrong for a config field that lives in a
+    section for the user's convenience but is read by something else -- a
+    standalone script over finished artifacts, say. Fingerprinting such a
+    field makes adding it refuse every existing run's cheap re-render, over
+    a value the stage never reads: a guard firing on a state that is
+    genuinely current, which `CLAUDE.md` sec 11.35 records as the more
+    expensive direction of the two, since a refusal reads as a finding.
+
+    Opting a field out is a claim that the stage does not consume it, made
+    at the field itself so it cannot drift away from the declaration the way
+    a list kept in this module would.
+    """
+    out = {}
+    for f in dataclasses.fields(obj):
+        if f.metadata.get("stage_input") is False:
+            continue
+        value = getattr(obj, f.name)
+        out[f.name] = (_asdict_stage_inputs(value)
+                       if dataclasses.is_dataclass(value) and not isinstance(value, type)
+                       else value)
+    return json.loads(_stable_json(out))
 
 
 def _stable_json(value: Any) -> str:

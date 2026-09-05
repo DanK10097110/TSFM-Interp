@@ -944,14 +944,31 @@ def _family_resolution_line(run_dir: Path) -> str:
 
 
 def _frag(fig: go.Figure, height: int = 420) -> str:
-    """Style a figure to the report theme and emit an embeddable fragment."""
+    """Style a figure to the report theme and emit an embeddable fragment.
+
+    The margins are a FLOOR, not a fixed frame. Until 2026-09-04 they were
+    fixed (`l=60`), which silently truncated or overlapped every tick label
+    longer than ~10 characters -- and this report is full of them: SAE target
+    names run to 28 characters (`Chronos-Bolt/encoder.block.3`, ~171px at the
+    11px tick font, into a 60px margin), layer names, corruption names, model
+    names. The defect was invisible in review because a clipped label still
+    renders as *a* label; a reader sees a plausible axis and cannot tell that
+    the text was cut.
+
+    `automargin` is Plotly's own mechanism for this: the axis measures its
+    rendered labels and grows the margin to fit. Setting it here rather than
+    at ~70 call sites means a figure added later cannot reintroduce the bug,
+    and it is a no-op for the figures whose labels already fit.
+    """
     fig.update_layout(
         template="plotly_white", height=height,
         font=dict(family="Inter, system-ui, sans-serif", color=_COLORS["ink"], size=12),
         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-        margin=dict(l=60, r=20, t=40, b=50),
+        margin=dict(l=60, r=20, t=40, b=50, autoexpand=True),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0),
     )
+    fig.update_xaxes(automargin=True)
+    fig.update_yaxes(automargin=True)
     return fig.to_html(full_html=False, include_plotlyjs=False,
                        config={"displayModeBar": False})
 
@@ -1026,6 +1043,54 @@ def _excursion_clause(exc, threshold: float = 3.0) -> str:
             f'clean-vs-truth gap, on this panel.')
 
 
+def _forecastability_clause(sub, model: str) -> str:
+    """Say when a case's clean forecast cannot beat a flat line — measured.
+
+    Added 2026-09-04 from a user reading a panel and asking why *nothing*
+    came close to the true continuation, "not even the forecast from clean
+    output", while the three model traces sat close together. Checked before
+    being treated as a rendering complaint (`CLAUDE.md` sec 2.4), and it is
+    not a bug: L0 independently scores that series at the same MASE the panel
+    implies, and every model in the run scores within 1.79-2.02 on it. The
+    series has no autocorrelation structure for any model to use, so all of
+    them collapse to a level estimate — which is exactly why the traces
+    cluster, the observation the user actually made.
+
+    `_excursion_clause` above guards the *range* direction of this same
+    problem: a future that leaves the context's range. It reads 0.0 here,
+    because this future stays well inside that range while being no more
+    predictable — sec 11.45's own lesson (a guard normalized by one quantity
+    is blind to the other direction) recurring in the direction it named as
+    unguarded. This is that second guard.
+
+    Stated only when the model actually loses to the naive forecast, for the
+    same reason `_excursion_clause` has a threshold: a qualifier on every
+    panel is a qualifier nobody reads.
+    """
+    if sub is None or getattr(sub, "empty", True):
+        return ""
+    if "beats_naive" not in sub.columns or "mase_clean" not in sub.columns:
+        return ""
+    row = sub.dropna(subset=["mase_clean"])
+    if row.empty or row["beats_naive"].isna().all():
+        return ""
+    if bool(row["beats_naive"].any()):
+        return ""
+    clean = float(row["mase_clean"].mean())
+    naive = float(row["mase_naive"].mean()) if "mase_naive" in row.columns else None
+    if naive is None or not np.isfinite(naive):
+        return ""
+    return (f' <b>On this series {model}\'s clean forecast does not beat a '
+            f'flat line</b> ({clean:.2f} against {naive:.2f} for holding the '
+            f'last observed value, same units). That is a property of the '
+            f'series, not of the corruption experiment: with nothing '
+            f'periodic in the context to extrapolate, the best available '
+            f'response is a level estimate, which is why the clean, '
+            f'corrupted and patched traces all look flat and all sit close '
+            f'together. Read the clean-vs-corrupted gap on this panel; the '
+            f'clean-vs-truth gap is a ceiling every model in this run hits.')
+
+
 def _figcap(purpose: str) -> str:
     """The visible half of `_note` on its own, for a repeated or per-item figure.
 
@@ -1045,6 +1110,33 @@ def _short(layer: str) -> str:
     """Compact layer tick label from a qualified module name."""
     m = re.search(r"(\d+)$", layer)
     return f"L{m.group(1)}" if m else layer[-10:]
+
+
+def _wrap(text: str, width: int = 24) -> str:
+    """Break a label onto additional lines instead of letting it collide.
+
+    Added 2026-09-04 on user instruction ("if they are too close, simply make
+    it on another line"). `automargin` in `_frag` fixes *tick* labels, which
+    grow the plot's margin; it cannot help a **subplot title**, which is an
+    annotation centred over one column of a grid and simply overlaps its
+    neighbour when the title is wider than the column. Wrapping is the only
+    fix that keeps the whole title readable -- truncating it would hide the
+    very words that distinguish one panel from the next.
+
+    Splits on whitespace only, so a long single token (a layer name, a model
+    id) is left intact on its own line rather than broken mid-identifier.
+    """
+    words, lines, cur = str(text).split(), [], ""
+    for w in words:
+        cand = f"{cur} {w}".strip()
+        if cur and len(cand) > width:
+            lines.append(cur)
+            cur = w
+        else:
+            cur = cand
+    if cur:
+        lines.append(cur)
+    return "<br>".join(lines)
 
 
 def _section_slug(eyebrow: str) -> str:
@@ -2112,7 +2204,63 @@ def _all_pairs_block(pairs, primary: dict, row_fn, title: str,
             + _note(purpose, reading, limitations))
 
 
-def _l1_panel_block(arrays, meta: dict) -> str:
+def _l1_depth_note(depth_axis_name: str, run_dir: Path) -> str:
+    """The depth-correspondence figure's note, shared by both shapes.
+
+    A pair run renders one such curve; a panel run renders the same
+    curve once per pair as a grid and drops the singleton (it would
+    otherwise appear twice, once alone and once inside the grid). The
+    prose is identical in both cases, so it lives here rather than
+    being written twice -- the same no-drift shape `stage_docs.py` and
+    `glossary.py` use for their two rendering surfaces.
+    """
+    return _note(
+        "For each layer of the first model, the best-matching layer of the "
+        "second model and their CKA, plotted against relative depth — a "
+        "compact way to see whether early layers match early layers "
+        "(architectures process the input in a similar order) or whether "
+        "matches jump around in depth.",
+        "A roughly monotonic line (early-to-early, late-to-late) suggests "
+        "comparable processing order despite different depths/patch sizes. "
+        "A flat, uniformly-high line usually means the input's own "
+        "structure dominates every layer's geometry about equally — see "
+        "the null-line caveat above.",
+        f"The 'best match' is a max over the other model's layers, which "
+        "mechanically biases the curve upward versus any single fixed "
+        "pairing (more candidates to match against) and can look "
+        "artificially smooth even when the underlying matrix is noisy — "
+        "always sanity-check against the heatmap above. The x-axis is the "
+        f"'{depth_axis_name}' depth axis (ROADMAP.md sec 18 F1): 'block' "
+        "places a layer by its position over the model's whole stack, "
+        "including any surface this run never captured, so a model whose "
+        "captured layers stop partway up it legitimately ends short of 1.0 "
+        "instead of being stretched to fill the axis"
+        + _short_axis_clause(run_dir) + ".")
+
+
+def _l1_family_note() -> str:
+    """The family-conditioned figure's note, shared by both shapes.
+
+    Same reason as `_l1_depth_note` above: a panel run renders this metric
+    once per pair as a grouped bar chart and drops the reference pair's own
+    bar chart, which would otherwise be a strict subset of it.
+    """
+    return _note(
+        "The same peak-CKA computation restricted to one benchmark "
+        "family at a time (e.g. only trending series, only spiky "
+        "series), so a family where two models diverge structurally "
+        "doesn't get averaged away by families where they agree.",
+        "Compare bar heights across families, not to some universal "
+        "threshold — a lower bar means this family's structure is where "
+        "those models' representations differ most, which is exactly "
+        "the kind of finding the exemplar case studies exist to make "
+        "concrete.",
+        "Families with fewer than `l1.min_family_series` series are "
+        "dropped entirely (too few series for a stable per-family "
+        "CKA), so a family's absence here isn't evidence of anything.")
+
+
+def _l1_panel_block(arrays, meta: dict, run_dir: Path) -> str:
     """Every pair's peak CKA and its own heatmap, for a panel run.
 
     The heatmap and depth curve above are the designated reference pair's,
@@ -2170,11 +2318,142 @@ def _l1_panel_block(arrays, meta: dict) -> str:
                                       colorbar_title="CKA"))
     grid.update_xaxes(tickfont_size=8)
     grid.update_yaxes(tickfont_size=8)
-    return inner + "<h4>Layer-pair similarity, every pair</h4>" + \
+    inner += "<h4>Layer-pair similarity, every pair</h4>" + \
         _frag(grid, 260 * rowsn + 80) + _figcap(
             "The same layer-by-layer CKA matrix as the heatmap at the top of "
             "this section, for every model pair, on one shared 0-1 colour "
             "scale so the panels are comparable to each other.")
+    return inner + _l1_depth_curve_grid(records, meta, run_dir) + \
+        _l1_family_grid(arrays, records) + _l1_rsa_grid(records)
+
+
+def _l1_depth_curve_grid(records: list, meta: dict, run_dir: Path) -> str:
+    """Every pair's depth-correspondence curve, not just the reference pair's.
+
+    Added 2026-09-04 on user review ("seems to largely be comparing to
+    TimesFM only ... have all pairwise metrics/graphs for all pairs"). The
+    review was right and the cause is worth stating: `l1_geometry` has
+    computed a `depth_curve` per pair since the panel work landed
+    (`ROADMAP.md` sec 24.3), and this section rendered exactly one of them --
+    the designated reference pair's -- so on a four-model panel a reader saw
+    three curves all sharing model A and none of the three pairs that
+    exclude it. Nothing needed recomputing; the artifact already held every
+    curve. Same discipline as the heatmap grid above: one shared 0-1 y-axis,
+    because the panels exist to be compared with each other.
+    """
+    usable = [r for r in records if r.get("depth_curve")]
+    if len(usable) < 2:
+        return ""
+    cols = min(3, len(usable))
+    rowsn = (len(usable) + cols - 1) // cols
+    fig = make_subplots(rows=rowsn, cols=cols, horizontal_spacing=0.07,
+                        vertical_spacing=0.16, shared_yaxes=True,
+                        subplot_titles=[_wrap(f'{r["model_a"]} × {r["model_b"]}', 22)
+                                        for r in usable])
+    for i, r in enumerate(usable):
+        curve = r["depth_curve"]
+        xs = r.get("rel_depth_a") or np.linspace(0, 1, len(curve)).tolist()
+        null = (r.get("best_pair") or {}).get("null_ci")
+        row, col = i // cols + 1, i % cols + 1
+        fig.add_scatter(x=xs, y=[d["cka"] for d in curve], mode="lines+markers",
+                        line_color=_COLORS["accent"], showlegend=False,
+                        text=[f'{_short(d["layer_a"])} ↔ {_short(d["layer_b"])}'
+                              for d in curve],
+                        hovertemplate="depth %{x:.2f} · CKA %{y:.3f} · "
+                                      "%{text}<extra></extra>", row=row, col=col)
+        if null:
+            fig.add_hline(y=null["value"], line=dict(color=_COLORS["muted"], dash="dot"),
+                          row=row, col=col)
+    fig.update_yaxes(range=[0, 1])
+    fig.update_xaxes(tickfont_size=9)
+    fig.update_yaxes(tickfont_size=9)
+    axis = meta.get("depth_axis_a", "index")
+    return "<h4>Layer correspondence by depth, every pair</h4>" + \
+        _frag(fig, 230 * rowsn + 90) + _figcap(
+            f"For each pair, every layer of model A matched to its "
+            f"best-matching layer of model B, against relative depth on the "
+            f"'{axis}' axis. The dotted line in each panel is that pair's own "
+            f"shuffled-series null. All panels share a 0-1 y-axis, so curve "
+            f"heights are directly comparable between pairs.") + \
+        _l1_depth_note(axis, run_dir)
+
+
+def _l1_family_grid(arrays, records: list) -> str:
+    """Per-family peak CKA for every pair, as one grouped bar chart.
+
+    One figure rather than a grid of small ones: the question a reader has
+    here is "which family separates these models most, and is it the same
+    family for every pair" -- that is a comparison ACROSS pairs within a
+    family, so families belong on a shared categorical axis with pairs as
+    the series, not in separate panels a reader must hold in memory.
+    """
+    # Same guard as the other two grid builders, and it is not redundant with
+    # `_l1_panel_block`'s: a caller reaching this directly with one pair would
+    # otherwise get a one-series "every pair" chart, which is the reference
+    # pair's own bar chart under a title claiming to be more than that.
+    if len(records) < 2:
+        return ""
+    fig, any_series, families = go.Figure(), False, []
+    for r in records:
+        key = f'cka_family__{r["model_a"]}__{r["model_b"]}'
+        if key not in arrays:
+            continue
+        fam = np.asarray(arrays[key])
+        if not fam.shape[0]:
+            continue
+        families = list(r["families"])
+        best = fam.reshape(fam.shape[0], -1).max(axis=1)
+        fig.add_bar(x=families, y=best, name=f'{r["model_a"]} × {r["model_b"]}')
+        any_series = True
+    if not any_series:
+        return ""
+    fig.update_layout(barmode="group", yaxis_title="best CKA within family",
+                      yaxis_range=[0, 1.05], xaxis_title="benchmark family",
+                      legend=dict(orientation="h", yanchor="bottom", y=1.02,
+                                  x=0, font_size=10))
+    return "<h4>Family-conditioned agreement, every pair</h4>" + \
+        _frag(fig, 400) + _figcap(
+            "Peak CKA computed within one benchmark family at a time, for "
+            "every model pair. Read down a family (which pairs agree on this "
+            "kind of series?) and across families (does one family separate "
+            "every pair, or only some?) — a family where one pair's bar is "
+            "much lower than its neighbours is where those two models' "
+            "representations diverge specifically.") + _l1_family_note()
+
+
+def _l1_rsa_grid(records: list) -> str:
+    """Every pair's RSA depth profile on one axis, when RSA was computed.
+
+    RSA is the rank-based companion to CKA: it compares the two models'
+    representational *dissimilarity* orderings rather than their geometry
+    directly, so a pair that agrees on CKA but disagrees here is agreeing on
+    overall shape while ordering individual series differently. That
+    contrast is only visible with every pair drawn together.
+    """
+    usable = [r for r in records if r.get("rsa")]
+    if len(usable) < 2:
+        return ""
+    fig = go.Figure()
+    for r in usable:
+        rsa = r["rsa"]
+        xs = np.linspace(0, 1, len(rsa))
+        fig.add_scatter(x=xs, y=[d["spearman"] for d in rsa], mode="lines+markers",
+                        name=f'{r["model_a"]} × {r["model_b"]}',
+                        text=[f'{_short(d["layer_a"])} ↔ {_short(d["layer_b"])}'
+                              for d in rsa],
+                        hovertemplate="depth %{x:.2f} · ρ %{y:.3f} · "
+                                      "%{text}<extra></extra>")
+    fig.update_layout(xaxis_title="relative depth in model A",
+                      yaxis_title="RSA Spearman ρ", yaxis_range=[-0.1, 1],
+                      legend=dict(orientation="h", yanchor="bottom", y=1.02,
+                                  x=0, font_size=10))
+    return "<h4>Representational similarity (RSA), every pair</h4>" + \
+        _frag(fig, 400) + _figcap(
+            "Spearman rank correlation between the two models' "
+            "series-by-series dissimilarity matrices, at each depth of model "
+            "A. This is the rank-based companion to the CKA curves above: a "
+            "pair high on CKA but low here agrees about overall geometry "
+            "while ordering individual series differently.")
 
 
 def _sec_l1(run_dir: Path, findings: list) -> str:
@@ -2189,6 +2468,12 @@ def _sec_l1(run_dir: Path, findings: list) -> str:
     best = meta["best_pair"]
     null_ci = best.get("null_ci")
     depth_axis_name = meta.get("depth_axis_a", "index")
+    # A panel run renders every pair as a grid below; the reference pair's
+    # own depth curve and family bars would then appear twice, once alone
+    # and once inside the grid that contains them. So they render only when
+    # there is no grid to contain them -- which is exactly a pair run, where
+    # the output is byte-identical to before this split.
+    n_pairs = len(meta.get("pairs") or [])
     rel_depth_a = meta.get("rel_depth_a") or np.linspace(0, 1, len(meta["depth_curve"])).tolist()
     curve = go.Figure(go.Scatter(
         x=rel_depth_a,
@@ -2245,28 +2530,10 @@ def _sec_l1(run_dir: Path, findings: list) -> str:
         "structure does, and the two are hard to tell apart from this "
         "number alone.",
         "How to read this number")
-    inner += "<h4>Layer correspondence by depth</h4>" + _frag(curve, 320) + _note(
-        "For each layer of the first model, the best-matching layer of the "
-        "second model and their CKA, plotted against relative depth — a "
-        "compact way to see whether early layers match early layers "
-        "(architectures process the input in a similar order) or whether "
-        "matches jump around in depth.",
-        "A roughly monotonic line (early-to-early, late-to-late) suggests "
-        "comparable processing order despite different depths/patch sizes. "
-        "A flat, uniformly-high line usually means the input's own "
-        "structure dominates every layer's geometry about equally — see "
-        "the null-line caveat above.",
-        f"The 'best match' is a max over the other model's layers, which "
-        "mechanically biases the curve upward versus any single fixed "
-        "pairing (more candidates to match against) and can look "
-        "artificially smooth even when the underlying matrix is noisy — "
-        "always sanity-check against the heatmap above. The x-axis is the "
-        f"'{depth_axis_name}' depth axis (ROADMAP.md sec 18 F1): 'block' "
-        "places a layer by its position over the model's whole stack, "
-        "including any surface this run never captured, so a model whose "
-        "captured layers stop partway up it legitimately ends short of 1.0 "
-        "instead of being stretched to fill the axis"
-        + _short_axis_clause(run_dir) + ".")
+    if n_pairs < 2:
+        inner += ("<h4>Layer correspondence by depth</h4>" + _frag(curve, 320)
+                  + _l1_depth_note(depth_axis_name, run_dir))
+
     fam_comp = meta.get("family_comparisons")
     if fam_comp and not fam_comp.get("applicable", True):
         inner += (f'<h4>Family-conditioned agreement</h4>'
@@ -2287,19 +2554,9 @@ def _sec_l1(run_dir: Path, findings: list) -> str:
         bar = go.Figure(go.Bar(x=meta["families"], y=best_per,
                                marker_color=_COLORS["a"], error_y=err))
         bar.update_layout(yaxis_title="best CKA within family", yaxis_range=[0, 1.05])
-        inner += "<h4>Family-conditioned agreement</h4>" + _frag(bar, 320) + _note(
-            "The same peak-CKA computation restricted to one benchmark "
-            "family at a time (e.g. only trending series, only spiky "
-            "series), so a family where the two models diverge structurally "
-            "doesn't get averaged away by families where they agree.",
-            "Compare bar heights across families, not to some universal "
-            "threshold — a lower bar means this family's structure is where "
-            "the two models' representations differ most, which is exactly "
-            "the kind of finding the exemplar case studies exist to make "
-            "concrete.",
-            "Families with fewer than `l1.min_family_series` series are "
-            "dropped entirely (too few series for a stable per-family "
-            "CKA), so a family's absence here isn't evidence of anything.")
+        if n_pairs < 2:
+            inner += ("<h4>Family-conditioned agreement</h4>"
+                      + _frag(bar, 320) + _l1_family_note())
         lo_f = meta["families"][int(best_per.argmin())]
         findings.append(Finding(
             claim_id=_next_claim_id("l1"), stage="l1", evidence_class="geometric",
@@ -2309,7 +2566,7 @@ def _sec_l1(run_dir: Path, findings: list) -> str:
             plain=f"The two models organize '{lo_f}'-type data the most differently "
                 f"of any data type tested.",
             registered=False))
-    inner += _l1_panel_block(arrays, meta)
+    inner += _l1_panel_block(arrays, meta, run_dir)
     if meta.get("rsa"):
         inner += ("<h4>RSA along matched layers</h4>" + _table(pd.DataFrame(meta["rsa"]))
                   + _note(
@@ -2347,7 +2604,15 @@ def _sec_l1(run_dir: Path, findings: list) -> str:
                 "computed on each target's PERSISTED, ENCODED SAE feature "
                 "activations (`store.load(..., space='sae')`) instead of raw "
                 "activation-space hidden states.")
-            inner += heat_sae.to_html(full_html=False, include_plotlyjs=False)
+            # Through `_frag` like every other figure in this report, not
+            # `to_html` directly: this was the one site that bypassed it,
+            # so it alone rendered on plotly's default template with fixed
+            # margins -- meaning a different font, a different background,
+            # and tick labels clipped at whatever the default left margin
+            # is. Found by parsing the rendered HTML's figure JSON rather
+            # than by reading the source (sec 11.48): it was the only
+            # figure of 104 whose layout carried no `margin.autoexpand`.
+            inner += _frag(heat_sae)
             best_sae = cka_sae.get("best_pair") or {}
             if best_sae:
                 inner += (f'<p class="blurb">Best feature-space pair: '
@@ -3263,7 +3528,8 @@ def _l3_verbose_cases(pmeta: dict, parrs, run_dir: Path) -> str:
                      f"{f' ({fam})' if fam else ''}</h4>")
             if not sub.empty:
                 cols = [c for c in ["corruption", "damage", "recovered_frac",
-                                    "mase_clean", "mase_corrupted", "mase_patched",
+                                    "mase_clean", "mase_naive", "beats_naive",
+                                    "mase_corrupted", "mase_patched",
                                     "patch_layer", "patch_window",
                                     "own_best_restoration", "own_best_layer",
                                     "own_best_window"] if c in sub.columns]
@@ -3271,7 +3537,7 @@ def _l3_verbose_cases(pmeta: dict, parrs, run_dir: Path) -> str:
                          + _figcap(f"Every patched corruption for series "
                                    f"<b>{sid}</b> under <b>{model}</b>, in "
                                    f"units of this series' own naive-forecast "
-                                   f"error."))
+                                   f"error." + _forecastability_clause(sub, model)))
 
             valid = [c for c in corruptions
                      if f"verbose_{model}_{c}_clean" in parrs]
@@ -3289,12 +3555,26 @@ def _l3_verbose_cases(pmeta: dict, parrs, run_dir: Path) -> str:
                 patched = np.asarray(parrs[prefix + "patched"])
                 target = (np.asarray(parrs[prefix + "target"])
                           if (prefix + "target") in parrs else None)
+                context = (np.asarray(parrs[prefix + "context"])
+                           if (prefix + "context") in parrs else None)
                 t_fut = np.arange(clean.shape[1])
                 show = k == 0
                 if target is not None and si < target.shape[0]:
                     fig.add_scatter(x=t_fut, y=target[si], mode="lines",
                                     name="true continuation", legendgroup="truth",
                                     line=dict(color=_COLORS["ink"], dash="dot"),
+                                    showlegend=show, row=r, col=c)
+                # The trivial floor, drawn rather than described. Without it a
+                # flat model forecast reads as a failure; with it, a reader
+                # sees at once whether the model is beating "hold the last
+                # value" at all, which on an unforecastable series it is not.
+                if context is not None and si < context.shape[0]:
+                    fig.add_scatter(x=t_fut,
+                                    y=np.full(clean.shape[1], float(context[si][-1])),
+                                    mode="lines", name="naive forecast (hold last value)",
+                                    legendgroup="naive",
+                                    line=dict(color=_COLORS["muted"], dash="dashdot",
+                                              width=1.5),
                                     showlegend=show, row=r, col=c)
                 fig.add_scatter(x=t_fut, y=clean[si], mode="lines",
                                 name="forecast from clean input", legendgroup="clean",
@@ -4486,9 +4766,10 @@ def _sae_health_figure(df: pd.DataFrame) -> str:
 
     fig = make_subplots(
         rows=1, cols=3, shared_yaxes=True, horizontal_spacing=0.055,
-        subplot_titles=("Dead features (share of dictionary)",
-                        "Reconstruction fidelity",
-                        "Ground-truth alignment vs its own null"))
+        subplot_titles=tuple(_wrap(t, 26) for t in (
+            "Dead features (share of dictionary)",
+            "Reconstruction fidelity",
+            "Ground-truth alignment vs its own null")))
 
     dead = [None if pd.isna(v) else float(v) for v in d["dead rate"]]
     verdicts = list(d["dead-rate gate"])
@@ -4546,6 +4827,135 @@ def _sae_health_figure(df: pd.DataFrame) -> str:
     for ann in fig.layout.annotations:
         ann.font.size = 12
     return _frag(fig, height=max(300, 46 * len(d) + 120))
+
+def _sae_contrast_block(run_dir: Path, findings: list) -> str:
+    """What each model's dictionary accounts for that the others' do not.
+
+    Added 2026-09-04 on user review: the section could not answer "What does
+    this model account for that this one doesn't?" or "What is a common
+    strong feature between these models and what is unique and why?" — and
+    on inspection it had no artifact that could. Everything it rendered was
+    per-TARGET (13 rows of individual layers on a four-model run), so the
+    cross-model question a reader brings to a cross-model section had to be
+    answered by pooling five layers of one model against three of another,
+    at different depths, by eye, down a column of decimals.
+
+    Two elements, deliberately in this order. The contrast table first,
+    because it is the answer in words: one row per model, what only it
+    covers, what everyone covers. Then the matrix, with fields ordered
+    shared-first so "common" and "unique" are left and right halves of one
+    picture rather than a property a reader has to derive by scanning.
+
+    Both come from `derived.sae_field_coverage`, which holds to the same
+    adaptivity contract as `bottom_line_rows`: model identity is read off
+    the artifact's own keys, and no model name or architecture appears in
+    the reduction. A two-model run collapses to the same two categories
+    (shared / unique) with no special-casing.
+    """
+    cov = derived.sae_field_coverage(run_dir)
+    if cov.empty or (cov.attrs.get("n_models") or 0) < 2:
+        return ""
+    contrast = derived.sae_model_contrast(run_dir)
+    n_models = int(cov.attrs["n_models"])
+    min_share = cov.attrs.get("min_share", 0.05)
+
+    html = "<h4>What each model accounts for that the others don't</h4>"
+    if not contrast.empty:
+        html += _table(contrast)
+    shared_fields = sorted(set(cov.loc[cov["scope"] == "shared", "field"]))
+    uniq = cov[cov["covered"] & (cov["scope"] == "unique")]
+    html += _figcap(
+        f"One row per model, pooled over all of that model's analyzed layers. "
+        f"A property counts as covered when at least {min_share:.0%} of a "
+        f"layer's ground-truth-matched features track it at that layer — a "
+        f"maximum over layers, not an average, so a property a model "
+        f"represents at one depth and nowhere else still counts as covered. "
+        f"<i>only this model</i> is the direct answer to \"what does this "
+        f"model account for that the others don't\".")
+
+    order = (cov[["field", "n_models_covering"]].drop_duplicates()
+             .sort_values(["n_models_covering", "field"], ascending=[False, True]))
+    fields = list(order["field"])
+    models = list(dict.fromkeys(cov["model"]))
+    z = [[float(cov[(cov.model == m) & (cov.field == f)]["peak_share"].max())
+          if not cov[(cov.model == m) & (cov.field == f)].empty else 0.0
+          for f in fields] for m in models]
+    txt = [[(f"{v:.0%}" if v else "") for v in row] for row in z]
+    fig = go.Figure(go.Heatmap(
+        z=z, x=[_wrap(f.replace("_", " "), 14) for f in fields], y=models,
+        text=txt, texttemplate="%{text}", textfont_size=10,
+        colorscale="Viridis", zmin=0, colorbar_title="peak share"))
+    # The separator is drawn only where the shared block actually ends, so a
+    # run in which every field is shared (or none is) gets no phantom divider.
+    n_shared = sum(1 for f in fields
+                   if int(order.loc[order.field == f, "n_models_covering"].iloc[0]) >= n_models)
+    if 0 < n_shared < len(fields):
+        fig.add_vline(x=n_shared - 0.5, line=dict(color=_COLORS["ink"], width=2))
+    fig.update_layout(xaxis_title="structural property of the data",
+                      yaxis_title="", xaxis_tickangle=0)
+    html += _frag(fig, height=max(280, 60 * len(models) + 150)) + _figcap(
+        f"Share of each model's ground-truth-matched SAE features that track "
+        f"each property, at the layer where that model tracks it most. "
+        f"Columns are ordered by how many models reach the property: "
+        f"<b>left of the black line are the {n_shared} properties all "
+        f"{n_models} models account for</b>, right of it are those only some "
+        f"do. A blank cell means no layer of that model devoted "
+        f"{min_share:.0%} of its matched features to that property.")
+
+    if not uniq.empty:
+        top = uniq.sort_values("peak_share", ascending=False).iloc[0]
+        findings.append(Finding(
+            claim_id=_next_claim_id("sae"), stage="sae", evidence_class="descriptive",
+            text=f'SAE — {len(shared_fields)} of {cov["field"].nunique()} structural '
+                f'properties are accounted for by all {n_models} models '
+                f'({", ".join(shared_fields)}); the largest model-specific '
+                f'coverage is {top["model"]} on {top["field"]} '
+                f'({top["peak_share"]:.0%} of its matched features at '
+                f'{top["best_target"]}), which no other model reaches.',
+            plain=f"All {n_models} models build features for the same "
+                f"{len(shared_fields)} basic properties of the data, but "
+                f"{top['model']} is alone in devoting a large share of its "
+                f"features to {str(top['field']).replace('_', ' ')}.",
+            registered=False))
+    else:
+        findings.append(Finding(
+            claim_id=_next_claim_id("sae"), stage="sae", evidence_class="descriptive",
+            text=f'SAE — no structural property is covered by exactly one model; '
+                f'{len(shared_fields)} of {cov["field"].nunique()} are covered by '
+                f'all {n_models}.',
+            plain="No model builds features for a property of the data that the "
+                "others ignore entirely.",
+            registered=False))
+    return html + _note(
+        "The cross-model summary of the SAE section: which properties of the "
+        "benchmark each model's sparse features organize around, pooled over "
+        "that model's layers, and whether each property is common to every "
+        "model or specific to one.",
+        "Read the black line first. Properties to its left are the shared "
+        "vocabulary — every model in this run devotes features to them, which "
+        "is the closest thing this pipeline offers to 'these models learned "
+        "the same thing'. Properties to its right are where the dictionaries "
+        "diverge. A high share is not a quality claim: it says a large "
+        "fraction of that layer's interpretable features track this property, "
+        "not that the model forecasts it well. Cross-check a unique property "
+        "against the models' CKA in the geometry section — two models with "
+        "near-identical geometry having no unique properties is a consistent "
+        "picture, and one with unique properties despite high CKA is worth a "
+        "second look.",
+        "Coverage is computed over features that matched a ground-truth field "
+        "at all, so it describes the interpretable slice of each dictionary, "
+        "not the whole of it — a model whose features are real but do not "
+        "correspond to any field this benchmark labels will look like it "
+        "covers less. The fields are the benchmark's own generator "
+        "parameters, so a property the corpus does not vary cannot appear "
+        "here for any model. 'Unique' is relative to the models in THIS run "
+        "and to the "
+        f"{min_share:.0%} threshold; a model just under it at every layer "
+        "reads as not covering the property. Correlational throughout — a "
+        "feature tracking a property is not evidence the model uses it, "
+        "which is what the causal channel battery exists to test.",
+        "How to read this comparison")
+
 
 def _sae_health_block(run_dir: Path, findings: list) -> str:
     """One row per SAE target: is this dictionary worth reading features off?
@@ -4641,6 +5051,104 @@ def _sae_health_block(run_dir: Path, findings: list) -> str:
     return out
 
 
+def _sae_target_panel(cfg, store, run_dir: Path, key: str, model: str, layer: str,
+                      entry: dict, run_meta: dict, series_lookup, ctx_len):
+    """One SAE target's per-feature exemplar panel, and its strongest feature.
+
+    Extracted from `_sec_sae`'s loop 2026-09-04 when that panel became a
+    collapsed `<details>`. The extraction is not cosmetic: the body has four
+    early exits (no ground truth, pre-split artifacts, a failed panel, no
+    cards), and with an inline `<details>` opened before them each `continue`
+    would have emitted an unclosed element -- which browsers silently repair
+    by swallowing the rest of the section, so the failure would have shown up
+    as *missing content further down the page* rather than as an error. A
+    function whose caller owns the wrapper cannot express that bug.
+
+    Returns `(html, top)` where `top` is this target's strongest structural
+    feature (or None), which the caller accumulates per model.
+    """
+    from .sae_features import feature_table_html
+    out = ""
+    # The per-target run-on stats paragraph this loop used to build lived
+    # here: ~350 characters, `·`-separated, in a fixed field order, eleven
+    # of them on a three-model run. Every number was present and none was
+    # comparable, because comparing two targets meant diffing two
+    # paragraphs. It is now one sorted table plus grouped warnings,
+    # rendered once above this loop by `_sae_health_block` -- the same move
+    # sec 24 made for L3 and internals.
+    #
+    # Collapsed since 2026-09-04 (user review: "the SAE section is a bit
+    # overwhelming with the amount of information and how it is being
+    # displayed"). Measured before being treated as tone: this section
+    # rendered 16 tables and 224 table rows against 2 figures on the
+    # four-model run, and 13 of its 16 headings were this per-target
+    # panel. The panels are not redundant -- they are the only place an
+    # individual feature's firing series can be seen -- but they are
+    # DETAIL, and a reader meeting thirteen of them before any synthesis
+    # reads the section as a dump. Nothing is deleted (this repo's own
+    # no-silent-deletion doctrine); the detail moves one click away and
+    # the cross-model answer moves above it.
+    # Kept from the removed stats block: the exemplar panel below reads it.
+    gt_align = entry.get("ground_truth_alignment", {})
+    separated = gt_align.get("separated")
+    if gt_align.get("error") or not gt_align.get("features"):
+        # No ground truth to match against at all (the smoke corpus has
+        # none). Distinct from the predates-the-split case below, and
+        # they must not share a message: one says the corpus carries no
+        # labels, the other says this run's artifacts are stale.
+        out += ("<p class='blurb'>no ground-truth-matched features to "
+                  "illustrate \u2014 this corpus carries no labelled "
+                  "generative properties to correlate features against.</p>")
+        return out, None
+    if not separated:
+        # ROADMAP.md sec 26 A2: refuse to fall back to the legacy
+        # all-fields argmax as a HEADLINE. On this repo's own corpus
+        # that argmax names a `generator_*` provenance dummy for 11 of
+        # 11 targets, so silently using it would put a corpus artifact
+        # in the position the reader reads as "what this feature does".
+        # Say the run predates the split instead, and name the fix.
+        out += ("<p class='mockwarn'>⚠ This run's SAE artifacts predate the "
+                  "structural/provenance split (ROADMAP.md sec 26 A2), so the "
+                  "per-feature table is omitted rather than shown against the "
+                  "legacy all-fields match -- that match reports corpus "
+                  "bookkeeping labels (which generator wrote the series) as if "
+                  "they were model findings. Run "
+                  "<code>backfill_separated.py --run &lt;run&gt;</code>, or "
+                  "re-run the <code>sae</code> stage, to populate it.</p>")
+        return out, None
+    try:
+        cards = _feature_cards_for(cfg, store, model, layer, entry,
+                                   separated, run_meta)
+    except Exception as exc:
+        out += f"<p class='blurb'>exemplar panel unavailable: {exc}</p>"
+        return out, None
+    if not cards:
+        out += "<p class='blurb'>no features to illustrate.</p>"
+        return out, None
+    n_struct = separated.get("n_features_structural_matched", 0)
+    n_prov = separated.get("n_features_provenance_matched", 0)
+    out += (f"<p class='blurb'>Of {separated.get('n_features', 0)} probed "
+              f"features, {n_struct} correlate with a structural property of "
+              f"the series and {n_prov} with a corpus bookkeeping label "
+              f"(mean |ρ| {separated.get('mean_abs_rho_structural', 0):.3f} vs "
+              f"{separated.get('mean_abs_rho_provenance', 0):.3f}). Only the "
+              f"structural column is a statement about the model.</p>")
+    out += feature_table_html(cards, series_lookup, ctx_len,
+                                descriptions=_feature_descriptions(run_dir, key))
+    out += _figcap("One row per sparse feature, strongest structural "
+                     "correlate first. Each thumbnail is a series this "
+                     "feature fires hardest on -- grey is the context the "
+                     "model saw, dark the true continuation.")
+    best_struct = next((c for c in cards if c["structural_field"]), None)
+    top = None
+    if best_struct is not None:
+        top = {"layer": layer, "feature": best_struct["feature"],
+               "tracks": str(best_struct["structural_field"]),
+               "rho": float(best_struct["structural_rho"]),
+               "n": best_struct["structural_n"]}
+    return out, top
+
+
 def _sec_sae(cfg: PipelineConfig, run_dir: Path, findings: list) -> str:
     """Per-target SAE summary stats plus a ground-truth-matched feature exemplar panel.
 
@@ -4659,8 +5167,7 @@ def _sec_sae(cfg: PipelineConfig, run_dir: Path, findings: list) -> str:
     """
     from ..extraction.store import ActivationStore, load_meta
     from ..sae.ground_truth import load_ground_truth_table
-    from .sae_exemplars import build_feature_cards
-    from .sae_features import MODAL_ASSETS, feature_table_html
+    from .sae_features import MODAL_ASSETS
 
     meta_sae = load_json(run_dir / "sae" / "meta.json")
     if not meta_sae:
@@ -4686,73 +5193,17 @@ def _sec_sae(cfg: PipelineConfig, run_dir: Path, findings: list) -> str:
     tops: dict[str, list[dict]] = {}
     for key, entry in meta_sae.items():
         model, layer = key.split("/", 1)
-        # The per-target run-on stats paragraph this loop used to build lived
-        # here: ~350 characters, `·`-separated, in a fixed field order, eleven
-        # of them on a three-model run. Every number was present and none was
-        # comparable, because comparing two targets meant diffing two
-        # paragraphs. It is now one sorted table plus grouped warnings,
-        # rendered once above this loop by `_sae_health_block` -- the same move
-        # sec 24 made for L3 and internals. The `<h4>` stays because it is the
-        # exemplar panel's heading, not a stats header.
-        inner += f"<h4>{key}</h4>"
-        # Kept from the removed stats block: the exemplar panel below reads it.
-        gt_align = entry.get("ground_truth_alignment", {})
-        separated = gt_align.get("separated")
-        if gt_align.get("error") or not gt_align.get("features"):
-            # No ground truth to match against at all (the smoke corpus has
-            # none). Distinct from the predates-the-split case below, and
-            # they must not share a message: one says the corpus carries no
-            # labels, the other says this run's artifacts are stale.
-            inner += ("<p class='blurb'>no ground-truth-matched features to "
-                      "illustrate \u2014 this corpus carries no labelled "
-                      "generative properties to correlate features against.</p>")
-            continue
-        if not separated:
-            # ROADMAP.md sec 26 A2: refuse to fall back to the legacy
-            # all-fields argmax as a HEADLINE. On this repo's own corpus
-            # that argmax names a `generator_*` provenance dummy for 11 of
-            # 11 targets, so silently using it would put a corpus artifact
-            # in the position the reader reads as "what this feature does".
-            # Say the run predates the split instead, and name the fix.
-            inner += ("<p class='mockwarn'>⚠ This run's SAE artifacts predate the "
-                      "structural/provenance split (ROADMAP.md sec 26 A2), so the "
-                      "per-feature table is omitted rather than shown against the "
-                      "legacy all-fields match -- that match reports corpus "
-                      "bookkeeping labels (which generator wrote the series) as if "
-                      "they were model findings. Run "
-                      "<code>backfill_separated.py --run &lt;run&gt;</code>, or "
-                      "re-run the <code>sae</code> stage, to populate it.</p>")
-            continue
-        try:
-            cards = _feature_cards_for(cfg, store, model, layer, entry,
-                                       separated, run_meta)
-        except Exception as exc:
-            inner += f"<p class='blurb'>exemplar panel unavailable: {exc}</p>"
-            continue
-        if not cards:
-            inner += "<p class='blurb'>no features to illustrate.</p>"
-            continue
-        n_struct = separated.get("n_features_structural_matched", 0)
-        n_prov = separated.get("n_features_provenance_matched", 0)
-        inner += (f"<p class='blurb'>Of {separated.get('n_features', 0)} probed "
-                  f"features, {n_struct} correlate with a structural property of "
-                  f"the series and {n_prov} with a corpus bookkeeping label "
-                  f"(mean |ρ| {separated.get('mean_abs_rho_structural', 0):.3f} vs "
-                  f"{separated.get('mean_abs_rho_provenance', 0):.3f}). Only the "
-                  f"structural column is a statement about the model.</p>")
-        inner += feature_table_html(cards, series_lookup, ctx_len,
-                                    descriptions=_feature_descriptions(run_dir, key))
-        inner += _figcap("One row per sparse feature, strongest structural "
-                         "correlate first. Each thumbnail is a series this "
-                         "feature fires hardest on -- grey is the context the "
-                         "model saw, dark the true continuation.")
-        best_struct = next((c for c in cards if c["structural_field"]), None)
-        if best_struct is not None:
-            tops.setdefault(model, []).append(
-                {"layer": layer, "feature": best_struct["feature"],
-                 "tracks": str(best_struct["structural_field"]),
-                 "rho": float(best_struct["structural_rho"]),
-                 "n": best_struct["structural_n"]})
+        body, top = _sae_target_panel(cfg, store, run_dir, key, model, layer,
+                                      entry, run_meta, series_lookup, ctx_len)
+        # The wrapper is applied HERE, outside the body, so no early return
+        # inside the panel can leave a `<details>` unclosed -- the reason the
+        # body is a function at all rather than an inline block with four
+        # `continue`s in it.
+        inner += (f"<details class='note sae-target'><summary>{key} — "
+                  f"individual features and the series they fire on"
+                  f"</summary><div class='note-body'>{body}</div></details>")
+        if top is not None:
+            tops.setdefault(model, []).append(top)
 
     # One finding per model, not one per (model, layer). Each layer's
     # dictionary is trained separately, so the same labelled property being
@@ -4834,7 +5285,13 @@ def _sec_sae(cfg: PipelineConfig, run_dir: Path, findings: list) -> str:
                            "correlates with a structural property of the input "
                            "series, after regressing out which generator "
                            "produced it.") + inner)
-    inner = MODAL_ASSETS + health + inner
+    # Order: is the dictionary sound (health) -> what do the models share and
+    # differ on (contrast) -> what does each layer track (heatmap + tables).
+    # The cross-model answer sits above the per-target detail because it is
+    # the question a cross-model section is FOR; before 2026-09-04 a reader
+    # met thirteen per-layer tables first and no synthesis at all.
+    inner = (MODAL_ASSETS + health
+             + _sae_contrast_block(run_dir, findings) + inner)
     inner += _note(*_SAE_EXEMPLAR_NOTE, summary="What does this table mean?")
     inner += _sae_seed_floor_block(meta_sae)
     model_names = [m.name for m in cfg.models]

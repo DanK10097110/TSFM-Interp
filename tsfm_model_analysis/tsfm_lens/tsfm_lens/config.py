@@ -566,6 +566,30 @@ class SAEConfig:
     role_matching_untrained_twin_runs: dict = field(default_factory=dict)
     role_matching_cosine_threshold: float = 0.5
     role_matching_depth_tolerance: float = 0.15
+    # ROADMAP.md sec 26 C, 2026-09-04, on user review: "it is not clear what
+    # exactly each feature does as many have very similar names and activate
+    # for the same series." When true, `run_sae_describe.py` additionally
+    # measures what each feature's OWN top-firing series score on every
+    # structural ground-truth field, against the corpus median and spread,
+    # and hands the most unusual of those to the narrator as evidence. That
+    # is what lets two features sharing a `structural_field` -- routinely
+    # most of a target's top rows -- receive descriptions that differ, since
+    # without it every field the guard licenses them to mention is the same.
+    # Provenance fields, and any field this run's alignment refused as
+    # inseparable from provenance (sec 11.48), are excluded: a contrast on
+    # those reports how the benchmark was built.
+    #
+    # Default true because the evidence is a pure reduction over artifacts
+    # the exemplar pass already loads (no extra forward pass, no extra model
+    # load); `false` reproduces the pre-2026-09-04 packets exactly.
+    # `stage_input: False` keeps this out of the `sae` stage's config
+    # fingerprint (manifest.py). The narrator is a standalone script reading
+    # finished artifacts -- this knob changes `sae/descriptions.json` and no
+    # artifact the stage itself writes, so fingerprinting it would refuse
+    # every existing run's report re-render over a field that stage never
+    # reads. That is the false-refusal shape of CLAUDE.md sec 11.35.
+    describe_from_exemplars: bool = field(
+        default=True, metadata={"stage_input": False})
 
 
 @dataclass

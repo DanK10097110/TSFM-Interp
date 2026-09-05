@@ -37,6 +37,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import numpy as np
+import pandas as pd
 
 from tsfm_lens.config import load_config
 from tsfm_lens.extraction.store import ActivationStore, load_meta
@@ -88,7 +89,8 @@ def _top3(entry: dict) -> tuple:
 
 
 def build_evidence(run_dir: Path, cfg, top_features: int = 8,
-                   features_only: bool = False, with_exemplars: bool = True) -> list:
+                   features_only: bool = False, with_exemplars: bool = True,
+                   from_exemplars: bool = True) -> list:
     """`(key, kind, ident, Evidence)` for every feature and role worth describing.
 
     Feature packets come from `sae/meta.json`'s `separated` block (sec 26 A2),
@@ -123,10 +125,12 @@ def build_evidence(run_dir: Path, cfg, top_features: int = 8,
         null_p95 = (resp or {}).get("null_p95") or {}
         by_feature = {int(c["feature"]): c for c in ((resp or {}).get("candidates") or [])}
 
-        families_by_feature = {}
+        families_by_feature, profiles_by_feature = {}, {}
         if store is not None and run_meta is not None:
-            families_by_feature = _exemplar_families(cfg, store, model, layer,
-                                                     entry, sep, run_meta)
+            families_by_feature, sids_by_feature = _exemplar_families(
+                cfg, store, model, layer, entry, sep, run_meta)
+            if from_exemplars:
+                profiles_by_feature = _exemplar_profiles(cfg, sids_by_feature, sep)
 
         for fe in (sep.get("features") or [])[:top_features]:
             f_idx = int(fe["feature"])
@@ -141,6 +145,7 @@ def build_evidence(run_dir: Path, cfg, top_features: int = 8,
                 structural_n=(int(struct["n"]) if struct.get("n") is not None else None),
                 top3_structural=_top3(fe),
                 exemplar_families=tuple(families_by_feature.get(f_idx, ())),
+                exemplar_profile=tuple(profiles_by_feature.get(f_idx, ())),
                 clears_null=bool(channels),
                 # A target with no Stage 2 artifact was never TESTED. Passing
                 # `channels_measured=False` is what keeps its sentence from
@@ -193,7 +198,7 @@ def _exemplar_families(cfg, store, model: str, layer: str, entry: dict,
         log.warning(f"sae describe: could not build exemplar families for "
                     f"{model}/{layer} ({e}); descriptions omit families")
         return {}
-    out = {}
+    out, sids = {}, {}
     for c in cards:
         fams = [ex.get("family") for ex in (c.get("exemplars") or []) if ex.get("family")]
         seen = []
@@ -201,6 +206,65 @@ def _exemplar_families(cfg, store, model: str, layer: str, entry: dict,
             if f not in seen:
                 seen.append(f)
         out[int(c["feature"])] = tuple(seen)
+        sids[int(c["feature"])] = [ex.get("series_id")
+                                   for ex in (c.get("exemplars") or [])
+                                   if ex.get("series_id")]
+    return out, sids
+
+
+def _exemplar_profiles(cfg, sids_by_feature: dict, sep: dict,
+                       max_fields: int = 3, min_z: float = 0.5) -> dict:
+    """`{feature_idx: ((field, mine, typical), ...)}` -- what a feature's OWN
+    top-firing series measure, against what the corpus typically measures.
+
+    The evidence that lets two features sharing a `structural_field` be told
+    apart. Ranked by |z| of the firing series' mean against the corpus
+    spread, so the fields named are the ones this feature's series are most
+    unusual on -- not the ones with the largest raw units, which would just
+    rank by which field happens to be measured in bigger numbers.
+
+    Structural fields only, and only fields this run's own alignment did not
+    refuse as inseparable from provenance (`fields_not_separable_from_
+    provenance`, sec 11.48): a contrast on a field the corpus construction
+    fully determines reports how the benchmark was built, which is what
+    sec 26 A1/A3 took OUT of the headline. `min_z` exists for the same
+    reason `_excursion_clause` has a threshold -- a "differs from the
+    corpus" line printed for a field that does not differ is noise the
+    narrator would faithfully repeat.
+    """
+    from tsfm_lens.sae.ground_truth import load_ground_truth_table, is_provenance_field
+    try:
+        gt = load_ground_truth_table(cfg.data.path)
+    except Exception as e:
+        log.warning(f"sae describe: no ground truth for exemplar profiles ({e})")
+        return {}
+    refused = {r.get("field") if isinstance(r, dict) else r
+               for r in (sep.get("fields_not_separable_from_provenance") or [])}
+    cols = [c for c in gt.columns
+            if not is_provenance_field(c) and c not in refused
+            and pd.api.types.is_numeric_dtype(gt[c])]
+    if not cols:
+        return {}
+    stats = {c: (float(gt[c].median(skipna=True)), float(gt[c].std(skipna=True)))
+             for c in cols}
+    out = {}
+    for f_idx, sids in sids_by_feature.items():
+        rows = gt.reindex([s for s in sids if s in gt.index])
+        if rows.empty:
+            continue
+        scored = []
+        for c in cols:
+            vals = rows[c].dropna()
+            med, sd = stats[c]
+            if vals.empty or not np.isfinite(sd) or sd <= 0 or not np.isfinite(med):
+                continue
+            mine = float(vals.mean())
+            z = abs(mine - med) / sd
+            if z >= min_z:
+                scored.append((z, c, mine, med))
+        scored.sort(reverse=True)
+        if scored:
+            out[f_idx] = tuple((c, mine, med) for _, c, mine, med in scored[:max_fields])
     return out
 
 
@@ -214,6 +278,13 @@ def main() -> None:
     ap.add_argument("--features-only", action="store_true",
                     help="skip role packets; runnable right after the sae stage, "
                          "before Components A/B have been run")
+    ap.add_argument("--no-exemplar-profile", action="store_true",
+                    help="do not measure what each feature's top-firing series "
+                         "score on the structural ground-truth fields "
+                         "(overrides sae.describe_from_exemplars, default true). "
+                         "Without it two features sharing a structural field "
+                         "have identical licensed evidence and cannot receive "
+                         "distinguishable descriptions")
     ap.add_argument("--no-exemplars", action="store_true",
                     help="skip the encode pass that finds exemplar families "
                          "(faster; descriptions then cannot mention families)")
@@ -227,9 +298,17 @@ def main() -> None:
     args = ap.parse_args()
 
     cfg = load_config(args.run / "config_resolved.yaml")
+    # Config is the default, CLI is the override -- and the override is
+    # one-way (a flag can only turn it OFF). A `--exemplar-profile` that
+    # turned it on would let an invocation contradict the config the run was
+    # built with, and the artifact records no flags.
+    from_exemplars = bool(getattr(cfg.sae, "describe_from_exemplars", True))
+    if args.no_exemplar_profile:
+        from_exemplars = False
     packets = build_evidence(args.run, cfg, top_features=args.top_features,
                              features_only=args.features_only,
-                             with_exemplars=not args.no_exemplars)
+                             with_exemplars=not args.no_exemplars,
+                             from_exemplars=from_exemplars)
     if not packets:
         log.warning("sae describe: no evidence packets built; nothing written")
         return

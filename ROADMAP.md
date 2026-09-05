@@ -21910,6 +21910,16 @@ column pairs, 2 channel heatmaps each with the new axis and legend.
 
 ### 26 C — a grounded LLM narrator ✅ RUN LIVE AGAINST A REAL RUN, WIRED INTO THE REPORT (2026-09-04); PIPELINE-STAGE FLAG STILL OPEN
 
+> **Extended 2026-09-04 by §26 G(4)** — the narrator now also
+> receives what its feature's own top-firing series *measure*
+> (`Evidence.exemplar_profile`, config flag
+> `sae.describe_from_exemplars`, default true), which is what lets it
+> tell apart features sharing a target and a `structural_field`. That
+> flag is **not** the pipeline-stage flag this heading says is still
+> open: it configures the *evidence*, while the narrator remains a
+> standalone script. Read §26 G(4) before changing `check_text` — the
+> new vocabulary fabricated a comparison on its first live run.
+
 ⚠️ **Status corrected 2026-09-02.** The old "IN PROGRESS (background
 agent)" is doubly stale: that agent finished, and what it left behind is a
 complete, 77-test library plus (now) a caller — but the narrator has still
@@ -23322,3 +23332,206 @@ disagreement, the SAE dead-rate architecture-dependence, and the
 compute-coverage asymmetry needing a per-model qualifier. Nothing here
 contradicts a prior recorded number; this is a replication-and-extension
 run, not a correction.
+
+---
+
+### 26 G — a user report review: all-pairs geometry, a "laughable" forecast explained, and a narrator that invented a comparison ✅ DONE 2026-09-04
+
+User request, verbatim, five parts: "Representational geometry section seems
+to largly be comparing to timesFM only, which leads me to believe it is not
+dynamic or pair-wise exhaustive. Change that to have all pairwise
+metrics/graphs for all pairs, and have grid layout for easier representation
+like 'Layer-pair similarity, every pair' graphs. Also, the 'TimesFM ·
+d54b542c0edbac49 (random_parametric)' pertubation patching example is a bit
+puzzling, there is nothing even close to the true continuation, not even the
+forcast from clean output. in fact, some predictions are so off it is
+laughable, but they are pretty close to eachother. Why is this happening and
+fix please. Also, some labels like those in the first SAE graph are
+overlapping and hard to read. ... It is also not clear what exactly each
+feature does as many have very simillar names and activate for the same
+series. It is possible qwen 2 can be given the best fired series in context
+and create a description based on that? This should be added as a config
+option but defaulted as true."
+
+Each part was grounded in an artifact-verified mechanism before being
+treated as a presentation complaint (`CLAUDE.md` §2.4). Four of the five
+were mechanisms; the fifth was a real absence.
+
+### Findings
+
+**(1) The geometry section really was single-model, and it was a leftover
+rather than a design.** `_sec_l1` rendered three figures built from the
+designated reference pair alone — the depth curve, the family-conditioned
+bar, and the RSA trace — beside the all-pairs CKA heatmap grid §24.3 had
+already added. So on a 4-model panel a reader saw 6 pairs of heatmaps and 1
+pair of everything else, with nothing saying the rest were unplotted. Now
+every C(n,2) pair gets a depth curve, a family series and an RSA trace, in
+the same grid layout as the heatmaps. **A pair run is byte-unchanged**: the
+singleton figures are gated on `n_pairs < 2`, so a two-model report renders
+exactly what it did (pinned by a test that asserts a pair run emits *no*
+grids at all).
+
+The first implementation rendered **both** — singletons *and* grids, 8
+figures where 4 belonged, the same content twice — which is the opposite of
+the request. Found by counting rendered figures in the HTML, not by reading
+the diff (§11.48). The prose under the two singletons moved into
+`_l1_depth_note`/`_l1_family_note`, one home each, rendered by both paths —
+the same no-drift shape `stage_docs.py`/`glossary.py` already use — and a
+test asserts the grid emits the exact string the helper returns.
+`_l1_family_grid` was also missing the `len(records) < 2` guard its two
+siblings had; that was a real fix found by writing the test, not a test fix.
+
+**(2) The "laughable" forecast is correct behavior, and the panel now says
+so.** `d54b542c0edbac49` is not a plumbing failure: L0's own
+`metrics.parquet` independently scores TimesFM at MASE **2.022635** on that
+series, and **all four models** land in **1.79–2.02** — they agree with each
+other, which is the user's own observation, because the series has no
+autocorrelation structure to extrapolate and every model correctly collapses
+to a level estimate. What made it look broken is that the *naive* forecast
+(hold the last observed value) scores **1.77**, i.e. the models lose to a
+flat line, and nothing on the panel said that.
+
+This is a §11.45-shaped gap, at a new site. `future_excursion` guards the
+case where the *range* of the future is unforecastable; nothing guarded the
+case where the *level* is fine and the structure is absent. The panel now
+carries a measured clause — *"On this series TimesFM's clean forecast does
+not beat a flat line (2.02 against 1.77 for holding the last observed value,
+same units)"* — derived in `report/derived.py::patching_case_summary` as
+arithmetic over the row, never authored. It fires on **4 of the panels**,
+not all, which is what makes it a diagnostic rather than a disclaimer. Two
+tests pin both directions: it must fire when the model loses to flat, and it
+must be **silent** when nothing was measured, since a missing naive floor
+and a beaten one are different states (§11.37).
+
+**(3) One figure of 104 bypassed the shared margin helper.** Verified by
+parsing every rendered figure's `Plotly.newPlot` layout JSON out of the 4 MB
+HTML and checking `margin.autoexpand` — 103 went through `_frag` (which
+makes margins a floor rather than a frame, so a long tick label pushes the
+plot area instead of being clipped) and the SAE feature-CKA heatmap called
+`to_html` directly. That single figure is the one the user named. Fixed to
+`_frag(heat_sae)`; three tests pin the floor-not-frame property and the
+label wrapper's two invariants (breaks only on whitespace, loses no word).
+
+**(4) The narrator now sees what its feature's own top series measure — and
+immediately fabricated a comparison it had not been given.** `Evidence`
+gained `exemplar_profile`: `((field, mean_over_firing_series,
+corpus_median), ...)` over **structural** fields only, excluding provenance
+(§26 A1) and any field this run's own alignment refused as inseparable from
+provenance (§11.48). It is a pure reduction over artifacts the exemplar pass
+already loads — no extra forward pass, no extra model load — which is why
+`sae.describe_from_exemplars` defaults **true**, with `false` reproducing
+pre-2026-09-04 packets exactly.
+
+It works and is measurable. On `runs/full_report_run_4model`: **93 of 104**
+packets carry a non-empty profile, and among the 25 groups sharing both a
+target and a `structural_field` — the exact complaint, measured — the
+largest (7 features at `TimesFM/stacked_xf.2`, all `seasonal_period_dominant`)
+now yields **5 distinct texts**, against a group that previously had no
+licensed vocabulary to distinguish its members at all.
+
+🔴 **And adding a licensed vocabulary added a way to fabricate, on the first
+live run.** Feature `3751` of `TimesFM/stacked_xf.2` — whose packet reads
+verbatim *"its own top series measure: not measured"* — was described as
+firing on *"series whose seasonal swings are above and whose changes are
+fewer than typical"*, and the pre-existing guard **accepted it**: every
+concept in that sentence was licensed, by `other correlates`. What was
+invented was the *comparison*. This is §11.37's shape at a new site — an
+absent baseline producing a confident claim rather than a cautious one — and
+it is the second time in this subsystem that a null state and a measured one
+had to be forced apart (§26 C's `UNTESTED_MARKERS` allowlist was the first).
+
+Fixed with a three-state direction guard: an "above"-family word requires
+something actually measured above the corpus median, a "below"-family word
+likewise, and a packet with **no** profile refuses both with a distinct
+reason naming that there is no comparison to report at all. Two things it
+had to get right, each found by measuring rather than reasoning:
+
+- It false-positived on this module's own standard phrase, *"no effect above
+  the random-direction null"* (few-shot example 2) — a comparison to the
+  **null**, not to the corpus. A bare scan for "above" would have made the
+  correct sentence unrenderable. `_NULL_COMPARISON` strips that collocation
+  before the profile scan; a test pins that a bare "above" **elsewhere in
+  the same sentence** is still caught, because stripping too much silently
+  restores the fabrication. (This was the *first* of two false positives
+  from the same over-breadth — see the machine-fallback one below.)
+- The natural wording "higher/lower than usual" is unusable: `check_text`
+  licenses "lower" from a channel that moved *down*, and "higher" from
+  nothing at all, so that pairing would have rejected the low end of every
+  contrast and accepted the high end — a systematic asymmetry rather than a
+  guard. `render_evidence` says **"above"/"below what is typical"** instead,
+  and a test pins that the words "higher"/"lower" never appear in a rendered
+  profile line.
+
+🔴 **And the guard's own first version rejected the sentence it falls back
+TO** — a scan for bare direction words flags "strongest on series with a
+**larger** dominant seasonal period", which is `_structural_clause`'s own
+machine fallback and is a claim about the **sign of rho**, licensed by
+`structural_rho`, not a corpus comparison at all. It failed **7 tests across
+two files**, every one of them the module asserting its own wording is
+acceptable. Fixed by scanning only inside a window around a **corpus
+anchor** ("typical", "corpus", "usual", "average"), which is also the only
+phrasing `render_evidence` and the few-shot examples teach — the narrowing
+is the actual scope, not a concession. A test pins the boundary with a
+**pair** of near-identical sentences differing only in whether the direction
+word is made against the corpus, since narrowing a guard is one edit from
+disabling it and disabling is silent.
+
+**What the guard cost, reported by state and never pooled** (§26 C's own
+precedent), after that correction:
+
+| packet state | accepted | rate |
+|---|---|---|
+| profile measured (93 packets) | 90 | **96.8%** |
+| profile absent (11 packets) | 9 | **81.8%** |
+
+Overall **97.1% → 95.2%** (101/104 → 99/104). The guard costs *nothing at
+all* where evidence exists — 90/93 is unchanged from before it existed — and
+takes its 2-point overall price entirely out of the packets that had nothing
+to compare, which is the whole design. Of the newly-rejected descriptions,
+**2** claimed a comparison on a packet with no profile (the exact defect)
+and **1** claimed "above" where every measured field was below — an inverted
+direction, a subtler fabrication of the same kind. The broad first version
+scored 92.3% / 54.5%, so **most of what looked like the guard's cost was its
+own false positive**, not the price of honesty. **A rejection is not lost
+information**: every one falls back to the deterministic machine sentence,
+and all fallbacks were confirmed present in the rendered HTML.
+
+**(5) The `sae` stage's config fingerprint refused the re-render, correctly
+and for the wrong field.** Adding `describe_from_exemplars` to `SAEConfig`
+moved the `sae` stage's fingerprint, so `--stages report` refused every
+existing run as stale (§15 A3) — over a knob the `sae` stage never reads.
+The narrator is a standalone script over finished artifacts; the flag
+changes `sae/descriptions.json` and no artifact the stage writes. Left
+alone, adding any narrator-only knob would force a full SAE retrain to
+re-render a report, which is the false-refusal direction §11.35 records as
+the more expensive one, since a refusal reads as a considered finding.
+
+Fixed with `metadata={"stage_input": False}` on the field itself, honored by
+a new `manifest.py::_asdict_stage_inputs`. Opting out is a claim made **at
+the field**, so it cannot drift from the declaration the way a list kept in
+`manifest.py` would. Verified the strong way: the resolved fingerprint input
+is **bit-identical** to what `run_manifest.json` already recorded, so no
+existing run's manifest moved. Four tests, including two negatives — an
+ordinary field in the same dataclass (`sae.k`) must still move the
+fingerprint, and every section that opts nothing out must resolve **exactly**
+as `dataclasses.asdict` did, since the exclusion is implemented by replacing
+`asdict` and a difference there would invalidate every run's manifest at
+once while looking like a no-op. Confirmed to discriminate by planting an
+over-broad exclusion: exactly one test fails, and nothing unrelated.
+
+**Verification.** The report was re-rendered end to end through the real CLI
+and checked against **rendered output, not the diff** (§11.48): every
+accepted description text and every machine fallback appears verbatim in the
+HTML (**104 of 104** across both). 19 tests in
+`tests/test_sae_describe_exemplar_profile.py`, 11 in
+`tests/test_report_pairwise_and_labels.py`, 4 appended to
+`tests/test_manifest_fingerprint.py`.
+
+**Two observations left open, recorded rather than fixed.** (a) Two of the
+four exact-duplicate description pairs have *genuinely different* non-empty
+profiles and still collapsed to identical text — the narrator is
+under-using the evidence it is now given, which the guard cannot detect
+because nothing false was said. (b) `TimesFM/stacked_xf.2` feature `5894`
+has `structural_field = n_seasonalities` but its accepted text says "the
+dominance of a seasonal period" — a wrong gloss on a licensed concept,
+pre-existing and orthogonal to this item.

@@ -1230,6 +1230,21 @@ def patching_case_summary(run_dir: Path) -> pd.DataFrame:
                     row["mase_clean"] = _sc(np.abs(clean[si] - target[si]).mean())
                     row["mase_corrupted"] = _sc(np.abs(corr[si] - target[si]).mean())
                     row["mase_patched"] = _sc(np.abs(patched[si] - target[si]).mean())
+                    # The trivial floor, in the same units. Added 2026-09-04
+                    # after a user read a case panel where the clean forecast
+                    # sat flat at ~1.15 against a target oscillating over
+                    # [-0.03, 1.61] and asked why nothing came close to the
+                    # truth. It is not a bug -- L0 independently scores that
+                    # series at the same MASE, and all four models in the run
+                    # score 1.79-2.02 on it -- but the panel gave a reader no
+                    # way to tell "this model failed here" from "this series
+                    # is not forecastable and every model flat-lines". A naive
+                    # forecast answers exactly that, and costs one subtraction.
+                    if context is not None and si < context.shape[0]:
+                        naive = float(np.abs(context[si][-1] - target[si]).mean())
+                        row["mase_naive"] = _sc(naive)
+                        if row["mase_clean"] is not None and row["mase_naive"]:
+                            row["beats_naive"] = bool(row["mase_clean"] < row["mase_naive"])
                 if grid is not None and grid.ndim == 3 and si < grid.shape[2]:
                     cell = grid[:, :, si]
                     if np.isfinite(cell).any():
@@ -1555,3 +1570,110 @@ def sae_structural_profile(run_dir: Path) -> pd.DataFrame:
                          "mean_abs_rho": float(np.mean(rhos)),
                          "share_of_matched": (len(rhos) / total) if total else None})
     return pd.DataFrame(rows)
+
+
+def sae_field_coverage(run_dir: Path, min_share: float = 0.05) -> pd.DataFrame:
+    """Which data properties each MODEL's dictionaries organize around, and
+    whether that property is shared across models or unique to one.
+
+    Added 2026-09-04 on user review: "trying to answer the question of 'What
+    does this model account for that this one doesn't?', or 'What is a common
+    strong feature between these models and what is unique and why?'". The
+    section had no artifact that could answer either. `sae_structural_profile`
+    is per *target* (13 rows of layers on a 4-model run), and a reader cannot
+    do a four-way model comparison by mentally pooling five TimesFM layers
+    against three Chronos-2 ones -- especially when the layers are not even
+    the same depths across models.
+
+    So this pools a model's targets into one coverage profile and classifies
+    each field by HOW MANY models reach it at all:
+
+      shared    - every model in the run covers it
+      partial   - more than one, not all
+      unique    - exactly one model covers it
+
+    `covered` is `share_of_matched >= min_share` at ANY of that model's
+    targets, not an average: a property a model represents strongly at one
+    depth and nowhere else is still a property that model accounts for, and
+    averaging over depths would hide it behind layers that do something else.
+
+    `peak_share`/`peak_rho`/`best_target` record where that maximum was, so a
+    "unique" verdict can be checked against the layer that produced it rather
+    than taken on faith.
+
+    Adaptivity contract, same as `bottom_line_rows`: model identity comes
+    only from the artifact's own `"{model}/{layer}"` keys. No model name,
+    architecture family, or positional index appears anywhere here, so this
+    transfers unchanged to a run of models nobody has tried.
+    """
+    prof = sae_structural_profile(run_dir)
+    if prof.empty:
+        return pd.DataFrame()
+    prof = prof.copy()
+    prof["model"] = prof["target"].astype(str).str.split("/").str[0]
+    n_models = prof["model"].nunique()
+    rows = []
+    for (model, field), g in prof.groupby(["model", "field"], sort=False):
+        best = g.loc[g["share_of_matched"].idxmax()]
+        rows.append({
+            "model": model, "field": str(field),
+            "peak_share": float(best["share_of_matched"]),
+            "peak_rho": float(best["mean_abs_rho"]),
+            "best_target": str(best["target"]),
+            "n_targets_present": int(g["target"].nunique()),
+            "n_features": int(g["n_features"].sum()),
+        })
+    df = pd.DataFrame(rows)
+    if df.empty:
+        return df
+    df["covered"] = df["peak_share"] >= min_share
+    reach = (df[df["covered"]].groupby("field")["model"].nunique()
+             .reindex(df["field"].unique()).fillna(0).astype(int))
+    df["n_models_covering"] = df["field"].map(reach)
+    df["scope"] = np.where(
+        df["n_models_covering"] >= n_models, "shared",
+        np.where(df["n_models_covering"] <= 1, "unique", "partial"))
+    # A field nothing covers is not "unique to" the models that miss it.
+    df.loc[df["n_models_covering"] == 0, "scope"] = "uncovered"
+    df.attrs["n_models"] = n_models
+    df.attrs["min_share"] = min_share
+    return df.sort_values(["n_models_covering", "field", "peak_share"],
+                          ascending=[False, True, False]).reset_index(drop=True)
+
+
+def sae_model_contrast(run_dir: Path, min_share: float = 0.05) -> pd.DataFrame:
+    """One row per model: what it covers that others don't, and what it shares.
+
+    The reading layer over `sae_field_coverage` -- the same relationship
+    `sae_health` has to `sae/meta.json`. A reader asking "what does this model
+    account for that this one doesn't" wants a sentence per model, not a
+    matrix to scan, and a matrix is what the figure is for.
+
+    `only_this_model` is the direct answer to the user's first question and is
+    the column to read first; `strongest` answers "what is this model's
+    dictionary mostly about" regardless of whether others share it.
+    """
+    cov = sae_field_coverage(run_dir, min_share=min_share)
+    if cov.empty:
+        return pd.DataFrame()
+    rows = []
+    for model, g in cov.groupby("model", sort=False):
+        cvd = g[g["covered"]]
+        uniq = cvd[cvd["scope"] == "unique"].sort_values("peak_share", ascending=False)
+        shared = cvd[cvd["scope"] == "shared"].sort_values("peak_share", ascending=False)
+        top = cvd.sort_values("peak_share", ascending=False).head(1)
+        rows.append({
+            "model": model,
+            "properties covered": int(len(cvd)),
+            "strongest": (f'{top.iloc[0]["field"]} ({top.iloc[0]["peak_share"]:.0%})'
+                          if not top.empty else "—"),
+            "only this model": (", ".join(f'{r.field} ({r.peak_share:.0%})'
+                                          for r in uniq.head(3).itertuples())
+                                if not uniq.empty else "none"),
+            "shared with all": (", ".join(shared.head(3)["field"])
+                                if not shared.empty else "none"),
+        })
+    out = pd.DataFrame(rows)
+    out.attrs["n_models"] = cov.attrs.get("n_models")
+    out.attrs["min_share"] = min_share
+    return out

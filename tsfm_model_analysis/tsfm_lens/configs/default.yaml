@@ -167,6 +167,18 @@ layer_screen:
 sae:
   enabled: false                # baseline TopKSAE exists (sae/train.py); off here for cost --
                                  # enable + leave targets: [] to train on layer_screen's picks
+  # Evidence given to the LLM narrator (run_sae_describe.py, ROADMAP.md
+  # sec 26 C/G). true also hands it what each feature's OWN top-firing series
+  # measure, against the corpus median -- which is what tells apart features
+  # sharing a target and a structural field, of which this repo's own runs
+  # have 25 groups. Structural fields only: a contrast on a PROVENANCE field
+  # would report how the benchmark was built (sec 26 A1). Free -- a pure
+  # reduction over artifacts the exemplar pass already loads, no extra
+  # forward pass and no extra model load. `false` reproduces the
+  # pre-2026-09-04 packets exactly. Read by the narrator SCRIPT, never by
+  # the `sae` stage, so it is excluded from that stage's config fingerprint
+  # (CLAUDE.md sec 11.51) and changing it never invalidates a trained SAE.
+  describe_from_exemplars: true
 
 report:
   enabled: true

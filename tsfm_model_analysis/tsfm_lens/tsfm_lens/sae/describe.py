@@ -115,6 +115,27 @@ class Evidence:
     top3_structural: tuple = ()
     n_atoms: int | None = None
     exemplar_families: tuple = ()
+    exemplar_profile: tuple = ()
+    """`((field, mean_over_firing_series, corpus_median), ...)`, structural only.
+
+    Added 2026-09-04 on user review: "it is not clear what exactly each
+    feature does as many have very similar names and activate for the same
+    series." That was a measurement, not an impression -- within one target
+    the top features routinely share a `structural_field` and overlap on
+    exemplar families, so every field the narrator was licensed to mention
+    was IDENTICAL across them and no honest description could distinguish
+    them. This is the distinguishing evidence: for each field, what the
+    series this feature actually fires hardest on measure, against what the
+    corpus typically measures. Two features sharing a field still differ
+    here whenever they fire on different ends of it.
+
+    Structural fields only, and only fields `sae/ground_truth.py` did not
+    refuse as inseparable from provenance (sec 11.48) -- a contrast on
+    `generator_*` would say which generator wrote the series, which is
+    corpus bookkeeping and exactly what sec 26 A1/A3 removed from the
+    headline. Empty when the exemplar pass did not run, which keeps every
+    packet built before this field existed byte-identical.
+    """
     clears_null: bool = False
     channels_measured: bool = True
     """False when NO causal channel battery was run for this target at all.
@@ -488,6 +509,33 @@ UNLICENSED_TERMS = (
     "orders of magnitude",
 )
 
+# Comparative vocabulary for the `exemplar_profile` clause -- "this feature's
+# own top series measure X above/below what the corpus typically shows".
+#
+# Needed because the concept check cannot see this claim. That check licenses
+# a FIELD; the profile clause is an assertion ABOUT a field the packet may
+# already license for a different reason (`other correlates`), so a narrator
+# with no profile at all can compose a fully-licensed sentence claiming a
+# contrast that was never measured -- observed on the first live run, where a
+# packet reading "its own top series measure: not measured" was described as
+# "firing on series whose seasonal swings are above and whose changes are
+# fewer than typical". Every concept in that sentence was licensed. The
+# comparison was invented.
+#
+# Same shape as `UP_VERBS`/`DOWN_VERBS` one level over: a direction word is a
+# claim about a measurement's sign, so it needs a measurement pointing that
+# way. Deliberately disjoint from those two sets -- see `render_evidence`.
+PROFILE_ABOVE_TERMS = (
+    "above", "exceeds", "exceed", "exceeding", "greater", "larger", "more",
+    "longer", "stronger", "unusually high", "unusually large", "unusually many",
+    "above average", "higher than typical", "higher than usual",
+)
+PROFILE_BELOW_TERMS = (
+    "below", "fewer", "less", "smaller", "shorter", "weaker",
+    "unusually low", "unusually small", "unusually few", "below average",
+    "lower than typical", "lower than usual",
+)
+
 # Direction verbs. Licensed only when the packet holds a channel whose sign
 # actually points that way. `horizon_shape_near`/`far` are excluded from the
 # signed set by `CHANNEL_VERB` membership -- their statistic is an absolute
@@ -636,6 +684,37 @@ _UNTESTED_MARKER_PATTERNS = {term: _term_pattern(term)
 _UNLICENSED_PATTERNS = {t: _term_pattern(t) for t in UNLICENSED_TERMS}
 _UP_PATTERNS = {t: _term_pattern(t) for t in UP_VERBS}
 _DOWN_PATTERNS = {t: _term_pattern(t) for t in DOWN_VERBS}
+_PROFILE_ABOVE_PATTERNS = {t: _term_pattern(t) for t in PROFILE_ABOVE_TERMS}
+# Comparisons to the random-direction NULL, which are licensed by the
+# channel evidence and are not claims about the corpus at all.
+_NULL_COMPARISON = re.compile(
+    r"\b(?:above|below|over|beyond|under)\s+"
+    r"(?:the\s+)?(?:random[- ]direction\s+)?"
+    r"(?:null|noise floor|chance)\b")
+# A direction word is only a claim about the CORPUS when it is made against
+# one. "strongest on series with a larger dominant seasonal period" is a
+# claim about the SIGN OF RHO -- licensed by `structural_rho`, and the exact
+# wording this module's own machine fallback writes; scanning bare direction
+# words rejected it, i.e. the guard refused the sentence it falls back TO.
+# So the scan runs only in a window around a corpus anchor, which is also
+# the only phrasing `render_evidence` and the few-shot examples teach.
+_CORPUS_ANCHOR = re.compile(r"\b(?:typical|typically|corpus|usual|usually|average)\b")
+_ANCHOR_LOOKBEHIND = 80
+_ANCHOR_LOOKAHEAD = 40
+
+
+def _corpus_comparison_windows(text: str) -> str:
+    """The parts of `text` that compare something to the corpus, joined.
+
+    Empty when nothing is compared to the corpus at all -- which is the
+    common case and must stay unscanned.
+    """
+    spans = []
+    for hit in _CORPUS_ANCHOR.finditer(text):
+        spans.append(text[max(0, hit.start() - _ANCHOR_LOOKBEHIND):
+                          hit.end() + _ANCHOR_LOOKAHEAD])
+    return " || ".join(spans)
+_PROFILE_BELOW_PATTERNS = {t: _term_pattern(t) for t in PROFILE_BELOW_TERMS}
 _NO_EFFECT_PATTERNS = {t: _term_pattern(t) for t in NO_EFFECT_TERMS}
 # A raw artifact field name is correct but is not English, and it reads as
 # a leak of the pipeline's internals into the prose the report renders.
@@ -697,6 +776,9 @@ def allowed_concepts(ev: Evidence) -> set:
     for fam in (ev.exemplar_families or ()):
         out.add(family_concept(fam))
         out.add(field_concept(f"generator_{fam}"))
+    for entry in (ev.exemplar_profile or ()):
+        if entry and entry[0]:
+            out.add(field_concept(entry[0]))
     return out
 
 
@@ -724,6 +806,10 @@ def _allowed_number_strings(ev: Evidence) -> set:
     add(ev.structural_n)
     add(ev.n_atoms)
     for entry in (ev.top3_structural or ()):
+        if entry and len(entry) >= 3:
+            add(entry[1])
+            add(entry[2])
+    for entry in (ev.exemplar_profile or ()):
         if entry and len(entry) >= 3:
             add(entry[1])
             add(entry[2])
@@ -797,6 +883,41 @@ def check_text(text: str, ev: Evidence) -> str:
         if _DOWN_PATTERNS[term].search(norm) and not has_down:
             return (f"the answer said {term!r}, but no channel in the evidence moved "
                     "downward; a near or far horizon effect has a size, not a direction")
+
+    # The same rule for the `exemplar_profile` clause. Three states, not two,
+    # for the reason `channels_measured` exists: a packet with no profile did
+    # not measure this and must not be described as having found nothing
+    # either -- it simply has no comparison to report, so ANY comparison in
+    # the text is fabricated regardless of direction.
+    prof = [e for e in (ev.exemplar_profile or ()) if e and len(e) >= 3]
+    prof_above = any(float(e[1]) > float(e[2]) for e in prof)
+    prof_below = any(float(e[1]) < float(e[2]) for e in prof)
+    # "no effect ABOVE the random-direction null" is the module's own standard
+    # phrasing for a feature that cleared nothing -- and it is a comparison to
+    # the NULL, not to the corpus. Scanning the raw text flagged it, which
+    # would have rejected the correct wording of the commonest packet state in
+    # this repo. Removing the null collocations before the scan keeps a bare
+    # "above" elsewhere in the sentence a fabrication, which is what the guard
+    # is for; the alternative (requiring the full "above what is typical"
+    # phrase) would have let the observed fabrication through, since it wrote
+    # exactly the bare form. The scan is then narrowed to the windows that
+    # actually compare something to the corpus -- see `_corpus_comparison_windows`,
+    # without which this guard rejects the module's own machine fallback.
+    prof_norm = _corpus_comparison_windows(_NULL_COMPARISON.sub(" ", norm))
+    for term in PROFILE_ABOVE_TERMS:
+        if _PROFILE_ABOVE_PATTERNS[term].search(prof_norm) and not prof_above:
+            return (f"the answer said {term!r}, but " + (
+                "the evidence lists nothing its own top series measure above "
+                "what is typical" if prof else
+                "nothing was measured about what its own top series score, so "
+                "there is no comparison to the corpus to report at all"))
+    for term in PROFILE_BELOW_TERMS:
+        if _PROFILE_BELOW_PATTERNS[term].search(prof_norm) and not prof_below:
+            return (f"the answer said {term!r}, but " + (
+                "the evidence lists nothing its own top series measure below "
+                "what is typical" if prof else
+                "nothing was measured about what its own top series score, so "
+                "there is no comparison to the corpus to report at all"))
 
     for pattern in (_DIRECTION_ON_HORIZON, _HORIZON_THEN_DIRECTION):
         for hit in pattern.finditer(norm):
@@ -1021,7 +1142,12 @@ SYSTEM_PROMPT = (
     "always, never or nothing but.\n"
     "8. Say what patching the feature moves and, when a structural correlate is "
     "listed, on which kind of series it is strongest.\n"
-    "9. Reply with the sentence and nothing else."
+    "9. When the evidence says its own top series measure some property above or "
+    "below what is typical, say that too, in those words and without numbers. Do "
+    "not write higher or lower there -- those describe the forecast, not the "
+    "series. That clause is what tells this feature apart from others with the "
+    "same correlate.\n"
+    "10. Reply with the sentence and nothing else."
 )
 
 # Hand-written `(Evidence, description)` pairs. Real packets rather than
@@ -1079,6 +1205,27 @@ FEW_SHOT_EXAMPLES = (
         "Patching this feature pulls the forecast's overall level down and reshapes "
         "both horizons, most strongly on series from the realism-stress tier.",
     ),
+    (
+        # The exemplar for `exemplar_profile` (sec 26 C, 2026-09-04). Without
+        # one the model sees the new line only in the packet it is asked to
+        # describe and treats it as noise -- and the line exists precisely to
+        # be USED, since it is the only evidence that differs between two
+        # features sharing a `structural_field`, which is most of a target's
+        # top rows. Deliberately a packet whose `structural_field` is the
+        # generic one those features share, so the exemplar demonstrates the
+        # contrast doing the distinguishing work rather than decorating a
+        # sentence that was already specific.
+        Evidence(kind="feature", model="A", layer="l", ident="1568",
+                 channels={}, channels_measured=False,
+                 structural_field="seasonal_period_dominant",
+                 structural_rho=0.27, structural_n=443,
+                 exemplar_families=("random_parametric",),
+                 exemplar_profile=(("seasonal_amplitude_max", 1.82, 1.0),
+                                   ("ar_order", 0.0, 1.0))),
+        "This feature was not tested for an effect on the forecast; it tracks the "
+        "dominant seasonal period, firing on series whose seasonal swing is above "
+        "and whose autoregressive order is below what is typical.",
+    ),
 )
 
 
@@ -1131,6 +1278,33 @@ def render_evidence(ev: Evidence) -> str:
                     else "none"))
     fams = [FAMILY_GLOSS.get(f, f) for f in (ev.exemplar_families or ())]
     lines.append("example families: " + (", ".join(fams) if fams else "none"))
+    prof = [e for e in (ev.exemplar_profile or ()) if e and e[0]]
+    if prof:
+        # The line that lets two features sharing a `structural_field` be
+        # told apart: what their OWN top-firing series measure, against the
+        # corpus. Rendered as a comparison rather than a bare number so the
+        # narrator has the direction without having to derive it.
+        parts = []
+        for field, mine, typical in prof:
+            gloss = FIELD_GLOSS.get(field, field)
+            # "above"/"below", never "higher"/"lower". A direction word is a
+            # claim about a CHANNEL's sign, and `check_text` licenses one
+            # only from a channel that actually moved that way. This is a
+            # claim about a SERIES property, so it must not borrow that
+            # vocabulary -- and "lower" is in `DOWN_VERBS` while "higher" is
+            # not, so the natural pairing would also have rejected the
+            # low-end half of every contrast and accepted the high-end half,
+            # a systematic asymmetry rather than a guard. Extending
+            # `has_down` to cover this field was the other option and was
+            # rejected: it would license "patching this feature lowers the
+            # forecast level" on the strength of a series property, which is
+            # exactly the confusion the direction check exists to prevent.
+            word = "above" if float(mine) > float(typical) else "below"
+            parts.append(f"{gloss} {word} what is typical "
+                         f"({_fmt(mine)} against {_fmt(typical)} typical)")
+        lines.append("its own top series measure: " + "; ".join(parts))
+    else:
+        lines.append("its own top series measure: not measured")
     return "\n".join(lines)
 
 

@@ -21,6 +21,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from test_smoke import build_config  # noqa: E402  (sys.path set up above)
 
 from tsfm_lens.config import config_from_dict
+from tsfm_lens.manifest import fingerprint_stage, resolve_config_keys
 from tsfm_lens.pipeline import run_pipeline, stage_names
 
 
@@ -119,3 +120,69 @@ if __name__ == "__main__":
     test_changed_config_key_is_refused_then_force_resolves()
     test_allow_stale_proceeds_without_raising()
     print("manifest fingerprint tests passed")
+
+
+# --------------------------------------------------------------------------
+# `stage_input: False` -- a field in a section the stage does not consume
+# (2026-09-04, ROADMAP.md sec 26 C)
+# --------------------------------------------------------------------------
+
+def _plain_cfg(tmp_path):
+    return _cfg(str(tmp_path / "run"))
+
+
+def test_a_field_marked_not_a_stage_input_is_left_out_of_the_fingerprint(tmp_path):
+    """`sae.describe_from_exemplars` is read by the standalone narrator only.
+
+    A whole-section key is deliberately coarse, which is right for a stage's
+    real inputs and wrong for a knob that lives in a section for the user's
+    convenience. Fingerprinting it made `--stages report` refuse EVERY
+    existing run -- a guard firing on a state that is genuinely current,
+    which sec 11.35 records as the more expensive direction, since a refusal
+    reads as a considered finding rather than as a bug.
+    """
+    cfg = _plain_cfg(tmp_path)
+    resolved = resolve_config_keys(cfg, ("sae",))["sae"]
+    assert "describe_from_exemplars" not in resolved
+    assert hasattr(cfg.sae, "describe_from_exemplars")
+
+
+def test_flipping_that_field_does_not_move_the_fingerprint(tmp_path):
+    cfg = _plain_cfg(tmp_path)
+    before = fingerprint_stage(resolve_config_keys(cfg, ("sae",)), {})
+    cfg.sae.describe_from_exemplars = not cfg.sae.describe_from_exemplars
+    assert fingerprint_stage(resolve_config_keys(cfg, ("sae",)), {}) == before
+
+
+def test_an_ordinary_field_in_the_same_section_still_moves_it(tmp_path):
+    """The load-bearing negative.
+
+    Excluding by metadata is one edit away from excluding too much, and the
+    failure would be silent in the direction that matters: a stage skipping
+    on stale artifacts, which is the whole reason sec 15 A3 exists. `k` is
+    a real training input sitting in the same dataclass as the exempt field.
+    """
+    cfg = _plain_cfg(tmp_path)
+    before = fingerprint_stage(resolve_config_keys(cfg, ("sae",)), {})
+    cfg.sae.k = int(cfg.sae.k) + 1
+    assert fingerprint_stage(resolve_config_keys(cfg, ("sae",)), {}) != before
+
+
+def test_sections_with_no_exempt_fields_resolve_exactly_as_asdict_did(tmp_path):
+    """No recorded fingerprint may move for a section that opted nothing out.
+
+    The exclusion is implemented by replacing `dataclasses.asdict`, so every
+    OTHER section flows through new code. If that code differed from `asdict`
+    in any way -- key order, nested handling, a coerced type -- it would
+    invalidate every run's manifest at once while looking like a no-op.
+    """
+    import dataclasses, json
+    cfg = _plain_cfg(tmp_path)
+    for section in ("data", "l1", "l3", "lens", "attention"):
+        obj = getattr(cfg, section)
+        exempt = [f.name for f in dataclasses.fields(obj)
+                  if f.metadata.get("stage_input") is False]
+        assert exempt == [], f"{section} now opts fields out; extend this test"
+        got = resolve_config_keys(cfg, (section,))[section]
+        want = json.loads(json.dumps(dataclasses.asdict(obj), sort_keys=True, default=str))
+        assert got == want, section
