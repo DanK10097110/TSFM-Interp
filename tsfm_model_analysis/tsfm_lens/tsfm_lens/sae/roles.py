@@ -347,12 +347,29 @@ def role_table(candidates: list, X: np.ndarray, cluster_result: dict,
         mean_row = X[mask].mean(axis=0) if mask.any() else np.zeros(X.shape[1])
         dominant_effect = (float(mean_row[channel_columns.index(info["dominant_channel"])])
                           if info["dominant_channel"] in channel_columns else None)
+        # `clears_null` above is `any member cleared ANY channel`, while
+        # `dominant_effect_null_units` is the role's MEAN on its dominant
+        # channel -- two different quantities that read, side by side, as
+        # one qualifying the other. On `runs/full_report_run_4model` 17 of
+        # the 74 roles with `clears_null: True` have a dominant-channel mean
+        # BELOW 1.0 null units, and they are systematically the large
+        # clusters (7-23 atoms), because averaging a signed effect over more
+        # members dilutes it. Neither field is wrong and neither is
+        # redefined here (sec 2.1); what was missing is the third number
+        # that makes them legible together -- how many of the role's own
+        # members cleared the very channel the role is named after.
+        dom = info["dominant_channel"]
+        n_dom = sum(1 for c in members
+                    if dom is not None and dom in (c.get("clearing_channels") or ()))
+        n_any = sum(1 for c in members if c.get("clearing_channels"))
         out.append({
             "role": role_idx, "name": info["name"],
             "n_atoms": len(members),
             "features": [int(c["feature"]) for c in members],
             "dominant_channel": info["dominant_channel"],
             "dominant_effect_null_units": dominant_effect,
+            "dominant_channel_n_clearing": n_dom,
+            "n_members_clearing_any": n_any,
             "sign": info["sign"],
             "structural_field": info["structural_field"],
             "structural_rho": info["structural_rho"],

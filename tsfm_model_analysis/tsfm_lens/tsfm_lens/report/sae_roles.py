@@ -26,10 +26,25 @@ def roles_summary_table(target_result: dict) -> pd.DataFrame:
     """
     rows = []
     for r in target_result.get("roles", []):
+        # `clears null` is "some member atom cleared SOME channel" while
+        # `effect` is the role's MEAN on the one channel it is named after.
+        # Printed as a pair they read as one qualifying the other, and for
+        # 17 of the 74 clearing roles on `runs/full_report_run_4model` they
+        # point opposite ways -- "yes" beside 0.15 null units. The third
+        # number is what makes them legible together, and it is measured,
+        # not derived from either: how many of this role's own members
+        # cleared this role's own dominant channel. A role record written
+        # before that field existed renders "not recorded" rather than a
+        # guessed 0 (sec 11.37 -- absent and none are different outcomes).
+        n_dom = r.get("dominant_channel_n_clearing")
+        n_atoms = r["n_atoms"]
+        support = (f"{int(n_dom)} of {n_atoms}" if n_dom is not None
+                   else "not recorded")
         rows.append({
-            "role": r["name"], "atoms": r["n_atoms"],
+            "role": r["name"], "atoms": n_atoms,
             "dominant channel": r.get("dominant_channel") or "—",
             "effect (× null p95)": r.get("dominant_effect_null_units"),
+            "members clearing that channel": support,
             "structural correlate": (
                 f"{r['structural_field']} (ρ={r['structural_rho']:.2f}, n={r['structural_n']})"
                 if r.get("structural_field") else "—"),

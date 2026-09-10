@@ -148,9 +148,10 @@ def test_cleared_channels_uses_the_roles_normalization_and_drops_non_clearing():
         "down": {"channels": {ch: {"signed_mean": -4.0, "clears_null": True},
                               other: {"signed_mean": -9.0, "clears_null": False}}},
     }
-    out = CLI._cleared_channels(cand, {ch: 2.0, other: 2.0})
+    out, undirected = CLI._cleared_channels(cand, {ch: 2.0, other: 2.0})
     # larger magnitude of (+1.0, -4.0) is -4.0; -4.0 / 2.0 = -2.0, SIGN KEPT
     assert out == {ch: -2.0}, out
+    assert undirected == set()
 
 
 def test_a_channel_with_no_null_p95_is_dropped_not_divided_by_zero():
@@ -158,8 +159,8 @@ def test_a_channel_with_no_null_p95_is_dropped_not_divided_by_zero():
     cand = {"feature": 1,
             "up": {"channels": {ch: {"signed_mean": 3.0, "clears_null": True}}},
             "down": {"channels": {}}}
-    assert CLI._cleared_channels(cand, {}) == {}
-    assert CLI._cleared_channels(cand, {ch: 0.0}) == {}
+    assert CLI._cleared_channels(cand, {}) == ({}, set())
+    assert CLI._cleared_channels(cand, {ch: 0.0}) == ({}, set())
 
 
 def test_withheld_response_artifact_counts_as_not_measured(tmp_path):
@@ -202,3 +203,63 @@ def test_top3_skips_entries_with_no_field():
                                  {"field": None, "rho": 0.1, "n": 5},
                                  {"rho": 0.05, "n": 3}]}
     assert CLI._top3(entry) == (("noise_scale", 0.2, 10),)
+
+
+# --- the signed/unsigned split (sec 11.54 at the feature site) --------------
+
+def test_a_channel_whose_signed_mean_clears_keeps_its_direction():
+    """The boundary's safe side, pinned beside its unsafe side below.
+
+    Narrowing a guard is one edit from disabling it, so the pair differs in
+    exactly one number (sec 11.51 lesson 2).
+    """
+    ch = CHANNELS[0]
+    cand = {"feature": 1,
+            "up": {"channels": {ch: {"signed_mean": 2.0, "effect": 4.0,
+                                     "clears_null": True}}},
+            "down": {"channels": {}}}
+    out, undirected = CLI._cleared_channels(cand, {ch: 2.0})
+    assert out == {ch: 1.0}
+    assert undirected == set()
+
+
+def test_a_channel_that_moved_without_a_supported_direction_is_undirected():
+    """`clears_null` is the battery's UNSIGNED test; the packet carried the
+    SIGNED mean. On the real four-model run they disagree for 556 of 1394
+    cleared cells, down to a signed ratio of 0.01 -- so the narrator wrote a
+    direction word off the sign of a near-zero mean.
+
+    The channel is KEPT (it genuinely moved -- dropping it would assert the
+    opposite falsehood, sec 11.37) with the UNSIGNED effect that actually
+    cleared as its magnitude, and named as undirected.
+    """
+    ch = CHANNELS[0]
+    cand = {"feature": 1,
+            "up": {"channels": {ch: {"signed_mean": 0.2, "effect": 6.0,
+                                     "clears_null": True}}},
+            "down": {"channels": {}}}
+    out, undirected = CLI._cleared_channels(cand, {ch: 2.0})
+    assert undirected == {ch}
+    # 0.2 / 2.0 = 0.1 would have been rendered as "increases ... 0.10 times
+    # the null" beside "cleared the null: yes". What cleared is 6.0 / 2.0.
+    assert out == {ch: 3.0}
+
+
+def test_the_undirected_channel_licenses_no_direction_word():
+    """The point of the split -- verified through the guard, not the builder."""
+    from tsfm_lens.sae.describe import Evidence, check_text, render_evidence
+    ch = CHANNELS[0]
+    directed = Evidence(kind="feature", model="M", layer="l", ident="1",
+                        channels={ch: 3.0}, clears_null=True,
+                        channels_measured=True)
+    undirected = Evidence(kind="feature", model="M", layer="l", ident="1",
+                          channels={ch: 3.0}, clears_null=True,
+                          channels_measured=True,
+                          undirected_channels=frozenset({ch}))
+    from tsfm_lens.sae.describe import CHANNEL_GLOSS
+    gloss = CHANNEL_GLOSS.get(ch, ch)
+    sentence = f"Patching this feature increases {gloss}."
+    assert check_text(sentence, directed) == ""
+    assert check_text(sentence, undirected) != ""
+    assert "moves" in render_evidence(undirected)
+    assert "increases" not in render_evidence(undirected)

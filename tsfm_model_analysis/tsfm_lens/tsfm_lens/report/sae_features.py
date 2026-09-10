@@ -281,8 +281,112 @@ abbr.term      { text-decoration: underline dotted; cursor: help; }
 """
 
 
+# Channels that are magnitudes, not signed quantities. Read from
+# `sae/describe.py` rather than re-listed, so the narrator and the report
+# cannot disagree about which channel has a direction (sec 2.2).
+try:
+    from ..sae.describe import CHANNEL_VERB as _CHANNEL_VERB
+    _UNSIGNED_CHANNELS = frozenset(_CHANNEL_VERB)
+except Exception:                                          # pragma: no cover
+    _UNSIGNED_CHANNELS = frozenset({"horizon_shape_near", "horizon_shape_far"})
+
+
+def ablation_effect_label(entry: Optional[dict]) -> str:
+    """One phrase for what REMOVING this feature does, in null units.
+
+    Reports the channel with the largest cleared |signed effect / null p95|,
+    with a direction word -- the direction is the whole reason
+    `signed_effect` is recorded beside the unsigned `effect` (two features
+    whose removal moves the level in opposite directions have opposite
+    causal roles). Channels whose null had no spread are excluded here as
+    they are everywhere else: they cleared nothing, so they cannot be the
+    largest thing that cleared.
+
+    Returns "" when there is no ablation record at all -- the caller then
+    renders nothing, rather than a sentence implying the pass ran and found
+    no effect (`CLAUDE.md` sec 11.37: absent and null are different).
+    """
+    if not entry:
+        return ""
+    if not entry.get("scorable"):
+        return "not measured: " + str(entry.get("reason") or "not scorable")
+    best, best_ratio = None, 0.0
+    for ch, rec in (entry.get("channels") or {}).items():
+        if not rec.get("available") or not rec.get("clears_null"):
+            continue
+        p95, signed = rec.get("null_p95"), rec.get("signed_effect")
+        if not p95 or signed is None:
+            continue
+        # The ratio printed must be the one that DECIDED the clearing --
+        # `clears_null` compares the unsigned `effect` against the p95, and
+        # `|signed| / p95` is a different, smaller number whenever the
+        # per-series effects partly cancel. The first version printed the
+        # latter, which rendered "1.0x its null" beside a cell that had
+        # cleared comfortably. Direction still comes from `signed_effect`;
+        # the two are read off separately because they answer separate
+        # questions. Found by reading the rendered report (sec 11.48).
+        ratio = float(rec.get("effect") or 0.0) / float(p95)
+        if ratio > best_ratio:
+            best, best_ratio = (ch, float(signed)), ratio
+    if best is None:
+        return "removing it moves no channel past its own null"
+    ch, signed = best
+    # `horizon_shape_*` is a mean ABSOLUTE deviation, so it has no sign and a
+    # direction word on it is a fabrication -- the same rule
+    # `sae/describe.py::CHANNEL_VERB` encodes for the narrator, and the same
+    # one `check_text`'s `_DIRECTION_ON_HORIZON` guard enforces there. The
+    # renderer had no equivalent and printed "raises near horizon".
+    if ch in _UNSIGNED_CHANNELS:
+        verb = "reshapes"
+    else:
+        verb = "raises" if signed > 0 else "lowers"
+    return (f"removing it {verb} {describe_term(ch).label.lower()} "
+            f"({best_ratio:.1f}x its null)")
+
+
+def ablation_cell(entry: Optional[dict], max_series: int = 3) -> str:
+    """The with-and-without-the-feature forecasts for one feature.
+
+    Each sparkline draws that series' own context and true continuation,
+    overlaid with the forecast from the SAE's FULL reconstruction (`clean`)
+    and from the same reconstruction with this one atom zeroed
+    (`patched`). The baseline is the full reconstruction, not the raw
+    model forecast, so the gap between the two lines is the feature's own
+    contribution and not the SAE's reconstruction cost -- the picture and
+    the channel numbers beside it then describe the same contrast.
+
+    Everything drawn comes from the ablation artifact itself, so this needs
+    no corpus lookup and cannot pair a forecast with the wrong series.
+    """
+    if not entry or not entry.get("scorable"):
+        return "<span class='spark-missing'>not measured</span>"
+    fcs = (entry.get("forecasts") or [])[:max_series]
+    if not fcs:
+        return "<span class='spark-missing'>no forecasts kept</span>"
+    cells = []
+    for f in fcs:
+        ctx, tgt = list(f.get("context") or []), list(f.get("target") or [])
+        if not ctx or not tgt:
+            continue
+        meta = (f"{html.escape(str(f.get('series_id', '')))} · "
+                f"activation {float(f.get('activation', float('nan'))):.2f} · "
+                f"solid = with the feature, dashed = with it removed")
+        svg = sparkline_svg(ctx + tgt, len(ctx),
+                            clean=f.get("with_feature"),
+                            patched=f.get("without_feature"),
+                            title=f"series {f.get('series_id', '')} with and "
+                                  f"without feature {entry.get('feature')}")
+        cells.append(f"<figure class='spark-cell' data-meta=\"{meta}\" "
+                     f"title='Click to enlarge'>{svg}"
+                     f"<figcaption>with · without</figcaption></figure>")
+    if not cells:
+        return "<span class='spark-missing'>no forecasts kept</span>"
+    return f"<div class='spark-row'>{''.join(cells)}</div>"
+
+
 def feature_table_html(cards: list, series_lookup, context_len: int,
-                       descriptions: Optional[dict] = None) -> str:
+                       descriptions: Optional[dict] = None,
+                       ablations: Optional[dict] = None) -> str:
     """The compact one-row-per-feature table (ROADMAP.md sec 26 B2/B3).
 
     `series_lookup` maps a series id to its raw values (or `None` when the
@@ -294,14 +398,24 @@ def feature_table_html(cards: list, series_lookup, context_len: int,
     description. It is rendered verbatim and is never required: the table
     is complete and readable without it, so a run with no narrator
     available loses a convenience, not a column of evidence.
+
+    `ablations` optionally maps feature index -> that feature's entry in a
+    `*_ablation.json` candidate list, which adds the two causal columns:
+    what removing the feature does, and the forecasts with and without it.
+    Both are omitted wholesale when no ablation pass has run for this
+    target -- an empty column would read as "measured, no effect".
     """
     if not cards:
         return "<p class='blurb'>no features to illustrate.</p>"
     has_desc = bool(descriptions)
+    has_abl = bool(ablations)
     head = ("<tr><th>Feature</th>"
             + ("<th>What it looks like it does</th>" if has_desc else "")
             + "<th>Structural correlate</th>"
+            + ("<th>What removing it does</th>" if has_abl else "")
             + "<th>Top-activating series <span class='muted'>(click to enlarge)</span></th>"
+            + ("<th>Forecast with · without <span class='muted'>(click to enlarge)"
+               "</span></th>" if has_abl else "")
             + "<th>Corpus label</th></tr>")
     body = []
     for c in cards:
@@ -322,9 +436,16 @@ def feature_table_html(cards: list, series_lookup, context_len: int,
             d = (descriptions or {}).get(c["feature"])
             row += ("<td>" + (html.escape(d) if d else
                               "<span class='muted'>no description generated</span>") + "</td>")
-        row += (f"<td>{tracks_cell(c['structural_field'], c['structural_rho'], c['structural_n'])}</td>"
-                f"<td>{ex_html}</td>"
-                f"<td>{provenance_cell(c['provenance_field'], c['provenance_rho'])}</td></tr>")
+        abl = (ablations or {}).get(c["feature"])
+        row += f"<td>{tracks_cell(c['structural_field'], c['structural_rho'], c['structural_n'])}</td>"
+        if has_abl:
+            label = ablation_effect_label(abl)
+            row += ("<td>" + (html.escape(label) if label else
+                              "<span class='muted'>not a candidate</span>") + "</td>")
+        row += f"<td>{ex_html}</td>"
+        if has_abl:
+            row += f"<td>{ablation_cell(abl)}</td>"
+        row += (f"<td>{provenance_cell(c['provenance_field'], c['provenance_rho'])}</td></tr>")
         body.append(row)
     return (f"<table class='tbl'><thead>{head}</thead>"
             f"<tbody>{''.join(body)}</tbody></table>")

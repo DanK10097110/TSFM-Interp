@@ -56,7 +56,50 @@ def _response_artifact(run_dir: Path, model: str, layer: str) -> dict | None:
     return None if doc.get("withheld") else doc
 
 
-def _cleared_channels(cand: dict, null_p95: dict) -> dict:
+def _ablation_artifact(run_dir: Path, model: str, layer: str) -> dict | None:
+    p = (run_dir / "sae" / sanitize(model) / f"{sanitize(layer)}_ablation.json")
+    if not p.exists():
+        return None
+    doc = json.loads(p.read_text(encoding="utf-8"))
+    return None if doc.get("withheld") else doc
+
+
+def _ablation_channels(cand: dict | None) -> tuple[dict, set]:
+    """Signed null-multiples for the channels this feature's REMOVAL cleared.
+
+    🔴 The sign is negated on the way in. `sae/response.py` records
+    `signed_effect` as ablated-minus-baseline, i.e. the effect of taking the
+    feature OUT; `Evidence.ablation_channels` is documented to hold the
+    feature's own contribution, so that a direction word means one thing in
+    the narrator's sentence no matter which battery licensed it.
+
+    Channels whose null had no spread are excluded even when the artifact
+    says `clears_null` -- artifacts written before that guard landed say
+    exactly that, and 10 of the first real run's 32 clearing cells were this
+    shape. A ratio against a zero null is not large, it is undefined.
+    """
+    out, undirected = {}, set()
+    for ch, rec in ((cand or {}).get("channels") or {}).items():
+        if not rec.get("available") or not rec.get("clears_null"):
+            continue
+        if rec.get("null_degenerate"):
+            continue
+        p95, signed = rec.get("null_p95"), rec.get("signed_effect")
+        if not p95 or signed is None:
+            continue
+        ratio = -float(signed) / float(p95)
+        if abs(ratio) >= 1.0:
+            out[ch] = ratio
+            continue
+        # Same split as `_cleared_channels`: this battery also gates on an
+        # unsigned `effect` while carrying a `signed_effect`.
+        eff = rec.get("effect")
+        out[ch] = (abs(float(eff)) / float(p95)) if eff is not None else abs(ratio)
+        undirected.add(ch)
+    return out, undirected
+
+
+def _cleared_channels(cand: dict, null_p95: dict) -> tuple[dict, set]:
     """Signed null-multiples for the channels this candidate actually cleared.
 
     Same normalization as `sae/roles.py::build_feature_matrix`: the
@@ -69,7 +112,7 @@ def _cleared_channels(cand: dict, null_p95: dict) -> dict:
     """
     up = ((cand.get("up") or {}).get("channels") or {})
     down = ((cand.get("down") or {}).get("channels") or {})
-    out = {}
+    out, undirected = {}, set()
     for ch in CHANNELS:
         u, d = up.get(ch, {}), down.get(ch, {})
         if not (u.get("clears_null") or d.get("clears_null")):
@@ -78,8 +121,21 @@ def _cleared_channels(cand: dict, null_p95: dict) -> dict:
         signed = [v for v in (u.get("signed_mean"), d.get("signed_mean")) if v is not None]
         if not signed or not p95:
             continue
-        out[ch] = float(max(signed, key=abs)) / float(p95)
-    return out
+        ratio = float(max(signed, key=abs)) / float(p95)
+        if abs(ratio) >= 1.0:
+            out[ch] = ratio
+            continue
+        # `clears_null` above is the battery's UNSIGNED test (mean |delta|
+        # against the null's p95); `ratio` is the SIGNED mean over that same
+        # p95. The channel really moved, so withholding it would assert the
+        # opposite falsehood (sec 11.37), but its direction is a near-zero
+        # mean's sign and is not licensed -- sec 11.54 at the feature site.
+        # Report what actually cleared: the unsigned effect.
+        effects = [float(r["effect"]) for r in (u, d)
+                   if r.get("clears_null") and r.get("effect") is not None]
+        out[ch] = (max(effects) / float(p95)) if effects else abs(ratio)
+        undirected.add(ch)
+    return out, undirected
 
 
 def _top3(entry: dict) -> tuple:
@@ -124,6 +180,9 @@ def build_evidence(run_dir: Path, cfg, top_features: int = 8,
         resp = _response_artifact(run_dir, model, layer)
         null_p95 = (resp or {}).get("null_p95") or {}
         by_feature = {int(c["feature"]): c for c in ((resp or {}).get("candidates") or [])}
+        abl = _ablation_artifact(run_dir, model, layer)
+        abl_by_feature = {int(c["feature"]): c
+                          for c in ((abl or {}).get("candidates") or [])}
 
         families_by_feature, profiles_by_feature = {}, {}
         if store is not None and run_meta is not None:
@@ -136,7 +195,12 @@ def build_evidence(run_dir: Path, cfg, top_features: int = 8,
             f_idx = int(fe["feature"])
             struct = fe.get("structural") or {}
             cand = by_feature.get(f_idx)
-            channels = _cleared_channels(cand, null_p95) if cand else {}
+            channels, undirected = (_cleared_channels(cand, null_p95)
+                                    if cand else ({}, set()))
+            abl_cand = abl_by_feature.get(f_idx)
+            abl_channels, abl_undirected = (
+                _ablation_channels(abl_cand)
+                if (abl_cand or {}).get("scorable") else ({}, set()))
             packets.append((key, "feature", str(f_idx), Evidence(
                 kind="feature", model=model, layer=layer, ident=str(f_idx),
                 channels=channels,
@@ -146,6 +210,17 @@ def build_evidence(run_dir: Path, cfg, top_features: int = 8,
                 top3_structural=_top3(fe),
                 exemplar_families=tuple(families_by_feature.get(f_idx, ())),
                 exemplar_profile=tuple(profiles_by_feature.get(f_idx, ())),
+                ablation_channels=abl_channels,
+                # Conservative union across the two batteries: a channel one
+                # battery cannot give a direction to is rendered undirected
+                # in both, since the render loops share this one set. It can
+                # withhold a direction the other battery did support; it can
+                # never assert one neither did.
+                undirected_channels=frozenset(undirected | abl_undirected),
+                # A feature the ablation pass did not reach is `False` here
+                # even when the pass ran for the target -- the pass scores a
+                # selected subset, and a feature outside it was not measured.
+                ablation_measured=(abl is not None and f_idx in abl_by_feature),
                 clears_null=bool(channels),
                 # A target with no Stage 2 artifact was never TESTED. Passing
                 # `channels_measured=False` is what keeps its sentence from
@@ -155,16 +230,23 @@ def build_evidence(run_dir: Path, cfg, top_features: int = 8,
 
         rec = roles_doc.get(key) or {}
         for role in (rec.get("roles") or []):
+            role_chans = _role_channels(role, rec, null_p95)
             packets.append((key, "role", str(role.get("role")), Evidence(
                 kind="role", model=model, layer=layer, ident=str(role.get("role")),
-                channels=_role_channels(role, rec, null_p95),
+                channels=role_chans,
                 structural_field=role.get("structural_field"),
                 structural_rho=(float(role["structural_rho"])
                                 if role.get("structural_rho") is not None else None),
                 structural_n=(int(role["structural_n"])
                               if role.get("structural_n") is not None else None),
                 n_atoms=int(role.get("n_atoms") or 0),
-                clears_null=bool(role.get("clears_null")),
+                # NOT `roles.json`'s own `clears_null`, which is "any member
+                # atom cleared ANY channel" -- a different question from the
+                # one the sentence beneath it will answer. `_role_channels`
+                # now applies the same did-THIS-channel-clear test the
+                # feature path has always applied, so the two fields cannot
+                # disagree in the packet the way they did in the artifact.
+                clears_null=bool(role_chans),
                 channels_measured=resp is not None)))
     return packets
 
@@ -179,6 +261,23 @@ def _role_channels(role: dict, rec: dict, null_p95: dict) -> dict:
     ch = role.get("dominant_channel")
     val = role.get("dominant_effect_null_units")
     if not ch or val is None or not role.get("clears_null"):
+        return {}
+    # `_cleared_channels` (the FEATURE path, directly above) includes a
+    # channel only when that channel itself cleared, on the stated grounds
+    # that `Evidence` treats `channels` as the exhaustive list of what the
+    # narrator may claim. This path did not apply the same test: it gated on
+    # `clears_null`, which is "some member atom cleared SOME channel", and
+    # then reported the role's MEAN on its dominant channel whatever that
+    # mean was. On `runs/full_report_run_4model` that licensed an action
+    # claim for 17 of 74 roles whose own dominant-channel mean is below 1.0
+    # null units -- and 12 accepted sentences duly asserted one ("reshapes
+    # the far horizon", role mean 0.15). The narrator was faithful; the
+    # packet was not. Since `dominant_channel` is the argmax of |mean|, a
+    # sub-1.0 dominant means EVERY channel's role-level mean is sub-1.0, so
+    # the honest packet is an empty `channels` dict -- the same answer the
+    # feature path gives for a feature that cleared nothing (sec 11.39: the
+    # rule existed, at one of its two sites).
+    if abs(float(val)) < 1.0:
         return {}
     return {ch: float(val)}
 

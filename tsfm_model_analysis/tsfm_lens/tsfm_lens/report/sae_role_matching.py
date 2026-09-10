@@ -35,6 +35,16 @@ def pair_match_table(pair: dict) -> pd.DataFrame:
         if "activation_profile_correlation" in m:
             row["activation profile ρ"] = m["activation_profile_correlation"]
             row["max-activating overlap (Jaccard)"] = m.get("max_activating_series_jaccard")
+        if "causal" in m:
+            # The second opinion (ROADMAP.md sec 27). Rendered beside the
+            # correlational columns, never folded into them: two roles
+            # firing on the same series while pushing the forecast in
+            # different directions is the finding, and averaging the two
+            # signals into one score is exactly what would hide it.
+            c = m["causal"]
+            row["same causal direction?"] = c.get("verdict")
+            row["causal cosine"] = c.get("cosine")
+            row["vs. arbitrary-pair p95"] = c.get("null_p95")
         rows.append(row)
     return pd.DataFrame(rows)
 

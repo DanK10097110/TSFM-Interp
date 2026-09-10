@@ -23535,3 +23535,1091 @@ because nothing false was said. (b) `TimesFM/stacked_xf.2` feature `5894`
 has `structural_field = n_seasonalities` but its accepted text says "the
 dominance of a seasonal period" — a wrong gloss on a licensed concept,
 pre-existing and orthogonal to this item.
+
+---
+
+## 27. The feature's causal change becomes evidence, a comparison metric, and narrator context (added 2026-09-08, user-directed)
+
+> **The request, verbatim.** *"I want to incoporate the feature's causal
+> change into the report. First, show in the SAE examplars with and without
+> the feature firing to see how exactly the feature affects the prediction.
+> Second, I want to use the causal change the feature pushes to use as a
+> secondary comparison metric between features(cross-model too). The logic
+> here is that even though 2 features might activate for the same series, it
+> might be for different reasons, so that needs to be distinguished. This
+> causal affect of a feature should also be given in Qwen's context so it can
+> better describe what each feature does."*
+
+### 27.1 The premise is a measurement, not an impression
+
+Checked before building (§2.4). On `runs/full_report_run_4model` there are
+**25 groups of two or more features sharing BOTH a target and a
+`structural_field`**, the largest holding **7**. Within such a group every
+field the report and the narrator were licensed to mention is identical, so
+two features that co-fire and carry the same correlate were, in the report's
+own terms, indistinguishable. That is exactly the gap §26 G's
+`exemplar_profile` narrowed correlationally; this closes the causal half.
+
+### 27.2 What was built
+
+**A second intervention.** `sae/response.py::feature_ablation_fingerprints`
+zeroes one atom out of the SAE's own **token-level reconstruction**
+(`_feature_ablated_replacement`) and measures the nine
+`CHANNELS` on **that feature's own top-firing series** (`top_firing_rows`).
+Stage 2's existing battery injects a decoder direction into series chosen
+*without reference to the feature*; this one asks what the feature is
+contributing **where it is actually active**, which is the question two
+co-firing features differ on. Same reach gate, same random-direction null,
+same `intervention`/`conditioning` provenance recorded in the artifact.
+Driver: `run_sae_ablation.py` (reuses Stage 2's candidate list when present,
+recording `candidate_source`, so the correlational and causal views describe
+the same atoms). Artifact: `<run>/sae/<model>/<layer>_ablation.json`.
+
+**Rendered in the report.** `report/sae_features.py` gained
+`ablation_effect_label` and `ablation_cell`; `feature_table_html` gained two
+columns — *"What removing it does"* and *"Forecast with · without"*, the
+latter an overlay of the SAE's full reconstruction against the same
+reconstruction with one atom removed, **so the gap between the two lines is
+this feature's contribution and not the dictionary's**. Both columns are
+**omitted wholesale** when no ablation artifact exists: an empty "what
+removing it does" column reads as *measured, no effect*, which is the one
+thing it must not say (§11.37).
+
+**A causal second opinion on cross-model matching.**
+`sae/matching.py::causal_fingerprint` / `causal_agreement` /
+`causal_permutation_null` / `add_causal_agreement` at feature granularity,
+and `role_causal_fingerprint` / `add_role_causal_agreement` at role
+granularity. Three-way verdict: `same causal role` / **`fires together, acts
+differently`** / `not scorable`.
+
+> 🔴 **`match_cross_model_features` has no caller outside
+> `crosscoder_eval.py`.** The surface the report actually renders is
+> `role_matching.py`'s correspondence table, so the causal check was attached
+> **there as well** rather than only at a granularity nothing displays. A
+> role's fingerprint is the mean of its members' — over the members with a
+> usable fingerprint **only**, since treating an unmeasured member as a zero
+> vector shrinks the role's magnitude in proportion to how much of it was
+> never scored, which reads as "this role does little" (§11.37).
+> `n_members_measured` travels with every result.
+
+> 🔴 **Deliberately NOT folded into `match_rate` or the greedy match score.**
+> `match_rate` has recorded values across several runs and silently
+> redefining it would rewrite them (§2.1) — and more importantly, the
+> **disagreement is the finding**. Averaging a correlational and a causal
+> signal into one score hides precisely the case the request names.
+
+**Fed to the narrator, guard extended in the same edit (§11.51).**
+`Evidence` gained `ablation_channels` and `ablation_measured`;
+`render_evidence` gained a line naming the intervention;
+`_signed_channels` unions the two batteries for every direction, quality and
+concept check, so a direction the ablation measured is **licensed** rather
+than systematically rejected; `machine_fallback` gained `_ablation_clause`
+and a fourth honest state (*the ablation battery ran and found nothing, the
+injection battery never ran*), which is neither the untested state nor a
+a both-battery null.
+
+> 🔴 **Sign convention.** `sae/response.py` records `signed_effect` as the
+> effect **of removal**; `Evidence.ablation_channels` holds it **negated**,
+> i.e. the feature's own contribution, so a direction word means one thing
+> regardless of which battery licensed it. The guard checks a word against a
+> sign, not against a provenance.
+
+### 27.3 Findings — real weights, all 13 targets of `runs/full_report_run_4model`
+
+Four architectures (TimesFM, Chronos-2, Sundial, Chronos-Bolt), no new
+extraction. `reach.self_patch_delta` is **exactly 0.0 at all 13 targets** —
+§11.49's clean-cache fix holding at thirteen targets across four
+architectures, two of which (Sundial, Chronos-Bolt) had never been through
+this path.
+
+| target | candidates | ≥1 clearing | clearing cells vs chance |
+|---|---|---|---|
+| Chronos-2 / `encoder.block.6` | 46 | 23 | 110 vs 16.7 = **6.61×** |
+| Chronos-2 / `encoder.block.8` | 45 | 23 | 118 vs 18.4 = **6.40×** |
+| Chronos-Bolt / `encoder.block.4` | 46 | 14 | 85 vs 13.5 = **6.30×** |
+| TimesFM / `stacked_xf.6` | 36 | 16 | 66 vs 12.2 = **5.43×** |
+| Sundial / `model.layers.3` | 46 | 22 | 95 vs 18.9 = **5.03×** |
+| Chronos-Bolt / `encoder.block.3` | 44 | 12 | 57 vs 12.6 = 4.52× |
+| TimesFM / `stacked_xf.18` | 43 | 12 | 64 vs 14.4 = 4.44× |
+| TimesFM / `stacked_xf.16` | 41 | 10 | 57 vs 14.0 = 4.09× |
+| TimesFM / `stacked_xf.2` | 39 | 11 | 53 vs 13.1 = 4.06× |
+| Chronos-2 / `encoder.block.10` | 43 | 15 | 67 vs 17.6 = 3.82× |
+| Sundial / `model.layers.10` | 47 | 18 | 70 vs 18.9 = 3.70× |
+| TimesFM / `stacked_xf.10` | 42 | 12 | 53 vs 14.4 = 3.68× |
+| Sundial / `model.layers.7` | 47 | 13 | 47 vs 18.9 = **2.49×** |
+
+Only **4 zero-spread-null cells across all 13 targets**, each flagged
+`null_degenerate` and excluded from every downstream verdict.
+
+**Ablation is uniformly weaker than injection, and that is the interesting
+part.** Summed over all 13 targets: **1394 Stage 2 clearing cells against 942
+ablation cells** — despite ablation's *lower* chance baseline at every target
+(it scores only the candidates that are scorable on their own top-firing
+series). Verified directly from both artifacts, not from the background
+agent's summary. Two extremes worth reading:
+
+- **Sundial `model.layers.7` has the panel's second-highest injection count
+  (117) and its lowest ablation count (47)** — a feature set that responds
+  strongly to a direction steered in, and contributes little where it
+  actually fires. That gap is invisible to the injection battery alone, and
+  is precisely the distinction §27.1 exists to make.
+- **Chronos-2 blocks 6 and 8 are the only two targets where ablation
+  *exceeds* injection** (110 vs 84, 118 vs 93).
+
+**A depth ordering that runs opposite between two models.** Stage 2's
+`cross_patch_delta` falls monotonically with depth for Chronos-2 (**0.2729 →
+0.2528 → 0.1176** at blocks 6/8/10) and rises steeply for TimesFM (**0.4725**
+at `stacked_xf.2` → **6.4835** at `stacked_xf.18`). §11.42's mechanism — a
+context-only patch's influence decaying as fewer layers remain to propagate
+it — predicts Chronos-2's direction; TimesFM's is the one that would need
+explaining. Recorded, not explained.
+
+🔴 **One field-name collision found and fixed on the way, by a reader laying
+the two artifacts side by side rather than by any test.** Stage 2 writes
+`excess_over_chance` as a **difference** (90 clearing cells against 19.35
+expected → 70.65); the ablation artifact wrote a **ratio** under the same key
+(→ 4.65). Both numbers are individually correct, which is why nothing caught
+it. The ratio now carries its units in its name
+(`clearing_cells_over_chance_ratio`) and `excess_over_chance` is a difference
+in both, matching Stage 2 exactly. The 13 existing artifacts were rewritten
+in place to the corrected convention **from their own candidate lists**, not
+re-run. A test pins that no writer of `excess_over_chance` computes a
+quotient, confirmed to discriminate by restoring the ratio.
+
+**The cross-model result, and it answers the request directly.** Over the 6
+model pairs' matched roles: **1 `same causal role`, 18 `fires together, acts
+differently`, 15 `not scorable`.** The null is doing real work (p95 0.596 –
+0.937, pool 18–32, none saturated), and the two extremes are exactly the
+right ones:
+
+- The single agreement is **Sundial `far-horizon disperser ↑` ↔ TimesFM
+  `far-horizon disperser ↑`, cosine 0.857 against a p95 of 0.834** — the
+  semantically matching pair, clearing its own null.
+- **Chronos-2 `far-horizon disperser ↑` ↔ Chronos-Bolt `far-horizon
+  disperser ↑` has cosine −0.120.** *Identical role names, opposite causal
+  directions.* No correlational statistic in this repo could separate those
+  two cases; that is the request's premise, measured.
+
+> ⚠️ **Not quotable as a cross-model rate yet.** `causal_summary.quotable` is
+> `False` with a stated reason at every pair: a causal-agreement rate needs
+> its own **untrained-twin floor**, the discipline §6.2.1 Stage 1 (`frac_shared`
+> 0.845 against a floor of 0.974) and §25.6 (role match rate 0.833 below both
+> floors of 1.0) both established the hard way. Read the agree/disagree split
+> as a **within-run contrast** until `run_sae_ablation.py` is run against a
+> `random_init` twin of each model. The high nulls (0.83–0.94 for four of six
+> pairs) also make this test **conservative** — false negatives, the safe
+> direction — because role fingerprints are dominated by a few channels.
+
+### 27.4 Three defects found by running and reading, not by reading the diff
+
+Each was invisible to the tests written for the feature (§11.48, §2.4).
+
+1. **A circular import that the whole test suite could not see.**
+   `matching.py` and `role_matching.py` import each other; `role_matching`
+   imports `matching` at its line 96 and defines `sign_aware_cosine` at line
+   163. A module-level `from .role_matching import sign_aware_cosine` in
+   `matching.py` therefore resolves fine when **`matching` loads first** —
+   which every test in this package does — and raises `ImportError` when
+   `role_matching` loads first, which is what `report.py` does. It passed 25
+   tests and failed the first real CLI run. Fixed with a lazy `_cos()`
+   accessor, pinned by a test that runs the failing import order **in a
+   subprocess** (an in-process test cannot, since the modules are already
+   loaded), confirmed to discriminate by restoring the cycle.
+2. **A direction word on an unsigned channel.** `horizon_shape_near/far` are
+   mean **absolute** deviations. `sae/describe.py::CHANNEL_VERB` already
+   encodes this for the narrator and `check_text`'s `_DIRECTION_ON_HORIZON`
+   enforces it there — the report renderer had no equivalent and printed
+   *"removing it raises near horizon"*. Now `reshapes`, reading
+   `_UNSIGNED_CHANNELS` **from `describe.py`** rather than re-listing it, so
+   the two surfaces cannot disagree (§2.2).
+3. **The printed ratio was not the one that decided the clearing.**
+   `clears_null` compares the **unsigned** `effect` against the p95; the
+   label printed `|signed| / p95`, a smaller number whenever per-series
+   effects partly cancel — so a cell that cleared comfortably rendered
+   *"1.0x its null"*. Direction and magnitude are now read from different
+   fields, which is what they are.
+
+A fourth was found by a **test fixture** rather than a run: a *perfectly*
+matched role pair came back `fires together, acts differently`, because
+every distractor role loaded on one channel, so an arbitrary cross-pair
+already had |cosine| 1.0 and the null p95 sat at the bound a cosine cannot
+exceed. `causal_permutation_null` now reports `null_saturated` and withholds
+the verdict — the same p-floor arithmetic as §6.6 and as `_MIN_NULL_POOL`,
+arrived at from a third direction, and §11.37's degenerate baseline in the
+direction that manufactures a confident **negative**.
+
+### 27.5 Verification
+
+Rendered output checked, not the diff: `runs/full_report_run_4model`
+re-rendered through the real CLI at **15 sections / 125 findings / 0 failed**,
+with the two causal columns present at all **13** targets, the three causal
+columns at all **5** comparable pairs, **301** with/without overlays, and
+**0** direction words on an unsigned channel. New tests: 12 in
+`tests/test_sae_ablation_render.py`, 17 in
+`tests/test_sae_describe_ablation.py`, 25 in
+`tests/test_sae_causal_matching.py`, 14 in
+`tests/test_sae_ablation_fingerprint.py` (68 in all, counted by
+`pytest --collect-only` rather than by `def test_`, since parametrized
+cases are the difference). Every load-bearing negative was
+confirmed to discriminate by planting its own regression.
+
+### 27.6 Open, and worth doing next
+
+1. **The untrained-twin floor** — `run_sae_ablation.py` against each model's
+   `random_init` twin. Until then no causal-agreement rate is quotable.
+2. **Condition the injection battery the way the ablation is conditioned.**
+   Running Stage 2 on each feature's own top-firing series makes the two
+   batteries directly comparable, and their *disagreement* is itself
+   informative: a feature whose injected and ablated effects do not mirror
+   each other is not doing one clean thing.
+3. **Report magnitude alongside cosine in the table.** Both magnitudes
+   already travel in the artifact; the rendered table shows only the angle,
+   so two roles pushing identically an order of magnitude apart look the same.
+4. ✅ **Causal-channel coverage as a first-class reduction** — **DONE
+   2026-09-09, see §28.** "What does this model account for that this one
+   doesn't" is a question about *which channels each model has features for at
+   all* — a one-line reduction over these artifacts, sharper than the role
+   matrix. Built as `report/derived.py::sae_causal_repertoire` /
+   `sae_causal_agreement` plus `run_sae_compare.py`'s narrated layer. The
+   measured answer on the four-model panel is that the repertoires are
+   **nested, not disjoint**: only 3 of 9 channels belong to a single model,
+   and Chronos-Bolt has none of its own.
+
+---
+
+## 28. "What can this model do, and how does it differ from that one?" — one reduction and a chunked narration (added 2026-09-09, user-directed)
+
+> **The request.** *"think about how clear it is to the reader the capabilites
+> of a given model and the differences between models. It may be worth it to
+> also use qwen to compare and contrast the features of each model (i would
+> assume feeding all series/features at once is not good so maybe chunk it
+> first and then CoT reason over those chunks."* The chunk-first instruction
+> is the design, not a hint — see §28.2 for why a whole panel in one prompt
+> is the wrong unit, measured rather than assumed.
+
+This closes §27.6 item 4 ("causal-channel coverage as a first-class
+reduction") and answers the clarity half of the same request.
+
+### 28.1 The premise is a measurement
+
+The report already held every ingredient of "what does this model account
+for that this one doesn't" and made a reader join them by hand: dictionary
+health in one table, structural correlates in a heatmap, roles in a per-model
+matrix, correspondence in one table per pair, and — since §27 — an ablation
+verdict beside each matched role. Five surfaces, four of them per-target, and
+the question is per-**model**. Nothing was wrong; the join was the reader's.
+
+### 28.2 What was built
+
+**`report/derived.py::sae_causal_repertoire` / `sae_causal_agreement`** — two
+pure reductions, one row per model and one per pair, holding to
+`bottom_line_rows`' adaptivity contract (no model name, no architecture
+family, no `cfg.models[i]` index — pinned by a source-inspection test). The
+counterpart cell keeps **three** states (`matched / unmatched / not
+compared`), because a role at a target no pair covers has not failed to
+match, and collapsing the two asserts a comparison that never ran (§11.37).
+Rendered by `report.py::_sae_capability_block` above the health block.
+
+**`sae/compare.py` + `run_sae_compare.py`** — the narrated layer, chunked
+exactly as the request specifies. The unit of a chunk is **one matched role
+pair or one role with no counterpart** — the unit the measurement was made
+on, so each sentence is checkable against the single record that produced it.
+Stage 1 narrates each chunk under a guard; stage 2 summarises one pair's
+**accepted** stage-1 sentences with its vocabulary narrowed to what those
+sentences actually said, so a summary can only narrow its inputs. Both stages
+persist to `sae/comparison.json`, so the summary is auditable against the
+sentences it came from rather than being the only surface a reader sees.
+
+### 28.3 Findings — `runs/full_report_run_4model`, four architectures
+
+The repertoire table, read off the artifact:
+
+| model | roles | with a measured causal effect | channels moved | dominant channel | tracks most |
+|---|---|---|---|---|---|
+| TimesFM | 32 | 29 | **7** | near horizon (11 roles, **2.78** null units) | `n_seasonalities` (12 roles, ρ 0.195) |
+| Chronos-2 | 21 | 14 | 5 | near horizon (5 roles, 0.27 null units) | `ar_coeff_sum` (5 roles, ρ 0.237) |
+| Sundial | 21 | 18 | 4 | far horizon (11 roles, 1.39 null units) | `seasonal_amplitude_max` (8 roles, ρ 0.184) |
+| Chronos-Bolt | 14 | 8 | 3 | far horizon (10 roles, 1.69 null units) | `n_seasonalities` (4 roles, ρ 0.204) |
+
+1. **The repertoires are nested, not disjoint.** `horizon_shape_far` is moved
+   by all four models, `horizon_shape_near` and `dispersion` by three. Exactly
+   **three channels belong to one model each** — `level` (TimesFM),
+   `flatness` (Sundial), `spectral_centroid` (Chronos-2) — and Chronos-Bolt
+   has none of its own. So "what this model uniquely does" is a *small*
+   answer on this panel, and stating it as one is the finding.
+2. **Only two structural fields are unique to a model**: `noise_scale`
+   (Chronos-2) and `trend_order` (Chronos-Bolt). ⚠️ A field being a model's
+   *top* correlate does not make it unique — `ar_coeff_sum` is Chronos-2's
+   strongest and Sundial tracks it too. This paragraph corrects a claim made
+   in-session from memory before the artifact was re-read (§2.4).
+3. **The near/far split is the sharpest contrast on the panel**, and it is not
+   a strength difference: TimesFM's dominant channel clears its
+   random-direction null by 2.78 units where Chronos-2's clears it by 0.27,
+   an order of magnitude apart on the *same* channel.
+4. **Coverage is the honest limit and is rendered as one.** TimesFM has 32
+   roles across 5 targets but **25 of them were never compared** (no pair
+   covers those targets); Chronos-Bolt's 14 roles across 2 targets leave 7.
+   A match rate computed over what happened to be compared would read as a
+   property of the models.
+
+### 28.4 🔴 The stage-2 guard was weaker than stage 1's, and a live summary fabricated a ranking
+
+Found by reading the rendered summaries rather than the diff (§11.48). On the
+first live run, this was **accepted**:
+
+> "Chronos-Bolt and TimesFM differ significantly in their **ability** to clear
+> null channels, move the near horizon of forecasts, and affect the seasonal
+> magnitudes of series. TimesFM **outperforms** Chronos-Bolt in these areas."
+
+for a pair whose every role comparison is **unscorable** (agree 0, differ 0,
+unscored 7). Both halves are refused at the chunk level.
+
+**The diagnosis stated in-session was wrong and is corrected here.** The first
+reading was that `check_synthesis_text` lacked stage 1's capability and quality
+scans. It did not — it ran both. It was missing the **words**: `"ability"` was
+not in `_CAPABILITY_TERMS` (which held only phrases like `"no ability"`), and
+`"outperforms"` is in neither `QUALITY_WORSE` nor `QUALITY_BETTER`. A scan over
+a vocabulary that lacks the word is indistinguishable, at the output, from no
+scan at all. The first fix attempt added *duplicate* scan loops and was itself
+caught by grepping the repaired function for its own scan count; the shipped
+fix extends `_CAPABILITY_TERMS` with the bare nouns and adds a module-local
+`_SUPERIORITY_TERMS` to the existing quality loop, one scan per vocabulary per
+stage.
+
+**A second defect at the same site, and it is §11.39's shape.** The synthesis
+guard scanned the raw text for digits while the chunk guard stripped model
+names first, so the two disagreed about whether `Chronos-2` contains a number
+— refusing **2 of 6** summaries for "the number '2'" that a chunk sentence
+about the same model was allowed to say. `_strip_names` is now shared by both
+stages, which is the fix the sibling site had already received.
+
+**Cost, measured against the live corpus rather than asserted.** Of 46
+previously-accepted chunk sentences, **45 still pass and 1 is now refused** —
+and that one is a correct catch, not a false positive: *"Chronos-2 outperforms
+in series with multiple seasonal periods"* is a forecast-quality ranking, and
+this comparison measures which channels a role's features move. All **63**
+machine fallbacks and all **6** synthesis fallbacks pass their own guard
+(§11.51 lesson 3 — the tell that a guard is over-broad is that it rejects the
+sentence its own module falls back to).
+
+### 28.4b 🔴 A third leak, found by reading the CORRECTED run's output
+
+Re-running with the fixed guard produced 3 of 6 summaries accepted and both
+Chronos-2 summaries restored — and one of the newly-accepted ones read:
+
+> "Chronos-2 **strengthens forecast clarity** by boosting the spectral
+> centroid..."
+
+A higher spectral centroid is more high-frequency content; it is not a better
+forecast. This is the *same* fabrication as `outperforms`, reached through a
+**channel word** rather than a comparison word — so fixing the comparison
+vocabulary did not close it. Measured rather than patched on one sighting:
+across all **49** accepted texts the leak is exactly 3 words in 4 occurrences
+(`strengthens` ×2, `clarity` ×1, `clearer` ×1), all glossing the same channel.
+`_SUPERIORITY_TERMS` now carries them; the extension refuses **exactly those 2
+chunk sentences and nothing else** (44 of 46 previously-accepted survive), and
+all 63 chunk plus 6 synthesis fallbacks still pass.
+
+⚠️ **Bare `"clear"` is deliberately excluded** — "clear null channels" and
+"cleared its null" are this module's own wording for a channel that beat its
+random-direction null, so a guard catching `clearer` must not catch `cleared`.
+That boundary is pinned by a test in both directions: removing the gloss words
+fails 4 tests, adding bare `"clear"` fails exactly the boundary test.
+
+**The generalizable form, and it is §11.51 lesson 1 sharpened.** That lesson
+says every evidence field you license is a new fabrication surface. This adds:
+so is every **channel name** within a field. The narrator does not invent
+claims out of nothing — it invents the *interpretation* of a licensed
+technical term, and it will do so once per channel whose name sounds
+evaluative. `spectral_centroid`, `flatness` and `dispersion` are the ones on
+this panel with an obvious "good/bad" gloss available.
+
+### 28.4c 🔴 A fourth: an accepted sentence described an experiment nobody ran
+
+> "**Removing either Sundial or TimesFM** pushes the forecast the same way,
+> past what an arbitrary pair of roles reaches."
+
+Nothing in this repo removes a model. The second battery (§27) zeroes **one
+feature** out of the SAE's own reconstruction. The claim's *substance* is
+right — that pair really is the panel's one `same causal role` — and its
+*referent* is not, which is worse than a wrong number: it describes an
+experiment that was never run, in a fluent sentence whose measurement checks
+out.
+
+Measured before guarding: 3 hits in 46 accepted texts, but **two are the same
+sentence correctly propagated to the summary**, and the third — *"Removing
+**Chronos-Bolt's** null clears the channel"* — carries a possessive and is
+correct. So the real defect is **one distinct sentence**, and the possessive
+is the entire difference between the two readings. `_ablation_referent_reason`
+requires it, in **both** stages (§11.39 — the digit scan in this same module
+is what happens when a guard lands in one site and not its sibling). Cost
+against the live corpus: exactly that one sentence, 42 of 43 kept, all 63
+chunk and 6 synthesis fallbacks passing.
+
+### 28.5 Verification
+
+- `tests/test_sae_compare.py` **68 passed** (44 + 16 for the two synthesis
+  fixes + 5 for the channel gloss + 3 for the ablation referent). Every
+  load-bearing negative confirmed by planting its regression:
+  the digit scan reading raw text again fails 3, disabling it fails 1,
+  removing the bare capability nouns fails 6, emptying `_SUPERIORITY_TERMS`
+  fails 7. One plant was **inert on first write** — `_SUPERIORITY_TERMS = ()
+  or (...)` evaluates to the non-empty tuple, so it proved nothing and was
+  redone by truncating the literal; the same mistake had already been made
+  once this session on `_SHARE_QUANTIFIERS`.
+  Dropping the referent guard from stage 2 alone fails 2, dropping the
+  possessive exception fails exactly the boundary test, emptying the verb list
+  fails 3.
+- Every boundary is pinned as a **pair** of near-identical sentences differing
+  only in the guarded property (§11.51 lesson 2), since narrowing a guard to
+  kill a false positive is one edit from disabling it: `Chronos-2` vs `3` for
+  the digit scan, `clearer` vs `cleared` for the channel gloss, and
+  `Removing Sundial` vs `Removing Sundial's role` for the referent.
+- ⚠️ **Three plants were inert on first write and proved nothing while the
+  suite stayed green** — `() or (...)` twice (it evaluates to the non-empty
+  tuple), and a `’` matched against a file containing the `\u2019` escape.
+  Each was caught only by noticing a plant that "passed", and each was redone.
+  When planting into a *literal*, empty the literal and assert the file
+  actually changed.
+- `tests/test_sae_capability_report.py` 13 passed; `tests/test_narrator_batching.py` 9 passed.
+
+### 28.5b Acceptance is state-dependent, and the pattern is the point
+
+Reported by chunk state and **never pooled**, the way §26 C's allowlist and
+§26 G's profile guard already are — a pooled rate hides which claims the
+guard is actually refusing:
+
+| chunk state | accepted | rate |
+|---|---|---|
+| solo (role with no counterpart) | 24 / 25 | **96.0%** |
+| pair, `not scorable` | 13 / 24 | 54.2% |
+| pair, `fires together, acts differently` | 5 / 13 | 38.5% |
+| pair, `same causal role` | 0 / 1 | — |
+
+The gradient runs with **how comparative the claim is**, not with how much
+evidence exists: a one-model description is nearly always admissible, and the
+rate falls monotonically as the sentence has to say something about two models
+at once. That is the guard working as designed rather than a cost to minimise
+— the comparative claims are exactly the ones with a fabrication surface, and
+every refusal falls back to the deterministic machine sentence rather than to
+silence. Final artifact: **42 of 63** chunk sentences and **2 of 6** summaries
+accepted, with **zero** residual quality claims and **zero** remove-a-model
+misattributions across all 44 accepted texts (re-scanned directly, not
+inferred from the guard's own pass).
+
+### 28.6 A scaling defect in the narrator, found by a fourth model
+
+`run_sae_describe.py` passed **every** packet to `_generate` in one call — 116
+on the three-model run it was written against, **192** on the four-model
+panel, where it raised `torch.OutOfMemoryError` trying to allocate 4.93 GiB
+with 682 MiB free. Packet count is a property of the panel, so an unbounded
+batch works until someone adds a model. Fixed with a fixed `GEN_BATCH_SIZE =
+16` window plus halving OOM backoff. The backoff **discards the current
+window's partial output before retrying** — without it the halved retry
+appends duplicates — and the test that pins this needed a stub failing on a
+*later* sub-batch: with a purely width-based failure the retry always trips on
+the window's first inner sub-batch, nothing has been appended yet, and the
+discard is a no-op that any test would pass.
+
+### 28.7 🔴 A fifth and a sixth leak: the state with the HIGHEST acceptance was the least guarded
+
+Found 2026-09-09 by reading the artifact one more time (§11.48), while wiring
+the narrated layer into the report. `check_contrast_text` scored the verdict
+vocabulary inside `if c.kind == "pair":` and had **no `else` branch at all**,
+so a `solo` chunk — a role the other model offered no partner for — was
+scanned for everything except the one fact that defines it. **6 of 24 accepted
+solo sentences compared the role against a counterpart that does not exist:**
+
+> "A role in Chronos-2 decreased the forecast's trend slope **compared to its
+> counterpart in Chronos-Bolt**."
+> "A role in TimesFM **differs from a role in Sundial** by moving the near
+> horizon of the forecast."
+
+§11.37's shape for the third time in this section: an absent baseline yielding
+a **confident** claim rather than a cautious one. Note which state it hid in —
+solo was the **highest**-acceptance state at 96.0% (§28.5b), so the vocabulary
+gap was invisible in exactly the row of that table a reader would skip past.
+
+Three of the six never use the word "counterpart", so the guard also has to
+recognise a role attributed to the other model **by name** (`role … in
+<model_b>`). The discriminator is an **absence marker**, and the scope is the
+**sentence**, not a fixed window: the marker lands before the noun ("no such
+counterpart was found"), two words after it ("this counterpart was not
+found"), and ten words upstream governing a second reference ("No counterpart
+was found at the layers compared between a role in A and a role in B") — all
+three are correct text, and a window tight enough to bind the first refuses
+the third.
+
+**A sixth leak in the same read**, and it is §11.53's channel-gloss defect one
+noun over: `phrase()` writes "strongest on series with X", meaning where the
+feature **fires**. In **3 of 44** accepted texts that became "has the strongest
+**performance** on series with X" — a claim about how well the model forecasts
+there, which nothing measured. Bare "strongest" is deliberately **not** added
+to the tuple: it is this module's own wording, and the pair of sentences
+differing by exactly that one noun is what the boundary test pins.
+
+### 28.8 The narrated layer was persisted, auditable, and rendered nowhere
+
+Found by the §11.48 pass on the re-rendered report: of 44 accepted texts,
+**2** appeared in the HTML. Not a rendering bug — `_sae_capability_block`
+reads `capability_profile` and the agreement table's `summary` column, which
+is stage **2**. Stage 1 — 63 guarded sentences, one per matched role pair or
+unmatched role — reached no reader at all. That is the wrong half to hide: the
+summary is a *reduction over* those sentences, and a reader asking "what does
+this model account for that this one doesn't" is asking about the units, not
+the average of them. Chunking exists because a 1.5B narrator handed a whole
+panel averages it into fluent nonsense (§28.2); rendering only the summary
+reintroduces at the **report** boundary the averaging that chunking prevents
+at the **generation** boundary.
+
+`derived.sae_contrast_chunks` + a collapsed per-pair table under the agreement
+table is the fix. Every row carries a **`generated`** column, because ~40% of
+these sentences are the deterministic fallback and the fallbacks are written
+in the same correspondence terms the guard enforces **on purpose** (§11.51
+lesson 3) — so a reader cannot tell them apart from the prose. Presenting a
+machine template as a model's reading of the evidence is this subsystem's own
+fabrication failure, one layer out.
+
+### 28.9 Re-verification after the fifth and sixth fixes
+
+Replaying the strengthened guard over the previous run's accepted texts
+refuses **exactly 9** — the 8 counterpart fabrications and the one remaining
+"performance" — and **zero** pair chunks, which is the load-bearing negative
+(in a matched pair a counterpart genuinely exists and comparing against it is
+the entire point). All **63 chunk fallbacks (25 solo) and 6 synthesis
+fallbacks** still pass their own guard.
+
+Regenerated artifact, re-scanned directly rather than inferred from the
+guard's pass: **40 accepted texts, 0 residual counterpart fabrications, 0
+"performance", 0 quality claims, 0 remove-a-model misattributions.**
+Acceptance by state, never pooled:
+
+| chunk state | before | after |
+|---|---|---|
+| solo | 24 / 25 (96.0%) | **21 / 25 (84.0%)** |
+| pair | 18 / 38 (47.4%) | **17 / 38 (44.7%)** |
+| summaries | 2 / 6 | 2 / 6 |
+
+**The pair column moved, and the guard cannot touch pair chunks** — it is
+scoped by `kind`, and all 3 "performance" hits were in solo texts. Measured
+rather than assumed (§2.4): two runs at identical code are **bit-identical**
+across all 63 chunks and all 6 summaries, so generation is reproducible. What
+changed is **batch composition** — `describe_contrasts` batches by retry
+round, refused chunks stay in the batch another round, and a batched forward
+pass is not bit-identical to a differently-padded one. So this artifact is
+reproducible run-to-run but **not** across a guard change, which is worth
+knowing before reading a one-chunk difference as a regression.
+
+⚠️ **A residual, recorded rather than chased.** 3 of the 21 accepted solo
+texts now say both things at once — "when compared to a counterpart in
+Chronos-2 across the layers examined, **but no counterpart was found in
+Chronos-2**". The absence marker is present and the sentence is not false, but
+it is self-contradictory prose. Tightening the guard to catch it means
+abandoning sentence scope, which is what keeps the module's own fallback legal
+(§11.51 lesson 3). Left as measured: 3 of 21.
+
+### 28.10 Open
+
+1. **The causal-agreement rate still has no untrained-twin floor** (§27.6
+   item 1, unchanged) — the agreement table renders `not quotable` at every
+   pair for exactly this reason, which is the honest state, not a gap in the
+   table.
+2. **`roles_not_compared` is large** (25 of 32 for TimesFM). Widening
+   correspondence to every target pair, not only those a configured pair
+   covers, is the reduction that would shrink it.
+3. **3 of 21 accepted solo sentences are self-contradictory** — "compared to a
+   counterpart in X … but no counterpart was found in X" (§28.9). Not false,
+   and refusing them means abandoning the sentence scope that keeps the
+   module's own fallback legal, so this is recorded rather than chased. The
+   tractable fix is at the *prompt*, not the guard: the few-shot examples
+   teach the comparative frame and nothing teaches the solo frame, which is
+   the likeliest reason the narrator reaches for "compared to" in a state
+   that has nothing to compare.
+4. **Chunk acceptance is not comparable across guard changes** (§28.9).
+   Batched generation makes an artifact reproducible run-to-run but not
+   across a change in which chunks get retried. Any future acceptance
+   comparison needs an unchanged-code rerun as its control.
+
+### 28.11 The narrator was zero-shot and the guard kept its wordlist secret ✅ FIXED 2026-09-09
+
+The fallback rate the user flagged ("only a small percentage should fall
+back") was measured before anything was changed: **40%** of chunk sentences
+were the deterministic machine text. Two causes, both found by tallying the
+recorded `reason` strings rather than by reading the prompt:
+
+1. **`_contrast_messages` was the only zero-shot narrator in the repo.**
+   `describe._messages` has shown worked examples since it was written and
+   accepts 96.8% of packets where a profile was measured; the contrast
+   narrator was system prompt → evidence → retry, with no examples, doing the
+   harder of the two jobs.
+2. **The guard held the banned-word list and the prompt shared none of it.**
+   Of 25 rejected sentences, **17 were one lexical family** — `excels` ×5,
+   `enhances`/`enhance`/`enhancing` ×5, `improves`/`improving` ×4,
+   `outperforms`/`outperform` ×2, `strengthens` ×1 — and only 3 were actual
+   fabrications. Rule 6's abstract "claim nothing about which model is
+   better" does not map to `enhances` for a 1.5B model. §11.53's lesson at
+   the prompt boundary rather than inside the guard.
+
+**Fixes.** `FEW_SHOT_CONTRASTS` — four `(Contrast, sentence)` exemplars
+covering all four chunk states (pair/differ, pair/agree, pair/not-scorable,
+solo), each verified to pass `check_contrast_text` against its own
+`Contrast`. `_PROMPT_BANNED_WORDS` is built **from the guard's own tuples**
+(`QUALITY_WORSE + QUALITY_BETTER + _SUPERIORITY_TERMS + _EVALUATIVE_UNLICENSED`,
+54 words) and interpolated into rule 6, so the prompt cannot go stale against
+the guard — a hand-picked subset would be §11.34's claim-checked-nowhere.
+Rule 2 gained the solo case (§28.10 item 3). The same list went into
+`SYNTHESIS_SYSTEM_PROMPT` in the same edit (§11.39 — the first attempt landed
+in the chunk prompt only, and the two remaining summary failures were
+`stronger` and `improve` in the synthesis path).
+
+| | before | after |
+|---|---|---|
+| chunk sentences | 38/63 (60.3%) | **62/63 (98.4%)** |
+| pair chunks | 17/38 (44.7%) | **37/38 (97.4%)** |
+| solo chunks | 21/25 (84.0%) | **25/25 (100%)** |
+| summaries | 2/6 | **5/6** |
+
+### 28.12 🔴 Stage 1 is reliable; stage 2 does not converge — the summary is now measured, not generated (2026-09-09)
+
+Re-rendering the report and **reading the accepted summaries** (§11.48) found
+that 4 of the 5 accepted stage-2 summaries each carried a distinct
+fabrication, every one reached through *licensed words in an unlicensed
+grammatical role*. Stage 1 was clean: every one of the 61–62 accepted chunk
+sentences read against its own evidence was faithful.
+
+**Four guards were added, each measured before it was written and each
+confirmed to refuse its target and nothing else:**
+
+| leak | live wording | guard | refuses |
+|---|---|---|---|
+| a **series property** as the object of something a model does | chunks said roles *fire on series with noise scale*; summary said the models "both **remove noise** from time series data" | `_field_as_forecast_object_reason` — a term whose licensed intersection is `field:*` only, in the object slot of a forecast-action verb, or nominalized ("noise removal") | 2 of 6 summaries, **0 of 63** chunks and 0 fallbacks |
+| a word in **no vocabulary at all** | "affects the forecast's accuracy and **reliability**" | `reliability`/`reliable` into `_SUPERIORITY_TERMS` | 1 summary. `accuracy` maps to `channel:mase` and stays legal where mase was measured |
+| the **passive voice** of an already-guarded verb | "Sundial and TimesFM both have similar effects **when removed** from the forecast" | second pattern in `_ablation_referent_reason` | 1 summary |
+| **unmeasured internal mechanism** | "both **handle** seasonal patterns similarly" | `_UNMEASURED_PROCESS_TERMS`, its own category — it is not an evaluative claim, and collapsing it into `_SUPERIORITY_TERMS` would make the retry's reason say the wrong thing | 1 summary, 1 contentless chunk |
+
+**And the root cause of a fifth class was an INPUT defect, not a narrator
+one.** `phrase()` writes a solo chunk as "Removing this role moves the far
+horizon … and no counterpart was found at the layers compared" — unambiguous
+in the per-pair table, whose own columns name the role and its model, and
+ownerless as a bare bullet. **21 of 25 accepted solo sentences named no
+owner.** Stage 2 guessed, and guessed wrong twice in one run, attributing
+Sundial's flatness and spread effects to Chronos-2 with every model name and
+channel individually licensed — invisible to any vocabulary guard.
+`_attributed()` restores ownership from the `Contrast` the sentence was
+generated from, never from the text.
+
+🔴 **The decision, and the measurement behind it.** Across **four consecutive
+regenerations**, each closing the previous run's wording, the accepted
+summary produced a **different class of unsupported claim every time**:
+
+1. banned words + an evaluative channel gloss (§28.7),
+2. a paraphrase of a just-banned word (`reliability` → `precision`) plus
+   broken grammar,
+3. attributing one model's measured effect to the other,
+4. comparative quantification — "a **greater effect** … **more often**" for
+   `Chronos-2 vs Chronos-Bolt`, a pair whose agree/differ/unscored is
+   **0/0/7**, i.e. nothing was scorable at all — and "Chronos-2 **removes the
+   far horizon**".
+
+Each class was individually guardable; none was foreseeable from the one
+before. This is §26 C's blacklist-defeated-on-re-measure finding at a second
+site, and it does not look like it converges.
+
+So `compare_models(prefer_deterministic_summary=True)` is now the default and
+**`synthesis_fallback` was rewritten to be worth reading**: it composes the
+outcome shape and each model's moved channels from `ContrastSet`'s own
+tallies, which are already measured and cannot be wrong. It states **no
+counts, in digits or words** — a first draft did, and was refused by this
+module's own digit ban, whose stated reason is that share "may not be
+quantified, in words or otherwise" (§11.51 lesson 3 working as designed, not
+a guard to loosen); the exact tallies are in the table the sentence sits
+above. The generated attempt is still produced, guarded and **persisted** as
+`summary_generated`/`summary_generated_accepted`, so the decision stays
+auditable against its own evidence rather than going stale the way §11.29's
+docstring premise did.
+
+**The audit trail is the argument**: on the final run 4 of 6 generated
+summaries *passed every guard*, and two of those four are visibly wrong — the
+0/0/7 pair's "greater effect … more often", and "removes the far horizon".
+All six deterministic sentences are correct.
+
+### 28.13 Verification (2026-09-09)
+
+- **Live**, `runs/full_report_run_4model`, four architectures: 63 chunks,
+  **61 accepted (96.8%)**, 6 deterministic summaries. Read from the artifact,
+  not the log.
+- **Against rendered HTML** (§11.48): 61/61 accepted chunk sentences and 6/6
+  summaries appear verbatim; **0 of the 4 unrendered generated attempts leak
+  into the page**; the stale note ("falls back to a deterministic sentence")
+  is gone and the corrected one is present. 15 sections / **126 findings**
+  (up from 106 — the contrast tables and capability block).
+- **`tests/test_sae_compare.py` 80 → 126.** Every load-bearing negative
+  confirmed to discriminate by planting its regression: neutering the field
+  guard fails exactly 3, removing the passive branch 1, dropping
+  `reliability` 1, wiring the guard into one stage instead of two 1 — with
+  nothing unrelated disturbed.
+- **Two of my own tests were wrong on first write, in the way this file keeps
+  recording.** One asserted the guard goes inert when a channel is licensed
+  using `noise` — which maps to four `field:*` concepts and **no** channel, so
+  widening `allowed` cannot change its intersection; `variance` is the term
+  that carries both. The other scanned the fallback for digits **without
+  stripping model names first** and failed on the `2` in `Chronos-2`, which is
+  §11.53's own trap reappearing in its own regression test.
+- **A crash caught before it ran**: the field guard was first wired into
+  `check_contrast_text` *above* the line that binds `allowed`, which would
+  have raised `UnboundLocalError` on the first contrast sentence.
+
+### 28.14 Open
+
+5. **The guard's correctness had one leg until it was given two.** The field
+   referent guard originally rested entirely on the channel concept being in
+   `allowed`; under a deliberately thin allowed set it refused 9 of 63 real
+   chunks, including this module's own `phrase()` output. A second,
+   independent discriminator (`_FORECAST_POSSESSIVE` — a term written as a
+   property *of the forecast* is a channel by construction) takes that to
+   **0 of 63**. Worth generalizing: any guard keyed on an evidence-derived
+   set should be measured against an adversarially thin one.
+6. **Feature descriptions are at 76%, and 10 of the 25 rejections are pure
+   word-count overruns** ("the answer was 47 words; write at most 40"), not
+   fabrications — the cheapest remaining acceptance win in the subsystem and
+   not attempted here. Roles are at 93.2%.
+
+### 28.15 🔴 The narrator was honest and the packet was not — `clears_null` and the effect size answered different questions (2026-09-09, user-directed)
+
+**The user's instruction was "take a look at a few descriptions of features
+and make sure they make sense (if not go back and fix)."** Reading them found
+a defect, and it was upstream of the narrator: **the evidence packet said a
+role cleared its null while handing over an effect size below it.**
+
+`sae/roles.py::role_table` emits two fields that read, side by side, as one
+qualifying the other and are answers to different questions:
+
+- `clears_null` — **any member atom cleared ANY channel**.
+- `dominant_effect_null_units` — the role's **mean** on its dominant channel.
+
+On `runs/full_report_run_4model`, **17 of the 74 roles with `clears_null:
+True` have `|dominant_effect_null_units| < 1.0`**, and they are systematically
+the *large* clusters — `n_atoms` **7 to 23, median 11** — because averaging a
+signed effect over more members dilutes it. `run_sae_describe.py` set
+`Evidence.clears_null` straight from that field, so the narrator was handed
+*"cleared the null: yes"* beside *"0.15 times the null"* and did exactly what
+a grounded narrator should: it used the licensed causal vocabulary.
+
+**Measured, not inferred, over all 161 accepted descriptions.** Every one of
+the **14 accepted descriptions of a sub-null role narrates a causal action** —
+14 of 14, no exceptions:
+
+| target · role | dominant channel | effect (× null) | n_atoms | rendered text |
+|---|---|---|---|---|
+| TimesFM `stacked_xf.10` r3 | horizon_shape_far | **+0.153** | 17 | "Patching this role **reshapes the far horizon** of the forecast…" |
+| Chronos-2 `encoder.block.6` r0 | horizon_shape_near | **+0.184** | 11 | "…**reshapes the near horizon** of the forecast…" |
+| Sundial `model.layers.10` r0 | flatness | **−0.268** | 11 | "Patching this role **flattens the forecast**…" |
+| Chronos-2 `encoder.block.10` r1 | spectral_centroid | **+0.433** | 23 | "…**nudges the forecast's spectral peak upward**…" |
+| Sundial `model.layers.10` r5 | horizon_shape_far | **+0.763** | 15 | "…**reshapes the far horizon**…" |
+
+*(five of fourteen shown; the full range is +0.153 to +0.763 and −0.268.)*
+
+Three smaller phrasing defects were measured in the same pass and are the same
+shape one level down — a licensed vocabulary with no guard behind it: **6** of
+161 rendered the evidence label `"none measured"` as English ("tracking none
+measured"), **5** wrote "these roles" for evidence about exactly one role, and
+**1** rendered the label `"the same pattern"` verbatim.
+
+#### What was fixed, and where
+
+**The packet, not the sentence** — the narrator was never wrong about its
+evidence:
+
+1. `run_sae_describe.py::_role_channels` gained the same magnitude test
+   `_cleared_channels` already applies (`abs(val) < 1.0 → {}`), and
+   `build_evidence` now binds `role_chans` once and sets
+   `clears_null=bool(role_chans)` — tying the flag to the channels the
+   sentence may actually name, rather than to `roles.json`'s different
+   question. **31 of 88 role packets now license no channel** (14 that never
+   cleared + 17 sub-null).
+2. `sae/roles.py::role_table` records **two new measured fields** —
+   `dominant_channel_n_clearing` and `n_members_clearing_any` — derived from
+   `members` already in hand, at no GPU cost. `clears_null` and
+   `dominant_effect_null_units` are **byte-identical** (§2.1): nothing
+   recorded was redefined, what was missing is the third number that makes
+   the first two legible together.
+3. `report/sae_roles.py::roles_summary_table` renders it as **"members
+   clearing that channel"** (`"3 of 17"`), with `"not recorded"` for a role
+   written before the field existed.
+4. `sae/describe.py` gained two narrow guards — `_EVIDENCE_LABEL_FRAGMENTS`
+   and `_PLURAL_SELF_REFERENCE` — plus two **pre-existing** false-refusal
+   fixes surfaced by testing them (below).
+
+#### 🔴 Two pre-existing false refusals, found because a new guard forced the fallback round-trip
+
+`_signed_channels` merges the two batteries by keeping the **larger
+magnitude** per channel. That is right for a concept check and wrong for the
+two places that ask *"is this number the packet's own?"*:
+
+- **`_allowed_number_strings`** read the merged view, so the ablation
+  battery's own **1.02** looked fabricated while the module's own fallback
+  quoted it — **6 of 98 feature fallbacks refused for a digit they were
+  licensed to say.**
+- **The direction check** had the identical defect, exposed by a synthetic
+  minimal pair: `mase` cleared in both batteries at **+1.48 steering /
+  −1.02 ablation**, the merge keeps +1.48, and "decreases" is refused.
+
+Both now iterate `(ev.channels, ev.ablation_channels)` rather than the merge.
+**Machine fallbacks passing their own guard: 113 → 192 of 192.**
+
+#### §11.51 lesson 3 fired twice, exactly as it predicts
+
+1. The first `_PLURAL_SELF_REFERENCE` draft refused **79 of 192** fallbacks;
+   **73** were `"These 12 features …"`, which is *correct* for a role — a role
+   **is** a cluster of features. Narrowed to `\b(?:these|those)\s+roles\b`.
+2. `_EVIDENCE_LABEL_FRAGMENTS` initially held `"not measured"`/`"not tested"`
+   — the exact phrases `UNTESTED_MARKERS` **requires**. No untested
+   description could ever have been accepted. **It produced zero refusals on
+   the live run only because every packet there had a battery** — i.e. the
+   case that breaks it is the case that run cannot exercise, which is
+   §11.53's own shape. Narrowed to `"none measured"` and `"the same pattern"`.
+
+#### Verification
+
+`tests/test_sae_role_evidence.py` — **24 new tests, all passing**; the
+targeted SAE/narrator subset is **263 passed**; the full suite is **1480
+passed, 18 skipped, 0 failed** (912.81 s), up from 1424/17.
+
+A plant-discrimination harness ran **12 planted regressions**; 10
+discriminate. The two that did not were diagnosed rather than accepted: one
+is semantically empty (bare `"these features"` provably cannot match
+`"These 12 features"`) and was **replaced** with a count-form plant
+(`(?:\d+\s+)?`) that discriminates at 4 failures; the other showed the
+`clears_null` change had **no covering test at all**, which is why
+`test_the_packet_never_says_it_cleared_while_licensing_nothing` and a
+call-site `inspect.getsource` test exist (§11.43's lesson — a test calling
+the function directly passes while the caller stays broken).
+
+Two of my own tests also **passed for the wrong reason** and were rewritten:
+`test_a_plural_role_reference_is_refused_for_a_single_role` used
+`horizon_shape_far`, which is in `CHANNEL_VERB` and licenses no direction, so
+the *direction* check was doing the refusing — rebuilt as a minimal
+singular/plural pair over a signed channel (`mase`).
+
+#### The lesson
+
+Two fields, both correct, both recorded, printed adjacently, answering
+different questions — and the consumer read the pair as one claim. This is
+**§11.49's second defect at a new site**: there, a gate wrote a failure into
+`reason` while leaving `reachable` True and nothing read the field that
+moved. Here nothing is even wrong; what is missing is the number that makes
+the pair legible. **When two fields render side by side, one of them will be
+read as qualifying the other — so either they must answer the same question,
+or a third field must state the relationship.**
+
+And the fix's own scope was set by measurement in both directions: the
+narrator was **not** the defect (it used exactly the vocabulary it was
+licensed to use), and the first two guards written to help it each refused
+the module's own fallback before they refused anything real.
+
+#### Verified on the regenerated run, not on the diff (2026-09-09, same day)
+
+Everything above was measured on `descriptions.json.bak`. The whole chain was
+then re-run against `runs/full_report_run_4model` — `run_sae_roles.py` (13
+targets, ~3 min, zero warnings), `run_sae_describe.py`, `run_sae_compare.py`,
+`run.py --stages report` — and every defect count the fix targeted is **zero
+in the rendered HTML**, with the accepted text present verbatim:
+
+```
+new role column present ("members clearing that channel"): 13 of 13 targets
+literal "tracking none measured" in the SAE section:        0   (was 6)
+literal "these roles" in the SAE section:                   0   (was 5)
+literal "the same pattern" as an evidence label:            0   (was 1)
+accepted description texts found verbatim in the HTML:      144/144
+report: 15 sections rendered / 1 skipped / 0 failed, 126 findings
+preflight: 13 checks, 13 pass, 0 warn, 0 fail
+```
+
+The single skip is `seasonality_circuit` (no directory — expected on this
+config). No stale-artifact refusal fired.
+
+**Acceptance, by state and never pooled** (the script's own headline is the
+pooled `192 descriptions, 144 accepted (75.0%)`, which is the number *not* to
+quote):
+
+| kind | accepted | rate |
+|---|---|---|
+| features | 69 / 104 | **66.3%** |
+| roles | 75 / 88 | **85.2%** |
+
+Of the 48 rejections, **17 are pure length/sentence-count overruns** and **31
+are substantive guard refusals**. The largest substantive class is 4×
+*"the answer said 'above the null', but the evidence records no channel
+clearing the random-direction null"* — the new packet tightening doing exactly
+its job on roles whose channels it now strips.
+
+**The sub-null roles are the direct check on the fix, and they flipped.**
+Before, all 14 accepted descriptions of a role with a sub-1.0 dominant-channel
+mean narrated a causal action. After, the 13 such accepted descriptions all
+narrate the absence of one:
+
+> "Patching this role does nothing above the random-direction null; it merely
+> tracks series with more noise."
+> "Patching this role does not affect the forecast, tracking series with a
+> larger total AR coefficient."
+
+**Fix versus expose — the two new fields are diagnostic and that is the whole
+point.** `roles.json`'s `clears_null` is byte-identical to what it was (§2.1
+forbids redefining a recorded number), so 17 roles still carry
+`clears_null: True` at a sub-1.0 dominant-channel mean. That is not a residual
+bug; it is the disagreement the new column exists to state, and the column now
+states it: **12 of those 17 have `dominant_channel_n_clearing == 0`** — not one
+member atom cleared the channel the role is named after. One is negative
+(Sundial `model.layers.10` r0, −0.268); the extremes are TimesFM
+`stacked_xf.10` r3 (0.153, 17 atoms, 0 clearing) and Sundial `model.layers.10`
+r5 (0.763, 15 atoms, 5 clearing). The **behavioral** fix lives in
+`run_sae_describe.py`'s packet, which no longer licenses a sub-null channel —
+31 of 88 role packets now license none.
+
+Packet population also grew rather than shrank: **192 entries** (104 features +
+88 roles) against the backup's 161 accepted and the 3-model run's 116.
+
+### 28.16 🔴 §11.54's defect had a second site — the feature packet, where `clears_null` is unsigned and the number beside it is signed (2026-09-09, user-directed)
+
+Found by doing what §28.15's user request actually asked — reading a handful of
+rendered *feature* descriptions against their own artifact, rather than
+re-reading the fix. One of the eight sampled read:
+
+> "Patching this feature boosts the forecast's trend slope, reshaping the far
+> horizon and increasing spread and seasonal magnitude, while decreasing the
+> spectral centroid."
+
+Four of those five channels are **below 1.0 null units** in the packet
+(`dispersion` 0.74, `seasonal` 0.61, `mase` 0.56, `spectral_centroid` −0.38).
+That looks like §28.15 unfixed, and it is not — it is the same *shape* at a
+different site, and the reason is worth stating exactly.
+
+#### The two numbers
+
+`sae/response.py`'s steering battery records, per (feature, channel,
+direction), an unsigned **`effect`** (mean |delta|) and a **`signed_mean`**,
+and sets `clears_null` by testing **`effect`** against that channel's own
+random-direction `null_p95`. `run_sae_describe.py::_cleared_channels` gated on
+that flag and then handed the narrator `signed_mean / p95`. For TimesFM
+`stacked_xf.2` f5638's `dispersion`: `effect` 0.0443 against a p95 of 0.0261 —
+it cleared, at **1.70×** — while `signed_mean` is 0.0192, i.e. **0.74×**. Both
+numbers are right. 57% of the movement cancels across series, so the channel
+genuinely moved and its *direction* is not consistent.
+
+So the packet said `cleared the random-direction null: yes` and, one line
+below, `also increases: the forecast's spread, 0.74 times the null` — a
+boolean answering "did it move this channel" printed above a magnitude
+answering "how consistently in one direction", which is §11.54's mechanism
+verbatim.
+
+**Measured across the whole run before deciding anything** (§2.4): of **1394**
+cleared (feature, channel) cells, **556 (39.9%)** have a signed ratio below
+1.0 — the lowest five are 0.01, 0.03, 0.05, 0.06, 0.07. At 0.01 the direction
+word is the sign of a near-zero mean. Restricted to the 192 packets the
+narrator actually receives (top-8 features per target), **63 packets carry 183
+such cells**.
+
+#### The fix, and why it is not the role-side fix
+
+The role fix (§28.15) **drops** a channel whose signed mean is sub-null. Doing
+that here would be wrong in the other direction: these channels *did* move, and
+saying "does nothing above the null" about a feature with a 1.70× effect is
+§11.37's error inverted — absent is not the same as nothing. So the channel is
+**kept, with the quantity that actually cleared**, and only its direction is
+withheld:
+
+- `Evidence.undirected_channels: frozenset` — channels this packet may mention
+  but may not give a direction to. Its value in `channels` becomes the
+  **unsigned** `effect / p95` (≥ 1 by construction), not the signed ratio.
+- `describe.py::_verbs(ev, name)` returns `("moves", "moves")` for those,
+  reusing the machinery `CHANNEL_VERB` already provides for a channel whose
+  *statistic* has no direction. The difference is that this set is measured
+  per feature rather than fixed per channel. Three render/fallback call sites
+  now go through it.
+- The `check_text` direction check excludes them, so `increases`/`decreases`
+  cannot be licensed off a channel whose sign the evidence does not support.
+- The **ablation** battery has the identical `effect`/`signed_effect` split and
+  gets the same treatment; the packet's set is the **union** across the two
+  batteries, which can withhold a direction one battery did support but can
+  never assert one neither did.
+
+`sae/*_stage2_response.json` and `*_ablation.json` are untouched — no recorded
+`clears_null` or `effect` moved (§2.1). This is a change to what the *packet*
+licenses, exactly as §28.15's was.
+
+#### Verification
+
+- 4 new tests in `tests/test_sae_describe_cli.py`, including the
+  singular/plural-style **boundary pair** §11.51 lesson 2 asks for (signed
+  ratio 1.0 keeps its direction, 0.1 does not, nothing else differs) and one
+  that checks the split **through the guard and the renderer** rather than
+  through the builder.
+- Both plants confirmed to discriminate, each failing **exactly** its own test:
+  making `_verbs` ignore the set fails
+  `test_the_undirected_channel_licenses_no_direction_word` and nothing else;
+  making the builder never mark a channel undirected fails
+  `test_a_channel_that_moved_without_a_supported_direction_is_undirected` and
+  nothing else.
+- **§11.51 lesson 3, the cheapest tell, run over the live run**: all **192 of
+  192** machine fallbacks pass the strengthened guard.
+- `test_sae_describe_cli.py` + `test_sae_describe.py` +
+  `test_sae_describe_ablation.py` + `test_sae_role_evidence.py`: **174 passed**.
+
+#### The lesson
+
+§11.54 said: when two fields render side by side, one will be read as
+qualifying the other. What this adds is that **the pair can be split across a
+producer and a consumer** — the battery decides `clears_null` from one
+statistic and the packet reports another, and neither file contains both
+halves, so no amount of reading either one surfaces it. The tell is the same
+cheap one: **compute the cross-tab.** 556 of 1394 is not a rounding
+disagreement. And the remedy is not automatically the remedy that worked at
+the sibling site — at the role site the honest move was to drop the channel, at
+this one dropping it would have asserted the opposite falsehood.
+
+#### Live outcome of the undirected-channel fix
+
+Regenerated `descriptions.json` (192 packets) and re-rendered the report on
+`runs/full_report_run_4model`:
+
+```
+192 descriptions, 141 accepted        (was 144 -- the guard's whole cost is 3)
+  features 66 / 104 = 63.5%           (was 69 / 104 = 66.3%)
+  roles    75 /  88 = 85.2%           (unchanged -- the role path already
+                                       required a clearing SIGNED mean)
+packets carrying >=1 undirected channel: 63 of 192   (183 cells)
+machine fallbacks passing their own guard: 192 / 192
+accepted descriptions rendered in the HTML: 141 / 141
+report: 15 sections rendered / 1 skipped / 0 failed, 126 findings
+preflight: 13 checks, 13 pass, 0 warn, 0 fail
+```
+
+The sampled sentence that started this now reads, for the same feature:
+
+> "Patching this feature expands the forecast's spread, magnifies its
+> seasonality, steepens its trend, and broadens its range, all while having
+> little impact elsewhere."
+
+— against a packet in which `dispersion`, `seasonal`, `mase` and
+`spectral_centroid` are all marked undirected. That is **still not right**, and
+it is recorded here rather than papered over: the narrator has replaced the
+banned "increases" with *expands / magnifies / steepens / broadens*, which is
+§11.53's paraphrase defeat at an eleventh vocabulary. The guard refuses the
+literal direction words and the renderer offers "moves"; the model reaches for
+a synonym. Two candidate responses, neither attempted this pass — extend
+`UP_VERBS`/`DOWN_VERBS` (which §11.53 argues loses to unbounded paraphrase), or
+prefer the deterministic fallback for feature packets carrying any undirected
+channel, which is the call §28.12 already made for the *stage-2 summary* on
+exactly this evidence. **Prefer the second**; the first is the loop §11.53
+records four consecutive failures of.
+
+⚠️ **And one verification of my own was wrong before it was right** (§11.41).
+The rendered-HTML check first reported **101 of 141** descriptions present and
+all 40 missing being *features*, which reads exactly like the pre-existing
+exemplar-row/packet-selection mismatch CLAUDE.md §9 records — and is not. Both
+selections are `separated["features"][:8]`, i.e. **identical**. The 40 were
+`html.escape`'d: every feature sentence says "the forecast's …" and the role
+sentences do not, so an apostrophe split the two populations cleanly and made
+an instrument bug look like a structural finding about one kind. Escape-aware,
+it is 141 of 141. **A verification that separates cleanly along the axis you
+are studying is the one to distrust first.**

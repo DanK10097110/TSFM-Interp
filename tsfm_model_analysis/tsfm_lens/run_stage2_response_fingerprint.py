@@ -119,7 +119,10 @@ def main() -> None:
 
     # Alive-atom mask + activation variance, from the SAME series-level
     # pooled activations `ground_truth_alignment`/Stage 0/1 already used --
-    # `load_all_windows` is the store's series-level (pooled) read.
+    # `load_all_windows` is the store's WINDOW-level read, [n_series*n_windows,
+    # D] -- both statistics below are legitimately over windows. It is NOT
+    # a series-level read; anything selecting SERIES needs
+    # `ground_truth.encode_series_level`.
     bench_activations = load_all_windows(store, args.model, args.layer)
     alive = alive_feature_mask(sae, bench_activations, device)
     log.info(f"stage2: {int(alive.sum())} of {sae.dict_size} atoms alive "

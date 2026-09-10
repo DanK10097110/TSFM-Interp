@@ -136,6 +136,61 @@ class Evidence:
     headline. Empty when the exemplar pass did not run, which keeps every
     packet built before this field existed byte-identical.
     """
+    undirected_channels: frozenset = frozenset()
+    """Channels that moved but whose DIRECTION the evidence does not support.
+
+    The steering battery's per-channel `clears_null` tests an UNSIGNED
+    effect (mean |delta| against the random-direction null's p95), while
+    the number this packet carries is the SIGNED mean over that same null.
+    The two answer different questions, and on
+    `runs/full_report_run_4model` they disagree for 556 of 1394 cleared
+    (feature, channel) cells -- down to a signed ratio of 0.01, where the
+    sign of a near-zero mean is arbitrary. That is sec 11.54's defect at
+    the feature site: a boolean saying "it moved this channel" beside a
+    magnitude saying "how consistently in one direction", read as one
+    claim, and the narrator duly wrote "increases the forecast's spread"
+    off a signed mean 0.74 times its own null.
+
+    A channel listed here keeps its place in `channels` -- it genuinely
+    moved, and dropping it would assert the opposite falsehood (sec 11.37:
+    absent is not the same as nothing) -- but its value is the UNSIGNED
+    effect ratio, the quantity that actually cleared, and only the
+    undirected verb is honest for it. Same treatment `CHANNEL_VERB`
+    already gives a channel whose statistic has no direction; the
+    difference is that this set is measured per feature rather than fixed
+    per channel.
+    """
+    ablation_channels: dict = _dc_field(default_factory=dict)
+    """Cleared channels from the ABLATION battery, in signed null units.
+
+    `channels` above is the injection battery: a decoder direction steered
+    INTO a clean forward pass, on series chosen without reference to whether
+    the feature fires on them. This is the other intervention -- the feature
+    zeroed OUT of the SAE's own reconstruction, on the series it fires
+    hardest on -- so it answers a question the injection battery cannot: what
+    this feature is contributing where it is actually active.
+
+    🔴 SIGN CONVENTION, and it is not the artifact's. `sae/response.py`
+    records `signed_effect` as the effect OF REMOVAL (ablated minus
+    baseline); the value here is NEGATED, so it is the feature's own
+    contribution and reads on the same scale and in the same direction as
+    `channels`. Without that flip a direction word in the narrator's sentence
+    would mean opposite things depending on which line licensed it, and
+    nothing downstream could tell which -- the guard checks a word against a
+    sign, not against a provenance.
+
+    Empty when no ablation pass ran, which keeps every packet built before
+    this field existed byte-identical.
+    """
+    ablation_measured: bool = False
+    """True when the ablation battery ran for this target at all.
+
+    Separate from `ablation_channels` being non-empty for exactly the reason
+    `channels_measured` is separate from `clears_null` (`CLAUDE.md` sec
+    11.37): a feature the battery scored and found nothing for, and a feature
+    the battery never reached, are different states, and only the first
+    licenses "removing it changes nothing".
+    """
     clears_null: bool = False
     channels_measured: bool = True
     """False when NO causal channel battery was run for this target at all.
@@ -214,6 +269,18 @@ CHANNEL_VERB = {
     "horizon_shape_far": ("moves", "moves"),
 }
 _DEFAULT_VERB = ("increases", "decreases")
+
+
+def _verbs(ev, name: str) -> tuple:
+    """The honest verb pair for one channel of one packet.
+
+    Undirected either because the channel's own statistic carries no
+    direction (`CHANNEL_VERB`) or because THIS packet's signed mean did not
+    clear its own null (`Evidence.undirected_channels`).
+    """
+    if name in (getattr(ev, "undirected_channels", None) or frozenset()):
+        return ("moves", "moves")
+    return CHANNEL_VERB.get(name, _DEFAULT_VERB)
 
 # Canonical English for each ground-truth field
 # (`sae/ground_truth.py::_scalar_ground_truth` plus its one-hot dummies).
@@ -765,9 +832,32 @@ _HORIZON_THEN_DIRECTION = re.compile(
 # The guard.
 # ---------------------------------------------------------------------------
 
+def _signed_channels(ev: Evidence) -> dict:
+    """Both batteries' cleared channels, in the one shared sign convention.
+
+    The guard's direction, quality and concept checks all ask "does the
+    evidence support this word", and the answer is yes if EITHER battery
+    supports it. Reading only `channels` would reject a direction the
+    ablation pass measured -- a systematic rejection of correct sentences,
+    which sec 11.51 records as the failure mode a narrowly-scoped guard
+    produces: it rejected this module's own fallback.
+
+    On a channel both batteries cleared, the larger magnitude wins. They are
+    different interventions and can legitimately disagree in sign; the
+    disagreement is a finding about the feature, not a reason to drop the
+    channel, and dropping it would silently withhold the more informative
+    case.
+    """
+    out = dict(ev.channels or {})
+    for ch, v in (ev.ablation_channels or {}).items():
+        if ch not in out or abs(float(v)) > abs(float(out[ch])):
+            out[ch] = v
+    return out
+
+
 def allowed_concepts(ev: Evidence) -> set:
     """Every concept this packet licenses a mention of."""
-    out = {channel_concept(c) for c in (ev.channels or {})}
+    out = {channel_concept(c) for c in _signed_channels(ev)}
     if ev.structural_field:
         out.add(field_concept(ev.structural_field))
     for entry in (ev.top3_structural or ()):
@@ -800,8 +890,18 @@ def _allowed_number_strings(ev: Evidence) -> set:
         if float(f).is_integer():
             out.add(str(int(f)))
 
-    for v in (ev.channels or {}).values():
-        add(v)
+    # BOTH batteries' raw values, not `_signed_channels`' merged view. That
+    # merge keeps only the larger magnitude per channel, which is right for
+    # the direction and concept checks but wrong here: on a channel both
+    # batteries cleared, the smaller one is still a number the packet
+    # literally renders, and this module's OWN fallback quotes it (the
+    # ablation clause reports the ablation magnitude). It refused 6 of the
+    # 98 feature fallbacks on `runs/full_report_run_4model` -- a false
+    # refusal of a correct sentence, sec 11.35's damaging direction, and
+    # sec 11.39's shape: the rule was right and reached one of its inputs.
+    for src in (ev.channels, ev.ablation_channels):
+        for v in (src or {}).values():
+            add(v)
     add(ev.structural_rho)
     add(ev.structural_n)
     add(ev.n_atoms)
@@ -814,6 +914,28 @@ def _allowed_number_strings(ev: Evidence) -> set:
             add(entry[1])
             add(entry[2])
     return out
+
+
+# Deliberately only the fragments that are labels and NOTHING else. The
+# first draft also held "not measured" and "not tested", which deadlocks the
+# module against itself: `UNTESTED_MARKERS` REQUIRES an untested packet's
+# description to state that status, and those are the words it states it in
+# -- an allowlist demanding a phrase a banlist forbids, so no untested
+# description could ever be accepted. It produced zero refusals on
+# `runs/full_report_run_4model` only because every packet there had a
+# battery, i.e. the case that breaks it is the case that run cannot
+# exercise (sec 11.51 lesson 3, a second time in the same module).
+_EVIDENCE_LABEL_FRAGMENTS = (
+    "none measured",
+    "the same pattern",
+)
+
+# "these ROLES" only. The first draft also matched "these features", which
+# refused 73 of this module's own 88 role fallbacks -- a role IS a cluster
+# of features, so "These 12 features showed no measured effect" is both
+# correct and the fallback's standard wording. The defect is a plural
+# ROLE reference in a packet describing exactly one role.
+_PLURAL_SELF_REFERENCE = re.compile(r"\b(?:these|those)\s+roles\b", re.IGNORECASE)
 
 
 def check_text(text: str, ev: Evidence) -> str:
@@ -850,6 +972,31 @@ def check_text(text: str, ev: Evidence) -> str:
         return ("the answer did not end in a full stop, so it was cut off; write one "
                 "complete sentence")
 
+    # The evidence block's absence markers are LABELS in a machine-readable
+    # block, not English noun phrases, and the model splices them in as
+    # though they were: "This role fails to affect the forecast, tracking
+    # none measured." reached 6 accepted descriptions on
+    # `runs/full_report_run_4model`, and "tracking series with the same
+    # pattern" is the same splice one field over. Nothing is factually
+    # fabricated -- the sentence is simply not English, which no scan over
+    # a vocabulary of CLAIMS can see, because the defect is that a label was
+    # used as a phrase. The machine fallback states the same fact in words,
+    # so a refusal here loses no information (sec 11.51 lesson 3: verified
+    # by round-tripping every fallback through this guard).
+    for label in _EVIDENCE_LABEL_FRAGMENTS:
+        if label in low:
+            return (f"the answer used the evidence label {label!r} as if it were "
+                    "English; say it in plain words instead, or say nothing about it")
+
+    # A packet describes exactly one feature or one role. Plural self-
+    # reference ("these roles have no measurable effects") asserts a scope
+    # the packet does not have, and it is the same defect as sec 11.53's
+    # unguarded chunk STATE: a claim about how many things are being
+    # described, which no vocabulary of channels or fields can reach.
+    if _PLURAL_SELF_REFERENCE.search(low):
+        return ("the answer described several features or roles; this evidence is "
+                "about exactly one, so write about one")
+
     norm = _normalize(raw)
 
     for term in UNLICENSED_TERMS:
@@ -857,7 +1004,7 @@ def check_text(text: str, ev: Evidence) -> str:
             return (f"the answer said {term!r}, which nothing in the evidence "
                     "measures; say only what was measured")
 
-    if ev.channels:
+    if _signed_channels(ev):
         for term in NO_OTHER_EFFECT_TERMS:
             if _NO_OTHER_PATTERNS[term].search(norm):
                 return (f"the answer said {term!r}, but the evidence lists more than "
@@ -871,8 +1018,20 @@ def check_text(text: str, ev: Evidence) -> str:
     # A direction verb is a claim about a channel's SIGN. `horizon_shape_*`
     # is a mean absolute deviation, so it carries no sign at all and cannot
     # license one -- which is why the signed set excludes it.
-    signed = [float(v) for ch, v in (ev.channels or {}).items()
-              if ch not in CHANNEL_VERB]
+    # BOTH batteries' signs, not `_signed_channels`' merged view. That merge
+    # keeps only the larger magnitude per channel, so when the two
+    # interventions clear the SAME channel in OPPOSITE directions -- which
+    # its own docstring calls a legitimate finding about the feature -- the
+    # smaller one's sign is discarded and becomes unsayable. The tell is
+    # sec 11.51 lesson 3: this module's own fallback quotes the ablation
+    # clause ("decreases forecast error"), so the guard refused the sentence
+    # it falls back to. Widening admits a direction word only where some
+    # battery actually measured it; the check is unchanged where neither did.
+    undirected = (getattr(ev, "undirected_channels", None) or frozenset())
+    signed = [float(v)
+              for src in (ev.channels, ev.ablation_channels)
+              for ch, v in (src or {}).items()
+              if ch not in CHANNEL_VERB and ch not in undirected]
     has_up = any(v > 0 for v in signed)
     has_down = any(v < 0 for v in signed)
     for term in UP_VERBS:
@@ -927,7 +1086,7 @@ def check_text(text: str, ev: Evidence) -> str:
                     "is a size, not a direction, so say it moves or reshapes that "
                     "part of the forecast")
 
-    mase = float((ev.channels or {}).get("mase", 0.0))
+    mase = float(_signed_channels(ev).get("mase", 0.0))
     for term in QUALITY_WORSE:
         if _QUALITY_WORSE_PATTERNS[term].search(norm) and mase <= 0:
             return (f"the answer said {term!r}, but the evidence does not show "
@@ -937,13 +1096,14 @@ def check_text(text: str, ev: Evidence) -> str:
             return (f"the answer said {term!r}, but the evidence does not show "
                     "forecast error going down")
 
-    if ev.clears_null:
+    cleared_any = bool(ev.clears_null or ev.ablation_channels)
+    if cleared_any:
         for term in NO_EFFECT_TERMS:
             if _NO_EFFECT_PATTERNS[term].search(norm):
                 return (f"the answer said {term!r}, but the evidence lists a channel "
                         "that cleared the random-direction null")
 
-    if not ev.clears_null:
+    if not cleared_any:
         for term in CAUSAL_TERMS:
             if _CAUSAL_PATTERNS[term].search(norm):
                 return (f"the answer said {term!r}, but no channel cleared the "
@@ -956,7 +1116,7 @@ def check_text(text: str, ev: Evidence) -> str:
                         "a comparison that came out negative as though it came out "
                         "positive")
 
-    if not ev.channels_measured:
+    if not ev.channels_measured and not ev.ablation_measured:
         # The THIRD honest state, and the one the guard could not see. With no
         # battery run there is no null to have failed, so "does nothing above
         # the null" is not a cautious phrasing of ignorance -- it is a
@@ -1034,13 +1194,34 @@ def _channel_clause(ev: Evidence, plural: bool = False) -> str:
         return ""
     name, value = items[0]
     gloss = CHANNEL_GLOSS.get(name, name)
-    up, down = CHANNEL_VERB.get(name, _DEFAULT_VERB)
+    up, down = _verbs(ev, name)
     verb = _conjugate(up if float(value) >= 0 else down, plural)
     clause = f"{verb} {gloss} ({_fmt(value)} times the random-direction null)"
     if len(items) > 1:
         second = CHANNEL_GLOSS.get(items[1][0], items[1][0])
         clause += f", and also {second}"
     return clause
+
+
+def _ablation_clause(ev: Evidence, plural: bool = False) -> str:
+    """The ablation battery's strongest channel, said where it was measured.
+
+    Same shape as `_channel_clause`, and deliberately NOT merged with it: the
+    two batteries answer different questions, and the trailing "where it
+    fires" is the whole difference -- an injection effect is measured on
+    series chosen without reference to the feature, this one only on the
+    series it is actually active on.
+    """
+    items = sorted((ev.ablation_channels or {}).items(),
+                   key=lambda kv: -abs(float(kv[1])))
+    if not items:
+        return ""
+    name, value = items[0]
+    gloss = CHANNEL_GLOSS.get(name, name)
+    up, down = _verbs(ev, name)
+    verb = _conjugate(up if float(value) >= 0 else down, plural)
+    return (f"{verb} {gloss} on the series {'they fire' if plural else 'it fires'} "
+            f"on ({_fmt(value)} times the random-direction null)")
 
 
 def _structural_clause(ev: Evidence) -> str:
@@ -1079,13 +1260,33 @@ def machine_fallback(ev: Evidence) -> str:
     """
     subject, plural = _subject(ev)
     chan = _channel_clause(ev, plural)
+    abl = _ablation_clause(ev, plural)
     struct = _structural_clause(ev)
 
-    if ev.clears_null and chan:
-        text = f"{subject} {chan}"
+    # The ablation clause wins when both exist, rather than being appended.
+    # It is the more relevant of the two -- it measures the feature where it
+    # is actually active, which is the question that separates two features
+    # that co-fire -- and concatenating both would routinely push the
+    # sentence past MAX_WORDS, where the guard rejects the fallback itself.
+    lead = abl or chan
+    if lead:
+        text = f"{subject} {lead}"
         if struct:
             text += f", {struct}"
         return text + "."
+
+    if ev.ablation_measured and not ev.channels_measured:
+        # The ablation battery ran and found nothing; the injection battery
+        # never ran. "No measured effect above the null" is true of the one
+        # that ran, so this is NOT the untested state -- but it must not be
+        # reported as though both agreed.
+        if struct:
+            pronoun = "they are" if plural else "it is"
+            return (f"{subject} changed nothing above the random-direction null "
+                    f"when removed from the series {'they fire' if plural else 'it fires'} "
+                    f"on; {pronoun} {struct}.")
+        return (f"{subject} changed nothing above the random-direction null when "
+                f"removed from the series {'they fire' if plural else 'it fires'} on.")
 
     if not ev.channels_measured:
         # No battery ran, so there is no null to have failed. Saying it
@@ -1247,7 +1448,7 @@ def render_evidence(ev: Evidence) -> str:
     if items and ev.clears_null:
         for rank, (name, value) in enumerate(items):
             gloss = CHANNEL_GLOSS.get(name, name)
-            up, down = CHANNEL_VERB.get(name, _DEFAULT_VERB)
+            up, down = _verbs(ev, name)
             verb = up if float(value) >= 0 else down
             prefix = "" if rank == 0 else "also "
             lines.append(f"{prefix}{verb}: {gloss}, {_fmt(value)} times the null")
@@ -1259,8 +1460,41 @@ def render_evidence(ev: Evidence) -> str:
         # would then reject its own evidence block's vocabulary.
         lines.append("moves: not tested -- no response battery was run")
 
+    if ev.ablation_measured:
+        # The second intervention, stated as such. The injection line above
+        # says what steering this direction into a clean pass does; this says
+        # what the feature is contributing where it actually fires, which is
+        # the question two features that co-fire on the same series differ on
+        # even when every correlational field they carry is identical.
+        abl = sorted((ev.ablation_channels or {}).items(),
+                     key=lambda kv: -abs(float(kv[1])))
+        if abl:
+            parts = []
+            for name, value in abl:
+                gloss = CHANNEL_GLOSS.get(name, name)
+                up, down = _verbs(ev, name)
+                verb = up if float(value) >= 0 else down
+                parts.append(f"{verb}: {gloss}, {_fmt(value)} times the null")
+            lines.append("what it contributes where it fires "
+                         "(measured by removing it): " + "; ".join(parts))
+        else:
+            lines.append("what it contributes where it fires "
+                         "(measured by removing it): nothing above the null")
+
     if ev.structural_field:
         gloss = FIELD_GLOSS.get(ev.structural_field, ev.structural_field)
+        # State the DIRECTION here, exactly as `_structural_clause` already
+        # states it in the machine fallback. Without it the block reads
+        # "strongest on series with: seasonal amplitude", a bare noun the
+        # model copies verbatim into "most strongly on series with seasonal
+        # amplitude." -- grammatical debris in 7 accepted descriptions, and
+        # a real loss of information, since the sign of rho is the whole
+        # content of the correlate. This adds no fabrication surface: the
+        # larger/smaller pair is already licensed vocabulary here, because
+        # the fallback this guard round-trips has always used it.
+        if not ev.structural_field.startswith(_BOOLEAN_FIELD_PREFIXES):
+            positive = ev.structural_rho is None or float(ev.structural_rho) >= 0
+            gloss = f"a larger {gloss}" if positive else f"a smaller {gloss}"
         tail = ""
         if ev.structural_rho is not None:
             tail = f" (rho {_fmt(ev.structural_rho)}"
@@ -1350,8 +1584,69 @@ def load_narrator(device: str = "cuda", dtype=None) -> Narrator:
     return Narrator(tokenizer=tok, model=model, device=str(device))
 
 
+GEN_BATCH_SIZE = 16
+"""Prompts sent to the narrator in one forward pass.
+
+🔴 A FIXED bound, not a tuning knob, because the caller's batch size is the
+number of packets a run happens to produce and that scales with the panel.
+`run_sae_describe.py` hands `_generate` every packet at once: 116 on the
+three-model run this was first exercised on, 192 on the four-model panel --
+where it raised `torch.OutOfMemoryError` trying to allocate 4.93 GiB inside
+Qwen's MLP with 682 MiB free. Nothing was wrong with either the model or the
+packets; the batch was simply built from a quantity nobody bounded, so the
+narrator worked until a run got one model wider and then did not.
+
+16 is set below the largest batch measured to fit rather than at it, since
+the peak depends on the longest prompt in the sub-batch and an evidence
+packet's length is not bounded by anything either.
+"""
+
+
 def _generate(narrator: Narrator, batch_messages: list) -> list:
-    """Greedy, deterministic completion for a batch of chat conversations."""
+    """Greedy, deterministic completion for a batch of chat conversations.
+
+    Chunked into `GEN_BATCH_SIZE` sub-batches, and on an out-of-memory error
+    the offending sub-batch is halved and retried down to a single prompt.
+    Both matter and they are not the same guard: the bound stops the common
+    case (a panel with more roles than the last one), the backoff stops the
+    case a bound cannot predict (one unusually long packet, or a GPU someone
+    else is also using -- this repo's boxes are shared).
+
+    Decoding is greedy, so a sub-batch's output does not depend on the other
+    prompts in it beyond left-padding width, and the seed is re-set per
+    sub-batch so a run is reproducible from the chunking alone.
+    """
+    import torch
+
+    out_texts: list = []
+    for start in range(0, len(batch_messages), GEN_BATCH_SIZE):
+        window = batch_messages[start:start + GEN_BATCH_SIZE]
+        size = len(window)
+        while True:
+            try:
+                for off in range(0, len(window), size):
+                    out_texts.extend(_generate_one(narrator, window[off:off + size]))
+                break
+            except torch.OutOfMemoryError:
+                # Drop whatever this attempt produced before retrying, or
+                # the halved retry would append duplicates of the inner
+                # sub-batches that had already succeeded within this window.
+                del out_texts[start:]
+                torch.cuda.empty_cache()
+                if size == 1:
+                    raise
+                size = max(1, size // 2)
+                log.warning(
+                    "sae describe: out of memory generating %d prompts at once; "
+                    "retrying at %d. This is handled, but if it recurs every "
+                    "run the packet count has outgrown GEN_BATCH_SIZE (%d) and "
+                    "that constant should move, not this backoff",
+                    len(window), size, GEN_BATCH_SIZE)
+    return out_texts
+
+
+def _generate_one(narrator: Narrator, batch_messages: list) -> list:
+    """One forward pass. `_generate` owns the batching; this owns the call."""
     import torch
 
     tok = narrator.tokenizer

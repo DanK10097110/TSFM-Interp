@@ -1677,3 +1677,177 @@ def sae_model_contrast(run_dir: Path, min_share: float = 0.05) -> pd.DataFrame:
     out.attrs["n_models"] = cov.attrs.get("n_models")
     out.attrs["min_share"] = min_share
     return out
+
+
+def sae_contrast_chunks(run_dir: Path) -> pd.DataFrame:
+    """One row per compared unit: the narrated layer, role pair by role pair.
+
+    `sae_causal_agreement` renders each pair's stage-2 SUMMARY and nothing
+    beneath it, so stage 1 -- 63 guarded sentences on the four-model panel,
+    one per matched role pair or unmatched role -- was persisted, auditable,
+    and rendered nowhere. That is the wrong half to hide: the summary is a
+    reduction OVER these sentences, and a reader asking "what does this model
+    account for that this one doesn't" is asking about the units, not the
+    average of them. Chunking exists because a 1.5B narrator handed a whole
+    panel averages it into fluent nonsense; showing only the average of the
+    chunks reintroduces at the report boundary the thing chunking prevented
+    at the generation boundary.
+
+    Every row carries `generated`, because roughly a third of these sentences
+    are the module's deterministic fallback rather than narrator output, and
+    a reader cannot tell which from the prose -- the fallbacks are written in
+    the same correspondence terms the guard enforces, deliberately (sec
+    11.51 lesson 3). Collapsing the two would present a machine template as
+    a model's reading of the evidence.
+
+    Pure reduction over an artifact, holding to `bottom_line_rows`'
+    adaptivity contract: model identity comes off the artifact's own keys,
+    and no model name, architecture family or positional index appears here.
+    """
+    doc = load_json_or_none(Path(run_dir) / "sae" / "comparison.json")
+    pairs = ((doc or {}).get("comparison") or {}).get("pairs") or []
+    rows = []
+    for p in pairs:
+        for c in (p.get("chunks") or []):
+            solo = c.get("kind") != "pair"
+            cos = c.get("cosine")
+            rows.append({
+                "pair": f'{p.get("model_a")} vs {p.get("model_b")}',
+                "role": f'{c.get("model_a")} · {c.get("name_a")}',
+                "counterpart": ("none found at these layers" if solo else
+                                f'{c.get("model_b")} · {c.get("name_b")}'),
+                "co-firing": "—" if cos is None else f"{float(cos):.2f}",
+                "when each is removed": (c.get("causal_verdict")
+                                         or ("no counterpart to compare" if solo
+                                             else "not scorable")),
+                "what the evidence says": (c.get("text") or "").strip() or "—",
+                "generated": "narrator" if c.get("accepted") else "fallback",
+            })
+    if not rows:
+        return pd.DataFrame()
+    out = pd.DataFrame(rows)
+    # Reported BY STATE and never pooled: a solo chunk and a matched pair are
+    # different questions, the guard has a different amount to check on each,
+    # and every acceptance rate this subsystem has recorded so far separates
+    # cleanly on exactly that split (sec 11.51, sec 26 C).
+    for kind, mask in (("solo", out["counterpart"] == "none found at these layers"),
+                       ("pair", out["counterpart"] != "none found at these layers")):
+        sub = out[mask]
+        out.attrs[f"n_{kind}"] = int(len(sub))
+        out.attrs[f"n_{kind}_narrated"] = int((sub["generated"] == "narrator").sum())
+    return out
+
+
+def sae_causal_repertoire(run_dir: Path) -> pd.DataFrame:
+    """One row per model: which forecast channels its roles causally move.
+
+    The causal counterpart to `sae_model_contrast`, and deliberately a
+    separate table rather than more columns on that one. `sae_field_coverage`
+    reads the CORRELATIONAL side -- which labelled property of the input a
+    feature's activation tracks -- and answers "what is this dictionary
+    about". This reads `sae/comparison.json`'s capability profile, which is
+    built from the ablation battery: what removing a role actually does to
+    the forecast. Two features can track the same property and move the
+    forecast in different ways, which is the whole reason the second battery
+    exists (sec 27), so folding the two into one table would assert an
+    agreement between them that the run may not have.
+
+    Pure reduction over an artifact, holding to `bottom_line_rows`'
+    adaptivity contract: model identity comes off the artifact's own keys,
+    and no model name, architecture family or positional index appears here.
+
+    Returns an empty frame when the artifact is absent -- `run_sae_compare.py`
+    is a standalone driver like `run_sae_roles.py`, not a pipeline stage, so
+    its absence is the ordinary state of a run and not a failure.
+    """
+    doc = load_json_or_none(Path(run_dir) / "sae" / "comparison.json")
+    prof = (doc or {}).get("capability_profile") or {}
+    models = prof.get("models") or {}
+    if not models:
+        return pd.DataFrame()
+
+    rows = []
+    for model, m in models.items():
+        chans = sorted((m.get("channels") or {}).values(),
+                       key=lambda c: (-int(c.get("n_roles") or 0),
+                                      str(c.get("channel"))))
+        flds = sorted((m.get("structural_fields") or {}).values(),
+                      key=lambda f: (-int(f.get("n_roles") or 0),
+                                     str(f.get("field"))))
+        n_roles = int(m.get("n_roles") or 0)
+        n_dir = int(m.get("n_roles_with_causal_direction") or 0)
+        # Three counterpart states, never two (sec 11.37): a role that was
+        # never offered a counterpart and a role that was offered one and
+        # found none mean opposite things, and collapsing them would report
+        # a run with no comparison as a run in which nothing corresponded.
+        cparts = (f'{m.get("roles_with_counterpart", 0)} matched / '
+                  f'{m.get("roles_without_counterpart", 0)} unmatched / '
+                  f'{m.get("roles_not_compared", 0)} not compared')
+        rows.append({
+            "model": model,
+            "layers": len(m.get("targets") or []),
+            "roles": n_roles,
+            "with a measured causal effect": (
+                f"{n_dir} of {n_roles}" if n_roles else "—"),
+            "channels moved": len(chans),
+            "what it moves": ", ".join(
+                f'{c["label"]} ({c["n_roles"]})' for c in chans[:3]) or "none",
+            "what it tracks": ", ".join(
+                f'{f["label"]} ({f["n_roles"]})' for f in flds[:2]) or "none",
+            "counterparts": cparts,
+        })
+    out = pd.DataFrame(rows)
+    out.attrs["scope_note"] = prof.get("scope_note") or ""
+    out.attrs["cosine_threshold"] = prof.get("cosine_threshold")
+    out.attrs["compared"] = bool(prof.get("compared"))
+    # Every channel any model moves, so the caller can render the union as a
+    # matrix without re-reading the artifact.
+    out.attrs["channels"] = sorted(
+        {c["channel"] for m in models.values()
+         for c in (m.get("channels") or {}).values()})
+    return out
+
+
+def sae_causal_agreement(run_dir: Path) -> pd.DataFrame:
+    """One row per model pair: do matched roles do the SAME thing causally?
+
+    Two roles match when their activation profiles correlate -- they fire on
+    the same series. That says nothing about whether removing them moves the
+    forecast the same way, and on the runs measured so far it usually does
+    not. This renders that contrast per pair.
+
+    `not scorable` is a first-class column rather than folded into either
+    verdict, because a pair whose ablation battery had no measurable spread
+    on both sides has no verdict to report and must not be counted as
+    agreement (sec 11.37). The match rate is shown ONLY when the artifact
+    marks it quotable -- it sits below both sides' untrained-twin floor on
+    every pair checked so far, so rendering the bare number invites exactly
+    the reading the floor exists to prevent.
+    """
+    doc = load_json_or_none(Path(run_dir) / "sae" / "comparison.json")
+    pairs = ((doc or {}).get("comparison") or {}).get("pairs") or []
+    if not pairs:
+        return pd.DataFrame()
+    rows = []
+    for p in pairs:
+        scored = int(p.get("n_agree") or 0) + int(p.get("n_disagree") or 0)
+        rate = p.get("match_rate")
+        rows.append({
+            "pair": f'{p.get("model_a")} vs {p.get("model_b")}',
+            "matched roles scored": scored,
+            "act alike": int(p.get("n_agree") or 0),
+            "act differently": int(p.get("n_disagree") or 0),
+            "not scorable": int(p.get("n_not_scorable") or 0),
+            "match rate": (f"{float(rate):.2f}"
+                           if rate is not None and p.get("match_rate_quotable")
+                           else "not quotable"),
+            "summary": (p.get("summary") or "").strip() or "—",
+        })
+    out = pd.DataFrame(rows)
+    out.attrs["n_summaries_accepted"] = sum(
+        1 for p in pairs if p.get("summary_accepted"))
+    out.attrs["n_pairs"] = len(pairs)
+    out.attrs["n_chunks"] = sum(len(p.get("chunks") or []) for p in pairs)
+    out.attrs["n_chunks_accepted"] = sum(
+        1 for p in pairs for c in (p.get("chunks") or []) if c.get("accepted"))
+    return out

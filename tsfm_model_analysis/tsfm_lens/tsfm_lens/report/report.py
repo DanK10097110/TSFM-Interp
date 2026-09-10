@@ -4615,6 +4615,34 @@ def _feature_descriptions(run_dir: Path, key: str) -> dict:
     return out
 
 
+def _ablation_entries(run_dir: Path, model: str, layer: str,
+                      raw: bool = False):
+    """`{feature_index: candidate_record}` from one target's ablation
+    artifact, or `{}` when that pass has not been run for it.
+
+    `raw=True` returns the whole document instead (or `None`), which is what
+    the role-level causal check needs -- it reads the candidate list through
+    `sae/matching.py`'s own helpers rather than re-keying it here.
+
+    Optional exactly the way `_feature_descriptions` is: absent means the
+    two causal columns are not rendered at all, which is deliberately
+    different from rendering them empty -- an empty "what removing it does"
+    column reads as "measured, no effect", and that is the one thing it
+    must not say (`CLAUDE.md` sec 11.37).
+    """
+    from ..sae.train import sanitize
+    path = run_dir / "sae" / sanitize(model) / f"{sanitize(layer)}_ablation.json"
+    empty = None if raw else {}
+    if not path.exists():
+        return empty
+    doc = load_json(path) or {}
+    if doc.get("withheld"):
+        return empty
+    if raw:
+        return doc
+    return {int(c["feature"]): c for c in (doc.get("candidates") or [])}
+
+
 def _role_descriptions(run_dir: Path, key: str) -> dict:
     """Generated per-role descriptions for one target, if the run produced any.
 
@@ -4957,6 +4985,165 @@ def _sae_contrast_block(run_dir: Path, findings: list) -> str:
         "How to read this comparison")
 
 
+def _sae_capability_block(run_dir: Path, findings: list) -> str:
+    """What each model's roles causally DO, and whether matched roles agree.
+
+    The causal half of the cross-model question, sitting directly beneath
+    `_sae_contrast_block`'s correlational half. That block answers "which
+    labelled property of the input does this dictionary track"; this answers
+    "what does removing one of its roles actually do to the forecast", which
+    is a different question and, on every run measured so far, a differently
+    ordered one. Rendering them as one table would assert an agreement
+    between the two batteries that the run may not have.
+
+    Reads `sae/comparison.json` only, via two pure reductions. That artifact
+    comes from `run_sae_compare.py`, a standalone driver rather than a
+    pipeline stage, so its absence is the ordinary state of a run: this
+    returns "" and the section is unchanged, exactly as the roles block does
+    without `sae/roles.json`.
+    """
+    rep = derived.sae_causal_repertoire(run_dir)
+    if rep.empty:
+        return ""
+    agree = derived.sae_causal_agreement(run_dir)
+
+    html = "<h4>What each model's features causally do</h4>" + _table(rep)
+    html += _figcap(
+        "One row per model, pooled over its analyzed layers. A ROLE is a "
+        "cluster of sparse features sharing a causal signature; <i>what it "
+        "moves</i> lists the forecast channels that removing a role actually "
+        "shifts, most-roles-first, with the number of roles in brackets. "
+        "<i>counterparts</i> keeps three states apart on purpose — a role "
+        "offered a partner in the other model and matched, offered one and "
+        "unmatched, and never offered one at all — because the last is a "
+        "fact about which layers were analyzed, not about the model.")
+
+    # Model x channel matrix. Rows and columns both come off the artifact's
+    # own keys, so a panel of models nobody has run renders the same way.
+    channels = list(rep.attrs.get("channels") or [])
+    doc = derived.load_json_or_none(Path(run_dir) / "sae" / "comparison.json")
+    models_raw = ((doc or {}).get("capability_profile") or {}).get("models") or {}
+    if channels and len(models_raw) > 1:
+        models = list(models_raw)
+        z, txt = [], []
+        for m in models:
+            chans = models_raw[m].get("channels") or {}
+            z.append([int((chans.get(c) or {}).get("n_roles") or 0) for c in channels])
+            txt.append([str(v) if v else "" for v in z[-1]])
+        # One label per channel, taken from whichever model measured it --
+        # the gloss is a property of the channel, not of the model.
+        gloss = {}
+        for c in channels:
+            for m in models:
+                lab = ((models_raw[m].get("channels") or {}).get(c) or {}).get("label")
+                if lab:
+                    gloss.setdefault(c, lab)
+        fig = go.Figure(go.Heatmap(
+            z=z, x=[_wrap(gloss.get(c, c), 14) for c in channels], y=models,
+            text=txt, texttemplate="%{text}", textfont_size=11,
+            colorscale="Viridis", zmin=0, colorbar_title="roles"))
+        fig.update_layout(xaxis_title="what removing the role moves in the forecast",
+                          yaxis_title="", xaxis_tickangle=0)
+        html += _frag(fig, height=max(280, 60 * len(models) + 150)) + _figcap(
+            "How many of each model's roles move each channel. A blank cell "
+            "means no role of that model cleared the random-direction null on "
+            "that channel — which is not the same as the model being unable "
+            "to affect it.")
+
+    if not agree.empty:
+        html += "<h4>Do matched roles do the same thing?</h4>" + _table(agree)
+        tot_a = int(agree["act alike"].sum())
+        tot_d = int(agree["act differently"].sum())
+        tot_u = int(agree["not scorable"].sum())
+        html += _figcap(
+            f"Roles are matched across models by ACTIVATION profile — they "
+            f"fire on the same series. Whether they then move the forecast "
+            f"the same way is a separate measurement, and across all pairs "
+            f"here it is {tot_a} alike against {tot_d} differently, with "
+            f"{tot_u} pairs whose battery had no measurable spread on one or "
+            f"both sides and so cannot be scored either way. The summary "
+            f"column is COMPOSED FROM THESE MEASURED TALLIES, not written by "
+            f"the narrator: across four regenerations the generated summary "
+            f"produced a different class of unsupported claim each time, "
+            f"while the per-role sentences below it held up, so the summary "
+            f"layer states only what the counts in this row already say. The "
+            f"generated attempt is still produced, checked and kept in "
+            f"`sae/comparison.json` under `summary_generated`.")
+        if tot_a + tot_d:
+            findings.append(Finding(
+                claim_id=_next_claim_id("sae"), stage="sae",
+                evidence_class="causal_within_model",
+                text=f"SAE — of {tot_a + tot_d} cross-model role pairs whose "
+                     f"ablation effect could be scored, {tot_d} "
+                     f"{'moves' if tot_d == 1 else 'move'} the forecast "
+                     f"differently and {tot_a} "
+                     f"{'moves' if tot_a == 1 else 'move'} it alike; a "
+                     f"further {tot_u} could not be scored. Roles are matched "
+                     f"on co-firing, so this is the share of co-firing role "
+                     f"pairs that turn out to play different causal parts.",
+                plain="Features in different models that switch on for the "
+                      "same kinds of series mostly do NOT do the same thing "
+                      "to the forecast when you remove them."
+                      if tot_d > tot_a else
+                      "Features in different models that switch on for the "
+                      "same kinds of series usually also do the same thing "
+                      "to the forecast when you remove them.",
+                registered=False))
+
+    # Stage 1 beneath stage 2. The summary above is a reduction OVER these
+    # sentences, and the reader's question -- "what does this model account
+    # for that this one doesn't" -- is answered by the units, not by the
+    # average of them. Collapsed per pair, because six tables of eleven rows
+    # opened by default would bury the two tables above that frame them.
+    chunks = derived.sae_contrast_chunks(run_dir)
+    if not chunks.empty:
+        html += "<h4>Role by role, pair by pair</h4>"
+        for pair_name in chunks["pair"].drop_duplicates():
+            sub = chunks[chunks["pair"] == pair_name].drop(columns=["pair"])
+            n_nar = int((sub["generated"] == "narrator").sum())
+            html += _details(
+                f"{pair_name} — {len(sub)} compared roles "
+                f"({n_nar} narrated, {len(sub) - n_nar} machine fallback)",
+                _table(sub.reset_index(drop=True)))
+        html += _figcap(
+            f"Every unit the comparison was actually made on: "
+            f"{chunks.attrs.get('n_pair', 0)} matched role pairs and "
+            f"{chunks.attrs.get('n_solo', 0)} roles the other model offered "
+            f"no partner for. <i>co-firing</i> is the activation-profile "
+            f"cosine that matched the two; <i>when each is removed</i> is the "
+            f"separate causal measurement. The <i>generated</i> column is not "
+            f"decoration — a sentence marked <i>fallback</i> is a "
+            f"deterministic template, not a reading of the evidence, and the "
+            f"two are written in the same terms on purpose so the guard and "
+            f"the fallback cannot disagree.")
+
+    return html + _note(
+        "The causal cross-model summary: what each model's sparse-feature "
+        "roles do to the forecast when removed, and whether roles that fire "
+        "together across two models also act alike.",
+        "Read the repertoire table as a description of each dictionary's "
+        "causal vocabulary — a model moving more channels has a more varied "
+        "set of levers at these layers, not a better one. Then read the "
+        "agreement table as the check on the correspondence claim above it: "
+        "matching says two roles fire on the same series, and this says "
+        "whether they then do the same thing. A high 'act differently' count "
+        "is the informative case — it means co-firing was not enough to "
+        "establish that two models share a mechanism.",
+        "The ablation battery removes one atom from the SAE's own "
+        "reconstruction on the series that atom fires on, so every number "
+        "here is bounded by the layers this run trained a dictionary on and "
+        "by the atoms that survived the dead-feature gate. The agreement "
+        "rate has NO untrained-twin floor yet, unlike the match rate beside "
+        "it, so it is a within-run contrast and not a calibrated quantity — "
+        "do not read 'differently' as a measured effect size. A channel with "
+        "no roles for a model is a null result at these targets, not a "
+        "statement about what that architecture can represent. Sentences are "
+        "generated one compared unit at a time and each is checked against "
+        "that unit's own record; a refused sentence falls back to a "
+        "deterministic one rather than being dropped, so the table is "
+        "complete either way.",
+        "How to read this comparison")
+
 def _sae_health_block(run_dir: Path, findings: list) -> str:
     """One row per SAE target: is this dictionary worth reading features off?
 
@@ -5133,12 +5320,22 @@ def _sae_target_panel(cfg, store, run_dir: Path, key: str, model: str, layer: st
               f"(mean |ρ| {separated.get('mean_abs_rho_structural', 0):.3f} vs "
               f"{separated.get('mean_abs_rho_provenance', 0):.3f}). Only the "
               f"structural column is a statement about the model.</p>")
+    ablations = _ablation_entries(run_dir, model, layer)
     out += feature_table_html(cards, series_lookup, ctx_len,
-                                descriptions=_feature_descriptions(run_dir, key))
-    out += _figcap("One row per sparse feature, strongest structural "
-                     "correlate first. Each thumbnail is a series this "
-                     "feature fires hardest on -- grey is the context the "
-                     "model saw, dark the true continuation.")
+                                descriptions=_feature_descriptions(run_dir, key),
+                                ablations=ablations or None)
+    cap = ("One row per sparse feature, strongest structural "
+             "correlate first. Each thumbnail is a series this "
+             "feature fires hardest on -- grey is the context the "
+             "model saw, dark the true continuation.")
+    if ablations:
+        cap += (" The last two columns are causal rather than correlational: "
+                "the feature is zeroed out of the reconstruction on the series "
+                "it fires hardest on, and the paired forecasts show what its "
+                "removal changes. The baseline there is the SAE's own full "
+                "reconstruction, so the gap between the two lines is this "
+                "feature's contribution and not the dictionary's.")
+    out += _figcap(cap)
     best_struct = next((c for c in cards if c["structural_field"]), None)
     top = None
     if best_struct is not None:
@@ -5291,7 +5488,8 @@ def _sec_sae(cfg: PipelineConfig, run_dir: Path, findings: list) -> str:
     # the question a cross-model section is FOR; before 2026-09-04 a reader
     # met thirteen per-layer tables first and no synthesis at all.
     inner = (MODAL_ASSETS + health
-             + _sae_contrast_block(run_dir, findings) + inner)
+             + _sae_contrast_block(run_dir, findings)
+             + _sae_capability_block(run_dir, findings) + inner)
     inner += _note(*_SAE_EXEMPLAR_NOTE, summary="What does this table mean?")
     inner += _sae_seed_floor_block(meta_sae)
     model_names = [m.name for m in cfg.models]
@@ -5559,6 +5757,23 @@ def _sae_roles_block(cfg, run_dir: Path, findings: list, model_names: list) -> s
             untrained_twin_floors=twin_floors,
             cosine_threshold=cosine_threshold,
             run_dir=run_dir)
+
+        # ROADMAP.md sec 27: the causal second opinion, when an ablation pass
+        # exists. Two roles can match on activation profile -- they fire on
+        # the same series -- and still push the forecast in different
+        # directions; nothing correlational in this report can separate those
+        # two cases. Absent artifacts leave the columns out entirely rather
+        # than rendering an empty one, which would read as "measured, they
+        # agree" (sec 11.37).
+        abl_by_target = {}
+        for target in per_target_role_lists:
+            model, layer = target.split("/", 1)
+            doc = _ablation_entries(run_dir, model, layer, raw=True)
+            if doc is not None:
+                abl_by_target[target] = doc
+        if abl_by_target:
+            from ..sae.matching import add_role_causal_agreement
+            table = add_role_causal_agreement(table, all_roles, abl_by_target)
 
         inner += "<h5>Cross-model role correspondence</h5>"
         summary_rows = correspondence_summary_rows(table)

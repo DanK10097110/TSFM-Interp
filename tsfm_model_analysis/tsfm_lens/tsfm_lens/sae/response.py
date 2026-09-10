@@ -522,3 +522,365 @@ def feature_response_fingerprints(cfg, adapter, layer: str, sae, data, device,
             reach["reachable"] and reach["self_patch_delta"] == 0.0 and
             any_clears and n_clearing_cells > chance_expected),
     }
+
+
+# ---------------------------------------------------------------------------
+# Ablation, conditioned on the feature actually firing (ROADMAP.md sec 27).
+#
+# `feature_response_fingerprints` above answers "what does this DIRECTION do",
+# by injecting it into a family-stratified representative sample -- the same
+# 32 series for every candidate, whether or not that candidate fires on any
+# of them. That is the right question for naming a direction and the wrong
+# one for the user-facing question this section exists for: "what does this
+# FEATURE contribute, where it is actually active". A TopK dictionary leaves
+# any single atom inactive on most series, so injecting into a representative
+# sample measures a feature mostly outside its own regime, which pushes every
+# candidate toward the same answer -- exactly the wrong bias for a statistic
+# meant to TELL FEATURES APART.
+#
+# So this pass differs in both axes and says so in its own artifact:
+#   intervention  ablate (zero the atom in the reconstruction)  not inject
+#   conditioning  the atom's own top-firing series               not a sample
+#
+# It does NOT replace the above -- both are kept, because they answer
+# different questions and because replacing would silently rewrite every
+# number sec 25 already recorded (CLAUDE.md sec 2.1).
+# ---------------------------------------------------------------------------
+
+def _feature_ablated_replacement(clean_tokens: torch.Tensor, sae, device,
+                                 f_idx: int) -> torch.Tensor:
+    """Token-level SAE reconstruction with exactly one atom zeroed.
+
+    The counterfactual is "this feature, removed" -- not "this feature,
+    reversed" -- so the comparison baseline must be the FULL token-level
+    reconstruction rather than the raw clean forecast, or the measured
+    effect absorbs the whole dictionary's reconstruction error.
+    `eval.py::feature_ablation_effects` already establishes that baseline
+    convention; this reuses it rather than picking a second one.
+    """
+    b, t, d = clean_tokens.shape
+    features = sae.encode(clean_tokens.reshape(-1, d).to(device))
+    features[:, f_idx] = 0.0
+    recon = sae.decode(features)
+    return recon.reshape(b, t, d).cpu()
+
+
+def top_firing_rows(activations: np.ndarray, f_idx: int, k: int) -> np.ndarray:
+    """The `k` series row indices this atom fires hardest on, strongest first.
+
+    `activations` is `[n_series, dict_size]` -- the persisted series-level
+    SAE features (`store.load(..., space="sae")`), so selecting a feature's
+    own regime costs zero forward passes.
+
+    Rows where the atom is exactly zero are never returned: "the series it
+    fires hardest on" cannot include a series it does not fire on, and
+    padding the list to `k` with silent zeros would put series carrying no
+    signal into the very panel built to show the feature's effect. A caller
+    therefore gets FEWER than `k` rows for a rarely-active atom, which is
+    the honest answer and is what `n_top_series` records.
+    """
+    col = np.asarray(activations, dtype=np.float64)[:, int(f_idx)]
+    nz = np.flatnonzero(col > 0.0)
+    if nz.size == 0:
+        return np.empty(0, dtype=int)
+    order = nz[np.argsort(-col[nz], kind="stable")]
+    return order[:max(0, int(k))].astype(int)
+
+
+def _series_ids(data) -> np.ndarray:
+    """`BenchmarkData` carries its ids in `meta["series_id"]`; a positional
+    fallback keeps a stub or a metadata-less jsonl load renderable rather
+    than crashing a whole pass over a label."""
+    meta = getattr(data, "meta", None)
+    if meta is not None and "series_id" in getattr(meta, "columns", []):
+        return meta["series_id"].to_numpy()
+    ids = getattr(data, "series_ids", None)
+    return np.asarray(ids) if ids is not None else np.array(
+        [f"row{i}" for i in range(data.n)])
+
+
+def _pack_chunks(per_candidate_rows: dict, order: list, cap: int) -> list:
+    """Group candidates so each group's UNION of top-firing rows fits one
+    forward batch, greedily and in the caller's own candidate order.
+
+    The alternative -- one union over every candidate, truncated to the cap --
+    is `CLAUDE.md` sec 11.38's head slice: it keeps the lowest-numbered SERIES
+    indices, which is unrelated to which candidate needed them, and silently
+    leaves most candidates with no rows at all. Chunking costs one baseline
+    and one null sweep per chunk and measures every candidate on the series
+    it was selected for.
+
+    A single candidate whose own rows exceed the cap is truncated to its
+    STRONGEST rows (`top_firing_rows` is already sorted that way), which is a
+    principled restriction of its regime rather than an arbitrary one.
+    """
+    chunks, cur, cur_rows = [], [], set()
+    for f_idx in order:
+        rows = set(int(r) for r in per_candidate_rows[f_idx][:cap])
+        if not rows:
+            continue
+        if cur and len(cur_rows | rows) > cap:
+            chunks.append((cur, np.array(sorted(cur_rows), dtype=int)))
+            cur, cur_rows = [], set()
+        cur.append(f_idx)
+        cur_rows |= rows
+    if cur:
+        chunks.append((cur, np.array(sorted(cur_rows), dtype=int)))
+    return chunks
+
+
+def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
+                                  candidates: list, activations: np.ndarray,
+                                  top_k_series: int = 8, n_null_directions: int = 16,
+                                  max_series: int = 64, seed_offset: int = 260,
+                                  floor: dict | None = None,
+                                  periods_full: np.ndarray | None = None,
+                                  keep_forecasts: int = 3) -> dict:
+    """Ablate each candidate on its OWN top-firing series; score the same
+    9-channel battery against a ROW-MATCHED random-direction null.
+
+    Same reach gate, same baseline convention and same channels as
+    `feature_response_fingerprints` -- the two differ only in intervention
+    (ablate vs inject) and conditioning (own regime vs representative
+    sample), which is the whole point of keeping both.
+
+    **The null is row-matched, and that is load-bearing.** Candidates are
+    scored on different series, so a single pooled null p95 would compare a
+    candidate's effect on ITS rows against a null measured on other rows --
+    and a candidate whose top-firing series happen to sit in a high-response
+    regime would clear it on that alone. So the null's per-series deltas are
+    kept per row and the p95 is taken over each candidate's own rows. This is
+    `CLAUDE.md` sec 11.33's confound one level in: a threshold means nothing
+    against a reference measured under other conditions.
+
+    `activations` is `[n_series, dict_size]` SERIES-LEVEL pooled features
+    (`ground_truth.encode_series_level` over every row), used only to choose
+    rows -- a window-level matrix has more rows than there are series and
+    would index `data` as a different population, so the shape is checked
+    rather than assumed.
+
+    `keep_forecasts` per-series with/without pairs are returned per candidate
+    for the report's exemplar overlays. The "with" arm is the FULL
+    reconstruction, not the raw clean forecast, matching the channel baseline
+    so the picture and the number describe the same contrast; the unpatched
+    forecast is kept alongside so the SAE's own reconstruction cost stays
+    visible rather than being charged to the feature.
+
+    Returns `{"reach": ..., "withheld": True}` and nothing else when the
+    target is unreachable (sec 25.1 (7) -- a table of zeros from a patch that
+    never lands reads as "these features don't matter").
+    """
+    acts = np.asarray(activations, dtype=np.float64)
+    if acts.ndim != 2 or acts.shape[0] != data.n:
+        raise ValueError(
+            f"feature_ablation_fingerprints: `activations` must be series-level "
+            f"[n_series={data.n}, dict_size], got {acts.shape}. A window-level "
+            f"matrix (train.load_all_windows) has n_series*n_windows rows, so "
+            f"its row indices name windows, not series, and would select a "
+            f"different population from `data`. Use "
+            f"ground_truth.encode_series_level(sae, store, model, layer, "
+            f"np.arange(data.n), device).")
+
+    reach = reach_probe(cfg, adapter, layer, data, device,
+                        max_series=min(max_series, 16), seed_offset=seed_offset - 10)
+    if not reach["reachable"]:
+        log.warning("sae ablation fingerprint: %s/%s withheld -- %s",
+                   adapter.name, layer, reach["reason"])
+        return {"reach": reach, "withheld": True}
+
+    adapter.ensure_loaded()
+
+    order = [int(c["feature"]) for c in candidates]
+    rules = {int(c["feature"]): c.get("rules", []) for c in candidates}
+    per_candidate_rows = {f: top_firing_rows(acts, f, top_k_series) for f in order}
+    if not any(r.size for r in per_candidate_rows.values()):
+        return {"reach": reach, "withheld": True,
+                "reason": "no candidate fires on any series, so there is no "
+                          "regime to ablate it in"}
+
+    cap = capped_take(max_series, batch_size=adapter.cfg.batch_size)["n_realized"]
+    chunks = _pack_chunks(per_candidate_rows, order, cap)
+    log.info("sae ablation: %s/%s: %d candidates over %d forward chunks "
+             "(<=%d series each)", adapter.name, layer, len(order), len(chunks), cap)
+
+    all_contexts, all_targets = data.contexts(), data.targets()
+    all_ids = _series_ids(data)
+    periods_all = (np.asarray(periods_full, dtype=np.float64)
+                   if periods_full is not None else np.full(data.n, np.nan))
+    d_in, dict_size = sae.d_in, sae.dict_size
+    seed = cfg.run.seed + seed_offset
+    rng = np.random.default_rng(seed + 1)
+
+    results, n_clearing_cells, n_series_used = [], 0, set()
+    for chunk_feats, rows in chunks:
+        row_pos = {int(r): i for i, r in enumerate(rows)}
+        n_series_used.update(int(r) for r in rows)
+        contexts, targets = all_contexts[rows], all_targets[rows]
+        periods, series_ids = periods_all[rows], [str(s) for s in all_ids[rows]]
+
+        clean_tokens = capture_raw_tokens(adapter, contexts, [layer])[layer]
+        full_recon = _token_level_replacement(clean_tokens, sae, device)
+
+        def _forward(replacement):
+            with token_patch(adapter.module, layer, adapter.token_slice, replacement):
+                torch.manual_seed(seed)
+                return adapter.predict(contexts, cfg.data.horizon, cfg.l0.quantiles)
+
+        rec_full = _forward(full_recon)
+        baseline_fc, baseline_q = rec_full["point"], rec_full.get("quantiles")
+        torch.manual_seed(seed)
+        unpatched_fc = adapter.predict(contexts, cfg.data.horizon, cfg.l0.quantiles)["point"]
+
+        def _stats(rec):
+            return battery_statistics(rec["point"], baseline_fc, targets, contexts,
+                                      periods, steered_quantiles=rec.get("quantiles"),
+                                      baseline_quantiles=baseline_q)
+
+        # Null: remove an arbitrary direction of the same size. The mirror of
+        # Component A's injection null (same mechanism, negative magnitude),
+        # sized to the mean per-token activation these ablations actually
+        # remove -- so "this feature matters" means "more than removing that
+        # much of something arbitrary does".
+        with torch.no_grad():
+            enc_all = sae.encode(clean_tokens.reshape(-1, d_in).to(device))
+            removed = [float(enc_all[:, f].abs().mean().cpu()) for f in chunk_feats]
+        nonzero = [m for m in removed if m > 0]
+        null_magnitude = -float(np.mean(nonzero) if nonzero else 1.0)
+
+        null_rows: dict = {ch: [] for ch in CHANNELS}
+        for _ in range(n_null_directions):
+            direction = rng.normal(size=dict_size)
+            direction = direction / (np.linalg.norm(direction) + 1e-12)
+            stats = _stats(_forward(_direction_steered_replacement(
+                clean_tokens, sae, device,
+                torch.as_tensor(direction, dtype=torch.float32), null_magnitude)))
+            for ch in CHANNELS:
+                r = stats[ch]
+                if r["available"] and r["delta"] is not None:
+                    null_rows[ch].append(np.abs(np.asarray(r["delta"], dtype=np.float64)))
+
+        for f_idx in chunk_feats:
+            rows_f = [int(r) for r in per_candidate_rows[f_idx] if int(r) in row_pos]
+            idx = np.array([row_pos[r] for r in rows_f], dtype=int)
+            rec = _forward(_feature_ablated_replacement(clean_tokens, sae, device, f_idx))
+            stats = _stats(rec)
+
+            per_channel = {}
+            for ch in CHANNELS:
+                s = stats[ch]
+                if not s["available"] or s["delta"] is None:
+                    per_channel[ch] = {"available": False, "reason": s["reason"],
+                                       "effect": None, "signed_effect": None,
+                                       "null_p95": None, "clears_null": False,
+                                       "margin": None}
+                    continue
+                delta = np.asarray(s["delta"], dtype=np.float64)[idx]
+                if not np.isfinite(delta).any():
+                    # Every one of THIS candidate's rows is non-finite for
+                    # this channel (e.g. no ground-truth period among its own
+                    # top-firing series). The channel is available for the
+                    # batch and unavailable for this feature -- recording a
+                    # NaN effect instead would put a NaN into every
+                    # downstream fingerprint and comparison.
+                    per_channel[ch] = {
+                        "available": False, "effect": None, "signed_effect": None,
+                        "null_p95": None, "clears_null": False, "margin": None,
+                        "reason": "no finite value on this feature's own "
+                                  "top-firing series"}
+                    continue
+                effect = float(np.nanmean(np.abs(delta)))
+                # Signed too, and it is not redundant: `effect` is what the
+                # null p95 (itself unsigned) can legitimately be compared
+                # against, while DIRECTION is what tells two features that
+                # fire on the same series apart -- one ablation raising the
+                # level and another lowering it are opposite causal roles
+                # that an unsigned fingerprint would call identical.
+                signed = float(np.nanmean(delta))
+                draws = [d[idx] for d in null_rows[ch] if d.size == len(rows)]
+                pooled = np.concatenate(draws) if draws else np.empty(0)
+                pooled = pooled[np.isfinite(pooled)]
+                p95 = float(np.quantile(pooled, 0.95)) if pooled.size else None
+                # A null with no spread is not a threshold. Chronos-style
+                # quantized decoding routinely leaves a small perturbation's
+                # forecast bit-identical, so a channel can have EVERY null
+                # draw at exactly 0 -- and then any movement at all "clears"
+                # it, including movement below numerical noise. Measured on
+                # the first real target: 43 cells had p95 exactly 0 and 10 of
+                # them were counted as clearing, ~a third of that run's whole
+                # headline. Same treatment `analysis/agreement.py` gives a
+                # zero-width quantile band (`CLAUDE.md` sec 11.37): absent is
+                # reported as absent, never scored as a pass.
+                degenerate = p95 is not None and not (p95 > 0.0)
+                clears = bool(p95 is not None and not degenerate and effect > p95)
+                n_clearing_cells += int(clears)
+                per_channel[ch] = {
+                    "available": True, "effect": effect, "signed_effect": signed,
+                    "null_p95": p95, "clears_null": clears,
+                    "null_degenerate": bool(degenerate),
+                    "null_nonzero_frac": (float(np.mean(pooled > 0.0))
+                                          if pooled.size else None),
+                    "margin": (effect - p95) if (p95 is not None and not degenerate)
+                              else None,
+                    "reason": ("every null draw moved this channel by exactly 0, "
+                               "so there is no spread to clear -- not scored")
+                              if degenerate else ""}
+
+            keep = rows_f[:max(0, int(keep_forecasts))]
+            forecasts = [{
+                "series_id": series_ids[row_pos[r]],
+                "row": r,
+                "activation": float(acts[r, f_idx]),
+                "context": np.asarray(contexts[row_pos[r]], dtype=np.float64).tolist(),
+                "target": np.asarray(targets[row_pos[r]], dtype=np.float64).tolist(),
+                "with_feature": np.asarray(baseline_fc[row_pos[r]], dtype=np.float64).tolist(),
+                "without_feature": np.asarray(rec["point"][row_pos[r]], dtype=np.float64).tolist(),
+                "unpatched": np.asarray(unpatched_fc[row_pos[r]], dtype=np.float64).tolist(),
+            } for r in keep]
+
+            mase_rec = per_channel.get("mase", {})
+            results.append({
+                "feature": f_idx, "rules": rules[f_idx],
+                "n_top_series": int(idx.size), "scorable": True,
+                "mean_activation_on_top": float(np.mean(acts[rows_f, f_idx])),
+                "channels": per_channel,
+                "n_channels_clearing": sum(1 for v in per_channel.values()
+                                           if v["clears_null"]),
+                "mase_effect_floor_units": (
+                    in_floor_units(mase_rec["effect"], floor).get("value")
+                    if mase_rec.get("effect") is not None and floor else None),
+                "forecasts": forecasts,
+            })
+
+    for f_idx in order:
+        if not any(r["feature"] == f_idx for r in results):
+            results.append({"feature": f_idx, "rules": rules[f_idx], "n_top_series": 0,
+                            "scorable": False,
+                            "reason": "this atom fires on no series, so there is "
+                                      "no regime to ablate it in"})
+    results.sort(key=lambda r: order.index(r["feature"]))
+
+    scorable = [r for r in results if r.get("scorable")]
+    n_cells = len(scorable) * len(CHANNELS)
+    return {
+        "reach": reach, "withheld": False,
+        "intervention": "ablate", "conditioning": "top_firing",
+        "top_k_series": int(top_k_series), "n_series_union": len(n_series_used),
+        "n_chunks": len(chunks), "series_per_chunk_cap": int(cap),
+        "n_null_directions": int(n_null_directions),
+        "candidates": results,
+        "n_clearing_cells": int(n_clearing_cells),
+        "chance_expected_cells": 0.05 * n_cells,
+        # 🔴 A RATIO, where the Stage 2 artifact's identically-named field a
+        # few hundred lines above is a DIFFERENCE (90 clearing cells against
+        # 19.35 expected reads 70.65 there and 4.65 here). Two artifacts a
+        # reader lays side by side must not use one name for two quantities,
+        # so the ratio carries its units in its name and `excess_over_chance`
+        # is kept as the difference, matching Stage 2 exactly. Caught by a
+        # background agent's own reading of the two artifacts, not by a test
+        # -- both numbers are individually correct.
+        "clearing_cells_over_chance_ratio": (
+            (n_clearing_cells / (0.05 * n_cells)) if n_cells else None),
+        "excess_over_chance": n_clearing_cells - (0.05 * n_cells) if n_cells else None,
+        "any_feature_clears_any_channel": any(r.get("n_channels_clearing", 0) > 0
+                                              for r in scorable),
+    }
