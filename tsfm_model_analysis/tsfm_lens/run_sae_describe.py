@@ -10,9 +10,12 @@ column empty and the narrator was library code that only tests exercised.
 
 This is that caller. It is deliberately a standalone CLI rather than a
 pipeline stage, for the same reason `run_sae_roles.py` is: role evidence comes
-from `sae/roles.json` and channel evidence from `*_stage2_response.json`,
-neither of which a pipeline run produces (sec 25's Components A and B are
-standalone by design). Feature-level evidence needs only `sae/meta.json`, so
+from the roles artifact (`sae/roles.json`'s producer output, read here as
+`sae/roles_injection.json` -- ROADMAP.md sec 30, Stage 4, 2026-09-11:
+superseded by `sae/concepts.json` throughout the report proper, and archived
+under this name) and channel evidence from `*_stage2_response.json`, neither
+of which a pipeline run produces (sec 25's Components A and B are standalone
+by design). Feature-level evidence needs only `sae/meta.json`, so
 `--features-only` is runnable the moment the `sae` stage finishes.
 
 Evidence is assembled ONLY from artifacts already on disk. In particular the
@@ -154,7 +157,11 @@ def build_evidence(run_dir: Path, cfg, top_features: int = 8,
     the descriptions cover the rows a reader actually sees and no others.
     """
     meta_sae = json.loads((run_dir / "sae" / "meta.json").read_text(encoding="utf-8"))
-    roles_path = run_dir / "sae" / "roles.json"
+    # ROADMAP.md sec 30 (Stage 4, 2026-09-11): `sae/roles.json` is superseded
+    # by `sae/concepts.json` throughout the report; this reads the archived,
+    # injection-space artifact under its post-supersession name so a role
+    # description can still be generated for a run where it was renamed.
+    roles_path = run_dir / "sae" / "roles_injection.json"
     roles_doc = (json.loads(roles_path.read_text(encoding="utf-8"))
                  if roles_path.exists() and not features_only else {})
 
@@ -252,11 +259,11 @@ def build_evidence(run_dir: Path, cfg, top_features: int = 8,
 
 
 def _role_channels(role: dict, rec: dict, null_p95: dict) -> dict:
-    """A role's dominant channel in null units, from the role record itself.
+    """Every channel this role moved above its own null, in null units.
 
     Deliberately NOT recomputed from the candidate list: `roles.json` already
-    stores `dominant_channel` and `dominant_effect_null_units`, and a second
-    derivation could disagree with the roles table rendered beside it.
+    stores the role's per-channel means, and a second derivation could
+    disagree with the roles table rendered beside it.
     """
     ch = role.get("dominant_channel")
     val = role.get("dominant_effect_null_units")
@@ -279,6 +286,28 @@ def _role_channels(role: dict, rec: dict, null_p95: dict) -> dict:
     # rule existed, at one of its two sites).
     if abs(float(val)) < 1.0:
         return {}
+    # Every channel whose role-level mean clears its own null, not only the
+    # argmax. `channel_means_null_units` is already in multiples of each
+    # channel's own p95 (`roles.py::build_feature_matrix`), so the test is
+    # the same 1.0 bar applied to the dominant channel three lines up --
+    # this widens WHAT is licensed, never the bar that licenses it. On
+    # `runs/full_report_run_4model` 55 of 74 clearing roles carry two or
+    # more such channels and 45 carry four or more, and the role sentence
+    # was describing one of them; "reshapes the near horizon" was the whole
+    # description for roles that also, measurably, move the level, the
+    # spread and the trend slope (ROADMAP.md sec 28.18).
+    #
+    # Absent on an artifact written before that field existed, in which
+    # case the dominant channel alone is what was recorded and is all that
+    # may be claimed -- degrading to the old behaviour rather than
+    # recomputing a second time from the candidate list, which could
+    # disagree with the roles table rendered beside it.
+    means = role.get("channel_means_null_units")
+    if isinstance(means, dict) and means:
+        cleared = {k: float(v) for k, v in means.items()
+                   if v is not None and abs(float(v)) >= 1.0}
+        if cleared:
+            return cleared
     return {ch: float(val)}
 
 

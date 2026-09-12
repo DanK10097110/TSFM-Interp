@@ -322,6 +322,11 @@ class LayerScreenConfig:
     min_budget: int = 2
     max_series: int = 100_000       # cap on rows fed to the screen; effectively "all" by default
     use_curvature: bool = True      # work_bend only
+    min_gap: int = 1                # 1 = pure top-k. >1 forces a minimum index gap between
+                                    # selected layers, which DISCARDS high-scoring adjacent
+                                    # layers -- unnecessary here because work_bend already
+                                    # scores cross-layer change, so two adjacent high scores
+                                    # are two distinct transformations, not one counted twice
     seed: Optional[int] = None      # falls back to run.seed
     stride: int = 1                 # screening capture stride, independent of models[*].capture_layer_stride
     require_full_capture: bool = True   # run a dedicated stride-1 screening extraction (ROADMAP.md sec 15 A1)
@@ -493,6 +498,56 @@ class SAEConfig:
     # is checkpointed and put through ground-truth alignment / ablation /
     # steering -- the extra seeds exist to size the floor, not to be analyzed.
     n_seeds: int = 1
+    # ------------------------------------------------------------------
+    # Held-out evaluation + dictionary admission gate (2026-09-11, user-
+    # requested). Until now `reconstruction_fidelity` and `dead_feature_rate`
+    # were measured on the SAME rows the dictionary trained on, so a
+    # dictionary that memorized the corpus and one that generalized reported
+    # the identical number, and nothing anywhere refused a target on
+    # reconstruction quality.
+    #
+    # `holdout_frac` reserves that fraction of SERIES (never windows --
+    # invariant 2; windows within a series are strongly dependent) as a
+    # held-out split, drawn family-stratified so the split is not a
+    # task-ordered prefix (CLAUDE.md sec 11.38). The dictionary trains on the
+    # remaining series only; fidelity, dead rate and forecast preservation
+    # are then reported on BOTH splits. `0.0` disables the split entirely and
+    # reproduces every previously-recorded SAE number bit-for-bit.
+    holdout_frac: float = 0.2
+    # The admission gate itself. A target clearing neither bar is not silently
+    # rendered beside the ones that do -- `admission` in `sae/meta.json` says
+    # which bar it missed, `layer_substitution` (below) retries another layer
+    # of the SAME model, and the report refuses to draw feature-level
+    # conclusions from a dictionary that never passed.
+    #
+    # `min_fidelity_gate` is checked against the HELD-OUT fidelity when a
+    # split exists (train fidelity is what a memorizing dictionary inflates).
+    # 0.85 admits every target of `runs/full_report_run_4model` except
+    # Sundial's three (0.793/0.830/0.804); 0.90 would additionally reject
+    # TimesFM stacked_xf.6 (0.890) and .10 (0.891) and Chronos-2 block.6
+    # (0.893), which is why the default is the looser of the two the user
+    # named -- it isolates the one model that actually fails.
+    min_fidelity_gate: float = 0.85
+    # The forecast-preservation bound, in |dMASE|. Checked at TOKEN
+    # granularity, NOT window: the window number carries a per-architecture
+    # broadcast confound large enough to dominate it (see
+    # `eval.py::forecast_preservation`'s docstring, and CLAUDE.md sec 13's
+    # correction chain). This is exactly the "high fidelity but an abnormal
+    # MASE increase, which seems like a contradiction" case -- on the 4-model
+    # run Chronos-Bolt `encoder.block.4` has the BEST fidelity of all 13
+    # targets (0.955) and a window dMASE of +0.378, while its token dMASE is
+    # -0.135. The contradiction is the confound, not the dictionary.
+    # `0.0` disables the dMASE half of the gate.
+    max_abs_delta_mase: float = 0.25
+    # Layer substitution (2026-09-11, user-requested). When a target fails the
+    # gate, retry with the next-best-scoring CAPTURED layer from that model's
+    # own `layer_screen` ranking, up to this many extra attempts. A model
+    # whose layers all fail is dropped from the SAE section WITH A STATED
+    # REASON rather than rendered as though it had passed. `0` disables
+    # substitution (a failing target is still recorded, just not retried).
+    # Only applies to auto-resolved targets -- a pinned `sae.targets` entry
+    # is an explicit choice and is never silently replaced.
+    layer_substitution_attempts: int = 2
     forecast_preservation_max_series: int = 64
     ground_truth_max_series: int = 2000
     # Label-permutation null for ground-truth alignment (ROADMAP.md sec 16
@@ -559,7 +614,10 @@ class SAEConfig:
     # convention already requires an explicit run path) -- a twin lives in a
     # SEPARATE run directory containing both the real model and its
     # `random_init: true` copy as two models of one small config, with its
-    # own `sae`/roles.json built the same way as this run's. Empty (the
+    # own roles artifact built the same way as this run's -- read by
+    # `sae/role_matching.py::untrained_twin_role_floor` as
+    # `sae/roles_injection.json` (ROADMAP.md sec 30, Stage 4, 2026-09-11).
+    # Empty (the
     # default) means no floor is available and any role-matching
     # shared-fraction number is rendered non-quotable with a stated reason
     # rather than silently omitted (sec 25.6's mandatory pairing).
@@ -590,6 +648,37 @@ class SAEConfig:
     # reads. That is the false-refusal shape of CLAUDE.md sec 11.35.
     describe_from_exemplars: bool = field(
         default=True, metadata={"stage_input": False})
+    # ROADMAP.md sec 30.6 -- re-clustering SAE features on their ABLATION
+    # fingerprint into named CONCEPTS (`sae/concepts.py`) and testing whether
+    # a concept's top-firing series are grouped the same way by another
+    # model's dictionary (`sae/transfer.py`). Defaults reproduce sec 30.1/
+    # 30.2's own measurements. `concept_causal_only`/`concept_k`/
+    # `concept_min_silhouette` mirror `cluster_concepts`'s own parameters;
+    # `concept_misfit_cosine_gap` is `misfits.py`'s relative-cohesion bar
+    # (sec 30.4.3); `concept_cards_max` and `interest_weights` are report-
+    # time-only (which cards render, and how they rank) and read by nothing
+    # the `sae` stage itself writes, so both carry `stage_input: False` --
+    # the same false-refusal shape `describe_from_exemplars` above already
+    # guards against (`CLAUDE.md` sec 11.35/sec 11.51).
+    concepts_enabled: bool = True
+    concept_causal_only: bool = True
+    concept_k: str = "auto"
+    concept_min_silhouette: float = 0.1
+    concept_misfit_cosine_gap: float = 0.3
+    concept_cards_max: int = field(default=24, metadata={"stage_input": False})
+    # sec 30.4.2's cross-model transfer test: `transfer_top_k` is each
+    # concept's/feature's top-firing series count, `transfer_n_null` the
+    # matched-null draw count (the acceptance band's width is a property of
+    # this value -- raising it narrows the band at linear cost, sec 30.9
+    # criterion 2), `transfer_seed` the stable base seed `_seed()` mixes into
+    # every per-(concept, target) draw (`CLAUDE.md` sec 11.2 -- never
+    # Python's builtin `hash()`).
+    transfer_enabled: bool = True
+    transfer_top_k: int = 20
+    transfer_n_null: int = 200
+    transfer_seed: int = 0
+    interest_weights: tuple = field(default=(0.5, 0.3, 0.2),
+                                    metadata={"stage_input": False})
 
 
 @dataclass

@@ -95,12 +95,23 @@ def _zscore(v: np.ndarray) -> np.ndarray:
 
 
 def _select_top_with_spacing(scores: np.ndarray, budget: int, min_gap: int = 1) -> list:
-    """Greedy top-score pick enforcing a minimum index gap between choices.
+    """Greedy top-score pick, optionally enforcing a minimum index gap.
 
-    Without this, a single sharp bend spanning two adjacent layers (both
-    scoring high for the same underlying event) eats the whole budget on
-    near-duplicates instead of spreading picks across genuinely distinct
-    depths -- directly serving the "not too many, but interesting" (R3) goal.
+    `min_gap=1` (the default since 2026-09-11) is **pure top-k**: the gap
+    condition is vacuously true for distinct indices, so the k highest-scoring
+    layers are taken in score order and nothing else influences the choice.
+
+    Larger gaps exist for the original R3 argument -- that a single sharp bend
+    spanning two adjacent layers scores high twice for one underlying event, so
+    spending the budget on both buys a near-duplicate. That argument is wrong
+    for this scorer and the knob defaults off because of it: `work_bend` already
+    measures *cross-layer* change (`change[l] = 1 - cka[l, l+1]`, the
+    representation's movement from l to l+1), so two adjacent high scores are
+    two distinct transformations, not one counted twice. Enforcing a gap on top
+    of that discards real signal -- on `runs/full_report_run_4model` it rejected
+    TimesFM layer 19 (score 1.767, second-highest of 20) for adjacency to layer
+    18, and admitted layers 2 and 6 at **negative** scores (-0.182, -0.211) in
+    its place.
     """
     order = np.argsort(-scores)
     chosen: list = []
@@ -146,7 +157,7 @@ def work_bend_scores(cka_matrix: np.ndarray, rdm_vectors: list | None = None) ->
 
 def select_work_bend(store, model: str, layers: list, budget: int,
                      rows: np.ndarray | None = None, device: torch.device | None = None,
-                     use_curvature: bool = True) -> dict:
+                     use_curvature: bool = True, min_gap: int = 1) -> dict:
     """Idea A entry point: rank layers by residual-trajectory change + curvature."""
     bank_window = load_layer_bank(store, model, layers, "window", rows)
     layers_l, cka = within_model_cka_matrix(bank_window, device)
@@ -156,11 +167,11 @@ def select_work_bend(store, model: str, layers: list, budget: int,
         rdm_vectors = [_series_rdm(bank_series[l]) for l in layers_l]
     scores = work_bend_scores(cka, rdm_vectors)
     combined = np.asarray(scores["combined"])
-    min_gap = max(1, len(layers_l) // (2 * max(budget, 1)))
+    min_gap = max(1, int(min_gap))
     chosen = _select_top_with_spacing(combined, budget, min_gap)
     return {"method": "work_bend", "layers": layers_l, "score_per_layer": combined.tolist(),
             "selected": [layers_l[i] for i in chosen], "selected_idx": chosen,
-            "components": scores, "cka_matrix": cka.tolist()}
+            "min_gap": min_gap, "components": scores, "cka_matrix": cka.tolist()}
 
 
 # ---------------------------------------------------------------------------
@@ -348,16 +359,16 @@ def factor_emergence_scores(decodability: dict, threshold_frac: float = 0.5,
 
 
 def select_factor_emergence(store, model: str, layers: list, gt, series_ids: np.ndarray,
-                            gt_cols: list, budget: int, seed: int = 0) -> dict:
+                            gt_cols: list, budget: int, seed: int = 0, min_gap: int = 1) -> dict:
     """Idea B entry point: rank layers by ground-truth factor emergence/transition."""
     decodability = factor_probe_matrix(store, model, layers, gt, series_ids, gt_cols, seed=seed)
     scores = factor_emergence_scores(decodability)
     combined = np.asarray(scores["score_per_layer"])
-    min_gap = max(1, len(layers) // (2 * max(budget, 1)))
+    min_gap = max(1, int(min_gap))
     chosen = _select_top_with_spacing(combined, budget, min_gap)
     return {"method": "factor_emergence", "layers": layers, "score_per_layer": combined.tolist(),
             "selected": [layers[i] for i in chosen], "selected_idx": chosen,
-            "components": scores, "decodability": decodability}
+            "min_gap": min_gap, "components": scores, "decodability": decodability}
 
 
 # ---------------------------------------------------------------------------
@@ -374,7 +385,8 @@ def select_layers(method: str, store, model: str, layers: list, budget: int, **k
     if method == "work_bend":
         return select_work_bend(store, model, layers, budget,
                                 rows=kwargs.get("rows"), device=kwargs.get("device"),
-                                use_curvature=kwargs.get("use_curvature", True))
+                                use_curvature=kwargs.get("use_curvature", True),
+                                min_gap=kwargs.get("min_gap", 1))
     if method == "coverage":
         return select_coverage(store, model, layers, budget,
                                rows=kwargs.get("rows"), device=kwargs.get("device"))
@@ -383,7 +395,8 @@ def select_layers(method: str, store, model: str, layers: list, budget: int, **k
         if gt is None or series_ids is None or gt_cols is None:
             raise ValueError("factor_emergence requires gt, series_ids, and gt_cols")
         return select_factor_emergence(store, model, layers, gt, series_ids, gt_cols, budget,
-                                       seed=kwargs.get("seed", 0))
+                                       seed=kwargs.get("seed", 0),
+                                       min_gap=kwargs.get("min_gap", 1))
     raise ValueError(f"method must be one of work_bend|coverage|factor_emergence, got {method!r}")
 
 
@@ -532,7 +545,8 @@ def run_layer_screen(cfg, hub, store, data, device: torch.device | None = None) 
                     round(cfg.layer_screen.budget_frac * len(layers)))
         budget = min(budget, len(layers))
         kwargs = {"device": device, "seed": seed, "rows": rows,
-                 "use_curvature": cfg.layer_screen.use_curvature}
+                 "use_curvature": cfg.layer_screen.use_curvature,
+                 "min_gap": cfg.layer_screen.min_gap}
         if method == "factor_emergence":
             kwargs.update(gt=gt, series_ids=series_ids, gt_cols=gt_cols)
         try:
@@ -544,6 +558,7 @@ def run_layer_screen(cfg, hub, store, data, device: torch.device | None = None) 
         n_model_blocks = (len(all_layers_by_model[m.name]) if m.name in all_layers_by_model
                           else len(hub.get(m.name).all_layer_names()))
         sel["method_requested"] = method_requested
+        sel.setdefault("min_gap", max(1, int(cfg.layer_screen.min_gap)))
         sel["fair_to_all_layers"] = fair_to_all_layers
         sel["n_screened"] = len(layers)
         sel["n_model_blocks"] = n_model_blocks

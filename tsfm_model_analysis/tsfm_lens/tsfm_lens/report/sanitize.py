@@ -123,15 +123,45 @@ def _clean_parenthetical(inner: str) -> str:
     return "".join(out)
 
 
+_CODE_BLOCK = re.compile(r"<(style|script)\b[^>]*>.*?</\1\s*>",
+                         re.DOTALL | re.IGNORECASE)
+
+
 def strip_internal_refs(text: str) -> str:
     """Return `text` with every internal-document citation removed.
 
     Safe to run on a fully rendered HTML document: it only ever deletes a span
     that contains a citation, never rewrites markup, and stops a non-
     parenthetical deletion at the first `<` so it cannot eat a tag.
+
+    🔴 `<style>` and `<script>` bodies are passed through UNTOUCHED, and that
+    is a correctness fix rather than an optimization. The four whitespace
+    cleanups at the bottom of this function tidy prose left ragged by a
+    deleted citation, and one of them -- `" +([.,;)])" -> r"\1"` -- deletes
+    the space before a `.`, which in CSS is the descendant combinator. It
+    rewrote the report's own sparkline-enlarge rule from
+    `#spark-modal .panel svg` to `#spark-modal.panel svg`: a selector that
+    matches an element that is BOTH that id and that class, i.e. nothing. So
+    clicking a sparkline opened the modal and cloned the SVG into it at the
+    132x30 the `.spark` rule still gave it -- the overlay worked perfectly
+    and enlarged nothing, which is why the affordance read as broken with
+    every part of its machinery present and correct. The docstring above
+    already promised this ("never rewrites markup"); it was true of the
+    citation deletion and false of the cleanups, which is sec 11.51's own
+    tell one layer over -- a stated property that only half the function
+    holds to.
     """
     if not text:
         return text
+
+    if _CODE_BLOCK.search(text):
+        out_parts, last = [], 0
+        for m in _CODE_BLOCK.finditer(text):
+            out_parts.append(strip_internal_refs(text[last:m.start()]))
+            out_parts.append(m.group(0))
+            last = m.end()
+        out_parts.append(strip_internal_refs(text[last:]))
+        return "".join(out_parts)
 
     out = text
     guard = 0

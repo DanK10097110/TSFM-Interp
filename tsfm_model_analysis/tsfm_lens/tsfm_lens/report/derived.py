@@ -264,9 +264,9 @@ def bottom_line_rows(run_dir: Path, model_names: list) -> list:
     if sae:
         rows.extend(_sae_alignment_rows(sae))
 
-    roles = load_json_or_none(run_dir / "sae" / "roles.json")
-    if roles:
-        rows.extend(_sae_role_rows(roles))
+    concepts = load_json_or_none(run_dir / "sae" / "concepts.json")
+    if concepts:
+        rows.extend(_sae_concept_rows(concepts.get("targets") or {}))
 
     confirm = load_json_or_none(run_dir / "confirm" / "confirmation.json")
     if confirm:
@@ -785,47 +785,65 @@ def _sae_alignment_rows(sae: dict) -> list:
     return rows
 
 
-def _sae_role_rows(roles: dict) -> list:
-    """ROADMAP.md sec 25.9 Stage 3 (Component B(b)): does at least one
-    causally-named role's dominant channel effect clear its own
-    random-direction null, for each SAE target this run built roles for?
+def _sae_concept_rows(targets: dict) -> list:
+    """ROADMAP.md sec 30 -- the concept-space successor to the role-space
+    row this replaced (`_sae_role_rows`, sec 25.9 Stage 3(B(b)), retired
+    with `roles.json` itself -- sec 30.10 stage 4's supersession). Does at
+    least one concept's dominant channel effect clear its own
+    random-direction ABLATION null, for each SAE target this run built
+    concepts for?
 
-    `value` is the strongest role's dominant effect already expressed in
-    "multiples of null p95" units (`sae/roles.py::build_feature_matrix`'s own
-    normalization), so `reference=1.0` is not a magic number picked for this
-    row -- it is the null boundary that unit is defined against. A target
-    the reach gate withheld, or one with too few candidates to cluster,
-    contributes no row -- absence of a causal claim, not a claim of zero
-    effect (`CLAUDE.md` sec 11.42's lesson: a withheld target has no
-    measurement to report, not a negative one).
+    A concept's `centroid_null_units` is already expressed in "multiples of
+    null p95" (`sae/concepts.py::ablation_vector`'s own normalization,
+    identical in kind to the role-space row this replaces), so
+    `reference=1.0` is the null boundary itself, not a number picked for
+    this row. `profile` already excludes any channel under 1.0 null unit
+    (`concept_table`'s own filter), so a concept with an EMPTY profile is
+    this artifact's "no measured effect" state -- excluded from the max by
+    construction, mirroring the role-space row's own discipline.
+
+    A withheld target, or one `concept_table` returned no concepts for
+    (`non_modular`, or too few causal candidates to cluster), contributes no
+    row -- absence of a causal claim, not a claim of zero effect
+    (`CLAUDE.md` sec 11.42's lesson: a withheld target has no measurement to
+    report, not a negative one).
     """
     rows: list = []
-    for target, rec in roles.items():
-        if not isinstance(rec, dict) or rec.get("withheld") or rec.get("skipped"):
+    for target, rec in targets.items():
+        if not isinstance(rec, dict) or rec.get("withheld"):
             continue
-        role_list = rec.get("roles") or []
-        named = [r for r in role_list if r.get("clears_null")]
+        concept_list = rec.get("concepts") or []
+        named = [c for c in concept_list if c.get("profile")]
         if not named:
             continue
-        best = max(named, key=lambda r: abs(r.get("dominant_effect_null_units") or 0.0))
-        value = abs(best.get("dominant_effect_null_units") or 0.0)
+        best = max(named, key=lambda c: abs(c["profile"][0]["signed_null_units"]))
+        value = abs(best["profile"][0]["signed_null_units"])
         rows.append(Verdict(
-            measure=f"SAE causal roles, {target}: strongest role's effect vs. its null",
+            measure=f"SAE causal concepts, {target}: strongest concept's effect vs. its null",
             value=value, reference=1.0,
-            reference_label="random-direction steering null (p95, same magnitude)",
+            reference_label="random-direction ablation null (p95, same magnitude)",
             rule=RULES["greater_than"](), unit="multiples of null p95",
-            detail=[{"role": r["name"], "n_atoms": r["n_atoms"],
-                     "dominant_channel": r.get("dominant_channel"),
-                     "effect_null_units": r.get("dominant_effect_null_units"),
-                     "structural_field": r.get("structural_field")}
-                    for r in role_list],
-            note="Each role's name and its dominant channel are DERIVED from "
-                 "the same steering battery this row scores, never authored "
-                 "(ROADMAP.md sec 25.5(b)) -- a role named 'no measured "
-                 "effect (n atoms)' is excluded from the max here by "
-                 "construction, not by a separate filter. The per-role "
-                 "detail is every role this target's dictionary clustered "
-                 "into, not only the winner."))
+            detail=[{"concept": (c.get("name") or f"concept {c.get('concept')}"),
+                     "members": c.get("n_members"),
+                     "dominant channel": (c["profile"][0]["channel"]
+                                          if c.get("profile") else "none cleared its own null"),
+                     "effect (x null p95)": (
+                         "no channel cleared" if not c.get("profile")
+                         else f"{float(c['profile'][0]['signed_null_units']):.3f}"),
+                     }
+                    for c in concept_list],
+            note="Each concept's name and its dominant channel are DERIVED "
+                 "from the same ablation battery this row scores, never "
+                 "authored (ROADMAP.md sec 30.4.1) -- a concept whose "
+                 "profile is empty ('no measured effect') is excluded from "
+                 "the max here by construction, not by a separate filter. "
+                 "The per-concept detail is every concept this target's "
+                 "dictionary clustered into, not only the winner -- and a "
+                 "concept with no measured effect says so in words rather "
+                 "than leaving the cell blank, which pandas would otherwise "
+                 "render as `NaN` and a reader would read as a failed "
+                 "measurement rather than the useful negative result it is "
+                 "(sec 11.37)."))
     return rows
 
 
@@ -932,16 +950,33 @@ def corruption_breakdown(run_dir: Path) -> pd.DataFrame:
             ag = agreement.get(cname) or {}
             row["depth_agreement_rho"] = _fin(ag.get("value"))
 
+            # Three states, not two (CLAUDE.md sec 11.37). Patching runs on a
+            # SUBSET of the battery (`l3.patching.corruptions`), so most rows
+            # have no restoration -- and the reason differs: the stage may not
+            # have run for this model at all, or it ran and did not select this
+            # corruption. Both were previously the same missing key, which
+            # pandas renders `NaN`, i.e. a failed measurement.
             pinfo = patching.get(model) or {}
             pcorrs = list(pinfo.get("corruptions") or [])
             rkey = f"restoration_{model}"
-            if cname in pcorrs and rkey in parrs:
+            row["best_restoration"] = None
+            row["best_restoration_layer"] = None
+            if not pinfo:
+                row["restoration_absent"] = "patching did not run"
+            elif cname not in pcorrs:
+                row["restoration_absent"] = "not patched"
+            elif rkey not in parrs:
+                row["restoration_absent"] = "no restoration recorded"
+            else:
                 rest = np.asarray(parrs[rkey])[pcorrs.index(cname)]
-                if rest.size:
+                if not rest.size:
+                    row["restoration_absent"] = "no restoration recorded"
+                else:
                     best = int(np.nanargmax(rest))
                     row["best_restoration"] = _fin(rest[best])
                     plays = list(pinfo.get("layers") or [])
                     row["best_restoration_layer"] = plays[best] if best < len(plays) else None
+                    row["restoration_absent"] = None
             rows.append(row)
 
     df = pd.DataFrame(rows)
@@ -1398,6 +1433,7 @@ def sae_health(run_dir: Path) -> pd.DataFrame:
 
     rows = []
     thresholds: dict[str, float | None] = {}
+    fid_thresholds: dict[str, float | None] = {}
     for key, entry in meta.items():
         if not isinstance(entry, dict):
             continue
@@ -1433,6 +1469,39 @@ def sae_health(run_dir: Path) -> pd.DataFrame:
 
         win = _fin((entry.get("forecast_preservation") or {}).get("mase_delta"))
         tok = _fin((entry.get("forecast_preservation_token") or {}).get("mase_delta"))
+
+        # Held-out halves of the same two measurements (user request,
+        # 2026-09-11). Every number to their left is scored on the series the
+        # dictionary was FIT on, so a dictionary that has memorized its
+        # training rows scores well on all of them; the train-vs-held-out
+        # GAP is the only thing here that can say so. Both are `None` on a run
+        # predating the split, and the columns are dropped entirely below
+        # rather than rendered as a column of blanks -- an empty column reads
+        # as "measured and came back empty", which is the sec 11.37 conflation
+        # this table already avoids for its gate and alignment cells.
+        fid_hold = _fin(entry.get("reconstruction_fidelity_heldout"))
+        tok_hold = _fin(
+            (entry.get("forecast_preservation_token_heldout") or {}).get("mase_delta"))
+
+        # The admission gate reads the held-out fidelity and the held-out
+        # TOKEN-granularity ΔMASE, never the window one: for a model whose
+        # token width differs from `alignment.window` the window number
+        # carries a broadcast loss that is a property of the tokenizer, not
+        # of the dictionary (CLAUDE.md sec 13's granularity confound). Three
+        # states, not two -- `passed is None` is "a bar could not be
+        # measured", which must not read as a pass.
+        adm = entry.get("admission") or {}
+        for chk in (adm.get("checks") or []):
+            if chk.get("check") == "reconstruction fidelity":
+                fid_thresholds[str(key)] = _fin(chk.get("threshold"))
+        if not adm:
+            admission = None
+        elif adm.get("passed") is True:
+            admission = "admitted"
+        elif adm.get("passed") is False:
+            admission = f"REFUSED — {adm.get('reason') or 'a bar was not met'}"
+        else:
+            admission = f"undecidable — {adm.get('reason') or 'a bar was not measured'}"
 
         # A raw ΔMASE is not one quantity across models -- a sampled decoder
         # and a deterministic one sit on structurally different floors -- so
@@ -1477,10 +1546,13 @@ def sae_health(run_dir: Path) -> pd.DataFrame:
             # dropped token means the information left the figure, not that
             # the assertion was stale.
             "reconstruction fidelity": _fin(entry.get("reconstruction_fidelity")),
+            "reconstruction fidelity (held out)": fid_hold,
             "dead rate": dead,
             "dead-rate gate": dead_verdict,
+            "admission": admission,
             "ΔMASE (window)": win,
             "ΔMASE (token)": tok,
+            "ΔMASE (token, held out)": tok_hold,
             "granularity gap": (None if win is None or tok is None
                                 else abs(win - tok)),
             "ΔMASE vs own floor": floor_units,
@@ -1502,12 +1574,26 @@ def sae_health(run_dir: Path) -> pd.DataFrame:
                for r in df["ΔMASE sign"]):
         df = df.drop(columns=["ΔMASE sign"])
 
+    # Same rule for the held-out trio, for the same reason: a run trained
+    # before `sae.holdout_frac` existed has no held-out series, and three
+    # columns of blanks would assert a comparison nobody made. Dropped only
+    # when EVERY target lacks the value -- one target missing it keeps the
+    # column, because there the blank cell is itself the information.
+    for col in ("reconstruction fidelity (held out)",
+                "ΔMASE (token, held out)", "admission"):
+        if col in df.columns and df[col].isna().all():
+            df = df.drop(columns=[col])
+
     # The gate's numeric threshold rides along in `attrs` rather than as a
     # twelfth column: the reader already sees it inside the verdict string,
     # but the FIGURE needs it as a number to draw the bar the bars are
     # judged against. Data, not display -- so it stays out of the table and
     # out of `report.py`, which must not re-derive a threshold it could read.
     df.attrs["dead_rate_thresholds"] = thresholds
+    # Same contract for the admission gate's fidelity bar: the figure needs it
+    # as a NUMBER to draw the line its bars are judged against, and must never
+    # re-derive a threshold it could read (report.py is display, not policy).
+    df.attrs["fidelity_thresholds"] = fid_thresholds
 
     # Worst dictionary first: the reader's question is which of these to
     # distrust, and a table sorted by insertion order answers nothing.
@@ -1516,6 +1602,118 @@ def sae_health(run_dir: Path) -> pd.DataFrame:
     # only weakens them.
     return df.sort_values("dead rate", ascending=False,
                           na_position="last").reset_index(drop=True)
+
+
+def sae_seed_floor(meta_sae: dict, interpretable_ratio: float = 2.0) -> pd.DataFrame:
+    """One row per SAE target: how much of this target's headline moves when
+    only the training seed does, and whether the headline survives it.
+
+    🔴 This replaces a long-format spread table -- one row per (target,
+    metric) -- which on a thirteen-target run is 78 rows of seven columns,
+    and which the user asked to make useful or minimize. Three things were
+    wrong with its shape, and only the first is length:
+
+    - **A third of it was a control reporting its own success.**
+      `mase_clean_window`/`mase_clean_token` are the FROZEN-STORE control
+      (`run_sae_repeat_variance.py`): the unpatched forecast cannot depend
+      on an SAE seed, so their spread must be exactly zero. Twenty-six rows
+      reading `sd 0.000000` are not twenty-six measurements; they are one
+      verdict, and it belongs in a sentence. It is still checked -- a
+      non-zero spread there invalidates every other row and is reported by
+      name, not silently averaged in.
+    - **Two more rows per target were bit-identical by construction.**
+      A model whose token width equals the alignment window has
+      `mase_delta_window == mase_delta_token` exactly (sec 13). As separate
+      rows that reads as agreement between two measurements; as two columns
+      of one row it reads as what it is.
+    - **It did not answer the question a floor is for.** A spread is an
+      input to a verdict, not the verdict. Each row now states whether the
+      target's own mean ΔMASE clears `interpretable_ratio` x its own seed
+      spread -- the same 2x bar sec 18 F6 applies to the behavioral floor,
+      applied here to the SAE-training one. The two floors are different
+      quantities and a delta has to clear both.
+
+    Three outcomes are kept apart, never collapsed (sec 11.37): a spread of
+    exactly zero with a non-zero mean is resolvable by arithmetic and says
+    so, a spread of zero with a zero mean is no signal rather than a clean
+    one, and a single-seed target has no floor at all -- which is not the
+    same claim as "did not clear it".
+    """
+    rows, control_failures, targets_seen = [], [], 0
+    for key, entry in (meta_sae or {}).items():
+        if not isinstance(entry, dict):
+            continue
+        floor = entry.get("seed_floor")
+        if not floor:
+            continue
+        targets_seen += 1
+        spread = floor.get("spread") or {}
+
+        def _sp(metric):
+            s = spread.get(metric) or {}
+            return (s.get("mean"), s.get("sd")) if s.get("n") else (None, None)
+
+        for control in ("mase_clean_window", "mase_clean_token"):
+            _, sd = _sp(control)
+            if sd is not None and float(sd) != 0.0:
+                control_failures.append(f"{key} ({control} sd {float(sd):.3g})")
+
+        def _pm(metric, fmt=".3f"):
+            m, sd = _sp(metric)
+            if m is None:
+                return "not measured"
+            return f"{float(m):{fmt}} ± {float(sd):{fmt}}"
+
+        d_mean, d_sd = _sp("mase_delta_token")
+        if d_mean is None:
+            d_mean, d_sd = _sp("mase_delta_window")
+        if d_mean is None:
+            verdict = "no ΔMASE measured at this target"
+        elif float(d_sd) == 0.0:
+            verdict = ("resolvable — zero spread across seeds"
+                       if float(d_mean) != 0.0 else
+                       "no effect and no spread — nothing to resolve")
+        else:
+            ratio = abs(float(d_mean)) / float(d_sd)
+            verdict = (f"{'resolvable' if ratio > interpretable_ratio else 'NOT resolvable'}"
+                       f" — {ratio:.1f}× its own seed spread"
+                       f" (bar is {interpretable_ratio:g}×)")
+
+        n_seeds = int(floor.get("n_seeds") or (spread.get("mase_delta_token") or {}).get("n") or 0)
+        rows.append({
+            "target": key,
+            "seeds": n_seeds,
+            "reconstruction fidelity": _pm("reconstruction_fidelity"),
+            "dead-feature rate": _pm("dead_feature_rate"),
+            "ΔMASE (token)": _pm("mase_delta_token"),
+            "ΔMASE (window)": _pm("mase_delta_window"),
+            "is that ΔMASE resolvable at one seed?": verdict,
+        })
+
+    out = pd.DataFrame(rows)
+    out.attrs["control_failures"] = control_failures
+    out.attrs["n_targets"] = targets_seen
+    if control_failures:
+        out.attrs["control_statement"] = (
+            "🔴 The frozen-store control FAILED at "
+            + ", ".join(control_failures)
+            + " — the unpatched forecast moved between seeds, so something "
+              "other than the SAE seed varied and every spread above is "
+              "suspect.")
+    elif targets_seen:
+        out.attrs["control_statement"] = (
+            "The frozen-store control held at every target: the unpatched "
+            "forecast's spread across seeds is exactly zero, so the store "
+            "did not move and the spreads above are SAE training alone.")
+    else:
+        out.attrs["control_statement"] = ""
+    if not out.empty:
+        n_res = sum(1 for r in rows
+                    if r["is that ΔMASE resolvable at one seed?"].startswith("resolvable"))
+        out.attrs["headline"] = (
+            f"{n_res} of {len(rows)} targets' forecast-preservation ΔMASE is "
+            f"larger than {interpretable_ratio:g}× its own seed-to-seed spread.")
+    return out
 
 
 def _pct(x) -> str:
@@ -1679,6 +1877,60 @@ def sae_model_contrast(run_dir: Path, min_share: float = 0.05) -> pd.DataFrame:
     return out
 
 
+_DETERMINISTIC_BY_DESIGN_PREFIX = "deterministic by design"
+
+
+def _chunk_state(c: dict) -> str:
+    """Narrated, refused, or never sent -- three states, not two.
+
+    `sae/compare.py::describe_contrasts` now routes an unscorable pair
+    straight to its deterministic sentence rather than asking the narrator
+    for one (sec 28.17), so `accepted: False` no longer means "the guard
+    refused this". Collapsing the two would report a run where nothing
+    failed as a run of failures, which is sec 11.37's shape and is exactly
+    the correction `run_sae_compare.py::_summary_state` already made one
+    level up.
+    """
+    if c.get("accepted"):
+        return "narrator"
+    reason = str(c.get("reason") or "")
+    if reason.startswith(_DETERMINISTIC_BY_DESIGN_PREFIX):
+        return "measured (by design)"
+    return "fallback (refused)"
+
+
+def _removal_cell(c: dict, solo: bool) -> str:
+    """The causal verdict, carrying its measured reason when there isn't one.
+
+    "not scorable" names a state without naming its cause, and the causes
+    are different findings: a role with no member clearing any channel has
+    no causal direction to compare (a fact about that role), while a null
+    pool below 20 cross-pairs cannot be cleared at any effect size (a fact
+    about the run's size, sec 6.6's p-floor in a different statistic).
+    Rendering both as the same two words is what made this column read as
+    noise rather than as a result.
+    """
+    if solo:
+        return "no counterpart to compare"
+    verdict = c.get("causal_verdict") or "not scorable"
+    if verdict != "not scorable":
+        return verdict
+    reason = str(c.get("causal_reason") or "").strip()
+    if not reason:
+        return verdict
+    lower = reason.lower()
+    side = (c.get("model_a") if lower.startswith("side a:")
+            else c.get("model_b") if lower.startswith("side b:") else None)
+    body = reason.split(":", 1)[1].strip() if side is not None else reason
+    if side is not None and "cleared any channel" in body:
+        return f"not scorable — no {side} feature in this role cleared its null"
+    if side is not None:
+        return f"not scorable — on the {side} side, {body}"
+    if "cross-pairs" in body:
+        return "not scorable — too few cross-model pairs to form a null"
+    return verdict
+
+
 def sae_contrast_chunks(run_dir: Path) -> pd.DataFrame:
     """One row per compared unit: the narrated layer, role pair by role pair.
 
@@ -1717,11 +1969,9 @@ def sae_contrast_chunks(run_dir: Path) -> pd.DataFrame:
                 "counterpart": ("none found at these layers" if solo else
                                 f'{c.get("model_b")} · {c.get("name_b")}'),
                 "co-firing": "—" if cos is None else f"{float(cos):.2f}",
-                "when each is removed": (c.get("causal_verdict")
-                                         or ("no counterpart to compare" if solo
-                                             else "not scorable")),
+                "when each is removed": _removal_cell(c, solo),
                 "what the evidence says": (c.get("text") or "").strip() or "—",
-                "generated": "narrator" if c.get("accepted") else "fallback",
+                "generated": _chunk_state(c),
             })
     if not rows:
         return pd.DataFrame()
@@ -1808,6 +2058,44 @@ def sae_causal_repertoire(run_dir: Path) -> pd.DataFrame:
     return out
 
 
+def _unscorable_breakdown(pair: dict) -> str:
+    """Which cause, and how many of each -- the answer to "why is so much of
+    this table `not scorable`", counted rather than asserted.
+
+    The two causes measured on `runs/full_report_run_4model` are not the
+    same kind of fact and the reader has to be able to separate them: a role
+    with NO member clearing any channel has no causal direction for the
+    other side to agree or disagree with (a property of that role), while a
+    cross-pair pool below 20 cannot produce a clearable p95 at any effect
+    size (a property of the run's size -- sec 6.6's p-floor in a different
+    statistic, and the one of the two that MORE DATA fixes). Reads the
+    chunk records rather than a summary field, because the count is per
+    matched pair and only the chunks carry `causal_reason`.
+    """
+    counts: dict = {}
+    for c in (pair.get("chunks") or []):
+        if c.get("kind") != "pair" or c.get("causal_verdict") != "not scorable":
+            continue
+        reason = str(c.get("causal_reason") or "").strip()
+        lower = reason.lower()
+        if not reason:
+            key = "reason not recorded"
+        elif "cleared any channel" in lower:
+            side = (c.get("model_a") if lower.startswith("side a:")
+                    else c.get("model_b") if lower.startswith("side b:") else None)
+            key = (f"the {side} role has no member clearing any channel"
+                   if side else "one role has no member clearing any channel")
+        elif "cross-pairs" in lower:
+            key = "too few cross-model pairs to form a null"
+        else:
+            key = reason
+        counts[key] = counts.get(key, 0) + 1
+    if not counts:
+        return "—"
+    return "; ".join(f"{n}× {k}" for k, n in
+                     sorted(counts.items(), key=lambda kv: -kv[1]))
+
+
 def sae_causal_agreement(run_dir: Path) -> pd.DataFrame:
     """One row per model pair: do matched roles do the SAME thing causally?
 
@@ -1819,10 +2107,30 @@ def sae_causal_agreement(run_dir: Path) -> pd.DataFrame:
     `not scorable` is a first-class column rather than folded into either
     verdict, because a pair whose ablation battery had no measurable spread
     on both sides has no verdict to report and must not be counted as
-    agreement (sec 11.37). The match rate is shown ONLY when the artifact
-    marks it quotable -- it sits below both sides' untrained-twin floor on
-    every pair checked so far, so rendering the bare number invites exactly
-    the reading the floor exists to prevent.
+    agreement (sec 11.37).
+
+    🔴 There is deliberately NO aggregate rate column, and the reason is a
+    referent error rather than a quotability one. This table used to carry
+    `match rate`, read straight off the artifact's `match_rate` -- which is
+    the GEOMETRIC role-match rate, the share of one model's roles that found
+    any counterpart above a fixed cosine threshold. In a table headed "do
+    matched roles do the same thing?" a column called "match rate" reads as
+    the share that agreed, which it is not: on `full_report_run_4model` it
+    reads 1.000 for four pairs whose agreement counts are 0 alike against 2
+    to 5 differently. That number already has a home, in the correspondence
+    block's rate table, where it sits beside its own chance level, its
+    untrained-twin floor and a "safe to quote?" verdict -- so removing it
+    here loses nothing and stops one quantity from answering another
+    question one table over.
+
+    Nor is the agreement share itself rendered. Every count in the three
+    verdict columns is scored per role pair against the ablation battery's
+    own null, but their RATIO has no chance level: no run has yet measured
+    what fraction of role pairs would "act alike" between a model and an
+    untrained twin. `attrs["aggregate_rate_withheld"]` states that, so the
+    block can say it once beneath the table rather than repeating an
+    identical "not quotable" cell on every row -- which is what six rows of
+    it looked like, and what the user reading this table objected to.
     """
     doc = load_json_or_none(Path(run_dir) / "sae" / "comparison.json")
     pairs = ((doc or {}).get("comparison") or {}).get("pairs") or []
@@ -1831,19 +2139,31 @@ def sae_causal_agreement(run_dir: Path) -> pd.DataFrame:
     rows = []
     for p in pairs:
         scored = int(p.get("n_agree") or 0) + int(p.get("n_disagree") or 0)
-        rate = p.get("match_rate")
+        n_unscored = int(p.get("n_not_scorable") or 0)
         rows.append({
             "pair": f'{p.get("model_a")} vs {p.get("model_b")}',
             "matched roles scored": scored,
             "act alike": int(p.get("n_agree") or 0),
             "act differently": int(p.get("n_disagree") or 0),
-            "not scorable": int(p.get("n_not_scorable") or 0),
-            "match rate": (f"{float(rate):.2f}"
-                           if rate is not None and p.get("match_rate_quotable")
-                           else "not quotable"),
-            "summary": (p.get("summary") or "").strip() or "—",
+            "not scorable": n_unscored,
+            "why the rest could not be scored": _unscorable_breakdown(p),
+            "summary": ((p.get("summary") or "").strip()
+                        or ("No matched role pair here could be scored — see the "
+                            "column to the left for why." if scored == 0 and n_unscored
+                            else "No comparable features at these layers.")),
         })
     out = pd.DataFrame(rows)
+    n_scored = int(out["matched roles scored"].sum())
+    n_alike = int(out["act alike"].sum())
+    out.attrs["aggregate_rate_withheld"] = (
+        f"Across every pair, {n_alike} of {n_scored} scorable role pairs acted "
+        "alike. That share is not rendered as a rate because it has no chance "
+        "level: each verdict beside it is scored against the ablation "
+        "battery's own null, but nothing yet measures how often two roles "
+        "would agree between a model and an untrained twin of itself. Read "
+        "the counts, not their ratio." if n_scored else
+        "No role pair in this run could be scored either way, so there is no "
+        "agreement share to report — see the column naming why.")
     out.attrs["n_summaries_accepted"] = sum(
         1 for p in pairs if p.get("summary_accepted"))
     out.attrs["n_pairs"] = len(pairs)
@@ -1851,3 +2171,290 @@ def sae_causal_agreement(run_dir: Path) -> pd.DataFrame:
     out.attrs["n_chunks_accepted"] = sum(
         1 for p in pairs for c in (p.get("chunks") or []) if c.get("accepted"))
     return out
+
+
+# ---------------------------------------------------------------------------
+# ROADMAP.md sec 30 -- concepts (ablation-space clustering), replacing roles
+# ---------------------------------------------------------------------------
+#
+# Four pure reductions over `sae/concepts.json` / `sae/transfer.json` /
+# each target's own `*_ablation.json`, per sec 30.4.4. Additive only -- none
+# of these touch `_sae_concept_rows`/`bottom_line_rows` above, which is a
+# separate, already-verified scorecard row with its own scope (one row per
+# TARGET's strongest concept). These four feed the new `sae_concepts_block`
+# rendering module instead (`report/sae_concepts.py`).
+
+
+def _universality_bucket(n_reached, n_other_models) -> str:
+    """Which of THREE states a concept's cross-model reach falls into (sec
+    30.4.5's block 1), derived from the same `n_reached`/`n_other_models`
+    pair `concept_cards` computes -- so the summary table and the per-card
+    grouping cannot silently disagree about what "universal" means.
+
+    `n_reached is None` means no transfer artifact exists at all -- "not
+    measured", never silently folded into "model-specific" (sec 11.37: a
+    concept nobody tested for transfer has not failed to transfer).
+    `n_other_models <= 0` means this run has nothing else to transfer TO
+    (a solo run, or a corpus of one model's own targets) -- "not
+    comparable", not a bucket a reader could act on.
+    """
+    if n_reached is None:
+        return "not measured"
+    if n_other_models is None or n_other_models <= 0:
+        return "not comparable"
+    if n_reached <= 0:
+        return "model-specific"
+    if n_reached >= n_other_models:
+        return "universal"
+    return "partial"
+
+
+def concept_cards(run_dir: Path, weights: tuple = (0.5, 0.3, 0.2)) -> pd.DataFrame:
+    """One row per CONCEPT across the whole run, ranked by `interest`
+    (ROADMAP.md sec 30.4.4):
+
+        interest = w1*causal_strength + w2*transfer_informative
+                 + w3*(n_members_clearing / n_members)
+
+    `causal_strength` is the max |signed_null_units| across the concept's
+    own `profile` -- `profile` already excludes any channel under 1.0 null
+    unit (`concepts.py::concept_table`'s own filter), so this is never
+    computed over noise. `transfer_informative` is 1.0 when the concept
+    reaches SOME but not ALL of the run's other models (0 < n_reached <
+    n_other_models) and 0.4 otherwise -- rewarding a concept that
+    discriminates BETWEEN models over one that is either universal or
+    nowhere, per sec 30.4.4's own reasoning. `cohesion_frac` is
+    `n_members_clearing / n_members` straight from `concepts.json`.
+
+    `weights` defaults to sec 30.1/30.6's own (0.5, 0.3, 0.2); a caller
+    (`report.py`) passes `cfg.sae.interest_weights` when available, matching
+    every other reduction in this module that takes an explicit numeric
+    parameter rather than a `cfg` object.
+
+    Three states for the transfer term, never two (sec 11.37): when
+    `sae/transfer.json` does not exist at all, `transfer_informative` and
+    `n_models_reached` are `None` and `universality_bucket` reads "not
+    measured" -- not silently scored as 0.4, which would assert a
+    measurement that never ran.
+
+    Withheld targets and non-modular targets (`concept_table` returns no
+    concepts for them) contribute no rows -- an absent concept, not one
+    scored as uninteresting (sec 11.42's lesson, applied to a ranking
+    instead of a fingerprint).
+
+    No model name, architecture family or `cfg.models[i]` index appears in
+    this function's source -- every model identity comes from the
+    artifacts' own keys (the adaptivity contract this module states above).
+    Returns an empty, correctly-shaped `pd.DataFrame` when `sae/
+    concepts.json` is absent, and never raises.
+    """
+    _cols = ["target", "model", "concept", "name", "profile", "n_members",
+             "n_members_clearing", "within_cosine_mean", "causal_strength",
+             "transfer_informative", "n_models_reached", "n_other_models",
+             "reach", "cohesion_frac", "interest", "misfits", "description",
+             "description_generated", "universality_bucket"]
+    concepts_doc = load_json_or_none(Path(run_dir) / "sae" / "concepts.json")
+    targets = (concepts_doc or {}).get("targets") or {}
+    if not targets:
+        return pd.DataFrame(columns=_cols)
+
+    transfer_doc = load_json_or_none(Path(run_dir) / "sae" / "transfer.json")
+    reach_by_concept: dict = {}
+    all_models: set = set()
+    if transfer_doc:
+        for r in (transfer_doc.get("reach") or []):
+            key = (str(r.get("src")), r.get("concept"))
+            reach_by_concept.setdefault(key, {})[str(r.get("dst_model"))] = \
+                bool(r.get("reciprocal"))
+        for src, dsts in (transfer_doc.get("matrix") or {}).items():
+            all_models.add(str(src))
+            all_models.update(str(d) for d in dsts)
+    # Models actually analyzed in this run, from `concepts.json`'s own target
+    # keys -- never a hardcoded architecture list.
+    all_models |= {str(t).split("/", 1)[0] for t in targets}
+    n_other_models = max(len(all_models) - 1, 0) if transfer_doc is not None else None
+
+    w1, w2, w3 = (float(weights[0]), float(weights[1]), float(weights[2]))
+    rows: list = []
+    for target_key, rec in targets.items():
+        if not isinstance(rec, dict) or rec.get("withheld"):
+            continue
+        model = rec.get("model") or str(target_key).split("/", 1)[0]
+        for concept in rec.get("concepts", []):
+            profile = concept.get("profile") or []
+            causal_strength = max(
+                (abs(float(p["signed_null_units"])) for p in profile),
+                default=0.0)
+            n_members = int(concept.get("n_members") or 0)
+            n_clearing = int(concept.get("n_members_clearing") or 0)
+            cohesion_frac = (n_clearing / n_members) if n_members else 0.0
+
+            if transfer_doc is None:
+                transfer_informative = None
+                n_reached = None
+            else:
+                reach = reach_by_concept.get(
+                    (str(target_key), concept.get("concept"))) or {}
+                n_reached = sum(1 for v in reach.values() if v)
+                transfer_informative = (
+                    1.0 if 0 < n_reached < (n_other_models or 0) else 0.4)
+
+            ti_term = transfer_informative if transfer_informative is not None else 0.0
+            interest = w1 * causal_strength + w2 * ti_term + w3 * cohesion_frac
+
+            rows.append({
+                "target": target_key, "model": model,
+                "concept": concept.get("concept"),
+                "name": concept.get("name"),
+                "profile": profile,
+                "n_members": n_members,
+                "n_members_clearing": n_clearing,
+                "within_cosine_mean": _fin(concept.get("within_cosine_mean")),
+                "causal_strength": causal_strength,
+                "transfer_informative": transfer_informative,
+                "n_models_reached": n_reached,
+                "n_other_models": n_other_models,
+                "reach": (reach_by_concept.get(
+                    (str(target_key), concept.get("concept"))) or {}
+                    if transfer_doc is not None else {}),
+                "cohesion_frac": cohesion_frac,
+                "interest": interest,
+                "misfits": concept.get("misfits") or [],
+                "description": concept.get("description"),
+                "description_generated": bool(concept.get("description_generated")),
+                "universality_bucket": _universality_bucket(n_reached, n_other_models),
+            })
+
+    df = pd.DataFrame(rows, columns=_cols)
+    if df.empty:
+        return df
+    df.attrs["weights"] = {"w1_causal_strength": w1,
+                           "w2_transfer_informative": w2,
+                           "w3_cohesion_frac": w3}
+    df.attrs["transfer_measured"] = transfer_doc is not None
+    return df.sort_values("interest", ascending=False).reset_index(drop=True)
+
+
+def concept_transfer_matrix(run_dir: Path) -> pd.DataFrame:
+    """Model x model reciprocal-transfer rate, reshaped from `sae/
+    transfer.json`'s own `matrix` field into a square `pd.DataFrame` (row =
+    source model, column = destination model) so `report.py` can hand it
+    straight to the existing heatmap idiom without re-deriving anything from
+    `pairs`.
+
+    Row/column labels come from the artifact's own keys, never a hardcoded
+    model list. A cell with no measured rate (a pair `run_transfer` never
+    saw, e.g. a model with no concepts to transfer FROM) is `NaN`, not 0.0 --
+    a rate of exactly zero is a real, different claim from "never measured"
+    (sec 11.37), and `NaN` is what the caller's heatmap already renders as a
+    gap rather than a false floor.
+
+    Returns an empty `pd.DataFrame` when `sae/transfer.json` is absent.
+    """
+    doc = load_json_or_none(Path(run_dir) / "sae" / "transfer.json")
+    matrix = (doc or {}).get("matrix") or {}
+    if not matrix:
+        return pd.DataFrame()
+    models = sorted({*matrix.keys(),
+                     *(d for dsts in matrix.values() for d in dsts)})
+    data = [[_fin((matrix.get(src) or {}).get(dst)) for dst in models]
+            for src in models]
+    df = pd.DataFrame(data, index=models, columns=models)
+    df.attrs["k_top_series"] = doc.get("k_top_series")
+    df.attrs["n_null_draws"] = doc.get("n_null_draws")
+    df.attrs["stratum_field"] = doc.get("stratum_field")
+    return df
+
+
+def concept_universality(run_dir: Path) -> pd.DataFrame:
+    """One row per universality bucket (universal / partial / model-specific)
+    -- sec 30.4.5 block 1's summary table -- with a count and the concept
+    keys in it, so the rendered table is auditable back to individual
+    concepts without re-reading `concept_cards`.
+
+    Buckets are computed by `concept_cards` itself (`_universality_bucket`),
+    so this function and the per-card grouping in `sae_concepts_block`
+    cannot disagree about the rule. Returns an empty, correctly-shaped frame
+    when `sae/concepts.json` is absent OR when no transfer measurement
+    exists for this run (`concept_cards`'s `transfer_measured` attr) --
+    rendering three empty-looking buckets would assert a transfer
+    measurement that never happened (sec 11.37); the caller renders "not
+    measured" instead of this table in that case.
+    """
+    empty = pd.DataFrame(columns=["bucket", "n_concepts", "concepts"])
+    cards = concept_cards(run_dir)
+    if cards.empty or not cards.attrs.get("transfer_measured"):
+        return empty
+    order = ["universal", "partial", "model-specific"]
+    rows = []
+    for bucket in order:
+        sub = cards[cards["universality_bucket"] == bucket]
+        rows.append({
+            "bucket": bucket, "n_concepts": int(len(sub)),
+            "concepts": [f"{r.target}#{r.concept}" for r in sub.itertuples()],
+        })
+    df = pd.DataFrame(rows, columns=["bucket", "n_concepts", "concepts"])
+    df.attrs["n_other_models"] = (
+        int(cards["n_other_models"].iloc[0]) if not cards.empty else None)
+    df.attrs["n_concepts_total"] = int(len(cards))
+    return df
+
+
+def misfit_table(run_dir: Path, min_cosine_gap: float = 0.3) -> pd.DataFrame:
+    """One row per MISFIT -- a concept member whose own ablation fingerprint
+    sits far from its concept's centroid (`sae/misfits.py::misfit_rows`,
+    reused rather than re-derived, sec 11.41: the same function that built
+    the centroid's own comparison vector). Renders `own_top_channels` beside
+    `concept_channels` so a reader sees the divergence the misc section
+    exists to show, not just a feature id.
+
+    Reads each target's own record straight out of `sae/concepts.json`
+    (already the exact shape `misfit_rows` expects: a `concepts` list plus
+    `channel_columns`) and that target's raw `sae/<model>/<layer>_
+    ablation.json`. A withheld target, or a target whose ablation artifact
+    is missing from disk, contributes no rows rather than raising -- the
+    same degradation `concept_cards` uses for a withheld target.
+
+    An empty result is ambiguous by shape alone -- "no misfit battery was
+    ever measured" and "the battery ran and genuinely found nothing" are
+    different claims (`CLAUDE.md` sec 11.37) -- so `attrs["n_targets_checked"]`
+    disambiguates them: absent (key not set at all) means `sae/concepts.json`
+    itself is missing/empty, so nothing could even be attempted; `0` means
+    concepts.json exists but not one target's ablation artifact could be
+    loaded (still effectively unmeasured); a positive count means that many
+    targets were actually scored, and an empty `rows` list at that point is a
+    real, measured "no misfits found" verdict. `attrs["min_cosine_gap"]` is
+    recorded on every path so a caller never re-derives the threshold applied.
+    """
+    from ..sae.misfits import misfit_rows
+    from ..sae.train import sanitize
+
+    run_dir = Path(run_dir)
+    concepts_doc = load_json_or_none(run_dir / "sae" / "concepts.json")
+    targets = (concepts_doc or {}).get("targets") or {}
+    df = pd.DataFrame()
+    if not targets:
+        df.attrs["min_cosine_gap"] = float(min_cosine_gap)
+        return df
+
+    rows: list = []
+    n_targets_checked = 0
+    for target_key, rec in targets.items():
+        if not isinstance(rec, dict) or rec.get("withheld"):
+            continue
+        model, layer = rec.get("model"), rec.get("layer")
+        if not model or not layer:
+            continue
+        ablation_path = (run_dir / "sae" / sanitize(model)
+                        / f"{sanitize(layer)}_ablation.json")
+        ablation_art = load_json_or_none(ablation_path)
+        if not ablation_art:
+            continue
+        n_targets_checked += 1
+        for row in misfit_rows(rec, ablation_art, min_cosine_gap=min_cosine_gap):
+            rows.append({"target": target_key, "model": model, **row})
+
+    df = pd.DataFrame(rows)
+    df.attrs["min_cosine_gap"] = float(min_cosine_gap)
+    df.attrs["n_targets_checked"] = n_targets_checked
+    return df

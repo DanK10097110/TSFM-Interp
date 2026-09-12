@@ -183,6 +183,31 @@ def cluster_roles(X: np.ndarray, role_k="auto", min_silhouette: float = 0.1,
 
 _SIGN_ARROWS = {1: "↑", -1: "↓"}
 
+# Channels whose statistic is a magnitude, not a signed quantity. Read from
+# the narrator's own table so the role NAME and every other surface cannot
+# disagree about which channel has a direction (sec 2.2) -- `report/
+# sae_roles.py` and `report/sae_features.py` already read it the same way.
+# `describe` does not import this module, so this is not sec 11.52's cycle.
+try:
+    from .describe import CHANNEL_VERB as _CHANNEL_VERB
+    _UNSIGNED_CHANNELS = frozenset(_CHANNEL_VERB)
+except Exception:                                          # pragma: no cover
+    _UNSIGNED_CHANNELS = frozenset({"horizon_shape_near", "horizon_shape_far"})
+
+
+def _arrow(channel: str, sign: int) -> str:
+    """The direction marker for a role name's channel.
+
+    `horizon_shape_*` is a mean ABSOLUTE deviation, so its sign carries no
+    information: measured across every role of `runs/full_report_run_4model`,
+    `horizon_shape_far` is 88 positive / 0 negative and `horizon_shape_near`
+    88 / 0. An arrow that provably cannot point the other way is decoration
+    that reads as a finding, so those channels get "↕" (ROADMAP.md sec 28.18).
+    """
+    if channel in _UNSIGNED_CHANNELS:
+        return "↕"
+    return _SIGN_ARROWS[sign]
+
 
 def _channel_pretty(channel: str) -> str:
     return {"trend": "trend-slope", "seasonal": "seasonal-magnitude",
@@ -274,7 +299,7 @@ def derive_role_name(role_idx: int, X: np.ndarray, labels: np.ndarray,
         chan, sign = _dominant_channel(channel_part, channel_columns, rank)
         if chan is None:
             break
-        parts = [f"{_channel_pretty(chan)} {_SIGN_ARROWS[sign]}"]
+        parts = [f"{_channel_pretty(chan)} {_arrow(chan, sign)}"]
         # Accumulate every channel from 0..rank into the name once we're
         # past the first attempt, so "append the next channel" reads as a
         # composite name rather than replacing the first.
@@ -283,8 +308,8 @@ def derive_role_name(role_idx: int, X: np.ndarray, labels: np.ndarray,
             for r in range(rank):
                 c2, s2 = _dominant_channel(channel_part, channel_columns, r)
                 if c2 is not None:
-                    prior_parts.append(f"{_channel_pretty(c2)} {_SIGN_ARROWS[s2]}")
-            parts = prior_parts + [f"{_channel_pretty(chan)} {_SIGN_ARROWS[sign]}"]
+                    prior_parts.append(f"{_channel_pretty(c2)} {_arrow(c2, s2)}")
+            parts = prior_parts + [f"{_channel_pretty(chan)} {_arrow(chan, sign)}"]
         suffix = ""
         if struct_field is not None:
             suffix = f" · {struct_field}"
@@ -362,12 +387,28 @@ def role_table(candidates: list, X: np.ndarray, cluster_result: dict,
         n_dom = sum(1 for c in members
                     if dom is not None and dom in (c.get("clearing_channels") or ()))
         n_any = sum(1 for c in members if c.get("clearing_channels"))
+        # The role's mean on EVERY channel, not just the argmax. `X`'s
+        # channel columns are already in multiples of each channel's own
+        # null p95 (`build_feature_matrix`), so this is directly comparable
+        # to the 1.0 bar `dominant_effect_null_units` is read against --
+        # and it is what lets a consumer license every channel that cleared
+        # rather than only the largest one. On
+        # `runs/full_report_run_4model`, 55 of the 74 clearing roles have
+        # two or more channels at |mean| >= 1.0 and 45 have four or more,
+        # so reporting only the argmax discards most of what was measured
+        # about what kind of change the role makes (ROADMAP.md sec 28.18).
+        # Added beside `dominant_*` rather than replacing it: the roles
+        # table and every recorded role name read those (sec 11.39).
+        channel_means = {ch: float(mean_row[i])
+                         for i, ch in enumerate(channel_columns)
+                         if i < mean_row.shape[0]}
         out.append({
             "role": role_idx, "name": info["name"],
             "n_atoms": len(members),
             "features": [int(c["feature"]) for c in members],
             "dominant_channel": info["dominant_channel"],
             "dominant_effect_null_units": dominant_effect,
+            "channel_means_null_units": channel_means,
             "dominant_channel_n_clearing": n_dom,
             "n_members_clearing_any": n_any,
             "sign": info["sign"],

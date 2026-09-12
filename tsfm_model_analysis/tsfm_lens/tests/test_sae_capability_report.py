@@ -153,23 +153,59 @@ def test_repertoire_holds_the_adaptivity_contract():
 
 # --- the agreement table ----------------------------------------------------
 
-def test_an_unquotable_match_rate_is_withheld_not_printed(run):
-    """🔴 The match rate sits BELOW both sides' untrained-twin floor on every
-    real pair checked. Printing the bare number invites exactly the reading
-    the floor exists to prevent, so the artifact's own quotable flag decides."""
-    row = derived.sae_causal_agreement(run).iloc[0]
-    assert row["match rate"] == "not quotable"
-    assert "0.83" not in str(row["match rate"])
+def test_the_geometric_match_rate_does_not_appear_in_the_agreement_table(run):
+    """🔴 `match_rate` is the share of roles that found ANY counterpart above
+    a cosine threshold -- co-firing, not agreement. Rendered in a table asking
+    "do matched roles do the same thing?" it answers a different question one
+    column over: on the real four-model run it reads 1.000 for four pairs
+    whose agreement counts are 0 alike against 2 to 5 differently. It belongs
+    in the correspondence block, beside its own chance level and floor.
+
+    This replaces a pair of tests that only checked WHETHER the number was
+    quotable. Quotability was never the defect; the referent was.
+    """
+    a = derived.sae_causal_agreement(run)
+    assert "match rate" not in a.columns
+    assert not any("match" in c and "rate" in c for c in a.columns)
+    # And the number itself must not have leaked into any other cell.
+    assert "0.83" not in a.iloc[0].astype(str).str.cat(sep=" ")
 
 
-def test_a_quotable_match_rate_is_printed(tmp_path):
-    """The other half of the pair -- otherwise a column hardcoded to the
-    string would pass the test above."""
+def test_a_quotable_match_rate_still_does_not_reappear(tmp_path):
+    """The other half: flipping the artifact's own quotable flag must not
+    bring the column back, since it was removed for what it MEASURES, not
+    for whether it cleared a floor.
+    """
     doc = _doc()
     doc["comparison"]["pairs"][0]["match_rate_quotable"] = True
     d = tmp_path / "sae"; d.mkdir()
     (d / "comparison.json").write_text(json.dumps(doc), encoding="utf-8")
-    assert derived.sae_causal_agreement(tmp_path).iloc[0]["match rate"] == "0.83"
+    assert "match rate" not in derived.sae_causal_agreement(tmp_path).columns
+
+
+def test_the_withheld_aggregate_states_itself_once(run):
+    """Six identical "not quotable" cells is a column saying nothing six
+    times. The reason travels in `attrs` so the block states it ONCE, and it
+    must name the counts a reader is being pointed at instead.
+    """
+    a = derived.sae_causal_agreement(run)
+    why = a.attrs["aggregate_rate_withheld"]
+    assert "chance level" in why
+    assert "1 of 5" in why  # the fixture's own alike-of-scored counts
+
+
+def test_the_withheld_aggregate_survives_a_run_with_nothing_scorable(tmp_path):
+    """The load-bearing negative: with 0 scorable pairs the sentence must not
+    report "0 of 0 acted alike", which reads as a measured unanimity."""
+    doc = _doc()
+    pair = doc["comparison"]["pairs"][0]
+    pair["n_agree"] = 0
+    pair["n_disagree"] = 0
+    d = tmp_path / "sae"; d.mkdir()
+    (d / "comparison.json").write_text(json.dumps(doc), encoding="utf-8")
+    why = derived.sae_causal_agreement(tmp_path).attrs["aggregate_rate_withheld"]
+    assert "0 of 0" not in why
+    assert "could be scored" in why
 
 
 def test_not_scorable_is_its_own_column_not_folded_into_a_verdict(run):
@@ -256,7 +292,40 @@ def test_a_fallback_sentence_is_labelled_as_one(run):
     assert by_text["In Alpha this role moves the far horizon, and in Beta "
                    "its counterpart does too."] == "narrator"
     assert by_text["In Alpha this role moves the level; no counterpart was "
-                   "found in Beta at the layers compared."] == "fallback"
+                   "found in Beta at the layers compared."] == "fallback (refused)"
+
+
+def test_a_deterministic_by_design_chunk_is_not_labelled_a_refusal(run):
+    """THREE states, not two (sec 11.37, and sec 28.17's own correction).
+
+    `describe_contrasts` now routes an unscorable pair straight to its
+    deterministic sentence instead of asking the narrator for one, so
+    `accepted: False` no longer implies the guard refused anything. Labelling
+    that "fallback" reports a run where nothing failed as a run of failures
+    -- the same correction `run_sae_compare.py::_summary_state` already made
+    for the summary row one level up. The load-bearing half of this test is
+    that the two unaccepted states render DIFFERENTLY; asserting only the new
+    label would pass against a version that relabelled both."""
+    from tsfm_lens.sae.compare import DETERMINISTIC_BY_DESIGN
+    doc = json.loads((run / "sae" / "comparison.json").read_text())
+    doc["comparison"]["pairs"][0]["chunks"].append({
+        "kind": "pair", "model_a": "Alpha", "name_a": "r9",
+        "model_b": "Beta", "name_b": "r9", "cosine": 0.7,
+        "causal_verdict": "not scorable",
+        "causal_reason": "side B: no member of this role cleared any channel's "
+                         "null, so the role has no causal direction to compare",
+        "text": "In Alpha this role moves the trend; not scorable.",
+        "accepted": False, "reason": DETERMINISTIC_BY_DESIGN,
+    })
+    (run / "sae" / "comparison.json").write_text(json.dumps(doc))
+    df = derived.sae_contrast_chunks(run)
+    row = df[df["what the evidence says"] ==
+             "In Alpha this role moves the trend; not scorable."].iloc[0]
+    assert row["generated"] == "measured (by design)"
+    assert set(df["generated"]) == {"narrator", "fallback (refused)",
+                                    "measured (by design)"}
+    assert row["when each is removed"] == (
+        "not scorable — no Beta feature in this role cleared its null")
 
 
 def test_chunk_acceptance_is_recorded_by_state_never_pooled(run):

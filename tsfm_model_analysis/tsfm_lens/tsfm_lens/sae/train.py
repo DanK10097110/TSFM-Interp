@@ -19,7 +19,7 @@ from ..config import PipelineConfig
 from ..data import BenchmarkData
 from ..extraction.store import ActivationStore
 from ..models import ModelHub
-from ..utils import batch_slices, load_json, log, save_json
+from ..utils import batch_slices, load_json, log, sample_rows, save_json
 from .eval import (dead_feature_rate, feature_ablation_effects, feature_steering_effects,
                    forecast_preservation, reconstruction_fidelity, seed_spread)
 from .ground_truth import ground_truth_alignment, load_ground_truth_table
@@ -58,6 +58,116 @@ def load_all_windows(store: ActivationStore, model: str, layer: str) -> np.ndarr
     n = store.root.attrs["n_series"]
     acts = store.load(model, layer, level="window", rows=np.arange(n))
     return acts.reshape(-1, acts.shape[-1]).astype(np.float32)
+
+
+def split_series(n_series: int, holdout_frac: float, seed: int,
+                 families: np.ndarray | None = None) -> dict:
+    """Partition SERIES into a training and a held-out set.
+
+    The unit is the series, never the window (invariant 2): `load_all_windows`
+    returns `[n_series * n_windows, D]` in series-major order, and every window
+    of one series is a slice of one signal, so a window-level split would put
+    near-duplicates of the training rows into the "held-out" set and report a
+    fidelity indistinguishable from the training one -- the exact failure this
+    split exists to detect.
+
+    Drawn family-stratified when `families` is given, so the held-out set is a
+    sample rather than a task-ordered prefix of a corpus written grouped by
+    generator (`CLAUDE.md` sec 11.38, sec 15 A4).
+
+    `holdout_frac <= 0` returns every series as training and an EMPTY held-out
+    set -- the pre-2026-09-11 behavior, bit-for-bit.
+    """
+    all_idx = np.arange(int(n_series))
+    n_hold = int(round(max(0.0, float(holdout_frac)) * n_series))
+    # A one-series held-out set cannot support a forecast-preservation mean
+    # worth reading, and a zero-series training set cannot train at all.
+    n_hold = min(n_hold, max(0, n_series - 1))
+    if n_hold < 2:
+        return {"train": all_idx, "heldout": np.asarray([], dtype=int),
+                "holdout_frac": 0.0, "n_train": int(n_series), "n_heldout": 0,
+                "reason": ("disabled by config" if holdout_frac <= 0 else
+                           f"corpus too small to hold out ({n_series} series)")}
+    hold = np.sort(all_idx[sample_rows(int(n_series), n_hold, seed, strata=families)])
+    train = np.setdiff1d(all_idx, hold, assume_unique=False)
+    return {"train": train, "heldout": hold,
+            "holdout_frac": float(n_hold) / float(n_series),
+            "n_train": int(train.size), "n_heldout": int(hold.size), "reason": None}
+
+
+def _rows_for_series(series_idx: np.ndarray, n_windows: int) -> np.ndarray:
+    """Window-level row indices into `load_all_windows`' series-major output."""
+    if series_idx.size == 0:
+        return np.asarray([], dtype=int)
+    return (series_idx[:, None] * int(n_windows) + np.arange(int(n_windows))[None, :]).ravel()
+
+
+def admission_verdict(fidelity_train: float, fidelity_heldout: float | None,
+                      delta_mase_token: float | None, min_fidelity: float,
+                      max_abs_delta_mase: float, dead_rate_passed: bool | None = None) -> dict:
+    """Is this dictionary sound enough to draw feature-level conclusions from?
+
+    Three independent bars, each recorded with the value and the threshold that
+    decided it, so a reader can disagree with the arithmetic rather than only
+    with the verdict (the `report/derived.py::Verdict` discipline).
+
+    1. **Reconstruction fidelity**, read on the HELD-OUT split when one exists.
+       A dictionary that cannot rebuild the activation it decomposes is not a
+       decomposition of it, and every downstream feature claim inherits that.
+    2. **Forecast preservation**, |ΔMASE| at TOKEN granularity, held-out. Token
+       rather than window because the window number is inflated by a
+       per-architecture broadcast confound that has nothing to do with the
+       dictionary -- the reason a target can show the best fidelity of a run
+       and simultaneously the worst window ΔMASE, which is not a contradiction
+       but two different measurements.
+    3. **Dead-feature rate**, whose own gate is computed upstream; passed in so
+       one verdict covers all three rather than the reader joining two.
+
+    A bar with no measurement is `None` -- neither passed nor failed -- and the
+    overall verdict is refused rather than assumed (`CLAUDE.md` sec 11.37: an
+    absent baseline must not yield a confident answer in either direction).
+    """
+    checks, failed, unmeasured = [], [], []
+    fid_used, fid_split = fidelity_heldout, "heldout"
+    if fid_used is None:
+        fid_used, fid_split = fidelity_train, "train"
+    fid_ok = None if fid_used is None else bool(fid_used >= min_fidelity)
+    checks.append({"check": "reconstruction fidelity", "split": fid_split,
+                   "value": None if fid_used is None else float(fid_used),
+                   "threshold": float(min_fidelity),
+                   "rule": f"fidelity >= {min_fidelity:g} on the {fid_split} split",
+                   "passed": fid_ok})
+
+    dm_ok = None
+    if max_abs_delta_mase > 0:
+        dm_ok = (None if delta_mase_token is None or not np.isfinite(delta_mase_token)
+                 else bool(abs(delta_mase_token) <= max_abs_delta_mase))
+        checks.append({"check": "forecast preservation", "split": "heldout",
+                       "value": None if delta_mase_token is None else float(delta_mase_token),
+                       "threshold": float(max_abs_delta_mase),
+                       "rule": (f"|dMASE| <= {max_abs_delta_mase:g} at TOKEN granularity "
+                                "(window is architecture-confounded)"),
+                       "passed": dm_ok})
+    if dead_rate_passed is not None:
+        checks.append({"check": "dead-feature rate", "split": "train",
+                       "value": None, "threshold": None,
+                       "rule": "the dead-rate gate recorded for this target",
+                       "passed": bool(dead_rate_passed)})
+
+    for c in checks:
+        if c["passed"] is False:
+            failed.append(c["check"])
+        elif c["passed"] is None:
+            unmeasured.append(c["check"])
+
+    if failed:
+        passed, reason = False, "failed: " + ", ".join(failed)
+    elif unmeasured:
+        passed, reason = None, "not decidable -- unmeasured: " + ", ".join(unmeasured)
+    else:
+        passed, reason = True, "cleared every bar"
+    return {"passed": passed, "reason": reason, "checks": checks,
+            "failed_checks": failed, "unmeasured_checks": unmeasured}
 
 
 @torch.no_grad()
@@ -445,7 +555,19 @@ def run_sae(cfg: PipelineConfig, hub: ModelHub, store: ActivationStore,
            data: BenchmarkData, device: torch.device) -> None:
     """Train + evaluate one baseline TopK SAE per configured (model, layer) target."""
     out_dir = cfg.run_dir() / "sae"
-    targets = cfg.sae.targets or _default_targets(cfg, store)
+    auto_targets = not cfg.sae.targets
+    targets = list(cfg.sae.targets or _default_targets(cfg, store))
+    # `targets` is appended to during iteration by the layer-substitution path
+    # below, so a failed layer's replacement is trained in the same pass.
+    # Absent when layer_screen is disabled or was never run for this run dir.
+    # Substitution then has no ranking to consult and degrades to "no
+    # substitute available", which is stated in the artifact rather than
+    # silently picking a neighbouring layer.
+    _screen_path = cfg.run_dir() / "layer_screen" / "selection.json"
+    screen_sel = load_json(_screen_path) if _screen_path.exists() else {}
+    attempted: dict = {}
+    for t in targets:
+        attempted.setdefault(t["model"], set()).add(t["layer"])
     results = {}
     real_contexts = _sample_real_contexts(cfg) if cfg.sae.real_data_enabled else None
     # Ground-truth seasonal periods for every series in `data`, sampled once
@@ -465,15 +587,32 @@ def run_sae(cfg: PipelineConfig, hub: ModelHub, store: ActivationStore,
         log.info(f"sae: training baseline TopK SAE for {key}")
         adapter = hub.get(model)
         bench_activations = load_all_windows(store, model, layer)
-        train_activations = bench_activations
+        # Held-out SERIES split (2026-09-11). Before this, fidelity and dead
+        # rate were measured on the rows the dictionary trained on, so a
+        # memorizing dictionary and a generalizing one reported the same
+        # number. `split.train` is what trains; both splits are scored.
+        n_windows = int(store.root.attrs["n_windows"])
+        split = split_series(int(store.root.attrs["n_series"]), cfg.sae.holdout_frac,
+                             cfg.run.seed + 23, families=data.meta["family"].to_numpy())
+        train_rows = _rows_for_series(split["train"], n_windows)
+        hold_rows = _rows_for_series(split["heldout"], n_windows)
+        bench_train = bench_activations[train_rows]
+        bench_hold = bench_activations[hold_rows] if hold_rows.size else None
+        if split["n_heldout"]:
+            log.info(f"sae: {key} held out {split['n_heldout']} of "
+                     f"{split['n_train'] + split['n_heldout']} series "
+                     f"({hold_rows.size} windows) from training")
+        elif split["reason"]:
+            log.info(f"sae: {key} no held-out split -- {split['reason']}")
+        train_activations = bench_train
         n_real = 0
         if cfg.sae.real_data_enabled:
             real_activations = extract_real_activations(
                 adapter, layer, real_contexts, cfg.alignment.window, cfg.sae.batch_size, device)
             n_real = real_activations.shape[0]
-            train_activations = np.concatenate([bench_activations, real_activations], axis=0)
+            train_activations = np.concatenate([bench_train, real_activations], axis=0)
             log.info(f"sae: augmented {key} training set with {n_real} real-data rows "
-                     f"({bench_activations.shape[0]} benchmark + {n_real} real = "
+                     f"({bench_train.shape[0]} benchmark + {n_real} real = "
                      f"{train_activations.shape[0]} total)")
 
         dict_size_search = None
@@ -487,7 +626,7 @@ def run_sae(cfg: PipelineConfig, hub: ModelHub, store: ActivationStore,
             dict_size_search = search_dict_size(train_activations, train_cfg,
                                                 cfg.sae.dict_size_ladder,
                                                 cfg.sae.max_dead_rate, device,
-                                                eval_activations=bench_activations,
+                                                eval_activations=bench_train,
                                                 min_fidelity=cfg.sae.min_fidelity,
                                                 n_seeds=cfg.sae.dict_size_search_seeds,
                                                 margin=cfg.sae.dict_size_search_margin)
@@ -510,8 +649,16 @@ def run_sae(cfg: PipelineConfig, hub: ModelHub, store: ActivationStore,
         # activations even when real data augmented training, so this number
         # means the same thing (fit to the corpus this run is actually about)
         # regardless of whether real-data augmentation is on.
-        fidelity = reconstruction_fidelity(sae, bench_activations, device)
-        dead_rate = dead_feature_rate(sae, bench_activations, device)
+        fidelity = reconstruction_fidelity(sae, bench_train, device)
+        dead_rate = dead_feature_rate(sae, bench_train, device)
+        # The same two numbers on series the dictionary never saw. A gap
+        # between `fidelity` and `fidelity_heldout` is memorization; their
+        # near-equality is the evidence that the training number means what
+        # the report says it means.
+        fidelity_heldout = (reconstruction_fidelity(sae, bench_hold, device)
+                            if bench_hold is not None else None)
+        dead_rate_heldout = (dead_feature_rate(sae, bench_hold, device)
+                             if bench_hold is not None else None)
         # ROADMAP.md sec 23.2 A1(d): a rendered pass/fail gate, not just a
         # number in a JSON file nothing reads (report.py::_sec_sae renders a
         # visible warning on a failing gate; `_compose_caveats` attaches an
@@ -531,7 +678,8 @@ def run_sae(cfg: PipelineConfig, hub: ModelHub, store: ActivationStore,
 
         try:
             fp = forecast_preservation(cfg, adapter, layer, sae, store, data, device,
-                                       granularity="window")
+                                       granularity="window",
+                                       allowed_series=split["train"], split="train")
         except Exception as e:
             log.warning(f"sae: forecast-preservation check failed for {key}: {e}")
             fp = {"error": str(e)}
@@ -543,10 +691,31 @@ def run_sae(cfg: PipelineConfig, hub: ModelHub, store: ActivationStore,
             # eval.py::forecast_preservation's own docstring for both sides
             # of this comparison).
             fp_token = forecast_preservation(cfg, adapter, layer, sae, store, data, device,
-                                             granularity="token")
+                                             granularity="token",
+                                             allowed_series=split["train"], split="train")
         except Exception as e:
             log.warning(f"sae: token-granularity forecast-preservation check failed for {key}: {e}")
             fp_token = {"error": str(e)}
+
+        # Both granularities again on held-out series. The GATE reads the
+        # held-out token number: window carries the per-architecture broadcast
+        # confound (see eval.py::forecast_preservation), and train carries
+        # whatever the dictionary memorized.
+        fp_hold, fp_token_hold = None, None
+        if split["n_heldout"]:
+            for gran, dest in (("window", "fp_hold"), ("token", "fp_token_hold")):
+                try:
+                    val = forecast_preservation(cfg, adapter, layer, sae, store, data, device,
+                                                granularity=gran,
+                                                allowed_series=split["heldout"], split="heldout")
+                except Exception as e:
+                    log.warning(f"sae: held-out {gran} forecast-preservation failed for "
+                                f"{key}: {e}")
+                    val = {"error": str(e)}
+                if dest == "fp_hold":
+                    fp_hold = val
+                else:
+                    fp_token_hold = val
 
         try:
             # ROADMAP.md sec 16 E14 / CLAUDE.md sec 13 item 13 C1: without
@@ -651,7 +820,7 @@ def run_sae(cfg: PipelineConfig, hub: ModelHub, store: ActivationStore,
                 replicate, _ = train_sae(train_activations, _train_config(
                     cfg, seed, dict_size=train_cfg.dict_size), device)
                 per_seed.append(_repeat_metrics(cfg, adapter, layer, replicate, store, data,
-                                                device, bench_activations, key, seed))
+                                                device, bench_train, key, seed))
             seed_floor = {"n_seeds": cfg.sae.n_seeds, "per_seed": per_seed,
                           "spread": {m: seed_spread([r[m] for r in per_seed])
                                      for m in SEED_FLOOR_METRICS}}
@@ -662,13 +831,61 @@ def run_sae(cfg: PipelineConfig, hub: ModelHub, store: ActivationStore,
                      f"dMASE(token) {spread['mase_delta_token'].get('mean', float('nan')):+.4f} "
                      f"+/- {spread['mase_delta_token'].get('sd', float('nan')):.4f}")
 
+        dm_hold = (fp_token_hold or {}).get("mase_delta") if fp_token_hold else None
+        admission = admission_verdict(
+            fidelity_train=fidelity, fidelity_heldout=fidelity_heldout,
+            delta_mase_token=dm_hold, min_fidelity=cfg.sae.min_fidelity_gate,
+            max_abs_delta_mase=cfg.sae.max_abs_delta_mase,
+            dead_rate_passed=dead_rate_gate["passed"])
+        if admission["passed"] is False:
+            log.warning(f"sae: {key} FAILS dictionary admission -- {admission['reason']}")
+            # Layer substitution. A layer that cannot be decomposed is a fact
+            # about that layer, not necessarily about the model, so retry the
+            # next-best-scoring CAPTURED layer from the same model's own
+            # layer_screen ranking before concluding anything about the model.
+            # Only auto-resolved targets are substituted: a pinned
+            # `sae.targets` entry is an explicit choice and replacing it
+            # silently would answer a question the user did not ask.
+            n_tried = int(target.get("substitution_attempt", 0))
+            if (auto_targets and cfg.sae.layer_substitution_attempts > 0
+                    and n_tried < cfg.sae.layer_substitution_attempts):
+                nxt = _next_substitute_layer(screen_sel, store, model,
+                                             attempted.setdefault(model, set()))
+                if nxt is None:
+                    log.warning(f"sae: {key} failed and no unattempted captured layer "
+                                f"remains for {model!r} -- moving on")
+                    admission["substitution"] = {"attempted": True, "replacement": None,
+                                                 "reason": "no unattempted captured layer remains"}
+                else:
+                    log.warning(f"sae: retrying {model!r} at {nxt!r} in place of {layer!r} "
+                                f"(substitution attempt {n_tried + 1} of "
+                                f"{cfg.sae.layer_substitution_attempts})")
+                    attempted[model].add(nxt)
+                    targets.append({"model": model, "layer": nxt,
+                                    "substitution_attempt": n_tried + 1,
+                                    "substitutes_for": layer})
+                    admission["substitution"] = {"attempted": True, "replacement": nxt,
+                                                 "reason": None}
+        elif admission["passed"] is None:
+            log.warning(f"sae: {key} admission undecidable -- {admission['reason']}")
+        if target.get("substitutes_for"):
+            admission["substitutes_for"] = target["substitutes_for"]
+            admission["substitution_attempt"] = int(target.get("substitution_attempt", 0))
+
         results[key] = {
             "checkpoint": str(ckpt_path), "d_in": sae.d_in, "dict_size": sae.dict_size,
             "k": sae.k, "n_train_rows": int(train_activations.shape[0]),
             "n_benchmark_rows": int(bench_activations.shape[0]), "n_real_data_rows": n_real,
             "train_mse_history": history, "reconstruction_fidelity": fidelity,
+            "reconstruction_fidelity_heldout": fidelity_heldout,
+            "dead_feature_rate_heldout": dead_rate_heldout,
+            "holdout_split": {k2: v2 for k2, v2 in split.items()
+                              if k2 not in ("train", "heldout")},
+            "admission": admission,
             "dead_feature_rate": dead_rate, "forecast_preservation": fp,
             "forecast_preservation_token": fp_token,
+            "forecast_preservation_heldout": fp_hold,
+            "forecast_preservation_token_heldout": fp_token_hold,
             "ground_truth_alignment": gt,
             "feature_ablation": fa,
             "feature_steering": fs,
@@ -722,6 +939,25 @@ def _screen_ranked_captured(sel: dict, available: list) -> list:
     by_layer = {l: s for l, s in zip(layers, scores) if s is not None}
     return sorted(available, key=lambda l: (-by_layer[l], l) if l in by_layer
                   else (float("inf"), l))
+
+
+def _next_substitute_layer(screen_sel: dict, store: ActivationStore, model: str,
+                           attempted: set) -> str | None:
+    """The best-scoring captured layer of `model` that has not been tried yet.
+
+    Ordered by `layer_screen`'s own score (`_screen_ranked_captured`) so a
+    substitution is the screen's next choice rather than an arbitrary
+    neighbour. Returns None when every captured layer has been attempted --
+    which is the honest answer, not a reason to retry one.
+    """
+    sel = (screen_sel or {}).get(model) or {}
+    try:
+        available = [l for l in store.layers(model) if l not in attempted]
+    except Exception:
+        return None
+    if not available:
+        return None
+    return _screen_ranked_captured(sel, available)[0]
 
 
 def _default_targets(cfg: PipelineConfig, store: ActivationStore) -> list:

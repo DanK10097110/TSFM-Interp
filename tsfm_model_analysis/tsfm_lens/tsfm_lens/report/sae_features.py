@@ -344,7 +344,7 @@ def ablation_effect_label(entry: Optional[dict]) -> str:
             f"({best_ratio:.1f}x its null)")
 
 
-def ablation_cell(entry: Optional[dict], max_series: int = 3) -> str:
+def ablation_cell(entry: Optional[dict], max_series: Optional[int] = None) -> str:
     """The with-and-without-the-feature forecasts for one feature.
 
     Each sparkline draws that series' own context and true continuation,
@@ -360,7 +360,14 @@ def ablation_cell(entry: Optional[dict], max_series: int = 3) -> str:
     """
     if not entry or not entry.get("scorable"):
         return "<span class='spark-missing'>not measured</span>"
-    fcs = (entry.get("forecasts") or [])[:max_series]
+    # `max_series=None` renders every pair the ablation pass kept. The old
+    # hardcoded 3 silently truncated a run started with a larger
+    # `--keep-forecasts`, and -- because the exemplar column beside it drew
+    # its own fixed 4 -- made the two columns disagree about how many series
+    # this feature was examined on (ROADMAP.md sec 28's item 7).
+    fcs = list(entry.get("forecasts") or [])
+    if max_series is not None:
+        fcs = fcs[:max_series]
     if not fcs:
         return "<span class='spark-missing'>no forecasts kept</span>"
     cells = []
@@ -386,7 +393,8 @@ def ablation_cell(entry: Optional[dict], max_series: int = 3) -> str:
 
 def feature_table_html(cards: list, series_lookup, context_len: int,
                        descriptions: Optional[dict] = None,
-                       ablations: Optional[dict] = None) -> str:
+                       ablations: Optional[dict] = None,
+                       overlay_series: Optional[int] = None) -> str:
     """The compact one-row-per-feature table (ROADMAP.md sec 26 B2/B3).
 
     `series_lookup` maps a series id to its raw values (or `None` when the
@@ -404,6 +412,12 @@ def feature_table_html(cards: list, series_lookup, context_len: int,
     what removing the feature does, and the forecasts with and without it.
     Both are omitted wholesale when no ablation pass has run for this
     target -- an empty column would read as "measured, no effect".
+
+    `overlay_series` caps the with/without column; `None` (the default)
+    draws every pair the artifact kept. The caller sets the exemplar
+    column's own count from the same number, so the two columns examine
+    the same series rather than differing by however far apart their two
+    hardcoded defaults happened to sit.
     """
     if not cards:
         return "<p class='blurb'>no features to illustrate.</p>"
@@ -444,7 +458,7 @@ def feature_table_html(cards: list, series_lookup, context_len: int,
                               "<span class='muted'>not a candidate</span>") + "</td>")
         row += f"<td>{ex_html}</td>"
         if has_abl:
-            row += f"<td>{ablation_cell(abl)}</td>"
+            row += f"<td>{ablation_cell(abl, overlay_series)}</td>"
         row += (f"<td>{provenance_cell(c['provenance_field'], c['provenance_rho'])}</td></tr>")
         body.append(row)
     return (f"<table class='tbl'><thead>{head}</thead>"
@@ -480,4 +494,45 @@ def term_legend_html(names: Sequence[str], heading: str = "") -> str:
     return (f"{heading}<table class='tbl'><thead><tr><th>In the data</th>"
             f"<th>Name</th><th>What it measures</th>"
             f"<th>What a high value means</th></tr></thead>"
+            f"<tbody>{''.join(rows)}</tbody></table>")
+
+
+def metric_legend_html(columns: Sequence[str], heading: str = "") -> str:
+    """A definition table for the COLUMNS a rendered table actually printed.
+
+    Added 2026-09-11 on user review: `ΔMASE sign` and `alignment mean abs
+    rho` each appeared exactly once in the whole rendered report, as a bare
+    `<th>`, with no definition anywhere in the document -- and those were
+    the two the reader could not act on. `term_legend_html` above could not
+    serve this: its columns are "what it measures / what a high value
+    means", which is the right shape for a property of the DATA and the
+    wrong shape for a statistic this pipeline computed, where the missing
+    half is the arithmetic.
+
+    Built from the headers passed in, never from `METRIC_DEFS.keys()`, for
+    the same reason `term_legend_html` is built from the figure's own axis:
+    a legend listing a column the table did not print describes a different
+    run. A column with no recorded definition is simply absent -- an
+    incomplete legend is visible where a placeholder gloss is not.
+    """
+    from ..sae.vocab import describe_metric
+
+    seen, rows = set(), []
+    for col in columns:
+        key = str(col).strip()
+        if not key or key in seen:
+            continue
+        seen.add(key)
+        d = describe_metric(key)
+        if d is None:
+            continue
+        rows.append(
+            f"<tr><td><code>{html.escape(key)}</code></td>"
+            f"<td>{html.escape(d.what)}</td>"
+            f"<td>{html.escape(d.how)}</td></tr>")
+    if not rows:
+        return ""
+    return (f"{heading}<table class='tbl'><thead><tr><th>Column</th>"
+            f"<th>What it means, and why it matters</th>"
+            f"<th>How it is calculated</th></tr></thead>"
             f"<tbody>{''.join(rows)}</tbody></table>")

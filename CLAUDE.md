@@ -1473,6 +1473,26 @@ heuristic relying on it would silently leave that weight at its pretrained
 value. `sae/ground_truth.py::permutation_null_alignment` is the
 complementary label-permutation null this same item asks for, contextualizing
 the SAE ground-truth alignment score's own multiple-comparisons inflation.
+⚠️ **What a twin actually IS differs per architecture, and three of the four
+measured are unusable as a causal floor (2026-09-10, `ROADMAP.md` §29).**
+"Simply skipping that step" for TimesFM leaves the library's own init in
+place, and `timesfm.torch.normalization.RMSNorm` sets `scale =
+torch.zeros(...)` with `forward` ending `normed_inputs * self.scale` — **no
+`1 + scale`** — so both residual branches are zeroed and **every block is an
+exact identity** (140 of 232 parameter tensors all-zero, all 20 captured
+layers bit-identical). An SAE on that twin sees the tokenizer embedding
+whatever layer is pinned. Chronos-2's and Chronos-Bolt's twins fail the other
+way: an untrained encoder contributes nothing to a scale-only output, so a
+patch moves the forecast by 6.5e-08 / 9.3e-08 of its own scale — numerically
+dead, and `std_across_horizon` ~0.0007/0.012 against `std_across_series`
+~1.056 says why (a flat constant times each series' own instance norm).
+Sundial's is the only twin that is live *and* not degenerate. **So the null
+remains sound for L1/L2/internals/ground-truth alignment — those read
+geometry and decodability, which an identity stack and a constant forecast
+both legitimately have — but a twin is NOT automatically a floor for a
+CAUSAL measurement**, which needs the patch to reach the head. Check
+`reach_probe` against a twin before spending a battery on it, and read §29.5
+before trusting its verdict.
 
 **Support matrix as built:**
 
@@ -4998,6 +5018,181 @@ measuring has not been measured** — run it over every machine fallback the
 module can produce, which is where both of these surfaced (113 → 192 of 192
 passing after the two pre-existing false refusals underneath them were also
 fixed).
+
+### 11.55 Widening the EVIDENCE can silence a guard that was never touched — and the tell is that the guard's own condition became universal
+
+Found 2026-09-10 (`ROADMAP.md` §28.18) while widening the narrator's
+descriptions to name every channel a feature moved, not only the strongest.
+The change was to the evidence packet and the sentence composer; `check_text`
+was not edited. It went inert anyway.
+
+`check_text`'s direction scan is **existential** — `has_up = any(v > 0 ...)`,
+`has_down = any(v < 0 ...)` over the whole packet — which is a correct and
+sufficient guard for as long as a packet licenses **one** channel. Widening
+the packet to every channel above its own null made **43 of the 57** licensing
+roles carry both signs at once, against **0** before. A packet carrying both
+signs licenses every direction word in the sentence, so for those roles the
+scan can no longer refuse anything. Two accepted descriptions promptly
+inverted a direction ("steepens its slope" for a trend of −2.15).
+
+**This is §11.53's lesson arriving from the other side.** There, a scan whose
+vocabulary lacked the word was indistinguishable at the output from no scan.
+Here the vocabulary was complete and the *licence* went universal — same
+observable (a guard that refuses nothing), different cause, and neither is
+visible in the guard's own diff, because the guard did not change. Closed by
+asking the same question per channel, of the one each verb actually governs.
+
+**Three lessons, and the second and third cost more than the first.**
+
+1. **When you widen what a packet asserts, re-derive every guard's
+   discriminating power against the widened packet, not against the old one.**
+   The cheap detector is a one-line cross-tab over the live artifacts: for each
+   guard, how many packets does its condition now hold vacuously for? Going
+   from 0 to 43 of 57 is not a threshold to retune, it is a guard that stopped
+   being one. This generalizes past text: any check of the form "does *some*
+   element satisfy P" weakens monotonically as the collection grows, so growing
+   a collection is a change to every existential check that reads it.
+
+2. **A narrowing added to prevent a false refusal must be measured, and it may
+   be worth nothing.** The replacement rule got four narrowings, each added
+   because without it the rule refused a correct sentence. Ablating the **real**
+   function over all 332 live texts scored them at 6 fallbacks + 1 accepted, 2
+   accepted, 1 accepted, and **0** — and the two halves of the third turned out
+   to be *individually redundant*, each stopping the live sentence alone, so
+   removing either changed nothing and only removing both re-opened the defect.
+   A narrowing with no measured effect is still defensible where a false refusal
+   is the expensive direction (§11.33/§11.35), but say so: its test fixture is
+   **constructed rather than observed**, and a docstring that implies otherwise
+   is a claim checked nowhere (§11.34).
+
+3. 🔴 **Ablate the real function, never a reimplementation of it.** The first
+   ablation harness re-coded the rule in the measurement script; its comma
+   handling differed from the real code's positional window, and it reported a
+   narrowing as load-bearing that the real function shows is not. One row of a
+   findings table would have been wrong. Monkeypatch the module's own constants
+   and call the shipped function — §11.41's discipline (validate the instrument
+   against a case whose answer you already know) applied to an ablation rather
+   than to a probe.
+
+**Two corollaries about planting, both self-inflicted in the same session, and
+both instances of §11.53's postscript** (*a plant that changes nothing is
+indistinguishable from a guard that works*). A plant that replaces only the
+first line of a multi-line statement yields a **syntax error**, and pytest
+reports `1 error` where an inert guard reports `N passed` — read the summary
+line, not just the exit status, or a broken plant is scored as an inert
+mechanism. And a fixture built on a vocabulary entry the scan can never reach
+is inert for a reason that has nothing to do with the mechanism: half of
+`_ADVERB_ONLY_DIRECTIONS` (`"up"`, `"down"`) is in neither verb set, so the
+first replacement fixture tested nothing. Where a set is deliberately a
+superset of what is currently reachable, **pin that it is not entirely
+unreachable** — that assertion is what catches the next fixture built on a
+dead member.
+
+---
+
+### 11.56 An absolute epsilon cannot separate "no effect" from "a numerically dead model", and the gate says the model is fine
+
+Found 2026-09-10 (`ROADMAP.md` §29) measuring whether each model's
+`random_init` twin can carry a causal battery. `analysis/response_reach.py`
+decides `reachable = cross_delta > _EPS` with `_EPS = 1e-12`. Two of the four
+twins are *numerically dead* — an untrained Chronos encoder contributes
+nothing to a scale-only output, so its forecast is a flat constant times each
+series' own instance norm and a patch moves it by **6.5e-08 / 9.3e-08 of the
+forecast's own scale**. Both clear 1e-12 by four orders of magnitude, so the
+gate returns `reachable: True`, a battery would run, and every channel would
+report an effect computed against float noise, scored against a null computed
+the same way. §11.37's shape once more: *absent* and *tiny* are different
+states, and an absolute threshold on a quantity whose scale is set by the
+model cannot tell them apart. The fix is a *relative* test — Δ against the
+forecast scale the probe already has — deliberately not made in the same pass,
+because moving that gate re-decides every recorded Stage 2 verdict (§2.1).
+
+🔴 **The same probe has a second, sharper failure, and it is the one that
+produced a wrong recorded claim.** `reach_probe` builds its replacement from
+*another captured layer's* clean tokens. On TimesFM's twin every block is an
+exact identity, so all 20 captured layers are bit-identical and the probe
+writes the tensor that was already there: `written_diff_vs_target` exactly
+0.0, `cross_delta` exactly 0.0. A prior session read that 0.0 as *the
+strongest possible evidence of inertness* and recorded the model as causally
+dead. Re-run with a provably-different replacement (clean × 1.5), the same
+twin at the same layer moves the forecast by **15.6% — the largest relative
+reach of the four models measured.** The probe was not reporting no reach; it
+was reporting that it could not construct a test, in a field
+(`written_differs`) that nothing downstream read — §11.49's "check that the
+field consumers read is the one that moved" at a new site.
+
+**Lesson.** A probe that derives its own stimulus from the system under test
+has a failure mode no threshold can catch: the system can make the stimulus
+degenerate. Every such probe needs to publish whether its stimulus was valid
+as a *separate, consumed* field, and a zero returned alongside an invalid
+stimulus must not be typed the same as a measured zero. Note which direction
+the damage ran here, because it is the expensive one and matches §11.33 /
+§11.35: the broken instrument did not error — it returned the cleanest,
+most decisive number in the table, and that number was written down.
+
+### 11.57 A normalization asserted by five labels and performed by none — and the symptom looks like missing data, not a wrong number
+
+Found 2026-09-11 by a user reading the report and asking why the feature x
+channel heatmap had "a bunch of blank space ... get rid of empty rows."
+
+`report/sae_roles.py::feature_channel_matrix` appended the larger-magnitude
+signed steering effect in **raw channel units** and never divided by the
+channel's null p95. Five surfaces said otherwise: the function's own docstring
+("signed, null-normalized effect"), the colorbar title (`signed effect (null
+units)`), the hovertemplate (`effect %{z:.2f}x null p95`), the figure caption,
+and the note's limitations line. `sae/roles.py:112` has always divided by
+`null_p95` for the **same quantity**, to build the clustering vector — so two
+surfaces computed from one measurement disagreed about its units, which is
+sec 11.54's shape at a new site.
+
+The nine response channels are not commensurable raw: measured across
+`runs/full_report_run_4model`, median cleared |value| runs from `trend`'s
+**0.000559** to `seasonal`'s **0.718163**, a span of **1285x**, and one shared
+RdBu scale is pinned by the largest. So **70.8% / 67.5% / 77.5% / 39.4%** of
+the four models' filled cells rendered within 5% of white, and 5/37, 3/32,
+13/55 and 1/86 rows had no visibly coloured cell at all. Post-fix the columns
+span **2.9x** and those figures are 2.2% / 2.0% / 11.2% / 4.0% and 0/0/2/0.
+
+🔴 **The rows were never empty, which is why nobody caught it.**
+`model_feature_channel_matrix` admits a row only when `clears[i].any()`, so
+every drawn row cleared its null somewhere -- a `trend` effect of 0.000438
+against that channel's own p95 of **0.000118** is 3.7x its null, rendered as
+white. The defect therefore presented as *absent data*, a state the figure
+legitimately has (a non-clearing cell is deliberately blank), rather than as a
+wrong value. A reader -- and every review -- reads a pale cell as "nothing was
+measured here", which is exactly what the figure's own design told them to
+read it as.
+
+**Fixed by making the labels true, not by editing them to match the code**, and
+the p95 is read from each candidate's **own** channel record rather than passed
+in as an argument, so a caller structurally cannot pair one target's effects
+with another target's null. Verified from **rendered Plotly z-arrays**
+(sec 11.48), not the diff.
+
+**Three lessons, and the third is the one that generalizes past this figure.**
+(1) A label that names a *transformation* ("null-normalized", "per capita",
+"z-scored", "log") is a claim about code and must be tested like one --
+sec 11.43's lesson for an error message's flag, applied to a unit. The cheap
+check is a cross-tab: recompute the labelled quantity independently and diff.
+(2) When two modules compute the same quantity for different consumers, the
+one whose output is *rendered* is the one nobody verifies, because the other
+one's output feeds a number (a silhouette, a cluster) that would look wrong.
+(3) **A shared colour scale is a silent aggregator.** Any heatmap pooling
+quantities on different natural scales is one missing normalization away from
+showing a single column and calling the rest blank, and the failure is
+invisible in every per-cell test -- the values are individually correct. Assert
+the *spread across columns*, not just each cell: the pinned test here is that
+two features moving different channels by the same multiple of their own nulls
+render at the same intensity.
+
+**Postscript, and it is sec 11.53's postscript again.** Fixing this made the
+existing `test_sae_roles_report.py` fixtures inert -- they carried no
+`null_p95` at all, so after the fix they exercised an all-NaN path and their
+assertions stopped discriminating (the tell was 4 new "Mean of empty slice"
+warnings in an otherwise-green run). A fixture with *uniform* nulls would have
+been just as inert: it cannot distinguish a normalized matrix from a raw one
+scaled by a constant. Where a fix introduces a per-item divisor, every fixture
+needs divisors that **differ**, or the tests pass against the defect.
 
 ---
 

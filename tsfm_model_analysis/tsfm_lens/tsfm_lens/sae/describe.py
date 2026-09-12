@@ -85,6 +85,12 @@ MAX_ATTEMPTS = 3
 SEED = 0
 MAX_NEW_TOKENS = 64
 MAX_WORDS = 40
+# The most channels the deterministic sentence will name beyond the
+# strongest one. Not a claim that the rest do not matter -- the roles
+# table's "also moves" column renders every one of them -- only the point
+# past which a forty-word sentence stops being readable. `machine_fallback`
+# steps DOWN from here whenever the composed sentence would overrun.
+_MAX_EXTRA_CHANNELS = 4
 MAX_SENTENCES = 2
 
 
@@ -663,10 +669,27 @@ _TRAILING_DIRECTION = ("upward", "upwards", "downward", "downwards", "higher",
 # forecast, raising its level" is licensed whenever `level` is in the
 # packet, and rejecting it would be the false-refusal failure CLAUDE.md
 # sec 11.33/sec 11.35 warn is the expensive direction.
-_SIGNED_CHANNEL_NOUNS = ("level", "levels", "trend", "trends", "slope",
-                         "spread", "spreads", "dispersion", "range",
-                         "seasonality", "seasonal", "error", "errors",
-                         "centroid", "flatness")
+# Which channel each of those nouns names. The tuple below is DERIVED from
+# this map rather than listed beside it: the per-channel direction rule
+# (`_channel_direction_conflict`) needs the mapping, the two horizon rules
+# need only the membership, and two hand-maintained lists of the same
+# vocabulary are the sec 11.53 shape -- a scan missing a word is
+# indistinguishable from no scan.
+_CHANNEL_NOUNS = {
+    "level": "level", "levels": "level",
+    "trend": "trend", "trends": "trend", "slope": "trend",
+    "spread": "dispersion", "spreads": "dispersion",
+    "dispersion": "dispersion", "range": "dispersion",
+    "seasonality": "seasonal", "seasonal": "seasonal",
+    "error": "mase", "errors": "mase",
+    # "spectrum" is not decoration: it is what the live run actually wrote
+    # for this channel ("lowering its frequency spectrum"), and without it
+    # that direction word binds to the previous noun instead and refuses a
+    # correct sentence.
+    "centroid": "spectral_centroid", "spectrum": "spectral_centroid",
+    "flatness": "flatness",
+}
+_SIGNED_CHANNEL_NOUNS = tuple(_CHANNEL_NOUNS)
 
 # Denials of any effect. A contradiction of the packet when a channel did
 # clear its null -- the mirror image of the causal-overreach rule.
@@ -831,6 +854,107 @@ _HORIZON_THEN_DIRECTION = re.compile(
 # ---------------------------------------------------------------------------
 # The guard.
 # ---------------------------------------------------------------------------
+
+# Direction words that are adverbs only, never verbs governing an object.
+# `_TRAILING_DIRECTION` cannot be reused here: it deliberately includes
+# "raising"/"lowering" for the horizon rule's reverse-order construction,
+# and those two ARE verbs governing a following object in every other
+# sentence -- treating them as adverbs bound six correct clauses backwards
+# to the wrong noun ("elevating forecast error, lowering the overall
+# level" was read as lowering the ERROR).
+_ADVERB_ONLY_DIRECTIONS = frozenset(
+    {"upward", "upwards", "downward", "downwards", "up", "down"})
+
+# How far a direction verb may reach for its object. Five words covers
+# "increases the forecast's overall level"; widening it further starts
+# crossing clause boundaries, and a wrong binding here is a false refusal
+# of a correct sentence, which sec 11.33/sec 11.35 record as the expensive
+# direction.
+_DIRECTION_OBJECT_WINDOW = 5
+
+# Words AND the punctuation/conjunctions that end a clause, because the
+# scan below must not reach past one. "flattens out more, and worsens
+# errors" is intransitive and its verb governs nothing; without a boundary
+# the scan carries "flattens" across the comma onto "errors" and refuses a
+# correct sentence.
+_WORD = re.compile(r"[a-z0-9_]+|[,;]")
+_CLAUSE_BOUNDARIES = frozenset({",", ";", "and", "or", "but", "while",
+                                "then", "whereas", "though"})
+
+
+def _licensed_directions(ev: Evidence) -> dict:
+    """Per channel, the set of directions some battery actually measured.
+
+    BOTH batteries, merged the same way `check_text`'s existential scan
+    already merges them and for the same recorded reason: the injection and
+    ablation interventions can clear one channel in OPPOSITE directions,
+    which is a finding about the feature rather than a contradiction, and
+    keeping only one of them makes the other unsayable -- including in this
+    module's own ablation fallback, which is how the first version of this
+    rule was caught refusing six of them (sec 11.51 lesson 3).
+    """
+    undirected = (getattr(ev, "undirected_channels", None) or frozenset())
+    out: dict = {}
+    for src in (ev.channels, ev.ablation_channels):
+        for name, value in (src or {}).items():
+            if name in CHANNEL_VERB or name in undirected:
+                continue
+            out.setdefault(name, set()).add(1 if float(value) > 0 else -1)
+    return out
+
+
+def _channel_direction_conflict(norm: str, ev: Evidence):
+    """A direction verb attached to a channel that moved the other way.
+
+    The existing up/down scan is EXISTENTIAL -- `has_up = any(v > 0 ...)`
+    over the whole packet -- which was sufficient while a role packet
+    licensed one channel. Widening the packet to every channel above its
+    own null (sec 11.54, ROADMAP.md sec 28.18) made 43 of the 57 licensing
+    roles on `runs/full_report_run_4model` carry both signs at once, where
+    none did before; for those the scan cannot refuse any direction word
+    anywhere, which is exactly sec 11.53's headline shape -- a scan that
+    cannot discriminate is indistinguishable at the output from no scan.
+    Two accepted sentences duly inverted a direction ("steepens its slope"
+    for a trend of -2.15).
+
+    Deliberately narrow. Only the VERB -> OBJECT construction is judged:
+    the verb must precede the noun it is checked against, with no other
+    direction word between them. Reverse-order and coordinated-list
+    constructions ("pulling the overall level, flatness and spread
+    upward") are left alone, because binding across them mis-attached
+    correct clauses in measurement -- the guard therefore under-refuses by
+    construction and says so, rather than trading a real defect for a
+    false refusal.
+    """
+    allowed = _licensed_directions(ev)
+    if not allowed:
+        return None
+    words = _WORD.findall(norm)
+    nouns = {i: _CHANNEL_NOUNS[w] for i, w in enumerate(words)
+             if w in _CHANNEL_NOUNS}
+    directions = {i: (1 if w in _UP_SET else -1) for i, w in enumerate(words)
+                  if w in _UP_SET or w in _DOWN_SET}
+    for i, sign in sorted(directions.items()):
+        if words[i] in _ADVERB_ONLY_DIRECTIONS:
+            continue
+        channel = None
+        for j in range(i + 1, min(i + 1 + _DIRECTION_OBJECT_WINDOW, len(words))):
+            if j in directions or words[j] in _CLAUSE_BOUNDARIES:
+                break
+            if j in nouns:
+                channel = nouns[j]
+                break
+        if channel is None:
+            continue
+        measured = allowed.get(channel)
+        if measured and sign not in measured:
+            return (words[i], channel, "upward" if sign > 0 else "downward")
+    return None
+
+
+_UP_SET = frozenset(UP_VERBS)
+_DOWN_SET = frozenset(DOWN_VERBS)
+
 
 def _signed_channels(ev: Evidence) -> dict:
     """Both batteries' cleared channels, in the one shared sign convention.
@@ -1043,6 +1167,18 @@ def check_text(text: str, ev: Evidence) -> str:
             return (f"the answer said {term!r}, but no channel in the evidence moved "
                     "downward; a near or far horizon effect has a size, not a direction")
 
+    # The two scans above ask whether SOME channel moved that way. Once a
+    # packet carries channels in both directions they can no longer refuse
+    # anything, so the same question is asked again per channel, of the one
+    # the verb actually governs.
+    hit = _channel_direction_conflict(norm, ev)
+    if hit:
+        verb, channel, said = hit
+        gloss = CHANNEL_GLOSS.get(channel, channel)
+        return (f"the answer said {verb!r} of {gloss}, but the evidence has that "
+                f"channel moving the other way, not {said}; give each channel the "
+                "direction its own measurement shows")
+
     # The same rule for the `exemplar_profile` clause. Three states, not two,
     # for the reason `channels_measured` exists: a packet with no profile did
     # not measure this and must not be described as having found nothing
@@ -1186,9 +1322,83 @@ def _conjugate(verb: str, plural: bool) -> str:
     return verb[:-1] if (plural and verb.endswith("s")) else verb
 
 
-def _channel_clause(ev: Evidence, plural: bool = False) -> str:
+def _short_gloss(name: str) -> str:
+    """The gloss as it reads in a list whose subject is already the forecast.
+
+    Every gloss but two begins "the forecast's", and repeating that four
+    times in one sentence spends eight of forty words restating the subject
+    -- which is not a style point here but a capacity one, since the words
+    it costs are the channels the sentence then cannot name. The lead clause
+    still uses the full gloss, so the referent is established before any
+    "its" appears. Purely a rewrite of the same gloss: nothing is dropped or
+    renamed, so the vocabulary `check_text` scans is unchanged.
+    """
+    gloss = CHANNEL_GLOSS.get(name, name)
+    prefix = "the forecast's "
+    if gloss.startswith(prefix):
+        return "its " + gloss[len(prefix):]
+    return gloss
+
+
+def _extra_channel_phrase(ev: Evidence, items: list, plural: bool) -> str:
+    """The channels after the strongest one, each under ITS OWN direction.
+
+    The clause used to name the runner-up as a bare noun -- "and also the
+    forecast's overall level" -- which says a second thing moved without
+    saying which way, and stopped there however many more had cleared. On
+    `runs/full_report_run_4model` 55 of the 57 roles that license a channel
+    move two or more above their own null and 45 move four or more, so that
+    was a seventh of what had been measured about the KIND of change
+    (ROADMAP.md sec 28.18).
+
+    Grouping by direction rather than listing verb-noun pairs is what keeps
+    it inside `MAX_WORDS`: five channels cost five nouns and at most three
+    verbs. Each verb comes from `_verbs`, i.e. from the sign of that
+    channel's own mean, so this clause cannot attach a direction to a
+    channel that moved the other way -- the defect that made the generated
+    sentence unreliable at these widths in the first place.
+    """
+    groups: dict = {}
+    for name, value in items:
+        up, down = _verbs(ev, name)
+        verb = up if float(value) >= 0 else down
+        groups.setdefault(verb, []).append(_short_gloss(name))
+    parts = []
+    for verb, glosses in groups.items():
+        parts.append(f"{_conjugate(verb, plural)} {_join(glosses)}")
+    return _join(parts)
+
+
+def _join(parts: list) -> str:
+    """`a`, `a and b`, `a, b and c` -- an Oxford-comma-free serial list.
+
+    Local rather than an f-string at each site because the fallback is held
+    to `MAX_WORDS` by its own guard, and a list built three different ways
+    is three different word counts.
+    """
+    parts = [p for p in parts if p]
+    if not parts:
+        return ""
+    if len(parts) == 1:
+        return parts[0]
+    return ", ".join(parts[:-1]) + " and " + parts[-1]
+
+
+def _channel_clause(ev: Evidence, plural: bool = False,
+                    max_extra: int = 4) -> str:
     """The strongest channel, verbalized with its own honest verb and its
-    effect in multiples of the random-direction null."""
+    effect in multiples of the random-direction null, followed by every
+    other channel that cleared -- up to `max_extra` of them, strongest
+    first.
+
+    `max_extra` is a WORD budget, not a claim about how many channels
+    matter: `machine_fallback` lowers it until the composed sentence fits
+    `MAX_WORDS`, since a nine-channel role cannot be spelled out in forty
+    words. Truncating is safe here only because the sentence never claims
+    exhaustiveness -- an exclusivity claim is a separate, separately-guarded
+    thing (`NO_OTHER_EFFECT_TERMS`) -- and because the roles table beside it
+    renders the full set in its "also moves" column.
+    """
     items = sorted((ev.channels or {}).items(), key=lambda kv: -abs(float(kv[1])))
     if not items:
         return ""
@@ -1197,13 +1407,14 @@ def _channel_clause(ev: Evidence, plural: bool = False) -> str:
     up, down = _verbs(ev, name)
     verb = _conjugate(up if float(value) >= 0 else down, plural)
     clause = f"{verb} {gloss} ({_fmt(value)} times the random-direction null)"
-    if len(items) > 1:
-        second = CHANNEL_GLOSS.get(items[1][0], items[1][0])
-        clause += f", and also {second}"
+    extra = items[1:1 + max(int(max_extra), 0)]
+    if extra:
+        clause += ", and also " + _extra_channel_phrase(ev, extra, plural)
     return clause
 
 
-def _ablation_clause(ev: Evidence, plural: bool = False) -> str:
+def _ablation_clause(ev: Evidence, plural: bool = False,
+                     max_extra: int = 4) -> str:
     """The ablation battery's strongest channel, said where it was measured.
 
     Same shape as `_channel_clause`, and deliberately NOT merged with it: the
@@ -1220,8 +1431,17 @@ def _ablation_clause(ev: Evidence, plural: bool = False) -> str:
     gloss = CHANNEL_GLOSS.get(name, name)
     up, down = _verbs(ev, name)
     verb = _conjugate(up if float(value) >= 0 else down, plural)
-    return (f"{verb} {gloss} on the series {'they fire' if plural else 'it fires'} "
-            f"on ({_fmt(value)} times the random-direction null)")
+    clause = (f"{verb} {gloss} on the series "
+              f"{'they fire' if plural else 'it fires'} "
+              f"on ({_fmt(value)} times the random-direction null)")
+    # Same widening as `_channel_clause`, and it has to be here too rather
+    # than only there: `machine_fallback` prefers the ablation clause when
+    # both exist, so a fix applied to one of the two sites leaves the
+    # preferred one narrow (sec 11.39 -- fix by symbol, verify by grep).
+    extra = items[1:1 + max(int(max_extra), 0)]
+    if extra:
+        clause += ", and also " + _extra_channel_phrase(ev, extra, plural)
+    return clause
 
 
 def _structural_clause(ev: Evidence) -> str:
@@ -1259,9 +1479,27 @@ def machine_fallback(ev: Evidence) -> str:
     `check_text` for the packet it was built from.
     """
     subject, plural = _subject(ev)
-    chan = _channel_clause(ev, plural)
-    abl = _ablation_clause(ev, plural)
     struct = _structural_clause(ev)
+
+    # How many channels the sentence can name is a MEASURED ceiling, not a
+    # constant: it depends on this packet's own glosses, its subject, and
+    # whether it carries a structural clause. Guessing one number would
+    # either truncate a short sentence that had room or overrun `MAX_WORDS`
+    # on a long one -- and overrunning means the guard rejects the module's
+    # own fallback, which sec 11.51 lesson 3 is the tell for a guard, and
+    # here would leave the packet with nothing to render at all. So compose
+    # at the widest and step down until it fits (sec 11.35: compute the
+    # ceiling, do not derive it).
+    for max_extra in range(_MAX_EXTRA_CHANNELS, -1, -1):
+        chan = _channel_clause(ev, plural, max_extra)
+        abl = _ablation_clause(ev, plural, max_extra)
+        lead_try = abl or chan
+        if not lead_try:
+            break
+        n_words = len(f"{subject} {lead_try}"
+                      f"{', ' + struct if struct else ''}.".split())
+        if n_words <= MAX_WORDS:
+            break
 
     # The ablation clause wins when both exist, rather than being appended.
     # It is the more relevant of the two -- it measures the feature where it

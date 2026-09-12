@@ -22,6 +22,7 @@ import torch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from tsfm_lens.analysis.layer_screen import (
+    _select_top_with_spacing,
     factor_emergence_scores,
     factor_probe_matrix,
     greedy_coverage_selection,
@@ -256,6 +257,33 @@ def test_select_layers_dispatch_validates_inputs():
     print("select_layers dispatch validation test passed")
 
 
+def test_selection_is_pure_top_k_and_admits_adjacent_layers():
+    """The default (min_gap=1) must be top-k by score and nothing else.
+
+    The plant is the real failure the spacing rule caused on
+    `runs/full_report_run_4model`: the two highest-scoring layers are
+    ADJACENT (idx 8, 9) and two layers score NEGATIVE. A gap rule rejects
+    idx 9 for adjacency to 8 and admits a negative-scoring layer instead,
+    so this fixture discriminates -- it fails against min_gap=2.
+    """
+    scores = np.array([-0.5, -0.4, -0.3, -0.2, -0.1, 0.4, 0.5, 0.6, 5.0, 4.0])
+
+    chosen = _select_top_with_spacing(scores, budget=3, min_gap=1)
+    assert chosen == [7, 8, 9], chosen
+    assert all(scores[i] > 0 for i in chosen)
+
+    spaced = _select_top_with_spacing(scores, budget=3, min_gap=2)
+    assert 9 not in spaced, spaced
+    assert any(scores[i] < 0 for i in spaced), (spaced, "gap rule must admit a negative score")
+
+    ranked = list(np.argsort(-scores)[:4])
+    assert sorted(int(i) for i in ranked) == _select_top_with_spacing(scores, budget=4, min_gap=1)
+
+    from tsfm_lens.config import LayerScreenConfig
+    assert LayerScreenConfig().min_gap == 1, "the production default must be pure top-k"
+    print("pure top-k selection test passed")
+
+
 # ---------------------------------------------------------------------------
 # Bake-off scoring (§6.1.1-E)
 # ---------------------------------------------------------------------------
@@ -371,6 +399,7 @@ if __name__ == "__main__":
     test_factor_emergence_weak_factors_no_longer_dilute_strong_late_peak()
     test_factor_probe_matrix_drops_unusable_columns()
     test_select_layers_dispatch_validates_inputs()
+    test_selection_is_pure_top_k_and_admits_adjacent_layers()
     test_recall_at_budget_perfect_and_disjoint()
     test_parsimony_curve_reaches_full_mass()
     test_null_curves_oracle_dominates_and_sums_to_one()

@@ -50,3 +50,6 @@ tsfm_benchmark/outputs/*.parquet
 tsfm_benchmark/outputs/*.npz
 tsfm_benchmark/outputs/*.pkl
 tsfm_benchmark/outputs/*.csv
+
+tsfm_model_analysis/tsfm_lens/.pytest_tmp/
+tsfm_model_analysis/tsfm_lens/configs/

@@ -344,3 +344,69 @@ def test_build_evidence_ties_the_two_together_for_every_role():
     src = inspect.getsource(R.build_evidence)
     assert "clears_null=bool(role_chans)" in src
     assert 'clears_null=bool(role.get("clears_null"))' not in src
+
+
+# ---------------------------------------------------------------------------
+# Every channel that cleared, not only the argmax (ROADMAP.md sec 28.18)
+# ---------------------------------------------------------------------------
+
+def _role_with_means(means, dominant=None, clears=True):
+    """A role record carrying its full per-channel mean vector."""
+    dom = dominant or max(means, key=lambda k: abs(means[k]))
+    return {"dominant_channel": dom, "dominant_effect_null_units": means[dom],
+            "channel_means_null_units": dict(means), "clears_null": clears,
+            "n_atoms": 7, "role": 0, "name": "r"}
+
+
+def test_every_channel_above_its_own_null_is_licensed_not_only_the_largest():
+    """The defect: a role measurably moving four channels was described
+    by one of them, because the packet carried the argmax alone."""
+    role = _role_with_means({"horizon_shape_far": 2.2, "level": -1.8,
+                             "dispersion": 1.4, "trend": 0.3})
+    out = R._role_channels(role, {}, {})
+    assert set(out) == {"horizon_shape_far", "level", "dispersion"}
+    assert out["level"] == pytest.approx(-1.8)
+
+
+def test_a_sub_null_channel_is_still_excluded_when_others_clear():
+    """Widening WHAT is licensed must not widen the bar that licenses it."""
+    role = _role_with_means({"horizon_shape_far": 2.2, "trend": 0.9})
+    assert set(R._role_channels(role, {}, {})) == {"horizon_shape_far"}
+
+
+def test_a_role_whose_dominant_is_sub_null_licenses_nothing_even_with_means():
+    """sec 11.54's rule is unchanged: the argmax being sub-null means every
+    channel is, so the honest packet is empty. A widened reader that
+    checked the vector FIRST would resurrect all 17 of those roles."""
+    role = _role_with_means({"horizon_shape_far": 0.4, "level": 0.3})
+    assert R._role_channels(role, {}, {}) == {}
+
+
+def test_an_artifact_without_the_vector_keeps_the_dominant_only_behaviour():
+    """Degrade, don't recompute: a roles.json written before this field
+    recorded one channel, and one channel is all it may claim."""
+    assert R._role_channels(_role(2.5), {}, {}) == {"horizon_shape_far": 2.5}
+
+
+def test_an_empty_vector_is_treated_as_absent_rather_than_as_nothing_cleared():
+    role = _role_with_means({"horizon_shape_far": 2.5})
+    role["channel_means_null_units"] = {}
+    assert R._role_channels(role, {}, {}) == {"horizon_shape_far": 2.5}
+
+
+def test_role_table_records_the_mean_of_every_channel_not_just_the_argmax():
+    """The producer half. Two members, so the recorded value must be their
+    MEAN -- a table that stored one member's row would pass a one-member
+    fixture."""
+    channels = ["trend", "level"]
+    X = np.array([[3.0, -2.0], [1.0, -4.0]])
+    cands = [{"feature": 0, "clearing_channels": ("trend",)},
+             {"feature": 1, "clearing_channels": ("trend",)}]
+    rows = role_table(cands, X, {"labels": np.array([0, 0])}, channels,
+                      {"trend": 1.0, "level": 1.0})
+    means = rows[0]["channel_means_null_units"]
+    assert means["trend"] == pytest.approx(2.0)
+    assert means["level"] == pytest.approx(-3.0)
+    # The legacy fields must be untouched by the addition (sec 11.39).
+    assert rows[0]["dominant_channel"] == "level"
+    assert rows[0]["dominant_effect_null_units"] == pytest.approx(-3.0)

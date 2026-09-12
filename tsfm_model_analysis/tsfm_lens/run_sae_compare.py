@@ -12,7 +12,10 @@ This writes two things, in that order of trustworthiness.
 `capability_profile` is a pure reduction -- per model, which forecast
 channels its roles causally move, which structural properties they track,
 and how many of its roles found a counterpart. No model is loaded and no
-number is re-derived; it is a join over `sae/roles.json`, the ablation
+number is re-derived; it is a join over the roles artifact (`sae/
+roles.json`'s producer output, read here as `sae/roles_injection.json` --
+ROADMAP.md sec 30, Stage 4, 2026-09-11: superseded by `sae/concepts.json`
+throughout the report proper, and archived under this name), the ablation
 artifacts and the role-correspondence table. It is the part to read first
 and the part to disagree with, because every cell traces to an artifact.
 
@@ -43,6 +46,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from tsfm_lens.sae.compare import (
+    DETERMINISTIC_BY_DESIGN,
     compare_models,
     contrast_chunks,
     model_capability_profile,
@@ -66,13 +70,27 @@ def load_inputs(run_dir: Path, cosine_threshold: float = 0.5,
     comparable depths, and this CLI compares every pair the roles file
     holds, which is the more inclusive choice and is stated in the artifact.
     """
-    roles_path = run_dir / "sae" / "roles.json"
+    # ROADMAP.md sec 30 (Stage 4, 2026-09-11): the report's own SAE section
+    # now reads `sae/concepts.json` (ablation-space clustering) instead of
+    # this artifact; this CLI's own comparison is unaffected in mechanism
+    # and simply reads the archived, injection-space artifact under its
+    # post-supersession name.
+    roles_path = run_dir / "sae" / "roles_injection.json"
     if not roles_path.exists():
         raise SystemExit(
             f"{roles_path} does not exist -- run `run_sae_roles.py --run "
             f"{run_dir} --all` first; role clustering is Component B and is "
             f"not produced by a pipeline run")
     roles = json.loads(roles_path.read_text(encoding="utf-8"))
+    # ROADMAP.md sec 30 (Stage 4/5, 2026-09-11): a superseded `roles_
+    # injection.json` carries two top-level metadata keys
+    # (`superseded_by`/`superseded_reason`) alongside the per-target
+    # records -- neither is a "model/layer" target and neither value is a
+    # dict, so both would crash `v.get("model")` below and the
+    # `target.split("/", 1)` unpacking further down. Filter to dict-valued
+    # entries only, which is every actual target record and nothing else,
+    # forward-compatible with any future metadata key this artifact gains.
+    roles = {k: v for k, v in roles.items() if isinstance(v, dict)}
     models = sorted({v.get("model") for v in roles.values() if v.get("model")})
     if len(models) < 2:
         raise SystemExit(
@@ -117,6 +135,30 @@ def _summary_state(p: dict) -> str:
     if p.get("summary_generated"):
         return "measured (the generated attempt was refused)"
     return "measured"
+
+
+def _chunk_states(comparison: dict) -> dict:
+    """Chunks tallied BY STATE, because a pooled rate here means nothing.
+
+    An unscorable pair chunk renders the deterministic sentence by design
+    (sec 28.12's precedent, applied to the one chunk kind whose only content
+    is the measured reason it could not be scored), so it is `accepted:
+    false` on a run where nothing failed. Pooling it with the narrated
+    chunks reported 38 of 63 (60.3%) for a run whose narrated acceptance is
+    38 of 39 -- the same collapse `_summary_state` above exists to prevent,
+    one level down, and the same by-state discipline sec 26 C already
+    requires of the narrator's own rates.
+    """
+    out = {"narrator": 0, "measured (by design)": 0, "fallback (refused)": 0}
+    for p in comparison["pairs"]:
+        for c in p["chunks"]:
+            if c.get("accepted"):
+                out["narrator"] += 1
+            elif str(c.get("reason") or "").startswith(DETERMINISTIC_BY_DESIGN[:24]):
+                out["measured (by design)"] += 1
+            else:
+                out["fallback (refused)"] += 1
+    return out
 
 
 def main() -> None:
@@ -164,12 +206,18 @@ def main() -> None:
     out.write_text(json.dumps(doc, indent=2, default=str), encoding="utf-8")
 
     chunks = sum(len(p["chunks"]) for p in comparison["pairs"])
-    acc = sum(1 for p in comparison["pairs"] for c in p["chunks"] if c["accepted"])
+    states = _chunk_states(comparison)
+    narrated = states["narrator"] + states["fallback (refused)"]
     log.info("sae compare: wrote %s", out)
     print(f"\nwrote {out}")
     print(f"  {len(profile['models'])} models, {len(comparison['pairs'])} pairs, "
-          f"{chunks} chunks, {acc} chunk sentences accepted "
-          f"({acc / chunks:.1%})" if chunks else "  no chunks")
+          f"{chunks} chunks")
+    if narrated:
+        print(f"    narrated:            {states['narrator']:3d} of {narrated} accepted "
+              f"({states['narrator'] / narrated:.1%}), "
+              f"{states['fallback (refused)']} refused and fell back")
+    print(f"    measured by design:  {states['measured (by design)']:3d} "
+          f"(unscorable pairs -- the measured reason IS the content)")
     for p in comparison["pairs"]:
         print(f"  {p['model_a']:14s} vs {p['model_b']:14s} "
               f"agree {p['n_agree']:2d} / differ {p['n_disagree']:2d} / "

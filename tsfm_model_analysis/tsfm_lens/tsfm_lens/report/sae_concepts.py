@@ -1,0 +1,352 @@
+"""ROADMAP.md sec 30.4 -- rendering for CONCEPTS (ablation-space feature
+clustering), the replacement for "roles" (injection-space clustering,
+`sae_roles.py`) throughout the report. sec 30.1 measured concepts
+clustering decisively better in the space that actually matters for a
+causal claim (mean silhouette 0.450 vs roles' -0.235 across every target
+checked, NEW beats OLD at 13 of 13) -- see `sae/concepts.py`'s own module
+docstring for the clustering mechanism and `ROADMAP.md` sec 30 for the full
+comparison.
+
+One public entry point, `sae_concepts_block`, mirroring `_sae_roles_block`'s
+exact signature (`(cfg, run_dir, findings, model_names) -> str`) so
+`report.py::_sec_sae` can call it the same way. Three blocks, per sec
+30.4.5:
+
+  1. Concept universality -- how many of this run's concepts are universal
+     / partial / model-specific (`derived.concept_universality`), plus the
+     pairwise reciprocal-transfer-rate heatmap (`derived.concept_transfer_
+     matrix`).
+  2. Concept cards -- the top `cfg.sae.concept_cards_max` concepts by
+     `derived.concept_cards`'s own `interest` score, grouped by
+     universality bucket, each rendering its full causal profile, which
+     other models reach it (reciprocally or not), member-clearing counts,
+     a representative member's own with/without-feature forecast overlay
+     (reusing `sae_features.py::ablation_cell` -- sec 27's own battery
+     already renders exactly this contrast for a single feature; a concept
+     card reuses it rather than inventing a second visualization for the
+     same nine-channel evidence), and its name/description.
+  3. Misfits -- one collapsed block per model, from `derived.misfit_table`,
+     rendering a misfitting member's OWN top channels beside its concept's,
+     since the point of the section is the divergence between the two
+     (`sae/misfits.py`'s own docstring).
+
+Degrades exactly like `_sae_roles_block`: returns `""` outright when
+`sae/concepts.json` does not exist (a standalone artifact, sec 30.10 -- no
+pipeline stage builds it), and every one of the three blocks degrades
+independently and states which of "not measured" / "measured, none" /
+"measured, positive" applies rather than collapsing the three (`CLAUDE.md`
+sec 11.37) -- most concretely in block 3, where the real run this module
+was built against found a genuine, measured ZERO misfits (matching sec
+30.1's own "no orphans" finding), which must render differently from
+"misfit detection never ran here".
+
+Cross-module helpers (`Finding`, `_next_claim_id`, `_details`, `_note`,
+`_table`, `_frag`, `_depth_ordered_targets`) are imported from `.report`
+LAZILY, inside `sae_concepts_block` itself, not at module level --
+`report.py` calls this module the same way it calls `sae_roles.py`/
+`sae_features.py` (a local import inside `_sec_sae`), and a module-level
+import here would be the exact two-module import cycle `CLAUDE.md` sec
+11.52 already found and fixed once in `sae/matching.py`/`sae/role_
+matching.py`: this module needs names `report.py` defines, and `report.py`
+needs this module's own entry point.
+"""
+
+from __future__ import annotations
+
+import html
+from pathlib import Path
+from typing import Optional
+
+from . import derived
+from .derived import load_json_or_none as _load_json_or_none
+
+__all__ = ["sae_concepts_block"]
+
+
+def _profile_html(profile: list) -> str:
+    """A concept's causal profile as a compact list: channel, signed effect
+    (in null units), and how many of its members individually clear that
+    channel -- the same fields `concepts.py::concept_table` already filters
+    to "worth naming" (>= 1.0 null unit), so nothing here re-derives a
+    threshold `concepts.py` already applied."""
+    if not profile:
+        return "<span class='muted'>no channel cleared 1.0 null units</span>"
+    parts = []
+    for p in profile:
+        val = p.get("signed_null_units")
+        parts.append(f"{html.escape(str(p.get('channel')))} "
+                     f"{float(val):+.2f}x null ({int(p.get('n_members_clearing', 0))} members)")
+    return "; ".join(parts)
+
+
+def _reach_html(reach: dict, n_other_models) -> str:
+    """Which other models this concept's top-firing series are grouped the
+    same way by, reciprocally or not -- three states, never two: `None`
+    means transfer was never measured for this run; `0` means this run has
+    no other model to check against; otherwise every OTHER model is either
+    named as reciprocal, named as non-reciprocal, or -- if `reach` never
+    recorded a value for it at all -- counted as untested, since a model
+    absent from `reach` is a different claim from one present and `False`
+    (`CLAUDE.md` sec 11.37)."""
+    if n_other_models is None:
+        return "<span class='muted'>transfer not measured</span>"
+    n_other_models = int(n_other_models)
+    if n_other_models <= 0:
+        return "<span class='muted'>no other model in this run</span>"
+    reach = reach or {}
+    recip = sorted(m for m, v in reach.items() if v)
+    non_recip = sorted(m for m, v in reach.items() if not v)
+    untested = n_other_models - len(reach)
+    bits = []
+    if recip:
+        bits.append(f"reciprocally reaches {', '.join(html.escape(m) for m in recip)}")
+    if non_recip:
+        bits.append(f"reaches non-reciprocally: {', '.join(html.escape(m) for m in non_recip)}")
+    if untested > 0:
+        bits.append(f"{untested} other model(s) not tested against")
+    return "; ".join(bits) if bits else "reaches no other model"
+
+
+def _representative_ablation_entry(candidates: Optional[list], features: list) -> Optional[dict]:
+    """The first member feature (in the concept's own `features` order,
+    `concepts.py`'s clustering order -- not re-sorted here) with a scorable
+    ablation record, so a card's exemplar plot is drawn from real evidence
+    whenever ANY member has it, rather than inventing a "most
+    representative member" ranking this reduction has no basis for.
+
+    Falls back to the first member's record even when unscorable, so the
+    card states "not measured" explicitly (`ablation_cell`'s own fallback)
+    rather than showing nothing; returns `None` only when no candidate
+    record exists at all for any member of this concept at this target."""
+    if not candidates:
+        return None
+    by_feature = {int(c["feature"]): c for c in candidates if "feature" in c}
+    first_seen = None
+    for f in features:
+        entry = by_feature.get(int(f))
+        if entry is None:
+            continue
+        if first_seen is None:
+            first_seen = entry
+        if entry.get("scorable"):
+            return entry
+    return first_seen
+
+
+def sae_concepts_block(cfg, run_dir: Path, findings: list, model_names: list) -> str:
+    """The whole "SAE concepts" report subsection. Mirrors `_sae_roles_
+    block`'s signature; see the module docstring for the three blocks and
+    the degradation contract. Returns `""` when `sae/concepts.json` does
+    not exist or carries no targets."""
+    run_dir = Path(run_dir)
+    if not (run_dir / "sae" / "concepts.json").exists():
+        return ""
+
+    # Lazy, per the module docstring's import-cycle note.
+    from .report import (
+        Finding, _next_claim_id, _details, _note, _table, _frag,
+        _depth_ordered_targets,
+    )
+    from .sae_features import ablation_cell
+    from ..sae.train import sanitize
+
+    sae_cfg = getattr(cfg, "sae", None)
+    weights = tuple(getattr(sae_cfg, "interest_weights", None) or (0.5, 0.3, 0.2))
+    max_cards = int(getattr(sae_cfg, "concept_cards_max", None) or 24)
+    misfit_gap = float(getattr(sae_cfg, "concept_misfit_cosine_gap", None) or 0.3)
+
+    cards = derived.concept_cards(run_dir, weights=weights)
+    if cards.empty:
+        return ""
+
+    concepts_doc = _load_json_or_none(run_dir / "sae" / "concepts.json") or {}
+    targets_doc = concepts_doc.get("targets") or {}
+    features_by_target_id: dict = {}
+    for target_key, rec in targets_doc.items():
+        if not isinstance(rec, dict):
+            continue
+        for concept in rec.get("concepts", []):
+            features_by_target_id[(target_key, concept.get("concept"))] = \
+                concept.get("features") or []
+
+    inner = "<h4>SAE concepts (ablation-space clustering, ROADMAP.md sec 30)</h4>"
+    inner += (
+        "<p class='blurb'>Concepts cluster probed features on their own "
+        "ABLATION fingerprint -- what each feature does when removed from "
+        "the SAE's own reconstruction, on the series it actually fires on "
+        "(sec 27's battery) -- rather than the INJECTION fingerprint the "
+        "'roles' section above uses. sec 30.1 measured concepts clustering "
+        "decisively better in that space (mean silhouette <b>0.450</b> vs "
+        "roles' <b>&minus;0.235</b>, beating roles at every target "
+        "checked).</p>")
+
+    # -------- block 1: universality + transfer heatmap --------
+    uni = derived.concept_universality(run_dir)
+    matrix = derived.concept_transfer_matrix(run_dir)
+    if uni.empty or matrix.empty:
+        inner += (
+            "<p class='blurb'>Cross-model concept transfer: <b>not "
+            "measured</b> for this run (`sae/transfer.json` is absent or "
+            "empty) -- the concept cards below still render each concept's "
+            "own causal profile.</p>")
+    else:
+        inner += "<h5>Concept universality</h5>"
+        inner += _table(uni.drop(columns=["concepts"]))
+        models_sorted = list(matrix.columns)
+        import plotly.graph_objects as go  # local: only this block plots
+        fig = go.Figure(data=go.Heatmap(
+            z=matrix.values, x=models_sorted, y=list(matrix.index),
+            colorscale="Viridis", zmin=0, zmax=1,
+            colorbar=dict(title="reciprocal transfer rate"),
+            hovertemplate="%{y} → %{x}: %{z:.2f}<extra></extra>",
+            hoverongaps=False))
+        fig.update_layout(
+            title="Concept transfer rate between models (reciprocal)",
+            xaxis=dict(title="destination model"),
+            yaxis=dict(title="source model", autorange="reversed"))
+        inner += _frag(fig, height=max(320, 60 * len(matrix.index)))
+        inner += _note(
+            "For each source model's concepts, the fraction whose top-firing "
+            "series are grouped the same way by the destination model's own "
+            "SAE dictionary -- reciprocally, in both directions.",
+            "A cell near 1.0 means that source's concepts transfer to the "
+            "destination almost universally; a low cell means most concepts "
+            "are specific to the source. The diagonal is blank -- a model's "
+            "transfer rate against itself is not a comparison.",
+            f"Transfer is a statistical (AUC-based) test against a "
+            f"matched-stratum null (k_top_series="
+            f"{matrix.attrs.get('k_top_series')}, n_null_draws="
+            f"{matrix.attrs.get('n_null_draws')}, stratified by "
+            f"{matrix.attrs.get('stratum_field')}), not a causal claim -- it "
+            f"says the two dictionaries GROUP series alike, not that either "
+            f"model's forecast depends on the other's feature.",
+            summary="What does this heatmap mean?")
+
+        n_total = int(uni.attrs.get("n_concepts_total", int(uni["n_concepts"].sum())))
+        n_other = uni.attrs.get("n_other_models")
+        findings.append(Finding(
+            claim_id=_next_claim_id("sae"), stage="sae", evidence_class="descriptive",
+            text=(f"SAE concept universality: of {n_total} concepts across "
+                  f"{cards['target'].nunique()} analyzed target(s), "
+                  + ", ".join(f"{int(r.n_concepts)} {r.bucket}" for r in uni.itertuples())
+                  + (f" (checked against {n_other} other model(s) per target)."
+                     if n_other is not None else ".")),
+            plain=(f"Of {n_total} sparse-feature concepts found across this "
+                   f"run's models, "
+                   + ", ".join(f"{int(r.n_concepts)} are {r.bucket}" for r in uni.itertuples())
+                   + " when checked against every other model's own dictionary."),
+            registered=False))
+
+    # -------- block 2: concept cards --------
+    top = cards.head(max_cards).reset_index(drop=True)
+    bucket_order = ["universal", "partial", "model-specific", "not comparable", "not measured"]
+    present_buckets = [b for b in bucket_order if (top["universality_bucket"] == b).any()]
+
+    shown_targets = _depth_ordered_targets(sorted(top["target"].astype(str).unique()))
+    candidates_by_target: dict[str, list] = {}
+    for target in shown_targets:
+        model, layer = str(target).split("/", 1)
+        path = run_dir / "sae" / sanitize(model) / f"{sanitize(layer)}_ablation.json"
+        art = _load_json_or_none(path)
+        if art:
+            candidates_by_target[target] = art.get("candidates") or []
+
+    w = cards.attrs.get("weights") or {}
+    inner += f"<h5>Concept cards — top {len(top)} of {len(cards)} by interest</h5>"
+    inner += (
+        "<p class='blurb'>interest = "
+        f"{w.get('w1_causal_strength', weights[0]):.2f}×causal_strength + "
+        f"{w.get('w2_transfer_informative', weights[1]):.2f}×transfer_informative + "
+        f"{w.get('w3_cohesion_frac', weights[2]):.2f}×(members clearing any "
+        "channel / members) -- ROADMAP.md sec 30.4.4. Grouped by universality "
+        "bucket, deepest interest first within each.</p>")
+
+    for bucket in present_buckets:
+        bucket_rows = top[top["universality_bucket"] == bucket]
+        inner += f"<h6>{html.escape(bucket)} ({len(bucket_rows)})</h6>"
+        card_bodies = []
+        for row in bucket_rows.itertuples():
+            candidates = candidates_by_target.get(str(row.target))
+            member_features = features_by_target_id.get((row.target, row.concept), [])
+            entry = _representative_ablation_entry(candidates, member_features)
+            spark_html = ablation_cell(entry, max_series=8)
+            desc_html = ""
+            if row.description:
+                gen_tag = " <i>(generated)</i>" if row.description_generated else ""
+                desc_html = (f"<p class='blurb'><i>{html.escape(str(row.description))}</i>"
+                             f"{gen_tag}</p>")
+            name = row.name or f"concept {row.concept}"
+            card_bodies.append(
+                "<div class='concept-card'>"
+                f"<p class='blurb'><b>{html.escape(str(name))}</b> — "
+                f"{html.escape(str(row.target))}, concept {row.concept}: "
+                f"{int(row.n_members)} member(s), {int(row.n_members_clearing)} "
+                f"clearing at least one channel's own null; interest "
+                f"{float(row.interest):.2f}.<br>"
+                f"profile: {_profile_html(row.profile)}<br>"
+                f"transfer: {_reach_html(row.reach, row.n_other_models)}</p>"
+                f"{desc_html}{spark_html}</div>")
+        inner += "".join(card_bodies)
+
+        # One finding per target represented in this bucket's shown cards --
+        # mirrors `_sae_roles_block`'s per-target finding, scoped to what's
+        # actually rendered rather than every concept `concept_cards` built.
+        for target in sorted(bucket_rows["target"].astype(str).unique()):
+            target_rows = bucket_rows[bucket_rows["target"].astype(str) == target]
+            best = target_rows.loc[target_rows["causal_strength"].idxmax()]
+            findings.append(Finding(
+                claim_id=_next_claim_id("sae"), stage="sae",
+                evidence_class="causal_within_model",
+                text=(f"SAE concepts — {target} ({bucket}): "
+                      f"{len(target_rows)} concept(s) in this run's top "
+                      f"{len(top)} by interest; strongest is "
+                      f"'{best['name']}' ({int(best['n_members'])} members), "
+                      f"dominant profile effect {best['causal_strength']:.2f}x "
+                      f"its own null."),
+                plain=(f"In {target}, a cluster of {int(best['n_members'])} "
+                       f"sparse features named '{best['name']}' causally "
+                       f"moves the forecast beyond what random steering of "
+                       f"the same size does."),
+                registered=False))
+
+    # -------- block 3: misfits --------
+    misfits_df = derived.misfit_table(run_dir, min_cosine_gap=misfit_gap)
+    n_checked = misfits_df.attrs.get("n_targets_checked")
+    inner += "<h5>Misfits — members whose own fingerprint diverges from their concept</h5>"
+    if n_checked is None:
+        inner += ("<p class='blurb'>Misfit detection: <b>not measured</b> "
+                  "for this run.</p>")
+    elif n_checked == 0:
+        inner += ("<p class='blurb'>Misfit detection: no target's ablation "
+                  "artifact could be loaded from disk, so no member could "
+                  "be checked against its concept's own cohesion.</p>")
+    elif misfits_df.empty:
+        inner += (
+            f"<p class='blurb'>Misfit detection: <b>{n_checked}</b> "
+            f"target(s) checked at a cosine gap of {misfit_gap:g} below "
+            f"each concept's own within-concept mean cosine; <b>zero "
+            f"misfits found</b> — every clustered member's own ablation "
+            f"fingerprint sits within its concept's own cohesion (matching "
+            f"sec 30.1's own \"no orphans\" measurement).</p>")
+    else:
+        inner += (f"<p class='blurb'>{n_checked} target(s) checked; "
+                  f"<b>{len(misfits_df)}</b> misfit(s) found.</p>")
+        for model, sub in misfits_df.groupby("model"):
+            body_parts = []
+            for r in sub.itertuples():
+                own = "; ".join(
+                    f"{c['channel']} {c['signed_null_units']:+.2f}x null"
+                    for c in (r.own_top_channels or [])) or "no channel worth naming"
+                concept_ch = "; ".join(
+                    f"{c['channel']} {c['signed_null_units']:+.2f}x null"
+                    for c in (r.concept_channels or [])) or "no channel worth naming"
+                body_parts.append(
+                    f"<p class='blurb'><b>{html.escape(str(r.target))}</b> "
+                    f"concept {r.concept}, feature {r.feature}: cosine to "
+                    f"centroid {r.cosine_to_centroid:+.3f} vs concept's own "
+                    f"mean {r.concept_mean_cosine:+.3f} (threshold "
+                    f"{r.threshold:+.3f}).<br>own fingerprint: {own}<br>"
+                    f"concept's fingerprint: {concept_ch}</p>")
+            inner += _details(f"{model}: {len(sub)} misfit(s)", "".join(body_parts))
+
+    return inner

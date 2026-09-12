@@ -107,7 +107,9 @@ def _token_level_replacement(clean_tokens: torch.Tensor, sae, device) -> torch.T
 
 def forecast_preservation(cfg: PipelineConfig, adapter, layer: str, sae,
                           store: ActivationStore, data: BenchmarkData, device,
-                          granularity: str = "window") -> dict:
+                          granularity: str = "window",
+                          allowed_series: np.ndarray | None = None,
+                          split: str = "all") -> dict:
     """Patch the SAE's reconstruction of clean activations into a clean forward pass.
 
     Compares the resulting forecast's MASE against the model's own unpatched
@@ -158,19 +160,34 @@ def forecast_preservation(cfg: PipelineConfig, adapter, layer: str, sae,
     model is evidence the window-broadcast confound was the dominant
     driver; one that stays bad under both points at the SAE's own
     reconstruction quality instead.
+
+    `allowed_series` restricts the evaluated sample to one side of the
+    train/held-out series split (`train.py::split_series`), so a ΔMASE can be
+    reported on series the dictionary never saw; `split` is the label carried
+    into the artifact ("train", "heldout", or "all" when unrestricted). The
+    split is over SERIES, never windows -- invariant 2 -- because this check
+    patches whole contexts and every window of a series shares one forecast.
     """
     if granularity not in ("window", "token"):
         raise ValueError(f"forecast_preservation: unknown granularity {granularity!r}")
     adapter.ensure_loaded()
     requested = cfg.sae.forecast_preservation_max_series
-    cap = capped_take(requested, n_available=data.n, batch_size=adapter.cfg.batch_size)
+    families = data.meta["family"].to_numpy()
+    # `allowed_series` restricts the sample to one side of the train/held-out
+    # SERIES split (train.py::split_series). Sampling is stratified WITHIN the
+    # allowed set rather than drawn corpus-wide and filtered, so a split that
+    # happens to under-represent a family still yields a family-balanced
+    # sample of what it does contain instead of a skewed remainder.
+    pool = (np.arange(data.n) if allowed_series is None
+            else np.asarray(allowed_series, dtype=int))
+    cap = capped_take(requested, n_available=int(pool.size), batch_size=adapter.cfg.batch_size)
     take = cap["n_realized"]
     # A head slice here silently scored both models on whichever series happen
     # to sit first in a corpus written grouped by task -- stratified instead
     # (ROADMAP.md sec 15 A4); `n_requested`/`n_realized`/`limited_by` are
     # recorded below so this run's exact sample, and *why* it differs from the
     # configured request when it does, is comparable to another's (sec 15 A16).
-    rows = sample_rows(data.n, take, cfg.run.seed + 11, strata=data.meta["family"].to_numpy())
+    rows = pool[sample_rows(int(pool.size), take, cfg.run.seed + 11, strata=families[pool])]
     contexts = data.contexts()[rows]
     targets = data.targets()[rows]
     seed = cfg.run.seed + 11
@@ -192,6 +209,7 @@ def forecast_preservation(cfg: PipelineConfig, adapter, layer: str, sae,
 
     return {
         "granularity": granularity,
+        "split": split,
         "n_series": int(take),
         "n_requested": cap["n_requested"],
         "n_realized": cap["n_realized"],

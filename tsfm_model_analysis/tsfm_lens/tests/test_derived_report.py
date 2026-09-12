@@ -450,69 +450,64 @@ def test_a_target_with_no_permutation_null_is_not_comparable_rather_than_a_pass(
 
 
 # ---------------------------------------------------------------------------
-# ROADMAP.md sec 25.9 Stage 3 (Component B(b)): SAE causal role rows.
+# ROADMAP.md sec 30: SAE causal CONCEPT rows -- the concept-space successor
+# to the role-space rows this section used to test, retired alongside
+# `roles.json` itself (sec 30.10 stage 4's supersession).
 # ---------------------------------------------------------------------------
 
-def test_sae_role_row_reports_the_strongest_named_role_against_its_null(tmp_path):
+def test_sae_concept_row_reports_the_strongest_named_concept_against_its_null(tmp_path):
     """value/reference are pre-normalized to 'multiples of null p95' by
-    `sae/roles.py`, so reference=1.0 is the null boundary itself, not a
-    number picked for this test."""
-    _write(tmp_path, "sae/roles.json", {"M/layer.6": {
-        "withheld": False, "skipped": False,
-        "roles": [
-            {"name": "trend-slope ↑", "n_atoms": 5, "dominant_channel": "trend",
-             "dominant_effect_null_units": 2.4, "clears_null": True,
-             "structural_field": None},
-            {"name": "no measured effect (3 atoms)", "n_atoms": 3,
-             "dominant_channel": None, "dominant_effect_null_units": None,
-             "clears_null": False, "structural_field": None},
-        ]}})
+    `sae/concepts.py::ablation_vector`, so reference=1.0 is the null
+    boundary itself, not a number picked for this test."""
+    _write(tmp_path, "sae/concepts.json", {"targets": {"M/layer.6": {
+        "withheld": False,
+        "concepts": [
+            {"concept": 0, "name": "dominant raises trend", "n_members": 5,
+             "profile": [{"channel": "trend", "signed_null_units": 2.4,
+                         "n_members_clearing": 5}]},
+            {"concept": 1, "name": "no channel clears its own null",
+             "n_members": 3, "profile": []},
+        ]}}})
     row, = derived.bottom_line_rows(tmp_path, ["M"])
     assert row.value == pytest.approx(2.4)
     assert row.reference == pytest.approx(1.0)
     assert row.verdict == "above"
-    # Every role is in `detail`, including the "no measured effect" one --
-    # the row's own note says this is by construction, not filtered out.
+    # Every concept is in `detail`, including the empty-profile one -- the
+    # row's own note says this is by construction, not filtered out.
     assert len(row.detail) == 2
 
 
-def test_sae_role_row_is_excluded_when_no_role_clears_its_null():
-    """A target where every role fell into the 'no measured effect' fallback
-    contributes NO row -- absence of a causal claim, not a false zero."""
-    from tsfm_lens.report.derived import _sae_role_rows
-    rows = _sae_role_rows({"M/layer.6": {
-        "withheld": False, "skipped": False,
-        "roles": [{"name": "no measured effect (8 atoms)", "n_atoms": 8,
-                  "dominant_channel": None, "dominant_effect_null_units": None,
-                  "clears_null": False, "structural_field": None}]}})
+def test_sae_concept_row_is_excluded_when_no_concept_clears_its_null():
+    """A target where every concept has an empty profile ('no measured
+    effect') contributes NO row -- absence of a causal claim, not a false
+    zero."""
+    from tsfm_lens.report.derived import _sae_concept_rows
+    rows = _sae_concept_rows({"M/layer.6": {
+        "withheld": False,
+        "concepts": [{"concept": 0, "name": "no channel clears its own null",
+                      "n_members": 8, "profile": []}]}})
     assert rows == []
 
 
-def test_sae_role_row_is_excluded_for_a_withheld_target():
+def test_sae_concept_row_is_excluded_for_a_withheld_target():
     """sec 11.42's lesson applied to this row: a target the reach gate
     refused has no measurement to report, not a negative one."""
-    from tsfm_lens.report.derived import _sae_role_rows
-    rows = _sae_role_rows({"M/layer.6": {"withheld": True, "reason": "no reach"}})
+    from tsfm_lens.report.derived import _sae_concept_rows
+    rows = _sae_concept_rows({"M/layer.6": {"withheld": True, "reason": "no reach"}})
     assert rows == []
 
 
-def test_sae_role_row_handles_a_clears_null_role_with_no_recorded_effect():
-    """Defensive edge case: a role marked `clears_null=True` but with
-    `dominant_effect_null_units=None` must not crash `abs(None)` inside the
-    max-selection -- it degrades to value=0.0, which correctly reads as
-    'at or below' rather than a fabricated pass."""
-    from tsfm_lens.report.derived import _sae_role_rows
-    rows = _sae_role_rows({"M/layer.6": {
-        "withheld": False, "skipped": False,
-        "roles": [{"name": "x", "n_atoms": 1, "dominant_channel": None,
-                  "dominant_effect_null_units": None, "clears_null": True,
-                  "structural_field": None}]}})
-    row, = rows
-    assert row.value == 0.0
-    assert row.verdict == "at or below"
+def test_sae_concept_row_is_excluded_for_a_non_modular_target():
+    """A target `concept_table` returned no concepts for at all (non-modular,
+    or too few causal candidates to cluster) contributes no row -- an empty
+    `concepts` list, not a crash on a missing key."""
+    from tsfm_lens.report.derived import _sae_concept_rows
+    rows = _sae_concept_rows({"M/layer.6": {"withheld": False, "non_modular": True,
+                                            "concepts": []}})
+    assert rows == []
 
 
-def test_sae_role_row_verdict_cannot_be_authored_by_a_call_site():
+def test_sae_concept_row_verdict_cannot_be_authored_by_a_call_site():
     """Mirrors `test_a_verdict_is_derived_and_cannot_be_authored` for this
     row: passing a fake verdict string is silently overwritten by
     `Verdict.__post_init__`, the same structural guarantee every other

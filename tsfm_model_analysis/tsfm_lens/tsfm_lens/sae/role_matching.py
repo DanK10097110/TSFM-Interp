@@ -592,7 +592,11 @@ def untrained_twin_role_floor(real_model: str, real_layer: str,
                               twin_name_in_twin_run: str) -> Optional[dict]:
     """Match `real_model`'s roles (from the TWIN run's own copy of that
     model, at `real_layer`) against its `random_init` twin's roles, both
-    read from `<twin_run_dir>/sae/roles.json`.
+    read from `<twin_run_dir>/sae/roles_injection.json` (ROADMAP.md sec 30,
+    Stage 4, 2026-09-11: `sae/roles.json` is superseded by `sae/
+    concepts.json` throughout the report, and archived under this name --
+    this untrained-twin floor is a Component C mechanism unaffected by that
+    supersession and simply reads the archived artifact).
 
     This is the sec 6.2.1 Stage 1 precedent applied to roles instead of the
     crosscoder's `frac_shared`: a real model's SAE roles matched against an
@@ -602,16 +606,17 @@ def untrained_twin_role_floor(real_model: str, real_layer: str,
     architecture alone.
 
     Returns `None` (not a fabricated floor) when `twin_run_dir` has no
-    `sae/roles.json`, or when either name's role target is missing/withheld
-    there -- sec 2.5's degrade-loudly doctrine: a caller must be able to
-    tell "the floor could not be computed" apart from "the floor is zero".
-    `real_name_in_twin_run`/`twin_name_in_twin_run` are the model names AS
-    CONFIGURED IN THE TWIN RUN (e.g. "TimesFM" and "TimesFM-random") --
-    deliberately separate from `real_model` (the name in the CALLER's run,
-    which may differ if the two runs configure the pair under different
-    names, though in this repo's convention they are the same string).
+    `sae/roles_injection.json`, or when either name's role target is
+    missing/withheld there -- sec 2.5's degrade-loudly doctrine: a caller
+    must be able to tell "the floor could not be computed" apart from "the
+    floor is zero". `real_name_in_twin_run`/`twin_name_in_twin_run` are the
+    model names AS CONFIGURED IN THE TWIN RUN (e.g. "TimesFM" and
+    "TimesFM-random") -- deliberately separate from `real_model` (the name
+    in the CALLER's run, which may differ if the two runs configure the pair
+    under different names, though in this repo's convention they are the
+    same string).
     """
-    roles_path = Path(twin_run_dir) / "sae" / "roles.json"
+    roles_path = Path(twin_run_dir) / "sae" / "roles_injection.json"
     if not roles_path.exists():
         log.info(f"role matching: no untrained-twin floor available -- "
                  f"{roles_path} does not exist (run run_sae_roles.py against "

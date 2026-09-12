@@ -959,13 +959,41 @@ def _frag(fig: go.Figure, height: int = 420) -> str:
     rendered labels and grows the margin to fit. Setting it here rather than
     at ~70 call sites means a figure added later cannot reintroduce the bug,
     and it is a no-op for the figures whose labels already fit.
+
+    🔴 The legend's own position was the same bug one object over, and it
+    was a CLASS defect rather than one figure's (user review, 2026-09-11:
+    "fix the labels of the bar chart to not be overlapping"). The legend
+    sat at `y=1.02` above the plot area; `make_subplots(subplot_titles=...)`
+    emits each title as a paper-referenced annotation at `y=1.0` with
+    `yanchor='bottom'`, i.e. **the same band**, and the legend starts at
+    `x=0` and runs right across all of them. Measured on
+    `runs/full_report_run_4model`: **25 of 109** rendered figures have both,
+    including the SAE dictionary-health panel the review named. So the
+    legend moves BELOW the plot whenever the figure carries subplot titles
+    -- derived from the figure's own annotations, never from a list of
+    call sites, so a subplotted figure added later inherits the fix.
+
+    The offset is computed in pixels and converted, not written as a fixed
+    fraction: legend `y` is in plot-area units, so one constant would sit
+    36px below a 300px figure and 100px below a 718px one.
     """
+    titled = any(
+        getattr(a, "xref", None) == "paper" and getattr(a, "yref", None) == "paper"
+        and a.y is not None and abs(float(a.y) - 1.0) < 1e-6
+        for a in (fig.layout.annotations or ()))
+    bottom = 50
+    if titled:
+        legend = dict(orientation="h", yanchor="top",
+                      y=-(58.0 / max(int(height), 200)), x=0)
+        bottom = 90
+    else:
+        legend = dict(orientation="h", yanchor="bottom", y=1.02, x=0)
     fig.update_layout(
         template="plotly_white", height=height,
         font=dict(family="Inter, system-ui, sans-serif", color=_COLORS["ink"], size=12),
         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-        margin=dict(l=60, r=20, t=40, b=50, autoexpand=True),
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0),
+        margin=dict(l=60, r=20, t=40, b=bottom, autoexpand=True),
+        legend=legend,
     )
     fig.update_xaxes(automargin=True)
     fig.update_yaxes(automargin=True)
@@ -1163,6 +1191,37 @@ def _details(summary: str, body: str, open_: bool = False) -> str:
 def _table(df: pd.DataFrame) -> str:
     return df.to_html(index=False, classes="tbl", float_format=lambda v: f"{v:.3f}",
                       border=0, escape=True)
+
+
+def _absent_as_text(df: pd.DataFrame, columns, reason, fmt: str = "{:.3f}"):
+    """Render a missing cell as the reason it is missing, never as `NaN`.
+
+    `df.to_html` prints a missing float as the literal string `NaN`, which
+    reads as a measurement that was attempted and broke. Several joins in
+    this report legitimately have empty cells because a stage ran at its own
+    stride or over its own subset -- patching is the recurring case -- and
+    those two states must not render the same way (`CLAUDE.md` sec 11.37).
+
+    `reason` is either one string for every absent cell, or a sequence giving
+    each row its own (which is how the corruption table distinguishes "this
+    corruption was not selected for patching" from "patching never ran for
+    this model"). The column becomes TEXT: a float column cannot hold a
+    sentence, and putting one absent value back as `None` reintroduces `NaN`.
+    """
+    reasons = ([reason] * len(df)) if isinstance(reason, str) else list(reason)
+    for col in columns:
+        if col not in df.columns:
+            continue
+        out = []
+        for value, why in zip(df[col], reasons):
+            if value is None or (isinstance(value, float) and not np.isfinite(value)):
+                out.append(why or "not measured")
+            elif isinstance(value, (int, float)) and not isinstance(value, bool):
+                out.append(fmt.format(value))
+            else:
+                out.append(str(value))
+        df[col] = out
+    return df
 
 
 def _ci_str(d: dict, key: str = "value") -> str:
@@ -2797,6 +2856,10 @@ def _corruption_breakdown_block(run_dir: Path, findings: list) -> str:
               else f"{v:.1f}×"))
             for v, det in zip(show["in_floor_units"], show["model_deterministic"])]
         show = show.drop(columns=["model_deterministic"])
+    if "restoration_absent" in show.columns:
+        _absent_as_text(show, ["best_restoration", "best_restoration_layer"],
+                        list(show["restoration_absent"]))
+        show = show.drop(columns=["restoration_absent"])
     rename = {"input_footprint_pct": "input touched (%)",
               "input_energy": "input energy",
               "strength_calibrated": "strength matched",
@@ -2838,7 +2901,10 @@ def _corruption_breakdown_block(run_dir: Path, findings: list) -> str:
         "<code>peak Δact</code>/<code>mean Δact</code> should be compared "
         "down a model's own column and by peak <i>location</i> across models, "
         "not by value. <code>best restoration</code> is present only for the "
-        "corruptions <code>l3.patching.corruptions</code> selected."))
+        "corruptions <code>l3.patching.corruptions</code> selected; every "
+        "other row says so in the cell rather than leaving it blank, "
+        "because a corruption nobody patched and a corruption whose patch "
+        "recovered nothing are different findings."))
 
     per_c = df.groupby("corruption", observed=True)["forecast_change"].mean().dropna()
     if len(per_c) >= 2:
@@ -2884,6 +2950,19 @@ def _layer_metrics_block(run_dir: Path, model_names: list, findings: list) -> st
         df = derived.layer_metrics(run_dir, model)
         if df.empty:
             continue
+        # The patching stage runs at its own `layer_stride`, so most layers
+        # legitimately have no restoration. Say which layers those are
+        # instead of rendering a `NaN` that reads as a broken measurement
+        # (`CLAUDE.md` sec 11.37) -- this column existing at all means
+        # patching ran, so the only reason a cell is empty is the stride.
+        df = df.copy()
+        for col, why in (("best_patch_restoration", "layer not patched"),
+                         ("screen_score", "layer not screened"),
+                         ("skip_lens_mase", "layer not in the lens sweep"),
+                         ("l3_mean_sensitivity", "layer not in the corruption sweep"),
+                         ("best_cka", "no cross-model partner"),
+                         ("best_cka_partner", "no cross-model partner")):
+            _absent_as_text(df, [col], why)
         rename = {"rel_depth": "rel. depth", "effective_dim": "eff. dim",
                   "input_cka": "CKA to input", "probe_accuracy": "probe acc.",
                   "probe_over_chance": "probe − chance",
@@ -4560,13 +4639,18 @@ def _corpus_series_lookup(cfg):
 
 
 def _feature_cards_for(cfg, store, model: str, layer: str, entry: dict,
-                       separated: dict, run_meta):
+                       separated: dict, run_meta, top_examples: int = 4):
     """Encode this target's features from its saved checkpoint and build the cards.
 
     Uses the row set the artifact itself recorded rather than recomputing a
     stratified draw, so the activations behind the exemplar thumbnails are
     the same series the recorded rho was measured on (CLAUDE.md sec 11.24's
     trap: two "identical" sampling calls that stopped agreeing).
+
+    `top_examples` is the caller's, not this function's, because it has to
+    equal the number of with/without overlays the ablation artifact kept --
+    a count that is a property of how that pass was RUN, not a constant
+    (ROADMAP.md sec 28's item 7).
     """
     import numpy as np
 
@@ -4585,7 +4669,44 @@ def _feature_cards_for(cfg, store, model: str, layer: str, entry: dict,
     sae = load_sae_checkpoint(str(ckpt))
     features = encode_series_level(sae, store, model, layer, rows, "cpu")
     series_ids = run_meta["series_id"].to_numpy()[rows]
-    return build_feature_cards(features, series_ids, separated, run_meta)
+    return build_feature_cards(features, series_ids, separated, run_meta,
+                               top_examples=top_examples)
+
+
+def _overlay_series_clause(cards: list, ablations: dict) -> str:
+    """Say whether the two series columns show the same series -- measured.
+
+    The correlational column ranks a feature's series by its series-level
+    pooled activation; the causal one ranks by whatever the ablation pass
+    scored. Nothing in either module guarantees the two orderings agree,
+    so this counts the rows where they do rather than asserting it. On
+    `runs/full_report_run_4model` they agree everywhere, which is worth
+    stating -- a reader comparing a thumbnail against the overlay beside it
+    is otherwise entitled to assume they are different series.
+    """
+    pairs = 0
+    same = 0
+    for c in cards:
+        abl = (ablations or {}).get(c["feature"])
+        if not abl or not abl.get("forecasts"):
+            continue
+        left = [str(e["series_id"]) for e in c["exemplars"]]
+        right = [str(f.get("series_id")) for f in abl["forecasts"]]
+        pairs += 1
+        same += int(left == right)
+    if not pairs:
+        return ""
+    if same == pairs:
+        return ("The two series columns are the same series in the same "
+                "order, so a thumbnail and the overlay beside it describe "
+                "one series seen twice.")
+    if same == 0:
+        return ("The two series columns rank the series independently and "
+                "agree on none of these rows, so a thumbnail and the "
+                "overlay beside it are different series.")
+    return (f"The two series columns rank the series independently and "
+            f"coincide on {same} of {pairs} rows, so read each column's own "
+            f"series labels rather than pairing them by position.")
 
 
 def _feature_descriptions(run_dir: Path, key: str) -> dict:
@@ -4641,33 +4762,6 @@ def _ablation_entries(run_dir: Path, model: str, layer: str,
     if raw:
         return doc
     return {int(c["feature"]): c for c in (doc.get("candidates") or [])}
-
-
-def _role_descriptions(run_dir: Path, key: str) -> dict:
-    """Generated per-role descriptions for one target, if the run produced any.
-
-    Mirrors `_feature_descriptions` exactly, reading the same
-    `sae/descriptions.json` artifact's "roles" bucket instead of
-    "features" -- `run_sae_describe.py` keys role packets by
-    `str(role["role"])`, the same integer id `sae/roles.py::role_table`
-    assigns and `roles.json` persists as each role dict's "role" field, so
-    the lookup key here is `str(role["role"])`, not the role's display
-    name (which is not stable -- `derive_role_name` derives it from the
-    role's own mean effect and can collide across roles).
-    """
-    path = run_dir / "sae" / "descriptions.json"
-    if not path.exists():
-        return {}
-    doc = load_json(path) or {}
-    entry = doc.get(key) or {}
-    out = {}
-    for k, v in (entry.get("roles") or {}).items():
-        text = v.get("text") if isinstance(v, dict) else v
-        if text:
-            out[str(k)] = str(text)
-    return out
-
-
 
 
 def _depth_ordered_targets(targets: list) -> list:
@@ -4792,11 +4886,17 @@ def _sae_health_figure(df: pd.DataFrame) -> str:
     d = df.iloc[::-1].reset_index(drop=True)
     y = list(d["target"])
 
+    hold_col = "reconstruction fidelity (held out)"
+    fid_hold = ([None if pd.isna(v) else float(v) for v in d[hold_col]]
+                if hold_col in d.columns else [None] * len(d))
+    has_hold = any(v is not None for v in fid_hold)
+
     fig = make_subplots(
         rows=1, cols=3, shared_yaxes=True, horizontal_spacing=0.055,
         subplot_titles=tuple(_wrap(t, 26) for t in (
             "Dead features (share of dictionary)",
-            "Reconstruction fidelity",
+            ("Reconstruction fidelity: fitted vs held-out series"
+             if has_hold else "Reconstruction fidelity"),
             "Ground-truth alignment vs its own null")))
 
     dead = [None if pd.isna(v) else float(v) for v in d["dead rate"]]
@@ -4816,17 +4916,61 @@ def _sae_health_figure(df: pd.DataFrame) -> str:
     have = {t for t in thresholds.values() if t is not None}
     if len(have) == 1:
         thr = have.pop()
+        # `annotation_yanchor="top"` hangs the label INSIDE the plot area.
+        # The default (`bottom`) puts it above the top edge -- which is
+        # exactly where `make_subplots` has already placed this panel's own
+        # title, so the two rendered on top of each other.
         fig.add_vline(x=thr, line=dict(color=_COLORS["accent"], width=1.5, dash="dash"),
                       annotation_text=f"gate {thr:.0%}", annotation_position="top",
-                      annotation_font_size=11, row=1, col=1)
+                      annotation_yanchor="top", annotation_font_size=11,
+                      row=1, col=1)
 
+    # Panel 2: fidelity on the series the dictionary was FIT on, with the
+    # held-out value overlaid on the same row when the run measured one (user
+    # request, 2026-09-11). Two separate bars would put the comparison back on
+    # the reader; a bar plus a marker makes the generalization gap a visible
+    # horizontal distance, which is the same idiom panel 3 already uses for
+    # the alignment margin rather than a third one. The bar stays TRAIN so the
+    # overlay can sit inside or outside it and be read either way -- a
+    # held-out marker to the LEFT of the bar end is memorization, and that is
+    # the one thing this panel exists to expose.
     fid = [None if pd.isna(v) else float(v) for v in d["reconstruction fidelity"]]
     fig.add_trace(go.Bar(
-        x=fid, y=y, orientation="h", marker_color=_COLORS["a"], showlegend=False,
+        x=fid, y=y, orientation="h", marker_color=_COLORS["a"],
+        name="fitted on these series", showlegend=has_hold,
         text=[("" if v is None else f"{v:.3f}") for v in fid],
         textposition="outside", cliponaxis=False,
-        hovertemplate="%{y}<br>fidelity %{x:.4f}<extra></extra>",
+        hovertemplate="%{y}<br>fidelity (train) %{x:.4f}<extra></extra>",
     ), row=1, col=2)
+    if has_hold:
+        # The gap as a segment, drawn only where BOTH halves exist -- a
+        # one-ended segment would render as a tick indistinguishable from the
+        # marker and imply a comparison against nothing (sec 11.37).
+        for label, tr, ho in zip(y, fid, fid_hold):
+            if tr is None or ho is None:
+                continue
+            fig.add_trace(go.Scatter(
+                x=[ho, tr], y=[label, label], mode="lines", showlegend=False,
+                line=dict(color=("#B04A5A" if tr - ho > 0.05 else _COLORS["muted"]),
+                          width=2.5),
+                hoverinfo="skip"), row=1, col=2)
+        fig.add_trace(go.Scatter(
+            x=fid_hold, y=y, mode="markers", name="held-out series",
+            marker=dict(color=_COLORS["accent"], size=9, symbol="diamond"),
+            hovertemplate="%{y}<br>fidelity (held out) %{x:.4f}<extra></extra>",
+        ), row=1, col=2)
+        # The admission gate's own bar, read from the artifact via `attrs`
+        # exactly as the dead-rate line is -- drawn only when every gated
+        # target agrees on it, for the same reason.
+        fid_thr = {t for t in (df.attrs.get("fidelity_thresholds") or {}).values()
+                   if t is not None}
+        if len(fid_thr) == 1:
+            ft = fid_thr.pop()
+            fig.add_vline(x=ft, line=dict(color=_COLORS["accent"], width=1.5,
+                                          dash="dash"),
+                          annotation_text=f"admits at {ft:.2f}",
+                          annotation_position="top", annotation_yanchor="top",
+                          annotation_font_size=11, row=1, col=2)
 
     rho = [None if pd.isna(v) else float(v) for v in d["alignment mean abs rho"]]
     p95 = [None if pd.isna(v) else float(v) for v in d["permutation null p95"]]
@@ -4847,10 +4991,21 @@ def _sae_health_figure(df: pd.DataFrame) -> str:
         marker=dict(color=_COLORS["accent"], size=9),
         hovertemplate="%{y}<br>mean|ρ| %{x:.4f}<extra></extra>"), row=1, col=3)
 
-    fig.update_xaxes(range=[0, max([v for v in dead if v is not None] + [0.35]) * 1.18],
+    # Every panel gets an EXPLICIT range with headroom. Panels 1 and 2 draw
+    # their value as `textposition="outside"` with `cliponaxis=False`, which
+    # means the text is free to render past the axis end -- and the gap
+    # between two subplot columns here is 5.5% of the figure width, so under
+    # autorange a fidelity label on panel 2 lands on top of panel 3's null
+    # markers. Headroom on the axis is what keeps the label inside its own
+    # column; clipping it instead would hide the number it exists to show.
+    fig.update_xaxes(range=[0, max([v for v in dead if v is not None] + [0.35]) * 1.22],
                      tickformat=".0%", row=1, col=1)
-    fig.update_xaxes(row=1, col=2)
-    fig.update_xaxes(row=1, col=3)
+    fid_hi = max([v for v in fid if v is not None]
+                 + [v for v in fid_hold if v is not None] + [1.0])
+    fig.update_xaxes(range=[0, fid_hi * 1.22], row=1, col=2)
+    align_hi = max([v for v in rho if v is not None]
+                   + [v for v in p95 if v is not None] + [0.05])
+    fig.update_xaxes(range=[0, align_hi * 1.18], row=1, col=3)
     fig.update_yaxes(tickfont=dict(size=11))
     for ann in fig.layout.annotations:
         ann.font.size = 12
@@ -4999,8 +5154,9 @@ def _sae_capability_block(run_dir: Path, findings: list) -> str:
     Reads `sae/comparison.json` only, via two pure reductions. That artifact
     comes from `run_sae_compare.py`, a standalone driver rather than a
     pipeline stage, so its absence is the ordinary state of a run: this
-    returns "" and the section is unchanged, exactly as the roles block does
-    without `sae/roles.json`.
+    returns "" and the section is unchanged, exactly as
+    `sae_concepts_block` does without `sae/concepts.json` (ROADMAP.md sec
+    30, Stage 4).
     """
     rep = derived.sae_causal_repertoire(run_dir)
     if rep.empty:
@@ -5068,7 +5224,8 @@ def _sae_capability_block(run_dir: Path, findings: list) -> str:
             f"while the per-role sentences below it held up, so the summary "
             f"layer states only what the counts in this row already say. The "
             f"generated attempt is still produced, checked and kept in "
-            f"`sae/comparison.json` under `summary_generated`.")
+            f"`sae/comparison.json` under `summary_generated`. "
+            + str(agree.attrs.get("aggregate_rate_withheld") or ""))
         if tot_a + tot_d:
             findings.append(Finding(
                 claim_id=_next_claim_id("sae"), stage="sae",
@@ -5133,9 +5290,12 @@ def _sae_capability_block(run_dir: Path, findings: list) -> str:
         "reconstruction on the series that atom fires on, so every number "
         "here is bounded by the layers this run trained a dictionary on and "
         "by the atoms that survived the dead-feature gate. The agreement "
-        "rate has NO untrained-twin floor yet, unlike the match rate beside "
-        "it, so it is a within-run contrast and not a calibrated quantity — "
-        "do not read 'differently' as a measured effect size. A channel with "
+        "rate has NO untrained-twin floor yet, so it is a within-run "
+        "contrast and not a calibrated quantity — do not read "
+        "'differently' as a measured effect size. The geometric role-match "
+        "rate is a DIFFERENT quantity and is not repeated here: it lives in "
+        "the correspondence block, beside its own chance level and floor. "
+        "A channel with "
         "no roles for a model is a null result at these targets, not a "
         "statement about what that architecture can represent. Sentences are "
         "generated one compared unit at a time and each is checked against "
@@ -5161,6 +5321,8 @@ def _sae_health_block(run_dir: Path, findings: list) -> str:
     table. What changes is that eight near-identical red paragraphs -- which
     train a reader to skip red paragraphs -- become one that says which eight.
     """
+    from .sae_features import metric_legend_html
+
     df = derived.sae_health(run_dir)
     if df.empty:
         return ""
@@ -5172,7 +5334,43 @@ def _sae_health_block(run_dir: Path, findings: list) -> str:
     not_clearing = [r["target"] for _, r in df.iterrows()
                     if "does NOT clear" in str(r["alignment vs null"])]
 
-    out = ""
+    # Why four different health numbers, and why none of them is the
+    # headline on its own. Added 2026-09-11 on user review -- the section
+    # printed twelve columns of verdicts without ever saying what question
+    # each one answers, so "why do these matter more than reconstruction
+    # fidelity" had no answer anywhere in the document. They are not ranked;
+    # they are a chain, and each one is only meaningful if the one before it
+    # held.
+    out = _details(
+        "What these numbers are for, and why reconstruction fidelity is not "
+        "the headline",
+        "<p class='blurb'>A sparse dictionary is only useful here if four "
+        "things hold, in order, and each column below tests exactly one of "
+        "them. <b>(1) Is it a faithful stand-in for the layer?</b> That is "
+        "<i>reconstruction fidelity</i> — and it is a floor, not a finding: "
+        "a dictionary that cannot rebuild the layer is describing something "
+        "else. <b>(2) Is enough of it actually in use?</b> That is the "
+        "<i>dead-feature share</i>. High fidelity from a mostly-dead "
+        "dictionary means every feature shown was drawn from a small "
+        "surviving minority. <b>(3) Does the model still forecast the same "
+        "way through it?</b> That is <i>ΔMASE</i>, and it is a stronger test "
+        "than fidelity, because fidelity is measured in activation space "
+        "where all directions count equally and the forecast does not care "
+        "equally about all of them — a reconstruction can be numerically "
+        "excellent and still drop the one direction the forecast head reads. "
+        "<i>ΔMASE sign</i> then asks whether that number survives refitting "
+        "the dictionary at another random seed; where it does not, the "
+        "damage and its direction are not a measurement at all. <b>(4) Do "
+        "its features correspond to anything nameable?</b> That is "
+        "<i>alignment</i>, read against each dictionary's own "
+        "label-permutation null rather than against zero. This is the one "
+        "closest to the question the section exists for — the goal is "
+        "reading features, not rebuilding layers — and it is the one that "
+        "most often disagrees with fidelity: on this evidence a dictionary "
+        "can rebuild its layer almost perfectly while none of its features "
+        "corresponds to any labelled property. Open the table below for each "
+        "column's exact arithmetic.</p>",
+        open_=False)
     if failing:
         out += (f"<p class='mockwarn'>⚠ {len(failing)} of {len(df)} dictionaries "
                 f"exceed the dead-feature acceptance bar, so every feature shown "
@@ -5203,10 +5401,29 @@ def _sae_health_block(run_dir: Path, findings: list) -> str:
         "label-permutation null (grey tick) -- the bar's length is the "
         "margin, and a grey tick to the right of the orange dot means the "
         "names carry no more signal than shuffled labels would.")
-    out += _table(df)
+    # The table is COLLAPSED under the figure (user review, 2026-09-11:
+    # "collapse this table because it is showing the same info as the bar
+    # chart"). The review is right about the overlap and not about the
+    # whole: three of the figure's panels carry four of the table's twelve
+    # columns, so the table is not redundant -- it is DETAIL, and the eight
+    # columns it alone carries (the two forecast-damage numbers, their
+    # granularity gap, the two resolvability verdicts, and the printed rule
+    # behind each gate) are exactly the ones a bar cannot express. Moving it
+    # one click away keeps them; deleting it would not.
+    out += _details(
+        f"All {len(df.columns) - 1} numbers per dictionary as a table, plus "
+        f"the rule behind every verdict",
+        _table(df)
+        + metric_legend_html(
+            list(df.columns),
+            heading="<p class='blurb'>Every column, in words, with its "
+                    "arithmetic.</p>"))
     out += _note(
-        "The same eleven numbers per dictionary as the figure above, plus the "
-        "rule that decided each verdict -- which is the part a bar cannot carry.",
+        f"The figure draws 4 of these {len(df.columns) - 1} numbers -- the "
+        f"three that are comparisons ACROSS dictionaries, plus the null each "
+        f"alignment is read against. The collapsed table above carries all "
+        f"of them, and is the only place the rule behind each verdict is "
+        f"printed.",
         "Worst dictionary first, sorted by dead-feature rate, because a dead "
         "dictionary invalidates every feature read off it where low fidelity "
         "only weakens them. Read the dead rate and the alignment verdict "
@@ -5303,9 +5520,20 @@ def _sae_target_panel(cfg, store, run_dir: Path, key: str, model: str, layer: st
                   "<code>backfill_separated.py --run &lt;run&gt;</code>, or "
                   "re-run the <code>sae</code> stage, to populate it.</p>")
         return out, None
+    # Read the causal artifact before building the cards: the number of
+    # with/without pairs it kept is what sizes the correlational column
+    # beside it. Both columns select from the same descending-activation
+    # ranking, so two different hardcoded counts (4 exemplars against 3
+    # overlays) rendered a fourth series the causal panel then appeared to
+    # decline to examine. Derived per target, so a re-run at a different
+    # `--keep-forecasts` corrects itself (ROADMAP.md sec 28's item 7).
+    ablations = _ablation_entries(run_dir, model, layer)
+    n_overlays = max((len(e.get("forecasts") or [])
+                      for e in (ablations or {}).values()), default=0)
     try:
         cards = _feature_cards_for(cfg, store, model, layer, entry,
-                                   separated, run_meta)
+                                   separated, run_meta,
+                                   top_examples=n_overlays or 4)
     except Exception as exc:
         out += f"<p class='blurb'>exemplar panel unavailable: {exc}</p>"
         return out, None
@@ -5320,10 +5548,10 @@ def _sae_target_panel(cfg, store, run_dir: Path, key: str, model: str, layer: st
               f"(mean |ρ| {separated.get('mean_abs_rho_structural', 0):.3f} vs "
               f"{separated.get('mean_abs_rho_provenance', 0):.3f}). Only the "
               f"structural column is a statement about the model.</p>")
-    ablations = _ablation_entries(run_dir, model, layer)
     out += feature_table_html(cards, series_lookup, ctx_len,
                                 descriptions=_feature_descriptions(run_dir, key),
-                                ablations=ablations or None)
+                                ablations=ablations or None,
+                                overlay_series=n_overlays or None)
     cap = ("One row per sparse feature, strongest structural "
              "correlate first. Each thumbnail is a series this "
              "feature fires hardest on -- grey is the context the "
@@ -5335,6 +5563,7 @@ def _sae_target_panel(cfg, store, run_dir: Path, key: str, model: str, layer: st
                 "removal changes. The baseline there is the SAE's own full "
                 "reconstruction, so the gap between the two lines is this "
                 "feature's contribution and not the dictionary's.")
+        cap += " " + _overlay_series_clause(cards, ablations)
     out += _figcap(cap)
     best_struct = next((c for c in cards if c["structural_field"]), None)
     top = None
@@ -5352,15 +5581,18 @@ def _sec_sae(cfg: PipelineConfig, run_dir: Path, findings: list) -> str:
     ROADMAP.md §6.2's "verbose-mode reporting" checklist item. Originally
     correlational-only (ground-truth alignment against a permutation null);
     ROADMAP.md §25's Components A/B/C (Stages 0-4, closed 2026-08-31) added
-    the causal half in separate report subsections this docstring does not
-    own: a causal channel battery scored against a random-direction null
-    (`_sae_roles_block`'s channel heatmap), named feature "roles"
-    (`sae/roles.py`, the roles table and role cards), and cross-model role
-    matching against an untrained-twin floor (`sae/role_matching.py`, the
-    role x model matrix, also rendered by `_sae_roles_block`). This
-    function's own scope stays the per-target summary and the ground-truth
-    exemplar panel; see `_sae_roles_block` and `CLAUDE.md` §6.5's SAE
-    paragraph for the rest.
+    a causal half — a causal channel battery scored against a random-
+    direction null, named feature "roles" (`sae/roles.py`), and cross-model
+    role matching against an untrained-twin floor (`sae/role_matching.py`)
+    — originally rendered by a now-retired `_sae_roles_block` (injection-
+    space clustering). ROADMAP.md sec 30 (Stage 4, 2026-09-11) replaced that
+    whole block with `sae_concepts.py::sae_concepts_block`, which reads
+    `sae/concepts.json` (ABLATION-space clustering) instead of
+    `sae/roles.json`, per sec 30.1's measured result that concepts cluster
+    decisively better (mean silhouette 0.450 vs roles' -0.235, at every
+    target checked). This function's own scope stays the per-target summary
+    and the ground-truth exemplar panel; see `sae_concepts_block` and
+    `CLAUDE.md` §6.5's SAE paragraph for the rest.
     """
     from ..extraction.store import ActivationStore, load_meta
     from ..sae.ground_truth import load_ground_truth_table
@@ -5475,13 +5707,21 @@ def _sec_sae(cfg: PipelineConfig, run_dir: Path, findings: list) -> str:
                          "nearly tied is assigned to one of them "
                          "arbitrarily.",
                          summary="What does this heatmap mean?")
-                 + "<h4>Strongest structural feature per analyzed layer</h4>"
-                 + _table(summary)
                  + _figcap("Within that picture, the single strongest feature "
-                           "per model and layer: the one whose activation best "
-                           "correlates with a structural property of the input "
-                           "series, after regressing out which generator "
-                           "produced it.") + inner)
+                           "per model and layer is one click away below: the "
+                           "one whose activation best correlates with a "
+                           "structural property of the input series, after "
+                           "regressing out which generator produced it.")
+                 # Collapsed 2026-09-11: this is one row per LAYER (13 of them
+                 # on a four-model panel) of the same quantity the heatmap
+                 # above already shows per layer, narrowed to each layer's
+                 # single best feature. It is detail under a picture, not a
+                 # second answer, and at top level it was the third
+                 # thirteen-row table a reader met in this section.
+                 + _details(f"Strongest structural feature at each of the "
+                            f"{len(summary)} analyzed layers",
+                            _table(summary))
+                 + inner)
     # Order: is the dictionary sound (health) -> what do the models share and
     # differ on (contrast) -> what does each layer track (heatmap + tables).
     # The cross-model answer sits above the per-target detail because it is
@@ -5493,425 +5733,11 @@ def _sec_sae(cfg: PipelineConfig, run_dir: Path, findings: list) -> str:
     inner += _note(*_SAE_EXEMPLAR_NOTE, summary="What does this table mean?")
     inner += _sae_seed_floor_block(meta_sae)
     model_names = [m.name for m in cfg.models]
-    inner += _sae_roles_block(cfg, run_dir, findings, model_names)
+    from .sae_concepts import sae_concepts_block
+    inner += sae_concepts_block(cfg, run_dir, findings, model_names)
     return inner
 
 
-_SAE_ROLES_TABLE_NOTE = (
-    "Each row is a ROLE -- a cluster of probed sparse features that share a "
-    "causal identity (`sae/response.py`'s steering battery, null-normalized) "
-    "and, where available, a residualized structural correlate "
-    "(`sae/ground_truth.py::best_ground_truth_matches_separated`). Names are "
-    "DERIVED, never authored: the dominant channel and sign come straight "
-    "from the role's own mean effect vector, and a collision with a "
-    "sibling role's name is broken by appending the next most "
-    "discriminating channel until the two differ (ROADMAP.md sec 25.5(b)).",
-    "'Effect (x null p95)' above 1.0 means the role's dominant channel "
-    "moved further, on average across its member atoms, than a "
-    "random steering direction of the identical magnitude did at its own "
-    "95th percentile -- the same null every cell in the heatmap below is "
-    "checked against. A role literally named 'no measured effect (n atoms)' "
-    "clustered together on the RESPONSE side alone (no channel cleared its "
-    "null for any member) -- it is reported, not hidden, because a "
-    "dictionary can cluster cleanly on structure while carrying no "
-    "detectable causal effect, which is itself a finding about the "
-    "dictionary. 'unnamed (no distinguishing signature)' means every "
-    "channel column was exactly zero for that role even though something "
-    "in it cleared a null -- an explicit refusal rather than a silently "
-    "ordered guess.",
-    "A role's structural correlate is CORRELATIONAL (residualized, but "
-    "still an association, not the causal battery) -- only the dominant "
-    "channel and its null comparison are causal-within-model evidence. "
-    "Clustering quality (silhouette) is reported separately; a "
-    "non-modular dictionary at this granularity is a real result, not a "
-    "forced partition.")
-
-
-def _sae_roles_block(cfg, run_dir: Path, findings: list, model_names: list) -> str:
-    """ROADMAP.md sec 25.7 parts 3-6: the roles table, feature x channel
-    heatmap, per-role cards, and (panel runs only) a role x model matrix.
-
-    Reads `sae/roles.json` (`run_sae_roles.py`'s output) plus each named
-    target's own `*_stage2_response.json` for the per-feature detail the
-    heatmap and cards need. Degrades to "" (not a placeholder) when
-    `roles.json` does not exist -- this is a standalone artifact
-    (ROADMAP.md sec 25.12: no pipeline stage), so its absence means the
-    offline `run_sae_roles.py` step has not been run for this run yet, the
-    same convention `_sec_seasonality_circuit` already uses for its own
-    standalone artifact.
-    """
-    from ..sae.response import CHANNELS
-    from ..sae.vocab import describe_term
-    from .sae_features import term_legend_html
-    from .sae_roles import (
-        feature_channel_matrix,
-        role_card_summary,
-        role_member_candidates,
-        roles_summary_table,
-    )
-    from ..sae.train import sanitize as _sanitize_layer
-
-    roles_path = run_dir / "sae" / "roles.json"
-    if not roles_path.exists():
-        return ""
-    all_roles = load_json(roles_path)
-    if not all_roles:
-        return ""
-
-    inner = "<h4>Causal feature roles (ROADMAP.md sec 25)</h4>"
-
-    per_target_role_lists: dict[str, list] = {}
-    for target, rec in all_roles.items():
-        model, layer = target.split("/", 1)
-        if rec.get("skipped"):
-            inner += (f"<p class='blurb'>{target}: roles not built -- "
-                      f"{rec.get('reason', 'no reason recorded')}.</p>")
-            continue
-        if rec.get("withheld"):
-            inner += (f"<p class='blurb'>{target}: WITHHELD -- {rec.get('reason', '')} "
-                      f"(the reach gate refused this target; no candidates were "
-                      f"probed, so there is nothing to cluster).</p>")
-            continue
-
-        role_list = rec.get("roles", [])
-        per_target_role_lists[target] = role_list
-        sil = rec.get("silhouette")
-        sil_clause = f", silhouette {sil:.3f}" if isinstance(sil, (int, float)) and sil == sil else ""
-        non_modular_clause = (f", <b>non-modular at this granularity</b> -- {rec['non_modular_reason']}"
-                              if rec.get("non_modular") else "")
-        inner += (f"<h5>{target}</h5><p class='blurb'>"
-                 f"{rec['n_candidates']} probed candidates clustered into "
-                 f"{len(role_list)} roles (k={rec['k']}{sil_clause}{non_modular_clause}).</p>")
-
-        # Part 3: the roles table.
-        df = roles_summary_table(rec)
-        if not df.empty:
-            inner += _table(df)
-            inner += _note(*_SAE_ROLES_TABLE_NOTE, summary="What does this table mean?")
-
-        # Load this target's per-candidate detail for the heatmap/cards.
-        stage2_path = run_dir / "sae" / _sanitize_layer(model) / f"{_sanitize_layer(layer)}_stage2_response.json"
-        if not stage2_path.exists():
-            continue
-        stage2 = load_json(stage2_path)
-        candidates = stage2["candidates"]
-
-        # Part 4: feature x channel heatmap, non-significant cells BLANK.
-        feature_ids, channel_cols, values, clears = feature_channel_matrix(candidates, list(CHANNELS))
-        if len(feature_ids):
-            masked = np.where(clears, values, np.nan)
-            # ROADMAP.md sec 26 B1: the axis said `spectral_centroid` /
-            # `horizon_shape_far`, which is precise and unreadable. Ticks
-            # now carry the human label, the raw identifier and definition
-            # ride along in the hover, and a definition table sits under
-            # the figure -- a reader should not have to leave the heatmap
-            # to find out what a column means.
-            pretty_x = [_vocab_pretty(c) for c in channel_cols]
-            meanings = np.array(
-                [[f"{c}<br>{describe_term(c).what}" for c in channel_cols]],
-                dtype=object).repeat(len(feature_ids), axis=0)
-            fig = go.Figure(data=go.Heatmap(
-                z=masked, x=pretty_x, y=[str(f) for f in feature_ids],
-                colorscale="RdBu", zmid=0,
-                colorbar=dict(title="signed effect<br>(null units)"),
-                customdata=meanings,
-                hovertemplate=("feature %{y}<br>%{customdata}"
-                               "<br><b>effect %{z:.2f}x null p95</b><extra></extra>"),
-                hoverongaps=False))
-            fig.update_layout(title=f"{target}: feature × channel response (blank = did not clear null)",
-                              yaxis=dict(title="feature", type="category"),
-                              xaxis=dict(title="forecast property the feature moves"))
-            inner += _frag(fig, height=max(320, 24 * len(feature_ids)))
-            inner += _details("What each column means",
-                              term_legend_html(channel_cols))
-            inner += _note(
-                "Every probed candidate feature's signed, null-normalized "
-                "steering effect on every channel. A blank cell is not zero "
-                "-- it is a cell that did not clear its own channel's "
-                "random-direction null and is deliberately left unshaded "
-                "rather than rendered as a weak effect.",
-                "Color intensity is the effect size in multiples of that "
-                "channel's own null p95; red and blue are opposite signs "
-                "(e.g. pushing a channel up vs. down). Read a ROW to see "
-                "one feature's full causal profile; read a COLUMN to see "
-                "which features move a given channel.",
-                "Channels are on different natural scales (a `trend` slope "
-                "and a `mase` delta are not comparable in raw units), which "
-                "is exactly why every cell is pre-divided by that channel's "
-                "own null p95 before plotting -- do not compare raw color "
-                "intensity across columns as if it were the same unit.",
-                summary="What does this heatmap mean?")
-
-        # Part 5: per-role cards (member atoms, dominant-channel agreement).
-        role_desc = _role_descriptions(run_dir, target)
-        card_body = ""
-        for role in role_list:
-            members = role_member_candidates(role, candidates)
-            summary = role_card_summary(role, members)
-            struct_clause = ""
-            if role.get("structural_field"):
-                struct_clause = (f" (structural correlate: {role['structural_field']}, "
-                                 f"ρ={role['structural_rho']:.2f}, n={role['structural_n']})")
-            desc_clause = ""
-            desc_text = role_desc.get(str(role.get("role")))
-            if desc_text:
-                desc_clause = f"<p class='blurb'><i>{desc_text}</i></p>"
-            card_body += (f"<h6>{role['name']}</h6>"
-                         f"<p class='blurb'>{role['n_atoms']} atoms: "
-                         f"{', '.join(str(f) for f in role['features'])}. "
-                         f"{summary['n_members_clearing_dominant']} of "
-                         f"{summary['n_members']} members individually clear "
-                         f"the dominant channel's own null{struct_clause}.</p>"
-                         f"{desc_clause}")
-        if card_body:
-            inner += _details(f"{target}: per-role member detail ({len(role_list)} roles)", card_body)
-            inner += _figcap(
-                "Member-level detail per role: which atoms belong to it and how "
-                "many individually agree with the role's own dominant channel. "
-                "ROADMAP.md sec 25.7 part 5 additionally specifies a mean "
-                "Δŷ(h)-by-horizon waveform with a bootstrap band, 2-3 stratified "
-                "exemplar series, and a per-window activation trace per role; "
-                "none of those are in `*_stage2_response.json` (which persists "
-                "only the scalar per-channel summary each steering pass "
-                "produced, not the underlying per-horizon-step forecast array or "
-                "per-window activations) -- rendering them needs a live forward "
-                "pass through the target model, which this report-only pass does "
-                "not perform. Stated deferral, not a silently thin card.")
-
-    # Part 6: cross-model role correspondence (ROADMAP.md sec 25.6, sec
-    # 25.9 Stage 4, Component C) -- only when >=2 models have SAE role
-    # targets in THIS run. Matches roles ACROSS every model pair this run
-    # configures (`cfg.comparison_pairs()`, sec 24.3's rule -- all C(n,2)
-    # pairs on a panel, not only the designated reference pair), by
-    # sign-aware cosine over each role's mean null-normalized response
-    # fingerprint (the one genuinely architecture-neutral space this repo
-    # has -- shared forecast space, not decoder geometry). A blank cell
-    # means "no target at a comparable depth in this model", never "this
-    # model lacks this role" (sec 25.6).
-    models_with_roles = sorted({t.split("/", 1)[0] for t in per_target_role_lists})
-    if len(models_with_roles) >= 2:
-        from ..extraction.store import ActivationStore
-        from ..analysis.depth_axis import depth_axis_for_run
-        from ..sae.role_matching import role_correspondence_table, untrained_twin_role_floor
-        from .sae_role_matching import (
-            correspondence_summary_rows,
-            pair_match_table,
-            role_by_model_matrix,
-            shared_vs_specific_rows,
-        )
-
-        # `cfg` is optional here (this block's own tests, and any purely
-        # display-oriented caller, pass `None` -- `_sae_roles_block` reads
-        # only `sae/roles.json` and each target's own Stage 2 artifact for
-        # every OTHER part, and this part degrades the same way rather than
-        # requiring a full resolved config just to build C(n,2) pairs from
-        # names it already has as its own `model_names` argument).
-        depth_axis_name = getattr(getattr(cfg, "alignment", None), "depth_axis", "index")
-        store_path = run_dir / "activations.zarr"
-        store = ActivationStore(store_path, mode="r") if store_path.exists() else None
-        depths = {}
-        for target in per_target_role_lists:
-            model, layer = target.split("/", 1)
-            try:
-                coords = depth_axis_for_run(depth_axis_name, store, model, [layer]).coords
-                if len(coords):
-                    depths[target] = float(coords[0])
-            except Exception as e:
-                log.warning(f"sae role matching: could not resolve depth for "
-                           f"{target} ({e}); this target's row will show an "
-                           f"unresolved ('?') depth rather than a fabricated one")
-
-        # Untrained-twin floors (sec 25.6, mandatory before any match-rate
-        # number is quotable). Explicit run paths only -- no auto-discovery
-        # anywhere in this repo (analysis/null_baseline.py's own convention).
-        twin_runs = getattr(getattr(cfg, "sae", None), "role_matching_untrained_twin_runs", None) or {}
-        twin_floors = {}
-        for model in models_with_roles:
-            twin_dir = twin_runs.get(model)
-            if not twin_dir:
-                continue
-            target_for_model = next((t for t in per_target_role_lists if t.startswith(f"{model}/")), None)
-            if target_for_model is None:
-                continue
-            layer = target_for_model.split("/", 1)[1]
-            twin_name = f"{model}-random"
-            floor = untrained_twin_role_floor(model, layer, Path(twin_dir), model, twin_name)
-            if floor is not None:
-                twin_floors[model] = floor
-
-        # `cfg.comparison_pairs()` returns `ModelConfig` objects, not name
-        # strings -- prefer it (it reflects the actual configured reference
-        # pair ordering) but fall back to all C(n,2) pairs over the models
-        # THIS BLOCK already knows have role targets, when no usable cfg is
-        # available -- never fewer pairs just because cfg is absent.
-        if cfg is not None and getattr(cfg, "models", None):
-            model_pairs = [(a.name, b.name) for a, b in cfg.comparison_pairs()]
-        else:
-            from itertools import combinations
-            model_pairs = list(combinations(models_with_roles, 2))
-        depth_tolerance = getattr(getattr(cfg, "sae", None), "role_matching_depth_tolerance", 0.15)
-        cosine_threshold = getattr(getattr(cfg, "sae", None), "role_matching_cosine_threshold", 0.5)
-        table = role_correspondence_table(
-            model_pairs, all_roles, depths=depths,
-            depth_tolerance=depth_tolerance,
-            untrained_twin_floors=twin_floors,
-            cosine_threshold=cosine_threshold,
-            run_dir=run_dir)
-
-        # ROADMAP.md sec 27: the causal second opinion, when an ablation pass
-        # exists. Two roles can match on activation profile -- they fire on
-        # the same series -- and still push the forecast in different
-        # directions; nothing correlational in this report can separate those
-        # two cases. Absent artifacts leave the columns out entirely rather
-        # than rendering an empty one, which would read as "measured, they
-        # agree" (sec 11.37).
-        abl_by_target = {}
-        for target in per_target_role_lists:
-            model, layer = target.split("/", 1)
-            doc = _ablation_entries(run_dir, model, layer, raw=True)
-            if doc is not None:
-                abl_by_target[target] = doc
-        if abl_by_target:
-            from ..sae.matching import add_role_causal_agreement
-            table = add_role_causal_agreement(table, all_roles, abl_by_target)
-
-        inner += "<h5>Cross-model role correspondence</h5>"
-        summary_rows = correspondence_summary_rows(table)
-        if summary_rows:
-            inner += _table(pd.DataFrame(summary_rows))
-        matrix_df = role_by_model_matrix(table, models_with_roles)
-        if not matrix_df.empty:
-            inner += "<h6>Role × model matrix</h6>"
-            inner += _table(matrix_df)
-        for pair in table["pairs"]:
-            if not pair.get("comparable"):
-                inner += (f"<p class='blurb'>{pair['model_a']} × {pair['model_b']}: "
-                          f"not comparable — {pair.get('reason', 'no reason recorded')}.</p>")
-                continue
-            pt = pair_match_table(pair)
-            if not pt.empty:
-                inner += (f"<p class='blurb'>{pair['model_a']} ({pair['target_a']}) × "
-                          f"{pair['model_b']} ({pair['target_b']}), greedy nearest-neighbour "
-                          f"(not an optimal assignment):</p>")
-                inner += _table(pt)
-            split_rows = shared_vs_specific_rows(pair)
-            if split_rows is None:
-                n_pool = pair.get("population_null_n_pool") or 0
-                inner += (f"<p class='blurb'>Shared-vs-specific role split not available for "
-                          f"{pair['model_a']} × {pair['model_b']}: only {n_pool} role "
-                          f"vector(s) exist elsewhere in this run to estimate a chance level "
-                          f"from.</p>")
-            elif split_rows:
-                inner += "<h6>Shared vs. specific roles (population-null-based)</h6>"
-                inner += _table(pd.DataFrame(split_rows))
-        inner += _note(
-            "For each pair of models with SAE role targets, every role on one "
-            "side is matched to its single best-scoring role on the other "
-            "(sign-aware cosine similarity over the mean null-normalized "
-            "response fingerprint, ROADMAP.md sec 25.6) — the response "
-            "fingerprint is used because it lives in shared forecast space, "
-            "unlike a decoder vector or raw activation, which differ in basis "
-            "and dimension across architectures. The role × model matrix "
-            "folds matches from every pair into one row per canonical "
-            "(matched) role name, one column per model, cell = that model's "
-            "role at this position with its relative depth (block axis) and "
-            "cosine to its partner.",
-            "Cosine is SIGNED (range −1 to +1), never |cosine| — a role "
-            "pushing a channel up and one pushing it down are genuinely "
-            "different causal identities, not the same role read backwards. "
-            "A match rate is rendered 'quotable' only when at least one "
-            "model has an untrained-twin floor recorded beside it: ROADMAP.md "
-            "sec 6.2.1 Stage 1 found a real pair's crosscoder "
-            "'frac_shared' (0.845) BELOW its own untrained-twin floor "
-            "(0.974) — a model can read as more 'shared' with a random copy "
-            "of itself than with a genuinely different, trained model — so "
-            "any bare match-rate number here would repeat that mistake.",
-            "Matching is greedy nearest-neighbour, not an optimal one-to-one "
-            "assignment (the same scope limit `sae/matching.py` already "
-            "states) — more than one role on one side can claim the same "
-            "partner on the other. A blank cell in the matrix means no "
-            "target exists at a comparable depth in that model for this "
-            "run, never that the model lacks the role. Depth-located claims "
-            "here inherit every coverage caveat the Cost section states for "
-            "an encoder-only or partially-captured model. The threshold-based "
-            "'match rate' (cosine ≥ a fixed value, default 0.5) can read as a "
-            "clean 100% even when it is uninformative — the response "
-            "fingerprint has only 9 channels, so two roles that both push one "
-            "generic effect (e.g. dispersion up) can score a high cosine with "
-            "no real correspondence implied. The 'shared vs. specific roles' "
-            "table instead checks each match against a WITHIN-RUN population "
-            "null (`permutation_null_cosine`): how similar do two ARBITRARY "
-            "trained roles elsewhere in this run look, absent any claim they "
-            "correspond. A role is 'shared' only if its match clears that "
-            "chance level — this is the per-role-group split with its own "
-            "null ROADMAP.md sec 26 D1 asks for, and is independent of (not a "
-            "substitute for) the untrained-twin floor, which asks a different "
-            "question (architecture alone, not response-space richness).",
-            summary="What does this correspondence table mean?")
-
-        for pair in table["pairs"]:
-            if not pair.get("comparable") or not pair.get("matches"):
-                continue
-            best = max(pair["matches"], key=lambda m: m.get("cosine") or -1)
-            quotable = pair.get("match_rate_quotable")
-            floor_clause = ""
-            if quotable:
-                floor = pair.get("untrained_twin_floor") or {}
-                floor_clause = (f" (untrained-twin floor: "
-                                f"{', '.join(f'{n}={v:.3f}' for n, v in floor.items())}, "
-                                f"clears floor: {pair.get('clears_untrained_twin_floor')})")
-            else:
-                floor_clause = " — NOT quotable as evidence of shared structure: no untrained-twin floor available"
-            null_rate = pair.get("match_rate_null_based")
-            null_quotable = pair.get("match_rate_null_based_quotable")
-            if null_quotable and null_rate is not None:
-                null_clause = (f" Against the within-run population null "
-                               f"(p95 cosine {pair['population_null_p95']:.3f} over "
-                               f"{pair['population_null_n_pool']} other role vectors in this run), "
-                               f"only {null_rate:.0%} of {pair['model_a']}'s roles clear chance "
-                               f"level — the null-calibrated read, not the "
-                               f"{pair['match_rate']:.0%} fixed-threshold figure above.")
-            else:
-                null_clause = " Population-null-based split not available for this pair (too few other roles in this run to estimate a chance level from)."
-            findings.append(Finding(
-                claim_id=_next_claim_id("sae"), stage="sae", evidence_class="descriptive",
-                text=f"SAE role correspondence — {pair['model_a']} ({pair['target_a']}) × "
-                    f"{pair['model_b']} ({pair['target_b']}): {len(pair['matches'])} roles "
-                    f"matched, {pair['match_rate']:.0%} at cosine ≥ {pair['cosine_threshold']:g}; "
-                    f"strongest single match '{best['role_a']}' ↔ '{best['role_b']}' "
-                    f"(cosine {best['cosine']:+.3f}){floor_clause}.{null_clause}",
-                plain=(f"In {pair['model_a']} and {pair['model_b']}, "
-                      f"{null_rate:.0%} of causal roles are more similar across models than "
-                      f"two unrelated roles from this same run typically are — judged against "
-                      f"a measured chance level, not a fixed cutoff."
-                      if null_quotable and null_rate is not None else
-                      f"In {pair['model_a']} and {pair['model_b']}, {pair['match_rate']:.0%} of "
-                      f"causal roles found a reasonably similar counterpart in the other "
-                      f"model's dictionary, judged by how each role moves the forecast — this "
-                      f"run has too few other roles to check whether that is more than chance."),
-                registered=False))
-
-    # One finding per target with at least one named (clears_null) role.
-    for target, role_list in per_target_role_lists.items():
-        named = [r for r in role_list if r.get("clears_null")]
-        if not named:
-            continue
-        best = max(named, key=lambda r: abs(r.get("dominant_effect_null_units") or 0.0))
-        n_candidates = sum(r["n_atoms"] for r in role_list)
-        findings.append(Finding(
-            claim_id=_next_claim_id("sae"), stage="sae", evidence_class="causal_within_model",
-            text=f"SAE roles — {target}: {len(role_list)} roles from "
-                f"{n_candidates} probed candidates; strongest is "
-                f"'{best['name']}' ({best['n_atoms']} atoms), dominant "
-                f"channel {best.get('dominant_channel')} at "
-                f"{best.get('dominant_effect_null_units'):.2f}x its null p95.",
-            plain=f"In {target}, a group of {best['n_atoms']} sparse features "
-                 f"named '{best['name']}' causally moves the forecast's "
-                 f"{best.get('dominant_channel')} beyond what random steering "
-                 f"of the same size does.",
-            registered=False))
-
-    return inner
 
 
 def _sae_seed_floor_block(meta_sae: dict) -> str:
@@ -5922,25 +5748,41 @@ def _sae_seed_floor_block(meta_sae: dict) -> str:
     beside it reads exactly like one that has cleared a floor (`CLAUDE.md`
     §2.5).
     """
-    rows = []
-    for key, entry in meta_sae.items():
-        floor = entry.get("seed_floor")
-        if not floor:
-            continue
-        for metric, spread in floor["spread"].items():
-            if not spread.get("n", 0):
-                continue
-            rows.append({"target": key, "metric": metric, "seeds": spread["n"],
-                         "mean": spread["mean"], "sd": spread["sd"],
-                         "min": spread["min"], "max": spread["max"]})
-    if not rows:
+    from .sae_features import metric_legend_html
+
+    df = derived.sae_seed_floor(meta_sae)
+    if df.empty:
         return ("<h4>Seed-to-seed noise floor</h4><p class='blurb'>Not measured — this "
                 "run trained one SAE per target (<code>sae.n_seeds: 1</code>). Every "
                 "number above is therefore a single draw from SAE-training "
                 "stochasticity, with no floor to read it against; set "
                 "<code>sae.n_seeds</code> above 1 to size one "
                 "(ROADMAP.md sec 13).</p>")
-    return ("<h4>Seed-to-seed noise floor</h4>" + _table(pd.DataFrame(rows))
+    # The headline is the finding; the per-LAYER rows behind it are detail
+    # and are collapsed (user review, 2026-09-11: "most layer specific
+    # tables should be pooled into per-model analysis unless really
+    # necessary, but should be collapsed by default"). The headline sentence
+    # `derived.sae_seed_floor` already computes is a reduction over exactly
+    # these rows, so nothing is lost by putting them one click away -- and
+    # the absent case above stays uncollapsed, because "no floor was
+    # measured" is a caveat on every number in the section and a caveat
+    # behind a click is not a caveat.
+    return ("<h4>Seed-to-seed noise floor</h4>"
+            + _figcap(
+                str(df.attrs.get("headline") or "") + " Each cell in the "
+                "table below is the mean across seeds ± its spread; the two "
+                "ΔMASE columns are IDENTICAL by construction for a model "
+                "whose token width equals the alignment window, so where "
+                "they differ the gap is the window-broadcast confound rather "
+                "than a second opinion. "
+                + str(df.attrs.get("control_statement") or ""))
+            + _details(f"Per-seed spread at each of the {len(df)} analyzed "
+                       f"layers",
+                       _table(df)
+                       + metric_legend_html(
+                           list(df.columns),
+                           heading="<p class='blurb'>Every column, in words, "
+                                   "with its arithmetic.</p>"))
             + _note(*_SAE_SEED_FLOOR_NOTE, summary="What does this floor mean?"))
 
 
@@ -6073,15 +5915,16 @@ _SAE_SEED_FLOOR_NOTE = (
     "upstream varies — same store, same rows, same checkpoint — so the "
     "spread here is SAE-training stochasticity alone, and it is the floor "
     "every headline number in this section has to be read against.",
-    "<code>sd</code> is what a ΔMASE must exceed before its sign means "
-    "anything: a delta smaller than it is one draw from a distribution that "
-    "contains both signs, and this section says so explicitly next to any "
-    "such value rather than leaving it to be inferred. <code>mase_clean</code> "
-    "is a control, not a result — the unpatched forecast cannot depend on "
-    "the SAE seed, so an sd above zero there means something other than the "
-    "seed varied and the rest of the table is suspect. Dead-feature rate "
-    "and reconstruction fidelity are usually far more stable across seeds "
-    "than the forecast deltas are.",
+    "The ± is what a ΔMASE must exceed before its sign means anything: a "
+    "delta smaller than twice it is one draw from a distribution that "
+    "contains both signs, which is what the last column decides and says. "
+    "The unpatched forecast is a CONTROL, not a result — it cannot depend "
+    "on the SAE seed, so its spread must be exactly zero, and that verdict "
+    "is stated once beneath the table rather than repeated as a row of "
+    "zeros per target; a failure there means something other than the seed "
+    "varied and every spread above it is suspect. Dead-feature rate and "
+    "reconstruction fidelity are usually far more stable across seeds than "
+    "the forecast deltas are.",
     "This floor is measured for this run's own targets and settings only; "
     "it does not transfer to a different layer, corpus, dictionary size, or "
     "<code>k</code>. It is also not the <i>behavioral</i> repeat-run floor "
@@ -7098,7 +6941,11 @@ def _sec_layer_screen(run_dir: Path, model_colors: dict, findings: list) -> str:
         inner += _frag(fig, 300) + _note(
             "A cheap score over this model's own layers, used to decide which few layers "
             "are worth spending an expensive analysis (an SAE) on. The bars are the score; "
-            "the highlighted ones are what the screen selected.",
+            "the highlighted ones are what the screen selected — the highest-scoring layers, "
+            f"up to a budget of {len(sel.get('selected', []))} for this model"
+            + (" and nothing else." if int(sel.get("min_gap", 1)) <= 1 else
+               f", subject to a minimum gap of {sel.get('min_gap')} layers between picks "
+               "(so a high-scoring layer adjacent to an already-selected one was skipped)."),
             "Height is only meaningful relative to the other bars for the same model — it "
             "is a ranking device, not a quantity with units. A screen worth trusting picks "
             "layers in the middle-to-late range and clearly separates them from the rest; a "

@@ -297,6 +297,10 @@ def test_untrained_twin_role_floor_none_when_twin_run_has_no_roles_json(tmp_path
 
 
 def test_untrained_twin_role_floor_matches_real_against_twin(tmp_path):
+    # ROADMAP.md sec 30 (Stage 4, 2026-09-11): the report's own SAE section
+    # now reads `sae/concepts.json`; this function's own artifact was
+    # archived under `roles_injection.json` and this test writes it there,
+    # matching `untrained_twin_role_floor`'s own repointed read path.
     from tsfm_lens.utils import save_json
     twin_dir = tmp_path / "twin_run"
     cand = [_candidate(0, {"trend": 5.0})]
@@ -306,7 +310,7 @@ def test_untrained_twin_role_floor_matches_real_against_twin(tmp_path):
         "ModelA/layer0": {"withheld": False, "skipped": False, "roles": [_role(0, "r", [0])]},
         "ModelA-random/layer0": {"withheld": False, "skipped": False, "roles": [_role(0, "r", [0])]},
     }
-    save_json(twin_dir / "sae" / "roles.json", roles_json)
+    save_json(twin_dir / "sae" / "roles_injection.json", roles_json)
     result = untrained_twin_role_floor("ModelA", "layer0", twin_dir, "ModelA", "ModelA-random")
     assert result is not None
     assert result["comparable"] is True

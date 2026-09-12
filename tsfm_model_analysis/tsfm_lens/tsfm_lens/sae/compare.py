@@ -55,7 +55,8 @@ __all__ = [
     "Contrast", "ContrastSet",
     "model_capability_profile", "contrast_chunks",
     "render_contrast", "contrast_allowed_concepts", "check_contrast_text",
-    "contrast_machine_fallback", "describe_contrasts",
+    "contrast_machine_fallback", "unscorable_clause",
+    "DETERMINISTIC_BY_DESIGN", "describe_contrasts",
     "synthesis_evidence", "check_synthesis_text", "synthesis_fallback",
     "compare_models", "CONTRAST_SYSTEM_PROMPT", "SYNTHESIS_SYSTEM_PROMPT",
     "FEW_SHOT_CONTRASTS",
@@ -250,6 +251,21 @@ class Contrast:
     """
     causal_cosine: float | None = None
     causal_null_p95: float | None = None
+    causal_reason: str = ""
+    """WHY `causal_verdict` is `not scorable`, in the battery's own words.
+
+    Empty for a scored pair. Carried because "not scorable" names a state
+    without naming its cause, and the two causes measured on
+    `runs/full_report_run_4model` are different findings that a reader must
+    be able to tell apart: 25 of 27 unscorable cells are one side's role
+    having NO member that cleared any channel's null (the role has no causal
+    direction, which is a fact about that role), and 2 are the null pool
+    being smaller than 20 (the p95 arithmetic of sec 6.6's p-floor in a
+    different statistic, which is a fact about the run's size). Without this
+    field the narrator invented a third, unmeasured cause -- "could not be
+    scored due to differences in the roles' effects on the forecast" -- which
+    is both unlicensed and, for the commonest case, the opposite of true.
+    """
     n_atoms_a: int | None = None
     n_atoms_b: int | None = None
     forbidden_models: tuple = ()
@@ -360,6 +376,7 @@ def contrast_chunks(match_table: dict, roles_json: dict,
                 causal_verdict=causal.get("verdict"),
                 causal_cosine=causal.get("cosine"),
                 causal_null_p95=causal.get("null_p95"),
+                causal_reason=str(causal.get("reason") or ""),
                 n_atoms_a=role_a.get("n_atoms"), n_atoms_b=role_b.get("n_atoms"),
                 forbidden_models=forbidden))
 
@@ -1139,6 +1156,52 @@ def check_contrast_text(text: str, c: Contrast) -> str:
     return ""
 
 
+# The marker `describe_contrasts` records instead of a refusal reason when a
+# chunk was never sent to the narrator. Read by `run_sae_compare.py` and by
+# `report/derived.py::sae_contrast_chunks`, which both report three states --
+# narrated, refused, and deliberately deterministic -- because collapsing the
+# last two labels a run where nothing failed as a run of failures (sec 11.37).
+DETERMINISTIC_BY_DESIGN = (
+    "deterministic by design: an unscorable pair's only content is the "
+    "measured reason it could not be scored, and across the runs measured so "
+    "far the narrator supplied a different, unlicensed reason instead")
+
+
+def unscorable_clause(c: Contrast, brief: bool = False) -> str:
+    """Why this pair could not be scored, in the reader's terms.
+
+    `Contrast.causal_reason` carries `sae/matching.py`'s own wording, which
+    names the side as "A"/"B" -- correct inside that module and meaningless
+    in a report where the two models have names. This translates it and
+    falls back to the bare state, never to an invented cause.
+
+    `brief` exists because the two consumers have different budgets and the
+    long form breaks one of them: `check_contrast_text` caps a chunk
+    sentence at 60 words, and the full clause pushed 11 of 63 machine
+    fallbacks past it -- sec 11.51 lesson 3, a guard refusing its own
+    module's fallback, this time by length rather than vocabulary. The
+    report table has no such cap and renders the full wording.
+    """
+    r = (c.causal_reason or "").strip()
+    if not r:
+        return "not scorable" if brief else "the causal comparison could not be scored"
+    lower = r.lower()
+    side = (c.model_a if lower.startswith("side a:")
+            else c.model_b if lower.startswith("side b:") else None)
+    body = r.split(":", 1)[1].strip() if side is not None else r
+    if brief:
+        if side is not None and "cleared any channel" in body:
+            return f"not scorable — no {side} feature in this role cleared its null"
+        if side is not None:
+            return f"not scorable — on the {side} side, {body}"
+        if "cross-pairs" in body:
+            return "not scorable — too few cross-model pairs to form a null"
+        return "not scorable"
+    if side is not None:
+        return f"the causal comparison could not be scored: in {side}, {body}"
+    return f"the causal comparison could not be scored: {body}"
+
+
 def contrast_machine_fallback(c: Contrast) -> str:
     """The deterministic sentence used when generation is refused.
 
@@ -1168,7 +1231,7 @@ def contrast_machine_fallback(c: Contrast) -> str:
     if c.causal_verdict == "fires together, acts differently":
         return head + ("; they fire on the same series, yet removing each pushes "
                        "the forecast a different way.")
-    return head + "; the causal comparison could not be scored."
+    return head + "; " + unscorable_clause(c, brief=True) + "."
 
 
 # ---------------------------------------------------------------------------
@@ -1189,7 +1252,12 @@ def _contrast_messages(c: Contrast, history: list) -> list:
     return msgs
 
 
-def describe_contrasts(chunks: list, narrator) -> list:
+def _is_unscorable_pair(c: Contrast) -> bool:
+    return c.kind == "pair" and c.causal_verdict == "not scorable"
+
+
+def describe_contrasts(chunks: list, narrator,
+                       prefer_deterministic_unscorable: bool = True) -> list:
     """One `describe.Description` per chunk, same order.
 
     Batched by retry ROUND exactly as `describe.describe_batch` is, so the
@@ -1197,6 +1265,23 @@ def describe_contrasts(chunks: list, narrator) -> list:
     chunks a panel produces -- a four-model run has six pairs and can reach
     well over a hundred chunks, which is the whole reason the user asked for
     chunking rather than one long prompt.
+
+    🔴 `prefer_deterministic_unscorable` defaults True, for the same reason
+    and on the same evidence as `compare_models`' own
+    `prefer_deterministic_summary` (sec 28.12). An unscorable pair's packet
+    carries exactly one thing the scored pairs do not: the measured reason it
+    could not be scored. The narrator does not have it -- it is not in the
+    prompt as anything it may quote -- so it supplies one, and on
+    `runs/full_report_run_4model` every accepted unscorable sentence supplied
+    the SAME invented cause ("due to differences in the roles' effects on the
+    forecast"), which for the 25-of-27 majority case is the opposite of the
+    truth: there was no measurable effect on one side to differ. No
+    vocabulary scan can catch that -- the sentence is fluent, every term in
+    it is licensed, and it is wrong about a fact the guard has no field for
+    (sec 11.53's tenth instance). `unscorable_clause` states the measured
+    reason instead. Pass False to restore generation for these chunks; the
+    scored chunks are untouched either way, and their acceptance rate is
+    therefore comparable across this change.
     """
     chunks = list(chunks)
     if not chunks:
@@ -1208,7 +1293,15 @@ def describe_contrasts(chunks: list, narrator) -> list:
                 for c in chunks]
 
     results: list = [None] * len(chunks)
-    pending = list(range(len(chunks)))
+    pending = []
+    for i, c in enumerate(chunks):
+        if prefer_deterministic_unscorable and _is_unscorable_pair(c):
+            results[i] = _d.Description(
+                text=contrast_machine_fallback(c), accepted=False,
+                reason=DETERMINISTIC_BY_DESIGN, attempts=0,
+                model_id=narrator.model_id, revision=narrator.revision)
+        else:
+            pending.append(i)
     histories: dict = {i: [] for i in pending}
     for attempt in range(1, _d.MAX_ATTEMPTS + 1):
         if not pending:
@@ -1530,6 +1623,7 @@ def compare_models(match_table: dict, roles_json: dict, narrator=None,
                  "population_null_p95": c.population_null_p95,
                  "causal_verdict": c.causal_verdict,
                  "causal_cosine": c.causal_cosine,
+                 "causal_reason": c.causal_reason,
                  "text": d.text, "accepted": d.accepted, "reason": d.reason}
                 for c, d in zip(cs.chunks, descs)],
         })

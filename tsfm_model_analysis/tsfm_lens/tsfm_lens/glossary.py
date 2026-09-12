@@ -379,7 +379,11 @@ GLOSSARY: dict = {
             "description of that model's own feature space, not a claim that any "
             "other model has an equivalent role until cross-model matching (see "
             "response fingerprint) has actually checked."),
-        where="SAE roles table and role cards (Component B)."),
+        where=(
+            "Superseded by concept clustering (ROADMAP.md sec 30, "
+            "2026-09-11) -- see the concept cards and concept universality "
+            "table instead; the roles table/role cards this pointer named "
+            "are no longer rendered.")),
     "response fingerprint": Term(
         term="Response fingerprint",
         definition=(

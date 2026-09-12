@@ -344,7 +344,7 @@ The recurring vocabulary of this repo's report, one sentence each (`ROADMAP.md` 
 
 **Role.** A cluster of a single model's SAE features that share a similar structural signature and causal response profile, named from its dominant response channel and its best-matching ground-truth field — a description of that model's own feature space, not a claim that any other model has an equivalent role until cross-model matching (see response fingerprint) has actually checked.
 
-*Where it appears:* SAE roles table and role cards (Component B).
+*Where it appears:* Superseded by concept clustering (ROADMAP.md sec 30, 2026-09-11) -- see the concept cards and concept universality table instead; the roles table/role cards this pointer named are no longer rendered.
 
 **RSA (representational similarity analysis).** The rank-correlation companion to CKA: instead of comparing representations directly it compares each model's *matrix of series-to-series distances*, so it survives any monotone rescaling CKA would not.
 

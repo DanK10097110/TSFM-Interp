@@ -128,3 +128,50 @@ def test_the_rendered_report_has_no_internal_references_left():
     assert not re.search(r"\bsec\b\.?\s*\d", html)
     assert not re.search(r"§\s*\d", html)
     assert 'id="sec-' in html
+
+
+# ---------------------------------------------------------------------------
+# Code blocks (2026-09-09)
+# ---------------------------------------------------------------------------
+
+def test_a_style_block_passes_through_untouched():
+    """🔴 The sanitizer runs over the WHOLE rendered document, `<style>` and
+    `<script>` bodies included, and its punctuation tidy-up rewrote CSS.
+
+    `re.sub(r" +([.,;)])", r"\\1", out)` exists to close the gap a dropped
+    citation leaves before a comma. Applied to a stylesheet it turns the
+    descendant selector `#spark-modal .panel svg` into `#spark-modal.panel
+    svg` -- a selector matching nothing, since no element has both that id
+    and that class. The sparkline enlarge overlay therefore opened and
+    cloned the SVG at the inline `.spark` rule's 132x30: the overlay worked
+    perfectly and enlarged nothing, which is why it read as a modal bug for
+    as long as it did.
+
+    A `<style>` body is not prose and must not be tidied. Confirmed to fail
+    against the pre-fix version.
+    """
+    css = "<style>#spark-modal .panel svg { width: 90vw; }\n.a .b, .c .d { top: 0; }</style>"
+    out = strip_internal_refs(css)
+    assert "#spark-modal .panel svg" in out
+    assert "#spark-modal.panel" not in out
+    assert ".a .b, .c .d" in out
+
+
+def test_prose_around_a_code_block_is_still_stripped():
+    """The other half -- skipping the block must not skip the document. A
+    guard that quietly disabled stripping wherever a page has a stylesheet
+    would pass the test above and defeat the module."""
+    text = ("a claim (ROADMAP.md sec 18 F6)"
+            "<style>.x .y { a: b; }</style>"
+            "another claim (CLAUDE.md sec 11.37)")
+    out = strip_internal_refs(text)
+    assert "ROADMAP.md" not in out and "CLAUDE.md" not in out
+    assert ".x .y" in out
+    assert out.startswith("a claim") and out.endswith("another claim")
+
+
+def test_a_script_body_is_skipped_too():
+    """`document.querySelector('#m .panel')` is the same trap in the other
+    kind of block."""
+    js = "<script>document.querySelector('#m .panel');</script>"
+    assert strip_internal_refs(js) == js

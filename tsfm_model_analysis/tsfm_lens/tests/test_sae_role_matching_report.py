@@ -51,6 +51,15 @@ def test_pair_match_table_empty_for_incomparable_pair():
 
 
 def test_pair_match_table_has_one_row_per_match_with_cosine():
+    """One row per match, cosine present and signed.
+
+    The cell is TEXT, not a float, and that is the assertion worth making:
+    a match whose causal battery could not be scored explains why in words
+    in the two columns beside it, and a `None` left in a float column comes
+    back as `NaN` -- the same explanation restated as a broken measurement
+    (sec 11.37). Formatting at the builder is what keeps the two states
+    apart, so the type is pinned here.
+    """
     pair = _comparable_pair(matches=[
         {"role_a": "r1", "role_b": "r1-b", "cosine": 0.9},
         {"role_a": "r2", "role_b": "r2-b", "cosine": 0.3},
@@ -58,7 +67,8 @@ def test_pair_match_table_has_one_row_per_match_with_cosine():
     df = pair_match_table(pair)
     assert len(df) == 2
     assert "cosine" in df.columns
-    assert list(df["cosine"]) == [0.9, 0.3]
+    assert list(df["cosine"]) == ["+0.900", "+0.300"]
+    assert not df.isna().any().any()
 
 
 def test_pair_match_table_includes_secondary_signals_when_present():
@@ -79,18 +89,19 @@ def test_summary_rows_one_per_pair_including_incomparable():
     table = {"pairs": [_comparable_pair(), _incomparable_pair()]}
     rows = correspondence_summary_rows(table)
     assert len(rows) == 2
-    assert rows[0]["comparable"] is True
-    assert rows[1]["comparable"] is False
-    assert rows[1]["reason"] == "no target exists to check"
+    assert rows[0]["comparable"] == "yes"
+    assert rows[1]["comparable"] == "no"
+    assert rows[1]["quotable reason"] == "no target exists to check"
+    assert set(rows[0]) == set(rows[1])
 
 
 def test_summary_rows_quotable_reflects_floor_availability():
     with_floor = _comparable_pair(quotable=True, floor={"A": 0.5})
     without_floor = _comparable_pair(model_a="X", model_b="Y", quotable=False, floor=None)
     rows = correspondence_summary_rows({"pairs": [with_floor, without_floor]})
-    assert rows[0]["quotable"] is True
+    assert rows[0]["quotable"] == "yes"
     assert rows[0]["untrained-twin floor"] != "not available"
-    assert rows[1]["quotable"] is False
+    assert rows[1]["quotable"] == "no"
     assert rows[1]["untrained-twin floor"] == "not available"
 
 
@@ -98,12 +109,19 @@ def test_summary_rows_quotable_reflects_floor_availability():
 # role_by_model_matrix
 # ---------------------------------------------------------------------------
 
-def test_matrix_blank_cell_is_none_not_a_string():
-    """A model with no matched role at a canonical position must render a
-    real `None`, never a placeholder string like 'n/a' or '0.0' -- sec
-    25.6's "blank means no target at comparable depth, never absence of
-    effect" contract, checked at the exact type level so a future edit
-    can't silently swap in a string that reads as data.
+def test_matrix_blank_cell_says_why_it_is_blank():
+    """A model with no matched role at a canonical position must render the
+    REASON, never a placeholder that reads as data ('n/a', '0.0') and never
+    a bare `None`.
+
+    🔴 This test used to require exactly `None`, on the reasoning that a
+    real null is the only thing a reader cannot mistake for a measurement.
+    That reasoning did not survive the renderer: pandas coerces a `None`
+    sitting in a column whose other cells are strings-or-numbers into
+    `NaN`, and `NaN` is precisely the "measurement that failed" reading
+    sec 25.6's contract exists to prevent. The cell now carries the words,
+    which is the same contract enforced one layer later -- so what is
+    pinned is that the text names the absence and contains no number.
     """
     pair = _comparable_pair(model_a="A", model_b="B",
                             matches=[{"role_a": "canon-role", "role_b": "b-role", "cosine": 0.7}])
@@ -113,7 +131,11 @@ def test_matrix_blank_cell_is_none_not_a_string():
     row = df.iloc[0]
     assert row["A"] is not None
     assert row["B"] is not None
-    assert row["C"] is None  # C has no target in this pair at all
+    blank = row["C"]  # C has no target in this pair at all
+    assert isinstance(blank, str)
+    assert "no target" in blank
+    assert not any(ch.isdigit() for ch in blank)
+    assert not df.isna().any().any()
 
 
 def test_matrix_folds_same_role_name_from_multiple_pairs_into_one_row():

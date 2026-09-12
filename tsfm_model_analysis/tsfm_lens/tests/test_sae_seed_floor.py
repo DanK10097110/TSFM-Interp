@@ -77,12 +77,20 @@ def test_a_single_seed_has_no_spread_rather_than_a_fabricated_one():
                                   "max": 0.4, "range": 0.0, "values": [0.4]}
 
 
-def _entry(mean, sd_values):
-    """A `sae/meta.json` entry whose window ΔMASE has the given seed values."""
+def _entry(mean, sd_values, clean=None):
+    """A `sae/meta.json` entry whose window ΔMASE has the given seed values.
+
+    `clean` is the frozen-store control's own per-seed values; it defaults to
+    a constant, which is the ONLY value a correct run can produce -- the
+    unpatched forecast does not depend on the SAE seed.
+    """
+    clean = list(clean if clean is not None else [1.5] * len(sd_values))
     return {"seed_floor": {"n_seeds": len(sd_values),
                            "per_seed": [],
                            "spread": {"mase_delta_window": seed_spread(sd_values),
-                                      "mase_delta_token": seed_spread(sd_values)}}}
+                                      "mase_delta_token": seed_spread(sd_values),
+                                      "mase_clean_window": seed_spread(clean),
+                                      "mase_clean_token": seed_spread(clean)}}}
 
 
 def test_the_floor_lookup_is_tri_state_and_unmeasured_is_not_failed():
@@ -115,12 +123,67 @@ def test_an_unmeasured_floor_renders_a_sentence_not_an_empty_block():
 
 
 def test_a_measured_floor_renders_every_metric_for_every_target():
+    """One row per TARGET, not per (target, metric).
+
+    🔴 This used to assert the two raw metric KEYS appeared in the HTML, and
+    they did -- as 78 rows on the four-model run, a third of which were the
+    frozen-store control reporting its own success (`mase_clean_*`, whose
+    spread must be exactly zero) and two more of which were bit-identical by
+    construction for any model whose token width equals the alignment
+    window. The metrics are all still rendered; they are columns of one row
+    now, so an identity between two of them reads as an identity rather than
+    as two agreeing measurements. What the assertion pins is unchanged --
+    every target, every metric -- stated against the rendered labels.
+    """
     meta = {"a/l0": _entry(None, [0.1, 0.2, 0.3]), "b/l1": _entry(None, [1.0, 1.1, 1.2])}
     html = _sae_seed_floor_block(meta)
     assert "Seed-to-seed noise floor" in html
     assert "a/l0" in html and "b/l1" in html
-    assert "mase_delta_window" in html and "mase_delta_token" in html
+    assert "ΔMASE (token)" in html and "ΔMASE (window)" in html
+    assert "reconstruction fidelity" in html and "dead-feature rate" in html
     assert "Not measured" not in html
+    # and the control's own verdict is stated once, not as 2N rows of 0.000
+    assert "frozen-store control" in html
+    assert html.count("mase_clean") == 0
+
+
+def test_the_control_failing_is_stated_in_red_not_averaged_in():
+    """🔴 The load-bearing negative. `mase_clean` is the unpatched forecast:
+    it CANNOT depend on an SAE seed, so a non-zero spread there means
+    something other than the seed varied and every other number in the table
+    is suspect. As one of 78 rows that fact was a `0.000000` a reader had to
+    notice stopped being zero; it is now a verdict.
+    """
+    from tsfm_lens.report.derived import sae_seed_floor
+    meta = {"a/l0": _entry(None, [0.1, 0.2, 0.3])}
+    ok = sae_seed_floor(meta)
+    assert ok.attrs["control_failures"] == []
+    assert "held at every target" in ok.attrs["control_statement"]
+
+    bad = sae_seed_floor({"a/l0": _entry(None, [0.1, 0.2, 0.3],
+                                         clean=[1.5, 1.52, 1.48])})
+    assert bad.attrs["control_failures"]
+    assert "FAILED" in bad.attrs["control_statement"]
+    assert "suspect" in bad.attrs["control_statement"]
+
+
+def test_a_delta_smaller_than_its_own_seed_spread_is_named_not_resolvable():
+    """The verdict a spread exists to produce. Three states kept apart: a
+    zero spread with a non-zero mean is resolvable by arithmetic, a zero
+    spread with a zero mean is no signal rather than a clean one, and
+    neither may render as the other (sec 11.37).
+    """
+    from tsfm_lens.report.derived import sae_seed_floor
+    col = "is that ΔMASE resolvable at one seed?"
+
+    swamped = sae_seed_floor({"a/l0": _entry(None, [-0.20, 0.35, 0.02])})
+    assert swamped.iloc[0][col].startswith("NOT resolvable")
+
+    clean = sae_seed_floor({"a/l0": _entry(None, [0.500, 0.505, 0.495])})
+    assert clean.iloc[0][col].startswith("resolvable")
+
+    flat = sae_seed_floor({"a/l0": _entry(None, [0.0, 0.0, 0.0])})
+    assert "nothing to resolve" in flat.iloc[0][col]
 
 
 def test_the_metric_row_covers_exactly_what_the_spread_is_taken_over():
