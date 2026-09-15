@@ -36,14 +36,14 @@ def _fake_cfg(models=("Alpha", "Beta"), weights=(0.5, 0.3, 0.2),
 
 
 def _concept(concept_id, features, n_members, n_clearing, profile,
-            name="strong trend riser", within_cosine_mean=0.8,
+            name="strong trend riser", centroid_cosine_mean=0.8,
             description=None, description_generated=False):
     return {
         "concept": concept_id, "features": list(features),
         "n_members": n_members, "n_members_clearing": n_clearing,
         "centroid_null_units": {p["channel"]: p["signed_null_units"] for p in profile},
         "profile": profile, "dominant_channel": profile[0]["channel"] if profile else None,
-        "name": name, "within_cosine_mean": within_cosine_mean, "misfits": [],
+        "name": name, "centroid_cosine_mean": centroid_cosine_mean, "misfits": [],
         "description": description, "description_generated": description_generated,
     }
 
@@ -180,7 +180,7 @@ def test_misfits_zero_checked_when_no_ablation_artifact_on_disk(tmp_path):
     target's ablation artifact could be loaded", never as "zero misfits
     found" (a real, different, measured claim)."""
     profile = [{"channel": "trend", "signed_null_units": 2.5, "n_members_clearing": 2}]
-    concepts = [_concept(0, [0, 1], 2, 2, profile, within_cosine_mean=0.9)]
+    concepts = [_concept(0, [0, 1], 2, 2, profile, centroid_cosine_mean=0.9)]
     _write_concepts(tmp_path, {"Alpha/layer.0": _target_rec("Alpha", "layer.0", concepts)})
     # Deliberately no `_write_ablation` call -- the target's own artifact
     # was never written to disk.
@@ -199,11 +199,11 @@ def test_misfits_measured_zero_renders_distinctly_from_not_measured(tmp_path):
     # Two members whose own ablation vector is nearly identical to the
     # centroid (both fire on `trend` only) -- cosine ~1.0, comfortably above
     # any `within_cosine_mean - gap` threshold.
-    concepts = [_concept(0, [0, 1], 2, 2, profile, within_cosine_mean=0.999)]
+    concepts = [_concept(0, [0, 1], 2, 2, profile, centroid_cosine_mean=0.999)]
     _write_concepts(tmp_path, {"Alpha/layer.0": _target_rec("Alpha", "layer.0", concepts)})
 
     # Both members fire on `trend` only, same direction as the centroid --
-    # cosine 1.0, comfortably above `within_cosine_mean(0.999) - gap(0.3)`.
+    # cosine 1.0, comfortably above `centroid_cosine_mean(0.999) - gap(0.3)`.
     _write_ablation(tmp_path, "Alpha", "layer.0",
                     [_candidate(0, {"trend": 3.0}), _candidate(1, {"trend": 3.0})])
     out = sae_concepts_block(_fake_cfg(models=("Alpha",)), tmp_path, [], ["Alpha"])
@@ -219,13 +219,13 @@ def test_misfits_found_renders_own_channels_beside_concept_channels(tmp_path):
     beside the concept's -- the whole point of the section is the
     divergence, per `sae/misfits.py`'s own docstring."""
     concept_profile = [{"channel": "trend", "signed_null_units": 3.0, "n_members_clearing": 1}]
-    concepts = [_concept(0, [0, 1], 2, 1, concept_profile, within_cosine_mean=0.95)]
+    concepts = [_concept(0, [0, 1], 2, 1, concept_profile, centroid_cosine_mean=0.95)]
     _write_concepts(tmp_path, {"Alpha/layer.0": _target_rec("Alpha", "layer.0", concepts)})
 
     # Feature 0 matches the concept's own trend direction (cosine 1.0);
     # feature 1 fires almost entirely on a DIFFERENT channel (seasonal) --
     # its own ablation vector is orthogonal to the centroid (cosine 0.0),
-    # far below `within_cosine_mean(0.95) - default_gap(0.3) = 0.65`.
+    # far below `centroid_cosine_mean(0.95) - default_gap(0.3) = 0.65`.
     _write_ablation(tmp_path, "Alpha", "layer.0",
                     [_candidate(0, {"trend": 3.0}),
                      _candidate(1, {"seasonal": 3.0})])
@@ -276,3 +276,74 @@ def test_cards_capped_at_max_and_grouped_by_present_buckets_only(tmp_path):
     assert "<h6>universal" not in out
     assert "<h6>partial" not in out
     assert "<h6>model-specific" not in out
+
+
+# ---------------------------------------------------------------------------
+# 5. Item B (sec 32.3): the card leads with the description; the statistics
+#    collapse. Covers all three description states a real run can produce.
+# ---------------------------------------------------------------------------
+
+def test_card_description_is_the_headline_and_statistics_collapse(tmp_path):
+    """The description must render before the name/target line and the
+    ablation sparklines, and must never be empty. ROADMAP.md sec 32.7d
+    PRUNE (2026-09-15): generation is gone, so every present description is
+    labelled as deterministically composed regardless of `description_
+    generated` -- that field can still be `True` on an older run's stale
+    `descriptions.json`, and the label must describe what the CURRENT
+    pipeline does, not what produced a stale artifact (sec 32.3's own
+    text, corrected in place). The statistics the card used to show
+    unconditionally (member counts, n_members_clearing, interest, profile,
+    transfer) must still be present, just collapsed into one `_details` per
+    card -- never a second collapsing mechanism (sec 11.52's import-cycle
+    constraint means `_details` is imported lazily; a second mechanism
+    would duplicate it)."""
+    profile = [{"channel": "trend", "signed_null_units": 2.5, "n_members_clearing": 2}]
+    concepts = [
+        _concept(0, [0, 1], 2, 2, profile, name="stale-flag concept",
+                description="Patching this concept steepens the trend.",
+                description_generated=True),
+        _concept(1, [2, 3], 2, 2, profile, name="composed concept",
+                description="These 2 features raise the forecast trend.",
+                description_generated=False),
+        _concept(2, [4, 5], 2, 2, profile, name="undescribed concept",
+                description=None, description_generated=False),
+    ]
+    _write_concepts(tmp_path, {"Alpha/layer.0": _target_rec("Alpha", "layer.0", concepts)})
+    out = sae_concepts_block(_fake_cfg(models=("Alpha",)), tmp_path, [], ["Alpha"])
+
+    assert out.count("concept-card") == 3
+    # No ablation artifact was written, so the misfits block (block 3)
+    # contributes zero `<details>` here -- every one below is a card's own.
+    assert out.count("<details") == 3
+    assert out.count("the numbers behind this") == 3
+
+    # No "(generated)" tag anywhere, even for the concept whose stale
+    # artifact says `description_generated: True` -- the PRUNE means that
+    # distinction no longer exists in the render layer.
+    assert "<i>(generated)</i>" not in out
+    assert out.count("<i>(composed from the measurements)</i>") == 2
+
+    for desc_marker, tag in [
+        ("Patching this concept steepens the trend.",
+         "<i>(composed from the measurements)</i>"),
+        ("These 2 features raise the forecast trend.",
+         "<i>(composed from the measurements)</i>"),
+        ("no description generated", None),
+    ]:
+        idx_desc = out.find(desc_marker)
+        assert idx_desc != -1, desc_marker
+        if tag:
+            assert tag in out
+        # The description must precede this card's own statistics line and
+        # its own collapsing `<details>` -- i.e. it is the headline, not
+        # something rendered after the numbers.
+        idx_members = out.find("member(s)", idx_desc)
+        idx_details = out.find("<details", idx_desc)
+        assert idx_members != -1 and idx_members > idx_desc
+        assert idx_details != -1 and idx_details > idx_desc
+
+    # The statistics themselves are unchanged in substance, just relocated.
+    assert out.count("member(s)") == 3
+    assert out.count("clearing at least one") == 3
+    assert "profile:" in out
+    assert "transfer:" in out

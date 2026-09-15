@@ -1,16 +1,33 @@
-"""Generate per-feature and per-role descriptions for one run (ROADMAP.md sec 26 C).
+"""Generate per-feature/per-role/per-concept descriptions for one run
+(ROADMAP.md sec 26 C; deterministic-only since sec 32.7d PRUNE, 2026-09-15).
 
-`sae/describe.py` is the grounded narrator: it builds a prompt from an
-`Evidence` packet, generates with a pinned small instruct model, and REJECTS
-any sentence mentioning a concept or a number the packet does not contain,
-falling back to a deterministic machine sentence when generation cannot pass
-the guard. It had no caller. `report.py::_feature_descriptions` reads
-`sae/descriptions.json`; nothing wrote it, so every rendered report showed the
-column empty and the narrator was library code that only tests exercised.
+`sae/describe.py` is the grounded evidence-to-sentence layer: it builds an
+`Evidence` packet from measured artifacts and composes a sentence from it
+with `machine_fallback`, which can say only what the packet licenses --
+`check_text` (the same module) is what a real run's own gloss tables are
+checked against at import time (`_assert_glosses_self_consistent`), so the
+composed sentence is guaranteed to pass the identical guard a generated one
+would have needed to.
 
-This is that caller. It is deliberately a standalone CLI rather than a
-pipeline stage, for the same reason `run_sae_roles.py` is: role evidence comes
-from the roles artifact (`sae/roles.json`'s producer output, read here as
+This script used to also try an LLM (`Qwen/Qwen2.5-1.5B-Instruct`) first and
+fall back to `machine_fallback` only when generation failed the guard.
+ROADMAP.md sec 32.7d PRUNE removed that path after ROADMAP.md sec 26 C's own
+measurement on `runs/full_report_run_4model`: generation's acceptance
+was concentrated entirely in states with real causal-battery evidence
+(roles: 92.9%) and near-zero where none existed (features, mostly untested:
+42.0%, almost all of that the untested-marker allowlist rather than a
+genuine generated claim) -- i.e. the guard, not the model, was already
+carrying the sentence's truthfulness, so loading a 1.5B checkpoint bought
+fluency without buying information for this caller. `sae/describe.py`'s
+generation machinery (`load_narrator`, `_generate`) is NOT deleted -- it is
+still used, unchanged, by the separate `sae/compare.py` (ROADMAP.md sec 28)
+cross-model narrator, which independently decided to keep its own
+generation path as an audit trail (sec 28.12). See `sae/describe.py`'s
+module docstring for the full boundary.
+
+This is deliberately a standalone CLI rather than a pipeline stage, for the
+same reason `run_sae_roles.py` is: role evidence comes from the roles
+artifact (`sae/roles.json`'s producer output, read here as
 `sae/roles_injection.json` -- ROADMAP.md sec 30, Stage 4, 2026-09-11:
 superseded by `sae/concepts.json` throughout the report proper, and archived
 under this name) and channel evidence from `*_stage2_response.json`, neither
@@ -26,7 +43,6 @@ convention, so a description and the heatmap a reader compares it against
 cannot disagree about what "2.4x" means.
 
     python run_sae_describe.py --run runs/full_report_run_large
-    python run_sae_describe.py --run runs/full_report_run_large --no-llm
     python run_sae_describe.py --run runs/full_report_run_large --features-only
 """
 
@@ -35,6 +51,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from collections import Counter
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -44,7 +61,7 @@ import pandas as pd
 
 from tsfm_lens.config import load_config
 from tsfm_lens.extraction.store import ActivationStore, load_meta
-from tsfm_lens.sae.describe import Evidence, describe_batch, load_narrator
+from tsfm_lens.sae.describe import Description, Evidence, machine_fallback
 from tsfm_lens.sae.response import CHANNELS
 from tsfm_lens.sae.train import sanitize
 from tsfm_lens.utils import log
@@ -164,6 +181,13 @@ def build_evidence(run_dir: Path, cfg, top_features: int = 8,
     roles_path = run_dir / "sae" / "roles_injection.json"
     roles_doc = (json.loads(roles_path.read_text(encoding="utf-8"))
                  if roles_path.exists() and not features_only else {})
+    # ROADMAP.md sec 32.2 Item A1: the superseding artifact. A THIRD branch,
+    # not a replacement -- `roles_injection.json` stays describable above.
+    concepts_path = run_dir / "sae" / "concepts.json"
+    concepts_targets = {}
+    if concepts_path.exists() and not features_only:
+        concepts_doc = json.loads(concepts_path.read_text(encoding="utf-8"))
+        concepts_targets = concepts_doc.get("targets") or {}
 
     store = run_meta = None
     if with_exemplars:
@@ -192,6 +216,10 @@ def build_evidence(run_dir: Path, cfg, top_features: int = 8,
                           for c in ((abl or {}).get("candidates") or [])}
 
         families_by_feature, profiles_by_feature = {}, {}
+        # Hoisted out of the `store is not None` branch below: concept
+        # packets pool member features' sids the same way, and must see an
+        # empty dict rather than an undefined name when no store loaded.
+        sids_by_feature: dict = {}
         if store is not None and run_meta is not None:
             families_by_feature, sids_by_feature = _exemplar_families(
                 cfg, store, model, layer, entry, sep, run_meta)
@@ -255,6 +283,34 @@ def build_evidence(run_dir: Path, cfg, top_features: int = 8,
                 # disagree in the packet the way they did in the artifact.
                 clears_null=bool(role_chans),
                 channels_measured=resp is not None)))
+
+        # ROADMAP.md sec 32.2 Item A1/A6: a third branch, reading the
+        # superseding artifact. Keyed by the integer concept id (`str(...)`),
+        # never the derived `name` -- sec A6's own stated reason: several
+        # concepts in a real run share one name, so it is neither stable
+        # nor unique as a key.
+        crec = concepts_targets.get(key) or {}
+        for concept in (crec.get("concepts") or []):
+            concept_chans, concept_undirected = _concept_channels(concept, null_p95)
+            struct_field, struct_rho, struct_n = _concept_structural(concept, sep)
+            concept_profile = (
+                _concept_exemplar_profile(cfg, concept, sids_by_feature, sep)
+                if from_exemplars and sids_by_feature else ())
+            packets.append((key, "concept", str(concept.get("concept")), Evidence(
+                kind="concept", model=model, layer=layer,
+                ident=str(concept.get("concept")),
+                channels=concept_chans,
+                structural_field=struct_field,
+                structural_rho=struct_rho,
+                structural_n=struct_n,
+                n_atoms=int(concept.get("n_members") or 0),
+                exemplar_profile=concept_profile,
+                undirected_channels=frozenset(concept_undirected),
+                # Sec A3: derived from the channels actually built, NEVER
+                # from `n_members_clearing` -- a different question
+                # (sec 11.54's trap, restated for concepts).
+                clears_null=bool(concept_chans),
+                channels_measured=resp is not None)))
     return packets
 
 
@@ -309,6 +365,73 @@ def _role_channels(role: dict, rec: dict, null_p95: dict) -> dict:
         if cleared:
             return cleared
     return {ch: float(val)}
+
+
+def _concept_channels(concept: dict, null_p95: dict) -> tuple[dict, frozenset]:
+    """Every channel this concept's centroid moved above its own null.
+
+    ROADMAP.md sec 32.2 Item A3: mirrors `_role_channels` directly above.
+    Reads `sae/concepts.py::concept_table`'s own `centroid_null_units`,
+    which is **already in null units** -- dividing by `null_p95` a second
+    time would be wrong, which is why that parameter (kept only for
+    signature parity with `_role_channels`, itself unused there too) is not
+    read here. A channel enters only when `abs(value) >= 1.0`; this is not
+    optional, since `concepts.json` carries no concept-level `clears_null`
+    field and `n_members_clearing` answers "how many MEMBERS individually
+    cleared this channel" -- a different question from "does the concept's
+    OWN mean clear it", the exact pair CLAUDE.md sec 11.54 records as
+    unreconcilable when rendered adjacent. `clears_null` is derived by the
+    caller from this dict, never from an artifact field.
+
+    Always returns an empty `frozenset` for undirected channels:
+    `centroid_null_units` is one signed mean per channel, not a magnitude
+    test split across two steering directions the way the feature/role
+    ablation batteries are, so there is no direction to withhold here. The
+    `(dict, frozenset)` shape is kept anyway so `build_evidence` can treat
+    all three `Evidence.kind`s the same way.
+    """
+    centroid = concept.get("centroid_null_units") or {}
+    out = {ch: float(v) for ch, v in centroid.items()
+           if v is not None and abs(float(v)) >= 1.0}
+    return out, frozenset()
+
+
+def _concept_structural(concept: dict, sep: dict) -> tuple:
+    """Structural correlate for a concept cluster, aggregated over members.
+
+    ROADMAP.md sec 32.2 Item A4: a concept has no `structural_field` of its
+    own, so this reads `sae/meta.json`'s `separated` block exactly as the
+    feature path does, once per member: each member's own residualized
+    best match, dropping any field refused as inseparable from provenance
+    (`fields_not_separable_from_provenance`, sec 11.48) -- a `generator_*`
+    correlate is corpus bookkeeping, not a property of the cluster.
+    `structural_field` is the modal surviving field among members;
+    `structural_rho` is the MEAN rho over members sharing that field;
+    `structural_n` is how many members share it. Fewer than 2 sharing
+    members leaves all three `None` -- a modal field of 1 is not a cluster
+    property and the narrator would state it as one.
+
+    A member feature absent from `sep["features"]` (capped at top-50,
+    sec 26 A4's own finding) contributes nothing -- graceful degradation,
+    not an error.
+    """
+    refused = {r.get("field") if isinstance(r, dict) else r
+               for r in (sep.get("fields_not_separable_from_provenance") or [])}
+    by_feature = {int(f["feature"]): f for f in (sep.get("features") or [])}
+    fields = []
+    for fid in (concept.get("features") or []):
+        rec = by_feature.get(int(fid))
+        struct = (rec or {}).get("structural") or {}
+        field, rho = struct.get("field"), struct.get("rho")
+        if field and field not in refused and rho is not None:
+            fields.append((field, float(rho)))
+    if not fields:
+        return None, None, None
+    modal_field, n = Counter(f for f, _ in fields).most_common(1)[0]
+    if n < 2:
+        return None, None, None
+    rhos = [r for f, r in fields if f == modal_field]
+    return modal_field, float(np.mean(rhos)), n
 
 
 def _exemplar_families(cfg, store, model: str, layer: str, entry: dict,
@@ -396,6 +519,27 @@ def _exemplar_profiles(cfg, sids_by_feature: dict, sep: dict,
     return out
 
 
+def _concept_exemplar_profile(cfg, concept: dict, sids_by_feature: dict, sep: dict,
+                              max_fields: int = 3, min_z: float = 0.5) -> tuple:
+    """`exemplar_profile` for a CLUSTER (ROADMAP.md sec 32.2 Item A5).
+
+    Pools every member feature's own top-firing series under one pseudo-key
+    and reuses `_exemplar_profiles` unchanged (CLAUDE.md sec 11.24: one code
+    path for the z-scored corpus contrast, not a second implementation).
+    Returns `()` when no member contributed a series -- keeping every
+    packet built before this field existed byte-identical, per the field's
+    own docstring.
+    """
+    pooled: list = []
+    for fid in (concept.get("features") or []):
+        pooled.extend(sids_by_feature.get(int(fid), []))
+    if not pooled:
+        return ()
+    profiles = _exemplar_profiles(cfg, {0: pooled}, sep,
+                                  max_fields=max_fields, min_z=min_z)
+    return profiles.get(0, ())
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -416,12 +560,6 @@ def main() -> None:
     ap.add_argument("--no-exemplars", action="store_true",
                     help="skip the encode pass that finds exemplar families "
                          "(faster; descriptions then cannot mention families)")
-    ap.add_argument("--no-llm", action="store_true",
-                    help="do not load the narrator -- emit the deterministic "
-                         "machine sentence for every packet. Every description is "
-                         "then `accepted: false` with reason 'no narrator loaded', "
-                         "so the artifact never claims LLM provenance it lacks")
-    ap.add_argument("--device", default="cuda")
     ap.add_argument("--out", type=Path, default=None)
     args = ap.parse_args()
 
@@ -441,38 +579,52 @@ def main() -> None:
         log.warning("sae describe: no evidence packets built; nothing written")
         return
 
-    narrator = None
-    if not args.no_llm:
-        try:
-            narrator = load_narrator(device=args.device)
-        except Exception as e:
-            log.warning(f"sae describe: could not load the narrator ({e}); falling "
-                        f"back to deterministic machine sentences. This is a "
-                        f"DEGRADED run -- every description will be "
-                        f"`accepted: false`")
-
-    descriptions = describe_batch([ev for _, _, _, ev in packets], narrator)
+    # ROADMAP.md sec 32.7d PRUNE (2026-09-15): no model is loaded and nothing
+    # is generated -- every packet is composed by `machine_fallback`, which
+    # can only say what the packet licenses (the same guard a generated
+    # sentence would have had to pass, checked at import time against this
+    # module's own gloss tables via `_assert_glosses_self_consistent`).
+    # `accepted`/`reason`/`attempts`/`model_id`/`revision` are kept on the
+    # written record only for schema stability with `sae/compare.py`'s
+    # (unrelated, still-generating) `Description` shape -- `accepted` is
+    # `False` for every entry by construction, never a degraded state, so a
+    # reader must not read it as "the narrator failed here".
+    descriptions = [Description(
+        text=machine_fallback(ev), accepted=False,
+        reason="deterministic only -- LLM generation removed, "
+               "ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        attempts=0, model_id="", revision="")
+        for _, _, _, ev in packets]
 
     doc: dict = {}
-    n_acc = 0
-    for (key, kind, ident, _), d in zip(packets, descriptions):
-        bucket = doc.setdefault(key, {"features": {}, "roles": {}})
-        bucket["features" if kind == "feature" else "roles"][ident] = {
+    # ROADMAP.md sec 32.2 Item A9: coverage BY STATE, never pooled -- a
+    # concept's two state axes are whether `channels` licensed anything and
+    # whether `exemplar_profile` was measured.
+    concept_state_counts: dict = {}
+    _KIND_BUCKET = {"feature": "features", "role": "roles", "concept": "concepts"}
+    for (key, kind, ident, ev), d in zip(packets, descriptions):
+        bucket = doc.setdefault(key, {"features": {}, "roles": {}, "concepts": {}})
+        bucket[_KIND_BUCKET[kind]][ident] = {
             "text": d.text, "accepted": d.accepted, "reason": d.reason,
             "attempts": d.attempts, "model_id": d.model_id, "revision": d.revision}
-        n_acc += bool(d.accepted)
+        if kind == "concept":
+            state = (bool(ev.channels), bool(ev.exemplar_profile))
+            concept_state_counts[state] = concept_state_counts.get(state, 0) + 1
 
     out = args.out or (args.run / "sae" / "descriptions.json")
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(doc, indent=2), encoding="utf-8")
-    rate = n_acc / len(descriptions) if descriptions else 0.0
-    log.info(f"sae describe: wrote {out} -- {len(descriptions)} packets across "
-             f"{len(doc)} targets, {n_acc} generated and accepted "
-             f"({rate:.1%}), the rest deterministic fallbacks")
-    print(f"\n{len(descriptions)} descriptions, {n_acc} accepted ({rate:.1%})")
+    log.info(f"sae describe: wrote {out} -- {len(descriptions)} deterministic "
+             f"descriptions across {len(doc)} targets")
+    print(f"\n{len(descriptions)} descriptions (deterministic; no narrator loaded)")
     for key in doc:
-        f, r = len(doc[key]["features"]), len(doc[key]["roles"])
-        print(f"  {key:34s} {f} features, {r} roles")
+        f, r, c = (len(doc[key]["features"]), len(doc[key]["roles"]),
+                  len(doc[key]["concepts"]))
+        print(f"  {key:34s} {f} features, {r} roles, {c} concepts")
+    if concept_state_counts:
+        print("  concept coverage by state (channels measured, profile measured):")
+        for (has_chans, has_profile), n in sorted(concept_state_counts.items()):
+            print(f"    channels={has_chans!s:5s} profile={has_profile!s:5s}: {n}")
 
 
 if __name__ == "__main__":

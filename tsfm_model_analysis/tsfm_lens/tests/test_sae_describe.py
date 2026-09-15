@@ -2,12 +2,14 @@
 grounded-narrator presentation layer).
 
 The guard is pure logic over an evidence packet, so every test here is
-synthetic with a planted answer and none of them loads the narrator
-checkpoint -- the one test that does is skipped when the model is not on
-disk. That split is deliberate: the model is the part that can be swapped,
-the guard is the part that must not silently weaken, and a test suite that
-needed a 3 GB download to check "does this reject a fabricated channel"
-would stop being run.
+synthetic with a planted answer and none of them loads a narrator
+checkpoint -- this module's own per-packet generation entry points
+(`describe`, `describe_batch`) were deleted by ROADMAP.md sec 32.7d PRUNE
+(2026-09-15; `run_sae_describe.py`, their only caller, now composes every
+description with `machine_fallback` directly), so there is no longer a
+live-generation round trip to test here at all. `load_narrator`/
+`_generate`/`_generate_one` remain, unchanged, for `sae/compare.py`'s
+separate cross-model narrator (sec 28) -- see this file's section 6.
 
 Every rejection test below was confirmed to actually discriminate by
 planting the regression (removing the branch, or flipping the flag) and
@@ -18,7 +20,6 @@ checked (`CLAUDE.md` sec 11.39's shape, one level over).
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
 
 import pytest
@@ -637,26 +638,16 @@ def test_allowed_concepts_covers_top3_not_only_the_best_field():
 
 # ---------------------------------------------------------------------------
 # 6. Contract surface used by the report.
+#
+# ROADMAP.md sec 32.7d PRUNE (2026-09-15): `describe`/`describe_batch` --
+# this module's own per-packet generate-then-guard entry points -- are
+# deleted; `run_sae_describe.py` (their only caller) now composes every
+# description with `machine_fallback` directly. `sae/compare.py` (sec 28)
+# is the surviving generation caller and is exercised by
+# `tests/test_sae_compare.py`, not here. `test_narrator_batching.py` still
+# covers `_generate`/`_generate_one` directly, so the tests below dropped
+# nothing generation-related that another suite does not already cover.
 # ---------------------------------------------------------------------------
-
-def test_describe_without_a_narrator_returns_the_fallback():
-    ev = _role_packet()
-    d = D.describe(ev, None)
-    assert isinstance(d, D.Description)
-    assert d.accepted is False
-    assert d.text == D.machine_fallback(ev)
-    assert d.model_id == D.MODEL_ID and d.revision == D.REVISION
-
-
-def test_describe_batch_without_a_narrator_preserves_order():
-    out = D.describe_batch(_ALL_PACKETS, None)
-    assert len(out) == len(_ALL_PACKETS)
-    assert [d.text for d in out] == [D.machine_fallback(e) for e in _ALL_PACKETS]
-
-
-def test_describe_batch_of_nothing_is_empty():
-    assert D.describe_batch([], None) == []
-
 
 def test_revision_is_pinned_to_a_full_sha():
     assert len(D.REVISION) == 40
@@ -699,26 +690,128 @@ def test_render_evidence_mentions_nothing_the_guard_would_forbid():
 
 
 # ---------------------------------------------------------------------------
-# 7. The one test that needs the checkpoint.
+# 6b. ROADMAP.md sec 32.7c Item J4 -- CHANNEL_MEANING licensed into evidence,
+# and CHANNEL_HIGH_TERMS closing the vocabulary gap that opens.
 # ---------------------------------------------------------------------------
 
-def _model_on_disk() -> bool:
-    root = Path(os.environ.get("HF_HOME", Path.home() / ".cache" / "huggingface"))
-    hub = root / "hub" if (root / "hub").exists() else root
-    snap = hub / "models--Qwen--Qwen2.5-1.5B-Instruct" / "snapshots" / D.REVISION
-    return snap.exists()
+def test_every_channel_has_a_non_empty_meaning():
+    for channel in D.CHANNEL_GLOSS:
+        assert D.CHANNEL_MEANING.get(channel), channel
 
 
-@pytest.mark.skipif(not _model_on_disk(),
-                    reason="narrator checkpoint not downloaded at the pinned revision")
-def test_live_generation_is_guarded_and_deterministic():
-    narrator = D.load_narrator(device="cuda")
-    ev = _role_packet()
-    a = D.describe(ev, narrator)
-    b = D.describe(ev, narrator)
-    assert a.text == b.text
-    assert a.revision == D.REVISION
-    if a.accepted:
-        assert D.check_text(a.text, ev) == ""
-    else:
-        assert a.text == D.machine_fallback(ev)
+def test_no_meaning_is_circular():
+    for channel, meaning in D.CHANNEL_MEANING.items():
+        assert not D._is_circular_meaning(channel, meaning), (channel, meaning)
+
+
+def test_a_gloss_that_merely_expands_the_identifier_fails_circularity():
+    """ROADMAP.md sec 32.7c Item J's own load-bearing negative: a meaning
+    reading `"the spectral centroid"` for `spectral_centroid` must FAIL the
+    test, or the test passes against the exact defect it exists to catch."""
+    assert D._is_circular_meaning("spectral_centroid", "the spectral centroid")
+    assert D._is_circular_meaning("spectral_centroid",
+                                  "Feature raises the spectral centroid.")
+    # A genuine explanation, not merely the identifier restated, must pass.
+    assert not D._is_circular_meaning(
+        "spectral_centroid",
+        "Centre of mass of the forecast's frequency spectrum.")
+
+
+def test_correct_direction_high_clause_vocabulary_is_accepted():
+    ev = D.Evidence(kind="feature", model="m", layer="l", ident="0",
+                    channels={"spectral_centroid": 6.0}, clears_null=True)
+    assert D.check_text("This feature makes the forecast choppier.", ev) == ""
+    ev2 = D.Evidence(kind="feature", model="m", layer="l", ident="0",
+                     channels={"dispersion": 3.0}, clears_null=True)
+    assert D.check_text("This feature makes the forecast swing more.", ev2) == ""
+    ev3 = D.Evidence(kind="feature", model="m", layer="l", ident="0",
+                     channels={"seasonal": 2.0}, clears_null=True)
+    assert D.check_text("This feature is more strongly periodic.", ev3) == ""
+
+
+@pytest.mark.parametrize("channel,term", [
+    ("spectral_centroid", "choppier"),
+    ("spectral_centroid", "higher-frequency"),
+    ("dispersion", "swing more"),
+    ("seasonal", "more strongly periodic"),
+])
+def test_wrong_direction_high_clause_vocabulary_is_rejected(channel, term):
+    # Negative sign: the packet measured this channel moving DOWN, so a
+    # sentence using its "high" vocabulary is a fabricated direction.
+    ev = D.Evidence(kind="feature", model="m", layer="l", ident="0",
+                    channels={channel: -4.0}, clears_null=True)
+    reason = D.check_text(f"This feature is {term}.", ev)
+    assert reason != ""
+    assert term in reason
+    assert "does not" in reason
+
+
+def test_high_clause_guard_is_per_channel_not_packet_wide():
+    """Load-bearing negative: a packet with BOTH signs present must judge
+    each channel's own high-clause vocabulary against ITS OWN sign, not the
+    packet's existential up/down scan (which would already accept 'positive'
+    words purely because some other channel moved up)."""
+    ev = D.Evidence(kind="feature", model="m", layer="l", ident="0",
+                    channels={"spectral_centroid": 5.0, "dispersion": -3.0},
+                    clears_null=True)
+    # spectral_centroid is positive here -- its own high-clause term is fine.
+    assert D.check_text("This feature is choppier.", ev) == ""
+    # dispersion is negative in the SAME packet -- its own high-clause term
+    # must still be refused, even though spectral_centroid moved up.
+    reason = D.check_text("This feature makes the forecast swing more.", ev)
+    assert reason != "" and "swing more" in reason
+
+
+def test_render_evidence_names_only_channels_actually_in_the_packet():
+    ev = D.Evidence(kind="feature", model="m", layer="l", ident="0",
+                    channels={"level": 4.0}, clears_null=True)
+    block = D.render_evidence(ev)
+    assert "what these channels measure:" in block
+    assert "the forecast's overall level" in block
+    # A channel this packet never named must not appear in the meanings
+    # block -- it would be background for a claim with no evidence.
+    assert "the forecast's spectral centroid" not in block
+
+
+def test_render_evidence_omits_the_meanings_block_when_nothing_cleared():
+    ev = D.Evidence(kind="feature", model="m", layer="l", ident="0")
+    block = D.render_evidence(ev)
+    assert "what these channels measure:" not in block
+
+
+def test_render_evidence_uses_the_neutral_definition_for_a_negative_channel():
+    """The full CHANNEL_MEANING asserts what a HIGH value looks like; showing
+    it for a channel this packet measured as negative would put a
+    self-contradicting exemplar in the narrator's own prompt (sec 11.51)."""
+    ev = D.Evidence(kind="feature", model="m", layer="l", ident="0",
+                    channels={"level": -4.0}, clears_null=True)
+    block = D.render_evidence(ev)
+    assert "what these channels measure:" in block
+    # The neutral definition (direction-free) is present...
+    assert "Mean value of the forecast" in block
+    # ...but the directional illustration for the HIGH side is not.
+    assert "raises the whole forecast" not in block
+
+
+def test_render_evidence_uses_the_full_meaning_for_a_positive_channel():
+    ev = D.Evidence(kind="feature", model="m", layer="l", ident="0",
+                    channels={"level": 4.0}, clears_null=True)
+    block = D.render_evidence(ev)
+    assert "raises the whole forecast" in block
+
+
+def test_render_evidence_names_ablation_channels_too():
+    ev = D.Evidence(kind="feature", model="m", layer="l", ident="0",
+                    ablation_measured=True, ablation_channels={"trend": 2.0})
+    block = D.render_evidence(ev)
+    assert "what these channels measure:" in block
+    assert "Slope of the forecast" in block
+
+
+# ROADMAP.md sec 32.7d PRUNE (2026-09-15): the live-generation round-trip
+# test that used to live here (`load_narrator` + `describe`, skipped unless
+# the checkpoint was on disk) tested this module's own per-packet
+# `describe`/`describe_batch` entry points, which are deleted -- see the
+# section-6 note above. `sae/compare.py` (sec 28) is the surviving
+# generation caller; it has no equivalent checkpoint-gated live test, and
+# adding one is out of this PRUNE's scope.

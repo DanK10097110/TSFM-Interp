@@ -39,6 +39,41 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+# ROADMAP.md sec 32.7c Item J3: the eight response-channel entries below are
+# composed from `sae.describe.CHANNEL_MEANING` (itself composed from
+# `sae.vocab.CHANNEL_DEFS`, sec 32.7c Item J1) rather than hand-typed here,
+# so this module cannot become a THIRD, independently-drifting vocabulary
+# for the same nine channels -- CLAUDE.md sec 11.53 names exactly that shape
+# as a recurring defect in this area of the repo. `describe_term` supplies
+# each channel's short display label the same way the report's hover text
+# and legends already do.
+from .sae.describe import CHANNEL_MEANING as _CHANNEL_MEANING
+from .sae.vocab import describe_term as _describe_term
+
+_CHANNEL_BATTERY_WHERE = (
+    "Sparse features (SAE) -- the causal channel battery's evidence columns, "
+    "and every channel name rendered from it.")
+
+
+def _channel_glossary_definition(name: str) -> str:
+    """Fold `CHANNEL_MEANING`'s two-sentence "what. high." into one sentence.
+
+    `CHANNEL_MEANING` is written for a narrated sentence and a hover tooltip,
+    where two short sentences read naturally; this module's own writing rule
+    (above) asks for one sentence per definition, so the two clauses are
+    joined rather than re-derived independently -- re-deriving them here
+    would be exactly the third-vocabulary duplication this module's import
+    comment already explains avoiding.
+    """
+    what, _, high = _CHANNEL_MEANING[name].partition(". ")
+    high = high.rstrip(". ")
+    # Every `CHANNEL_DEFS.high` clause reads "Feature <verb-phrase>"; recast
+    # as "a higher value <verb-phrase>" keeps the same verb (singular
+    # subject either way) while folding it into one clause instead of a
+    # second sentence.
+    assert high.startswith("Feature "), f"unexpected CHANNEL_MEANING shape for {name!r}"
+    return f"{what.rstrip('. ')} -- a higher value {high[len('Feature '):]}."
+
 
 @dataclass(frozen=True)
 class Term:
@@ -283,6 +318,40 @@ GLOSSARY: dict = {
             "judgment usual in SAE work; because each feature is matched to its *best* "
             "of many candidate fields, it is read against a label-permutation null."),
         where="Sparse features (SAE)."),
+    "channel-trend": Term(
+        term=_describe_term("trend").label,
+        definition=_channel_glossary_definition("trend"),
+        where=_CHANNEL_BATTERY_WHERE),
+    "channel-seasonal": Term(
+        term=_describe_term("seasonal").label,
+        definition=_channel_glossary_definition("seasonal"),
+        where=_CHANNEL_BATTERY_WHERE),
+    "channel-spectral-centroid": Term(
+        term=_describe_term("spectral_centroid").label,
+        definition=_channel_glossary_definition("spectral_centroid"),
+        where=_CHANNEL_BATTERY_WHERE),
+    "channel-level": Term(
+        term=_describe_term("level").label,
+        definition=_channel_glossary_definition("level"),
+        where=_CHANNEL_BATTERY_WHERE),
+    "channel-dispersion": Term(
+        term=_describe_term("dispersion").label,
+        definition=_channel_glossary_definition("dispersion"),
+        where=_CHANNEL_BATTERY_WHERE),
+    "channel-horizon-near": Term(
+        term=_describe_term("horizon_shape_near").label,
+        definition=_channel_glossary_definition("horizon_shape_near"),
+        where=_CHANNEL_BATTERY_WHERE),
+    "channel-horizon-far": Term(
+        term=_describe_term("horizon_shape_far").label,
+        definition=_channel_glossary_definition("horizon_shape_far"),
+        where=_CHANNEL_BATTERY_WHERE),
+    "channel-flatness": Term(
+        term=_describe_term("flatness").label,
+        definition=_channel_glossary_definition("flatness"),
+        where=_CHANNEL_BATTERY_WHERE),
+    # "mase" is already covered above (the general forecast-quality metric);
+    # not duplicated here as a ninth "channel-mase" entry.
     "ami": Term(
         term="AMI (adjusted mutual information)",
         definition=(

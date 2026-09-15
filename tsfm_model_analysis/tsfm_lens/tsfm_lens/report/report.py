@@ -4638,6 +4638,33 @@ def _corpus_series_lookup(cfg):
     return lookup, int(bench.context_len or ctx)
 
 
+def _series_archetype_lookup(cfg) -> dict:
+    """`series_id -> archetype label (or None)`, for Item H3's flatness table.
+
+    Mirrors `_corpus_series_lookup`'s degrade-gracefully contract: a corpus
+    that cannot be loaded yields an empty dict rather than raising, and the
+    caller renders an "unknown archetype" bucket instead of dropping rows.
+    Archetype is `None` for tiers that cannot express one (ROADMAP.md §15
+    A9) — kept as `None`, not coerced into a fake label, so those rows are
+    grouped honestly rather than silently merged into a real archetype.
+    """
+    try:
+        from ..data import load_benchmark
+        bench = load_benchmark(cfg.data, cfg.run.seed)
+    except Exception as exc:
+        log.info(f"report: SAE flatness archetype table unavailable ({exc})")
+        return {}
+    ids = bench.meta["series_id"].to_numpy()
+    if "archetype" in bench.meta.columns:
+        archetypes = bench.meta["archetype"].to_numpy()
+    else:
+        archetypes = [None] * len(ids)
+    out = {}
+    for sid, a in zip(ids, archetypes):
+        out[str(sid)] = None if (a is None or (isinstance(a, float) and pd.isna(a))) else str(a)
+    return out
+
+
 def _feature_cards_for(cfg, store, model: str, layer: str, entry: dict,
                        separated: dict, run_meta, top_examples: int = 4):
     """Encode this target's features from its saved checkpoint and build the cards.
@@ -5455,8 +5482,237 @@ def _sae_health_block(run_dir: Path, findings: list) -> str:
     return out
 
 
+def _flat_clause(panel: dict, population: Optional[dict]) -> str:
+    """One measured sentence beside a FLAT ablation panel (ROADMAP.md sec
+    32.7 Item H2), or "" for a panel that is not flat or for which no
+    population statistics were computed.
+
+    Fires only when `panel["flat"]` is `True` — a caveat on every panel is
+    read by nobody (§11.45's own finding), and firing on a non-flat panel
+    (or one whose lag-1 sits nowhere near the noise-like population this
+    sentence describes) is exactly the §11.45 shape sec 32.8's own H test
+    pins against. Every number in the sentence is read off `population`,
+    which the caller computes ONCE from the run's own panel table — never
+    hardcoded here (ROADMAP.md §24's discipline).
+    """
+    if not panel.get("flat") or not population:
+        return ""
+    lag1 = panel.get("context_lag1")
+    if lag1 is None:
+        return ""
+    noise_share = population.get("noise_like_flat_share")
+    noise_n = population.get("noise_like_n") or 0
+    better = population.get("flat_scores_better_mase")
+    clause = (f"the context has lag-1 autocorrelation {lag1:.2f}")
+    if noise_share is not None and noise_n > 0:
+        clause += (f"; across this run, contexts below 0.2 produce a "
+                  f"near-constant forecast {noise_share:.1%} of the time")
+    if better is True:
+        clause += ", and those forecasts score better on MASE than the non-flat ones"
+    return clause + "."
+
+
+def _sae_flatness_block(cfg, run_dir: Path, findings: list,
+                        df: Optional[pd.DataFrame] = None) -> str:
+    """Why so many ablation panels look flat, and whether that is correct
+    (ROADMAP.md §32.7, Items H1/H3/H4).
+
+    `derived.ablation_panel_table` is the pure per-panel reduction; this
+    function is the render layer — an archetype×model table (H3), a
+    per-model raw-vs-reconstruction table with the confound stated beside it
+    (H4), and a paired-bar figure making the same confound-check visible
+    (H4(ii): the dictionary is not what flattens the forecast, since the
+    raw, un-reconstructed model shows nearly the same per-model spread).
+
+    Every population figure quoted anywhere in this block (the noise-like
+    flat share, the archetype flat shares, the per-model medians) is
+    recomputed from THIS run's own `df`, never the §32.7 prose numbers —
+    §24's whole discipline, applied to a table built after that prose was
+    written.
+
+    `df` may be passed in already computed (`_sec_sae` builds it once and
+    reuses it for the per-panel `_flat_clause` population too, via
+    `derived.flatness_population`) — computed here when omitted, so this
+    function stays independently callable.
+    """
+    if df is None:
+        df = derived.ablation_panel_table(run_dir)
+    if df.empty:
+        return ""
+    threshold = df.attrs.get("flat_threshold", 0.10)
+
+    flat_mask = df["flat"] == True  # noqa: E712 (pandas boolean column, not `is True`)
+    n_panels = len(df)
+    n_flat = int(flat_mask.sum())
+    overall_share = n_flat / n_panels if n_panels else None
+
+    lag1 = pd.to_numeric(df["context_lag1"], errors="coerce")
+    smooth_mask = lag1 > 0.8
+    smooth_share = float(df.loc[smooth_mask, "flat"].mean()) if smooth_mask.any() else None
+    smooth_n = int(smooth_mask.sum())
+
+    population = derived.flatness_population(df) or {}
+    noise_share = population.get("noise_like_flat_share")
+    noise_n = population.get("noise_like_n") or 0
+    better = population.get("flat_scores_better_mase")
+    flat_med = float(df.loc[flat_mask, "mase"].dropna().median()) if flat_mask.any() and df.loc[flat_mask, "mase"].notna().any() else None
+    nonflat_med = float(df.loc[~flat_mask, "mase"].dropna().median()) if (~flat_mask).any() and df.loc[~flat_mask, "mase"].notna().any() else None
+
+    out = ""
+    if overall_share is not None:
+        out += (f"<p class='blurb'>{n_flat} of {n_panels} rendered ablation "
+                f"panels ({overall_share:.1%}) have a forecast sd below "
+                f"{threshold:.0%} of their context sd — read as measured "
+                f"before it is read as a defect.</p>")
+
+    # H3: archetype x model flatness table, ordered by measured flat share.
+    archetype_lookup = _series_archetype_lookup(cfg)
+    if archetype_lookup:
+        adf = df.copy()
+        adf["archetype"] = [archetype_lookup.get(str(s)) or "unknown"
+                            for s in adf["series_id"]]
+        pivot = (adf.groupby(["archetype", "model"])["flat"].mean()
+                .unstack("model"))
+        n_per_archetype = adf.groupby("archetype").size()
+        order = (adf.groupby("archetype")["flat"].mean()
+                .sort_values(ascending=False).index)
+        pivot = pivot.reindex(order)
+        rows = []
+        for arch in pivot.index:
+            row = {"archetype": arch, "n": int(n_per_archetype.loc[arch])}
+            for m in pivot.columns:
+                v = pivot.loc[arch, m]
+                row[m] = "" if pd.isna(v) else f"{v:.1%}"
+            rows.append(row)
+        arch_table = pd.DataFrame(rows)
+        out += ("<h4>Flat share by archetype and model</h4>"
+               + _table(arch_table)
+               + _note(
+                   "Share of rendered ablation panels that are flat "
+                   f"(forecast sd < {threshold:.0%} of context sd), one row "
+                   "per archetype the corpus recorded, ordered worst first.",
+                   "Structured archetypes (a real trend or seasonal "
+                   "component) should show 0% regardless of model; a "
+                   "noise-like archetype (no autocorrelation to extrapolate) "
+                   "flattening for every model is the MMSE-optimal response, "
+                   "not a defect. A row where one model flattens and another "
+                   "does not, on the SAME archetype, is the behavioral "
+                   "difference Item H4 below controls for.",
+                   "Archetype is a property of the CORPUS the run was built "
+                   "against, not of the model — a run whose corpus carries no "
+                   "archetype label (§15 A9) contributes only an \"unknown\" "
+                   "row.",
+                   summary="What does this table mean?"))
+
+    # H4: per-model raw-vs-reconstruction table and figure -- the confound
+    # control. `unpatched` (raw model, no SAE) is already in the artifact at
+    # zero extra forward passes (ROADMAP.md §32.7's H4(ii)).
+    by_model = df.groupby("model").agg(
+        raw_sd_ratio=("raw_sd_ratio", "median"),
+        recon_sd_ratio=("forecast_sd_ratio", "median"),
+        raw_flat=("raw_sd_ratio", lambda s: float((s < threshold).mean())
+                  if s.notna().any() else float("nan")),
+        recon_flat=("flat", "mean"),
+    ).reset_index()
+    if not by_model.empty:
+        mtable = pd.DataFrame({
+            "model": by_model["model"],
+            "raw model (median sd ratio)": by_model["raw_sd_ratio"].round(3),
+            "SAE reconstruction (median sd ratio)": by_model["recon_sd_ratio"].round(3),
+            "raw % flat": (by_model["raw_flat"] * 100).round(1).astype(str) + "%",
+            "recon % flat": (by_model["recon_flat"] * 100).round(1).astype(str) + "%",
+        }).sort_values("SAE reconstruction (median sd ratio)")
+        out += ("<h4>Does the SAE flatten the forecast, or does the model?</h4>"
+               + _sae_flatness_figure(by_model)
+               + _figcap("Each model's own raw forecast (bar) against the "
+                        "SAE's full reconstruction of it (diamond) — both as "
+                        "median forecast sd over context sd, across every "
+                        "rendered ablation panel. A short segment says the "
+                        "dictionary changes little; the per-model spread "
+                        "itself is what the bars carry.")
+               + _table(mtable)
+               + _note(
+                   "Whether the ~6x per-model spread in flatness is a "
+                   "property of each model's own forecast, or an artifact of "
+                   "the SAE reconstructing it.",
+                   "The raw (unpatched) and reconstructed columns are close "
+                   "for every model, and the spread across models is present "
+                   "in the RAW column before any dictionary touches the "
+                   "forecast — so the spread is a model property, safe to "
+                   "render as one, not a reconstruction artifact.",
+                   "This is Item H4(ii): the `unpatched` forecast was "
+                   "already in every ablation artifact at zero extra "
+                   "forward passes. It does not control for a confound "
+                   "correlated with reconstruction FIDELITY across targets "
+                   "(H4(i), not computed here) — a real but smaller, "
+                   "partial check this one does not replace.",
+                   summary="What does this figure mean?"))
+
+    if overall_share is not None:
+        plain = (f"{overall_share:.0%} of ablation panels show a near-flat forecast.")
+        text = (f"Ablation panel flatness: {n_flat} of {n_panels} panels "
+               f"({overall_share:.1%}) have forecast sd < {threshold:.0%} of "
+               f"context sd.")
+        if noise_share is not None:
+            text += (f" Noise-like contexts (lag-1 autocorrelation < 0.2, "
+                     f"n={noise_n}) are flat {noise_share:.1%} of the time")
+            if smooth_share is not None:
+                text += (f"; smooth contexts (lag-1 > 0.8, n={smooth_n}) are "
+                        f"flat {smooth_share:.1%} of the time")
+            text += "."
+        if better:
+            text += (f" Flat panels score better on MASE (median {flat_med:.3f} "
+                     f"vs {nonflat_med:.3f} for non-flat panels).")
+    else:
+        plain = "Ablation panel flatness was measured."
+        text = f"Ablation panel flatness: {n_flat} of {n_panels} panels flat."
+
+    findings.append(Finding(
+        claim_id=_next_claim_id("sae"), stage="sae", evidence_class="descriptive",
+        plain=plain, text=text,
+        registered=False, cleared_noise_floor=None))
+    return out
+
+
+def _sae_flatness_figure(by_model: pd.DataFrame) -> str:
+    """Bar (raw model) + diamond (SAE reconstruction) + connecting segment,
+    one row per model — the same idiom `_sae_health_figure`'s panel 2 uses
+    for train-vs-held-out fidelity, adapted here for raw-vs-reconstruction
+    forecast flatness (ROADMAP.md §32.7 Item H4(ii)).
+    """
+    d = by_model.sort_values("recon_sd_ratio", ascending=True).reset_index(drop=True)
+    y = list(d["model"])
+    raw = [None if pd.isna(v) else float(v) for v in d["raw_sd_ratio"]]
+    recon = [None if pd.isna(v) else float(v) for v in d["recon_sd_ratio"]]
+
+    fig = go.Figure()
+    fig.add_trace(go.Bar(
+        x=raw, y=y, orientation="h", marker_color=_COLORS["a"],
+        name="raw model (no SAE)",
+        text=[("" if v is None else f"{v:.3f}") for v in raw],
+        textposition="outside", cliponaxis=False,
+        hovertemplate="%{y}<br>raw model %{x:.4f}<extra></extra>"))
+    for label, r, rc in zip(y, raw, recon):
+        if r is None or rc is None:
+            continue
+        fig.add_trace(go.Scatter(
+            x=[r, rc], y=[label, label], mode="lines", showlegend=False,
+            line=dict(color=_COLORS["muted"], width=2.5), hoverinfo="skip"))
+    fig.add_trace(go.Scatter(
+        x=recon, y=y, mode="markers", name="SAE reconstruction",
+        marker=dict(color=_COLORS["accent"], size=9, symbol="diamond"),
+        hovertemplate="%{y}<br>SAE reconstruction %{x:.4f}<extra></extra>"))
+    hi = max([v for v in raw if v is not None]
+             + [v for v in recon if v is not None] + [0.1])
+    fig.update_xaxes(title="forecast sd / context sd", range=[0, hi * 1.25])
+    fig.update_yaxes(tickfont=dict(size=11))
+    fig.update_layout(legend=dict(orientation="h", y=-0.18))
+    return _frag(fig, height=max(220, 60 * len(d) + 120))
+
+
 def _sae_target_panel(cfg, store, run_dir: Path, key: str, model: str, layer: str,
-                      entry: dict, run_meta: dict, series_lookup, ctx_len):
+                      entry: dict, run_meta: dict, series_lookup, ctx_len,
+                      population: Optional[dict] = None):
     """One SAE target's per-feature exemplar panel, and its strongest feature.
 
     Extracted from `_sec_sae`'s loop 2026-09-04 when that panel became a
@@ -5471,7 +5727,7 @@ def _sae_target_panel(cfg, store, run_dir: Path, key: str, model: str, layer: st
     Returns `(html, top)` where `top` is this target's strongest structural
     feature (or None), which the caller accumulates per model.
     """
-    from .sae_features import feature_table_html
+    from .sae_features import feature_table_html, term_legend_html
     out = ""
     # The per-target run-on stats paragraph this loop used to build lived
     # here: ~350 characters, `·`-separated, in a fixed field order, eleven
@@ -5551,7 +5807,9 @@ def _sae_target_panel(cfg, store, run_dir: Path, key: str, model: str, layer: st
     out += feature_table_html(cards, series_lookup, ctx_len,
                                 descriptions=_feature_descriptions(run_dir, key),
                                 ablations=ablations or None,
-                                overlay_series=n_overlays or None)
+                                overlay_series=n_overlays or None,
+                                median_hidden_norm=entry.get("median_hidden_norm"),
+                                population=population)
     cap = ("One row per sparse feature, strongest structural "
              "correlate first. Each thumbnail is a series this "
              "feature fires hardest on -- grey is the context the "
@@ -5562,9 +5820,35 @@ def _sae_target_panel(cfg, store, run_dir: Path, key: str, model: str, layer: st
                 "it fires hardest on, and the paired forecasts show what its "
                 "removal changes. The baseline there is the SAE's own full "
                 "reconstruction, so the gap between the two lines is this "
-                "feature's contribution and not the dictionary's.")
+                "feature's contribution and not the dictionary's; the third, "
+                "muted trace is the RAW model forecast with no SAE "
+                "reconstruction at all, so the gap between it and the "
+                "baseline is the dictionary's own reconstruction cost, drawn "
+                "on the same axes.")
+        # ROADMAP.md sec 32.7c Item I3: the overlay's implicit question is
+        # "did removing this feature change the forecast"; the battery's
+        # actual question is narrower and it is the only one a channel
+        # verdict is entitled to answer.
+        cap += (" A channel is only counted as ‘cleared’ when the "
+                "feature's own effect exceeds what removing that much of an "
+                "ARBITRARY random direction does -- not simply whether the "
+                "forecast moved. A candidate whose battery cleared nothing "
+                "is collapsed below (still fully present in the DOM), since "
+                "the measurement, not the picture, is what says whether an "
+                "effect is real.")
         cap += " " + _overlay_series_clause(cards, ablations)
     out += _figcap(cap)
+    if ablations:
+        # ROADMAP.md sec 32.7c Item J2: the legend lists every channel this
+        # target's causal battery actually measured -- built from the
+        # channels PRESENT in `ablations`, not a hardcoded nine, so it can
+        # never list a channel this run's battery didn't run and can never
+        # omit one it did (the same derive-from-the-data rule
+        # `term_legend_html` already follows for structural fields).
+        chan_names = sorted({ch for e in ablations.values()
+                              for ch in (e.get("channels") or {})})
+        out += term_legend_html(chan_names,
+                                 heading="<h5>What each channel means</h5>")
     best_struct = next((c for c in cards if c["structural_field"]), None)
     top = None
     if best_struct is not None:
@@ -5618,12 +5902,20 @@ def _sec_sae(cfg: PipelineConfig, run_dir: Path, findings: list) -> str:
     # read features off is the gate on everything else in this section, so it
     # must not end up beneath a table of features drawn from a dead one.
     health = _sae_health_block(run_dir, findings)
+    # ROADMAP.md sec 32.7 Item H: computed ONCE here so the block-level
+    # flatness table (H3/H4) and every per-panel `_flat_clause` fired from
+    # inside `ablation_cell` (via `_sae_target_panel`/`sae_concepts_block`
+    # below) read the identical population numbers — never two independent
+    # arithmetics of "share of noise-like contexts that flatten" (sec 24).
+    ablation_df = derived.ablation_panel_table(run_dir)
+    flatness_population = derived.flatness_population(ablation_df)
     inner = ""
     tops: dict[str, list[dict]] = {}
     for key, entry in meta_sae.items():
         model, layer = key.split("/", 1)
         body, top = _sae_target_panel(cfg, store, run_dir, key, model, layer,
-                                      entry, run_meta, series_lookup, ctx_len)
+                                      entry, run_meta, series_lookup, ctx_len,
+                                      population=flatness_population)
         # The wrapper is applied HERE, outside the body, so no early return
         # inside the panel can leave a `<details>` unclosed -- the reason the
         # body is a function at all rather than an inline block with four
@@ -5728,13 +6020,15 @@ def _sec_sae(cfg: PipelineConfig, run_dir: Path, findings: list) -> str:
     # the question a cross-model section is FOR; before 2026-09-04 a reader
     # met thirteen per-layer tables first and no synthesis at all.
     inner = (MODAL_ASSETS + health
+             + _sae_flatness_block(cfg, run_dir, findings, df=ablation_df)
              + _sae_contrast_block(run_dir, findings)
              + _sae_capability_block(run_dir, findings) + inner)
     inner += _note(*_SAE_EXEMPLAR_NOTE, summary="What does this table mean?")
     inner += _sae_seed_floor_block(meta_sae)
     model_names = [m.name for m in cfg.models]
     from .sae_concepts import sae_concepts_block
-    inner += sae_concepts_block(cfg, run_dir, findings, model_names)
+    inner += sae_concepts_block(cfg, run_dir, findings, model_names,
+                                population=flatness_population)
     return inner
 
 

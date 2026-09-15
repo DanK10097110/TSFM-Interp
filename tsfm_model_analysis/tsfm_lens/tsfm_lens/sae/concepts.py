@@ -140,36 +140,148 @@ def build_concept_matrix(candidates: list, causal_only: bool = True
 
 
 def cluster_concepts(X: np.ndarray, k="auto", min_silhouette: float = 0.1,
-                     seed: int = 0) -> dict:
-    """`StandardScaler` + `KMeans`, IDENTICAL to `roles.py::cluster_roles` --
-    reused by import, never reimplemented, so sec 30.1's NEW-vs-OLD
-    comparison is a statement about the FEATURE SPACE rather than about two
-    different clusterers (`CLAUDE.md` sec 11.41). `k="auto"` resolves through
-    that same function's `_resolve_role_k` (`clip(max(2, n // 6), 2, 8)`).
+                     min_members: int = 3, seed: int = 0) -> dict:
+    """`StandardScaler` + `KMeans`. An explicit `k` (int) is IDENTICAL to
+    `roles.py::cluster_roles` -- reused by import, never reimplemented, so
+    sec 30.1's NEW-vs-OLD comparison is a statement about the FEATURE SPACE
+    rather than about two different clusterers (`CLAUDE.md` sec 11.41).
+
+    `k="auto"` no longer resolves through `_resolve_role_k`'s single ratio-
+    derived value (`clip(max(2, n // 6), 2, 8)`) -- `ROADMAP.md` Item D
+    (sec 32.5/32.13) found that ratio's silhouette was frequently negative
+    (mean -0.235 across the 13 real targets sec 30.1 measured) and, worse,
+    that the metric meant to catch a bad partition REWARDS the degenerate
+    one: a singleton's silhouette contribution is maximal by construction,
+    so 9 of 30 concepts recorded before this fix were single-feature
+    k-means artifacts the old ratio could not see as a problem.
+
+    D1/D2: `k="auto"` now SWEEPS `k in range(2, k_upper+1)` where
+    `k_upper = min(8, n // min_members, n - 1)` (`n - 1` because a `k >= n`
+    partition is degenerate -- every point its own cluster -- and
+    `silhouette_score` is undefined there), scoring every attempted k by
+    silhouette, and marks a k `admissible` only when its SMALLEST cluster
+    has at least `min_members` rows -- checked BEFORE comparing scores,
+    never after, because a singleton's silhouette is exactly the number
+    this admissibility gate exists to keep from winning
+    (`CLAUDE.md` sec 11.48: gate before scoring, not after). The best-
+    silhouette ADMISSIBLE k is selected; the OLD `min_silhouette` floor
+    still applies to whatever that selection is (a partition that clears
+    the size floor but not the quality floor is still `non_modular`).
+
+    D3: when no k in the swept range is admissible, that is a recorded
+    result, not a fallback to an inadmissible partition (sec 25.13 item 2's
+    pre-registered outcome, echoed here for a different metric) --
+    `non_modular=True` with `reason` naming the sweep.
+
+    D4: every attempted k (whether or not it was admissible) is recorded in
+    `k_sweep: [{k, silhouette, admissible, min_cluster_size}, ...]`, plus
+    `k_selection_rule` describing which rule produced the returned `k` --
+    "silhouette-best admissible, k swept 2..N" for the new path, or
+    "explicit k=N" / "ratio (min_members<=1, legacy reproduction)" for the
+    two paths that bypass the sweep (below), so a reader can always tell a
+    swept k from a ratio-derived one (`ROADMAP.md` sec 31.1's own
+    `min_gap`-provenance lesson, applied here to k).
+
+    D5: `min_members<=1` is a SENTINEL, not just a lenient floor -- it
+    bypasses the sweep entirely and delegates straight to `cluster_roles`
+    with its own `_resolve_role_k` ratio, exactly the pre-D code path, so
+    every already-recorded concept stays regenerable BY CONSTRUCTION rather
+    than by the sweep coincidentally re-discovering the same k
+    (`CLAUDE.md` sec 2.1/sec 7 invariant 1's precedent: freeze the old
+    behavior behind an explicit, reproducible knob rather than only behind
+    a default). An explicit (non-`"auto"`) `k` takes the same legacy path
+    for the same reason -- `test_cluster_concepts_is_roles_cluster_roles`
+    pins that this is bit-for-bit unchanged.
 
     A target with fewer than 4 causal candidates is skipped with a recorded
     reason rather than clustered -- three of a kind is not a partition.
 
-    Returns `{"labels", "k", "silhouette", "non_modular", "reason"}`.
+    Returns `{"labels", "k", "silhouette", "non_modular", "reason",
+    "k_sweep", "k_selection_rule"}`.
     """
     n = X.shape[0]
     if n < _MIN_CAUSAL_CANDIDATES:
         return {"labels": np.zeros(n, dtype=int), "k": 1, "silhouette": float("nan"),
                "non_modular": True,
                "reason": f"only {n} causal candidate(s) -- fewer than "
-                         f"{_MIN_CAUSAL_CANDIDATES}, not clustered"}
-    return cluster_roles(X, role_k=k, min_silhouette=min_silhouette, seed=seed)
+                         f"{_MIN_CAUSAL_CANDIDATES}, not clustered",
+               "k_sweep": None, "k_selection_rule": "too few candidates"}
+
+    if k != "auto" or int(min_members) <= 1:
+        result = dict(cluster_roles(X, role_k=k, min_silhouette=min_silhouette, seed=seed))
+        result["k_sweep"] = None
+        result["k_selection_rule"] = (
+            f"explicit k={k}" if k != "auto"
+            else "ratio (min_members<=1, legacy reproduction)")
+        return result
+
+    return _sweep_k(X, min_silhouette=min_silhouette, min_members=int(min_members),
+                    seed=seed)
+
+
+def _sweep_k(X: np.ndarray, min_silhouette: float, min_members: int, seed: int) -> dict:
+    """The D1/D2/D3/D4 sweep itself, factored out of `cluster_concepts` so
+    the legacy/sweep branch point above stays readable. Only called for
+    `k="auto"` with `min_members >= 2`."""
+    from sklearn.cluster import KMeans
+    from sklearn.metrics import silhouette_score
+    from sklearn.preprocessing import StandardScaler
+
+    n = X.shape[0]
+    k_upper = min(8, n // min_members, n - 1)
+    Xs = StandardScaler().fit_transform(X)
+
+    k_sweep: list[dict] = []
+    best = None  # (silhouette, k, labels)
+    for kk in range(2, k_upper + 1):
+        labels = KMeans(n_clusters=kk, n_init=10, random_state=seed).fit_predict(Xs)
+        sizes = np.bincount(labels, minlength=kk)
+        min_cluster_size = int(sizes.min())
+        admissible = min_cluster_size >= min_members
+        sil = float(silhouette_score(Xs, labels))
+        k_sweep.append({"k": kk, "silhouette": sil, "admissible": admissible,
+                        "min_cluster_size": min_cluster_size})
+        if admissible and (best is None or sil > best[0]):
+            best = (sil, kk, labels)
+
+    if best is None:
+        return {"labels": np.zeros(n, dtype=int), "k": 1, "silhouette": float("nan"),
+               "non_modular": True,
+               "reason": (f"no k in 2..{k_upper} partitions {n} candidates into "
+                          f"clusters of at least {min_members} members"),
+               "k_sweep": k_sweep,
+               "k_selection_rule": f"silhouette-best admissible, k swept 2..{k_upper}"}
+
+    sil, kk, labels = best
+    non_modular = bool(np.isfinite(sil) and sil < min_silhouette)
+    reason = "" if not non_modular else f"silhouette {sil:.3f} below the {min_silhouette:g} floor"
+    return {"labels": labels, "k": kk, "silhouette": sil,
+           "non_modular": non_modular, "reason": reason,
+           "k_sweep": k_sweep,
+           "k_selection_rule": f"silhouette-best admissible, k swept 2..{k_upper}"}
 
 
 def _dominant_channel_index(mean_row: np.ndarray, channel_columns: list,
                             rank: int = 0) -> tuple:
     """The `rank`-th most discriminating channel by `|mean|`, and its sign.
 
-    A sort/lookup handle only -- per sec 30.1 measurement 2 (30.3% member-
-    agrees-with-name against a 30.3% permutation null), this must NEVER be
-    rendered as the concept's name. `concept_table` stores it as
-    `dominant_channel` for that reason: a scalar downstream code can sort or
-    filter on, not a claim about what the concept "is."
+    Originally documented here as "must NEVER be rendered as the concept's
+    name" per sec 30.1 measurement 2 (30.3% member-agrees-with-name against
+    a 30.3% permutation null). **Corrected (ROADMAP.md sec 32.4, Item C):**
+    measurement 2's finding is about naming by **argmax alone** -- picking
+    a name from raw magnitude with no contrast against the peer population,
+    which is what produced chance-level agreement. It is a claim about HOW
+    the channel was chosen as the WHOLE name, not a blanket ban on this
+    value ever appearing in a composed name. `_compose_batch`'s design (c)
+    renders this channel as the name's LEAD clause specifically because it
+    is `concept_table`'s own `dominant_channel` -- what the concept's
+    largest measured effect actually is -- and pairs it with a SEPARATE,
+    statistically-validated contrast clause (the sec 30.7 z-score mechanism)
+    that answers a different question. That composition is not naming by
+    argmax; sec 32.9's own correction (search "no single-channel concept
+    name anywhere") already draws this exact line for a different
+    acceptance-criterion draft. `concept_table` still also stores this as
+    the standalone `dominant_channel` field for downstream sort/filter use.
     """
     order = np.argsort(-np.abs(mean_row))
     if rank >= len(order):
@@ -195,6 +307,32 @@ def _within_cosine_mean(rows: np.ndarray) -> float:
     sims = unit @ unit.T
     iu = np.triu_indices(n, k=1)
     return float(np.mean(sims[iu]))
+
+
+def _centroid_cosine_mean(rows: np.ndarray, centroid: np.ndarray) -> float:
+    """Mean cosine similarity between each member row and the concept's own
+    CENTROID -- distinct from `_within_cosine_mean`'s mean PAIRWISE cosine,
+    and the two are not interchangeable (`ROADMAP.md` sec 32.13b/Item L): a
+    centroid sits closer to every member than members sit to one another by
+    construction, so `misfits.py::misfit_rows` used to compare a member's
+    cosine-to-centroid against a bar built from the pairwise mean -- two
+    different statistics, measured +0.248 apart on average, which is why the
+    detector produced zero misfits site-wide. This is the bar-setting
+    statistic Item L calls for: same "distance from centroid" quantity that
+    gets scored, so the threshold and the score are finally like-for-like.
+    `NaN` for a singleton, matching `_within_cosine_mean`'s own contract."""
+    n = rows.shape[0]
+    if n < 2:
+        return float("nan")
+    c_norm = float(np.linalg.norm(centroid))
+    if c_norm == 0.0:
+        return float("nan")
+    row_norms = np.linalg.norm(rows, axis=1)
+    valid = row_norms > 0
+    if not np.any(valid):
+        return float("nan")
+    cos = (rows[valid] @ centroid) / (row_norms[valid] * c_norm)
+    return float(np.mean(cos))
 
 
 def _magnitude_tier(val: float) -> str | None:
@@ -231,16 +369,39 @@ def _rank_candidates(row: int, cleared: np.ndarray, z: np.ndarray) -> list:
 
 def _compose_batch(profiles: np.ndarray, cleared: np.ndarray, peers: list) -> list[dict]:
     """One `{"name": str, "lead_diversified": bool}` per row of `profiles`,
-    applying `compose_name`'s three mechanisms across the WHOLE peer
-    population at once -- mechanism 2 needs every row's claim to decide the
-    next row's, and mechanism 3 needs every row's candidate name at each
-    length k. `compose_name` is a thin per-row wrapper over this; production
-    callers (`assign_concept_names`) call this directly rather than paying
-    O(n) repeated O(n^2) batch recomputes.
+    applying `compose_name`'s mechanisms across the WHOLE peer population at
+    once -- mechanism 2 needs every row's claim to decide the next row's,
+    and mechanism 3 needs every row's candidate name at each length k.
+    `compose_name` is a thin per-row wrapper over this; production callers
+    (`assign_concept_names`) call this directly rather than paying O(n)
+    repeated O(n^2) batch recomputes.
+
+    ROADMAP.md sec 32.4, Item C, design (c). The name's FIRST clause is
+    always `{tier(dominant)} {verb(dominant)} {dominant_channel}` -- the
+    same channel `concept_table` persists as `dominant_channel`
+    (`_dominant_channel_index`, ranked by raw |mean|), so a name can never
+    assert a magnitude tier for a channel that isn't the one carrying it.
+    The pre-Item-C design picked its LEAD clause by z-score contrast and
+    read the tier word off THAT channel's own raw value -- conflating "what
+    is statistically unusual about this concept among its peers" with "how
+    large is this concept's actual effect" (sec 11.54's pattern: two correct
+    fields read together as one claim).
     """
     n = profiles.shape[0]
     if n == 0:
         return []
+
+    n_channels = profiles.shape[1]
+
+    # The dominant channel: identical computation to `concept_table`'s own
+    # `dominant_channel` field (rank-0 by raw |mean|, via the shared
+    # `_dominant_channel_index` helper) so the name's lead and the
+    # persisted `dominant_channel` field can never disagree about which
+    # channel is meant.
+    dominant_idx: list = []
+    for i in range(n):
+        name, _sign = _dominant_channel_index(profiles[i], CHANNELS)
+        dominant_idx.append(CHANNELS.index(name) if name is not None else None)
 
     # Mechanism 1: contrastive z-score, computed over ALL peers (not just
     # those clearing a given channel) -- it characterizes what is TYPICAL
@@ -252,78 +413,99 @@ def _compose_batch(profiles: np.ndarray, cleared: np.ndarray, peers: list) -> li
     z = (profiles - mean) / std_safe
 
     own_ranked = [_rank_candidates(i, cleared, z) for i in range(n)]
-    top_abs_z = [abs(z[i, own_ranked[i][0]]) if own_ranked[i] else -np.inf
+    # The CONTRAST clause is the z-selected channel, distinct from the
+    # dominant one -- design (c): "omitted when it is the same channel".
+    # Filtering it out of the candidate list up front (rather than picking
+    # the top z-ranked candidate and discarding the row's whole contrast
+    # clause whenever it collides with dominant) means a row whose top
+    # z-candidate happens to be its own dominant channel still gets a
+    # genuinely distinct second clause when one of its other cleared
+    # channels can supply it -- no diversity signal is thrown away that
+    # doesn't have to be.
+    contrast_candidates = [[c for c in own_ranked[i] if c != dominant_idx[i]]
+                          for i in range(n)]
+    top_abs_z = [abs(z[i, contrast_candidates[i][0]]) if contrast_candidates[i] else -np.inf
                 for i in range(n)]
 
-    # Mechanism 2: leading-clause diversification. Process rows in
+    # Mechanism 2: leading-CONTRAST-clause diversification. Process rows in
     # descending top-|z|, tie-broken by `peers[i]` (a (target, concept_id)
     # -shaped key) -- NEVER by array position, which is what makes the
     # result invariant to how the caller ordered its rows.
     #
-    # The dedup key is the RENDERED leading clause -- (channel, verb, tier),
-    # matching the docstring's literal "whose leading clause no earlier row
-    # has taken" (not "whose channel"). Two rows both clearing `trend` but
-    # with opposite signs render "raises trend" / "lowers trend" -- distinct
-    # text, so they must not block each other; two rows with the same sign
-    # but different magnitude tiers ("mild raises X" / "dominant raises X")
-    # are equally distinct. Deduping on bare channel index (an earlier
-    # version of this function) is strictly more conservative than the
-    # spec requires and measurably so: on `runs/full_report_run_4model`'s
-    # real 30 concepts it caps distinct leading clauses at 11 of 30 against
-    # a proven-optimal ceiling of 26 (a bipartite-matching computation, not
-    # a guess); keying on the rendered clause instead reaches 25 of 30 --
-    # see ROADMAP.md sec 30's dated Stage 2 update for the full diagnosis.
-    def _leading_clause_key(row: int, ch: int) -> tuple:
-        val = float(profiles[row, ch])
-        return (ch, _verb(val), _magnitude_tier(val))
+    # The dedup key is the RENDERED contrast clause -- (channel, verb). No
+    # tier here: a contrast clause never carries a tier word (design (c)
+    # renders it as "unusually {verb} {channel}"), so two rows differing
+    # only in magnitude at the same channel/sign render IDENTICAL contrast
+    # text and must be deduped as such, unlike the old tier-inclusive key
+    # this replaces (which was keying the LEAD clause, which did carry a
+    # tier). Deduping on bare channel index (an earlier version of this
+    # function, pre-Item-C) is strictly more conservative than the spec
+    # requires; keying on the rendered clause reaches a higher distinct-name
+    # count -- see ROADMAP.md sec 30's dated Stage 2 update for the
+    # (pre-Item-C) diagnosis of this same tradeoff.
+    def _contrast_clause_key(row: int, ch: int) -> tuple:
+        return (ch, _verb(float(profiles[row, ch])))
 
     order = sorted(range(n), key=lambda i: (-top_abs_z[i], peers[i]))
     used_leads: set = set()
-    lead_channel: list = [None] * n
+    contrast_lead: list = [None] * n
     for i in order:
-        candidates = own_ranked[i]
+        candidates = contrast_candidates[i]
         if not candidates:
             continue
         chosen = next((c for c in candidates
-                       if _leading_clause_key(i, c) not in used_leads),
+                       if _contrast_clause_key(i, c) not in used_leads),
                       candidates[0])
-        lead_channel[i] = chosen
-        used_leads.add(_leading_clause_key(i, chosen))
+        contrast_lead[i] = chosen
+        used_leads.add(_contrast_clause_key(i, chosen))
 
     clause_order: list[list[int]] = []
     lead_diversified = [False] * n
     for i in range(n):
-        candidates = own_ranked[i]
+        candidates = contrast_candidates[i]
         if not candidates:
             clause_order.append([])
             continue
-        lead = lead_channel[i]
+        lead = contrast_lead[i]
         clause_order.append([lead] + [c for c in candidates if c != lead])
         lead_diversified[i] = (lead != candidates[0])
 
-    def render(i: int, k: int) -> str:
-        chans = clause_order[i][:k]
-        if not chans:
-            return "no channel clears its own null"
-        tier = _magnitude_tier(float(profiles[i, chans[0]]))
-        clauses = [f"{_verb(float(profiles[i, c]))} {CHANNELS[c]}" for c in chans]
-        body = " · ".join(clauses)
-        return f"{tier} {body}" if tier else body
+    def _dominant_text(i: int) -> str | None:
+        dom = dominant_idx[i]
+        if dom is None:
+            return None
+        val = float(profiles[i, dom])
+        tier = _magnitude_tier(val)
+        clause = f"{_verb(val)} {CHANNELS[dom]}"
+        return f"{tier} {clause}" if tier else clause
 
-    # Mechanism 3: shortest unique prefix. A peer with fewer clauses than k
-    # is compared at ITS OWN max length, since it cannot render further.
+    def render(i: int, k: int) -> str:
+        dom_text = _dominant_text(i)
+        contrast_chans = clause_order[i][:k]
+        contrast_clauses = [f"unusually {_verb(float(profiles[i, c]))} {CHANNELS[c]}"
+                           for c in contrast_chans]
+        if dom_text is None:
+            if not contrast_clauses:
+                return "no channel clears its own null"
+            return " · ".join(contrast_clauses)
+        if not contrast_clauses:
+            return dom_text
+        return dom_text + " · " + " · ".join(contrast_clauses)
+
+    # Mechanism 3: shortest unique prefix, over the CONTRAST clauses only --
+    # the dominant clause is fixed and always present (k=0 means "dominant
+    # clause alone"). A peer with fewer contrast clauses than k is compared
+    # at ITS OWN max length, since it cannot render further.
+    max_contrast = max(_MAX_CLAUSES - 1, 0)
     names: list = [None] * n
     for i in range(n):
-        max_k = min(len(clause_order[i]), _MAX_CLAUSES)
-        if max_k == 0:
-            names[i] = render(i, 0)
-            continue
+        max_k = min(len(clause_order[i]), max_contrast)
         chosen = render(i, max_k)  # fallback if every k collides: the cap
-        for k in range(1, max_k + 1):
+        for k in range(0, max_k + 1):
             candidate = render(i, k)
             collides = any(
                 render(j, min(k, len(clause_order[j]))) == candidate
-                for j in range(n) if j != i and clause_order[j])
+                for j in range(n) if j != i)
             if not collides:
                 chosen = candidate
                 break
@@ -334,34 +516,48 @@ def _compose_batch(profiles: np.ndarray, cleared: np.ndarray, peers: list) -> li
 
 def compose_name(i: int, profiles: np.ndarray, cleared: np.ndarray, peers: list) -> str:
     """The deterministic name for peer `i`. Short, specific, and distinct
-    from its peers -- no LLM, no weights. See sec 30.4.1/sec 30.7.
+    from its peers -- no LLM, no weights. See sec 30.4.1/sec 30.7,
+    corrected by sec 32.4 (Item C).
 
     `profiles`/`cleared` are `[n_peers, n_channels]`, row-aligned with
     `peers` (a list of ids used only as a stable tie-break, e.g.
-    `(target, concept_id)`). Three mechanisms, in this order:
+    `(target, concept_id)`). The name has two parts:
 
-    1. CONTRASTIVE ORDER. Z-score each channel across `peers`, then rank
-       this row's cleared channels by |z| -- names a row by what is
-       unusual about it among its peers, not by its own largest absolute
-       effect (which is what makes today's argmax naming collapse onto a
-       handful of population-wide-dominant channels).
-    2. LEADING-CLAUSE DIVERSIFICATION. Process rows in descending top-|z|,
-       tie-broken by `peers[i]` so the pass is reproducible (sec 11.2).
-       Each row takes its most contrastive channel whose leading clause no
-       earlier row has taken, falling back to its own best when all are
-       taken.
-    3. SHORTEST UNIQUE PREFIX. Emit clauses k=1,2,3... and stop at the
-       first k whose rendered name no peer shares at that same k (a peer
-       with fewer available clauses is compared at its own max). Capped at
-       3 clauses even if a collision remains at the cap.
+    1. DOMINANT LEAD, always present and always first: the channel
+       `concept_table` itself names `dominant_channel` (rank-0 by raw
+       |mean|), rendered `{tier} {verb} {channel}` -- a name can never omit
+       or misstate the concept's own largest measured effect.
+    2. CONTRAST CLAUSE, present only when it differs from the dominant
+       channel: the most STATISTICALLY UNUSUAL cleared channel among this
+       row's peers (z-score contrast, sec 30.7's original mechanism 1),
+       rendered `unusually {verb} {channel}` with NO tier word -- it answers
+       "what marks this concept out from its peers", a different question
+       from the lead's "how large is this effect", and the wording makes
+       that difference legible rather than implying a magnitude it may not
+       have.
 
-    Clause wording: `raises`/`lowers` <channel>, downgraded to `moves`
-    below 1.0 null unit -- a sub-null mean's sign is not resolvable
-    (sec 11.54's second site). Tier prefix from the leading channel only:
-    `dominant` >=5, `strong` >=2, `mild` >=1 null units.
+    Two sub-mechanisms operate on the contrast clause only (never on the
+    now-fixed dominant lead):
 
-    A row with no candidate channel (`cleared[i]` all False) names as
-    "no channel clears its own null" rather than fabricating one.
+    a. LEADING-CONTRAST DIVERSIFICATION. Process rows in descending top-|z|
+       among each row's own (dominant-excluded) candidates, tie-broken by
+       `peers[i]` so the pass is reproducible (sec 11.2). Each row takes its
+       most contrastive channel whose contrast clause no earlier row has
+       taken, falling back to its own best when all are taken.
+    b. SHORTEST UNIQUE PREFIX. Emit 0, 1, 2... contrast clauses (0 means
+       "dominant clause alone") and stop at the first count whose full
+       rendered name no peer shares at that same count (a peer with fewer
+       available contrast clauses is compared at its own max). Capped at
+       `_MAX_CLAUSES - 1` contrast clauses even if a collision remains at
+       the cap.
+
+    Clause wording: `raises`/`lowers` <channel>, downgraded to `moves` below
+    1.0 null unit -- a sub-null mean's sign is not resolvable (sec 11.54's
+    second site).
+
+    A row with no dominant channel at all (every raw value exactly 0.0) and
+    no cleared channel to fall back to names as "no channel clears its own
+    null" rather than fabricating one.
     """
     return _compose_batch(profiles, cleared, peers)[int(i)]["name"]
 
@@ -369,6 +565,14 @@ def compose_name(i: int, profiles: np.ndarray, cleared: np.ndarray, peers: list)
 def assign_concept_names(targets: dict) -> None:
     """Mutates `targets` (`run_concepts`'s own artifact structure) in
     place, setting `name`/`name_lead_diversified` on every concept record.
+
+    `name_lead_diversified` (sec 32.4, Item C): since the name's FIRST
+    clause is now always the fixed `dominant_channel` lead, this field no
+    longer describes the lead clause -- it describes whether the CONTRAST
+    clause (the second, z-selected clause) is this row's own top-|z|
+    candidate or was displaced from it by mechanism 2's diversification
+    pass. `True` only when a row has a contrast candidate at all and
+    diversification actually moved it off that row's own best pick.
 
     The peer set is EVERY concept across the WHOLE RUN, not one target's
     own concepts (sec 30.7: "concept cards rank by interest across the
@@ -482,6 +686,7 @@ def concept_table(candidates: list, X: np.ndarray, feature_ids: list,
             "name": None,
             "name_lead_diversified": None,
             "within_cosine_mean": _within_cosine_mean(members_X),
+            "centroid_cosine_mean": _centroid_cosine_mean(members_X, centroid),
             "misfits": [],
             "description": None,
             "description_generated": False,
@@ -505,6 +710,7 @@ def run_concepts(run_dir: Path, cfg) -> dict:
     causal_only = bool(getattr(sae_cfg, "concept_causal_only", True))
     k = getattr(sae_cfg, "concept_k", "auto")
     min_silhouette = float(getattr(sae_cfg, "concept_min_silhouette", 0.1))
+    min_members = int(getattr(sae_cfg, "concept_min_members", 3))
     seed = int(getattr(getattr(cfg, "run", None), "seed", 0) or 0)
 
     targets: dict[str, dict] = {}
@@ -522,7 +728,8 @@ def run_concepts(run_dir: Path, cfg) -> dict:
 
         candidates = art.get("candidates", [])
         X, feature_ids, diagnostics = build_concept_matrix(candidates, causal_only=causal_only)
-        cluster_result = cluster_concepts(X, k=k, min_silhouette=min_silhouette, seed=seed)
+        cluster_result = cluster_concepts(X, k=k, min_silhouette=min_silhouette,
+                                          min_members=min_members, seed=seed)
         concepts = concept_table(candidates, X, feature_ids, cluster_result, art)
 
         targets[key] = {
@@ -535,6 +742,8 @@ def run_concepts(run_dir: Path, cfg) -> dict:
             "k": cluster_result["k"], "silhouette": cluster_result["silhouette"],
             "non_modular": cluster_result["non_modular"],
             "reason": cluster_result["reason"],
+            "k_sweep": cluster_result.get("k_sweep"),
+            "k_selection_rule": cluster_result.get("k_selection_rule"),
             "channel_columns": list(CHANNELS),
             "concepts": concepts,
         }

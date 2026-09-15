@@ -8,9 +8,14 @@ docstring for the clustering mechanism and `ROADMAP.md` sec 30 for the full
 comparison.
 
 One public entry point, `sae_concepts_block`, mirroring `_sae_roles_block`'s
-exact signature (`(cfg, run_dir, findings, model_names) -> str`) so
-`report.py::_sec_sae` can call it the same way. Three blocks, per sec
-30.4.5:
+signature (`(cfg, run_dir, findings, model_names) -> str`, plus an optional
+`population` kwarg threading ROADMAP.md sec 32.7 Item H's flatness
+population through to `ablation_cell`) so `report.py::_sec_sae` can call it
+the same way. Three blocks, per sec
+30.4.5, plus a concept-map figure (ROADMAP.md sec 32.14, Item M) rendered
+above the cards via `.sae_concept_map.concept_map_block` -- a separate
+module so its PCA computation stays unit-testable without a plotly/report.py
+round-trip (see that module's own docstring):
 
   1. Concept universality -- how many of this run's concepts are universal
      / partial / model-specific (`derived.concept_universality`), plus the
@@ -133,11 +138,19 @@ def _representative_ablation_entry(candidates: Optional[list], features: list) -
     return first_seen
 
 
-def sae_concepts_block(cfg, run_dir: Path, findings: list, model_names: list) -> str:
+def sae_concepts_block(cfg, run_dir: Path, findings: list, model_names: list,
+                       population: Optional[dict] = None) -> str:
     """The whole "SAE concepts" report subsection. Mirrors `_sae_roles_
     block`'s signature; see the module docstring for the three blocks and
     the degradation contract. Returns `""` when `sae/concepts.json` does
-    not exist or carries no targets."""
+    not exist or carries no targets.
+
+    `population` (ROADMAP.md sec 32.7 Item H2) is `derived.flatness_population`'s
+    run-wide flatness statistics, computed once by the caller
+    (`report.py::_sec_sae`) and passed through unchanged to `ablation_cell`
+    so a per-panel flatness clause here reads the same numbers the section's
+    own flatness table (H3/H4) does.
+    """
     run_dir = Path(run_dir)
     if not (run_dir / "sae" / "concepts.json").exists():
         return ""
@@ -169,6 +182,10 @@ def sae_concepts_block(cfg, run_dir: Path, findings: list, model_names: list) ->
             features_by_target_id[(target_key, concept.get("concept"))] = \
                 concept.get("features") or []
 
+    meta_sae = _load_json_or_none(run_dir / "sae" / "meta.json") or {}
+    median_norm_by_target = {k: v.get("median_hidden_norm")
+                             for k, v in meta_sae.items() if isinstance(v, dict)}
+
     inner = "<h4>SAE concepts (ablation-space clustering, ROADMAP.md sec 30)</h4>"
     inner += (
         "<p class='blurb'>Concepts cluster probed features on their own "
@@ -178,7 +195,16 @@ def sae_concepts_block(cfg, run_dir: Path, findings: list, model_names: list) ->
         "'roles' section above uses. sec 30.1 measured concepts clustering "
         "decisively better in that space (mean silhouette <b>0.450</b> vs "
         "roles' <b>&minus;0.235</b>, beating roles at every target "
-        "checked).</p>")
+        "checked).</p>"
+        # ROADMAP.md sec 32.7c Item I3: state the battery's actual
+        # null-comparison question once, here too -- the card below reuses
+        # `ablation_cell`, whose own collapsing (Item I1) only tells a
+        # reader something WAS measured and cleared nothing, not what
+        # "cleared" means.
+        "<p class='blurb'>A channel counts as cleared only when a member's "
+        "own effect exceeds what removing that much of an ARBITRARY "
+        "random direction does -- not simply whether the forecast moved "
+        "when that member was removed.</p>")
 
     # -------- block 1: universality + transfer heatmap --------
     uni = derived.concept_universality(run_dir)
@@ -237,6 +263,10 @@ def sae_concepts_block(cfg, run_dir: Path, findings: list, model_names: list) ->
                    + " when checked against every other model's own dictionary."),
             registered=False))
 
+    # -------- concept map (ROADMAP.md sec 32.14, Item M) --------
+    from .sae_concept_map import concept_map_block
+    inner += concept_map_block(run_dir, cfg)
+
     # -------- block 2: concept cards --------
     top = cards.head(max_cards).reset_index(drop=True)
     bucket_order = ["universal", "partial", "model-specific", "not comparable", "not measured"]
@@ -269,23 +299,48 @@ def sae_concepts_block(cfg, run_dir: Path, findings: list, model_names: list) ->
             candidates = candidates_by_target.get(str(row.target))
             member_features = features_by_target_id.get((row.target, row.concept), [])
             entry = _representative_ablation_entry(candidates, member_features)
-            spark_html = ablation_cell(entry, max_series=8)
-            desc_html = ""
+            spark_html = ablation_cell(entry, max_series=8,
+                                       median_hidden_norm=median_norm_by_target.get(str(row.target)),
+                                       population=population)
+            # ROADMAP.md sec 32.3 Item B: the description is the card's
+            # HEADLINE, never empty -- a description entry's `text` is
+            # populated by `machine_fallback` for every packet
+            # `run_sae_describe.py` builds (ROADMAP.md sec 32.7d PRUNE,
+            # 2026-09-15: generation is gone, so a description is always
+            # deterministically composed, never a distinct "the narrator
+            # accepted this" state), so the only genuinely empty state left
+            # is "the narrator never ran for this run at all", which renders
+            # the same muted placeholder `sae_features.py`'s own feature
+            # table already uses for that state. `row.description_generated`
+            # is intentionally not read here -- it can still be `True` on an
+            # older run's `descriptions.json` written before the PRUNE, and
+            # this label describes what the CURRENT pipeline does, not what
+            # produced a stale artifact.
             if row.description:
-                gen_tag = " <i>(generated)</i>" if row.description_generated else ""
-                desc_html = (f"<p class='blurb'><i>{html.escape(str(row.description))}</i>"
-                             f"{gen_tag}</p>")
+                desc_html = (f"<p class='blurb' style='color:var(--ink);"
+                             f"font-size:14.5px;margin:0 0 4px'>"
+                             f"{html.escape(str(row.description))}"
+                             f" <i>(composed from the measurements)</i></p>")
+            else:
+                desc_html = ("<p class='blurb' style='margin:0 0 4px'>"
+                             "<span class='muted'>no description generated"
+                             "</span></p>")
             name = row.name or f"concept {row.concept}"
+            meta_html = (
+                "<p style='margin:0 0 8px;font-size:12.5px;color:var(--muted)'>"
+                f"{html.escape(str(name))} — {html.escape(str(row.target))}, "
+                f"concept {row.concept}</p>")
+            numbers_html = (
+                f"<p class='blurb'>{int(row.n_members)} member(s), "
+                f"{int(row.n_members_clearing)} clearing at least one "
+                f"channel's own null; interest {float(row.interest):.2f}.<br>"
+                f"profile: {_profile_html(row.profile)}<br>"
+                f"transfer: {_reach_html(row.reach, row.n_other_models)}</p>")
             card_bodies.append(
                 "<div class='concept-card'>"
-                f"<p class='blurb'><b>{html.escape(str(name))}</b> — "
-                f"{html.escape(str(row.target))}, concept {row.concept}: "
-                f"{int(row.n_members)} member(s), {int(row.n_members_clearing)} "
-                f"clearing at least one channel's own null; interest "
-                f"{float(row.interest):.2f}.<br>"
-                f"profile: {_profile_html(row.profile)}<br>"
-                f"transfer: {_reach_html(row.reach, row.n_other_models)}</p>"
-                f"{desc_html}{spark_html}</div>")
+                f"{desc_html}{meta_html}{spark_html}"
+                f"{_details('the numbers behind this', numbers_html)}"
+                "</div>")
         inner += "".join(card_bodies)
 
         # One finding per target represented in this bucket's shown cards --
@@ -324,7 +379,7 @@ def sae_concepts_block(cfg, run_dir: Path, findings: list, model_names: list) ->
         inner += (
             f"<p class='blurb'>Misfit detection: <b>{n_checked}</b> "
             f"target(s) checked at a cosine gap of {misfit_gap:g} below "
-            f"each concept's own within-concept mean cosine; <b>zero "
+            f"each concept's own mean member-to-centroid cosine; <b>zero "
             f"misfits found</b> — every clustered member's own ablation "
             f"fingerprint sits within its concept's own cohesion (matching "
             f"sec 30.1's own \"no orphans\" measurement).</p>")
@@ -344,8 +399,9 @@ def sae_concepts_block(cfg, run_dir: Path, findings: list, model_names: list) ->
                     f"<p class='blurb'><b>{html.escape(str(r.target))}</b> "
                     f"concept {r.concept}, feature {r.feature}: cosine to "
                     f"centroid {r.cosine_to_centroid:+.3f} vs concept's own "
-                    f"mean {r.concept_mean_cosine:+.3f} (threshold "
-                    f"{r.threshold:+.3f}).<br>own fingerprint: {own}<br>"
+                    f"mean member-to-centroid cosine {r.centroid_cosine_mean:+.3f} "
+                    f"(threshold {r.threshold:+.3f}, {r.bar_statistic} minus a "
+                    f"gap of {r.min_cosine_gap:g}).<br>own fingerprint: {own}<br>"
                     f"concept's fingerprint: {concept_ch}</p>")
             inner += _details(f"{model}: {len(sub)} misfit(s)", "".join(body_parts))
 

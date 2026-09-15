@@ -587,6 +587,14 @@ def run_sae(cfg: PipelineConfig, hub: ModelHub, store: ActivationStore,
         log.info(f"sae: training baseline TopK SAE for {key}")
         adapter = hub.get(model)
         bench_activations = load_all_windows(store, model, layer)
+        # ROADMAP.md sec 32.7c Item I2: a feature's decoder column is
+        # unit-norm (`TopKSAE.normalize_decoder_`), so its activation IS the
+        # length of the vector an ablation removes -- and that length means
+        # nothing across targets without what it is a fraction OF. Computed
+        # once here, over this target's own store activations, and carried
+        # in the artifact rather than recomputed in the report (which has
+        # no store handle on a report-only rerun).
+        median_hidden_norm = float(np.median(np.linalg.norm(bench_activations, axis=-1)))
         # Held-out SERIES split (2026-09-11). Before this, fidelity and dead
         # rate were measured on the rows the dictionary trained on, so a
         # memorizing dictionary and a generalizing one reported the same
@@ -894,6 +902,7 @@ def run_sae(cfg: PipelineConfig, hub: ModelHub, store: ActivationStore,
             "training_budget": training_budget,
             "dead_rate_gate": dead_rate_gate,
             "dict_size_search": dict_size_search,
+            "median_hidden_norm": median_hidden_norm,
         }
     save_json(out_dir / "meta.json", results)
 

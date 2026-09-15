@@ -156,13 +156,22 @@ def test_cluster_concepts_is_roles_cluster_roles():
     assert a["silhouette"] == pytest.approx(b["silhouette"], nan_ok=True)
 
 
-def test_k_auto_matches_resolve_role_k():
+def test_k_auto_matches_resolve_role_k_at_min_members_1():
+    """ROADMAP.md sec 32.5 Item D5: `min_members<=1` is the reproducibility
+    sentinel -- it bypasses D1's sweep entirely and delegates straight to
+    the pre-D ratio (`_resolve_role_k`), so every concept recorded before
+    Item D stays regenerable bit for bit. This is the exact contract this
+    test pinned before Item D existed, now spelled out with the sentinel
+    that keeps it true (the new DEFAULT, `min_members=3`, no longer
+    reproduces this -- see `tests/test_concept_clustering.py` for that)."""
     from tsfm_lens.sae.roles import _resolve_role_k
     rng = np.random.default_rng(0)
     for n in (12, 24, 48, 96):
         X = rng.normal(size=(n, len(CHANNELS)))
-        result = cluster_concepts(X, k="auto", seed=0)
+        result = cluster_concepts(X, k="auto", min_members=1, seed=0)
         assert result["k"] == _resolve_role_k("auto", n)
+        assert result["k_sweep"] is None
+        assert result["k_selection_rule"] == "ratio (min_members<=1, legacy reproduction)"
 
 
 def test_fewer_than_four_candidates_is_skipped_with_reason():
@@ -292,12 +301,19 @@ def test_compose_name_contrastive_beats_absolute():
     """Plant: `trend` is ~5.0 for every row (large, but with zero variance
     -> |z|=0 for everyone). `seasonal` is ~0.1 for rows 0-3 and 4.9 for row
     4 -- comparable RAW magnitude to `trend`, but a huge |z| for row 4 since
-    it is an outlier against the population. Naming by raw magnitude picks
-    `trend` for row 4 too (5.0 > 4.9) -- the SAME channel as every other
-    row. Naming by |z| singles row 4 out via `seasonal`. If compose_name's
-    output for row 4 named `trend`, the mechanism would not be contrastive
-    and this plant would fail to discriminate -- which is the point of the
-    comment on this test in sec 30.8."""
+    it is an outlier against the population.
+
+    Under design (c) (ROADMAP.md sec 32.4, Item C) `trend` is `row 4`'s
+    DOMINANT lead too -- it is still the larger raw magnitude (5.0 > 4.9),
+    and the dominant clause is now fixed/unconditional rather than
+    competing in the contrastive pool. So "trend must not appear in row 4's
+    name at all" (this test's pre-Item-C assertion) is no longer the right
+    discriminator: it would now reject the correct output. What still
+    separates naming-by-contrastive-z from naming-by-raw-magnitude is the
+    CONTRAST clause -- only row 4's `seasonal` value is a population
+    outlier (huge |z|), so only row 4 earns a "unusually ... seasonal"
+    contrast clause; rows 0-3, whose only cleared channel IS their dominant
+    channel, have no contrast candidate at all and render no such clause."""
     trend = CHANNELS.index("trend")
     seasonal = CHANNELS.index("seasonal")
     profiles = _profile_matrix(5)
@@ -310,62 +326,63 @@ def test_compose_name_contrastive_beats_absolute():
     peers = [("t", i) for i in range(5)]
 
     name_odd = compose_name(4, profiles, cleared, peers)
-    assert "seasonal" in name_odd
-    assert "trend" not in name_odd
+    assert "trend" in name_odd  # fixed dominant lead, largest raw |mean|
+    assert "seasonal" in name_odd  # contrastive population outlier
+    assert "unusually" in name_odd  # rendered as the CONTRAST clause
     for i in range(4):
-        assert "trend" in compose_name(i, profiles, cleared, peers)
+        name = compose_name(i, profiles, cleared, peers)
+        assert "trend" in name
+        assert "seasonal" not in name  # not cleared, not an outlier here
 
 
 def test_compose_name_is_shortest_unique_prefix():
-    """Rows 0 and 1 (the subjects) share the same magnitude on `trend` and
-    `level` and differ only on a 3rd channel (`mase` vs `dispersion`) --
-    they must both render 3 clauses.
+    """ROADMAP.md sec 32.4, Item C, design (c): the DOMINANT clause (here
+    `trend`, tied and largest for both subjects) is fixed and never
+    competes in mechanism 2/3's clause-selection pool, so what needs
+    disambiguating is the CONTRAST clauses alone (capped at
+    `_MAX_CLAUSES - 1 = 2`).
 
-    Under contrastive z-scoring a channel shared by only two rows is NOT
-    automatically the most contrastive one (a channel unique to a single
-    row has a *higher* |z| against a shared background, per its own
-    combinatorics -- see the module's naming spec): a subject's own
-    top-ranked candidates only become `trend`/`level` (ahead of its 3rd
-    channel) once every candidate has the SAME population split (the same
-    count of rows sharing that channel's value), which is what the
-    "thief" rows below manufacture. Each thief exists solely to claim one
-    channel as a diversified lead before either subject is processed
-    (thieves carry smaller peer keys, so `_compose_batch`'s tie-broken
-    processing order reaches them first) -- forcing both subjects to
-    exhaust `trend` and `level` and fall back to `trend`, `level` in turn
-    at k=1 and k=2, disambiguating only at k=3 via their own distinct 3rd
-    channel. `thief_mase`/`thief_disp` come in pairs only so that the
-    `mase`/`dispersion` populations have the same 3-row split as
-    `trend`/`level` (2 subjects + 1 thief), which is what keeps all four
-    channels' |z| exactly tied for each subject rather than left to
-    floating-point chance.
+    Two "thief" rows independently claim `mase`/`dispersion` as their OWN
+    lead contrast clause first (smaller peer keys -> `_compose_batch`'s
+    tie-broken processing order reaches them before either subject; each
+    thief's own dominant is a distinct, unrelated channel so its claimed
+    channel stays a genuine contrast candidate for it, not its dominant).
+    Both subjects clear `level` (shared, tied) plus their OWN distinct 2nd
+    channel (`mase` vs `dispersion`) -- constructed so all of `level`'s,
+    `mase`'s and `dispersion`'s |z| for the relevant row are EXACTLY tied
+    (each column has exactly 2 of 7 rows at the same nonzero value),
+    breaking only on channel index. Subject 0 reaches `level` unforced
+    (unused when its turn comes); subject 1's only other candidate
+    (`dispersion`) is already claimed by a thief, so it is forced into a
+    genuine, unavoidable collision with subject 0 on `level`. Both then
+    need their own 2nd contrast clause to disambiguate -- 3 clauses total
+    (dominant + 2 contrast, 2 separators) each.
 
-    Every other row (the solo rows) has exactly one, unshared cleared
-    channel and must render 1 clause.
-    Negative: forcing k=2 globally would leave the subjects colliding."""
+    Solo rows each carry one channel as their own dominant with nothing
+    else cleared, so they render the dominant clause alone: 0 separators.
+    Negative: forcing k=1 globally (denying either subject its own 2nd
+    clause) would leave the two subjects colliding."""
     trend, level = CHANNELS.index("trend"), CHANNELS.index("level")
     mase, disp = CHANNELS.index("mase"), CHANNELS.index("dispersion")
+    flatness = CHANNELS.index("flatness")
+    hz_far = CHANNELS.index("horizon_shape_far")
     solo_channels = [CHANNELS.index(c) for c in
-                     ("seasonal", "spectral_centroid",
-                      "horizon_shape_near", "horizon_shape_far")]
+                     ("seasonal", "spectral_centroid", "horizon_shape_near")]
 
-    v = 5.0
-    # Array order: subjects, then the six thieves, then the four solo rows.
-    # Peer keys are assigned independently of array position (sec 11.2/
-    # sec 11.55) -- the thieves' keys are smaller than the subjects' so
-    # they are processed first despite sitting later in the array.
+    v, dom, big = 3.0, 10.0, 8.0
     rows = [
-        ({trend: v, level: v, mase: v}, {trend, level, mase}, ("t", 100)),
-        ({trend: v, level: v, disp: v}, {trend, level, disp}, ("t", 101)),
-        ({trend: v}, {trend}, ("t", 0)),
-        ({level: v}, {level}, ("t", 1)),
-        ({mase: v}, {mase}, ("t", 2)),
-        ({mase: v}, {mase}, ("t", 3)),
-        ({disp: v}, {disp}, ("t", 4)),
-        ({disp: v}, {disp}, ("t", 5)),
+        # Thieves: a distinct dominant channel (so the channel they exist
+        # to claim stays a CONTRAST candidate for them, not their own
+        # dominant), plus the one candidate they claim.
+        ({flatness: big, mase: v}, {mase}, ("t", 0)),
+        ({hz_far: big, disp: v}, {disp}, ("t", 1)),
+        # Subjects: tied dominant (trend), tied shared contrast (level),
+        # and their own distinct 2nd contrast channel.
+        ({trend: dom, level: v, mase: v}, {level, mase}, ("t", 2)),
+        ({trend: dom, level: v, disp: v}, {level, disp}, ("t", 3)),
     ]
     for j, ch in enumerate(solo_channels):
-        rows.append(({ch: 8.0}, {ch}, ("t", 200 + j)))
+        rows.append(({ch: big}, set(), ("t", 100 + j)))
 
     n = len(rows)
     profiles = _profile_matrix(n)
@@ -379,10 +396,13 @@ def test_compose_name_is_shortest_unique_prefix():
         peers.append(key)
 
     batch_names = [compose_name(i, profiles, cleared, peers) for i in range(n)]
-    assert batch_names[0] != batch_names[1]
-    assert batch_names[0].count("·") == 2  # 3 clauses = 2 separators
-    assert batch_names[1].count("·") == 2
-    for r in range(8, n):  # the solo rows
+    subj0, subj1 = batch_names[2], batch_names[3]
+    assert subj0 != subj1
+    assert subj0.count("·") == 2  # dominant + 2 contrast clauses
+    assert subj1.count("·") == 2
+    assert "mase" in subj0 and "dispersion" not in subj0
+    assert "dispersion" in subj1 and "mase" not in subj1
+    for r in range(4, n):  # the solo rows
         assert batch_names[r].count("·") == 0
 
 

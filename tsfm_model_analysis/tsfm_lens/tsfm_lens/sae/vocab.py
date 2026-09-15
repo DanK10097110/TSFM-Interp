@@ -67,11 +67,12 @@ class TermDef:
 CHANNEL_DEFS: dict = {
     "trend": TermDef(
         "Trend",
-        "Slope of the forecast -- whether it rises or falls across the horizon.",
+        "Slope of the forecast -- whether it rises or falls as it continues forward.",
         "Feature pushes the forecast to slope upward more steeply."),
     "seasonal": TermDef(
         "Seasonal strength",
-        "Energy in the forecast at the series' own dominant seasonal frequency.",
+        "Energy in the forecast concentrated at the series' own dominant "
+        "repeating rhythm.",
         "Feature makes the forecast more strongly periodic."),
     "spectral_centroid": TermDef(
         "Frequency balance",
@@ -85,15 +86,15 @@ CHANNEL_DEFS: dict = {
     "dispersion": TermDef(
         "Spread",
         "How much the forecast varies within itself (its standard deviation).",
-        "Feature makes the forecast more variable rather than flat."),
+        "Feature makes the forecast swing more from step to step."),
     "horizon_shape_near": TermDef(
         "Near horizon",
         "Shape of the first part of the forecast -- the steps just after the context ends.",
-        "Feature pushes the near-term forecast upward."),
+        "Feature changes the near-term forecast's shape by a larger amount."),
     "horizon_shape_far": TermDef(
         "Far horizon",
-        "Shape of the late part of the forecast -- the steps furthest into the future.",
-        "Feature pushes the long-range forecast upward."),
+        "Shape of the late part of the forecast -- its furthest-out steps.",
+        "Feature changes the long-range forecast's shape by a larger amount."),
     "mase": TermDef(
         "Accuracy (MASE)",
         "Forecast error against the true continuation, scaled by a naive baseline.",
@@ -101,7 +102,7 @@ CHANNEL_DEFS: dict = {
     "flatness": TermDef(
         "Flatness",
         "How close the forecast is to a constant line.",
-        "Feature flattens the forecast toward a constant."),
+        "Feature makes the forecast closer to a flat, constant line."),
 }
 
 

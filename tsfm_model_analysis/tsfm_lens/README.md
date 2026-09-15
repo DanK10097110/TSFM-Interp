@@ -274,6 +274,18 @@ The recurring vocabulary of this repo's report, one sentence each (`ROADMAP.md` 
 
 *Where it appears:* Behavioral profile, Representational geometry's per-family CKA, Activation clusters.
 
+**Far horizon.** Shape of the late part of the forecast -- its furthest-out steps -- a higher value changes the long-range forecast's shape by a larger amount.
+
+*Where it appears:* Sparse features (SAE) -- the causal channel battery's evidence columns, and every channel name rendered from it.
+
+**Flatness.** How close the forecast is to a constant line -- a higher value makes the forecast closer to a flat, constant line.
+
+*Where it appears:* Sparse features (SAE) -- the causal channel battery's evidence columns, and every channel name rendered from it.
+
+**Frequency balance.** Centre of mass of the forecast's frequency spectrum -- low means the forecast is dominated by slow, smooth movement, high means by fast wiggles -- a higher value shifts the forecast toward higher-frequency, choppier movement.
+
+*Where it appears:* Sparse features (SAE) -- the causal channel battery's evidence columns, and every channel name rendered from it.
+
 **Ground-truth feature alignment.** The correlation between a learned sparse feature's activation and a known generator parameter (a seasonal period, a trend order, an anomaly flag), which is this repo's substitute for the subjective max-activating-example judgment usual in SAE work; because each feature is matched to its *best* of many candidate fields, it is read against a label-permutation null.
 
 *Where it appears:* Sparse features (SAE).
@@ -285,6 +297,10 @@ The recurring vocabulary of this repo's report, one sentence each (`ROADMAP.md` 
 **Input-feature baseline.** A deliberately simple probe (raw window values, FFT magnitudes, summary statistics) predicting the same targets the stitching map does, whose whole job is to absorb the part of the agreement that follows from shared input rather than shared learned structure.
 
 *Where it appears:* Stitching probes; the quantity every reported gain is measured against.
+
+**Level.** Mean value of the forecast -- its overall height -- a higher value raises the whole forecast.
+
+*Where it appears:* Sparse features (SAE) -- the causal channel battery's evidence columns, and every channel name rendered from it.
 
 **Linear CKA.** A 0–1 similarity between two models' representations of the same series at a chosen layer pair, computed on the shared window axis and bootstrapped with the series as the resampling unit; it is correlational, and both models seeing the same input inflates it on its own.
 
@@ -301,6 +317,10 @@ The recurring vocabulary of this repo's report, one sentence each (`ROADMAP.md` 
 **Minimal sufficient set.** The smallest set of a model's own attention heads found by a greedy search whose patching restores most of a corruption's damage — sufficient because patching it works, but never proven the unique or provably smallest such set, since a greedy search only ever finds *a* small set, not *the* smallest.
 
 *Where it appears:* The seasonality circuit.
+
+**Near horizon.** Shape of the first part of the forecast -- the steps just after the context ends -- a higher value changes the near-term forecast's shape by a larger amount.
+
+*Where it appears:* Sparse features (SAE) -- the causal channel battery's evidence columns, and every channel name rendered from it.
 
 **Necessity.** Whether ablating a candidate head set on an otherwise-clean forecast damages it toward the fully-corrupted level — the complement of sufficiency, and required alongside it because either alone is a weaker claim than both together.
 
@@ -354,6 +374,10 @@ The recurring vocabulary of this repo's report, one sentence each (`ROADMAP.md` 
 
 *Where it appears:* Private benchmark confirmation; the run header's dataset line.
 
+**Seasonal strength.** Energy in the forecast concentrated at the series' own dominant repeating rhythm -- a higher value makes the forecast more strongly periodic.
+
+*Where it appears:* Sparse features (SAE) -- the causal channel battery's evidence columns, and every channel name rendered from it.
+
 **Skip lens and tuned lens.** Two ways to ask what forecast a middle layer already implies: the skip lens patches that layer's states in as the final block's output and lets the model's own head decode them, while the tuned lens fits a held-out ridge probe instead, correcting the skip lens's miscalibration at early layers.
 
 *Where it appears:* Forecast lens.
@@ -361,6 +385,10 @@ The recurring vocabulary of this repo's report, one sentence each (`ROADMAP.md` 
 **sMAPE and pinball loss.** The two companion forecast metrics: sMAPE is a symmetric percentage error (scale-free but unstable near zero), and pinball loss scores the predicted *quantiles* rather than the point forecast, which is the only one of the three sensitive to whether a model's uncertainty is honest.
 
 *Where it appears:* Behavioral profile's per-family metric table.
+
+**Spread.** How much the forecast varies within itself (its standard deviation) -- a higher value makes the forecast swing more from step to step.
+
+*Where it appears:* Sparse features (SAE) -- the causal channel battery's evidence columns, and every channel name rendered from it.
 
 **Stitching gain.** The extra held-out R² a ridge map from one model's layer to the other's achieves *above* a hand-crafted input-feature probe on the same targets — the gain, never the raw R², is the evidence, because the models read the same input and a raw R² is therefore partly trivial.
 
@@ -381,6 +409,10 @@ The recurring vocabulary of this repo's report, one sentence each (`ROADMAP.md` 
 **Token width.** How many timesteps one of a model's tokens covers (about 32 for a patch tokenizer, 1 for a per-timestep quantizer), which sets the finest lag that model's attention can express and is multiplied into every plotted lag axis so a lag of 300 means the same 300 timesteps for every model.
 
 *Where it appears:* Attention analysis' lag axes; the fairness card's finest-resolvable-lag row.
+
+**Trend.** Slope of the forecast -- whether it rises or falls as it continues forward -- a higher value pushes the forecast to slope upward more steeply.
+
+*Where it appears:* Sparse features (SAE) -- the causal channel battery's evidence columns, and every channel name rendered from it.
 
 **Untrained-twin floor.** The same measurement run against a randomly-initialized copy of a model's own architecture, giving the level any two networks of that shape reach before either has learned anything; a similarity that fails to clear it is architecture, not learning.
 

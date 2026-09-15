@@ -664,6 +664,19 @@ class SAEConfig:
     concept_causal_only: bool = True
     concept_k: str = "auto"
     concept_min_silhouette: float = 0.1
+    # ROADMAP.md sec 32.5 Item D: `cluster_concepts`'s k="auto" path sweeps
+    # k in range(2, k_max+1) (k_max = min(8, n // concept_min_members, n-1))
+    # instead of a single ratio-derived k, and rejects any k whose smallest
+    # cluster has fewer than concept_min_members rows BEFORE comparing
+    # silhouette scores -- a singleton's silhouette is maximal by
+    # construction, so the size floor must gate before the score is
+    # compared, not after. Default 3: fewer than 3 does not need Item D's
+    # protection (a pair is already rare enough to eyeball) and 3 is what
+    # the acceptance criterion (0 singleton concepts) requires as a floor.
+    # `concept_min_members<=1` is a SENTINEL that bypasses the sweep
+    # entirely and reproduces the pre-D ratio-based single fit bit for bit
+    # (D5) -- the reproducibility knob, not a looser version of the floor.
+    concept_min_members: int = 3
     concept_misfit_cosine_gap: float = 0.3
     concept_cards_max: int = field(default=24, metadata={"stage_input": False})
     # sec 30.4.2's cross-model transfer test: `transfer_top_k` is each

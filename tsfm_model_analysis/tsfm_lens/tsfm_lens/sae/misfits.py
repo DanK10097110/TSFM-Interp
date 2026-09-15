@@ -55,8 +55,45 @@ def _own_profile(vec: np.ndarray, channel_columns: list) -> list[dict]:
 def misfit_rows(concepts: dict, ablation_art: dict, min_cosine_gap: float = 0.3
                ) -> list[dict]:
     """A member is a MISFIT when its own ablation fingerprint is far from its
-    concept's centroid: cosine(member, centroid) < (mean within-concept cosine
-    for that concept) - min_cosine_gap.
+    concept's centroid: cosine(member, centroid) < (mean member-to-centroid
+    cosine for that concept) - min_cosine_gap.
+
+    🔴 **Item L (`ROADMAP.md` sec 32.13b/32.5).** This used to read the bar
+    off `within_cosine_mean` -- the mean PAIRWISE cosine between members --
+    while scoring each member's cosine to the CENTROID. Those are two
+    different statistics: a centroid sits closer to every member than members
+    sit to one another by construction, so member-to-centroid cosine runs
+    systematically higher (+0.248 on average, measured over
+    `runs/full_report_run_4model`'s 21 scorable concepts) than the pairwise
+    mean the old bar was built from -- the detector was arithmetically
+    near-dead, not measuring a genuinely tight dictionary. The bar is now
+    `centroid_cosine_mean` (`concepts.py::_centroid_cosine_mean`): the mean of
+    the SAME "member cosine to centroid" quantity that gets scored, so the
+    threshold and the score are finally like-for-like (`CLAUDE.md` sec 11.33:
+    ask what a normalized score is normalized BY). A concept record written
+    before this fix carries no `centroid_cosine_mean` and is skipped, exactly
+    as one with a `NaN`/missing `within_cosine_mean` always was -- "not yet
+    measured" degrades to no rows, never to the old (wrong) statistic
+    (`CLAUDE.md` sec 2.5): silently reapplying a bar this docstring just
+    called wrong would be the same mismatch under a different name. Every row
+    persists `bar_statistic`, the field name the bar was built from, so a
+    rendered card can print the rule it was judged by (`CLAUDE.md` sec 32:
+    "a verdict renders the rule that decided it").
+
+    `min_cosine_gap`'s default (0.3) is now a MEASURED choice rather than an
+    unvalidated carry-over -- the number was already 0.3 before this fix, but
+    "tuned against a like-for-like comparison" is new: swept at 0.2/0.3/0.4 on
+    `runs/full_report_run_4model` (13 scored targets, 21 scorable concepts,
+    192 members in them) after the fix: **0.2 -> 26 misfits, 0.3 -> 10
+    misfits, 0.4 -> 3 misfits** -- all three clear the acceptance bar
+    (`ROADMAP.md` Item L: neither zero nor "every member"). 0.3 is kept as the
+    default: it flags ~5% of scorable members (10 of 192) rather than ~14%
+    (0.2) or ~1.6% (0.4), the middle of the three and the value every prior
+    (arithmetically-dead) run already shipped with, so keeping it changes what
+    the number MEANS without changing what a caller has to pass. The exact
+    count at whichever gap a caller passes is always recorded in the artifact
+    via `derived.misfit_table`'s `attrs`, so this default is a starting point,
+    not a hidden constant.
 
     Threshold is relative to the concept's OWN cohesion, never a global
     constant -- a tight concept and a loose one should not share a bar
@@ -72,8 +109,8 @@ def misfit_rows(concepts: dict, ablation_art: dict, min_cosine_gap: float = 0.3
     `channel_columns`); `ablation_art` is that same target's raw ablation
     artifact (`sae/<model>/<layer>_ablation.json`, carrying `candidates`).
     Singleton concepts (`n_members == 1`) are never scored here, EXPLICITLY
-    -- not only as a side effect of `within_cosine_mean` coming back `NaN`
-    for a singleton (`concepts.py::_within_cosine_mean`'s own contract), but
+    -- not only as a side effect of `centroid_cosine_mean` coming back `NaN`
+    for a singleton (`concepts.py::_centroid_cosine_mean`'s own contract), but
     checked directly on `n_members`, so a record that ever carries a
     singleton with a non-`NaN` mean (a stale artifact, a hand-built fixture)
     still renders it as an ordinary card rather than a misfit. There is no
@@ -91,7 +128,8 @@ def misfit_rows(concepts: dict, ablation_art: dict, min_cosine_gap: float = 0.3
         n_members = int(concept.get("n_members", len(concept.get("features", []))))
         if n_members < 2:
             continue
-        mean_cosine = concept.get("within_cosine_mean")
+        bar_statistic = "centroid_cosine_mean"
+        mean_cosine = concept.get(bar_statistic)
         if mean_cosine is None or not np.isfinite(mean_cosine):
             continue
         threshold = float(mean_cosine) - float(min_cosine_gap)
@@ -114,7 +152,8 @@ def misfit_rows(concepts: dict, ablation_art: dict, min_cosine_gap: float = 0.3
                 "concept": concept.get("concept"),
                 "feature": int(feature),
                 "cosine_to_centroid": cos,
-                "concept_mean_cosine": float(mean_cosine),
+                "centroid_cosine_mean": float(mean_cosine),
+                "bar_statistic": bar_statistic,
                 "threshold": threshold,
                 "min_cosine_gap": float(min_cosine_gap),
                 "own_top_channels": _own_profile(own_vec, channel_columns),

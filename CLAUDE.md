@@ -559,6 +559,91 @@ remain") so it doesn't run past what was actually asked for — cron jobs in
 this harness are session-only and auto-expire after 7 days regardless, but
 don't rely on that as the stop condition if a shorter one was requested.
 
+### 2.9 Scaffolding comes down once the decision it supported is made
+
+**Added 2026-09-12, user-directed.** This repo builds a lot of machinery to
+*decide* something: a control beside a candidate, a null beside a measurement,
+a deterministic fallback beside a generated sentence, two variants scored
+against each other, a legacy artifact kept beside its replacement. That is
+correct while the decision is open — most of §11's traps exist because a number
+was quoted without the thing that made it trustworthy.
+
+**It stops being correct the moment the decision is made.** Once one side has
+won, keeping both is not caution, it is two code paths, two artifacts, two
+things to keep in sync, and a reader who cannot tell which one the report
+actually used. So: **when a comparison closes, delete the loser.** Not
+"disable it behind a flag," not "keep it for reference" — remove the code, stop
+computing it, and record *in `ROADMAP.md`* what was removed, what it measured,
+and which measurement decided it. The record is what makes the deletion safe;
+the code is not.
+
+The same applies to computation with no consumer. If a stage computes a
+quantity nothing reads, an artifact is written that nothing loads, or a driver
+exists for a study that closed, that is cost — GPU time, wall clock, review
+surface, and a maintenance obligation — bought for nothing. Take it out.
+
+🔴 **The boundary, which a future session must not get wrong.** This section
+is about **code and computation**. It does **not** license deleting anything in
+`CLAUDE.md` or `ROADMAP.md`: §0's correct-in-place discipline, §11's traps,
+every Findings block and every recorded refutation stay, including — especially
+— the ones describing code that has since been deleted. A trap whose code is
+gone is still the reason nobody rebuilds it. Prose is cheap and load-bearing;
+code is expensive and replaceable.
+
+**What does NOT count as dead, and the list is not optional:**
+- A **control, null, or floor that gates a rendered verdict.** §11.37's
+  degenerate-baseline trap, §11.36's `adjustment_ok`, §11.47's convergence
+  flag, every untrained-twin floor — these look redundant precisely because
+  they usually agree with the thing they check. That is what they are for.
+- A **fallback on a path that can still fail.** A deterministic sentence
+  rendered when a guard refuses is not a duplicate of the generated one; it is
+  the failure branch.
+- A **second granularity or second axis that answers a different question** —
+  `forecast_preservation` at window *and* token granularity, attention at
+  native *and* matched resolution. Two numbers that disagree are the finding.
+- A **standalone study driver whose output a human reads.** Most of the 35
+  `run_*.py` scripts write a JSON that no other code loads **by design**; a
+  "written but never read" scan will flag all of them and be wrong about all
+  of them.
+
+**Establish deadness by measurement, not by grep.** A first pass at this
+list on 2026-09-12 used a grep heuristic and produced **two candidates, both
+false positives** — `sae/vocab.py` reads as unreferenced and has three real
+importers, and the reference counts for `report/sae_role_matching.py`'s
+functions are dominated by its own tests. §11.41's rule applies to a
+dead-code probe exactly as it does to a thread-count probe: validate it
+against a module you already know is live before believing it about one you
+don't.
+
+**The one grounded candidate that survey did find, recorded rather than
+acted on:** `tsfm_lens/report/sae_role_matching.py` (581 lines) has **zero
+importers in the live code** — `report.py` does not call any of its twelve
+functions — and is kept alive solely by `tests/test_sae_role_matching_report.py`
+(199 lines). It renders the *injection-space* role-matching tables, orphaned
+when §30 stage 4 superseded `roles.json` with `concepts.json`; its own
+docstring already concedes it is "available to any caller still working with
+`sae/roles_injection.json`," and there is no such caller. **A module kept
+alive only by its own tests is the shape this section is about** — the tests
+pass, the coverage looks real, and nothing a reader ever sees depends on any
+of it. Decide it deliberately (delete both files, or wire the tables back
+into the report) rather than letting it sit.
+
+✅ **Deleted 2026-09-14 (`ROADMAP.md` §32.9 PRUNE), per this section's own
+"decide it deliberately" instruction — the record above stays per this
+file's own no-deletion doctrine (the boundary two paragraphs up).**
+`report/sae_role_matching.py` and `tests/test_sae_role_matching_report.py`
+are both gone. `tests/test_sae_role_consolidation.py` (a mixed file, half
+testing this dead module and half testing the still-live
+`report/sae_roles.py`) was trimmed rather than deleted outright. Re-verified
+by measurement rather than trusting the paragraph above at face value: every
+one of the twelve functions was individually grepped across
+`tsfm_lens/report/` with zero hits outside the module's own files, and the
+similarly-named but fully live `sae/role_matching.py` (`role_correspondence_table`,
+still consumed by `run_sae_compare.py`'s standalone `roles_injection.json`
+comparison — the "standalone study driver" exemption a few paragraphs up)
+was confirmed untouched. Full numbers and the affected-test-suite result in
+`ROADMAP.md` §32.9.
+
 ---
 
 ## 3. Repository layout
@@ -880,8 +965,17 @@ TSFM-Interp/
         │                        # null has indefinitely many wordings where
         │                        # the untested STATUS has only one -- saying
         │                        # it. So such a description must carry the
-        │                        # marker or fall back. --no-llm gives the deterministic
-        │                        # machine fallbacks with no weights loaded
+        │                        # marker or fall back.
+        │                        # ✅ PRUNE, 2026-09-15 (ROADMAP.md sec 32.7d/32.9):
+        │                        # the Qwen generation path (`describe`/`describe_batch`)
+        │                        # this driver called is deleted -- it is now a pure
+        │                        # deterministic-path driver, no `--device`/`--no-llm`
+        │                        # CLI surface, `accepted` always False. See ROADMAP.md
+        │                        # sec 32.7d for why and sec 26 C's acceptance numbers
+        │                        # that motivated it. `sae/describe.py`'s generation
+        │                        # machinery (`load_narrator`/`_generate`) is NOT
+        │                        # deleted -- `sae/compare.py` (sec 28) below still
+        │                        # uses it and still takes --no-llm.
         ├── run_sae_ablation.py  # ROADMAP.md sec 27: the SECOND causal battery.
         │                        # Stage 2 INJECTS a decoder direction into series
         │                        # picked without reference to the feature; this
@@ -2466,6 +2560,35 @@ blocks, stride 1, `num_samples: 20`). `family_key: auto`. Every stage has an
 `enabled` flag; all knobs documented inline in the YAML.
 `configs/medium_run.yaml` gives a mid-scale real-model config between the
 mock-only smoke run and this full default.
+
+⚠️ **`horizon: 64` is under-reading TimesFM, and the number that governs that is
+128, not 32 (measured 2026-09-14, `ROADMAP.md` §33).** TimesFM 2.5 has
+`input_patch_len: 32` **and `output_patch_len: 128`** — the 32 governs how the
+*context* is read, the forecast is emitted in 128-step patches, and
+`num_decode_steps = (horizon - 1) // 128`. So at `horizon: 64` the model
+computes 128 steps in **one** forward pass and `models/timesfm_adapter.py:110`
+(`full = full[:, :horizon, :]`) discards the second half. Measured live:
+`max|predict(H=128)[:, :64] - predict(H=64)| = 0.000e+00`, a captured block
+fires **1×** at both 64 and 128 and **2×** at 129 (§11.49's condition), and
+warm latency is 38.8 vs 38.3 ms. **128 is therefore the last horizon free of
+that hazard for TimesFM and costs nothing; 129 is the first that trips it.**
+Chronos-2 is the same shape (1 firing, 77.6 → 76.1 ms); Sundial stays 1 firing
+at 1.9×; **Chronos-Bolt and Chronos-T5 go 1 → 2 firings at 128**, and Bolt's own
+library prints `We recommend keeping prediction length <= 64` past that.
+🔴 **Two things a future session must not conclude from this.** (1) Raising the
+SAE causal horizon was tested and **does not help** — steps 64–127 correlate with
+steps 0–63 at Pearson 0.949 / Spearman 0.977, at or above the level the two
+existing `horizon_shape_*` channels already collapse onto one axis, and
+`horizon_shape_far`'s discriminability *falls* 30% at 128 (`ROADMAP.md` §33.8,
+closed as a negative). (2) 🔴 **Do not raise `data.horizon` to get there.**
+`data.py:91` drops any series under `context_len + horizon`, and `benchmark_large`
+was generated to exactly 576 — `horizon: 128` drops **605 of 965 series** and
+takes `parametric` (130), `random_parametric` (425) and `sequential_par` (50) to
+**zero**, leaving a corpus that is entirely real-derived while the run completes
+and renders a full report (§11.46's shape, `ROADMAP.md` §33.5). Any future
+horizon work must decouple the battery's horizon from corpus admission, which
+is sound because eight of the nine causal channels read only the two forecasts
+and only `mase` reads targets.
 
 `alignment.depth_axis: block` (default since 2026-08-13, `ROADMAP.md` §18 F1;
 `index` is the legacy axis every number recorded before that date was

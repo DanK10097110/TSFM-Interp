@@ -49,7 +49,8 @@ import pandas as pd
 
 __all__ = ["Verdict", "Rule", "RULES", "bottom_line_rows", "corruption_breakdown",
            "layer_metrics", "exemplar_summary", "patching_case_summary",
-           "load_json_or_none"]
+           "load_json_or_none", "ablation_panel_summary", "ablation_panel_table",
+           "flatness_population"]
 
 
 def load_json_or_none(path: Path):
@@ -2209,6 +2210,157 @@ def _universality_bucket(n_reached, n_other_models) -> str:
     return "partial"
 
 
+def ablation_panel_summary(entry: Mapping, flat_threshold: float = 0.10) -> dict:
+    """Per-panel flatness diagnostic for one ablation forecast (ROADMAP.md
+    sec 32.7 Item H1).
+
+    `entry` is one element of an ablation candidate's own `forecasts` list
+    (`sae/response.py`'s per-series record) — holds `context`, `target`,
+    `with_feature` (the SAE's full reconstruction, the forecast this repo
+    actually renders as "the forecast": `ablation_cell`'s own
+    `clean=f.get("with_feature")` convention) and `unpatched` (the raw model,
+    no SAE at all — Item H4(ii)'s confound control, already on disk at zero
+    extra forward passes).
+
+    Returns `context_lag1` (lag-1 autocorrelation of the context — the
+    property sec 32.7 found predicts flatness at Spearman rho=0.626),
+    `forecast_sd_ratio` (the reconstruction's forecast sd over the context's
+    own sd), `raw_sd_ratio` (the same ratio for the unpatched raw-model
+    forecast), `flat` (`forecast_sd_ratio < flat_threshold`), and `mase`
+    (this one panel's own MASE, `mean_abs_diff` scale, reusing
+    `analysis.stats.mase` per CLAUDE.md sec 2.2 rather than re-deriving the
+    formula — so "flat panels score better on MASE" is checkable panel by
+    panel, not only in aggregate).
+
+    Holds `bottom_line_rows`' adaptivity contract: no model name, no
+    architecture family, no `cfg.models[i]` index — this function never sees
+    the target key its caller read the entry from, only the one forecast
+    dict. Pinned by a source-inspection test.
+    """
+    from ..analysis.stats import mase as _mase
+
+    def _sd_ratio(arr, ctx_sd) -> Optional[float]:
+        if arr is None or ctx_sd is None or not np.isfinite(ctx_sd) or ctx_sd <= 0:
+            return None
+        a = np.asarray(arr, dtype=np.float64)
+        if a.size == 0 or not np.all(np.isfinite(a)):
+            return None
+        return float(np.std(a)) / ctx_sd
+
+    def _lag1(arr: np.ndarray) -> Optional[float]:
+        if arr.size < 2:
+            return None
+        centered = arr - np.mean(arr)
+        denom = float((centered ** 2).sum()) + 1e-8
+        return float((centered[1:] * centered[:-1]).sum() / denom)
+
+    ctx = entry.get("context")
+    ctx_arr = np.asarray(ctx, dtype=np.float64) if ctx else np.array([])
+    ctx_sd = float(np.std(ctx_arr)) if ctx_arr.size else None
+    context_lag1 = _lag1(ctx_arr) if ctx_arr.size and np.all(np.isfinite(ctx_arr)) else None
+    forecast_sd_ratio = _sd_ratio(entry.get("with_feature"), ctx_sd)
+    raw_sd_ratio = _sd_ratio(entry.get("unpatched"), ctx_sd)
+    flat = forecast_sd_ratio is not None and forecast_sd_ratio < flat_threshold
+
+    panel_mase = None
+    tgt, fc = entry.get("target"), entry.get("with_feature")
+    if tgt and fc and ctx_arr.size and len(tgt) == len(fc):
+        try:
+            point = np.asarray(fc, dtype=np.float64).reshape(1, -1)
+            targets = np.asarray(tgt, dtype=np.float64).reshape(1, -1)
+            contexts = ctx_arr.reshape(1, -1)
+            panel_mase = float(_mase(point, targets, contexts)[0])
+            if not np.isfinite(panel_mase):
+                panel_mase = None
+        except Exception:
+            panel_mase = None
+
+    return {
+        "context_lag1": context_lag1,
+        "forecast_sd_ratio": forecast_sd_ratio,
+        "raw_sd_ratio": raw_sd_ratio,
+        "flat": flat,
+        "mase": panel_mase,
+    }
+
+
+def flatness_population(df: pd.DataFrame) -> Optional[dict]:
+    """Population statistics a per-panel flatness clause renders beside a
+    single flat panel (ROADMAP.md sec 32.7 Item H2), factored out of the
+    report's own `_sae_flatness_block` so a block-level summary and a
+    per-panel clause (`report.py::_flat_clause`) read IDENTICAL numbers --
+    one computation, not two independently-arithmetic-ed copies of "share of
+    noise-like contexts that flatten" (ROADMAP.md sec 24's discipline).
+
+    `df` is `ablation_panel_table`'s own per-panel table (or any frame
+    carrying its `context_lag1`/`flat`/`mase` columns). Returns `None` for an
+    empty table, never a dict of `None`s -- a caller can then treat "no
+    population" and "population computed, some fields absent" as different
+    states.
+    """
+    if df is None or df.empty:
+        return None
+    lag1 = pd.to_numeric(df["context_lag1"], errors="coerce")
+    noise_mask = lag1 < 0.2
+    noise_n = int(noise_mask.sum())
+    noise_share = float(df.loc[noise_mask, "flat"].mean()) if noise_n else None
+
+    flat_mask = df["flat"] == True  # noqa: E712 (pandas boolean column, not `is True`)
+    flat_mase = df.loc[flat_mask, "mase"].dropna()
+    nonflat_mase = df.loc[~flat_mask, "mase"].dropna()
+    flat_med = float(flat_mase.median()) if len(flat_mase) else None
+    nonflat_med = float(nonflat_mase.median()) if len(nonflat_mase) else None
+    better = (flat_med is not None and nonflat_med is not None
+              and flat_med < nonflat_med)
+
+    return {
+        "noise_like_flat_share": noise_share,
+        "noise_like_n": noise_n,
+        "flat_scores_better_mase": better,
+    }
+
+
+def ablation_panel_table(run_dir: Path, flat_threshold: float = 0.10) -> pd.DataFrame:
+    """One row per rendered ablation panel across every SAE target (ROADMAP.md
+    sec 32.7 Items H1/H3/H4).
+
+    Enumerates targets from `sae/meta.json` (never a hardcoded model list)
+    and reads each target's own `sae/<model>/<layer>_ablation.json` — a
+    missing or `withheld` artifact contributes no rows, the same
+    degrade-gracefully contract `_ablation_entries`/`misfit_table` already
+    use. `model`/`layer`/`feature`/`series_id` are attached HERE, not inside
+    `ablation_panel_summary`, which is the pure per-panel reduction the
+    adaptivity contract pins — this function's whole job is enumerating
+    whatever targets the run's own artifact names, so it necessarily reads
+    (never branches on) the model name to attach it as a column.
+
+    `df.attrs["flat_threshold"]` carries the threshold applied, so a caller
+    computing a flat share never re-derives it from a different default
+    (ROADMAP.md sec 31.4/sec 26 E's rule).
+    """
+    from ..sae.train import sanitize
+
+    run_dir = Path(run_dir)
+    meta_sae = load_json_or_none(run_dir / "sae" / "meta.json") or {}
+    rows: list = []
+    for key in meta_sae:
+        model, layer = key.split("/", 1)
+        path = run_dir / "sae" / sanitize(model) / f"{sanitize(layer)}_ablation.json"
+        doc = load_json_or_none(path)
+        if not doc or doc.get("withheld"):
+            continue
+        for cand in doc.get("candidates") or []:
+            feature = cand.get("feature")
+            for f in cand.get("forecasts") or []:
+                summary = ablation_panel_summary(f, flat_threshold)
+                rows.append({"model": model, "layer": layer, "feature": feature,
+                            "series_id": f.get("series_id"), **summary})
+
+    df = pd.DataFrame(rows)
+    df.attrs["flat_threshold"] = float(flat_threshold)
+    return df
+
+
 def concept_cards(run_dir: Path, weights: tuple = (0.5, 0.3, 0.2)) -> pd.DataFrame:
     """One row per CONCEPT across the whole run, ranked by `interest`
     (ROADMAP.md sec 30.4.4):
@@ -2247,6 +2399,14 @@ def concept_cards(run_dir: Path, weights: tuple = (0.5, 0.3, 0.2)) -> pd.DataFra
     artifacts' own keys (the adaptivity contract this module states above).
     Returns an empty, correctly-shaped `pd.DataFrame` when `sae/
     concepts.json` is absent, and never raises.
+
+    `description`/`description_generated` are joined in from `sae/
+    descriptions.json` at read time (ROADMAP.md sec 32.2 Item A1's storage
+    decision) -- `concepts.json`'s own same-named fields are always `null`/
+    `False`, since `run_sae_describe.py` writes only the separate artifact,
+    never back into `concepts.json`. Falls back to the (always-empty)
+    `concepts.json` fields when `descriptions.json` does not exist, exactly
+    the way `_feature_descriptions` degrades.
     """
     _cols = ["target", "model", "concept", "name", "profile", "n_members",
              "n_members_clearing", "within_cosine_mean", "causal_strength",
@@ -2257,6 +2417,20 @@ def concept_cards(run_dir: Path, weights: tuple = (0.5, 0.3, 0.2)) -> pd.DataFra
     targets = (concepts_doc or {}).get("targets") or {}
     if not targets:
         return pd.DataFrame(columns=_cols)
+
+    # ROADMAP.md sec 32.2 Item A1's storage decision: `run_sae_describe.py`
+    # writes the narrator's output to `sae/descriptions.json`, never back
+    # into `concepts.json` -- that keeps `concepts.json` byte-identical and
+    # needs no re-run of the concepts stage. So the report joins the two at
+    # render time, here, rather than reading `concept["description"]`
+    # directly, which is always `null` (`sae/concepts.py::concept_table`
+    # never writes it). Keyed by the integer concept id, matching how
+    # `run_sae_describe.py::main` writes it (sec A6).
+    descriptions_doc = load_json_or_none(Path(run_dir) / "sae" / "descriptions.json")
+    concept_desc_by_target: dict = {}
+    if descriptions_doc:
+        for tkey, tdoc in descriptions_doc.items():
+            concept_desc_by_target[str(tkey)] = (tdoc or {}).get("concepts") or {}
 
     transfer_doc = load_json_or_none(Path(run_dir) / "sae" / "transfer.json")
     reach_by_concept: dict = {}
@@ -2302,6 +2476,19 @@ def concept_cards(run_dir: Path, weights: tuple = (0.5, 0.3, 0.2)) -> pd.DataFra
             ti_term = transfer_informative if transfer_informative is not None else 0.0
             interest = w1 * causal_strength + w2 * ti_term + w3 * cohesion_frac
 
+            desc_entry = (concept_desc_by_target.get(str(target_key)) or {}
+                         ).get(str(concept.get("concept"))) or {}
+            if desc_entry:
+                description = desc_entry.get("text")
+                description_generated = bool(desc_entry.get("accepted"))
+            else:
+                # No `run_sae_describe.py` run for this run directory yet --
+                # degrade to `concepts.json`'s own (always-null) field rather
+                # than raising, exactly as `_feature_descriptions` degrades
+                # when `descriptions.json` is absent.
+                description = concept.get("description")
+                description_generated = bool(concept.get("description_generated"))
+
             rows.append({
                 "target": target_key, "model": model,
                 "concept": concept.get("concept"),
@@ -2320,8 +2507,8 @@ def concept_cards(run_dir: Path, weights: tuple = (0.5, 0.3, 0.2)) -> pd.DataFra
                 "cohesion_frac": cohesion_frac,
                 "interest": interest,
                 "misfits": concept.get("misfits") or [],
-                "description": concept.get("description"),
-                "description_generated": bool(concept.get("description_generated")),
+                "description": description,
+                "description_generated": description_generated,
                 "universality_bucket": _universality_bucket(n_reached, n_other_models),
             })
 

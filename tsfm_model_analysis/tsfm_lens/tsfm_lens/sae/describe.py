@@ -36,25 +36,40 @@ paragraph. So generation is treated as an *untrusted proposal* and
    one anyway.
 4. Length, markdown, scaffolding and placeholder checks.
 
-On rejection the packet is re-sent with the rejection reason appended as a
-corrective turn (which is what makes a retry under greedy decoding produce
-a *different* answer -- same decode, different prompt). After
-`MAX_ATTEMPTS` the deterministic, LLM-free `machine_fallback` renders
-instead, and `Description.accepted` is False with the reason kept. The
-fallback is built from the same gloss tables the guard reads, and
+The fallback is built from the same gloss tables the guard reads, and
 `_assert_glosses_self_consistent` checks at import time that every gloss
 would itself pass the guard -- a fallback the guard would reject is a bug,
 not a safety net.
+
+✅ **PRUNE, 2026-09-15 (ROADMAP.md sec 32.7d/32.9).** This module's
+per-feature/per-role/per-concept generation entry points -- `describe`,
+`describe_batch`, and the `_messages` prompt builder they used -- are
+**deleted**. `run_sae_describe.py` (their only caller) now composes every
+description with `machine_fallback` directly and never loads a model; see
+that script's own docstring. This is CLAUDE.md sec 2.9's "delete the
+loser" applied to a comparison ROADMAP.md sec 26 C/32.2 already decided:
+on `runs/full_report_run_4model`, generation's value was concentrated in
+states with real causal-battery evidence and near-zero where none existed
+(sec 26 C), and the guard that makes a generated sentence trustworthy is
+the same guard the fallback already satisfies by construction -- so the
+LLM path bought fluency, not information, for the one caller this covers.
+
+What is **not** deleted, and must not be confused with the pruned path:
+`sae/compare.py` (ROADMAP.md sec 28) is a separate, independently-decided
+system that narrates a CROSS-MODEL comparison rather than one feature/role,
+and it deliberately kept its own generation path as an audit trail
+(sec 28.12) even after defaulting to a deterministic summary. It calls
+`load_narrator`/`_generate`/`_generate_one` directly and reuses this
+module's `Description`/`Narrator`/`MODEL_ID`/`REVISION`/vocabulary tables
+by design (CLAUDE.md sec 2.2) -- all of that stays, unchanged, below.
 
 Determinism
 -----------
 Greedy decode (`do_sample=False`, one beam), a fixed seed, a pinned
 checkpoint revision, and `MODEL_ID`/`REVISION` recorded on every
 `Description` so a rendered sentence is auditable back to what produced it.
-`describe` is `describe_batch` of one, so the single and batch paths cannot
-diverge in prompt construction or guarding; batch size itself can still
-move a token under left-padding in bf16, which is measured rather than
-asserted (see this module's tests).
+Batch size itself can still move a token under left-padding in bf16, which
+is measured rather than asserted (see `tests/test_narrator_batching.py`).
 """
 
 from __future__ import annotations
@@ -65,12 +80,13 @@ from dataclasses import dataclass, field as _dc_field
 from ..utils import log
 
 __all__ = [
-    "MODEL_ID", "REVISION", "MAX_ATTEMPTS", "CHANNEL_GLOSS", "FIELD_GLOSS",
+    "MODEL_ID", "REVISION", "MAX_ATTEMPTS", "CHANNEL_GLOSS", "CHANNEL_MEANING",
+    "FIELD_GLOSS",
     "DOMAIN_TERMS", "CAUSAL_TERMS", "CLEARED_CLAIM_TERMS",
     "UNTESTED_MARKERS",
     "FEW_SHOT_EXAMPLES", "SYSTEM_PROMPT",
     "Evidence", "Description", "Narrator",
-    "load_narrator", "describe", "describe_batch", "machine_fallback",
+    "load_narrator", "machine_fallback",
     "check_text", "allowed_concepts", "render_evidence",
 ]
 
@@ -287,6 +303,69 @@ def _verbs(ev, name: str) -> tuple:
     if name in (getattr(ev, "undirected_channels", None) or frozenset()):
         return ("moves", "moves")
     return CHANNEL_VERB.get(name, _DEFAULT_VERB)
+
+
+# ROADMAP.md sec 32.7c/Item J: a non-circular meaning for every channel,
+# written once. `CHANNEL_GLOSS` above is a short noun phrase built to sit
+# inside a generated sentence ("moves the forecast's spectral centroid") and
+# is circular by construction for exactly that job -- it names the quantity,
+# it does not explain it. `sae/vocab.py::CHANNEL_DEFS` already carries the
+# explanation (`what` a channel measures, `high` what a large value means),
+# written for the report's hover text and legend. Composing this module's
+# "meaning" sentence FROM that content, rather than hand-writing a fourth
+# vocabulary table, is the point: `CLAUDE.md` sec 11.53 names "two
+# hand-maintained lists of the same vocabulary" as a recurring defect shape
+# in this exact module, and a fresh `CHANNEL_MEANING` dict typed out by hand
+# beside `CHANNEL_DEFS` would be a third. `_assert_glosses_self_consistent`
+# below checks every entry both for circularity (the channel's own name must
+# not appear) and for passing `check_text` under a packet that licenses only
+# that channel -- so a future edit to `CHANNEL_DEFS` that reintroduces a
+# circular or unlicensable phrasing fails at import time, not in a rendered
+# report.
+def _channel_meaning(name: str) -> str:
+    from .vocab import CHANNEL_DEFS as _CHANNEL_DEFS
+    d = _CHANNEL_DEFS.get(name)
+    if d is None:
+        return ""
+    what = d.what.rstrip(". ")
+    high = d.high.rstrip(". ")
+    return f"{what}. {high}."
+
+
+def _channel_meaning_neutral(name: str) -> str:
+    """The direction-neutral half of a channel's meaning: what the quantity
+    IS, with no claim about which way it moved. `CHANNEL_MEANING`'s `high`
+    half is validated only against a POSITIVELY-signed packet for that same
+    channel (`_assert_glosses_self_consistent`'s own documented scope) --
+    quoting the full text for a channel this packet measured as NEGATIVE
+    would assert a direction the packet contradicts. This is what
+    `render_evidence` shows instead in that case (sec 32.7c Item J4)."""
+    from .vocab import CHANNEL_DEFS as _CHANNEL_DEFS
+    d = _CHANNEL_DEFS.get(name)
+    if d is None:
+        return ""
+    return f"{d.what.rstrip('. ')}."
+
+
+def _is_circular_meaning(channel: str, text: str) -> bool:
+    """True if `text` merely expands the identifier rather than explaining it.
+
+    The load-bearing negative Item J's acceptance criterion names: a gloss
+    reading `"the spectral centroid"` for `spectral_centroid` must fail this,
+    because it never says what a spectral centroid IS. Checked as "the
+    channel's own normalized name (underscore -> space) appears verbatim in
+    the text" -- `CHANNEL_GLOSS['spectral_centroid']` ("the forecast's
+    spectral centroid") fails it; `CHANNEL_MEANING['spectral_centroid']`
+    ("Centre of mass of the forecast's frequency spectrum...") does not,
+    since it explains the quantity in different words instead of repeating
+    its name.
+    """
+    return channel.replace("_", " ").lower() in text.lower()
+
+
+CHANNEL_MEANING = {name: _channel_meaning(name) for name in CHANNEL_GLOSS}
+CHANNEL_MEANING_NEUTRAL = {name: _channel_meaning_neutral(name) for name in CHANNEL_GLOSS}
+
 
 # Canonical English for each ground-truth field
 # (`sae/ground_truth.py::_scalar_ground_truth` plus its one-hot dummies).
@@ -650,6 +729,27 @@ QUALITY_WORSE = ("worsens", "worsen", "worsening", "worse", "degrades",
 QUALITY_BETTER = ("improves", "improve", "improving", "improved", "better",
                   "enhances", "enhance", "enhancing", "helps", "help")
 
+# ROADMAP.md sec 32.7c Item J4: `render_evidence` now shows the model
+# `CHANNEL_MEANING` (sec 32.7c Item J1) for every channel it names, so the
+# vocabulary of three channels' own `high` clause -- words the generic
+# UP_VERBS/DOWN_VERBS scan does not cover -- is newly likely to be echoed
+# back verbatim (`spectral_centroid`: "shifts...higher-frequency, choppier";
+# `dispersion`: "swing more from step to step"; `seasonal`: "more strongly
+# periodic"). Per sec 11.51 lesson 1 the guard is widened in the SAME edit
+# that widens the evidence. Gated exactly like QUALITY_WORSE/QUALITY_BETTER
+# above -- on this ONE channel's own signed value, not the packet-wide
+# existential scan -- and drawn only from each channel's `high` clause. The
+# `what` clause's "low means X, high means Y" framing (spectral_centroid's
+# own definition) is deliberately left unguarded: it explains the quantity
+# for both directions at once and is not itself a claim about this packet,
+# exactly the content `_assert_glosses_self_consistent` already treats as
+# safe to quote whole.
+CHANNEL_HIGH_TERMS = {
+    "spectral_centroid": ("choppier", "choppy", "higher-frequency", "high-frequency"),
+    "dispersion": ("swing more", "swings more"),
+    "seasonal": ("more strongly periodic", "more periodic"),
+}
+
 # Horizon nouns, for the proximity rule below.
 _HORIZON_WORDS = ("near horizon", "far horizon", "early horizon", "late horizon",
                   "horizons", "horizon", "far end")
@@ -814,6 +914,9 @@ _RAW_FIELD_PATTERNS = {f: _term_pattern(f) for f in FIELD_GLOSS if "_" in f}
 _NO_OTHER_PATTERNS = {t: _term_pattern(t) for t in NO_OTHER_EFFECT_TERMS}
 _QUALITY_WORSE_PATTERNS = {t: _term_pattern(t) for t in QUALITY_WORSE}
 _QUALITY_BETTER_PATTERNS = {t: _term_pattern(t) for t in QUALITY_BETTER}
+_CHANNEL_HIGH_PATTERNS = {(channel, term): _term_pattern(term)
+                          for channel, terms in CHANNEL_HIGH_TERMS.items()
+                          for term in terms}
 
 
 def _alt(words) -> str:
@@ -1054,12 +1157,56 @@ _EVIDENCE_LABEL_FRAGMENTS = (
     "the same pattern",
 )
 
-# "these ROLES" only. The first draft also matched "these features", which
-# refused 73 of this module's own 88 role fallbacks -- a role IS a cluster
-# of features, so "These 12 features showed no measured effect" is both
-# correct and the fallback's standard wording. The defect is a plural
-# ROLE reference in a packet describing exactly one role.
-_PLURAL_SELF_REFERENCE = re.compile(r"\b(?:these|those)\s+roles\b", re.IGNORECASE)
+# "these ROLES"/"these CONCEPTS" only. The first draft also matched "these
+# features", which refused 73 of this module's own 88 role fallbacks -- a
+# role (and, ROADMAP.md sec 32.2 Item A2, a concept) IS a cluster of
+# features, so "These 12 features showed no measured effect" is both correct
+# and the fallback's standard wording. The defect is a plural ROLE/CONCEPT
+# reference in a packet describing exactly one role or concept.
+_PLURAL_SELF_REFERENCE = re.compile(
+    r"\b(?:these|those)\s+(?:roles|concepts)\b", re.IGNORECASE)
+
+# ROADMAP.md sec 32.2 Item A7, third bullet: a packet -- feature, role or
+# concept alike -- carries no information about any OTHER feature, role,
+# concept, model or target. `render_evidence` never names a model, never
+# names a second target, and no `Evidence` field holds a counterpart, so any
+# comparison language is fabricated regardless of which kind licensed the
+# rest of the sentence. Checked for EVERY kind, not concept alone (sec 11.53
+# lesson 4: a guard scoped to one kind has silently declared every other
+# kind unguarded).
+COMPARISON_TERMS = (
+    "compared to", "compared with", "in comparison", "by comparison",
+    "unlike", "in contrast to", "in contrast with", "contrasts with",
+    "differs from", "different from", "similar to", "similarly to",
+    "the same way as", "the same as", "versus", "vs.",
+    "counterpart", "other models", "another model", "other concepts",
+    "another concept", "other roles", "another role", "other targets",
+    "another target", "other layers", "another layer", "other features",
+)
+_COMPARISON_PATTERNS = {t: _term_pattern(t) for t in COMPARISON_TERMS}
+
+# ROADMAP.md sec 32.2 Item A7, fourth bullet: a singleton is not a group.
+# `_subject` already renders "This role's/concept's single feature" for
+# `n_atoms == 1`, but that governs only the machine fallback -- a generated
+# sentence is free to say "these features" regardless, which asserts a
+# member count the packet does not have. Bare "features" (never "feature")
+# is the tell: every correct singleton sentence in this module (the
+# fallback included) says "feature", singular, and only a multi-member
+# packet's fallback ever says "features". Gated on kind/n_atoms, not
+# checked for a feature-kind packet, which has no `n_atoms` at all.
+_MEMBER_PLURAL = re.compile(r"\bfeatures\b", re.IGNORECASE)
+
+# Found reading GENERATED output against a real run (CLAUDE.md sec 11.48),
+# not by reasoning about the guard: a real Chronos-Bolt concept with
+# `n_atoms=9` was narrated as "Patching THIS FEATURE reshapes..." -- the
+# mirror image of the fourth bullet above. That bullet catches a singleton
+# described as a group; this catches a group described as a singleton.
+# `_subject` never renders bare "This feature" for kind in ("role",
+# "concept") at ANY `n_atoms` -- n==1 gets "This {kind}'s single feature",
+# n>1 gets "These N features", n==0 gets "This {kind}" -- so the literal
+# adjacent phrase "this feature" has no licensed reading for either kind and
+# is refused unconditionally, not only when n_atoms happens to be known.
+_SINGULAR_FOR_CLUSTER = re.compile(r"\bthis\s+feature\b", re.IGNORECASE)
 
 
 def check_text(text: str, ev: Evidence) -> str:
@@ -1118,10 +1265,34 @@ def check_text(text: str, ev: Evidence) -> str:
     # unguarded chunk STATE: a claim about how many things are being
     # described, which no vocabulary of channels or fields can reach.
     if _PLURAL_SELF_REFERENCE.search(low):
-        return ("the answer described several features or roles; this evidence is "
-                "about exactly one, so write about one")
+        return ("the answer described several features, roles or concepts; this "
+                "evidence is about exactly one, so write about one")
+
+    # ROADMAP.md sec 32.2 Item A7, fourth bullet: a singleton role/concept
+    # has exactly one member, and "features" (plural) claims more than one.
+    if ev.kind in ("role", "concept") and ev.n_atoms == 1 and _MEMBER_PLURAL.search(low):
+        return (f"the answer said {'features'!r}, but this {ev.kind} has exactly "
+                "one member; say \"feature\", singular")
+
+    # The mirror image, found the same way sec 11.53's own defects were
+    # found -- reading a real run's generated output, not its diff. A
+    # cluster (any `n_atoms`) called "this feature" claims exactly one
+    # member; only kind="feature" evidence licenses that phrase.
+    if ev.kind in ("role", "concept") and _SINGULAR_FOR_CLUSTER.search(low):
+        n = ev.n_atoms
+        size = "1 feature" if n == 1 else f"{n or 'several'} features"
+        return (f"the answer said \"this feature\", but this is a {ev.kind} -- a "
+                f"cluster of {size}; say \"this {ev.kind}\" or, for a "
+                f"single-member {ev.kind}, \"this {ev.kind}'s single feature\"")
 
     norm = _normalize(raw)
+
+    # ROADMAP.md sec 32.2 Item A7, third bullet: no packet of any kind
+    # carries a counterpart to compare against.
+    for term in COMPARISON_TERMS:
+        if _COMPARISON_PATTERNS[term].search(norm):
+            return (f"the answer said {term!r}; the evidence has no other feature, "
+                    "role, concept, model or target to compare this one against")
 
     for term in UNLICENSED_TERMS:
         if _UNLICENSED_PATTERNS[term].search(norm):
@@ -1232,6 +1403,16 @@ def check_text(text: str, ev: Evidence) -> str:
             return (f"the answer said {term!r}, but the evidence does not show "
                     "forecast error going down")
 
+    # ROADMAP.md sec 32.7c Item J4 -- see CHANNEL_HIGH_TERMS's own comment.
+    signed_by_channel = _signed_channels(ev)
+    for channel, terms in CHANNEL_HIGH_TERMS.items():
+        value = float(signed_by_channel.get(channel, 0.0))
+        for term in terms:
+            if _CHANNEL_HIGH_PATTERNS[(channel, term)].search(norm) and value <= 0:
+                gloss = CHANNEL_GLOSS.get(channel, channel)
+                return (f"the answer said {term!r}, but the evidence does not "
+                        f"show {gloss} moving that way")
+
     cleared_any = bool(ev.clears_null or ev.ablation_channels)
     if cleared_any:
         for term in NO_EFFECT_TERMS:
@@ -1307,14 +1488,19 @@ def _subject(ev: Evidence) -> tuple:
     """`(subject, plural)`. The plural flag exists only so the fallback
     conjugates -- "These 16 features moves" was what the first version
     rendered, and a template sentence that renders bad grammar is not
-    presentable, which is the one thing the fallback has to be."""
-    if ev.kind == "role":
+    presentable, which is the one thing the fallback has to be.
+
+    ROADMAP.md sec 32.2 Item A2: a concept is a cluster of features exactly
+    as a role is, so it takes the identical treatment -- only the noun in
+    the singular/empty branches names which kind it is.
+    """
+    if ev.kind in ("role", "concept"):
         n = ev.n_atoms
         if n == 1:
-            return "This role's single feature", False
+            return f"This {ev.kind}'s single feature", False
         if n:
             return f"These {n} features", True
-        return "This role", False
+        return f"This {ev.kind}", False
     return "This feature", False
 
 
@@ -1673,15 +1859,21 @@ def render_evidence(ev: Evidence) -> str:
     respect to everything the guard will later allow -- a packet field that
     is not rendered here could only ever be reached by guessing."""
     lines = ["EVIDENCE"]
-    if ev.kind == "role":
+    if ev.kind in ("role", "concept"):
         n = ev.n_atoms
-        lines.append(f"kind: role of {n} features" if n else "kind: role")
+        if n == 1:
+            lines.append(f"kind: {ev.kind} of 1 feature")
+        elif n:
+            lines.append(f"kind: {ev.kind} of {n} features")
+        else:
+            lines.append(f"kind: {ev.kind}")
     else:
         lines.append(f"kind: feature {ev.ident}")
     lines.append("cleared the random-direction null: "
                  + ("yes" if ev.clears_null else
                     "no" if ev.channels_measured else "not tested"))
 
+    named_channels: set = set()
     items = sorted((ev.channels or {}).items(), key=lambda kv: -abs(float(kv[1])))
     if items and ev.clears_null:
         for rank, (name, value) in enumerate(items):
@@ -1690,6 +1882,7 @@ def render_evidence(ev: Evidence) -> str:
             verb = up if float(value) >= 0 else down
             prefix = "" if rank == 0 else "also "
             lines.append(f"{prefix}{verb}: {gloss}, {_fmt(value)} times the null")
+            named_channels.add(name)
     elif ev.channels_measured:
         lines.append("moves: nothing above the null")
     else:
@@ -1713,11 +1906,39 @@ def render_evidence(ev: Evidence) -> str:
                 up, down = _verbs(ev, name)
                 verb = up if float(value) >= 0 else down
                 parts.append(f"{verb}: {gloss}, {_fmt(value)} times the null")
+                named_channels.add(name)
             lines.append("what it contributes where it fires "
                          "(measured by removing it): " + "; ".join(parts))
         else:
             lines.append("what it contributes where it fires "
                          "(measured by removing it): nothing above the null")
+
+    if named_channels:
+        # ROADMAP.md sec 32.7c Item J4: `CHANNEL_MEANING` (Item J1) written
+        # once, by a human, so the narrator can draw on it directly rather
+        # than inventing an explanation of its own -- exactly the risk this
+        # module's few-shot examples and guard otherwise exist to catch.
+        # Only channels actually named above, never the full nine: a
+        # meaning for a channel that did not clear the null is background
+        # for a claim the packet has no evidence for.
+        #
+        # `CHANNEL_MEANING`'s illustrative half asserts what a HIGH value
+        # looks like (`_assert_glosses_self_consistent` validates it only
+        # against a positively-signed packet for that same channel) -- for
+        # a channel THIS packet measured as negative, that half would assert
+        # a direction the packet contradicts, exactly the "exemplar of
+        # fabrication sitting in the prompt" sec 11.51 warns against. Gate
+        # per channel on its own signed value; a negative or undirected
+        # channel gets only the direction-neutral definition.
+        signed = _signed_channels(ev)
+        lines.append("what these channels measure:")
+        for name in sorted(named_channels):
+            undirected = name in (getattr(ev, "undirected_channels", None) or frozenset())
+            positive = float(signed.get(name, 0.0)) >= 0
+            meaning = (CHANNEL_MEANING.get(name) if (positive and not undirected)
+                       else CHANNEL_MEANING_NEUTRAL.get(name))
+            if meaning:
+                lines.append(f"- {CHANNEL_GLOSS.get(name, name)}: {meaning}")
 
     if ev.structural_field:
         gloss = FIELD_GLOSS.get(ev.structural_field, ev.structural_field)
@@ -1780,30 +2001,18 @@ def render_evidence(ev: Evidence) -> str:
     return "\n".join(lines)
 
 
-def _messages(ev: Evidence, history: list) -> list:
-    """System prompt, few-shot turns, this packet, then any rejected attempt
-    plus its correction. `history` is `[(rejected_text, reason), ...]` --
-    what makes a greedy retry produce a different answer at all."""
-    msgs = [{"role": "system", "content": SYSTEM_PROMPT}]
-    for shot_ev, desc in FEW_SHOT_EXAMPLES:
-        msgs.append({"role": "user", "content": render_evidence(shot_ev)})
-        msgs.append({"role": "assistant", "content": desc})
-    msgs.append({"role": "user", "content": render_evidence(ev)})
-    for rejected, reason in history:
-        msgs.append({"role": "assistant", "content": rejected})
-        msgs.append({"role": "user", "content":
-                     f"That was rejected because {reason}. Write the sentence again, "
-                     "obeying every rule."})
-    return msgs
-
-
 # ---------------------------------------------------------------------------
-# Model handling.
+# Model handling. `load_narrator`/`_generate`/`_generate_one` below are used
+# ONLY by `sae/compare.py` (ROADMAP.md sec 28) since the PRUNE above -- see
+# this module's docstring. `sae/compare.py` builds its own chat messages
+# (`_contrast_messages`/`_synthesis_messages`) rather than sharing a
+# `_messages` helper with the deleted per-packet path, so none is kept here.
 # ---------------------------------------------------------------------------
 
 def load_narrator(device: str = "cuda", dtype=None) -> Narrator:
     """Load the pinned narrator checkpoint once. Returns an opaque handle to
-    hand to `describe`/`describe_batch`."""
+    hand to `sae/compare.py`'s own generation calls (`_generate`/
+    `_generate_one`) -- the only remaining caller since the PRUNE above."""
     import torch
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
@@ -1825,14 +2034,20 @@ def load_narrator(device: str = "cuda", dtype=None) -> Narrator:
 GEN_BATCH_SIZE = 16
 """Prompts sent to the narrator in one forward pass.
 
-🔴 A FIXED bound, not a tuning knob, because the caller's batch size is the
-number of packets a run happens to produce and that scales with the panel.
-`run_sae_describe.py` hands `_generate` every packet at once: 116 on the
-three-model run this was first exercised on, 192 on the four-model panel --
-where it raised `torch.OutOfMemoryError` trying to allocate 4.93 GiB inside
-Qwen's MLP with 682 MiB free. Nothing was wrong with either the model or the
-packets; the batch was simply built from a quantity nobody bounded, so the
-narrator worked until a run got one model wider and then did not.
+🔴 A FIXED bound, not a tuning knob, because a caller's batch size is the
+number of items a run happens to produce and that scales with the panel.
+`run_sae_describe.py` used to hand `_generate` every feature/role/concept
+packet at once -- 116 on the three-model run this was first exercised on,
+192 on the four-model panel -- where it raised `torch.OutOfMemoryError`
+trying to allocate 4.93 GiB inside Qwen's MLP with 682 MiB free. Nothing
+was wrong with either the model or the packets; the batch was simply built
+from a quantity nobody bounded, so the narrator worked until a run got one
+model wider and then did not. `run_sae_describe.py` no longer calls
+`_generate` at all (ROADMAP.md sec 32.7d PRUNE, 2026-09-15 -- see this
+module's docstring); `sae/compare.py` (sec 28) is the sole remaining
+caller and this bound still protects it the same way, at a smaller and
+more slowly-growing batch (one chunk per matched role pair or unmatched
+role, not one per feature).
 
 16 is set below the largest batch measured to fit rather than at it, since
 the peak depends on the longest prompt in the sub-batch and an evidence
@@ -1908,57 +2123,6 @@ def _generate_one(narrator: Narrator, batch_messages: list) -> list:
     return [tok.decode(row, skip_special_tokens=True).strip() for row in gen]
 
 
-def describe_batch(evs: list, narrator) -> list:
-    """One `Description` per evidence packet, same order.
-
-    Retries are batched by ROUND rather than per item: every packet still
-    failing after round `r` is re-sent together in round `r+1` with its own
-    rejection reason appended, so the number of forward passes is bounded by
-    `MAX_ATTEMPTS` regardless of how many packets there are.
-    """
-    evs = list(evs)
-    if not evs:
-        return []
-
-    if narrator is None:
-        return [Description(text=machine_fallback(ev), accepted=False,
-                            reason="no narrator loaded", attempts=0,
-                            model_id=MODEL_ID, revision=REVISION) for ev in evs]
-
-    results: list = [None] * len(evs)
-    pending = list(range(len(evs)))
-    histories: dict = {i: [] for i in pending}
-
-    for attempt in range(1, MAX_ATTEMPTS + 1):
-        if not pending:
-            break
-        texts = _generate(narrator, [_messages(evs[i], histories[i]) for i in pending])
-        still: list = []
-        for i, text in zip(pending, texts):
-            reason = check_text(text, evs[i])
-            if not reason:
-                results[i] = Description(text=text.strip(), accepted=True, reason="",
-                                         attempts=attempt, model_id=narrator.model_id,
-                                         revision=narrator.revision)
-            else:
-                histories[i].append((text.strip(), reason))
-                still.append(i)
-        pending = still
-
-    for i in pending:
-        last_reason = histories[i][-1][1] if histories[i] else "generation failed"
-        results[i] = Description(text=machine_fallback(evs[i]), accepted=False,
-                                 reason=last_reason, attempts=MAX_ATTEMPTS,
-                                 model_id=narrator.model_id, revision=narrator.revision)
-    return results
-
-
-def describe(ev: Evidence, narrator) -> Description:
-    """One packet. Implemented as `describe_batch` of one so the single and
-    batch paths cannot diverge in prompt construction or guarding."""
-    return describe_batch([ev], narrator)[0]
-
-
 # ---------------------------------------------------------------------------
 # Import-time self-consistency: a fallback the guard would reject is a bug.
 # ---------------------------------------------------------------------------
@@ -1972,6 +2136,43 @@ def _assert_glosses_self_consistent() -> None:
             raise AssertionError(
                 f"CHANNEL_GLOSS[{channel!r}] = {gloss!r} does not pass its own "
                 f"guard: {reason}")
+    for channel, meaning in CHANNEL_MEANING.items():
+        if not meaning:
+            raise AssertionError(f"CHANNEL_MEANING[{channel!r}] is empty")
+        if _is_circular_meaning(channel, meaning):
+            raise AssertionError(
+                f"CHANNEL_MEANING[{channel!r}] = {meaning!r} is circular -- it "
+                f"contains the channel's own name instead of explaining it")
+        # Positive sign only, matching `CHANNEL_GLOSS`'s own self-check
+        # convention just above: `CHANNEL_DEFS.high` (the field this text is
+        # composed from) states what a HIGH value means, not a bidirectional
+        # "raising it does X, lowering it does Y" -- checking it against a
+        # negative-signed packet would fail on the direction word alone,
+        # which is the guard doing its job (the sentence's own claim would
+        # be wrong for that packet), not a defect in the sentence.
+        ev = Evidence(kind="feature", model="m", layer="l", ident="0",
+                      channels={channel: 1.0}, clears_null=True)
+        reason = check_text(f"This feature's effect: {meaning}", ev)
+        if reason:
+            raise AssertionError(
+                f"CHANNEL_MEANING[{channel!r}] = {meaning!r} does not pass "
+                f"its own guard: {reason}")
+    for channel, neutral in CHANNEL_MEANING_NEUTRAL.items():
+        if not neutral:
+            raise AssertionError(f"CHANNEL_MEANING_NEUTRAL[{channel!r}] is empty")
+        # The point of the neutral half is that it asserts no direction --
+        # so, unlike CHANNEL_MEANING above, it must pass under a NEGATIVELY
+        # signed packet for this same channel (render_evidence's own use of
+        # it, sec 32.7c Item J4). A failure here means the "what" clause
+        # itself smuggled in directional vocabulary the positive-only check
+        # above would never catch.
+        ev = Evidence(kind="feature", model="m", layer="l", ident="0",
+                      channels={channel: -1.0}, clears_null=True)
+        reason = check_text(f"This feature's effect: {neutral}", ev)
+        if reason:
+            raise AssertionError(
+                f"CHANNEL_MEANING_NEUTRAL[{channel!r}] = {neutral!r} does not "
+                f"pass its own guard under a NEGATIVE packet: {reason}")
     for fld, gloss in FIELD_GLOSS.items():
         ev = Evidence(kind="feature", model="m", layer="l", ident="0",
                       structural_field=fld, structural_rho=0.5, structural_n=100,
