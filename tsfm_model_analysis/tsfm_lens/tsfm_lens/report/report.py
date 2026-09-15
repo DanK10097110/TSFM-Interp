@@ -1121,6 +1121,31 @@ def _forecastability_clause(sub, model: str) -> str:
             f'clean-vs-truth gap is a ceiling every model in this run hits.')
 
 
+# Corruptions whose footprint is a small, randomly-located span of the full
+# context (sec 6.5's footprint note) rather than something spread across all
+# of it -- these are the ones a fixed trailing default view can crop entirely,
+# so `_l3_verbose_cases` gives them a wider default view and a marker instead
+# of the shared tight one every other corruption keeps.
+_LOCALIZED_CORRUPTIONS = frozenset({"spike", "dropout"})
+
+
+def _contiguous_segments(idx: np.ndarray) -> list:
+    """Group sorted-or-unsorted integer indices into contiguous [lo, hi] runs.
+
+    Used to turn "which context steps differ between clean and corrupted"
+    into one shaded marker per corrupted span rather than one span covering
+    the full min..max range, which would over-highlight the gaps between a
+    dropout corruption's separate blanked blocks.
+    """
+    if idx.size == 0:
+        return []
+    s = np.unique(idx)
+    breaks = np.nonzero(np.diff(s) > 1)[0]
+    starts = np.concatenate(([0], breaks + 1))
+    ends = np.concatenate((breaks, [s.size - 1]))
+    return [(int(s[a]), int(s[b])) for a, b in zip(starts, ends)]
+
+
 def _figcap(purpose: str) -> str:
     """The visible half of `_note` on its own, for a repeated or per-item figure.
 
@@ -3675,19 +3700,60 @@ def _l3_verbose_cases(pmeta: dict, parrs, run_dir: Path) -> str:
                 # the forecast it produced, so both what the model read and
                 # what it produced are on one shared axis (complaint: "there
                 # is nothing that shows the context each model was given").
-                ctx_tail = min(context.shape[1], 64) if context is not None else 0
-                if context is not None and si < context.shape[0] and ctx_tail:
-                    t_ctx = np.arange(-ctx_tail, 0)
-                    fig.add_scatter(x=t_ctx, y=context[si][-ctx_tail:], mode="lines",
+                # The FULL context is always plotted as data (not truncated),
+                # so the modebar's autoscale button can always reveal all of
+                # it; only the *default visible* window differs by
+                # corruption -- a tight 64 steps for most, since that's what
+                # keeps them readable, and a wider one for `spike`/`dropout`
+                # only, whose footprint is a small, randomly-located span
+                # that a shared tight window can crop out of frame entirely
+                # (complaint: the scale for every corruption panel had grown
+                # too wide once the context-window fix started widening all
+                # of them, not just the two localized ones that needed it).
+                full_len = context.shape[1] if context is not None else 0
+                ctx_tail = min(full_len, 64)
+                localized = cname in _LOCALIZED_CORRUPTIONS
+                segments: list = []
+                if (context is not None and context_corr is not None
+                        and si < context.shape[0] and si < context_corr.shape[0]):
+                    c_si = context[si].astype(np.float64)
+                    cc_si = context_corr[si].astype(np.float64)
+                    thresh = 1e-6 + 1e-3 * float(np.abs(c_si).max() or 1.0)
+                    changed = np.nonzero(np.abs(c_si - cc_si) > thresh)[0]
+                    if changed.size and localized:
+                        segments = _contiguous_segments(changed)
+                        pad = 16
+                        ctx_tail = max(ctx_tail,
+                                       min(full_len, full_len - int(changed.min()) + pad))
+                if context is not None and si < context.shape[0] and full_len:
+                    t_ctx = np.arange(-full_len, 0)
+                    fig.add_scatter(x=t_ctx, y=context[si], mode="lines",
                                     name="clean context", legendgroup="ctx-clean",
                                     line=dict(color=_COLORS["a"], width=1),
                                     showlegend=show, row=r, col=c)
-                if context_corr is not None and si < context_corr.shape[0] and ctx_tail:
-                    t_ctx = np.arange(-ctx_tail, 0)
-                    fig.add_scatter(x=t_ctx, y=context_corr[si][-ctx_tail:], mode="lines",
+                if context_corr is not None and si < context_corr.shape[0] and full_len:
+                    t_ctx = np.arange(-full_len, 0)
+                    fig.add_scatter(x=t_ctx, y=context_corr[si], mode="lines",
                                     name="corrupted context", legendgroup="ctx-corrupted",
                                     line=dict(color=_COLORS["accent"], width=1),
                                     showlegend=show, row=r, col=c)
+                if full_len:
+                    fig.update_xaxes(range=[-ctx_tail, clean.shape[1]], row=r, col=c)
+                if segments:
+                    # Shade exactly which context steps the corruption
+                    # touched -- one band per contiguous run, so a multi-block
+                    # `dropout` shows as separate marked blocks rather than
+                    # one span covering the untouched gap between them.
+                    for lo, hi in segments:
+                        fig.add_vrect(x0=lo - full_len - 0.5, x1=hi - full_len + 0.5,
+                                      fillcolor=_COLORS["accent"], opacity=0.15,
+                                      line_width=0, row=r, col=c)
+                    y_top = float(max(np.nanmax(c_si), np.nanmax(cc_si)))
+                    fig.add_annotation(x=float(segments[0][0] - full_len), y=y_top,
+                                       yshift=10, text="corrupted span",
+                                       showarrow=False,
+                                       font=dict(size=9, color=_COLORS["accent"]),
+                                       row=r, col=c)
                 if target is not None and si < target.shape[0]:
                     fig.add_scatter(x=t_fut, y=target[si], mode="lines",
                                     name="true continuation", legendgroup="truth",
@@ -3718,14 +3784,24 @@ def _l3_verbose_cases(pmeta: dict, parrs, run_dir: Path) -> str:
                                 row=r, col=c)
                 fig.add_scatter(x=t_fut, y=patched[si], mode="lines",
                                 name="forecast after patching", legendgroup="patched",
-                                line=dict(color=_COLORS["b"], dash="dash"),
+                                line=dict(color=_COLORS["b"], width=2),
                                 showlegend=show, row=r, col=c)
             fig.update_layout(xaxis_title="steps (0 = forecast start, dotted line)")
             html += (_frag(fig, 190 * nrow + 90, modebar=True)
                      + _figcap(f"Series <b>{sid}</b> under <b>{model}</b>: one "
                                f"panel per patched corruption. Before step 0, the "
                                f"clean context and the corrupted context it "
-                               f"produced (last 64 steps shown); after it, the "
+                               f"produced — the last 64 steps shown by default "
+                               f"for most corruptions, since that keeps them "
+                               f"readable; <b>spike</b> and <b>dropout</b> touch "
+                               f"only a small, randomly-located span of the full "
+                               f"context, so those two default to a wider view "
+                               f"with that span shaded and labelled "
+                               f"<i>corrupted span</i> so it isn't missed. The "
+                               f"full context is plotted underneath every panel "
+                               f"either way — use the autoscale button in the "
+                               f"toolbar (top-right of the figure) to zoom out "
+                               f"and see all of it, on any corruption; after it, the "
                                f"clean forecast, the corrupted one, and the one "
                                f"recovered by patching. Each panel is patched at "
                                f"the single layer×window cell that restored the "
