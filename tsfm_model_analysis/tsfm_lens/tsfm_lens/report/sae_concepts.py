@@ -30,7 +30,15 @@ round-trip (see that module's own docstring):
      already renders exactly this contrast for a single feature; a concept
      card reuses it rather than inventing a second visualization for the
      same nine-channel evidence), and its name/description.
-  3. Misfits -- one collapsed block per model, from `derived.misfit_table`,
+  3. Causally interesting individual features -- top N features across
+     every target (`derived.causal_feature_ranking`) ranked by ablation
+     effect on the `mase` channel and overall causal-fingerprint magnitude,
+     read directly from each target's raw `*_ablation.json` candidates
+     rather than gated behind concept formation (min_members=3 + silhouette
+     + a causal pre-filter concept clustering requires) -- so a target with
+     few or no formed concepts still surfaces its strongest individual
+     features (2026-09-15, user review).
+  4. Misfits -- one collapsed block per model, from `derived.misfit_table`,
      rendering a misfitting member's OWN top channels beside its concept's,
      since the point of the section is the divergence between the two
      (`sae/misfits.py`'s own docstring).
@@ -204,7 +212,11 @@ def sae_concepts_block(cfg, run_dir: Path, findings: list, model_names: list,
         "<p class='blurb'>A channel counts as cleared only when a member's "
         "own effect exceeds what removing that much of an ARBITRARY "
         "random direction does -- not simply whether the forecast moved "
-        "when that member was removed.</p>")
+        "when that member was removed. Each card's chart carries a narrow "
+        "strip below the forecast lines: that is the with/without gap drawn "
+        "on its own scale (its dotted line is zero, i.e. no difference), so "
+        "a small effect stays visible even when the two forecast lines "
+        "above it overlap too closely to tell apart.</p>")
 
     # -------- block 1: universality + transfer heatmap --------
     uni = derived.concept_universality(run_dir)
@@ -274,12 +286,21 @@ def sae_concepts_block(cfg, run_dir: Path, findings: list, model_names: list,
 
     shown_targets = _depth_ordered_targets(sorted(top["target"].astype(str).unique()))
     candidates_by_target: dict[str, list] = {}
+
+    def _candidates_for(target: str) -> list:
+        # Lazy, cached load shared by the concept cards below and the
+        # causally-interesting-features block further down -- a target
+        # not among `shown_targets` (no concept formed there at all) still
+        # needs its raw candidates for the latter.
+        if target not in candidates_by_target:
+            model, layer = str(target).split("/", 1)
+            path = run_dir / "sae" / sanitize(model) / f"{sanitize(layer)}_ablation.json"
+            art = _load_json_or_none(path)
+            candidates_by_target[target] = (art.get("candidates") or []) if art else []
+        return candidates_by_target[target]
+
     for target in shown_targets:
-        model, layer = str(target).split("/", 1)
-        path = run_dir / "sae" / sanitize(model) / f"{sanitize(layer)}_ablation.json"
-        art = _load_json_or_none(path)
-        if art:
-            candidates_by_target[target] = art.get("candidates") or []
+        _candidates_for(target)
 
     w = cards.attrs.get("weights") or {}
     inner += f"<h5>Concept cards — top {len(top)} of {len(cards)} by interest</h5>"
@@ -302,6 +323,21 @@ def sae_concepts_block(cfg, run_dir: Path, findings: list, model_names: list,
             spark_html = ablation_cell(entry, max_series=8,
                                        median_hidden_norm=median_norm_by_target.get(str(row.target)),
                                        population=population)
+            # ROADMAP.md sec 32.7c / user review: the description and
+            # `numbers_html` below describe the concept's AGGREGATE profile
+            # over every member, but the chart can only show one member's
+            # own forecast pair -- stated explicitly here so "these N
+            # features move X" beside a single feature's chart reads as a
+            # representative sample, not a mismatch (CLAUDE.md sec 11.54's
+            # "two correct fields printed side by side" shape).
+            if int(row.n_members) > 1 and entry is not None:
+                shown_feature = entry.get("feature")
+                spark_html = (
+                    f"<p class='blurb' style='margin:0 0 4px'>chart shows "
+                    f"1 representative member"
+                    f"{f' (feature {shown_feature})' if shown_feature is not None else ''} "
+                    f"of this concept's {int(row.n_members)}; the profile "
+                    f"above is the AVERAGE over all of them.</p>" + spark_html)
             # ROADMAP.md sec 32.3 Item B: the description is the card's
             # HEADLINE, never empty -- a description entry's `text` is
             # populated by `machine_fallback` for every packet
@@ -364,7 +400,86 @@ def sae_concepts_block(cfg, run_dir: Path, findings: list, model_names: list,
                        f"the same size does."),
                 registered=False))
 
-    # -------- block 3: misfits --------
+    # -------- block 3: causally interesting individual features --------
+    # ROADMAP.md sec 32.7c / user review, 2026-09-15: the concept cards above
+    # answer "which CLUSTERS of features are interesting", and a target with
+    # few causally-alive features (or causally-alive features that don't
+    # cluster into a cohesive group of >=3) surfaces few or zero cards even
+    # though individual features there were genuinely, strongly causal. This
+    # block answers a different, narrower question directly -- deliberately
+    # NOT folded into "misfits" below, which is about a concept MEMBER's
+    # divergence from its own cluster and has nothing to say about a feature
+    # with no cluster at all.
+    feat_max = int(getattr(sae_cfg, "causal_feature_ranking_max", None) or 15)
+    feat_df = derived.causal_feature_ranking(run_dir, top_n=feat_max)
+    n_causal_total = feat_df.attrs.get("n_total", 0)
+    inner += (f"<h5>Causally interesting individual features — top "
+              f"{len(feat_df)} of {n_causal_total}</h5>")
+    inner += (
+        "<p class='blurb'>Every SAE feature across this run's targets whose "
+        "own ablation battery cleared at least one channel's null — "
+        "independent of whether it landed in a concept above — ranked by "
+        "the average of two percentile ranks: how far it moved the "
+        "<code>mase</code> channel in null units, and its overall causal "
+        "fingerprint magnitude across all nine channels "
+        "(<code>sae/matching.py::causal_fingerprint</code>). This is "
+        "the per-feature view the concept cards cannot give: a target "
+        "whose causally-alive features never clustered into a group of "
+        "three or more still has its strongest individual features shown "
+        "here.</p>")
+    if feat_df.empty:
+        inner += ("<p class='blurb'>No feature on any target cleared even "
+                  "one channel's null in the ablation battery.</p>")
+    else:
+        card_bodies = []
+        for row in feat_df.itertuples():
+            candidates = _candidates_for(str(row.target))
+            entry = next((c for c in candidates if c.get("feature") == row.feature), None)
+            spark_html = ablation_cell(
+                entry, max_series=8,
+                median_hidden_norm=median_norm_by_target.get(str(row.target)),
+                population=population)
+            top_ch = "; ".join(
+                f"{html.escape(str(c['channel']))} {c['signed_null_units']:+.2f}x null"
+                for c in (row.top_channels or [])) or "no channel worth naming"
+            concept_note = (f"member of concept '{html.escape(str(row.concept))}' above"
+                            if row.concept else "not part of any formed concept")
+            meta_html = (
+                "<p style='margin:0 0 8px;font-size:12.5px;color:var(--muted)'>"
+                f"{html.escape(str(row.target))}, feature {row.feature} — "
+                f"{concept_note}</p>")
+            mase_txt = (f"{row.mase_null_units:+.2f}x null" if row.mase_null_units is not None
+                       else "not scorable")
+            numbers_html = (
+                f"<p class='blurb'>overall fingerprint magnitude "
+                f"{row.magnitude:.2f}, {row.n_channels_clearing} of 9 channels "
+                f"clearing; mase channel {mase_txt}.<br>"
+                f"top channels: {top_ch}</p>")
+            card_bodies.append(
+                "<div class='concept-card'>"
+                f"{meta_html}{spark_html}"
+                f"{_details('the numbers behind this', numbers_html)}"
+                "</div>")
+        inner += "".join(card_bodies)
+
+        best = feat_df.iloc[0]
+        findings.append(Finding(
+            claim_id=_next_claim_id("sae"), stage="sae",
+            evidence_class="causal_within_model",
+            text=(f"SAE causally interesting individual features: "
+                  f"{n_causal_total} feature(s) across "
+                  f"{feat_df['target'].nunique()} target(s) clear at least "
+                  f"one channel's null in the ablation battery; strongest is "
+                  f"{best['target']} feature {best['feature']} "
+                  f"({best['n_channels_clearing']} of 9 channels clearing, "
+                  f"fingerprint magnitude {best['magnitude']:.2f})."),
+            plain=(f"Of {n_causal_total} individual SAE features measured "
+                   f"across this run, feature {best['feature']} in "
+                   f"{best['target']} moves the forecast most convincingly "
+                   f"when ablated."),
+            registered=False))
+
+    # -------- block 4: misfits --------
     misfits_df = derived.misfit_table(run_dir, min_cosine_gap=misfit_gap)
     n_checked = misfits_df.attrs.get("n_targets_checked")
     inner += "<h5>Misfits — members whose own fingerprint diverges from their concept</h5>"

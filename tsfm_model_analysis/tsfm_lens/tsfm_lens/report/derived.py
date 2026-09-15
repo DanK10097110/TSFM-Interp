@@ -2645,3 +2645,134 @@ def misfit_table(run_dir: Path, min_cosine_gap: float = 0.3) -> pd.DataFrame:
     df.attrs["min_cosine_gap"] = float(min_cosine_gap)
     df.attrs["n_targets_checked"] = n_targets_checked
     return df
+
+
+def causal_feature_ranking(run_dir: Path, top_n: int = 15) -> pd.DataFrame:
+    """One row per individual SAE feature, ranked by how much ABLATING it
+    moves the forecast — independent of whether that feature landed in a
+    formed concept.
+
+    Added 2026-09-15 on user review of the concept cards ("there are only 4
+    interesting features?! There should be at least 10 that are actually
+    causally interesting — which in my mind means they move MASE and causal
+    fingerprint after ablation the most"). `concept_cards` (above) is not an
+    answer to that request: `sae/concepts.py::concept_table` requires
+    `min_members=3` AND adequate silhouette AND (by default)
+    `n_channels_clearing>=1` under a `_MIN_CAUSAL_CANDIDATES=4` floor before
+    a cluster is even attempted, so a target with few causally-alive features
+    — or causally-alive features that simply don't cluster into a cohesive
+    group of three or more — surfaces few or zero cards, and
+    `sae/concepts.json` does not even PERSIST the causally-alive feature-id
+    list for a target with no formed concept, only its count (`n_causal`).
+    The features are real and were measured; they are just not clustered.
+
+    This reduction bypasses that clustering gate entirely and reads each
+    target's raw `sae/<model>/<layer>_ablation.json` `candidates` list
+    directly, one row per feature. A feature is included only when
+    `sae/matching.py::causal_fingerprint` reports it `available` — scorable
+    AND clearing at least one channel's own null — the same "a causal
+    channel battery patches each alive feature... scored against a
+    random-direction null" standard every other causal claim in the SAE
+    section already uses, never a raw, un-normalized forecast delta.
+
+    Ranked by the AVERAGE of two independent percentile ranks — the
+    magnitude of the `mase` channel's own signed effect in null units, and
+    `causal_fingerprint`'s overall vector magnitude across every channel —
+    rather than a hand-weighted sum of two differently-scaled quantities.
+    Neither is allowed to dominate the other by construction: a feature that
+    barely moves MASE but strongly and distinctly reshapes several other
+    channels ranks alongside one that moves MASE hardest, since "moves MASE
+    and causal fingerprint... the most" named both. A feature whose `mase`
+    channel was never scorable ranks worst on that half (`na_option="bottom"`)
+    rather than being silently excluded or treated as a tie for first.
+
+    `concept` names the concept this feature was actually clustered into
+    when one exists (joined from `sae/concepts.json`, read-only — this
+    function never re-clusters), so a reader can tell "this feature is ALSO
+    a concept member" from "this feature has no concept at all" rather than
+    reading every row as equally undescribed.
+
+    `df.attrs["n_total"]` carries the count BEFORE truncation to `top_n`, so
+    a caller can state how many causally-alive individual features this run
+    actually has, not just how many are shown. Returns an empty, correctly-
+    shaped `pd.DataFrame` when `sae/meta.json` is absent or no target's
+    ablation artifact has a single available feature, and never raises. No
+    model name, architecture family or `cfg.models[i]` index appears in this
+    function's source — every model identity comes from `sae/meta.json`'s
+    own keys.
+    """
+    from ..sae.matching import causal_fingerprint
+    from ..sae.train import sanitize
+
+    _cols = ["target", "model", "feature", "magnitude", "n_channels_clearing",
+             "mase_null_units", "top_channels", "concept"]
+    run_dir = Path(run_dir)
+    meta_sae = load_json_or_none(run_dir / "sae" / "meta.json") or {}
+    if not meta_sae:
+        df = pd.DataFrame(columns=_cols)
+        df.attrs["n_total"] = 0
+        return df
+
+    concepts_doc = load_json_or_none(run_dir / "sae" / "concepts.json") or {}
+    concept_name_by_feature: dict = {}
+    for target_key, rec in (concepts_doc.get("targets") or {}).items():
+        if not isinstance(rec, dict):
+            continue
+        for concept in rec.get("concepts", []):
+            name = concept.get("name") or f"concept {concept.get('concept')}"
+            for f in concept.get("features") or []:
+                try:
+                    concept_name_by_feature[(str(target_key), int(f))] = name
+                except (TypeError, ValueError):
+                    continue
+
+    rows: list = []
+    for key in meta_sae:
+        model, layer = str(key).split("/", 1)
+        path = run_dir / "sae" / sanitize(model) / f"{sanitize(layer)}_ablation.json"
+        doc = load_json_or_none(path)
+        if not doc or doc.get("withheld"):
+            continue
+        for cand in doc.get("candidates") or []:
+            fp = causal_fingerprint(cand)
+            if not fp.get("available"):
+                continue
+            feature = cand.get("feature")
+            chans = cand.get("channels") or {}
+            mase_rec = chans.get("mase") or {}
+            mase_p95 = mase_rec.get("null_p95")
+            mase_signed = mase_rec.get("signed_effect")
+            mase_units = (float(mase_signed) / float(mase_p95)
+                          if (mase_rec.get("available") and mase_p95
+                              and mase_signed is not None) else None)
+            top_channels = sorted(
+                ({"channel": ch,
+                  "signed_null_units": float(rec2["signed_effect"]) / float(rec2["null_p95"])}
+                 for ch, rec2 in chans.items()
+                 if rec2.get("clears_null") and rec2.get("null_p95")),
+                key=lambda d: abs(d["signed_null_units"]), reverse=True)
+            rows.append({
+                "target": key, "model": model,
+                "feature": int(feature) if feature is not None else None,
+                "magnitude": fp.get("magnitude"),
+                "n_channels_clearing": int(fp.get("n_channels_clearing") or 0),
+                "mase_null_units": mase_units,
+                "top_channels": top_channels,
+                "concept": (concept_name_by_feature.get((str(key), int(feature)))
+                            if feature is not None else None),
+            })
+
+    df = pd.DataFrame(rows, columns=_cols)
+    if df.empty:
+        df.attrs["n_total"] = 0
+        return df
+
+    r_mase = df["mase_null_units"].abs().rank(ascending=False, na_option="bottom")
+    r_mag = df["magnitude"].rank(ascending=False, na_option="bottom")
+    df["combined_rank"] = (r_mase + r_mag) / 2.0
+    df = df.sort_values("combined_rank", kind="stable").reset_index(drop=True)
+    n_total = len(df)
+    if top_n:
+        df = df.head(int(top_n)).reset_index(drop=True)
+    df.attrs["n_total"] = n_total
+    return df

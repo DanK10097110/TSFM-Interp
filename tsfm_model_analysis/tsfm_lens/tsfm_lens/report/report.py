@@ -943,7 +943,7 @@ def _family_resolution_line(run_dir: Path) -> str:
            f'{", " + str(fr["n_unknown"]) + " unresolved" if fr["n_unknown"] else ""}.</p>')
 
 
-def _frag(fig: go.Figure, height: int = 420) -> str:
+def _frag(fig: go.Figure, height: int = 420, modebar: bool = False) -> str:
     """Style a figure to the report theme and emit an embeddable fragment.
 
     The margins are a FLOOR, not a fixed frame. Until 2026-09-04 they were
@@ -997,8 +997,10 @@ def _frag(fig: go.Figure, height: int = 420) -> str:
     )
     fig.update_xaxes(automargin=True)
     fig.update_yaxes(automargin=True)
-    return fig.to_html(full_html=False, include_plotlyjs=False,
-                       config={"displayModeBar": False})
+    config = ({"displayModeBar": True, "displaylogo": False,
+                "modeBarButtonsToRemove": ["lasso2d", "select2d"]}
+               if modebar else {"displayModeBar": False})
+    return fig.to_html(full_html=False, include_plotlyjs=False, config=config)
 
 
 def _stage_doc_block(stage_key: str) -> str:
@@ -2358,30 +2360,40 @@ def _l1_panel_block(arrays, meta: dict, run_dir: Path) -> str:
         f'the \'{meta.get("depth_axis_a", "index")}\' axis, so a model with an '
         "uncaptured surface legitimately never reaches 1.0.")
 
-    n = len(records)
-    cols = min(3, n)
-    rowsn = (n + cols - 1) // cols
-    grid = make_subplots(rows=rowsn, cols=cols, horizontal_spacing=0.09,
-                         vertical_spacing=0.14,
-                         subplot_titles=[f'{r["model_a"]} × {r["model_b"]}'
-                                         for r in records])
-    for i, r in enumerate(records):
-        key = f'cka_window__{r["model_a"]}__{r["model_b"]}'
-        if key not in arrays:
-            continue
-        grid.add_trace(go.Heatmap(
-            z=arrays[key], x=[_short(x) for x in r["layers_b"]],
-            y=[_short(y) for y in r["layers_a"]], zmin=0, zmax=1,
-            coloraxis="coloraxis"), row=i // cols + 1, col=i % cols + 1)
-    grid.update_layout(coloraxis=dict(colorscale="Viridis", cmin=0, cmax=1,
-                                      colorbar_title="CKA"))
-    grid.update_xaxes(tickfont_size=8)
-    grid.update_yaxes(tickfont_size=8)
-    inner += "<h4>Layer-pair similarity, every pair</h4>" + \
-        _frag(grid, 260 * rowsn + 80) + _figcap(
-            "The same layer-by-layer CKA matrix as the heatmap at the top of "
-            "this section, for every model pair, on one shared 0-1 colour "
-            "scale so the panels are comparable to each other.")
+    def _heat_panel(rows: list) -> str:
+        n = len(rows)
+        cols = min(3, n)
+        rowsn = (n + cols - 1) // cols
+        grid = make_subplots(rows=rowsn, cols=cols, horizontal_spacing=0.09,
+                             vertical_spacing=0.14,
+                             subplot_titles=[f'{r["model_a"]} × {r["model_b"]}'
+                                             for r in rows])
+        for i, r in enumerate(rows):
+            key = f'cka_window__{r["model_a"]}__{r["model_b"]}'
+            if key not in arrays:
+                continue
+            grid.add_trace(go.Heatmap(
+                z=arrays[key], x=[_short(x) for x in r["layers_b"]],
+                y=[_short(y) for y in r["layers_a"]], zmin=0, zmax=1,
+                coloraxis="coloraxis"), row=i // cols + 1, col=i % cols + 1)
+        grid.update_layout(coloraxis=dict(colorscale="Viridis", cmin=0, cmax=1,
+                                          colorbar_title="CKA"))
+        grid.update_xaxes(tickfont_size=8)
+        grid.update_yaxes(tickfont_size=8)
+        return _frag(grid, 260 * rowsn + 80)
+
+    # Collapsed behind `_details` beyond the first 4 pairs -- same threshold
+    # and reasoning as `_cluster_partition_grid` below: a run with <=4 pairs
+    # (up to 3 models) renders every pair uncollapsed, unchanged from before
+    # this split.
+    shown, rest = records[:4], records[4:]
+    inner += "<h4>Layer-pair similarity, every pair</h4>" + _heat_panel(shown)
+    if rest:
+        inner += _details(f"{len(rest)} more pair(s)", _heat_panel(rest))
+    inner += _figcap(
+        "The same layer-by-layer CKA matrix as the heatmap at the top of "
+        "this section, for every model pair, on one shared 0-1 colour "
+        "scale so the panels are comparable to each other.")
     return inner + _l1_depth_curve_grid(records, meta, run_dir) + \
         _l1_family_grid(arrays, records) + _l1_rsa_grid(records)
 
@@ -2403,38 +2415,46 @@ def _l1_depth_curve_grid(records: list, meta: dict, run_dir: Path) -> str:
     usable = [r for r in records if r.get("depth_curve")]
     if len(usable) < 2:
         return ""
-    cols = min(3, len(usable))
-    rowsn = (len(usable) + cols - 1) // cols
-    fig = make_subplots(rows=rowsn, cols=cols, horizontal_spacing=0.07,
-                        vertical_spacing=0.16, shared_yaxes=True,
-                        subplot_titles=[_wrap(f'{r["model_a"]} × {r["model_b"]}', 22)
-                                        for r in usable])
-    for i, r in enumerate(usable):
-        curve = r["depth_curve"]
-        xs = r.get("rel_depth_a") or np.linspace(0, 1, len(curve)).tolist()
-        null = (r.get("best_pair") or {}).get("null_ci")
-        row, col = i // cols + 1, i % cols + 1
-        fig.add_scatter(x=xs, y=[d["cka"] for d in curve], mode="lines+markers",
-                        line_color=_COLORS["accent"], showlegend=False,
-                        text=[f'{_short(d["layer_a"])} ↔ {_short(d["layer_b"])}'
-                              for d in curve],
-                        hovertemplate="depth %{x:.2f} · CKA %{y:.3f} · "
-                                      "%{text}<extra></extra>", row=row, col=col)
-        if null:
-            fig.add_hline(y=null["value"], line=dict(color=_COLORS["muted"], dash="dot"),
-                          row=row, col=col)
-    fig.update_yaxes(range=[0, 1])
-    fig.update_xaxes(tickfont_size=9)
-    fig.update_yaxes(tickfont_size=9)
+
+    def _curve_panel(rows: list) -> str:
+        cols = min(3, len(rows))
+        rowsn = (len(rows) + cols - 1) // cols
+        fig = make_subplots(rows=rowsn, cols=cols, horizontal_spacing=0.07,
+                            vertical_spacing=0.16, shared_yaxes=True,
+                            subplot_titles=[_wrap(f'{r["model_a"]} × {r["model_b"]}', 22)
+                                            for r in rows])
+        for i, r in enumerate(rows):
+            curve = r["depth_curve"]
+            xs = r.get("rel_depth_a") or np.linspace(0, 1, len(curve)).tolist()
+            null = (r.get("best_pair") or {}).get("null_ci")
+            row, col = i // cols + 1, i % cols + 1
+            fig.add_scatter(x=xs, y=[d["cka"] for d in curve], mode="lines+markers",
+                            line_color=_COLORS["accent"], showlegend=False,
+                            text=[f'{_short(d["layer_a"])} ↔ {_short(d["layer_b"])}'
+                                  for d in curve],
+                            hovertemplate="depth %{x:.2f} · CKA %{y:.3f} · "
+                                          "%{text}<extra></extra>", row=row, col=col)
+            if null:
+                fig.add_hline(y=null["value"], line=dict(color=_COLORS["muted"], dash="dot"),
+                              row=row, col=col)
+        fig.update_yaxes(range=[0, 1])
+        fig.update_xaxes(tickfont_size=9)
+        fig.update_yaxes(tickfont_size=9)
+        return _frag(fig, 230 * rowsn + 90)
+
+    # Same collapse-beyond-4 discipline as the heatmap grid above.
+    shown, rest = usable[:4], usable[4:]
     axis = meta.get("depth_axis_a", "index")
-    return "<h4>Layer correspondence by depth, every pair</h4>" + \
-        _frag(fig, 230 * rowsn + 90) + _figcap(
-            f"For each pair, every layer of model A matched to its "
-            f"best-matching layer of model B, against relative depth on the "
-            f"'{axis}' axis. The dotted line in each panel is that pair's own "
-            f"shuffled-series null. All panels share a 0-1 y-axis, so curve "
-            f"heights are directly comparable between pairs.") + \
-        _l1_depth_note(axis, run_dir)
+    inner = "<h4>Layer correspondence by depth, every pair</h4>" + _curve_panel(shown)
+    if rest:
+        inner += _details(f"{len(rest)} more pair(s)", _curve_panel(rest))
+    inner += _figcap(
+        f"For each pair, every layer of model A matched to its "
+        f"best-matching layer of model B, against relative depth on the "
+        f"'{axis}' axis. The dotted line in each panel is that pair's own "
+        f"shuffled-series null. All panels share a 0-1 y-axis, so curve "
+        f"heights are directly comparable between pairs.")
+    return inner + _l1_depth_note(axis, run_dir)
 
 
 def _l1_family_grid(arrays, records: list) -> str:
@@ -3560,9 +3580,10 @@ def _l3_verbose_cases(pmeta: dict, parrs, run_dir: Path) -> str:
     cases = derived.patching_case_summary(run_dir)
     html = _note(
         "A concrete, single-series version of the aggregate patching curves "
-        "above: for one series, its own clean / corrupted / patched forecasts "
-        "under every corruption that was patched, and its own restoration "
-        "grid at the corruption that damaged it most.",
+        "above: for one series, the clean context and the corrupted context "
+        "it produced, its own clean / corrupted / patched forecasts under "
+        "every corruption that was patched, and its own restoration grid at "
+        "the corruption that damaged it most.",
         "The patched forecast at each corruption uses the single "
         "(layer, window) cell that restored the most on average across the "
         "whole sampled batch — named in the table as <code>patch_layer</code> "
@@ -3573,7 +3594,17 @@ def _l3_verbose_cases(pmeta: dict, parrs, run_dir: Path) -> str:
         "<code>recovered_frac</code> is correspondingly lower than "
         "<code>own_best_restoration</code>. A negative "
         "<code>recovered_frac</code> means patching moved the forecast "
-        "further from the clean one than the corruption did.",
+        "further from the clean one than the corruption did. The context "
+        "traces are plotted on the same time axis as the forecasts but "
+        "before step 0 — the corrupted context is what the model actually "
+        "read before producing the <i>forecast from corrupted input</i> "
+        "trace; the clean context is what it read for the other two "
+        "forecasts. Each panel supports the usual Plotly affordances (drag "
+        "to zoom into a region, double-click to reset, camera icon to save "
+        "an image) via the toolbar in its top-right corner — the same "
+        "detail-on-demand the SAE exemplar panels give through their "
+        "click-to-enlarge modal, adapted to a multi-panel figure that "
+        "already draws every corruption at once.",
         "These series are a family-stratified sample of the patched batch, "
         "not a typical or a worst case: useful for making the aggregate "
         "curves concrete and for checking that the patch mechanism does what "
@@ -3636,8 +3667,27 @@ def _l3_verbose_cases(pmeta: dict, parrs, run_dir: Path) -> str:
                           if (prefix + "target") in parrs else None)
                 context = (np.asarray(parrs[prefix + "context"])
                            if (prefix + "context") in parrs else None)
+                context_corr = (np.asarray(parrs[prefix + "context_corrupted"])
+                                if (prefix + "context_corrupted") in parrs else None)
                 t_fut = np.arange(clean.shape[1])
                 show = k == 0
+                # Context is plotted on negative steps, immediately preceding
+                # the forecast it produced, so both what the model read and
+                # what it produced are on one shared axis (complaint: "there
+                # is nothing that shows the context each model was given").
+                ctx_tail = min(context.shape[1], 64) if context is not None else 0
+                if context is not None and si < context.shape[0] and ctx_tail:
+                    t_ctx = np.arange(-ctx_tail, 0)
+                    fig.add_scatter(x=t_ctx, y=context[si][-ctx_tail:], mode="lines",
+                                    name="clean context", legendgroup="ctx-clean",
+                                    line=dict(color=_COLORS["a"], width=1),
+                                    showlegend=show, row=r, col=c)
+                if context_corr is not None and si < context_corr.shape[0] and ctx_tail:
+                    t_ctx = np.arange(-ctx_tail, 0)
+                    fig.add_scatter(x=t_ctx, y=context_corr[si][-ctx_tail:], mode="lines",
+                                    name="corrupted context", legendgroup="ctx-corrupted",
+                                    line=dict(color=_COLORS["accent"], width=1),
+                                    showlegend=show, row=r, col=c)
                 if target is not None and si < target.shape[0]:
                     fig.add_scatter(x=t_fut, y=target[si], mode="lines",
                                     name="true continuation", legendgroup="truth",
@@ -3655,6 +3705,8 @@ def _l3_verbose_cases(pmeta: dict, parrs, run_dir: Path) -> str:
                                     line=dict(color=_COLORS["muted"], dash="dashdot",
                                               width=1.5),
                                     showlegend=show, row=r, col=c)
+                fig.add_vline(x=0, line=dict(color=_COLORS["muted"], width=1, dash="dot"),
+                              row=r, col=c)
                 fig.add_scatter(x=t_fut, y=clean[si], mode="lines",
                                 name="forecast from clean input", legendgroup="clean",
                                 line=dict(color=_COLORS["a"]), showlegend=show,
@@ -3668,10 +3720,12 @@ def _l3_verbose_cases(pmeta: dict, parrs, run_dir: Path) -> str:
                                 name="forecast after patching", legendgroup="patched",
                                 line=dict(color=_COLORS["b"], dash="dash"),
                                 showlegend=show, row=r, col=c)
-            fig.update_layout(xaxis_title="steps (0 = forecast start)")
-            html += (_frag(fig, 190 * nrow + 90)
+            fig.update_layout(xaxis_title="steps (0 = forecast start, dotted line)")
+            html += (_frag(fig, 190 * nrow + 90, modebar=True)
                      + _figcap(f"Series <b>{sid}</b> under <b>{model}</b>: one "
-                               f"panel per patched corruption, each showing the "
+                               f"panel per patched corruption. Before step 0, the "
+                               f"clean context and the corrupted context it "
+                               f"produced (last 64 steps shown); after it, the "
                                f"clean forecast, the corrupted one, and the one "
                                f"recovered by patching. Each panel is patched at "
                                f"the single layer×window cell that restored the "
@@ -3679,15 +3733,18 @@ def _l3_verbose_cases(pmeta: dict, parrs, run_dir: Path) -> str:
                                f"<code>patch_layer</code>/<code>patch_window</code> "
                                f"pair in the table above, not this series' own "
                                f"best cell, which the table gives separately as "
-                               f"<code>own_best_layer</code>. All four traces are "
-                               f"forecasts or ground truth over the same horizon; "
+                               f"<code>own_best_layer</code>. The context and "
+                               f"forecast of the same condition share a color "
+                               f"(clean = blue, corrupted = orange), so each pair "
+                               f"reads as one continuous line across the divider; "
                                f"the gap between <i>true continuation</i> and "
                                f"<i>forecast from clean input</i> is this model's "
                                f"ordinary forecast error on this series, which the "
                                f"corruption experiment neither creates nor removes "
                                f"— the quantity under study is the gap between the "
                                f"clean and corrupted forecasts. Legend clicks apply "
-                               f"to every panel."
+                               f"to every panel; use the toolbar in the top-right "
+                               f"of the figure to zoom into any region."
                                + _excursion_clause(exc)))
 
             worst = None
@@ -4488,6 +4545,60 @@ def _fin_or_none(x):
     return v if np.isfinite(v) else None
 
 
+def _cluster_partition_grid(comp: dict) -> str:
+    """Every pair's own partition-overlap heatmap, not only the reference
+    pair's — mirrors `_l1_panel_block`'s shared-colour-scale grid, the
+    precedent this repo already uses for "every pair, not just the
+    designated one" (user review, 2026-09-04). `comp["pairs"]` already
+    carries each pair's own `contingency`/`rows_a`/`cols_b`
+    (`analysis/clustering.py`), previously read here only for its scalar
+    `ami` via `_all_pairs_block` — this renders the matrices already
+    sitting in the artifact rather than recomputing anything from
+    `embedding.parquet`.
+
+    Collapsed behind `_details` beyond the first 4 pairs, per an explicit
+    user request that a section with "many graphs" default-collapse and
+    show only the most important few open; a run with <=4 pairs (up to 3
+    models) renders every pair uncollapsed, exactly like L1's own grid.
+    """
+    records = comp.get("pairs") or []
+    usable = [r for r in records if r.get("contingency")]
+    if len(usable) < 2:
+        return ""
+
+    def _panel(rows: list) -> str:
+        n = len(rows)
+        cols = min(3, n)
+        rowsn = (n + cols - 1) // cols
+        grid = make_subplots(rows=rowsn, cols=cols, horizontal_spacing=0.09,
+                             vertical_spacing=0.18,
+                             subplot_titles=[f'{r["model_a"]} × {r["model_b"]}'
+                                             for r in rows])
+        for i, r in enumerate(rows):
+            z = np.array(r["contingency"])
+            grid.add_trace(go.Heatmap(
+                z=z, x=[f'c{c}' for c in r["cols_b"]],
+                y=[f'c{c}' for c in r["rows_a"]], zmin=0, zmax=1,
+                coloraxis="coloraxis"), row=i // cols + 1, col=i % cols + 1)
+        grid.update_layout(coloraxis=dict(colorscale="Blues", cmin=0, cmax=1,
+                                          colorbar_title="row frac"))
+        grid.update_xaxes(tickfont_size=8)
+        grid.update_yaxes(tickfont_size=8)
+        return _frag(grid, 260 * rowsn + 80)
+
+    shown, rest = usable[:4], usable[4:]
+    inner = "<h4>Partition overlap, every pair</h4>" + _panel(shown)
+    if rest:
+        inner += _details(f"{len(rest)} more pair(s)", _panel(rest))
+    inner += _figcap(
+        "Row-normalized contingency between each pair's own cluster "
+        "assignments, on one shared 0-1 colour scale so the panels are "
+        "comparable to each other — the same statistic as the single "
+        "reference-pair heatmap above, for every pair this run measured, "
+        "not just the designated one.")
+    return inner
+
+
 def _sec_clusters(run_dir: Path, model_colors: dict, findings: list) -> str:
     """Side-by-side labeled cluster maps, per-model label tables, partition overlap."""
     emb = pd.read_parquet(run_dir / "clustering" / "embedding.parquet")
@@ -4577,14 +4688,15 @@ def _sec_clusters(run_dir: Path, model_colors: dict, findings: list) -> str:
         "benchmark families), so overlap partly reflects how family-like "
         "each model's natural clusters are, not just agreement between "
         "the two models."))
+    inner += _cluster_partition_grid(comp)
     inner += _all_pairs_block(
         comp.get("pairs"), comp,
         lambda r: {"model A": r["model_a"], "model B": r["model_b"],
                    "AMI": _ci_str(r["ami"])},
         "Partition agreement, every pair",
         "Adjusted mutual information between each pair of models' cluster "
-        "assignments. The heatmap above is the designated reference pair; "
-        "this table is every pair the run measured.",
+        "assignments. The heatmap grid above draws every pair's own overlap; "
+        "this table gives the same pairs' exact AMI values.",
         "AMI is chance-corrected, so 0 is what independent partitions of the "
         "same sizes would give and the values are directly comparable across "
         "rows even when the pairs have different cluster counts.",
@@ -5234,7 +5346,19 @@ def _sae_capability_block(run_dir: Path, findings: list) -> str:
             "to affect it.")
 
     if not agree.empty:
-        html += "<h4>Do matched roles do the same thing?</h4>" + _table(agree)
+        # ROADMAP.md sec 32.7c / user review: the per-row `summary` text is
+        # a template composed from the same tallies the numeric columns
+        # already show (see the docstring above and `derived.
+        # sae_causal_agreement`), so on a run where most pairs land in the
+        # same bucket (0 "act alike" here, on this run's 4 models) it reads
+        # as six near-identical sentences -- the counts differ, the prose
+        # mostly doesn't. Dropped from the table itself; the aggregate
+        # figcap below states the pooled tallies once, and the "Role by
+        # role, pair by pair" section right after this one is where the
+        # real per-pair variation actually lives (individual role
+        # sentences, not a pair-level template).
+        html += ("<h4>Do matched roles do the same thing?</h4>"
+                 + _table(agree.drop(columns=["summary"])))
         tot_a = int(agree["act alike"].sum())
         tot_d = int(agree["act differently"].sum())
         tot_u = int(agree["not scorable"].sum())
@@ -5244,14 +5368,10 @@ def _sae_capability_block(run_dir: Path, findings: list) -> str:
             f"the same way is a separate measurement, and across all pairs "
             f"here it is {tot_a} alike against {tot_d} differently, with "
             f"{tot_u} pairs whose battery had no measurable spread on one or "
-            f"both sides and so cannot be scored either way. The summary "
-            f"column is COMPOSED FROM THESE MEASURED TALLIES, not written by "
-            f"the narrator: across four regenerations the generated summary "
-            f"produced a different class of unsupported claim each time, "
-            f"while the per-role sentences below it held up, so the summary "
-            f"layer states only what the counts in this row already say. The "
-            f"generated attempt is still produced, checked and kept in "
-            f"`sae/comparison.json` under `summary_generated`. "
+            f"both sides and so cannot be scored either way. This table's "
+            f"per-pair template sentence is dropped as repetitive — see "
+            f"'Role by role, pair by pair' below for what actually varies "
+            f"across pairs, one matched role at a time. "
             + str(agree.attrs.get("aggregate_rate_withheld") or ""))
         if tot_a + tot_d:
             findings.append(Finding(
@@ -5824,7 +5944,11 @@ def _sae_target_panel(cfg, store, run_dir: Path, key: str, model: str, layer: st
                 "muted trace is the RAW model forecast with no SAE "
                 "reconstruction at all, so the gap between it and the "
                 "baseline is the dictionary's own reconstruction cost, drawn "
-                "on the same axes.")
+                "on the same axes. The narrow strip BELOW each chart is that "
+                "same gap (with the feature minus without it) drawn on its "
+                "own scale, so a small effect is still visible even when it "
+                "is too small to see as two overlapping lines above; the "
+                "dotted line through it is zero, i.e. no difference.")
         # ROADMAP.md sec 32.7c Item I3: the overlay's implicit question is
         # "did removing this feature change the forecast"; the battery's
         # actual question is narrower and it is the only one a channel

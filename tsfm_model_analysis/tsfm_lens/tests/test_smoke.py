@@ -167,7 +167,7 @@ def test_per_window_and_lens_artifacts(run_dir=None):
             n_series = grid.shape[-1]
             assert grid.shape[:2] == (len(info["rel_depth"]), len(info["windows"])), grid.shape
             assert n_series == len(vmeta["series_ids"]) == len(vmeta["families"])
-            for key in ("context", "target", "clean", "corrupted", "patched"):
+            for key in ("context", "context_corrupted", "target", "clean", "corrupted", "patched"):
                 assert parrs[prefix + key].shape[0] == n_series, (prefix, key)
 
     lmeta = load_json(run_dir / "lens" / "lens.json")

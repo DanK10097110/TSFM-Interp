@@ -439,6 +439,7 @@ def run_l3(cfg: PipelineConfig, hub, store: ActivationStore, data: BenchmarkData
                 prefix = f"verbose_{model}_{cname}_"
                 verbose_arrays[prefix + "grid"] = entry["restoration_grid"]
                 verbose_arrays[prefix + "context"] = entry["context"]
+                verbose_arrays[prefix + "context_corrupted"] = entry["context_corrupted"]
                 if entry["target"] is not None:
                     verbose_arrays[prefix + "target"] = entry["target"]
                 verbose_arrays[prefix + "clean"] = entry["forecast_clean"]
@@ -659,6 +660,7 @@ def _verbose_case(adapter, layers_p: list, windows: list, win_of_token: np.ndarr
         "series_ids": [str(s) for s in series_ids[ex]] if series_ids is not None else [],
         "families": [str(f) for f in families[ex]] if families is not None else [],
         "context": ctx_clean[ex].astype(np.float32),
+        "context_corrupted": ctx_corr[ex].astype(np.float32),
         "target": targets[ex].astype(np.float32) if targets is not None else None,
         "forecast_clean": f_clean[ex].astype(np.float32),
         "forecast_corrupted": f_corr[ex].astype(np.float32),

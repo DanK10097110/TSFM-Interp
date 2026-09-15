@@ -338,6 +338,9 @@ abbr.term      { text-decoration: underline dotted; cursor: help; }
   <div class="hint">Grey = context the model saw · dark = true continuation ·
    pale dotted = raw model forecast (no SAE reconstruction) ·
    blue = forecast with this feature left alone · red dashed = with it removed.
+   The narrow strip below the chart, when present, is that blue-minus-red gap
+   drawn on its own scale so a small effect stays visible; its dotted line is
+   zero (no difference).
    Press Escape or click outside to close.</div></div>
 </div>
 <script>
