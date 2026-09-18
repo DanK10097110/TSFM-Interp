@@ -95,10 +95,23 @@ class LeakageAuditor:
         self.window = max(1, int(dtw_window_frac * target_len))
         self._refs: list[tuple[str, str, np.ndarray]] = []
         self._matrix: np.ndarray | None = None
+        self._licenses: dict[str, str] = {}
+        self._raw_refs: list[np.ndarray] = []
 
-    def add_reference(self, corpus: str, item_id: str, values: np.ndarray) -> None:
-        """Register one real series the benchmark must stay away from."""
+    def add_reference(self, corpus: str, item_id: str, values: np.ndarray, license: str = "unknown") -> None:
+        """Register one real series the benchmark must stay away from.
+
+        ``license`` (from the source's own `SourceRef.license`, ROADMAP.md
+        sec 34 item B1) is recorded per corpus name so a persisted audit block
+        can state which real corpora the gate compared against and under what
+        license -- it is not used by the gate computation itself. The raw
+        (pre-normalization) values are kept too, so a realism comparison
+        (``audit.realism_report``) can be computed later against the exact
+        reference set the gate used, without re-loading it.
+        """
         self._refs.append((corpus, item_id, _normalize(values, self.target_len)))
+        self._raw_refs.append(np.asarray(values, dtype=float))
+        self._licenses[corpus] = license
         self._matrix = None
 
     def _ensure_matrix(self) -> None:
@@ -163,6 +176,130 @@ def find_near_duplicates(samples: list[TimeSeriesSample], target_len: int = 256,
         if d < threshold:
             dups.append((ids[i], ids[j], d))
     return dups
+
+
+def _quantiles(values: list[float]) -> dict[str, float] | None:
+    """Quantile summary of a distance list, or ``None`` when it means nothing.
+
+    ``None`` (never a degenerate all-zero/all-inf dict) is deliberate: with no
+    references every sample's ``nearest_distance`` is `inf` (``LeakageReport``'s
+    own no-op default), and a quantile block full of ``inf`` would read as a
+    measurement rather than as "the gate did not run" (CLAUDE.md sec 11.37 --
+    an absent measurement must never render as a passing, or any, one).
+    """
+    if not values:
+        return None
+    arr = np.asarray(values, dtype=float)
+    if not np.all(np.isfinite(arr)):
+        return None
+    return {
+        "min": float(arr.min()),
+        "p01": float(np.quantile(arr, 0.01)),
+        "p05": float(np.quantile(arr, 0.05)),
+        "p50": float(np.quantile(arr, 0.50)),
+    }
+
+
+def compose_audit_block(
+    auditor: "LeakageAuditor",
+    kept: list[TimeSeriesSample],
+    rejected: list[tuple[str, float]],
+    dup_pairs: list[tuple[str, str, float]],
+    split_of: dict[str, str],
+    near_dup_threshold: float = 0.05,
+    near_dup_target_len: int = 256,
+    worst_k: int = 50,
+    compute_realism: bool = True,
+) -> dict[str, Any]:
+    """Compose the leakage/near-duplicate/realism verdict into one persistable block.
+
+    This performs **no new gate computation** (ROADMAP.md sec 34 item B1.1):
+    every number here was already produced by ``LeakageAuditor.audit`` (set on
+    each sample as ``leakage_report``), by ``BenchmarkBuilder._build_split``
+    (``rejected``), or by the caller's own already-computed ``find_near_duplicates``
+    call (``dup_pairs`` -- this function does not re-run the matcher, per
+    B1.3's "do not change the matcher"). It only reads that evidence and labels
+    it, instead of letting it print to a terminal and disappear (the defect
+    this item exists to fix; CLAUDE.md sec 2.5/sec 11.49).
+
+    ``split_of`` maps each kept sample's ``sample_id`` to ``"public"`` or
+    ``"private"``, which is what makes the near-duplicate pairs' ``relation``
+    field meaningful -- the cross-split pairs are the only leakage-relevant
+    ones (they are the ones that would break sec 4.5's disjoint-seed
+    guarantee), and the un-labelled matcher output cannot tell them apart from
+    an ordinary within-split near-duplicate.
+    """
+    references = sorted({corpus for corpus, _, _ in auditor._refs})
+    reference_n_series = len(auditor._refs)
+    gate_effective = reference_n_series > 0
+
+    accepted_distances = [
+        s.leakage_report["nearest_distance"] for s in kept
+        if s.leakage_report is not None and s.leakage_report.get("nearest_distance") is not None
+    ]
+    rejected_distances = [d for _, d in rejected]
+    n_candidates = len(kept) + len(rejected)
+
+    gate = {
+        "references": references if references else "none",
+        "reference_licenses": dict(auditor._licenses),
+        "reference_n_series": reference_n_series,
+        "gate_effective": gate_effective,
+        "metric": auditor.metric,
+        "band": auditor.window,
+        "normalization": f"resample{auditor.target_len}+znorm",
+        "threshold": auditor.threshold,
+        "n_candidates": n_candidates,
+        "n_rejected": len(rejected),
+        "rejection_rate": (len(rejected) / n_candidates) if n_candidates else 0.0,
+        "accepted_distance_quantiles": _quantiles(accepted_distances) if gate_effective else None,
+        "rejected_distance_quantiles": _quantiles(rejected_distances) if gate_effective else None,
+    }
+
+    n_within_public = n_within_private = n_across = 0
+    labeled: list[dict[str, Any]] = []
+    for a, b, d in dup_pairs:
+        sa, sb = split_of.get(a, "?"), split_of.get(b, "?")
+        if sa == "public" and sb == "public":
+            relation = "within_public"
+            n_within_public += 1
+        elif sa == "private" and sb == "private":
+            relation = "within_private"
+            n_within_private += 1
+        else:
+            relation = "across"
+            n_across += 1
+        labeled.append({"a": a, "b": b, "distance": d, "relation": relation})
+    labeled.sort(key=lambda r: r["distance"])
+
+    near_duplicates = {
+        "threshold": near_dup_threshold,
+        "target_len": near_dup_target_len,
+        "n_pairs_within_public": n_within_public,
+        "n_pairs_within_private": n_within_private,
+        "n_pairs_across_splits": n_across,
+        "worst_pairs_cap": worst_k,
+        "worst_pairs": labeled[:worst_k],
+    }
+
+    block: dict[str, Any] = {"schema_version": 1, "gate": gate, "near_duplicates": near_duplicates}
+
+    if compute_realism and gate_effective and auditor._raw_refs and kept:
+        by_tier: dict[str, list[TimeSeriesSample]] = {}
+        for s in kept:
+            tier = s.provenance.generator_params.get("tier", "unknown")
+            by_tier.setdefault(tier, []).append(s)
+        realism = {
+            "note": "gap between generated and real reference distributions on "
+                    "summary statistics; used only to tune realism, NEVER a "
+                    "leakage signal (CLAUDE.md sec 4.4) -- render under 'how "
+                    "realistic', never under 'how leak-free'.",
+            "combined": realism_report(kept, auditor._raw_refs),
+            "by_tier": {tier: realism_report(s, auditor._raw_refs) for tier, s in by_tier.items()},
+        }
+        block["realism"] = realism
+
+    return block
 
 
 def realism_report(samples: list[TimeSeriesSample], reference: list[np.ndarray]) -> dict[str, Any]:

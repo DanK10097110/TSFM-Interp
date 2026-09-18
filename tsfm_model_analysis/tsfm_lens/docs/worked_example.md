@@ -65,6 +65,72 @@ visible instead of invisible.
 
 ---
 
+## 0.5. The corpus card — trust the benchmark before trusting any model result
+
+**Artifact:** `corpus/card.json` (`ROADMAP.md` §34 items B1–C2) · **Report section:** "The corpus card" · **Evidence class:** descriptive
+
+This section renders second, still before any model result, and for a
+reason worth sitting with: **every number in every section below this one is
+a claim about `benchmark_medium/public_dev`, and this is the one section that
+asks whether that corpus itself deserves the trust the rest of the report
+spends on it.**
+
+`benchmark_medium/public_dev` is a sealed corpus (`epoch 0`, global digest
+`6337c592a7bc…`) of **288 series across 3 families** — `random_parametric`
+(188), `mixture` (60), `parametric` (40) — split by tier into **228
+`synthetic`** series (no real data touched at all) and **60
+`realism_stress`** series (real-derived, so they inherit a real corpus's
+*distribution* even though every instance still had to pass the leakage
+gate — the tier distinction §4.1 and the glossary's "leakage" entry both
+draw). The largest single family, `random_parametric`, is 65.3% of the
+corpus (`quality.largest_family_share`) — worth knowing before reading any
+per-family statistic elsewhere in this doc as if every family carried equal
+weight.
+
+**The corpus trust ladder renders seven rows for this corpus, and the
+honest reading is that none of them currently say "clears":**
+
+| Claim | Verdict | Why |
+|---|---|---|
+| No series is a copy of a real reference series | `not_recorded` | manifest predates item B1's audit-persistence fix |
+| No within-split near-duplicates | `not_recorded` | same reason |
+| Dev and private splits share no series | `not_recorded` | same reason |
+| Private split looks like the dev split | `inconclusive` | no equivalence test has been run (item B3) |
+| A model can't win here by memorizing one shape (effective dimensionality) | `not_run` | no `benchmark_validation` report configured for this corpus |
+| Series vary in more than one way | `not_run` | same reason |
+| Models weren't trained on this data | `not_verifiable` | no mechanism anywhere can inspect a checkpoint's own training data |
+
+This is not a defect in the section — it is the section doing exactly its
+job. `benchmark_medium/public_dev` was built before item B1 existed, so its
+manifest's `extra` block is empty; the correct rendering of "an audit that
+never ran" is `not_recorded`, never a false `clean`, which is the same
+`CLAUDE.md` §11.37 discipline ("absent and degenerate are different states,
+and a threshold that cannot tell them apart reports the dangerous one as
+the safe one") every other section in this report is built around. **Read
+this the way you would read a `not yet measured` fairness row two sections
+up: the honest answer to "is this benchmark corpus leak-free and diverse"
+is currently *we have not checked*, not *yes*.** Nothing below this line
+stops being useful for that — L0's MASE numbers, L1's CKA, L3's causal
+fingerprints are all real measurements of what these two models do on this
+corpus — but "this corpus" is exactly the object this section just told you
+has an open trust question, and a reader who skips this section would never
+learn that.
+
+The representative-series gallery (one context window per family, sampled
+with `np.random.default_rng` rather than a head slice — §11.38's fix, so a
+corpus written grouped by generator doesn't silently show only its
+first-sorting family) and the diversity figure both degrade the same
+honest way: the gallery always renders (it needs no audit), while the
+diversity figure reads `"not available (no corpus.validation_report
+configured)"` rather than a redundancy fraction or an effective
+dimensionality, because `benchmark_validation` was never run against this
+particular corpus. A UMAP embedding is never computed here either way
+(invariant 4 — diversity is measured in catch22 feature space, never on
+UMAP coordinates, and this section will say so even when a validation
+report *is* configured).
+
+---
+
 ## 1. Behavioral profile — the only section that needs no interpretability at all
 
 **Artifacts:** `l0/summary.json`, `l0/metrics.parquet` · **Evidence class:** behavioral

@@ -177,6 +177,128 @@ def test_accuracy_per_compute_replaces_a_row_that_only_restated_its_own_name(tmp
     assert "Big" in cov.measure and cov.verdict == "below"   # 0.42 < 0.90
 
 
+def test_the_families_row_carries_a_three_state_power_reading_per_family(tmp_path):
+    """`ROADMAP.md` §34 A1.2: a non-detection is 'adequately powered' (a
+    stated MDE) or 'underpowered or unsatisfiable' (no MDE computable at
+    all), never a single undifferentiated 'not detected'."""
+    _write(tmp_path, "l0/summary.json", {
+        "overall": [{"model": "A", "mase": 1.0}, {"model": "B", "mase": 1.1}],
+        "alpha": 0.05,
+        "family_tests": [
+            {"family": "won", "favored": "A", "p_holm": 0.01, "ratio": 0.8,
+             "mde": {"reason": None, "mde": 0.05}},
+            {"family": "powered", "favored": "none", "p_holm": 0.5, "ratio": 1.0,
+             "mde": {"reason": None, "mde": 0.3}},
+            {"family": "unsatisfiable", "favored": "none", "p_holm": 0.5, "ratio": 1.0,
+             "mde": {"reason": "unsatisfiable_correction", "mde": None}},
+            {"family": "no_mde_at_all", "favored": "none", "p_holm": 0.5, "ratio": 1.0},
+        ]})
+    rows = derived.bottom_line_rows(tmp_path, ["A", "B"])
+    fam_row = next(r for r in rows if "separates significantly" in r.measure)
+    states = {d["family"]: d["power_state"] for d in fam_row.detail}
+    assert states["won"] == "detected"
+    assert states["powered"] == "not detected, adequately powered (MDE=0.300)"
+    assert states["unsatisfiable"] == "not detected, underpowered or unsatisfiable"
+    assert states["no_mde_at_all"] == "not detected, underpowered or unsatisfiable"
+
+
+def test_a_version_that_always_says_not_detected_fails_the_three_state_check(tmp_path):
+    """Load-bearing negative: the two-state predecessor this replaces."""
+    def _old_two_state(t: dict) -> str:
+        return "detected" if t.get("favored") not in (None, "none") else "not detected"
+
+    fixture = [
+        {"favored": "none", "mde": {"reason": None, "mde": 0.3}},
+        {"favored": "none", "mde": {"reason": "unsatisfiable_correction", "mde": None}},
+    ]
+    old_states = {i: _old_two_state(t) for i, t in enumerate(fixture)}
+    new_states = {i: derived._power_state(t) for i, t in enumerate(fixture)}
+    assert len(set(old_states.values())) == 1        # both read "not detected"
+    assert len(set(new_states.values())) == 2        # the new function tells them apart
+
+
+def test_accuracy_rows_names_no_model_or_architecture():
+    """The adaptivity contract: this must transfer to models nobody has run."""
+    import inspect
+
+    def _no_docstring(fn) -> str:
+        src = inspect.getsource(fn)
+        return src.split('"""')[2] if src.count('"""') >= 2 else src
+
+    body = (_no_docstring(derived._accuracy_rows) + _no_docstring(derived._power_state)
+           + _no_docstring(derived._no_skill_rows))
+    for banned in ("TimesFM", "Chronos", "Sundial", "model_a", "model_b",
+                   "models[0]", "models[1]", "stacked_xf", "encoder.block",
+                   "__naive__", "__seasonal_naive__"):
+        assert banned not in body, f"{banned!r} would tie this reduction to one run"
+
+
+# ---------------------------------------------------------------------------
+# _no_skill_rows (ROADMAP.md §34 item A3)
+# ---------------------------------------------------------------------------
+
+def test_no_skill_row_compares_the_best_model_against_the_better_reference(tmp_path):
+    _write(tmp_path, "l0/summary.json", {
+        "overall": [{"model": "A", "mase": 0.9}, {"model": "B", "mase": 1.2}],
+        "alpha": 0.05, "family_tests": [],
+        "per_family": [
+            {"model": "A", "family": "f1", "mase": 0.9},
+            {"model": "B", "family": "f1", "mase": 1.2},
+            {"model": "__naive__", "family": "f1", "mase": 1.05},
+            {"model": "__seasonal_naive__", "family": "f1", "mase": 0.6,
+             "seasonal_naive_available": True},
+        ]})
+    rows = derived.bottom_line_rows(tmp_path, ["A", "B"])
+    row = next(r for r in rows if r.measure.startswith("Best model beats a trivial"))
+    assert row.value == 0.9
+    assert row.reference == 0.6
+    assert "seasonal-naive" in row.reference_label or "__seasonal_naive__" in row.reference_label
+    assert row.verdict == "worse or equal"  # 0.9 is NOT < 0.6
+
+
+def test_no_skill_row_names_the_family_with_no_reference_available(tmp_path):
+    """T-A3.4 at the reduction seam: a family where seasonal-naive is
+    undefined and naive-1 has no reliable series either must render a
+    NAMED absent state, never silently skip the family or fall back to a
+    different reference under the same label (§11.37)."""
+    _write(tmp_path, "l0/summary.json", {
+        "overall": [{"model": "A", "mase": 0.9}], "alpha": 0.05, "family_tests": [],
+        "per_family": [
+            {"model": "A", "family": "short", "mase": 0.9},
+            {"model": "__naive__", "family": "short", "mase": None},
+            {"model": "__seasonal_naive__", "family": "short", "mase": None,
+             "seasonal_naive_available": False},
+        ]})
+    rows = derived.bottom_line_rows(tmp_path, ["A"])
+    row = next(r for r in rows if r.measure.startswith("Best model beats a trivial"))
+    assert row.verdict == "not comparable"
+    assert row.reference is None
+    assert "no reference forecast available" in row.reference_label
+
+
+def test_no_skill_row_absent_when_l0_never_ran(tmp_path):
+    assert derived.bottom_line_rows(tmp_path, ["A", "B"]) == []
+
+
+def test_a_version_reading_overall_instead_of_per_family_would_leak_pseudo_models(tmp_path):
+    """Load-bearing negative: if `_no_skill_rows` read `overall` (which
+    `_summarize` deliberately keeps pseudo-model-free, ROADMAP.md §34 A3.3)
+    instead of `per_family`, it would find no reserved rows at all and
+    silently emit zero rows -- confirmed here by reproducing that reader
+    against the same fixture the real function scores correctly."""
+    l0 = {
+        "overall": [{"model": "A", "mase": 0.9}, {"model": "B", "mase": 1.2}],
+        "per_family": [
+            {"model": "A", "family": "f1", "mase": 0.9},
+            {"model": "__seasonal_naive__", "family": "f1", "mase": 0.6},
+        ]}
+    real_rows = derived._no_skill_rows(l0)
+    buggy = [r for r in (l0.get("overall") or []) if str(r.get("model")).startswith("__")]
+    assert len(real_rows) == 1
+    assert len(buggy) == 0
+    assert len(real_rows) != len(buggy)
+
+
 def test_a_confirmation_row_names_its_claims_from_the_fields_the_artifact_has(tmp_path):
     _write(tmp_path, "confirm/confirmation.json", {"n_registered": 2, "tests": [
         {"status": "tested", "confirmed": True, "family": "seasonal",

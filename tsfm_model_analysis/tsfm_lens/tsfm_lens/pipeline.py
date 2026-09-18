@@ -19,6 +19,7 @@ from .analysis.attention import run_attention
 from .analysis.clustering import run_clustering
 from .analysis.exemplars import run_exemplars
 from .analysis.confirm import run_confirm
+from .analysis.corpus_card import run_corpus_card
 from .analysis.hypotheses import run_register
 from .analysis.internals import run_internals
 from .analysis.layer_screen import run_layer_screen
@@ -102,6 +103,15 @@ _EXTRACT_KEYS = ("data", "alignment", "extraction",
 def _stages() -> list:
     """The canonical stage sequence."""
     return [
+        # Ordered FIRST, before `extract`: it reads only the corpus (already
+        # in memory as `ctx.data`) and no model, so a run where extraction
+        # fails should still leave a corpus card on disk (ROADMAP.md sec 34
+        # item C1.1). `deps=[]` makes `--stages corpus` a valid standalone run.
+        Stage("corpus", [],
+              lambda c: c.corpus.enabled,
+              lambda c: (c.run_dir() / "corpus" / "card.json").exists(),
+              lambda ctx: run_corpus_card(ctx.cfg, ctx.data),
+              ("data", "corpus")),
         Stage("extract", [],
               lambda c: c.extraction.enabled,
               lambda c: (c.run_dir() / "activations.zarr").exists()
@@ -209,7 +219,7 @@ def _stages() -> list:
 # `l0` is here despite declaring an `extract` dependency in the DAG: it reads
 # no activations (it only *writes* its predictions into the store), so the
 # dependency exists to order a full run, not because L0 needs a capture.
-_L0_ONLY_STAGES = ("l0", "budget", "frontend", "report")
+_L0_ONLY_STAGES = ("l0", "budget", "frontend", "report", "corpus")
 
 # The tier each stage needs from EVERY configured model (`ROADMAP.md` sec 19
 # G1). Tier 0 is forecasts only; 1 adds readable activations; 2 adds
@@ -227,6 +237,7 @@ _L0_ONLY_STAGES = ("l0", "budget", "frontend", "report")
 # stage above tier 0 is either cross-model or feeds one that is.
 _STAGE_MIN_TIER = {
     "l0": 0, "budget": 0, "frontend": 0, "report": 0, "register": 0, "confirm": 0,
+    "corpus": 0,
     "extract": 1, "layer_screen": 1, "internals": 1, "l1": 1, "l2": 1,
     "cluster": 1, "sae": 1, "attention": 1, "exemplars": 1,
     "lens": 2, "l3": 2,

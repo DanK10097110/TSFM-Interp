@@ -185,6 +185,12 @@ def main() -> None:
                              "localization) and exit -- the zero-code entry point for a "
                              "checkpoint with no hand-written adapter (ROADMAP.md sec 16 "
                              "E3(b), adapter 'generic_hf')")
+    parser.add_argument("--check-adapter", default="",
+                        help="run the full one-command checklist for one model name and "
+                             "exit -- construct, conformance, alignment, span discovery, "
+                             "and every optional capability, each as one row with a typed "
+                             "status (pass/warn/fail/not_applicable) and a remediation "
+                             "(ROADMAP.md sec 34.6 Item E4); exits nonzero iff any row fails")
     parser.add_argument("--doctor", action="store_true",
                         help="run the full preflight (incl. loading every model for "
                              "adapter conformance + alignment checks) and exit "
@@ -328,6 +334,22 @@ def main() -> None:
         print(f"{'raw':>5} {'/ceil':>6}  layer")
         for layer, frac in results.items():
             print(f"{frac:5.2f} {frac / ceil['ceiling']:6.2f}  {layer}")
+        return
+    if args.check_adapter:
+        from tsfm_lens.models.adapter_check import overall_status, run_adapter_checklist
+
+        rows = run_adapter_checklist(cfg, args.check_adapter)
+        symbol = {"pass": "OK  ", "warn": "WARN", "fail": "FAIL",
+                 "not_applicable": "n/a "}
+        print(f"adapter checklist: {args.check_adapter}")
+        for row in rows:
+            print(f"  [{symbol[row['status']]}] {row['name']:16s} {row['detail']}")
+            if row["remediation"]:
+                print(f"           -> {row['remediation']}")
+        status = overall_status(rows)
+        print(f"\noverall: {status}")
+        if status == "fail":
+            raise SystemExit(1)
         return
     if args.doctor:
         print(f"tsfm-lens doctor: full preflight for {args.config}")

@@ -33,10 +33,21 @@ from ..data import BenchmarkData, load_benchmark
 from ..extraction.alignment import align, pooling_matrix
 from ..extraction.hooks import ActivationCatcher
 from ..utils import batch_slices, load_json, log, save_json
+from .corpus_card import audit_state, read_cross_split, read_manifest
 from .hypotheses import check_registry_freshness
 from .l0_behavioral import _predict_all, _score
 from .l1_geometry import linear_cka
+from .power import mde_paired_bootstrap
 from .stats import bootstrap_ci, holm, paired_bootstrap
+
+# Corpus identity (ROADMAP.md sec 34 item B5): a manifest-derived field
+# degrades to this reason, never a bare `None`, when the confirm.source is
+# `smoke` or an unverified jsonl -- both skip `load_sealed` entirely, so
+# there is no manifest.json to read (CLAUDE.md sec 2.5, sec 6.7's own
+# "smoke-mode confirm is mechanically real but distributionally identical to
+# dev" warning, which this is what makes visible per-run rather than only
+# documented).
+_NO_MANIFEST_REASON = "no sealed manifest (smoke source, or an unverified jsonl load)"
 
 
 def run_confirm(cfg: PipelineConfig, hub, forced: bool = False) -> None:
@@ -48,6 +59,13 @@ def run_confirm(cfg: PipelineConfig, hub, forced: bool = False) -> None:
     the actual enforcement behind `CLAUDE.md` §6.7's "everything on dev is
     exploratory, confirm tests it exactly once" discipline, previously
     enforced by convention alone.
+
+    Also refuses (`ROADMAP.md` sec 34 item B5) if `confirm.path`'s own
+    manifest declares a visibility other than `private` -- a second, earlier
+    enforcement point for the same discipline, since a confirmation run
+    against the public split would otherwise complete and look identical to
+    a real one. `confirmation.json` records which corpus (digest, epoch,
+    visibility, B1's audit block) this run actually consumed.
     """
     out_dir = cfg.run_dir() / "confirm"
     repeated = (out_dir / "confirmation.json").exists()
@@ -81,6 +99,12 @@ def run_confirm(cfg: PipelineConfig, hub, forced: bool = False) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
 
     private = _load_private(cfg)
+    dev_manifest, private_manifest = _read_provenance_manifests(cfg)
+    # Checked before any private-corpus analysis runs, not after (sec 34
+    # B5.2) -- a public/private mixup should fail before spending compute
+    # on the very evidence its own discipline would then be invalidating.
+    _check_private_provenance(private_manifest, dev_manifest)
+    provenance = _private_provenance(private, cfg.confirm.path, dev_manifest, private_manifest)
     a, b = cfg.comparison_pair()
     metrics = _private_behavioral(cfg, hub, private, out_dir)
     hypotheses = _test_registered_hypotheses(cfg, metrics, registry, a.name, b.name)
@@ -102,6 +126,7 @@ def run_confirm(cfg: PipelineConfig, hub, forced: bool = False) -> None:
         # tell the two apart after the log has scrolled away.
         "repeated_look": bool(forced and repeated),
         **hypotheses,
+        **provenance,
         "cka_replication": replication,
         "l3_replication": l3_replication,
     })
@@ -130,6 +155,105 @@ def _load_private(cfg: PipelineConfig) -> BenchmarkData:
     return private
 
 
+def _read_provenance_manifests(cfg: PipelineConfig) -> tuple:
+    """One cheap JSON read per side -- shared by `_private_provenance` (which
+    renders them) and `_check_private_provenance` (which gates on them), so
+    neither has to re-read the other's copy."""
+    dev_manifest = read_manifest(cfg.data.path) if cfg.data.source != "smoke" else None
+    private_manifest = read_manifest(cfg.confirm.path) if cfg.confirm.source != "smoke" else None
+    return dev_manifest, private_manifest
+
+
+def _private_provenance(private: BenchmarkData, confirm_path: str,
+                        dev_manifest: dict, private_manifest: dict) -> dict:
+    """B5.1: which corpus (and which of possibly several private epochs,
+    `CLAUDE.md` sec 4.5) this confirmation actually consumed.
+
+    `private.corpus_digest` already exists upstream (sec 15 A7) and was
+    simply dropped here -- that is the whole gap this closes for the digest
+    field. `manifest.json`'s other fields (`visibility`, `epoch`, and B1's
+    `extra.audit` block) are not carried on `BenchmarkData` at all, so they
+    come from `_read_provenance_manifests`'s direct read via
+    `corpus_card.read_manifest` -- the identical cheap, no-reverification
+    read `corpus_card.py` already does for the dev corpus (reused rather
+    than duplicated, `CLAUDE.md` sec 2.2/11.24), not a second reload of the
+    dev corpus's full row set just to reach two scalar fields off its
+    manifest.
+
+    `private_composition` (counts by tier/family) is NOT manifest-derived --
+    it comes straight from `private.meta`, which is already in memory
+    regardless of whether a manifest exists -- so it is always populated,
+    unlike the manifest-derived fields below it, which share one explicit
+    `manifest_reason` when there is no manifest to read (the failure mode
+    B5's own text names: "all fields null with reason: 'no sealed
+    manifest'"). `exchangeability` (ROADMAP.md sec 34 item B3.4) comes from
+    `corpus_card.read_cross_split`, which reads an optional, plain sibling
+    `cross_split.json` next to the private corpus (written by
+    `benchmark_validation`'s `run_validation.py --compare-splits ...
+    --persist-into-private`, entirely outside this pipeline) -- degrading
+    to an explicit, actionable reason (naming the exact CLI invocation)
+    rather than the earlier placeholder's bare "not yet implemented", since
+    B3 has been implemented since this field was first written and the
+    honest gap is now "not yet run for this corpus", not "does not exist".
+    """
+    has_manifest = private_manifest is not None or dev_manifest is not None
+    meta = private.meta
+    return {
+        "private_corpus_path": confirm_path,
+        "private_corpus_digest": private.corpus_digest,
+        "private_manifest_epoch": (private_manifest or {}).get("epoch"),
+        "private_visibility": (private_manifest or {}).get("visibility"),
+        "private_composition": {
+            "by_tier": {str(k): int(v) for k, v in meta["tier"].value_counts().items()},
+            "by_family": {str(k): int(v) for k, v in meta["family"].value_counts().items()},
+        },
+        "dev_corpus_digest": (dev_manifest or {}).get("global_digest"),
+        "dev_manifest_epoch": (dev_manifest or {}).get("epoch"),
+        "private_audit": audit_state(private_manifest),
+        "exchangeability": read_cross_split(confirm_path, private.corpus_digest),
+        # Not itself one of B5.1's named fields, but required by its own
+        # failure-mode text: the five manifest-derived scalars above render
+        # as bare `None` with no way to tell "checked, absent" apart from
+        # "never checked" unless this is read alongside them.
+        "private_manifest_reason": None if has_manifest else _NO_MANIFEST_REASON,
+    }
+
+
+def _check_private_provenance(private_manifest: dict, dev_manifest: dict) -> None:
+    """B5.2's checks -- one that must fail loudly, one that must only warn,
+    and (by its absence here) one that must never run at all.
+
+    Visibility is checked whenever a manifest was actually read, regardless
+    of `confirm.require_seal` -- `read_manifest` needs no `tsfm_benchmark`
+    import, so this catches a public/private mixup even when seal
+    verification itself was explicitly disabled. Epoch drift across sec
+    4.5's several possible private epochs is legitimate and only logged.
+
+    Deliberately absent: any comparison of `private_corpus_digest` to
+    `dev_corpus_digest`. They are different splits and MUST differ; an
+    equality check here would fire on every correct run (sec 11.35's false-
+    refusal shape) -- ROADMAP.md sec 34 B5.2 names this as the check to NOT
+    write, not merely one to skip by omission.
+    """
+    if private_manifest is not None:
+        visibility = private_manifest.get("visibility")
+        if visibility != "private":
+            raise RuntimeError(
+                f"confirm.path points at a corpus whose manifest declares "
+                f"visibility={visibility!r}, not 'private'. Running the one-shot "
+                f"confirmation stage against a non-private corpus silently invalidates "
+                f"CLAUDE.md sec 6.7's exploration-vs-confirmation discipline -- point "
+                f"confirm.path at the sealed private split.")
+    if private_manifest is not None and dev_manifest is not None:
+        priv_epoch, dev_epoch = private_manifest.get("epoch"), dev_manifest.get("epoch")
+        if priv_epoch != dev_epoch:
+            log.warning(
+                "CONFIRM: private corpus epoch (%r) differs from dev corpus epoch (%r) -- "
+                "legitimate under CLAUDE.md sec 4.5's regeneration protocol, but the reader "
+                "should know this confirmation is not against the same epoch dev findings "
+                "were explored on", priv_epoch, dev_epoch)
+
+
 def _private_behavioral(cfg: PipelineConfig, hub, private: BenchmarkData,
                         out_dir) -> pd.DataFrame:
     """Score both models on the private corpus with the same L0 metric definitions."""
@@ -155,6 +279,16 @@ def _test_registered_hypotheses(cfg: PipelineConfig, metrics: pd.DataFrame, regi
     proven that file matches what was registered, so reading it here for
     the descriptive `dev_ratio` display value is safe, but *which* claims
     get tested comes from the registry, not from re-deriving the claim list.
+
+    Records `mde_private` for every claim -- the private-n minimum detectable
+    effect, computed before that claim's own test runs (`ROADMAP.md` §34
+    A1.3) -- alongside, never as a gate: a hypothesis whose private-n MDE
+    exceeds its own dev effect size is one this confirmation cannot confirm
+    even in principle, and the reader is entitled to that fact regardless of
+    which way the test itself comes out. `min_attainable_p_holm` (§6.6's
+    p-floor) is computed once, from the count of claims this private run can
+    actually test, and threaded into every claim's MDE call unchanged --
+    never re-derived per claim, matching `l0_behavioral.py`'s own discipline.
     """
     sc = cfg.stats
     dev = load_json(cfg.run_dir() / "l0" / "summary.json")
@@ -164,18 +298,25 @@ def _test_registered_hypotheses(cfg: PipelineConfig, metrics: pd.DataFrame, regi
 
     wide = metrics.pivot_table(index=["series_id", "family"], columns="model",
                                values="mase").reset_index()
+    groups = [(fam, favored, wide[wide["family"] == fam]) for fam, favored in claims]
+    m_testable = sum(1 for _, _, grp in groups if len(grp) >= sc.min_series)
+    min_attainable_p_holm = (m_testable / sc.n_boot) if m_testable and sc.n_boot else None
+
     tests, pvals = [], {}
-    for fam, favored in claims:
-        grp = wide[wide["family"] == fam]
+    for fam, favored, grp in groups:
         entry = {"family": fam, "dev_favored": favored,
                  "dev_ratio": dev_ratio.get(fam)}
+        sign = 1.0 if favored == name_a else -1.0
+        diff = sign * (grp[name_b] - grp[name_a]).to_numpy()
+        entry["mde_private"] = mde_paired_bootstrap(
+            diff, alpha=cfg.confirm.alpha, n_boot=sc.n_boot,
+            seed=cfg.run.seed + 900_000 + len(tests),
+            min_attainable_p_holm=min_attainable_p_holm, min_n=sc.min_series)
         if len(grp) < sc.min_series:
             entry.update({"status": "untestable",
                           "reason": f"only {len(grp)} private series"})
             tests.append(entry)
             continue
-        sign = 1.0 if favored == name_a else -1.0
-        diff = sign * (grp[name_b] - grp[name_a]).to_numpy()
         res = paired_bootstrap(diff, sc.n_boot, cfg.run.seed + 200 + len(tests), sc.ci)
         entry.update({"status": "tested", **res})
         tests.append(entry)

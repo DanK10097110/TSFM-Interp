@@ -50,7 +50,7 @@ import pandas as pd
 __all__ = ["Verdict", "Rule", "RULES", "bottom_line_rows", "corruption_breakdown",
            "layer_metrics", "exemplar_summary", "patching_case_summary",
            "load_json_or_none", "ablation_panel_summary", "ablation_panel_table",
-           "flatness_population"]
+           "flatness_population", "corpus_trust_rows", "corpus_composition_rows"]
 
 
 def load_json_or_none(path: Path):
@@ -153,10 +153,40 @@ def _separated_by(delta: float, unit: str) -> Rule:
     return Rule("separated_by", f"|difference| ≥ {delta:g} {unit}", apply)
 
 
+def _at_most(threshold_label: str) -> Rule:
+    """For counts that must not exceed a fixed ceiling (duplicate pairs, most
+    commonly 0) -- the count-based mirror of `_at_least`.
+    """
+    def apply(value, reference):
+        if reference is None or value is None:
+            return "not comparable"
+        return "clears" if value <= reference else "does not clear"
+    return Rule("at_most", f"value ≤ {threshold_label}", apply)
+
+
 RULES = {"ratio_at_least": _ratio_at_least, "greater_than": _greater_than,
          "lower_is_better": _lower_is_better,
-         "at_least": _at_least, "ci_excludes": _ci_excludes,
+         "at_least": _at_least, "at_most": _at_most, "ci_excludes": _ci_excludes,
          "separated_by": _separated_by}
+
+
+def _gated_rule(inner: Rule, ok: bool, third_state: str) -> Rule:
+    """Wrap `inner` so the verdict is forced to `third_state` whenever `ok`
+    is False, keeping `inner`'s own printed rule text unchanged.
+
+    Used by `corpus_trust_rows`, whose rows have more failure states than
+    the usual pass/fail/not-comparable trio (`not checked`, `not recorded`,
+    `inconclusive`, `not run`, `not verifiable` -- ROADMAP.md sec 34 C2.3).
+    `ok` is always a fact read off the card's own audit/validation state,
+    never a call-site opinion, so `Verdict.verdict` stays fully derived from
+    the artifact rather than authored -- the same structural guarantee
+    `Verdict.__post_init__` already gives every other row in this module.
+    """
+    if ok:
+        return inner
+    def apply(value, reference):
+        return third_state
+    return Rule(inner.name, inner.text, apply)
 
 
 @dataclass
@@ -227,6 +257,7 @@ def bottom_line_rows(run_dir: Path, model_names: list) -> list:
     l0 = load_json_or_none(run_dir / "l0" / "summary.json")
     if l0:
         rows.extend(_accuracy_rows(l0, model_names))
+        rows.extend(_no_skill_rows(l0))
 
     l1 = load_json_or_none(run_dir / "l1" / "meta.json")
     if l1 and l1.get("best_pair"):
@@ -321,11 +352,97 @@ def _accuracy_rows(l0: dict, model_names: list) -> list:
         reference_label="one family (the minimum for any family-level claim)",
         rule=RULES["at_least"]("1"), unit="families",
         detail=[{"family": t.get("family"), "favored": t.get("favored"),
-                 "mase_ratio": _fin(t.get("ratio")), "p_holm": _fin(t.get("p_holm"))}
+                 "mase_ratio": _fin(t.get("ratio")), "p_holm": _fin(t.get("p_holm")),
+                 "power_state": _power_state(t)}
                 for t in tests],
         note=f"Holm-corrected at α={alpha:g}; a family absent from this count "
              f"is one where the models were not distinguished, not one where "
-             f"they were equal."))
+             f"they were equal. `power_state` (`ROADMAP.md` §34 A1) is the "
+             f"third reading a non-detection needs: 'detected' vs. 'not "
+             f"detected, adequately powered' (a stated MDE this run could "
+             f"have caught) vs. 'not detected, underpowered or unsatisfiable' "
+             f"(no MDE is even computable at this n / n_boot)."))
+    return rows
+
+
+def _power_state(t: dict) -> str:
+    """The third reading of a family's non-detection (`ROADMAP.md` §34 A1.2).
+
+    'Not detected' collapses two very different situations that a plain
+    Holm-corrected p-value cannot tell apart: a family where this run's
+    sample size could have caught a difference and simply didn't find one,
+    and a family where no effect of any size was ever detectable at this n
+    or this many comparisons. Reads only fields already on the family-test
+    row (`favored`, `mde`), so it transfers to any model pair and any corpus.
+    """
+    if t.get("favored") not in (None, "none"):
+        return "detected"
+    mde = t.get("mde")
+    if isinstance(mde, dict) and _fin(mde.get("mde")) is not None:
+        return f"not detected, adequately powered (MDE={_fin(mde['mde']):.3f})"
+    return "not detected, underpowered or unsatisfiable"
+
+
+def _no_skill_rows(l0: dict) -> list:
+    """'Does the best model beat a trivial forecast?', one row per family
+    (`ROADMAP.md` §34 A3.4).
+
+    Reads only `per_family` -- which already carries the two reserved
+    no-skill rows as extra entries (`ROADMAP.md` §34 A3.2/A3.3) -- so this
+    transfers to any run: no model name, no architecture, and the reserved
+    rows are identified purely by the `__`-prefix convention, never by a
+    literal checkpoint or pseudo-model name.
+
+    `mase ≈ 1.0` for naive-1 under the default `mean_abs_diff` scale is true
+    by construction and is stated in the row's own `note`, not presented as
+    a discovery -- the informative comparison is against seasonal-naive,
+    which is not 1.0 by construction.
+    """
+    per_family = l0.get("per_family") or []
+    real, reserved = {}, {}
+    for r in per_family:
+        model, fam, mase = r.get("model"), r.get("family"), _fin(r.get("mase"))
+        if model is None or fam is None:
+            continue
+        (reserved if str(model).startswith("__") else real).setdefault(fam, []).append((model, mase, r))
+    rows = []
+    for fam in sorted(set(real) & set(reserved)):
+        candidates = [(m, v) for m, v, _ in real[fam] if v is not None]
+        if not candidates:
+            continue
+        best_model, best_mase = min(candidates, key=lambda e: e[1])
+        ref_candidates = [(m, v, r) for m, v, r in reserved[fam] if v is not None]
+        detail = [{"model": best_model, "mase": best_mase}] + [
+            {"reference": m, "mase": v, "available": True} for m, v, _ in reserved[fam] if v is not None
+        ] + [
+            {"reference": m, "mase": None, "available": False}
+            for m, v, _ in reserved[fam] if v is None
+        ]
+        if not ref_candidates:
+            # Every configured reference forecast is undefined for this
+            # family (e.g. every series too short for one full seasonal
+            # period, and naive-1's own always-defined guarantee failed too
+            # -- only possible when the family has zero reliable series at
+            # all). Named, not silently dropped (§11.37's absent-vs-bad
+            # distinction).
+            rows.append(Verdict(
+                measure=f"Best model beats a trivial (no-skill) forecast ({fam})",
+                value=best_mase, reference=None,
+                reference_label="no reference forecast available for this family",
+                rule=RULES["lower_is_better"](), unit="MASE", detail=detail,
+                note="Neither no-skill reference could be computed for this family."))
+            continue
+        ref_model, ref_mase, _ = min(ref_candidates, key=lambda e: e[1])
+        rows.append(Verdict(
+            measure=f"Best model beats a trivial (no-skill) forecast ({fam})",
+            value=best_mase, reference=ref_mase,
+            reference_label=f"better of naive-1 / seasonal-naive on this family ({ref_model})",
+            rule=RULES["lower_is_better"](), unit="MASE", detail=detail,
+            note="`mase` ≈ 1.0 for naive-1 under the default `mean_abs_diff` scale "
+                "is true by construction, not a discovery -- the informative "
+                "comparison is against seasonal-naive, which is not 1.0 by "
+                "construction (ROADMAP.md §34 A3). A family where the best model "
+                "does NOT clear this is a finding about that family, not a bug."))
     return rows
 
 
@@ -2776,3 +2893,178 @@ def causal_feature_ranking(run_dir: Path, top_n: int = 15) -> pd.DataFrame:
         df = df.head(int(top_n)).reset_index(drop=True)
     df.attrs["n_total"] = n_total
     return df
+
+
+# ---------------------------------------------------------------------------
+# The corpus trust ladder (ROADMAP.md sec 34 item C2.3)
+# ---------------------------------------------------------------------------
+
+def corpus_trust_rows(card: dict) -> list:
+    """Seven claims about the corpus itself, each a `Verdict` derived from
+    `corpus/card.json` (`analysis/corpus_card.py`) -- never a model, never a
+    result. Adaptivity contract as usual: no model name, no architecture
+    family, no `cfg.models[` index anywhere in this function; a `family` name
+    is corpus data, not a model, and is fine.
+
+    Design note on sourcing, since ROADMAP.md's own table names a "reference"
+    for each row without pinning exactly which artifact field backs it:
+    rows 1-3 are all read from the SAME sealed-manifest audit block
+    (`card["audit"]`, ROADMAP.md item B1) -- distance to the real reference
+    corpus, near-duplicate pairs WITHIN a split, and near-duplicate pairs
+    ACROSS the dev/private split -- so all three share one availability
+    condition (`not_recorded` when no audit block exists at all) with row 1
+    additionally requiring `gate_effective` (`not_checked` otherwise, T-C2.1's
+    own load-bearing negative). Rows 5-6 read the optional, digest-checked
+    `benchmark_validation` report (`card["validation"]`) and degrade to
+    `not_run` when it is absent or was refused for a digest mismatch. Row 4
+    (private-vs-dev equivalence) and row 7 (training-data leakage) have no
+    computation anywhere in this repo to read -- confirmed directly against
+    `build_pipeline.audit.compose_audit_block`, which writes the identical
+    audit block to both splits (`tests/test_audit_persistence.py`), so
+    nothing currently distinguishes their distributions -- and are therefore
+    fixed at `inconclusive` / `not_verifiable` respectively, each carrying
+    the reason in its own `note` rather than a bare unlabeled row.
+    """
+    audit_block = card.get("audit") or {}
+    state = audit_block.get("state")
+    audit = audit_block.get("audit") or {}
+    gate = audit.get("gate") or {}
+    near_dup = audit.get("near_duplicates") or {}
+
+    audit_present = state in ("not_checked", "measured")
+    gate_measured = state == "measured"
+
+    rows: list = []
+
+    # Row 1 -- "no series here is a copy of a real series we checked against".
+    accepted_q = gate.get("accepted_distance_quantiles") or {}
+    min_accepted = _fin(accepted_q.get("min"))
+    threshold = _fin(gate.get("threshold"))
+    third1 = "measured" if gate_measured else ("not_checked" if audit_present else "not_recorded")
+    rows.append(Verdict(
+        measure="No series here is a copy of a real reference series "
+                f"({int(gate.get('n_rejected') or 0)} of "
+                f"{int(gate.get('n_candidates') or 0)} candidates rejected)",
+        value=min_accepted, reference=threshold,
+        reference_label=f"gate threshold ({gate.get('metric', 'distance')})",
+        rule=_gated_rule(RULES["greater_than"](), gate_measured, third1),
+        unit="distance", detail=[{"accepted_distance_quantiles": accepted_q,
+                                  "n_candidates": gate.get("n_candidates"),
+                                  "n_rejected": gate.get("n_rejected")}],
+        note=audit_block.get("reason") or ""))
+
+    # Row 2 -- "no two series here are near-duplicates of each other" (within
+    # a split -- across-split is its own row 3, since the two leak in
+    # different directions).
+    within = int(near_dup.get("n_pairs_within_public") or 0) + \
+        int(near_dup.get("n_pairs_within_private") or 0)
+    third2 = "measured" if audit_present else "not_recorded"
+    rows.append(Verdict(
+        measure="No two series within a split are near-duplicates of each other",
+        value=float(within) if audit_present else None, reference=0.0,
+        reference_label="0 within-split near-duplicate pairs",
+        rule=_gated_rule(RULES["at_most"]("0"), audit_present, third2),
+        unit="pairs",
+        detail=[{"n_pairs_within_public": near_dup.get("n_pairs_within_public"),
+                "n_pairs_within_private": near_dup.get("n_pairs_within_private")}],
+        note="" if audit_present else (audit_block.get("reason") or "")))
+
+    # Row 3 -- "the dev and private splits share no series" (B1.3).
+    across = _fin(near_dup.get("n_pairs_across_splits"))
+    third3 = "measured" if audit_present else "not_recorded"
+    rows.append(Verdict(
+        measure="The dev and private splits share no series",
+        value=across if audit_present else None, reference=0.0,
+        reference_label="0 cross-split near-duplicate pairs",
+        rule=_gated_rule(RULES["at_most"]("0"), audit_present, third3),
+        unit="pairs", detail=[{"n_pairs_across_splits": near_dup.get("n_pairs_across_splits")}],
+        note="" if audit_present else (audit_block.get("reason") or "")))
+
+    # Row 4 -- private-vs-dev equivalence: nothing computes this (see docstring).
+    rows.append(Verdict(
+        measure="The private split looks like the dev split",
+        value=None, reference=None, reference_label="a declared equivalence margin",
+        rule=_gated_rule(RULES["greater_than"](), False, "inconclusive"),
+        note="No mechanism in this repo currently compares the private split's "
+             "distribution against the dev split's -- ROADMAP.md sec 34 item B1's "
+             "audit block is written identically to both splits by construction "
+             "(same epoch, same verdict), so it cannot answer this question. "
+             "Recorded as inconclusive rather than omitted."))
+
+    # Rows 5-6 -- from the optional, digest-checked validation report.
+    validation = card.get("validation") or {}
+    val_ok = bool(validation.get("available"))
+    report = (validation.get("report") or {}) if val_ok else {}
+    diversity = report.get("diversity") or {}
+    eff_dim = _fin(diversity.get("effective_dimensionality"))
+    # benchmark_validation/gates.py::min_effective_dimensionality's literal
+    # default -- not itself persisted into validation_report.json, so this is
+    # an honest, stated reference rather than a value read off the artifact
+    # (unlike every other row here); a report from a run with a different
+    # configured gate threshold would need that threshold re-derived, which
+    # nothing here does yet.
+    _MIN_EFFECTIVE_DIM = 2.0
+    rows.append(Verdict(
+        measure="A model cannot do well here by memorizing one shape "
+                "(effective dimensionality)",
+        value=eff_dim if val_ok else None, reference=_MIN_EFFECTIVE_DIM,
+        reference_label="benchmark_validation's default min_effective_dimensionality "
+                        "(gates.py) -- not read from this report's own config",
+        rule=_gated_rule(RULES["at_least"](f"{_MIN_EFFECTIVE_DIM:g}"), val_ok, "not_run"),
+        detail=[{"total_variance": diversity.get("total_variance"),
+                "near_collision_fraction": diversity.get("near_collision_fraction")}],
+        note="" if val_ok else (validation.get("reason") or "")))
+
+    by_group = (report.get("diversity_by_group") or {}).get("groups") or {}
+    top_features = {g: d.get("top_variance_feature") for g, d in by_group.items()
+                    if isinstance(d, dict) and d.get("top_variance_feature")}
+    n_distinct = len({str(v) for v in top_features.values()})
+    # A coarse, explicitly-stated bar: with every family's variance dominated
+    # by the SAME single feature, the corpus has one structural axis wearing
+    # several labels, not real per-family variety. Two or more distinct
+    # dominant features is evidence of more than one.
+    _MIN_DISTINCT_TOP_FEATURES = 2
+    rows.append(Verdict(
+        measure=f"Series here vary in more than one way "
+                f"({n_distinct} distinct per-group dominant feature"
+                f"{'s' if n_distinct != 1 else ''} of {len(top_features)} groups)",
+        value=float(n_distinct) if (val_ok and by_group) else None,
+        reference=float(_MIN_DISTINCT_TOP_FEATURES),
+        reference_label=f"at least {_MIN_DISTINCT_TOP_FEATURES} distinct dominant features across groups",
+        rule=_gated_rule(RULES["at_least"](str(_MIN_DISTINCT_TOP_FEATURES)),
+                        val_ok and bool(by_group), "not_run"),
+        detail=[{"group": g, "top_variance_feature": f} for g, f in top_features.items()],
+        note="" if (val_ok and by_group) else (validation.get("reason")
+             or "the validation report has no per-group diversity breakdown")))
+
+    # Row 7 -- training-data leakage: not checkable here, by design (sec 4.1).
+    rows.append(Verdict(
+        measure="The models being compared were not trained on this data",
+        value=None, reference=None, reference_label="a checkpoint's own training corpus",
+        rule=_gated_rule(RULES["greater_than"](), False, "not_verifiable"),
+        note="Nothing in this repo can inspect a checkpoint's training corpus. "
+             "CLAUDE.md sec 4.1's two-tier design audits INSTANCE-level leakage "
+             "(rows 1-3 above: is any series here a copy of something we checked "
+             "against) but DISTRIBUTIONAL leakage -- has a model's training data "
+             "ever seen data shaped like this -- is carried by construction for "
+             "every real_derived-tier sample and is not something any audit in "
+             "this repo, or any other, can rule out. This row is intentionally "
+             "unresolvable and is rendered rather than omitted so it cannot be "
+             "mistaken for a question nobody thought to ask."))
+
+    return rows
+
+
+def corpus_composition_rows(card: dict) -> list:
+    """`[{"tier","family","generator","archetype","count"}, ...]` for the
+    corpus composition bar chart -- a pure reshape of `card["composition"]`'s
+    count dicts into rows a plotting call can group by. No model, no
+    architecture, no `cfg.models[` index: this is corpus data.
+    """
+    comp = card.get("composition") or {}
+    rows: list = []
+    for kind in ("by_tier", "by_family", "by_generator", "by_archetype"):
+        label = kind[3:]
+        for name, count in (comp.get(kind) or {}).items():
+            rows.append({"axis": label, "value": str(name), "count": int(count)})
+    return rows

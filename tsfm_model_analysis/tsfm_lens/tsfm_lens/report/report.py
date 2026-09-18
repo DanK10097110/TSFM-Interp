@@ -140,6 +140,10 @@ def run_report(cfg: PipelineConfig) -> Path:
          "Every measured asymmetry between each pair of models in this run, before any result section (ROADMAP.md §18 F9).",
          [], "report",
          lambda: _sec_fairness(cfg, run_dir)),
+        ("Corpus", "The corpus card",
+         "What the benchmark corpus actually is and whether it can be trusted, before any model result (ROADMAP.md §34 item C2).",
+         ["corpus/card.json"], "corpus",
+         lambda: _sec_corpus(cfg, run_dir, findings)),
         ("L0", "Behavioral profile",
          "Forecast quality per benchmark family: the hypotheses the deeper levels try to explain.",
          ["l0/metrics.parquet", "l0/summary.json"], "l0",
@@ -521,6 +525,13 @@ _VERDICT_CLASS = {
     "does not clear": "v-fail", "includes": "v-fail", "worse or equal": "v-fail",
     "below": "v-fail", "not separated": "v-fail", "above": "v-neutral",
     "at or below": "v-neutral", "not comparable": "v-none",
+    # ROADMAP.md sec 34 C2.3's trust-ladder third states. `not_checked` is
+    # styled the same as a failure (`v-fail`) rather than `v-none` on
+    # purpose -- T-C2.1's own load-bearing negative is that a corpus built
+    # with `--references none` must read as visibly distinct from a clean
+    # pass, not as a neutral "nothing to see here".
+    "not_checked": "v-fail", "not_recorded": "v-none", "inconclusive": "v-none",
+    "not_run": "v-none", "not_verifiable": "v-none",
 }
 
 
@@ -2130,8 +2141,13 @@ def _sec_l0(run_dir: Path, model_colors: dict, findings: list) -> str:
     """Family-level MASE comparison with CIs and Holm-corrected paired tests."""
     summary = load_json(run_dir / "l0" / "summary.json")
     per_fam = pd.DataFrame(summary["per_family"])
+    # `__`-prefixed rows are the no-skill reference forecasts (`ROADMAP.md`
+    # §34 A3.2) -- excluded from this comparison figure per A3.3 ("must not
+    # enter any comparison set"); they render only in the table below and in
+    # the scorecard's dedicated row.
+    real_fam = per_fam[~per_fam["model"].astype(str).str.startswith("__")]
     fig = go.Figure()
-    for model, grp in per_fam.groupby("model"):
+    for model, grp in real_fam.groupby("model"):
         err = None
         if "mase_lo" in grp.columns:
             err = _err_y([{"value": v, "lo": lo, "hi": hi} for v, lo, hi in
@@ -2175,8 +2191,27 @@ def _sec_l0(run_dir: Path, model_colors: dict, findings: list) -> str:
             registered=False))
     inner += "<h4>Overall metrics</h4>" + _table(pd.DataFrame(summary["overall"]))
     fam_cols = [c for c in ("model", "family", "mase", "mae_over_mad", "smape", "pinball",
-                            "mase_n_excluded") if c in per_fam.columns]
+                            "mase_n_excluded", "seasonal_naive_available",
+                            "seasonal_naive_n_excluded") if c in per_fam.columns]
     inner += "<h4>Per-family metrics</h4>" + _table(per_fam[fam_cols])
+    if (per_fam["model"].astype(str).str.startswith("__")).any():
+        inner += _note(
+            "`__naive__` and `__seasonal_naive__` (`ROADMAP.md` §34 A3) are "
+            "not configured models -- they are the trivial forecasts every "
+            "real model should beat: repeat the last context value, or "
+            "repeat the last full dominant period. Their MASE, if not "
+            "excluded as unreliable, is what the scorecard's 'beats a "
+            "trivial forecast' row below compares each family's best model "
+            "against.",
+            "`__naive__`'s MASE is ≈1.0 under the default `mean_abs_diff` "
+            "scale BY CONSTRUCTION -- that is not a discovery. "
+            "`__seasonal_naive__` is the informative one: it is not 1.0 by "
+            "construction, and a family where the best model does not beat "
+            "it is worth reading as a real finding, not a bug.",
+            "`__seasonal_naive__`'s MASE is missing (not zero, not a "
+            "fallback to naive-1) for any family where every series is too "
+            "short to hold one full detected period -- see "
+            "`seasonal_naive_available` on that row.")
     inner += _note(
         "`mae_over_mad` (sec 15 A11) is a scale-free companion to MASE that "
         "doesn't depend on the context, only the target's own dispersion.",
@@ -2205,14 +2240,49 @@ def _sec_l0(run_dir: Path, model_colors: dict, findings: list) -> str:
 
     tests = summary.get("family_tests")
     if tests:
-        tbl = pd.DataFrame(tests)[["family", "ratio", "mean", "lo", "hi",
-                                   "p", "p_holm", "favored"]]
+        from ..analysis.power import format_mde_sentence
+
+        def _power_cell(row: dict) -> str:
+            # A1.2 (`ROADMAP.md` §34): a row that already found a strength
+            # answers "how reliably would a repeat find it again", never the
+            # MDE question -- the two are different rows' worth of evidence
+            # and rendering both would suggest a strength row is somehow
+            # still underpowered. A row with no `mde` computed at all (older
+            # artifact, before this item) degrades to "" rather than a claim.
+            mde = row.get("mde")
+            if not isinstance(mde, dict):
+                return ""
+            if row.get("favored") != "none":
+                p = mde.get("achieved_power_at_observed")
+                return f"achieved power {p * 100:.0f}% at this n" if p is not None else ""
+            return format_mde_sentence(mde)
+
+        tbl_full = pd.DataFrame(tests)
+        tbl_full["Power / MDE"] = [_power_cell(t) for t in tests]
+        tbl = tbl_full[["family", "ratio", "mean", "lo", "hi",
+                        "p", "p_holm", "favored", "Power / MDE"]]
         tbl.columns = ["family", "MASE ratio", "paired ΔMASE", "lo", "hi",
-                       "p (boot)", "p (Holm)", "favored"]
+                       "p (boot)", "p (Holm)", "favored", "Power / MDE"]
         fam_n_boot = next((t.get("n_boot") for t in tests if t.get("n_boot")), None)
         inner += (f'<h4>Paired family tests (α={summary.get("alpha", 0.05)}, '
                   f'Holm-corrected, positive Δ favors first model'
                   f'{_p_note({"n_boot": fam_n_boot}) if fam_n_boot else ""})</h4>' + _table(tbl))
+        inner += _note(
+            "`Power / MDE` (`ROADMAP.md` §34 A1): for a family with no detected "
+            "difference, the smallest true difference this run's sample size "
+            "could reliably (80% of the time) have caught; for a family that "
+            "already found a strength, how often a repeat of this exact test "
+            "would find it again.",
+            "A family reading 'not testable' has no meaningful MDE at all -- "
+            "either the Holm correction for this many comparisons cannot reach "
+            "significance at this n_boot no matter the effect size, the family "
+            "has too few series to resample, or every series gave an identical "
+            "paired delta. Read 'no difference detected, MDE = X' as a "
+            "statement about this RUN's resolving power, never as evidence the "
+            "two models behave the same on that family.",
+            "Simulation-based and therefore itself noisy at the `n_sim` used; "
+            "not a substitute for running more series if the MDE is larger "
+            "than the effect size a reader actually cares about.")
         for model, fams in summary.get("strengths", {}).items():
             if fams:
                 findings.append(Finding(
@@ -7016,6 +7086,288 @@ def _fairness_rows_for_pair(cfg: PipelineConfig, run_dir: Path, a, b) -> list:
     return rows
 
 
+def _sec_corpus(cfg: PipelineConfig, run_dir: Path, findings: list) -> str:
+    """The corpus card section (ROADMAP.md sec 34 item C2): what the benchmark
+    actually is, rendered before any model result -- so a reader can judge
+    whether a claim below is worth trusting before reading it, the same
+    reason `_sec_fairness` renders first among model-facing sections.
+
+    Reads only `corpus/card.json` (`analysis/corpus_card.py`) -- never
+    imports `benchmark_validation` (item C1.2) and never recomputes a
+    leakage or diversity check itself. Renders unconditionally: even a
+    corpus with no manifest and no validation report has a composition and
+    a trust ladder whose rows honestly read `not_recorded`/`not_run`, which
+    is the point of the three-state distinction (sec 11.37) this section
+    exists to surface rather than hide.
+    """
+    card = load_json(run_dir / "corpus" / "card.json") if (run_dir / "corpus" / "card.json").exists() else None
+    if card is None:
+        return ""
+
+    prov = card.get("provenance") or {}
+    comp = card.get("composition") or {}
+    quality = card.get("quality") or {}
+    audit_block = card.get("audit") or {}
+    validation = card.get("validation") or {}
+    parts = []
+
+    # --- Header: what corpus is this -----------------------------------
+    kind = prov.get("kind", "unknown")
+    if kind == "sealed":
+        header = (f"Sealed corpus, visibility <b>{_esc(prov.get('visibility'))}</b>, "
+                  f"epoch <b>{_esc(prov.get('epoch'))}</b>, "
+                  f"{prov.get('n_samples')} sealed samples "
+                  f"({comp.get('n_series')} usable after length filtering). "
+                  f"Global digest <code>{_esc(str(prov.get('global_digest'))[:16])}…</code>.")
+    else:
+        header = (f"Corpus kind: <b>{_esc(kind)}</b> ({comp.get('n_series')} series). "
+                  f"{_esc(prov.get('note', ''))}")
+    parts.append(f'<p class="figcap">{header}</p>')
+
+    # --- Figure 1: composition ------------------------------------------
+    comp_rows = derived.corpus_composition_rows(card)
+    if comp_rows:
+        df = pd.DataFrame(comp_rows)
+        axes_present = [a for a in ("tier", "generator", "family", "archetype") if (df["axis"] == a).any()]
+        show_axes = axes_present[:2] if len(axes_present) >= 2 else axes_present
+        fig = make_subplots(rows=1, cols=max(1, len(show_axes)),
+                            subplot_titles=[f"by {a}" for a in show_axes])
+        for i, axis in enumerate(show_axes, start=1):
+            sub = df[df["axis"] == axis].sort_values("count", ascending=True).tail(15)
+            fig.add_trace(go.Bar(x=sub["count"], y=sub["value"], orientation="h",
+                                 marker_color=_COLORS["a"], showlegend=False), row=1, col=i)
+        fig.update_layout(title="What is in this corpus")
+        parts.append(_frag(fig, height=max(280, 26 * min(15, df["value"].nunique()))))
+        parts.append(_note(
+            "Series counts by tier and by generator, for THIS run's own corpus.",
+            "Each bar is a count of series sharing that label. `tier` distinguishes "
+            "leakage-safe synthetic series from real-derived ones "
+            "(`CLAUDE.md` sec 4.1); `generator` names the construction mechanism.",
+            "This renders only the corpus this run actually loaded (`data.path`), "
+            "never a dev-vs-private side-by-side -- the private split is loaded "
+            "independently, only by the `confirm` stage, and is not available here "
+            "to compare against without loading a second corpus this stage was not "
+            "given (ROADMAP.md sec 34 item C2.2's own scope note)."))
+    else:
+        parts.append('<p class="figcap">No composition breakdown available.</p>')
+
+    # --- Figure 2: representative series, one per family ----------------
+    try:
+        from ..data import load_benchmark
+        bench = load_benchmark(cfg.data, cfg.run.seed)
+        families = bench.meta["family"].astype(str).to_numpy()
+        uniq = sorted(set(families))
+        rng = np.random.default_rng(cfg.run.seed)
+        if len(uniq) > 12:
+            uniq = sorted(np.array(uniq)[np.sort(rng.choice(len(uniq), size=12, replace=False))])
+        chosen = {}
+        for fam in uniq:
+            idx = np.where(families == fam)[0]
+            if len(idx):
+                chosen[fam] = int(rng.choice(idx))
+        if chosen:
+            ncols = min(3, len(chosen))
+            nrows = int(np.ceil(len(chosen) / ncols))
+            fig2 = make_subplots(rows=nrows, cols=ncols,
+                                 subplot_titles=[_wrap(f, 20) for f in chosen])
+            for i, (fam, row_idx) in enumerate(chosen.items()):
+                r, c = i // ncols + 1, i % ncols + 1
+                series = bench.values[row_idx][: bench.context_len]
+                fig2.add_trace(go.Scatter(y=series, mode="lines",
+                                          line=dict(color=_COLORS["a"], width=1.3),
+                                          showlegend=False), row=r, col=c)
+            fig2.update_layout(title="What the series look like", height=max(260, 210 * nrows))
+            parts.append(_frag(fig2, height=max(260, 210 * nrows)))
+            parts.append(_note(
+                f"One representative context window ({bench.context_len} steps) per "
+                f"family, {len(chosen)} of {len(uniq if len(uniq) <= 12 else families)} "
+                "families shown.",
+                "Each panel is one real series from this corpus, not an average or a "
+                "synthetic composite -- picked per family (`np.random.default_rng` "
+                "seeded on `run.seed`) rather than by a head slice, since this "
+                "corpus is written grouped by generator and a plain prefix would "
+                "silently select a family-skewed sample (`ROADMAP.md` sec 15 A4, "
+                "sec 11.38).",
+                "Each panel has its own y-axis: series scales are not comparable "
+                "across panels, and this is illustrative, not a diversity "
+                "measurement (that is Figure 3 below, computed in feature space)."))
+    except Exception as exc:  # noqa: BLE001 -- a missing picture, never a failed section
+        log.info("report: corpus card representative-series panel unavailable (%s)", exc)
+
+    # --- Figure 3: diversity ---------------------------------------------
+    val_ok = bool(validation.get("available"))
+    report = (validation.get("report") or {}) if val_ok else {}
+    matching = report.get("matching") or {}
+    diversity = report.get("diversity") or {}
+    unverified_provenance = val_ok and validation.get("provenance") == "unverified"
+    if val_ok and matching.get("bucket_edges") and matching.get("bucket_counts"):
+        edges, counts = matching["bucket_edges"], matching["bucket_counts"]
+        centers = [(edges[i] + edges[i + 1]) / 2 for i in range(len(counts))]
+        fig3 = go.Figure(go.Bar(x=centers, y=counts, marker_color=_COLORS["a"]))
+        fig3.update_layout(title="Diversity: pairwise shape-similarity distribution",
+                           xaxis_title="similarity / distance bucket", yaxis_title="pair count")
+        parts.append(_frag(fig3))
+        if unverified_provenance:
+            parts.append(f'<div class="fairness-restricted"><b>Provenance unverified.</b> '
+                         f'{_esc(validation.get("reason", ""))}</div>')
+        eff_dim = diversity.get("effective_dimensionality")
+        near_coll = diversity.get("near_collision_fraction")
+        parts.append(_note(
+            f"Equal-frequency histogram of pairwise shape-similarity scores over "
+            f"{card.get('composition', {}).get('n_series')} series "
+            f"(redundancy fraction {matching.get('redundancy_fraction')}). "
+            f"Effective dimensionality {eff_dim} of {report.get('features', {}).get('n_features')} "
+            f"catch22/24 features; near-collision fraction {near_coll}.",
+            "Computed by `benchmark_validation` in **catch22 feature space, never "
+            "on UMAP coordinates** (`CLAUDE.md` sec 5's single most important rule "
+            "for this package) -- distances here are the real diversity measurement, "
+            "unlike Figure 4 below." + (
+                " This particular validation report's provenance is UNVERIFIED "
+                "(item C1.3) -- it is matched to this corpus by configured path "
+                "only, not by a cross-checked digest, so it may in principle "
+                "describe a different corpus than the one this run actually used."
+                if unverified_provenance else ""),
+            "A high redundancy fraction can be a true finding, not a defect -- e.g. "
+            "many pure-seasonal series sharing one period differ only in noise and "
+            "are legitimately near-duplicate in shape. Read this figure alongside "
+            "effective dimensionality, never alone."))
+    elif val_ok:
+        parts.append('<p class="figcap">Validation report available, but carries no bucketed '
+                     'similarity histogram to render.</p>')
+    else:
+        parts.append(f'<div class="fairness-restricted">Diversity: not available '
+                     f'({_esc(validation.get("reason", "no validation report configured"))}).</div>')
+
+    # --- Figure 4: feature-space map (degraded panel, not a re-plot) ----
+    umap_path = None
+    vr_path = getattr(cfg.corpus, "validation_report", "") or ""
+    if vr_path:
+        cand = Path(vr_path).parent / "feature_space_3d.html"
+        if cand.exists():
+            umap_path = str(cand)
+    parts.append(
+        '<div class="figcap-panel"><p class="figcap">Feature-space map: '
+        + (f'a standalone interactive 3-D UMAP projection exists alongside this '
+           f'corpus’s validation report at <code>{_esc(umap_path)}</code>.'
+           if umap_path else
+           'no standalone 3-D UMAP artifact was found next to this run’s '
+           'validation report (or none is configured).')
+        + '</p></div>')
+    parts.append(_note(
+        "This section deliberately does not re-plot or re-derive a UMAP embedding "
+        "-- `validation_report.json` persists only aggregated quantiles and bucket "
+        "histograms, never raw per-sequence coordinates, and item C1.2 forbids "
+        "this package from importing `benchmark_validation` to regenerate one.",
+        "Open the linked standalone HTML file directly (`benchmark_validation`'s "
+        "own `plot_embedding` output) for the interactive 3-D view, colored by "
+        "generator.",
+        "Three things this repo insists on stating every time UMAP is mentioned "
+        "(`CLAUDE.md` sec 5): diversity is measured in catch22 feature space, "
+        "never on UMAP coordinates (Figure 3 above is the real measurement); UMAP "
+        "distorts global distances and cluster sizes, so gaps in the 3-D plot are "
+        "not quantitative; and this is a CORPUS feature-space embedding, a "
+        "different object entirely from an activation-space embedding of a "
+        "model's internals (sec 22.8's L4 clustering section)."))
+
+    # --- Figure 5: leakage --------------------------------------------
+    state = audit_block.get("state")
+    audit = audit_block.get("audit") or {}
+    gate = audit.get("gate") or {}
+    if state == "measured" and (gate.get("accepted_distance_quantiles") or gate.get("rejected_distance_quantiles")):
+        acc_q = gate.get("accepted_distance_quantiles") or {}
+        rej_q = gate.get("rejected_distance_quantiles") or {}
+        keys = [k for k in ("min", "p01", "p05", "p50") if k in acc_q or k in rej_q]
+        fig5 = go.Figure()
+        if acc_q:
+            fig5.add_trace(go.Bar(name="accepted", x=keys, y=[acc_q.get(k) for k in keys],
+                                  marker_color=_COLORS["a"]))
+        if rej_q:
+            fig5.add_trace(go.Bar(name="rejected", x=keys, y=[rej_q.get(k) for k in keys],
+                                  marker_color=_COLORS["accent"]))
+        thr = gate.get("threshold")
+        if thr is not None:
+            fig5.add_hline(y=thr, line_dash="dash", annotation_text="gate threshold")
+        fig5.update_layout(title="Leakage gate: accepted vs. rejected distance quantiles",
+                           yaxis_title=f"distance ({gate.get('metric', 'dtw')})", barmode="group")
+        parts.append(_frag(fig5))
+        near_dup = audit.get("near_duplicates") or {}
+        parts.append(_note(
+            f"Distance-to-nearest-reference quantiles for series the gate accepted "
+            f"vs. rejected, against {gate.get('reference_n_series')} real reference "
+            f"series from {gate.get('references')}. "
+            f"{gate.get('n_rejected')} of {gate.get('n_candidates')} candidates rejected "
+            f"({near_dup.get('n_pairs_across_splits', 0)} cross-split near-duplicate "
+            "pairs).",
+            "A series below the gate threshold is rejected as too close to a real "
+            "reference series (`CLAUDE.md` sec 4.4). Only aggregated quantiles are "
+            "persisted, not the raw per-candidate distance array, so this is a "
+            "quantile comparison, not a full histogram.",
+            "This gate measures INSTANCE-level leakage only (an exact copy of a "
+            "reference series) -- it says nothing about DISTRIBUTIONAL leakage "
+            "(a model having seen data *shaped like* this), which is carried by "
+            "construction for every real-derived-tier sample and cannot be audited "
+            "by this or any other check (`CLAUDE.md` sec 4.1)."))
+    elif state == "not_checked":
+        parts.append(
+            '<div class="fairness-restricted"><b>Leakage: NOT CHECKED.</b> '
+            f'{_esc(audit_block.get("reason", ""))}</div>')
+    else:
+        parts.append(
+            '<div class="fairness-restricted"><b>Leakage: NOT RECORDED.</b> '
+            f'{_esc(audit_block.get("reason", "no sealed manifest for this corpus"))}</div>')
+
+    # --- Trust ladder ------------------------------------------------
+    trust_rows = derived.corpus_trust_rows(card)
+    body = ""
+    for v in trust_rows:
+        cls = _VERDICT_CLASS.get(v.verdict, "v-none")
+        detail_html = ""
+        if v.detail:
+            try:
+                detail_html = _table(pd.DataFrame(v.detail))
+            except (ValueError, TypeError):
+                detail_html = ""
+        note_html = f'<p class="sc-note">{_esc(v.note)}</p>' if v.note else ""
+        body += (
+            f'<tr class="sc-row"><td class="sc-measure">{_esc(v.measure)}</td>'
+            f'<td class="sc-value">{_fmt_measure_value(v.value, v.unit)}</td>'
+            f'<td class="sc-ref">{_fmt_measure_value(v.reference, v.unit)}'
+            f'<br><span class="sc-reflabel">{_esc(v.reference_label)}</span></td>'
+            f'<td class="sc-rule"><code>{_esc(v.rule.text)}</code></td>'
+            f'<td class="sc-verdict {cls}">{_esc(v.verdict)}</td></tr>')
+        if detail_html or note_html:
+            body += (f'<tr class="sc-detailrow"><td colspan="5">'
+                     f'<details class="note"><summary>What does this mean?</summary>'
+                     f'<div class="note-body">{note_html}{detail_html}</div>'
+                     f'</details></td></tr>')
+        findings.append(Finding(
+            claim_id=_next_claim_id("corpus"), stage="corpus", evidence_class="descriptive",
+            text=f"Corpus trust — {v.measure}: {_fmt_measure_value(v.value, v.unit)} "
+                f"vs. {v.reference_label} ({_fmt_measure_value(v.reference, v.unit)}) — {v.verdict}.",
+            plain=f"{v.measure}: {v.verdict}.",
+            registered=False))
+    parts.append(
+        '<h4>Corpus trust ladder</h4>'
+        '<table class="tbl scorecard"><thead><tr>'
+        '<th>Claim</th><th>Measured</th><th>Compared against</th>'
+        '<th>Rule</th><th>Verdict</th></tr></thead>'
+        f'<tbody>{body}</tbody></table>')
+    parts.append(_note(
+        "Seven claims about the corpus itself (ROADMAP.md sec 34 item C2.3), each "
+        "derived from `corpus/card.json` -- never a model result.",
+        "`not_recorded` means no audit ever ran; `not_checked` means the leakage "
+        "gate ran with zero reference series (`--references none`) so every "
+        "candidate passed trivially -- NOT the same as a corpus checked and found "
+        "clean. `inconclusive` and `not_verifiable` rows are claims nothing in this "
+        "repo can currently resolve, rendered rather than omitted.",
+        "A `measured`/`clears` verdict is evidence the corpus is sound by the "
+        "checks that exist here -- it is not proof no other check would find a "
+        "problem, and rows 4 and 7 are permanently open questions this section "
+        "states rather than answers."))
+
+    return "".join(parts)
+
+
 def _sec_fairness(cfg: PipelineConfig, run_dir: Path) -> str:
     """The fairness card (ROADMAP.md sec 18 F9): every measured asymmetry
     between the two models in this run, in one place, rendered before any
@@ -7730,6 +8082,48 @@ def _sec_internals(run_dir: Path, model_colors: dict, findings: list) -> str:
     return inner
 
 
+def _confirm_provenance_block(conf: dict) -> str:
+    """Which corpus (and which of possibly several private epochs, `CLAUDE.md`
+    sec 4.5) this confirmation actually consumed (`ROADMAP.md` sec 34 item B5).
+
+    Degrades to a stated reason rather than a bare omission when the
+    corpus has no sealed manifest (`smoke`/unverified `jsonl` sources) --
+    the failure mode B5's own text names: report that the confirmation is
+    mechanically real but distributionally identical to dev, per `CLAUDE.md`
+    sec 6.7's own warning, which nothing previously surfaced per-run.
+    A pre-B5 `confirmation.json` (no `private_manifest_reason` key at all)
+    renders the same "not recorded" line a missing manifest does -- there is
+    no way to tell the two apart from the artifact alone, and treating an
+    absent key as equivalent to "checked, found absent" is the honest
+    reading (`CLAUDE.md` sec 2.5).
+    """
+    reason = conf.get("private_manifest_reason")
+    if reason is None and "private_manifest_reason" not in conf:
+        reason = "this run predates ROADMAP.md sec 34 item B5 -- no corpus provenance recorded"
+    if reason:
+        return (f'<p class="blurb"><i>Corpus provenance not recorded: {reason}.</i> '
+                f'A confirmation with no sealed manifest is mechanically real but may be '
+                f'distributionally identical to the dev corpus (CLAUDE.md sec 6.7) -- read '
+                f'the verdicts below with that in mind.</p>')
+    digest = conf.get("private_corpus_digest")
+    epoch = conf.get("private_manifest_epoch")
+    visibility = conf.get("private_visibility")
+    dev_epoch = conf.get("dev_manifest_epoch")
+    audit = conf.get("private_audit") or {}
+    line = (f'<p class="blurb">Private corpus: visibility <b>{visibility}</b>, epoch '
+           f'<b>{epoch}</b>, digest <code>{str(digest)[:16]}</code>. Leakage audit: '
+           f'<b>{audit.get("state", "unknown")}</b>')
+    if audit.get("reason"):
+        line += f' ({audit["reason"]})'
+    line += '.'
+    if epoch is not None and dev_epoch is not None and epoch != dev_epoch:
+        line += (f' <b>Dev corpus is a different epoch ({dev_epoch})</b> -- legitimate under '
+                 f'sec 4.5\'s regeneration protocol, but this confirmation is not against the '
+                 f'same epoch the dev findings above were explored on.')
+    line += '</p>'
+    return line
+
+
 def _sec_confirm(run_dir: Path, findings: list, n_exploratory: int) -> str:
     """Private-benchmark verdicts: multiplicity ledger, hypothesis table, overall test, CKA replication."""
     conf = load_json(run_dir / "confirm" / "confirmation.json")
@@ -7737,6 +8131,7 @@ def _sec_confirm(run_dir: Path, findings: list, n_exploratory: int) -> str:
              f'series, tested once at α={conf["alpha"]} (Holm-corrected across '
              f'hypotheses). Everything above this section is exploratory; this is '
              f'the confirmatory evidence.</p>')
+    inner += _confirm_provenance_block(conf)
     if conf.get("repeated_look"):
         # A second look is still worth rendering -- it just is not the thing
         # this section otherwise claims to be, and nothing else in the
@@ -7802,6 +8197,12 @@ def _sec_confirm(run_dir: Path, findings: list, n_exploratory: int) -> str:
                                       for h in not_replicable]))))
     tests = conf.get("tests", [])
     if tests:
+        from ..analysis.power import format_mde_sentence
+
+        def _mde_private_cell(t: dict) -> str:
+            mde = t.get("mde_private")
+            return format_mde_sentence(mde) if isinstance(mde, dict) else ""
+
         rows = []
         for t in tests:
             verdict = "untestable" if t["status"] == "untestable" else \
@@ -7810,7 +8211,8 @@ def _sec_confirm(run_dir: Path, findings: list, n_exploratory: int) -> str:
                          "dev ratio": t.get("dev_ratio"),
                          "private ΔMASE": t.get("mean"),
                          "lo": t.get("lo"), "hi": t.get("hi"),
-                         "p (Holm)": t.get("p_holm"), "verdict": verdict})
+                         "p (Holm)": t.get("p_holm"), "verdict": verdict,
+                         "private MDE": _mde_private_cell(t)})
         confirmed = sum(1 for t in tests if t["confirmed"])
         won = [t["family"] for t in tests if t["confirmed"]]
         lost = [t["family"] for t in tests
@@ -7832,6 +8234,20 @@ def _sec_confirm(run_dir: Path, findings: list, n_exploratory: int) -> str:
                      "excludes zero — a direction that merely repeats is not enough."
                      "</p>" if verdict_bits else "")
                   + _table(pd.DataFrame(rows)))
+        inner += _note(
+            "`private MDE` (`ROADMAP.md` §34 A1.3): the smallest true effect "
+            "this claim's private-split sample size could have caught, "
+            "computed BEFORE this test spent the private data — the "
+            "pre-registration half of the power question.",
+            "A claim marked 'not confirmed' beside a large or 'not testable' "
+            "MDE was never in a position to confirm, regardless of how the "
+            "test came out — the private split simply wasn't big enough (or "
+            "the Holm correction across this many claims too strict) to "
+            "detect an effect of that size. That is a different, weaker "
+            "kind of non-confirmation than one with a small MDE.",
+            "Computed independently of `dev ratio` — a claim can have a "
+            "large dev effect and still carry a large private MDE if the "
+            "private split has far fewer series in that family than dev did.")
         # `append`, not the old `insert(0, ...)` (sec 15 A15) -- every
         # finding added before this section runs gets tagged "exploratory"
         # by index position (see `run_report`'s boundary capture); inserting
@@ -8039,9 +8455,9 @@ tr.cov-skipped td{color:var(--muted)}
   border-radius:999px;cursor:pointer}
 .detail-toggle button.active{background:var(--ink);color:var(--panel);border-color:var(--ink)}
 .detail-toggle .dt-hint{align-self:center;color:var(--muted);margin-left:4px}
-/* ROADMAP.md sec 21 J4: Headline mode keeps only the fairness card, L0, and
-   confirmed (registered) findings -- everything else is the evidence this
-   repo's own doctrine says never to read past a headline alone. */
+/* Headline mode keeps only the fairness card, L0, and confirmed
+   (registered) findings -- everything else is the evidence this report's
+   own doctrine says never to read past a headline alone. */
 body[data-detail="headline"] section:not(.sec-headline){display:none}
 body[data-detail="headline"] .findings li:not(.registered){display:none}
 body[data-detail="headline"] .fgroup-block:not(:has(li.registered)){display:none}
@@ -8118,12 +8534,12 @@ tables, and figures in the sections further down this report. Expand to read the
 {% endif %}
 <footer>generated by tsfm_lens · sections render only for stages that ran</footer>
 <script>
-// ROADMAP.md sec 21 J4: three-position progressive disclosure. Headline
-// hides every section but Fairness/L0/Confirm (CSS, see body[data-detail=...]
-// rules above) and every non-registered finding; Methods expands every
-// collapsed <details> (note/coverage/config) so nothing needs re-authoring.
-// Default state is Standard -- this report unchanged -- so no existing
-// reader's experience moves unless they click a button.
+// Three-position progressive disclosure. Headline hides every section but
+// Fairness/L0/Confirm (CSS, see body[data-detail=...] rules above) and
+// every non-registered finding; Methods expands every collapsed <details>
+// (note/coverage/config) so nothing needs re-authoring. Default state is
+// Standard -- this report unchanged -- so no existing reader's experience
+// moves unless they click a button.
 function tsfmSetDetail(level) {
   document.body.setAttribute('data-detail', level);
   document.querySelectorAll('.detail-toggle button').forEach(function (b) {

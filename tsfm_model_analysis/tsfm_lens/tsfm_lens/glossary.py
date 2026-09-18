@@ -157,6 +157,51 @@ GLOSSARY: dict = {
             "`intermittent_bursts`, …); per-family statistics are the unit multiple-"
             "comparison correction is applied across."),
         where="Behavioral profile, Representational geometry's per-family CKA, Activation clusters."),
+    "leakage": Term(
+        term="Leakage (instance-level vs. distributional)",
+        definition=(
+            "Two different failures a benchmark can have: instance-level leakage is "
+            "the exact series having been seen in a model's training data, which the "
+            "leakage gate audits directly against real reference series; "
+            "distributional leakage is only *that kind* of data having been seen, "
+            "which is carried by construction for every `real_derived`-tier sample "
+            "and cannot be audited by this or any other check."),
+        where="The corpus card's leakage-gate figure and trust ladder."),
+    "epoch": Term(
+        term="Epoch (corpus)",
+        definition=(
+            "A fresh, non-overlapping seed range used to mint a brand-new private "
+            "split when an existing one is suspected of having leaked, so a peeked-at "
+            "private corpus is regenerated rather than reused."),
+        where="The corpus card's header line; private benchmark confirmation."),
+    "redundancy-fraction": Term(
+        term="Redundancy fraction",
+        definition=(
+            "The share of all pairwise series comparisons — by cross-correlation or "
+            "banded DTW shape matching, after z-normalization — that fall below a "
+            "near-duplicate distance threshold; a high value can be a true finding "
+            "rather than a defect, e.g. many pure-seasonal series sharing one period "
+            "and differing only in noise."),
+        where="The corpus card's diversity figure, read alongside effective dimensionality."),
+    "near-collision": Term(
+        term="Near-collision fraction",
+        definition=(
+            "In the catch22 feature space — never on UMAP coordinates — the fraction "
+            "of series whose nearest neighbor sits closer than a fixed threshold; a "
+            "distinct diversity signal from the shape-matching redundancy fraction, "
+            "since the two are computed on different representations and never "
+            "merged until the report."),
+        where="The corpus card's diversity figure."),
+    "catch22": Term(
+        term="catch22 (feature space)",
+        definition=(
+            "The 22 (or 24, adding mean/std) general-purpose time-series features "
+            "`benchmark_validation` computes per series and robustly scales (with "
+            "winsorization against outlier swamping) before computing diversity, "
+            "effective dimensionality, or near-collisions on them — the space every "
+            "diversity number in this report is measured in, never the UMAP "
+            "coordinates used only for the companion plot."),
+        where="The corpus card's diversity and feature-space-map figures."),
     "tier": Term(
         term="Tier (`synthetic` / `real_derived`)",
         definition=(

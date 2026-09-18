@@ -54,6 +54,16 @@ Three design points are load-bearing:
 
 Four fixed questions per stage (`ROADMAP.md` sec 21 J2), generated from `tsfm_lens/stage_docs.py` by `render_stage_docs.py` -- edit that file, not this section, and re-run the script to update it.
 
+### `corpus`
+
+**Question.** Can the benchmark corpus itself be trusted -- is it free of copied reference series, free of near-duplicates, and diverse enough that a model can't do well here just by memorizing one shape?
+
+**How.** Reads the sealed corpus's own manifest (ROADMAP.md sec 34 item B1's audit block, when present) and, optionally, an existing `benchmark_validation` report, and renders both as a fixed trust ladder of named claims -- never recomputes a leakage or diversity check itself, and never imports `benchmark_validation`.
+
+**Good vs. bad result.** Good: every trust-ladder row reads `measured` with a real reference and a stated verdict. Bad: a row reads `not_checked` -- the corpus was built with `--references none`, so every candidate passed the leakage gate trivially, which is NOT the same as a corpus that was checked and found clean -- or `not_recorded`, meaning no audit ever ran at all.
+
+**What it cannot tell you.** Two rows are always unresolvable and are rendered that way rather than omitted: whether the private split's distribution genuinely matches the dev split's (no mechanism in this repo compares them), and whether any model being compared was trained on data shaped like this corpus (no audit anywhere can inspect a checkpoint's own training data). A `measured` row is evidence the corpus is sound by the checks that exist -- it is not proof no other check would find a problem.
+
 ### `extract`
 
 **Question.** Has each model's internal computation actually been captured, and lined up correctly with real time, so every later stage has something trustworthy to work from?
@@ -242,6 +252,10 @@ The recurring vocabulary of this repo's report, one sentence each (`ROADMAP.md` 
 
 *Where it appears:* The fairness card; Cost and capacity; auto-appended to depth-located findings.
 
+**catch22 (feature space).** The 22 (or 24, adding mean/std) general-purpose time-series features `benchmark_validation` computes per series and robustly scales (with winsorization against outlier swamping) before computing diversity, effective dimensionality, or near-collisions on them — the space every diversity number in this report is measured in, never the UMAP coordinates used only for the companion plot.
+
+*Where it appears:* The corpus card's diversity and feature-space-map figures.
+
 **Corruption sensitivity fingerprint.** A layers × corruptions matrix of how much each layer's activations move when a specific structural property is destroyed in the input, forming a per-model signature whose *shape across depth* is what gets compared across models — never the raw magnitudes, which are not calibrated between corruptions.
 
 *Where it appears:* Perturbation & patching's sensitivity heatmap and cross-model agreement.
@@ -265,6 +279,10 @@ The recurring vocabulary of this repo's report, one sentence each (`ROADMAP.md` 
 **Effective dimensionality.** The participation ratio of a representation's PCA spectrum — roughly, how many directions actually carry variance — used as a descriptive profile of where a model expands or compresses, not as a quality score.
 
 *Where it appears:* Model internals' per-layer depth profile.
+
+**Epoch (corpus).** A fresh, non-overlapping seed range used to mint a brand-new private split when an existing one is suspected of having leaked, so a peeked-at private corpus is regenerated rather than reused.
+
+*Where it appears:* The corpus card's header line; private benchmark confirmation.
 
 **Evidence class.** The rung a claim sits on — geometric, linearly-translatable, causal-within-model, descriptive, illustrative, or confirmatory — stated for every finding so that a confident-looking chart cannot be read as stronger evidence than its method supports.
 
@@ -298,6 +316,10 @@ The recurring vocabulary of this repo's report, one sentence each (`ROADMAP.md` 
 
 *Where it appears:* Stitching probes; the quantity every reported gain is measured against.
 
+**Leakage (instance-level vs. distributional).** Two different failures a benchmark can have: instance-level leakage is the exact series having been seen in a model's training data, which the leakage gate audits directly against real reference series; distributional leakage is only *that kind* of data having been seen, which is carried by construction for every `real_derived`-tier sample and cannot be audited by this or any other check.
+
+*Where it appears:* The corpus card's leakage-gate figure and trust ladder.
+
 **Level.** Mean value of the forecast -- its overall height -- a higher value raises the whole forecast.
 
 *Where it appears:* Sparse features (SAE) -- the causal channel battery's evidence columns, and every channel name rendered from it.
@@ -321,6 +343,10 @@ The recurring vocabulary of this repo's report, one sentence each (`ROADMAP.md` 
 **Near horizon.** Shape of the first part of the forecast -- the steps just after the context ends -- a higher value changes the near-term forecast's shape by a larger amount.
 
 *Where it appears:* Sparse features (SAE) -- the causal channel battery's evidence columns, and every channel name rendered from it.
+
+**Near-collision fraction.** In the catch22 feature space — never on UMAP coordinates — the fraction of series whose nearest neighbor sits closer than a fixed threshold; a distinct diversity signal from the shape-matching redundancy fraction, since the two are computed on different representations and never merged until the report.
+
+*Where it appears:* The corpus card's diversity figure.
 
 **Necessity.** Whether ablating a candidate head set on an otherwise-clean forecast damages it toward the fully-corrupted level — the complement of sufficiency, and required alongside it because either alone is a weaker claim than both together.
 
@@ -349,6 +375,10 @@ The recurring vocabulary of this repo's report, one sentence each (`ROADMAP.md` 
 **Reach.** Whether a patched-in intervention (a feature direction, a layer's activations) actually changes anything the forecast head reads, checked before any effect is trusted — confirmed by two controls: patching a layer into itself must move the forecast by exactly 0.0, and patching an earlier layer into a later read must move it by something nonzero; a clean, flat, entirely plausible-looking curve can still mean the intervention never reached anywhere the model reads (`CLAUDE.md` sec 11.42).
 
 *Where it appears:* SAE causal channel testing (Component A).
+
+**Redundancy fraction.** The share of all pairwise series comparisons — by cross-correlation or banded DTW shape matching, after z-normalization — that fall below a near-duplicate distance threshold; a high value can be a true finding rather than a defect, e.g. many pure-seasonal series sharing one period and differing only in noise.
+
+*Where it appears:* The corpus card's diversity figure, read alongside effective dimensionality.
 
 **Registered hypothesis.** A dev-corpus finding written down *before* the private corpus is opened; only registered hypotheses can be confirmed, and a finding discovered afterwards cannot be rescued by the confirmation stage no matter how strong it looks.
 

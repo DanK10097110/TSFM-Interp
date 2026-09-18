@@ -1,17 +1,22 @@
 """Adapter registry and the lazy-loading ModelHub.
 
 Register a new model by adding one entry to ADAPTERS; everything downstream
-consumes the ModelAdapter interface only.
+consumes the ModelAdapter interface only. Contributed adapters (`ROADMAP.md`
+sec 34.6 Item E1) live in `models/contrib/` instead and never touch this
+dict directly -- they are discovered into `CONTRIB_REGISTRY` below, by
+scanning source text rather than importing it, so a heavy or broken contrib
+file cannot affect `import tsfm_lens.models` for anyone else.
 """
 
 from __future__ import annotations
 
-from typing import Dict
+from typing import Dict, List, Tuple
 
 import torch
 
 from ..config import DataConfig, ModelConfig
 from ..utils import log
+from . import contrib
 from .base import ModelAdapter
 from .mock import (MockBlackBoxAdapter, MockEncDecAdapter, MockPatchAdapter,
                    MockStepAdapter, MockWaveAdapter)
@@ -44,12 +49,67 @@ def _register_optional() -> None:
 _register_optional()
 
 
+# `CONTRIB_REGISTRY`: name -> (dotted_module_path, class_name), discovered by
+# AST scan only (`contrib.discover_contrib_adapters`, no import). `errors`
+# from that scan, PLUS any contrib name colliding with a name already in
+# ADAPTERS above (checked here, since only this module knows the built-in
+# names), land in `discovery_errors` -- printed by `run.py --doctor`
+# (ROADMAP.md sec 34.6 E1.2: silent skipping is forbidden).
+CONTRIB_REGISTRY: Dict[str, Tuple[str, str]] = {}
+discovery_errors: List[dict] = []
+
+
+def _discover_contrib() -> None:
+    registry, errors = contrib.discover_contrib_adapters()
+    discovery_errors.extend(errors)
+    for name, (module_path, class_name) in registry.items():
+        if name in ADAPTERS:
+            filename = module_path.rsplit(".", 1)[-1] + ".py"
+            log.warning("contrib adapter '%s' declared in %s collides with the built-in "
+                       "adapter of the same name -- rename its ADAPTER_NAME", name, filename)
+            discovery_errors.append({
+                "file": filename, "collides_with": name,
+                "error": f"ADAPTER_NAME '{name}' collides with a built-in adapter "
+                        f"registered by tsfm_lens.models -- rename it"})
+            continue
+        CONTRIB_REGISTRY[name] = (module_path, class_name)
+    for err in errors:
+        log.warning("contrib adapter discovery: %s: %s", err["file"], err["error"])
+
+
+_discover_contrib()
+
+
 def build_adapter(mcfg: ModelConfig, data_cfg: DataConfig,
                   device: torch.device, dtype: torch.dtype) -> ModelAdapter:
-    """Construct (without loading) the adapter named in a model config."""
-    if mcfg.adapter not in ADAPTERS:
-        raise ValueError(f"unknown adapter '{mcfg.adapter}'; available: {sorted(ADAPTERS)}")
-    return ADAPTERS[mcfg.adapter](mcfg, data_cfg, device, dtype)
+    """Construct (without loading) the adapter named in a model config.
+
+    Checks the built-in registry first, then contrib (by lazy import, which
+    is the first point a contrib file's own top-level code -- and any heavy
+    library it imports -- actually runs). A name that collided with a
+    built-in at discovery time was excluded from `CONTRIB_REGISTRY`, so it
+    raises here naming both, rather than silently resolving to whichever one
+    registration order happened to favor (`CLAUDE.md` sec 11.34).
+    """
+    if mcfg.adapter in ADAPTERS:
+        return ADAPTERS[mcfg.adapter](mcfg, data_cfg, device, dtype)
+    if mcfg.adapter in CONTRIB_REGISTRY:
+        module_path, class_name = CONTRIB_REGISTRY[mcfg.adapter]
+        try:
+            cls = contrib.import_contrib_class(module_path, class_name)
+        except Exception as exc:
+            raise ValueError(
+                f"contrib adapter '{mcfg.adapter}' ({module_path}.{class_name}) failed to "
+                f"import: {type(exc).__name__}: {exc}") from exc
+        return cls(mcfg, data_cfg, device, dtype)
+    collision = next((e for e in discovery_errors if e.get("collides_with") == mcfg.adapter), None)
+    if collision is not None:
+        raise ValueError(
+            f"adapter name '{mcfg.adapter}' collides with a built-in adapter of the same "
+            f"name, declared by contrib file {collision['file']} -- rename the contrib "
+            f"ADAPTER_NAME to something else")
+    raise ValueError(f"unknown adapter '{mcfg.adapter}'; available: "
+                     f"{sorted(list(ADAPTERS) + list(CONTRIB_REGISTRY))}")
 
 
 class ModelHub:

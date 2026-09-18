@@ -302,3 +302,15 @@ confirm:
   max_series: 800
   require_seal: true
   alpha: 0.05
+
+# ROADMAP.md sec 34 item C1/C2 (2026-09-17): the corpus card and report
+# section, added after this run's own config was first written -- this
+# points it at the already-computed benchmark_validation report for
+# benchmark_large's public_dev split. That report predates item C1.3's
+# writer change (no corpus_digest field), so the card must render it under
+# the explicit "provenance unverified" transitional label rather than
+# either trusting it silently or refusing it -- a real exercise of that
+# specific code path, not just the smoke config's synthetic-corpus one.
+corpus:
+  enabled: true
+  validation_report: ../../validation_large/validation_report.json  # relative to tsfm_lens/

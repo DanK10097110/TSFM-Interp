@@ -83,6 +83,8 @@ def build_report(
     diversity_by_group: dict[str, Any] | None = None,
     diversity_by_group_key: str | None = None,
     redundancy_by_group_result: dict[str, Any] | None = None,
+    corpus_digest: str | None = None,
+    split_role: str | None = None,
 ) -> dict[str, Any]:
     """Combine all stage outputs into one serialisable dictionary.
 
@@ -95,10 +97,28 @@ def build_report(
     ``diversity_metrics_by_group``) and ``redundancy_by_group_result`` (see
     ``redundancy_by_group``) are the per-group counterparts of the global
     ``diversity``/``matching`` numbers -- pass them to surface a subgroup that
-    has collapsed even though the corpus-wide numbers look fine.
+    has collapsed even though the corpus-wide numbers look fine. ``corpus_digest``
+    (ROADMAP.md sec 34 item C1.3) is the sealed corpus's own manifest
+    ``global_digest``, when known -- carried through so a downstream
+    ``tsfm_lens`` corpus card can refuse to pair this report with a
+    different corpus that happens to share its file path. ``None`` for a
+    corpus with no sealed manifest (e.g. ``--demo`` mode); a report with no
+    digest is not proof of tampering, only that nothing could be checked.
+
+    ``split_role`` (ROADMAP.md sec 34 item B2.1) -- pass ``"private"`` when
+    validating the sealed private corpus. This records ``model_free: true``
+    (a statement, not a new computation -- see ``cross_split.py``'s module
+    docstring for the argument that nothing in this package ever involves a
+    model) and redacts the one field in this report that would otherwise
+    carry private sample ids: ``matching.top_redundant_pairs``. Every other
+    field here is already an aggregate statistic (a fraction, a count, a
+    bucketed histogram) and needs no redaction. ``"public"``/``None``/
+    anything else leaves the report exactly as it has always been --
+    existing callers are unaffected.
     """
     report: dict[str, Any] = {
         "n_sequences": diversity.n_sequences,
+        "corpus_digest": corpus_digest,
         "matching": {
             "method": match.method,
             "redundancy_fraction": round(match.redundancy_fraction, 5),
@@ -133,6 +153,11 @@ def build_report(
         report["diversity_by_group"] = {"by": diversity_by_group_key or "unknown", "groups": _by_group_summary(diversity_by_group)}
     if redundancy_by_group_result is not None:
         report["redundancy_by_group"] = redundancy_by_group_result
+    if split_role == "private":
+        report["split_role"] = "private"
+        report["model_free"] = True
+        report["per_sample_identifiers_omitted"] = True
+        report["matching"]["top_redundant_pairs"] = []
     return report
 
 

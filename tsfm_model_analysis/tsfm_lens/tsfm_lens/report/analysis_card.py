@@ -101,6 +101,11 @@ def build_analysis_card(run_dir: Path) -> dict:
             "n_replicable": confirm.get("n_replicable"),
             "alpha": confirm.get("alpha"),
             "n_private_series": confirm.get("n_private_series"),
+            # ROADMAP.md sec 34 item B5: which private corpus (sec 4.5 means
+            # there can be more than one epoch of it) this confirmation
+            # actually consumed -- beside the dev-side `environment.
+            # corpus_digest` above, which was already on this card.
+            "private_corpus_digest": confirm.get("private_corpus_digest"),
         } if confirm else None,
         "report_coverage_summary": coverage.get("summary"),
         "findings_total": n_findings,
@@ -202,6 +207,10 @@ def render_analysis_card_markdown(card: dict) -> str:
                      f"sealed private corpus (alpha={confirm.get('alpha')}, "
                      f"n={confirm.get('n_private_series')} private series). This is the gold-standard "
                      "evidence — `CLAUDE.md` §6.7.")
+        digest = confirm.get("private_corpus_digest")
+        lines.append(f"- Private corpus digest: `{digest}`" if digest else
+                     "- Private corpus digest: _not recorded (no sealed manifest at the "
+                     "confirm path -- CLAUDE.md sec 4.5, ROADMAP.md sec 34 item B5)_")
     else:
         lines.append("_Not available — the `confirm` stage did not run for this run (exploratory-only "
                      "findings below are dev-corpus hypotheses, not confirmed results)._")

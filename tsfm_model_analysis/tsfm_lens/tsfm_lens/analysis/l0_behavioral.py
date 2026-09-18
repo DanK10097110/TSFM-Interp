@@ -18,8 +18,17 @@ from ..data import BenchmarkData
 from ..extraction.store import ActivationStore
 from ..utils import batch_slices, log, sample_rows, save_json
 from .calibration import reliability_from_own_width, summarize_calibration
-from .stats import (_mase_scale, holm, mae_over_mad, mase as _mase,
+from .power import mde_paired_bootstrap
+from .stats import (_mase_scale, dominant_period, holm, mae_over_mad, mase as _mase,
                     mase_pinball_by_horizon, mase_reliability, mean_ci, paired_bootstrap)
+
+# Reserved namespace for L0's no-skill reference forecasts (`ROADMAP.md` §34
+# item A3). `config.py::PipelineConfig.validate` rejects any real model
+# config using this prefix, so these two names can never collide with an
+# adapter -- see A3.3's "must not enter any comparison set" requirement,
+# enforced by filtering them out of `_summarize` before any pairing logic
+# runs, not by hoping no consumer ever groups by the wrong column.
+NO_SKILL_MODELS = ("__naive__", "__seasonal_naive__")
 
 
 def run_l0(cfg: PipelineConfig, hub, data: BenchmarkData, store: ActivationStore) -> None:
@@ -54,9 +63,11 @@ def run_l0(cfg: PipelineConfig, hub, data: BenchmarkData, store: ActivationStore
                 cfg.l0.scale, cfg.l0.noise_floor_repeats, data.meta["family"].to_numpy()[nf_rows])
         if not cfg.run.keep_models_loaded:
             hub.release(mcfg.name)
+    frames.extend(_no_skill_frames(contexts, targets, data.horizon, cfg.l0.quantiles,
+                                   data.meta, cfg.l0.scale, cfg.l0.min_scale_frac))
     metrics = pd.concat(frames, ignore_index=True)
     metrics.to_parquet(out_dir / "metrics.parquet")
-    save_json(out_dir / "summary.json", _summarize(metrics, cfg))
+    save_json(out_dir / "summary.json", _summarize(metrics, cfg, noise_floor))
     if noise_floor:
         save_json(out_dir / "noise_floor.json", noise_floor)
     if calibration:
@@ -170,6 +181,123 @@ def _score(model: str, point: np.ndarray, quants: np.ndarray, contexts: np.ndarr
                          "smape": smape, "pinball": pinball})
 
 
+def _naive_forecast(contexts: np.ndarray, horizon: int) -> np.ndarray:
+    """Repeat the last observed context value across the whole horizon.
+
+    Always defined -- every series has a last context point -- so this
+    reference never carries an availability flag (`ROADMAP.md` §34 A3.1).
+    """
+    return np.repeat(contexts[:, -1:], horizon, axis=1)
+
+
+def _seasonal_naive_forecast(contexts: np.ndarray, horizon: int, min_lag: int = 4):
+    """Repeat the last full dominant period forward across the horizon.
+
+    Uses `stats.dominant_period` -- the same period estimate
+    `analysis/attention.py`'s periodicity taxonomy and `mase`'s own
+    `seasonal_naive` scale mode already use, so there is one definition of
+    "period" in the repo, not a second one computed here (`ROADMAP.md` §34
+    A3.1). Undefined per-series whenever the context is too short to hold
+    even one full period -- `dominant_period` itself would raise on such an
+    input (its search window `ac[min_lag:hi]` is empty below this length),
+    so the guard here is what turns that crash into a named, per-series
+    `available=False` rather than a stage failure. Never falls back to
+    naive-1 under the seasonal label for an unavailable series (§11.37's
+    absent-vs-bad distinction) -- the caller zeroes those rows' MASE to NaN.
+
+    `point` is built in `contexts.dtype`, not a hardcoded float64: real
+    corpora load as float32 (`data.py::BenchmarkData`), and a reference
+    forecast one dtype wider than every real model's own score columns
+    makes `pd.concat` in `run_l0` silently upcast the REAL rows' `mase`/
+    `smape`/`mae_over_mad` from float32 to float64 too -- which does not
+    change any value but does change every downstream `.mean()`/bootstrap
+    result at float-precision level, breaking A3.3's byte-identical
+    acceptance check. Found by running that exact check against a real run
+    rather than trusting the synthetic tests (`CLAUDE.md` sec 2.4) --
+    `_naive_forecast` never had this bug, since `np.repeat` on `contexts`
+    already inherits its dtype.
+    """
+    n, ctx_len = contexts.shape
+    point = np.zeros((n, horizon), dtype=contexts.dtype)
+    available = np.zeros(n, dtype=bool)
+    for i in range(n):
+        if ctx_len <= min_lag + 1:
+            continue
+        p = dominant_period(contexts[i], min_lag=min_lag)
+        if p <= 0 or p >= ctx_len:
+            continue
+        tail = contexts[i, -p:]
+        point[i] = np.tile(tail, int(np.ceil(horizon / p)))[:horizon]
+        available[i] = True
+    return point, available
+
+
+def _no_skill_frames(contexts: np.ndarray, targets: np.ndarray, horizon: int, quantiles: list,
+                     meta: pd.DataFrame, scale_mode: str, min_scale_frac: float) -> list:
+    """Score both reference forecasts with L0's own `_score` -- never a
+    re-implementation of MASE beside it (`ROADMAP.md` §34 A3.1). A degenerate
+    quantile forecast (every quantile level equal to the point value) is the
+    honest choice for a reference with no distributional estimate; it is
+    what a model that reports only a point forecast would also produce.
+
+    Zero forward passes -- both references are pure functions of `contexts`.
+    """
+    def _score_one(name: str, point: np.ndarray, available: np.ndarray = None) -> pd.DataFrame:
+        quants = np.repeat(point[:, :, None], len(quantiles), axis=2).astype(np.float32)
+        df = _score(name, point, quants, contexts, targets, quantiles, meta,
+                    scale_mode, min_scale_frac)
+        if available is not None:
+            df["mase"] = np.where(available, df["mase"], np.nan)
+            df["available"] = available
+        return df
+
+    sn_point, sn_available = _seasonal_naive_forecast(contexts, horizon)
+    return [_score_one(NO_SKILL_MODELS[0], _naive_forecast(contexts, horizon)),
+            _score_one(NO_SKILL_MODELS[1], sn_point, sn_available)]
+
+
+def _no_skill_reference_rows(metrics: pd.DataFrame) -> list:
+    """Per-family aggregates for the two reserved no-skill rows, computed and
+    returned SEPARATELY from the real-model pipeline so nothing here can leak
+    into the paired comparison machinery (`ROADMAP.md` §34 A3.3) -- callers
+    append this list directly onto `per_family`, the one place besides the
+    scorecard these rows are allowed to appear.
+
+    `mase_reliable` is a pure function of (context, target, scale_mode), so
+    it is identical across every model scored on the same series -- the
+    reserved rows inherit it unchanged, and a series excluded there is
+    excluded here too (`mase_n_excluded`). `seasonal_naive_available` is a
+    SEPARATE, additional exclusion specific to `__seasonal_naive__`: a family
+    where every series is too short for one full period reports `mase: None`
+    with `seasonal_naive_available: False`, never a naive-1 fallback under
+    the seasonal label.
+    """
+    reserved = metrics[metrics["model"].isin(NO_SKILL_MODELS)]
+    if reserved.empty:
+        return []
+    rows = []
+    for (model, family), grp in reserved.groupby(["model", "family"]):
+        reliable = grp[grp["mase_reliable"]]
+        row = {"model": model, "family": family,
+              "smape": float(grp["smape"].mean()), "pinball": float(grp["pinball"].mean()),
+              "mae_over_mad": float(grp["mae_over_mad"].mean()),
+              "mase_n_excluded": int((~grp["mase_reliable"]).sum())}
+        mase_vals = reliable["mase"].dropna()
+        row["mase"] = float(mase_vals.mean()) if len(mase_vals) else None
+        if "available" in grp.columns:
+            # `pd.concat` upcasts this column to float64 (True/False/NaN ->
+            # 1.0/0.0/NaN) whenever the sibling `__naive__` frame -- which
+            # never sets it -- is concatenated alongside it, so `~` on the
+            # raw column raises on the float dtype rather than negating a
+            # bool. Cast explicitly; found by running the test, not by
+            # reading the code (`CLAUDE.md` sec 2.4).
+            avail = grp["available"].astype(bool)
+            row["seasonal_naive_available"] = bool(avail.any())
+            row["seasonal_naive_n_excluded"] = int((~avail).sum())
+        rows.append(row)
+    return rows
+
+
 def _archetype_summary(metrics: pd.DataFrame, cfg: PipelineConfig) -> dict:
     """Per-archetype MASE ratio/Holm tests, finer-grained than `per_family` (sec 15 A9).
 
@@ -259,7 +387,36 @@ def _archetype_summary(metrics: pd.DataFrame, cfg: PipelineConfig) -> dict:
     return out
 
 
-def _summarize(metrics: pd.DataFrame, cfg: PipelineConfig) -> dict:
+def _resolve_pair_floor(noise_floor: dict, x_name: str, y_name: str, family: str):
+    """The noise floor a family's MDE should be read against (`ROADMAP.md` §34 A1.1).
+
+    An MDE in raw MASE units means nothing to a reader; the whole point of
+    `stats.in_floor_units` is that "0.9 noise floors" does. Reuses that
+    module's own resolution rule rather than a second one: a deterministic
+    model's own floor is exactly 0 (any nonzero delta against it is real
+    signal, never noise), and a stochastic model's floor is its measured
+    per-family repeat-run delta, falling back to the model-level one when a
+    family has no per-family entry. The pair's floor is the max of its two
+    models' floors -- the more conservative (harder-to-clear) of the two,
+    matching the convention `in_floor_units` already applies per model.
+    """
+    if not noise_floor:
+        return None
+    vals = []
+    for name in (x_name, y_name):
+        entry = noise_floor.get(name)
+        if not entry:
+            continue
+        if entry.get("deterministic"):
+            vals.append(0.0)
+            continue
+        fam_entry = entry.get("per_family", {}).get(family)
+        vals.append(float(fam_entry["mean"]) if fam_entry
+                    else float(entry.get("mase_abs_delta_mean", 0.0)))
+    return max(vals) if vals else None
+
+
+def _summarize(metrics: pd.DataFrame, cfg: PipelineConfig, noise_floor: dict = None) -> dict:
     """Family aggregates with CIs, plus Holm-corrected paired tests of the model pair.
 
     A family "strength" is claimed only when the paired per-series MASE
@@ -271,8 +428,25 @@ def _summarize(metrics: pd.DataFrame, cfg: PipelineConfig) -> dict:
     `mae_over_mad` use every row -- excluded counts are recorded in
     `mase_reliability` (corpus-wide) and each `per_family`/`per_archetype`
     row's `mase_n_excluded`, not silently absorbed into the mean.
+
+    `noise_floor` (`l0/noise_floor.json`'s in-memory form, `run_l0`'s own
+    dict of that name) is optional -- absent for any run with
+    `l0.noise_floor_repeats < 2` -- and every family's MDE degrades to
+    `mde_floor_units: None` rather than failing when it is.
+
+    `metrics` also carries the two reserved no-skill rows (`ROADMAP.md` §34
+    A3.2) -- they are extracted and set aside FIRST, before anything below
+    reads `metrics`, so every paired test, Holm correction, archetype
+    breakdown and the multiplicity ledger operate on exactly the real-model
+    rows a pre-A3 run would have produced (A3.3's "must not enter any
+    comparison set", verified as the acceptance criterion that this run's
+    `multiplicity` block is byte-identical to a pre-change run). They are
+    added back in only as extra rows of `per_family` below -- the one place
+    besides the scorecard (`report/derived.py::_no_skill_rows`) they belong.
     """
     sc = cfg.stats
+    no_skill = _no_skill_reference_rows(metrics)
+    metrics = metrics[~metrics["model"].isin(NO_SKILL_MODELS)].reset_index(drop=True)
     reliable = metrics[metrics["mase_reliable"]]
     per_family = (metrics.groupby(["model", "family"])[["smape", "pinball", "mae_over_mad"]]
                   .mean().reset_index())
@@ -293,7 +467,7 @@ def _summarize(metrics: pd.DataFrame, cfg: PipelineConfig) -> dict:
     overall = metrics.groupby("model")[["smape", "pinball", "mae_over_mad"]].mean().reset_index()
     overall_mase = reliable.groupby("model")["mase"].mean().rename("mase").reset_index()
     overall = overall.merge(overall_mase, on="model", how="left")
-    summary = {"per_family": per_family.to_dict(orient="records"),
+    summary = {"per_family": per_family.to_dict(orient="records") + no_skill,
                "overall": overall.to_dict(orient="records"),
                "mase_reliability": {
                    "scale": cfg.l0.scale, "min_scale_frac": cfg.l0.min_scale_frac,
@@ -368,17 +542,30 @@ def _summarize(metrics: pd.DataFrame, cfg: PipelineConfig) -> dict:
     def _overall_seed(pi: int) -> int:
         return cfg.run.seed + (90 if pi == 0 else 200_000 + pi)
 
-    raw = {}
+    raw, raw_diffs, mde_seeds, skipped_families = {}, {}, {}, {}
     for pi, (x, y) in enumerate(pairs):
         for fi, (fam, grp) in enumerate(wide.groupby("family")):
             if len(grp) < sc.min_series:
+                skipped_families.setdefault((x.name, y.name), []).append(str(fam))
                 continue
             diff = (grp[y.name] - grp[x.name]).to_numpy()
             res = paired_bootstrap(diff, sc.n_boot, _fam_seed(pi, fi), sc.ci)
             if res is not None:
-                raw[(x.name, y.name, str(fam))] = res
+                key = (x.name, y.name, str(fam))
+                raw[key] = res
+                raw_diffs[key] = diff
+                # A disjoint offset from `_fam_seed`'s own stream, so the MDE's
+                # bootstrap simulations never share a resample sequence with
+                # the actual test they characterize.
+                mde_seeds[key] = _fam_seed(pi, fi) + 10_000_000
 
     adjusted = holm({"\u241f".join(k): v["p"] for k, v in raw.items()}) if raw else {}
+    # The SAME value written into `multiplicity.json` below, computed once and
+    # threaded into every MDE call -- never re-derived per family, which is
+    # exactly the "two sites can independently drift" shape `ROADMAP.md` \u00a734.7
+    # item 1 names, and T-A1.4's cross-artifact-consistency check exists to
+    # catch a regression back into that shape.
+    min_attainable_p_holm_val = (len(raw) / sc.n_boot) if raw and sc.n_boot else None
 
     def _rows(x_name: str, y_name: str) -> list:
         out_rows = []
@@ -397,8 +584,13 @@ def _summarize(metrics: pd.DataFrame, cfg: PipelineConfig) -> dict:
                 if num is not None and den not in (None, 0) \
                         and np.isfinite(num) and np.isfinite(den):
                     ratio = float(num / den)
+            mde = mde_paired_bootstrap(
+                raw_diffs[(xn, yn, fam)], alpha=sc.alpha, n_boot=sc.n_boot,
+                seed=mde_seeds[(xn, yn, fam)],
+                min_attainable_p_holm=min_attainable_p_holm_val,
+                floor=_resolve_pair_floor(noise_floor or {}, xn, yn, fam))
             out_rows.append({"family": fam, "ratio": ratio, **res,
-                             "p_holm": p_holm, "favored": favored})
+                             "p_holm": p_holm, "favored": favored, "mde": mde})
         return sorted(out_rows, key=lambda t: t["p_holm"])
 
     pairwise = []
@@ -410,6 +602,13 @@ def _summarize(metrics: pd.DataFrame, cfg: PipelineConfig) -> dict:
                                              sc.n_boot, _overall_seed(i), sc.ci),
             "strengths": {x.name: [t["family"] for t in rows if t["favored"] == x.name],
                           y.name: [t["family"] for t in rows if t["favored"] == y.name]},
+            # Skipped families never entered `raw` at all -- \u00a734 A1.1's own
+            # failure-mode table requires they still surface in the ledger
+            # (`ROADMAP.md` \u00a711.39's lesson: a site that only MENTIONS a
+            # quantity, here "every family this pair tested", is exactly
+            # where a quantity silently goes missing).
+            "mde_skipped_families": [{"family": fam, "mde": None, "reason": "family_skipped"}
+                                     for fam in skipped_families.get((x.name, y.name), [])],
         })
     summary["pairwise"] = pairwise
     summary["multiplicity"] = {
@@ -434,7 +633,7 @@ def _summarize(metrics: pd.DataFrame, cfg: PipelineConfig) -> dict:
         # can be significant, and the report must say so rather than render a
         # table of honestly-computed non-results (invariant 8).
         "n_boot": sc.n_boot,
-        "min_attainable_p_holm": (len(raw) / sc.n_boot) if raw and sc.n_boot else None,
+        "min_attainable_p_holm": min_attainable_p_holm_val,
     }
 
     # The designated pair keeps its existing top-level keys: every consumer

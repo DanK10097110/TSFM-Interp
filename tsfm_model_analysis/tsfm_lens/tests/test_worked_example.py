@@ -47,7 +47,7 @@ def test_the_document_exists_and_names_the_run_it_quotes():
 def test_it_walks_the_report_in_the_report_s_own_section_order():
     """A worked example read out of order teaches the wrong reading path."""
     t = _text()
-    order = ["fairness card", "Behavioral profile", "Cost and capacity",
+    order = ["fairness card", "corpus card", "Behavioral profile", "Cost and capacity",
              "forecast lens", "Representational geometry", "Stitching probes",
              "Perturbation and patching", "Private benchmark confirmation"]
     positions = [t.find(s) for s in order]

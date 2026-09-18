@@ -45,6 +45,29 @@ _ALIASES = {"clustering": "cluster", "l4": "cluster"}
 
 
 STAGE_DOCS: dict = {
+    "corpus": StageDoc(
+        question=("Can the benchmark corpus itself be trusted -- is it free of copied "
+                   "reference series, free of near-duplicates, and diverse enough that a "
+                   "model can't do well here just by memorizing one shape?"),
+        how=("Reads the sealed corpus's own manifest (ROADMAP.md sec 34 item B1's audit "
+             "block, when present) and, optionally, an existing `benchmark_validation` "
+             "report, and renders both as a fixed trust ladder of named claims -- never "
+             "recomputes a leakage or diversity check itself, and never imports "
+             "`benchmark_validation`."),
+        good_bad=("Good: every trust-ladder row reads `measured` with a real reference "
+                   "and a stated verdict. Bad: a row reads `not_checked` -- the corpus "
+                   "was built with `--references none`, so every candidate passed the "
+                   "leakage gate trivially, which is NOT the same as a corpus that was "
+                   "checked and found clean -- or `not_recorded`, meaning no audit ever "
+                   "ran at all."),
+        cannot_tell=("Two rows are always unresolvable and are rendered that way rather "
+                      "than omitted: whether the private split's distribution genuinely "
+                      "matches the dev split's (no mechanism in this repo compares them), "
+                      "and whether any model being compared was trained on data shaped "
+                      "like this corpus (no audit anywhere can inspect a checkpoint's own "
+                      "training data). A `measured` row is evidence the corpus is sound "
+                      "by the checks that exist -- it is not proof no other check would "
+                      "find a problem.")),
     "extract": StageDoc(
         question=("Has each model's internal computation actually been captured, and "
                    "lined up correctly with real time, so every later stage has something "

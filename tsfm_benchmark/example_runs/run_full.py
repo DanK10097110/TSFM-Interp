@@ -110,12 +110,18 @@ def load_references(auditor, kind, limit, subset: str | None = None, n_domains: 
         items = monash(subset=subset, limit=limit) if subset else bootstrap_catalog(n_domains=n_domains, total_limit=limit)
         n = 0
         for ref, values in items:
-            auditor.add_reference(ref.corpus, ref.item_id, values)
+            auditor.add_reference(ref.corpus, ref.item_id, values, license=ref.license)
             n += 1
         where = f"domain '{subset}'" if subset else f"{n_domains} bootstrapped domains"
         print(f"loaded {n} real reference series from Monash ({where})")
     else:
-        print("no reference corpus loaded; leakage gate passes trivially (distance = inf)")
+        print(
+            "WARNING: --references none -- the leakage gate is a no-op (every "
+            "sample passes trivially, distance = inf). The resulting corpus's "
+            "sealed manifest will record extra.audit.gate.gate_effective=false: "
+            "it carries NO leakage evidence, which is not the same as having "
+            "passed a leakage check. Pass --references monash to make the gate "
+            "do work (CLAUDE.md sec 4.4; ROADMAP.md sec 34 item B1.4).")
 
 
 def main():
@@ -155,11 +161,13 @@ def main():
     priv = os.path.join(args.out, "private_test")
     result = builder.build_and_seal(specs, public_dir=pub, private_dir=priv, seed=args.seed, epoch=args.epoch)
 
+    gate = result.audit.get("gate", {})
     print(f"\nepoch {result.epoch}")
     print(f"public_dev   : {len(result.public_dev)} sequences -> {pub}")
     print(f"private_test : {len(result.private_test)} sequences -> {priv}")
     print(f"rejected gate: {len(result.rejected)}")
     print(f"near-dupes   : {len(result.duplicates)}")
+    print(f"gate_effective: {gate.get('gate_effective')} (persisted in manifest['extra']['audit'])")
     print("files/split  : corpus.jsonl, manifest.json")
 
 

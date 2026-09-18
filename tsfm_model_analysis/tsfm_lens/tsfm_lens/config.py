@@ -719,6 +719,38 @@ class RunConfig:
 
 
 @dataclass
+class CorpusConfig:
+    """The corpus card (ROADMAP.md sec 34 item C1): what the benchmark actually
+    is, before any model result. Needs no model and no `tsfm_benchmark`/
+    `benchmark_validation` import -- it reads `data.*` (already a stage input
+    to every other stage) plus, optionally, the sealed corpus's own
+    `manifest.json` (written by `build_pipeline.seal.seal_corpus`, carrying
+    item B1's `extra.audit` leakage/near-duplicate/realism verdict when
+    present) and an already-produced `benchmark_validation` report pointed at
+    by `validation_report`.
+
+    Both fields genuinely gate what the `corpus` stage itself computes and
+    writes (`enabled` whether it runs at all; `validation_report` which extra
+    block the card composes), so neither needs `stage_input: False` --
+    changing either legitimately invalidates `corpus/card.json` and should
+    refuse a stale skip (`CLAUDE.md` sec 15 A3).
+    """
+    enabled: bool = True
+    # Path to an existing `benchmark_validation` `validation_report.json` for
+    # THIS corpus, or "" (default) to skip that section of the card. Left
+    # unset rather than auto-discovered: `tsfm_lens` must not invoke
+    # `benchmark_validation` itself (a separate, heavy-dependency package,
+    # `CLAUDE.md` sec 3) to produce one, and guessing a path next to
+    # `data.path` would silently pair a stale or unrelated report with this
+    # run's corpus. The card cross-checks the report's own `corpus_digest`
+    # (set by `benchmark_validation.report` alongside it, item C1.3) against
+    # this run's `data.py::BenchmarkData.corpus_digest` and REFUSES to render
+    # the validation summary -- rather than trust a path match -- on a
+    # mismatch, naming both digests.
+    validation_report: str = ""
+
+
+@dataclass
 class PipelineConfig:
     run: RunConfig = field(default_factory=RunConfig)
     data: DataConfig = field(default_factory=DataConfig)
@@ -741,6 +773,7 @@ class PipelineConfig:
     frontend: FrontendConfig = field(default_factory=FrontendConfig)
     sae: SAEConfig = field(default_factory=SAEConfig)
     report: ReportConfig = field(default_factory=ReportConfig)
+    corpus: CorpusConfig = field(default_factory=CorpusConfig)
 
     def run_dir(self) -> Path:
         """Directory holding every artifact for this run."""
@@ -800,6 +833,15 @@ class PipelineConfig:
         names = [m.name for m in self.models]
         if len(set(names)) != len(names):
             raise ValueError("model names must be unique")
+        # `__`-prefixed names are reserved for L0's no-skill reference
+        # pseudo-models (`__naive__`, `__seasonal_naive__`, ROADMAP.md sec 34
+        # A3.2) -- a real adapter config using that namespace would collide
+        # with them in `l0/metrics.parquet` and enter the per-family
+        # reference table as if it were a trivial baseline.
+        reserved = [n for n in names if n.startswith("__")]
+        if reserved:
+            raise ValueError(f"model names may not start with '__' (reserved for "
+                             f"L0's no-skill pseudo-models): {reserved}")
         if len(self.models) > 2:
             import logging
             # This used to warn that every cross-model stage but L0 silently
@@ -869,6 +911,7 @@ _NESTED = {
     "sae": SAEConfig, "report": ReportConfig,
     "stats": StatsConfig, "internals": InternalsConfig, "confirm": ConfirmConfig,
     "lens": LensConfig, "attention": AttentionConfig, "exemplars": ExemplarsConfig,
+    "corpus": CorpusConfig,
 }
 
 

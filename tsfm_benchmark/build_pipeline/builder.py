@@ -23,7 +23,7 @@ from typing import Any
 
 import numpy as np
 
-from .audit import LeakageAuditor, find_near_duplicates
+from .audit import LeakageAuditor, compose_audit_block, find_near_duplicates
 from .registry import CORRUPTIONS, GENERATORS
 from .schema import TimeSeriesSample
 from . import seal as seal_mod
@@ -132,6 +132,7 @@ class BuildResult:
     epoch: int
     rejected: list[tuple[str, float]]
     duplicates: list[tuple[str, str, float]]
+    audit: dict[str, Any] = field(default_factory=dict)
 
 
 class BenchmarkBuilder:
@@ -220,13 +221,28 @@ class BenchmarkBuilder:
         public, rej_pub = self._build_split(specs, public_base, epoch)
         private, rej_priv = self._build_split(specs, private_base, epoch)
         dups = find_near_duplicates(public + private)
-        return BuildResult(public_dev=public, private_test=private, epoch=epoch, rejected=rej_pub + rej_priv, duplicates=dups)
+        rejected = rej_pub + rej_priv
+        split_of = {s.sample_id: "public" for s in public}
+        split_of.update({s.sample_id: "private" for s in private})
+        audit_block = compose_audit_block(self.auditor, public + private, rejected, dups, split_of)
+        return BuildResult(public_dev=public, private_test=private, epoch=epoch, rejected=rejected, duplicates=dups, audit=audit_block)
 
     def build_and_seal(self, specs: list[TaskSpec], public_dir: str, private_dir: str, seed: int = 0, epoch: int = 0) -> BuildResult:
-        """Build an epoch and seal both splits to disk; private_dir is held out."""
+        """Build an epoch and seal both splits to disk; private_dir is held out.
+
+        Both manifests carry the same ``extra.audit`` block (ROADMAP.md sec 34
+        item B1): the gate and near-duplicate check both ran over the whole
+        public+private union, so the verdict is a property of the epoch, not
+        of one split. ``extra.audit`` is metadata only -- ``_global_digest``
+        hashes sample content alone (seal.py), so adding it here cannot move
+        either split's digest or fail an existing ``load_sealed(verify=True)``
+        (T-B1.1 pins this).
+        """
         result = self.build(specs, seed=seed, epoch=epoch)
-        seal_mod.seal_corpus(result.public_dev, public_dir, epoch, "public")
-        seal_mod.seal_corpus(result.private_test, private_dir, epoch, "private", extra={"note": "held-out; do not publish"})
+        seal_mod.seal_corpus(result.public_dev, public_dir, epoch, "public", extra={"audit": result.audit})
+        seal_mod.seal_corpus(
+            result.private_test, private_dir, epoch, "private",
+            extra={"audit": result.audit, "note": "held-out; do not publish"})
         return result
 
     def regenerate_private(self, specs: list[TaskSpec], private_dir: str, seed: int = 0, epoch: int = 1) -> list[TimeSeriesSample]:

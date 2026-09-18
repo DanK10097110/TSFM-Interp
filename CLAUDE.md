@@ -384,6 +384,36 @@
 > the floor" reading is not reproducible, only the clause-2 scorecard loss
 > is. §13 item 3 below is corrected to match; no other section changed.
 
+> **Reconciliation note (2026-09-18) — a contributor path for new adapters
+> now exists (`ROADMAP.md` §34.6, Items E1/E2/E4); §6.2's "Writing one by
+> hand" paragraph is updated below to point at it.** New `models/contrib/`
+> (an `ast`-only discovery scan — no heavy library import at `import
+> tsfm_lens.models` time — of module-level `ADAPTER_NAME` declarations) plus
+> `models/TEMPLATE_adapter.py`, a generated `ADAPTERS.md`
+> (`adapter_docs.py`/`render_adapter_docs.py --check`, the same derive-
+> don't-hand-write discipline `run.py --list-configs` and `stage_docs.py`/
+> `glossary.py` already established), and `run.py --check-adapter <model>`
+> — one command running conformance, alignment, span discovery and every
+> optional-capability probe in dependency order as a typed four-state
+> checklist (`pass`/`warn`/`fail`/`not_applicable`, §11.37's standing
+> lesson). The six existing hand-written adapters are untouched and stay in
+> `models/__init__.py`; this only opens a place for new ones. One real bug
+> found by running the new checklist against a real per-timestep mock
+> config rather than by reading the code — exactly §11.33/§11.35's
+> resolution-confound shape recurring at a new site: a fixed probe stride
+> tuned for coarse-patch models left most of a per-timestep model's tokens
+> unprobed, collapsing a correct adapter's declared-vs-measured span IoU to
+> 0.062; fixed by deriving the stride from the model's own measured token
+> width (IoU restored to 1.000). Full numbers in `ROADMAP.md` §34.6's E1/E2/
+> E4 Findings blocks. **Not yet done, stated rather than assumed:** E4's
+> acceptance criterion asks for a run against all six real adapters with
+> live checkpoints; this session verified only the class-level metadata
+> (tier, default checkpoint) with no weights loaded, plus every mock
+> adapter end-to-end. Items E3 (`--new-adapter` scaffolder) and E5 (the
+> written contributor guide) are explicitly not part of this note — they
+> are the next queued item in `ROADMAP.md` §34.9 and depend on what this
+> note describes.
+
 ---
 
 ## 1. What this project is
@@ -1437,6 +1467,40 @@ preserved:
   collapsed-looking group can be told apart from a group that's legitimately
   dominated by one real axis of variation.
 
+### New (2026-09-18, `ROADMAP.md` §34 items B2+B3): dev↔private cross-split validation
+
+`cross_split.py` answers two questions this package had never asked of the
+**private** split before: is it suspiciously similar to (or different from)
+the dev split, and does `confirm`'s validity assumption — that dev and
+private are exchangeable, a stronger property than §4.5's disjoint-seed-range
+guarantee — actually hold? Both halves reuse this package's own existing
+machinery rather than new kernels: cross-split near-duplicate fraction pools
+the two splits through `matching.match_all` and discards the within-split
+quadrants; composition equality is a χ² test plus Cramér's V per
+tier/generator/archetype; and a feature-space equivalence check fits *one*
+`RobustScaler` on the pooled union (never on either split alone) using
+`features.py`'s own winsorization convention, then runs both an
+energy-distance permutation test (difference-detecting) and a TOST
+equivalence test (equivalence-establishing, three states —
+`equivalent`/`not_equivalent`/`inconclusive`, per `CLAUDE.md` §11.36's
+`adjustment_ok` lesson that a non-significant difference test proves nothing
+alone). §6.7's one-shot discipline is preserved by construction: every
+function here is a statistic of corpus construction alone (no model, no
+forecast), and the private-split report path (`report.build_report(...,
+split_role="private")`) additionally redacts the one field
+(`matching.top_redundant_pairs`) that would otherwise leak private sample
+ids. Run via `run_validation.py --compare-splits PUBLIC_DIR PRIVATE_DIR
+[--persist-into-private]`; the latter writes a plain sibling
+`cross_split.json` next to the sealed private corpus (never touching
+`manifest.json`/its `global_digest`), which `tsfm_lens/analysis/confirm.py`
+reads (digest-cross-checked) to populate `confirmation.json`'s
+`exchangeability` field. On the real `benchmark_large` corpus (965 public /
+967 private series) the verdict is `inconclusive` at the default 0.2-SD
+margin (21 of 22 catch22 features individually equivalent; one,
+`CO_trev_1_num`, unresolved rather than confirmed) with a non-significant
+energy-distance test — see `ROADMAP.md` §34 Item B3's Findings for full
+numbers.
+
 ---
 
 ## 6. Part C — `tsfm-lens` (the analysis half)
@@ -1448,6 +1512,7 @@ stronger question and exists **because of the previous level's limitation**.
 
 | Stage | Question | Method | Limitation inherited |
 |---|---|---|---|
+| **Corpus** (`corpus`, added 2026-09-17, `ROADMAP.md` §34 items C1/C2) | What does the benchmark corpus actually contain, and can it be trusted, before any model result? | Composition by tier/family/generator/archetype, per-generator determinism, a representative-series gallery, the persisted leakage-audit block (item B1) rendered as a seven-row trust ladder against `benchmark_validation`'s diversity/redundancy report | Whatever the audit and validation stages didn't check renders as a named absent/not-checked state, never a silent pass; the training-data-leakage row is always `not_verifiable` — no mechanism here confirms what a given model's own pretraining corpus contained |
 | **L0** | Who is better, where? | MASE/sMAPE/pinball per family, paired bootstrap, Holm-corrected | Behavioral only |
 | **Cost** (`budget`) | What does each model cost, and is its quality bought with compute? | Parameters by role, FLOPs **measured** via torch's `FlopCounterMode`, latency, peak VRAM; L0 MASE re-plotted against each | Cost at *this* run's context/horizon only; FLOPs ≠ latency |
 | **Frontend** (`frontend`, added 2026-08-23, ROADMAP.md §16 E17) | What does each model's tokenizer/embedding do to the input *before* any layer? | Quantization resolution and clip fraction (re-quantizing tokenizers only), scale-equivariance residual, context-truncation-from-the-back degradation shape, NaN/missing-timestep handling verdict | Tier-0, input/output only — no activations; degrades to `not_applicable` per-diagnostic for a model lacking the relevant mechanism (e.g. TimesFM has no re-quantizing tokenizer) |
@@ -1464,17 +1529,15 @@ stronger question and exists **because of the previous level's limitation**.
 | **Confirm** | Which dev findings are real? | One-shot re-test of dev hypotheses on sealed **private** corpus | The gold standard |
 
 Plus `extract` (upstream), `register` (freezes dev hypotheses for `confirm`) and
-`report` (downstream). **17 stages** as of 2026-08-23 (`stage_names()` is the
-authority — this line has gone stale three times now; check it rather than
-trusting the number), up from 16 with the addition of `frontend` (ROADMAP.md
-§16 E17). The smoke run renders **14 of 16 report sections** (SAE is off in that
-config; the seasonality-circuit section additionally returns no content on mock
-adapters) and **54 findings / 55 figures** — re-measured live
-2026-08-30 via `configs/smoke.yaml` through the actual CLI, not just the test
-suite, and it takes **29 s** cold on CPU. **Corrected** from this line's prior
-"12 of 13", which predated `frontend` and had already flagged itself as needing
-a re-check; §9's dated rows below keep their own historical counts (13/47/48)
-because those are measurements *on their dates*, not claims about today.
+`report` (downstream). **18 stages** as of 2026-09-17 (`stage_names()` is the
+authority — this line has gone stale four times now; check it rather than
+trusting the number), up from 17 with the addition of `corpus` (ROADMAP.md
+§34 items C1/C2, ordered first in the DAG — before `extract` — since it reads
+only the sealed corpus and the persisted audit block, never an activation).
+The smoke run's section/finding/figure counts below predate `corpus` and are
+not yet re-measured against it; §9's dated rows below keep their own
+historical counts (13/47/48, 14/16, 54/55) because those are measurements *on
+their dates*, not claims about today.
 
 **Why this ordering exists:** an early session explicitly argued down a proposal
 to put SAEs first. Training good SAEs on two models × multiple layers is the
@@ -1680,10 +1743,32 @@ a refusal is itself the specification for the adapter you then write. Add
 head, so no L0). §11.34 records the four probes that were wrong before this
 worked; read it before adding a fifth.
 
-**Writing one by hand:** subclass `ModelAdapter`, register in
-`models/__init__.py`, run `--discover-layers` to pick a `layer_regex`, then
-`--check-alignment` (and `--discover-spans`, which cross-checks the spans you
-declared against measured ones per token — the E3(d) check).
+**Writing one by hand — now via `models/contrib/`, not `models/__init__.py`
+directly (2026-09-18, `ROADMAP.md` §34.6 Items E1/E2/E4).** Copy
+`models/TEMPLATE_adapter.py` into `models/contrib/<name>_adapter.py`, fill in
+`load()`/`prepare()`/`forward()`/`predict()`/`token_time_spans()`, and run
+`python run.py --config <your config> --check-adapter <name>` — a single
+command that runs conformance, `--check-alignment`, `--discover-spans`, and
+every optional-capability probe in dependency order, prints one row per check
+with a typed status (`pass`/`warn`/`fail`/`not_applicable` — never a bare
+pass/fail, §11.37) and, on failure, a remediation naming what to change.
+Contrib files are discovered by an `ast`-only scan of `models/contrib/` (a
+module-level `ADAPTER_NAME` string, found without importing the file, so a
+broken contrib module's heavy library imports never reach `import
+tsfm_lens.models`); a name colliding with a built-in, or a file the scan
+can't parse, is refused/logged by filename rather than silently dropped. The
+six original hand-written adapters (`chronos`, `chronos2`, `chronos_bolt`,
+`generic_hf`, `sundial`, `timesfm`) stay exactly where they are in
+`models/__init__.py` — this is a place for *new* ones, not a restructuring.
+`ADAPTERS.md` (generated by `render_adapter_docs.py`, `--check` for CI) lists
+every registered adapter — built-in and contrib — with its derived tier,
+default checkpoint, declared capabilities and which pipeline stages that
+tier unlocks; nothing in it is hand-maintained, so (per §11.34's "a
+hand-written index is a claim checked nowhere") it cannot go stale the way a
+prose adapter list would. `--discover-layers` and `--check-alignment`/
+`--discover-spans` still exist standalone for interactive debugging of one
+check at a time; `--check-adapter` is the one-command path for "is this
+adapter done yet," not a replacement for them.
 Nothing downstream changes *in principle* — `chronos2_adapter.py` (Phase
 4's first real test of that claim) needed zero adapter-specific
 special-casing anywhere else, but did surface one genuine bug in shared
@@ -5316,6 +5401,61 @@ warnings in an otherwise-green run). A fixture with *uniform* nulls would have
 been just as inert: it cannot distinguish a normalized matrix from a raw one
 scaled by a constant. Where a fix introduces a per-item divisor, every fixture
 needs divisors that **differ**, or the tests pass against the defect.
+
+### 11.58 A four-seam probe has a fifth, unstated precondition — and violating it produces someone else's generic error, not this repo's own named refusal
+
+Found 2026-09-18 (`ROADMAP.md` §34.5 Item D1) sweeping 8 real Hugging Face
+checkpoints through the zero-code `generic_hf` path. `GenericHFAdapter`
+measures four seams (input kwarg, block-stack regex, token→time spans,
+forecast head) and either resolves all four or raises a named,
+`this-repo's-own` refusal — `NotTimeLocalized` for a diffuse impulse
+response (§12's envelope edge), or a multivariate refusal for a checkpoint
+whose config declares more than one channel. Two of the sweep's eight
+candidates (Lag-Llama, Moirai) were chosen specifically to exercise those
+two gates on real weights for the first time. **Neither test happened.**
+
+5 of the 8 candidates (Toto, MOMENT, Lag-Llama, TTM, Moirai) crashed inside
+`transformers.AutoConfig.from_pretrained`, before any of `GenericHFAdapter`'s
+own code ran at all — a `ValueError: Unrecognized model` (4 of 5) or a
+`KeyError`→`ValueError` "does not recognize this architecture" (TTM, whose
+config is transformers-*shaped* but whose `model_type` string is simply
+unregistered without a separate PyPI package). The shared cause: `Toto`,
+`MOMENT`, `Lag-Llama` and `Moirai` are each built on their own standalone
+package (`toto-ts`, `momentfm`, gluonts-based `lag-llama`, `uni2ts`) whose
+`config.json` has nothing to do with the `transformers` registry — one repo
+(`Lag-Llama`) has no `config.json` at all, only a PyTorch-Lightning
+checkpoint. **`GenericHFAdapter`'s stated four-seam probe implicitly
+assumes a fifth precondition it never states or checks: that the checkpoint
+publishes a `transformers`-recognized `config.json`.** Violating that
+precondition doesn't produce one of this repo's own named, considered
+refusals — it produces `transformers`'s own generic "should have a
+`model_type` key" error, which says nothing about time-series-adapter
+compatibility at all and reads as a dependency-version problem rather than
+an architectural-mismatch one.
+
+**Not fixed this session — the two obvious "fixes" both have a real cost,
+and the sweep's own headline number (5 of 8) says this is common enough to
+be worth doing properly rather than papering over.** A `try/except` around
+`AutoConfig.from_pretrained` that re-raises with a clearer message would at
+least name the precondition, but would not make Lag-Llama or Moirai
+*probeable* — that needs either a bespoke adapter built on the checkpoint's
+own package, or (per `ROADMAP.md` §16 E3's zero-code-path spirit) a
+documented list of "needs package X registered first" cases a contributor
+can act on before writing any adapter code. Recorded as the concrete next
+step in `ROADMAP.md` §34.5 Item D1's Findings rather than attempted here.
+
+**Lesson, and it is §11.34's lesson one layer upstream.** §11.34 found that
+a *probe*'s own tie-breaks fail silently and far from their cause. This is
+the same shape one call earlier: the probe never got the chance to guess
+wrong, because the library it depends on to hand it a loadable model
+already failed, in its own vocabulary, about its own registry — and that
+failure is indistinguishable, from the caller's side, from "you have the
+wrong `transformers` version" (§11.8's own trap) even though the real cause
+here is architectural (no `transformers`-native config exists at all, for
+any version). Before believing a probe's refusal names the real reason a
+checkpoint didn't work, check **which layer produced the exception** —
+this repo's own gate, or a dependency's, one level below anything this
+repo's code could have influenced.
 
 ---
 
