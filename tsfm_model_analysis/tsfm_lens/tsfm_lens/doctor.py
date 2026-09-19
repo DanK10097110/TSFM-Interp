@@ -331,10 +331,25 @@ def _check_capped_stages(cfg: PipelineConfig) -> list:
     # exactly the shape `CLAUDE.md` sec 11.35 warns about -- a check that
     # reads as a considered finding while measuring something other than
     # what its name says.
+    #
+    # `resolve_adapter_class` (not the bare `ADAPTERS` dict) so a CONTRIB
+    # adapter's tier is resolved too -- the original `if m.adapter in
+    # ADAPTERS` filter silently dropped every contrib model from `tiers`
+    # entirely, so a tier-0 contrib adapter paired with a tier-3 mock (the
+    # exact shape `run.py --new-adapter`'s own scaffolded config produces,
+    # ROADMAP.md sec 34.6 Item E3) computed run_tier=3 instead of the real 0
+    # and this check then FAILED on a stage the real tier gate was about to
+    # drop anyway -- the precise false refusal the comment above already
+    # warns about, tripped by this very function.
     from .pipeline import _STAGE_MIN_TIER
-    from .models import ADAPTERS
-    tiers = [ADAPTERS[m.adapter].capability_tier() for m in cfg.models
-             if m.adapter in ADAPTERS]
+    from .models import resolve_adapter_class
+    tiers = []
+    unresolvable = []
+    for m in cfg.models:
+        try:
+            tiers.append(resolve_adapter_class(m.adapter).capability_tier())
+        except Exception as exc:  # noqa: BLE001 - reported, not swallowed
+            unresolvable.append(f"{m.name} ({m.adapter}): {type(exc).__name__}: {exc}")
     run_tier = min(tiers) if tiers else 3
 
     def runs(stage: str) -> bool:
@@ -356,10 +371,21 @@ def _check_capped_stages(cfg: PipelineConfig) -> list:
         if cfg.sae.feature_steering_enabled:
             candidates.append(("sae.feature_steering_max_series",
                                cfg.sae.feature_steering_max_series))
-    if not candidates:
-        return [DoctorCheck("batch caps", "pass",
-                            f"no batch-per-call stages enabled at tier {run_tier}")]
     checks = []
+    if unresolvable:
+        # Reported, never silently absorbed into `tiers` -- an adapter this
+        # check cannot resolve is exactly the shape it must not hide (sec
+        # 2.5): the run_tier computed above excludes it, so say so rather
+        # than let a missing model read as an agreeing one.
+        checks.append(DoctorCheck(
+            "batch caps: adapter resolution", "warn",
+            "could not resolve a tier for: " + "; ".join(unresolvable),
+            "run_tier below excludes these models -- fix the adapter name/import "
+            "and rerun preflight before trusting this check"))
+    if not candidates:
+        checks.append(DoctorCheck("batch caps", "pass",
+                                  f"no batch-per-call stages enabled at tier {run_tier}"))
+        return checks
     for label, value in candidates:
         if value > min_batch:
             checks.append(DoctorCheck(

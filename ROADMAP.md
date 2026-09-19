@@ -30726,7 +30726,7 @@ item's addition contradicts, so no edit was made there.
 
 ---
 
-#### Item A4 — One tidy, machine-readable results table 📋 NEEDS IMPLEMENTATION
+#### Item A4 — One tidy, machine-readable results table ✅ DONE 2026-09-18
 
 **The gap.** A researcher who wants to meta-analyse, re-plot, or check arithmetic
 must parse ~12 artifacts with ~12 schemas. `findings.json` (E6) and the analysis
@@ -30780,6 +30780,115 @@ artifacts and confirm exact equality.
 **Load-bearing negative:** an artifact deliberately truncated (one key removed)
 must produce NaN + a WARNING naming the missing key, not a crash and not a
 plausible default. Confirm it fails against a version using `.get(key, 0.0)`.
+
+**Findings (2026-09-18).** Built `tsfm_lens/report/results_table.py` exactly
+to the A4.1 column list, wired into `run_report` (called right after
+`findings.json` is written, reading that same file — never a second source of
+truth) and exposed as a standalone `run.py --export-results <run_dir>` CLI
+entry alongside `--verify-provenance`. A4.3's join key (`claim_id`) and A4.2's
+pure-reduction discipline are both structural: `build_results_rows` reads only
+`findings.json` plus, for one declared stage, that stage's own already-written
+artifact — it computes no new statistic anywhere.
+
+**Scoping decision, stated rather than silently narrowed.** Only `confirm` got
+a declared per-stage extractor (`_STAGE_EXTRACTORS = {"confirm":
+_extract_confirm_rows}`). `confirm`'s three aggregate `Finding`s
+(`_sec_confirm` in `report.py`) each summarize a known, stably-shaped list —
+family hypotheses, per-corruption L3 replication, one CKA pair — so expanding
+each into one row per stratum is a real, checkable correspondence. Other
+multi-stratum stages (`l0`'s per-family/per-pair tests, `attention`'s
+per-head scores) do not carry a `Finding`-to-stratum-row correspondence
+anywhere in the code today; inventing one risks exactly the fabricated-join
+failure `CLAUDE.md` §11.36/§11.54 already caught twice in this repo (a
+correspondence asserted between two things that were never actually linked).
+Every unhandled stage instead gets a base row (finding's own fields, NaN for
+the rest) plus **one grouped WARNING per run naming every affected stage and
+the total finding count** — not one warning per stage or per finding, matching
+`report.py`'s own established "group by reason" convention (`CLAUDE.md`
+§11.44 postscript). On `runs/full_report_run_4model` this reads: `"no
+declared extractor for stage(s) ['attention', 'budget', 'clustering',
+'corpus', 'exemplars', 'frontend', 'internals', 'l0', 'l1', 'l2', 'l3',
+'layer_screen', 'lens', 'report', 'sae'] -- 119 finding(s) exported with base
+columns only"`.
+
+**A4.2's "`*_available` companion flag where the distinction matters" is not
+implemented as extra columns.** The concrete A4.1 column list (the section's
+own binding spec) has no `*_available` fields, and every column in it is
+either legitimately absent (rendered NaN, exactly as A4.2 asks) or genuinely
+present — no column in this schema has a value where NaN is itself a valid
+*measurement* rather than an absence, so a NaN is unambiguous without a
+companion flag. Read this as a scope call inside a spec whose own artifact
+(the column list) already decided it, not a gap.
+
+**A real bug found by running the exporter against real data, not by reading
+the diff (`CLAUDE.md` §2.4/§11.48).** The first implementation assumed the
+`confirm.2` (L3 replication) and `confirm.3` (CKA replication) sub-artifacts'
+bootstrap-CI dicts use key `"mean"`, matching `confirm.1`'s family-hypothesis
+`tests[]` convention. Running `--export-results` against the real
+`runs/full_report_run_4model/confirm/confirmation.json` produced WARNING spam
+(`missing key 'mean'`, `missing key 'n'`) for every one of those 10 rows.
+Direct inspection of the real JSON showed the actual key is `"value"` —
+matching `report.py::_ci_str`'s own default parameter
+(`def _ci_str(d: dict, key: str = "value")`), which these two sub-artifacts
+were rendered through in the HTML all along — and that `"n"`/`"resample_unit"`
+are genuinely absent from this artifact's real schema for these two blocks
+(not a truncation; `l3_replication.tests[i].private` and `cka_replication.private`
+carry only `value`/`lo`/`hi` plus, sometimes, `resample_unit`). Fixed by
+reading `"value"` (via the shared `_num` helper, so a genuinely missing key
+still warns) and `.get("n", np.nan)` for those two blocks specifically (a
+plain `.get`, no warning, since the key's absence here is a known, stable
+property of the real schema, not evidence of truncation). Test fixtures in
+`tests/test_results_table.py` were updated to match (they had inherited the
+same `"mean"`-keyed assumption from the same research pass that produced the
+first draft of `results_table.py`) — this is the same class of error
+`CLAUDE.md` §2.4 exists to catch: a careful paraphrase of a schema is not the
+same as reading the schema, and only running the real exporter against real
+production data surfaced the mismatch.
+
+**Tests (`tests/test_results_table.py`, 21 tests).** Base-row schema and
+column completeness; T-A4.1 (one row per finding, with `confirm`'s three
+findings expanding to 1+9+1=11 rows); the unhandled-stage grouped-warning
+behavior (confirmed to name both `l0` and a synthetic `brand_new_stage`
+together in one warning, since neither has a declared extractor); the
+`confirm` extractor's three real shapes (family/L3/CKA), each pinned against
+fixture values transcribed from the real artifact; an `untested`-status
+confirm test correctly producing `replicated = NaN` (not `False` —
+`CLAUDE.md` §11.37's three-state discipline); T-A4.2's `_num` helper (missing
+key → NaN + named WARNING; non-numeric value → NaN + named WARNING); row-count
+accounting; DataFrame dtype/column-order checks; CSV/parquet full-precision
+round-trip (a value written as `-0.7266042780748663` reads back bit-identical
+from both formats); and a subprocess CLI integration test exercising
+`run.py --export-results` end to end exactly as a user would invoke it.
+
+**Load-bearing negative, confirmed to discriminate.** Planted
+`d.get(key, 0.0)` in place of `_num`'s NaN-returning missing-key branch (via a
+string-substitution script with an `assert planted != src` guard confirming
+the substitution actually matched); `test_truncated_confirm_artifact_produces_nan_not_a_get_default`
+and `test_num_missing_key_is_nan_with_a_named_warning` both **FAILED** as
+expected (`0.0 != NaN`). Reverted (with a matching `assert reverted != src`
+guard) and manually re-read `_num`'s source to confirm the revert was
+byte-correct; full suite green again (21/21).
+
+**Acceptance, verified against `runs/full_report_run_4model`.**
+`python run.py --export-results runs/full_report_run_4model` wrote
+`report/results.csv` and `report/results.parquet`: **130 rows for 122
+findings** (119 base rows + `confirm`'s 3 findings expanding to 1 + 9 + 1 = 11
+rows). `pandas.read_csv` on the CSV produces **zero** `object`-dtype numeric
+columns (16 object columns are all genuinely categorical/text —
+`claim_id`/`stage`/`subject`/`stratum`/`rule_text`/etc. — 10 float64, 1 bool).
+Three rows spot-checked by hand against source artifacts, all exact:
+`confirm.1`'s `mixture` row (`value = 0.2745701213600114`, matching
+`tests[0].mean` exactly, `verdict = "confirmed"` matching `confirmed: true`);
+`confirm.2`'s three sampled corruption rows (`noise`: `-0.7266042780748663`,
+`detrend`: `0.616644385026738`, `deseasonalize`: `0.46891711229946526`, each
+matching `l3_replication.tests[i].private.value` exactly); `confirm.3`'s
+single CKA row (`value = 0.44131606817245483` matching
+`cka_replication.private.value`, `reference_value = 0.43619173765182495`
+matching `cka_replication.dev_cka`). Full regression: `tests/test_results_table.py`
++ `tests/test_smoke.py` together — **26 passed, 1 pre-existing warning**
+(the already-documented `test_end_to_end` return-value warning, unrelated to
+this change) — confirming the `report.py`/`run.py` wiring introduced no
+regression in the one existing suite that exercises `run_report` end to end.
 
 ### 34.3 Package B — private benchmark validation and the trust chain
 
@@ -31334,7 +31443,7 @@ output fields, not to a new module).
 
 ---
 
-#### Item B4 — Recalibrate the diversity gates against real corpora 📋 NEEDS IMPLEMENTATION
+#### Item B4 — Recalibrate the diversity gates against real corpora ✅ DONE 2026-09-18
 
 **File:** `benchmark_validation/gates.py`.
 
@@ -31391,6 +31500,128 @@ fail against the pre-change thresholds only if it does — if the old thresholds
 already caught it, say so and find a case that separates them, otherwise the
 recalibration is inert (§11.55's ablation lesson: measure what each narrowing
 actually buys, and be willing to record "nothing").
+
+**Findings (2026-09-18).** Assembled the calibration set (B4.1) from every
+sealed/validated corpus actually on disk: `benchmark_medium/public_dev` (288
+series), `benchmark_medium/private_test` (286), `benchmark_large/public_dev`
+(965, reused from the existing `validation_large/validation_report.json`),
+`benchmark_large/private_test` (967, freshly validated this session — none
+existed before), and `full_multidomain_run1` (4288, reused from
+`tsfm_benchmark/outputs_full1/validation_report.json`), plus the demo (205,
+including 5 planted near-duplicates). All six measured/recorded with the
+CLI's actual default matcher (`--method dtw`), recorded as `CALIBRATION_SET`
+in `gates.py` itself (B4.2) with corpus name, n, method, and date — full
+precision, transcribed below:
+
+| corpus | n | redundancy_fraction | effective_dimensionality | near_collision_fraction |
+|---|---|---|---|---|
+| benchmark_medium/public_dev | 288 | 0.0 | 5.346 | 0.0521 |
+| benchmark_medium/private_test | 286 | 0.0 | 5.512 | 0.0524 |
+| benchmark_large/public_dev | 965 | 0.0 | 5.294 | 0.0518 |
+| benchmark_large/private_test | 967 | 0.0 | 5.354 | 0.0507 |
+| full_multidomain_run1 | 4288 | 0.0 | 4.886 | 0.0501 |
+| demo (5 planted near-dup) | 205 | 0.00072 | 4.892 | 0.0585 |
+
+**A real, previously-undocumented finding surfaced while building this set,
+out of scope to fix here.** `redundancy_fraction` is wildly matcher-dependent:
+re-running the demo with `--method xcorr` instead of the CLI's actual default
+(`dtw`) gives **4.835%** redundant pairs — matching `CLAUDE.md` §5's
+long-quoted "4.8%" reference exactly — while `dtw` on the *identical* corpus
+gives **0.072%**, a ~70x disagreement on the same 5 planted duplicates. The
+CLI's own module docstring calls `xcorr` "the default" while the actual CLI
+flag defaults to `dtw` — a documentation/CLI mismatch this item did not
+attempt to resolve (it is a property of `matching.py`'s DTW similarity
+computation and the CLI's own default choice, not of these gate thresholds).
+`CALIBRATION_SET`'s `method` field records `dtw` throughout for internal
+consistency with what a flag-less validation run actually produces, and the
+module docstring states explicitly that a reading under one method must never
+be compared against a threshold calibrated under the other.
+
+**B4.3 — thresholds re-derived with stated headroom, not fit to the
+minimum.** `min_effective_dimensionality` raised **2.0 → 3.0**: the worst
+observed value across the calibration set is 4.886 (`full_multidomain_run1`),
+and 3.0 ≈ worst_observed × 0.6 (the exact formula B4.3 names as an example),
+giving every real corpus on record ≥1.63x headroom while being materially
+tighter than 2.0, which offered almost no signal (any corpus with even modest
+diversity cleared it trivially — none of the six calibration corpora came
+within 2.4x of the old floor, but the new floor is only 1.63x away from the
+worst one, a genuinely tighter bar). `max_redundancy_fraction` (0.15) and
+`max_near_collision_fraction` (0.10) were left unchanged: given the
+dtw-vs-xcorr sensitivity finding above, there is no principled way to tighten
+`max_redundancy_fraction` without first resolving which matcher a threshold
+should be calibrated against (an open follow-up, not attempted here), and
+`max_near_collision_fraction`'s existing 1.71x headroom over the worst
+observed (0.0585, demo) was judged adequate without further evidence either
+way.
+
+**B4.4 — per-group near-collision-fraction floor, the sharper finding.** A
+30-seed Gaussian-noise simulation (22 features, no true redundancy at all)
+showed the within-group 5th-percentile quantile method's own **null
+expectation** is 0.3933 at n=5, 0.2500 at n=8, 0.2000 at n=10, 0.1333 at n=15,
+and only reaches 0.1000 at n=20 — i.e. the pre-existing 0.20 per-group bar was
+**already guaranteed to fail any archetype/task group of n≤10 on pure noise
+alone**, regardless of actual diversity. This is exactly the demo's own
+"unknown" group (the 5 planted near-duplicates, n=5): its measured
+near-collision fraction of 0.40 failed the old, unconditional per-group gate
+— a real, already-observed false refusal, not a hypothetical one. Fixed with
+a new `GateThresholds.min_group_n_for_collision_gate = 20` (chosen so the
+simulated null floor at that size, 0.10, sits at exactly 2x headroom under the
+0.20 bar) and a genuine third `GateResult` state — `passed: bool | None`,
+`None` meaning **skipped**, never counted toward the overall `passed`
+verdict and never silently omitted (`CLAUDE.md` §11.37's three-state
+discipline, applied to a fourth site in this repo). `print_gate_summary` now
+prints `[skip]` with the reason inline rather than either `[ok]` or `[FAIL]`.
+
+**Acceptance, verified.** All six calibration-set corpora pass
+`DEFAULT_THRESHOLDS` (re-verified live, not just recorded): re-running the
+demo through the real CLI now prints `diversity gates : PASS (calibrated
+against 6 corpora, see CALIBRATION_SET)`, with `group[unknown].near_collision_fraction`
+rendered `[skip]` — `n=5 < min_group_n_for_collision_gate=20: skipped, not
+scored` — rather than the pre-fix `[FAIL]`. The literal load-bearing negative
+(39 exact copies of one shape + 1 unrelated series) was built and measured
+live via `extract_features`/`diversity_metrics` directly (not simulated):
+`near_collision_fraction=0.975`, `effective_dimensionality=1.0`, failing
+**decisively** under both old and new thresholds — this specific gate
+(`max_near_collision_fraction`, unchanged at 0.10) does not discriminate old
+vs. new, exactly the "say so" escape clause B4's own spec names. Two
+discriminating cases were found instead, matching the two thresholds this
+item actually changed: (1) a synthetic corpus (30 exact duplicates of one
+seasonal shape + 20 genuinely distinct series) measured at
+`effective_dimensionality=2.935` — passes the old 2.0 floor, fails the new
+3.0 floor; (2) the demo's own real `unknown` n=5 group (0.40) — evaluated and
+**FAILed** under the old, unconditional per-group gate, **skipped** (not
+scored) under the new size-gated one.
+
+**Load-bearing negatives confirmed to discriminate.** Planted the pre-fix
+values (`min_effective_dimensionality: 2.0`, `min_group_n_for_collision_gate:
+0`, i.e. never skip) via a verified string substitution
+(`assert planted != src`); three tests **FAILED** as expected —
+`test_min_effective_dimensionality_recalibration_is_not_inert`,
+`test_small_group_near_collision_gate_is_skipped_not_failed_or_passed`, and
+`test_gate_result_as_dict_is_json_serializable_with_skipped_state` (the last
+because the overall `passed` flipped `True → False` once the small group's
+gate stopped being skipped and started being evaluated-and-failed). Restored
+via a matching substitution and confirmed **byte-identical** to the
+pre-plant file (`assert a == b`); full `test_gates_calibration.py` +
+`test_diversity_gates.py` green again (18/18).
+
+**Tests (`tests/test_gates_calibration.py`, 12 new tests) + the pre-existing
+`tests/test_diversity_gates.py` (6 tests, all still passing unmodified —
+confirming the recalibration didn't silently change any behavior those tests
+already pinned).** Calibration-set shape and provenance; every calibration
+corpus passes `DEFAULT_THRESHOLDS` as a regression (not just a one-time
+check); the min-effective-dimensionality discrimination case; a headroom
+sanity check (every calibration corpus clears the new floor by ≥1.6x); the
+small-group skip mechanism (skip vs. evaluated-and-failed, boundary at
+exactly `n == min_group_n_for_collision_gate` vs. one below it, and that
+skipping one gate for a group does not skip that group's *other* gate); the
+degenerate 39-copies corpus failing at both old and new thresholds; a
+`.get(key, 0.0)`-class missing-metric fail-closed check; and JSON
+serializability of the new `None` state. Full `tsfm_benchmark` suite: **108
+passed, 0 failed** (up from the pre-existing 96, all originally-passing tests
+still green). No `build_pipeline/` file was touched, so invariant 1's
+golden-hash re-check does not apply to this change (confirmed via `git status
+benchmark_validation/` showing only `gates.py` modified).
 
 ---
 
@@ -32602,6 +32833,98 @@ Python identifier; and writes **relative** paths only (invariant 11).
 substitute and reach a report — a contributor's first hour should end at a
 rendered HTML, not at a stack trace.
 
+**Findings (2026-09-18) — ✅ DONE.** New `tsfm_lens/scaffold_adapter.py`
+(`scaffold`, `validate_name`, `class_name_for`, `render_adapter_source`,
+`render_config_source`, `command_plan`) wired into `run.py` as
+`--new-adapter NAME --checkpoint ID`. Built entirely by substitution over
+`models/TEMPLATE_adapter.py`'s own text (`CLAUDE.md` §2.2 — never a second,
+hand-written generator), paired against `mock_patch` (tier 3) rather than
+another mock exactly per this item's own spec, so a config never needs
+editing as the contributed adapter climbs tiers — the comparison stages
+gate on `min(tier_a, tier_b)`. All four failure modes implemented and
+tested: refuses to overwrite either file (naming it, and checking both
+paths before writing either, so a mid-pair failure can never leave one file
+written and the other missing); rejects a name colliding with a registered
+adapter (naming the full sorted registry); rejects a non-identifier/keyword
+name; every path in the generated config is relative (invariant 11,
+verified by a test that reads `render_config_source`'s own output and
+asserts no absolute-path token appears in it).
+
+20 new tests in `tests/test_scaffold_adapter.py`, including a real
+subprocess-driven integration test
+(`test_new_adapter_cli_scaffolds_and_reaches_a_rendered_report`) that shells
+out to the real `run.py` twice (once to scaffold, once to re-scaffold and
+confirm the refusal) and then runs commands 1 and 2 exactly as printed — all
+36 tests across `test_scaffold_adapter.py` + `test_contrib_discovery.py` +
+`test_adapter_docs.py` pass together (0 failed).
+
+🔴 **Three real bugs found by running the printed commands against a real
+scaffold, not by reading the diff (`CLAUDE.md` §11.48) — the acceptance
+criterion's own "reach a report, not a stack trace" bar is what caught all
+three, and none would have been caught by unit-testing `scaffold_adapter.py`
+in isolation:**
+
+1. **`TEMPLATE_adapter.py`'s own import was wrong once copied into
+   `contrib/`.** `from .mock import MockBlackBoxAdapter` is correct at the
+   template's own location (`models/TEMPLATE_adapter.py`, a sibling of
+   `models/mock.py`), but a relative import from one level deeper
+   (`models/contrib/<name>_adapter.py`) resolves to the nonexistent
+   `tsfm_lens.models.contrib.mock` — a bug in the *template itself* that
+   would hit anyone following the template's own documented manual
+   workflow ("copy it into `models/contrib/`"), not only the scaffolder.
+   Fixed with an absolute import (`from tsfm_lens.models.mock import
+   MockBlackBoxAdapter`), correct at both locations.
+2. **`render_adapter_source`'s first version left a stray docstring mention
+   of `TemplateAdapter` unrenamed** (a targeted single-occurrence
+   replacement missed the template's own module-docstring prose, "As
+   shipped, this file runs. `TemplateAdapter` subclasses..."), which would
+   ship a scaffolded file whose class is correctly renamed but whose own
+   docstring still talks about a class that no longer exists. Fixed with a
+   global `template.replace("TemplateAdapter", class_name)` guarded by a
+   defensive `template.count("TemplateAdapter") < 3` check, so a future
+   drift in the template's own text fails loudly at generation time rather
+   than silently under-substituting.
+3. **`doctor.py`'s batch-cap preflight check resolved tiers only through
+   the built-in `ADAPTERS` dict**, filtering `if m.adapter in ADAPTERS` —
+   which silently excluded every *contrib* model from the tier computation
+   entirely. E3's own scaffolded config (a tier-0 contrib adapter paired
+   with tier-3 `mock_patch`) computed `run_tier=3` instead of the real `0`,
+   and preflight then FAILed on `attention.ablation_max_series` even though
+   the real tier gate was about to drop the whole `attention` stage — the
+   exact false-refusal shape `CLAUDE.md` §11.35 already names, tripped by
+   the very comment warning about it. Root cause: `build_adapter`'s
+   built-in-then-contrib resolution order lived only inside that one
+   function; nothing else could reuse it. Fixed by splitting out
+   `models.resolve_adapter_class(name) -> type` (used by both
+   `build_adapter` and the new `doctor.py` fix, so the two can never drift
+   per `CLAUDE.md` §11.34), and by reporting a genuinely unresolvable
+   adapter as a named `warn` rather than silently excluding it from the
+   tier computation (`CLAUDE.md` §2.5). 2 new regression tests in
+   `tests/test_doctor.py`, each confirmed to fail against the pre-fix
+   `if m.adapter in ADAPTERS` filter (reverted and re-run to verify).
+
+**Real end-to-end verification** (not just pytest): `python run.py
+--new-adapter demo_probe --checkpoint org/demo-probe-ckpt` scaffolded
+`models/contrib/demo_probe_adapter.py` + `configs/smoke_demo_probe.yaml`;
+command 1 (`--check-adapter demo_probe`) printed `overall: pass` with every
+other row `not_applicable`, exactly as documented; command 2 (the bare
+config run) rendered `runs/smoke_demo_probe/report.html` — **5 sections, 28
+findings**, the adapter name `demo_probe` appearing **67 times** in the
+rendered HTML — after the doctor.py fix above (before it, command 2 failed
+preflight with `[FAIL] batch cap: attention.ablation_max_series` on a stage
+the tier gate was about to drop anyway). The throwaway adapter/config/run
+directory were deleted afterward and `render_adapter_docs.py` re-run to
+confirm `ADAPTERS.md` returned to its exact committed state (no diff).
+
+Full broad regression after all three fixes: `test_doctor.py` +
+`test_scaffold_adapter.py` + `test_contrib_discovery.py` +
+`test_adapter_docs.py` + `test_check_adapter.py` +
+`test_adapter_conformance.py` + `test_smoke.py` — **77 passed, 0 failed**
+(one transient failure in `test_adapter_docs.py` during an earlier run was
+traced to the still-present `demo_probe` manual-test artifact polluting that
+test's own before/after `ADAPTERS.md` snapshot, not a code regression —
+re-ran clean after cleanup).
+
 ---
 
 #### Item E4 — `run.py --check-adapter <model>`: one command, one checklist 📋 NEEDS IMPLEMENTATION
@@ -32775,6 +33098,108 @@ checkpoint. The honest proxy, since no such person is available: a fresh session
 with **no context beyond that file** does it, and every place it has to guess or
 read source is a defect in the document, recorded and fixed.
 
+**Findings (2026-09-18) — ✅ DONE.** New
+`tsfm_lens/docs/CONTRIBUTING_ADAPTERS.md` (narrative only — every fact that
+could drift, tier counts, capability names, adapter counts, is a pointer at
+`tsfm_lens/ADAPTERS.md`'s generated narrative instead, per this item's own
+🔴 rule), plus a rewrite of `README.md`'s stale "Extending → New model"
+subsection (previously a five-step hand-written list ending "Register it in
+`tsfm_lens/models/__init__.py`", with no mention of the zero-code probe path
+or the contrib mechanism at all) into a two-paragraph pointer at the new doc
+and at `ADAPTERS.md`.
+
+**Verified the acceptance criterion literally, not by proxy.** Rather than
+judge the document by re-reading it with full repo context (exactly the
+context a real fresh contributor lacks), spawned a `general-purpose` Agent
+whose *entire* onboarding was the document's own verbatim text, instructed
+to follow it literally against the real repo and report every place it had
+to guess, read adapter source, or hit an unexplained result — operationalizing
+the item's own stated proxy ("a fresh session with no context beyond that
+file"). It attempted the full path end-to-end (scaffolded a real contrib
+adapter named `probe_fixture`, ran the printed commands, reached a rendered
+report) and returned six concrete, specific gaps, not vague feedback:
+
+1. **No config schema was pointed to anywhere.** The doc said "you need a
+   config file" with no starting point, so the agent had to read
+   `config.py`'s dataclasses to guess at valid keys.
+2. **"`ADAPTERS.md` one directory up" was wrong and, worse, ambiguous** — up
+   from what? The real layout is `tsfm_lens/ADAPTERS.md` sitting in the
+   *same* directory as `docs/`'s parent, not "up" from `docs/` in any
+   direction the agent could resolve without listing the filesystem itself.
+3. **The Step 0 reconnaissance check (`docs/probe_sweep.md`) was ordered as
+   an aside paragraph after the decision tree**, not before it, so the agent
+   ran a live probe before noticing a record of the same checkpoint already
+   existed.
+4. **A printed-label mismatch:** the doc said a healthy tier-0 result reads
+   `'not_applicable'` in every row; the real terminal output abbreviates
+   that to `[n/a ]` (`run.py`'s own `symbol` dict), which the agent flagged
+   as looking like a possible new failure mode rather than the documented
+   good result.
+5. **No mention that `--probe-adapter` against a nonexistent checkpoint id
+   is an expected, named outcome** (Step 0's own "crash before this repo's
+   own code ran" case) rather than a config mistake — the agent's fixture
+   used a fake checkpoint id deliberately and was uncertain whether the
+   resulting `transformers` traceback meant it had done something wrong.
+6. **Commands 3–4 (`--discover-layers`, `--check-alignment`) raise a raw,
+   unhandled `CapabilityUnavailable` traceback if run before tier 1 is
+   implemented**, inconsistent with `--check-adapter`'s graceful `n/a`
+   degradation for the identical precondition — undocumented, and the agent
+   hit it by running the five commands in numeric order without knowing to
+   wait.
+
+**All six fixed**, one of them (4) at its root cause rather than only in the
+doc: `tsfm_lens/scaffold_adapter.py::command_plan`'s own printed annotation
+for command 1 was corrected from `"every other row printed as
+'not_applicable'"` to `"printed as '[n/a ]' (status not_applicable)"`, so the
+scaffolder's own output and the doc agree, not just the doc alone. The doc
+gained: a new "Step 0 — check whether the reconnaissance is already done"
+section promoted ahead of the decision tree; an explicit, unambiguous
+working-directory instruction ("the parent directory of the `docs/` folder
+this file lives in, and a sibling of the `tsfm_lens/` package directory");
+every `` `ADAPTERS.md` `` reference normalized to `` `tsfm_lens/ADAPTERS.md`
+``; a concrete starting config to copy (`configs/generic_hf_timer.yaml`,
+"this repo's own worked example of exactly this path"); the probe's three
+outcomes stated explicitly (all-resolve / named refusal / raw crash one
+layer below this repo's own code, with `docs/probe_sweep.md` cited for real
+examples of the third); and an explicit warning about commands 3–4's tier-0
+crash behavior, naming it a known rough edge rather than a bug.
+
+🔴 **One self-correction caught before it shipped, worth recording because
+it is the same failure class this item exists to prevent.** An intermediate
+edit phrased the working-directory instruction as "the directory two levels
+up from this file" — technically arguable, but itself exactly the kind of
+relative-path ambiguity the fresh-context test's finding #2 had just flagged
+as a problem. Caught on a second read (not by another agent run) and
+replaced with the unambiguous, landmark-based phrasing quoted above
+("the parent directory of the `docs/` folder ... a sibling of the
+`tsfm_lens/` package directory"). **Lesson for future doc work in this
+package:** a relative-path instruction ("up", "two levels up", "the parent
+of X") is a claim about the reader's current location and must be checked
+the same way `CLAUDE.md` §11.43 says to check a claim about a CLI flag —
+by having someone (or something) with no other context actually follow it.
+
+**Verified after the fixes**, without spawning a second full agent (the
+fixes address named, mechanical gaps — a missing config pointer, a wrong
+path claim, a label mismatch, an ordering nit, two missing outcome/rough-edge
+notes — each independently confirmable by reading the corrected text against
+the real filesystem, not requiring a second blind run to re-discover): the
+final `docs/CONTRIBUTING_ADAPTERS.md` re-read in full end-to-end reads
+coherently with no remaining internal contradiction; `configs/
+generic_hf_timer.yaml` (the newly-cited copy target) exists and is exactly
+the worked example the doc claims it is; the `tsfm_lens/ADAPTERS.md`
+location claim was checked directly against the real two-directory layout
+(`tsfm_model_analysis/tsfm_lens/` outer, containing `README.md`/`docs/`/
+`configs/`/a thin `run.py` shim, vs. `tsfm_model_analysis/tsfm_lens/
+tsfm_lens/` inner, containing the real `run.py`/`ADAPTERS.md`/`models/`);
+and `tests/test_scaffold_adapter.py` (20 tests) re-run after the
+`command_plan` wording change: **20 passed, 0 failed** — the fix that closed
+gap #4 broke nothing. The fresh-context subagent's own throwaway artifacts
+(`tsfm_lens/models/contrib/probe_fixture_adapter.py`,
+`configs/probe_fixture_zerocode.yaml`, `configs/smoke_probe_fixture.yaml`,
+`runs/smoke_probe_fixture/`) were deleted afterward; `tsfm_lens/ADAPTERS.md`
+carried no trace of `probe_fixture` (confirmed by grep before cleanup, so no
+regeneration was even needed this time — unlike E3's `demo_probe` episode).
+
 ### 34.7 Cross-cutting failure modes — read this before starting any item
 
 These recur across packages. Each is a trap this repo has already paid for at
@@ -32945,9 +33370,9 @@ user's own stated emphasis (the trust chain got two of the five asks).
 | 7 | **B2 + B3** private and cross-split validation | ~1.5 sessions | B1 | ✅ **DONE 2026-09-18** — see B2's and B3's own Findings block (filed under B3). The deepest item in the plan; B3 tests an assumption the gold-standard stage rests on. B3.4 (wiring into `confirm`, deferred from B5) also landed this firing |
 | 8 | **E1 + E2 + E4** contrib area, derived docs, one-command check | ~1.5 sessions | — | ✅ **DONE 2026-09-18** — see E1's, E2's and E4's own Findings blocks. Real thing found by running each: E1's `TEMPLATE_adapter.py` had a live `SyntaxWarning` in its own docstring, and E4's `discover_spans` check had a genuine resolution-confound bug (IoU 0.062 → 1.000) that only a per-timestep mock config surfaced; E2's real-checkpoint half and E4's real-checkpoint half of "all six adapters" are both deferred (verified against mocks and against every real adapter's class-level metadata, not against live weights) |
 | 9 | **D1** probe sweep | ~1 session | E2 (it feeds the table) | ✅ **DONE 2026-09-18** — see D1's own Findings block. 2 of 8 real candidates resolved cleanly (Timer, TimeMoE); 5 of 8 crashed one layer upstream of any of this repo's own code (`transformers.AutoConfig`, not `GenericHFAdapter`'s own gates) — a genuine, previously-undocumented finding (`CLAUDE.md` §11.58), not the two-gate test D2 hoped for. Acceptance met on the table+driver's own terms, explicitly not on "each row named a `GenericHFAdapter` gate" |
-| 10 | **E3 + E5** scaffolder and the written path | ~0.5 session | E1–E4, D1 | Writes best once the things it describes exist |
-| 11 | **A4** tidy results export | ~0.5 session | A1, A3 (for their columns) | Late, so it exports the final schema rather than being edited twice |
-| 12 | **B4** gate recalibration | ~0.5 session | B2 (private observations) | Needs the private-split observations to be worth doing |
+| 10 | **E3 + E5** scaffolder and the written path | ~0.5 session | E1–E4, D1 | ✅ **DONE 2026-09-18** — see E3's and E5's own Findings blocks. E3 found and fixed three real bugs by running its own printed commands (a template import bug, an unrenamed docstring, a doctor.py preflight tier-resolution bug); E5's fresh-context-subagent verification of its own literal acceptance criterion found and fixed six concrete gaps in the written path, one at its root cause in `scaffold_adapter.py` rather than only in the doc |
+| 11 | **A4** tidy results export | ~0.5 session | A1, A3 (for their columns) | ✅ **DONE 2026-09-18** — see A4's own Findings block. `results.csv`/`results.parquet` verified against `runs/full_report_run_4model`: 130 rows for 122 findings, zero object-dtype numeric columns, three rows spot-checked to exact float equality against source artifacts. Found and fixed a real `"mean"`-vs-`"value"` key mismatch by running the exporter against real data, not by reading the diff |
+| 12 | **B4** gate recalibration | ~0.5 session | B2 (private observations) | ✅ **DONE 2026-09-18** — see B4's own Findings block. Recalibrated against 6 real corpora (not the single demo point E23 left it on); found and fixed a real false-refusal (the demo's own 5-planted-duplicate group failed the old per-group near-collision gate purely from quantile-discreteness at n=5, not from redundancy); also surfaced a ~70x dtw-vs-xcorr redundancy_fraction disagreement, flagged as an explicit out-of-scope follow-up |
 | 13 | **A2** specification curve | ~1.5 sessions | A4 helps | Widest, most speculative, least blocked — genuinely last |
 | 14 | **D2** one new architecture class | ~2 sessions | D1 | Deliberately last; §19's one-class rule means this is a standing item, not a finish line |
 

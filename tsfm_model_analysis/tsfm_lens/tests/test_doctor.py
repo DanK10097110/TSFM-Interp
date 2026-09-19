@@ -139,6 +139,71 @@ def test_capped_stages_check_passes_when_every_cap_fits():
     print("capped-stages check passes when max_series fits every model's batch_size")
 
 
+def test_capped_stages_check_resolves_a_contrib_adapters_tier_not_just_built_ins(monkeypatch):
+    """Regression, found verifying ROADMAP.md sec 34.6 Item E3's own
+    scaffolded config against real preflight output (not the diff, per
+    CLAUDE.md sec 11.48): the pre-fix check computed `tiers` by filtering
+    `if m.adapter in ADAPTERS`, the BUILT-IN dict only -- silently excluding
+    every contrib model from the tier computation. A tier-0 contrib adapter
+    paired with a tier-3 built-in mock (exactly `run.py --new-adapter`'s own
+    pairing) therefore computed run_tier=3 instead of the real 0, and this
+    check FAILED on `attention.ablation_max_series` even though the actual
+    tier gate was about to drop the `attention` stage entirely -- the exact
+    false refusal the surrounding comment already warns about, tripped by
+    this very function. `resolve_adapter_class` (checks CONTRIB_REGISTRY
+    too) is the fix.
+    """
+    import tsfm_lens.models as models_pkg
+    from tsfm_lens.models.mock import MockBlackBoxAdapter
+
+    cfg = _cpu_cfg()
+    cfg.models[0].adapter = "mock_patch"              # tier 3, built-in
+    cfg.models[1].adapter = "_fake_contrib_blackbox"  # tier 0, "contrib"
+    cfg.models[0].batch_size = 64
+    cfg.models[1].batch_size = 64
+    cfg.attention.enabled = True
+    cfg.attention.ablation = True
+    cfg.attention.ablation_max_series = 128  # > batch_size -- irrelevant once
+    # `attention` is correctly dropped at the real run_tier of 0.
+
+    saved_registry = dict(models_pkg.CONTRIB_REGISTRY)
+    models_pkg.CONTRIB_REGISTRY["_fake_contrib_blackbox"] = ("fake.module", "FakeClass")
+    monkeypatch.setattr(models_pkg.contrib, "import_contrib_class",
+                        lambda module_path, class_name: MockBlackBoxAdapter)
+    try:
+        checks = _check_capped_stages(cfg)
+    finally:
+        models_pkg.CONTRIB_REGISTRY.clear()
+        models_pkg.CONTRIB_REGISTRY.update(saved_registry)
+
+    names = [c.name for c in checks]
+    assert "batch cap: attention.ablation_max_series" not in names, (
+        "the contrib model's tier-0 was not counted -- attention should have "
+        "been excluded from candidates at the real run_tier, not evaluated")
+    overall = next(c for c in checks if c.name == "batch caps")
+    assert overall.status == "pass"
+    assert "tier 0" in overall.detail
+    print("capped-stages check correctly resolves a contrib adapter's tier, "
+          "not just built-ins")
+
+
+def test_capped_stages_check_reports_a_warn_not_a_silent_drop_for_an_unresolvable_adapter():
+    """The complementary negative: an adapter this check truly cannot
+    resolve (a typo, a broken contrib import) must surface as its own
+    `warn` naming the model, not vanish from `tiers` the way the pre-fix
+    bug silently dropped every contrib adapter (CLAUDE.md sec 2.5 -- degrade
+    loudly, never silently).
+    """
+    cfg = _cpu_cfg()
+    cfg.models[1].adapter = "_totally_unknown_adapter_name"
+    checks = _check_capped_stages(cfg)
+    warn_check = next(c for c in checks if c.name == "batch caps: adapter resolution")
+    assert warn_check.status == "warn"
+    assert "_totally_unknown_adapter_name" in warn_check.detail
+    print("capped-stages check warns by name on an unresolvable adapter, "
+          "rather than silently excluding it from the tier computation")
+
+
 def test_run_preflight_static_mode_never_loads_a_model():
     cfg = _cpu_cfg()
     checks = run_preflight(cfg, full=False)

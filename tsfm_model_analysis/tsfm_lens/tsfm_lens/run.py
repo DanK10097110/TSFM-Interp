@@ -28,7 +28,22 @@ from tsfm_lens.extraction.alignment import (calibrate_impulse_amplitude,
 from tsfm_lens.extraction.span_discovery import compare_declared, discover_spans
 from tsfm_lens.manifest import verify_provenance
 from tsfm_lens.pipeline import Context, run_pipeline, stage_names
+from tsfm_lens.report.results_table import export_results_table
 from tsfm_lens.utils import setup_logging
+
+
+def _export_results(run_dir: Path) -> None:
+    """`--export-results` entry point (ROADMAP.md sec 34.2 Item A4).
+
+    Re-derives `report/results.csv`/`.parquet` from a run's own already-
+    written `findings.json` without touching the pipeline -- the same
+    export the `report` stage already writes automatically, exposed
+    standalone for a run whose report predates this item, or after editing
+    a stage extractor and wanting to re-export without re-rendering HTML.
+    """
+    paths = export_results_table(run_dir)
+    print(f"wrote {paths['csv']}")
+    print(f"wrote {paths['parquet']}")
 
 
 def _print_provenance_diff(run_dir: Path) -> None:
@@ -155,6 +170,13 @@ def main() -> None:
                              "activation-store shape) against the current "
                              "environment and print every difference, then "
                              "exit (ROADMAP.md sec 20 H12)")
+    parser.add_argument("--export-results", default="", metavar="RUN_DIR",
+                        help="re-export report/results.csv and .parquet -- one "
+                             "long-format row per finding -- from a run's own "
+                             "report/findings.json, then exit; no --config "
+                             "needed (ROADMAP.md sec 34.2 Item A4). The report "
+                             "stage already does this automatically -- use "
+                             "this to re-export without re-rendering HTML")
     parser.add_argument("--stages", default="",
                         help=f"comma-separated subset of {stage_names()}; default: all enabled")
     parser.add_argument("--force", default="",
@@ -191,6 +213,15 @@ def main() -> None:
                              "and every optional capability, each as one row with a typed "
                              "status (pass/warn/fail/not_applicable) and a remediation "
                              "(ROADMAP.md sec 34.6 Item E4); exits nonzero iff any row fails")
+    parser.add_argument("--new-adapter", default="", metavar="NAME",
+                        help="scaffold tsfm_lens/models/contrib/<name>_adapter.py from "
+                             "the template plus configs/smoke_<name>.yaml pairing it "
+                             "against mock_patch, print the five commands to run next, "
+                             "and exit -- no --config needed (ROADMAP.md sec 34.6 Item "
+                             "E3; requires --checkpoint)")
+    parser.add_argument("--checkpoint", default="",
+                        help="checkpoint id to record in the scaffolded adapter/config "
+                             "(used with --new-adapter)")
     parser.add_argument("--doctor", action="store_true",
                         help="run the full preflight (incl. loading every model for "
                              "adapter conformance + alignment checks) and exit "
@@ -219,8 +250,36 @@ def main() -> None:
         _print_provenance_diff(Path(args.verify_provenance))
         return
 
+    if args.export_results:
+        _export_results(Path(args.export_results))
+        return
+
+    if args.new_adapter:
+        if not args.checkpoint:
+            parser.error("--checkpoint is required with --new-adapter")
+        from tsfm_lens import models as models_pkg
+        from tsfm_lens.scaffold_adapter import ScaffoldError, scaffold
+
+        known = set(models_pkg.ADAPTERS) | set(models_pkg.CONTRIB_REGISTRY)
+        contrib_dir = Path(__file__).resolve().parent / "models" / "contrib"
+        configs_dir = Path(__file__).resolve().parents[1] / "configs"
+        try:
+            result = scaffold(args.new_adapter, args.checkpoint, known,
+                              contrib_dir, configs_dir)
+        except ScaffoldError as exc:
+            parser.error(str(exc))
+            return
+        print(f"wrote {result.adapter_rel_path}")
+        print(f"wrote {result.config_rel_path}")
+        print("\nrun these next, in order:\n")
+        for cmd in result.commands:
+            print(cmd)
+            print()
+        return
+
     if not args.config:
-        parser.error("--config is required (unless using --verify-provenance)")
+        parser.error("--config is required (unless using --verify-provenance or "
+                     "--export-results)")
     cfg = load_config(args.config)
     if args.verbose is not None:
         cfg.report.verbose = args.verbose

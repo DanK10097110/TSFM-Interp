@@ -62,7 +62,9 @@ from typing import Any, Optional
 
 import numpy as np
 
-from .mock import MockBlackBoxAdapter
+from tsfm_lens.models.mock import MockBlackBoxAdapter  # absolute: correct both here
+# and once copied into contrib/, where a relative `.mock` would instead resolve
+# to the nonexistent `tsfm_lens.models.contrib.mock`.
 
 # --- Registration: read by AST at discovery time, never executed. Change
 # both before copying this file into contrib/ -- ADAPTER_NAME must not

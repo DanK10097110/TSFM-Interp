@@ -80,6 +80,39 @@ def _discover_contrib() -> None:
 _discover_contrib()
 
 
+def resolve_adapter_class(name: str) -> type:
+    """The class registered under `name`, built-in or contrib -- no instance.
+
+    Split out of `build_adapter` (ROADMAP.md sec 34.6 Item E4, found while
+    verifying E3's own scaffolded config against real preflight output) so a
+    caller that only needs a class-level fact -- `capability_tier()` is a
+    classmethod, per `pipeline.py::resolve_tiers`'s own docstring "costs
+    nothing" -- is not forced to also supply `data_cfg`/`device`/`dtype` and
+    construct a full instance just to ask it. One lookup, used by both
+    `build_adapter` here and `doctor.py`'s batch-cap preflight check, so the
+    built-in-then-contrib-then-collision resolution order can never drift
+    between the two call sites (`CLAUDE.md` sec 11.34's tie-break lesson).
+    """
+    if name in ADAPTERS:
+        return ADAPTERS[name]
+    if name in CONTRIB_REGISTRY:
+        module_path, class_name = CONTRIB_REGISTRY[name]
+        try:
+            return contrib.import_contrib_class(module_path, class_name)
+        except Exception as exc:
+            raise ValueError(
+                f"contrib adapter '{name}' ({module_path}.{class_name}) failed to "
+                f"import: {type(exc).__name__}: {exc}") from exc
+    collision = next((e for e in discovery_errors if e.get("collides_with") == name), None)
+    if collision is not None:
+        raise ValueError(
+            f"adapter name '{name}' collides with a built-in adapter of the same "
+            f"name, declared by contrib file {collision['file']} -- rename the contrib "
+            f"ADAPTER_NAME to something else")
+    raise ValueError(f"unknown adapter '{name}'; available: "
+                     f"{sorted(list(ADAPTERS) + list(CONTRIB_REGISTRY))}")
+
+
 def build_adapter(mcfg: ModelConfig, data_cfg: DataConfig,
                   device: torch.device, dtype: torch.dtype) -> ModelAdapter:
     """Construct (without loading) the adapter named in a model config.
@@ -91,25 +124,8 @@ def build_adapter(mcfg: ModelConfig, data_cfg: DataConfig,
     raises here naming both, rather than silently resolving to whichever one
     registration order happened to favor (`CLAUDE.md` sec 11.34).
     """
-    if mcfg.adapter in ADAPTERS:
-        return ADAPTERS[mcfg.adapter](mcfg, data_cfg, device, dtype)
-    if mcfg.adapter in CONTRIB_REGISTRY:
-        module_path, class_name = CONTRIB_REGISTRY[mcfg.adapter]
-        try:
-            cls = contrib.import_contrib_class(module_path, class_name)
-        except Exception as exc:
-            raise ValueError(
-                f"contrib adapter '{mcfg.adapter}' ({module_path}.{class_name}) failed to "
-                f"import: {type(exc).__name__}: {exc}") from exc
-        return cls(mcfg, data_cfg, device, dtype)
-    collision = next((e for e in discovery_errors if e.get("collides_with") == mcfg.adapter), None)
-    if collision is not None:
-        raise ValueError(
-            f"adapter name '{mcfg.adapter}' collides with a built-in adapter of the same "
-            f"name, declared by contrib file {collision['file']} -- rename the contrib "
-            f"ADAPTER_NAME to something else")
-    raise ValueError(f"unknown adapter '{mcfg.adapter}'; available: "
-                     f"{sorted(list(ADAPTERS) + list(CONTRIB_REGISTRY))}")
+    cls = resolve_adapter_class(mcfg.adapter)
+    return cls(mcfg, data_cfg, device, dtype)
 
 
 class ModelHub:

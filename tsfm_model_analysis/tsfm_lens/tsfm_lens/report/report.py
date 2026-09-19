@@ -23,7 +23,7 @@ from jinja2 import Template
 from plotly.subplots import make_subplots
 
 from .. import failure_gallery, glossary, methods_appendix, stage_docs
-from . import derived
+from . import derived, results_table
 from .sanitize import strip_internal_refs, strip_refs_in_place
 from ..config import PipelineConfig
 from ..utils import load_json, log, save_json
@@ -348,6 +348,12 @@ def run_report(cfg: PipelineConfig) -> Path:
     # metadata, not run artifacts a downstream analysis stage would read.
     save_json(run_dir / "report" / "findings.json",
              strip_refs_in_place({"findings": [asdict(f) for f in findings]}))
+    # `results.csv`/`results.parquet` (ROADMAP.md sec 34.2 Item A4): one
+    # long-format row per finding (more for a few stages with a declared
+    # extractor), read back from the `findings.json` just written above --
+    # a pure reduction, not a second source of truth, so it cannot disagree
+    # with the HTML it is exported alongside.
+    results_table.export_results_table(run_dir)
     # `multiplicity.json` (ROADMAP.md sec 18 F8): one record per independently
     # Holm-corrected family of tests in this report, machine-readable so a
     # cross-run reader (meta_report) can compare how many comparisons produced

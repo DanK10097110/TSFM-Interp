@@ -585,28 +585,21 @@ class-based loader instead of the current adapter.
 
 ## Extending
 
-**New model — bring your own HF checkpoint.** Nothing downstream changes in
-principle; four real adapters (Chronos-T5, Chronos-Bolt, TimesFM 2.5,
-Chronos-2, Sundial) have proven this out, and the one real shared-code gap
-a fourth architecture ever surfaced (a capture hook that assumed `tuple`
-outputs) was fixed once in `extraction/hooks.py`, not per-adapter.
+**New model — bring your own checkpoint.** Nothing downstream changes in
+principle; several real adapters spanning encoder-decoder, decoder-only,
+encoder-only and cross-series-attention architectures have proven this out,
+and the rare shared-code gap a new architecture surfaces gets fixed once in
+the shared module, not per-adapter.
 
-1. Subclass `ModelAdapter` (`tsfm_lens/models/base.py`): implement `load`,
-   `module`, `prepare`, `forward`, `token_time_spans`, `predict`; override
-   `postprocess_tokens`/`token_slice` if the sequence carries specials or
-   padding. `chronos_bolt_adapter.py` is the compact worked example;
-   `sundial_adapter.py` is the most recent one and shows how to route around
-   a checkpoint's own broken `.generate()`/cache path without touching any
-   shared file.
-2. Register it in `tsfm_lens/models/__init__.py`.
-3. `python run.py --config <your config> --discover-layers` to pick a
-   `layer_regex` over its residual stream.
-4. `python run.py --config <your config> --check-alignment <name>` — read
-   the full per-layer table, not just whether it ran (see the alignment
-   caveat below).
-5. Drop it into a config next to any existing model and run the pipeline
-   normally — `layer_screen` (below) and every downstream stage work
-   unmodified.
+Start at **[`docs/CONTRIBUTING_ADAPTERS.md`](docs/CONTRIBUTING_ADAPTERS.md)** —
+the decision tree (try the zero-code probe path before writing anything;
+scaffold a contrib adapter with `run.py --new-adapter` only if it refuses),
+the commands to run at each step, what a refusal from one of them means, and
+the licensing convention. **[`tsfm_lens/ADAPTERS.md`](tsfm_lens/ADAPTERS.md)**
+(generated, never hand-edited) is its companion: every currently-registered
+adapter's tier, capabilities and default checkpoint, plus the narrative
+explaining what each verification step measures. Between the two, nothing
+about adding a model should require reading adapter source code to answer.
 
 **Layer screening.** Before the expensive per-layer analyses (Profile, L1,
 SAE), the `layer_screen` stage (`analysis/layer_screen.py`, method
