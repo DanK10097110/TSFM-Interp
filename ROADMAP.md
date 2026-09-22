@@ -951,6 +951,77 @@ Three things a session picking this up must know before opening §34:
   pipeline") → package E. §22.3's other halves stay parked; §22.8's three
   outright rejections are untouched.
 
+**18. 📋 DESIGN ONLY, DO NOT IMPLEMENT — §35, convergent learning at the unit
+level (added 2026-09-22, user-directed).** The user supplied Li, Yosinski,
+Clune, Lipson & Hopcroft, *Convergent Learning* (NIPS 2015 workshop), which
+asks this repo's founding question for CNNs and answers it with machinery this
+repo does not have, and asked for a design — **explicitly not an
+implementation**. §35 is that design: an **alignment spectrum** (per-unit
+best-match correlation, sorted) and **CCM**, its floor-referenced reduction,
+plus the greedy-vs-optimal assignment gap the codebase has twice named as
+missing (`sae/matching.py:45-48`, `sae/role_matching.py:250`) and never
+measured.
+
+Three things a session picking this up must know before opening §35:
+- **The justification is one testable identity, and it is the go/no-go.**
+  Rotating one model's hidden basis leaves CKA **bit-identical** while driving
+  CCM to its null. §35.9 test 3 asserts both halves in one test; if it does not
+  pass, abandon the section rather than tune it.
+- **Both halves of the paper's method are size-confounded here and in opposite
+  directions**, because this repo's dictionaries span **32×** in width where
+  the paper's nets were equal by construction: the optimal assignment has a
+  **ceiling** below 1 (§11.35's shape — a false refusal of a correct pair), and
+  the greedy one has **search inflation that grows with the candidate count**
+  (§16 E9's own reason for `permutation_null_alignment`). §35.3.3 splits their
+  jobs accordingly. Do not port the paper's thresholds — §35.1 records a likely
+  transcription error in its Table 1, and §35.13 derives every constant from
+  this repo's own null instead.
+- **Two report-copy fixes in §35.11 are true today and can land alone**: L1's
+  rendered note sells rotation invariance purely as a virtue and never states
+  its cost, and `l1/cka_sae.json` runs a **rotation-invariant** statistic on
+  the one basis this repo built expensively to be non-arbitrary — the note
+  crediting that basis and the statistic discarding it contradict each other
+  (§35.2 item 4).
+
+🔴 **This does not reopen the crosscoder.** §6.2.1's triage stands; §35.5
+offers a *mechanism* for its negative `frac_shared` result (a many-to-one
+correspondence has no representation in a shared atom set) via the post-hoc
+matching path that already **won** that pre-registered comparison, which is
+the opposite of §2.9's forbidden revival.
+
+**19. 📋 DESIGN ONLY, DO NOT IMPLEMENT — §36, the L1 report section becomes
+two-tier (added 2026-09-22, user-directed, same session as item 18).** The
+follow-on instruction was *"I don't want to get rid of what I already have with
+CKA, but if there is a provably better metric then scale CKA back (make more of
+the graphs collapsable), and add similar graphs for the new metric."* §36 is
+that design: six CCM figures specified down to their colour scales, a
+seven-check **pre-registered promotion gate**, and an exact folded-HTML pattern
+for the five CKA objects that move behind a `<details>`. It depends on item 18
+and must not be started before §35 step 2 passes its rotation control.
+
+Three things a session picking this up must know before opening §36:
+- **The demotion is gated on measurement, not on the design existing.** Seven
+  checks must all pass on a real run (§36.1) before `layout_tier` becomes
+  `ccm_primary`; six of seven is `cka_primary`, which is today's layout
+  byte-for-byte. The threshold and the rule live in
+  `analysis/alignment_spectrum.py` — **`report.py` reads `layout_tier` and
+  never derives it** (§36.7 test 10), the same constraint
+  `Verdict.__post_init__` already enforces for the scorecard.
+- 🔴 **Collapsing a figure can fake `test_the_rendered_report_captions_every_figure`.**
+  Wrapping a figure *and* its `_figcap` in a `<details>` keeps them positionally
+  adjacent, so that test passes while its own stated invariant — a figure is
+  labelled without a click — is violated. §36.5 gives the required shape (the
+  `<h4>` becomes the `<summary>`) and §36.7 test 7 adds the general invariant
+  that must land in the **same commit** as the first collapsed figure.
+- **Nothing about CKA is removed, ever.** The stage, `cka.npz`, `meta.json`,
+  `cka_sae.json`, every `_note` string and every `Finding` are identical in both
+  tiers — pinned by tests 8 and 9, the second because a folded figure quietly
+  losing its claim from `findings.json` is invisible in the HTML. "Scale back"
+  is a statement about pixels. The CKA **heatmap stays open** even at
+  `ccm_primary`, directly beneath CCM's, because gate check 7 is the claim that
+  the two grids differ and collapsing the comparison would make the demotion
+  unfalsifiable by eye (§36.4).
+
 **Not in this queue:** see **§22** — parked features with reasons and un-park
 triggers, and §22.8's short list of things rejected outright. **§23.5** lists
 what is *correctly* closed, so a future session does not reopen a decision
@@ -13637,6 +13708,27 @@ reason E3(c)'s routing half wasn't: no such model is integrated here.
 Lag-Llama is the named candidate and remains unbuilt (§22.2). The evidence is
 a synthetic decoy with a known-correct answer plus the proof that the
 pre-existing gate admits it.
+
+✅→🔴 **Exercised 2026-09-21 (§34 Item D2) — Lag-Llama is now integrated, and
+the gate did NOT fire.** `--discover-spans` against the real
+`time-series-foundation-models/Lag-Llama` checkpoint measured
+`contiguity=1.000000`, 0 non-contiguous tokens, at `contrast` far above the
+gate (1518–1603 vs. `min_contrast=4.0`). The architecture genuinely reads a
+disjoint 84-lag set per token, exactly the case this section describes — but
+the argmax-ownership methodology assigns each probed input position to
+whichever token shows the *largest-magnitude* response, and the direct/local
+embedding pathway at the matching position dominates that contest by enough
+margin that the far-lag dependency never wins ownership of any token, so the
+measured map comes out as a clean contiguous diagonal despite the real
+disjoint computation underneath it. This is not the admits-a-lag-feature-
+model-by-omission failure the decoy above was built to catch (that decoy has
+no dominant local term to hide behind); it is a **new, narrower gap**: a
+lag-feature architecture with a strong lag-0 term defeats peak-magnitude
+argmax specifically. See `CLAUDE.md` §34 Item D2's Findings (or ROADMAP.md
+§34's own Item D2 above) for the full numbers. Not fixed — per this item's
+own standing instruction not to adjust a gate to chase one model's verdict —
+and left here as the first real evidence that the methodology, not just its
+untested status, has a gap.
 
 ### G3–G7 — parked (see §22.2)
 
@@ -30176,7 +30268,7 @@ distributions).
 > unusually weak on *what a number's absence means*. Every item in A is about
 > the second.
 
-#### Item A1 — Statistical power and the minimum detectable effect 📋 NEEDS IMPLEMENTATION
+#### Item A1 — Statistical power and the minimum detectable effect ✅ DONE 2026-09-17
 
 **The gap.** `l0/summary.json` reports, per family, whether a difference was
 detected. It never reports what size of difference this run **could** have
@@ -30437,7 +30529,7 @@ if a diff is ever needed, but nothing requires restoring it.
 
 ---
 
-#### Item A2 — Specification curve over the analysis knobs 📋 NEEDS IMPLEMENTATION
+#### Item A2 — Specification curve over the analysis knobs ✅ DONE 2026-09-21
 
 **The gap.** Every analysis knob in this repo is individually defended, and the
 defences are good. None is swept. §9's own layer-screen row records selector
@@ -30511,9 +30603,249 @@ must make the `compute` depth axis cell `not_applicable`, not silently fall back
 to `index` and report a robust result. Confirm it fails against a version that
 falls back.
 
+**Findings (2026-09-21, autonomous cron loop, `CLAUDE.md` §2.8).** Built as
+specified: new `tsfm_lens/analysis/spec_curve.py` (`run_spec_curve`, the four
+claim-family sweep functions, `ClaimCell`/`ClaimSweep`) + `run_spec_curve.py`
+(CLI) + `tests/test_spec_curve.py` (16 tests, all synthetic with a planted
+answer, per this repo's own convention) + A2.3's report rendering
+(`report/report.py::_sec_spec_curve`, wired into the `builders` list as a new
+"Spec curve" section, plus 2 new tests in the same file). It is a standalone
+reducer exactly like `report/meta_report.py`/`analysis/error_fingerprint.py` —
+no model load, no forward pass, reads `config_resolved.yaml` +
+`ActivationStore(mode="r")` + already-written artifacts only.
+
+1. **A2.1's premise correction, found before writing any code (§2.4).** The
+   scope table's `layer_screen.method` row says "Free — `layer_screen` writes
+   all three scores." That is false as literally stated: the production
+   `run_layer_screen` stage persists only the *configured* method's scores and
+   deletes its dedicated fair (stride-1, every-block) screening store
+   afterward by default (`layer_screen.keep_store: false`, `ROADMAP.md` §15
+   A1). Re-running `coverage`/`factor_emergence` the way the pipeline stage
+   does would need a second extraction pass, which A2.1 rules out of scope by
+   its own "anything requiring a second extraction is out of scope" rule. What
+   IS free is re-scoring the same three selectors against the run's MAIN
+   (possibly strided) store — exactly what `run_layer_screen` itself falls
+   back to when `require_full_capture: false`. `sweep_layer_screen_selection`
+   does this and marks every resulting cell `fair_to_all_layers: false` — a
+   real, stated deviation from the production selection's own fairness
+   guarantee, not a second copy of the same measurement. Documented in the
+   module's own docstring and in a corrected §6.1.1-style callout, not
+   silently absorbed.
+2. **A2.2 as built.** Four claim families, matched against `report/
+   findings.json`'s own claim ids by substring containment
+   (`_match_finding_claim_id`, best-effort — a miss returns `None` and the
+   claim is still swept under a synthetic `spec.*` id, never dropped):
+   `l0_strength_set` (which families a model is significantly stronger on;
+   applicable to `l0.scale`/`stats.n_boot`/corpus-subsample-seed),
+   `lens_crystallization` (whether a model's forecast crystallizes at all
+   within tolerance — the *qualitative* state, not the raw depth number,
+   since the value is axis-dependent by definition; applicable to
+   `alignment.depth_axis` only), `layer_screen_selection` (which layers a
+   selector picks; applicable to `layer_screen.method` only, per finding 1
+   above), `attention_periodicity` (which head is the top periodicity head;
+   applicable to `attention.resolution_mode` only, a pure read of
+   already-persisted `attention/meta.json` — zero recomputation).
+3. **A2.3 as built, in `report.py::_sec_spec_curve`.** One dot per claim in a
+   Plotly scatter, **ordered worst-first** (least-robust claim nearest the
+   top) rather than by claim id, family, or "best cell" — the spec's own
+   "never render only the best cell" read as an ordering discipline as well
+   as a selection one. Hover text on every dot carries the full per-cell
+   breakdown (`knob=value: robust=…, value=…` or the `not_applicable` reason),
+   not just the summary fraction. A claim with zero applicable cells renders
+   as an off-axis 'x' marker and is named separately in prose, excluded from
+   every count. Below the figure: a per-claim table, and one `Finding` per
+   claim with `n_applicable > 0` stating that claim's own `robust_frac` in
+   full precision (e.g. `1.000` vs `0.667`) and, for a non-robust claim, which
+   specific knob(s) flip it (`"; flips under: alignment.depth_axis=index."`).
+   `evidence_class="descriptive"` throughout, `registered=False`. Wired into
+   the `builders` list **before** `Confirm`, not after — placing it after
+   would have put its findings past `n_exploratory[0]`'s cutoff and left them
+   silently untagged as "[exploratory]" despite being dev-only (found by
+   reading `run_report`'s own tagging loop, not by running it and noticing a
+   wrong label). Added a `STAGE_DOCS["spec_curve"]` entry (the same pattern
+   `"seasonality_circuit"` already uses for a report-only, non-pipeline-stage
+   section — confirmed no test in `test_stage_docs.py` requires `STAGE_DOCS`
+   keys to be a subset of `pipeline.stage_names()`) and a
+   `methods_appendix.py` entry pulling this module's own docstring verbatim.
+4. **What is NOT built, stated rather than assumed.** A2's failure-modes
+   bullet allows a full cartesian-product sweep "behind an explicit flag" —
+   only the default one-at-a-time sum mode (16 cells: 4+2+2+2+3+3) is
+   implemented; `run_spec_curve`'s `grid_mode` is unconditionally
+   `"one_knob_at_a_time"` with no flag to widen it. Not attempted this
+   session given the combinatorial cost (288 cells full-product) and that
+   nothing in this item's acceptance criterion requires it.
+5. **Test results, all local and green.** `tests/test_spec_curve.py`: **16
+   passed** (57.4s). `tests/test_stage_docs.py`: **7 passed** (5.96s, confirms
+   the new `STAGE_DOCS` entry doesn't break the completeness/alias checks).
+   `tests/test_smoke.py` + `tests/test_report_legibility.py` together: **21
+   passed, 1 pre-existing warning** (111.14s) — run specifically to catch any
+   regression from adding a new entry to `report.py`'s `builders` list on a
+   real (mock-model) end-to-end pipeline run; none found.
+6. **Live acceptance run — launched, not yet complete as of this writing
+   (2026-09-21).** Per this item's own Acceptance criterion, dispatched
+   against `runs/full_report_run_large_revived` — substituted for the
+   original `runs/full_report_run_large`, which this file's own 2026-09-04
+   disk-cleanup entry records as no longer kept (`_revived` is what "the most
+   recent 3-model full run" now refers to, and it is the same TimesFM /
+   Chronos-T5-Base / Chronos-2 panel over the same `benchmark_large` corpus:
+   965 dev series, 5 families, len 576). Command: `python run_spec_curve.py
+   --run runs/full_report_run_large_revived --out
+   runs/full_report_run_large_revived/spec_curve/results_cli.json`, launched
+   detached (`nohup … & + disown`, PID 2561642, PPID 1 — confirmed to survive
+   independent of any Claude session). As of the last check this session
+   (12m34s elapsed, 98.2% CPU, 761MB RSS, no crash), it had verified the
+   sealed corpus and loaded the store (`965 series, 5 families, len=576`) and
+   was still computing — most plausibly inside the `layer_screen_selection`
+   family, whose `factor_emergence` selector trains per-layer probes against
+   the main store's real activations for all three models and has no
+   intermediate log line between "data loaded" and the final summary print.
+   Per `CLAUDE.md` §2.8, not polled further this session; the numbers (which
+   claims are/aren't fully robust, the `layer_screen_selection` family's
+   `fair_to_all_layers`/`jaccard_vs_baseline` values, and confirmation that
+   the depth-axis plant behaves as predicted rather than reading as
+   universally robust per §11.55) are not yet in hand and are **not** invented
+   here. A future session (the next cron firing, or a direct check) should
+   read `runs/full_report_run_large_revived/spec_curve/results.json` (and the
+   `results_cli.json` copy) once the process has exited, verify the
+   Acceptance criterion is genuinely met, and append those numbers as a
+   follow-up to this Findings block rather than editing it in place
+   (`ROADMAP.md` §0's correct-in-place discipline is for wrong statements,
+   not for filling in a result that didn't exist yet).
+7. **Live acceptance run — COMPLETE, Acceptance criterion genuinely met,
+   every number below independently re-derived from
+   `runs/full_report_run_large_revived/spec_curve/results.json` via
+   `json.load` in this session (not taken from the launching agent's own
+   report on trust, per `CLAUDE.md` §2.4) — byte-for-byte match on every
+   field checked.** Wall clock **52m 5s** (12:47:58 → 13:40:03 by the log's
+   own timestamps; PID 2561642 no longer exists at the follow-up check).
+   Zero errors/warnings/exceptions in the full log (case-insensitive grep
+   for `error|traceback|exception|warn`: 0 matches).
+   - **Summary** (`data["summary"]`, verbatim): `{'n_claims': 11,
+     'n_fully_robust': 5, 'n_not_fully_robust': 6, 'n_excluded_claims': 0,
+     'excluded_claim_ids': []}`. **The Acceptance criterion's two halves are
+     both satisfied**: at least one claim at `robust_frac == 1.0` across its
+     whole applicable grid (5 of them: both `l0_strength_set` claims anchored
+     on TimesFM, both `lens_crystallization` claims, the TimesFM
+     `attention_periodicity` claim) and at least one below 1.0 with the
+     disagreeing cells' own differing values surfaced, not dropped (6 of
+     them, full list below).
+   - **Every non-fully-robust claim, with its disagreeing cell(s)' exact
+     values** (all six `reason` fields on these disagreeing cells are the
+     empty string `''` — the module only populates `reason` for
+     `not_applicable` cells, never for a genuine `robust: false`
+     disagreement on an applicable cell; the disagreement's only signal is
+     the differing `value` itself, confirmed directly against the JSON, not
+     a summarization gap):
+     - `spec.l0_strength.Chronos-T5-Base.Chronos-2.Chronos-2` — robust 6/7
+       (**0.8571428571428571**). Baseline `['random_parametric',
+       'sequential_par']`; disagrees only under `l0.scale=seasonal_naive` →
+       `['mixture', 'random_parametric', 'sequential_par']` (an extra family
+       enters the "strongest" set under the alternate scale metric).
+     - `spec.layer_screen.TimesFM` — robust **0/3 (0.0)**. Baseline (the run's
+       actual `work_bend` selection) `['stacked_xf.15', 'stacked_xf.18',
+       'stacked_xf.2', 'stacked_xf.6', 'stacked_xf.9']`; all three grid values
+       disagree and all three read `jaccard_vs_baseline: 0.0` (zero overlap
+       with the baseline set): `work_bend→['stacked_xf.14','stacked_xf.16']`,
+       `coverage→['stacked_xf.0','stacked_xf.8']`,
+       `factor_emergence→['stacked_xf.0','stacked_xf.14']`. (The
+       `work_bend` row disagreeing with itself is not a contradiction — the
+       claim's own baseline was captured from `layer_screen/selection.json`,
+       a run made under a *different* seed/corpus draw than this sweep's own
+       fresh `work_bend` re-run; `layer_screen.seed: None` means "unseeded",
+       so this is itself further, unplanned evidence for the claim's own
+       instability, consistent with `CLAUDE.md` §9's already-recorded
+       verdict-flip finding for `layer_screen`, not a bug in the sweep.)
+     - `spec.layer_screen.Chronos-T5-Base` — robust **0/3 (0.0)**. Baseline
+       `['encoder.block.10', 'encoder.block.4', 'encoder.block.8']`;
+       `work_bend→[...block.10, .11, .4], jaccard=0.5`,
+       `coverage→[...block.1, .11, .6], jaccard=0.0`,
+       `factor_emergence→[...block.0, .10, .9], jaccard=0.2`.
+     - `spec.layer_screen.Chronos-2` — robust **0/3 (0.0)**. Baseline
+       `['encoder.block.10', 'encoder.block.6', 'encoder.block.8']`;
+       `work_bend→[...block.10, .11, .8], jaccard=0.5`,
+       `coverage→[...block.11, .5, .9], jaccard=0.0`,
+       `factor_emergence→[...block.0, .1, .3], jaccard=0.0`.
+     - `spec.attention_periodicity.Chronos-T5-Base` — robust 1/2 (**0.5**).
+       Baseline `['encoder.block.6', 3]`; disagrees under
+       `attention.resolution_mode=native` → `['encoder.block.8', 5]` (a
+       *different* top head at a *different* lag under the native, unmatched
+       resolution axis — `matched` reproduces the baseline exactly).
+     - `spec.attention_periodicity.Chronos-2` — robust 1/2 (**0.5**). Baseline
+       `['encoder.block.3', 3]`; disagrees under `native` →
+       `['encoder.block.5', 11]`.
+   - **`fair_to_all_layers` is `False` in all 9 of 9 "ok" cells** of the
+     `layer_screen_selection` family (3 claims × 3 `layer_screen.method`
+     values) — confirming this run's `layer_screen` stage screens only the
+     `capture_layer_stride`-subsampled store (`CLAUDE.md` §15 A1's
+     already-recorded limitation), so every one of these
+     layer-selection-instability numbers should be read alongside that
+     caveat rather than as evidence the *full, unstrided* selection would
+     be equally unstable — a different, harder question this run's config
+     cannot answer.
+   - **§11.55 check: the module is not inert.** The five fully-robust claims
+     are genuinely fully robust (every applicable cell agrees) and the six
+     non-fully-robust claims are genuinely discriminating (real, differing
+     `value`s per disagreeing cell, not a uniform `robust: False` stamped
+     everywhere) — directly ruling out both failure shapes §11.55 warns
+     about (an existential check gone vacuous, or a plant with no
+     observable effect).
+   - **The `alignment.depth_axis` plant does *not* fire anywhere in this
+     run — checked directly, and this is a real limitation to state rather
+     than a pass to claim.** All 4 grid values (`index`/`block`/`compute`/
+     `functional`) read `not_applicable` on every one of the 11 claims, with
+     a family-specific (not copy-pasted — independently verified: each of
+     the four claim families' `not_applicable` reason text correctly names
+     only *that* family's own dependencies) reason. **None of this run's
+     four claim families (`l0_strength_set`, `lens_crystallization`,
+     `layer_screen_selection`, `attention_periodicity`) actually reads the
+     depth axis at all** — so the earlier note's own stated check ("confirm
+     the depth-axis plant behaves as predicted, i.e. `block` should cap
+     Chronos-T5-Base's coordinate around 0.478 vs `index`'s 1.0") could not
+     be exercised by this acceptance run's claim set. That check needs a
+     claim family that actually consumes `alignment.depth_axis` (a
+     depth-located L1/L2/L3 claim, none of which A2.1 put in the initial
+     four families) to be meaningful — recorded here as a real, open gap in
+     this run's coverage of the grid, not silently glossed over.
+   - **Report-rendering (A2.3) re-verified against this real data, not just
+     against the earlier synthetic fixtures.** Re-rendered
+     `runs/full_report_run_large_revived/report.html` via `python run.py
+     --config configs/full_report_run_large_revived.yaml --stages report
+     --force report --allow-stale` (`--allow-stale` needed only because this
+     run's `layer_screen`/`sae` stage configs have since gained new fields —
+     `min_gap`, `concept_causal_only`, `holdout_frac`, etc. — tripping the
+     `CLAUDE.md` §15 A3 staleness guard exactly as designed; `spec_curve`
+     itself reads only its own dedicated `results.json` and is unaffected by
+     that schema drift). Result: **16 sections rendered / 2 skipped
+     (`Corpus`, `seasonality_circuit` — both for stated reasons unrelated to
+     this item), 93 findings**, of which **11 are `stage: "spec_curve"`**,
+     each correctly tagged `[exploratory — not pre-registered]` (confirming
+     this session's earlier placement of the new builder entry immediately
+     before "Confirm" in `report.py`'s `builders` list was correct) and each
+     independently re-derived from `report/findings.json` matching the raw
+     JSON numbers above exactly — e.g.
+     `spec.layer_screen.Chronos-T5-Base`'s rendered finding correctly reads
+     *"is robust in 0 of 3 applicable analysis-knob cells (0.000) against a
+     baseline of ['encoder.block.10', 'encoder.block.4', 'encoder.block.8']
+     ... flips under: layer_screen.method=work_bend;
+     layer_screen.method=coverage; layer_screen.method=factor_emergence"*,
+     and the auto-composed `caveat` correctly appends the run's own measured
+     capture-coverage qualifier ("~86% of Chronos-T5-Base's forward
+     computation is unobserved ...") via the pre-existing
+     `_qualify_depth_claims` machinery with zero new code needed for that
+     part. Every finding text checked renders as intended; no placeholder,
+     no truncation, no key-name drift (`CLAUDE.md` §11.6's class of bug).
+   - **What this closes:** A2 is fully done — module, tests (16/16
+     synthetic), report section (11 real findings verified against rendered
+     HTML per §11.48's discipline, not just the diff), and this live
+     acceptance run. **What it doesn't close, stated rather than glossed
+     over:** the depth-axis knob has never yet been exercised against a
+     claim that actually depends on it (see above); A2.1's own four claim
+     families are a deliberately small starting set, not exhaustive coverage
+     of this repo's headline claims.
+
 ---
 
-#### Item A3 — A no-skill reference row on L0 📋 NEEDS IMPLEMENTATION
+#### Item A3 — A no-skill reference row on L0 ✅ DONE 2026-09-17
 
 **The gap.** MASE's denominator makes 1.0 an implicit reference, but the report
 never states it, the alternative `seasonal_naive` scale mode exists in
@@ -31625,7 +31957,7 @@ benchmark_validation/` showing only `gates.py` modified).
 
 ---
 
-#### Item B5 — `confirm` records the corpus it consumed 📋 NEEDS IMPLEMENTATION
+#### Item B5 — `confirm` records the corpus it consumed ✅ DONE 2026-09-18
 
 **File:** `tsfm_lens/analysis/confirm.py`, `tsfm_lens/data.py` (pass-through).
 
@@ -31795,7 +32127,7 @@ A3's same precedent (no CLAUDE.md change).
 > `validation_report.json` in the benchmark package that **nothing in `tsfm_lens`
 > reads**. So this is a new section, not an expansion.
 
-#### Item C1 — The corpus card artifact 📋 NEEDS IMPLEMENTATION
+#### Item C1 — The corpus card artifact ✅ DONE 2026-09-17
 
 **File:** new `tsfm_lens/analysis/corpus_card.py`; new pipeline stage `corpus`.
 
@@ -31934,7 +32266,7 @@ block, the prior firing that did touch `build_pipeline/`).
 
 ---
 
-#### Item C2 — The report section 📋 NEEDS IMPLEMENTATION
+#### Item C2 — The report section ✅ DONE 2026-09-17
 
 **File:** `report/report.py::_sec_corpus`, `report/derived.py::corpus_trust_rows`
 and `corpus_composition_rows`.
@@ -32171,7 +32503,7 @@ narrowed to skip only genuine CSS selector lines).
 
 ---
 
-#### Item C3 — Plain language, and the two docs surfaces that will break 📋 NEEDS IMPLEMENTATION
+#### Item C3 — Plain language, and the two docs surfaces that will break ✅ DONE 2026-09-17
 
 **C3.1 — `stage_docs.py` gains a `corpus` entry.** It holds four fixed lines per
 stage (Question / How / Good-vs-bad / What it CANNOT tell you), one entry per
@@ -32321,7 +32653,7 @@ C3.2 and C3.3 were genuinely unstarted and are now done:
 > landscape table is the menu; §19's sequencing rule is the constraint, and this
 > package does not relax it.
 
-#### Item D1 — Track 1: a probe sweep, which is one session and covers many models 📋 NEEDS IMPLEMENTATION
+#### Item D1 — Track 1: a probe sweep, which is one session and covers many models ✅ DONE 2026-09-18
 
 **The insight that makes this cheap.** `GenericHFAdapter` + `run.py
 --probe-adapter` already *measures* the four seams every hand-written adapter
@@ -32483,7 +32815,7 @@ without touching `tsfm_lens.config`/`pipeline` at all.
 
 ---
 
-#### Item D2 — Track 2: one hand-written architecture class, and which one 📋 NEEDS IMPLEMENTATION
+#### Item D2 — Track 2: one hand-written architecture class, and which one ✅ DONE 2026-09-21
 
 **§19's rule, restated because it is the constraint that makes this tractable:
 one class per session, chosen to break a different envelope assumption.** Adding
@@ -32560,7 +32892,198 @@ gate, routes to `l0`/`budget`/`report`, and renders the reason in the fairness
 card is a **successful** outcome for this item, and the plan says so in advance
 so that a session does not "fix" the gate to make the model pass.
 
----
+**Findings (2026-09-21) — ✅ DONE. Lag-Llama chosen (the "1st" recommendation);
+it did NOT refuse, and that is itself the load-bearing result.** New
+`tsfm_lens/models/contrib/lag_llama_adapter.py` (414 lines) +
+`tsfm_lens/models/contrib/_lag_llama_vendor/` (the upstream architecture and
+`RobustScaler`, copied verbatim with license headers preserved, from
+`time-series-foundation-models/lag-llama`, Apache License 2.0 — verified
+against the upstream repo's own `LICENSE` file, D2.1 step 2, now recorded in
+both new configs' header comments). Architecture: 8-block, hidden=144 (9
+heads × 16), RoPE-positional, SDPA-causal decoder over a 92-dim
+per-timestep feature (84 hand-picked lags including lag 0, 2 static
+scale/loc, 6 calendar features) through a median/IQR `RobustScaler`, with a
+3-parameter Student-t sampling head. **2,449,299 parameters total**
+(`budget/model_budget.json`) — by far the smallest checkpoint in this repo.
+
+**D2.1 checklist, all six steps run against the real checkpoint via `run.py
+--check-adapter LagLlama`** (config `configs/lag_llama_dev.yaml`; both new
+canonical configs, `configs/smoke_lag_llama.yaml` and
+`configs/lag_llama_vs_chronos.yaml`, force-added to git alongside the
+gitignored-by-default `configs/` directory, matching the existing
+`default.yaml`/`smoke_blackbox.yaml` pattern):
+```
+adapter checklist: LagLlama
+  [OK  ] construct        tier 2 (steerable), adapter class LagLlamaAdapter
+  [OK  ] conformance      n_layers=8; final_block_name=transformer.h.7;
+                          n_discovered_modules=107; n_tokens=480;
+                          alignment_first_layer_frac=1.0;
+                          has_attention_info=True; has_mlp_info=True;
+                          has_attention_patterns=False;
+                          has_cross_attention_patterns=False;
+                          patch_identity_delta=0.00047235190868377686;
+                          patch_reach_delta=0.07345932722091675;
+                          patch_reaches_forecast=True
+  [OK  ] check_alignment  shallowest-layer diagonal-hit fraction 1.000
+                          (1.000 of this window's 1.000 ceiling),
+                          amplitude 0.250, threshold 0.5
+  [OK  ] discover_spans   declared-vs-measured mean IoU 1.000 (stride 1)
+  [OK  ] attention_info   returned a well-formed list
+  [OK  ] mlp_info         returned a well-formed dict
+  [n/a ] attention_patterns  not overridden -- deliberate (below)
+  [n/a ] cross_attention_patterns  not overridden -- decoder-only, no decoder/encoder split
+overall: pass
+```
+`attention_patterns` is deliberately unsupported (tier 2, not 3):
+`CausalSelfAttention.forward` calls `F.scaled_dot_product_attention` directly
+on RoPE-rotated q/k with no swappable seam, and hand-replicating that
+arithmetic outside the fused kernel risks a plausible-but-wrong attention map
+— the same "release fragility not worth it" call already made for
+Chronos-Bolt and Chronos-2 (`CLAUDE.md` §6.2). `attention_info` **is**
+hand-written (mirroring Chronos-T5's own hard-coded pattern, since
+`_scan_attention`'s generic heuristic looks for `n_heads`/`num_heads` and an
+`o_proj`-style Linear, and this architecture has neither: `n_head` singular,
+output projection named `c_proj`), so head-level mean-ablation still works.
+`patch_identity_delta` (0.00047) is small but not exactly 0.0, unlike
+`CLAUDE.md` §11.49's fp32-throughout precedent (this adapter forces float32
+regardless of run dtype for exactly that reason) — the residual is
+consistent with ordinary CUDA kernel non-determinism in the from-scratch
+autoregressive sampling loop rather than a precision-mismatch bug, and it
+clears the conformance test's own `< 1e-3` bar by 2×.
+
+**The full per-layer `--check-alignment` table** (read whole, not the first
+row, per D2.1 step 4 and the Sundial precedent it warns about) — from the
+real paired run, `runs/lag_llama_vs_chronos/alignment/alignment_check.json`:
+`transformer.h.{0,1,2,4,5,6,7}` = 1.0, `transformer.h.3` = 0.9333333333333333
+(min), mean 0.9916666666666667, `passed: true`. No re-quantizing tokenizer
+(`token_ids()` returns `None`), so amplitude calibration is correctly a
+no-op at the historical 0.25 constant (ROADMAP.md §15 A20(d)'s documented
+skip path) — no Sundial-style mid-depth decay here.
+
+🔴 **The contiguity gate did not fire, and the reason is a genuine, worth-
+recording limit of the argmax-ownership methodology, not a bug in the
+adapter or a wrongly-declared span.** `--discover-spans` measured
+`contiguity=1.000000`, `0 non-contiguous` tokens (`0 empty`), mean IoU
+1.000 against the adapter's own declared 1-timestep/token spans, at
+`contrast` between 1518.95 and 1603.52 across the two runs that measured it
+(`smoke_lag_llama`/`lag_llama_vs_chronos` vs. the `--check-adapter` probe's
+own corpus sample — both far above the `min_contrast=4.0` gate).
+`extraction/span_discovery.py::_spans_from_argmax` assigns each *probed
+input timestep p* to whichever *token* shows the **largest-magnitude**
+activation change, then checks whether the timesteps owned by each token
+form one contiguous run. Lag-Llama's architecture genuinely does read a
+disjoint lag set at every token (lag 0 plus 83 far offsets up to 1092) —
+that part of the a-priori expectation in this item's own table is correct.
+But the direct/local pathway (token *p*'s own embedding, entering the
+residual stream right at position *p*) produces a far larger activation
+change at token *p* than the same perturbed value's much smaller marginal
+contribution to token *p*+lag_k's hidden state (one of 92 input features,
+further diluted through `RobustScaler`'s corpus-wide median/IQR
+normalization and one linear-embedding weight). So token *p* wins the
+argmax contest at essentially every probed position, the far-lag
+dependency never becomes any token's *dominant* input, and the ownership
+map comes out as a clean, contiguous 1:1 diagonal despite the genuinely
+disjoint underlying computation. **This is the outcome the plan's own
+"either outcome is valuable" framing anticipated as the alternative to a
+refusal** — not "the gate is wrong" in the sense of admitting a model with
+no real time structure, but a measured demonstration that the current
+peak-magnitude-argmax methodology cannot distinguish "reads one interval"
+from "reads one dominant interval plus several genuinely-disjoint but
+smaller-magnitude ones," which is exactly the shape a lag-feature
+architecture with a strong `lag 0` term produces. Recorded here rather than
+"fixed" per this item's own explicit instruction not to adjust the gate to
+chase a particular model's verdict.
+
+**L1 — peak cross-model CKA against its shuffle null**
+(`runs/lag_llama_vs_chronos/l1/meta.json`): **0.4681587815284729** at
+(`transformer.h.5`, `encoder.block.4`), 95% CI [0.42400060519576077,
+0.5350337073206902] (series-bootstrap, n=1200 window rows), against a
+shuffled-series null of **0.15648808479309081** (CI [0.1437118500471115,
+0.17051555216312408]) — decisively above (real point estimate ~3× the
+null, non-overlapping CIs), replicating the same pattern already
+established with Sundial and Chronos-2 against a fourth, architecturally
+distinct pair. Relative depths at the peak: LagLlama 0.7142857142857143 (of
+8 captured blocks), Chronos-T5-Small 0.36363636363636365 (of 6). Per-family
+CKA (higher than the global cross-family pair, as usual in this repo — a
+different, less noisy quantity): mixture 0.7726818919181824, parametric
+0.9276167750358582, random_parametric 0.7424651384353638.
+
+**Outcome (a) — zero shared-infrastructure changes needed.** Confirmed via
+`git status` on `extraction/hooks.py`, `models/base.py`,
+`models/conformance.py`, `models/__init__.py`: none touched. Matches the
+Sundial precedent, not the Chronos-2 one — the third data point of four for
+"does a new architecture surface a shared bug," and the second "no" (Sundial,
+Lag-Llama) against the first "yes" (Chronos-2, `CLAUDE.md` §11.21) and one
+architecture-owned break routed around rather than shared (Sundial's own
+remote-code cache bug, §11.22).
+
+⚠️ **D2.3's "a real paired run with L0 + L1 at minimum" is met and exceeded
+(L0, L1, L2, budget, frontend, layer_screen, internals, lens all rendered —
+`report/coverage.json`: 10 rendered, 8 skipped) — but full pipeline parity
+with the other five architectures is explicitly NOT reached, stated rather
+than implied.** L3, Attention, L4/clustering and Exemplars are all listed as
+`skipped: artifacts missing`, in **both** `smoke_lag_llama` and
+`lag_llama_vs_chronos`, consistently — this is a cost decision, not a
+crash: Lag-Llama's `predict()` is a from-scratch, no-kv-cache autoregressive
+loop (chosen for simplicity at this model's negligible parameter count, per
+the adapter's own docstring), and L3's sensitivity pass alone measured
+**15 minutes 22 seconds for 9 corruptions at only 80 series / batch 40**
+(`L3 sensitivity LagLlama: 100%|██████████| 9/9 [15:22<00:00, 102.89s/it]`,
+captured live). L3's own per-window patching evaluates many times that many
+predict() calls per layer×window cell and was not attempted this session
+given the loop's remaining time budget; Attention/L4/Exemplars were never
+reached. This is exactly the D2 acceptance bar's own text ("a real paired
+run with L0 + L1 **at minimum**") — met, not exceeded to full parity, and
+recorded as an open continuation rather than silently left to look complete
+from the config's `enabled: true` flags alone (§2.5).
+
+**Tests:** `tests/test_lag_llama_adapter.py`, 4 of 4 passed (26.91s,
+including the real-checkpoint, GPU/network-gated
+`test_lag_llama_conformance_against_real_checkpoint`, `skipif`-guarded
+rather than always-on per this repo's own stated convention for
+real-weight adapter tests) — three offline tests pin the
+`gluonts.torch.modules.loss`-removal unpickling shim
+(`_stub_removed_loss_module`, the `CLAUDE.md` §11.9-class gluonts-version
+trap this checkpoint's own Lightning `.ckpt` hits) in isolation, idempotent
+and non-clobbering of a real module if gluonts ever reintroduces one. No
+regressions: `tests/test_contrib_discovery.py` (7), `test_adapter_conformance.py`,
+`test_capability_tiers.py`, `test_capability_matrix.py` — 38 passed
+together, zero failures from adding a fourth registered adapter to the
+tier/capability/conformance surfaces. `ADAPTERS.md` regenerated
+automatically (`render_adapter_docs.py`) and already carries a
+`lag_llama | contrib/lag_llama_adapter.py | 2 (steerable) |
+time-series-foundation-models/Lag-Llama | attention_info, mlp_info | ...`
+row with no manual edit — E2's derived-doc contract holding for a fourth
+consecutive real adapter it was never specifically tested against.
+
+**D2.3 checklist, final tally:** conformance ✅ (named checks above);
+`--discover-spans` `mean_iou` ✅ (1.000); full `--check-alignment` table ✅
+(read and explained, not just "passed"); `capability_matrix`/tier row ✅
+(tier 2, derived); smoke config ✅ (`configs/smoke_lag_llama.yaml`); real
+paired run with L0+L1 at minimum ✅ (met and exceeded through L2/budget/lens/
+internals/layer_screen/frontend, L3/attention/clustering/exemplars
+explicitly deferred on cost grounds above); `ADAPTERS.md` row ✅ (derived,
+verified present). **§34.9's ordering table is now fully DONE, all 14
+rows.**
+
+**Full-suite regression check (2026-09-22).** The first attempt at this
+verification (2026-09-21 23:03, log `full_suite_final_d2.log`) was killed
+mid-run by a session/process teardown at 72-75% complete (all dots/skips, no
+failures up to that point, but no `EXIT_CODE` line was ever written — the
+`echo` after pytest never ran, confirming the process was terminated rather
+than finished; `CLAUDE.md` §2.8's backgrounding discipline has no defense
+against the *session itself* ending mid-run, only against polling it). Not
+resumable — pytest has no checkpoint mechanism, so the run was restarted
+from 0% rather than assumed to have passed. Re-run start to finish
+2026-09-22 13:25-13:48 EDT against the full `tsfm_lens` suite including the
+new `tests/test_lag_llama_adapter.py` and `tests/test_spec_curve.py`:
+**1959 passed, 17 skipped, 0 failed, 432 warnings, in 1367.95s (0:22:47)**,
+`EXIT_CODE=0`. The 432 warnings are the two pre-existing ones this file
+already tracks (`sklearn` PCA divide-by-zero in `test_sae_concept_report.py`,
+`test_smoke.py::test_end_to_end`'s return-value-not-None), repeated across
+parametrized invocations — no new warning class introduced. This is the
+verification gate the D2/A2 work (Lag-Llama adapter + spec_curve) was
+waiting on before being committed.
 
 ### 34.6 Package E — a dedicated adapter area and a contributor path
 
@@ -32575,7 +33098,7 @@ so that a session does not "fix" the gate to make the model pass.
 > or capability tiers — every one of which postdates it. That staleness is the
 > argument for E2's central decision.
 
-#### Item E1 — A home for contributed adapters, and a template 📋 NEEDS IMPLEMENTATION
+#### Item E1 — A home for contributed adapters, and a template ✅ DONE 2026-09-18
 
 **File:** new `tsfm_lens/models/contrib/` package, new
 `tsfm_lens/models/TEMPLATE_adapter.py`.
@@ -32675,7 +33198,7 @@ the docstring fix's own acceptance check.
 
 ---
 
-#### Item E2 — `ADAPTERS.md`, derived from the code and gated for staleness 📋 NEEDS IMPLEMENTATION
+#### Item E2 — `ADAPTERS.md`, derived from the code and gated for staleness ✅ DONE 2026-09-18
 
 **File:** new `tsfm_lens/adapter_docs.py`, new `render_adapter_docs.py` (with
 `--check`), generated `tsfm_lens/ADAPTERS.md`.
@@ -32817,7 +33340,7 @@ adapter-registry-adjacent suite regressed.
 
 ---
 
-#### Item E3 — `run.py --new-adapter NAME --checkpoint ID` 📋 NEEDS IMPLEMENTATION
+#### Item E3 — `run.py --new-adapter NAME --checkpoint ID` ✅ DONE 2026-09-18
 
 Scaffolds `models/contrib/<name>_adapter.py` from the template with the name and
 checkpoint filled in, plus `configs/smoke_<name>.yaml` pairing it against
@@ -32927,7 +33450,7 @@ re-ran clean after cleanup).
 
 ---
 
-#### Item E4 — `run.py --check-adapter <model>`: one command, one checklist 📋 NEEDS IMPLEMENTATION
+#### Item E4 — `run.py --check-adapter <model>`: one command, one checklist ✅ DONE 2026-09-18 (mocks; real-checkpoint half deferred)
 
 **The gap.** The verification surface exists and is scattered:
 `check_adapter_conformance` (mock-only in tests), `--discover-spans`,
@@ -33068,7 +33591,7 @@ hand-rolled fake, after an early version raised `AttributeError` on
 
 ---
 
-#### Item E5 — The contributor's written path 📋 NEEDS IMPLEMENTATION
+#### Item E5 — The contributor's written path ✅ DONE 2026-09-18
 
 **File:** `tsfm_lens/docs/CONTRIBUTING_ADAPTERS.md` (narrative, hand-written, no
 drifting facts), plus a **rewrite** of `README.md`'s stale Extending section into
@@ -33373,8 +33896,8 @@ user's own stated emphasis (the trust chain got two of the five asks).
 | 10 | **E3 + E5** scaffolder and the written path | ~0.5 session | E1–E4, D1 | ✅ **DONE 2026-09-18** — see E3's and E5's own Findings blocks. E3 found and fixed three real bugs by running its own printed commands (a template import bug, an unrenamed docstring, a doctor.py preflight tier-resolution bug); E5's fresh-context-subagent verification of its own literal acceptance criterion found and fixed six concrete gaps in the written path, one at its root cause in `scaffold_adapter.py` rather than only in the doc |
 | 11 | **A4** tidy results export | ~0.5 session | A1, A3 (for their columns) | ✅ **DONE 2026-09-18** — see A4's own Findings block. `results.csv`/`results.parquet` verified against `runs/full_report_run_4model`: 130 rows for 122 findings, zero object-dtype numeric columns, three rows spot-checked to exact float equality against source artifacts. Found and fixed a real `"mean"`-vs-`"value"` key mismatch by running the exporter against real data, not by reading the diff |
 | 12 | **B4** gate recalibration | ~0.5 session | B2 (private observations) | ✅ **DONE 2026-09-18** — see B4's own Findings block. Recalibrated against 6 real corpora (not the single demo point E23 left it on); found and fixed a real false-refusal (the demo's own 5-planted-duplicate group failed the old per-group near-collision gate purely from quantile-discreteness at n=5, not from redundancy); also surfaced a ~70x dtw-vs-xcorr redundancy_fraction disagreement, flagged as an explicit out-of-scope follow-up |
-| 13 | **A2** specification curve | ~1.5 sessions | A4 helps | Widest, most speculative, least blocked — genuinely last |
-| 14 | **D2** one new architecture class | ~2 sessions | D1 | Deliberately last; §19's one-class rule means this is a standing item, not a finish line |
+| 13 | **A2** specification curve | ~1.5 sessions | A4 helps | ✅ **DONE 2026-09-21** (autonomous cron loop) — see A2's own Findings block (item 7). Widest, most speculative, least blocked. Code + report rendering done, `tests/test_spec_curve.py` 16/16 green, no regressions in `test_stage_docs.py` (7) or `test_smoke.py`+`test_report_legibility.py` (21); the live-run acceptance check against `runs/full_report_run_large_revived` COMPLETED (52m 5s wall clock, 0 errors) with the Acceptance criterion genuinely met (5 of 11 claims fully robust, 6 not — every disagreeing cell's exact value verified byte-for-byte against the raw JSON, and against the re-rendered report's `findings.json`) — see A2's Findings item 7 for the full numbers, and its one recorded open gap (the `alignment.depth_axis` knob was never exercised by this run's four claim families, none of which reads that axis) |
+| 14 | **D2** one new architecture class | ~2 sessions | D1 | ✅ **DONE 2026-09-21** (autonomous cron loop) — see D2's own Findings block. Lag-Llama; did NOT refuse the contiguity gate (contiguity measured 1.000 — a genuine, explained limit of the argmax-ownership methodology, not a bug); peak CKA 0.4682 vs. shuffle null 0.1565; outcome (a), zero shared-infrastructure changes; L3/attention/clustering/exemplars explicitly deferred on cost grounds (Lag-Llama's no-kv-cache `predict()` measured 15m22s for L3 sensitivity alone at 80 series), L0+L1-at-minimum bar met and exceeded through L2/budget/lens/internals/layer_screen/frontend. **All 14 rows of this table are now done.** |
 
 **🔴 Five things not to do.**
 
@@ -33433,3 +33956,1341 @@ was still on the page to contradict.
    applicable"?** Recommended above: it renders, degraded, because a skipped
    section reads as "not run" and a smoke corpus genuinely has no provenance —
    which is itself the thing a reader of a smoke report should be told.
+
+---
+
+## 35. Convergent learning — unit-level correspondence, and the many-to-one structure CKA cannot see (added 2026-09-22, user-directed — DESIGN ONLY, NOT IMPLEMENTED)
+
+### 35.0 Status, provenance, and the one-paragraph version
+
+🔴 **DESIGN ONLY. Nothing in this section is implemented, and the instruction
+that produced it said explicitly not to implement it.** That includes the
+report-copy changes in §35.11 — those are written as exact before/after
+strings so an authorized session can apply them in one mechanical pass, not
+because they have been applied. Two of them (§35.11 items 1 and 2) are true
+of the repo *today*, independent of whether the new metric is ever built; they
+are flagged as such so they can land separately.
+
+**Provenance.** A user-supplied paper — Li, Yosinski, Clune, Lipson &
+Hopcroft, *Convergent Learning: Do different neural networks learn the same
+representations?* (NIPS 2015 Workshop on Feature Extraction, JMLR W&CP 44,
+196–212) — asks this repo's founding question (`CLAUDE.md` §1: "Is there an
+intrinsic circuit/representation present across multiple TSFMs?") for CNNs
+trained from different random initializations, and answers it with machinery
+this repo does not have. The instruction was to read `ROADMAP.md` against the
+paper's logic, design a metric meeting its constraints, design its test, and
+specify the report changes its insights imply.
+
+**The one-paragraph version.** Every cross-model similarity number in this
+repo is either **population-geometric** (L1's CKA and RSA — deliberately
+invariant to any rotation of either model's basis) or a **thresholded scalar**
+over a matched set (`role_matching.py::_match_rate`, already found
+content-free at 1.0 on a real run, `role_matching.py:311-316`). The paper's
+contribution sits in the gap between those: a **per-unit alignment
+distribution** — for each unit in model A, the correlation of its best partner
+in B, sorted — whose *shape* separates two hypotheses that any scalar
+conflates (a shared core with a rare, model-specific tail vs. uniformly
+moderate similarity everywhere), plus **the gap between greedy and optimal
+assignment**, which is direct evidence that two models use *different numbers
+of units to span the same subspace*. This section designs both for TSFMs, as
+**CCM** (Convergent Core Mass) and the **alignment spectrum**, with the two
+size confounds the paper never had to face (dictionaries here span 32× in
+width) solved rather than caveated. The single sharpest consequence: **a
+random rotation of one model's hidden basis leaves CKA bit-identical and
+drives CCM to its null** — so CCM is provably not a re-parameterization of a
+number this repo already has, and that identity is the load-bearing test in
+§35.9.
+
+### 35.1 Why this repo is the paper's natural second instance, and where it is not
+
+The paper's setup and this repo's differ in three ways that change the design,
+and it is worth being explicit about which parts transfer.
+
+| | Li et al. 2015 | This repo |
+|---|---|---|
+| What varies between the two networks | **Random seed only** — same architecture, same data, same objective | **Architecture, tokenizer, training corpus, objective** — TimesFM vs Chronos-T5 vs Chronos-2 vs Sundial |
+| Unit counts | **Equal by construction** (96 vs 96, 256 vs 256 …) | **Unequal, by up to 32×** (SAE dictionaries at 192/384/1536/6144 — `CLAUDE.md` §13's revival findings; `d_model` 768 vs 1280) |
+| Is the unit basis privileged? | **Yes** — post-ReLU conv channels | **No** for the residual stream; **attempted yes** for SAE atoms |
+| Is a shared input row index available? | Yes (same validation image) | Yes — L1 already row-aligns `[series, window, dim]`, and `sae_pooled/{model}/{layer}` row *i* is the same corpus series (§30.2) |
+| Layers comparable by index? | Yes (identical depth) | No — needs `analysis/depth_axis.py` (§18 F1) |
+
+**What transfers directly.** Correlation over a shared row sample as the
+similarity kernel (scale-free, which is the paper's own stated reason); the
+semi-matching/matching distinction; the sorted spectrum as the deliverable;
+the mutual-information robustness check; joint spectral clustering for the
+many-to-many case; and the depth profile of matchability.
+
+**What does not, and is redesigned below.** (a) Unequal unit counts break both
+assignments in opposite directions (§35.3.3). (b) The residual stream has no
+privileged basis, so a *low* neuron-level score here is not evidence against
+convergent learning the way it would be for conv channels — which is why
+§35.4 makes the neuron-level measurement a **control** rather than the
+headline. (c) Because the two networks here differ in more than a seed, the
+paper's implicit null ("two runs of the same thing") is unavailable, and an
+explicit size-matched null is mandatory (§35.3.4).
+
+🔵 **One observation about the paper's own numbers, recorded because this
+repo's doctrine is to not calibrate against an unverified table.** Table 1
+lists `conv2` at semi-matching 0.577 / matching 0.527 / overlap 58.6% and
+`conv5` at 0.577 / 0.527 / 68.4% — the first two columns identical to three
+decimals across two layers of very different width (256 vs 256 channels, but
+different depth and receptive field), while the third column differs. That is
+far more likely a transcription error than a coincidence. **Do not port any
+threshold calibrated against these values**; the design below derives every
+threshold from a null computed on this repo's own data, which it would need to
+do anyway.
+
+### 35.2 The gap in this repo, grounded rather than asserted
+
+Each row is a claim about code as of 2026-09-22, with its evidence.
+
+1. **No optimal assignment exists anywhere in the repo.** `grep -rn
+   "linear_sum_assignment\|hungarian\|bipartite"` across both packages returns
+   three hits, all of them *prose admitting the absence*:
+   `sae/matching.py:45-48` ("Matching is greedy nearest-neighbor … a
+   Hungarian-algorithm version is a natural improvement, not built this
+   session"), `sae/role_matching.py:250` (same sentence, for roles), and
+   `tests/test_role_matching.py:163` (a test that pins the greedy behavior
+   *so that* nobody mistakes it for an assignment). So the paper's central
+   diagnostic — **the gap between the two** — has been named as missing twice
+   and measured zero times.
+2. **The existing cross-model scalar is already known to be content-free.**
+   `role_matching.py:311-316` records that on a real run *every* observed
+   cosine cleared the fixed `cosine_threshold` of 0.5, "forcing `match_rate`
+   to a content-free 1.0 regardless of which roles matched which (found by
+   reading the rendered report, not the code)". §26 D1 replaced it with a
+   population null and found **1 of 21 role matches clears** it. That is the
+   right direction and it is still a *count over a threshold*, not a
+   distribution.
+3. **CKA is rotation-invariant, and nothing in the repo states what that
+   costs.** `l1_geometry.py:29-35` computes feature-space linear CKA; the
+   rendered note (`report.py:2691-2696`) presents rotation invariance purely
+   as a virtue ("so it compares geometry, not raw coordinates"), and
+   `stage_docs.py`'s `l1.cannot_tell` lists *correlational* and *says nothing
+   about mechanism* but not *says nothing about unit correspondence*. A
+   reader is therefore told the number is robust without being told which
+   question it structurally cannot answer.
+4. 🔴 **The repo computes a rotation-invariant statistic on the one basis it
+   built expensively to be non-arbitrary.** `l1/cka_sae.json`
+   (`sae/feature_geometry.py::run_sae_feature_cka`, §6.2.1 Stage 3d) runs
+   linear CKA over two models' *persisted SAE feature* matrices, and its own
+   rendered note (`report.py:2816-2821`) credits the result to the feature
+   basis being "meaningful on its own rather than an arbitrary rotation of the
+   hidden space." **CKA discards exactly that property.** Any rotation of the
+   SAE feature space — including one that destroys sparsity and every atom's
+   identity — leaves that number unchanged. The statistic and the argument for
+   the statistic contradict each other. A per-unit alignment measure is what
+   that argument actually calls for, and it reads the same persisted arrays at
+   the same cost.
+5. **The crosscoder answered a different question and lost; the question it
+   was asked is still open.** §6.2.1 Stage 4 closed the joint-dictionary
+   crosscoder as a negative result, and Stage 1 found `frac_shared` **0.845
+   against an untrained-twin floor of 0.974** — TimesFM reading as *more*
+   shared with a random copy of itself than with Chronos. §35.5 offers a
+   mechanism for that result rather than a revival of the artifact: if the
+   true relationship is **many-to-many** (A spends four atoms where B spends
+   three), then a joint dictionary *forced* to share atoms cannot represent
+   it, and `relative_decoder_norm` is the wrong statistic regardless of
+   training quality. Post-hoc matching of independently trained dictionaries
+   is the path that already **won** this repo's own pre-registered comparison
+   (§6.2.1 Stage 4: V1 loses to post-hoc matching on ground-truth alignment,
+   diff −0.0417, p=0.002) — so this is not §2.9's forbidden revival of a
+   loser, it is the winner's missing measurement.
+6. **"What differs in what each model learns" is currently answered only
+   descriptively.** `CLAUDE.md` §1 names it as one of four founding questions.
+   L4 clustering and the SAE concept cards describe each model's organization;
+   §30's `transfer.py` tests whether B groups A's top series. None of them
+   produces a *population* statement of the form "X% of this model's units
+   have no counterpart in the other at all," which is the paper's second
+   headline finding and the thing a practitioner actually asks.
+
+### 35.3 The metric
+
+Two objects: the **alignment spectrum** (a curve, which is the deliverable a
+reader looks at) and **CCM** (one number reduced from it, for the scorecard
+and for cross-run comparison). Everything below is defined for one ordered
+model pair (A, B) at one layer pair, on one shared row sample.
+
+#### 35.3.1 The similarity kernel, and why its sign convention is declared per instantiation
+
+For unit *u* of A and unit *v* of B, over the same `N` rows in the same order:
+
+    rho(u, v) = Pearson( x_u , x_v )      # scale-free, the paper's own stated reason
+
+The kernel is then either `rho` or `|rho|`, and **which one is a declared
+property of the unit basis, never a tunable**:
+
+- **Signed `rho`** wherever the basis has a sign convention — SAE atoms, whose
+  TopK activations are non-negative, so an anti-correlated pair is a real
+  non-match. This matches the paper (post-ReLU channels).
+- **`|rho|`** wherever it does not — residual-stream dimensions, where a unit
+  and its negation are the same direction and a sign flip is meaningless.
+
+Declaring it removes a real failure mode: an assignment maximizing signed
+correlation over a sign-arbitrary basis would systematically refuse half the
+true correspondences, and the symptom would be a plausible-looking low score
+(§11.33/§11.35's shape — a statistic applied outside the conditions its value
+has meaning in). Record the signed value alongside `|rho|` in either case, so
+a strongly *negative* SAE pair — two atoms tiling one axis in opposite
+directions — is visible rather than discarded.
+
+**Robustness kernel (the paper's §3.2), required, not optional.** At least one
+second kernel with a different invariance class must be computed at the
+headline layer pair, and the acceptance criterion is that the *qualitative*
+verdict agrees, not that the values do:
+
+- **Spearman rank correlation** — cheap, monotone-invariant. Default for the
+  dense neuron-level instantiation, and precedent-matching: RSA already plays
+  exactly this role for CKA (`l1_geometry.py:5-11`).
+- **Mutual information** — the paper's choice, and the right one for the
+  *sparse* SAE instantiation, where the joint distribution's mass sits at
+  (0, 0) and a correlation is driven almost entirely by co-firing. Use the
+  paper's own binning: percentile bins each holding 5% of the marginal, **plus
+  a dedicated bin for the near-zero mass** (they use `(-inf, 1e-6]`), which is
+  the detail that makes MI work at all on sparse activations.
+
+Disagreement between kernels is the finding, reported, not resolved by picking
+one — the repo's standing practice (`CLAUDE.md` §6.5's two attention
+resolutions; §13's window-vs-token granularity).
+
+#### 35.3.2 The two assignments, and the gap between them
+
+- **Semi-matching** (the paper's term; row-wise greedy): for each `u ∈ A`,
+  `best(u) = argmax_v k(u,v)`. Every A-unit gets a partner; partners may
+  repeat. This is what `sae/matching.py` and `sae/role_matching.py` already
+  do.
+- **Matching** (optimal one-to-one): the maximum-weight bipartite assignment,
+  `scipy.optimize.linear_sum_assignment` on `-K`. Injective by construction.
+
+Three reductions, mirroring the paper's Table 1:
+
+    semi_matching_mean   = mean_u k(u, best(u))
+    matching_mean        = mean over assigned pairs of k(u, sigma(u))
+    overlap_ratio        = |{ u : best(u) == sigma(u) }| / n_assignable
+
+`semi_matching_mean >= matching_mean` always (the greedy choice is
+unconstrained) — a free correctness invariant worth asserting in code, since a
+violation means the assignment solver was handed the wrong sign.
+
+**What the gap means, and it is the paper's best idea.** A large gap with a
+high `semi_matching_mean` says many A-units want the *same* B-unit: A spends
+several units where B spends one. The paper's own hypothesis (§3.1, "Net1
+might learn a representation that uses six filters to span a subspace of human
+faces, but Net2 learns to span the same subspace with five") becomes a
+measurement here:
+
+    span_ratio(v) = |{ u in A : best(u) == v }|      # A-units claiming B-unit v
+    multiplicity  = distribution of span_ratio over B-units with >= 1 claimant
+    b_coverage    = |{ v : some u claims v }| / n_b   # how much of B is reachable at all
+
+`b_coverage` is worth its own line: it is the paper's asymmetry made explicit
+and it is **not symmetric**, so the whole spectrum is computed in **both
+directions (A→B and B→A)** and both are reported. L2 already sets this
+precedent (`CLAUDE.md` §6.5: "Both directions (A→B, B→A) reported"), and §16
+E9's fourth follow-up is the cautionary tale for what happens when only one
+direction is measured.
+
+#### 35.3.3 🔴 The size problem — two confounds, pointing opposite ways
+
+This is the adaptation the paper never needed, and it is the reason a naive
+port would produce a number that ranks dictionary size rather than convergence.
+
+**Confound 1 — the matching has a ceiling below 1.** An injective assignment
+can match at most `min(n_a, n_b)` units. With A's dictionary at 6144 atoms and
+B's at 192 (real sizes from §26 E's revival findings), 5952 A-atoms are
+**unmatchable by construction**, so `overlap_ratio` is bounded above by
+192/6144 = 3.1% at *any* effect size. That is §11.35 exactly — a threshold
+applied to a metric whose attainable maximum varies per configuration, which
+there produced a **false refusal** of a provably correct adapter. So:
+
+    assignment_ceiling   = min(n_a, n_b) / n_a
+    overlap_frac_of_ceil = overlap_ratio / assignment_ceiling
+
+and **`overlap_ratio` is never rendered without its ceiling beside it**, by
+the same rule `frac_shared` now carries its L-B floor (§6.2.1 Stage 1).
+
+**Confound 2 — the semi-matching has search inflation that *grows* with
+`n_b`.** `best(u)` is a maximum over `n_b` candidates, so even with no
+relationship whatsoever, `E[max]` rises with `n_b`. This repo has already paid
+for this exact mistake once: `ground_truth.py::permutation_null_alignment`
+exists because "every feature is matched to its best of ~30 candidate fields
+and that search inflates the mean even on shuffled labels" (`CLAUDE.md` §6.5).
+Thirty candidates was enough to require a null; six thousand is not less.
+
+**So the two halves of the paper's method are size-confounded in opposite
+directions**, and the design splits their jobs accordingly:
+
+- **The headline (CCM) is defined on the semi-matching spectrum** — which has
+  no ceiling, every unit participates, and is therefore comparable across a
+  32× width span — **read against a size-matched null** that absorbs confound 2
+  (§35.3.4).
+- **The assignment is reported as a structure diagnostic**, never as the
+  headline: `overlap_frac_of_ceil`, the multiplicity distribution, and
+  `b_coverage`. These answer "*how* do they correspond", not "*how much*".
+
+⚠️ **A corollary that must not be skipped: do not cap the unit pool by any
+quantity correlated with matchability.** If `n_a` is capped for cost, capping
+by variance or by activation frequency preferentially drops the weakly-matched
+tail — which is precisely the object CCM measures — and biases the headline
+**up**. That is §11.38's head-slice one level over. Cap by seeded uniform
+random sample of atom indices, record `n_units_sampled` and `n_units_total` in
+the artifact, or do not cap at all. Prefer not capping: §35.12's cost analysis
+says it is affordable.
+
+#### 35.3.4 The floor: a size-matched row-permutation null
+
+    Null: permute the ROW order of B's matrix, recompute the entire spectrum.
+
+This preserves `n_b`, preserves every unit's own marginal distribution and
+sparsity, and destroys **only** the row correspondence — so it isolates exactly
+the quantity of interest and absorbs confound 2 automatically, because the null
+searches over the same `n_b` candidates the real measurement does. It is the
+same device already used at three sites (`role_matching.py`'s shuffled-series
+null, `ground_truth.py::permutation_null_alignment`, L1's own shuffled-series
+reference line), so it needs no new justification here.
+
+Let `s(k)` be the k-th largest value of `k(u, best(u))` over `u ∈ A` (the
+**real spectrum**), and `s0(k)` the same statistic averaged over `R` row
+permutations (the **null spectrum**), `R >= 20`.
+
+🔴 **The reduction must not be clipped.** The obvious definition,
+`mean_k max(0, s(k) − s0(k))`, is **wrong**, and catching it here rather than
+after a run is the point of writing this down: a clipped statistic is strictly
+positive under the pure null (it averages the positive part of noise), so it
+can never return zero even when nothing is shared — §11.37's degenerate
+baseline, where absent reads as a confident answer. Use the signed form:
+
+    CCM = (1/n_a) * sum_k [ s(k) - s0(k) ]                 # signed; 0 under the null
+    CCM_head = mean over the top decile of k
+    CCM_tail = mean over the bottom half of k
+
+CCM is zero in expectation when the two models share nothing, can go negative,
+and carries a **cluster bootstrap CI over series** (invariant 2 — never over
+windows, never over units). A CCM whose CI contains zero is a null result and
+must render as one.
+
+**Why order statistics rather than paired differences.** `s(k)` and `s0(k)` are
+both sorted, so CCM compares the *distribution* of best-match quality against
+the distribution search alone produces — it is deliberately invariant to
+*which* units happen to be the well-matched ones, which is correct, since unit
+identity is arbitrary and any per-unit pairing between a real run and a
+permuted one would be meaningless.
+
+A second, more legible reduction for the report, derived from the same R
+permutations (which give a pointwise null distribution at each rank):
+
+    CCF = |{ k : s(k) > null_p95(k) }| / n_a    # "convergent core fraction"
+
+⚠️ `null_p95(k)` inherits `matching.py:_MIN_NULL_POOL`'s arithmetic: a p95
+estimated from fewer than 20 draws sits at or above the largest of them, so
+`R >= 20` is a hard floor, not a default, and `R` is recorded per artifact.
+
+#### 35.3.5 The shape, which is the whole point
+
+`CCM_head` and `CCM_tail` are reported **separately and never summed**, because
+their contrast is the scientific claim:
+
+| `CCM_head` | `CCM_tail` | Reading |
+|---|---|---|
+| high | ≈ 0 | **Shared core + rare tail** — the paper's actual finding. Some units are learned reliably by both; others exist in one model only. |
+| high | high | **Uniform correspondence** — nearly every unit has a partner. Would be a stronger result than the paper's, and should be disbelieved until the rotation control (§35.9) passes. |
+| ≈ 0 | ≈ 0 | **No unit-level correspondence.** Expected at the neuron level (§35.4); a real negative at the SAE level. |
+| ≈ 0 | high | Incoherent — indicates a bug in the sort or the null, not a finding. Assert against it. |
+
+**This table is the argument for the whole section.** All four rows can
+produce the *same* CKA. A single scalar over a rotation-invariant statistic
+cannot distinguish "60% of units correspond almost perfectly and 40% not at
+all" from "every unit corresponds moderately", and those are different answers
+to `CLAUDE.md` §1's founding question.
+
+### 35.4 Two instantiations, and why the cheap one is the control for the expensive one
+
+**N-level (neurons).** Units are residual-stream dimensions; matrices come
+straight from `ActivationStore.load(model, layer, level="window", rows=...)`,
+the same arrays L1 already reads, on the same row sample. `d_model` is 768–1280,
+so this is cheap and runs on **every existing run directory with no SAE at
+all**. Kernel: `|rho|`.
+
+**F-level (SAE features).** Units are dictionary atoms; matrices come from
+`load(..., space="sae")` (`store.py:280-290`), requiring
+`sae.persist_features: true` and `store.has_sae_features(model, layer)`.
+Kernel: signed `rho`. This is the measurement §35.2 item 4 argues
+`l1/cka_sae.json` should have been all along, reading the identical arrays.
+
+🔵 **The relationship between them is the design's most important claim, and it
+inverts the naive reading of a low score.** The residual stream **has no
+privileged basis** — LayerNorm and the residual connection leave any rotation
+of the hidden space computing the identical function, and nothing selects the
+coordinate axes. The paper's conv channels, post-ReLU, *are* privileged. So:
+
+- **N-level CCM ≈ 0 alongside a high CKA is the expected, correct outcome**,
+  and it is **not** evidence against convergent learning. It is evidence that
+  the coordinate basis is arbitrary — which is a statement about the basis,
+  not about the models.
+- **F-level CCM > 0 is the real result**, because the SAE is the machinery
+  that attempts to *recover* a privileged basis.
+- Therefore **N-level is the control that gives F-level its meaning**: F-level
+  CCM clearly exceeding N-level CCM at the same layer pair, on the same rows,
+  is the first direct evidence in this repo that the dictionaries recover
+  something the raw basis does not — a claim the SAE subsystem has never been
+  able to make, and one that would stand even if every other SAE number stayed
+  where it is.
+
+⚠️ Two honest complications, stated rather than smoothed. (a) An
+**optional third instantiation** — MLP hidden activations, post-nonlinearity —
+sits between the two: more privileged than the residual stream, far cheaper
+than an SAE. It needs `mlp_info()`, which TimesFM does not have
+(`CLAUDE.md` §6.2's support matrix: its feed-forward block is two bare
+`nn.Linear`s), so it is available for some pairs and not others and must
+degrade per-model, not per-run. (b) A high F-level CCM is **conditional on
+both dictionaries being alive.** A dead atom's column is constant, its
+correlation is undefined, and `activation_profile_correlation` returns 0.0 by
+design (`matching.py:63-71`) — so at the 94.5%/97.3% dead rates every pre-
+revival SAE number in this repo was measured at (`CLAUDE.md` §13), the spectrum
+is mostly zeros and CCM reads ≈ 0 **for a reason that is about dictionary
+health, not convergence**. Restrict the pool to alive atoms, take the alive
+count as `n_a`, and render the dead rate from §26 E's existing health table in
+the same block. This is not optional: without it the metric silently reports
+dictionary health under a convergence label.
+
+### 35.5 The many-to-many half — joint spectral clustering, and the model-specific tail
+
+The paper's §4 exists because a one-to-one assignment *provably cannot*
+express "A uses four units where B uses three." Its answer is spectral
+clustering on the **combined** similarity graph, which this repo should adopt
+because it answers `CLAUDE.md` §1's second founding question ("What differs in
+what each model learns?") with a population number rather than a description.
+
+Build, per the paper's §4.1, over alive units of both models at one layer pair:
+
+    W = [[ K_AA , K_AB ],
+         [ K_AB^T, K_BB ]]        entries below threshold tau zeroed
+    L = D - W                     unnormalized Laplacian
+    U = k smallest eigenvectors ; k-means over rows of U
+    recursively re-split any cluster larger than 2*alpha*(n_a + n_b)   (paper: alpha = 0.025)
+
+The within-model blocks `K_AA`, `K_BB` are **free** — the same kernel on the
+same rows — and they are what makes this different from anything the repo has.
+`sae/concepts.py` clusters atoms *within* one model by ablation fingerprint;
+this clusters **across both jointly**, so a cluster's composition is itself the
+measurement.
+
+Per cluster, following the paper's §6.6 but with the size confound fixed:
+
+    n_from_a , n_from_b
+    between_net_sim = mean of K_AB over the cluster's A x B member pairs
+    within_net_sim  = ( mean K_AA over A-members + mean K_BB over B-members ) / 2
+    span_ratio      = n_from_a / n_from_b            (mixed clusters only)
+
+and the two headline reductions:
+
+    pure_frac_a = share of A's units in clusters containing NO B-unit
+    pure_frac_b = share of B's units in clusters containing NO A-unit
+
+🔴 **Report `pure_frac_a` and `pure_frac_b` separately — never one pooled
+"pure fraction."** With 6144 A-atoms against 192 B-atoms, almost every cluster
+is pure-A *by count alone*, so a pooled number ranks dictionary size again.
+This is §35.3.3's confound arriving in the clustering half, and it is the same
+mistake in a new statistic.
+
+**The null is free and its direction is unambiguous.** Under the same
+row-permutation null, `K_AB → 0`, no mixed cluster forms, and both pure
+fractions → 1.0. So the real measurement must come in **below** its null, and
+`pure_frac_a - pure_frac_a_null` is the signed, zero-under-null quantity to
+report — the same construction as CCM, for the same reason.
+
+**What this buys that the crosscoder could not.** §6.2.1 Stage 1's
+`frac_shared` read 0.845 against a 0.974 untrained-twin floor, and Stage 4
+found that floor is itself seed-fragile (0.696/0.792/0.856 across three
+seeds). A joint dictionary is constrained to a shared atom set, so a genuine
+4-to-3 correspondence has no representation in it and `relative_decoder_norm`
+cannot recover one. The `multiplicity` distribution of §35.3.2 and
+`span_ratio` here measure precisely that structure without requiring the two
+models to share any atom. **If mean `span_ratio` departs significantly from
+1.0 while CCM is positive, that is a mechanistic explanation for the
+crosscoder's negative result** — and it would be the first one this repo has.
+
+### 35.6 The depth profile — a concrete prediction this repo can falsify
+
+Compute the semi-matching spectrum (cheap — §35.12) at **every** layer pair on
+L1's own grid, on the same rows, and place both models on the shared axis via
+`analysis/depth_axis.py::depth_axis_for_run` with `alignment.depth_axis:
+block` (§18 F1's default), carrying Chronos-T5's captured-FLOP qualifier
+(§18 F4) like every other depth-located claim.
+
+**The paper's finding (Table 1):** matchability is **non-monotonic in depth** —
+`conv1` 0.703 and `conv5` 0.577 match well, `conv4` 0.374 worst — "the path
+from perfectly matchable three-channel pixels … to the relatively matchable
+conv5 representation passes through an intermediate middle region where
+matching is more difficult."
+
+**The prediction for TSFMs, and why it is worth running for its own sake.** If
+this repo's pair behaves like the paper's, `ccm_by_depth` should be U-shaped,
+and **this is a shape CKA cannot be asked for.** §16 E9's second follow-up
+already established the *opposite* shape for CKA-against-its-floor — real
+cross-model structure beats both architecture-only floors "at every middle
+depth (layers 6–14 of TimesFM's 10 captured layers), and loses to at least one
+floor only at the extremes." Those two are not in contradiction (they are
+different statistics against different references), and **that is the point**:
+a repo where geometry converges in the middle while individual units
+correspond at the ends is a substantive finding about where in depth shared
+structure is *basis-aligned* versus merely *subspace-aligned*. Either outcome
+is publishable; neither is currently measurable.
+
+**The practical payoff, which is not speculative.** Report
+`argmax_pair(CKA)` beside `argmax_pair(CCM)`. If they disagree, the layer pair
+that is most geometrically similar is not the layer pair whose units
+correspond — and the second is the better place to train SAEs intended for
+cross-model comparison. That is a principled, cross-model layer-selection
+criterion, and it lands next to `layer_screen`'s `work_bend` default, which
+this file already concedes rests on a single corpus, a single checkpoint pair,
+and verdicts that **reverse** under a causal gold (§13's closed "second
+Chronos size" item). CCM would not replace `work_bend` — it answers a
+different question (where do units correspond *across models*, not which layer
+is interesting *within* one) — but it is the first candidate criterion this
+repo has for the cross-model half.
+
+### 35.7 Constraint check — does the metric meet the paper's own requirements?
+
+The paper states four requirements for a unit-similarity measure. Checked one
+at a time, against this design, including the one it fails:
+
+| Requirement (paper) | Met? | How |
+|---|---|---|
+| **Scale-independent** — "we use correlation … because it is independent of the scale of the activations of units" (§2) | ✅ | Pearson/Spearman on columns; MI is scale-free by construction. No raw dot product anywhere — the same reasoning `matching.py:63-71` already applies. |
+| **Same layer, same inputs, never across layers** (§2: "the units compared are always on the same layer … we do not compare units between different layers") | ⚠️ **Deliberately relaxed, and the relaxation is forced** | Two TSFMs of different depth have no "same layer." The design computes the full layer×layer grid (§35.6) and **names a pair by its depth coordinates**, exactly as L1 already does. The paper's constraint was available to it only because both networks were architecturally identical; honoring it literally here would make the measurement impossible rather than rigorous. |
+| **Robust to the choice of similarity measure** (§3.2) | ✅ | §35.3.1 makes a second kernel required, with the acceptance criterion on the qualitative verdict (§35.10 item 4). |
+| **Supports both one-to-one and many-to-many** (§3 vs §4) | ✅ | §35.3.2 and §35.5 respectively, with the size confounds of each fixed. |
+
+**One requirement the paper did not state and this repo must add**: a
+**null**. Li et al. compare two runs of the same architecture on the same
+data, so "how much would any two encoders agree" is implicitly controlled by
+construction. Nothing here is, which is why §35.3.4's row-permutation null is
+load-bearing rather than a nicety, and why §16 E9's untrained-twin run is the
+second reference (§35.10 item 3). Importing the paper's method *without* its
+implicit control is the single most likely way to get a confidently wrong
+number out of this section.
+
+### 35.8 Traps anticipated, before they are hit
+
+Named here in `CLAUDE.md` §11's idiom so the implementing session can check
+each rather than rediscover it. Each names the existing trap it recurs from.
+
+1. **Row correspondence is assumed, not checked (§11.37's shape).**
+   `matching.py`'s docstring already concedes it: "the caller must verify
+   `gt_a["rows"] == gt_b["rows"]` before calling this (not re-checked here)."
+   A silent row mismatch does not error — it produces a well-formed spectrum
+   at the null level, which reads as a clean negative result. **The new module
+   must take the row index array and refuse on a mismatch**, and one test must
+   plant a misaligned pair and assert the refusal.
+2. **A degenerate column is a confident answer, not a missing one (§11.37,
+   §11.57).** Dead atoms and constant residual dimensions correlate at 0.0 by
+   convention. Count them, exclude them from `n_a`/`n_b`, and **render the
+   excluded count** — a CCM computed over 6144 atoms of which 5800 are dead is
+   not the same measurement as one over 344 alive atoms, and nothing in the
+   number itself says which happened.
+3. **The clipped reduction cannot return zero (§11.37).** Already caught in
+   §35.3.4 — recorded here so a "simplification" does not reintroduce
+   `max(0, ·)`.
+4. **A cost cap chosen by variance biases the headline (§11.38).** Already
+   caught in §35.3.3. Random, seeded, recorded.
+5. **The bootstrap unit is the series (invariant 2).** Window-level rows give
+   statistical power and are strongly dependent; resampling rows directly
+   would produce a CI several times too narrow. Cluster-bootstrap series, and
+   **re-derive the whole correlation matrix and re-solve the assignment inside
+   each replicate** — a CI computed by resampling a fixed correlation matrix
+   describes nothing.
+6. **`n_boot` vs `n_boot_heavy` is not cosmetic (§6.6).** The semi-matching is
+   an argmax and bootstraps cheaply; the assignment is `O(n^3)` and does not.
+   Use `stats.n_boot` for the spectrum and `stats.n_boot_heavy` for the
+   assignment, record both in the artifact, and print each interval's own
+   floor next to it.
+7. **The assignment's sign is a free correctness check.** `linear_sum_assignment`
+   minimizes; the input must be `-K`. Assert `semi_matching_mean >=
+   matching_mean` on every call — a violation is the sign error, and without
+   the assert it surfaces as a small, plausible, wrong number.
+8. **Editing the SAE config section to add a knob refuses every existing run
+   (§11.51's fourth defect).** `manifest.py` fingerprints a whole config
+   section, so a new field under `sae:` moves the `sae` stage's fingerprint
+   and `--stages report` will refuse stale. This measurement reads artifacts
+   and writes its own — its knobs belong in their **own config section**, or
+   on fields carrying `metadata={"stage_input": False}`.
+9. **A new module imported by `report.py` can deadlock on an import cycle
+   (§11.52).** `sae/matching.py` and `sae/role_matching.py` already import
+   each other and are held apart by a lazy accessor. If the new module reuses
+   `activation_profile_correlation` (it should — §2.2), import it lazily
+   inside the function, and pin the failing entry order **in a subprocess**,
+   since an in-process test cannot express it.
+10. **Verify against rendered output, not the diff (§11.48).** The spectrum is
+    a figure; the failure modes that matter (an unsorted curve, a null drawn
+    at the wrong rank, a ceiling line missing) are all invisible in a passing
+    unit test and obvious in the rendered HTML.
+
+### 35.9 Test plan — synthetic plants with known answers, and one real control
+
+Designed, not run. Every test below states the answer it plants, and each
+negative names the regression it must fail against — this repo's standing
+requirement that a plant be confirmed to discriminate rather than assumed to
+(`CLAUDE.md` §11.53's postscript: "a plant that changes nothing is
+indistinguishable from a guard that works").
+
+**Synthetic, no checkpoint, no store.**
+
+1. **Identity rung.** `B = A`. Must give `semi_matching_mean = 1.0`,
+   `overlap_ratio = 1.0`, `CCM` at its maximum, `pure_frac_* = 0`. The
+   ladder's top end, mirroring §6.2.1 Stage 1's identity rung.
+2. **Permutation invariance (the paper's whole premise).** `B = A` with atoms
+   **relabeled**. Every reduction must be **bit-identical** to test 1 — the
+   metric measures correspondence, not index order. *Fails against* any
+   implementation that pairs by position.
+3. 🔴 **The rotation control — the load-bearing test.** `B = A @ Q` for a
+   random orthogonal `Q`. Assert **two** things in the same test:
+   `linear_cka(A, B)` equals `linear_cka(A, A)` to float tolerance, **and**
+   CCM collapses to within its null CI. This simultaneously proves the metric
+   is measuring something CKA cannot see and that it is not a
+   re-parameterization of a number the repo already has. If this test does not
+   pass, the section has no justification and should be abandoned rather than
+   tuned. *Fails against* any kernel applied to a rotation-invariant summary
+   of the columns.
+4. **Planted core + tail.** Construct A with 60 units copied (plus noise) into
+   B and 40 units independent. Assert `CCF ≈ 0.6 ± sampling`, `CCM_head ≫
+   CCM_tail`, and — the discriminating part — that **CKA is substantially
+   unchanged** when the 40 independent units are re-randomized while the 60
+   shared ones are held. That is §35.3.5's table made executable.
+5. **Planted many-to-one.** Build B by *merging* pairs of A's units, so
+   `n_b = n_a/2` and the true relationship is 2-to-1. Assert:
+   `semi_matching_mean` stays high; `overlap_ratio` falls; `multiplicity`
+   concentrates at 2; mean `span_ratio ≈ 2`; and `assignment_ceiling = 0.5` is
+   *reported*, so the low overlap is read against it. *Fails against* an
+   implementation that omits the ceiling — which would score this
+   correctly-structured pair as a poor match.
+6. **The null returns zero.** Row-permuted B: `CCM` CI must contain zero, and
+   `CCF` must be ≈ 0.05 (its definition, against a p95). A CCM that cannot
+   reach zero here is trap §35.8 item 3 returning.
+7. **Unequal sizes, no relationship.** `n_a = 200`, `n_b ∈ {50, 500, 5000}`,
+   all independent. `semi_matching_mean` must **rise** with `n_b` (confirming
+   search inflation is real and the instrument sees it) while **CCM stays at
+   zero at all three** (confirming the null absorbs it). This is the test that
+   licenses comparing CCM across a 32× dictionary span, and without it that
+   comparison is unsupported.
+8. **Degenerate columns.** A pool that is 95% constant columns must report the
+   alive count, exclude them, and not report a CCM over the full width.
+9. **Kernel agreement.** Tests 4 and 6 re-run under Spearman and MI; the
+   qualitative verdict must agree. Pins the paper's §3.2 as a regression.
+10. **Refusal on row mismatch** (§35.8 item 1), and **the sign assert**
+    (§35.8 item 7).
+
+**Real, one control, cheap.** Against an existing run directory with two
+models — no forward passes, no checkpoint load, the same contract
+`error_fingerprint.py` and `agreement.py` already hold to: run the **N-level**
+spectrum at the peak-CKA pair for a real pair *and* for a real-vs-its-own-
+`random_init`-twin pair (§16 E9's configs already exist). Expected, and worth
+stating in advance so the result is falsifiable: **N-level CCM near its null
+for both**, because the residual stream has no privileged basis (§35.4). A
+*large* N-level CCM would be the surprise and would need explaining before any
+F-level number is trusted.
+
+### 35.10 Acceptance criteria — what has to be true before this is believed
+
+1. **Test 3 (rotation) passes.** Non-negotiable; without it the metric is not
+   demonstrably distinct from CKA.
+2. **Test 7 (size invariance of CCM) passes at all three widths.** Without it,
+   no cross-target or cross-run CCM comparison may be quoted.
+3. **The real pair's CCM CI excludes zero at the F level, and exceeds the same
+   pair's untrained-twin CCM.** Two references, not one — the permutation null
+   answers "beyond search," the twin answers "beyond architecture." §16 E9's
+   L1/L2 experience is the precedent: which floor you check against changed
+   the verdict in both directions, so both are reported.
+4. **Both kernels agree qualitatively** on whether the CI excludes zero and on
+   the head/tail ordering. Disagreement is reported as the finding and blocks
+   promotion to a pipeline stage, per §35.7.
+5. **The alive-unit count and the assignment ceiling appear in every rendered
+   CCM**, per §35.3.3's rule and §6.2.1 Stage 1's precedent for `frac_shared`.
+6. **Promotion gate.** This ships as a **standalone driver over existing run
+   directories** (`run_alignment_spectrum.py`, reading the store, zero forward
+   passes) — matching `run_error_fingerprint.py`, `run_agreement.py` and
+   `run_scaling_ladder.py`, all of which are deliberately *not* stages. It
+   becomes a pipeline stage **only if 1–5 all pass**. §2.9 and §20 H4's
+   precedent are explicit: H4's heuristic was built, measured, found to lose to
+   a free baseline, and **deliberately not wired in** — wiring in a measurement
+   before it has cleared its own criteria would contradict the result.
+
+### 35.11 What must change in the report, the stage docs, and the limitations lists
+
+**Items 1–2 are true of the repo today and can land without any of the above.**
+Items 3–7 land with the measurement.
+
+**1. `stage_docs.py`, `"l1"` → `cannot_tell` — the rotation cost is missing.**
+Current text ends: *"…It says nothing about mechanism; L2 and L3 exist
+specifically because this stage can't answer that."* **Append:**
+
+> It also cannot tell you whether any individual unit or feature in one model
+> corresponds to one in the other. The comparison is deliberately blind to each
+> layer's rotation, and that blindness has a price: one model's hidden space
+> could be arbitrarily rotated — scrambling every individual unit — and this
+> score would not move at all.
+
+**2. `report.py:2691-2696`, the L1 `_note`.** The `purpose` register currently
+sells rotation invariance as a pure virtue — *"(invariant to rotation/scaling
+of either representation, so it compares geometry, not raw coordinates)"* —
+and the `limitations` register does not mention it. **Add to `limitations`:**
+
+> Rotation invariance is what makes this comparison possible across two models
+> with different hidden sizes, and it is also its sharpest limit: an identical
+> score is achievable with zero correspondence between individual units,
+> because rotating one model's basis leaves this number bit-identical while
+> scrambling which direction means what. Read a high value as "these layers
+> organize the same data into the same *shape*," never as "these layers'
+> units mean the same things."
+
+**3. `report.py:2814-2820`, the SAE feature-space CKA note — an internal
+contradiction to fix.** The clause sits in the **`reading` register** (the
+second positional argument of that `_note` call, the one that begins "A high
+value here means…"), not in `limitations`. It credits the result to the
+feature basis being "meaningful on its own rather than an arbitrary rotation
+of the hidden space," while the statistic reported discards exactly that
+property (§35.2 item 4). **Replace that trailing clause with:**
+
+> A feature basis is *built* to be meaningful on its own, unlike the raw
+> hidden space — but this particular score is invariant to rotation, so it
+> cannot make use of that: it would read the same if the feature axes were
+> mixed together arbitrarily. It is a check that the two dictionaries agree
+> about which series resemble which, not that the two dictionaries contain
+> the same features.
+
+**4. New `stage_docs.py` entry** (only when promoted to a stage, per §35.10
+item 6), in the four fixed registers — *Question*: "Do the two models'
+individual units mean the same things, or only span the same space?"; *How*;
+*Good vs bad*: a curve starting high and decaying (shared core + model-specific
+tail) vs a flat curve at the null; *Cannot tell you*: that a matched pair of
+units plays the same causal role — that is §27's ablation battery, and the
+pairing here is correlational.
+
+**5. `glossary.py`** — five terms, one sentence each, each pointing at a report
+*section* (the file's own convention): **alignment spectrum**, **semi-matching**,
+**assignment (one-to-one matching)**, **convergent core**, **span ratio**.
+
+**6. `report/derived.py::bottom_line_rows`** — one scorecard row per pair:
+measure `CCM`, value, reference = *that pair's own row-permutation null*, the
+rule, the derived verdict. Must hold the adaptivity contract (no model name, no
+architecture family, no `cfg.models[i]` index) and render `"not comparable"`
+when the null is absent, like every other row.
+
+⚠️ **Corrected by §36.6, same session — the reference named above is the
+wrong one and is left in place per §0's discipline rather than silently
+rewritten.** CCM is already defined as a *difference from* the permutation
+null (§35.3.4), so printing that null as the row's reference prints zero and
+**double-counts the control** — it renders as though the comparison were
+against nothing. The reference is that pair's **untrained-twin floor**
+(`twin_floor.value` in §36.2's artifact), with `"not comparable"` when
+`twin_floor.available` is false. Everything else in this item stands.
+
+**7. `CLAUDE.md` §12, Architectural/conceptual** — a new numbered limitation,
+and a correction to two docstrings:
+
+> **Population geometry cannot see unit correspondence.** L1's CKA and RSA are
+> invariant to rotation of either model's basis by construction, so no L1
+> number — including `l1/cka_sae.json`, computed on the SAE feature basis —
+> can distinguish "these two models' units correspond" from "these two models'
+> units span the same subspace in completely different coordinates." Whether
+> the two models even use the *same number* of units for the same structure is
+> likewise unmeasured. Both are the subject of `ROADMAP.md` §35, designed and
+> not built.
+
+And in `sae/matching.py:45-48` and `sae/role_matching.py:250`, the twin
+sentences conceding that greedy matching "is a natural improvement, not built"
+should — **corrected in place, never deleted** (§0, §2.9's boundary) — point
+at §35 as where the gap between greedy and optimal becomes a measurement
+rather than a caveat.
+
+### 35.12 Ordering, cost, and what not to do
+
+**Cost, measured in arithmetic rather than guessed.** The correlation matrix is
+one matmul over the shared rows: `K = corr(A^T B)` at `[n_a × n_b]`, trivial at
+N-level (1280²) and ~6144×6144 at F-level, still a single GEMM. The
+semi-matching is a row-wise argmax — **so the full layer×layer grid is
+affordable**, which is what makes §35.6's depth curve free. The assignment is
+`O(n³)`; `scipy`'s Jonker-Volgenant solves 1280² in about a second and 6144²
+in seconds to tens of seconds. Therefore:
+
+> **Compute the spectrum on the full grid; compute the assignment only at the
+> pairs that matter** — the peak-CCM pair, the peak-CKA pair, and a
+> depth-strided subset. Bootstrap the spectrum at `n_boot` and the assignment
+> at `n_boot_heavy`.
+
+**Build order.** (a) The synthetic test suite **first**, including test 3 —
+the rotation control is the go/no-go and costs nothing to run. (b) The N-level
+spectrum over an existing run directory. (c) The real control of §35.9. (d)
+F-level, only against a **revived** (post-`aux_k`) run, since a 95%-dead
+dictionary measures dictionary health (§35.4). (e) The clustering half of
+§35.5 last — it is the most interesting and the most likely to be confounded,
+and it is worth nothing if CCM has not already cleared §35.10.
+
+**What not to do.**
+- 🔴 **Do not re-open the crosscoder.** §6.2.1's triage block stands. §35.5
+  explains that result; it does not propose rebuilding the artifact that
+  produced it, and §2.9 forbids reviving a mechanism that lost a pre-registered
+  comparison.
+- **Do not make this a pipeline stage before §35.10 item 6's gate.** §20 H4 is
+  the precedent: built, measured, lost to a free baseline, correctly left
+  un-wired.
+- **Do not quote a single CCM without its null, its alive count and — where an
+  assignment is involved — its ceiling.** The three ways this number can lie
+  are all size-driven and all invisible in the value itself.
+- **Do not replace L1 with this.** CKA answers a real question (is the
+  *geometry* shared) that CCM does not; they are complements, and the most
+  informative outcome in §35.3.5's table is the one where they **disagree**.
+- **Do not reuse `analysis/clustering.py` for §35.5 without re-deriving its
+  assumptions.** That module clusters *series* within one model; this clusters
+  *units* across two, and the imbalance failure mode (§35.5) is specific to
+  the second.
+
+### 35.13 Open questions — decide before implementing the item that depends on them
+
+1. **Which granularity for the rows — window or series?** Window-level gives
+   far more rows and therefore much better-conditioned correlations, which
+   matters for a 6144-wide dictionary; series-level is what `sae_pooled`
+   already persists and what every existing SAE comparison uses.
+   **Recommend window-level for the N-level instantiation** (the store has it
+   and L1's global CKA already uses it for exactly this reason) **and
+   series-level for F-level** (it is what is persisted; adding a window-level
+   SAE encode is a separate cost). Record the choice per artifact — it is not
+   a detail, since the two give different N by a factor of ~16.
+2. **Does CCM use `|rho|` or signed `rho` for SAE atoms?** §35.3.1 recommends
+   signed, on the grounds that TopK atoms are non-negative so an
+   anti-correlation is a real non-match. The counter-argument is that sparse
+   non-negative columns have a slightly negative baseline correlation by
+   construction, which the row-permutation null absorbs but which makes the
+   raw values harder to read. **Recommend signed, with `|rho|` recorded
+   alongside**, and resolve empirically on the first real run.
+3. **Is the F-level measurement restricted to ground-truth-matched candidates,
+   as `matching.py` restricts itself (top 50 by `|rho|`)?** That restriction
+   exists for cost and is a §35.3.3 violation — matchedness to ground truth is
+   plausibly correlated with cross-model matchability, so it would bias CCM
+   **up**. **Recommend all alive atoms**, since §35.12's arithmetic says the
+   full matrix is affordable and the cost argument no longer holds.
+4. **Which `tau` and `alpha` for §35.5's clustering?** The paper uses
+   `tau = 0.2`, `alpha = 0.025`, `k = 100`. Per §35.1's note on Table 1, do
+   not port these. **Recommend deriving `tau` from the row-permutation null's
+   own upper tail** (so the graph keeps only edges a permuted pair would not
+   produce) and choosing `k` by eigengap as the paper's own footnote 7
+   suggests — both are properties of this data rather than borrowed constants,
+   which is §34.10 item 1's same resolution to the same class of question.
+5. **Should the N-level control run on every pair automatically?** It is cheap
+   enough to, and it gives every existing run a basis-privilege reading for
+   free. Against: it is a new number rendered in a report before its own
+   acceptance criteria have been met. **Recommend running it in the standalone
+   driver only** until §35.10 clears.
+6. **Does a matched unit pair have to survive a causal check?** §27's ablation
+   battery could ask whether a matched pair *acts* alike, exactly as
+   `add_role_causal_agreement` does for roles — and §27's live result there was
+   1 `same causal role` against 18 `fires together, acts differently`, so the
+   answer is very likely "mostly no." That is a genuinely interesting second
+   phase and it is **explicitly out of scope here**: it needs its own
+   untrained-twin floor, which §29 measured and found three of four twins
+   cannot carry.
+
+---
+
+## 36. The L1 section becomes two-tier — CCM figures added, CKA demoted behind a measured gate (added 2026-09-22, user-directed — DESIGN ONLY, NOT IMPLEMENTED)
+
+### 36.0 What was asked, and the one qualification that changes the design
+
+**The instruction.** "I don't want to get rid of what I already have with CKA,
+but if there is a provably better metric then scale CKA back (make more of the
+graphs collapsable), and add similar graphs for the new metric." Design only;
+written so a smaller model can implement and test it without re-deriving
+anything.
+
+**The qualification, and it is load-bearing rather than pedantic.** As of this
+date **CCM is not proven better — it is not built, and nothing has been
+measured.** Worse for the "better" framing: CCM and CKA answer *different*
+questions (does the geometry correspond vs. do the individual units
+correspond), so CKA is not dominated even in the best case for CCM. A design
+that demotes CKA unconditionally would be this repo's §2.9 violation in
+reverse — taking down scaffolding *before* the decision it supported has been
+made, rather than after.
+
+So the demotion is built, wired, tested, and **gated on a pre-registered rule
+that a measurement fires** (§36.1). The gate has two outcomes and the section
+renders both; which one a run gets is read from an artifact field, never
+decided in `report.py`. Two consequences worth stating once:
+
+- **Nothing about CKA is removed, ever.** `l1/cka.npz`, `l1/meta.json`, the
+  CKA stage, every CKA `Finding`, and every CKA `_note` string survive both
+  tiers byte-identically. The *only* thing that changes is how many clicks a
+  reader needs. §36.7 test 8 pins the artifacts and test 9 pins the findings.
+- **Before CCM exists, the section is exactly what it is today** — byte
+  identical, pinned by §36.7 test 12. A run with no `alignment_spectrum.json`
+  must be unable to tell this change landed.
+
+### 36.1 The promotion gate — what "provably better" has to mean, pre-registered
+
+Seven checks. **All seven must pass**; any failure means `layout_tier:
+"cka_primary"` and the section renders as it does today with the CCM figures
+added *below* the CKA ones rather than above.
+
+| # | Check | Passes when | Why it is in the gate |
+|---|---|---|---|
+| 1 | `rotation_control_passed` | §35.9 test 3 green in the committed suite | Without it CCM is not demonstrably distinct from CKA, and demoting CKA for a re-parameterization of CKA would be absurd |
+| 2 | `size_invariance_passed` | §35.9 test 7 green | Without it no CCM value may be compared across targets, so no grid, heatmap or depth curve is readable |
+| 3 | `kernels_agree` | The second kernel (§35.3.1) gives the same qualitative verdict at the headline pair | §35.7's row 3 — the paper's own §3.2 robustness requirement |
+| 4 | `ci_excludes_zero` | This run's headline CCM 95% CI excludes 0 | A null result must not demote anything |
+| 5 | `beats_twin` | Headline CCM exceeds the same pair's untrained-twin CCM | §16 E9's two-reference discipline: permutation answers "beyond search", the twin answers "beyond architecture" |
+| 6 | `level_is_feature` | The headline CCM is the **F-level** (SAE) measurement, not N-level | 🔴 N-level is the *control* and is expected to read ≈ 0 (§35.4). Demoting CKA in favour of a control that correctly reads zero would be the worst possible outcome of this design, and it is the single most likely way to implement it wrong |
+| 7 | `non_redundant_with_cka` | `abs(spearman(ccm_grid.flat, cka_grid.flat)) < 0.7` over the shared layer grid, **or** `argmax(ccm_grid) != argmax(cka_grid)` | A metric that merely tracks CKA is not better than CKA, it is a more expensive CKA. This is the check that earns the word "better" |
+
+🔴 **The threshold `0.7` and the whole rule live in
+`analysis/alignment_spectrum.py`, never in `report.py`.** The artifact carries
+`gate.fired`, `gate.rule` (the human-readable sentence that decided it),
+`gate.checks` (the seven booleans) and `gate.redundancy_rho`; `report.py` reads
+`layout_tier` and renders `gate.rule` in the open. This is §11.57's lesson
+applied before it can bite — a threshold re-derived at the render site is a
+second source of truth — and it matches `Verdict.__post_init__`/`Rule.apply`,
+where a call site *structurally cannot* author a verdict. §36.7 test 10 greps
+`report.py` for the constant and fails if it is there.
+
+**Partial credit is deliberately not a thing.** There is no third tier. Six of
+seven is `cka_primary`. A design with a middle state invites tuning the gate
+until it fires, which is the failure §6.2.1's pre-registered decision rule
+exists to prevent — and which that section's own outcome (the flagship variant
+*lost*, and was recorded as losing) shows this repo is willing to accept.
+
+### 36.2 Artifact contract — `<run_dir>/l1/alignment_spectrum.json`
+
+Written by `analysis/alignment_spectrum.py` via `run_alignment_spectrum.py`
+(§35.10 item 6: a standalone driver over existing run dirs, **not** a pipeline
+stage, zero forward passes). Exact schema — an implementer should be able to
+build the figures from this alone.
+
+```jsonc
+{
+  "schema_version": 1,
+  "model_a": "TimesFM", "model_b": "Chronos-T5-Base",
+  "level": "feature",                  // "neuron" | "feature"
+  "kernel": "pearson",                 // "abs_pearson" (neuron) | "pearson" (feature)
+  "robustness_kernel": "mutual_information",   // or "spearman" | null
+  "depth_axis": "block",
+  "rows": { "granularity": "series", "n_rows": 288, "n_series": 288, "row_seed": 12 },
+  "layers_a": ["stacked_xf.2", "..."], "layers_b": ["encoder.block.0", "..."],
+  "rel_depth_a": [0.10, "..."],        "rel_depth_b": [0.04, "..."],
+
+  "ccm_grid": [[0.11, "..."], ["..."]],       // [len(layers_a) x len(layers_b)], SIGNED, may be < 0
+  "cka_grid": [[0.31, "..."], ["..."]],       // copied from l1/cka.npz for check 7 and F2's twin panel
+
+  "best_pair": {
+    "layer_a": "stacked_xf.10", "layer_b": "encoder.block.6",
+    "rel_depth_a": 0.52, "rel_depth_b": 0.29,
+    "ccm": 0.184, "ci": { "lo": 0.121, "hi": 0.248 },
+    "ccf": 0.41, "ccm_head": 0.39, "ccm_tail": 0.02,
+
+    "n_units_a": 344,  "n_units_a_total": 6144,   // alive / configured  (§35.8 item 2)
+    "n_units_b": 192,  "n_units_b_total": 384,
+
+    "spectrum":            [0.94, 0.91, "..."],   // s(k), DESCENDING, len == n_units_a
+    "matching_spectrum":   [0.94, 0.88, null],    // assignment value at the SAME k; null where unassigned
+    "null_spectrum_mean":  [0.42, 0.41, "..."],   // s0(k)
+    "null_spectrum_p05":   [0.38, "..."],
+    "null_spectrum_p95":   [0.47, "..."],
+    "n_permutations": 20,
+
+    "semi_matching_mean": 0.61, "matching_mean": 0.55,
+    "overlap_ratio": 0.18, "assignment_ceiling": 0.558,
+    "overlap_frac_of_ceiling": 0.323, "b_coverage": 0.72,
+    "multiplicity": { "1": 138, "2": 41, "3": 9, "4": 2, "5+": 1 }
+  },
+
+  "depth_curve": [ { "layer_a": "...", "layer_b": "...", "ccm": 0.09 } ],
+  "direction": "a_to_b",
+  "reverse": { "best_pair": { "...": "..." }, "depth_curve": [] },   // B->A, same shape
+
+  "twin_floor": { "available": true, "ccm": 0.021, "run_dir": "runs/null_timesfm_random",
+                  "reason": "" },
+  "basis_control": {
+    "neuron":  { "ccm": 0.008, "ci": { "lo": -0.010, "hi": 0.027 }, "available": true, "reason": "" },
+    "feature": { "ccm": 0.184, "ci": { "lo":  0.121, "hi": 0.248 }, "available": true, "reason": "" }
+  },
+
+  "gate": {
+    "fired": true,
+    "rule": "CCM's CI excludes zero (0.121-0.248), exceeds this pair's untrained-twin floor (0.021), and does not track CKA across the layer grid (Spearman 0.31 < 0.70).",
+    "checks": { "rotation_control_passed": true, "size_invariance_passed": true,
+                "kernels_agree": true, "ci_excludes_zero": true, "beats_twin": true,
+                "level_is_feature": true, "non_redundant_with_cka": true },
+    "redundancy_rho": 0.31
+  },
+  "layout_tier": "ccm_primary",        // "ccm_primary" | "cka_primary"  -- the ONLY field report.py branches on
+  "layout_reason": "...",              // rendered verbatim when tier is cka_primary
+
+  "pairs": [ /* one record per C(n,2) pair: model_a, model_b, best_pair, depth_curve, ccm_grid */ ]
+}
+```
+
+⚠️ **Three schema rules that are not decoration.**
+`matching_spectrum` uses `null`, never `0.0`, for an A-unit the assignment
+could not reach — a zero is a *measurement* ("matches nothing") and a `null`
+is a *structural fact* ("there was no B-unit left"), and §35.3.3's whole
+ceiling argument dies if they are conflated. `n_units_*` and
+`n_units_*_total` are both required at every site that renders a CCM.
+`ccm_grid` may contain negatives and any consumer that clips it to `[0, 1]`
+has reintroduced §35.3.4's clipping bug at the render layer.
+
+### 36.3 The figures — exact specifications
+
+All six go in `report/report.py` beside the existing L1 helpers. Every one uses
+`_frag` (never `to_html` — §11.48's one-figure-of-104 bug), `_COLORS` for
+colour, and `_short()` for layer tick labels.
+
+---
+
+**F1 — `_ccm_spectrum_fig(best: dict, kernel: str) -> go.Figure`. The headline,
+and the one figure with no CKA analog.** This is the paper's Figure 3.
+
+Three traces, **in this order** so the band renders behind the points:
+
+1. *Null band.* `go.Scatter(x = ks + ks[::-1], y = p95 + p05[::-1],
+   fill="toself", fillcolor="rgba(102,114,123,0.18)"` (that is `_COLORS["muted"]`
+   at 18%), `line=dict(width=0)`, `name="permutation null (5–95%)"`,
+   `hoverinfo="skip"`, `showlegend=True)`.
+2. *Semi-matching.* `mode="lines+markers"`, `line=dict(color=_COLORS["accent"],
+   width=1)`, `marker=dict(size=5, color=_COLORS["accent"], opacity=0.55)`,
+   `name="best available partner (greedy)"`.
+3. *Assignment.* `mode="markers"`, `marker=dict(size=3, color=_COLORS["ink"])`,
+   `name="one-to-one assignment"`, `connectgaps=False`.
+
+🔴 **The single detail an implementer will get wrong.** Both traces are plotted
+against **the same x**, and that x is the rank order of the *semi-matching*
+sort — the paper is explicit: "both the semi-matching and matching are found
+for each unit, and then the units are sorted in order of decreasing
+semi-matching value and both correlation values are plotted." Sorting the
+assignment trace independently would produce a smooth, plausible second curve
+that means nothing, because the vertical distance between the two traces at a
+given x is the whole diagnostic. **Do not sort `matching_spectrum`.**
+
+Axes: `xaxis_title="unit index, sorted by greedy best-match score"`,
+`yaxis_title="correlation with assigned unit"`,
+`yaxis_range=[0, 1]` when `kernel == "abs_pearson"` else `[-1, 1]`. Height 380.
+
+---
+
+**F2 — `_ccm_heat(rec: dict) -> go.Figure`. The direct analog of the CKA
+heatmap, and it must not be styled like one.**
+
+```python
+z = np.asarray(rec["ccm_grid"]); m = float(np.nanmax(np.abs(z))) or 1.0
+go.Heatmap(z=z, x=[_short(x) for x in layers_b], y=[_short(y) for y in layers_a],
+           colorscale="RdBu", zmid=0, zmin=-m, zmax=m, colorbar_title="CCM")
+```
+
+🔴 **Diverging, centred on zero, symmetric limits — never Viridis with
+`zmin=0, zmax=1`.** CKA is bounded in [0,1] with no meaningful midpoint; CCM is
+**signed with a null at exactly zero**, so a sequential scale would render "at
+the null" and "clearly below the null" as the same dark colour and make every
+grid look uniformly positive. Precedent to copy verbatim: `report.py:2885`,
+L2's ΔR² heatmap (`colorscale="RdBu", zmid=0`). Axis titles are the model
+names, identical to the CKA heatmap's, so the two read as a pair.
+
+---
+
+**F3 — `_ccm_depth_curve(rec: dict) -> go.Figure`. Mirrors the CKA depth
+curve so the two can be compared at a glance.**
+
+One `go.Scatter(mode="lines+markers", line_color=_COLORS["accent"])`, x =
+`rel_depth_a`, y = each layer's CCM at its best partner, `text` = the
+`"L10 ↔ L6"` pair label and `hovertemplate="depth %{x:.2f} · CCM %{y:.3f} ·
+%{text}<extra></extra>"` — the same shape as the CKA curve's. Then:
+
+- `add_hline(y=0, line=dict(color=_COLORS["muted"], dash="dot"),
+  annotation_text="permutation null (zero by construction)")`
+- when `twin_floor.available`: a second `add_hline` at `twin_floor.ccm`,
+  `dash="dash"`, annotated `"untrained-twin floor"`.
+
+**No `yaxis_range=[0,1]`.** Let it autoscale, but force zero into view
+(`yaxis_rangemode="tozero"` is wrong for a signed quantity — instead compute
+`lim = max(abs(y)) * 1.15` and set `[-lim, lim]` when any y < 0, else `[0,
+lim]`). x title: `f"relative depth in {model_a} ({depth_axis} axis)"`, carrying
+the same `_l1_depth_note` coverage qualifier the CKA curve already gets.
+
+---
+
+**F4 — `_ccm_multiplicity_fig(best: dict) -> go.Figure`. The many-to-one
+evidence. No CKA analog, and the reason this section exists.**
+
+`go.Bar(x=["1","2","3","4","5+"], y=counts, marker_color=_COLORS["a"])`,
+`xaxis_title="A-units claiming the same B-unit"`,
+`yaxis_title="number of B-units"`. Annotate the mean span ratio in the corner.
+Height 300. A bar at 1 dominating means the correspondence is genuinely
+one-to-one; mass at 2+ is the paper's "six filters vs five" made visible, and
+is §35.5's proposed mechanism for the crosscoder's negative result.
+
+---
+
+**F5 — `_ccm_basis_control_fig(rec: dict) -> go.Figure`. The figure that stops
+a reader over-reading a low number.**
+
+Grouped bar, two categories: `["hidden units (raw basis)", "SAE features
+(recovered basis)"]`, y = CCM, `error_y` from each CI via the existing
+`_err_y` helper, plus a dashed `add_hline` at the twin floor. When one side is
+unavailable, render the available bar and print the other's `reason` as a
+blurb — **never a zero bar**, which would assert a measurement that did not
+happen (§11.37).
+
+This figure carries the argument of §35.4: a near-zero raw-basis bar beside a
+clearly positive feature bar is not a weak result, it is the expected reading
+of a space with no privileged basis, and it is the first direct evidence this
+repo would have that its dictionaries recover structure the raw coordinates do
+not.
+
+---
+
+**F6 — `_ccm_panel_block(rec: dict) -> str`. Panel runs, mirroring
+`_l1_panel_block` exactly.** Same four parts in the same order: a peak table
+over all C(n,2) pairs (columns: model A, model B, CCM + CI, at, rel. depth,
+alive units A/B, assignment ceiling, twin floor); a heatmap grid on a **shared
+symmetric** colour scale (`m = max|CCM|` across *all* pairs, not per panel —
+the §11.57 lesson about shared scales, and `_l1_panel_block`'s own stated
+reason); a spectrum grid; and the same **collapse-beyond-4** discipline
+(`shown, rest = usable[:4], usable[4:]`, `rest` behind `_details(f"{len(rest)}
+more pair(s)", ...)`). Reuse the existing pattern rather than writing a second
+one (§2.2).
+
+### 36.4 The two layouts, figure by figure
+
+**Integration point — the whole change lives inside `_sec_l1`.** No new section
+builder, no new pipeline stage, no change to `builders`' `requires` list. The
+precedent is already in the same function: `cka_sae.json` is rendered at
+`report.py:2777` behind a bare `if cka_sae_path.exists():`. CCM does exactly
+the same:
+
+```python
+ccm_path = run_dir / "l1" / "alignment_spectrum.json"
+ccm = load_json(ccm_path) if ccm_path.exists() else None
+tier = (ccm or {}).get("layout_tier", "cka_primary")
+```
+
+`tier` is the **only** branch. Everything below is a reordering of strings
+already being produced.
+
+**Layout A — `cka_primary` (today's layout, plus CCM below if present).**
+Order unchanged from the current code, then, when `ccm` exists, the CCM block
+appended at the end with `gate.rule` rendered in the open as a blurb saying
+which check did not pass. Nothing collapses. This is also what a run with no
+CCM artifact gets, identically.
+
+**Layout B — `ccm_primary`.** Same objects, reordered and re-nested:
+
+| Order | Content | State | `<summary>` / `<h4>` text |
+|---|---|---|---|
+| 1 | **F1** alignment spectrum + `_note` | open | `<h4>` Do individual units correspond? |
+| 2 | **F2** CCM heatmap + `_note` | open | `<h4>` Unit-level correspondence by layer pair |
+| 3 | **CKA heatmap** (`heat`) + its existing `_note`, **unchanged strings** | **open** | `<h4>` Geometric similarity (CKA), the same layer grid |
+| 4 | **F3** CCM depth curve + `_note` | open | `<h4>` Unit correspondence by depth |
+| 5 | **F5** basis-privilege control + `_note` | open | `<h4>` Raw hidden units vs. SAE features |
+| 6 | **F4** multiplicity | collapsed | "How many of A's units compete for the same partner in B" |
+| 7 | CKA depth curve (`curve`) + `_l1_depth_note` | **collapsed** | "Geometric similarity by depth (CKA) — the same curve, for the geometry rather than the units" |
+| 8 | CKA family bars (`bar`) + `_l1_family_note` | **collapsed** | "Geometric similarity per data family (CKA)" |
+| 9 | `_l1_panel_block(...)` whole output | **collapsed** | "Geometric similarity for every model pair (CKA) — peak table, heatmap grid, depth grid" |
+| 10 | **F6** CCM panel block | open (its own internals keep collapse-beyond-4) | `<h4>` Unit correspondence, every pair |
+| 11 | RSA table + `_note` | **collapsed** | "RSA — a third notion of geometric agreement, as a check on CKA's own invariance" |
+| 12 | SAE-feature CKA heatmap + `_note` | **collapsed** | "Geometric similarity in SAE feature space (CKA)" |
+
+🔵 **Why the CKA heatmap (row 3) stays open when everything else CKA
+collapses**, since this is the one judgement call in the layout and it should
+not be changed casually. Gate check 7 *is* the claim "these two grids are not
+the same grid." The honest way to render a non-redundancy claim is to put both
+grids in front of the reader; collapsing the comparison that justifies the
+demotion would make the demotion unfalsifiable by eye. Rows 2 and 3 therefore
+sit adjacent, share axis titles, tick labels and layer ordering, and differ
+only in colour scale (§36.3 F2) — so "the bright cell is in a different place"
+is readable without a click. Everything else CKA answers a secondary question
+and collapses. **Five CKA objects move behind a fold; one stays.**
+
+⚠️ **Rows 7 and 8 render only when `n_pairs < 2`** (today's condition,
+unchanged — a panel run suppresses them because row 9's grids already contain
+them). Do not remove that guard while moving them, or a panel run renders the
+reference pair's curve twice, once alone and once inside the grid — the exact
+duplication `_sec_l1`'s existing comment at line 2657 says it was added to
+prevent.
+
+### 36.5 🔴 The collapse pattern — the exact shape, and the test it must not fake
+
+**The hazard.** `tests/test_report_legibility.py::test_the_rendered_report_captions_every_figure`
+walks the document positionally and requires a `<p class="figcap">`
+*immediately after* each `plotly-graph-div`. Wrapping a figure in `_details`
+**does not break that test** — the figcap moves inside the fold along with the
+figure and is still positionally adjacent. So the naive implementation passes
+CI while violating the invariant that test exists to protect, stated in its own
+module docstring: *"Every figure must answer 'what am I looking at' without the
+reader clicking anything … A report whose subject lines are all collapsed is
+effectively unlabeled, and the failure is invisible."*
+
+This is §11.53's shape exactly — a check whose vocabulary does not reach the
+new case is indistinguishable, at the output, from no check at all.
+
+**The required pattern.** The `<summary>` carries the subject line, so the
+figure is labelled *while folded*; the `_note` goes inside unchanged, so the
+positional walk still sees `fig → cap`:
+
+```python
+inner += _details(
+    "Geometric similarity by depth (CKA) — the same curve, for the geometry rather than the units",
+    _frag(curve, 320) + _l1_depth_note(depth_axis_name, run_dir),
+)
+```
+
+Three rules that follow, and each has a test in §36.7:
+
+1. **The `<h4>` becomes the `<summary>`; it does not stay outside.** Leaving
+   `inner += "<h4>Layer correspondence by depth</h4>" + _details(...)` renders a
+   heading with nothing under it and a fold labelled twice.
+2. **The `<summary>` must be specific — never `"What does this mean?"`, never
+   `"Details"`, and at least 20 characters.** It is the only label a folded
+   figure has.
+3. **Do not touch the `_note`/`_figcap` strings while moving a figure.** The
+   copy changes are §35.11's separate pass. A diff that both moves and rewords
+   is unreviewable, and §35.11 items 1–3 are independently landable.
+
+**And the invariant is strengthened rather than left implicit.** A new general
+test (§36.7 test 7) is added to `test_report_legibility.py`, applying to the
+whole report and not just L1: *every `<details>` containing a plotly div must
+carry a non-generic `<summary>` of at least 20 characters.* That is the check
+that makes collapsing figures safe as a practice, and it should land in the
+**same commit** as the first collapsed figure.
+
+### 36.6 Findings, scorecard, and what must NOT be added
+
+**Findings.** CCM emits three `Finding`s at `ccm_primary` and `cka_primary`
+alike — a demoted figure must not lose its claim (§36.7 test 9), and a new
+figure must not gain one only when it happens to be on top:
+
+- peak CCM with CI, layer pair, relative depths, and — required, per §35.3.3 —
+  alive-unit counts and the assignment ceiling in the same sentence;
+- the head/tail contrast (§35.3.5's table, as a sentence: shared core vs.
+  uniform vs. none);
+- the basis-privilege reading (raw-unit CCM vs. feature CCM).
+
+🔴 **`evidence_class="geometric"` for all three. Do not add a new
+`EvidenceClass` literal.** CCM is a representational-similarity claim, not a
+causal one; and the six literals are consumed by `_compose_caveats`, the
+confidence-badge CSS keyed on them, and `findings.json`'s schema, so a seventh
+is a four-file change for no gain. Set `cleared_noise_floor=True` on the peak
+finding **only** when `gate.checks.ci_excludes_zero and beats_twin` — and leave
+it `None`, never `False`, otherwise (§21 J1's rule: it is set at 2 of 36 sites
+and inferred at none).
+
+**Scorecard.** One row in `report/derived.py::bottom_line_rows`, per pair:
+measure *"unit-level correspondence (CCM)"*, value = peak CCM, reference =
+*that pair's own untrained-twin floor* (not zero — the permutation null is
+already absorbed into CCM's definition, so zero is the wrong reference to
+print and would double-count the control), rule and derived verdict via
+`Rule.apply`. Renders `"not comparable"` when `twin_floor.available` is false.
+Must hold the adaptivity contract — **no model name, no architecture family, no
+`cfg.models[i]` index anywhere in the function** — which is pinned by an
+existing source-inspection test.
+
+**Not added, deliberately:** no `stage_docs.py` entry, no `glossary.py` entry
+change beyond §35.11 item 5, and **no new pipeline stage**. §35.10 item 6's
+gate is unchanged by this section: the artifact is produced by a standalone
+driver, and the report renders it if it is there. §20 H4 is the precedent for
+why that ordering matters.
+
+### 36.7 Tests — exact assertions
+
+All twelve are cheap, synthetic, and need no checkpoint. Build a tiny
+`alignment_spectrum.json` fixture in `tmp_path` and call the helpers directly;
+for the rendered-HTML ones, reuse the existing `runs/smoke` pattern and skip
+when absent, as `test_report_legibility.py` already does.
+
+New file `tests/test_l1_tiering.py`, except 7 which belongs in
+`test_report_legibility.py`.
+
+| # | Test | Assertion | Confirmed to discriminate by |
+|---|---|---|---|
+| 1 | `test_spectrum_is_sorted_descending` | F1's semi-matching trace `y` is non-increasing | shuffling the fixture's `spectrum` |
+| 2 | `test_assignment_never_exceeds_greedy` | pointwise `matching_spectrum[k] <= spectrum[k]` wherever both are non-null | planting a fixture where it does; also assert the **module** raises, since this is §35.8 item 7's sign check |
+| 3 | 🔴 `test_unassignable_units_are_gaps_not_zeros` | with `n_units_b < n_units_a`, F1's assignment trace has exactly `n_a - n_b` `None`s and **no** zeros | replacing `None` with `0.0` in the fixture — the load-bearing negative, because zeros read as "matches nothing" rather than "could not be assigned" |
+| 4 | `test_ccm_heatmap_is_diverging_and_centred` | parse the figure's JSON: `zmid == 0`, `zmin == -zmax`, `colorscale` is not Viridis | setting `zmin=0` |
+| 5 | `test_cka_stays_open_under_cka_primary` | with `layout_tier: "cka_primary"`, the CKA heatmap's div is **not** inside any `<details>` | flipping the tier |
+| 6 | `test_cka_collapses_only_under_ccm_primary` | with `"ccm_primary"`, it **is** inside a `<details>`, and exactly **five** CKA objects are folded | flipping the tier |
+| 7 | 🔴 `test_a_collapsed_figure_is_labelled_by_its_summary` (general, in `test_report_legibility.py`) | every `<details>` containing a `plotly-graph-div` has a `<summary>` that is not `"What does this mean?"` and is ≥ 20 chars | planting a `_details("More", _frag(fig))` |
+| 8 | `test_tiering_does_not_touch_cka_artifacts` | `l1/cka.npz` and `l1/meta.json` byte-identical across both tiers | — (pins "don't get rid of what I have") |
+| 9 | 🔴 `test_no_finding_is_lost_when_a_figure_is_folded` | the `findings` list is **equal** under both tiers | dropping one CKA `findings.append` inside the folded branch — the defect this test exists for, since a folded figure's claim silently leaving `findings.json` is invisible in the HTML |
+| 10 | `test_report_does_not_author_the_gate` | `report.py` source contains neither `0.7` as a redundancy threshold nor the string `non_redundant`; it reads `layout_tier` only | inlining the threshold |
+| 11 | `test_gate_requires_feature_level` | `checks.level_is_feature = False` with all six others true ⇒ `cka_primary` | flipping it true |
+| 12 | 🔴 `test_absent_artifact_renders_todays_html` | with no `alignment_spectrum.json`, `_sec_l1`'s output is **byte-identical** to the pre-change function's | — (the cheapest and most important regression here) |
+
+### 36.8 Implementation order — seven steps, each independently verifiable
+
+Each step ends green and is worth committing; none requires the next.
+
+1. **`_details` labelling invariant first.** Add test 7 to
+   `test_report_legibility.py` and fix any existing `<details>` it flags.
+   Touches no L1 code, and it is the guard everything after depends on.
+2. **`analysis/alignment_spectrum.py`** — the metric and `decide_layout_tier`,
+   with §35.9's synthetic suite. No report code. **Stop here and read §35.9
+   test 3's result**: if the rotation control fails, stop entirely — §35 says
+   abandon rather than tune, and steps 3–7 have no justification.
+3. **`run_alignment_spectrum.py`** — driver over existing run dirs, writes the
+   §36.2 artifact. Run it against a real two-model run dir; confirm the schema
+   and that `layout_tier` comes out `cka_primary` on an N-level-only run (gate
+   check 6).
+4. **Figures F1–F5**, rendered into a throwaway HTML from the fixture, with
+   tests 1–4. No change to `_sec_l1` yet.
+5. **Layout A only** — wire the CCM block in *below* the existing content,
+   nothing collapsed, with tests 8, 9 and 12. At this point the report shows
+   both metrics and demotes nothing, which is a shippable state.
+6. **Layout B** — the reordering and the five folds, with tests 5, 6, 10, 11.
+7. **F6 panel block**, then the scorecard row and §35.11's copy pass.
+
+**Cost.** Steps 1 and 4–7 are report-only and fast. Step 2 is the real work.
+Step 3 is minutes per run dir (zero forward passes). Nothing here needs a GPU
+or a checkpoint, so none of it is a `CLAUDE.md` §2.8 background-agent job.
+
+### 36.9 What not to do
+
+- 🔴 **Do not collapse anything until the gate fires on a real run.** Layout B
+  is code that exists and is tested; a run reaches it only by measurement.
+  Shipping the reorder with `layout_tier` hardcoded would be §2.9's error
+  inverted — scaffolding taken down before the decision was made.
+- 🔴 **Do not delete, stop computing, or stop persisting any CKA quantity.**
+  The stage, `cka.npz`, `meta.json`, `cka_sae.json`, every `Finding` and every
+  `_note` string stay in both tiers. "Scale back" is a statement about pixels.
+- **Do not put CCM in its own report section.** The entire value is the
+  adjacency of rows 2 and 3; across a section break a reader cannot compare
+  them, and a second builder would need its own `requires`, coverage row and
+  stage doc for nothing.
+- **Do not clip `ccm_grid` to `[0, 1]` at the render site**, and do not reuse
+  the CKA heatmap's `zmin=0, zmax=1, colorscale="Viridis"` by copy-paste. Both
+  reintroduce §35.3.4's clipping bug in the figure layer, where it looks like
+  a styling choice.
+- **Do not sort the assignment trace** (§36.3 F1's red note).
+- **Do not add a third layout tier** or make the gate tunable per config. Six
+  of seven is `cka_primary`.
+- **Do not let the CCM figures render when only the N-level measurement
+  exists** without the basis-control figure (F5) beside them. A near-zero
+  raw-basis CCM shown alone, with no explanation of why zero is the expected
+  reading, is a number that will be quoted as "the models share nothing."
+
+### 36.10 Open questions — decide before step 6
+
+1. **Should rows 2 and 3 be one 1×2 subplot instead of two stacked figures?**
+   A shared-axis subplot makes the comparison tighter, but it would mean
+   rebuilding `heat` rather than moving it, which breaks §36.9's "do not touch
+   the CKA figure" property and complicates test 8. **Recommend two stacked
+   figures** for the first implementation; revisit only if a reader says the
+   comparison is hard to make.
+2. **Which direction does F1 show by default, A→B or B→A?** They are not
+   symmetric (§35.3.2) and both are in the artifact. **Recommend rendering the
+   configured `comparison_pair` order (A→B) open and B→A folded** behind a
+   `_details`, rather than picking whichever looks better — which would be a
+   selection on the result.
+3. **Does the collapsed CKA content still count toward the report's figure
+   total in the coverage block?** It should — the figures still render and a
+   fold is not a skip. Confirm `report/coverage.json` is untouched by tiering;
+   if it is not, that is a bug in the coverage counter, not in this design.
+4. **Should `layout_tier` be overridable from a config for debugging?** A
+   `report.force_layout_tier` knob would make step 6 easy to exercise by hand.
+   Against: it is a config field in a heavily-read section and would move the
+   `report` stage's fingerprint (§11.51's fourth defect). **Recommend no
+   config knob** — the tests construct both tiers from fixtures, which is
+   cheaper and cannot leak into a real run.

@@ -92,6 +92,13 @@ pip install torch==2.9.1+cu130 --index-url https://download.pytorch.org/whl/cu13
 # Model libraries (real-checkpoint adapters)
 pip install transformers==4.57.6 timesfm==2.0.2 chronos-forecasting==2.3.1
 
+# Contrib adapter (models/contrib/) libraries -- ONLY needed for the specific
+# checkpoint that contrib adapter targets, not for the core five hand-written
+# adapters above. gluonts + lightning installed cleanly against this env's
+# torch==2.9.1+cu130 / transformers==4.57.6 with no downgrade of either
+# (ROADMAP.md Item D2).
+pip install gluonts==0.17.0 lightning==2.6.6   # models/contrib/lag_llama_adapter.py
+
 # tsfm_benchmark + tsfm_lens themselves, editable -- two SEPARATE packages,
 # deliberately (CLAUDE.md sec 3, README.md "Install"): their dependency sets
 # barely overlap and tsfm_lens's (torch/zarr/plotly/sklearn) are an order of
@@ -135,6 +142,8 @@ pin harder.
 | `huggingface-hub` | 0.36.2 | pip (pypi) | See `transformers` note above — a `timesfm`/`chronos-forecasting` transitive constraint, not chosen directly. |
 | `timesfm` | 2.0.2 | pip (pypi) | **Not the same API as pre-2.0 releases.** `timesfm>=2.0` removed the old `TimesFmHparams`/`TimesFmCheckpoint`/`TimesFm` class API entirely; `models/timesfm_adapter.py` targets the new `TimesFM_2p5_200M_torch` class-based API and defaults to checkpoint `google/timesfm-2.5-200m-pytorch` (20 layers), not the older 2.0/500M checkpoint (50 layers) — see `CLAUDE.md` §11.8. An older pre-2.0 `timesfm` install needs a different (unmaintained-here) adapter. |
 | `chronos-forecasting` | 2.3.1 | pip (pypi) | Backend for the Chronos-T5/Chronos-Bolt adapters. |
+| `gluonts` | 0.17.0 | pip (pypi) | Backend for the `lag_llama` **contrib** adapter (`models/contrib/lag_llama_adapter.py`, ROADMAP.md Item D2) — not needed for the five hand-written adapters above. Installed clean against `torch==2.9.1+cu130` / `transformers==4.57.6` with no downgrade of either. ⚠️ **`gluonts.torch.modules.loss` was removed between gluonts<=0.14.4 (what the published `lag-llama.ckpt` was pickled against) and 0.17.0** — `torch.load()` on that checkpoint fails to unpickle its `hyper_parameters['loss']` entry with this version installed unless a `sys.modules` stub for the removed module is injected first (`lag_llama_adapter.py::_stub_removed_loss_module`, called before every `torch.load()` in that file). Same trap class as `CLAUDE.md` §11.9/§11.10 (a dependency's own breaking release invalidating a checkpoint pickled against an older version), just for an unpickling path instead of a public API. |
+| `lightning` | 2.6.6 | pip (pypi) | Transitive via `gluonts[torch]`'s Lag-Llama-era checkpoint format (the vendored `LagLlamaModel`'s training code references PyTorch-Lightning conventions even though this repo's adapter only ever calls it in inference mode). |
 | `einops` | 0.8.2 | pip (pypi) | Transitive (model library dependency). |
 | `safetensors` | 0.8.0 | pip (pypi) | Transitive (checkpoint loading). |
 | `accelerate` | 1.14.0 | pip (pypi) | Transitive (model library dependency). |

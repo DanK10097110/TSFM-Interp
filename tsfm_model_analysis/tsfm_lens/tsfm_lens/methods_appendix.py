@@ -103,6 +103,8 @@ _ESTIMATORS = [
                 text=_HAND_WRITTEN["SAE fidelity and dead-feature rate"]),
     MethodEntry("relative_decoder_norm (crosscoder shared/specific split)", None,
                 text=_HAND_WRITTEN["relative_decoder_norm (crosscoder shared/specific split)"]),
+    MethodEntry("Specification curve (analysis-knob robustness)",
+                "tsfm_lens.analysis.spec_curve"),
 ]
 
 

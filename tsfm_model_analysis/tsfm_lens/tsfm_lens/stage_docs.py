@@ -462,6 +462,43 @@ STAGE_DOCS: dict = {
                       "'not confirmed' verdict does not mean the dev finding was "
                       "wrong, only that it didn't survive being tested exactly once, "
                       "out of sample.")),
+    "spec_curve": StageDoc(
+        question="Do this run's headline claims survive plausible variation in the "
+                 "analysis's own knobs -- the depth axis, the attention resolution "
+                 "mode, the L0 error scale, the bootstrap sample count, which corpus "
+                 "rows were sampled, which layer-screening method was used -- or does "
+                 "the reported number depend on one particular, somewhat arbitrary "
+                 "analysis choice?",
+        how=("Re-derives each headline claim (an L0 family-strength verdict, a lens "
+             "crystallization state, a layer-screen selection, an attention "
+             "periodicity head) from this run's own already-written activation store "
+             "and predictions, one knob at a time, and reports what fraction of the "
+             "applicable grid preserves the baseline verdict. No model is reloaded "
+             "and no forward pass runs -- this is a standalone reducer over existing "
+             "artifacts, not a pipeline stage, so it can be run against any "
+             "already-completed run without re-extracting anything."),
+        good_bad=("Good: a claim whose robust_frac is 1.0 across every applicable "
+                   "cell -- the verdict does not depend on which of these knobs was "
+                   "chosen. Bad: a robust_frac well below 1.0, meaning the headline "
+                   "number in this report is a property of one particular analysis "
+                   "configuration rather than of the models being compared -- read "
+                   "which specific knob flips it before trusting the headline claim "
+                   "on its own."),
+        cannot_tell=("This is a robustness diagnostic, not a significance test -- "
+                      "`evidence_class: descriptive` throughout, and a claim clearing "
+                      "every cell has not been shown significant here, only stable "
+                      "under these particular perturbations. The grid is deliberately "
+                      "narrow (six knobs needing no re-extraction, swept one at a time "
+                      "by default) and a knob not applicable to a given claim is "
+                      "excluded from its denominator rather than counted as robust, so "
+                      "a perfect score describes only the cells that could be checked. "
+                      "The layer-screen family recomputes against this run's own main "
+                      "activation store rather than the dedicated stride-1, "
+                      "every-block store the production `layer_screen` stage uses and "
+                      "then deletes by default, so every cell in that family is marked "
+                      "`fair_to_all_layers: false` -- a real, stated deviation from the "
+                      "production selection's own fairness guarantee, not the same "
+                      "measurement re-run.")),
     "report": StageDoc(
         question="Given everything the other stages found, is this a fair comparison, and what's actually solid enough to act on?",
         how=("Collects every stage's artifacts into one document, states upfront "

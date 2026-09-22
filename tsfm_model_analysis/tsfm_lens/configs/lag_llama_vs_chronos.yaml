@@ -1,0 +1,63 @@
+# ROADMAP.md Item D2.1 step 7 (real paired run): Lag-Llama vs. a second real
+# checkpoint (Chronos-T5-Small, matching context_len/tokenization
+# granularity -- both are 1 token/timestep, so the alignment window maps
+# 1:1 without either model's own patch geometry dominating the comparison).
+# L0 + L1 minimum per the item's acceptance criterion; L2/budget/layer_screen/
+# internals also enabled since the run is already paying for two real
+# checkpoints. Modest max_series (Lag-Llama's front-padded, no-kv-cache
+# `predict()` is the more expensive of the two models here) so this stays a
+# reasonably-fast confirmation run, not a full comparison config.
+#
+# Lag-Llama checkpoint license (D2.1 step 2): Apache License 2.0 (verified
+# against https://github.com/time-series-foundation-models/lag-llama's own
+# LICENSE file and preserved verbatim in every vendored file's header under
+# `models/contrib/_lag_llama_vendor/`). Chronos-T5-Small: Apache License 2.0
+# (amazon/chronos-t5-small model card).
+
+run:
+  name: lag_llama_vs_chronos
+  out_dir: runs
+  device: cuda
+  dtype: float32
+  seed: 0
+  keep_models_loaded: false
+
+data:
+  source: sealed
+  path: ../../benchmark_medium/public_dev
+  context_len: 480
+  horizon: 64
+  family_key: auto
+  max_series: 80
+
+alignment:
+  window: 32
+  sanity_check: true
+
+models:
+  - name: LagLlama
+    adapter: lag_llama
+    checkpoint: time-series-foundation-models/Lag-Llama
+    batch_size: 40
+    capture_layer_stride: 1
+  - name: Chronos-T5-Small
+    adapter: chronos
+    checkpoint: amazon/chronos-t5-small
+    batch_size: 40
+    capture_layer_stride: 1
+
+l0: {enabled: true, quantiles: [0.1, 0.5, 0.9]}
+budget: {enabled: true}
+layer_screen: {enabled: true}
+internals: {enabled: true}
+lens: {enabled: true, max_series: 40}
+l1: {enabled: true, layer_stride: 1, max_rows: 8000, min_family_series: 8, rsa: true, rsa_max_series: 80}
+l2: {enabled: true, layer_stride: 1, max_rows: 4000, val_frac: 0.3}
+l3: {enabled: true, patching: {max_series: 40}}
+attention: {enabled: true, batch_series: 8, ablation_max_series: 40}
+clustering: {enabled: true}
+exemplars: {enabled: true}
+sae: {enabled: false}
+confirm: {enabled: false}
+stats: {enabled: true, n_boot: 500, n_boot_heavy: 200, ci: 0.95, alpha: 0.05, min_series: 8}
+report: {enabled: true, verbose: false}

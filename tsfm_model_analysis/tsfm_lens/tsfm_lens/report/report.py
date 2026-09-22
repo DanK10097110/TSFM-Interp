@@ -201,6 +201,10 @@ def run_report(cfg: PipelineConfig) -> Path:
          "A few concrete series per family, told end to end: both forecasts, where each model's answer forms in depth, and where it looks in the context.",
          ["exemplars/exemplars.npz", "exemplars/exemplars.json"], "exemplars",
          lambda: _sec_exemplars(run_dir, model_colors, findings, cfg.alignment.depth_axis)),
+        ("Spec curve", "Analysis-knob robustness",
+         "How much of each headline claim above depends on one particular analysis-knob choice rather than on the models themselves (ROADMAP.md §34 item A2). Not a pipeline stage: run `run_spec_curve.py` separately against this run directory to populate it.",
+         [], "spec_curve",
+         lambda: _sec_spec_curve(run_dir, findings)),
         ("Confirm", "Private benchmark confirmation",
          "One-shot confirmatory tests of the dev findings on a sealed held-out corpus. This is the gold standard: exploration above, evidence here.",
          ["confirm/confirmation.json"], "confirm",
@@ -504,6 +508,7 @@ _STAGE_LABELS = {
     "cluster": "L4 — how each model organizes the data",
     "sae": "SAE features",
     "exemplars": "Exemplars",
+    "spec_curve": "Spec curve — analysis-knob robustness",
     "confirm": "Confirm — held-out test",
     "report": "Report-level checks",
     "fairness": "Fairness and comparability",
@@ -7482,6 +7487,134 @@ def _sec_fairness(cfg: PipelineConfig, run_dir: Path) -> str:
         "their rows are a statement of absence, not a small number -- "
         "absence of a row here is never evidence of fairness.",
     )
+    return inner
+
+
+def _sec_spec_curve(run_dir: Path, findings: list) -> str:
+    """ROADMAP.md sec 34 item A2's specification curve, rendered.
+
+    Reads `spec_curve/results.json` (`analysis/spec_curve.py::run_spec_curve`,
+    a standalone reducer over already-written artifacts -- not a pipeline
+    stage, so `requires=[]` in the builder list and this returns "" rather
+    than participating in the tier/shape gates like every other section).
+
+    A2.3's own instruction is "never render the best cell, only the
+    fraction": the dot-plot below is ordered worst-first (least-robust claim
+    at the top) rather than by claim id or family, and every dot's hover
+    text carries the FULL per-cell breakdown, not just the summary fraction,
+    so a claim that IS fully robust and a claim that is NOT look visibly
+    different by position and by marker at a glance, before a reader opens
+    anything. A claim with zero applicable cells (every knob in the grid is
+    `not_applicable` to it) is rendered as an off-axis 'x' and named
+    separately -- excluded from the fraction it would otherwise silently
+    inflate (`analysis/spec_curve.py`'s own stated failure mode).
+    """
+    payload = _safe_json(run_dir / "spec_curve" / "results.json")
+    if not payload or not payload.get("claims"):
+        return ""
+    claims = payload["claims"]
+    summary = payload["summary"]
+
+    def _sort_key(c):
+        frac = c["robust_frac"]
+        return (frac is None, frac if frac is not None else 0.0)
+    ordered = sorted(claims, key=_sort_key)
+
+    families = sorted({c["family"] for c in ordered})
+    fam_color = {f: _CLUSTER_PALETTE[i % len(_CLUSTER_PALETTE)] for i, f in enumerate(families)}
+
+    fig = go.Figure()
+    for fam in families:
+        idx = [i for i, c in enumerate(ordered) if c["family"] == fam]
+        xs, ys, texts, symbols = [], [], [], []
+        for i in idx:
+            c = ordered[i]
+            frac = c["robust_frac"]
+            xs.append(frac if frac is not None else -0.08)
+            ys.append(i)
+            symbols.append("circle" if frac is not None else "x")
+            cell_lines = "<br>".join(
+                f'{cell["knob"]}={cell["grid_value"]}: '
+                + (f'robust={cell["robust"]}, value={cell["value"]}'
+                   if cell["status"] == "ok"
+                   else f'n/a — {cell["reason"][:80]}')
+                for cell in c["cells"])
+            frac_txt = "no applicable cells" if frac is None else f'{c["n_robust"]} of {c["n_applicable"]} ({frac:.3f})'
+            texts.append(f'<b>{c["claim_id"]}</b> ({c["family"]})<br>'
+                        f'baseline: {c["baseline_value"]}<br>'
+                        f'robust in: {frac_txt}<br>{cell_lines}')
+        fig.add_trace(go.Scatter(
+            x=xs, y=ys, mode="markers", name=fam,
+            marker=dict(size=12, color=fam_color[fam], symbol=symbols,
+                       line=dict(width=1, color=_COLORS["ink"])),
+            text=texts, hovertemplate="%{text}<extra></extra>"))
+    fig.add_vline(x=1.0, line=dict(color=_COLORS["muted"], width=1, dash="dot"))
+    fig.update_yaxes(tickmode="array", tickvals=list(range(len(ordered))),
+                     ticktext=[c["claim_id"] for c in ordered], autorange="reversed")
+    fig.update_xaxes(title="robustness fraction over this claim's own applicable cells",
+                     range=[-0.18, 1.08])
+    inner = _frag(fig, height=max(240, 34 * len(ordered) + 120))
+    inner += _note(
+        "How much of each headline claim's applicable analysis-knob grid preserves the "
+        "reported verdict, one dot per claim, worst-first (ROADMAP.md sec 34 item A2). "
+        "Six knobs are swept one at a time: the depth axis, the attention resolution "
+        "mode, the L0 error scale, the bootstrap sample count, the corpus subsample "
+        "seed, and the layer-screening method.",
+        "x = 1.0 (the dotted reference line) means every applicable cell agreed with "
+        "the baseline run's own configuration; a dot short of it means at least one "
+        "knob flipped the verdict. Hover a dot for the exact per-knob breakdown, "
+        "including why a knob is marked not-applicable rather than robust. An 'x' "
+        "marker off the left edge means no knob in this grid applied to that claim at "
+        "all -- excluded from every count, never silently folded into a robust or "
+        "non-robust tally.",
+        "A knob a claim has no dependency on is excluded from that claim's own "
+        "denominator (a not-applicable cell is never counted as robust), so a perfect "
+        "score describes only the cells that could actually be checked, never the full "
+        "six-knob grid for every claim -- most families here are applicable to at most "
+        "three of the six. This is a robustness diagnostic, not a significance test: a "
+        "claim clearing every applicable cell has not thereby been shown statistically "
+        "significant, only stable under this particular, deliberately narrow set of "
+        "analysis-choice perturbations. The layer-screen family recomputes against this "
+        "run's own main activation store, not the dedicated stride-1, every-block store "
+        "the production layer_screen stage uses and then deletes by default -- every "
+        "cell in that family is marked fair_to_all_layers: false, a real, stated "
+        "deviation from the production selection's own fairness guarantee, not a "
+        "second copy of the same measurement.")
+
+    if summary["excluded_claim_ids"]:
+        inner += (f'<p class="blurb"><b>{summary["n_excluded_claims"]}</b> claim(s) had no '
+                  f'applicable knob at all and are excluded from every fraction above: '
+                  f'{", ".join(summary["excluded_claim_ids"])}.</p>')
+
+    rows = [{"claim": c["claim_id"], "family": c["family"],
+            "n_applicable": c["n_applicable"], "n_robust": c["n_robust"],
+            "robust_frac": "n/a" if c["robust_frac"] is None else f'{c["robust_frac"]:.3f}'}
+           for c in ordered]
+    inner += "<h4>Per-claim robustness</h4>"
+    inner += _table(pd.DataFrame(rows))
+
+    for c in ordered:
+        frac = c["robust_frac"]
+        if frac is None:
+            continue
+        flips = [cell for cell in c["cells"] if cell["status"] == "ok" and not cell["robust"]]
+        flip_desc = ("; ".join(f'{cell["knob"]}={cell["grid_value"]}' for cell in flips)
+                    if flips else "")
+        ref = (f' (cross-references {c["matched_finding_claim_id"]})'
+              if c.get("matched_finding_claim_id") else "")
+        text = (f'Spec curve — {c["claim_id"]} ({c["family"]}) is robust in '
+               f'{c["n_robust"]} of {c["n_applicable"]} applicable analysis-knob cells '
+               f'({frac:.3f}) against a baseline of {c["baseline_value"]!r}{ref}'
+               + (f'; flips under: {flip_desc}.' if flips else '.'))
+        plain = (f'This claim held up under every applicable analysis-knob variation '
+                f'tested against it.' if frac == 1.0 else
+                f'This claim only held up in {c["n_robust"]} of {c["n_applicable"]} of '
+                f'the applicable analysis variations tested against it -- part of the '
+                f'reported result depends on which analysis choice was made, not only '
+                f'on the models being compared.')
+        findings.append(Finding(
+            claim_id=_next_claim_id("spec_curve"), stage="spec_curve",
+            evidence_class="descriptive", text=text, plain=plain, registered=False))
     return inner
 
 
