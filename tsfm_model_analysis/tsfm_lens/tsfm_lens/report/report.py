@@ -1958,6 +1958,56 @@ def _noise_floor_block(run_dir: Path, findings: list) -> str:
     return html
 
 
+def _transfer_fdr_scopes(run_dir: Path) -> list:
+    """One BH correction-family row per (artifact, ordered model pair, leg)
+    for `sae/transfer.json` and `sae/atlas_transfer.json` (ROADMAP.md sec 37
+    P3 item 4). Rows are COUNTED, never pooled -- `sae/concept_stage.json`
+    can test dozens of ordered pairs across two artifacts, and each pair's
+    forward and reverse legs are BH-corrected in their OWN family
+    (`sae/transfer.py::_apply_pairwise_fdr`), so each is its own row here
+    too, exactly mirroring how the Holm rows above are one row per family
+    rather than one pooled row for all of L0.
+
+    Shares the Holm rows' dict shape so `_multiplicity_block`'s table and
+    unsatisfiable-family check need no BH-specific branch: `alpha` holds the
+    family's own `q`, `n_boot` holds `n_null_draws`, and
+    `min_attainable_p_holm` holds `m/(n_null+1)` -- BH's rank-1 threshold and
+    Holm's first-step threshold are both `alpha/m`, so the SAME arithmetic
+    that flags a Holm family unsatisfiable flags a BH family whose exact
+    p-floor cannot support it (identical to `doctor.check_transfer_fdr_budget`).
+    """
+    scopes = []
+    for name, path in (("transfer", run_dir / "sae" / "transfer.json"),
+                       ("atlas_transfer", run_dir / "sae" / "atlas_transfer.json")):
+        if not path.exists():
+            continue
+        art = load_json(path)
+        n_null = art.get("n_null_draws")
+        q = art.get("fdr_q")
+        p_method = art.get("p_method", "exact")
+        items = art.get("pairs") if name == "transfer" else art.get("tests")
+        if not items:
+            continue
+        by_pair: dict = {}
+        for it in items:
+            key = (it.get("src_model"), it.get("dst_model"))
+            by_pair.setdefault(key, []).append(it)
+        for (src_model, dst_model), rows in sorted(by_pair.items()):
+            m = len(rows)
+            for leg, leg_label in (("fwd", "forward"), ("rev", "reverse")):
+                floor_bound = (m / (n_null + 1)) if n_null else None
+                scopes.append({
+                    "scope": f"{name}.{src_model}->{dst_model}.{leg}", "method": "bh",
+                    "alpha": q, "n_tests": m, "n_boot": n_null,
+                    "most_stringent_threshold": (q / m) if q and m else None,
+                    "min_attainable_p_holm": floor_bound,
+                    "label": (f"{'Atlas ' if name == 'atlas_transfer' else ''}"
+                             f"Transfer — {src_model} → {dst_model} ({leg_label} leg, "
+                             f"{p_method})"),
+                })
+    return scopes
+
+
 def _multiplicity_scopes(run_dir: Path, summary: dict) -> list:
     """Every independently Holm-corrected family of tests in this report.
 
@@ -1993,6 +2043,7 @@ def _multiplicity_scopes(run_dir: Path, summary: dict) -> list:
                        "most_stringent_threshold": (alpha / len(tested)) if alpha else None,
                        "min_attainable_p_holm": (len(tested) / nb) if nb else None,
                        "label": "Confirm — pre-registered hypotheses (private corpus)"})
+    scopes += _transfer_fdr_scopes(run_dir)
     return scopes
 
 
@@ -2090,10 +2141,11 @@ def _multiplicity_block(run_dir: Path, summary: dict, findings: list) -> str:
                           f'unexamined.')
     out = (f'<h4>Multiplicity ledger</h4>'
            f'<p class="blurb">{total} corrected comparisons were made in this report, in '
-           f'{len(scopes)} independent correction families. Holm is applied <i>within</i> '
-           f'each family and never across them, so the counts below do not add up to one '
-           f'test — they are the multiplicity a reader would otherwise have to infer from '
-           f'the tables.{pair_line}</p>' + _table(tbl))
+           f'{len(scopes)} independent correction families. Each family\'s own correction '
+           f'(Holm for behavioral/confirm comparisons, BH for cross-model transfer tests) '
+           f'is applied <i>within</i> it and never across families, so the counts below do '
+           f'not add up to one test — they are the multiplicity a reader would otherwise '
+           f'have to infer from the tables.{pair_line}</p>' + _table(tbl))
     # A bootstrap p is floored at 1/n_boot (sec 6.6), so `n_tests/n_boot` is the
     # smallest Holm-adjusted p a family can produce AT ANY EFFECT SIZE. Past
     # alpha, the correction is unsatisfiable and every non-result in it is an
@@ -2103,24 +2155,26 @@ def _multiplicity_block(run_dir: Path, summary: dict, findings: list) -> str:
             if sc.get("min_attainable_p_holm") is not None and sc.get("alpha")
             and sc["min_attainable_p_holm"] > sc["alpha"]]
     for sc in dead:
+        method_name = "Holm" if sc.get("method", "holm") == "holm" else "BH"
+        draws_word = "n_boot" if sc.get("method", "holm") == "holm" else "n_null"
         need = int(-(-sc["n_tests"] // sc["alpha"])) if sc["alpha"] else None
         out += (f'<p class="blurb" style="border-left:4px solid #b00;padding-left:.7em">'
-                f'<b>Unsatisfiable correction — {sc["label"]}.</b> Bootstrap p-values '
-                f'are floored at 1/n_boot = {1 / sc["n_boot"]:.4f}, so with '
-                f'{sc["n_tests"]} comparisons the smallest Holm-adjusted p this family '
-                f'can produce is {sc["min_attainable_p_holm"]:.3f} — above α='
+                f'<b>Unsatisfiable correction — {sc["label"]}.</b> Permutation/bootstrap '
+                f'p-values are floored at 1/{draws_word} = {1 / sc["n_boot"]:.4f}, so with '
+                f'{sc["n_tests"]} comparisons the smallest {method_name}-adjusted p this '
+                f'family can produce is {sc["min_attainable_p_holm"]:.3f} — above α/q='
                 f'{sc["alpha"]}. <b>No result here can be significant at any effect '
                 f'size.</b> Read its non-results as arithmetic, not as evidence of no '
-                f'difference; raise <code>stats.n_boot</code> to at least '
-                f'{need} for this many comparisons.</p>')
+                f'difference; raise <code>{"stats.n_boot" if method_name == "Holm" else "sae.transfer_n_null"}</code> '
+                f'to at least {need} for this many comparisons{"" if method_name == "Holm" else ", or switch concepts.transfer_p_method to gpd_tail/adaptive"}.</p>')
         findings.append(Finding(
             claim_id=_next_claim_id("l0"), stage="l0", evidence_class="behavioral",
             text=f"L0 — the {sc['label']} correction family is UNSATISFIABLE at this "
-                f"n_boot: {sc['n_tests']} comparisons against a 1/{sc['n_boot']} "
-                f"p-floor gives a smallest reachable Holm p of "
-                f"{sc['min_attainable_p_holm']:.3f} > α={sc['alpha']}, so its "
+                f"draw count: {sc['n_tests']} comparisons against a 1/{sc['n_boot']} "
+                f"p-floor gives a smallest reachable {method_name} p of "
+                f"{sc['min_attainable_p_holm']:.3f} > α/q={sc['alpha']}, so its "
                 f"non-results carry no evidential weight (ROADMAP.md §18 F8).",
-            plain="This run did not use enough bootstrap resamples to possibly "
+            plain="This run did not use enough resamples/null draws to possibly "
                 "detect anything once corrected for how many comparisons it made.",
             registered=False))
     out += _note(
@@ -2140,7 +2194,7 @@ def _multiplicity_block(run_dir: Path, summary: dict, findings: list) -> str:
     findings.append(Finding(
         claim_id=_next_claim_id("l0"), stage="l0", evidence_class="behavioral",
         text=f"L0 — this report made {total} corrected comparisons across "
-            f"{len(scopes)} independent Holm families ({breakdown}) "
+            f"{len(scopes)} independent correction families ({breakdown}) "
             f"(ROADMAP.md §18 F8).",
         plain=f"We ran {total} statistical comparisons in this report, and corrected "
             f"for having run several at once.",

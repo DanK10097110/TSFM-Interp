@@ -289,6 +289,10 @@ def sae_concepts_block(cfg, run_dir: Path, findings: list, model_names: list,
     from .sae_concept_atlas import atlas_block
     inner += atlas_block(run_dir, cfg)
 
+    # -------- transfer significance + FDR, and atlas transfer (sec 37 P3) --------
+    from .sae_transfer_fdr import transfer_fdr_block
+    inner += transfer_fdr_block(run_dir, cfg)
+
     # -------- block 2: concept cards --------
     top = cards.head(max_cards).reset_index(drop=True)
     bucket_order = ["universal", "partial", "model-specific", "not comparable", "not measured"]
