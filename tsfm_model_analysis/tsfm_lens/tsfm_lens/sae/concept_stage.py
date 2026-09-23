@@ -12,6 +12,16 @@ Chains five steps that previously ran only as separate hand-invoked scripts:
      target's causal features (step 1's output, not step 2's per-target
      clusters) into one space and clusters ACROSS models, entirely
      independent of steps 2-4's own artifacts.
+  6. seed STABILITY of the atlas's own concepts, and the within-model
+     transfer ceiling (`sae/stability.py`, ROADMAP.md sec 37 P2) ->
+     `concept_stability.json` -- ADDITIVE on top of step 5: when
+     `concepts.n_sae_seeds >= 2`, trains `n_sae_seeds - 1` extra,
+     independently-seeded SAE replicates per already-trained target (at each
+     target's own fixed `dict_size`, never re-searched) and asks whether
+     step 5's concepts survive a second SAE draw at the SAME target, via the
+     same reciprocal transfer test step 4 uses -- within a model instead of
+     between two. Runs only when the atlas itself ran, since stability is a
+     property of the atlas's own concepts.
 
 Having no production caller is what let `runs/full_report_run_4model`'s
 `transfer.json` outlive two regenerations of the `concepts.json` it was built
@@ -38,12 +48,14 @@ leaving it beside a `concept_stage.json` that says nothing ran
 
 from __future__ import annotations
 
+import time
 from pathlib import Path
 
 from ..utils import load_json, log, save_json, set_seed
 from .ablation_run import run_ablation_all
 from .concept_atlas import pooled_features, run_concept_atlas
 from .concepts import run_concepts
+from .stability import concept_stability
 from .transfer import run_transfer
 
 
@@ -179,6 +191,9 @@ def run_concept_stage(cfg, hub, store, data, device) -> dict:
         log.warning("concepts: atlas skipped -- %s", atlas_skip)
         atlas_block = {"status": "skipped", "reason": atlas_skip,
                        "removed_stale": _drop_stale(run_dir / "sae" / "concept_atlas.json")}
+        stability_block = {
+            "status": "skipped", "reason": f"atlas skipped -- {atlas_skip}",
+            "removed_stale": _drop_stale(run_dir / "sae" / "concept_stability.json")}
     else:
         atlas = run_concept_atlas(run_dir, cfg)
         n_multi_model = sum(1 for c_rec in atlas["concepts"] if c_rec["n_models"] >= 2)
@@ -186,12 +201,34 @@ def run_concept_stage(cfg, hub, store, data, device) -> dict:
                        "n_assigned": atlas["n_assigned"], "n_concepts": len(atlas["concepts"]),
                        "n_multi_model": n_multi_model}
 
+        # ROADMAP.md sec 37 P2: is an atlas concept a property of the model,
+        # or of the one SAE draw that happened to be trained? Additive on
+        # top of the atlas above -- runs only when the atlas itself ran,
+        # since stability is a property of ITS concepts.
+        n_sae_seeds = int(getattr(c, "n_sae_seeds", 1))
+        replicate_seconds = None
+        if n_sae_seeds >= 2:
+            from .train import run_sae_replicates
+            t0 = time.monotonic()
+            run_sae_replicates(cfg, hub, store, data, device, n_sae_seeds)
+            replicate_seconds = time.monotonic() - t0
+        stability = concept_stability(run_dir, atlas, cfg)
+        stability_block = {
+            "status": "ran" if stability.get("measured") else "not_measured",
+            "n_sae_seeds": n_sae_seeds, "n_concepts": stability.get("n_concepts"),
+            "n_scored": stability.get("n_scored"), "n_stable": stability.get("n_stable"),
+            "frac_stable": stability.get("frac_stable")}
+        if replicate_seconds is not None:
+            stability_block["replicate_train_seconds"] = replicate_seconds
+
     record = {"schema_version": 1, "targets": [f"{m}/{l}" for m, l in targets],
               "ablation": ablation, "concept_counts": concept_counts,
               "n_concepts": sum(concept_counts.values()), "non_modular": non_modular,
-              "transfer": transfer_block, "describe": describe_block, "atlas": atlas_block}
+              "transfer": transfer_block, "describe": describe_block, "atlas": atlas_block,
+              "stability": stability_block}
     save_json(concept_stage_path(cfg), record)
-    log.info("concepts: %d concept(s) across %d target(s) (%d non-modular); transfer %s; atlas %s",
+    log.info("concepts: %d concept(s) across %d target(s) (%d non-modular); transfer %s; atlas %s; "
+             "stability %s",
              record["n_concepts"], len(concept_counts), len(non_modular),
-             transfer_block["status"], atlas_block["status"])
+             transfer_block["status"], atlas_block["status"], stability_block["status"])
     return record

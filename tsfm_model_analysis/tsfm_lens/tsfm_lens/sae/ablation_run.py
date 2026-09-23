@@ -28,7 +28,8 @@ from .train import load_all_windows, load_sae_checkpoint, sanitize
 
 
 def ablation_targets(run_dir: Path) -> list:
-    """Every `(model, layer)` with a trained checkpoint under `run_dir/sae`.
+    """Every `(model, layer)` with a trained PRIMARY checkpoint under
+    `run_dir/sae`.
 
     The checkpoint path holds only the SANITIZED names (`blocks_5` for
     `blocks.5`), which the store does not recognize, so the real names come
@@ -37,6 +38,18 @@ def ablation_targets(run_dir: Path) -> list:
     `store.load` fails loudly rather than reading the wrong layer. The
     previous version consulted only Stage 2, so `--all` on a run without
     Component A crashed on the first target.
+
+    ROADMAP.md sec 37 P2 widened what lives beside a primary checkpoint:
+    `sae/train.py::run_sae_replicates` saves each replicate as a SIBLING
+    file, `{sanitized layer}@r{i}.pt`, in the same directory this glob reads
+    (`CLAUDE.md` sec 11.40's own shape -- a fix that widens what one stage
+    emits widens what everything downstream that reads that directory sees).
+    A replicate is not a target of its own: it has no `sae/meta.json` entry,
+    no store rows outside `replicate={i}`, and battery output for it would
+    silently double-count the SAME (model, layer) under a fabricated layer
+    name. Skipped by the one thing that reliably marks a replicate -- `@r`
+    is never valid inside a sanitized layer name (`sanitize()` only emits
+    `[A-Za-z0-9_]`) and is the exact literal `run_sae_replicates` writes.
     """
     run_dir = Path(run_dir)
     meta_path = run_dir / "sae" / "meta.json"
@@ -47,6 +60,8 @@ def ablation_targets(run_dir: Path) -> list:
             by_ckpt[(sanitize(model), sanitize(layer))] = (model, layer)
     out = []
     for ckpt in sorted((run_dir / "sae").glob("*/*.pt")):
+        if "@r" in ckpt.stem:
+            continue
         model, layer = by_ckpt.get((ckpt.parent.name, ckpt.stem),
                                    (ckpt.parent.name, ckpt.stem))
         stage2 = ckpt.with_name(ckpt.stem + "_stage2_response.json")

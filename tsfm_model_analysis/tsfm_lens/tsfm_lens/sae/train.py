@@ -431,7 +431,7 @@ def search_dict_size(train_activations: np.ndarray, base_cfg: SAETrainConfig, la
 
 def encode_and_persist_features(store: ActivationStore, model: str, layer: str,
                                 sae: TopKSAE, device: torch.device,
-                                series_batch: int = 512) -> None:
+                                series_batch: int = 512, replicate: int = 0) -> None:
     """Encode every stored window-level activation and write features back into the store.
 
     The encode-store seam (ROADMAP.md sec 6.2.1 Stage 3d): promised in
@@ -442,9 +442,14 @@ def encode_and_persist_features(store: ActivationStore, model: str, layer: str,
     chunking `extraction/store.py::write_batch` already uses for raw
     activations, applied here because a TopK dictionary is typically 8x-16x
     wider than its input.
+
+    `replicate` (ROADMAP.md sec 37 P2) writes into the `replicate`-th sibling
+    SAE group instead of the primary one (see
+    `ActivationStore._sae_prefixes`); `0` (default) is the primary/original
+    group, unchanged.
     """
     n = store.root.attrs["n_series"]
-    store.init_sae_layer(model, layer, sae.dict_size)
+    store.init_sae_layer(model, layer, sae.dict_size, replicate=replicate)
     sae = sae.to(device)
     sae.eval()
     for s, e in batch_slices(n, series_batch):
@@ -454,8 +459,9 @@ def encode_and_persist_features(store: ActivationStore, model: str, layer: str,
         flat = torch.from_numpy(acts.reshape(-1, d).astype(np.float32)).to(device)
         with torch.no_grad():
             features = sae.encode(flat).cpu().numpy().astype(np.float16).reshape(b, w, -1)
-        store.write_sae_batch(model, layer, s, features)
-    log.info(f"sae: persisted encoded features for {model}/{layer} "
+        store.write_sae_batch(model, layer, s, features, replicate=replicate)
+    tag = f" (replicate {replicate})" if replicate else ""
+    log.info(f"sae: persisted encoded features for {model}/{layer}{tag} "
              f"({n} series x {store.root.attrs['n_windows']} windows x {sae.dict_size} features)")
 
 
@@ -914,6 +920,97 @@ def run_sae(cfg: PipelineConfig, hub: ModelHub, store: ActivationStore,
             log.warning(f"sae: feature-space CKA failed: {e}")
 
     log.info(f"sae: complete, {len(results)} target(s)")
+
+
+def train_sae_replicate(train_activations: np.ndarray, cfg: PipelineConfig, seed: int,
+                        dict_size: int, device: torch.device) -> tuple:
+    """One replicate dictionary at the PRIMARY's own recorded `dict_size`
+    (ROADMAP.md sec 37 P2 -- "is an atlas concept a property of the model, or
+    of one SAE draw?").
+
+    `dict_size` is a REQUIRED argument, never derived from
+    `cfg.sae.dict_size_policy`: a replicate trained at a different capacity
+    than the primary would confound stability with capacity. This function's
+    signature makes that impossible rather than merely documenting it -- it
+    has no code path that can reach `search_dict_size` at all (`run_sae`'s
+    own `dict_size_policy: search` branch lives entirely in `run_sae`, not
+    here). Everything else -- `dict_size_mult` (unused once `dict_size` is
+    nonzero), `k`, `lr`, `epochs`, `aux_k`, `aux_coef`, `aux_dead_steps`,
+    `min_train_steps`, `aux_dead_steps_frac` -- comes from `cfg.sae` exactly
+    as the primary's did, via the same `_train_config` `run_sae` itself uses.
+    """
+    train_cfg = _train_config(cfg, seed, dict_size=int(dict_size))
+    return train_sae(train_activations, train_cfg, device)
+
+
+def run_sae_replicates(cfg: PipelineConfig, hub: ModelHub, store: ActivationStore,
+                       data: BenchmarkData, device: torch.device,
+                       n_replicates: int) -> dict:
+    """Train + persist `n_replicates` extra seeds of every already-trained SAE
+    target (ROADMAP.md sec 37 P2), at each target's own recorded `dict_size`
+    (`sae/meta.json`), never re-searching it (`train_sae_replicate`).
+
+    Reuses the primary's own train/held-out SPLIT: `split_series` is a pure
+    function of `(n_series, holdout_frac, run.seed + 23, families)` that does
+    not depend on the SAE training seed, so calling it again here reproduces
+    the primary's exact split without needing to persist it. When
+    `sae.real_data_enabled`, also reuses the primary's real-data augmentation
+    -- computed once per (model, layer) target and shared across that
+    target's replicates, exactly as `run_sae` shares one `real_contexts` draw
+    across every target.
+
+    Returns `{key: {"n_replicates", "seeds", "checkpoints"}}`. Replicates are
+    saved to `sae/<model>/<layer>@r<i>.pt` and their encoded features
+    persisted into the store's `replicate=i` sibling group
+    (`encode_and_persist_features(..., replicate=i)`), never touching the
+    primary's own `sae/{model}/{layer}` group (`replicate=0`).
+    """
+    out_dir = cfg.run_dir() / "sae"
+    meta = load_json(out_dir / "meta.json")
+    real_contexts = _sample_real_contexts(cfg) if cfg.sae.real_data_enabled else None
+
+    by_model: dict = {}
+    for key in meta:
+        model, layer = key.split("/", 1)
+        by_model.setdefault(model, []).append(layer)
+
+    results: dict = {}
+    for model, layers in by_model.items():
+        adapter = hub.get(model) if cfg.sae.real_data_enabled else None
+        for layer in layers:
+            key = f"{model}/{layer}"
+            dict_size = int(meta[key]["dict_size"])
+            n_windows = int(store.root.attrs["n_windows"])
+            split = split_series(int(store.root.attrs["n_series"]), cfg.sae.holdout_frac,
+                                 cfg.run.seed + 23, families=data.meta["family"].to_numpy())
+            train_rows = _rows_for_series(split["train"], n_windows)
+            bench_activations = load_all_windows(store, model, layer)
+            bench_train = bench_activations[train_rows]
+            train_activations = bench_train
+            if cfg.sae.real_data_enabled:
+                real_activations = extract_real_activations(
+                    adapter, layer, real_contexts, cfg.alignment.window,
+                    cfg.sae.batch_size, device)
+                train_activations = np.concatenate([bench_train, real_activations], axis=0)
+
+            seeds, checkpoints = [], []
+            for i in range(1, int(n_replicates)):
+                seed = cfg.run.seed + i
+                log.info(f"sae replicates: training {key} replicate {i}/{int(n_replicates) - 1} "
+                         f"(seed {seed}, dict_size={dict_size})")
+                sae, _history = train_sae_replicate(train_activations, cfg, seed, dict_size, device)
+                ckpt_path = out_dir / sanitize(model) / f"{sanitize(layer)}@r{i}.pt"
+                save_sae(sae, ckpt_path)
+                encode_and_persist_features(store, model, layer, sae, device,
+                                            series_batch=cfg.sae.batch_size, replicate=i)
+                seeds.append(seed)
+                checkpoints.append(str(ckpt_path))
+            results[key] = {"n_replicates": len(seeds), "seeds": seeds, "checkpoints": checkpoints}
+        if adapter is not None and not cfg.run.keep_models_loaded:
+            hub.release(model)
+    log.info(f"sae replicates: trained {sum(r['n_replicates'] for r in results.values())} "
+             f"replicate(s) across {len(results)} target(s)")
+    return results
 
 
 def _sample_real_contexts(cfg: PipelineConfig) -> np.ndarray:

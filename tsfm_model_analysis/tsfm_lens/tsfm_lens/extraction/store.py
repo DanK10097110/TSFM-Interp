@@ -25,6 +25,17 @@ simply missing those keys, not present-but-empty; `has_sae_features` and
 a genuine failure. This is purely additive to the schema -- no existing
 key's shape, dtype, or meaning changed -- so it does not bump
 `_SCHEMA_VERSION` below.
+
+`replicate` (ROADMAP.md sec 37 P2) is a second, optional axis on the SAE
+groups above: `sae_r{i}/{model}/{layer}` / `sae_pooled_r{i}/{model}/{layer}`
+hold a REPLICATE dictionary's encoded features, trained at a different SAE
+seed on the same activations, for the seed-stability question ("is a concept
+a property of the model, or of one SAE draw?"). `replicate=0` (the default
+everywhere below) is not a special case handled separately -- it is simply
+the empty-suffix case of the same naming rule, so it resolves to exactly the
+pre-existing `sae`/`sae_pooled` keys with no branch of its own, and a store
+written before this change (no `replicate` kwarg anywhere in its call sites)
+loads with no argument unchanged.
 """
 
 from __future__ import annotations
@@ -240,46 +251,69 @@ class ActivationStore:
             out["models"][model] = {"n_layers": len(layers), "shapes": shapes}
         return out
 
+    @staticmethod
+    def _sae_prefixes(replicate: int = 0) -> tuple:
+        """`-> (window_prefix, pooled_prefix)` for SAE group `replicate`.
+
+        `replicate=0` returns exactly `("sae", "sae_pooled")` -- the
+        pre-existing keys, byte-identical -- since `f"_r{0}"` is never
+        formed (the `if replicate` guard below is false for `0`, not just
+        falsy-checked against `None`). Any `replicate > 0` names a sibling
+        group, `sae_r{replicate}`/`sae_pooled_r{replicate}` (ROADMAP.md sec
+        37 P2). Centralized here so `init_sae_layer`/`write_sae_batch`/
+        `has_sae_features`/`load` cannot name the two groups differently.
+        """
+        suffix = f"_r{int(replicate)}" if replicate else ""
+        return f"sae{suffix}", f"sae_pooled{suffix}"
+
     def init_sae_layer(self, model: str, layer: str, n_features: int,
-                       dtype: str = "float16") -> None:
+                       dtype: str = "float16", replicate: int = 0) -> None:
         """Allocate window-level and pooled SAE-feature arrays for one (model, layer).
 
         Mirrors `init_layer`'s act/pooled pair, one dictionary-size axis
         wider, under `sae`/`sae_pooled` instead -- the encode-store seam
-        (ROADMAP.md sec 6.2.1 Stage 3d).
+        (ROADMAP.md sec 6.2.1 Stage 3d). `replicate` (sec 37 P2) picks which
+        sibling group (see `_sae_prefixes`); `0` (default) is the original,
+        unreplicated group.
         """
         n, w = self.root.attrs["n_series"], self.root.attrs["n_windows"]
         chunk = min(256, n)
-        self.root.create_dataset(f"sae/{model}/{layer}", shape=(n, w, n_features),
+        window_prefix, pooled_prefix = self._sae_prefixes(replicate)
+        self.root.create_dataset(f"{window_prefix}/{model}/{layer}", shape=(n, w, n_features),
                                   chunks=(chunk, w, n_features), dtype=dtype, overwrite=True)
-        self.root.create_dataset(f"sae_pooled/{model}/{layer}", shape=(n, n_features),
+        self.root.create_dataset(f"{pooled_prefix}/{model}/{layer}", shape=(n, n_features),
                                   chunks=(min(4096, n), n_features), dtype=dtype, overwrite=True)
 
-    def write_sae_batch(self, model: str, layer: str, start: int, features: np.ndarray) -> None:
+    def write_sae_batch(self, model: str, layer: str, start: int, features: np.ndarray,
+                        replicate: int = 0) -> None:
         """Write one batch of window-level SAE features and their series-level pooling.
 
         `features` is `[batch, n_windows, n_features]`, matching `write_batch`'s
         `aligned` shape one axis wider -- deliberately mirrored so a reader
-        of one already understands the other.
+        of one already understands the other. `replicate` picks the sibling
+        group written into (see `_sae_prefixes`).
         """
+        window_prefix, pooled_prefix = self._sae_prefixes(replicate)
         end = start + features.shape[0]
-        self.root[f"sae/{model}/{layer}"][start:end] = features
-        self.root[f"sae_pooled/{model}/{layer}"][start:end] = features.mean(axis=1)
+        self.root[f"{window_prefix}/{model}/{layer}"][start:end] = features
+        self.root[f"{pooled_prefix}/{model}/{layer}"][start:end] = features.mean(axis=1)
 
-    def has_sae_features(self, model: str, layer: str) -> bool:
+    def has_sae_features(self, model: str, layer: str, replicate: int = 0) -> bool:
         """Whether encoded SAE features were persisted for this (model, layer).
 
         Callers should check this before `load(..., space="sae")` and
         skip-with-a-log-line if false (CLAUDE.md sec 2.5) -- most (model,
         layer) pairs never get SAE features written at all
         (`sae.persist_features` is off by default), so absence here is the
-        expected common case, not a broken store.
+        expected common case, not a broken store. `replicate` checks the
+        sibling group (see `_sae_prefixes`); `0` is the original group.
         """
-        return f"sae/{model}/{layer}" in self.root
+        window_prefix, _ = self._sae_prefixes(replicate)
+        return f"{window_prefix}/{model}/{layer}" in self.root
 
     def load(self, model: str, layer: str, level: str = "series",
              rows: Optional[np.ndarray] = None, check_finite: bool = True,
-             space: str = "act") -> np.ndarray:
+             space: str = "act", replicate: int = 0) -> np.ndarray:
         """Load activations at 'series' ([N, D]) or 'window' ([N, W, D]) granularity.
 
         `space="act"` (default) reads raw activations (`act`/`pooled`);
@@ -291,6 +325,11 @@ class ActivationStore:
         a caller bug to fix (check `has_sae_features` first and skip with a
         log line), not an expected-absent piece of metadata.
 
+        `replicate` (ROADMAP.md sec 37 P2, `space="sae"` only) selects among
+        several independently-seeded dictionaries trained on the same
+        activations (see `_sae_prefixes`); `0` (default) is the original,
+        unreplicated group and is a no-op for `space="act"`.
+
         `check_finite=True` (default, sec 15 A19) asserts every consumer of
         this store -- every CKA/ridge/PCA call downstream -- gets a loud,
         specific failure the first time it touches a poisoned layer,
@@ -301,15 +340,18 @@ class ActivationStore:
         """
         if space not in ("act", "sae"):
             raise ValueError(f"store.load: space must be 'act' or 'sae', got {space!r}")
-        prefix = "sae" if space == "sae" else "act"
-        pooled_prefix = "sae_pooled" if space == "sae" else "pooled"
+        if space == "sae":
+            prefix, pooled_prefix = self._sae_prefixes(replicate)
+        else:
+            prefix, pooled_prefix = "act", "pooled"
         key = (pooled_prefix if level == "series" else prefix) + f"/{model}/{layer}"
         if key not in self.root:
-            hint = (f"has_sae_features({model!r}, {layer!r}) is False -- "
-                    f"sae.persist_features was off, or this target was never trained"
+            hint = (f"has_sae_features({model!r}, {layer!r}, replicate={replicate}) is False -- "
+                    f"sae.persist_features was off, this target was never trained, or this "
+                    f"replicate was never persisted"
                     if space == "sae" else "this (model, layer) was never extracted")
-            raise KeyError(f"store.load({model!r}, {layer!r}, space={space!r}): no array "
-                           f"at {key!r} -- {hint}.")
+            raise KeyError(f"store.load({model!r}, {layer!r}, space={space!r}, "
+                           f"replicate={replicate}): no array at {key!r} -- {hint}.")
         arr = self.root[key]
         out = arr[:] if rows is None else arr.oindex[np.asarray(rows)]
         if check_finite:
