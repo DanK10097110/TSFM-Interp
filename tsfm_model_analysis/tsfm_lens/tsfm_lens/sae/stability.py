@@ -159,7 +159,7 @@ def _part_reciprocal_at(reader: _ReplicateReader, target: str, feature_ids: list
         dst_ranks = reader.replicate_ranks(target, i)
         rseed = _seed(target, seed_tag, f"@r{i}", base=base_seed)
         result = transfer_one(src_scores, dst_ranks, S, fwd_draws, strata, by_stratum,
-                              k=k_top, n_draws=n_null, seed=rseed)
+                              k=k_top, n_draws=n_null, seed=rseed, fwd_seed=fwd_seed)
         reciprocal_at.append(bool(result["reciprocal"]))
     return reciprocal_at, src_scores
 

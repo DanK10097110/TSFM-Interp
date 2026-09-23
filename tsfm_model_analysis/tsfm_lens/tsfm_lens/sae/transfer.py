@@ -31,17 +31,20 @@ above already promise stays put:
      ADDITIVE keys; `auc`/`clears`/`null_p95`/... are computed exactly as
      before and are byte-identical.
   2. At `n_null=200` (the default `sae.transfer_n_null`) the exact p floor is
-     `1/201`, and BH over hundreds of tests cannot survive a floor that
-     coarse (`m/(n_null+1) > q` for any nontrivial `m`, `doctor.py`'s
-     `check_transfer_fdr_budget`). For any leg whose exact p sits exactly on
-     that floor (every null draw fell below the observed statistic),
-     `gpd_tail_p` fits a generalized Pareto distribution to the null's own
-     upper tail (Knijnenburg et al. 2009) and extrapolates a finer p; the
-     `adaptive` method instead redraws a larger null (up to
-     `max_redraw`, default 5000) from the SAME seed -- deterministic,
+     `1/201`. BH is step-up, so `k` floor-level p-values in a family of `m`
+     survive together once `k >= m / ((n_null+1) q)`, but a LONE effect in a
+     large family cannot (its rank-1 bar `q/m` sits below the floor --
+     `doctor.py`'s `check_transfer_fdr_budget`). For any leg whose exact p
+     sits exactly on that floor, the `adaptive` method redraws a larger null
+     (up to `max_redraw`, default 5000) from the SAME seed -- deterministic,
      because `matched_draws`' per-draw loop only depends on the running RNG
      state, so the first `n_draws` of a `max_redraw`-draw call are bit-
-     identical to a standalone `n_draws` call from the same seed.
+     identical to a standalone `n_draws` call from the same seed. A
+     generalized-Pareto tail extrapolation (Knijnenburg et al. 2009) was
+     built and removed: on `runs/full_report_run_4model` only 2 of 16
+     floor-hitting legs landed within a factor of 2 of a 5,000-draw exact p
+     (ratios 5.26e-06 to 13.07; a 20-point tail fit at `n_null=200`), ROADMAP
+     sec 37 P3.
   3. `run_atlas_transfer` tests every cross-model concept ATLAS's per-model
      PART (`sae/concept_atlas.py`'s pooled, cross-model clusters) against
      every OTHER model's targets, reusing `transfer_one`/`matched_draws`/
@@ -77,10 +80,10 @@ from ..utils import log, save_json
 
 __all__ = ["series_strata", "concept_scores", "top_series", "matched_draws",
           "auc_from_ranks", "transfer_one", "run_transfer",
-          "gpd_tail_p", "benjamini_hochberg", "run_atlas_transfer"]
+          "benjamini_hochberg", "run_atlas_transfer"]
 
 _MAX_REDRAW_DEFAULT = 5000
-_GPD_TAIL_FRAC = 0.10
+_P_METHODS = ("exact", "adaptive")
 
 
 def series_strata(meta: pd.DataFrame) -> np.ndarray:
@@ -174,7 +177,7 @@ def _seed(*parts, base: int) -> int:
 
 
 # ---------------------------------------------------------------------------
-# p-values: exact, GPD-tail extrapolated, and adaptive-redraw (sec 37 P3).
+# p-values: exact and adaptive-redraw (sec 37 P3).
 # ---------------------------------------------------------------------------
 
 def _exact_p(obs: float, null_vals: np.ndarray) -> tuple:
@@ -183,63 +186,25 @@ def _exact_p(obs: float, null_vals: np.ndarray) -> tuple:
     exactly 0 -- `CLAUDE.md` sec 6.6's bootstrap-p discipline applied to a
     permutation test. `hits_floor` is `True` only when NO null draw reached
     `obs` (`count == 0`), i.e. the floor is the whole story the exact test
-    can tell -- gpd_tail/adaptive only ever engage in that case."""
+    can tell -- adaptive only ever engages in that case."""
     n = int(null_vals.size)
     count = int(np.sum(null_vals >= obs))
     return (1 + count) / (1 + n), count == 0
 
 
-def gpd_tail_p(obs: float, null_vals: np.ndarray,
-              tail_frac: float = _GPD_TAIL_FRAC):
-    """Generalized-Pareto extrapolation of a right-tail permutation p past
-    the exact floor `1/(n+1)` (Knijnenburg et al. 2009, "Fewer permutations,
-    more accurate P-values"): fit a GPD to the exceedances of the top
-    `tail_frac` of `null_vals` over their own threshold, then read `obs`'s
-    tail probability off the fitted survival function rather than off the
-    (here, EMPTY) empirical tail.
-
-    Returns `None` -- never a fabricated p -- when the tail is too small or
-    too degenerate to fit (fewer than 20 null draws, an all-equal top decile
-    the fit cannot separate, `obs` at or below the fitted threshold, or the
-    MLE itself failing to converge to a finite, positive scale). Callers
-    must fall back to the exact floor honestly (recording `p_method:
-    "exact"`, not `"gpd_tail"`) whenever this returns `None`.
-    """
-    from scipy.stats import genpareto
-
-    n = int(null_vals.size)
-    if n < 20:
-        return None
-    order = np.sort(np.asarray(null_vals, dtype=np.float64))
-    n_tail = max(10, int(np.ceil(tail_frac * n)))
-    n_tail = min(n_tail, n - 1)
-    if n_tail < 10:
-        return None
-    threshold = float(order[n - n_tail])
-    exceed = order[n - n_tail:] - threshold
-    if float(np.ptp(exceed)) <= 0.0 or obs <= threshold:
-        return None
-    try:
-        shape, loc, scale = genpareto.fit(exceed, floc=0.0)
-    except Exception:
-        return None
-    if not (np.isfinite(shape) and np.isfinite(scale)) or scale <= 0:
-        return None
-    tail_p = float(genpareto.sf(obs - threshold, shape, loc=0.0, scale=scale))
-    if not np.isfinite(tail_p) or tail_p < 0:
-        return None
-    p = (n_tail / n) * tail_p
-    if not np.isfinite(p) or p <= 0:
-        return None
-    # The GPD extrapolates PAST the exact floor, so it must never report a
-    # p LARGER than the floor it was invoked to refine (the exact test
-    # already showed p < floor by hitting count==0) -- clamp from above only.
-    return float(min(p, 1.0 / (n + 1)))
+def _p_method(concepts_cfg) -> str:
+    """`concepts.transfer_p_method`, validated up front: an unknown method
+    must fail before any draws are spent, not on the first floor-hitting leg
+    (which may never occur on a small run, leaving the typo silent)."""
+    method = str(getattr(concepts_cfg, "transfer_p_method", "exact") or "exact")
+    if method not in _P_METHODS:
+        raise ValueError(f"concepts.transfer_p_method must be one of {_P_METHODS}, "
+                         f"got {method!r}")
+    return method
 
 
 def _resolve_p(obs: float, null_vals: np.ndarray, method: str, redraw_fn,
-               max_redraw: int = _MAX_REDRAW_DEFAULT,
-               tail_frac: float = _GPD_TAIL_FRAC) -> tuple:
+               max_redraw: int = _MAX_REDRAW_DEFAULT) -> tuple:
     """`-> (p, p_method_used)`. `redraw_fn(n)` draws a FRESH `n`-row null
     (from the same seed as the original, per `matched_draws`' prefix
     stability) and returns the corresponding null-statistic array; only
@@ -250,11 +215,6 @@ def _resolve_p(obs: float, null_vals: np.ndarray, method: str, redraw_fn,
     p, hits_floor = _exact_p(obs, null_vals)
     if not hits_floor or method == "exact":
         return p, "exact"
-    if method == "gpd_tail":
-        gp = gpd_tail_p(obs, null_vals, tail_frac=tail_frac)
-        if gp is None:
-            return p, "exact"
-        return gp, "gpd_tail"
     if method == "adaptive":
         big_null = redraw_fn(max_redraw)
         big_p, _ = _exact_p(obs, big_null)
@@ -375,8 +335,14 @@ def transfer_one(src_scores: np.ndarray, dst_ranks: np.ndarray, S: np.ndarray,
                  fwd_draws: np.ndarray, strata: np.ndarray, by_stratum: dict,
                  k: int = 20, n_draws: int = 200, seed: int = 0,
                  p_method: str = "exact",
-                 max_redraw: int = _MAX_REDRAW_DEFAULT) -> dict:
+                 max_redraw: int = _MAX_REDRAW_DEFAULT,
+                 fwd_seed: int | None = None) -> dict:
     """Forward + reverse legs for ONE (concept, destination target) pair.
+
+    `seed` seeds the reverse leg's null; `fwd_seed` is the seed the caller
+    built `fwd_draws` from. `p_method="adaptive"` needs it, so the redrawn
+    forward null EXTENDS `fwd_draws` (prefix stability of `matched_draws`)
+    rather than being a fresh draw from the reverse leg's seed.
 
     `fwd_draws` is the `(n_draws, len(S))` matched-draw block the CALLER
     built once for this source concept and reuses across every destination
@@ -397,7 +363,7 @@ def transfer_one(src_scores: np.ndarray, dst_ranks: np.ndarray, S: np.ndarray,
              redrawn against `S_b`'s OWN stratum composition, never `S`'s.
              `rev_p` uses this same single-statistic null.
 
-    `p_method` (`"exact"` | `"gpd_tail"` | `"adaptive"`, sec 37 P3) only
+    `p_method` (`"exact"` | `"adaptive"`, sec 37 P3) only
     changes behavior for a leg whose EXACT p hits the floor
     `1/(n_draws+1)`; `null_p95`/`clears`/`auc`/... are computed exactly as
     before `p_method` existed and never depend on it.
@@ -410,8 +376,12 @@ def transfer_one(src_scores: np.ndarray, dst_ranks: np.ndarray, S: np.ndarray,
     null_p95 = float(np.percentile(null_max, 95))
     clears = bool(auc > null_p95)
 
+    if p_method == "adaptive" and fwd_seed is None:
+        raise ValueError("transfer_one: p_method='adaptive' needs fwd_seed, the seed "
+                         "fwd_draws was built from")
+
     def _fwd_redraw(n: int) -> np.ndarray:
-        draws = matched_draws(S, strata, by_stratum, n, np.random.default_rng(seed))
+        draws = matched_draws(S, strata, by_stratum, n, np.random.default_rng(fwd_seed))
         return auc_from_ranks(dst_ranks, draws).max(axis=1)
 
     p, p_used = _resolve_p(auc, null_max, p_method, _fwd_redraw, max_redraw=max_redraw)
@@ -496,7 +466,7 @@ def run_transfer(run_dir: Path, concepts: dict, cfg) -> dict:
     k_top = int(getattr(sae_cfg, "transfer_top_k", 20))
     n_null = int(getattr(sae_cfg, "transfer_n_null", 200))
     base_seed = int(getattr(sae_cfg, "transfer_seed", 0))
-    p_method = str(getattr(concepts_cfg, "transfer_p_method", "exact") or "exact")
+    p_method = _p_method(concepts_cfg)
     fdr_q = float(getattr(concepts_cfg, "transfer_fdr_q", 0.05) or 0.05)
     max_redraw = int(getattr(concepts_cfg, "transfer_max_redraw", _MAX_REDRAW_DEFAULT) or _MAX_REDRAW_DEFAULT)
 
@@ -530,7 +500,7 @@ def run_transfer(run_dir: Path, concepts: dict, cfg) -> dict:
                 result = transfer_one(score, dst_ranks, S, fwd_draws, strata,
                                       by_stratum, k=k_top, n_draws=n_null,
                                       seed=rev_seed, p_method=p_method,
-                                      max_redraw=max_redraw)
+                                      max_redraw=max_redraw, fwd_seed=fwd_seed)
                 pairs.append({"src": src_key, "src_model": src_model, "concept": concept["concept"],
                              "dst": dst_key, "dst_model": dst_model, **result})
 
@@ -675,7 +645,7 @@ def run_atlas_transfer(run_dir: Path, atlas: dict, cfg) -> dict:
     k_top = int(getattr(sae_cfg, "transfer_top_k", 20))
     n_null = int(getattr(sae_cfg, "transfer_n_null", 200))
     base_seed = int(getattr(sae_cfg, "transfer_seed", 0))
-    p_method = str(getattr(concepts_cfg, "transfer_p_method", "exact") or "exact")
+    p_method = _p_method(concepts_cfg)
     fdr_q = float(getattr(concepts_cfg, "transfer_fdr_q", 0.05) or 0.05)
     max_redraw = int(getattr(concepts_cfg, "transfer_max_redraw", _MAX_REDRAW_DEFAULT) or _MAX_REDRAW_DEFAULT)
 
@@ -709,7 +679,7 @@ def run_atlas_transfer(run_dir: Path, atlas: dict, cfg) -> dict:
             rev_seed = _seed("atlas", src_key, cid, dst_key, base=base_seed)
             result = transfer_one(score, dst_ranks, S, fwd_draws, strata, by_stratum,
                                   k=k_top, n_draws=n_null, seed=rev_seed, p_method=p_method,
-                                  max_redraw=max_redraw)
+                                  max_redraw=max_redraw, fwd_seed=fwd_seed)
             tests.append({"concept": cid, "src_target": src_key, "src_model": src_model,
                          "dst_target": dst_key, "dst_model": dst_model, **result})
 

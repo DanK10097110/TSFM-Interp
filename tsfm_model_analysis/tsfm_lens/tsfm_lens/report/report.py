@@ -1968,13 +1968,14 @@ def _transfer_fdr_scopes(run_dir: Path) -> list:
     too, exactly mirroring how the Holm rows above are one row per family
     rather than one pooled row for all of L0.
 
-    Shares the Holm rows' dict shape so `_multiplicity_block`'s table and
-    unsatisfiable-family check need no BH-specific branch: `alpha` holds the
-    family's own `q`, `n_boot` holds `n_null_draws`, and
-    `min_attainable_p_holm` holds `m/(n_null+1)` -- BH's rank-1 threshold and
-    Holm's first-step threshold are both `alpha/m`, so the SAME arithmetic
-    that flags a Holm family unsatisfiable flags a BH family whose exact
-    p-floor cannot support it (identical to `doctor.check_transfer_fdr_budget`).
+    Shares the Holm rows' dict shape for the ledger table (`alpha` holds the
+    family's own `q`, `n_boot` holds `n_null_draws`), but NOT the Holm
+    unsatisfiability arithmetic: `min_attainable_p_holm` is `None` here. BH is
+    step-up, so `k` floor-level p-values survive together once
+    `k >= m / ((n_null+1) q)`; a BH family past `m/(n_null+1) > q` loses only
+    its lone effects, not every effect (a 70-test pair of
+    `runs/full_report_run_4model` kept 36 survivors there). `bh_min_batch` is
+    that `k`, the same arithmetic as `doctor.check_transfer_fdr_budget`.
     """
     scopes = []
     for name, path in (("transfer", run_dir / "sae" / "transfer.json"),
@@ -1995,12 +1996,13 @@ def _transfer_fdr_scopes(run_dir: Path) -> list:
         for (src_model, dst_model), rows in sorted(by_pair.items()):
             m = len(rows)
             for leg, leg_label in (("fwd", "forward"), ("rev", "reverse")):
-                floor_bound = (m / (n_null + 1)) if n_null else None
+                bh_min_batch = (int(np.ceil(m / ((n_null + 1) * q)))
+                                if n_null and q else None)
                 scopes.append({
                     "scope": f"{name}.{src_model}->{dst_model}.{leg}", "method": "bh",
                     "alpha": q, "n_tests": m, "n_boot": n_null,
                     "most_stringent_threshold": (q / m) if q and m else None,
-                    "min_attainable_p_holm": floor_bound,
+                    "min_attainable_p_holm": None, "bh_min_batch": bh_min_batch,
                     "label": (f"{'Atlas ' if name == 'atlas_transfer' else ''}"
                              f"Transfer — {src_model} → {dst_model} ({leg_label} leg, "
                              f"{p_method})"),
@@ -2118,7 +2120,10 @@ def _multiplicity_block(run_dir: Path, summary: dict, findings: list) -> str:
                                      else round(sc["most_stringent_threshold"], 5)),
         "smallest p (Holm) reachable": (None if sc.get("min_attainable_p_holm") is None
                                         else round(sc["min_attainable_p_holm"], 5)),
+        "min. batch to survive (BH)": sc.get("bh_min_batch"),
     } for sc in scopes])
+    if tbl["min. batch to survive (BH)"].isna().all():
+        tbl = tbl.drop(columns="min. batch to survive (BH)")
     total = sum(sc["n_tests"] for sc in scopes)
     mult = summary.get("multiplicity") or {}
     pair_line = ""
@@ -2152,31 +2157,46 @@ def _multiplicity_block(run_dir: Path, summary: dict, findings: list) -> str:
     # arithmetic consequence, not evidence -- exactly the shape of CLAUDE.md
     # sec 11.29 (a criterion that gets harder as the thing it gates improves).
     dead = [sc for sc in scopes
-            if sc.get("min_attainable_p_holm") is not None and sc.get("alpha")
+            if sc.get("method", "holm") == "holm" and sc.get("min_attainable_p_holm") is not None and sc.get("alpha")
             and sc["min_attainable_p_holm"] > sc["alpha"]]
     for sc in dead:
-        method_name = "Holm" if sc.get("method", "holm") == "holm" else "BH"
-        draws_word = "n_boot" if sc.get("method", "holm") == "holm" else "n_null"
         need = int(-(-sc["n_tests"] // sc["alpha"])) if sc["alpha"] else None
         out += (f'<p class="blurb" style="border-left:4px solid #b00;padding-left:.7em">'
-                f'<b>Unsatisfiable correction — {sc["label"]}.</b> Permutation/bootstrap '
-                f'p-values are floored at 1/{draws_word} = {1 / sc["n_boot"]:.4f}, so with '
-                f'{sc["n_tests"]} comparisons the smallest {method_name}-adjusted p this '
-                f'family can produce is {sc["min_attainable_p_holm"]:.3f} — above α/q='
+                f'<b>Unsatisfiable correction — {sc["label"]}.</b> Bootstrap p-values '
+                f'are floored at 1/n_boot = {1 / sc["n_boot"]:.4f}, so with '
+                f'{sc["n_tests"]} comparisons the smallest Holm-adjusted p this family '
+                f'can produce is {sc["min_attainable_p_holm"]:.3f} — above α='
                 f'{sc["alpha"]}. <b>No result here can be significant at any effect '
                 f'size.</b> Read its non-results as arithmetic, not as evidence of no '
-                f'difference; raise <code>{"stats.n_boot" if method_name == "Holm" else "sae.transfer_n_null"}</code> '
-                f'to at least {need} for this many comparisons{"" if method_name == "Holm" else ", or switch concepts.transfer_p_method to gpd_tail/adaptive"}.</p>')
+                f'difference; raise <code>stats.n_boot</code> to at least '
+                f'{need} for this many comparisons.</p>')
         findings.append(Finding(
             claim_id=_next_claim_id("l0"), stage="l0", evidence_class="behavioral",
             text=f"L0 — the {sc['label']} correction family is UNSATISFIABLE at this "
-                f"draw count: {sc['n_tests']} comparisons against a 1/{sc['n_boot']} "
-                f"p-floor gives a smallest reachable {method_name} p of "
-                f"{sc['min_attainable_p_holm']:.3f} > α/q={sc['alpha']}, so its "
+                f"n_boot: {sc['n_tests']} comparisons against a 1/{sc['n_boot']} "
+                f"p-floor gives a smallest reachable Holm p of "
+                f"{sc['min_attainable_p_holm']:.3f} > α={sc['alpha']}, so its "
                 f"non-results carry no evidential weight (ROADMAP.md §18 F8).",
-            plain="This run did not use enough resamples/null draws to possibly "
+            plain="This run did not use enough bootstrap resamples to possibly "
                 "detect anything once corrected for how many comparisons it made.",
             registered=False))
+    coarse = [sc for sc in scopes if sc.get("method") == "bh"
+              and (sc.get("bh_min_batch") or 0) > 1]
+    if coarse:
+        batches = sorted({sc["bh_min_batch"] for sc in coarse})
+        batch_txt = (f"{batches[0]}" if len(batches) == 1
+                     else f"{batches[0]}–{batches[-1]}")
+        out += (f'<p class="blurb" style="border-left:4px solid #c80;padding-left:.7em">'
+                f'<b>Coarse p-floor — {len(coarse)} of '
+                f'{sum(1 for sc in scopes if sc.get("method") == "bh")} BH transfer '
+                f'families.</b> Their exact permutation p-values are floored at '
+                f'1/(n_null+1), which sits above BH\'s rank-1 bar q/m, so a <i>lone</i> '
+                f'transfer cannot survive there: BH is step-up, and a family only declares '
+                f'discoveries once {batch_txt} floor-level p-values arrive together. '
+                f'Survivors in these families are genuine FDR-controlled results; the '
+                f'non-survivors are partly arithmetic. Set '
+                f'<code>concepts.transfer_p_method: adaptive</code> to resolve '
+                f'floor-hitting legs with a larger null.</p>')
     out += _note(
         "How many statistical comparisons this report actually made, and under "
         "what correction (ROADMAP.md sec 18 F8).",

@@ -270,7 +270,7 @@ The recurring vocabulary of this repo's report, one sentence each (`ROADMAP.md` 
 
 *Where it appears:* The SAE section's concept cards; produced by the concepts stage.
 
-**Concept atlas.** A grouping of causal SAE features pooled across every model in the run and clustered directly against each other by ablation-fingerprint similarity, so a group can span several models — unlike a plain 'concept' above, which only ever groups features within one model's own dictionary. Every pair of features inside one atlas group is guaranteed at least a minimum cosine similarity; a group smaller than the minimum member count is left unassigned rather than kept. Two permutation nulls accompany it: one asking whether the grouping is any tighter than chance, one asking whether groups spanning several models are more common than relabeling which model each feature came from would predict.
+**Concept atlas.** A grouping of causal SAE features pooled across every model and clustered by ablation-fingerprint similarity, so that every pair inside a group clears a minimum cosine, groups below the minimum size stay unassigned, and a group can span several models (unlike a plain 'concept', which stays within one model's dictionary).
 
 *Where it appears:* The SAE section's concept atlas figure and table; produced by the concepts stage.
 

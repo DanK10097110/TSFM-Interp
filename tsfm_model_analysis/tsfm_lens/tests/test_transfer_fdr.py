@@ -1,4 +1,4 @@
-"""ROADMAP.md sec 37 P3: p-values, GPD tail extrapolation, adaptive redraw,
+"""ROADMAP.md sec 37 P3: p-values, adaptive redraw,
 per-pair-per-leg Benjamini-Hochberg FDR control for `sae/transfer.py`'s
 cross-model transfer tests, and their extension to the pooled concept ATLAS
 (`run_atlas_transfer` -> `sae/atlas_transfer.json`).
@@ -31,8 +31,9 @@ from tsfm_lens.doctor import check_transfer_fdr_budget  # noqa: E402
 from tsfm_lens.extraction.store import ActivationStore, save_meta  # noqa: E402
 from tsfm_lens.sae.transfer import (  # noqa: E402
     _exact_p,
+    _by_stratum,
     benjamini_hochberg,
-    gpd_tail_p,
+    matched_draws,
     run_atlas_transfer,
     run_transfer,
 )
@@ -70,50 +71,88 @@ def test_p_value_at_the_boundary_is_exactly_the_floor():
 
 
 # ---------------------------------------------------------------------------
-# GPD tail (item 2)
+# Adaptive redraw (item 2). The GPD tail it replaced failed on real data
+# (2/16 floor-hitting legs within x2 of a 5,000-draw exact p) and was removed.
 # ---------------------------------------------------------------------------
 
-def test_gpd_tail_within_factor_of_two_of_analytic_tail():
-    """A known-distribution null (Exponential(1), whose tail is exactly a
-    GPD with shape 0 by construction) -- the fitted extrapolation must land
-    within a factor of 2 of the TRUE analytic survival probability at an
-    `obs` beyond the empirical max (an exact-p floor-hit case)."""
-    rng = np.random.default_rng(191)
-    null = rng.exponential(scale=1.0, size=200)
-    obs = float(null.max() * 1.15)
-    p, hits_floor = _exact_p(obs, null)
-    assert hits_floor is True
-    true_p = float(np.exp(-obs))
-    gp = gpd_tail_p(obs, null)
-    assert gp is not None
-    ratio = gp / true_p
-    assert 0.5 <= ratio <= 2.0, (gp, true_p, ratio)
-    # negative: the floor itself (1/201) is nowhere near a factor of 2 of
-    # the true analytic tail here -- confirms the GPD extrapolation is
-    # doing real work, not just reproducing the floor.
-    assert abs(p / true_p - 1.0) > 1.0
+def test_matched_draws_is_prefix_stable_under_a_larger_redraw():
+    """`adaptive`'s determinism claim: the first `n` rows of an `N`-draw call
+    are bit-identical to a standalone `n`-draw call from the same seed, so the
+    redrawn null EXTENDS the original instead of replacing it."""
+    strata = np.repeat(["a", "b", "c"], 20)
+    by_stratum = _by_stratum(strata)
+    S = np.array([0, 1, 25, 26, 45])
+    small = matched_draws(S, strata, by_stratum, 50, np.random.default_rng(11))
+    big = matched_draws(S, strata, by_stratum, 500, np.random.default_rng(11))
+    assert np.array_equal(small, big[:50])
+    other = matched_draws(S, strata, by_stratum, 50, np.random.default_rng(12))
+    assert not np.array_equal(small, other)
 
 
-def test_gpd_tail_returns_none_on_degenerate_input():
-    """No fabricated p when the tail cannot be fit: too few draws, an
-    all-equal tail, or `obs` at/below the fitted threshold."""
-    assert gpd_tail_p(5.0, np.arange(5, dtype=float)) is None  # n < 20
-    assert gpd_tail_p(5.0, np.ones(50)) is None  # degenerate (zero-spread) tail
-    rng = np.random.default_rng(0)
-    null = rng.exponential(size=200)
-    assert gpd_tail_p(float(null.min()), null) is None  # obs below threshold
+def test_adaptive_resolves_a_floor_hitting_leg_below_the_exact_floor(tmp_path):
+    """The planted shared concept beats every one of 200 null draws, so its
+    exact p is the floor 1/201; `adaptive` must redraw to `max_redraw` and
+    report the finer floor 1/(max_redraw+1), labelled as such. A leg that did
+    NOT hit the floor keeps its exact p and label."""
+    run_dir, _shared, _by_model = _make_store(tmp_path, ("m1", "m2"), n_feat=5, seed=7, k_signal=8)
+    concepts = {"targets": {
+        "m1/L0": {"model": "m1", "withheld": False,
+                  "concepts": [{"concept": 0, "features": [0]}, {"concept": 1, "features": [1]}]},
+        "m2/L0": {"model": "m2", "withheld": False,
+                  "concepts": [{"concept": 0, "features": [0]}, {"concept": 1, "features": [1]}]},
+    }}
+    exact = run_transfer(run_dir, concepts, _make_cfg(run_dir, ("m1", "m2"), top_k=8))
+    adaptive = run_transfer(run_dir, concepts, _make_cfg(run_dir, ("m1", "m2"), top_k=8,
+                                                         p_method="adaptive", max_redraw=1000))
+    for pe, pa in zip(exact["pairs"], adaptive["pairs"]):
+        if pe["p"] == pytest.approx(1 / 201):
+            assert pa["p_method"] == "adaptive"
+            assert pa["p"] < pe["p"]
+        else:
+            assert pa["p_method"] == "exact"
+            assert pa["p"] == pe["p"]
+    assert any(pa["p_method"] == "adaptive" for pa in adaptive["pairs"])
+    assert any(pa["p_method"] == "exact" for pa in adaptive["pairs"])
 
 
-def test_gpd_tail_never_exceeds_the_exact_floor():
-    """A floor-hitting exact p is `1/(n+1)`; the GPD refinement must only
-    ever REFINE it downward (a p larger than the floor would contradict the
-    exact test's own count==0 result)."""
-    rng = np.random.default_rng(3)
-    null = rng.exponential(size=300)
-    obs = float(null.max() * 1.02)  # just barely past the floor
-    gp = gpd_tail_p(obs, null)
-    if gp is not None:
-        assert gp <= 1.0 / (len(null) + 1) + 1e-12
+def test_adaptive_forward_redraw_extends_the_callers_forward_null(tmp_path, monkeypatch):
+    """The forward leg's redraw must be seeded from the seed the caller built
+    `fwd_draws` from, so its first `n_null` draws reproduce the original
+    forward null exactly. Decoy: the reverse leg's redraw extends ITS null,
+    which was drawn from a different seed -- a redraw seeded from the reverse
+    seed would reproduce the wrong one."""
+    import tsfm_lens.sae.transfer as T
+    captured = []
+    real = T._resolve_p
+
+    def spy(obs, null_vals, method, redraw_fn, max_redraw=T._MAX_REDRAW_DEFAULT):
+        captured.append((np.array(null_vals), redraw_fn))
+        return real(obs, null_vals, method, redraw_fn, max_redraw=max_redraw)
+
+    monkeypatch.setattr(T, "_resolve_p", spy)
+    run_dir, _shared, _by_model = _make_store(tmp_path, ("m1", "m2"), n_feat=5, seed=7, k_signal=8)
+    concepts = {"targets": {
+        "m1/L0": {"model": "m1", "withheld": False, "concepts": [{"concept": 0, "features": [0]}]},
+        "m2/L0": {"model": "m2", "withheld": False, "concepts": [{"concept": 0, "features": [0]}]},
+    }}
+    run_transfer(run_dir, concepts, _make_cfg(run_dir, ("m1", "m2"), top_k=8,
+                                              p_method="adaptive", max_redraw=400))
+    assert len(captured) == 4
+    for null_vals, redraw_fn in captured:
+        assert np.array_equal(redraw_fn(null_vals.size), null_vals)
+
+
+def test_unknown_p_method_fails_before_any_draw(tmp_path):
+    """A removed or misspelled method (`gpd_tail`) must raise up front, not
+    only on the first floor-hitting leg, which a small run may never reach."""
+    run_dir, _shared, _by_model = _make_store(tmp_path, ("m1", "m2"), n_feat=5, seed=7, k_signal=8)
+    concepts = {"targets": {
+        "m1/L0": {"model": "m1", "withheld": False, "concepts": [{"concept": 1, "features": [1]}]},
+        "m2/L0": {"model": "m2", "withheld": False, "concepts": [{"concept": 1, "features": [1]}]},
+    }}
+    with pytest.raises(ValueError, match="transfer_p_method"):
+        run_transfer(run_dir, concepts, _make_cfg(run_dir, ("m1", "m2"), top_k=8,
+                                                  p_method="gpd_tail"))
 
 
 # ---------------------------------------------------------------------------
@@ -307,7 +346,7 @@ def test_uncorrected_transfer_keys_survive_pinned_values(tmp_path):
 
 def test_uncorrected_keys_identical_across_p_methods(tmp_path):
     """`p_method` must never change any legacy field's value -- run twice
-    (exact vs gpd_tail) on the identical fixture/seed and diff every legacy
+    (exact vs adaptive) on the identical fixture/seed and diff every legacy
     key plus the `reach`/`matrix`/`universality` reductions built from
     them."""
     run_dir, _shared, _by_model = _make_store(tmp_path, ("m1", "m2"), n_feat=5, seed=7, k_signal=8)
@@ -321,7 +360,8 @@ def test_uncorrected_keys_identical_across_p_methods(tmp_path):
                      "rev_null_p95", "rev_clears", "reciprocal")
     cfg_exact = _make_cfg(run_dir, ("m1", "m2"), top_k=8, p_method="exact")
     out_exact = run_transfer(run_dir, concepts, cfg_exact)
-    cfg_gpd = _make_cfg(run_dir, ("m1", "m2"), top_k=8, p_method="gpd_tail")
+    cfg_gpd = _make_cfg(run_dir, ("m1", "m2"), top_k=8, p_method="adaptive",
+                        max_redraw=1000)
     out_gpd = run_transfer(run_dir, concepts, cfg_gpd)
 
     assert len(out_exact["pairs"]) == len(out_gpd["pairs"]) == 4
@@ -463,9 +503,13 @@ def test_doctor_transfer_fdr_floor_warns_at_n200_m830_exact():
     check = check_transfer_fdr_budget(n_null=200, m=830, q=0.05, p_method="exact")
     assert check.status == "warn"
     assert "830" in check.detail
-    # negative: the same m under gpd_tail routes around the floor entirely.
-    check_gpd = check_transfer_fdr_budget(n_null=200, m=830, q=0.05, p_method="gpd_tail")
-    assert check_gpd.status == "pass"
+    # BH is step-up: 830 / (201 * 0.05) = 82.59 -> a batch of 83 floor-level
+    # p-values survives, so the family is NOT unsatisfiable.
+    assert ">= 83 floor-level" in check.detail
+    assert "unsatisfiable" not in (check.detail + check.remediation).lower()
+    # negative: the same m under adaptive routes around the floor entirely.
+    check_ad = check_transfer_fdr_budget(n_null=200, m=830, q=0.05, p_method="adaptive")
+    assert check_ad.status == "pass"
 
 
 def test_doctor_transfer_fdr_floor_passes_when_m_is_small():
@@ -594,3 +638,29 @@ def test_transfer_fdr_block_renders_without_model_names(tmp_path):
     html = transfer_fdr_block(run_dir, cfg)
     assert "alpha" in html and "beta" in html
     assert "Cross-model transfer" in html
+
+
+def test_ledger_does_not_call_a_bh_transfer_family_unsatisfiable(tmp_path):
+    """BH is step-up, so a family past `m/(n_null+1) > q` loses only its
+    LONE effects (a 70-test real pair kept 36 survivors). The ledger must
+    render it as a coarse floor with its minimum batch, never with the Holm
+    "No result here can be significant" block or an L0 finding. Decoy: an
+    unsatisfiable Holm family in the same ledger must still be named."""
+    from tsfm_lens.report.report import _multiplicity_block
+    pairs = [{"src_model": "A", "dst_model": "B"} for _ in range(70)]
+    save_json(tmp_path / "sae" / "transfer.json",
+              {"n_null_draws": 200, "fdr_q": 0.05, "p_method": "exact", "pairs": pairs})
+    summary = {"multiplicity": {"scope": "l0.family", "method": "holm", "alpha": 0.05,
+                                "n_models": 2, "n_pairs": 1, "n_tests": 18,
+                                "n_boot": 150, "min_attainable_p_holm": 18 / 150,
+                                "most_stringent_threshold": 0.05 / 18,
+                                "designated_pair": ["A", "B"]}}
+    findings: list = []
+    html = _multiplicity_block(tmp_path, summary, findings)
+    assert html.count("Unsatisfiable correction") == 1
+    assert "L0 per-family paired tests" in html.split("Unsatisfiable correction")[1][:80]
+    assert "Coarse p-floor" in html
+    assert "2 of 2 BH transfer" in html
+    assert "7 floor-level p-values" in html
+    unsat = [f for f in findings if "UNSATISFIABLE" in f.text]
+    assert len(unsat) == 1 and "Transfer" not in unsat[0].text

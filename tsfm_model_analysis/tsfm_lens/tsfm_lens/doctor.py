@@ -26,6 +26,7 @@ report."
 
 from __future__ import annotations
 
+import math
 import shutil
 from dataclasses import dataclass
 from pathlib import Path
@@ -250,43 +251,44 @@ def _check_multiplicity_budget(cfg: PipelineConfig) -> DoctorCheck:
 
 
 def check_transfer_fdr_budget(n_null: int, m: int, q: float, p_method: str) -> DoctorCheck:
-    """Whether `sae/transfer.py`'s exact permutation p-floor can support one
-    BH family of `m` tests (`ROADMAP.md` sec 37 P3, item 7).
+    """Whether `sae/transfer.py`'s exact permutation p-floor lets one BH
+    family of `m` tests declare an ISOLATED effect (`ROADMAP.md` sec 37 P3,
+    item 7).
 
-    Same shape as `_check_multiplicity_budget` above, one level down: a
-    permutation p is floored at `1/(n_null+1)`, so `m` tests all sitting at
-    that floor cannot jointly clear a Bonferroni-style bound of `q` once
-    `m * floor > q` -- i.e. `m / (n_null+1) > q`, the exact condition this
-    item specifies. BH is less conservative than Bonferroni (its smallest
-    p can still survive on its own), so this is a SUFFICIENT-for-concern
-    warning, not a proof every such family fails outright; `p_method` in
-    `{"gpd_tail", "adaptive"}` routes AROUND the floor entirely (sec 37 P3
-    items 2), so this only ever fires under `"exact"`.
+    A permutation p is floored at `1/(n_null+1)`. BH is step-up: the `k`
+    smallest p-values all survive when `p_(k) <= q k / m`, so `k` tests at
+    the floor survive together once `k >= m / ((n_null+1) q)`. The family is
+    therefore NOT unsatisfiable the way a Holm family is past `m/n_boot >
+    alpha` (`_check_multiplicity_budget`) -- on `runs/full_report_run_4model`
+    a 70-test pair past this bound kept 36 survivors. What `m/(n_null+1) > q`
+    does mean is that a lone effect (rank 1, bar `q/m`) cannot clear the
+    floor: only effects that arrive in batches of at least that `k` are
+    detectable, so a family's non-survivors are partly arithmetic.
+    `p_method: "adaptive"` routes around the floor, so this only fires under
+    `"exact"`.
 
-    Unlike `_check_multiplicity_budget`, `m` here (the transfer-test count
-    for one ordered model pair's one leg) is a property of how many
-    concepts got trained, not of the config -- exactly the same "do not
-    guess a property of the corpus" restraint that function's own docstring
-    states for its own family count (`CLAUDE.md` sec 11.34). So this is
-    called from `sae/concept_stage.py` AFTER `run_transfer`/
-    `run_atlas_transfer` know their real per-pair, per-leg `m`, not from
-    static `run_preflight` -- there is nothing to check before those tests
-    exist.
+    `m` (the test count for one ordered model pair's one leg) is a property
+    of how many concepts got trained, not of the config (`CLAUDE.md` sec
+    11.34), so this is called from `sae/concept_stage.py` after
+    `run_transfer`/`run_atlas_transfer` know their real per-pair `m`, not
+    from static `run_preflight`.
     """
-    detail = (f"n_null={n_null} (p-floor 1/{n_null + 1}={1.0 / (n_null + 1):.5f}), "
+    floor = 1.0 / (n_null + 1)
+    k_min = int(math.ceil(m * floor / q)) if q > 0 else m
+    detail = (f"n_null={n_null} (p-floor 1/{n_null + 1}={floor:.5f}), "
               f"m={m} test(s) in this BH family, q={q}, p_method={p_method!r}")
-    remedy = (f"raise concepts.transfer_p_method to 'gpd_tail' or 'adaptive' "
-              f"(sec 37 P3 item 2), or raise sae.transfer_n_null so that "
-              f"m/(n_null+1) <= q (currently need n_null >= {int(m / max(q, 1e-12)) - 1})")
+    remedy = (f"set concepts.transfer_p_method: adaptive, or raise "
+              f"sae.transfer_n_null to >= {int(math.ceil(m / max(q, 1e-12))) - 1} so a "
+              f"single effect can clear BH's rank-1 bar q/m")
     if p_method != "exact":
         return DoctorCheck("transfer FDR floor", "pass", detail + " -- not applicable")
     if m <= 0:
         return DoctorCheck("transfer FDR floor", "pass", detail)
-    if m / (n_null + 1) > q:
+    if m * floor > q:
         return DoctorCheck("transfer FDR floor", "warn", detail +
-                           " -- m/(n_null+1) exceeds q: this family's exact "
-                           "p-floor cannot support a Bonferroni-tight FDR "
-                           "bound at this m", remedy)
+                           f" -- a lone effect cannot survive BH here (q/m={q / m:.5f} is "
+                           f"below the floor); effects are detectable only in batches of "
+                           f">= {k_min} floor-level p-values", remedy)
     return DoctorCheck("transfer FDR floor", "pass", detail)
 
 

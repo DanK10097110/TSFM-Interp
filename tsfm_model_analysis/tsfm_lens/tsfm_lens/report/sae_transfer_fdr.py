@@ -125,11 +125,15 @@ def transfer_fdr_block(run_dir: Path, cfg) -> str:
             f"within its own (pair, leg) family at q={transfer.get('fdr_q')} "
             "(\"FDR reciprocal\").",
             "A test's exact permutation p is floored at "
-            f"1/{int(transfer.get('n_null_draws', 0)) + 1}; where every null "
-            f"draw fell short of the observed statistic, `p_method="
-            f"{transfer.get('p_method')!r}` extrapolates a finer p instead of "
-            "reporting that same floor for every such test, which is what "
-            "would otherwise make BH unable to separate them.",
+            f"1/{int(transfer.get('n_null_draws', 0)) + 1}. "
+            + ("Where every null draw fell short of the observed statistic, "
+               "p_method='adaptive' redrew a larger null from the same seed "
+               "to resolve a finer p. "
+               if transfer.get("p_method") == "adaptive" else
+               "p_method='exact' leaves floor-hitting tests AT that floor: BH "
+               "then passes them only as a batch, so a lone strong transfer "
+               "in a large family can be missed (see the multiplicity "
+               "ledger's 'min. batch to survive' column). "),
             "FDR reciprocal is always <= uncorrected reciprocal: BH can only "
             "remove survivors relative to the raw p95 comparison, never add "
             "them. Read this table beside the multiplicity ledger, which "
