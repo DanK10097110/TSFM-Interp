@@ -408,6 +408,36 @@ STAGE_DOCS: dict = {
                       "alignment number is inflated by searching many candidate "
                       "ground-truth fields per feature, so it must always be read "
                       "next to its permutation-null control, never on its own.")),
+    "concepts": StageDoc(
+        question="Which features does each model's dictionary actually use when it forecasts, do they group into named concepts, and does another model group the same series the same way?",
+        how=("For every trained dictionary, zeroes each candidate feature out of the "
+             "model's own reconstruction on the series where that feature fires "
+             "hardest, and measures nine properties of the forecast against a "
+             "random-direction null. Features that move something are clustered by "
+             "what they move into concepts (or the dictionary is declared "
+             "non-modular when no clean grouping exists). Each concept's top series "
+             "are then checked in every other model: does some feature there "
+             "separate the same series better than random series of the same kind "
+             "would, and does that feature's own top series come back the other "
+             "way? Finally every concept is described in a sentence composed only "
+             "from what was measured. Separately, every causal feature across every "
+             "model is also pooled into one shared space and clustered directly "
+             "against each other, so a group there can span several models even "
+             "when a dictionary's own per-target clustering above found no clean "
+             "grouping within it."),
+        good_bad=("Good: features whose removal moves the forecast well above the "
+                   "null, concepts with several members each, and transfers that clear "
+                   "the matched null in both directions. Bad: most targets declared "
+                   "non-modular (the dictionary's causal features do not group), or "
+                   "transfer rates that are high only because the matched null is weak "
+                   "for that kind of series."),
+        cannot_tell=("A transfer that clears its null says another model separates "
+                      "the same series, not that it uses the feature the same way "
+                      "causally. The rates are uncorrected for the many tests made, and "
+                      "nothing yet says how often a concept would transfer to a second "
+                      "dictionary trained on the SAME model, so a rate cannot be read "
+                      "as high or low on its own. Everything here is measured on the "
+                      "development corpus only.")),
     "exemplars": StageDoc(
         question="What does an aggregate difference between models actually look like on one real series?",
         how=("Picks a handful of concrete series per data family — specifically ones "

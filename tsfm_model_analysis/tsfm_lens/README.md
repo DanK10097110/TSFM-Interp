@@ -194,6 +194,16 @@ Four fixed questions per stage (`ROADMAP.md` sec 21 J2), generated from `tsfm_le
 
 **What it cannot tell you.** A feature firing on a particular kind of series is illustrative correlation unless the causal channel battery has confirmed a real patched response for that feature — check the channel result, not just the ground-truth alignment score, before reading any feature as meaningful. A cross-model role match is a geometric correspondence in response space, not evidence the two models use that role the same way causally — and on the one real pair checked so far, the match rate did not clear its own untrained-twin floor, so 'the models share this feature' is not yet an established claim for any pair. Only the small alive fraction of the dictionary (often under 10%) can ever show up as an example, and the headline alignment number is inflated by searching many candidate ground-truth fields per feature, so it must always be read next to its permutation-null control, never on its own.
 
+### `concepts`
+
+**Question.** Which features does each model's dictionary actually use when it forecasts, do they group into named concepts, and does another model group the same series the same way?
+
+**How.** For every trained dictionary, zeroes each candidate feature out of the model's own reconstruction on the series where that feature fires hardest, and measures nine properties of the forecast against a random-direction null. Features that move something are clustered by what they move into concepts (or the dictionary is declared non-modular when no clean grouping exists). Each concept's top series are then checked in every other model: does some feature there separate the same series better than random series of the same kind would, and does that feature's own top series come back the other way? Finally every concept is described in a sentence composed only from what was measured. Separately, every causal feature across every model is also pooled into one shared space and clustered directly against each other, so a group there can span several models even when a dictionary's own per-target clustering above found no clean grouping within it.
+
+**Good vs. bad result.** Good: features whose removal moves the forecast well above the null, concepts with several members each, and transfers that clear the matched null in both directions. Bad: most targets declared non-modular (the dictionary's causal features do not group), or transfer rates that are high only because the matched null is weak for that kind of series.
+
+**What it cannot tell you.** A transfer that clears its null says another model separates the same series, not that it uses the feature the same way causally. The rates are uncorrected for the many tests made, and nothing yet says how often a concept would transfer to a second dictionary trained on the SAME model, so a rate cannot be read as high or low on its own. Everything here is measured on the development corpus only.
+
 ### `exemplars`
 
 **Question.** What does an aggregate difference between models actually look like on one real series?
@@ -255,6 +265,14 @@ The recurring vocabulary of this repo's report, one sentence each (`ROADMAP.md` 
 **catch22 (feature space).** The 22 (or 24, adding mean/std) general-purpose time-series features `benchmark_validation` computes per series and robustly scales (with winsorization against outlier swamping) before computing diversity, effective dimensionality, or near-collisions on them — the space every diversity number in this report is measured in, never the UMAP coordinates used only for the companion plot.
 
 *Where it appears:* The corpus card's diversity and feature-space-map figures.
+
+**Concept.** A group of SAE features from one model's dictionary whose removal moves the forecast in the same way (the same channels, the same direction), found by clustering each feature's ablation fingerprint and admitted only when every group has at least a minimum number of members, so a dictionary whose causal features do not group is reported as non-modular rather than forced into concepts.
+
+*Where it appears:* The SAE section's concept cards; produced by the concepts stage.
+
+**Concept atlas.** A grouping of causal SAE features pooled across every model in the run and clustered directly against each other by ablation-fingerprint similarity, so a group can span several models — unlike a plain 'concept' above, which only ever groups features within one model's own dictionary. Every pair of features inside one atlas group is guaranteed at least a minimum cosine similarity; a group smaller than the minimum member count is left unassigned rather than kept. Two permutation nulls accompany it: one asking whether the grouping is any tighter than chance, one asking whether groups spanning several models are more common than relabeling which model each feature came from would predict.
+
+*Where it appears:* The SAE section's concept atlas figure and table; produced by the concepts stage.
 
 **Corruption sensitivity fingerprint.** A layers × corruptions matrix of how much each layer's activations move when a specific structural property is destroyed in the input, forming a per-model signature whose *shape across depth* is what gets compared across models — never the raw magnitudes, which are not calibrated between corruptions.
 
@@ -439,6 +457,10 @@ The recurring vocabulary of this repo's report, one sentence each (`ROADMAP.md` 
 **Token width.** How many timesteps one of a model's tokens covers (about 32 for a patch tokenizer, 1 for a per-timestep quantizer), which sets the finest lag that model's attention can express and is multiplied into every plotted lag axis so a lag of 300 means the same 300 timesteps for every model.
 
 *Where it appears:* Attention analysis' lag axes; the fairness card's finest-resolvable-lag row.
+
+**Transfer.** Whether another model separates the same series a concept fires hardest on, scored as the best of that model's features against random series sets drawn with the same mix of series kinds, and called reciprocal only when that feature's own top series are in turn separated by the original concept.
+
+*Where it appears:* The SAE section's concept universality table; produced by the concepts stage.
 
 **Trend.** Slope of the forecast -- whether it rises or falls as it continues forward -- a higher value pushes the forecast to slope upward more steeply.
 

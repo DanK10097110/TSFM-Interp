@@ -509,6 +509,40 @@ GLOSSARY: dict = {
             "jointly-trained models can already look substantially 'matched' by "
             "chance."),
         where="Cross-model role correspondence table (Component C)."),
+    "concept": Term(
+        term="Concept",
+        definition=(
+            "A group of SAE features from one model's dictionary whose removal "
+            "moves the forecast in the same way (the same channels, the same "
+            "direction), found by clustering each feature's ablation fingerprint "
+            "and admitted only when every group has at least a minimum number of "
+            "members, so a dictionary whose causal features do not group is "
+            "reported as non-modular rather than forced into concepts."),
+        where="The SAE section's concept cards; produced by the concepts stage."),
+    "transfer": Term(
+        term="Transfer",
+        definition=(
+            "Whether another model separates the same series a concept fires "
+            "hardest on, scored as the best of that model's features against "
+            "random series sets drawn with the same mix of series kinds, and "
+            "called reciprocal only when that feature's own top series are in "
+            "turn separated by the original concept."),
+        where="The SAE section's concept universality table; produced by the concepts stage."),
+    "concept atlas": Term(
+        term="Concept atlas",
+        definition=(
+            "A grouping of causal SAE features pooled across every model in the "
+            "run and clustered directly against each other by ablation-fingerprint "
+            "similarity, so a group can span several models — unlike a plain "
+            "'concept' above, which only ever groups features within one model's "
+            "own dictionary. Every pair of features inside one atlas group is "
+            "guaranteed at least a minimum cosine similarity; a group smaller than "
+            "the minimum member count is left unassigned rather than kept. Two "
+            "permutation nulls accompany it: one asking whether the grouping is "
+            "any tighter than chance, one asking whether groups spanning several "
+            "models are more common than relabeling which model each feature came "
+            "from would predict."),
+        where="The SAE section's concept atlas figure and table; produced by the concepts stage."),
 }
 
 

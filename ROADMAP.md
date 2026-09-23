@@ -951,8 +951,27 @@ Three things a session picking this up must know before opening §34:
   pipeline") → package E. §22.3's other halves stay parked; §22.8's three
   outright rejections are untouched.
 
+**20 (queued ahead of 18 and 19). 📋 DESIGN ONLY — §37, the Concept Atlas
+(added 2026-09-22, user-directed).** The repo's most interesting claim — *this
+concept is learned, shared across models, and causally moves the forecast* —
+has every ingredient built (§25–§32) and is assembled nowhere. The per-concept
+claim has five clauses, and each fails today for a measured reason (§37.1):
+- no concept has been checked against a second SAE seed;
+- "what it is about" is correlational only;
+- 830 transfer tests carry no multiplicity correction and no ceiling;
+- 98.3% of causal response variance is a level shift;
+- cross-model causal agreement has a floor for 1 of 6 pairs, measured on
+  different series.
+
+And `run_concepts`/`run_transfer` have **no caller outside tests**. §37 gives
+eight items, P0–P8. Start at **§37.14's ordering table**. P0 is zero-GPU. P6
+(generator counterfactuals and mediation) is the headline experiment. There are
+two pre-registered stop gates (P2 stability, P6 input response). P7 needs a
+**fresh private epoch**: `benchmark_large`'s has been read three times.
+
 **18. 📋 DESIGN ONLY, DO NOT IMPLEMENT — §35, convergent learning at the unit
-level (added 2026-09-22, user-directed).** The user supplied Li, Yosinski,
+level (added 2026-09-22, user-directed). 🔵 Re-scoped by §37 (2026-09-22): SAE
+features first, after §37 P2 — see §35.0.** The user supplied Li, Yosinski,
 Clune, Lipson & Hopcroft, *Convergent Learning* (NIPS 2015 workshop), which
 asks this repo's founding question for CNNs and answers it with machinery this
 repo does not have, and asked for a design — **explicitly not an
@@ -989,8 +1008,9 @@ correspondence has no representation in a shared atom set) via the post-hoc
 matching path that already **won** that pre-registered comparison, which is
 the opposite of §2.9's forbidden revival.
 
-**19. 📋 DESIGN ONLY, DO NOT IMPLEMENT — §36, the L1 report section becomes
-two-tier (added 2026-09-22, user-directed, same session as item 18).** The
+**19. ⏸️ PARKED 2026-09-22 (§37) — §36, the L1 report section becomes
+two-tier (added 2026-09-22, user-directed, same session as item 18).** Un-park
+when §35's promotion gate passes on a real run. The
 follow-on instruction was *"I don't want to get rid of what I already have with
 CKA, but if there is a provably better metric then scale CKA back (make more of
 the graphs collapsable), and add similar graphs for the new metric."* §36 is
@@ -9120,6 +9140,7 @@ Append below, three lines maximum, newest last.
 | **08-30** (user-directed, §24.4 + §24.5) | **The three-model full-feature run the user asked for, and the derived-examples pass that had to land first.** §24.4: five rendered notes and one *rendered module docstring* (`analysis/lens.py`, spliced verbatim into the methods appendix) illustrated mechanisms with a fixed architecture name — a claim about a model that may not be in the run, and on an unfamiliar panel a claim about the wrong one; each now derives its example from the run's own data or gives none. §24.5: ran `configs/full_report_run_3model.yaml` (TimesFM-2.5-200M / Chronos-T5-Base / **Chronos-2**, every stage, `verbose: true`) to **15 rendered / 1 skipped / 0 failed, 94 findings, 0 bare figures**, with the pair path bit-exact inside the panel (L1 0.38115179538726807, L2 0.4132/0.3179) and the three models named in 32/31/30 findings. It crashed once, at `sae`, after twelve stages — `layer_screen` picks layers the analysis store never captured because §15 A1 correctly gave the screen its own stride-1 store, and nothing compared the two lists (`CLAUDE.md` **§11.40**; a stage-boundary version of §11.32, and one that cannot fail early by construction). Fixed, 5 tests, discriminating power confirmed against the pre-fix resolution rather than assumed. Also fixed a hardcoded `pairs_examined_by_other_stages: 1` with no consumer anywhere — §11.39's shape again. **One unplanned controlled result worth more than the run itself:** Chronos-2 and Chronos-T5-Base at *identical* SAE settings give dead rates 0.108–0.134 vs 0.951–0.973, so the ~95%-dead condition §23.2 A1 has chased for sessions is not the recipe — but the alive dictionaries align to ground truth *worse*, so A1 is reframed, not answered. One reading corrected mid-session: the fairness card's two-model scope on a panel is a documented decision with a banner naming the absent model, not the gap I first took it for. **Continued (same day) into a usability pass**: wrote `Functionality_Summary.md` against re-measured numbers rather than carried-forward ones — which caught `CLAUDE.md` §6.1's smoke figures being stale by 40× on runtime (the smoke *pipeline* is 29 s, not the ~20 min recorded) and its section/finding counts being 12-of-13/47 where the run now renders 14-of-16/54, both corrected in place. That pass had recorded a manual thread-capping workaround as "a cheap, real improvement nobody was tasked with" — §23.1's most common shape — so on the user's instruction it was built: **E25**, `tests/conftest.py` in both packages, 13 tests. It reliably buys core footprint (42 → 14 peak threads, 18 cores → under 3); its effect on *time* is workload-dependent and my first draft of that entry generalized one module's 1.78× to the whole suite, which the next full run contradicted — corrected in place, with a clean A/B as the pending measurement. The measurement justifying the item was itself wrong twice before it was right (**§11.41**). | §24.4, §24.5 Findings, §23.2 A1's new Findings, §16 E25 |
 | **08-31** (user-directed, §25) | **Designed, deliberately did not implement, a replacement for the SAE section's naming and its missing causal half.** The user's read — "not much interpretability, and many features are called the same thing" — was grounded in artifacts before being treated as presentation (§2.4, and §24/§24.6's precedent that a presentation complaint is usually a mechanism): at `runs/full_report_run_large` **43 of 51** displayed features at one Chronos-T5-Base target are named by a corpus-*provenance* dummy and **20** share the identical name; on the run `docs/worked_example.md` teaches from, **34 of 50** say `tier_realism_stress`. Three things make that structural rather than unlucky — provenance dummies are valid on all 965 series against 374–555 for structural fields, so the argmax competes fields at 1.7–2.6× different `n`; the collapse is in the *label*, since those 34 atoms have pairwise decoder cosine mean **0.028981153** against a random-atom baseline of **−6.0e-05** (so deduplication is the wrong fix); and `feature_ablation_effects`/`feature_steering_effects` both exist, are tested, and are rendered by **nothing**, while the section's docstring still claims they don't exist. §25 designs the fingerprint/roles/cross-model-matching replacement with a random-direction null, §11.42's two-part reach gate, and four pre-registered negative outcomes; §25.11 records why Holm is *unusable* here (96 tests against a 1/24 null p-floor — §6.6/§18 F8's unsatisfiable-correction rule) and what replaces it. **Stage 0 is a blocker and needs no new code:** two of three models in the flagship run carry 88–98% dead dictionaries, and §23.2 A1's fix is built, validated, and off by default. **Extended the same day on a user follow-up (§25.16-§25.19), and one of the four answers is a new measurement rather than a design:** joining `sae/meta.json` against `internals/profile.json` across **45 unique (model, layer, dict, recipe) cells already on disk** -- zero GPU, nothing trained -- shows the alive-atom count scales with that layer's own `effective_dim` at **exponent 1.02 (rho=+0.584, p=2.5e-05)** while `dict_size` and `d_in` predict it **not at all** (rho=-0.201, n.s.), and only **3 of 45** cells are dictionary-bound. The within-model control is the honest core: same run, same corpus, same dict 10240, only the layer varies -> TimesFM `effective_dim` 31.65->2.49 tracks alive 1258->237 at rho=+0.900. So Chronos-2's 1%-dead dictionaries are not a Chronos-2 property but an `effective_dim` 39.9-49.8 property, and the user's "would more diversity help" intuition has a measurable mechanism -- while the obvious injection was already measured to go the *wrong* way (real Monash rows: eff-dim 1.76 vs 2.66, dead rate *higher*). Recorded with three explicit threats to validity (partial circularity, pooled non-independent units, and sec 11.33's confounded-ratio shape: `alive/effective_dim` spans 25-207, so the exponent is the result and the ratio is not) plus a two-arm controlled test and a pre-registered negative. Also corrected a claim I had written four hours earlier: sec 25.14's rejection of LLM feature descriptions cited `CLAUDE.md` sec 4.6 (which is about *generating data*, where bit-exactness is invariant 1); the rejection that actually applies is sec 22.8's, whose stated ground is **auditability** -- so a scored, suppressible description is admissible where an unscored narrative is not. **Then the user pushed back on the one caveat that gates the whole design -- "the 95% dead is actually a big deal, I would rather the more accurate one" -- and they were right to: the caveat was CONFOUNDED (sec 25.20).** I had compared Chronos-2 (alive) against Chronos-T5-Base (dead), two different architectures, corpora and eff-dim regimes. The within-model comparison exists on disk because `runs/sae_revival` trained against a COPY of `runs/medium_run_chronos_base`'s own store: same model, same layer, same corpus, three dead rates. It says revival is **free-or-better for Chronos-T5-Base** (gap over its own permutation null +0.2362 vs +0.2294, one MORE structural field covered, fidelity 0.901 vs 0.840, at a 32x smaller dictionary -- and 157 vs 160 alive atoms, so the top-50 display cap applies near-identical selection pressure, the one confound that could have explained it) and **genuinely costs correlational signal for TimesFM** (+0.1665 -> +0.1086, with the selection confound pointing the other way, since its top-50 is drawn from 1591 alive against 417). Two findings make the decision not a threshold: (a) the statistic being defended is inflated by exactly the provenance labels sec 25.1 indicted -- provenance matches out-score structural ones in **all four** dictionaries measured (Chronos dead: 35 of 50 matches provenance at 0.637 vs 0.573 structural), so maximizing it selects for corpus-membership detectors; (b) the obvious replacement metric, best-per-field structural rho, is **refuted by the untrained twin**, which scores **0.565** against the real revived dictionary's **0.567** -- only gap-over-permutation-null separates trained from random (+0.109 to +0.236 vs +0.007 and -0.017). Fidelity is also not a proxy for interpretability: the TimesFM untrained twin has the HIGHEST fidelity measured (0.963) at zero GT signal, so it is readable only at fixed activations, which is the case here. Stage 0's exit criterion is rewritten: train both recipes per target and let **Component A** break the tie, because the premise of sec 25 is that a feature's identity is what it does. **Then, on a fourth instruction, parked the question this turns into as sec 22.0 -- first in the parked list, behind sec 25 rather than beside it** (*"First I want the SAE to work, then test out the research question"*), with an un-park trigger (sec 25.9 Stage 2 exits positive) rather than a date. Two halves: *does TopK-induced feature death act as a useful importance filter?* -- whose two live explanations, death-as-selection and feature splitting, make **opposite** predictions about per-feature vs per-role causal effect and are therefore separable by Component A at no new primitive -- and *why is the best recipe model-dependent?*, whose leading hypothesis is that revival's benefit tracks `effective_dim` (2.66 hurts / 8.67 helps / 44.26 needs nothing). That second half has a **within-model** discriminating experiment, which is the part worth keeping: `effective_dim` varies **12-fold across TimesFM's own depth** (31.65 at `stacked_xf.2` to 2.49 at `.18`), so a five-cell A/B on one model holds architecture, tokenizer and corpus fixed and separates the dimensional hypotheses from the tokenization one -- the latter predicts no depth trend. Novelty is documented as a **claim with its own falsifier** (a named literature check, and the instruction to narrow rather than drop the experiment if it hits), and the consequence stated: if the recipe is model-dependent, a fixed recipe makes every cross-model SAE number a **fairness** problem of exactly the sec 18 kind. One confound flagged so it cannot be misread later -- the `k=48` runs vary k *and* aux_k, so they are not intermediate points on the revival axis, and Chronos's non-monotone gap there is a different axis, not a dose-response. | §25, §25.16-§25.20, **§22.0**, §0.5 item 16 |
 | **09-17** (user-directed, §34 — **design only, nothing implemented**) | **User asked for five things at once and explicitly forbade implementing any of them:** analysis depth a researcher needs, statistical assurance via *private* benchmark validation, a report subsection letting a reader trust the benchmark's diversity and non-leakage, more hooks for current TSFM models, and a dedicated adapter area so others can contribute — *"make a detailed plan on roadmap.md that any small less capable model will be able to use and implement correctly... a lot of details, failure modes and how to deal with them, and descriptions of tests."* Wrote §34: five packages (A–E), 21 items, each with **File:**, numbered sub-items, failure-mode tables, acceptance criteria and a named load-bearing negative, plus a 14-row ordering table, 14 cross-cutting failure modes keyed to the §11 traps that earned them, ~60 specified tests, five things not to do, and six open questions with recommendations. **The session's own work was a grounding pass, not writing** (§2.4): eleven premises established by reading code and artifacts, three of which contradict what `CLAUDE.md` says about the same code. The load-bearing ones: **the leakage gate's verdict is computed and discarded** (`builder.py:195-229` collects `rejected` and calls `find_near_duplicates`; `build_and_seal` seals public with **no `extra=`**; `run_full.py:157-163` only `print()`s the counts; `benchmark_large/public_dev/manifest.json` carries `"extra": {}`) — §15 A2's shape at a second site; **`_global_digest` hashes sample content only** (`seal.py:29-31`), which is the entire safety argument for persisting that verdict under `extra` and is pinned as test T-B1.1; **`find_near_duplicates` runs on the union with no split labels** (`builder.py:222`), so the only leakage-relevant pairs — the cross-split ones — are indistinguishable; **nothing anywhere computes statistical power or a minimum detectable effect** (zero grep hits across both packages), so every "no significant difference" in the repo is currently indistinguishable from "underpowered"; **validation has only ever targeted `public_dev`** (`run_validation.py:50`), so the private split every confirmation depends on is unvalidated and dev↔private exchangeability is asserted (§6.7) and measured nowhere; **`confirmation.json` records no corpus digest, epoch or composition**, so "confirmed on the private split" names no particular split under §4.5's epochs; **the report's 17 sections include none about the data** and `validation_report.json` is read by nothing in `tsfm_lens`; **`gates.py`'s thresholds have one calibration point** (its own docstring); and `audit.realism_report` has **zero callers** while `CLAUDE.md` §4.4 describes it as firing on every sample (flagged for re-confirmation per §2.9, not acted on). Also recorded rather than done silently: **two §22 un-park triggers fired** — §22.2 ("a specific model someone actually wants analyzed") → package D, and §22.3's adapter half ("a second person tries to run the pipeline") → package E; §22.3's other halves stay parked and §22.8's three outright rejections are untouched, with §34.4's UMAP figure carrying an explicit note that the *corpus catch22 feature space* is a different object from the activation-space embeddings §22.8 rejects. **No code changed.** | §34, §34.9's ordering table, §0.5 item 17, §22.2/§22.3 |
+| **09-22** (user-directed, §37 — **design only, nothing implemented**) | **Reviewed the unfinished roadmap against the founding questions (what concepts, shared how, causal how) and wrote §37, the Concept Atlas, P0–P8.** Grounded against code: concept/transfer drivers have no non-test caller, extra-seed SAEs are discarded, transfer has no FDR, and the generators' seasonal amplitude, anomaly magnitude, heteroskedastic depth, non-zero trend scale and intermittency rate are draw-neutral. That last fact is what makes P6's counterfactuals clean. Edited §35.0/§36/§29.7/§32.10/§0.5 in place rather than restating them. | §37, §0.5 item 20 |
 ---
 
 ## 15. Audit — silent-failure paths and fragile mechanisms
@@ -25190,13 +25211,17 @@ pinned** — the floor it produces is real, but it is a floor for
    `not quotable` with §29.6's table as the measured reason. **This is a
    user decision** — one of six pairs, with a known confound on one side,
    is a judgement about what the number is worth, not a measurement.
+   🔵 **Superseded 2026-09-22 by §37 P5b**, whose within-run floor (matched
+   random features ablated on the same shared series) covers all six pairs
+   with no twin.
 2. **`reach_probe`'s absolute `_EPS`** (§29.5) — make the reachability test
    relative to the forecast scale, as its own change, with every recorded
-   Stage 2 verdict re-derived under it.
+   Stage 2 verdict re-derived under it. → **Specified as §37 P5a.**
 3. **`reach_probe` cannot distinguish "no reach" from "could not measure
    reach"** (§29.3) — when `written_differs` is False the probe should
    escalate to a constructed replacement rather than returning a
-   zero-valued `cross_delta` that reads as a measurement.
+   zero-valued `cross_delta` that reads as a measurement. → **Specified as
+   §37 P5a.**
 
 `configs/null_4model_causal_floor.yaml` (untracked, all four adapters with
 `random_init: true`) exists and is unmodified; **no twin run directory was
@@ -25711,6 +25736,12 @@ With the stratum-matched null the statistic becomes graded and informative:
 |---|---|---|
 | forward only | 509 of 830 | **61.3%** |
 | reciprocal (both directions) | 403 of 830 | **48.6%** |
+
+⚠️ **Superseded as a current figure (2026-09-22, §37.3 P0 Findings).** These
+counts come from an 88-concept `concepts.json` that is no longer on disk. The
+current `transfer.json` has 284 pairs over 30 concepts (131 reciprocal), and it
+is itself stale against §32 D's 4-concept `concepts.json`. The table is kept as
+the historical measurement; do not quote it as the run's state.
 
 **Reciprocal** means: A's concept's top-20 series `S_A` are separated in B by
 some feature `f_B` above the matched null (forward), **and** `f_B`'s own top-20
@@ -29723,6 +29754,8 @@ known return-value warning) — no new warnings, no new failures.
   worth probing; two thirds of them then move nothing past their own null. That
   may be a correct negative — most features are not causal — or a sign the
   selection rules pick on a criterion the battery cannot see. Not investigated.
+  → §37 P4 answers it in part: it separates level carriers whose level effect is
+  below the null from features with no effect at all.
 - **Whether a feature's firing is concentrated on a few tokens** is unmeasured
   and is a live candidate for mechanism (2): `f['activation']` is the
   **series-level pooled** value (`sae/response.py`'s own docstring), while the
@@ -33963,6 +33996,11 @@ was still on the page to contradict.
 
 ### 35.0 Status, provenance, and the one-paragraph version
 
+🔵 **Re-scoped 2026-09-22 by §37.** First implementation targets **SAE
+features**, with §37 P2's replicate dictionaries as the same-model reference
+spectrum; the residual-stream measurement stays the control §35.4 already calls
+it. Start after §37 P2. §35.11 items 1–2 may land on their own at any time.
+
 🔴 **DESIGN ONLY. Nothing in this section is implemented, and the instruction
 that produced it said explicitly not to implement it.** That includes the
 report-copy changes in §35.11 — those are written as exact before/after
@@ -34794,6 +34832,11 @@ and it is worth nothing if CCM has not already cleared §35.10.
 
 ## 36. The L1 section becomes two-tier — CCM figures added, CKA demoted behind a measured gate (added 2026-09-22, user-directed — DESIGN ONLY, NOT IMPLEMENTED)
 
+⏸️ **Parked 2026-09-22 (§37).** Un-park trigger: §35's rotation control passes
+and its promotion gate is met on a real run. It is a layout change gated on a
+metric that does not exist yet, and it does not serve the founding questions §37
+targets.
+
 ### 36.0 What was asked, and the one qualification that changes the design
 
 **The instruction.** "I don't want to get rid of what I already have with CKA,
@@ -35294,3 +35337,1005 @@ or a checkpoint, so none of it is a `CLAUDE.md` §2.8 background-agent job.
    `report` stage's fingerprint (§11.51's fourth defect). **Recommend no
    config knob** — the tests construct both tiers from fixtures, which is
    cheaper and cannot leak into a real run.
+
+
+---
+
+## 37. The Concept Atlas — one pipeline for "what concepts, shared how, causal how", with the rigor each claim needs (added 2026-09-22, user-directed — DESIGN ONLY, NOT IMPLEMENTED)
+
+### 37.0 Status, provenance, and the one-paragraph version
+
+🔴 **DESIGN ONLY. Nothing in this section is implemented.** Every number below
+is either a measurement already recorded elsewhere in this file (cited by
+section) or a grounding fact checked against the code on 2026-09-22 (cited by
+`file:line`). No run was made, no artifact changed.
+
+**Provenance.** The user asked for a review of the unfinished roadmap against
+the repo's most interesting research direction — *what interpretable concepts
+TSFMs learn, whether those concepts are shared across models, and whether they
+causally affect the forecasts* — with an eye to easier understanding, faster
+setup and more rigorous statistics. The review found that §34 is fully closed,
+that §35/§36 are well-specified but aim at L1 geometry rather than at this
+question, and that the concept machinery built in §25–§32 already holds most of
+the ingredients but never assembles them into a claim. Then: *"write this into
+roadmap with detailed design steps and reasoning, and what to test."*
+
+**The one-paragraph version.** The repo can already name concepts
+(ablation-clustered SAE features, §30), test whether another model groups the
+same series (§30.2's stratum-matched transfer test), and measure what removing
+a feature does to the forecast (§27). What it cannot do is say, for any single
+concept, **"this is a property of the model and not of one SAE draw; it is
+about input property X in the causal sense; it is shared with model B; it does
+the same thing to the forecast in both; and all of that held on data nobody
+looked at."** Each clause fails today for a specific, measured reason (§37.1).
+This section designs the missing pieces as eight items, **P0–P8**, most of them
+thin layers over code that already exists, and one genuinely new experiment —
+**generator counterfactuals** (P6) — which uses the one asset no other TSFM
+interpretability setup has: exact, seeded generators that can re-emit the
+*same* series with *one* component changed and every other component
+bit-identical. That turns "concept C correlates with seasonality" into "raising
+seasonal amplitude raises C, and removing C removes the forecast's response to
+that amplitude" — a mediation claim, measured within each model and compared
+across models the way invariant 5 requires.
+
+**Who this is written for.** A session with no memory of this conversation,
+possibly a smaller model, implementing from this text alone. Function names,
+artifact keys, thresholds and tests are stated literally. Where a choice is a
+judgment call rather than a derivation, it is marked **(judgment)** and §37.12
+lists it as a decision for the user or for a reviewing session.
+
+### 37.1 The claim, and why each clause fails today — grounded
+
+The target claim, per concept, has five clauses. Each row states what exists,
+the measured reason it is insufficient, and the item that fixes it.
+
+| # | Clause | What exists | Why it is insufficient (evidence) | Item |
+|---|---|---|---|---|
+| 1 | **Stable** — a property of the model, not of one SAE training draw | `sae.n_seeds` retrains each target at extra seeds (`config.py:500`) | Extra-seed dictionaries exist only to size a noise floor and are **discarded** ("Only the primary seed's SAE ... the extra seeds exist to size the floor, not to be analyzed", `config.py:493-499`). No concept has ever been checked against a second dictionary. §13's own seed study showed single-seed SAE ΔMASE values are uninterpretable (TimesFM sd 0.121); concepts built on one dictionary inherit that. | **P2** |
+| 2 | **About X, causally** — the concept responds to an intervention on input property X | Structural ρ against ground-truth fields (§26 A1–A3), residualized against provenance | Correlational by construction. §26 A3 found the residualized version 93% noise until gated; §30.1 found argmax naming fails its own null (30.3% vs a 30.3% p95). No input-side intervention exists anywhere in the SAE stack. | **P6** |
+| 3 | **Shared** — another model represents it too | `sae/transfer.py`: 403 of 830 pairs reciprocal, 43 of 88 concepts reach all three other models (§30.2) — ⚠️ **stale** (P0 Findings, §37.3): the artifact on disk has 284 pairs/30 concepts, and the current `concepts.json` has 4 | (a) Every p is a p95 comparison with **no multiplicity correction** — `grep -rn "benjamini\|fdr" tsfm_lens/sae/` returns nothing, and at 5% about 41 of 830 tests clear by chance. (b) The rate has **no ceiling**: nothing says what fraction a concept would transfer *to a second SAE of the same model*, so 48.6% cannot be read as high or low. (c) Dev split only. | **P2, P3, P7** |
+| 4 | **Causal on the forecast** — removing it changes the forecast beyond a null | `feature_ablation_fingerprints` (§27), 9 channels, row-matched random-direction null | PC1 of the 64-step ablation delta curves explains **98.3%** of variance and is nearly flat across the horizon (§30.2): "causal" currently means, overwhelmingly, "shifts the forecast level". **64.4%** of causal candidates clear no channel (§32.7b). | **P4** |
+| 5 | **Same causal role in both models** | §27's `add_role_causal_agreement`: 1 `same causal role` vs 18 `fires together, acts differently` | (a) **No floor**: the untrained-twin floor is obtainable for 1 of 6 pairs (§29). (b) Each model's ablation is measured on *that feature's own* top-firing series (`response.py:632` docstring), so for a cross-model pair the two effects are measured on **partly different inputs** — a disagreement conflates "acts differently" with "was measured on different series". (c) `reach_probe`'s absolute `_EPS = 1e-12` passes numerically dead models (§29.5). | **P5** |
+| — | **Held out** | `confirm` replicates L0, L1 peak CKA and L3 fingerprints (`analysis/confirm.py:383,447`) | No concept claim is ever registered (`analysis/hypotheses.py` has l0/l1/l2/l3/clustering entries only). And `benchmark_large`'s private split has already been read **three** times (§26 F: `full_report_run_large`, `_revived`, `_4model`), so it is no longer a one-shot held-out set for anything new (§6.7). | **P7** |
+| — | **Runnable** | `sae/concepts.py::run_concepts`, `sae/transfer.py::run_transfer` | 🔴 **Neither has a caller outside `tests/`** — no pipeline stage, no CLI script (checked: `grep -rn "run_concepts\|run_transfer"` over `run_*.py` and `tsfm_lens/` finds only their own definitions and docstrings). The `concepts.json`/`transfer.json` on `runs/full_report_run_4model` cannot be regenerated by any documented command. The surrounding chain is 8 standalone `run_sae_*.py` scripts. ✅ **Fixed 2026-09-23 (P1): the `concepts` stage runs the whole chain; see §37.4 Findings.** | **P1** |
+
+**What the table implies about the plan as a whole.** §35 (CCM) and §36 (L1
+two-tier layout) improve *geometric* comparison, which is the question L1
+already answers adequately with its nulls. The three founding questions the
+user highlighted live in the concept stack, and every one of its weak links is
+cheaper to fix than §35 is to build. So §37 goes ahead of §35/§36 in §0.5, and
+§37.11 folds §35's metric into this plan where it earns its place (on SAE
+features, with P2's seed replicates as its null) rather than competing with it.
+
+### 37.2 Design principles specific to this section
+
+1. **Every clause gets its own reference, measured in the same run.** Stability
+   is referenced against a second dictionary of the same model; transfer
+   against both a stratum-matched null *and* the within-model ceiling; causal
+   effects against a row-matched random-direction null; input response against
+   matched random feature sets; mediation against matched random ablations. No
+   clause is scored against zero (§24's rule).
+2. **Cross-model comparisons happen on shared inputs, always.** Transfer
+   already does this. P5 and P6 extend it to causal measurements: both models
+   are intervened on the *same* series, and only the within-model results are
+   compared (invariant 5).
+3. **The existing artifacts are the source of truth; new stages read them.**
+   `sae/<model>/<layer>_ablation.json`, `sae/concepts.json`,
+   `sae/transfer.json` keep their schemas. New fields are added, never renamed
+   (the §11.39 rule: add a canonical key, leave legacy keys untouched, read
+   new-then-legacy).
+4. **Three honest states everywhere** — measured-and-passes, measured-and-fails,
+   and *not measured* (with the reason). A concept with no seed replicate is
+   `stability: "not measured"`, never `stable: False` (§11.37).
+5. **Deterministic descriptions only.** Concept names come from §30's
+   `compose_name`. The Qwen narrator is out of scope for this section (§28.12
+   and §32.7d already decided that generated text does not converge at the
+   summary level); nothing here depends on it.
+
+### 37.3 P0 — Premise measurements, zero GPU (~0.5 session)
+
+**Why first.** Two premises in §37.1 are quantitative and cheap to check, and
+the design of P3 and P4 depends on their size. Per `CLAUDE.md` §2.4, measure
+them before building on them.
+
+**Steps.**
+1. **Multiplicity arithmetic on the existing transfer artifact.** Load
+   `runs/full_report_run_4model/sae/transfer.json`. For each pair, the artifact
+   holds `auc` and `null_p95` but **not** a p-value (`transfer.py:162`
+   returns p95 only). Recompute the forward-leg empirical p for every pair by
+   re-running `transfer_one`'s null with the stored seeds (`_seed(src,
+   concept, base=transfer_seed)` is stable, so the draws are reproducible) and
+   returning `p = (1 + #{null_max >= obs}) / (1 + n_null)`.
+2. Apply Benjamini–Hochberg at q = 0.05 (a) over all 830 pairs and (b) per
+   ordered model pair. Record how many survive under each, beside the
+   uncorrected 509/403.
+3. **Record the p-floor arithmetic, because it decides P3's design.** At
+   `transfer_n_null: 200` the smallest attainable p is 1/201 ≈ 0.00498. BH over
+   m = 830 at q = 0.05 lets rank r survive only if p ≤ 0.05·r/830, so **at least
+   83 tests must sit exactly at the floor before any test can survive** — the
+   §6.6 p-floor trap in a new place. Per model pair (m ≈ 138) the requirement is
+   r ≥ 14. State the observed count at the floor.
+4. **Level share on the existing ablation artifacts.** For every candidate in
+   every `*_ablation.json` that kept forecasts (`keep_forecasts=3`), compute
+   `level_share = mean_s(a_s²) / mean_s(mean_h(d_s(h)²))` where
+   `d_s = ablated_s − baseline_s` and `a_s = mean_h(d_s)`. Report the
+   distribution per model. §30.2's PC1 98.3% predicts a median near 1.
+
+**Tests.** None beyond a small script under `scratchpad/` or a function in
+P3's module; this is measurement, not a feature.
+
+**Acceptance.** A Findings block under P0 with: the BH survivor counts (both
+families), the number of tests at the p-floor, and the level-share quantiles
+per model, all at full precision.
+
+**Go/no-go.** If BH over 830 leaves **fewer than half** of the 403 reciprocal
+pairs, §30.2's universality table is materially overstated and P8's report must
+lead with the corrected counts. That is not a reason to stop, but it is a
+correction to record in §30.2 in place.
+
+**Findings (2026-09-22, run by a Sonnet subagent, headline claims re-verified
+from the artifacts by the orchestrating session; scripts and JSON at
+`scratchpad/p0/`).**
+
+🔴 **The premise this section measures no longer exists on disk. The go/no-go
+cannot be evaluated as written.** In `runs/full_report_run_4model`,
+`sae/transfer.json` (mtime 09-11 15:40) holds **284 pairs over 30 concepts**
+(131 reciprocal, 160 forward), not 830 over 88. `sae/concepts.json` (09-12
+21:32) holds **4 concepts**. Two concepts at `Chronos-Bolt/encoder.block.3` and
+two at `TimesFM/stacked_xf.10`; the other **11 of 13 targets are
+`non_modular`**. The cause is **not nondeterminism**: `_sweep_k` seeds `KMeans`
+with `random_state=seed`. It is §32 Item D's deliberate clustering change
+(`concept_min_members: 3`, 30 → 4 concepts, recorded at §32 D's Findings),
+after which `transfer.json` was **never rebuilt**. §30.2's 88/830 predates even
+the 30-concept artifact. So §37.1 row 3's figures are stale twice over, and
+nothing flagged it: `transfer.json` is written by a standalone driver, outside
+the §15 A3 fingerprint check. That is §11.40's shape, a downstream artifact
+outliving the upstream one it was built from. P1's stage is what closes it.
+
+- **Null reproduction.** Using `transfer.py`'s own functions and seeds, the 38
+  of 284 pairs whose source concept still exists identically reproduce
+  **exactly**: `auc`, `null_p95`, `rev_auc`, `rev_null_p95` all max|Δ| = 0.0,
+  and 0 best-feature mismatches. The other 246 reference concepts no longer on
+  disk and cannot be audited.
+- **On that 38-pair subset** (p-floor 1/201 = 0.004975124378109453):
+  - Forward-leg p at the floor: 13 of 38. Reverse-leg p at the floor: 26 of 38.
+  - BH at q = 0.05, per leg (m = 38): 19 forward and 29 reverse survive.
+  - Reciprocal: **19** under BH versus **23** uncorrected on the same subset.
+  - Forward-clearing and reciprocal are identical sets here (0 asymmetric).
+  - These are small-n numbers and must not be generalized.
+- **p-floor arithmetic checked:** m = 830 needs r ≥ 83 at the floor (exact),
+  m = 284 needs 29, and m = 38 needs 4.
+- **Level share, 452 scorable candidates.** 16 have an exactly-zero denominator
+  (d ≡ 0 on every kept series) and are excluded as undefined, not scored
+  (§11.37). Pooled over n = 436:
+  - min 0.0, p10 0.06552579024656555, p25 0.21112606949082768
+  - **median 0.5350824205184874**, p75 0.8640299722572775
+  - p90 0.9589944468604472, max 0.9980742621984077
+  - **fraction > 0.9: 0.20642201834862386**
+
+  Median per model:
+
+  | model | n | median level share | fraction > 0.9 |
+  |---|---|---|---|
+  | TimesFM | 147 | 0.6872249220301392 | 0.3129251700680272 |
+  | Sundial | 126 | 0.5418738746084368 | 0.12698412698412698 |
+  | Chronos-2 | 114 | 0.46669720387541236 | 0.21052631578947367 |
+  | Chronos-Bolt | 49 | 0.296875715615301 | 0.08163265306122448 |
+
+  **Step 4's prediction ("a median near 1") is refuted.** §30.2's 98.3% is the
+  PC1 variance share of the *pooled* delta-curve matrix, which a minority of
+  large, level-dominated effects can produce. Per candidate, the level shift
+  is a majority of the effect in only about half the features. **P4 therefore
+  matters less as a de-confounder and more as a descriptor.** Its
+  level-carrier / shape-causal tags split the population roughly in half,
+  rather than rescuing a minority from a dominant confound.
+
+**Consequence for the plan.** The atlas's current population is **4 concepts
+in 2 targets** under the default clustering rule. P2/P3/P5/P6 were sized
+against 88. See §37.15 question 6.
+
+### 37.4 P1 — A `concepts` pipeline stage and one preset (~1 session)
+
+**Why.** Setup is the precondition for every other item: none of P2–P8 is
+reproducible while the concept chain has no entry point. And a reader of this
+repo who wants the three founding questions answered should need one command.
+
+**Design.**
+1. **New `Stage("concepts", ["sae"], ...)`** in `pipeline.py`, ordered after
+   `sae` and before `exemplars`/`register`. Its runner
+   (`tsfm_lens/sae/concept_stage.py::run_concept_stage(cfg, hub, store)`)
+   chains, per target resolved by `sae.targets`:
+   1. `feature_ablation_fingerprints` (currently driven only by
+      `run_sae_ablation.py`) — move the driver body into a function the stage
+      and the script both call, so the script becomes a thin CLI wrapper and
+      the two cannot drift (§11.24).
+   2. `run_concepts(run_dir, cfg)` → `sae/concepts.json`.
+   3. `run_transfer(run_dir, concepts, cfg)` → `sae/transfer.json` (panel/pair
+      runs only; see step 4).
+   4. The deterministic description pass (`run_sae_describe.py`'s
+      deterministic path, already Qwen-free since §32.9 PRUNE).
+2. **Requirements the stage declares.** Capability tier ≥ 2 (steerable — the
+   ablation battery patches via `token_patch`) in `_STAGE_MIN_TIER`;
+   `sae.persist_features: true` (transfer reads `space="sae"`) — the stage
+   **raises at preflight** if it is off, rather than degrading, because a
+   concept run without persisted features cannot produce its central artifact.
+   Run shape: `solo` runs ablation+concepts and skips transfer with a stated
+   reason (not by `_STAGE_MIN_MODELS`, which would drop the whole stage).
+3. **Config.** New `ConceptsConfig` section `concepts:` with `enabled: bool =
+   False` plus the new knobs from P2–P6. **Do not move** the existing
+   `sae.concept_*` / `sae.transfer_*` fields (`config.py:655-692`): removing
+   them from `sae` changes the `sae` stage's resolved fingerprint and would
+   refuse every existing run as stale (§11.51's fourth defect). The `concepts`
+   stage declares them as field-level keys, which `manifest.resolve_config_keys`
+   supports (`"sae.transfer_top_k"` form, `manifest.py:28-50`), plus the whole
+   `concepts` section.
+4. **Preset `configs/concept_atlas.yaml`** — the four models of
+   `configs/full_report_run_4model.yaml`, the §26 revival recipe
+   (`aux_k`, `dict_size_policy: search`, `min_train_steps`),
+   `sae.persist_features: true`, `concepts.enabled: true`, and the stages the
+   atlas needs (`extract, budget, layer_screen, l0, l3, sae, concepts,
+   register, confirm, report`) — L1/L2/attention/cluster left on at their
+   defaults, since the atlas's cross-check against L3 specialists (§30.2's
+   ordering argument) needs L3. Its leading comment states the private-epoch
+   requirement from P7.
+5. **`run.py --list-configs`** picks the preset up automatically (it derives
+   from files). Add the stage to `stage_docs.py` (four lines) and `glossary.py`
+   ("concept", "transfer", "within-model ceiling", "level share",
+   "counterfactual dose") and re-run both `--check` gates.
+
+**Tests** (`tests/test_concept_stage.py`, mock adapters, CPU):
+- `test_stage_chain_writes_all_three_artifacts` — `configs/smoke.yaml` +
+  `sae.enabled/persist_features/concepts.enabled` writes
+  `*_ablation.json`, `concepts.json`, `transfer.json`.
+- `test_script_and_stage_produce_identical_ablation_json` — the refactored
+  `run_sae_ablation.py` and the stage produce byte-identical JSON on the same
+  mock run. **Load-bearing negative:** plant a different default in the script
+  path and confirm the test fails.
+- `test_preflight_refuses_without_persisted_features`.
+- `test_solo_run_skips_transfer_with_reason` — the artifact carries
+  `transfer: {"status": "skipped", "reason": "run shape solo"}`.
+- `test_existing_sae_fingerprint_unchanged` — resolving the `sae` stage's
+  fingerprint for `configs/full_report_run_4model.yaml` before and after the
+  change is identical (this pins the "do not move the fields" rule).
+
+**Acceptance.** Re-run only the `concepts` stage against an **isolated copy**
+of `runs/full_report_run_4model` (the SAE checkpoints and persisted features
+are there) and compare to the committed `concepts.json`/`transfer.json`.
+Transfer must reproduce **bit-identically** (it is deterministic given
+`transfer_seed`, §30.2). Concepts must reproduce **bit-identically** if the
+committed artifact was produced by the current `run_concepts`; if it does not,
+**that is a finding** — record which fields differ and treat the stage's output
+as the reference from then on, since the committed file has no reproducible
+provenance.
+
+**Findings (2026-09-23) — ✅ DONE.** Built as designed: `sae/ablation_run.py`
+(driver body, shared by `run_sae_ablation.py` and the stage),
+`sae/describe_run.py` (same for `run_sae_describe.py`), `sae/concept_stage.py`,
+`ConceptsConfig` (`concepts:` section; ablation knobs default to the script's
+CLI defaults 8/16/64/3/12, pinned by a test), `Stage("concepts", ["sae"])`
+at tier 2 with field-level `sae.concept_*`/`sae.transfer_*` keys, a preflight
+placed **after** the tier/shape gates (placing it before would refuse a stage
+the gate was about to drop, §11.35), `configs/concept_atlas.yaml`, stage doc
+and two glossary terms (both `--check` gates green). `sae/concept_stage.json`
+records per-target ablation state and a `transfer` block that is `skipped`
+with a reason in five cases (transfer disabled, solo shape, <2 models, no
+concepts, unpersisted features); a skipped transfer or describe **deletes**
+this run dir's previous `transfer.json`/`descriptions.json` — the exact
+stale-artifact state §37.3 P0 found. Deviations from the plan: the three
+glossary terms belonging to P2–P5 ("within-model ceiling", "level share",
+"counterfactual dose") are deferred to those items; the planned
+`test_existing_sae_fingerprint_unchanged` against the 4-model run became
+`test_existing_sae_fields_not_moved` + `test_fingerprint_scoping`, because
+that run's `sae` (and `layer_screen`) fingerprints **already** fail to match
+current code — every field added to a whole-section key since 09-04
+(`concept_*`, `transfer_*`, `holdout_frac`, `min_gap`, ...) marks older runs
+stale. This is pre-existing and not caused by P1 (every other stage still
+matches), but it means `allow_stale=True` is needed to rerun any stage of
+that run.
+
+*A real pre-existing bug fixed on the way:* `run_sae_ablation.py --all` on a
+run with no Component A artifacts crashed on its first target
+(`KeyError: store.load('patchy','blocks_5')`): layer names came only from
+`*_stage2_response.json`, so without one the **sanitized** checkpoint name
+was passed to the store. Names now come from `sae/meta.json` first.
+
+*Tests:* `tests/test_concept_stage.py`, 8 tests, ~23 s on CPU. All 7 planted
+regressions fail their target test (script default drift; revert of the
+name fix; stale file not removed; preflight removed; a config key dropped
+from the stage; the no-concepts skip reason removed; a default mismatch). 243
+passed across smoke/concept-stage/describe/causal-matching/docs/tiers.
+
+*Acceptance*, on an isolated copy of `runs/full_report_run_4model`, stage run
+alone (`--stages concepts`, `allow_stale`):
+- **Ablation: 13 of 13 targets content-identical** to the 09-08 artifacts
+  (`json.dumps(sort_keys=True)` equal, clearing-cell counts e.g. 53 / 14.4
+  expected at `TimesFM/stacked_xf.10`). They are **not byte-identical**: the
+  09-08 files are compact JSON, and `save_json` now writes indented output
+  with different key order. Script and stage share one writer, so they agree
+  byte for byte with each other (pinned by the identity test).
+- **Concepts: identical in every field except each concept's `name`** (e.g.
+  Bolt `encoder.block.3` c0 was `mild lowers trend` on disk and is now
+  `mild raises horizon_shape_far`). Same 4 concepts (2 at Bolt `encoder.block.3`, 2 at TimesFM
+  `stacked_xf.10`), same members; 11 of 13 targets non-modular. Only the
+  naming code changed after 09-12. **The stage's output is the reference
+  from now on.**
+- **Transfer: the stage equals a standalone `run_transfer` call byte for
+  byte.** 38 pairs, 23 clear forward, 23 reciprocal (uncorrected). All 38 are
+  identical to a pair in the stale 284-pair file — these are exactly the 38
+  pairs §37.3 P0 found reproducing. So P0's subset analysis (BH per leg: 19
+  reciprocal) is the correct current figure, and the stale file's other 246
+  pairs had no current concepts behind them.
+
+**Cross-model Concept Atlas (2026-09-23, §37.15 q6 decision) — ✅ built.**
+`sae/concept_atlas.py`, `report/sae_concept_atlas.py`,
+`tests/test_concept_atlas.py` (17 tests), wired into the `concepts` stage as an
+additive `atlas` block (`concepts.atlas_*` knobs). How it works:
+- All causal features from every non-withheld target are pooled into one
+  9-channel ablation space, across all four models.
+- Clustering is complete-linkage cosine clustering, so every pair inside a
+  concept is at or above `atlas_min_cosine`. The chain-case test shows average
+  linkage breaks this guarantee (it forms a cluster whose worst pair is 0.766
+  at a 0.85 threshold).
+- Groups with fewer than 3 members are left unassigned.
+- The figure is PCA of the unit-normalized profiles, one fit shared by every
+  panel: one panel per model plus "All models". PCA explains 27.3% + 22.3% of
+  the variance.
+
+This work was implemented by a Sonnet subagent and reviewed here. Review
+found one defect in the cross-model null and fixed it: only its right tail
+was computed. On this run the right-tail p is 1.0, which the agent's report
+read as "not significant", yet the true state is the opposite extreme. So a
+left tail was added, plus a finer statistic: mean *purity*, the largest single
+model's share of each concept. From the two tails of the purity statistic,
+the atlas derives a `verdict` of `drawn together` / `segregated by model` /
+`consistent with chance`.
+
+*Calibration on `runs/full_report_run_4model`* (201 pooled causal features:
+61 Chronos-2, 61 TimesFM, 53 Sundial, 26 Chronos-Bolt; structure null =
+column-shuffle, 200 draws):
+
+| min_cosine | assigned | concepts | struct null mean / p95 / p | concepts spanning ≥2 models (null mean, p below) | purity real / null (p segregated) |
+|---|---|---|---|---|---|
+| 0.6 | 182 | 24 | — / 39.0 / 1.0 | 23 | — |
+| 0.7 | 172 | 32 | — / 39.0 / 0.891 | 30 | — |
+| 0.8 | 136 | 33 | 26.04 / 31.0 / 0.0199 | 28 (31.965, 0.0050) | 0.6338 / 0.5433 (0.0149) |
+| 0.9 | 63 | 19 | 9.62 / 13.0 / 0.0050 | 14 (17.940, 0.0100) | 0.6667 / 0.5672 (0.0100) |
+
+**Default set to 0.9.** At 0.8, shuffled channels alone produce 26 of the real
+33 concepts on average. At 0.9 the real count is about twice the null mean.
+Below 0.8 the real count does not beat the null at all.
+
+**Result, both halves quoted together:**
+- Most concepts *are* shared across models: 14 of 19 span ≥2 models at 0.9,
+  and 28 of 33 at 0.8.
+- Yet features group by model **more than chance predicts**: verdict
+  `segregated by model` at both thresholds. A concept's largest model holds
+  67% of its members, against 57% under label permutation.
+- So cross-model concepts exist, but each architecture's causal profiles are
+  partly its own.
+- Evidence class: shared *forecast-effect profile*. Shared input selectivity
+  is what transfer (P3) tests, not this.
+
+UMAP coordinates are stored as an optional extra and are not bit-reproducible
+(numba threading); the figure uses PCA, which is.
+
+### 37.5 P2 — Seed stability, and the within-model ceiling that gives transfer its denominator (~1 session + GPU)
+
+**Why.** Clause 1 (stability) and clause 3b (a ceiling for transfer) are the
+same measurement. Transfer between two SAEs of the *same* model at the *same*
+layer, trained at different seeds, answers both: a concept that fails to
+transfer to its own model's second dictionary is an artifact of one SAE draw,
+and the fraction that do transfer is the most a cross-model rate could
+plausibly reach. This is also the null Li et al. (2015) use for convergent
+learning — two runs of the same thing — which §35.1 notes this repo lacked.
+
+**Design.**
+1. **Persist replicate dictionaries.** New `concepts.n_sae_seeds: int = 3`
+   (primary + 2). For each target, train seeds `run.seed + 1 .. n-1` at the
+   **primary's chosen `dict_size`** (never re-run the size search — a
+   replicate at a different size confounds stability with capacity, which is
+   §11.29's shape). Save checkpoints to `sae/<model>/<layer>@r<i>.pt`.
+2. **Persist their pooled features.** Extend `ActivationStore` with an optional
+   `replicate: int = 0` on `init_sae_layer`, `write_sae_batch`,
+   `has_sae_features` and `load(..., space="sae")`, stored under
+   `sae_r{i}/` and `sae_pooled_r{i}/` groups. `replicate=0` must map to the
+   **existing** `sae`/`sae_pooled` paths exactly, so no existing store moves.
+   `encode_and_persist_features(..., replicate=i)` passes it through.
+3. **Stability test.** New `sae/stability.py::concept_stability(run_dir, concepts,
+   cfg) -> dict`. For each concept at the primary dictionary and each replicate
+   `i`, call `transfer_one(src_scores, dst_ranks=rankdata(replicate_i_pooled),
+   ...)` with the same stratum-matched null and the same stable seed derivation
+   (extend `_seed`'s parts with `"@r{i}"`). A concept is **stable** if the
+   reciprocal leg clears at **every** replicate (**(judgment)**: all-of-2 rather
+   than 1-of-2, because "stable" is a claim about the model and a
+   one-of-two pass is a coin flip away from failing). Record per concept
+   `stability: {"replicates": 2, "reciprocal_at": [true, false],
+   "stable": false}`, or `"not measured"` when `n_sae_seeds < 2`.
+4. **Within-model ceiling.** Per target, `ceiling = fraction of primary
+   concepts reciprocal at replicate i`, averaged over replicates, with a
+   concept-level bootstrap CI. Per model, average over its targets.
+5. **Relative transfer.** For each ordered model pair (A, B), report the raw
+   reciprocal rate `R(A→B)` (existing) **and**
+   `R_rel(A→B) = R(A→B) / sqrt(ceiling(A) · ceiling(B))`. Render the raw rate,
+   both ceilings and the ratio together — never the ratio alone, since it can
+   exceed 1 and a reader must be able to see why. **(judgment)**: geometric
+   mean, because transfer depends on both the source concept's stability and
+   the destination dictionary's resolution.
+6. **Stable-only universality.** Recompute §30.2's "reaches 3/2/1/0" table over
+   stable concepts only, beside the all-concepts version.
+
+**Cost.** SAE training ×2 per target (13 targets on the 4-model run) plus one
+encode pass each. No model forward passes beyond what `extract` stored. A
+background agent per `CLAUDE.md` §2.8.
+
+**Tests** (`tests/test_concept_stability.py`, synthetic):
+- `test_replicate_zero_maps_to_existing_paths` — writing and reading with
+  `replicate=0` touches exactly `sae/`/`sae_pooled/`. **Load-bearing:** a store
+  written before this change must still load with no argument.
+- `test_identical_dictionary_is_fully_stable` — a "replicate" that is a copy
+  of the primary gives `stable: True` for every concept and ceiling 1.0.
+- `test_random_dictionary_is_not_stable` — a replicate with random pooled
+  features gives a ceiling inside its own null (reciprocal rate ≤ the rate a
+  shuffled score achieves). This is the load-bearing negative: if it passes
+  with a high ceiling, the test measures stratum structure, not concepts.
+- `test_planted_stable_and_unstable_concepts` — plant two latent factors; build
+  primary and replicate dictionaries that both encode factor 1 (with different
+  feature indices and small noise) and only the primary encodes factor 2.
+  Concept on factor 1 is stable, concept on factor 2 is not.
+- `test_replicate_uses_primary_dict_size` — the replicate never calls
+  `search_dict_size`.
+- `test_seed_derivation_is_stable_across_processes` — run the seed function in
+  a subprocess and compare (§11.2, §11.52's subprocess discipline).
+
+**Acceptance.** On the 4-model run: a stability rate per model, a ceiling per
+model with CI, the relative-transfer matrix, and the stable-only universality
+table, as a Findings block.
+
+**Go/no-go (pre-registered).** If **fewer than 25%** of concepts are stable in
+every model **(judgment)**, the atlas would describe SAE noise. Stop, record
+the result, and fix the dictionary (more data, different k, a different target
+layer) before P4–P8. Do not tune the stability criterion down to pass (§34.9
+rule 5).
+
+### 37.6 P3 — Multiplicity for transfer, and a p-floor that can be met (~0.5 session)
+
+**Why.** Clause 3a. The transfer test runs 830 tests on the 4-model run and
+will run more on any larger panel. Counting how many clear a p95 is a
+per-test error rate, not a family-wise or false-discovery statement.
+
+**Design.**
+1. `transfer_one` gains `p` and `rev_p` fields,
+   `p = (1 + #{null ≥ obs}) / (1 + n)` for both legs (the forward null is
+   already max-over-features, so each p is search-corrected within its test).
+2. **The p-floor.** P0 step 3 shows BH is unsatisfiable at `n_null = 200`
+   unless many tests hit the floor. Raising `n_null` to 2000 costs ×10 on the
+   forward leg, which is the expensive one (`auc_from_ranks` over the whole
+   destination dictionary per draw). Two options, in order of preference:
+   - **(a) Tail approximation.** Keep 200 exact draws for screening; for any
+     test whose exact p hits the floor, fit a generalized Pareto distribution to
+     the top 10% of null maxima and extrapolate p from the fitted tail
+     (Knijnenburg et al., *Bioinformatics* 2009, "Fewer permutations, more
+     accurate P-values"). Use `scipy.stats.genpareto`. Record `p_method:
+     "exact" | "gpd_tail"` per test.
+   - **(b) Adaptive draws.** For floor-hitting tests only, redraw up to 5000.
+   Recommend (a) with (b) as its validation: on one target, run both and require
+   the GPD p to be within a factor of 2 of the 5000-draw exact p for every
+   floor-hitting test. If validation fails, ship (b).
+3. **Families.** BH at `concepts.transfer_fdr_q: 0.05` **per ordered model
+   pair** **(judgment)**: a reader's question is always "between these two
+   models", and pooling across pairs makes one pair's result depend on how many
+   other models were in the run — the property §18 F8 already rejected for L0.
+   Register the families in `report/multiplicity.json` as their own rows
+   (counted, never pooled — §6.5's ledger rule).
+4. `reach`, `matrix` and `universality` are recomputed from FDR-surviving
+   reciprocal pairs (`reciprocal_fdr`), with the uncorrected versions kept under
+   their existing keys (§11.39 rule). A reciprocal pair survives only if **both**
+   legs survive BH in their own families.
+5. **Preflight.** Extend `doctor._check_multiplicity_budget` with the transfer
+   family: warn when `m / (n_null + 1) > q` and the tail method is off.
+
+**Tests** (`tests/test_transfer_fdr.py`):
+- `test_p_value_matches_rank_of_observed` on a hand-built null.
+- `test_bh_survivors_on_planted_mixture` — 900 null tests + 100 planted
+  strong effects; BH recovers ≥ 90 planted and its false share is ≤ ~0.05
+  across 20 seeds.
+- `test_gpd_tail_agrees_with_many_draws` — a known-distribution null where the
+  exact tail p is analytic; GPD within a factor of 2.
+- `test_uncorrected_keys_unchanged` — `reach`/`matrix`/`universality` are
+  byte-identical to the pre-change artifact on a fixture. **Load-bearing:**
+  delete the legacy-key write and confirm it fails.
+- `test_floor_warning_fires` — at `n_null=200`, m=830, tail off → warning.
+
+**Acceptance.** Corrected universality and relative-transfer tables on the
+4-model run, beside P0's numbers.
+
+### 37.7 P4 — Causal fingerprints with the level shift separated (~0.5 session + GPU)
+
+**Why.** Clause 4. If 98% of what ablation does is move the forecast's level,
+then any comparison of causal fingerprints is mostly a comparison of one signed
+scalar (§30.2 point 4). That is a legitimate finding — "most SAE features at
+this layer are level carriers" — but the atlas must be able to distinguish a
+level carrier from a feature that changes the forecast's **shape**, and today it
+cannot.
+
+**Design.**
+1. `battery_statistics` (`response.py:107`) gains `remove_level: bool = False`.
+   When true, the steered/ablated forecast is shifted per series by
+   `−(mean_h(steered) − mean_h(baseline))` before the channels are computed.
+   The same transform is applied to the null's deltas, so each level-removed
+   channel has its own row-matched null.
+2. **Before implementing, audit which of the nine channels are already
+   level-invariant** (e.g. `_horizon_shape(x, baseline)`, dispersion across
+   quantiles, spectral centroid on a mean-removed signal). A channel that is
+   already invariant must give *identical* values in both modes — that is a
+   free correctness check, and a difference means the channel was not what its
+   docstring says. Record the audit table in P4's Findings.
+3. Each candidate record gains `level_share` (P0's definition) and a
+   `shape_channels` block (level-removed effect, null p95, clears).
+4. A concept is tagged `level carrier` if its members' median
+   `level_share ≥ concepts.level_share_threshold: 0.9` **(judgment; calibrate
+   against P0's distribution and record the chosen value)** and no
+   level-removed channel clears; `shape-causal` if any level-removed channel
+   clears; otherwise `no measured effect`. These tags go into the concept
+   record and the name composer's input, so a concept name can say "shifts the
+   level" rather than borrowing a channel word the effect does not support.
+
+**Tests** (`tests/test_level_removed_battery.py`):
+- `test_pure_level_shift` — ablated = baseline + c: every level-removed channel
+  effect is 0 to float tolerance, `level_share == 1.0`.
+- `test_zero_mean_shape_change` — ablated = baseline + zero-mean wave:
+  `level_share == 0` and every level-removed value equals the raw one.
+- `test_already_invariant_channels_identical` — for the channels the audit
+  declares invariant, both modes agree bit-for-bit on random fixtures.
+- `test_null_gets_same_transform` — **load-bearing:** remove the transform from
+  the null path only and confirm the clears-rate on a pure-level fixture jumps
+  (a shape channel scored against a level-carrying null is §11.33's confound).
+
+**Acceptance.** On the 4-model run: per model, the share of causal candidates
+that are level carriers vs shape-causal, and the channels shape-causal ones
+move. Requires re-running the ablation battery (forward passes) — background
+agent.
+
+### 37.8 P5 — Cross-model causal agreement on shared inputs, with a floor every model can have (~1 session + GPU)
+
+**Why.** Clause 5. Three defects stack (§37.1 row 5): no floor for 5 of 6
+pairs, effects measured on different series, and a reach gate that passes dead
+models. The fix for all three is to stop needing an untrained twin: compare
+the two models' ablation effects **on the same series**, and reference each
+agreement against **the same model's other features** ablated on those same
+series.
+
+**P5a — reach gate repairs (prerequisite; §29.7 items 2–3).**
+1. `reach_probe`: replace `cross_delta > _EPS` with
+   `cross_delta / forecast_scale > concepts.min_relative_reach: 1e-4`
+   **(judgment; the two dead twins measured 6.5e-08 and 9.3e-08, live models
+   are orders of magnitude above; record the observed live minimum and set the
+   threshold at least 100× below it)**, where `forecast_scale` is the mean
+   absolute clean forecast the probe already computes.
+2. When `written_diff_vs_target == 0.0` (the replacement is identical to what
+   is there, §29.3), escalate to a constructed replacement (clean × 1.5) and
+   record `reach_method: "constructed"`; never return a zero `cross_delta` that
+   reads as a measurement.
+3. Re-derive every recorded Stage 2 verdict under the new gate in one pass and
+   record which, if any, change (§2.1 — this gate decides downstream verdicts).
+
+**P5b — shared-input agreement.**
+1. For each FDR-surviving reciprocal pair from P3 — source concept `c` in A,
+   destination best feature `f_b` in B — the shared series set is
+   `U = S_A ∪ S_B` (the two top-20 sets the transfer test already computed;
+   ≤ 40 series).
+2. Ablate all of `c`'s members in A on `U`, and `f_b` (plus, if `f_b` belongs to
+   a B concept, that concept's members — record which) in B on `U`, using the
+   existing `_feature_ablated_replacement` generalized to a feature *set*. Both
+   are scored with P4's level and shape channels, null-normalized per model
+   against the row-matched random-direction null on `U`.
+3. **Agreement statistics, two of them, because they answer different
+   questions.** (i) Per-series concordance of the signed level effect across
+   `U` (Spearman over the ≤40 series): do the two models' forecasts move the
+   same way *on the same series*? (ii) Sign agreement of the shape-channel
+   vectors (cosine over channels that clear in either model).
+4. **The within-run floor.** For B, draw 50 random alive feature sets matched
+   to `f_b`'s set size and to its mean pooled activation on `U` (decile
+   matching), ablate each on `U`, and recompute (i) and (ii) against A's fixed
+   effect. The agreement clears if it exceeds this null's p95. Symmetrically for
+   A. This answers "does B's matched feature agree with A's concept more than
+   an arbitrary equally-active B feature would", and it needs no twin.
+5. Verdict per pair: `same causal effect` (both statistics clear),
+   `level only` (i clears, ii does not — expected to be common given P0),
+   `acts differently` (neither clears while both effects individually clear
+   their own nulls), `not scorable` (either side has no effect above its own
+   null — a feature that does nothing cannot disagree).
+6. Keep §27's `add_role_causal_agreement` output untouched; this is a new
+   `sae/transfer.json` block `causal_agreement_shared_input`, not a
+   replacement, so the recorded 1-vs-18 stays regenerable.
+
+**Seeding.** Chronos-T5 and Sundial sample their forecasts; every pair of
+`predict()` calls compared here must reset `torch.manual_seed` to the same value
+(§11.50). Patched captures use `capture_raw_tokens(autocast=False)` (§11.49).
+
+**Tests** (`tests/test_shared_input_agreement.py`, mock adapters):
+- `test_identical_models_agree` — A and B the same mock with the same SAE:
+  verdict `same causal effect` for every pair.
+- `test_sign_flipped_model_disagrees` — B's decoder direction negated:
+  concordance strongly negative, verdict `acts differently`.
+- `test_null_is_matched_on_activation` — the null's mean activation on `U` is
+  within one decile of `f_b`'s. **Load-bearing:** switch to unmatched random
+  features and confirm a planted weak-but-real agreement stops clearing (or
+  starts clearing spuriously) on the fixture built for it.
+- `test_dead_model_not_scorable` — B with zeroed head: `not scorable`, never
+  `acts differently` (§11.37).
+- `test_relative_reach_refuses_dead_twin` / `test_constructed_replacement_when_identical`
+  for P5a.
+- `test_seeded_predict_pairs` — on a stochastic mock, two unpatched predicts
+  inside the harness differ by exactly 0.0.
+
+**Acceptance.** For the 4-model run's surviving pairs: the verdict distribution
+per model pair, beside §27's 1-vs-18, with a short note on how many of §27's
+"acts differently" verdicts survive when both effects are measured on the same
+series.
+
+### 37.9 P6 — Generator counterfactuals and mediation: the headline experiment (~2 sessions + GPU)
+
+**Why.** Clause 2, and the strongest form of clauses 4–5. Every other
+interpretability claim in this repo about *what a feature is about* is
+correlational. The benchmark's generators are exact and seeded, so the repo can
+do what real-data interpretability work cannot: re-create a series with one
+component changed and everything else bit-identical. That gives a true
+input-side intervention (does the concept respond to the property?) and, paired
+with ablation, a mediation test (does the forecast's response to the property
+pass through the concept?).
+
+**Grounding — which knobs are clean interventions.** Read from
+`tsfm_benchmark/build_pipeline/generators.py:30-134` on 2026-09-22. A knob is
+*draw-neutral* if changing it consumes no extra RNG draws, so every other
+component is bit-identical:
+
+| Knob | Draw-neutral? | Reason |
+|---|---|---|
+| seasonal `amplitude` (per seasonality, incl. ×0 = remove) | **Yes** | seasonal terms consume no draws (`generators.py:73-79`) |
+| `anomaly_magnitude` | **Yes** | only multiplies already-drawn signs (`:115`) |
+| `heteroskedastic.depth` (when present) | **Yes** | the phase is drawn regardless of depth (`:90`) |
+| `trend.scale` (when already non-zero) | **Yes**, as a scaling | `rng.normal(0, scale)` is the same draws × scale (`:68`); **0→non-zero is NOT neutral** (adds draws, shifts every later component) |
+| `intermittency.rate` (when present) | **Yes** | same `rng.random` draws, different threshold (`:120`) |
+| `noise_scale` | **No, excluded** | also scales changepoint shifts (`:107`) and anomaly magnitudes (`:115`) — a coupled intervention |
+| `n_changepoints`, `n_anomalies`, adding a seasonality | **No, excluded** | change draw counts |
+
+**Which series.** `random_parametric` records `sampled_params` and
+`inner_seed` in `provenance.generator_params` (`generators.py:404-414`), so every
+such series is exactly reconstructable. Plain `parametric` records only
+`length` in provenance (`:133`); its other parameters live in the task config,
+not the sample. **v1 supports `random_parametric` only** (425 of 965 series in
+`benchmark_large` public, per §30.2's archetype count). Extending to
+`parametric` would need the build config and is out of scope unless a reviewer
+decides otherwise.
+
+**Design — the generator side** (`tsfm_benchmark/build_pipeline/counterfactual.py`,
+new, no change to any existing generator):
+1. `KNOBS: dict[str, Callable]` for the five draw-neutral knobs above.
+2. `regenerate(sample: TimeSeriesSample, knob: str, factor: float,
+   index: int | None = None) -> TimeSeriesSample` — rebuild the `parametric`
+   kwargs from `sampled_params`, scale the knob (for `seasonal_amplitude`,
+   `index` picks the seasonality; default the largest-amplitude one), call
+   `parametric(length, seed=inner_seed, **params)`, and mark the result
+   `provenance.generator = "counterfactual"` with the knob, factor and source
+   id. Raises `ValueError` for a non-`random_parametric` sample, for a knob the
+   sample does not have (e.g. `heteroskedastic_depth` on a series with no
+   envelope), and for `trend_scale` when the original scale is 0.
+3. **Counterfactual series are never sealed, never admitted into a corpus, and
+   never written into `tsfm_benchmark` outputs.** They are regenerated on the
+   fly inside `tsfm_lens`, deterministically, so nothing needs storing.
+   `tsfm_lens` imports this module lazily (it is a separate install, §3) and
+   the stage degrades to `counterfactual: {"status": "unsupported", "reason":
+   "tsfm_benchmark not importable"}` if it is absent.
+
+**Design — the measurement side** (`tsfm_lens/sae/counterfactual.py`):
+1. **Series selection.** For each knob, the `random_parametric` series that have
+   the component, family/archetype-stratified via `utils.sample_rows` (§15 A4,
+   never a head slice — §11.38), up to `concepts.cf_max_series: 64`.
+2. **Doses** `concepts.cf_doses: [0.0, 0.5, 1.0, 1.5, 2.0]`. Dose 1.0 must
+   reproduce the corpus series bit-identically (a free identity check; see
+   tests).
+3. **Input response.** For each dose, run the context through the model,
+   capture the target layer, pool to the series level, and encode with the
+   primary SAE. 🔴 **Capture in the store's numeric regime** (autocast on, the
+   convention `sae/real_data.py` documents), because the SAE was trained on
+   store-space activations — not the patching regime (§11.49). The concept
+   score is `concept_scores(pooled, members)` from `transfer.py:52`.
+   Per series, the response is the Spearman correlation of score against dose;
+   aggregate as the mean with a series-bootstrap CI (`analysis/stats.py`).
+4. **Null for input response.** 200 random sets of alive features, matched to
+   the concept's size and to its mean baseline activation (decile), scored the
+   same way. A concept **responds to knob k** if its mean response exceeds the
+   null's p95 of |mean response| and its CI excludes 0. BH across
+   concepts × knobs within each target.
+5. **Mediation** (only for concepts that respond, to bound cost). For a forecast
+   channel `ch` (P4's level and level-removed channels):
+   - Total effect `T = ch(forecast at dose 2) − ch(forecast at dose 0)`, both
+     arms run with the layer **patched by the SAE's full reconstruction**, so
+     SAE error is held fixed across arms (the §27 baseline convention).
+   - Effect with C removed: `T_C` = the same difference with C's members zeroed
+     in the reconstruction in **both** arms.
+   - Report `T`, `T_C` and `T − T_C`, each with a series-bootstrap CI; the
+     mediated fraction `1 − T_C / T` only as a secondary number, and only when
+     `|T|` clears its own null (a ratio of a noise-level denominator is
+     meaningless, §11.35/§11.37).
+   - Null: 20 matched random feature sets ablated the same way
+     **(judgment: 20 not 200, cost-bounded; raise if a result hinges on it)**.
+     C **mediates** `ch` if `T − T_C` exceeds the null's p95.
+   - Capture for patching with `autocast=False` (§11.49) and seed every
+     `predict()` pair (§11.50).
+6. **Cross-model comparison — the atlas's strongest claim.** For each knob, per
+   model: which concepts respond and which forecast channels they mediate, with
+   sign. A **shared causal mechanism** for knob k between A and B requires:
+   (i) a concept in each that responds to k, (ii) both mediate the same channel
+   with the same sign, (iii) the two concepts are an FDR-surviving reciprocal
+   transfer pair (P3). All comparisons are of within-model results on the same
+   counterfactual inputs (invariant 5).
+7. **Relation to structural ρ.** Keep structural ρ as the correlational column;
+   the concept's primary "about" label becomes the knob(s) it responds to when
+   any do, and "not tested (no draw-neutral knob)" otherwise — never silently
+   falling back to ρ under the causal heading.
+
+**Pre-registered predictions (write the results against them).**
+- Seasonal amplitude should have at least one responding concept in every model
+  that has any L3 `deseasonalize` sensitivity; its mediated channel should
+  include the seasonal channel, not only level. If only level is mediated, that
+  is consistent with P0/P4's level-carrier result and is recorded as such.
+- Anomaly magnitude should have responding concepts in models with high L3
+  `spike` sensitivity (§30.2 names Sundial as the spike specialist) and weaker
+  or none in the seasonal specialist.
+- A knob applied to a series lacking that component is a hard error, never a
+  zero-response measurement.
+
+**Tests.**
+Generator side (`tsfm_benchmark/tests/test_counterfactual.py`):
+- `test_dose_one_is_bit_identical` — for every knob, `regenerate(s, knob, 1.0)`
+  reproduces `s.values` exactly (and the golden-hash test still passes — the
+  module touches no generator).
+- `test_non_target_components_bit_identical` — for each knob and a random
+  factor, every `ground_truth.components` entry except the target is
+  bit-identical. **Load-bearing:** include `noise_scale` in the test's knob list
+  and confirm it fails (proves the check can detect a coupled knob).
+- `test_target_component_scales_exactly` — the seasonal component at factor f
+  equals f × the original.
+- `test_trend_zero_to_nonzero_refused`, `test_missing_component_refused`,
+  `test_non_random_parametric_refused`.
+Measurement side (`tsfm_lens/tests/test_counterfactual_mediation.py`, mocks):
+- `test_absent_input_change_gives_zero_response` — a dose ladder whose contexts
+  are identical (knob on a zero-amplitude seasonality is refused, so build the
+  identity directly) yields exactly 0.0 score change.
+- `test_planted_responsive_feature` — a mock SAE whose feature 0 reads the
+  seasonal amplitude: responds, clears the matched null.
+- `test_planted_mediator` — a mock model whose forecast depends on the input
+  only through feature 0: mediated fraction ≈ 1; a feature orthogonal to the
+  path: ≈ 0.
+- `test_ratio_withheld_when_total_is_noise` — `|T|` below its null → no
+  mediated fraction rendered, stated reason present.
+- `test_store_regime_used_for_encoding` — the encode path passes
+  `autocast=True`, the patch path `autocast=False` (inspect the calls, not a
+  comment — §11.49's postscript notes a source grep once passed on a comment).
+
+**Acceptance.** On the 4-model run's stable concepts: the knob × model
+response table, the mediation table for responding concepts, and the list of
+shared causal mechanisms, each scored against the predictions above, in a
+Findings block.
+
+**Go/no-go.** Run step 3 (input response) on **one target per model first**.
+If no concept responds beyond its null to any knob on any of those targets,
+stop: that is a real negative about these dictionaries, and building mediation
+on top of it would narrate nothing. Record it and ask whether a different
+layer (e.g. `layer_screen`'s second pick) is worth one more try.
+
+### 37.10 P7 — Register concept claims and confirm them once, on a fresh private epoch (~1 session + GPU)
+
+**Why.** Every concept finding so far is exploratory: dozens of targets,
+hundreds of transfer tests, several design iterations, all on the dev split.
+§6.7's discipline says such findings are hypotheses until they survive one
+look at sealed private data. And the private split they would use has been
+read three times already.
+
+**Design.**
+1. **Fresh private epoch.** Build `benchmark_large` private epoch 1 via
+   `regenerate_private(epoch=1)` (§4.5), validate it with B2/B3's
+   cross-split check (`run_validation.py --compare-splits`) before use, and
+   point the atlas config's `confirm.path` at it. Real-derived tiers need the
+   real-data network path; see §37.12 question 1 for the fallback.
+2. **Registration** (`analysis/hypotheses.py`), from dev artifacts only, before
+   the private path is touched:
+   - `concept_transfer::{src}::{concept}::{dst_model}` for the top
+     `concepts.n_registered: 20` **(judgment)** stable, FDR-surviving
+     reciprocal pairs by dev AUC margin;
+   - `concept_knob::{target}::{concept}::{knob}` for every concept that
+     responds to a knob (P6), capped at the same number.
+   Registering a bounded set is what keeps Holm satisfiable at the private
+   stage (§6.6's p-floor) and prevents the confirmation from paying for every
+   exploratory look.
+3. **Replication** (`analysis/confirm.py::_replicate_registered_concepts`):
+   capture private activations at each registered target layer following
+   `_replicate_registered_cka`'s pattern (`confirm.py:447`, autocast on, which
+   matches store space), encode with the saved checkpoint
+   `sae/<model>/<layer>.pt`, recompute concept scores, top-k and the
+   stratum-matched transfer test with **private** strata. Knob claims:
+   regenerate the private `random_parametric` series' counterfactuals and
+   recompute the input response. Holm within each of the two families; each is
+   its own row in the multiplicity ledger.
+4. **Verdicts** `confirmed` / `not confirmed` / `not replicable` (with reason),
+   written under `confirm/confirmation.json`'s new `concept_replication` key.
+   The existing consumable guard applies unchanged; a run whose confirmation
+   already exists uses a new `run.name`, not `--force` (§11.43).
+
+**Tests** (`tests/test_concept_confirm.py`, mocks, smoke private split):
+- `test_registration_precedes_private_access` — registry hash is recorded
+  before any private load (reuse A15's freshness guard).
+- `test_planted_real_transfer_confirms_and_spurious_does_not` — the same
+  shape as the existing `{trend: True, spiky: False}` confirm test.
+- `test_registration_cap_respected` and
+  `test_holm_family_counted_separately_in_ledger`.
+- `test_private_strata_used` — **load-bearing:** feed the dev strata instead
+  and confirm the test detects it (the null composition must match the private
+  source set).
+
+**Acceptance.** A `concept_replication` block on a fresh epoch, with per-claim
+verdicts, in the atlas run's Findings.
+
+### 37.11 P8 — Per-concept verdicts and the Concept Atlas report section (~1 session, incremental)
+
+**Why.** The claim should be one row a reader can check, not five artifacts
+they have to join (§28's lesson: the question is per concept and per model
+pair, and the join was the reader's).
+
+**Design.**
+1. **`report/derived.py::concept_verdicts(concepts, transfer, stability,
+   counterfactual, confirmation) -> list[Verdict]`**, a pure reduction under
+   the adaptivity contract (no model name, architecture, or `cfg.models[i]`).
+   The verdict is derived by a printed `Rule` in `Verdict.__post_init__`, so no
+   call site can author one:
+   - `shared causal mechanism` — stable in both models, FDR-surviving
+     reciprocal transfer, shared-input agreement `same causal effect`, and (if
+     P6 ran) shared knob mediation;
+   - `shared, acts differently` — stable and transfers, agreement
+     `acts differently`;
+   - `shared, level only` — transfers, agreement `level only`;
+   - `model-specific` — stable, reaches no other model after FDR;
+   - `unstable` — fails P2;
+   - `not measured` — with the missing item named.
+   A `confirmed on private data` column is added when P7 ran; absent, it says
+   `not confirmed (no fresh private epoch)`.
+2. **Section placement.** A new `Concepts` section directly after the
+   scorecard and before L0 **(judgment; the three founding questions are this
+   section's subject, so a reader should meet it first)**. The existing SAE
+   section keeps dictionary health, cards and the feature×channel heatmap as
+   its detail; the atlas links into it by `sec-*` anchor.
+3. **Figures** (each with `_note`, per §0 rule 6):
+   - relative-transfer heatmap: model × model, cell = `R_rel`, with the raw rate
+     and both ceilings in the hover and in a table beneath;
+   - knob × model mediation heatmap (P6): cell = number of concepts mediating
+     each channel, sign-colored;
+   - verdict counts per model pair as a stacked bar, including `unstable` and
+     `not measured`, so a panel with thin evidence looks thin.
+4. **Scorecard rows**, one per model pair: "shared causal concepts: n of N
+   stable", reference = the within-model ceiling, rule printed.
+5. **What must not be added.** No generated prose; no single "concept
+   universality score" that pools pairs; no verdict for a concept whose clause
+   was not measured.
+
+**Tests** (`tests/test_concept_atlas_report.py`):
+- `test_verdict_derived_not_authored` — passing `verdict=` is overwritten.
+- `test_adaptivity_contract` — source inspection, as for `bottom_line_rows`.
+- `test_not_measured_never_renders_as_fail` — a run without P2 renders
+  `unstable` zero times and `not measured` for every concept.
+  **Load-bearing:** default missing stability to `False` and confirm it fails.
+- `test_every_atlas_figure_captioned` — reuse `test_report_legibility.py`'s
+  positional walk.
+- `test_findings_json_includes_atlas_claims` — transfer rows carry
+  `evidence_class: "descriptive"` (a shared-input firing statement, not
+  stitching); P5/P6 rows carry `"causal_within_model"`.
+
+**Acceptance.** The atlas renders on the 4-model run with every state
+represented, verified from the rendered HTML (§11.48), not the diff.
+
+### 37.12 What this changes elsewhere in the plan
+
+Edited in place (2026-09-22), not restated here: §35.0 (re-scoped to SAE
+features, starts after P2; §35.11 items 1–2 may land alone), §36's header
+(parked), §29.7 item 1 (superseded by P5b's within-run floor), §32.10's 64.4%
+bullet (P4 answers it in part), and §0.5 items 18–20. §30.7's generated narrator
+stays out; P4's tags feed `compose_name`.
+
+### 37.13 Traps that apply, named so they are not rediscovered
+
+- **§11.2 / §11.52** — every seed through `transfer._seed`'s sha256, never
+  `hash()`; test seed stability in a subprocess.
+- **§11.29** — replicate SAEs at the primary's dict size; a control whose size
+  is re-searched is also a confound.
+- **§11.33 / §11.35 / §11.37** — every null is row-matched or
+  activation-matched to the thing it references; an absent measurement is a
+  third state; a ratio is withheld when its denominator is noise.
+- **§11.38** — no head slices; every series subset via `utils.sample_rows` with
+  strata.
+- **§11.49** — encode in store space (autocast on); patch in `predict()` space
+  (autocast off). P6 needs both, in the same function; test the calls.
+- **§11.50** — seed-reset every compared `predict()` pair; two of the four
+  panel models sample.
+- **§11.51 (fourth defect)** — classify every new config field as a stage input
+  or not in the same edit; do not move existing `sae.*` fields.
+- **§11.24** — before comparing a P-item result to a recorded number, check
+  whether shared code moved between the two runs' dates.
+- **§11.48** — verify the atlas from the rendered HTML and the written
+  artifacts, never from the diff.
+
+### 37.14 Ordering, cost, and gates
+
+| # | Item | Cost | Blocked by | Gate |
+|---|---|---|---|---|
+| 1 | **P0** premise measurements | ~0.5 session, zero GPU | — | Records the FDR and level-share numbers P3/P4 are sized by |
+| 2 | **P1** `concepts` stage + preset | ~1 session | — | Must reproduce `transfer.json` bit-identically on the 4-model run |
+| 3 | **P3** transfer FDR + p-floor | ~0.5 session | P0 | GPD validation against many-draw exact p |
+| 4 | **P2** seed stability + ceiling | ~1 session + GPU | P1 | 🔴 **Stop if < 25% of concepts are stable** |
+| 5 | **P4** level-separated fingerprints | ~0.5 session + GPU | P1 | Channel-invariance audit recorded first |
+| 6 | **P5a** reach-gate repairs | ~0.5 session | — | Re-derive recorded Stage 2 verdicts |
+| 7 | **P5b** shared-input agreement | ~1 session + GPU | P3, P4, P5a | — |
+| 8 | **P6** counterfactuals + mediation | ~2 sessions + GPU | P2, P4 | 🔴 **Stop if no concept responds on one target per model** |
+| 9 | **P7** register + confirm on a fresh epoch | ~1 session + GPU | P2, P3, P6; a fresh private epoch | Consumes the new epoch once |
+| 10 | **P8** verdicts + atlas section | ~1 session, incremental from P2 onward | each item's artifact | Rendered-HTML verification |
+| 11 | §35 on SAE features | per §35 | P2 | §35.9 test 3 (rotation) |
+
+Every GPU step goes to a background agent per `CLAUDE.md` §2.8, briefed to
+report numbers, not write Findings.
+
+### 37.15 Open questions — decide before the item that depends on them
+
+1. **(P7) The fresh private epoch.** Building `benchmark_large` epoch 1 needs the
+   real-data path (Monash/ETT over the network) for its real-derived tiers. If
+   that is unavailable, the fallback is a **synthetic-only** private epoch with
+   registration restricted to claims whose source concepts' top series are
+   synthetic. That is weaker (it cannot confirm claims involving real-derived
+   series) and should be chosen deliberately, not defaulted to. **User decision.**
+2. **(P7) How many claims to register.** 20 per family is a judgment; more
+   claims spend more of the one private look and tighten Holm. **User or
+   reviewing-session decision**, recorded before registration.
+3. **(P2) Two replicates or four.** Two gives an all-of-2 stability criterion at
+   2× SAE training cost; four allows a "3 of 4" criterion that is less brittle
+   at 4× cost. Recommend two for the first pass, and four only if P2's go/no-go
+   lands near its threshold.
+4. **(P8) Section placement.** Recommended first after the scorecard; the
+   alternative is inside the SAE section. The first makes the founding
+   questions the report's subject; the second keeps the report's existing
+   evidence-ladder order (L0 → L4 → SAE). **User decision.**
+5. **(P6) Plain `parametric` series.** Supporting them needs the build config's
+   task parameters, which are not in the sample. Worth it only if
+   `random_parametric`'s 425 series prove too few per knob after P6's
+   component filter.
+6. **(P2 onward — raised by P0's Findings) Which concept population the atlas
+   is built on.** Under the default rule (`concept_min_members: 3`, §32 D)
+   `full_report_run_4model` has **4 concepts in 2 of 13 targets**. That is too
+   few for per-pair BH, a stability rate, or a universality table to mean
+   anything. Options:
+   (a) Build on the 4 and report "most dictionaries are not modular" as the
+       headline. It is honest, but it is a thin atlas.
+   (b) Make the concept unit the **causal feature** rather than the cluster.
+       There are 452 scorable candidates, and §30's transfer works per feature
+       set. A cluster becomes an optional grouping reported where
+       `non_modular` is False.
+   (c) Revisit §32 D's floor.
+   **Recommendation: (b).** (c) would reopen a decision made on measurement
+   (singleton silhouette is maximal by construction), and (a) leaves P2/P3/P6
+   underpowered. Under (b), P1's stage still runs `run_concepts` unchanged,
+   and transfer gains a per-feature mode.
+   ✅ **Decided 2026-09-23 by the user: (b), refined.** The causal feature is
+   the unit being clustered, but a concept stays a **group**: at least **3
+   features**, each similar enough to every other one. Concepts are pooled
+   **across models** instead of being formed per target, since the ablation
+   space is model-agnostic (its channels are properties of the forecast).
+   Implementation: `sae/concept_atlas.py`, which uses complete-linkage cosine
+   clustering at `concepts.atlas_min_cosine`. Complete linkage means every pair
+   inside a concept clears the threshold. Two nulls apply: a column-shuffle
+   structure null, and a model-label-permutation cross-model null. The output
+   is `sae/concept_atlas.json`, plus a PCA figure with one panel per model and
+   one for all models. PCA rather than UMAP, following
+   `report/sae_concept_map.py`: the space is 9-D and holds a few hundred
+   points. This is additive: per-target `concepts.json` and `transfer.json`
+   are unchanged. It re-scopes P2 (stability of atlas concepts across seeds)
+   and P3 (transfer per atlas concept) once the atlas exists. The
+   `min_cosine` default comes from the calibration recorded in §37.4's atlas
+   Findings.

@@ -244,7 +244,11 @@ def test_concept_exemplar_profile_pools_member_sids(monkeypatch):
         captured["sids_by_feature"] = sids_by_feature
         return {0: (("seasonal_amplitude_max", 1.8, 1.0),)}
 
-    monkeypatch.setattr(CLI, "_exemplar_profiles", fake_profiles)
+    # The body moved to `tsfm_lens.sae.describe_run` (ROADMAP.md sec 37.4); the
+    # function under test resolves `_exemplar_profiles` in THAT module, so the
+    # patch must target it rather than the script's re-export.
+    import tsfm_lens.sae.describe_run as _dr
+    monkeypatch.setattr(_dr, "_exemplar_profiles", fake_profiles)
     concept = {"features": [1, 2]}
     sids_by_feature = {1: ["a", "b"], 2: ["c"]}
     result = CLI._concept_exemplar_profile(object(), concept, sids_by_feature, {})

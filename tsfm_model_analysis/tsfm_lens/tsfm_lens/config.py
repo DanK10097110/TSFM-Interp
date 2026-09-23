@@ -751,6 +751,50 @@ class CorpusConfig:
 
 
 @dataclass
+class ConceptsConfig:
+    """The `concepts` stage (ROADMAP.md sec 37.4 P1): ablation battery ->
+    concept clustering -> cross-model transfer -> deterministic descriptions,
+    over every target the `sae` stage trained.
+
+    Off by default: it costs a patched forward pass per (candidate, series,
+    null direction) per target, and it needs `sae.persist_features: true`,
+    which is itself off by default. The clustering and transfer knobs stay in
+    `sae:` (`concept_*`, `transfer_*`) where they were first recorded --
+    moving them would change the `sae` stage's resolved fingerprint and
+    refuse every existing run as stale (`CLAUDE.md` sec 11.51); this stage
+    declares them as field-level fingerprint keys instead. The ablation knobs
+    below are `run_sae_ablation.py`'s own CLI defaults, so a stage run and a
+    script run with defaults are the same measurement.
+    """
+    enabled: bool = False
+    top_k_series: int = 8
+    n_null_directions: int = 16
+    max_series: int = 64
+    keep_forecasts: int = 3
+    n_features_per_rule: int = 12
+    describe: bool = True
+    describe_top_features: int = 8
+
+    # ROADMAP.md sec 37.15 q6 (option b) -- the cross-model CONCEPT ATLAS
+    # (`sae/concept_atlas.py`): pools every target's causal ablation
+    # fingerprints into one space and clusters ACROSS models, unlike
+    # `concept_*` above (which clusters one target against its own peers
+    # only). Lives in THIS section, not `sae:`, because unlike the
+    # `concept_*`/`transfer_*` knobs it has no pre-existing `sae`-stage
+    # fingerprint to protect -- it is new, so it can be declared where it is
+    # actually consumed. `atlas_min_cosine: 0.9` was chosen against the
+    # column-shuffle structure null on runs/full_report_run_4model (ROADMAP.md
+    # sec 37.4 atlas Findings): at 0.8 the real 33 concepts sit barely above a
+    # null mean of 26.04 (so most would form from shuffled channels too); at
+    # 0.9 the real 19 are about twice the null mean of 9.62 (p 0.005). Lower
+    # values buy coverage at the cost of concepts chance also produces.
+    atlas_enabled: bool = True
+    atlas_min_cosine: float = 0.9
+    atlas_min_members: int = 3
+    atlas_n_null: int = 200
+
+
+@dataclass
 class PipelineConfig:
     run: RunConfig = field(default_factory=RunConfig)
     data: DataConfig = field(default_factory=DataConfig)
@@ -774,6 +818,7 @@ class PipelineConfig:
     sae: SAEConfig = field(default_factory=SAEConfig)
     report: ReportConfig = field(default_factory=ReportConfig)
     corpus: CorpusConfig = field(default_factory=CorpusConfig)
+    concepts: ConceptsConfig = field(default_factory=ConceptsConfig)
 
     def run_dir(self) -> Path:
         """Directory holding every artifact for this run."""
@@ -911,7 +956,7 @@ _NESTED = {
     "sae": SAEConfig, "report": ReportConfig,
     "stats": StatsConfig, "internals": InternalsConfig, "confirm": ConfirmConfig,
     "lens": LensConfig, "attention": AttentionConfig, "exemplars": ExemplarsConfig,
-    "corpus": CorpusConfig,
+    "corpus": CorpusConfig, "concepts": ConceptsConfig,
 }
 
 

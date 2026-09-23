@@ -13,9 +13,15 @@ signature (`(cfg, run_dir, findings, model_names) -> str`, plus an optional
 population through to `ablation_cell`) so `report.py::_sec_sae` can call it
 the same way. Three blocks, per sec
 30.4.5, plus a concept-map figure (ROADMAP.md sec 32.14, Item M) rendered
-above the cards via `.sae_concept_map.concept_map_block` -- a separate
-module so its PCA computation stays unit-testable without a plotly/report.py
-round-trip (see that module's own docstring):
+above the cards via `.sae_concept_map.concept_map_block`, and -- immediately
+after it -- the cross-model concept ATLAS (ROADMAP.md sec 37.15 q6 option b,
+`.sae_concept_atlas.atlas_block`): the map above groups causal features
+WITHIN each target's own per-target clustering (mostly non-modular, sec
+37.15's own Findings), while the atlas pools causal features ACROSS every
+target/model and clusters them directly against each other, so a concept
+there can span models the per-target map never lets it. Both are separate
+modules so their computation stays unit-testable without a plotly/report.py
+round-trip (see each module's own docstring):
 
   1. Concept universality -- how many of this run's concepts are universal
      / partial / model-specific (`derived.concept_universality`), plus the
@@ -278,6 +284,10 @@ def sae_concepts_block(cfg, run_dir: Path, findings: list, model_names: list,
     # -------- concept map (ROADMAP.md sec 32.14, Item M) --------
     from .sae_concept_map import concept_map_block
     inner += concept_map_block(run_dir, cfg)
+
+    # -------- concept atlas, cross-model (ROADMAP.md sec 37.15 q6 option b) --------
+    from .sae_concept_atlas import atlas_block
+    inner += atlas_block(run_dir, cfg)
 
     # -------- block 2: concept cards --------
     top = cards.head(max_cards).reset_index(drop=True)

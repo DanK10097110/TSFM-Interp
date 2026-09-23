@@ -39,6 +39,8 @@ from .manifest import (diff_resolved, fingerprint_stage, load_manifest,
 from .models import ModelHub
 from .models.base import TIER_NAMES, NotTimeLocalized
 from .report.report import run_report
+from .sae.concept_stage import (concept_stage_path, preflight_problem as _concepts_preflight,
+                                 run_concept_stage)
 from .sae.train import run_sae
 from .utils import (log, resolve_device, resolve_dtype, run_provenance, save_json,
                     set_seed, setup_logging)
@@ -190,6 +192,18 @@ def _stages() -> list:
               lambda c: (c.run_dir() / "sae" / "meta.json").exists(),
               lambda ctx: run_sae(ctx.cfg, ctx.hub, ctx.store, ctx.data, ctx.device),
               ("sae",)),
+        # ROADMAP.md sec 37.4 P1. Its clustering/transfer knobs live in `sae:`
+        # and are declared field by field, so they fingerprint THIS stage
+        # without moving out of the `sae` section (which would refuse every
+        # existing run as stale, CLAUDE.md sec 11.51).
+        Stage("concepts", ["sae"],
+              lambda c: c.concepts.enabled,
+              lambda c: concept_stage_path(c).exists(),
+              lambda ctx: run_concept_stage(ctx.cfg, ctx.hub, ctx.store, ctx.data, ctx.device),
+              ("concepts", "run.seed", "sae.concept_causal_only", "sae.concept_k",
+               "sae.concept_min_silhouette", "sae.concept_min_members",
+               "sae.transfer_enabled", "sae.transfer_top_k", "sae.transfer_n_null",
+               "sae.transfer_seed", "sae.describe_from_exemplars")),
         Stage("exemplars", ["l0"],
               lambda c: c.exemplars.enabled,
               lambda c: (c.run_dir() / "exemplars" / "exemplars.json").exists(),
@@ -240,7 +254,7 @@ _STAGE_MIN_TIER = {
     "corpus": 0,
     "extract": 1, "layer_screen": 1, "internals": 1, "l1": 1, "l2": 1,
     "cluster": 1, "sae": 1, "attention": 1, "exemplars": 1,
-    "lens": 2, "l3": 2,
+    "lens": 2, "l3": 2, "concepts": 2,
 }
 
 
@@ -478,6 +492,12 @@ def run_pipeline(cfg: PipelineConfig, stages: Optional[list] = None,
     save_json(cfg.run_dir() / "tiers.json", _apply_tiers(cfg, ctx, selected))
     save_json(cfg.run_dir() / "shapes.json", _apply_shape(cfg, selected))
     _apply_routing(cfg, ctx, selected, force)
+    # After the gates, so a stage they already dropped is not refused on a
+    # requirement it will never need (CLAUDE.md sec 11.35's false refusal).
+    if "concepts" in selected:
+        problem = _concepts_preflight(cfg)
+        if problem:
+            raise ValueError(f"preflight: {problem}")
 
     manifest = load_manifest(cfg.run_dir())
     prev_stages = manifest.get("stages", {})
