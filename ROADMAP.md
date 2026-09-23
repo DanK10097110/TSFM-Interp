@@ -35797,6 +35797,68 @@ the result, and fix the dictionary (more data, different k, a different target
 layer) before P4–P8. Do not tune the stability criterion down to pass (§34.9
 rule 5).
 
+**Findings (2026-09-23, P2 done — merged `0f102e0`).** Implemented as
+designed: `concepts.n_sae_seeds: 3`, replicate checkpoints at
+`sae/<model>/<layer>@r<i>.pt` trained at the primary's `dict_size` (the
+function has no path to `search_dict_size`), a `replicate` axis on the store
+(`replicate=0` byte-identical to the old keys), `sae/stability.py::
+concept_stability` → `sae/concept_stability.json`, and a `stability` block in
+`concept_stage.json`. **Deviation:** stability is measured on the **atlas**
+concepts (§37.15 q6), split into per-target *parts*; a concept is stable only
+if every part is reciprocal at every replicate. Found in passing:
+`ablation_targets` globbed the `@r<i>.pt` siblings as targets (fixed, pinned).
+
+GPU acceptance on an isolated copy of `runs/full_report_run_4model` (atlas at
+0.9: 19 concepts, 201 causal features, 63 assigned), `n_sae_seeds=3`, 26
+replicates, 979.9082707837224 s. **Re-run on the committed code gave a
+byte-identical `concept_stability` artifact** (replicate training 950.5131745003164 s),
+so replicate SAE training is deterministic at a fixed seed on this stack.
+
+| model | within-model ceiling | 95% CI (bootstrap over parts) | parts |
+|---|---|---|---|
+| Chronos-2 | 0.9642857142857143 | [0.8928571428571429, 1.0] | 14 |
+| Chronos-Bolt | 1.0 | [1.0, 1.0] | 7 |
+| Sundial | 0.9545454545454546 | [0.8636363636363636, 1.0] | 11 |
+| TimesFM | 0.8695652173913043 | [0.7385869565217396, 0.9782608695652174] | 23 |
+
+- **Stable: 14/19 = 0.7368421052631579. Go/no-go: GO** (bar 25%, not tuned).
+- Universality (concepts spanning N models), all → stable: 3 models 7 → 4,
+  2 models 7 → 7, 1 model 5 → 3. No atlas concept spans all 4 models.
+- Old per-target `concepts.json` ceiling (only 2 targets have concepts):
+  Chronos-Bolt 0.5 (2 parts), TimesFM 1.0 (2 parts) — too few to read.
+- **Relative transfer** (item 5; atlas transfer from P3, exact p, uncorrected
+  reciprocal rate over the geometric mean of the two ceilings; the ceiling is
+  itself an uncorrected reciprocal rate, so the FDR rate is shown beside it but
+  not divided):
+
+| src → dst | tests | R (uncorr.) | R (FDR) | ceil src | ceil dst | R_rel |
+|---|---|---|---|---|---|---|
+| Chronos-2 → Chronos-Bolt | 28 | 0.75 | 0.75 | 0.9642857142857143 | 1.0 | 0.7637626158259733 |
+| Chronos-2 → Sundial | 42 | 0.5714285714285714 | 0.4523809523809524 | 0.9642857142857143 | 0.9545454545454546 | 0.5956083504537688 |
+| Chronos-2 → TimesFM | 70 | 0.5571428571428572 | 0.5142857142857142 | 0.9642857142857143 | 0.8695652173913043 | 0.6084328033484686 |
+| Chronos-Bolt → Chronos-2 | 21 | 0.8571428571428571 | 0.8571428571428571 | 1.0 | 0.9642857142857143 | 0.8728715609439694 |
+| Chronos-Bolt → Sundial | 21 | 0.5714285714285714 | 0.5714285714285714 | 1.0 | 0.9545454545454546 | 0.5848757893933245 |
+| Chronos-Bolt → TimesFM | 35 | 0.7428571428571429 | 0.7142857142857143 | 1.0 | 0.8695652173913043 | 0.7966255361824395 |
+| Sundial → Chronos-2 | 33 | 0.42424242424242425 | 0.3333333333333333 | 0.9545454545454546 | 0.9642857142857143 | 0.442194078367192 |
+| Sundial → Chronos-Bolt | 22 | 0.5909090909090909 | 0.45454545454545453 | 0.9545454545454546 | 1.0 | 0.6048147367590061 |
+| Sundial → TimesFM | 55 | 0.38181818181818183 | 0.3090909090909091 | 0.9545454545454546 | 0.8695652173913043 | 0.4190899230909324 |
+| TimesFM → Chronos-2 | 69 | 0.6666666666666666 | 0.6376811594202898 | 0.8695652173913043 | 0.9642857142857143 | 0.7280392518699623 |
+| TimesFM → Chronos-Bolt | 46 | 0.6956521739130435 | 0.6956521739130435 | 0.8695652173913043 | 1.0 | 0.7460038465922509 |
+| TimesFM → Sundial | 69 | 0.6086956521739131 | 0.5362318840579711 | 0.8695652173913043 | 0.9545454545454546 | 0.6681143701449648 |
+
+  Read: the ceilings are near 1, so R_rel ≈ R; every pair sits below its
+  ceiling (max R_rel 0.8728715609439694, Chronos-Bolt → Chronos-2). Sundial is
+  the weakest source in all three of its pairs (R_rel 0.419–0.605) and the
+  Chronos pair the strongest in both directions. The table is not yet rendered
+  in the report (computed here from `atlas_transfer.json` and
+  `concept_stability.json`); rendering it is part of P8.
+- **Evidence class:** "stable" = reproducible *decomposition*, not a causal
+  claim. **Open:** the stability test does not score replicate fidelity/dead
+  rate, so a collapsed replicate would read as instability; and
+  `sae.n_seeds` (noise floor) and `concepts.n_sae_seeds` use the same seed
+  offsets, so enabling both trains identical replicates twice (wasteful,
+  not wrong).
+
 ### 37.6 P3 — Multiplicity for transfer, and a p-floor that can be met (~0.5 session)
 
 **Why.** Clause 3a. The transfer test runs 830 tests on the 4-model run and
@@ -35848,6 +35910,58 @@ per-test error rate, not a family-wise or false-discovery statement.
 
 **Acceptance.** Corrected universality and relative-transfer tables on the
 4-model run, beside P0's numbers.
+
+**Findings (2026-09-23, P3 done — merged `d45869f`, review fixes `d5456a7`).**
+Implemented: `p`/`rev_p` per leg, `concepts.transfer_p_method: exact|adaptive`,
+BH per (ordered model pair, leg) at `transfer_fdr_q: 0.05`, `reciprocal_fdr`
+(both legs), `*_fdr` reductions beside the untouched legacy keys,
+`run_atlas_transfer` → `sae/atlas_transfer.json`, a doctor check (run from the
+concepts stage after `m` is known, not static preflight), a report block, and
+36 BH rows in the multiplicity ledger.
+
+- **2(a) failed its validation and was removed.** GPD tail vs a 5,000-draw
+  exact p on the 16 floor-hitting per-target legs: 2/16 within a factor of 2
+  (ratios 5.2578096488986614e-06 to 13.07364652378654; a 20-point tail fit
+  at `n_null=200`). Per the design's own rule, (b) adaptive redraw ships; the
+  `gpd_tail` code path is deleted and an unknown `transfer_p_method` now
+  raises before any draw. Default stays `exact`.
+- **Review fixes to the agent's code.** (i) The ledger and the doctor applied
+  Holm's "unsatisfiable — no result can be significant" wording to BH
+  families (24 of 36 flagged). Wrong for BH: it is step-up, so `k`
+  floor-level p-values survive together once `k ≥ m/((n_null+1)q)` —
+  Chronos-2 → TimesFM (m=70, flagged) kept 36. BH rows now render a "coarse
+  p-floor" note with a "min. batch to survive" column; the red block and its
+  L0 finding stay Holm-only. The item-2 sentence above ("BH is unsatisfiable
+  at `n_null = 200` unless many tests hit the floor") is the correct form.
+  (ii) The adaptive forward redraw was seeded from the reverse leg's seed, so
+  it did not extend the forward null it replaced; `transfer_one` now takes
+  `fwd_seed` (flagged by the orchestrating peer session).
+- **Per-target transfer:** 38 tests / 23 uncorrected reciprocal / 19 FDR
+  reciprocal — identical to P0 step 3.
+- **Atlas transfer** (exact, recomputed on an isolated copy from committed
+  code): **511 tests / 308 uncorrected / 282 FDR reciprocal** (the agent's
+  report said 295; its own per-pair table sums to 282). Per-pair counts are
+  in the §37.5 relative-transfer table.
+- **Effect space vs input space**, over 120 tested (concept, source model,
+  destination model) triples:
+
+  | | input: transfers (FDR) | input: does not |
+  |---|---|---|
+  | effect: destination holds a member of the concept | 38 | 18 |
+  | effect: it does not | 52 | 12 |
+
+  Input transfer is 38/56 = 0.6785714285714286 when the effect profile is
+  shared and 52/64 = 0.8125 when it is not (odds ratio
+  0.48717948717948717, Fisher two-sided p = 0.0972354732752099; triples share
+  concepts, so p is optimistic). **Sharing a forecast-effect profile does not
+  predict sharing input selectivity** — the two notions of "same concept" in
+  this repo are dissociated on this run, which is what P5 must explain.
+  The high base rate (90/120 transfer) also says the input-space test is
+  permissive at `transfer_top_k`; read atlas transfer as a weak filter.
+- **Rendered check** (report stage on the isolated copy, 16 sections, 122
+  findings, none failed): "Unsatisfiable correction" 0 (was 24 before the
+  fix), one "Coarse p-floor — 24 of 36 BH transfer families" note (minimum
+  batch 3–7), the FDR block and its effect-vs-input table present, no GPD text.
 
 ### 37.7 P4 — Causal fingerprints with the level shift separated (~0.5 session + GPU)
 

@@ -359,7 +359,13 @@ rescued. L0, L1 and L3 replicate on private data.
    `sae/descriptions.json`. The LLM narrator path was pruned for features; it
    remains only in `sae/compare.py`.
 6. The **`concepts` stage** (`sae/concept_stage.py`, config section
-   `concepts:`) chains steps 2–5 and writes `sae/concept_stage.json`. It
+   `concepts:`) chains steps 2–5, then the cross-model **atlas**
+   (`sae/concept_atlas.py`, complete-linkage cosine clusters of pooled causal
+   features, ≥3 members), **seed stability** (`sae/stability.py`,
+   `n_sae_seeds` replicate SAEs at the primary's dict size, within-model
+   ceiling) and **atlas transfer** (`run_atlas_transfer`, BH per ordered model
+   pair and leg; `transfer_p_method: exact|adaptive`), and writes
+   `sae/concept_stage.json`. It
    requires `sae.persist_features: true`, which preflight checks. It skips
    transfer with a stated reason, and deletes its own stale artifacts when it
    does not rewrite them. The preset is `configs/concept_atlas.yaml`.
