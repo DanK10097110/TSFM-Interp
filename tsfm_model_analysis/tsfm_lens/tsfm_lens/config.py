@@ -806,6 +806,22 @@ class ConceptsConfig:
     # `3`: the primary plus 2 replicates.
     n_sae_seeds: int = 3
 
+    # ROADMAP.md sec 37 P3 -- p-values and FDR control for `sae/transfer.py`'s
+    # cross-model transfer tests, plus their extension to the atlas above
+    # (`run_atlas_transfer` -> `sae/atlas_transfer.json`). `transfer_p_method`
+    # only changes behavior for a leg whose EXACT permutation p already hits
+    # the floor `1/(sae.transfer_n_null + 1)` -- "exact" leaves it at the
+    # floor (honest, coarse); "gpd_tail" fits a generalized Pareto tail to the
+    # null's own upper tail to extrapolate a finer p at no extra null draws;
+    # "adaptive" redraws a larger null (up to `transfer_max_redraw`) from the
+    # SAME seed instead. `transfer_fdr_q` is the Benjamini-Hochberg target
+    # FDR, applied separately per ordered (source model, destination model)
+    # pair and per leg (never pooled across pairs -- CLAUDE.md sec 6.5's
+    # per-family discipline for Holm, applied to BH here).
+    transfer_p_method: str = "exact"
+    transfer_fdr_q: float = 0.05
+    transfer_max_redraw: int = 5000
+
 
 @dataclass
 class PipelineConfig:

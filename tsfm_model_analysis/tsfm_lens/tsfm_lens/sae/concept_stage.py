@@ -56,7 +56,7 @@ from .ablation_run import run_ablation_all
 from .concept_atlas import pooled_features, run_concept_atlas
 from .concepts import run_concepts
 from .stability import concept_stability
-from .transfer import run_transfer
+from .transfer import run_atlas_transfer, run_transfer
 
 
 def concept_stage_path(cfg) -> Path:
@@ -108,6 +108,26 @@ def _transfer_skip_reason(cfg, concepts: dict, meta: dict) -> str | None:
     if unpersisted:
         return ("no persisted SAE features for " + ", ".join(unpersisted)
                 + " -- re-run the sae stage with sae.persist_features: true")
+    return None
+
+
+def _atlas_transfer_skip_reason(cfg, atlas: dict | None) -> str | None:
+    """ROADMAP.md sec 37 P3 item 6. Same shape as `_transfer_skip_reason`
+    above, one artifact over: `run_atlas_transfer` needs the atlas itself
+    (skipped above -> nothing to test) AND >=2 models (a solo run has no
+    cross-model transfer question to ask), and honors the same
+    `sae.transfer_enabled` toggle the per-target transfer above does, since
+    both are the identical shared-inputs transfer TEST, just over a
+    different source unit (an atlas concept's per-model part vs. a
+    per-target concept)."""
+    if not cfg.sae.transfer_enabled:
+        return "sae.transfer_enabled is false"
+    if cfg.run_shape() == "solo":
+        return "run shape solo -- atlas transfer compares two models' dictionaries"
+    if atlas is None:
+        return "the atlas did not run (see the atlas block's own skip reason)"
+    if not atlas.get("concepts"):
+        return "the atlas has no concepts to test"
     return None
 
 
@@ -187,6 +207,7 @@ def run_concept_stage(cfg, hub, store, data, device) -> dict:
     causal_only = bool(getattr(cfg.sae, "concept_causal_only", True))
     n_pooled = len(pooled_features(run_dir, causal_only=causal_only)[0])
     atlas_skip = _atlas_skip_reason(cfg, n_pooled)
+    atlas = None
     if atlas_skip:
         log.warning("concepts: atlas skipped -- %s", atlas_skip)
         atlas_block = {"status": "skipped", "reason": atlas_skip,
@@ -221,14 +242,50 @@ def run_concept_stage(cfg, hub, store, data, device) -> dict:
         if replicate_seconds is not None:
             stability_block["replicate_train_seconds"] = replicate_seconds
 
+    # ROADMAP.md sec 37 P3 item 6: the atlas's own per-model PARTS, tested
+    # against every OTHER model's targets -- reuses `run_atlas_transfer`,
+    # which shares `transfer_one`/`matched_draws`/`_seed` with `run_transfer`
+    # above rather than re-deriving them. Runs after the atlas so a fresh
+    # clustering always re-runs the transfer built on it (the exact staleness
+    # `_drop_stale` exists to prevent, `sec 37 P0`'s own motivating finding).
+    atlas_transfer_skip = _atlas_transfer_skip_reason(cfg, atlas)
+    if atlas_transfer_skip:
+        log.warning("concepts: atlas transfer skipped -- %s", atlas_transfer_skip)
+        atlas_transfer_block = {
+            "status": "skipped", "reason": atlas_transfer_skip,
+            "removed_stale": _drop_stale(run_dir / "sae" / "atlas_transfer.json")}
+    else:
+        at = run_atlas_transfer(run_dir, atlas, cfg)
+        n_recip_fdr = sum(1 for t in at["tests"] if t["reciprocal_fdr"])
+        atlas_transfer_block = {
+            "status": "ran", "n_tests": len(at["tests"]),
+            "n_ordered_pairs": len(at["pair_summary"]),
+            "n_uncorrected_reciprocal": sum(1 for t in at["tests"] if t["reciprocal"]),
+            "n_fdr_reciprocal": n_recip_fdr}
+        # sec 37 P3 item 7: the doctor's transfer-FDR-floor check, run here
+        # (not from static preflight) because it needs the REAL per-pair,
+        # per-leg test count `m`, which only exists once transfer has run --
+        # see `check_transfer_fdr_budget`'s own docstring for why.
+        from ..doctor import check_transfer_fdr_budget
+        p_method = str(getattr(c, "transfer_p_method", "exact") or "exact")
+        fdr_q = float(getattr(c, "transfer_fdr_q", 0.05) or 0.05)
+        n_null = int(getattr(cfg.sae, "transfer_n_null", 200))
+        for rec in at["pair_summary"]:
+            fdr_check = check_transfer_fdr_budget(n_null, rec["n_tests"], fdr_q, p_method)
+            if fdr_check.status != "pass":
+                log.warning("concepts: transfer FDR floor (%s -> %s): %s -- %s",
+                           rec["src_model"], rec["dst_model"], fdr_check.status,
+                           fdr_check.detail)
+
     record = {"schema_version": 1, "targets": [f"{m}/{l}" for m, l in targets],
               "ablation": ablation, "concept_counts": concept_counts,
               "n_concepts": sum(concept_counts.values()), "non_modular": non_modular,
               "transfer": transfer_block, "describe": describe_block, "atlas": atlas_block,
-              "stability": stability_block}
+              "stability": stability_block, "atlas_transfer": atlas_transfer_block}
     save_json(concept_stage_path(cfg), record)
-    log.info("concepts: %d concept(s) across %d target(s) (%d non-modular); transfer %s; atlas %s; "
-             "stability %s",
+    log.info("concepts: %d concept(s) across %d target(s) (%d non-modular); transfer %s; "
+             "atlas %s; stability %s; atlas transfer %s",
              record["n_concepts"], len(concept_counts), len(non_modular),
-             transfer_block["status"], atlas_block["status"], stability_block["status"])
+             transfer_block["status"], atlas_block["status"], stability_block["status"],
+             atlas_transfer_block["status"])
     return record
