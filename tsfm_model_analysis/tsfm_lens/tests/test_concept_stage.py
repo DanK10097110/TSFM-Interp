@@ -132,6 +132,69 @@ def test_atlas_disabled_removes_stale_artifact(run_dir):
     assert not (work / "sae" / "concept_atlas.json").exists()
 
 
+def test_stability_wired_into_stage_default_seeds(run_dir):
+    """ROADMAP.md sec 37 P2: `concepts.n_sae_seeds` defaults to 3 (the
+    primary plus 2 replicates), so this fixture's default run (no override
+    in `_cfg`) must have trained and persisted both replicates for every
+    trained target and run `concept_stability` end to end -- not merely
+    left the knob wired but unexercised."""
+    rd, cfg = run_dir
+    from tsfm_lens.extraction.store import ActivationStore
+    record = load_json(rd / "sae" / "concept_stage.json")
+    stability = record["stability"]
+    assert stability["status"] == "ran", stability
+    assert stability["n_sae_seeds"] == 3
+    assert "replicate_train_seconds" in stability
+    assert (rd / "sae" / "concept_stability.json").exists()
+    art = load_json(rd / "sae" / "concept_stability.json")
+    assert art["measured"] is True
+    assert art["n_sae_seeds"] == 3 and art["replicates"] == 2
+    assert stability["n_concepts"] == art["n_concepts"]
+    assert stability["n_stable"] == art["n_stable"]
+    # Both replicates were actually trained and persisted as SIBLING
+    # checkpoints/store groups, never overwriting the primary's own.
+    store = ActivationStore(rd / "activations.zarr", mode="r")
+    for target in cfg.sae.targets:
+        model, layer = target["model"], target["layer"]
+        assert store.has_sae_features(model, layer, replicate=0)
+        assert store.has_sae_features(model, layer, replicate=1)
+        assert store.has_sae_features(model, layer, replicate=2)
+        from tsfm_lens.sae.train import sanitize
+        assert (rd / "sae" / sanitize(model) / f"{sanitize(layer)}@r1.pt").exists()
+        assert (rd / "sae" / sanitize(model) / f"{sanitize(layer)}@r2.pt").exists()
+        # negative: a replicate must not silently overwrite the primary's own
+        # checkpoint -- if it did, this file would be missing entirely
+        # (`run_sae` always writes it with no `@r` suffix).
+        assert (rd / "sae" / sanitize(model) / f"{sanitize(layer)}.pt").exists()
+
+
+def test_stability_disabled_trains_no_replicates():
+    """`concepts.n_sae_seeds: 1` must cost nothing extra: no replicate
+    checkpoint, no replicate store group, and `concept_stability.json`
+    records `"not measured"` rather than a partial or fabricated result."""
+    from tsfm_lens.extraction.store import ActivationStore
+    from tsfm_lens.sae.train import sanitize
+
+    work = tempfile.mkdtemp()
+    cfg = _cfg(work, name="stability_disabled")
+    cfg.concepts.n_sae_seeds = 1
+    run_pipeline(cfg, stages=["extract"])
+    store = ActivationStore(cfg.run_dir() / "activations.zarr", mode="r")
+    cfg.sae.targets = [{"model": "patchy", "layer": store.layers("patchy")[-1]},
+                       {"model": "steppy", "layer": store.layers("steppy")[-1]}]
+    run_pipeline(cfg, stages=["sae", "concepts"])
+    rd = cfg.run_dir()
+    record = load_json(rd / "sae" / "concept_stage.json")
+    assert record["stability"]["status"] == "not_measured"
+    art = load_json(rd / "sae" / "concept_stability.json")
+    assert art["measured"] is False
+    store2 = ActivationStore(rd / "activations.zarr", mode="r")
+    for target in cfg.sae.targets:
+        model, layer = target["model"], target["layer"]
+        assert not (rd / "sae" / sanitize(model) / f"{sanitize(layer)}@r1.pt").exists()
+        assert not store2.has_sae_features(model, layer, replicate=1)
+
+
 def test_script_and_stage_produce_identical_ablation_json(run_dir):
     """Re-running `run_sae_ablation.py --all` with its CLI defaults set to the
     stage's knobs must reproduce the stage's artifacts byte for byte."""

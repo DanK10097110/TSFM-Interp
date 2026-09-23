@@ -793,6 +793,19 @@ class ConceptsConfig:
     atlas_min_members: int = 3
     atlas_n_null: int = 200
 
+    # ROADMAP.md sec 37 P2 -- seed stability of atlas concepts, and the
+    # within-model transfer ceiling. Is an atlas concept a property of the
+    # model, or of one SAE draw? For each already-trained target, this many
+    # independently-seeded SAE dictionaries are trained in total (the
+    # primary, seed `run.seed`, plus `n_sae_seeds - 1` replicates at
+    # `run.seed + 1 .. run.seed + n_sae_seeds - 1`), each at the PRIMARY's
+    # own recorded `dict_size` (never re-searched -- a replicate at a
+    # different capacity would confound stability with capacity,
+    # `sae/train.py::train_sae_replicate`). `1` disables replicate training
+    # entirely (no stability measurement, no extra wall-clock cost). Default
+    # `3`: the primary plus 2 replicates.
+    n_sae_seeds: int = 3
+
 
 @dataclass
 class PipelineConfig:
