@@ -313,8 +313,11 @@ def test_card_description_is_the_headline_and_statistics_collapse(tmp_path):
 
     assert out.count("concept-card") == 3
     # No ablation artifact was written, so the misfits block (block 3)
-    # contributes zero `<details>` here -- every one below is a card's own.
-    assert out.count("<details") == 3
+    # contributes zero `<details>` here. ROADMAP.md sec 37 Spec C item F
+    # wraps the whole per-target universality+cards unit in its own
+    # collapsed `<details>` ("Per-target concepts... supersedes it"), so the
+    # total is one more than the 3 per-card ones.
+    assert out.count("<details") == 4
     assert out.count("the numbers behind this") == 3
 
     # No "(generated)" tag anywhere, even for the concept whose stale

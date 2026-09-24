@@ -537,6 +537,43 @@ GLOSSARY: dict = {
             "unassigned, and a group can span several models (unlike a plain "
             "'concept', which stays within one model's dictionary)."),
         where="The SAE section's concept atlas figure and table; produced by the concepts stage."),
+    "sharing class": Term(
+        term="Sharing class",
+        definition=(
+            "Whether an atlas concept's models also agree on the INPUTS that drive "
+            "it, not just its effect: 'shared' when every model in it is connected "
+            "through agreeing cross-model input pairs, 'partially shared' when only "
+            "some pairs agree, 'convergent' when none do, and 'single-model' when "
+            "only one model holds the concept at all."),
+        where="Model comparison — the sharing map and every concept card; produced by `sae/concept_profiles.py`."),
+    "convergent concept": Term(
+        term="Convergent concept",
+        definition=(
+            "An atlas concept whose member models share the same causal EFFECT on "
+            "the forecast but fire on different, unrelated INPUTS per model — a "
+            "measured finding about this run's own data, not a weaker or failed "
+            "version of a fully shared concept."),
+        where="Model comparison — sharing-class column and Q1's answer box."),
+    "provenance-driven": Term(
+        term="Provenance-driven",
+        definition=(
+            "Said of a concept's part when what best explains which series it "
+            "fires on is a fact about how the benchmark was BUILT (which tier or "
+            "generator produced a series) rather than a structural property of the "
+            "time series itself, so 'fires on sequential_par series' is read as a "
+            "property of the corpus, not of time series in general."),
+        where="Model comparison — every input-profile table; produced by `sae/concept_profiles.py`."),
+    "evidence ladder": Term(
+        term="Evidence ladder",
+        definition=(
+            "The six rungs a cross-model concept claim climbs, from weakest to "
+            "strongest: same forecast effect, same driving inputs, reproducible "
+            "across an independent SAE seed, other models' own dictionaries select "
+            "the same inputs, the same causal effect measured on the same inputs, "
+            "and confirmed on a sealed private corpus — a concept's verdict names "
+            "the highest rung it actually reaches, and a rung nothing in this run "
+            "measures renders 'not measured', never a failed rung."),
+        where="Model comparison — the verdict table; produced by `report/derived.py::concept_verdicts`."),
 }
 
 

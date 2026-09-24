@@ -192,7 +192,7 @@ Four fixed questions per stage (`ROADMAP.md` sec 21 J2), generated from `tsfm_le
 
 **Good vs. bad result.** Good: high reconstruction fidelity, a low dead-feature rate, forecast-preservation deltas that stay within the SAE's own seed-to-seed noise floor, and features whose activation clearly tracks a real ground-truth field well above what random label shuffling would produce by chance. For the causal layer: a channel response that clears the random-direction null, and a cross-model role match rate that clears its own untrained-twin floor (not just zero). Bad: the large majority of features never firing at all (a common failure mode), a forecast-preservation delta far outside the noise floor, a ground-truth alignment score that isn't meaningfully above its own permutation-null control, or a role match rate that looks large but sits below the untrained-twin floor — architecture match alone can produce that, not shared learned structure.
 
-**What it cannot tell you.** A feature firing on a particular kind of series is illustrative correlation unless the causal channel battery has confirmed a real patched response for that feature — check the channel result, not just the ground-truth alignment score, before reading any feature as meaningful. A cross-model role match is a geometric correspondence in response space, not evidence the two models use that role the same way causally — and on the one real pair checked so far, the match rate did not clear its own untrained-twin floor, so 'the models share this feature' is not yet an established claim for any pair. Only the small alive fraction of the dictionary (often under 10%) can ever show up as an example, and the headline alignment number is inflated by searching many candidate ground-truth fields per feature, so it must always be read next to its permutation-null control, never on its own.
+**What it cannot tell you.** A feature firing on a particular kind of series is illustrative correlation unless the causal channel battery has confirmed a real patched response for that feature — check the channel result, not just the ground-truth alignment score, before reading any feature as meaningful. A cross-model role match is a geometric correspondence in response space, not evidence the two models use that role the same way causally — read the match rate against its own untrained-twin floor before treating any match as evidence of a shared feature; a rate that does not clear that floor is not an established claim for that pair, and this is a per-run measurement, not a fixed property of the method. Only the small alive fraction of the dictionary (often under 10%) can ever show up as an example, and the headline alignment number is inflated by searching many candidate ground-truth fields per feature, so it must always be read next to its permutation-null control, never on its own.
 
 ### `concepts`
 
@@ -274,6 +274,10 @@ The recurring vocabulary of this repo's report, one sentence each (`ROADMAP.md` 
 
 *Where it appears:* The SAE section's concept atlas figure and table; produced by the concepts stage.
 
+**Convergent concept.** An atlas concept whose member models share the same causal EFFECT on the forecast but fire on different, unrelated INPUTS per model — a measured finding about this run's own data, not a weaker or failed version of a fully shared concept.
+
+*Where it appears:* Model comparison — sharing-class column and Q1's answer box.
+
 **Corruption sensitivity fingerprint.** A layers × corruptions matrix of how much each layer's activations move when a specific structural property is destroyed in the input, forming a per-model signature whose *shape across depth* is what gets compared across models — never the raw magnitudes, which are not calibrated between corruptions.
 
 *Where it appears:* Perturbation & patching's sensitivity heatmap and cross-model agreement.
@@ -305,6 +309,10 @@ The recurring vocabulary of this repo's report, one sentence each (`ROADMAP.md` 
 **Evidence class.** The rung a claim sits on — geometric, linearly-translatable, causal-within-model, descriptive, illustrative, or confirmatory — stated for every finding so that a confident-looking chart cannot be read as stronger evidence than its method supports.
 
 *Where it appears:* "How to read this report", and the caveat under every finding.
+
+**Evidence ladder.** The six rungs a cross-model concept claim climbs, from weakest to strongest: same forecast effect, same driving inputs, reproducible across an independent SAE seed, other models' own dictionaries select the same inputs, the same causal effect measured on the same inputs, and confirmed on a sealed private corpus — a concept's verdict names the highest rung it actually reaches, and a rung nothing in this run measures renders 'not measured', never a failed rung.
+
+*Where it appears:* Model comparison — the verdict table; produced by `report/derived.py::concept_verdicts`.
 
 **Family and archetype.** Two levels of benchmark grouping: the *family* is which generator produced a series (`parametric`, `random_parametric`, `mixture`, …) and the *archetype* is the structural recipe drawn within it (`seasonal_dominant`, `intermittent_bursts`, …); per-family statistics are the unit multiple-comparison correction is applied across.
 
@@ -386,6 +394,10 @@ The recurring vocabulary of this repo's report, one sentence each (`ROADMAP.md` 
 
 *Where it appears:* Model internals; the SAE section's ground-truth alignment.
 
+**Provenance-driven.** Said of a concept's part when what best explains which series it fires on is a fact about how the benchmark was BUILT (which tier or generator produced a series) rather than a structural property of the time series itself, so 'fires on sequential_par series' is read as a property of the corpus, not of time series in general.
+
+*Where it appears:* Model comparison — every input-profile table; produced by `sae/concept_profiles.py`.
+
 **Random-direction null.** The same causal channel battery re-run on directions drawn at random from the same activation space instead of a trained SAE feature's decoder direction, so a channel response is only quotable once it is compared against how large a response chance alone produces, not against zero.
 
 *Where it appears:* SAE causal channel testing (Component A).
@@ -425,6 +437,10 @@ The recurring vocabulary of this repo's report, one sentence each (`ROADMAP.md` 
 **Seasonal strength.** Energy in the forecast concentrated at the series' own dominant repeating rhythm -- a higher value makes the forecast more strongly periodic.
 
 *Where it appears:* Sparse features (SAE) -- the causal channel battery's evidence columns, and every channel name rendered from it.
+
+**Sharing class.** Whether an atlas concept's models also agree on the INPUTS that drive it, not just its effect: 'shared' when every model in it is connected through agreeing cross-model input pairs, 'partially shared' when only some pairs agree, 'convergent' when none do, and 'single-model' when only one model holds the concept at all.
+
+*Where it appears:* Model comparison — the sharing map and every concept card; produced by `sae/concept_profiles.py`.
 
 **Skip lens and tuned lens.** Two ways to ask what forecast a middle layer already implies: the skip lens patches that layer's states in as the final block's output and lets the model's own head decode them, while the tuned lens fits a held-out ridge probe instead, correcting the skip lens's miscalibration at early layers.
 

@@ -23,7 +23,7 @@ from jinja2 import Template
 from plotly.subplots import make_subplots
 
 from .. import failure_gallery, glossary, methods_appendix, stage_docs
-from . import derived, results_table
+from . import derived, model_comparison, results_table
 from .sanitize import strip_internal_refs, strip_refs_in_place
 from ..config import PipelineConfig
 from ..utils import load_json, log, save_json
@@ -82,6 +82,12 @@ class Finding:
 
 
 _CLAIM_COUNTERS: dict = {}
+# ROADMAP.md sec 37 Spec C item F: "What each channel means" was rendered
+# once per SAE target (13 times on the reference run) -- the identical
+# legend table every time, since the channel VOCABULARY is run-wide, not
+# per-target. Reset once per `run_report` call, exactly like
+# `_CLAIM_COUNTERS`, so a second render in the same process starts fresh.
+_CHANNEL_LEGEND_RENDERED = [False]
 
 
 def _join_and(items: list) -> str:
@@ -124,6 +130,7 @@ def run_report(cfg: PipelineConfig) -> Path:
     """
     _FLOOR_AUDIT.update(checked=0, below_floor=0, unmeasured=0, suppressed=[])
     _CLAIM_COUNTERS.clear()
+    _CHANNEL_LEGEND_RENDERED[0] = False
     run_dir = cfg.run_dir()
     # ROADMAP.md sec 24.3: keyed off `cfg.models` rather than the comparison
     # pair, so a solo run has a color and a panel run does not silently give
@@ -134,6 +141,22 @@ def run_report(cfg: PipelineConfig) -> Path:
     model_colors = {m.name: _MODEL_PALETTE[i % len(_MODEL_PALETTE)]
                     for i, m in enumerate(cfg.models)}
     sections, findings, coverage = [], [], []
+
+    # ROADMAP.md sec 37 Spec C: rendered directly after the scorecard, before
+    # "How to read this report" -- a fixed template slot like `bottom_line`
+    # itself, not a `builders` list entry, since the ordering the spec asks
+    # for sits ABOVE where the `sections` loop below even starts rendering.
+    # Still recorded in the SAME `coverage` list every other section uses,
+    # so "Run coverage" states its status/reason exactly like a stage.
+    try:
+        model_comparison_html, _mc_status, _mc_detail = model_comparison.model_comparison_block(
+            cfg, run_dir, findings)
+    except Exception as exc:
+        _mc_status, _mc_detail = "failed", f"{type(exc).__name__}: {exc}"
+        model_comparison_html = ""
+        log.warning("report: section Compare failed: %s", _mc_detail)
+    coverage.append({"eyebrow": "Compare", "title": "Model comparison",
+                     "status": _mc_status, "detail": _mc_detail})
 
     builders = [
         ("Fairness", "The fairness card",
@@ -322,6 +345,7 @@ def run_report(cfg: PipelineConfig) -> Path:
         config_text=_config_text(run_dir),
         mock_warning=_mock_warning(mock_models),
         bottom_line=_scorecard(run_dir, cfg),
+        model_comparison_block=model_comparison_html,
         how_to_read=_how_to_read(cfg.alignment.window),
         glossary_block=_glossary_block(),
         methods_appendix_block=_methods_appendix_block(),
@@ -5412,7 +5436,11 @@ def _sae_contrast_block(run_dir: Path, findings: list) -> str:
     n_models = int(cov.attrs["n_models"])
     min_share = cov.attrs.get("min_share", 0.05)
 
-    html = "<h4>What each model accounts for that the others don't</h4>"
+    html = ("<h4>What each model accounts for that the others don't</h4>"
+           "<p class='blurb'>Unit: correlational structural-property coverage of "
+           "individual SAE features (not the causal, cross-model atlas CONCEPTS -- "
+           "see <a href='#cmp-sharing-map'>Model comparison &sect; What is "
+           "shared?</a> for that unit).</p>")
     if not contrast.empty:
         html += _table(contrast)
     shared_fields = sorted(set(cov.loc[cov["scope"] == "shared", "field"]))
@@ -6061,6 +6089,27 @@ def _sae_flatness_figure(by_model: pd.DataFrame) -> str:
     return _frag(fig, height=max(220, 60 * len(d) + 120))
 
 
+def _channel_legend_block(chan_names: list) -> str:
+    """"What each channel means", rendered once per report (ROADMAP.md sec
+    37 Spec C item F) -- the channel vocabulary is run-wide, not per-target,
+    so `_sae_target_panel` calling this once per target (13 times on the
+    reference run) rendered the SAME table 13 times. The gate lives in this
+    one function, not inlined at the call site, so its stateful behavior
+    (first call renders, every later call links back) is unit-testable on
+    its own without the rest of `_sae_target_panel`'s heavy fixture.
+    """
+    from .sae_features import term_legend_html
+
+    if not _CHANNEL_LEGEND_RENDERED[0]:
+        _CHANNEL_LEGEND_RENDERED[0] = True
+        return (f"<div id='sae-channel-legend'>"
+                f"{term_legend_html(chan_names, heading='<h5>What each channel means</h5>')}"
+                f"</div>")
+    return ("<p class='blurb'>What each channel means: "
+           "<a href='#sae-channel-legend'>see the first target's legend "
+           "above</a> (same nine channels every target).</p>")
+
+
 def _sae_target_panel(cfg, store, run_dir: Path, key: str, model: str, layer: str,
                       entry: dict, run_meta: dict, series_lookup, ctx_len,
                       population: Optional[dict] = None):
@@ -6202,8 +6251,7 @@ def _sae_target_panel(cfg, store, run_dir: Path, key: str, model: str, layer: st
         # `term_legend_html` already follows for structural fields).
         chan_names = sorted({ch for e in ablations.values()
                               for ch in (e.get("channels") or {})})
-        out += term_legend_html(chan_names,
-                                 heading="<h5>What each channel means</h5>")
+        out += _channel_legend_block(chan_names)
     best_struct = next((c for c in cards if c["structural_field"]), None)
     top = None
     if best_struct is not None:
@@ -6374,10 +6422,19 @@ def _sec_sae(cfg: PipelineConfig, run_dir: Path, findings: list) -> str:
     # The cross-model answer sits above the per-target detail because it is
     # the question a cross-model section is FOR; before 2026-09-04 a reader
     # met thirteen per-layer tables first and no synthesis at all.
+    # ROADMAP.md sec 37 Spec C item F: the activation-matched role blocks
+    # (`_sae_capability_block`) are matched by CO-FIRING, not by the causal
+    # ablation effect the Model comparison section's own sharing map uses --
+    # `sae/roles_injection.json`'s own `superseded_by: concepts.json` names
+    # exactly this supersession. Kept renderable (P5's design keeps sec 27's
+    # output regenerable), just collapsed rather than shown by default.
+    capability_html = _sae_capability_block(run_dir, findings)
+    superseded_roles = (_details("Superseded: activation-matched roles", capability_html)
+                        if capability_html else "")
     inner = (MODAL_ASSETS + health
              + _sae_flatness_block(cfg, run_dir, findings, df=ablation_df)
              + _sae_contrast_block(run_dir, findings)
-             + _sae_capability_block(run_dir, findings) + inner)
+             + superseded_roles + inner)
     inner += _note(*_SAE_EXEMPLAR_NOTE, summary="What does this table mean?")
     inner += _sae_seed_floor_block(meta_sae)
     model_names = [m.name for m in cfg.models]
@@ -8624,6 +8681,10 @@ details pre{background:var(--panel);border:1px solid var(--line);border-radius:6
   padding:14px;font:12px/1.5 var(--mono);overflow-x:auto;color:var(--ink)}
 footer{color:var(--muted);font:12px var(--mono);margin-top:14px}
 .fairness-restricted{border:2px solid #b03a2e;background:rgba(176,58,46,.08);border-radius:6px;padding:12px 14px;margin:0 0 14px;line-height:1.5}
+.compare-boxes{display:flex;gap:14px;flex-wrap:wrap;margin:0 0 20px}
+.compare-box{flex:1 1 260px;background:rgba(46,110,142,.04);border:1px solid var(--line);
+  border-radius:6px;padding:14px 16px}
+.compare-box h5{margin:0 0 6px;font:600 12.5px var(--mono);color:var(--accent)}
 p.figcap{margin:-4px 0 4px;padding:0 2px;font-size:13px;line-height:1.5;
   color:var(--ink);max-width:82ch}
 details.note{margin:2px 0 18px;border:1px solid var(--line);border-radius:6px;
@@ -8690,6 +8751,7 @@ body[data-detail="headline"] .fgroup-block:not(:has(li.registered)){display:none
   <span class="dt-hint">Headline: fairness card + L0 + confirmed findings only · Standard: this report as written · Methods: every collapsed detail expanded</span>
 </div>
 {% if bottom_line %}{{ bottom_line }}{% endif %}
+{% if model_comparison_block %}{{ model_comparison_block }}{% endif %}
 {{ how_to_read }}
 {{ glossary_block }}
 <details class="coverage"{% if any_failed %} open{% endif %}>

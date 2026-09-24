@@ -225,17 +225,27 @@ def sae_concepts_block(cfg, run_dir: Path, findings: list, model_names: list,
         "above it overlap too closely to tell apart.</p>")
 
     # -------- block 1: universality + transfer heatmap --------
+    # ROADMAP.md sec 37 Spec C item F: this per-TARGET unit (a concept lives
+    # inside one model's own dictionary; "universal" means "reached by
+    # another model's dictionary", never "the same concept as another
+    # model's") is collected into `per_target_html` rather than `inner`
+    # directly, together with block 2 below, so both land inside ONE
+    # collapsed `<details>` placed AFTER the cross-model atlas -- the atlas
+    # answers the same "is this shared" question in the unit that actually
+    # supersedes this one (a pooled, directly cross-model-clustered concept,
+    # not a per-target one reached only via a separate transfer test).
+    per_target_html = ""
     uni = derived.concept_universality(run_dir)
     matrix = derived.concept_transfer_matrix(run_dir)
     if uni.empty or matrix.empty:
-        inner += (
+        per_target_html += (
             "<p class='blurb'>Cross-model concept transfer: <b>not "
             "measured</b> for this run (`sae/transfer.json` is absent or "
             "empty) -- the concept cards below still render each concept's "
             "own causal profile.</p>")
     else:
-        inner += "<h5>Concept universality</h5>"
-        inner += _table(uni.drop(columns=["concepts"]))
+        per_target_html += "<h5>Concept universality</h5>"
+        per_target_html += _table(uni.drop(columns=["concepts"]))
         models_sorted = list(matrix.columns)
         import plotly.graph_objects as go  # local: only this block plots
         fig = go.Figure(data=go.Heatmap(
@@ -248,8 +258,8 @@ def sae_concepts_block(cfg, run_dir: Path, findings: list, model_names: list,
             title="Concept transfer rate between models (reciprocal)",
             xaxis=dict(title="destination model"),
             yaxis=dict(title="source model", autorange="reversed"))
-        inner += _frag(fig, height=max(320, 60 * len(matrix.index)))
-        inner += _note(
+        per_target_html += _frag(fig, height=max(320, 60 * len(matrix.index)))
+        per_target_html += _note(
             "For each source model's concepts, the fraction whose top-firing "
             "series are grouped the same way by the destination model's own "
             "SAE dictionary -- reciprocally, in both directions.",
@@ -317,8 +327,8 @@ def sae_concepts_block(cfg, run_dir: Path, findings: list, model_names: list,
         _candidates_for(target)
 
     w = cards.attrs.get("weights") or {}
-    inner += f"<h5>Concept cards — top {len(top)} of {len(cards)} by interest</h5>"
-    inner += (
+    per_target_html += f"<h5>Concept cards — top {len(top)} of {len(cards)} by interest</h5>"
+    per_target_html += (
         "<p class='blurb'>interest = "
         f"{w.get('w1_causal_strength', weights[0]):.2f}×causal_strength + "
         f"{w.get('w2_transfer_informative', weights[1]):.2f}×transfer_informative + "
@@ -328,7 +338,7 @@ def sae_concepts_block(cfg, run_dir: Path, findings: list, model_names: list,
 
     for bucket in present_buckets:
         bucket_rows = top[top["universality_bucket"] == bucket]
-        inner += f"<h6>{html.escape(bucket)} ({len(bucket_rows)})</h6>"
+        per_target_html += f"<h6>{html.escape(bucket)} ({len(bucket_rows)})</h6>"
         card_bodies = []
         for row in bucket_rows.itertuples():
             candidates = candidates_by_target.get(str(row.target))
@@ -391,7 +401,7 @@ def sae_concepts_block(cfg, run_dir: Path, findings: list, model_names: list,
                 f"{desc_html}{meta_html}{spark_html}"
                 f"{_details('the numbers behind this', numbers_html)}"
                 "</div>")
-        inner += "".join(card_bodies)
+        per_target_html += "".join(card_bodies)
 
         # One finding per target represented in this bucket's shown cards --
         # mirrors `_sae_roles_block`'s per-target finding, scoped to what's
@@ -413,6 +423,15 @@ def sae_concepts_block(cfg, run_dir: Path, findings: list, model_names: list,
                        f"moves the forecast beyond what random steering of "
                        f"the same size does."),
                 registered=False))
+
+    # ROADMAP.md sec 37 Spec C item F: block 1 + block 2 above are the
+    # per-TARGET unit's own answer to "is this concept shared" -- superseded
+    # by the cross-model atlas rendered above (`atlas_block`) and, further
+    # up the report, the Model comparison section's own sharing map/verdict
+    # ladder. Collapsed, not deleted: the numbers are unchanged inside.
+    inner += _details(
+        "Per-target concepts (earlier unit; the atlas above supersedes it)",
+        per_target_html)
 
     # -------- block 3: causally interesting individual features --------
     # ROADMAP.md sec 32.7c / user review, 2026-09-15: the concept cards above

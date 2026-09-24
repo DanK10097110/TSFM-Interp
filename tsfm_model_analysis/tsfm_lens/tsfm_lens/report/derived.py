@@ -50,7 +50,8 @@ import pandas as pd
 __all__ = ["Verdict", "Rule", "RULES", "bottom_line_rows", "corruption_breakdown",
            "layer_metrics", "exemplar_summary", "patching_case_summary",
            "load_json_or_none", "ablation_panel_summary", "ablation_panel_table",
-           "flatness_population", "corpus_trust_rows", "corpus_composition_rows"]
+           "flatness_population", "corpus_trust_rows", "corpus_composition_rows",
+           "concept_verdicts", "RUNG_LABELS"]
 
 
 def load_json_or_none(path: Path):
@@ -303,6 +304,10 @@ def bottom_line_rows(run_dir: Path, model_names: list) -> list:
     confirm = load_json_or_none(run_dir / "confirm" / "confirmation.json")
     if confirm:
         rows.append(_confirmation_row(confirm))
+
+    profiles = load_json_or_none(run_dir / "sae" / "concept_profiles.json")
+    if profiles:
+        rows.extend(_concept_pair_sharing_rows(profiles, model_names))
 
     return rows
 
@@ -962,6 +967,62 @@ def _sae_concept_rows(targets: dict) -> list:
                  "render as `NaN` and a reader would read as a failed "
                  "measurement rather than the useful negative result it is "
                  "(sec 11.37)."))
+    return rows
+
+
+def _concept_models_of(concept: dict) -> set:
+    return {p.get("model") for p in (concept.get("parts") or []) if isinstance(p, dict)}
+
+
+def _concept_pair_sharing_rows(profiles: dict, model_names: list) -> list:
+    """ROADMAP.md sec 37 Spec C item 3 -- one scorecard row per model pair:
+    how many of the run's SEED-STABLE, multi-model atlas concepts this pair
+    actually shares (same causal effect AND agreeing inputs, per
+    `sae/concept_profiles.py`'s own `sharing_class`/`cross_model_pairs`),
+    out of how many stable multi-model concepts either model is even a
+    candidate for.
+
+    Reuses `analysis/model_similarity.py`'s own `_agreeing_component`/
+    `_SHARED_CLASSES` rather than re-deriving "do these two parts agree" a
+    third time (`sharing_class` on the concept, this row, and the
+    B-metric `shared_concepts` would otherwise each answer that question
+    their own way, sec 11.53's recurring defect). A concept whose
+    reproducibility was never measured (`stable` is a "not measured: ..."
+    string, never coerced to `False`) is excluded from BOTH the numerator
+    and the denominator here -- the row states a fact about the concepts
+    this run actually confirmed, not a guess about the unmeasured ones.
+    """
+    # Imported lazily, matching the rest of this module's own reduction
+    # style (`concept_cards` etc. import their sibling `sae.*` modules
+    # inside the function, never at module top) and avoiding a cycle with
+    # `analysis/model_similarity.py`, which does not import `report/`.
+    from ..analysis.model_similarity import _SHARED_CLASSES, _agreeing_component
+
+    concepts = [c for c in (profiles.get("concepts") or []) if isinstance(c, dict)]
+    stable_multi = [c for c in concepts
+                    if c.get("stable") is True and int(c.get("n_models") or 0) >= 2]
+    rows: list = []
+    for i in range(len(model_names)):
+        for j in range(i + 1, len(model_names)):
+            a, b = model_names[i], model_names[j]
+            eligible = [c for c in stable_multi
+                       if a in _concept_models_of(c) or b in _concept_models_of(c)]
+            shared = [c for c in eligible
+                     if c.get("sharing_class") in _SHARED_CLASSES
+                     and _agreeing_component(c, a, b)]
+            n, denom = len(shared), len(eligible)
+            rows.append(Verdict(
+                measure=f"Concepts shared (same effect and inputs, reproducible): {a} & {b}",
+                value=float(n), reference=(float(denom) if denom else None),
+                reference_label="stable, multi-model atlas concepts either model is part of",
+                rule=RULES["ratio_at_least"](1.0), unit="concepts",
+                detail=[{"concept": c.get("concept"), "name": c.get("name")} for c in shared],
+                note=(f"Denominator counts only concepts BOTH seed-stable and spanning "
+                     f"2+ models where {a} or {b} holds a member -- a concept whose "
+                     f"stability was never measured is excluded from this row entirely, "
+                     f"not treated as unstable ({len(concepts) - len(stable_multi)} of "
+                     f"{len(concepts)} run-wide concepts are excluded for that or the "
+                     f"single-model reason).")))
     return rows
 
 
@@ -3067,4 +3128,176 @@ def corpus_composition_rows(card: dict) -> list:
         label = kind[3:]
         for name, count in (comp.get(kind) or {}).items():
             rows.append({"axis": label, "value": str(name), "count": int(count)})
+    return rows
+
+
+# ---------------------------------------------------------------------------
+# Concept verdicts (ROADMAP.md sec 37 Spec C) -- the evidence LADDER a
+# reader climbs for every cross-model atlas concept, and the single derived
+# verdict at the top of it.
+# ---------------------------------------------------------------------------
+
+#: The six rungs `report/model_comparison.py`'s verdict table renders as
+#: columns, in climbing order. Rungs 5 and 6 are structurally always "not
+#: measured" in this codebase state (no causal-battery-on-shared-inputs
+#: pass exists yet, and `confirm` has not minted a fresh private epoch for
+#: this question) -- carried as real columns rather than omitted, because a
+#: reader comparing this table against a future run where P5/P7 exist
+#: should see the SAME six columns, not a table that silently grew two.
+RUNG_LABELS = (
+    "same forecast effect", "same inputs", "reproducible",
+    "other dictionaries select the same inputs",
+    "same causal effect on the same inputs", "confirmed on private data",
+)
+
+_CONCEPT_VERDICT_RULE_TEXT = (
+    "verdict = f(sharing_class, stable): sharing_class == 'shared (same "
+    "effect, same inputs)' and stable is True -> 'shared: same effect, "
+    "same inputs, reproducible'; that sharing_class with stable is False -> "
+    "'not reproducible across SAE seeds'; that sharing_class with stable "
+    "unmeasured -> 'not measured: L3 reproducibility <reason>'; "
+    "sharing_class == 'convergent (same effect, different inputs)' -> "
+    "'shared effect, different inputs (convergent)' unless stable is "
+    "False; sharing_class == 'partially shared' -> 'partially shared' "
+    "unless stable is False; either of those with stable is False -> 'not "
+    "reproducible across SAE seeds'; "
+    "sharing_class == 'single-model' and stable is True -> 'model-specific, "
+    "reproducible'; that sharing_class with stable is False -> 'not "
+    "reproducible across SAE seeds'; that sharing_class with stable "
+    "unmeasured -> 'not measured: L3 reproducibility <reason>'."
+)
+
+_L5_NOT_MEASURED = "not measured: P5 not run"
+_L6_NOT_MEASURED = "not confirmed: no fresh private epoch"
+
+
+def _rung(n: int, status: str, detail: str) -> dict:
+    return {"rung": n, "label": RUNG_LABELS[n - 1], "status": status, "detail": detail}
+
+
+def _derive_concept_verdict(sharing_class, stable):
+    """`-> (verdict, highest_rung)`. The ONLY function that decides a
+    concept's verdict string -- `concept_verdicts` below never reads a
+    pre-existing "verdict" key off an input row, so a call site cannot
+    author one (mirrors `Verdict.__post_init__`'s own guarantee that a
+    verdict is computed, never assigned).
+
+    `stable` must be checked by IDENTITY (`is True` / `is False`), never by
+    truthiness: `sae/concept_profiles.py` records an unmeasured
+    reproducibility as the STRING `"not measured: <reason>"`, which is
+    truthy in Python, so a bare `if stable: ... else: "not reproducible"`
+    would silently fold "never measured" into "measured and failed" --
+    exactly the false negative CLAUDE.md sec 11.37/sec 2.5 exist to catch,
+    and load-bearingly tested here (see `tests/test_model_comparison_
+    report.py`'s planted regression).
+    """
+    if sharing_class == "shared (same effect, same inputs)":
+        if stable is True:
+            return "shared: same effect, same inputs, reproducible", 3
+        if stable is False:
+            return "not reproducible across SAE seeds", 2
+        return f"not measured: L3 reproducibility ({stable})", 2
+    if sharing_class == "convergent (same effect, different inputs)":
+        if stable is False:
+            return "not reproducible across SAE seeds", 1
+        return "shared effect, different inputs (convergent)", 1
+    if sharing_class == "partially shared":
+        if stable is False:
+            return "not reproducible across SAE seeds", 1
+        return "partially shared", 2
+    if sharing_class == "single-model":
+        if stable is True:
+            return "model-specific, reproducible", 3
+        if stable is False:
+            return "not reproducible across SAE seeds", 1
+        return f"not measured: L3 reproducibility ({stable})", 1
+    return f"not measured: unrecognized sharing class {sharing_class!r}", 0
+
+
+def concept_verdicts(profiles: Optional[dict], stability: Optional[dict],
+                     atlas_transfer: Optional[dict]) -> list:
+    """One row per atlas concept: the evidence-ladder columns (`RUNG_LABELS`)
+    plus the single derived `verdict` and `highest_rung` a reader climbs to.
+
+    `profiles` is `sae/concept_profiles.json` (Spec A) -- required; `[]` when
+    absent, since there is nothing to derive a verdict FROM. `stability`
+    (`sae/concept_stability.json`) and `atlas_transfer` (`sae/atlas_
+    transfer.json`) are read only to phrase L3/L4's "not measured" reason
+    when `profiles`'s own per-concept fields do not already carry one (they
+    normally do -- `run_concept_profiles` already records "not measured:
+    <reason>" strings for both -- so this is a defensive fallback, not the
+    primary path, mirroring `analysis/model_similarity.py::_shared_
+    concepts`'s "read defensively" discipline for a sibling artifact it
+    does not own).
+
+    Adaptivity contract: no model or architecture name, no `cfg.models[`
+    index -- every model name here is read off `profiles`'s own `parts`.
+    """
+    if not profiles or not profiles.get("concepts"):
+        return []
+    stability_reason = None
+    if not stability or not stability.get("measured"):
+        stability_reason = (stability or {}).get("reason") if stability else \
+            "sae/concept_stability.json does not exist"
+    transfer_reason = None
+    if not atlas_transfer:
+        transfer_reason = "sae/atlas_transfer.json does not exist"
+
+    rows: list = []
+    for c in profiles["concepts"]:
+        if not isinstance(c, dict):
+            continue
+        cid = c.get("concept")
+        name = c.get("name")
+        n_models = int(c.get("n_models") or 0)
+        sharing_class = c.get("sharing_class")
+        stable = c.get("stable")  # True / False / "not measured: <reason>" -- never read as a call-site "verdict"
+        transfer_fdr = c.get("input_transfer_models_fdr")
+
+        l1 = _rung(1, "reached", f"{n_models} model(s) share this concept's causal "
+                                 f"effect profile (atlas membership, within-model causal)")
+        if sharing_class == "shared (same effect, same inputs)":
+            l2 = _rung(2, "reached", "every model in this concept agrees, pairwise, "
+                                     "on which series drive it")
+        elif sharing_class == "partially shared":
+            l2 = _rung(2, "partial", "some but not every cross-model pair in this "
+                                     "concept agrees on which series drive it")
+        elif sharing_class == "convergent (same effect, different inputs)":
+            l2 = _rung(2, "not reached", "no cross-model pair in this concept agrees "
+                                        "on which series drive it")
+        else:  # "single-model"
+            l2 = _rung(2, "not applicable", "only one model holds this concept")
+
+        if stable is True:
+            l3 = _rung(3, "reached", "the concept's grouping survives an independent "
+                                     "replicate SAE at the same target(s)")
+        elif stable is False:
+            l3 = _rung(3, "not reached", "the concept's grouping did NOT survive an "
+                                        "independent replicate SAE")
+        else:
+            l3 = _rung(3, "not measured", str(stable) if isinstance(stable, str)
+                       else (stability_reason or "not measured"))
+
+        if isinstance(transfer_fdr, list):
+            l4 = (_rung(4, "reached", f"other model(s)' own dictionaries also select "
+                                     f"this concept's inputs under FDR: {', '.join(transfer_fdr)}")
+                 if transfer_fdr else
+                 _rung(4, "not reached", "no other model's dictionary selects this "
+                                        "concept's inputs under FDR"))
+        else:
+            l4 = _rung(4, "not measured", str(transfer_fdr) if isinstance(transfer_fdr, str)
+                       else (transfer_reason or "not measured"))
+
+        l5 = _rung(5, "not measured", _L5_NOT_MEASURED)
+        l6 = _rung(6, "not measured", _L6_NOT_MEASURED)
+
+        verdict, highest_rung = _derive_concept_verdict(sharing_class, stable)
+        rows.append({
+            "concept": cid, "name": name, "n_models": n_models,
+            "sharing_class": sharing_class,
+            "rungs": [l1, l2, l3, l4, l5, l6],
+            "verdict": verdict, "highest_rung": highest_rung,
+            "rule": _CONCEPT_VERDICT_RULE_TEXT,
+        })
+    rows.sort(key=lambda r: (-r["highest_rung"], -(r["n_models"] or 0), r["concept"]))
     return rows
