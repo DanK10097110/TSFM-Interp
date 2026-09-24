@@ -2,7 +2,9 @@
 "what concepts does each model's dictionary hold, and does another model
 group the same series".
 
-Chains five steps that previously ran only as separate hand-invoked scripts:
+Chains the following steps (the first four ran only as separate hand-invoked
+scripts before this stage existed; the rest are additive extensions added
+since):
   1. the ablation battery (`sae/ablation_run.py`, sec 27) -> `*_ablation.json`
   2. concept clustering in ablation space (`sae/concepts.py`) -> `concepts.json`
   3. cross-model transfer on shared inputs (`sae/transfer.py`) -> `transfer.json`
@@ -22,6 +24,17 @@ Chains five steps that previously ran only as separate hand-invoked scripts:
      same reciprocal transfer test step 4 uses -- within a model instead of
      between two. Runs only when the atlas itself ran, since stability is a
      property of the atlas's own concepts.
+  7. per-concept PROFILES (`sae/concept_profiles.py`, ROADMAP.md sec 37 Spec
+     A) -> `concept_profiles.json` -- ADDITIVE on top of steps 5-6: for every
+     atlas concept and every one of its (model, layer) parts, what corpus
+     inputs make it fire (correlational, against `ground_truth.py`'s own
+     structural fields), whether models sharing the concept's EFFECT also
+     share its INPUTS (a stratum-matched permutation test reusing
+     `transfer.py`'s own machinery), and whether the model holding it
+     forecasts better on its top-firing series BECAUSE of it (behavioral,
+     upgraded to within-model causal only when the concept's own ablation
+     battery already moved MASE there). Runs only when the atlas has
+     concepts, since a profile is a property of an atlas concept.
 
 Having no production caller is what let `runs/full_report_run_4model`'s
 `transfer.json` outlive two regenerations of the `concepts.json` it was built
@@ -277,15 +290,45 @@ def run_concept_stage(cfg, hub, store, data, device) -> dict:
                            rec["src_model"], rec["dst_model"], fdr_check.status,
                            fdr_check.detail)
 
+    # ROADMAP.md sec 37 Spec A: per-concept profiles (`sae/concept_profiles.py`)
+    # -- what a concept's parts fire on, whether models sharing its effect
+    # also share its inputs, and the link to each part's own causal MASE
+    # effect. Runs only when the atlas itself ran, since a profile is a
+    # property of an atlas concept (exactly `stability`'s own condition
+    # above); `_drop_stale` mirrors every other additive artifact's pattern
+    # in this stage when it does not rewrite it.
+    if not c.profiles_enabled:
+        profiles_reason = "concepts.profiles_enabled is false"
+        profiles_block = {"status": "skipped", "reason": profiles_reason,
+                          "removed_stale": _drop_stale(run_dir / "sae" / "concept_profiles.json")}
+    elif atlas is None:
+        profiles_reason = "the atlas did not run (see the atlas block's own skip reason)"
+        profiles_block = {"status": "skipped", "reason": profiles_reason,
+                          "removed_stale": _drop_stale(run_dir / "sae" / "concept_profiles.json")}
+    elif not atlas.get("concepts"):
+        profiles_reason = "the atlas has no concepts to profile"
+        profiles_block = {"status": "skipped", "reason": profiles_reason,
+                          "removed_stale": _drop_stale(run_dir / "sae" / "concept_profiles.json")}
+    else:
+        from .concept_profiles import run_concept_profiles
+        profiles = run_concept_profiles(cfg.run_dir(), cfg)
+        profiles_block = {"status": "ran", "n_concepts": len(profiles["concepts"]),
+                          "sharing_class_counts": profiles["summary"]["sharing_class_counts"],
+                          "sharing_class_counts_stable_only":
+                              profiles["summary"]["sharing_class_counts_stable_only"],
+                          "n_provenance_driven_parts": profiles["summary"]["n_provenance_driven_parts"],
+                          "n_parts": profiles["summary"]["n_parts"]}
+
     record = {"schema_version": 1, "targets": [f"{m}/{l}" for m, l in targets],
               "ablation": ablation, "concept_counts": concept_counts,
               "n_concepts": sum(concept_counts.values()), "non_modular": non_modular,
               "transfer": transfer_block, "describe": describe_block, "atlas": atlas_block,
-              "stability": stability_block, "atlas_transfer": atlas_transfer_block}
+              "stability": stability_block, "atlas_transfer": atlas_transfer_block,
+              "profiles": profiles_block}
     save_json(concept_stage_path(cfg), record)
     log.info("concepts: %d concept(s) across %d target(s) (%d non-modular); transfer %s; "
-             "atlas %s; stability %s; atlas transfer %s",
+             "atlas %s; stability %s; atlas transfer %s; profiles %s",
              record["n_concepts"], len(concept_counts), len(non_modular),
              transfer_block["status"], atlas_block["status"], stability_block["status"],
-             atlas_transfer_block["status"])
+             atlas_transfer_block["status"], profiles_block["status"])
     return record
