@@ -460,3 +460,21 @@ def test_write_model_similarity_round_trips_through_json(tmp_path):
     assert reloaded["models"] == ["A", "B"]
     assert set(reloaded["metrics"]) == set(ms.METRIC_ORDER)
     assert out["pairs"] == [{"model_a": "A", "model_b": "B", "key": "A|B"}]
+
+
+def test_shared_concepts_needs_agreeing_parts_not_mere_co_presence(tmp_path):
+    """A partially shared concept with parts in A, B and C where only A-C
+    agree: (A, C) shares it, (A, B) does not. Decoy: B has a part there, so
+    counting co-presence would wrongly credit (A, B)."""
+    import json
+    (tmp_path / "sae").mkdir()
+    doc = {"concepts": [{
+        "concept": 7, "sharing_class": "partially shared",
+        "parts": [{"model": "A"}, {"model": "B"}, {"model": "C"}],
+        "cross_model_pairs": [
+            {"model_a": "A", "model_b": "B", "agrees": False},
+            {"model_a": "A", "model_b": "C", "agrees": True},
+            {"model_a": "B", "model_b": "C", "agrees": False}]}]}
+    (tmp_path / "sae" / "concept_profiles.json").write_text(json.dumps(doc), encoding="utf-8")
+    assert ms._shared_concepts(tmp_path, None, "A", "C")["value"] == 1.0
+    assert ms._shared_concepts(tmp_path, None, "A", "B")["value"] == 0.0

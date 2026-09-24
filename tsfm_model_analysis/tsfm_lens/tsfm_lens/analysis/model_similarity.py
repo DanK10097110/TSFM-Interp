@@ -538,12 +538,34 @@ def _input_transfer(run_dir: Path, cfg, a: str, b: str) -> dict:
 _SHARED_CLASSES = {"shared (same effect, same inputs)", "partially shared"}
 
 
+def _agreeing_component(concept: dict, a: str, b: str) -> bool:
+    """True when models `a` and `b` are connected through the concept's
+    agreeing cross-model part pairs (`cross_model_pairs[*].agrees`). A
+    `partially shared` concept can hold parts in both models whose inputs
+    do not agree with each other; that pair does not share it."""
+    parent: dict = {}
+
+    def find(x):
+        parent.setdefault(x, x)
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+
+    for rec in concept.get("cross_model_pairs") or []:
+        if isinstance(rec, dict) and rec.get("agrees"):
+            parent[find(rec.get("model_a"))] = find(rec.get("model_b"))
+    return a in parent and b in parent and find(a) == find(b)
+
+
 def _shared_concepts(run_dir: Path, cfg, a: str, b: str) -> dict:
+    """Concepts classed shared or partially shared in which `a` and `b` sit
+    in one agreeing component, read from `sae/concept_profiles.json`."""
     path = run_dir / "sae" / "concept_profiles.json"
     if not path.exists():
         return _not_measured("descriptive",
-                             "sae/concept_profiles.json not found (built by a "
-                             "separate stage of this cmp-B/C work)")
+                             "sae/concept_profiles.json not found (the concepts "
+                             "stage's profiles step has not run)")
     try:
         doc = load_json(path)
         concepts = doc.get("concepts", [])
@@ -552,14 +574,9 @@ def _shared_concepts(run_dir: Path, cfg, a: str, b: str) -> dict:
                              f"could not read sae/concept_profiles.json: {e}")
     matched = []
     for c in concepts:
-        try:
-            if c.get("sharing_class") not in _SHARED_CLASSES:
-                continue
-            models_here = {p.get("model") for p in (c.get("parts") or [])
-                          if isinstance(p, dict)}
-        except AttributeError:
+        if not isinstance(c, dict) or c.get("sharing_class") not in _SHARED_CLASSES:
             continue
-        if a in models_here and b in models_here:
+        if _agreeing_component(c, a, b):
             matched.append(c.get("concept"))
     return {"value": float(len(matched)), "ci": None, "reference": None,
            "evidence_class": "descriptive", "status": "measured", "reason": None,
