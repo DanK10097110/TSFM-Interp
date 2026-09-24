@@ -100,7 +100,7 @@ def series_strata(meta: pd.DataFrame) -> np.ndarray:
 def concept_scores(pooled: np.ndarray, feature_ids: list) -> np.ndarray:
     """Per-series score for one concept: the mean of its member features'
     pooled SAE activation, `(n_series,)`."""
-    return pooled[:, feature_ids].mean(axis=1)
+    return np.asarray(pooled[:, feature_ids], dtype=np.float64).mean(axis=1)
 
 
 def top_series(score: np.ndarray, k: int) -> np.ndarray:
@@ -159,6 +159,10 @@ def auc_from_ranks(R: np.ndarray, idx: np.ndarray) -> np.ndarray:
     `idx` is `(k,)` for one index set -> returns `(n_features,)`; `(n_draws,
     k)` for a batch of draws -> returns `(n_draws, n_features)`.
     """
+    if R.dtype.itemsize < 8:
+        raise TypeError(
+            f"auc_from_ranks needs float64 ranks, got {R.dtype}: scipy's rankdata "
+            "keeps a float16 input's dtype, which quantizes rank sums and AUCs")
     n = R.shape[0]
     idx = np.asarray(idx)
     k = idx.shape[-1]
@@ -436,7 +440,7 @@ def _pooled_ranks_fns(store: ActivationStore):
 
     def _ranks(key: str) -> np.ndarray:
         if key not in ranks_cache:
-            ranks_cache[key] = rankdata(_pooled(key), axis=0)
+            ranks_cache[key] = rankdata(np.asarray(_pooled(key), dtype=np.float64), axis=0)
         return ranks_cache[key]
 
     return _pooled, _ranks

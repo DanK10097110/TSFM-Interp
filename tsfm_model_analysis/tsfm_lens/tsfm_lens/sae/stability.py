@@ -136,7 +136,7 @@ class _ReplicateReader:
         if cache_key not in self._ranks:
             model, layer = target.split("/", 1)
             pooled = self.store.load(model, layer, level="series", space="sae", replicate=i)
-            self._ranks[cache_key] = rankdata(pooled, axis=0)
+            self._ranks[cache_key] = rankdata(np.asarray(pooled, dtype=np.float64), axis=0)
         return self._ranks[cache_key]
 
 

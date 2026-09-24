@@ -664,3 +664,47 @@ def test_ledger_does_not_call_a_bh_transfer_family_unsatisfiable(tmp_path):
     assert "7 floor-level p-values" in html
     unsat = [f for f in findings if "UNSATISFIABLE" in f.text]
     assert len(unsat) == 1 and "Transfer" not in unsat[0].text
+
+
+class _Float16Store:
+    """Stand-in store returning float16 pooled features, as the real zarr
+    store does (`CLAUDE.md` sec 6.4)."""
+
+    def __init__(self, X):
+        self.X = X
+
+    def load(self, model, layer, level="series", space="sae", replicate=None):
+        return self.X
+
+
+def test_ranks_and_scores_are_float64_on_float16_store():
+    """scipy's `rankdata` keeps a float16 input's dtype, so rank sums over
+    ~10^4 and the AUC itself were quantized. Planted answer: on sparse
+    float16 features at a real run's size, AUCs from the transfer rank cache
+    and from the stability replicate cache equal a float64 reference
+    exactly, and concept scores are float64."""
+    from scipy.stats import rankdata
+    from tsfm_lens.sae.stability import _ReplicateReader
+    from tsfm_lens.sae.transfer import _pooled_ranks_fns, auc_from_ranks, concept_scores
+
+    rng = np.random.default_rng(0)
+    X = rng.gamma(0.3, size=(965, 64)).astype(np.float16)
+    X[X < 0.5] = 0
+    ref = rankdata(X.astype(np.float64), axis=0)
+    idx = rng.choice(965, (500, 20))
+    want = auc_from_ranks(ref, idx)
+    store = _Float16Store(X)
+    _, ranks_fn = _pooled_ranks_fns(store)
+    for R in (ranks_fn("m/l"), _ReplicateReader(store).replicate_ranks("m/l", 0)):
+        assert R.dtype == np.float64
+        np.testing.assert_array_equal(auc_from_ranks(R, idx), want)
+    assert concept_scores(X, [0, 1, 2]).dtype == np.float64
+
+
+def test_auc_from_ranks_refuses_float16_ranks():
+    """A float16 rank matrix fails loudly instead of returning quantized AUCs."""
+    from tsfm_lens.sae.transfer import auc_from_ranks
+
+    R = np.arange(1, 101, dtype=np.float16)[:, None]
+    with pytest.raises(TypeError, match="float64"):
+        auc_from_ranks(R, np.arange(10))
