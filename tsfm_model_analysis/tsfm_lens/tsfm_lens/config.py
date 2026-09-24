@@ -821,6 +821,17 @@ class ConceptsConfig:
     transfer_fdr_q: float = 0.05
     transfer_max_redraw: int = 5000
 
+    # ROADMAP.md sec 37 Spec A -- per-concept profiles (`sae/concept_profiles.py`):
+    # what a concept fires on, whether the models that share its effect also
+    # share its inputs, and whether the model that has it forecasts better
+    # because of it. Additive on top of the atlas/stability/atlas-transfer
+    # artifacts above; runs only when the atlas itself ran, since a profile is
+    # a property of an atlas concept. `profile_n_perm` is the permutation-null
+    # draw count for the search-corrected structural-field test (`concepts.py`
+    # sec 37 Spec A item 2's `p_max_structural`).
+    profiles_enabled: bool = True
+    profile_n_perm: int = 1000
+
 
 @dataclass
 class PipelineConfig:
