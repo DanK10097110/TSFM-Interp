@@ -370,17 +370,17 @@ def _build_pqr_run(tmp_path):
     pooled_b[:20, 1] += 6.0
     pooled_b[40:60, 2] += 6.0   # Q's feature at B (DISJOINT block from A's Q)
 
-    _write_sae(store, "A", "L1", pooled_a)
-    _write_sae(store, "B", "L1", pooled_b)
+    _write_sae(store, "A", "blk.1", pooled_a)
+    _write_sae(store, "B", "blk.1", pooled_b)
 
-    save_json(tmp_path / "sae" / "meta.json", {"A/L1": _sae_meta_entry(), "B/L1": _sae_meta_entry()})
+    save_json(tmp_path / "sae" / "meta.json", {"A/blk.1": _sae_meta_entry(), "B/blk.1": _sae_meta_entry()})
 
-    _write_ablation(tmp_path, "A", "L1", [
+    _write_ablation(tmp_path, "A", "blk.1", [
         _candidate(0, _row(0, 6.0)), _candidate(1, _row(0, 5.5)),
         _candidate(2, _row(3, 6.0)), _candidate(4, _row(3, 5.7)),
         _candidate(3, {ch: 0.0 for ch in CHANNELS}),  # non-causal filler
     ])
-    _write_ablation(tmp_path, "B", "L1", [
+    _write_ablation(tmp_path, "B", "blk.1", [
         _candidate(0, _row(0, 6.2)), _candidate(1, _row(0, 5.8)),
         _candidate(2, _row(3, 5.9)),
         _candidate(3, {ch: 0.0 for ch in CHANNELS}),
