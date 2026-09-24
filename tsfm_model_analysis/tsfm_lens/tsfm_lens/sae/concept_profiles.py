@@ -73,6 +73,7 @@ from scipy.stats import hypergeom, rankdata, spearmanr
 from ..analysis.stats import mean_ci
 from ..extraction.store import ActivationStore, load_meta
 from ..utils import load_json, log, save_json
+from .ablation_run import ablation_path
 from .concept_atlas import _right_tail_p, pooled_features
 from .concepts import CHANNELS
 from .ground_truth import (is_provenance_field, load_ground_truth_table,
@@ -149,8 +150,7 @@ def _ablation_candidates(run_dir: Path, target: str, cache: dict) -> dict:
     a part at the same target)."""
     if target not in cache:
         model, layer = target.split("/", 1)
-        path = run_dir / "sae" / model / f"{layer}_ablation.json"
-        art = load_json(path)
+        art = load_json(ablation_path(run_dir, model, layer))
         cache[target] = {int(c["feature"]): c for c in (art.get("candidates") or [])}
     return cache[target]
 
