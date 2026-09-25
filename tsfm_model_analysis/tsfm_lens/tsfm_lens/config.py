@@ -841,17 +841,18 @@ class ConceptsConfig:
     # being, relative to the forecast, noise). `reachable` now requires
     # `cross_delta / forecast_scale > min_relative_reach`, where
     # `forecast_scale` is the mean absolute clean forecast the probe already
-    # computes. `1e-4` is judgment, not a measured boundary: it sits ABOVE
-    # the two dead twins (~1e-7-1e-5 relative reach measured in production,
-    # sec 37.8's Findings) and at least 100x BELOW the observed live minimum
-    # on `runs/full_report_run_4model`'s 13 SAE targets (sec 37.8's Findings
-    # record both numbers). Lives in `concepts:`, not `sae:`, for the same
+    # computes. `1e-3` is judgment, set between the measured populations
+    # (sec 37.8's Findings): the dead Chronos-2/Chronos-Bolt twins reach at
+    # most 3.47e-05 relative (29x below), and the live minimum over the 4-model
+    # run's 13 SAE targets is 0.1125 (112x above, meeting the design's
+    # "at least 100x below live" rule). 1e-4 left only 3x to the Bolt twin.
+    # Lives in `concepts:`, not `sae:`, for the same
     # reason `atlas_min_cosine` does (no pre-existing `sae`-stage fingerprint
     # to protect); the `concepts` Stage already declares the whole
     # `concepts` section as a fingerprint key, so this field marks existing
     # `concepts` artifacts stale without any other change (`CLAUDE.md`
     # sec 6.1).
-    min_relative_reach: float = 1e-4
+    min_relative_reach: float = 1e-3
 
 
 @dataclass
