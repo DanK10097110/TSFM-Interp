@@ -181,9 +181,9 @@ def test_p_max_structural_null_calibration():
 
 
 def test_provenance_driven_true_for_tier_correlated_score():
-    """Concept R: score equals `tier_synthetic` plus noise -> `provenance_driven`
-    must be True (provenance rho beats residualized structural rho, since no
-    structural signal was planted at all)."""
+    """Concept R: the score fires on real-derived series (minus
+    `tier_synthetic`, plus noise), so its top-k is all one real-derived
+    generator -> `provenance_driven` True."""
     rng = np.random.default_rng(2)
     n_synth, n_real = 100, 40
     n = n_synth + n_real
@@ -191,7 +191,7 @@ def test_provenance_driven_true_for_tier_correlated_score():
                   seasonal_amplitude_max=rng.uniform(0, 5, n_synth))
     provenance_cols = ["tier_synthetic", "tier_real_derived",
                       "generator_parametric", "generator_mixture"]
-    s = gt["tier_synthetic"].to_numpy() + rng.normal(scale=0.1, size=n)
+    s = -gt["tier_synthetic"].to_numpy() + rng.normal(scale=0.1, size=n)
     S = np.argsort(-s)[:20]
     generators = np.array(["parametric"] * n_synth + ["mixture"] * n_real)
     strata = np.array(["fam"] * n)
@@ -590,3 +590,18 @@ def test_overlap_from_shared_archetype_only_fails_within_stratum():
     res = cp._pair_agreement(sa, sb, S_a, S_b, strata, by_stratum, 0, 500)
     assert res["top_k_overlap"] >= 5 and res["p_overlap"] < 1e-4
     assert res["p_overlap_within_stratum"] > 0.05
+
+
+def test_provenance_driven_needs_real_derived_top_series():
+    """C17's shape: provenance rho exceeds every residualized structural
+    rho, but the top-k series are all synthetic. That is not a provenance
+    detector. Decoy: the same rho profile with a top-k that is 90% one
+    real-derived generator is."""
+    recs = [{"field": "has_random_walk", "resid_rho": 0.34}]
+    prov = {"tier_synthetic_rho": -0.71, "max_generator_rho": 0.2}
+    gens = np.array(["parametric"] * 100 + ["block_bootstrap"] * 100)
+    driven, comp = cp._provenance_driven(recs, prov, np.arange(20), gens)
+    assert comp["provenance_exceeds_structural"] is True and driven is False
+    S_real = np.r_[np.arange(100, 118), np.arange(2)]
+    driven2, _ = cp._provenance_driven(recs, prov, S_real, gens)
+    assert driven2 is True
