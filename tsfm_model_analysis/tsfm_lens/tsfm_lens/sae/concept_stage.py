@@ -41,8 +41,9 @@ since):
      its `sae/atlas_transfer.json`): for every FDR-surviving reciprocal
      transfer test, ablates the source concept-part and the destination
      feature (or its own atlas part) on the SAME shared series the transfer
-     test already selected, and scores their agreement against each side's
-     own matched-random-feature-set floor. Runs only when atlas transfer ran
+     test already selected; each side's own effect must clear its
+     random-direction null, and their agreement is scored against each
+     side's matched-random-feature-set floor. Runs only when atlas transfer ran
      and at least one test survived FDR, since its unit of work is exactly
      that test.
 

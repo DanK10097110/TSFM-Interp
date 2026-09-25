@@ -42,6 +42,8 @@ own arithmetic a second, possibly-diverging way.
 
 from __future__ import annotations
 
+from collections import Counter
+
 import html as _html
 from pathlib import Path
 from typing import Optional
@@ -222,7 +224,10 @@ def _answer_q1(verdicts: list, n_models: int) -> str:
         answer = (f"<b>{len(all_shared)}</b> concept(s) are shared by all {n_models} models -- "
                   f"same causal effect, same top-firing series, reproducible across an "
                   f"independent SAE seed: {names(all_shared)}.")
-        rung = "L3 (reproducible) reached; L5 (same causal effect on the same inputs) and L6 (private-data confirmation) not measured."
+        l5 = [r["status"] for v in all_shared for r in v.get("rungs", []) if r["rung"] == 5]
+        l5_text = (", ".join(f"{n} {s}" for s, n in sorted(Counter(l5).items())) if l5 else "not measured")
+        rung = (f"L3 (reproducible) reached; L5 (same causal effect on the same inputs): {l5_text}; "
+                f"L6 (private-data confirmation) not confirmed.")
     else:
         if broadest < n_models:
             answer = (f"<b>No</b> concept has causal-effect members in all {n_models} models; "
@@ -752,7 +757,8 @@ def _concept_card(v: dict, concept: dict, verdict_row: dict, model_names: list) 
     rungs = {r["rung"]: r for r in verdict_row["rungs"]}
     sure = (f"L3 reproducible: {rungs[3]['status']} ({_e(rungs[3]['detail'])}). "
            f"L4 other dictionaries select the same inputs: {rungs[4]['status']} "
-           f"({_e(rungs[4]['detail'])}). L5: {rungs[5]['detail']}. L6: {rungs[6]['detail']}.")
+           f"({_e(rungs[4]['detail'])}). L5 same causal effect on the same inputs: {rungs[5]['status']} "
+           f"({_e(rungs[5]['detail'])}). L6: {rungs[6]['detail']}.")
     body += f"<p class='sc-note'>How sure: {sure}</p>"
     summary = (f"{_e(v['name'] or v['concept'])} — {_e(v['verdict'])} "
               f"({', '.join(_concept_models(concept))})")
@@ -946,8 +952,11 @@ def _shared_input_pair_table(shared_input: Optional[dict]) -> str:
         "'source&rarr;destination'. A test is scored only when both sides' ablation "
         "clears its own within-model null on the shared series; otherwise it is "
         "'not scorable'.",
-        "Evidence class: causal WITHIN each model (an ablation, scored against that "
-        "model's own matched-random-feature-set floor), compared ACROSS models only "
+        "Evidence class: causal WITHIN each model (each side's ablation must clear "
+        "its own random-direction null on the shared series to be scorable; the "
+        "agreement statistics must beat the 95th percentile of both models' "
+        "activation-matched random-feature-set floors, and 'acts differently' "
+        "requires falling below both floors' 5th percentile), compared ACROSS models only "
         "on the same corpus inputs -- never a transplant of one model's activation "
         "into another (invariant 5). A pair's counts are not symmetric: source and "
         "destination are the ordered roles the transfer test itself assigned.")

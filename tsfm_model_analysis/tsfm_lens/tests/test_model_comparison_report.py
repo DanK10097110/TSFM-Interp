@@ -352,6 +352,33 @@ def test_q1_decoy_names_the_all_model_concept_when_one_exists():
     assert "<b>No</b>" not in answer
 
 
+def test_q1_rung_reports_measured_l5_not_a_stale_not_measured():
+    """Once `sae/shared_input_agreement.json` exists, Q1's "how sure" line
+    must report L5's measured status. It hardcoded "L5 ... not measured"
+    before P5b landed. Plant: restoring the hardcoded string fails this."""
+    profiles = {"concepts": [
+        {"concept": 1, "name": "universal concept", "n_models": 3,
+         "parts": [{"model": "A"}, {"model": "B"}, {"model": "C"}],
+         "sharing_class": "shared (same effect, same inputs)", "stable": True,
+         "input_transfer_models_fdr": []}]}
+    shared = {"tests": [{"concept": 1, "verdict": "same causal effect"}]}
+    verdicts = derived.concept_verdicts(profiles, None, None, shared)
+    _, sure = mc._answer_q1(verdicts, 3)
+    assert "1 reached" in sure
+    assert "L5 (same causal effect on the same inputs) and L6" not in sure
+
+
+def test_shared_input_table_note_names_both_nulls():
+    """The note is a claim about the method (CLAUDE.md sec 8, labels are
+    claims): scorability uses each side's random-direction null, and the
+    agreement uses the matched-feature floors. Plant: the pre-review note
+    ("scored against that model's own matched-random-feature-set floor")
+    fails this."""
+    html = mc._shared_input_pair_table({"pair_verdict_counts": {"A->B": {"level only": 1}}})
+    assert "random-direction null" in html
+    assert "own matched-random-feature-set floor" not in html
+
+
 # ---------------------------------------------------------------------------
 # 4. Solo run skips; two-model run renders one pair, W reads "not computed".
 # ---------------------------------------------------------------------------
