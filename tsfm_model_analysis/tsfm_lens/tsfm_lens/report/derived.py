@@ -3176,13 +3176,23 @@ def _l5_status(cid, shared_input: Optional[dict]) -> tuple:
     causal agreement, measured on the SAME shared series
     (`sae/shared_input_agreement.json`). `shared_input` is that whole
     artifact (not a per-concept slice) -- its `tests` rows carry their own
-    `concept` id, matching `sae/atlas_transfer.json`'s own unit.
+    `concept` id, matching `sae/atlas_transfer.json`'s own unit. Verdicts:
+    `same causal effect`, `level only`, `shape only`, `no specific
+    agreement`, `acts differently`, `not scorable` (review of the v1 run
+    added `no specific agreement`: failing to clear the matched-feature
+    floor is the ABSENCE of evidence of agreement, not evidence of
+    disagreement -- `acts differently` is reserved for falling BELOW the
+    floor's lower tail, i.e. worse than matched features agree by chance).
 
     'reached' ('same causal effect on shared inputs') only when at least one
     of this concept's tests is `same causal effect` and NONE is `acts
     differently` -- one disagreeing pair is enough to withhold the reached
     verdict even if another pair agrees, since "shared" here means every
-    tested pair is at least consistent, not merely that one pair is.
+    tested pair is at least consistent, not merely that one pair is. Every
+    other outcome (including a mix of `level only`/`shape only`/`no specific
+    agreement`, or nothing reaching `same causal effect`) is `partial`: the
+    rule only ever promotes to 'reached' or demotes to 'not reached' on the
+    same two verdicts, unchanged by the new one.
     """
     if not shared_input or not shared_input.get("tests"):
         return "not measured", _L5_NOT_MEASURED

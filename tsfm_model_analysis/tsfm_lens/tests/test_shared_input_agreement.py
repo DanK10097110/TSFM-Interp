@@ -230,7 +230,33 @@ HORIZON = 4
 D_IN = 3
 N_SERIES = 10
 K_TOP = 5
+# A realistic dictionary size, not a handful (review item 1 / P5b's own
+# `test_null_is_matched_on_activation` lesson applied a second time): the
+# own-effect null is now a RANDOM DIRECTION over the full dictionary, and a
+# 4-dim dictionary lets that direction land close enough to the real
+# feature's own axis by chance that the ablation and the null become hard to
+# tell apart. A production SAE dictionary has hundreds of atoms, so a random
+# direction's component on any one axis is small; this fixture-only constant
+# restores that separation without changing `feature_ablation_fingerprints`'
+# own convention.
+DICT_SIZE = 50
 WEIGHT = np.array([1.0, 1.5, 0.5, 2.0])  # non-constant: gives shape a genuine signal
+
+# Fixed (non-random) permutations of 0..5 used as the matched-null floor's
+# "level" draws in the hand-stubbed driver tests below. A Gaussian-noise
+# fallback induces a uniformly random RANK PERMUTATION, so its Spearman
+# correlation against a fixed target is a near-uniform draw over ~15
+# discrete values (n=6); with only ~20 null draws the empirical p95/p05
+# from that is itself a coin flip, which made
+# `test_no_specific_agreement_when_positive_but_below_floor` pass or fail
+# depending on the seed alone. These two permutations were chosen (see
+# `find_perms2.py` in this session's scratch) to give Spearman >= 0.4
+# against BOTH `real_level_a=[5,4,3,2,1,0]` and
+# `real_level_b=[4,5,1,3,0,2]` (the "high" one) or <= 0.0 against both (the
+# "low" one), so ANY deterministic split across the ~20 draws gives a floor
+# that reliably straddles the fixtures' observed statistics.
+_NULL_LEVEL_HIGH = np.array([2., 5., 3., 4., 0., 1.])
+_NULL_LEVEL_LOW = np.array([0., 1., 2., 4., 3., 5.])
 
 _MODULE_STATE: dict = {}
 
@@ -383,11 +409,11 @@ def _build_run(pooled_a, w_dec_a, pooled_b, w_dec_b, run_dir, reach=None, n_null
 
 
 def _fixture_pooled(real_col: np.ndarray) -> np.ndarray:
-    """4-feature pooled matrix: feature 0/1 is the real causal channel
-    (caller places it), features on the other three indices are quiet,
-    similar-activation distractors so `matched_null_sets` has a pool."""
+    """`DICT_SIZE`-feature pooled matrix: feature 0/1 is the real causal
+    channel (caller places it), every other index is a quiet, similar-
+    activation distractor so `matched_null_sets` has a pool."""
     rng = np.random.default_rng(7)
-    pooled = rng.uniform(4, 6, size=(N_SERIES, 4))
+    pooled = rng.uniform(4, 6, size=(N_SERIES, DICT_SIZE))
     return pooled, real_col
 
 
@@ -395,7 +421,7 @@ def _pooled_and_wdec(real_index: int, real_col: np.ndarray, real_gain: float,
                      distractor_gain: float = 0.4) -> tuple:
     pooled, _ = _fixture_pooled(real_col)
     pooled[:, real_index] = real_col
-    w_dec = np.full((4, D_IN), distractor_gain / D_IN)
+    w_dec = np.full((DICT_SIZE, D_IN), distractor_gain / D_IN)
     w_dec[real_index] = real_gain / D_IN
     return pooled, w_dec
 
@@ -417,31 +443,37 @@ def test_identical_models_agree(monkeypatch, tmp_path):
 
 
 def test_acts_differently_when_neither_statistic_clears(monkeypatch, tmp_path):
-    """`verdict == "acts differently"` needs a level effect that is genuinely
-    DEcorrelated (not merely sign-flipped) between the two models. The
-    linear-decode, single-top-k-series fixture used elsewhere in this file
-    cannot produce that: any two feature-weighted sums of the SAME
-    row-monotonic activation column stay monotonically related to each
-    other (confirmed empirically -- every decode-sign/weight-shape
-    combination tried gave `stat_i` exactly +-1.0, never an intermediate
-    value). So this test stubs `battery_for_set` (the seam between "which
-    feature set gets ablated" and "what its measured effect is") with a
-    hand-built, genuinely anti-correlated pair of real effects, while every
-    null draw is small, independent noise -- exercising the driver's own
-    verdict-assembly branch (build_units -> matched_null_sets -> statistic
-    i/ii -> verdict) through the REAL production code path, with full
-    control over the one quantity (the causal effect itself) the physical
-    fixture cannot decorrelate.
+    """`verdict == "acts differently"` (review item 2) needs an observed
+    statistic BELOW the p05 of both sides' matched-null floors -- not merely
+    a failure to clear the p95 (that alone is `no specific agreement`, see
+    the next test). The linear-decode, single-top-k-series fixture used
+    elsewhere in this file cannot produce a genuinely decorrelated level
+    effect (any two feature-weighted sums of the SAME row-monotonic
+    activation column stay monotonically related to each other -- confirmed
+    empirically), so this test stubs `battery_for_set` (the seam between
+    "which feature set gets ablated" and "what its measured effect is") AND
+    `own_effect_null` (review item 1's own null, decides `clearing_a`/
+    `clearing_b` and each side's shape `null_p95`) with hand-built stats:
+    an EXACTLY reversed level pair (spearman -1.0, as far below any
+    reasonable near-zero floor as a bounded statistic can go) for the
+    matched-null-scored agreement, and small independent noise for the
+    own-effect null so both sides clear "is this effect real" (avoiding
+    'not scorable') without contaminating the agreement floor. This
+    exercises the driver's own verdict-assembly branch (build_units ->
+    matched_null_sets -> statistic i/ii -> verdict) through the REAL
+    production code path, with full control over the one quantity (the
+    causal effect itself) the physical fixture cannot decorrelate.
 
-    Plant: reverting the verdict `if/elif` chain to always prefer 'level
-    only' over 'acts differently' (i.e. dropping the final `else` branch's
-    distinctness) is caught because `statistic_i["clears"]` and
-    `statistic_ii["clears"]` are BOTH asserted False here, which only the
-    correct chain maps to 'acts differently'.
+    Plant: reverting the verdict chain's `elif stat_i["below_floor"] or
+    stat_ii["below_floor"]: "acts differently"` to fire on `not clears`
+    alone (the pre-review behavior) does not change THIS test's outcome
+    (below_floor is true here too) -- see
+    `test_no_specific_agreement_when_positive_but_below_floor` for the plant
+    that actually discriminates the two conditions.
     """
     n = 6
     real_level_a = np.array([5., 4., 3., 2., 1., 0.])   # decreasing
-    real_level_b = np.array([0., 3., 1., 4., 2., 5.])   # not monotonically related to A
+    real_level_b = np.array([0., 1., 2., 3., 4., 5.])   # EXACT reversal: spearman == -1.0
     real_trend_a = np.array([2., 2., 2., 2., 2., 2.])
     real_trend_b = np.array([-2., 2., -2., 2., -2., 2.])
 
@@ -453,8 +485,6 @@ def test_acts_differently_when_neither_statistic_clears(monkeypatch, tmp_path):
         out["trend"] = {"available": True, "delta": np.asarray(trend_vals, dtype=np.float64), "reason": ""}
         return out
 
-    counters = {"A": 0, "B": 0}
-
     def _fake_battery(ctx, features, U_key, contexts_u, targets_u, periods_u, seed):
         feats = sorted(int(f) for f in ([features] if isinstance(features, (int, np.integer))
                                         else features))
@@ -462,13 +492,19 @@ def test_acts_differently_when_neither_statistic_clears(monkeypatch, tmp_path):
             return _stats_raw(real_level_a), _stats_shape(real_trend_a)
         if ctx.model == "B" and feats == [1]:
             return _stats_raw(real_level_b), _stats_shape(real_trend_b)
-        counters[ctx.model] += 1
-        r = np.random.default_rng(hash((ctx.model, tuple(feats))) % (2 ** 31))
-        return _stats_raw(r.normal(0, 0.2, n)), _stats_shape(r.normal(0, 0.2, n))
+        fseed = sia._seed("fallback", ctx.model, tuple(feats), base=0)
+        r = np.random.default_rng(fseed)
+        level_noise = _NULL_LEVEL_HIGH if fseed % 2 == 0 else _NULL_LEVEL_LOW
+        return _stats_raw(level_noise), _stats_shape(r.normal(0, 0.2, n))
 
-    pooled = np.full((n, 4), 3.0)  # alive, uniform activation -- any set matches any decile
-    sae_a = _SAE(pooled, np.zeros((4, D_IN)))
-    sae_b = _SAE(pooled, np.zeros((4, D_IN)))
+    def _fake_own_null(ctx, features, U_key, contexts_u, targets_u, periods_u, seed, n_null):
+        r = np.random.default_rng(seed)
+        return [(_stats_raw(r.normal(0, 0.05, n)), _stats_shape(r.normal(0, 0.05, n)))
+               for _ in range(int(n_null))]
+
+    pooled = np.full((n, DICT_SIZE), 3.0)  # alive, uniform activation -- any set matches any decile
+    sae_a = _SAE(pooled, np.zeros((DICT_SIZE, D_IN)))
+    sae_b = _SAE(pooled, np.zeros((DICT_SIZE, D_IN)))
     saes = {("A", "blocks_0"): sae_a, ("B", "blocks_0"): sae_b}
     adapters = {"A": _Adapter("A"), "B": _Adapter("B")}
     hub, store = _Hub(adapters), _Store({"A": pooled, "B": pooled})
@@ -495,6 +531,108 @@ def test_acts_differently_when_neither_statistic_clears(monkeypatch, tmp_path):
                         lambda store, model, layer: data.contexts()[:, :D_IN].astype(np.float32))
     monkeypatch.setattr(sia, "reach_probe", lambda *a, **k: {"reachable": True, "reason": ""})
     monkeypatch.setattr(sia, "battery_for_set", _fake_battery)
+    monkeypatch.setattr(sia, "own_effect_null", _fake_own_null)
+
+    score_a = concept_scores(pooled, [0])
+    S_a = top_series(score_a, 3)
+    ranks_b = rankdata(pooled, axis=0)
+    auc = float(auc_from_ranks(ranks_b, S_a)[1])
+    atlas = {"rows": [{"model": "A", "layer": "blocks.0", "feature": 0, "concept": 1}]}
+    atlas_transfer = {"k_top_series": 3, "tests": [
+        {"concept": 1, "src_target": "A/blocks.0", "src_model": "A",
+         "dst_target": "B/blocks.0", "dst_model": "B", "feature": 1,
+         "auc": auc, "reciprocal_fdr": True},
+    ]}
+    out = sia.run_shared_input_agreement(cfg, tmp_path, hub, store, data, "cpu",
+                                         atlas, atlas_transfer)
+    test = out["tests"][0]
+    assert test["statistic_i"]["observed"] == pytest.approx(-1.0)
+    assert test["statistic_i"]["clears"] is False
+    assert test["statistic_i"]["below_floor"] is True
+    assert test["statistic_ii"]["clears"] is False
+    assert test["verdict"] == "acts differently", test
+
+
+def test_no_specific_agreement_when_positive_but_below_floor(monkeypatch, tmp_path):
+    """Review item 2's actual dividing line: a POSITIVE, small concordance
+    that fails to clear the p95 but does not fall below the p05 either must
+    be `no specific agreement`, never `acts differently` -- failing to
+    clear a floor is the ABSENCE of evidence of agreement, not evidence of
+    disagreement. Reuses the same stubbing technique as the test above,
+    with a weakly-but-not-negatively related level pair.
+
+    Plant: restoring the pre-review `else: verdict = "acts differently"`
+    (i.e. dropping the `below_floor` gate so ANY non-clearing pair is
+    called `acts differently`) is caught here, because THIS fixture's
+    `below_floor` is False on both statistics -- the discrimination
+    `test_acts_differently_when_neither_statistic_clears` alone cannot
+    provide, since its own fixture is also `below_floor` under both the old
+    and new rule.
+    """
+    n = 6
+    # Weak positive concordance -- fails p95 (needs near-perfect agreement
+    # against a tight own-effect-null-normalized floor) but nowhere near
+    # the p05 lower tail either.
+    real_level_a = np.array([5., 4., 3., 2., 1., 0.])
+    real_level_b = np.array([4., 5., 1., 3., 0., 2.])   # spearman +0.2, weak, positive
+    real_trend_a = np.array([2., 2., 2., 2., 2., 2.])
+    real_trend_b = np.array([1.8, 2.1, 1.9, 2.0, 2.2, 1.7])  # same sign, similar magnitude
+
+    def _stats_raw(level):
+        return {"level": {"available": True, "delta": np.asarray(level, dtype=np.float64), "reason": ""}}
+
+    def _stats_shape(trend_vals):
+        out = {ch: {"available": False, "delta": None, "reason": "n/a"} for ch in sia.SHAPE_CHANNELS}
+        out["trend"] = {"available": True, "delta": np.asarray(trend_vals, dtype=np.float64), "reason": ""}
+        return out
+
+    def _fake_battery(ctx, features, U_key, contexts_u, targets_u, periods_u, seed):
+        feats = sorted(int(f) for f in ([features] if isinstance(features, (int, np.integer))
+                                        else features))
+        if ctx.model == "A" and feats == [0]:
+            return _stats_raw(real_level_a), _stats_shape(real_trend_a)
+        if ctx.model == "B" and feats == [1]:
+            return _stats_raw(real_level_b), _stats_shape(real_trend_b)
+        fseed = sia._seed("fallback", ctx.model, tuple(feats), base=0)
+        r = np.random.default_rng(fseed)
+        level_noise = _NULL_LEVEL_HIGH if fseed % 2 == 0 else _NULL_LEVEL_LOW
+        return _stats_raw(level_noise), _stats_shape(r.normal(0, 0.2, n))
+
+    def _fake_own_null(ctx, features, U_key, contexts_u, targets_u, periods_u, seed, n_null):
+        r = np.random.default_rng(seed)
+        return [(_stats_raw(r.normal(0, 0.05, n)), _stats_shape(r.normal(0, 0.05, n)))
+               for _ in range(int(n_null))]
+
+    pooled = np.full((n, DICT_SIZE), 3.0)
+    sae_a = _SAE(pooled, np.zeros((DICT_SIZE, D_IN)))
+    sae_b = _SAE(pooled, np.zeros((DICT_SIZE, D_IN)))
+    saes = {("A", "blocks_0"): sae_a, ("B", "blocks_0"): sae_b}
+    adapters = {"A": _Adapter("A"), "B": _Adapter("B")}
+    hub, store = _Hub(adapters), _Store({"A": pooled, "B": pooled})
+
+    class _SmallData:
+        n_series = n
+        meta = None
+
+        def contexts(self):
+            c = np.zeros((n, 8), dtype=np.float32)
+            c[:, 0] = np.arange(n)
+            return c
+
+        def targets(self):
+            return np.zeros((n, HORIZON), dtype=np.float32)
+    _SmallData.n = n
+    data = _SmallData()
+
+    cfg = _Cfg
+    cfg.concepts.shared_input_n_null = 20
+    monkeypatch.setattr(sia, "load_sae_checkpoint",
+                        lambda path: saes[(Path(path).parent.name, Path(path).stem)])
+    monkeypatch.setattr(sia, "load_all_windows",
+                        lambda store, model, layer: data.contexts()[:, :D_IN].astype(np.float32))
+    monkeypatch.setattr(sia, "reach_probe", lambda *a, **k: {"reachable": True, "reason": ""})
+    monkeypatch.setattr(sia, "battery_for_set", _fake_battery)
+    monkeypatch.setattr(sia, "own_effect_null", _fake_own_null)
 
     score_a = concept_scores(pooled, [0])
     S_a = top_series(score_a, 3)
@@ -510,26 +648,140 @@ def test_acts_differently_when_neither_statistic_clears(monkeypatch, tmp_path):
                                          atlas, atlas_transfer)
     test = out["tests"][0]
     assert test["statistic_i"]["clears"] is False
+    assert test["statistic_i"]["below_floor"] is False
     assert test["statistic_ii"]["clears"] is False
-    assert test["verdict"] == "acts differently", test
+    assert test["statistic_ii"]["below_floor"] is False
+    assert test["verdict"] == "no specific agreement", test
 
 
-def test_sign_flip_alone_is_shape_only_not_acts_differently(monkeypatch, tmp_path):
-    """A bare decoder sign-flip (same horizon shape) disagrees on LEVEL but
-    several shape channels (dispersion, spectral_centroid, horizon_shape
-    near/far) are magnitude statistics that do not carry the ablation's
-    sign, so they still agree -- a measured, not assumed, property of the
-    9-channel battery. Plant: if `_normalized_shape_vector` ever forgot to
-    normalize by each side's OWN null_p95 sign convention and instead used
-    the raw signed_effect from the WRONG side, this test's mask/verdict
-    would not reproduce; see the driver-level assertion below."""
+def test_own_effect_null_is_random_direction_not_matched_sets(monkeypatch, tmp_path):
+    """Review item 1's own free correctness check: whether a side's effect
+    is real (`clearing_a`/`clearing_b`, hence `not scorable`) must be
+    decided by `own_effect_null`'s row-matched random-direction draws,
+    NEVER by `matched_null_sets`' battery results (those are only the
+    AGREEMENT floor for statistics (i)/(ii)). Fixture: both real effects are
+    modest and constant; `own_effect_null` is stubbed to small noise (so a
+    modest real effect clears easily); the MATCHED candidate sets'
+    `battery_for_set` results are stubbed enormous (so the SAME modest real
+    effect would never clear if it were scored against them instead).
+
+    Plant: swapping `_side_channel_scores(..., own_null_a)` /
+    `(..., own_null_b)` back to `(..., null_stats_a)` / `(..., null_stats_b)`
+    (the pre-review wiring) reproduces the old bug and turns this fixture
+    `not scorable`.
+    """
+    n = 6
+    real_level_a = np.full(n, 2.0)
+    real_level_b = np.full(n, 2.0)
+    real_trend_a = np.full(n, 2.0)
+    real_trend_b = np.full(n, 2.0)
+
+    def _stats_raw(level):
+        return {"level": {"available": True, "delta": np.asarray(level, dtype=np.float64), "reason": ""}}
+
+    def _stats_shape(trend_vals):
+        out = {ch: {"available": False, "delta": None, "reason": "n/a"} for ch in sia.SHAPE_CHANNELS}
+        out["trend"] = {"available": True, "delta": np.asarray(trend_vals, dtype=np.float64), "reason": ""}
+        return out
+
+    def _fake_battery(ctx, features, U_key, contexts_u, targets_u, periods_u, seed):
+        feats = sorted(int(f) for f in ([features] if isinstance(features, (int, np.integer))
+                                        else features))
+        if ctx.model == "A" and feats == [0]:
+            return _stats_raw(real_level_a), _stats_shape(real_trend_a)
+        if ctx.model == "B" and feats == [1]:
+            return _stats_raw(real_level_b), _stats_shape(real_trend_b)
+        # A matched candidate set's own battery result: enormous, so the
+        # modest real effect above would be swamped if this fed
+        # `_side_channel_scores` (the pre-review bug).
+        r = np.random.default_rng(sia._seed("fallback", ctx.model, tuple(feats), base=0))
+        return _stats_raw(r.normal(0, 1000.0, n)), _stats_shape(r.normal(0, 1000.0, n))
+
+    def _fake_own_null(ctx, features, U_key, contexts_u, targets_u, periods_u, seed, n_null):
+        r = np.random.default_rng(seed)
+        return [(_stats_raw(r.normal(0, 0.01, n)), _stats_shape(r.normal(0, 0.01, n)))
+               for _ in range(int(n_null))]
+
+    pooled = np.full((n, DICT_SIZE), 3.0)
+    sae_a = _SAE(pooled, np.zeros((DICT_SIZE, D_IN)))
+    sae_b = _SAE(pooled, np.zeros((DICT_SIZE, D_IN)))
+    saes = {("A", "blocks_0"): sae_a, ("B", "blocks_0"): sae_b}
+    adapters = {"A": _Adapter("A"), "B": _Adapter("B")}
+    hub, store = _Hub(adapters), _Store({"A": pooled, "B": pooled})
+
+    class _SmallData:
+        n_series = n
+        meta = None
+
+        def contexts(self):
+            c = np.zeros((n, 8), dtype=np.float32)
+            c[:, 0] = np.arange(n)
+            return c
+
+        def targets(self):
+            return np.zeros((n, HORIZON), dtype=np.float32)
+    _SmallData.n = n
+    data = _SmallData()
+
+    cfg = _Cfg
+    cfg.concepts.shared_input_n_null = 20
+    monkeypatch.setattr(sia, "load_sae_checkpoint",
+                        lambda path: saes[(Path(path).parent.name, Path(path).stem)])
+    monkeypatch.setattr(sia, "load_all_windows",
+                        lambda store, model, layer: data.contexts()[:, :D_IN].astype(np.float32))
+    monkeypatch.setattr(sia, "reach_probe", lambda *a, **k: {"reachable": True, "reason": ""})
+    monkeypatch.setattr(sia, "battery_for_set", _fake_battery)
+    monkeypatch.setattr(sia, "own_effect_null", _fake_own_null)
+
+    score_a = concept_scores(pooled, [0])
+    S_a = top_series(score_a, 3)
+    ranks_b = rankdata(pooled, axis=0)
+    auc = float(auc_from_ranks(ranks_b, S_a)[1])
+    atlas = {"rows": [{"model": "A", "layer": "blocks.0", "feature": 0, "concept": 1}]}
+    atlas_transfer = {"k_top_series": 3, "tests": [
+        {"concept": 1, "src_target": "A/blocks.0", "src_model": "A",
+         "dst_target": "B/blocks.0", "dst_model": "B", "feature": 1,
+         "auc": auc, "reciprocal_fdr": True},
+    ]}
+    out = sia.run_shared_input_agreement(cfg, tmp_path, hub, store, data, "cpu",
+                                         atlas, atlas_transfer)
+    test = out["tests"][0]
+    assert test["verdict"] != "not scorable", test
+    assert "level" in test["side_src"]["clearing_channels"]
+    assert "level" in test["side_dst"]["clearing_channels"]
+
+
+def test_sign_flip_shows_acts_differently_under_the_corrected_null(monkeypatch, tmp_path):
+    """A bare decoder sign-flip disagrees on LEVEL (spearman exactly -1.0,
+    below both sides' matched-null floor p05s). Before review item 1, this
+    fixture's SHAPE cosine was scored against the WRONG null (the matched
+    CANDIDATE feature sets) and came out spuriously near 1.0 -- several
+    shape channels (dispersion, spectral_centroid, horizon_shape near/far)
+    are magnitude statistics that do not carry the ablation's sign, so they
+    LOOKED like they agreed under that null's normalization, reading as
+    'shape only'. Scored against the CORRECT row-matched random-direction
+    null (`own_effect_null`, review item 1), the measured cosine here drops
+    to essentially uncorrelated (empirically ~0.03, neither clearing nor
+    below its own floor) -- this fixture is exactly the review's own
+    illustration of why the null mattered: the old null could manufacture
+    an agreement the corrected one does not reproduce, and the concept ends
+    up correctly `acts differently` on the strength of its level
+    disagreement alone.
+
+    Plant: swapping `_side_channel_scores`'s null argument back to the
+    matched sets (the pre-review wiring) inflates the shape cosine back
+    toward 1.0, which `test_own_effect_null_is_random_direction_not_
+    matched_sets` catches directly; this test's own load-bearing check is
+    that `statistic_ii` does NOT clear here."""
     pooled_a, w_dec_a = _pooled_and_wdec(0, REAL_COL, real_gain=20.0)
     pooled_b, w_dec_b = _pooled_and_wdec(1, REAL_COL, real_gain=-20.0)
     out = _build_run(pooled_a, w_dec_a, pooled_b, w_dec_b, tmp_path, monkeypatch=monkeypatch)
     test = out["tests"][0]
     assert test["statistic_i"]["observed"] == pytest.approx(-1.0)
     assert test["statistic_i"]["clears"] is False
-    assert test["verdict"] == "shape only", test
+    assert test["statistic_i"]["below_floor"] is True
+    assert test["statistic_ii"]["clears"] is False
+    assert test["verdict"] == "acts differently", test
 
 
 def test_dead_model_not_scorable(monkeypatch, tmp_path):
@@ -542,8 +794,14 @@ def test_dead_model_not_scorable(monkeypatch, tmp_path):
     assert "does not causally reach" in test["reason"]
 
 
-def test_auc_correctness_check_catches_a_divergent_recomputation(monkeypatch):
-    """Item 2's free correctness check: a WRONG recorded AUC must raise."""
+def test_auc_correctness_check_catches_a_divergent_recomputation(monkeypatch, tmp_path):
+    """Item 2's free correctness check: a WRONG recorded AUC must raise.
+    Uses a real writable `tmp_path`, not a fixed nonexistent path -- a run
+    dir the driver cannot create (e.g. `/unused`, permission denied) makes
+    a broken guard fail on an unrelated `PermissionError` from a later
+    `mkdir` instead of cleanly reaching pytest's `DID NOT RAISE`, which is
+    indistinguishable from the guard actually firing (CLAUDE.md sec 11.53:
+    a plant that changes nothing/is masked is not a working guard)."""
     pooled_a, w_dec_a = _pooled_and_wdec(0, REAL_COL, real_gain=20.0)
     pooled_b, w_dec_b = _pooled_and_wdec(1, REAL_COL, real_gain=20.0)
     _MODULE_STATE.clear()
@@ -567,7 +825,7 @@ def test_auc_correctness_check_catches_a_divergent_recomputation(monkeypatch):
          "auc": 0.123456, "reciprocal_fdr": True},  # deliberately wrong
     ]}
     with pytest.raises(AssertionError, match="does not reproduce"):
-        sia.run_shared_input_agreement(cfg, Path("/unused"), hub, store, data, "cpu",
+        sia.run_shared_input_agreement(cfg, tmp_path, hub, store, data, "cpu",
                                        atlas, atlas_transfer)
 
 
@@ -642,3 +900,20 @@ def test_l5_not_reached_when_any_test_acts_differently():
     rows = derived.concept_verdicts(profiles, None, None, shared_input)
     l5 = rows[0]["rungs"][4]
     assert l5["status"] == "not reached"
+
+
+def test_l5_partial_on_no_specific_agreement_alone():
+    """A concept whose only shared-input test is `no specific agreement`
+    (review item 2's new verdict) is neither 'reached' (no `same causal
+    effect`) nor 'not reached' (no `acts differently`) -- it is `partial`,
+    exactly like `level only`/`shape only` alone were before review."""
+    from tsfm_lens.report import derived
+
+    profiles = {"concepts": [{
+        "concept": 3, "name": "c3", "n_models": 2,
+        "sharing_class": "partially shared", "stable": None,
+        "input_transfer_models_fdr": []}]}
+    shared_input = {"tests": [{"concept": 3, "verdict": "no specific agreement"}]}
+    rows = derived.concept_verdicts(profiles, None, None, shared_input)
+    l5 = rows[0]["rungs"][4]
+    assert l5["status"] == "partial"

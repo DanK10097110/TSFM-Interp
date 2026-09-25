@@ -27,13 +27,27 @@ effect. Two agreement statistics answer different questions: (i) per-series
 Spearman concordance of the signed level effect (do the forecasts move the
 same way on the same inputs?); (ii) cosine of the null-normalized shape-
 channel vectors, over channels that clear in either model (do they move the
-same KIND of thing?). Neither needs an untrained-twin floor: instead, each
-side draws `concepts.shared_input_n_null` random ALIVE feature sets from its
-OWN dictionary, matched to the real set's size and its decile of mean pooled
-activation on `U`, and re-scores the SAME statistic against the OTHER side's
-fixed, already-measured effect -- "does this feature/part agree with the
-other side's effect more than an arbitrary, equally-active feature of the
-SAME model would". A statistic clears only when it beats BOTH sides' p95.
+same KIND of thing?).
+
+**Two separate nulls, for two separate questions (review of the first
+version tightened this; see the deviation note below).** Whether a side's
+own effect is real at all -- `clears_null`, `not scorable`, and the
+per-channel `null_p95` that normalizes each side's shape vector for (ii) --
+is decided by that side's own **row-matched random-direction null on `U`**
+(`own_effect_null`), exactly the mechanism `feature_ablation_fingerprints`
+already uses: `concepts.n_null_directions` random unit directions injected
+via `_direction_steered_replacement` at `-mean(nonzero abs activation of the
+ablated set on U)` magnitude, scored with the same raw/level-removed
+battery. This answers "is this ablation's effect distinguishable from
+removing an arbitrary direction of the same size" -- the ordinary causal
+bar every other fingerprint in this repo clears. Whether the AGREEMENT
+between the two sides' effects is more than an artifact of matched-feature
+noise is a different question, and keeps its own floor: each side draws
+`concepts.shared_input_n_null` random ALIVE feature sets from its OWN
+dictionary, matched to the real set's size and its decile of mean pooled
+activation on `U`, and re-scores the SAME statistic (i or ii) against the
+OTHER side's fixed, already-measured effect. A statistic clears when the
+observed value beats BOTH sides' matched-null p95.
 
 Deviation from sec 37.8 item 6, recorded here as the spec instructs: this
 writes its OWN `sae/shared_input_agreement.json` rather than a
@@ -47,9 +61,27 @@ bolting a causal block onto the wrong producer's file would make `transfer.
 json` depend on a stage it does not otherwise touch. `sae/matching.py::
 add_role_causal_agreement`'s own 1-vs-18 output is untouched by any of this.
 
+Second deviation, an ORCHESTRATOR decision made on review of the v1 run on
+`full_report_run_4model` (288 tests: 125 `not scorable`, 109 `acts
+differently`), refining design item 5: v1 scored each side's OWN effect
+against the matched feature sets rather than a random-direction null, which
+is the wrong null for "is this effect real" (feature sets are not
+independent draws from "nothing", so a small dictionary starves the floor
+and a highly-selective one over-clears it) -- fixed by the two-null split
+above. Separately, v1's `else` branch called "neither statistic clears its
+matched-null p95" `acts differently`, but failing to clear a floor is not
+evidence of disagreement -- it is the ABSENCE of evidence of agreement
+beyond what matched, equally-active features already produce by chance. v2
+also records each floor's p05 and only calls the pair `acts differently`
+when an observed statistic falls BELOW the p05 of both sides' floors (worse
+than matched features agree by chance -- disagreement beyond noise); the
+genuine middle ground -- scorable on both sides, neither clearing nor
+falling below the floor -- is its own verdict, `no specific agreement`.
+
 Evidence class: causal WITHIN each model (an ablation, scored against that
-model's own null), compared ACROSS models only on the same corpus inputs --
-never a transplant of one model's activation into another (invariant 5).
+model's own random-direction null), compared ACROSS models only on the same
+corpus inputs -- never a transplant of one model's activation into another
+(invariant 5).
 """
 
 from __future__ import annotations
@@ -67,8 +99,8 @@ from ..extraction.hooks import token_patch
 from ..utils import load_json, log, save_json
 from .eval import _token_level_replacement
 from .ground_truth import load_ground_truth_table
-from .response import CHANNELS, _feature_ablated_replacement, _score_channel_against_null, \
-    alive_feature_mask, battery_statistics
+from .response import CHANNELS, _direction_steered_replacement, _feature_ablated_replacement, \
+    _score_channel_against_null, alive_feature_mask, battery_statistics
 from .train import load_all_windows, load_sae_checkpoint, sanitize
 from .transfer import _seed, auc_from_ranks, concept_scores, top_series
 
@@ -76,7 +108,7 @@ __all__ = ["shared_input_agreement_path", "run_shared_input_agreement"]
 
 SHAPE_CHANNELS = tuple(c for c in CHANNELS if c != "level")
 _VERDICTS = ("same causal effect", "level only", "shape only",
-            "acts differently", "not scorable")
+            "acts differently", "no specific agreement", "not scorable")
 _N_DECILE_BINS = 10
 
 
@@ -235,6 +267,7 @@ def verify_auc_reproduces(ctx_dst: TargetContext, S_src: np.ndarray, dst_feature
 
 _baseline_cache: dict = {}
 _battery_cache: dict = {}
+_own_null_cache: dict = {}
 
 
 def reset_caches() -> None:
@@ -242,6 +275,7 @@ def reset_caches() -> None:
     content, not by run) cannot leak state across fixtures."""
     _baseline_cache.clear()
     _battery_cache.clear()
+    _own_null_cache.clear()
 
 
 def _baseline_for_rows(ctx: TargetContext, contexts_u: np.ndarray, U_key: tuple,
@@ -286,6 +320,66 @@ def battery_for_set(ctx: TargetContext, features, U_key: tuple, contexts_u: np.n
                                      baseline_quantiles=baseline_q, remove_level=True)
     out = (stats_raw, stats_shape)
     _battery_cache[key] = out
+    return out
+
+
+def own_effect_null(ctx: TargetContext, features, U_key: tuple, contexts_u: np.ndarray,
+                    targets_u: np.ndarray, periods_u: np.ndarray, seed: int,
+                    n_null: int) -> list:
+    """The null that decides whether `features`' own effect on `U` is real at
+    all (review of the v1 run, tightening design item 5's floor -- see the
+    module docstring's second deviation note): `n_null` row-matched
+    random-direction passes, exactly `feature_ablation_fingerprints`'s own
+    mechanism, NEVER the matched candidate feature sets used for the
+    AGREEMENT floor (`matched_null_sets`) -- those are a fixed, sparse
+    handful of other dictionary atoms and are not independent draws from
+    "no effect", so using them here starves a small dictionary's floor and
+    over-clears a highly selective one.
+
+    `magnitude` is `-mean(nonzero abs activation of `features` on U)`, the
+    same convention `feature_ablation_fingerprints` uses for its own
+    candidates -- "this effect" means more than removing that much of an
+    arbitrary direction does. Returns a list of `(stats_raw, stats_shape)`
+    tuples, the SAME shape `battery_for_set` returns for one candidate, so
+    `_side_channel_scores` (unchanged) can score against either.
+
+    Cached by `(model, layer, sorted(features), U)`: the magnitude is a
+    property of the specific ablated set, so two different sets at the same
+    (target, U) are two different nulls, but a repeated (set, U) -- e.g. the
+    same source part scored against two different destinations that share a
+    `U` -- is computed once."""
+    feat_list = [int(features)] if isinstance(features, (int, np.integer)) else \
+        sorted(int(f) for f in features)
+    key = (ctx.model, ctx.layer, tuple(feat_list), U_key)
+    if key in _own_null_cache:
+        return _own_null_cache[key]
+    clean_tokens, baseline_fc, baseline_q = _baseline_for_rows(ctx, contexts_u, U_key, seed)
+    with torch.no_grad():
+        d_in = clean_tokens.shape[-1]
+        enc = ctx.sae.encode(clean_tokens.reshape(-1, d_in).to(ctx.device))
+        removed = [float(enc[:, f].abs().mean().cpu()) for f in feat_list]
+    nonzero = [m for m in removed if m > 0]
+    null_magnitude = -float(np.mean(nonzero) if nonzero else 1.0)
+
+    rng = np.random.default_rng(seed)
+    out = []
+    for _ in range(int(n_null)):
+        direction = rng.normal(size=ctx.sae.dict_size)
+        direction = direction / (np.linalg.norm(direction) + 1e-12)
+        replacement = _direction_steered_replacement(
+            clean_tokens, ctx.sae, ctx.device,
+            torch.as_tensor(direction, dtype=torch.float32), null_magnitude)
+        with token_patch(ctx.adapter.module, ctx.layer, ctx.adapter.token_slice, replacement):
+            torch.manual_seed(seed)
+            rec = ctx.adapter.predict(contexts_u, ctx.cfg.data.horizon, ctx.cfg.l0.quantiles)
+        stats_raw = battery_statistics(rec["point"], baseline_fc, targets_u, contexts_u, periods_u,
+                                       steered_quantiles=rec.get("quantiles"),
+                                       baseline_quantiles=baseline_q, remove_level=False)
+        stats_shape = battery_statistics(rec["point"], baseline_fc, targets_u, contexts_u, periods_u,
+                                         steered_quantiles=rec.get("quantiles"),
+                                         baseline_quantiles=baseline_q, remove_level=True)
+        out.append((stats_raw, stats_shape))
+    _own_null_cache[key] = out
     return out
 
 
@@ -360,13 +454,18 @@ def _channel_deltas(stats: dict, channel: str, idx: np.ndarray | None = None) ->
 
 
 def _side_channel_scores(real_stats_raw: dict, real_stats_shape: dict,
-                         null_stats: list) -> dict:
+                         own_null: list) -> dict:
     """`-> {"level": score_dict, "shape": {channel: score_dict}}`, each
     `score_dict` from `response.py::_score_channel_against_null` (reused
     directly, never re-derived -- the same gating arithmetic every other
-    causal fingerprint in this repo uses)."""
+    causal fingerprint in this repo uses). `own_null` is THIS side's own
+    row-matched random-direction null (`own_effect_null`, review item 1) --
+    it decides whether the real effect is distinguishable from removing an
+    arbitrary direction at all, which is a different question from whether
+    the two sides AGREE (the matched feature sets scored by `_statistic_i`/
+    `_statistic_ii` answer that one, and never reach this function)."""
     level_real = _channel_deltas(real_stats_raw, "level")
-    level_null = [np.abs(_channel_deltas(sr, "level")) for sr, _ in null_stats
+    level_null = [np.abs(_channel_deltas(sr, "level")) for sr, _ in own_null
                  if _channel_deltas(sr, "level") is not None]
     level_score = (_score_channel_against_null(level_real, level_null)
                   if level_real is not None else
@@ -381,7 +480,7 @@ def _side_channel_scores(real_stats_raw: dict, real_stats_shape: dict,
                                 "null_p95": None, "clears_null": False,
                                 "reason": "channel unavailable on this row set"}
             continue
-        null_draws = [np.abs(_channel_deltas(ss, ch)) for _, ss in null_stats
+        null_draws = [np.abs(_channel_deltas(ss, ch)) for _, ss in own_null
                       if _channel_deltas(ss, ch) is not None]
         shape_scores[ch] = _score_channel_against_null(real_delta, null_draws)
     return {"level": level_score, "shape": shape_scores}
@@ -429,9 +528,18 @@ def _quantile95(values: list) -> float | None:
     return float(np.quantile(values, 0.95)) if values else None
 
 
+def _quantile05(values: list) -> float | None:
+    return float(np.quantile(values, 0.05)) if values else None
+
+
 def _statistic_i(level_a_real, level_b_real, null_stats_a: list, null_stats_b: list) -> dict:
     """Item 4(i): per-series Spearman concordance of the signed level effect,
-    against BOTH sides' matched-null floors (item 5)."""
+    against BOTH sides' matched-null floors (item 5). `clears` (beats both
+    p95s) and `below_floor` (falls below both p05s -- review's second
+    deviation note: disagreement beyond what matched, equally-active
+    features produce by chance, never merely "did not clear") are reported
+    together; neither implies the other, and both can be false (the
+    ordinary "no specific agreement" case)."""
     obs = _spearman(level_a_real, level_b_real)
     floor_src = []
     for stats_raw, _stats_shape in null_stats_a:
@@ -446,10 +554,15 @@ def _statistic_i(level_a_real, level_b_real, null_stats_a: list, null_stats_b: l
         if v is not None:
             floor_dst.append(v)
     p95_src, p95_dst = _quantile95(floor_src), _quantile95(floor_dst)
+    p05_src, p05_dst = _quantile05(floor_src), _quantile05(floor_dst)
     clears = bool(obs is not None and p95_src is not None and p95_dst is not None
                  and obs > p95_src and obs > p95_dst)
+    below_floor = bool(obs is not None and p05_src is not None and p05_dst is not None
+                       and obs < p05_src and obs < p05_dst)
     return {"observed": obs, "floor_p95_src": p95_src, "floor_p95_dst": p95_dst,
-           "n_floor_src": len(floor_src), "n_floor_dst": len(floor_dst), "clears": clears}
+           "floor_p05_src": p05_src, "floor_p05_dst": p05_dst,
+           "n_floor_src": len(floor_src), "n_floor_dst": len(floor_dst),
+           "clears": clears, "below_floor": below_floor}
 
 
 def _null_normalized_vector(null_stats_shape: dict, side_scores: dict, mask: list) -> np.ndarray:
@@ -472,10 +585,11 @@ def _statistic_ii(side_a: dict, side_b: dict, null_stats_a: list, null_stats_b: 
                   mask: list) -> dict:
     """Item 4(ii): cosine of the null-normalized shape-channel vectors, over
     channels clearing in either model, against both sides' matched-null
-    floors."""
+    floors. See `_statistic_i` for `clears` vs `below_floor`."""
     if not mask:
         return {"observed": None, "floor_p95_src": None, "floor_p95_dst": None,
-               "n_floor_src": 0, "n_floor_dst": 0, "clears": False,
+               "floor_p05_src": None, "floor_p05_dst": None,
+               "n_floor_src": 0, "n_floor_dst": 0, "clears": False, "below_floor": False,
                "reason": "no shape channel is available and clears in either model"}
     vec_a = _normalized_shape_vector(side_a, mask)
     vec_b = _normalized_shape_vector(side_b, mask)
@@ -492,10 +606,15 @@ def _statistic_ii(side_a: dict, side_b: dict, null_stats_a: list, null_stats_b: 
         if c is not None:
             floor_dst.append(c)
     p95_src, p95_dst = _quantile95(floor_src), _quantile95(floor_dst)
+    p05_src, p05_dst = _quantile05(floor_src), _quantile05(floor_dst)
     clears = bool(obs is not None and p95_src is not None and p95_dst is not None
                  and obs > p95_src and obs > p95_dst)
+    below_floor = bool(obs is not None and p05_src is not None and p05_dst is not None
+                       and obs < p05_src and obs < p05_dst)
     return {"observed": obs, "floor_p95_src": p95_src, "floor_p95_dst": p95_dst,
-           "n_floor_src": len(floor_src), "n_floor_dst": len(floor_dst), "clears": clears}
+           "floor_p05_src": p05_src, "floor_p05_dst": p05_dst,
+           "n_floor_src": len(floor_src), "n_floor_dst": len(floor_dst),
+           "clears": clears, "below_floor": below_floor}
 
 
 # ---------------------------------------------------------------------------
@@ -506,10 +625,12 @@ def run_shared_input_agreement(cfg, run_dir, hub, store, data, device, atlas: di
                                atlas_transfer: dict) -> dict:
     """Score every FDR-surviving reciprocal atlas-transfer test and write
     `sae/shared_input_agreement.json`. Gates each target's reach FIRST (P5a),
-    then ablates on the shared series `U`, scores the two agreement
-    statistics against each side's own matched-random-set floor, and assigns
-    a verdict (item 6). See the module docstring for the schema deviation
-    from ROADMAP.md sec 37.8 item 6.
+    then ablates on the shared series `U`, scores each side's own effect
+    against its row-matched random-direction null (`own_effect_null`,
+    review item 1), scores the two agreement statistics against each side's
+    own matched-random-SET floor, and assigns a verdict from both floors'
+    p95 (clears) and p05 (below_floor, review item 2). See the module
+    docstring for both deviations from ROADMAP.md sec 37.8.
     """
     t0 = time.monotonic()
     c = cfg.concepts
@@ -598,13 +719,30 @@ def run_shared_input_agreement(cfg, run_dir, hub, store, data, device, atlas: di
         null_stats_b = [battery_for_set(ctx_dst, ns, U_key, contexts_u, targets_u, periods_u, seed_dst)
                        for ns in null_sets_b]
 
-        side_a = _side_channel_scores(real_raw_a, real_shape_a, null_stats_a)
-        side_b = _side_channel_scores(real_raw_b, real_shape_b, null_stats_b)
+        # Review of the v1 run (ROADMAP.md sec 37.8 P5b review item 1):
+        # whether a side's OWN effect is real is decided by its own
+        # row-matched random-direction null, never the matched candidate
+        # feature sets above (those are ONLY the floor for statistics
+        # (i)/(ii) themselves -- see the module docstring).
+        own_null_seed_a = _seed("shared_input_own_null", unit["src_target"],
+                                tuple(sorted(unit["src_features"])), U_key, base=base_seed)
+        own_null_seed_b = _seed("shared_input_own_null", unit["dst_target"],
+                                tuple(sorted(unit["dst_features"])), U_key, base=base_seed)
+        n_null_directions = int(getattr(c, "n_null_directions", 16))
+        own_null_a = own_effect_null(ctx_src, unit["src_features"], U_key, contexts_u, targets_u,
+                                     periods_u, own_null_seed_a, n_null_directions)
+        own_null_b = own_effect_null(ctx_dst, unit["dst_features"], U_key, contexts_u, targets_u,
+                                     periods_u, own_null_seed_b, n_null_directions)
+
+        side_a = _side_channel_scores(real_raw_a, real_shape_a, own_null_a)
+        side_b = _side_channel_scores(real_raw_b, real_shape_b, own_null_b)
         clearing_a, clearing_b = _clearing_channels(side_a), _clearing_channels(side_b)
 
         record.update({
             "U": list(U_key), "n_shared_series": int(U.size),
-            "null_diag": {"src": diag_a, "dst": diag_b},
+            "matched_null_diag": {"src": diag_a, "dst": diag_b},
+            "own_effect_null": {"src": {"n_directions": n_null_directions, "n": len(own_null_a)},
+                               "dst": {"n_directions": n_null_directions, "n": len(own_null_b)}},
             "side_src": {"clearing_channels": clearing_a, "level": side_a["level"],
                         "shape": side_a["shape"]},
             "side_dst": {"clearing_channels": clearing_b, "level": side_b["level"],
@@ -615,8 +753,8 @@ def run_shared_input_agreement(cfg, run_dir, hub, store, data, device, atlas: di
             empty_target = unit["src_target"] if not clearing_a else unit["dst_target"]
             record["verdict"] = "not scorable"
             record["reason"] = (f"{empty_target} has no channel (raw level or "
-                                f"level-removed shape) clearing its own matched-set null "
-                                f"on the shared series")
+                                f"level-removed shape) clearing its own random-direction "
+                                f"null on the shared series")
             tests.append(record)
             continue
 
@@ -633,14 +771,21 @@ def run_shared_input_agreement(cfg, run_dir, hub, store, data, device, atlas: di
         record["statistic_ii"] = stat_ii
         record["shape_mask"] = mask
 
+        # Review item 2: failing to clear the matched-feature floor is the
+        # ABSENCE of evidence of agreement, not evidence of disagreement.
+        # `acts differently` is reserved for an observed statistic falling
+        # BELOW the p05 of BOTH sides' floors -- worse than matched,
+        # equally-active features already agree by chance.
         if stat_i["clears"] and stat_ii["clears"]:
             verdict = "same causal effect"
         elif stat_i["clears"]:
             verdict = "level only"
         elif stat_ii["clears"]:
             verdict = "shape only"
-        else:
+        elif stat_i["below_floor"] or stat_ii["below_floor"]:
             verdict = "acts differently"
+        else:
+            verdict = "no specific agreement"
         record["verdict"] = verdict
         tests.append(record)
 
