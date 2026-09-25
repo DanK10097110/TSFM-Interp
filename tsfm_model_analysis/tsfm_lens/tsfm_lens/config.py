@@ -832,6 +832,22 @@ class ConceptsConfig:
     profiles_enabled: bool = True
     profile_n_perm: int = 1000
 
+    # ROADMAP.md sec 37.7 P4 -- causal fingerprints with the level shift
+    # separated. `sae/response.py::feature_ablation_fingerprints` always
+    # computes `level_share` (sec 37.3 P0's ratio) and a level-removed
+    # `shape_channels` block per candidate (no extra forward pass -- both are
+    # read off the SAME patched forecast already computed for `channels`), so
+    # this knob is judgment only: how high a concept's members' MEDIAN
+    # `level_share` must sit, with no level-removed channel clearing, before
+    # the atlas tags it `level carrier` rather than `shape-causal` or `no
+    # measured effect` (`sae/concept_atlas.py::_tag_causal_effect`). Sec
+    # 37.3 P0 measured the pooled median at 0.535 and the per-model medians
+    # at 0.687/0.542/0.467/0.297 (TimesFM/Sundial/Chronos-2/Chronos-Bolt),
+    # with 20.6% of candidates above 0.9 -- 0.9 is set high enough that only
+    # the candidates P0 already called "almost entirely level" qualify, not
+    # the roughly half whose level share is merely majority.
+    level_share_threshold: float = 0.9
+
 
 @dataclass
 class PipelineConfig:
