@@ -36106,6 +36106,44 @@ per model pair, beside §27's 1-vs-18, with a short note on how many of §27's
 "acts differently" verdicts survive when both effects are measured on the same
 series.
 
+**Findings — P5a (2026-09-25, merged; Sonnet agent, reviewed).** Implemented:
+- `reach_probe` gates on `relative_reach = cross_patch_delta /
+  forecast_scale > concepts.min_relative_reach`, where `forecast_scale` is
+  the mean absolute clean forecast;
+- a constructed replacement (target clean × 1.5, `reach_method:
+  "constructed"`) when the written diff is exactly 0.0;
+- `forecast_scale == 0` withholds with a stated reason;
+- new additive fields `forecast_scale`, `relative_reach`,
+  `min_relative_reach`, `reach_method`.
+
+Tests: 22 in `test_response_fingerprint.py`. Plant: the old absolute gate
+fails `test_relative_reach_refuses_dead_twin`. Plant: removing the
+escalation fails `test_constructed_replacement_when_identical`.
+
+- **Live relative reach** (4-model run, production path; it reproduced
+  the recorded `cross_patch_delta` bit-for-bit):
+  - ablation gate: minimum 0.18462447478637423 (Chronos-2 encoder.block.10),
+    maximum 13.454734658139376 (TimesFM stacked_xf.18);
+  - stage-2 gate: minimum **0.11251279101337909**.
+- **Untrained twins** (`random_init: true`, production path, bf16):
+  - Chronos-2: 3.0568843567679234e-06 / 5.774114896117189e-06 /
+    5.249195360106535e-07, refused;
+  - Chronos-Bolt: 3.4745999325853425e-05 / 3.2922143489354e-05, refused;
+  - Sundial: 0.68–0.87, reachable;
+  - TimesFM: 0.18686863774548157 at all 5 layers, reachable via the
+    constructed replacement, because its identity stack makes every layer
+    bit-identical. The old code would have called it unreachable.
+
+  §29's fp32 numbers (6.5e-08 and 9.3e-08) came from a different, manual
+  replacement, and the production-path twin values above replace them.
+- **Threshold:** `min_relative_reach` is set to **1e-3** (judgment), not the
+  designed 1e-4. At 1e-4 the Chronos-Bolt twin sat only 3× below the cut.
+  1e-3 is 29× above the highest dead twin and 112× below the live minimum,
+  which meets the "≥100× below live" rule.
+- **Re-derived verdicts: none changed.** All 13 ablation targets and all 13
+  stage-2 targets stay reachable. The only behavior change is on twins,
+  which this run does not configure.
+
 ### 37.9 P6 — Generator counterfactuals and mediation: the headline experiment (~2 sessions + GPU)
 
 **Why.** Clause 2, and the strongest form of clauses 4–5. Every other
