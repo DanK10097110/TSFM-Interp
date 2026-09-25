@@ -36240,6 +36240,145 @@ escalation fails `test_constructed_replacement_when_identical`.
   stage-2 targets stay reachable. The only behavior change is on twins,
   which this run does not configure.
 
+**Findings — P5b (2026-09-25; merged `5184bcd`, review fixes `89bbe7d` and
+`09e0c81`; Sonnet agent, reviewed twice).** Implemented:
+- `sae/shared_input_agreement.py` → `sae/shared_input_agreement.json`, run
+  inside the `concepts` stage after atlas transfer;
+- knobs `concepts.shared_input_enabled` and `shared_input_n_null: 50`;
+- `_feature_ablated_replacement` accepts a feature set (a single int is
+  byte-identical);
+- L5 filled in `derived.concept_verdicts`, and a per-pair verdict table in
+  the model comparison section.
+
+Deviations from the design (all recorded in the module docstring):
+1. **Own artifact.** It writes its own artifact, not a block in
+   `transfer.json`.
+2. **Two nulls.** Scorability is decided by each side's row-matched
+   random-direction null on U, as in the battery. The activation-matched
+   random-feature-set floor is used only for the two agreement statistics.
+   v1 used the feature sets for both, which conflated "does this do
+   anything" with "is this more specific than an equally active feature".
+3. **Verdict split** (orchestrator decision). v1 labelled "neither statistic
+   beats its floor's p95" as `acts differently`, but that is absence of
+   agreement, not disagreement. `acts differently` now requires an observed
+   statistic below the p05 of *both* floors. The middle ground is `no
+   specific agreement`. `shape only` was added for (ii)-without-(i).
+
+- **Unit:** the 288 reciprocal-FDR atlas-transfer tests.
+  - `dst_set_kind`: feature 268, atlas part 20.
+  - No matched pool fell short.
+  - The recomputed S sets reproduce the recorded AUC, asserted once per
+    model pair.
+  - All 13 targets pass P5a's reach gate.
+- **Verdicts** (v2; the run is deterministic and reproduced bit for bit
+  twice, runtime 2049.9 s on one GPU):
+
+  | verdict | v1 (before review) | v2 |
+  |---|---|---|
+  | same causal effect | 16 | 5 |
+  | level only | 15 | 15 |
+  | shape only | 23 | 8 |
+  | no specific agreement | — | 32 |
+  | acts differently | 109 | 9 |
+  | not scorable | 125 | 219 |
+
+  v2 per ordered pair (same / level / shape / acts differently / no specific
+  / not scorable):
+
+  | source → destination | same | level | shape | differs | no specific | not scorable |
+  |---|---|---|---|---|---|---|
+  | Chronos-2 → Chronos-Bolt | 0 | 2 | 0 | 1 | 3 | 16 |
+  | Chronos-2 → Sundial | 0 | 0 | 0 | 0 | 0 | 20 |
+  | Chronos-2 → TimesFM | 1 | 1 | 3 | 4 | 3 | 24 |
+  | Chronos-Bolt → Chronos-2 | 2 | 4 | 2 | 0 | 2 | 8 |
+  | Chronos-Bolt → Sundial | 0 | 0 | 0 | 0 | 0 | 12 |
+  | Chronos-Bolt → TimesFM | 1 | 3 | 2 | 0 | 7 | 13 |
+  | Sundial → Chronos-2 | 0 | 0 | 0 | 0 | 2 | 9 |
+  | Sundial → Chronos-Bolt | 0 | 1 | 0 | 0 | 1 | 10 |
+  | Sundial → TimesFM | 0 | 1 | 0 | 0 | 2 | 14 |
+  | TimesFM → Chronos-2 | 1 | 0 | 1 | 2 | 6 | 33 |
+  | TimesFM → Chronos-Bolt | 0 | 2 | 0 | 2 | 6 | 22 |
+  | TimesFM → Sundial | 0 | 1 | 0 | 0 | 0 | 38 |
+
+  Only 1 of the 71 tests with Sundial as the destination is scorable.
+- **Statistics on the scored tests:**
+  - (i), n=69 (quantiles 10/25/50/75/90%): −0.324 / −0.042 / 0.167 / 0.383
+    / 0.462. Median of the larger floor p95: 0.348. 20 clear; 7 fall below
+    both p05s.
+  - (ii), n=64: −0.442 / 0.355 / 0.886 / 0.953 / 1.000. Median of the larger
+    floor p95: 0.943. 13 clear; 3 fall below.
+
+  Shape-vector cosines are high even for arbitrary equally active features,
+  so (ii) rarely clears: most ablations move the same shape channels in the
+  same direction.
+- **Why 219 are not scorable** (diagnosis, run with the merged code on a copy
+  of the P4 rebuild):
+  - **Destination sides** (184 failures): 134 are features the battery never
+    ablated (the transfer test's best-AUC feature is not a battery candidate);
+    13 were ablated and non-causal; 34 were battery-causal.
+  - **Source sides** (113 failures): all are battery-causal atlas members,
+    causal on their own top 8 series, whose effect over the ≤40 series of U
+    does not beat the random-direction null.
+  - **Dilution is not the cause.** The median side fires on 100% of U, and
+    scoring only its firing rows raises the scorable count from 69 to 72.
+  - **Gate sensitivity** (recorded, not adopted, because the gate would be
+    chosen after seeing results): scoring each side only on its own top-20
+    set within U gives 89 scorable; its top 8 by activation within U gives
+    114. The primary, pre-specified gate is all of U, and it is conservative.
+- **Scale check:** the unsigned level effect tracks series scale (median
+  Spearman 0.336 for real ablations, 0.365 for the random-direction null),
+  but statistic (i) uses the *signed* effect, whose Spearman with scale is
+  −0.018469310373839237 (IQR −0.156 to 0.140). The floor is not a scale
+  artifact.
+- **L5 per atlas concept** (rule: reached = at least one `same causal
+  effect` and no `acts differently`):
+  - reached 4: concepts 2, 6, 12, 18;
+  - partial 10: concepts 0, 1, 5, 7, 9, 10, 11, 13, 14, 17;
+  - not reached 5: concepts 3, 4, 8, 15, 16.
+
+  Two readings:
+  - Concepts 3 and 4 are sharing class `shared (same effect, same inputs)`,
+    yet act differently on shared series (concept 3: 4 of 4 scored tests).
+    The mean effect profile agrees, but *which* series move most is
+    anti-ranked across models.
+  - Concepts 12 and 18 are `single-model`, yet reach L5: another model's
+    best-matched feature, which the battery never ablated, has the same
+    causal effect on the shared series. Atlas membership is bounded by the
+    battery's candidate selection, so "single-model" means "no analogue among
+    the ablated candidates", not "no analogue".
+- **Versus §27's 1-vs-18.** The units differ (19 activation-matched role
+  pairs vs 288 transfer tests), so there is no one-to-one mapping. §27's
+  dominant verdict (18 of 19 "acts differently") does not survive: measured on
+  the same series with a floor, 9 of 69 scorable tests act differently, and
+  32 show no agreement beyond matched features.
+- **Rendered check** (isolated copy): 16 sections, none failed; the per-pair
+  table matches the JSON; concept cards print L5 status (4 reached, 9
+  partial, 4 not reached across the 17 cards). Review fixes in `09e0c81`:
+  - the table note described the pre-review null;
+  - Q1 hardcoded "L5 not measured";
+  - the card printed L5's detail without its status.
+
+  Each fix has a test, and each test fails under a planted regression.
+- **Tests:** 18 in `test_shared_input_agreement.py`. Plants:
+  - old else-branch → `no_specific_agreement` fails;
+  - matched-set own null → `own_effect_null_is_random_direction` fails;
+  - AUC tolerance 10.0 → DID NOT RAISE;
+  - demoting on `no specific agreement` → the L5 partial test fails;
+  - dropping the decile filter → `null_is_matched_on_activation` fails;
+  - single-member set ablation → the set test fails.
+
+  The agent replaced Python `hash()` seeding in test fixtures with `_seed`
+  (sha256), after it made a floor flaky across `PYTHONHASHSEED`. 136 passed
+  across the P5b, P4, concept, report and smoke suites.
+- **Open:**
+  - The set null uses the mean per-feature removed activation. For the 40
+    multi-feature source parts, it is smaller than what the set ablation
+    removes, which favors scorability. 9 scored tests involve a multi-feature
+    set.
+  - Sundial as a destination is almost never scorable. Unexplained.
+  - The L5 "reached" rule is lenient: 1 `same causal effect` among 12–21
+    tests reaches it.
+
 ### 37.9 P6 — Generator counterfactuals and mediation: the headline experiment (~2 sessions + GPU)
 
 **Why.** Clause 2, and the strongest form of clauses 4–5. Every other

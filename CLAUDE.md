@@ -371,7 +371,15 @@ rescued. L0, L1 and L3 replicate on private data.
    overlap, hypergeometric + BH, never a whole-series ρ; a `sharing_class`
    of shared / partially shared / convergent / single-model; a part is
    provenance-driven when ≥80% of its top-k comes from one real-derived
-   generator), and writes `sae/concept_stage.json`. It
+   generator), then **shared-input causal agreement**
+   (`sae/shared_input_agreement.py` → `sae/shared_input_agreement.json`, the
+   L5 rung: for each reciprocal-FDR atlas-transfer test, both sides are
+   ablated on the same series U; each side must clear its own
+   random-direction null to be scorable, and level concordance (i) and
+   shape cosine (ii) must beat both sides' activation-matched
+   random-feature-set floors; `acts differently` needs a statistic below
+   both floors' p05, otherwise `no specific agreement`), and writes
+   `sae/concept_stage.json`. It
    requires `sae.persist_features: true`, which preflight checks. It skips
    transfer with a stated reason, and deletes its own stale artifacts when it
    does not rewrite them. The preset is `configs/concept_atlas.yaml`.
@@ -464,6 +472,12 @@ in `CLAUDE_FULL.md`.
   An archetype (or a synthetic generator) is a structural recipe, so
   residualizing structure on it flagged 48 of 55 concept parts as
   provenance-driven. Residualize only on true confounds (ROADMAP §37.11).
+- **Absence of agreement is not disagreement.** Failing to beat a floor's
+  p95 is not evidence that two effects differ; that needs the lower tail.
+  P5b's v1 called 109 of 288 tests "acts differently" on this basis; with a
+  p05 test it was 9. Also: the null that asks "does this do anything" (random
+  direction) and the floor that asks "is this more specific than an equally
+  active feature" (matched features) are different nulls (ROADMAP §37.8).
 - **Sparse features and whole-series ρ.** Two sparse SAE features can have
   ρ 0.80 with zero shared top series, and identical top series with low ρ.
   "Same inputs" is a top-k overlap test (ROADMAP §37.11).
