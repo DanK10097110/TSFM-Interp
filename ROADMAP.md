@@ -35814,25 +35814,27 @@ replicates, 979.9082707837224 s. **Re-run on the committed code gave a
 byte-identical `concept_stability` artifact** (replicate training 950.5131745003164 s),
 so replicate SAE training is deterministic at a fixed seed on this stack.
 
-**Numbers below are the float64-rank rerun (`384c7cd`, 2026-09-24)** on a
-second isolated copy whose replicates were trained on CPU (all GPUs were
-full; same seeds, 41990 s). The GPU/float16 run had ceilings Chronos-2
-0.9642857142857143, Chronos-Bolt 1.0, Sundial 0.9545454545454546, TimesFM
-0.8695652173913043 and stable-by-universality 4 / 7 / 3. CPU- and
-GPU-trained replicates differ numerically, so the shift cannot be split
-between the rank fix and the device.
+**Float64 check (`384c7cd`, 2026-09-25).** Replicates retrained on GPU,
+with stability recomputed on float64 ranks, reproduce the table below
+exactly: every ceiling, its CI, and stable-by-universality 4 / 7 / 3.
+**The rank fix does not change stability.** A copy whose replicates were
+trained on CPU (all GPUs were full, same seeds, 41990 s) differed: ceilings
+Chronos-2 0.9285714285714286, Chronos-Bolt 0.9285714285714286, Sundial 1.0,
+TimesFM 0.8695652173913043; still 14/19 stable, but concept 14 flipped
+stable → unstable and concept 16 unstable → stable. **CPU- and GPU-trained
+replicates are not interchangeable.** Use GPU replicates for recorded
+numbers.
 
 | model | within-model ceiling | 95% CI (bootstrap over parts) | parts |
 |---|---|---|---|
-| Chronos-2 | 0.9285714285714286 | [0.8214285714285714, 1.0] | 14 |
-| Chronos-Bolt | 0.9285714285714286 | [0.7857142857142857, 1.0] | 7 |
-| Sundial | 1.0 | [1.0, 1.0] | 11 |
-| TimesFM | 0.8695652173913043 | [0.7391304347826086, 0.9782608695652174] | 23 |
+| Chronos-2 | 0.9642857142857143 | [0.8928571428571429, 1.0] | 14 |
+| Chronos-Bolt | 1.0 | [1.0, 1.0] | 7 |
+| Sundial | 0.9545454545454546 | [0.8636363636363636, 1.0] | 11 |
+| TimesFM | 0.8695652173913043 | [0.7385869565217396, 0.9782608695652174] | 23 |
 
-- **Stable: 14/19 = 0.7368421052631579** (unchanged). **Go/no-go: GO** (bar
-  25%, not tuned).
+- **Stable: 14/19 = 0.7368421052631579. Go/no-go: GO** (bar 25%, not tuned).
 - Universality (concepts spanning N models), all → stable: 3 models 7 → 4,
-  2 models 7 → 6, 1 model 5 → 4. No atlas concept spans all 4 models.
+  2 models 7 → 7, 1 model 5 → 3. No atlas concept spans all 4 models.
 - Old per-target `concepts.json` ceiling (only 2 targets have concepts):
   Chronos-Bolt 0.5 (2 parts), TimesFM 1.0 (2 parts) — too few to read.
 - **Relative transfer** (item 5; atlas transfer from P3, exact p, uncorrected
@@ -35842,22 +35844,22 @@ between the rank fix and the device.
 
 | src → dst | tests | R (uncorr.) | R (FDR) | ceil src | ceil dst | R_rel |
 |---|---|---|---|---|---|---|
-| Chronos-2 → Chronos-Bolt | 28 | 0.8214285714285714 | 0.7857142857142857 | 0.9285714285714286 | 0.9285714285714286 | 0.8846153846153846 |
-| Chronos-2 → Sundial | 42 | 0.5714285714285714 | 0.47619047619047616 | 0.9285714285714286 | 1.0 | 0.5929994533288809 |
-| Chronos-2 → TimesFM | 70 | 0.5714285714285714 | 0.5142857142857142 | 0.9285714285714286 | 0.8695652173913043 | 0.6359210677400178 |
-| Chronos-Bolt → Chronos-2 | 21 | 0.8571428571428571 | 0.8571428571428571 | 0.9285714285714286 | 0.9285714285714286 | 0.923076923076923 |
-| Chronos-Bolt → Sundial | 21 | 0.5714285714285714 | 0.5714285714285714 | 0.9285714285714286 | 1.0 | 0.5929994533288809 |
-| Chronos-Bolt → TimesFM | 35 | 0.7714285714285715 | 0.7428571428571429 | 0.9285714285714286 | 0.8695652173913043 | 0.8584934414490242 |
-| Sundial → Chronos-2 | 33 | 0.45454545454545453 | 0.3333333333333333 | 1.0 | 0.9285714285714286 | 0.47170411060251893 |
-| Sundial → Chronos-Bolt | 22 | 0.6818181818181818 | 0.5454545454545454 | 1.0 | 0.9285714285714286 | 0.7075561659037783 |
-| Sundial → TimesFM | 55 | 0.4 | 0.3090909090909091 | 1.0 | 0.8695652173913043 | 0.4289522117905443 |
-| TimesFM → Chronos-2 | 69 | 0.6666666666666666 | 0.6231884057971014 | 0.8695652173913043 | 0.9285714285714286 | 0.7419079123633542 |
-| TimesFM → Chronos-Bolt | 46 | 0.6956521739130435 | 0.6956521739130435 | 0.8695652173913043 | 0.9285714285714286 | 0.7741647781182825 |
-| TimesFM → Sundial | 69 | 0.6086956521739131 | 0.5652173913043478 | 0.8695652173913043 | 1.0 | 0.6527533657682196 |
+| Chronos-2 → Chronos-Bolt | 28 | 0.8214285714285714 | 0.7857142857142857 | 0.9642857142857143 | 1.0 | 0.8365019125713041 |
+| Chronos-2 → Sundial | 42 | 0.5714285714285714 | 0.47619047619047616 | 0.9642857142857143 | 0.9545454545454546 | 0.5956083504537688 |
+| Chronos-2 → TimesFM | 70 | 0.5714285714285714 | 0.5142857142857142 | 0.9642857142857143 | 0.8695652173913043 | 0.6240336444599677 |
+| Chronos-Bolt → Chronos-2 | 21 | 0.8571428571428571 | 0.8571428571428571 | 1.0 | 0.9642857142857143 | 0.8728715609439694 |
+| Chronos-Bolt → Sundial | 21 | 0.5714285714285714 | 0.5714285714285714 | 1.0 | 0.9545454545454546 | 0.5848757893933245 |
+| Chronos-Bolt → TimesFM | 35 | 0.7714285714285715 | 0.7428571428571429 | 1.0 | 0.8695652173913043 | 0.8272649798817641 |
+| Sundial → Chronos-2 | 33 | 0.45454545454545453 | 0.3333333333333333 | 0.9545454545454546 | 0.9642857142857143 | 0.47377936967913425 |
+| Sundial → Chronos-Bolt | 22 | 0.6818181818181818 | 0.5454545454545454 | 0.9545454545454546 | 1.0 | 0.6978631577988531 |
+| Sundial → TimesFM | 55 | 0.4 | 0.3090909090909091 | 0.9545454545454546 | 0.8695652173913043 | 0.43904658609526254 |
+| TimesFM → Chronos-2 | 69 | 0.6666666666666666 | 0.6231884057971014 | 0.8695652173913043 | 0.9642857142857143 | 0.7280392518699623 |
+| TimesFM → Chronos-Bolt | 46 | 0.6956521739130435 | 0.6956521739130435 | 0.8695652173913043 | 1.0 | 0.7460038465922509 |
+| TimesFM → Sundial | 69 | 0.6086956521739131 | 0.5652173913043478 | 0.8695652173913043 | 0.9545454545454546 | 0.6681143701449648 |
 
   Read: the ceilings are near 1, so R_rel ≈ R; every pair sits below its
-  ceiling (max R_rel 0.923076923076923, Chronos-Bolt → Chronos-2). Sundial is
-  the weakest source in all three of its pairs (R_rel 0.429–0.708) and the
+  ceiling (max R_rel 0.8728715609439694, Chronos-Bolt → Chronos-2). Sundial is
+  the weakest source in all three of its pairs (R_rel 0.439–0.698) and the
   Chronos pair the strongest in both directions. The report renders R_rel
   per pair as `input_transfer` in the model-similarity profile
   (`analysis/model_similarity.py`, §37.11).
