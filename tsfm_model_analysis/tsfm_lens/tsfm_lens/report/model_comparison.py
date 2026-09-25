@@ -913,6 +913,48 @@ def _verdict_table(verdicts: list) -> str:
 
 
 # ---------------------------------------------------------------------------
+# E2. Per-pair shared-input agreement table (ROADMAP.md sec 37.8 P5b).
+# ---------------------------------------------------------------------------
+
+def _shared_input_pair_table(shared_input: Optional[dict]) -> str:
+    """Pairs x verdict counts, from `sae/shared_input_agreement.json`'s own
+    `pair_verdict_counts` reduction (never recomputed here -- this module
+    renders, it does not re-derive). Missing artifact renders "not measured:
+    <reason>", matching every other degrade-with-a-reason block in this
+    section."""
+    if not shared_input:
+        return ("<p class='blurb'>not measured: sae/shared_input_agreement.json "
+               "does not exist (the concepts stage skips it when atlas transfer "
+               "did not run, or when no test survived reciprocal FDR).</p>")
+    pair_counts = shared_input.get("pair_verdict_counts") or {}
+    if not pair_counts:
+        return "<p class='blurb'>not measured: no scored (concept, pair) test.</p>"
+    verdicts = shared_input.get("params", {}).get("verdicts") or list(pair_counts.values())[0].keys()
+    head = "<tr><th>Model pair (source&rarr;destination)</th>" + \
+          "".join(f"<th>{_e(v)}</th>" for v in verdicts) + "<th>Total</th></tr>"
+    body = []
+    for pair, counts in sorted(pair_counts.items()):
+        total = sum(counts.values())
+        cells = "".join(f"<td>{counts.get(v, 0)}</td>" for v in verdicts)
+        body.append(f"<tr><td>{_e(pair)}</td>{cells}<td>{total}</td></tr>")
+    table = f"<table class='tbl'><thead>{head}</thead><tbody>{''.join(body)}</tbody></table>"
+    from .report import _note
+    note = _note(
+        "Cross-model causal agreement, per ordered model pair, on the SAME shared "
+        "series -- every FDR-surviving reciprocal atlas-transfer test's verdict.",
+        "Each cell counts (concept, source target, destination target) tests scored "
+        "'source&rarr;destination'. A test is scored only when both sides' ablation "
+        "clears its own within-model null on the shared series; otherwise it is "
+        "'not scorable'.",
+        "Evidence class: causal WITHIN each model (an ablation, scored against that "
+        "model's own matched-random-feature-set floor), compared ACROSS models only "
+        "on the same corpus inputs -- never a transplant of one model's activation "
+        "into another (invariant 5). A pair's counts are not symmetric: source and "
+        "destination are the ordered roles the transfer test itself assigned.")
+    return note + table
+
+
+# ---------------------------------------------------------------------------
 # Driver.
 # ---------------------------------------------------------------------------
 
@@ -944,7 +986,8 @@ def model_comparison_block(cfg, run_dir, findings: list) -> tuple:
 
     stability = _load_json_or_none(run_dir / "sae" / "concept_stability.json")
     atlas_transfer = _load_json_or_none(run_dir / "sae" / "atlas_transfer.json")
-    verdicts = derived.concept_verdicts(profiles, stability, atlas_transfer)
+    shared_input = _load_json_or_none(run_dir / "sae" / "shared_input_agreement.json")
+    verdicts = derived.concept_verdicts(profiles, stability, atlas_transfer, shared_input)
 
     html = "<section class='sec-headline'><div class='eyebrow'>Compare</div>"
     html += ("<h2 class='sec'>Model comparison &mdash; what is shared, what is unique, "
@@ -958,6 +1001,8 @@ def model_comparison_block(cfg, run_dir, findings: list) -> tuple:
     html += _sharing_block(verdicts, profiles, model_names)
     html += _unique_block(verdicts, profiles, run_dir, model_names)
     html += "<h4>Verdict for every concept</h4>" + _verdict_table(verdicts)
+    html += ("<h4>Shared-input causal agreement, per model pair (ROADMAP.md sec 37.8 P5b)</h4>"
+            + _shared_input_pair_table(shared_input))
     html += "</section>"
 
     n_all_shared = sum(1 for v in verdicts if v["verdict"] == _SHARED_VERDICT

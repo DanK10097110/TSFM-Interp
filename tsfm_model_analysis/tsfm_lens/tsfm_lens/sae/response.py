@@ -662,18 +662,27 @@ def feature_response_fingerprints(cfg, adapter, layer: str, sae, data, device,
 # ---------------------------------------------------------------------------
 
 def _feature_ablated_replacement(clean_tokens: torch.Tensor, sae, device,
-                                 f_idx: int) -> torch.Tensor:
-    """Token-level SAE reconstruction with exactly one atom zeroed.
+                                 f_idx) -> torch.Tensor:
+    """Token-level SAE reconstruction with one atom, or a SET of atoms
+    (ROADMAP.md sec 37.8 P5b), zeroed together.
 
-    The counterfactual is "this feature, removed" -- not "this feature,
-    reversed" -- so the comparison baseline must be the FULL token-level
+    The counterfactual is "this feature (or feature set), removed" -- not
+    "reversed" -- so the comparison baseline must be the FULL token-level
     reconstruction rather than the raw clean forecast, or the measured
     effect absorbs the whole dictionary's reconstruction error.
     `eval.py::feature_ablation_effects` already establishes that baseline
     convention; this reuses it rather than picking a second one.
+
+    `f_idx` is an `int` (the original, single-feature contract -- unchanged,
+    byte-identical: `features[:, f_idx] = 0.0` already broadcasts the same
+    way for a bare int) or an iterable of ints (an atlas concept part's full
+    membership, sec 37.8 P5b item 3), converted to a sorted list so fancy
+    indexing zeros every member at once.
     """
     b, t, d = clean_tokens.shape
     features = sae.encode(clean_tokens.reshape(-1, d).to(device))
+    if not isinstance(f_idx, (int, np.integer)):
+        f_idx = sorted(int(i) for i in f_idx)
     features[:, f_idx] = 0.0
     recon = sae.decode(features)
     return recon.reshape(b, t, d).cpu()

@@ -35,6 +35,16 @@ since):
      upgraded to within-model causal only when the concept's own ablation
      battery already moved MASE there). Runs only when the atlas has
      concepts, since a profile is a property of an atlas concept.
+  8. cross-model causal AGREEMENT on shared inputs (`sae/shared_input_
+     agreement.py`, ROADMAP.md sec 37.8 P5b) -> `shared_input_agreement.json`
+     -- ADDITIVE, runs after the atlas's own cross-model transfer (reusing
+     its `sae/atlas_transfer.json`): for every FDR-surviving reciprocal
+     transfer test, ablates the source concept-part and the destination
+     feature (or its own atlas part) on the SAME shared series the transfer
+     test already selected, and scores their agreement against each side's
+     own matched-random-feature-set floor. Runs only when atlas transfer ran
+     and at least one test survived FDR, since its unit of work is exactly
+     that test.
 
 Having no production caller is what let `runs/full_report_run_4model`'s
 `transfer.json` outlive two regenerations of the `concepts.json` it was built
@@ -68,6 +78,7 @@ from ..utils import load_json, log, save_json, set_seed
 from .ablation_run import run_ablation_all
 from .concept_atlas import pooled_features, run_concept_atlas
 from .concepts import run_concepts
+from .shared_input_agreement import run_shared_input_agreement, shared_input_agreement_path
 from .stability import concept_stability
 from .transfer import run_atlas_transfer, run_transfer
 
@@ -141,6 +152,20 @@ def _atlas_transfer_skip_reason(cfg, atlas: dict | None) -> str | None:
         return "the atlas did not run (see the atlas block's own skip reason)"
     if not atlas.get("concepts"):
         return "the atlas has no concepts to test"
+    return None
+
+
+def _shared_input_skip_reason(cfg, atlas_transfer_skip: str | None, at: dict | None) -> str | None:
+    """ROADMAP.md sec 37.8 P5b item 8: skip with a stated reason when atlas
+    transfer did not run, or ran but no test survived reciprocal FDR --
+    mirrors `_atlas_transfer_skip_reason`'s own precomputed-then-decide
+    shape one artifact over."""
+    if not getattr(cfg.concepts, "shared_input_enabled", True):
+        return "concepts.shared_input_enabled is false"
+    if atlas_transfer_skip:
+        return f"atlas transfer did not run -- {atlas_transfer_skip}"
+    if at is None or not any(t.get("reciprocal_fdr") for t in (at.get("tests") or [])):
+        return "no atlas-transfer test survived reciprocal FDR"
     return None
 
 
@@ -262,6 +287,7 @@ def run_concept_stage(cfg, hub, store, data, device) -> dict:
     # clustering always re-runs the transfer built on it (the exact staleness
     # `_drop_stale` exists to prevent, `sec 37 P0`'s own motivating finding).
     atlas_transfer_skip = _atlas_transfer_skip_reason(cfg, atlas)
+    at = None
     if atlas_transfer_skip:
         log.warning("concepts: atlas transfer skipped -- %s", atlas_transfer_skip)
         atlas_transfer_block = {
@@ -289,6 +315,25 @@ def run_concept_stage(cfg, hub, store, data, device) -> dict:
                 log.warning("concepts: transfer FDR floor (%s -> %s): %s -- %s",
                            rec["src_model"], rec["dst_model"], fdr_check.status,
                            fdr_check.detail)
+
+    # ROADMAP.md sec 37.8 P5b: cross-model causal agreement, measured on the
+    # SAME shared series, for every FDR-surviving reciprocal atlas-transfer
+    # test above. Runs after atlas transfer, since its whole unit of work is
+    # that test's own (source concept-part, destination feature) pair;
+    # `_drop_stale` mirrors every other additive artifact's pattern here.
+    shared_input_skip = _shared_input_skip_reason(cfg, atlas_transfer_skip, at)
+    if shared_input_skip:
+        log.warning("concepts: shared-input agreement skipped -- %s", shared_input_skip)
+        shared_input_block = {
+            "status": "skipped", "reason": shared_input_skip,
+            "removed_stale": _drop_stale(shared_input_agreement_path(run_dir))}
+    else:
+        sia = run_shared_input_agreement(cfg, run_dir, hub, store, data, device, atlas, at)
+        shared_input_block = {"status": "ran", "n_tests": sia["n_tests"],
+                              "verdict_counts": sia["verdict_counts"],
+                              "dst_set_kind_counts": sia["dst_set_kind_counts"],
+                              "n_short_matched_pool": sia["n_short_matched_pool"],
+                              "runtime_seconds": sia["runtime_seconds"]}
 
     # ROADMAP.md sec 37 Spec A: per-concept profiles (`sae/concept_profiles.py`)
     # -- what a concept's parts fire on, whether models sharing its effect
@@ -324,11 +369,12 @@ def run_concept_stage(cfg, hub, store, data, device) -> dict:
               "n_concepts": sum(concept_counts.values()), "non_modular": non_modular,
               "transfer": transfer_block, "describe": describe_block, "atlas": atlas_block,
               "stability": stability_block, "atlas_transfer": atlas_transfer_block,
+              "shared_input_agreement": shared_input_block,
               "profiles": profiles_block}
     save_json(concept_stage_path(cfg), record)
     log.info("concepts: %d concept(s) across %d target(s) (%d non-modular); transfer %s; "
-             "atlas %s; stability %s; atlas transfer %s; profiles %s",
+             "atlas %s; stability %s; atlas transfer %s; shared-input agreement %s; profiles %s",
              record["n_concepts"], len(concept_counts), len(non_modular),
              transfer_block["status"], atlas_block["status"], stability_block["status"],
-             atlas_transfer_block["status"], profiles_block["status"])
+             atlas_transfer_block["status"], shared_input_block["status"], profiles_block["status"])
     return record
