@@ -626,14 +626,23 @@ def _input_agreement_table(concept: dict) -> str:
     rows = concept.get("cross_model_pairs") or []
     if not rows:
         return "<p class='blurb'>No cross-model part pair to compare (single-model concept, or no scoreable part).</p>"
-    head = ("<tr><th>Model A</th><th>Model B</th><th>&rho;</th><th>Jaccard@k</th>"
-           "<th>p (unconditional)</th><th>p (within stratum)</th><th>Agrees</th></tr>")
+    head = ("<tr><th>Model A</th><th>Model B</th><th>Shared top-k series</th>"
+           "<th>Expected by chance</th><th>p (BH)</th><th>Beyond archetype?</th>"
+           "<th>Agrees</th><th>&rho; over all series (descriptive)</th></tr>")
     body = "".join(
         f"<tr><td>{_e(r['model_a'])}</td><td>{_e(r['model_b'])}</td>"
-        f"<td>{_fmt(r.get('rho'))}</td><td>{_fmt(r.get('jaccard_top_k'))}</td>"
-        f"<td>{_fmt(r.get('p_uncond'), 4)}</td><td>{_fmt(r.get('p_within_stratum'), 4)}</td>"
-        f"<td>{'yes' if r.get('agrees') else 'no'}</td></tr>"
+        f"<td>{r.get('top_k_overlap', 'n/a')}</td><td>{_fmt(r.get('top_k_overlap_expected'), 2)}</td>"
+        f"<td>{_fmt(r.get('p_overlap_bh'), 4)}</td>"
+        f"<td>{'yes' if r.get('beyond_stratum') else 'no'}</td>"
+        f"<td>{'yes' if r.get('agrees') else 'no'}</td><td>{_fmt(r.get('rho'))}</td></tr>"
         for r in rows)
+    body += ("<tr><td colspan='8' class='blurb'>Two parts agree on inputs when their top-firing "
+             "series overlap more than two random sets of the same size would (exact "
+             "hypergeometric test, Benjamini-Hochberg within this concept). 'Beyond archetype' "
+             "asks whether the overlap also beats random sets drawn with the same mix of "
+             "archetypes, i.e. whether the parts share more than a preference for one kind of "
+             "series. The correlation over all series is shown for context only: it measures "
+             "broad co-variation and can be high with no shared top series.</td></tr>")
     return f"<table class='tbl'><thead>{head}</thead><tbody>{body}</tbody></table>"
 
 
