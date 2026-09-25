@@ -43,9 +43,10 @@ machinery: `pooled_features`/`CHANNELS` come from `concept_atlas.py`/
 `transfer.py`'s `series_strata`/`concept_scores`/`top_series`/`_seed`/
 `benjamini_hochberg`/`_by_stratum` and `concept_atlas.py`'s own
 `_right_tail_p` floor convention. Structural-field residualization against
-corpus provenance (tier and generator dummies, never archetype: an archetype
-is a structural recipe, and residualizing on it measured 48 of 55 parts as
-provenance-driven on the 4-model run by gutting every structural rho) reuses `ground_truth.py::residualize_against_provenance`
+corpus provenance (tier and real-derived generator dummies, never archetype
+or synthetic generators: those are structural recipes, and residualizing on
+archetypes measured 48 of 55 parts as provenance-driven on the 4-model run
+by gutting every structural rho) reuses `ground_truth.py::residualize_against_provenance`
 directly, including its own degenerate-residual gate (a field the
 provenance one-hots predict almost perfectly leaves nothing but rounding
 noise to correlate against, `ground_truth.py` sec 26 A3) -- reusing that
@@ -98,7 +99,6 @@ _MIN_RESIDUAL_SCALE = 0.01
 _PROVENANCE_SHARE_THRESHOLD = 0.8
 _ENRICHMENT_Q = 0.05
 _AGREEMENT_Q = 0.05
-_RESIDUALIZE_PREFIXES = ("tier_", "generator_")
 _MASE_CHANNEL_IDX = CHANNELS.index("mase")
 
 EVIDENCE_CLASSES = {
@@ -575,9 +575,13 @@ def _mark_agreement(cross_model_pairs: list) -> None:
 
 def _residualization_cols(columns) -> list:
     """Provenance dummies structural fields are residualized against: tier
-    and generator only. Archetype dummies are excluded because an archetype
-    is a structural recipe."""
-    return [c for c in columns if is_provenance_field(c) and c.startswith(_RESIDUALIZE_PREFIXES)]
+    and the real-derived generators. Archetype and synthetic-generator
+    dummies are excluded because they are structural recipes: on the
+    4-model run, residualizing on `generator_random_parametric` cut the
+    random-walk concept's `has_random_walk` rho from 0.833 to 0.309."""
+    real_derived = {f"generator_{g}" for g in _REAL_DERIVED_GENERATORS}
+    return [c for c in columns if is_provenance_field(c)
+            and (c.startswith("tier_") or c in real_derived)]
 
 
 def _sharing_class(models_with_parts: set, agreeing_pairs: list) -> str:
@@ -826,10 +830,10 @@ def run_concept_profiles(run_dir, cfg) -> dict:
                                      f"beats redraws with the same per-stratum composition. rho "
                                      f"over all series is reported as broad co-variation only: on "
                                      f"the 4-model run rho 0.804 came with zero top-k overlap"),
-                  "residualization_basis": ("tier_* and generator_* dummies only; archetype_* is "
-                                            "excluded because an archetype is a structural recipe, "
-                                            "so residualizing on it removes the structure being "
-                                            "measured")},
+                  "residualization_basis": ("tier_* and real-derived generator_* dummies only; "
+                                            "archetype_* and synthetic generators are structural "
+                                            "recipes, so residualizing on them removes the "
+                                            "structure being measured")},
         "concepts": concepts_out, "summary": summary, "evidence_classes": EVIDENCE_CLASSES,
     }
     save_json(out_path, out)

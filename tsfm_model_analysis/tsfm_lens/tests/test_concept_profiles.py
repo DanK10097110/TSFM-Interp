@@ -556,6 +556,7 @@ def test_archetype_is_not_a_residualization_basis():
     joined["archetype_trend_dominant"] = 1.0 - arch
     cols = cp._residualization_cols(joined.columns)
     assert "archetype_seasonal_dominant" not in cols and "tier_synthetic" in cols
+    assert "generator_parametric" not in cols
     recs = cp._structural_field_records(s, joined, cols, seed=0)
     rec = next(r for r in recs if r["field"] == "seasonal_amplitude_max")
     assert rec["resid_rho"] is not None and rec["resid_rho"] > 0.8
