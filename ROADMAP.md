@@ -36028,6 +36028,102 @@ that are level carriers vs shape-causal, and the channels shape-causal ones
 move. Requires re-running the ablation battery (forward passes) — background
 agent.
 
+**Findings — P4 (2026-09-25, merged `b1a217e` + review `dfaec8b`; Sonnet
+agent, reviewed).** Implemented:
+- `battery_statistics(..., remove_level=False)`;
+- `response.py::level_share` (P0's ratio; `None` with a reason when the
+  denominator is exactly 0);
+- per candidate: `level_share`, a `shape_channels` block (the same battery
+  with the level removed, scored against a level-removed null built from the
+  same null forward passes), and `n_shape_channels_clearing`;
+- per atlas concept: `causal_tag`, `level_share_median`,
+  `n_members_with_level_share`, and (review) `n_members_shape_causal` of
+  `n_members_with_shape_record`;
+- `_compose_batch(..., tags=)`: a `level carrier` concept is named "shifts
+  the level";
+- `concepts.level_share_threshold: 0.9`.
+
+Everything is additive. On the real run, `concept_atlas.json` differs from
+the pre-P4 file only by the new keys: all 19 memberships and all 19 names are
+identical.
+
+- **Channel audit** (decided from the code, proved bit for bit in
+  `test_already_invariant_channels_identical`):
+
+  | channel | level-invariant | why |
+  |---|---|---|
+  | trend | yes | slope fitted after removing each row's mean |
+  | seasonal | yes | reads a nonzero FFT bin only |
+  | dispersion | yes | std removes its own mean; quantile width never sees the point forecast |
+  | spectral_centroid | no | its denominator includes bin 0 |
+  | level | no | it is the removed quantity |
+  | horizon_shape_near / far | no | raw per-step delta |
+  | mase | no | error against the target moves with level |
+  | flatness | no | threshold relative to max \|x\|; random fixtures looked invariant by coincidence, so it is shown by a hand-built counter-example |
+
+- **Review fix.** After level removal, the `level` channel's effect and
+  null are both float rounding (§11.48). It is now unavailable in
+  `shape_channels`, with a stated reason. Before the fix it "cleared" for one
+  TimesFM candidate. That candidate cleared other shape channels too, so no
+  class changed.
+- **Level share**, fresh battery run (n=439 scorable; P0 had n=436):
+  - pooled median 0.5651978345981524; p10 0.07029609241425071; p25
+    0.2466079874493294; p75 0.8248444299261131; p90 0.9496053201841033;
+    max 0.9952391472500276;
+  - fraction > 0.9: 0.18223234624145787 (P0: 0.20642201834862386);
+  - per-model medians: TimesFM 0.6760148520466956, Sundial
+    0.561834947593102, Chronos-2 0.46149602878261997, Chronos-Bolt
+    0.29543150177381716. The order is P0's.
+- **Causal candidates by class**:
+
+  | model | shape-causal | level carrier | no measured effect | total |
+  |---|---|---|---|---|
+  | TimesFM | 46 | 8 | 7 | 61 |
+  | Chronos-2 | 54 | 5 | 2 | 61 |
+  | Sundial | 52 | 0 | 1 | 53 |
+  | Chronos-Bolt | 26 | 0 | 0 | 26 |
+
+  So most causal features change the forecast's *shape* beyond a
+  level-removed null, even where most of their movement is level. The §30.2
+  worry ("fingerprint comparison is one signed scalar") does not hold at
+  candidate level. Shape channels cleared most often:
+  - TimesFM: horizon_shape_near 36;
+  - Chronos-2: dispersion 37;
+  - Sundial: horizon_shape_far 42;
+  - Chronos-Bolt: mase 23.
+- **Atlas tags: all 19 concepts are `shape-causal`**, because item 4's rule
+  fires when any member clears a shape channel. The rule hides a split,
+  which the member counts expose:
+  - 9 of 19 concepts have a median level share ≥ 0.9 (concepts 1, 2, 3,
+    4, 7, 8, 9, 17, 18);
+  - in only 3 of those 9 (7, 8, 17) is every member shape-causal;
+  - concept 18 has 1 of 3 shape-causal members (median level share
+    0.9878165846374678).
+
+  The tag says "some member moves shape". It does not say "this concept is
+  about shape". Read `n_members_shape_causal` beside it. The threshold stays
+  at 0.9, but it decided nothing on this run. **Open**: a `level-dominant`
+  qualifier (median ≥ threshold, and fewer than all members shape-causal),
+  if the report needs one. Not added, because it would be a second judgment
+  threshold with no measurement to calibrate it.
+- **Names:** none changed. The "shifts the level" override is covered by
+  unit tests (including an on-disk `run_concept_atlas` fixture), but no
+  concept on this run qualifies.
+- **Runtime:** ablation battery 180.452 s (13 targets, GPU).
+- **Tests:** 6 in `test_level_removed_battery.py` and 9 in
+  `test_level_removed_concept_tags.py`. Plants:
+  - a whole-batch shift fails `test_pure_level_shift`;
+  - a no-op transform fails 4 of 5;
+  - leaving the null raw fails `test_null_gets_same_transform` (null p95
+    0.42426395416259766 → 3.3941125869750977);
+  - swapping the tag order fails `test_shape_causal_wins_even_with_high_level_share`;
+  - dropping the dominant-clause exclusion fails its collision test;
+  - (review) dropping the level-channel branch fails
+    `test_level_channel_not_scored_after_level_removal`;
+  - (review) dropping the member count fails the shape-wins test.
+
+  160 passed across the concept, response, report and smoke suites.
+
 ### 37.8 P5 — Cross-model causal agreement on shared inputs, with a floor every model can have (~1 session + GPU)
 
 **Why.** Clause 5. Three defects stack (§37.1 row 5): no floor for 5 of 6
