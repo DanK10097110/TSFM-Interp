@@ -367,7 +367,8 @@ def _rank_candidates(row: int, cleared: np.ndarray, z: np.ndarray) -> list:
     return idxs
 
 
-def _compose_batch(profiles: np.ndarray, cleared: np.ndarray, peers: list) -> list[dict]:
+def _compose_batch(profiles: np.ndarray, cleared: np.ndarray, peers: list,
+                   tags: list | None = None) -> list[dict]:
     """One `{"name": str, "lead_diversified": bool}` per row of `profiles`,
     applying `compose_name`'s mechanisms across the WHOLE peer population at
     once -- mechanism 2 needs every row's claim to decide the next row's,
@@ -386,11 +387,31 @@ def _compose_batch(profiles: np.ndarray, cleared: np.ndarray, peers: list) -> li
     is statistically unusual about this concept among its peers" with "how
     large is this concept's actual effect" (sec 11.54's pattern: two correct
     fields read together as one claim).
+
+    `tags` (ROADMAP.md sec 37.7 P4, optional, `None` reproduces the pre-P4
+    behavior bit for bit): one `"level carrier"`/`"shape-causal"`/`"no
+    measured effect"` string per row (`sae/concept_atlas.py::
+    _tag_causal_effect`). A row tagged `"level carrier"` is withheld from
+    BOTH the dominant-lead and the contrast-clause competition -- its
+    `dominant_idx` is forced `None` and its contrast candidates forced empty
+    -- and its rendered name is unconditionally `"shifts the level"`,
+    overriding whatever `render` would otherwise have produced from its RAW
+    (level-confounded) centroid. This is the fix P0/P4 exist for: a level
+    carrier's RAW channel profile routinely has a large `mase` or
+    `horizon_shape` value that is entirely level bleed-through (every raw
+    channel moves when the forecast's level does), and naming it `"dominant
+    raises horizon_shape_far"` would assert a shape claim the level-removed
+    battery does not support. Withholding it from the clause competition
+    (rather than only overriding its OWN name afterward) also means a level
+    carrier's confounded channel can never occupy a `used_leads` dedup key
+    (mechanism 2) that a genuinely shape-causal peer might otherwise want --
+    it simply never enters that bookkeeping at all.
     """
     n = profiles.shape[0]
     if n == 0:
         return []
 
+    is_level_carrier = [bool(tags) and tags[i] == "level carrier" for i in range(n)]
     n_channels = profiles.shape[1]
 
     # The dominant channel: identical computation to `concept_table`'s own
@@ -400,6 +421,9 @@ def _compose_batch(profiles: np.ndarray, cleared: np.ndarray, peers: list) -> li
     # channel is meant.
     dominant_idx: list = []
     for i in range(n):
+        if is_level_carrier[i]:
+            dominant_idx.append(None)
+            continue
         name, _sign = _dominant_channel_index(profiles[i], CHANNELS)
         dominant_idx.append(CHANNELS.index(name) if name is not None else None)
 
@@ -422,7 +446,8 @@ def _compose_batch(profiles: np.ndarray, cleared: np.ndarray, peers: list) -> li
     # genuinely distinct second clause when one of its other cleared
     # channels can supply it -- no diversity signal is thrown away that
     # doesn't have to be.
-    contrast_candidates = [[c for c in own_ranked[i] if c != dominant_idx[i]]
+    contrast_candidates = [[] if is_level_carrier[i] else
+                          [c for c in own_ranked[i] if c != dominant_idx[i]]
                           for i in range(n)]
     top_abs_z = [abs(z[i, contrast_candidates[i][0]]) if contrast_candidates[i] else -np.inf
                 for i in range(n)]
@@ -510,6 +535,16 @@ def _compose_batch(profiles: np.ndarray, cleared: np.ndarray, peers: list) -> li
                 chosen = candidate
                 break
         names[i] = chosen
+
+    # ROADMAP.md sec 37.7 P4: a level carrier's name is fixed and honest
+    # rather than composed from its (level-confounded) raw centroid -- see
+    # this function's own docstring. Two level carriers sharing this exact
+    # name is not a naming defect: it is the correct statement that the
+    # level-removed battery cannot tell them apart by SHAPE, which is the
+    # only thing the rest of this composer's vocabulary describes.
+    for i in range(n):
+        if is_level_carrier[i]:
+            names[i] = "shifts the level"
 
     return [{"name": names[i], "lead_diversified": lead_diversified[i]} for i in range(n)]
 
