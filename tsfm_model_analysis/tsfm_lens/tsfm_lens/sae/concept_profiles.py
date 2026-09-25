@@ -181,6 +181,13 @@ def _structural_field_records(s: np.ndarray, joined: pd.DataFrame,
             continue
         raw_rho, _ = spearmanr(s[valid], gvals[valid])
         raw_rho = float(raw_rho) if np.isfinite(raw_rho) else None
+        varying = [c for c in provenance_cols
+                   if np.nanstd(joined[c].to_numpy(dtype=np.float64)[valid]) > 0]
+        if not varying:
+            out.append({"field": field, "raw_rho": raw_rho, "resid_rho": raw_rho,
+                       "oof_r2": 0.0, "residual_scale": 1.0, "n": n,
+                       "reason": "provenance is constant on this field's valid rows; not residualized"})
+            continue
         resid, oof_r2 = residualize_against_provenance(
             joined, field, provenance_cols, valid, seed=seed)
         field_scale = float(np.std(gvals[valid]))

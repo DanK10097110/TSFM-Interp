@@ -606,3 +606,23 @@ def test_provenance_driven_needs_real_derived_top_series():
     S_real = np.r_[np.arange(100, 118), np.arange(2)]
     driven2, _ = cp._provenance_driven(recs, prov, S_real, gens)
     assert driven2 is True
+
+
+def test_binary_field_keeps_its_rho_when_provenance_is_constant():
+    """A binary structural field on rows where every provenance dummy is
+    constant: cross-fitted residualization would split its ties by fold
+    and collapse Spearman (0.83 -> 0.33 on the 4-model run's random-walk
+    concept). The residualized rho must equal the raw rho."""
+    rng = np.random.default_rng(4)
+    n = 500
+    field = (rng.random(n) < 0.1).astype(float)
+    s = field * 3 + rng.normal(scale=0.5, size=n)
+    joined = pd.DataFrame({f: np.nan for f in cp._STRUCTURAL_FIELDS}, index=range(n))
+    joined["has_random_walk"] = field
+    joined["tier_synthetic"] = 1.0
+    joined["tier_real_derived"] = 0.0
+    joined["generator_mixture"] = 0.0
+    cols = cp._residualization_cols(joined.columns)
+    rec = next(r for r in cp._structural_field_records(s, joined, cols, seed=0)
+               if r["field"] == "has_random_walk")
+    assert rec["raw_rho"] > 0.4 and rec["resid_rho"] == rec["raw_rho"]
