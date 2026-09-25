@@ -43,7 +43,9 @@ machinery: `pooled_features`/`CHANNELS` come from `concept_atlas.py`/
 `transfer.py`'s `series_strata`/`concept_scores`/`top_series`/`_seed`/
 `benjamini_hochberg`/`_by_stratum` and `concept_atlas.py`'s own
 `_right_tail_p` floor convention. Structural-field residualization against
-corpus provenance reuses `ground_truth.py::residualize_against_provenance`
+corpus provenance (tier and generator dummies, never archetype: an archetype
+is a structural recipe, and residualizing on it measured 48 of 55 parts as
+provenance-driven on the 4-model run by gutting every structural rho) reuses `ground_truth.py::residualize_against_provenance`
 directly, including its own degenerate-residual gate (a field the
 provenance one-hots predict almost perfectly leaves nothing but rounding
 noise to correlate against, `ground_truth.py` sec 26 A3) -- reusing that
@@ -78,7 +80,7 @@ from .concept_atlas import _right_tail_p, pooled_features
 from .concepts import CHANNELS
 from .ground_truth import (is_provenance_field, load_ground_truth_table,
                            residualize_against_provenance)
-from .transfer import (_by_stratum, _seed, benjamini_hochberg, concept_scores,
+from .transfer import (_by_stratum, _seed, benjamini_hochberg, concept_scores, matched_draws,
                        series_strata, top_series)
 
 __all__ = ["run_concept_profiles"]
@@ -96,6 +98,7 @@ _MIN_RESIDUAL_SCALE = 0.01
 _PROVENANCE_SHARE_THRESHOLD = 0.8
 _ENRICHMENT_Q = 0.05
 _AGREEMENT_Q = 0.05
+_RESIDUALIZE_PREFIXES = ("tier_", "generator_")
 _MASE_CHANNEL_IDX = CHANNELS.index("mase")
 
 EVIDENCE_CLASSES = {
@@ -247,10 +250,11 @@ def _p_max_structural(s: np.ndarray, joined: pd.DataFrame, field_records: list,
 
 
 def _provenance_profile(s: np.ndarray, joined: pd.DataFrame) -> dict:
-    """`tier_synthetic`'s own rho, and the largest |rho| among any
-    `generator_*` dummy -- the two provenance signals `provenance_driven`
-    below reads (raw correlation; provenance fields are never residualized
-    against themselves)."""
+    """`tier_synthetic`'s own rho, and the largest |rho| among the
+    real-derived `generator_*` dummies -- the two provenance signals
+    `provenance_driven` below reads (raw correlation). Synthetic generators
+    and archetypes are excluded: they are recipes for structure, so a
+    feature tracking them is tracking structure, not corpus origin."""
     out = {"tier_synthetic_rho": None, "max_generator_rho": None, "max_generator_field": None}
     if "tier_synthetic" in joined.columns:
         gvals = joined["tier_synthetic"].to_numpy(dtype=np.float64)
@@ -259,8 +263,9 @@ def _provenance_profile(s: np.ndarray, joined: pd.DataFrame) -> dict:
             rho, _ = spearmanr(s[valid], gvals[valid])
             out["tier_synthetic_rho"] = float(rho) if np.isfinite(rho) else None
     best_field, best_rho = None, 0.0
+    real_derived_cols = {f"generator_{g}" for g in _REAL_DERIVED_GENERATORS}
     for col in joined.columns:
-        if not col.startswith("generator_"):
+        if col not in real_derived_cols:
             continue
         gvals = joined[col].to_numpy(dtype=np.float64)
         valid = ~np.isnan(gvals)
@@ -526,8 +531,51 @@ def _pair_agreement(s_a: np.ndarray, s_b: np.ndarray, S_a: np.ndarray, S_b: np.n
         null_within[p] = abs(float(r)) if np.isfinite(r) else 0.0
     p_within_stratum = _right_tail_p(abs(rho), null_within)
 
+    overlap, expected, p_overlap, p_overlap_within = _top_k_overlap(
+        S_a, S_b, s_a.size, strata, by_stratum, seed + 2, n_perm)
     return {"rho": rho, "jaccard_top_k": jaccard, "p_uncond": p_uncond,
-           "p_within_stratum": p_within_stratum}
+           "p_within_stratum": p_within_stratum, "top_k_overlap": overlap,
+           "top_k_overlap_expected": expected, "p_overlap": p_overlap,
+           "p_overlap_within_stratum": p_overlap_within}
+
+
+def _top_k_overlap(S_a: np.ndarray, S_b: np.ndarray, n: int, strata: np.ndarray,
+                   by_stratum: dict, seed: int, n_perm: int) -> tuple:
+    """`(overlap, expected, p, p_within_stratum)` for the two parts' top-k
+    series sets. `p` is the exact hypergeometric tail of the overlap under
+    two independent random k-subsets; `p_within_stratum` redraws `S_b` with
+    its own per-stratum composition (`transfer.matched_draws`), so an
+    overlap explained by both parts favouring one archetype does not clear
+    it. SAE features are sparse, so the shared top-firing series, not a
+    rank correlation over every series, is what "same inputs" means."""
+    set_a = set(S_a.tolist())
+    overlap = int(len(set_a & set(S_b.tolist())))
+    expected = float(len(S_a) * len(S_b) / n) if n else float("nan")
+    p = float(hypergeom.sf(overlap - 1, n, len(S_a), len(S_b)))
+    draws = matched_draws(S_b, strata, by_stratum, n_perm, np.random.default_rng(seed))
+    in_a = np.isin(draws, S_a)
+    null = in_a.sum(axis=1)
+    p_within = float((1 + np.sum(null >= overlap)) / (1 + n_perm))
+    return overlap, expected, p, p_within
+
+
+def _mark_agreement(cross_model_pairs: list) -> None:
+    """Set `agrees`, `p_overlap_bh` and `beyond_stratum` on each cross-model
+    pair record in place: BH over the concept's top-k overlap p-values.
+    The broad-correlation p (`p_uncond`) never decides agreement."""
+    pvals = {i: rec["p_overlap"] for i, rec in enumerate(cross_model_pairs)}
+    bh = benjamini_hochberg(pvals, _AGREEMENT_Q)
+    for i, rec in enumerate(cross_model_pairs):
+        rec["p_overlap_bh"] = bh[i]["p_bh"] if i in bh else None
+        rec["agrees"] = bool(bh[i]["survives"]) if i in bh else False
+        rec["beyond_stratum"] = bool(rec["agrees"] and rec["p_overlap_within_stratum"] < _AGREEMENT_Q)
+
+
+def _residualization_cols(columns) -> list:
+    """Provenance dummies structural fields are residualized against: tier
+    and generator only. Archetype dummies are excluded because an archetype
+    is a structural recipe."""
+    return [c for c in columns if is_provenance_field(c) and c.startswith(_RESIDUALIZE_PREFIXES)]
 
 
 def _sharing_class(models_with_parts: set, agreeing_pairs: list) -> str:
@@ -618,7 +666,7 @@ def run_concept_profiles(run_dir, cfg) -> dict:
     series_ids = meta["series_id"].to_numpy()
     gt = load_ground_truth_table(cfg.data.path)
     joined = gt.reindex(series_ids)
-    provenance_cols = [c for c in joined.columns if is_provenance_field(c)]
+    provenance_cols = _residualization_cols(joined.columns)
 
     metrics_path = run_dir / "l0" / "metrics.parquet"
     metrics_wide = None
@@ -723,14 +771,8 @@ def run_concept_profiles(run_dir, cfg) -> dict:
                            "model_b": pb["model"], "target_b": pb["target"]})
                 cross_model_pairs.append(res)
 
-        pvals = {i: rec["p_uncond"] for i, rec in enumerate(cross_model_pairs)}
-        bh = benjamini_hochberg(pvals, _AGREEMENT_Q)
-        for i, rec in enumerate(cross_model_pairs):
-            rec["p_uncond_bh"] = bh[i]["p_bh"] if i in bh else None
-            agrees = bool(rec["rho"] > 0 and (bh[i]["survives"] if i in bh else False))
-            rec["agrees"] = agrees
-            if agrees:
-                agreeing_pairs.append((rec["model_a"], rec["model_b"]))
+        _mark_agreement(cross_model_pairs)
+        agreeing_pairs = [(r["model_a"], r["model_b"]) for r in cross_model_pairs if r["agrees"]]
 
         sharing_class = _sharing_class(models_with_parts, agreeing_pairs)
         if stability_status != "measured" or cid not in stability_by_concept:
@@ -774,7 +816,18 @@ def run_concept_profiles(run_dir, cfg) -> dict:
         "params": {"transfer_top_k": k_top, "profile_n_perm": n_perm, "transfer_seed": base_seed,
                   "n_boot": n_boot, "min_residual_scale": _MIN_RESIDUAL_SCALE,
                   "provenance_share_threshold": _PROVENANCE_SHARE_THRESHOLD,
-                  "enrichment_q": _ENRICHMENT_Q, "agreement_q": _AGREEMENT_Q},
+                  "enrichment_q": _ENRICHMENT_Q, "agreement_q": _AGREEMENT_Q,
+                  "agreement_rule": (f"a cross-model part pair agrees when the overlap of their "
+                                     f"top-k series is larger than two random k-subsets give "
+                                     f"(exact hypergeometric p, BH at q={_AGREEMENT_Q} within the "
+                                     f"concept); beyond_stratum records whether the overlap also "
+                                     f"beats redraws with the same per-stratum composition. rho "
+                                     f"over all series is reported as broad co-variation only: on "
+                                     f"the 4-model run rho 0.804 came with zero top-k overlap"),
+                  "residualization_basis": ("tier_* and generator_* dummies only; archetype_* is "
+                                            "excluded because an archetype is a structural recipe, "
+                                            "so residualizing on it removes the structure being "
+                                            "measured")},
         "concepts": concepts_out, "summary": summary, "evidence_classes": EVIDENCE_CLASSES,
     }
     save_json(out_path, out)

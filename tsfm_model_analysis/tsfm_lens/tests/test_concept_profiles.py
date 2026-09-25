@@ -512,3 +512,81 @@ def test_stage_wiring_writes_profiles_artifact_and_block(monkeypatch):
     else:
         assert record["profiles"]["status"] == "skipped", record["profiles"]
         assert not (cfg.run_dir() / "sae" / "concept_profiles.json").exists()
+
+
+def test_agreement_is_top_k_overlap_not_broad_correlation():
+    """Two sparse parts firing on the SAME 20 of 900 series over unrelated
+    noise elsewhere share their inputs (overlap 20, tiny p) even though rho
+    over all series is modest. Decoy: two parts that co-vary broadly (rho
+    high) but whose top-20 sets are disjoint must show zero overlap and a
+    non-significant overlap p."""
+    rng = np.random.default_rng(5)
+    n, k = 900, 20
+    strata = np.array(["a", "b", "c"] * (n // 3))
+    by_stratum = cp._by_stratum(strata)
+    sa = rng.normal(size=n); sb = rng.normal(size=n)
+    sa[:k] += 8; sb[:k] += 8
+    res = cp._pair_agreement(sa, sb, np.argsort(-sa)[:k], np.argsort(-sb)[:k],
+                             strata, by_stratum, 0, 200)
+    assert res["top_k_overlap"] == k and res["p_overlap"] < 1e-10
+    assert res["p_overlap_within_stratum"] < 0.05
+    base = rng.normal(size=n)
+    ca = base + 0.3 * rng.normal(size=n); cb = base + 0.3 * rng.normal(size=n)
+    ca[k:2 * k] += 20; cb[2 * k:3 * k] += 20
+    dec = cp._pair_agreement(ca, cb, np.argsort(-ca)[:k], np.argsort(-cb)[:k],
+                             strata, by_stratum, 0, 200)
+    assert dec["rho"] > 0.7 and dec["top_k_overlap"] == 0 and dec["p_overlap"] > 0.05
+
+
+def test_archetype_is_not_a_residualization_basis():
+    """A score that tracks a structural field through its archetype must
+    keep its residualized rho and not read provenance-driven. Planted: the
+    field is set by the archetype (a recipe), and the score follows the
+    field. Residualizing on archetype dummies would zero the field."""
+    rng = np.random.default_rng(3)
+    n = 400
+    arch = rng.integers(0, 2, n)
+    field = arch * 2.0 + rng.normal(scale=0.3, size=n)
+    s = field + rng.normal(scale=0.3, size=n)
+    joined = pd.DataFrame({f: np.nan for f in cp._STRUCTURAL_FIELDS}, index=range(n))
+    joined["seasonal_amplitude_max"] = field
+    joined["tier_synthetic"] = 1.0
+    joined["generator_parametric"] = 1.0
+    joined["archetype_seasonal_dominant"] = arch.astype(float)
+    joined["archetype_trend_dominant"] = 1.0 - arch
+    cols = cp._residualization_cols(joined.columns)
+    assert "archetype_seasonal_dominant" not in cols and "tier_synthetic" in cols
+    recs = cp._structural_field_records(s, joined, cols, seed=0)
+    rec = next(r for r in recs if r["field"] == "seasonal_amplitude_max")
+    assert rec["resid_rho"] is not None and rec["resid_rho"] > 0.8
+    prov = cp._provenance_profile(s, joined)
+    driven, _ = cp._provenance_driven(recs, prov, np.argsort(-s)[:20], np.array(["parametric"] * n))
+    assert driven is False
+
+
+def test_agreement_decided_by_overlap_not_broad_correlation():
+    """A pair with a tiny broad-correlation p but no top-k overlap must not
+    agree; a pair with a tiny overlap p must, whatever its rho p."""
+    recs = [{"model_a": "A", "model_b": "B", "rho": 0.8, "p_uncond": 0.001,
+             "p_overlap": 0.9, "p_overlap_within_stratum": 0.9},
+            {"model_a": "A", "model_b": "C", "rho": 0.2, "p_uncond": 0.4,
+             "p_overlap": 1e-8, "p_overlap_within_stratum": 0.01}]
+    cp._mark_agreement(recs)
+    assert recs[0]["agrees"] is False and recs[1]["agrees"] is True
+    assert recs[1]["beyond_stratum"] is True and recs[0]["beyond_stratum"] is False
+
+
+def test_overlap_from_shared_archetype_only_fails_within_stratum():
+    """Both parts' top-20 are drawn independently from one 40-series
+    archetype: the overlap (~10) beats random subsets (expected ~0.44) but
+    not redraws with the same per-stratum composition."""
+    rng = np.random.default_rng(11)
+    n, k = 900, 20
+    strata = np.array(["x"] * 40 + ["y"] * 430 + ["z"] * 430)
+    by_stratum = cp._by_stratum(strata)
+    S_a = rng.choice(40, k, replace=False)
+    S_b = rng.choice(40, k, replace=False)
+    sa = rng.normal(size=n); sb = rng.normal(size=n)
+    res = cp._pair_agreement(sa, sb, S_a, S_b, strata, by_stratum, 0, 500)
+    assert res["top_k_overlap"] >= 5 and res["p_overlap"] < 1e-4
+    assert res["p_overlap_within_stratum"] > 0.05
