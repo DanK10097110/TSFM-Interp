@@ -311,11 +311,13 @@ def _enrichment(S: np.ndarray, strata: np.ndarray, q: float = _ENRICHMENT_Q) -> 
 
 def _provenance_driven(field_records: list, provenance: dict, S: np.ndarray,
                        generators: np.ndarray) -> tuple:
-    """`(bool, components)`. True if the provenance signal outranks the best
-    residualized structural signal, OR `S` is dominated by one real-derived
-    generator (>= 80%). Both components are always recorded, whichever
-    decided the verdict, so this 80% cut can be revisited against the real
-    distribution (spec's own instruction)."""
+    """`(bool, components)`. True when `S` is dominated by one real-derived
+    generator (>= 80% of the top-k series). On the 4-model run the share is
+    bimodal (23 of 55 parts at 0.0, 23 at >= 0.85), so the cut sits in the
+    gap. The rho comparison (`provenance_exceeds_structural`) is recorded
+    as descriptive only: it set a correlation over every series against a
+    residualized one over the synthetic rows, and flagged a random-walk
+    concept whose top-k held no real-derived series."""
     resid_rhos = [abs(r["resid_rho"]) for r in field_records if r["resid_rho"] is not None]
     max_resid_structural = max(resid_rhos) if resid_rhos else 0.0
     prov_candidates = [v for v in (provenance.get("tier_synthetic_rho"),
@@ -337,7 +339,7 @@ def _provenance_driven(field_records: list, provenance: dict, S: np.ndarray,
         "generator_share_threshold": _PROVENANCE_SHARE_THRESHOLD,
         "generator_dominates": generator_component,
     }
-    return bool(rho_component or generator_component), components
+    return bool(generator_component), components
 
 
 def _top_structural(field_records: list, top_n: int = 3) -> list:
