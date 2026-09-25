@@ -509,6 +509,35 @@ def test_q2_unmeasured_stability_is_not_zero_model_specific_concepts():
          "sharing_class": "single-model", "stable": False, "input_transfer_models_fdr": []}]}
     verdicts = derived.concept_verdicts(profiles, None, None)
     text, _ = mc._answer_q2(verdicts, profiles, ["A", "B"])
-    a_line, b_line = text.split("<br><br>")
+    head, a_line, b_line = text.split("<br><br>")
+    assert head.startswith("<b>Bottom line:</b> of 1 model-specific")
     assert "1 with reproducibility not measured" in a_line and "a-only" in a_line
     assert b_line.startswith("<b>B</b>: 0 model-specific")
+
+
+def test_why_line_reads_the_mase_sign_in_plain_words():
+    """mase delta = ablated - baseline: a clearing negative effect means
+    removing the concept IMPROVES the forecast; positive means it worsens
+    it. Decoy: a non-clearing effect names neither."""
+    def part(e, clears):
+        return {"behavioral_link": {"status": "measured",
+                                    "why_verdict": "no advantage on these inputs: indistinguishable",
+                                    "causal_mase_effect": {"mean_signed_effect_over_null_p95": e,
+                                                           "any_member_clears_null": clears}}}
+    assert "improves this model's MASE" in mc._why_line(part(-1.6, True))
+    assert "worsens this model's MASE" in mc._why_line(part(2.0, True))
+    quiet = mc._why_line(part(2.0, False))
+    assert "does not move" in quiet and "worsens" not in quiet and "improves" not in quiet
+
+
+def test_q3_groups_metrics_by_their_closest_pair():
+    """Two metrics pick pair A|B, one picks C|D: the answer groups them
+    instead of claiming every metric disagrees."""
+    sim = {"metrics": {"m1": {}, "m2": {}, "m3": {}}, "pairs": ["A|B", "C|D", "A|C"],
+           "consensus": {"extremes": {
+               "m1": {"most_similar": "A|B", "most_similar_value": 0.9, "least_similar": "A|C", "least_similar_value": 0.1},
+               "m2": {"most_similar": "A|B", "most_similar_value": 0.8, "least_similar": "A|C", "least_similar_value": 0.2},
+               "m3": {"most_similar": "C|D", "most_similar_value": 0.7, "least_similar": "A|B", "least_similar_value": 0.3}}},
+           "contrasts": []}
+    text, _ = mc._answer_q3(sim)
+    assert "<b>A/B</b> on 2 metric(s)" in text and "<b>C/D</b> on 1 metric(s)" in text

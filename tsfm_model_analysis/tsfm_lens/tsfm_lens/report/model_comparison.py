@@ -85,6 +85,14 @@ def _fmt(x, nd: int = 3) -> str:
     return f"{v:.{nd}f}"
 
 
+def _fmt_metric(key: str, x) -> str:
+    """A metric value for prose: the concept count as an integer, every
+    other metric at three decimals."""
+    if key == "shared_concepts" and x is not None:
+        return str(int(round(float(x))))
+    return _fmt(x)
+
+
 def _fmt_ci(value, ci) -> str:
     v = _fmt(value)
     if not ci or ci[0] is None or ci[1] is None:
@@ -168,14 +176,35 @@ def _part_fires_on(part: dict) -> str:
 
 
 def _why_line(part: dict) -> str:
+    """Plain-language 'why' for one part: whether its model is better on
+    the concept's top series, and what removing the concept does to that
+    model's own MASE (`mase` delta = ablated - baseline, so positive means
+    the concept helps)."""
     bl = part.get("behavioral_link") or {}
     if bl.get("status") != "measured":
-        return f"why: not measured ({bl.get('reason', 'unknown')})"
+        return f"why: not measured ({_e(bl.get('reason', 'unknown'))})"
+    verdict = str(bl.get("why_verdict") or "")
+    if verdict == "advantage carried by this concept":
+        gap = "this model beats every other on these series, and removing the concept worsens its MASE"
+    elif verdict.startswith("advantage, not traced"):
+        gap = "this model beats every other on these series, but removing the concept does not worsen its MASE"
+    elif verdict.startswith("worse than"):
+        gap = f"this model is {_e(verdict)} on these series"
+    elif verdict.endswith("indistinguishable"):
+        gap = "no model is clearly better or worse than this one on these series"
+    else:
+        gap = _e(verdict)
     causal = bl.get("causal_mase_effect") or {}
-    return (f"why: {_e(bl.get('why_verdict'))} (own causal MASE effect "
-           f"{_fmt(causal.get('mean_signed_effect_over_null_p95'))}x null p95, "
-           f"{'clears' if causal.get('any_member_clears_null') else 'does not clear'} "
-           f"its own null)")
+    e = causal.get("mean_signed_effect_over_null_p95")
+    if e is None:
+        effect = "its own ablation effect on MASE was not measured"
+    elif not causal.get("any_member_clears_null"):
+        effect = f"removing it does not move this model's MASE beyond the random-direction null ({_fmt(e)}x)"
+    elif e > 0:
+        effect = f"removing it worsens this model's MASE ({_fmt(e)}x the null's 95th percentile)"
+    else:
+        effect = f"removing it improves this model's MASE ({_fmt(abs(e))}x the null's 95th percentile)"
+    return f"why: {gap}; {effect}"
 
 
 # ---------------------------------------------------------------------------
@@ -183,35 +212,44 @@ def _why_line(part: dict) -> str:
 # ---------------------------------------------------------------------------
 
 def _answer_q1(verdicts: list, n_models: int) -> str:
+    """Q1 from the derived verdicts: all-model concepts first; when there
+    are none, the broadest span and how its concepts split by verdict."""
     all_shared = [v for v in verdicts if v["verdict"] == _SHARED_VERDICT and v["n_models"] == n_models]
     n_convergent = sum(1 for v in verdicts if v["verdict"] == _CONVERGENT_VERDICT and v["n_models"] >= 2)
+    names = lambda vs: ", ".join(f"'{_e(v['name'] or v['concept'])}'" for v in vs)
+    broadest = max((v["n_models"] for v in verdicts), default=0)
     if all_shared:
-        names = ", ".join(f"'{_e(v['name'] or v['concept'])}'" for v in all_shared)
-        answer = (f"<b>{len(all_shared)}</b> concept(s) are shared -- same causal effect, "
-                 f"same driving inputs, reproducible across an independent SAE seed -- "
-                 f"by all {n_models} models in this run: {names}.")
-        rung = "L3 (reproducible) reached for all model(s) in this list."
+        answer = (f"<b>{len(all_shared)}</b> concept(s) are shared by all {n_models} models -- "
+                  f"same causal effect, same top-firing series, reproducible across an "
+                  f"independent SAE seed: {names(all_shared)}.")
+        rung = "L3 (reproducible) reached; L5 (same causal effect on the same inputs) and L6 (private-data confirmation) not measured."
     else:
-        broadest = max((v["n_models"] for v in verdicts), default=0)
-        answer = (f"<b>No</b> concept in this run is shared (same effect, same inputs, "
-                 f"reproducible) by all {n_models} models.")
-        if broadest and broadest < n_models:
-            broad = [v for v in verdicts if v["n_models"] == broadest]
-            named = "; ".join(f"'{_e(v['name'] or v['concept'])}' ({_e(v['sharing_class'])})"
-                              for v in broad)
-            answer += (f" The broadest concept(s) span {broadest} of {n_models} models: {named}.")
+        if broadest < n_models:
+            answer = (f"<b>No</b> concept has causal-effect members in all {n_models} models; "
+                      f"the broadest span {broadest} of {n_models}.")
+        else:
+            answer = (f"<b>No</b> concept spanning all {n_models} models clears the full ladder "
+                      f"(same effect, same inputs, reproducible).")
+        broad = [v for v in verdicts if v["n_models"] == broadest]
+        by_verdict: dict = {}
+        for v in broad:
+            by_verdict.setdefault(v["verdict"], []).append(v)
+        split = "; ".join(f"{len(vs)} {_e(k)}" for k, vs in
+                          sorted(by_verdict.items(), key=lambda kv: -len(kv[1])))
+        answer += f" Of the {len(broad)} concept(s) spanning {broadest} models: {split}."
+        if by_verdict.get(_SHARED_VERDICT):
+            answer += f" Fully shared among {broadest}: {names(by_verdict[_SHARED_VERDICT])}."
         unmeasured = [v for v in verdicts if v["n_models"] == n_models and _l3_unmeasured(v)
                       and v.get("sharing_class") == "shared (same effect, same inputs)"]
         if unmeasured:
             answer += (f" <b>{len(unmeasured)}</b> concept(s) span all {n_models} models with the "
                        f"same effect and the same inputs, but their reproducibility across SAE "
-                       f"seeds was not measured: "
-                       + "; ".join(f"'{_e(v['name'] or v['concept'])}'" for v in unmeasured) + ".")
+                       f"seeds was not measured: {names(unmeasured)}.")
         rung = "L2/L3 not jointly reached at full model count."
     if n_convergent:
-        answer += (f" A further <b>{n_convergent}</b> multi-model concept(s) share the same "
-                  f"causal EFFECT but fire on different inputs per model (convergent) -- "
-                  f"a finding, not a failure to find sharing.")
+        answer += (f" <b>{n_convergent}</b> multi-model concept(s) share the same causal EFFECT but "
+                   f"fire on different series in each model (convergent) -- the models reach "
+                   f"the same forecast adjustment from different inputs.")
     return answer, rung
 
 
@@ -268,7 +306,22 @@ def _answer_q2(verdicts: list, profiles: Optional[dict], model_names: list) -> t
                         f"fires on: {_part_fires_on(part)}; {_why_line(part)}")
         lines.append(f"<b>{_e(m)}</b>: {_count_phrase(items)}.<br>"
                     + "<br>".join(parts))
-    return "<br><br>".join(lines), f"{sum(len(v) for v in per_model.values())} model-specific concept(s) total"
+    items_all = [it for v in per_model.values() for it in v]
+    carried = 0
+    better = 0
+    for _v, c, _rep in items_all:
+        bl = ((c.get("parts") or [{}])[0].get("behavioral_link") or {})
+        verdict = str(bl.get("why_verdict") or "")
+        better += verdict.startswith("advantage")
+        carried += verdict == "advantage carried by this concept"
+    head = (f"<b>Bottom line:</b> of {len(items_all)} model-specific concept(s), {better} sit on "
+            f"series where their model forecasts better than every other model, and {carried} "
+            f"of those are traced to the concept by its own ablation. A concept unique to a "
+            f"model is not, by itself, evidence of an advantage.")
+    sure = ("uniqueness is relative to the analyzed layers and dictionaries; reproducibility "
+            "is L3; what a concept fires on is correlational; the advantage link combines a "
+            "behavioral gap with a within-model ablation; nothing here is confirmed on private data (L6).")
+    return head + "<br><br>" + "<br><br>".join(lines), sure
 
 
 def _answer_q3(similarity: Optional[dict]) -> tuple:
@@ -278,19 +331,23 @@ def _answer_q3(similarity: Optional[dict]) -> tuple:
 
     consensus = similarity.get("consensus") or {}
     extremes = consensus.get("extremes") or {}
-    lines = []
-    for key, rec in (similarity.get("metrics") or {}).items():
+    closest: dict = {}
+    furthest: dict = {}
+    for key in (similarity.get("metrics") or {}):
         ext = extremes.get(key) or {}
         if not ext.get("most_similar"):
             continue
-        a, b = _pair_names(ext["most_similar"])
-        la, lb = _pair_names(ext["least_similar"]) if ext.get("least_similar") else (None, None)
-        label = METRIC_DOCS.get(key, {}).get("label", key)
-        lines.append(f"<b>{_e(label)}</b>: closest {_e(a)}/{_e(b)} "
-                    f"({_fmt(ext['most_similar_value'])}), furthest "
-                    f"{_e(la)}/{_e(lb)} ({_fmt(ext.get('least_similar_value'))})."
-                    if la else f"<b>{_e(label)}</b>: closest {_e(a)}/{_e(b)} "
-                              f"({_fmt(ext['most_similar_value'])}).")
+        label = _e(METRIC_DOCS.get(key, {}).get("label", key))
+        closest.setdefault(ext["most_similar"], []).append(
+            f"{label} {_fmt_metric(key, ext['most_similar_value'])}")
+        if ext.get("least_similar"):
+            furthest.setdefault(ext["least_similar"], []).append(
+                f"{label} {_fmt_metric(key, ext.get('least_similar_value'))}")
+    group = lambda d: "; ".join(
+        f"<b>{_e(_pair_names(pk)[0])}/{_e(_pair_names(pk)[1])}</b> on {len(ms)} metric(s) ({', '.join(ms)})"
+        for pk, ms in sorted(d.items(), key=lambda kv: -len(kv[1])))
+    lines = [f"Closest pair, by metric: {group(closest)}.",
+             f"Furthest pair, by metric: {group(furthest)}."]
     w_all = consensus.get("kendall_w_all") or {}
     w_rep = consensus.get("kendall_w_representation") or {}
     w_line = (f"Kendall's W across every measured metric: {_fmt_w(w_all)}; "
@@ -336,8 +393,9 @@ def _answer_boxes(verdicts: list, profiles: Optional[dict], similarity: Optional
                 "those series is actually traced to that concept's own ablation effect.",
                 q2, sure2, "cmp-unique")
            + box("Q3: How similar is each pair?",
-                "Every representation/behavioral/SAE similarity metric disagrees about "
-                "which pair is closest -- read per metric, never averaged into one score.",
+                "Each metric measures a different kind of similarity (behavior, geometry, "
+                "linear translatability, clustering, SAE effect, SAE inputs), so they need "
+                "not agree: read each on its own scale, never averaged into one score.",
                 q3, sure3, "cmp-similarity")
            + "</div>")
 
