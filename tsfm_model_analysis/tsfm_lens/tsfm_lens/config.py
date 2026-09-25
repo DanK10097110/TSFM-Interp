@@ -870,6 +870,24 @@ class ConceptsConfig:
     # the roughly half whose level share is merely majority.
     level_share_threshold: float = 0.9
 
+    # ROADMAP.md sec 37.8 P5b -- cross-model causal agreement, measured on
+    # the SAME shared series (`sae/shared_input_agreement.py`), for every
+    # FDR-surviving reciprocal atlas-transfer test. `shared_input_enabled`
+    # gates the whole step (it costs a patched forward pass per (real +
+    # `shared_input_n_null` matched-null) feature-set ablation, per side, per
+    # test); off skips with a stated reason and drops a stale artifact.
+    # `shared_input_n_null` is the number of random ALIVE feature sets each
+    # side draws, matched to its own real set's size and decile of mean
+    # pooled activation on the shared series, to build that side's own
+    # within-run floor for both agreement statistics (never an untrained-twin
+    # floor -- sec 37.8's whole point is that one is obtainable for only 1 of
+    # 6 pairs). Lives in `concepts:`, not `sae:`, for the same reason
+    # `min_relative_reach` does: no pre-existing `sae`-stage fingerprint to
+    # protect, and the `concepts` Stage already declares the whole section as
+    # a fingerprint key.
+    shared_input_enabled: bool = True
+    shared_input_n_null: int = 50
+
 
 @dataclass
 class PipelineConfig:
