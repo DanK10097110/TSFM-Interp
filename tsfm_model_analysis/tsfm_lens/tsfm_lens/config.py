@@ -832,6 +832,27 @@ class ConceptsConfig:
     profiles_enabled: bool = True
     profile_n_perm: int = 1000
 
+    # ROADMAP.md sec 37.8 P5a -- `analysis/response_reach.py::reach_probe`'s
+    # gate, relative rather than absolute (sec 29.5 found the absolute
+    # `_EPS=1e-12` admits a numerically dead model: Chronos-2's and
+    # Chronos-Bolt's untrained twins, patched with a provably-different
+    # (clean x1.5, fp32) replacement, moved the forecast by a relative
+    # 6.5e-08 and 9.3e-08 -- four orders of magnitude above `_EPS` while
+    # being, relative to the forecast, noise). `reachable` now requires
+    # `cross_delta / forecast_scale > min_relative_reach`, where
+    # `forecast_scale` is the mean absolute clean forecast the probe already
+    # computes. `1e-4` is judgment, not a measured boundary: it sits ABOVE
+    # the two dead twins (~1e-7-1e-5 relative reach measured in production,
+    # sec 37.8's Findings) and at least 100x BELOW the observed live minimum
+    # on `runs/full_report_run_4model`'s 13 SAE targets (sec 37.8's Findings
+    # record both numbers). Lives in `concepts:`, not `sae:`, for the same
+    # reason `atlas_min_cosine` does (no pre-existing `sae`-stage fingerprint
+    # to protect); the `concepts` Stage already declares the whole
+    # `concepts` section as a fingerprint key, so this field marks existing
+    # `concepts` artifacts stale without any other change (`CLAUDE.md`
+    # sec 6.1).
+    min_relative_reach: float = 1e-4
+
 
 @dataclass
 class PipelineConfig:

@@ -54,6 +54,8 @@ class _Cfg:
         horizon = 4
     class l0:
         quantiles = [0.5]
+    class concepts:
+        min_relative_reach = 1e-4
 
 
 class _Data:
@@ -79,12 +81,14 @@ class _ReachStub:
     """
 
     def __init__(self, self_delta: float, cross_delta: float, declared: bool = True,
-                token_written_differs: bool = True, n_layers: int = 3):
+                token_written_differs: bool = True, n_layers: int = 3,
+                baseline: float = 1.0):
         self.name = "stub"
         self._self_delta, self._cross_delta = self_delta, cross_delta
         self._declared = declared
         self._token_written_differs = token_written_differs
         self._n_layers = n_layers
+        self._baseline = baseline
         self._call = 0
         self.module = object()
         self.cfg = type("C", (), {"batch_size": 999})()
@@ -102,9 +106,14 @@ class _ReachStub:
         return self._declared
 
     def predict(self, contexts, horizon, quantiles):
+        # `_baseline` is nonzero so `forecast_scale` (the clean forecast's
+        # own mean absolute value, ROADMAP.md sec 37.8 P5a) is measurable --
+        # every delta below is a SHIFT from this baseline, so the magnitudes
+        # `self_delta`/`cross_delta` asserted throughout this file are
+        # unaffected by its value.
         self._call += 1
         offs = {1: 0.0, 2: self._self_delta, 3: self._cross_delta}[self._call]
-        return {"point": np.full((len(contexts), horizon), offs, np.float32)}
+        return {"point": np.full((len(contexts), horizon), self._baseline + offs, np.float32)}
 
 
 def _patched_capture_raw_tokens(token_written_differs: bool):
@@ -224,6 +233,68 @@ def test_reach_probe_records_the_declared_reads_patched_positions_flag(_stub_pat
     rep = response_reach.reach_probe(_Cfg, stub, "blocks.0", _Data(), device=None)
     assert rep["declared_reads_patched_positions"] is True
     assert rep["reachable"] is False  # declaration disagreeing with the measurement is recorded, not resolved
+
+
+def test_reach_probe_a_live_small_effect_model_still_passes(_stub_patch_machinery):
+    """Decoy for the relative-reach threshold (ROADMAP.md sec 37.8 P5a): a
+    small but genuinely live cross-patch delta, comfortably above
+    `min_relative_reach`, must not be swept up by the same fix that refuses a
+    dead twin below."""
+    _stub_patch_machinery(token_written_differs=True)
+    stub = _ReachStub(self_delta=0.0, cross_delta=0.001, baseline=1.0)
+    rep = response_reach.reach_probe(_Cfg, stub, "blocks.0", _Data(), device=None)
+    assert rep["relative_reach"] == pytest.approx(0.001, rel=1e-3)
+    assert rep["reachable"] is True
+
+
+def test_relative_reach_refuses_dead_twin(_stub_patch_machinery):
+    """ROADMAP.md sec 37.8 P5a / sec 29.5: an absolute cross-patch delta that
+    clears the old `_EPS=1e-12` by four orders of magnitude is still dead
+    RELATIVE to the forecast. Chronos-2's untrained twin measured
+    forecast_scale 0.7128255367279053 and cross_patch_delta
+    5.960464477539063e-08 (sec 29.2/29.4) -- a relative reach of ~8.36e-08,
+    nowhere near `min_relative_reach=1e-4`. Planting the old absolute check
+    (`cross_delta > _EPS`) back in place makes this fail, because 5.96e-08
+    clears `1e-12`."""
+    _stub_patch_machinery(token_written_differs=True)
+    stub = _ReachStub(self_delta=0.0, cross_delta=5.960464477539063e-08,
+                      baseline=0.7128255367279053)
+    rep = response_reach.reach_probe(_Cfg, stub, "blocks.0", _Data(), device=None)
+    assert rep["reachable"] is False
+    assert rep["relative_reach"] < _Cfg.concepts.min_relative_reach
+    assert "min_relative_reach" in rep["reason"]
+
+
+def _identical_nonzero_capture(adapter, contexts, layers, **_kw):
+    """Every captured layer's 'clean tokens' bit-identical, but NOT the zero
+    tensor -- the exact TimesFM-untrained-twin shape (sec 29.3: every block
+    is an exact identity because RMSNorm's scale is zero-initialized, so all
+    20 captured layers read back bit-identical to each other, not to zero)."""
+    import torch as _torch
+
+    base = _torch.full((len(contexts), 2, 3), 2.0)
+    return {l: base.clone() for l in layers}
+
+
+def test_constructed_replacement_when_identical(monkeypatch):
+    """ROADMAP.md sec 37.8 P5a item 2 / sec 29.3: when the ordinary
+    cross-patch replacement (another layer's clean tokens) is bit-identical
+    to the target's own clean tokens, `written_diff_mag` is exactly 0.0 and
+    the probe must escalate to a CONSTRUCTED replacement (the target's own
+    clean tokens x1.5) rather than read the resulting zero cross-patch delta
+    as a measurement of "no reach". Planting a revert to the old
+    `not written_differs -> reachable=False` branch (no escalation) makes
+    this fail: `reach_method` would never be recorded as `"constructed"`."""
+    import contextlib
+
+    monkeypatch.setattr(response_reach, "capture_raw_tokens", _identical_nonzero_capture)
+    monkeypatch.setattr(response_reach, "token_patch",
+                        lambda *a, **k: contextlib.nullcontext())
+    stub = _ReachStub(self_delta=0.0, cross_delta=0.4, baseline=1.0)
+    rep = response_reach.reach_probe(_Cfg, stub, "blocks.0", _Data(), device=None)
+    assert rep["reach_method"] == "constructed"
+    assert rep["reachable"] is True
+    assert rep["cross_patch_delta"] == pytest.approx(0.4)
 
 
 # ---------------------------------------------------------------------------
