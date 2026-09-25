@@ -36534,19 +36534,23 @@ section sits directly after the scorecard, as designed.
   generator. The share is bimodal: 23 of 55 parts at 0.0, 23 at ≥0.85.
 - **Profiles on the 4-model run** (19 concepts, 55 parts, 161.81317611597478 s
   on CPU): convergent 7, shared (same effect, same inputs) 4, single-model
-  5, partially shared 3. Stable only: convergent 7, shared 2, single-model 4,
-  partially shared 1. Provenance-driven parts: 24/55.
+  5, partially shared 3. Stable only (GPU replicates, corrected
+  2026-09-25; the CPU replicates gave 7 / 2 / 4 / 1): convergent 7, shared 3,
+  single-model 3, partially shared 1. Provenance-driven parts: 24/55.
 - **Q1 (shared by all):** no atlas concept has members in all 4 models. Of
   the 7 spanning 3 models: 3 not reproducible, 3 convergent, 1 partially
   shared. All 7 convergent concepts are stable. The dominant multi-model
   pattern is the same forecast adjustment reached from different inputs.
-- **Q2 (unique and why):** 4 reproducible model-specific concepts (TimesFM
-  2, Sundial 1, Chronos-Bolt 1, Chronos-2 0). None sits on series where its
-  model beats every other model. 2 of the 4 fire on one real-derived
+- **Q2 (unique and why):** 3 reproducible model-specific concepts under the
+  GPU replicates (TimesFM 1, Sundial 1, Chronos-Bolt 1, Chronos-2 0;
+  corrected 2026-09-25 — the CPU replicates gave 4 with TimesFM 2, the
+  difference being C16, which is unstable on GPU). None sits on series where
+  its model beats every other model. 2 of the 3 fire on one real-derived
   generator (mixture, sequential_par). C17 (TimesFM, random walks): ρ 0.833
   with `has_random_walk`, 19/20 top series `random_walk_drift` (24.78×
   enrichment), `p_max_structural` 0.000999000999000999, but not stable
-  under the CPU replicates. On its top series, TimesFM's log-MASE gap vs
+  under either the CPU or the GPU replicates (its TimesFM/stacked_xf.6 part
+  is non-reciprocal at both replicates). On its top series, TimesFM's log-MASE gap vs
   Chronos-2 is 0.0039 [−0.06, 0.0762] (indistinguishable) and vs Sundial
   −0.2352 [−0.4441, −0.0634]. Ablating it worsens TimesFM's MASE (4.04×
   null p95).
@@ -36555,7 +36559,8 @@ section sits directly after the scorecard, as designed.
     behavior and SAE effect: error agreement 0.9508137661557489, atlas
     co-membership 0.9504574076274207, 3 shared concepts. **Chronos-2/Bolt**
     is closest on geometry and SAE inputs: CKA 0.883013129234314, stitching
-    0.7092976272106171, input-transfer R_rel 0.9038461538461537. The same
+    0.7092976272106171, input-transfer R_rel 0.8546867367576367 (GPU
+    ceilings; 0.9038461538461537 with the CPU ceilings). The same
     Chronos-2/Bolt pair ranks last on error agreement (0.7200189762792106)
     and atlas co-membership (0.47258979206049145).
   - Kendall's W (all 7 metrics) 0.26866549088771313, p 0.07646176911544228.
@@ -36582,7 +36587,13 @@ section sits directly after the scorecard, as designed.
     (mean vs any-member), which reads oddly;
   - `runs/full_report_run_4model` itself has not been re-rendered (the
     ref4 copy carries the §37 artifacts);
-  - the stability numbers rest on CPU-trained replicates.
+  - ~~the stability numbers rest on CPU-trained replicates~~ — resolved
+    2026-09-25: a full concepts-stage rebuild on a fresh ref4 copy (current
+    main, P4 + P5a, GPU replicates, 1463.7746378351003 s, replicate training
+    923.1129205189645 s) reproduces §37.5's GPU ceilings and universality
+    (4 / 7 / 3, 14 of 19 stable) exactly, with the same 19 atlas memberships
+    and names. Kendall's W and every pair rank are unchanged. The re-rendered
+    report is 8,096,542 bytes.
 
 ### 37.12 What this changes elsewhere in the plan
 
