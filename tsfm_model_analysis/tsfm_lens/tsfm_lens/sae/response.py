@@ -930,7 +930,14 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
                         n_clearing_cells += int(per_channel[ch]["clears_null"])
 
                 s_shape = stats_shape[ch]
-                if not s_shape["available"] or s_shape["delta"] is None:
+                if ch == "level":
+                    per_channel_shape[ch] = {
+                        "available": False, "effect": None, "signed_effect": None,
+                        "null_p95": None, "clears_null": False, "margin": None,
+                        "reason": "removed by construction: the level-removed forecast has "
+                                  "the baseline's horizon mean, so both effect and null are "
+                                  "float rounding (CLAUDE.md sec 11.48)"}
+                elif not s_shape["available"] or s_shape["delta"] is None:
                     per_channel_shape[ch] = {"available": False, "reason": s_shape["reason"],
                                              "effect": None, "signed_effect": None,
                                              "null_p95": None, "clears_null": False,

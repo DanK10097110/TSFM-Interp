@@ -396,3 +396,21 @@ def test_null_gets_same_transform(wired):
     raw_ch = cand["channels"]["horizon_shape_near"]
     assert raw_ch["null_p95"] == pytest.approx(3.3941125496954285, abs=1e-5)
     assert raw_ch["clears_null"] is False
+
+
+def test_level_channel_not_scored_after_level_removal(wired):
+    """After `remove_level`, the `level` channel's effect and null are both
+    float rounding, and on the 4-model run one such cell "cleared" and made
+    a candidate shape-causal (CLAUDE.md sec 11.48). It must be unavailable in
+    `shape_channels` and never counted. Plant: dropping the `ch == "level"`
+    branch in `feature_ablation_fingerprints` fails this test."""
+    out = R.feature_ablation_fingerprints(
+        _Cfg, wired, "blocks.0", _IdentitySAE(), _Data(), "cpu",
+        candidates=[{"feature": 1, "rules": ["planted-shape"]}],
+        activations=np.column_stack([np.zeros(N_SERIES), [3.0, 2.0, 1.0]]),
+        top_k_series=3, n_null_directions=5)
+    cand = out["candidates"][0]
+    assert cand["shape_channels"]["level"]["available"] is False
+    assert cand["shape_channels"]["level"]["clears_null"] is False
+    assert "removed by construction" in cand["shape_channels"]["level"]["reason"]
+    assert cand["channels"]["level"]["available"] is True

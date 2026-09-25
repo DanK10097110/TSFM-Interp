@@ -408,20 +408,29 @@ def _tag_causal_effect(concepts: list, rows: list, lookup: dict, level_share_thr
     concept is then tagged from whatever members do carry the new fields,
     and `n_members_with_level_share` records how many that was so a reader
     can see when the tag rests on a partial population.
+
+    `n_members_shape_causal` of `n_members_with_shape_record` makes the
+    any-member rule readable: on the 4-model run every concept is
+    `shape-causal`, including ones whose median level share is 0.99, so the
+    tag alone cannot tell a concept whose members all move shape from one
+    where a single member does.
     """
     for rec in concepts:
         level_shares: list = []
         any_shape_clears = False
+        n_found = n_shape = 0
         for i in rec["members"]:
             r = rows[i]
             cand = lookup.get((str(r["model"]), str(r["layer"]), int(r["feature"])))
             if cand is None:
                 continue
+            n_found += 1
             ls = cand.get("level_share")
             if ls is not None:
                 level_shares.append(float(ls))
             if cand.get("n_shape_channels_clearing", 0) > 0:
                 any_shape_clears = True
+                n_shape += 1
         median_ls = float(np.median(level_shares)) if level_shares else None
         if any_shape_clears:
             tag = "shape-causal"
@@ -432,6 +441,8 @@ def _tag_causal_effect(concepts: list, rows: list, lookup: dict, level_share_thr
         rec["causal_tag"] = tag
         rec["level_share_median"] = median_ls
         rec["n_members_with_level_share"] = len(level_shares)
+        rec["n_members_shape_causal"] = n_shape
+        rec["n_members_with_shape_record"] = n_found
 
 
 def _name_concepts(concepts: list) -> None:

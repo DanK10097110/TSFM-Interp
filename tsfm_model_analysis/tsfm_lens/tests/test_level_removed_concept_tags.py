@@ -79,6 +79,8 @@ def test_shape_causal_wins_even_with_high_level_share():
     })
     _tag_causal_effect(concepts, rows, lookup, _THRESH)
     assert concepts[0]["causal_tag"] == "shape-causal"
+    assert concepts[0]["n_members_shape_causal"] == 1
+    assert concepts[0]["n_members_with_shape_record"] == 2
 
 
 def test_no_measured_effect_when_neither_condition_holds():
