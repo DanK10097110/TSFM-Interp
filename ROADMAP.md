@@ -35814,16 +35814,25 @@ replicates, 979.9082707837224 s. **Re-run on the committed code gave a
 byte-identical `concept_stability` artifact** (replicate training 950.5131745003164 s),
 so replicate SAE training is deterministic at a fixed seed on this stack.
 
+**Numbers below are the float64-rank rerun (`384c7cd`, 2026-09-24)** on a
+second isolated copy whose replicates were trained on CPU (all GPUs were
+full; same seeds, 41990 s). The GPU/float16 run had ceilings Chronos-2
+0.9642857142857143, Chronos-Bolt 1.0, Sundial 0.9545454545454546, TimesFM
+0.8695652173913043 and stable-by-universality 4 / 7 / 3. CPU- and
+GPU-trained replicates differ numerically, so the shift cannot be split
+between the rank fix and the device.
+
 | model | within-model ceiling | 95% CI (bootstrap over parts) | parts |
 |---|---|---|---|
-| Chronos-2 | 0.9642857142857143 | [0.8928571428571429, 1.0] | 14 |
-| Chronos-Bolt | 1.0 | [1.0, 1.0] | 7 |
-| Sundial | 0.9545454545454546 | [0.8636363636363636, 1.0] | 11 |
-| TimesFM | 0.8695652173913043 | [0.7385869565217396, 0.9782608695652174] | 23 |
+| Chronos-2 | 0.9285714285714286 | [0.8214285714285714, 1.0] | 14 |
+| Chronos-Bolt | 0.9285714285714286 | [0.7857142857142857, 1.0] | 7 |
+| Sundial | 1.0 | [1.0, 1.0] | 11 |
+| TimesFM | 0.8695652173913043 | [0.7391304347826086, 0.9782608695652174] | 23 |
 
-- **Stable: 14/19 = 0.7368421052631579. Go/no-go: GO** (bar 25%, not tuned).
+- **Stable: 14/19 = 0.7368421052631579** (unchanged). **Go/no-go: GO** (bar
+  25%, not tuned).
 - Universality (concepts spanning N models), all → stable: 3 models 7 → 4,
-  2 models 7 → 7, 1 model 5 → 3. No atlas concept spans all 4 models.
+  2 models 7 → 6, 1 model 5 → 4. No atlas concept spans all 4 models.
 - Old per-target `concepts.json` ceiling (only 2 targets have concepts):
   Chronos-Bolt 0.5 (2 parts), TimesFM 1.0 (2 parts) — too few to read.
 - **Relative transfer** (item 5; atlas transfer from P3, exact p, uncorrected
@@ -35833,25 +35842,25 @@ so replicate SAE training is deterministic at a fixed seed on this stack.
 
 | src → dst | tests | R (uncorr.) | R (FDR) | ceil src | ceil dst | R_rel |
 |---|---|---|---|---|---|---|
-| Chronos-2 → Chronos-Bolt | 28 | 0.75 | 0.75 | 0.9642857142857143 | 1.0 | 0.7637626158259733 |
-| Chronos-2 → Sundial | 42 | 0.5714285714285714 | 0.4523809523809524 | 0.9642857142857143 | 0.9545454545454546 | 0.5956083504537688 |
-| Chronos-2 → TimesFM | 70 | 0.5571428571428572 | 0.5142857142857142 | 0.9642857142857143 | 0.8695652173913043 | 0.6084328033484686 |
-| Chronos-Bolt → Chronos-2 | 21 | 0.8571428571428571 | 0.8571428571428571 | 1.0 | 0.9642857142857143 | 0.8728715609439694 |
-| Chronos-Bolt → Sundial | 21 | 0.5714285714285714 | 0.5714285714285714 | 1.0 | 0.9545454545454546 | 0.5848757893933245 |
-| Chronos-Bolt → TimesFM | 35 | 0.7428571428571429 | 0.7142857142857143 | 1.0 | 0.8695652173913043 | 0.7966255361824395 |
-| Sundial → Chronos-2 | 33 | 0.42424242424242425 | 0.3333333333333333 | 0.9545454545454546 | 0.9642857142857143 | 0.442194078367192 |
-| Sundial → Chronos-Bolt | 22 | 0.5909090909090909 | 0.45454545454545453 | 0.9545454545454546 | 1.0 | 0.6048147367590061 |
-| Sundial → TimesFM | 55 | 0.38181818181818183 | 0.3090909090909091 | 0.9545454545454546 | 0.8695652173913043 | 0.4190899230909324 |
-| TimesFM → Chronos-2 | 69 | 0.6666666666666666 | 0.6376811594202898 | 0.8695652173913043 | 0.9642857142857143 | 0.7280392518699623 |
-| TimesFM → Chronos-Bolt | 46 | 0.6956521739130435 | 0.6956521739130435 | 0.8695652173913043 | 1.0 | 0.7460038465922509 |
-| TimesFM → Sundial | 69 | 0.6086956521739131 | 0.5362318840579711 | 0.8695652173913043 | 0.9545454545454546 | 0.6681143701449648 |
+| Chronos-2 → Chronos-Bolt | 28 | 0.8214285714285714 | 0.7857142857142857 | 0.9285714285714286 | 0.9285714285714286 | 0.8846153846153846 |
+| Chronos-2 → Sundial | 42 | 0.5714285714285714 | 0.47619047619047616 | 0.9285714285714286 | 1.0 | 0.5929994533288809 |
+| Chronos-2 → TimesFM | 70 | 0.5714285714285714 | 0.5142857142857142 | 0.9285714285714286 | 0.8695652173913043 | 0.6359210677400178 |
+| Chronos-Bolt → Chronos-2 | 21 | 0.8571428571428571 | 0.8571428571428571 | 0.9285714285714286 | 0.9285714285714286 | 0.923076923076923 |
+| Chronos-Bolt → Sundial | 21 | 0.5714285714285714 | 0.5714285714285714 | 0.9285714285714286 | 1.0 | 0.5929994533288809 |
+| Chronos-Bolt → TimesFM | 35 | 0.7714285714285715 | 0.7428571428571429 | 0.9285714285714286 | 0.8695652173913043 | 0.8584934414490242 |
+| Sundial → Chronos-2 | 33 | 0.45454545454545453 | 0.3333333333333333 | 1.0 | 0.9285714285714286 | 0.47170411060251893 |
+| Sundial → Chronos-Bolt | 22 | 0.6818181818181818 | 0.5454545454545454 | 1.0 | 0.9285714285714286 | 0.7075561659037783 |
+| Sundial → TimesFM | 55 | 0.4 | 0.3090909090909091 | 1.0 | 0.8695652173913043 | 0.4289522117905443 |
+| TimesFM → Chronos-2 | 69 | 0.6666666666666666 | 0.6231884057971014 | 0.8695652173913043 | 0.9285714285714286 | 0.7419079123633542 |
+| TimesFM → Chronos-Bolt | 46 | 0.6956521739130435 | 0.6956521739130435 | 0.8695652173913043 | 0.9285714285714286 | 0.7741647781182825 |
+| TimesFM → Sundial | 69 | 0.6086956521739131 | 0.5652173913043478 | 0.8695652173913043 | 1.0 | 0.6527533657682196 |
 
   Read: the ceilings are near 1, so R_rel ≈ R; every pair sits below its
-  ceiling (max R_rel 0.8728715609439694, Chronos-Bolt → Chronos-2). Sundial is
-  the weakest source in all three of its pairs (R_rel 0.419–0.605) and the
-  Chronos pair the strongest in both directions. The table is not yet rendered
-  in the report (computed here from `atlas_transfer.json` and
-  `concept_stability.json`); rendering it is part of P8.
+  ceiling (max R_rel 0.923076923076923, Chronos-Bolt → Chronos-2). Sundial is
+  the weakest source in all three of its pairs (R_rel 0.429–0.708) and the
+  Chronos pair the strongest in both directions. The report renders R_rel
+  per pair as `input_transfer` in the model-similarity profile
+  (`analysis/model_similarity.py`, §37.11).
 - **Evidence class:** "stable" = reproducible *decomposition*, not a causal
   claim. **Open:** the stability test does not score replicate fidelity/dead
   rate, so a collapsed replicate would read as instability; and
@@ -35939,24 +35948,31 @@ concepts stage after `m` is known, not static preflight), a report block, and
 - **Per-target transfer:** 38 tests / 23 uncorrected reciprocal / 19 FDR
   reciprocal — identical to P0 step 3.
 - **Atlas transfer** (exact, recomputed on an isolated copy from committed
-  code): **511 tests / 308 uncorrected / 282 FDR reciprocal** (the agent's
-  report said 295; its own per-pair table sums to 282). Per-pair counts are
-  in the §37.5 relative-transfer table.
+  code): **511 tests / 316 uncorrected / 288 FDR reciprocal**. These are the
+  float64-rank numbers (`384c7cd`): scipy 1.18's `rankdata` keeps the
+  store's float16 dtype, so rank sums and AUCs were quantized (max |ΔAUC|
+  0.0022 at n=965, k=20), which inflated observed-vs-null ties. Under
+  float16 the counts were 308 / 282; the agent's report said 295. The
+  per-target counts did not move. Per-pair counts are in the §37.5
+  relative-transfer table.
 - **Effect space vs input space**, over 120 tested (concept, source model,
   destination model) triples:
 
   | | input: transfers (FDR) | input: does not |
   |---|---|---|
   | effect: destination holds a member of the concept | 38 | 18 |
-  | effect: it does not | 52 | 12 |
+  | effect: it does not | 55 | 9 |
 
   Input transfer is 38/56 = 0.6785714285714286 when the effect profile is
-  shared and 52/64 = 0.8125 when it is not (odds ratio
-  0.48717948717948717, Fisher two-sided p = 0.0972354732752099; triples share
-  concepts, so p is optimistic). **Sharing a forecast-effect profile does not
-  predict sharing input selectivity** — the two notions of "same concept" in
-  this repo are dissociated on this run, which is what P5 must explain.
-  The high base rate (90/120 transfer) also says the input-space test is
+  shared and 55/64 = 0.859375 when it is not (odds ratio
+  0.34545454545454546, Fisher two-sided p = 0.02746845905958349; triples
+  share concepts, so p is optimistic). Float64 ranks; under float16 the row
+  was 52 / 12 (OR 0.48717948717948717, p = 0.0972354732752099).
+  **Sharing a forecast-effect profile does not predict sharing input
+  selectivity; if anything it goes with less of it.** The two notions of
+  "same concept" in this repo are dissociated on this run, which is what P5
+  must explain. The high base rate (93/120 transfer) also says the
+  input-space test is
   permissive at `transfer_top_k`; read atlas transfer as a weak filter.
 - **Rendered check** (report stage on the isolated copy, 16 sections, 122
   findings, none failed): "Unsatisfiable correction" 0 (was 24 before the
@@ -36347,6 +36363,90 @@ pair, and the join was the reader's).
 
 **Acceptance.** The atlas renders on the 4-model run with every state
 represented, verified from the rendered HTML (§11.48), not the diff.
+
+**Findings (2026-09-25, P8 done as the "Model comparison" section — main
+`180c94c` + fixes to `8feb22f`).** Built by three Sonnet agents from specs
+(profiles `sae/concept_profiles.py`, pair similarity
+`analysis/model_similarity.py`, report `report/model_comparison.py` +
+`derived.concept_verdicts`), then reviewed and corrected on the real run.
+**Deviation from the design above:** the verdict ladder is L1 same effect
+(atlas) → L2 same inputs (top-k overlap) → L3 reproducible (P2) → L4 input
+transfer FDR (P3) → L5 same causal effect on shared inputs (P5, not
+measured) → L6 private confirmation (P7, not confirmed). The P5/P6 verdicts
+(`acts differently`, `level only`, mediation) wait for those items. The
+section sits directly after the scorecard, as designed.
+
+- **Five defects found by running on the real 4-model copy.** None was
+  visible in the agents' synthetic tests.
+  1. float16 `rankdata` in transfer/stability (`384c7cd`; §37.5/§37.6
+     numbers corrected in place).
+  2. Profiles read ablation files by raw layer name, and dotted real names
+     crashed (`f9b2372`).
+  3. Residualizing structure on archetype dummies, and then on synthetic
+     generators, removed the structure itself: 48 of 55 parts read
+     provenance-driven.
+  4. Input agreement on whole-series ρ: ρ 0.09 passed BH at n=965, while
+     ρ 0.804 came with zero shared top-20 series.
+  5. Cross-fitted residualization split a binary field's ties by fold:
+     `has_random_walk` ρ 0.833 → 0.328 with `oof_r2` ≈ 0 (`8feb22f`).
+  Also fixed in review: `shared_concepts` counted co-presence instead of
+  agreeing parts; stability=False did not override convergent/partial
+  verdicts; Q2 printed "0 reproducible" when stability was unmeasured.
+- **Final rules.** Agreement = exact hypergeometric p of the top-k overlap,
+  BH within the concept, with a stratum-matched redraw recorded as
+  `beyond_stratum`. Provenance-driven = ≥80% of top-k from one real-derived
+  generator. The share is bimodal: 23 of 55 parts at 0.0, 23 at ≥0.85.
+- **Profiles on the 4-model run** (19 concepts, 55 parts, 161.81317611597478 s
+  on CPU): convergent 7, shared (same effect, same inputs) 4, single-model
+  5, partially shared 3. Stable only: convergent 7, shared 2, single-model 4,
+  partially shared 1. Provenance-driven parts: 24/55.
+- **Q1 (shared by all):** no atlas concept has members in all 4 models. Of
+  the 7 spanning 3 models: 3 not reproducible, 3 convergent, 1 partially
+  shared. All 7 convergent concepts are stable. The dominant multi-model
+  pattern is the same forecast adjustment reached from different inputs.
+- **Q2 (unique and why):** 4 reproducible model-specific concepts (TimesFM
+  2, Sundial 1, Chronos-Bolt 1, Chronos-2 0). None sits on series where its
+  model beats every other model. 2 of the 4 fire on one real-derived
+  generator (mixture, sequential_par). C17 (TimesFM, random walks): ρ 0.833
+  with `has_random_walk`, 19/20 top series `random_walk_drift` (24.78×
+  enrichment), `p_max_structural` 0.000999000999000999, but not stable
+  under the CPU replicates. On its top series, TimesFM's log-MASE gap vs
+  Chronos-2 is 0.0039 [−0.06, 0.0762] (indistinguishable) and vs Sundial
+  −0.2352 [−0.4441, −0.0634]. Ablating it worsens TimesFM's MASE (4.04×
+  null p95).
+- **Q3 (pair similarity, 7 metrics):**
+  - The metrics split into two camps. **TimesFM/Chronos-2** is closest on
+    behavior and SAE effect: error agreement 0.9508137661557489, atlas
+    co-membership 0.9504574076274207, 3 shared concepts. **Chronos-2/Bolt**
+    is closest on geometry and SAE inputs: CKA 0.883013129234314, stitching
+    0.7092976272106171, input-transfer R_rel 0.9038461538461537. The same
+    Chronos-2/Bolt pair ranks last on error agreement (0.7200189762792106)
+    and atlas co-membership (0.47258979206049145).
+  - Kendall's W (all 7 metrics) 0.26866549088771313, p 0.07646176911544228.
+    Representation-only W 0.5301587301587302, p 0.14492753623188406.
+    There are 13 contrasts.
+  - The partial error agreement, controlling for seasonal-naive difficulty,
+    keeps TimesFM/Chronos-2 at 0.8917805947992252 but drops every
+    Chronos-Bolt pair to 0.32–0.49. The behavioral split is not a
+    series-difficulty artifact.
+  - **Reading:** representation geometry tracks the architecture family;
+    which causal forecast adjustments a model learns tracks how it errs.
+- **Rendered check** (isolated copy of ref4 with float64 transfer and
+  CPU-replicate stability):
+  - 16 sections, 124 findings, none failed;
+  - 3 answer boxes; the section has 83 figures and 84 captions;
+  - report 7,010,668 → 8,163,411 bytes;
+  - the per-target concept cards and activation-matched role blocks are now
+    in collapsed `<details>`, and the channel legend renders once with 12
+    back-links;
+  - the SAE StageDoc's run-result sentence is gone.
+- **Open:**
+  - the concept names are auto-generated effect strings and hard to read;
+  - "worsens … 0.978x the null's p95" can print alongside a clearing member
+    (mean vs any-member), which reads oddly;
+  - `runs/full_report_run_4model` itself has not been re-rendered (the
+    ref4 copy carries the §37 artifacts);
+  - the stability numbers rest on CPU-trained replicates.
 
 ### 37.12 What this changes elsewhere in the plan
 

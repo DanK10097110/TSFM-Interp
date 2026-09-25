@@ -364,14 +364,28 @@ rescued. L0, L1 and L3 replicate on private data.
    features, ≥3 members), **seed stability** (`sae/stability.py`,
    `n_sae_seeds` replicate SAEs at the primary's dict size, within-model
    ceiling) and **atlas transfer** (`run_atlas_transfer`, BH per ordered model
-   pair and leg; `transfer_p_method: exact|adaptive`), and writes
-   `sae/concept_stage.json`. It
+   pair and leg; `transfer_p_method: exact|adaptive`), then **profiles**
+   (`sae/concept_profiles.py` → `sae/concept_profiles.json`, per concept
+   part: what it fires on, its effect, an exemplar, and whether its model
+   is better on its top series; cross-model *input agreement* is the top-k
+   overlap, hypergeometric + BH, never a whole-series ρ; a `sharing_class`
+   of shared / partially shared / convergent / single-model; a part is
+   provenance-driven when ≥80% of its top-k comes from one real-derived
+   generator), and writes `sae/concept_stage.json`. It
    requires `sae.persist_features: true`, which preflight checks. It skips
    transfer with a stated reason, and deletes its own stale artifacts when it
    does not rewrite them. The preset is `configs/concept_atlas.yaml`.
 7. Report modules: `report/sae_concepts.py`, `sae_concept_map.py` (a shared
    StandardScaler+PCA fit across all targets; PCA, not UMAP, because the space
-   is 9-dimensional and small-sample), `sae_roles.py`, `derived.py`.
+   is 9-dimensional and small-sample), `sae_roles.py`, `derived.py`
+   (`concept_verdicts`: the evidence ladder L1–L6 per concept).
+8. **Model comparison section** (`report/model_comparison.py`, directly after
+   the scorecard): three derived answer boxes (shared / unique and why /
+   pair similarity), the sharing map, concept cards and verdict table.
+   Pair similarity comes from `analysis/model_similarity.py` →
+   `report/model_similarity.json`: 7 pair metrics, each on its own scale,
+   with a rank consensus (Kendall's W) and contrasts. Metrics are never
+   pooled into one score.
 
 The reference real run is `runs/full_report_run_4model` (TimesFM, Chronos-2,
 Sundial, Chronos-Bolt; 13 targets). Its current per-target concept count is
@@ -440,11 +454,19 @@ in `CLAUDE_FULL.md`.
   - A bias shared by both arms of a null is invisible in the comparison, so
     publish the shared step's own diagnostic, e.g. convergence (§11.47).
 - **Ties.** A rank transform that breaks ties by position turns a constant
-  column into a ramp (§11.37).
+  column into a ramp (§11.37). Cross-fitted residualization does the same to
+  a binary field (a different fold mean per fold): ρ 0.833 fell to 0.328.
 - **R² baselines.** A through-origin fit's R² needs an uncentered baseline
   (§11.31).
 - **Absolute epsilons.** An absolute epsilon cannot tell "no effect" from
   "numerically dead". Use relative thresholds (§11.56).
+- **Residualizing on a label that encodes the answer** removes the signal.
+  An archetype (or a synthetic generator) is a structural recipe, so
+  residualizing structure on it flagged 48 of 55 concept parts as
+  provenance-driven. Residualize only on true confounds (ROADMAP §37.11).
+- **Sparse features and whole-series ρ.** Two sparse SAE features can have
+  ρ 0.80 with zero shared top series, and identical top series with low ρ.
+  "Same inputs" is a top-k overlap test (ROADMAP §37.11).
 
 **Plumbing**
 
@@ -465,6 +487,13 @@ in `CLAUDE_FULL.md`.
   the import lazy, and test the other order in a subprocess (§11.52).
 - **Library keys.** `FlopCounterMode` keys modules from the module *entered*
   (§11.28). A lookup miss returns nothing and looks deliberate.
+- **Library dtypes.** scipy 1.18's `rankdata` keeps a float16 input's dtype,
+  and the store is float16, so rank sums and AUCs were silently quantized.
+  Cast to float64 before ranking; `auc_from_ranks` now refuses float16.
+- **Artifact paths.** Build a path to another stage's artifact with that
+  stage's own helper (`ablation_run.ablation_path`), never by hand: real
+  layer names contain dots and are `sanitize()`d on disk. Mock layer names
+  have no dots, so give fixtures a dotted name.
 - **Text I/O.** Always pass `encoding="utf-8"` to `read_text`/`write_text`
   (§11.17).
 - **Remedies.** `--force` only reaches selected stages. An error message that
