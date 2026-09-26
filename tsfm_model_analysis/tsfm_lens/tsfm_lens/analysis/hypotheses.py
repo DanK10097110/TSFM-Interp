@@ -255,9 +255,16 @@ def _concept_transfer_entries(run_dir: Path, cfg: PipelineConfig) -> tuple:
     """`-> (hypothesis entries, ranking dict)`. One entry per candidate in
     the top `cut`, each carrying everything `_replicate_registered_concepts`
     needs to re-test the FROZEN claim on private data without re-reading
-    `sae/concept_atlas.json` (registration precedes private access; freezing
-    `src_features`/`dst_feature` here, not re-deriving them at confirm time,
-    is the mechanism, ROADMAP.md sec 37.10 design item 4).
+    `sae/concept_atlas.json` (registration precedes private access,
+    ROADMAP.md sec 37.10 design item 4). `src_features` are frozen here;
+    `dst_feature` is recorded for reference only, because the forward leg
+    re-searches the destination dictionary on private data against a
+    max-over-features null, exactly as the dev test did.
+
+    The id names the destination TARGET, not only its model: one source
+    concept routinely transfers to several layers of the same model, and an
+    id that collapses them made `holm()` (keyed by id) silently shrink the
+    family (20 registered claims, 9 distinct ids on the reference run).
     """
     ranking = _concept_transfer_candidates(run_dir, cfg.concepts)
     at_path = run_dir / "sae" / "atlas_transfer.json"
@@ -265,7 +272,7 @@ def _concept_transfer_entries(run_dir: Path, cfg: PipelineConfig) -> tuple:
     entries = []
     for c in ranking["candidates"][:ranking["cut"]]:
         entries.append({
-            "id": f"concept_transfer::{c['src_target']}::{c['concept']}::{c['dst_model']}",
+            "id": f"concept_transfer::{c['src_target']}::{c['concept']}::{c['dst_target']}",
             "stage": "concept_transfer", "family": "concept_transfer",
             "concept": c["concept"], "src_target": c["src_target"], "src_model": c["src_model"],
             "src_features": c["src_features"], "dst_target": c["dst_target"],
@@ -290,6 +297,11 @@ def build_registry(cfg: PipelineConfig) -> dict:
     hypotheses = (_l0_entries(run_dir) + _l1_entries(run_dir) + _l2_entries(run_dir)
                  + _l3_entries(run_dir) + _clustering_entries(run_dir)
                  + concept_transfer_entries)
+    ids = [h["id"] for h in hypotheses]
+    dup = sorted({i for i in ids if ids.count(i) > 1})
+    if dup:
+        raise ValueError(f"hypothesis registry has duplicate ids {dup}; every claim "
+                         f"must be individually addressable (Holm is keyed by id)")
     return {"hypotheses": hypotheses,
            "n_replicable": sum(1 for h in hypotheses if h["replicable"]),
            "concept_transfer_candidates": ct_ranking,

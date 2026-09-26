@@ -474,3 +474,44 @@ if __name__ == "__main__":
     test_empty_knob_family_skips_gracefully()
     test_private_strata_used()
     print("concept confirm tests passed (report tests need tmp_path -- run via pytest)")
+
+
+def test_same_concept_to_several_layers_of_one_model_gets_distinct_ids():
+    """One source concept transferring to two LAYERS of the same destination
+    model is two claims. The reference run registered 20 claims under 9
+    distinct ids when the id named only the destination model, and `holm()`
+    (keyed by id) silently ran over 9 p-values instead of 20."""
+    cfg = _cfg()
+    tests = [_base_test_row(concept=0, dst_target="modelB/layer.1", auc=0.95, rev_auc=0.9),
+             _base_test_row(concept=0, dst_target="modelB/layer.2", auc=0.9, rev_auc=0.85)]
+    _atlas_fixture(cfg.run_dir(), tests, stable_concepts={0})
+    reg = build_registry(cfg)
+    ct = [h for h in reg["hypotheses"] if h["stage"] == "concept_transfer"]
+    assert len(ct) == 2
+    assert len({h["id"] for h in ct}) == 2
+
+
+def test_replication_refuses_duplicate_claim_ids():
+    """A registry whose claims share an id (one built before the id named
+    the destination target) must fail loudly, not Holm-correct a shrunken
+    family."""
+    n = 30
+    src_pooled = np.zeros((n, 1)); src_pooled[:, 0] = np.arange(n, dtype=float)
+    dst_pooled = np.zeros((n, 3)); dst_pooled[:, 1] = np.arange(n, dtype=float)
+    cfg = _cfg()
+    cfg.confirm.concept_transfer_n_null = 300
+    claim = {"id": "concept_transfer::A/l::0::B", "concept": 0, "src_target": "A/l",
+             "dst_target": "B/l", "dst_model": "B", "src_features": [0], "dst_feature": 1,
+             "k_top_series": 6, "dev_auc": 0.9, "dev_auc_margin": 0.2}
+    registry = _registry_with_claims([claim, {**claim, "dst_target": "B/m"}])
+    orig = _patch_capture({"A/l": src_pooled, "B/l": dst_pooled, "B/m": dst_pooled})
+    try:
+        raised = False
+        try:
+            confirm_mod._replicate_registered_concepts(cfg, hub=None, private=_private_meta(n),
+                                                       registry=registry)
+        except ValueError as exc:
+            raised = "duplicate ids" in str(exc)
+    finally:
+        _unpatch_capture(orig)
+    assert raised

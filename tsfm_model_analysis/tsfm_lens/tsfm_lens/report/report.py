@@ -8598,8 +8598,8 @@ def _sec_confirm(run_dir: Path, findings: list, n_exploratory: int) -> str:
         if tests_c:
             rows = [{
                 "concept": t["concept"],
-                "src → dst": f'{_short(t["src_target"])} → {_short(t["dst_target"])} '
-                            f'({t["dst_model"]})',
+                "src → dst": f'{t["src_target"].split("/", 1)[0]} {_short(t["src_target"])} → '
+                            f'{t["dst_model"]} {_short(t["dst_target"])}',
                 "dev AUC": t.get("dev_auc"), "dev margin": t.get("dev_auc_margin"),
                 "private AUC": t.get("private_auc"), "p (Holm)": t.get("p_holm"),
                 "verdict": t.get("verdict", t["status"]),

@@ -596,6 +596,11 @@ def _replicate_registered_concepts(cfg: PipelineConfig, hub, private: BenchmarkD
     here (sec 37.9's P6a NO-GO; no private counterfactual path is built).
     """
     transfer_hyps = [h for h in registry["hypotheses"] if h["stage"] == "concept_transfer"]
+    ids = [h["id"] for h in transfer_hyps]
+    if len(set(ids)) != len(ids):
+        raise ValueError("concept_transfer claims have duplicate ids; Holm is keyed by "
+                         "id, so the family would silently shrink. Re-register with a "
+                         "registry built by the current hypotheses.py")
     knob_hyps = [h for h in registry["hypotheses"] if h["stage"] == "concept_knob"]
 
     if knob_hyps:  # pragma: no cover -- defensive; P7 never registers this family
