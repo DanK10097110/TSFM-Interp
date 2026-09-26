@@ -36531,6 +36531,84 @@ stop: that is a real negative about these dictionaries, and building mediation
 on top of it would narrate nothing. Record it and ask whether a different
 layer (e.g. `layer_screen`'s second pick) is worth one more try.
 
+**Findings — P6a (2026-09-25; generator counterfactuals + input response;
+merged `e94eaaa`).** The generator side is `tsfm_benchmark/build_pipeline/counterfactual.py`
+(`KNOBS`, `regenerate()`). The measurement side is `tsfm_lens/sae/counterfactual.py::run_counterfactual_response`,
+which writes `sae/counterfactual_response.json`. It is opt-in (`concepts.cf_enabled: false`)
+and is not wired into the concepts stage or the report; that is P6b. The run was on an isolated copy of
+`runs/full_report_run_4model`.
+- **Knobs.** There are five draw-neutral knobs: `seasonal_amplitude`, `anomaly_magnitude`,
+  `heteroskedastic_depth`, `trend_scale` and `intermittency_rate`.
+  - `trend_scale` refuses to cross the 0/nonzero boundary, because `parametric()` draws differently there.
+  - The load-bearing `noise_scale` plant (a coupled knob) fails `test_non_target_components_bit_identical`.
+  - Golden hashes are unchanged (`tsfm_benchmark` 116 passed, 1 skipped).
+- **Corruption-replay bug, found by the identity check.**
+  - The first `regenerate()` rebuilt only the clean parametric series. **244/298**
+    `anomaly_magnitude`-eligible corpus series failed dose-1.0 identity, and every one of them had a
+    nonempty `provenance.transforms`: `configs/large_run.yaml` applies a post-generation corruption chain.
+  - The fix: `_replay_transforms` reseeds each corruption from the outer `provenance.seed`, as
+    `builder.py::_make_one` does. `scaling` is the exception: it applies its recorded *realized* factor,
+    because the recorded `sigma` cannot redraw it.
+  - After the fix there are 0 mismatches over 1113 eligible (series × knob) combinations. Inside the
+    measurement, dose 1.0 is bit-identical for every knob (max abs diff 0.0).
+  - Eligible series per knob, capped at `cf_max_series` 64: anomaly 64, seasonal 64, trend 64,
+    heteroskedastic 44, intermittency 33.
+- **Encode check redesigned.** The spec's check compared raw SAE-feature vectors against the persisted
+  `space="sae"` rows with an absolute/relative tolerance. It failed on every target.
+  - The cause is bf16 precision noise, not a wrong space. On Chronos-2 the raw-activation relative max diff
+    is 0.02507, and the SAE-feature max abs diff is 0.01056 against atol 1e-3.
+  - An absolute epsilon cannot separate those two cases (§8). The gate is now the per-concept-part score
+    Spearman against the persisted rows, `cf_encode_min_spearman` 0.98. The old check is kept as a
+    diagnostic that does not gate.
+  - All 22 parts pass. Min ρ per target: Chronos-2 0.99601, Bolt 0.99987, Sundial 1.0, TimesFM 0.99999.
+    TimesFM's raw relative max diff is 0.16232, yet its part scores rank identically.
+- **BH family unsatisfiable at the spec's `cf_n_null` 200.** With 20–27 tests per target, the smallest
+  attainable single-test q was 0.0597 > 0.05, so "nothing survives" would have been the resampling
+  resolution, not a measurement.
+  - The fix: `cf_n_null` is now 2000. The null loop uses a vectorized per-row Spearman (`_spearman_rows`,
+    average ranks, NaN for a constant row).
+  - Each target now records `bh_family` (`n_tests`, `p_floor`, `min_attainable_q_single`, `satisfiable`).
+    Min q is 0.01–0.01349, and every family is satisfiable.
+  - Planted regressions: ordinal ranks fail `test_spearman_rows_matches_per_series_spearman`, and a
+    hardcoded `satisfiable=True` fails `test_bh_family_satisfiability_recorded`.
+- **Go/no-go targets.** One per model, chosen by the most stable atlas parts: Chronos-2/encoder.block.6,
+  Chronos-Bolt/encoder.block.4, Sundial/model.layers.10, TimesFM/stacked_xf.6.
+- **Test counts.** 110 (part × knob) tests: 98 scored and 12 undefined.
+  - A test is undefined when every series has a constant score across doses. It is recorded as undefined,
+    never as 0 (§11.37).
+  - Defined series per scored test: median 18, min 1, max 64. 29 of the 98 tests have fewer than 10.
+- **Result: NO-GO at the pre-registered gate. 0 of 98 tests survive BH within target.**
+  - 14 tests respond uncorrected (|mean| > null p95 and the CI excludes 0), against ≤4.9 expected at
+    α=0.05. Binomial p is 0.0003755194824261461, so the dictionaries respond to input structure more
+    often than chance, but no single (concept, knob) response is resolvable after correction.
+  - By knob: intermittency 7, seasonal 5, anomaly 1, trend 1. By target: Bolt 5, Chronos-2 4,
+    Sundial 3, TimesFM 2.
+  - Nearest misses:
+    - Sundial c0 × intermittency: mean −0.9004, 4 defined series, q 0.0600.
+    - Bolt c0 × seasonal: mean −0.8105, CI [−0.929, −0.679], 32 defined, q 0.0650.
+    - Bolt c12 × intermittency: mean +0.6222, 32 defined, q 0.0650.
+  - **What limits it is the null, not power alone.** Null p95 of |mean| runs 0.43–0.73: random alive
+    features matched on activation decile respond to these knobs almost as strongly as the concepts do.
+    A knob moves a large fraction of the dictionary, so a concept's response is rarely *specific*. Many
+    responses are large (|mean| 0.6–0.9) and still sit only just above that floor.
+- **Pre-registered predictions.** Formally unresolved, because no response survives BH. Uncorrected only:
+  - Seasonal amplitude responders appear in Chronos-2 (c7 −0.4899, c8 +0.6556), Bolt (c0 −0.8105,
+    c12 −0.4971) and Sundial (c13 −0.8341), but not in TimesFM.
+  - Anomaly magnitude has one responder, Bolt c6 (−0.5686, 12 defined series). It has none in Sundial,
+    the §30.2 spike specialist. That runs against the prediction's direction, uncorrected.
+- **Runtime.** 89.9 s for the 4 targets (15.7–27.5 s each), so all 13 targets would
+  take about 5 min. Cost is not the constraint.
+- **Tests.** `test_counterfactual.py` has 9 tests and `test_counterfactual_mediation.py` has 11, each with a
+  confirmed plant. `test_shared_input_agreement.py`, `test_concept_atlas.py`,
+  `test_manifest_fingerprint.py` and `test_smoke.py` pass (61 total with the mediation file).
+- **Stopped here, per the go/no-go.** Mediation (P6b) is not built. Options for one more pre-registered
+  try, which the user decides:
+  - `layer_screen`'s second-pick layer;
+  - raising `cf_max_series`. This only helps the anomaly, seasonal and trend knobs, which hit the cap of 64.
+    Intermittency has 33 eligible series and heteroskedastic 44, so the cap does not bind for them.
+  - Neither option lowers the knob-general null floor, which is the binding constraint. Any retry must be
+    registered before it is looked at, with the same gate.
+
 ### 37.10 P7 — Register concept claims and confirm them once, on a fresh private epoch (~1 session + GPU)
 
 **Why.** Every concept finding so far is exploratory: dozens of targets,
