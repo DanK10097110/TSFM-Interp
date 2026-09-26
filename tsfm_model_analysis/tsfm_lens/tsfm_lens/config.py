@@ -888,6 +888,34 @@ class ConceptsConfig:
     shared_input_enabled: bool = True
     shared_input_n_null: int = 50
 
+    # ROADMAP.md sec 37.9 P6a -- generator-side input counterfactuals
+    # (`tsfm_benchmark/build_pipeline/counterfactual.py`'s draw-neutral knobs,
+    # measured by `tsfm_lens/sae/counterfactual.py`): does an atlas concept's
+    # causal-feature score actually RESPOND to the structural property its
+    # generator controls, rather than merely correlating with naturally
+    # varying series? Off by default (`cf_enabled`): it re-runs a forward
+    # pass per (series, dose) per (target, knob) on top of the already-heavy
+    # `concepts` battery, and needs `tsfm_benchmark` importable (a separate
+    # install; degrades with a stated reason, `{"status": "unsupported", ...}`,
+    # rather than failing, when it is not). `cf_max_series` bounds the
+    # per-knob series count (`utils.sample_rows`-stratified, never a head
+    # slice -- CLAUDE.md sec 11.38); `cf_doses` is the multiplicative dose
+    # ladder applied to each knob's own recorded value (1.0 must reproduce
+    # the corpus series bit-identically -- asserted inside the measurement,
+    # not only in tests); `cf_n_null` is the number of matched random
+    # alive-feature sets (`shared_input_agreement.matched_null_sets`'s own
+    # decile-matching logic, reused rather than re-derived) that build each
+    # concept's response floor. This step measures INPUT RESPONSE only --
+    # mediation and the cross-model comparison are P6b, gated on this step's
+    # go/no-go result. Lives in `concepts:`, not `sae:`, for the same reason
+    # `min_relative_reach`/`shared_input_enabled` do: no pre-existing
+    # `sae`-stage fingerprint to protect, and the `concepts` Stage already
+    # declares the whole section as a fingerprint key.
+    cf_enabled: bool = False
+    cf_max_series: int = 64
+    cf_doses: list = field(default_factory=lambda: [0.0, 0.5, 1.0, 1.5, 2.0])
+    cf_n_null: int = 200
+
 
 @dataclass
 class PipelineConfig:
