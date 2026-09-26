@@ -36724,8 +36724,14 @@ section sits directly after the scorecard, as designed.
   - the concept names are auto-generated effect strings and hard to read;
   - "worsens … 0.978x the null's p95" can print alongside a clearing member
     (mean vs any-member), which reads oddly;
-  - `runs/full_report_run_4model` itself has not been re-rendered (the
-    ref4 copy carries the §37 artifacts);
+  - ~~`runs/full_report_run_4model` itself has not been re-rendered (the
+    ref4 copy carries the §37 artifacts)~~ — resolved 2026-09-25: after a
+    proper `concepts,report` stage run on an isolated copy (current main with
+    P4, P5a and P5b; 3827.160477273166 s; every §37 artifact reproduced
+    bit-identically, apart from runtimes), the copy replaced
+    `runs/full_report_run_4model`. `config_resolved.yaml` has its original
+    relative `out_dir`/`data.path` again. The previous run is kept as
+    `runs/full_report_run_4model.pre_concept_atlas_20260925`;
   - ~~the stability numbers rest on CPU-trained replicates~~ — resolved
     2026-09-25: a full concepts-stage rebuild on a fresh ref4 copy (current
     main, P4 + P5a, GPU replicates, 1463.7746378351003 s, replicate training
