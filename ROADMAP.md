@@ -36627,6 +36627,33 @@ second pick, so the family is fixed in advance instead of chosen after looking.
 - **If NO-GO.** P6b (mediation) is not built on these dictionaries. The knob-general null floor is
   recorded as the binding constraint.
 
+**Findings — P6a retry (2026-09-26; the registered rule above, applied unchanged). NO-GO.**
+- **Checks.** Identity is bit-exact for all 5 knobs. The encode gate passes on all 9 targets
+  (33 parts, min ρ 0.99684). Every per-target BH family is satisfiable at `cf_n_null` 10000
+  (min q 0.001–0.003).
+- **Primary rule.** 151 tests were scored and 14 were undefined. Defined series per test: median 10,
+  min 1, max 64.
+  - Pooled BH over all 151: the smallest q is **0.4548**, so **0 survive**. The pooled family was
+    satisfiable (minimum attainable q 0.0151).
+- **Secondary results.**
+  - Per-target BH: 0 survive.
+  - 11 tests respond uncorrected, against ≤7.55 expected. Binomial p is 0.1365604281162953, so unlike
+    the first 4 targets (14/98, p 0.000376) there is no enrichment here.
+  - Uncorrected responders, by knob: seasonal 7, intermittency 2, trend 2, heteroskedastic 1.
+    Sundial/model.layers.7, TimesFM stacked_xf.2, .10 and .16 have none.
+  - The largest responses again sit just above a knob-general floor. Examples:
+    - Sundial/model.layers.3 c6 × seasonal: +0.8722 against null p95 0.8487.
+    - Bolt/encoder.block.3 c13 × heteroskedastic: +0.8663 against 0.8256.
+- **Runtime.** 515.6 s for 9 targets at `cf_n_null` 10000.
+- **Decision, per the registration.** P6b (mediation) is not built on these dictionaries. Across all
+  13 targets, no (concept, knob) input response is resolvable after correction. The binding constraint
+  is the knob-general null: an input knob moves random activation-matched features almost as much as
+  it moves concept features.
+  - For P7, the `concept_knob::` family is therefore empty (§37.10 design item 2).
+  - Reopening this needs a different design question, not another layer. One example: responses of
+    the concept *relative to* its matched features, per series, rather than a response that must beat
+    their distribution. That question must be registered before it is looked at.
+
 ### 37.10 P7 — Register concept claims and confirm them once, on a fresh private epoch (~1 session + GPU)
 
 **Why.** Every concept finding so far is exploratory: dozens of targets,
