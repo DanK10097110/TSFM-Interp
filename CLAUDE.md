@@ -481,6 +481,12 @@ in `CLAUDE_FULL.md`.
   p05 test it was 9. Also: the null that asks "does this do anything" (random
   direction) and the floor that asks "is this more specific than an equally
   active feature" (matched features) are different nulls (ROADMAP §37.8).
+- **Run invariance controls on real data, not only synthetic data.** CCM
+  passed its rotation test on isotropic synthetic data. On the real, low-rank
+  representations, rotating both bases *raised* it (F-level 0.148 → 0.331),
+  so it was not measuring unit correspondence at all (ROADMAP §35.14). A
+  bootstrap checked only on a true-zero fixture also hides a size-driven
+  bias.
 - **Sparse features and whole-series ρ.** Two sparse SAE features can have
   ρ 0.80 with zero shared top series, and identical top series with low ρ.
   "Same inputs" is a top-k overlap test (ROADMAP §37.11).

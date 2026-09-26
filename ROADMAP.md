@@ -33996,6 +33996,8 @@ was still on the page to contradict.
 
 ### 35.0 Status, provenance, and the one-paragraph version
 
+🔴 **Closed 2026-09-26 as a NO-GO: see §35.14.** The real-data rotation control showed CCM is not basis-sensitive on these low-rank representations.
+
 🔵 **Re-scoped 2026-09-22 by §37.** First implementation targets **SAE
 features**, with §37 P2's replicate dictionaries as the same-model reference
 spectrum; the residual-stream measurement stays the control §35.4 already calls
@@ -34827,6 +34829,70 @@ and it is worth nothing if CCM has not already cleared §35.10.
    phase and it is **explicitly out of scope here**: it needs its own
    untrained-twin floor, which §29 measured and found three of four twins
    cannot carry.
+
+### 35.14 Findings (2026-09-26): NO-GO. CCM does not measure unit correspondence on these representations
+
+**The work.** It was built by a Sonnet agent from `/tmp/tsfm_specs/s35_spec.md` (branch
+`worktree-agent-addcbd551b7d8b676`, commit `046b96c`). The branch holds
+`analysis/alignment_spectrum.py`, `run_alignment_spectrum.py` and `tests/test_alignment_spectrum.py`
+(12 tests). **Not merged**: the decision closed negative (§2.9), and the commit is the recovery point.
+It was run over the 4-model run's store, with zero forward passes.
+
+- **The synthetic suite passes, with two disclosed re-readings.**
+  1. **Test 3 (rotation) fails its literal criterion.** For an exact rotation, CCM does not fall
+     inside its null CI. The CI is [0.00263, 0.00501] at d=3000, N=100. A Haar rotation leaves each
+     unit a real best-partner correlation of about √(2 ln d / d), which the row-permutation null
+     cannot absorb. The agent re-read the gate as a >100× collapse relative to the identity rung
+     (0.6362 → 0.00609) with CKA unchanged. That re-reading is a deviation from §35.9, which says
+     "abandoned rather than tuned".
+  2. **CCF over-states the core fraction in a core+tail mixture** (1.0 for a planted 0.6). The null
+     spectrum is homogeneous, and the tail's order statistics are not.
+  - Test 7 (size invariance) passes cleanly: |CCM| is 6.6e-5, 8.6e-4 and 9.9e-4 at n_b 50, 500
+    and 5000.
+- **Real N-level result.** CCM is 0.24–0.54, and every CI excludes zero. §35.9 pre-registered this
+  as the surprise that "would need explaining before any F-level number is trusted".
+  - Examples: TimesFM/Chronos-2 0.2470631051534907 at CKA 0.436; Chronos-2/Bolt
+    0.5395807276 at CKA 0.883.
+- **The real rotation control decides it (orchestrator, `scratchpad/s35ctl`, reading the store
+  only).** A Haar rotation of one or both bases of the *real* activations:
+
+  | pair | real CCM | B rotated | both rotated | participation ratio A / B |
+  |---|---|---|---|---|
+  | N TimesFM xf.4 / Chronos-2 b.6 (400 series × 16 windows) | 0.2380 | 0.2131 | 0.2614 | 28.72 / 43.26 |
+  | N Chronos-2 b.0 / Bolt b.0 | 0.5311 | 0.5082 | 0.6131 | 10.85 / 6.44 |
+  | F Chronos-2 b.6 / Bolt b.4 (SAE, 965 series) | 0.1476 | 0.1282 | 0.3313 | 41.55 / 5.60 |
+  | F Sundial l.3 / TimesFM xf.18 (SAE) | 0.1471 | 0.1228 | 0.2947 | 6.87 / 1.54 |
+
+  - Rotating one basis moves CCM by 0.02–0.03. Rotating both **raises** it, up to 2.2× at the
+    F level.
+  - The representations are low-rank: the participation ratio goes as low as 1.54, and the top 10
+    PCs carry 37–92% of the variance. Nearly every direction, including a random one, correlates
+    with the few shared dominant components.
+  - At the F level the rotated heads beat the real ones: 0.3190 vs 0.1749, and 0.3079 vs 0.1206.
+    **SAE atoms are no more matched one-to-one across models than random directions of their
+    dictionaries are.**
+  - The design's premise, "a random rotation of one model's hidden basis ... drives CCM to its
+    null", holds only for isotropic data. It is false here. By §35.9's own rule the section is
+    abandoned, not tuned.
+- **Two further defects**, recorded so they are not re-derived.
+  1. **Window-level null.** It permutes individual windows, so shared window-position structure
+     survives in the real arm only. A series-block permutation null lowers TimesFM/Chronos-2 from
+     0.2380 to 0.1793, while Chronos-2/Bolt barely moves (0.5311 → 0.5095).
+  2. **Biased bootstrap CI.** The CI deduplicates each resample, which leaves about 63% of the
+     series, and CCM depends on N. So every CI sits *below* its own point estimate: 0.2470 against
+     [0.2390, 0.2437], and 0.1476 against [0.1084, 0.1179]. The agent's check used a null fixture
+     (true CCM 0), where a size-driven bias is invisible. A cluster-consistent fix exists: keep the
+     duplicates and permute *series* in the null, so duplicated pairs stay paired in both arms. It
+     was not built.
+- **Other observations (descriptive, not promoted).**
+  - The same-model reference (P2 replicates) is 0.1130–0.3620, above the cross-model range of
+    0.066–0.148.
+  - Signed and |ρ| CCM are identical at the peak cell (0.14764587936229084 vs 0.147648612431962).
+- **§36 stays parked.** Its un-park trigger, the rotation control passing on a real run, has failed.
+- **If this is reopened, it needs a new registered question.** One example is basis-privilege excess
+  = CCM(real) − CCM(both bases rotated), with its own null. It would answer "are units better
+  aligned than random directions", which is what the table above says they are not, rather than
+  "is there correspondence beyond chance".
 
 ---
 
@@ -36977,7 +37043,7 @@ stays out; P4's tags feed `compose_name`.
 | 8 | **P6** counterfactuals + mediation | ~2 sessions + GPU | P2, P4 | 🔴 **Stop if no concept responds on one target per model** |
 | 9 | **P7** register + confirm on a fresh epoch | ~1 session + GPU | P2, P3, P6; a fresh private epoch | Consumes the new epoch once |
 | 10 | **P8** verdicts + atlas section | ~1 session, incremental from P2 onward | each item's artifact | Rendered-HTML verification |
-| 11 | §35 on SAE features | per §35 | P2 | §35.9 test 3 (rotation) |
+| 11 | §35 on SAE features | per §35 | P2 | §35.9 test 3 (rotation) — **closed NO-GO 2026-09-26, §35.14** (fails the real-data rotation control) |
 
 Every GPU step goes to a background agent per `CLAUDE.md` §2.8, briefed to
 report numbers, not write Findings.
