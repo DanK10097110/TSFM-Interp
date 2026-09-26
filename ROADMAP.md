@@ -36706,6 +36706,75 @@ read three times already.
 **Acceptance.** A `concept_replication` block on a fresh epoch, with per-claim
 verdicts, in the atlas run's Findings.
 
+**Findings — P7 (2026-09-26; merged `b812a2a`).** The one-shot confirmation ran on a fresh private
+epoch. The run is preserved as `runs/full_report_run_4model_epoch1`, a copy of the reference run with
+`confirm.path: ../../benchmark_large/private_epoch1`. `configs/concept_atlas.yaml` now points at
+epoch 1.
+- **Epoch 1** (`benchmark_large/private_epoch1`, `regenerate_private(epoch=1)` with `large_run.yaml`'s
+  specs, real-derived tiers included, since the network path worked).
+  - 961 series. By tier: synthetic 551, realism_stress 410. By generator: random_parametric 423,
+    mixture 290, parametric 128, block_bootstrap 70, sequential_par 50.
+  - Sealed with global digest `22037758b857d315565a6cec0b09df8118c62c7b586010f25e44090ade66de3b`.
+- **Cross-split check against `public_dev`.**
+  - Near-duplicates: 5 of 927365 pairs (coverage 1.0, fraction 1e-05).
+  - Composition, χ² p-values: tier 0.974155, group 0.999982, archetype 0.665697.
+  - Energy distance p 0.908046.
+  - TOST (margin 0.2 SD) is `inconclusive`: n is too small for 4 catch22 features. It is not
+    `not_equivalent`, so it is not a stop condition.
+- **Registration (dev only, before private access).**
+  - 20 `concept_transfer` claims were taken from 229 reciprocal-FDR, seed-stable candidates. They are
+    ranked by the weaker leg's dev AUC margin (0.24311375661375667 down to 0.14434523809523814).
+  - The claims come from 3 atlas concepts: concept 6 (8 claims), concept 0 (4) and concept 4 (8).
+  - The `concept_knob` family is registered **empty**, with P6a's NO-GO as the stated reason.
+- **Result.** **19 of 20 confirmed**, Holm within the family (m 20, n_null 2000, minimum attainable
+  Holm p 0.009995, satisfiable).
+  - Private AUC ranges from 0.7966025641025641 to 0.9992948717948718.
+  - 19 claims have Holm p 0.009995 and one has 0.010995. Every forward and reverse p sits at the
+    1/2001 floor except the one failure.
+  - The failure is Chronos-Bolt/encoder.block.4 concept 6 → TimesFM/stacked_xf.10: private AUC
+    0.766, reverse AUC 0.521 against a p95 of 0.569, so it is not reciprocal (Holm p 0.257871).
+  - L6 now renders measured values: concept 4 is 8/8, concept 6 is 7/8, concept 0 is 4/4.
+- **What "confirmed" means here (evidence class).** This is a held-out confirmation of a
+  **correlational** transfer claim: both models single out the same private series. It is not causal.
+  - The forward leg re-searches the destination dictionary on private data, against a
+    max-over-features null, as on dev. The best private destination feature is the dev feature in only
+    **6 of 20** claims.
+  - So the confirmed claim is "the destination layer has a feature that selects the source concept's
+    series, and that feature's own top series score high on the source concept". It is not "this
+    specific pair of features".
+  - A frozen-feature claim is sharper, and could be registered for the next epoch. It was not tested
+    here, because testing it now would be a second look at epoch 1.
+- **Bug found in review and fixed (`b53802b`).**
+  - The claim id named only the destination *model*, so the 20 claims had **9 distinct ids**.
+    `holm()` is keyed by id, so it ran over 9 p-values. Every reported Holm p was wrong (0.0045
+    instead of 0.009995), and the failing claim displayed another claim's adjusted p.
+  - Verdicts were unaffected, because the failure is decided by reciprocity and every other claim
+    sits at the p floor.
+  - Ids now name `dst_target`, and both `build_registry` and the replication refuse duplicate ids.
+    Planted regressions: reverting the id fails
+    `test_same_concept_to_several_layers_of_one_model_gets_distinct_ids`, and removing the guard fails
+    `test_replication_refuses_duplicate_claim_ids`.
+  - The consumed artifact was repaired **without re-reading private data**. The ids were relabeled and
+    Holm recomputed from the recorded per-claim `p_combined`. The originals are kept as
+    `hypotheses.pre_id_fix.json` and `confirm/confirmation.pre_id_fix.json`, and the repair is recorded
+    under `concept_replication.id_repair`, which asserts that the original registry hash matches.
+- **Other review notes.**
+  - The per-claim p is `max(p_fwd, p_rev)` (intersection-union, conservative). The max-vs-min choice
+    is not pinned by its own plant, because the fixture is symmetric; the agent disclosed this.
+  - The agent built the epoch before running the smoke end-to-end test, contrary to the spec's order.
+    The epoch was not consumed until after the smoke test caught a real bug: registration read
+    `stable` flat instead of `stability.stable`, and the fixture had the same wrong shape. That was
+    fixed before `confirm` ran.
+  - The report's source column now names both models.
+- **Found, not fixed (out of scope).** `sae/concept_profiles.py::run_concept_profiles` calls
+  `load_ground_truth_table(cfg.data.path)` without a guard, so the `concepts` stage crashes under a
+  smoke config (empty path) as soon as the atlas has ≥1 concept. It should skip with a stated reason
+  (§2.5).
+- **Runtime.** register 4.7 s, confirm 447.3 s, report 53.1 s.
+- **Tests.** 134 passed, 1 skipped across the confirm, hypotheses, atlas, shared-input,
+  model-comparison, manifest and smoke files (`test_concept_confirm.py`: 15). The `tsfm_benchmark`
+  suite gives 116 passed, 1 skipped.
+
 ### 37.11 P8 — Per-concept verdicts and the Concept Atlas report section (~1 session, incremental)
 
 **Why.** The claim should be one row a reader can check, not five artifacts

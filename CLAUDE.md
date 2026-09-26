@@ -307,7 +307,10 @@ hypotheses **once** on the sealed private corpus:
 - It requires seal verification.
 - `--force confirm` is recorded as `repeated_look`.
 
-A peeked private set means minting a new epoch. Unregistered findings cannot be
+A peeked private set means minting a new epoch. Concept claims replicate
+under `confirmation.json`'s `concept_replication` key (P7; epoch 1 is
+`benchmark_large/private_epoch1`, consumed by
+`runs/full_report_run_4model_epoch1`). Unregistered findings cannot be
 rescued. L0, L1 and L3 replicate on private data.
 
 ### 6.7 Report (`report/report.py`)
@@ -508,6 +511,10 @@ in `CLAUDE_FULL.md`.
   stage's own helper (`ablation_run.ablation_path`), never by hand: real
   layer names contain dots and are `sanitize()`d on disk. Mock layer names
   have no dots, so give fixtures a dotted name.
+- **Keys that collapse.** A dict keyed by an id that under-specifies the
+  claim silently merges entries. 20 registered concept claims had 9 ids
+  (destination model, not layer), so Holm ran over 9 p-values. Refuse
+  duplicate ids where the registry is built (ROADMAP §37.10).
 - **Text I/O.** Always pass `encoding="utf-8"` to `read_text`/`write_text`
   (§11.17).
 - **Remedies.** `--force` only reaches selected stages. An error message that
