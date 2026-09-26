@@ -36609,6 +36609,24 @@ and is not wired into the concepts stage or the report; that is P6b. The run was
   - Neither option lowers the knob-general null floor, which is the binding constraint. Any retry must be
     registered before it is looked at, with the same gate.
 
+**Registration — P6a retry (2026-09-26, written before the retry was run).** This is the one
+further try that the go/no-go allows. It uses the other layers rather than only `layer_screen`'s
+second pick, so the family is fixed in advance instead of chosen after looking.
+- **Targets.** The 9 atlas targets not scored above:
+  - Chronos-2: encoder.block.8, encoder.block.10.
+  - Chronos-Bolt: encoder.block.3.
+  - Sundial: model.layers.3, model.layers.7.
+  - TimesFM: stacked_xf.2, .10, .16, .18.
+- **Unchanged.** Knobs, doses, `cf_max_series` 64, series selection, encode gate and response rule.
+- **Changed, and only to keep the family satisfiable.** `cf_n_null` is 10000.
+- **Primary rule (GO).** At least 1 test survives BH at q 0.05 over the **pooled** family of every
+  scored test on the 9 targets. Per-target BH over 9 more targets would multiply the chance of a
+  spurious survivor.
+- **Secondary, reported but not gating.** Per-target BH, and the uncorrected enrichment against
+  α=0.05.
+- **If NO-GO.** P6b (mediation) is not built on these dictionaries. The knob-general null floor is
+  recorded as the binding constraint.
+
 ### 37.10 P7 — Register concept claims and confirm them once, on a fresh private epoch (~1 session + GPU)
 
 **Why.** Every concept finding so far is exploratory: dozens of targets,
