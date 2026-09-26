@@ -888,6 +888,59 @@ class ConceptsConfig:
     shared_input_enabled: bool = True
     shared_input_n_null: int = 50
 
+    # ROADMAP.md sec 37.9 P6a -- generator-side input counterfactuals
+    # (`tsfm_benchmark/build_pipeline/counterfactual.py`'s draw-neutral knobs,
+    # measured by `tsfm_lens/sae/counterfactual.py`): does an atlas concept's
+    # causal-feature score actually RESPOND to the structural property its
+    # generator controls, rather than merely correlating with naturally
+    # varying series? Off by default (`cf_enabled`): it re-runs a forward
+    # pass per (series, dose) per (target, knob) on top of the already-heavy
+    # `concepts` battery, and needs `tsfm_benchmark` importable (a separate
+    # install; degrades with a stated reason, `{"status": "unsupported", ...}`,
+    # rather than failing, when it is not). `cf_max_series` bounds the
+    # per-knob series count (`utils.sample_rows`-stratified, never a head
+    # slice -- CLAUDE.md sec 11.38); `cf_doses` is the multiplicative dose
+    # ladder applied to each knob's own recorded value (1.0 must reproduce
+    # the corpus series bit-identically -- asserted inside the measurement,
+    # not only in tests); `cf_n_null` is the number of matched random
+    # alive-feature sets (`shared_input_agreement.matched_null_sets`'s own
+    # decile-matching logic, reused rather than re-derived) that build each
+    # concept's response floor. This step measures INPUT RESPONSE only --
+    # mediation and the cross-model comparison are P6b, gated on this step's
+    # go/no-go result. Lives in `concepts:`, not `sae:`, for the same reason
+    # `min_relative_reach`/`shared_input_enabled` do: no pre-existing
+    # `sae`-stage fingerprint to protect, and the `concepts` Stage already
+    # declares the whole section as a fingerprint key.
+    # `cf_n_null` 2000, not 200: the null's p floor is 1/(n_null+1), and with
+    # ~25 concept x knob tests per target BH cannot pass anything at 200
+    # (25/201 = 0.124 > 0.05; P6a go/no-go, ROADMAP sec 37.9). The null is
+    # scored on already-encoded features, so draws cost no forward passes.
+    cf_enabled: bool = False
+    cf_max_series: int = 64
+    cf_doses: list = field(default_factory=lambda: [0.0, 0.5, 1.0, 1.5, 2.0])
+    cf_n_null: int = 2000
+
+    # Encode-check gate (P6a go/no-go, ROADMAP sec 37.9): a fresh dose=1.0
+    # recompute is compared against the persisted store not by an absolute/
+    # relative tolerance on raw SAE-feature VALUES (an absolute epsilon
+    # cannot tell precision noise from a wrong space, CLAUDE.md sec 8 --
+    # measured directly: a real run's raw activations differed by a 0.17%
+    # relative max diff, bf16-scale precision noise, yet the whole feature
+    # VECTOR failed a 1e-3/1e-2 allclose because sparse TopK SAEs have many
+    # near-zero features an absolute atol cannot survive), but by whether
+    # each atlas concept part's OWN pooled score -- the only thing this
+    # module actually reads downstream -- ranks series the same way in both
+    # spaces. `cf_encode_min_spearman` is a judgment call, not a derived
+    # constant: 0.98 demands the fresh and stored per-series concept scores
+    # be nearly rank-identical, loose enough to absorb genuine bf16 noise on
+    # a smooth, well-populated feature, tight enough that a misaligned or
+    # substituted array (wrong layer, wrong row order) -- which decorrelates
+    # rather than merely perturbing -- cannot pass by chance. The observed
+    # per-part Spearman distribution is always reported in
+    # `counterfactual_response.json` so this threshold can be recalibrated
+    # against real data rather than guessed twice.
+    cf_encode_min_spearman: float = 0.98
+
 
 @dataclass
 class PipelineConfig:
