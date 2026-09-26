@@ -209,11 +209,20 @@ def _stages() -> list:
               lambda c: (c.run_dir() / "exemplars" / "exemplars.json").exists(),
               lambda ctx: run_exemplars(ctx.cfg, ctx.hub, ctx.store, ctx.data, ctx.device),
               ("exemplars",)),
+        # ROADMAP.md sec 37.10 P7: `concept_transfer` candidates are read from
+        # `sae/atlas_transfer.json`/`concept_stability.json` when they exist
+        # (`concepts` is NOT a hard dependency here -- a run with `concepts.
+        # enabled: false`, e.g. `configs/smoke.yaml`, must still be able to
+        # register its l0/l1/l2/l3/clustering hypotheses; the concept
+        # candidate list degrades to an empty, stated-reason block instead,
+        # CLAUDE.md sec 2.5). `concepts.n_registered` is declared field-level
+        # (not via the whole `concepts` section) for the same false-refusal
+        # reason its own docstring in config.py gives.
         Stage("register", ["l0"],
               lambda c: c.confirm.enabled,
               lambda c: (c.run_dir() / "hypotheses.json").exists(),
               lambda ctx: run_register(ctx.cfg),
-              ()),
+              ("concepts.n_registered",)),
         Stage("confirm", ["register"],
               lambda c: c.confirm.enabled,
               lambda c: (c.run_dir() / "confirm" / "confirmation.json").exists(),

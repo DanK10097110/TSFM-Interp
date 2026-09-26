@@ -11,6 +11,15 @@ on a sealed private corpus the models and the analysis never touched:
 2. Representational spot-check — window-level CKA at the dev best pair is
    recomputed on private contexts with a cluster-bootstrap CI, checking that
    the geometric result replicates out of sample.
+3. Concept replication (ROADMAP.md sec 37.10 P7) — each registered
+   `concept_transfer` claim is re-tested on private data:
+   `_replicate_registered_concepts` captures private activations at the
+   claim's own frozen (src, dst) targets, encodes them with the SAME saved
+   SAE checkpoint dev trained (never retrained), and reruns the
+   stratum-matched transfer test with `sae/transfer.py`'s own
+   `matched_draws`/`transfer_one` on PRIVATE strata. The `concept_knob`
+   family is registered empty (sec 37.9's P6a found nothing to freeze) and
+   is recorded that way, never silently dropped.
 
 Discipline matters more than machinery here: run this once, at the end.
 Repeated peeking consumes the private benchmark (regenerate a fresh epoch
@@ -27,6 +36,7 @@ import hashlib
 import numpy as np
 import pandas as pd
 import torch
+from scipy.stats import rankdata
 
 from ..config import PipelineConfig
 from ..data import BenchmarkData, load_benchmark
@@ -110,6 +120,7 @@ def run_confirm(cfg: PipelineConfig, hub, forced: bool = False) -> None:
     hypotheses = _test_registered_hypotheses(cfg, metrics, registry, a.name, b.name)
     replication = _replicate_registered_cka(cfg, hub, private, registry)
     l3_replication = _replicate_registered_l3(cfg, hub, private, registry)
+    concept_replication = _replicate_registered_concepts(cfg, hub, private, registry)
 
     confirmed = sum(1 for h in hypotheses["tests"] if h["confirmed"])
     n_replicable = sum(1 for h in registry["hypotheses"] if h["replicable"])
@@ -129,6 +140,7 @@ def run_confirm(cfg: PipelineConfig, hub, forced: bool = False) -> None:
         **provenance,
         "cka_replication": replication,
         "l3_replication": l3_replication,
+        "concept_replication": concept_replication,
     })
     log.info("confirm complete: %d/%d dev hypotheses confirmed on private data "
             "(%d registered, %d replicable)", confirmed, len(hypotheses["tests"]),
@@ -488,3 +500,220 @@ def _replicate_registered_cka(cfg: PipelineConfig, hub, private: BenchmarkData,
     return {"status": "tested", "layer_a": best["layer_a"], "layer_b": best["layer_b"],
             "dev_cka": best["cka"], "private": ci,
             "replicates": bool(ci["lo"] <= best["cka"] <= ci["hi"])}
+
+
+# ---------------------------------------------------------------------------
+# ROADMAP.md sec 37.10 P7 -- concept_transfer replication on private strata.
+# ---------------------------------------------------------------------------
+
+_KNOB_FAMILY_LEDGER_NOTE = (
+    "empty by design (sec 37.10 P7 decision item 3): sec 37.9's P6a found no "
+    "(concept, knob) response surviving BH on dev (0/98 go/no-go, 0/151 "
+    "registered retry), so no dev claim exists to freeze and no private "
+    "counterfactual path is built.")
+
+
+def _capture_private_window_acts(cfg: PipelineConfig, hub, private: BenchmarkData,
+                                 model: str, layer: str) -> torch.Tensor:
+    """Window-level `[n_private, n_windows, dim]` activations at one target,
+    captured on PRIVATE contexts with autocast ON (`cfg.run.dtype`/CUDA) --
+    the store's own numeric regime, exactly `_replicate_registered_cka`'s
+    capture loop, stopped one step short of its own final series-level
+    reduction (concept scoring needs the SAE encoded FIRST, mean-pooled
+    over windows SECOND -- `extraction/store.py::write_sae_batch`'s own
+    order, mirrored here rather than pooling raw activations before
+    encoding, sec 6.2.1 Stage 3d)."""
+    adapter = hub.get(model)
+    adapter.ensure_loaded()
+    pool = pooling_matrix(adapter.token_time_spans(), cfg.data.context_len,
+                          cfg.alignment.window)
+    chunks = []
+    with ActivationCatcher(adapter.module, [layer]) as catcher:
+        for s, e in batch_slices(private.n, adapter.cfg.batch_size):
+            with torch.no_grad(), torch.autocast(device_type=adapter.device.type,
+                                                 dtype=adapter.dtype,
+                                                 enabled=adapter.device.type == "cuda"):
+                adapter.forward(adapter.prepare(private.contexts()[s:e]))
+            hidden = adapter.postprocess_tokens(layer, catcher.collect()[layer])
+            chunks.append(align(hidden.float(), pool).cpu())
+    acts = torch.cat(chunks)
+    if not cfg.run.keep_models_loaded:
+        hub.release(model)
+    return acts
+
+
+def _encode_series_pooled(run_dir, model: str, layer: str, acts: torch.Tensor,
+                          device: torch.device) -> np.ndarray:
+    """Encode window-level activations with the SAVED (never retrained) SAE
+    checkpoint and mean-pool over windows -- `sae/train.py::
+    encode_and_persist_features`'s own two-step order, replicated on
+    private data rather than reading `store.load(..., space="sae")`, which
+    only ever holds DEV features. `float64` output: `sae/transfer.py::
+    auc_from_ranks` refuses anything narrower (float16 rank quantization,
+    CLAUDE.md sec 8)."""
+    from ..sae.train import load_sae_checkpoint, sanitize
+
+    ckpt_path = run_dir / "sae" / sanitize(model) / f"{sanitize(layer)}.pt"
+    sae = load_sae_checkpoint(str(ckpt_path)).to(device)
+    sae.eval()
+    b, w, d = acts.shape
+    flat = acts.reshape(-1, d).to(device)
+    with torch.no_grad():
+        feats = sae.encode(flat).cpu().numpy().astype(np.float64).reshape(b, w, -1)
+    return feats.mean(axis=1)
+
+
+def _replicate_registered_concepts(cfg: PipelineConfig, hub, private: BenchmarkData,
+                                   registry: dict) -> dict:
+    """Re-test every registered `concept_transfer` claim on private strata,
+    and record the (empty) `concept_knob` family in the same ledger.
+
+    Design choice, stated because it deliberately differs from
+    `_replicate_registered_cka`'s fixed-pair convention: unlike a peak-CKA
+    pair (chosen by maximizing over every layer x layer combination across
+    the whole architecture, a search this function does NOT repeat -- it
+    reuses `best_pair` verbatim), a transfer test's "forward leg" is BY
+    DEFINITION a search over the destination model's WHOLE dictionary
+    (`sae/transfer.py`'s own docstring: "best feature in the destination's
+    whole dictionary by AUC on S"), and that search is already corrected by
+    `transfer_one`'s own max-over-features null. Re-running `transfer_one`
+    verbatim on private data -- letting it re-derive the best destination
+    feature via argmax rather than freezing dev's `dst_feature` -- therefore
+    replicates the SAME test definition on new data, exactly as
+    `_replicate_registered_l3` reruns the whole corruption battery fresh and
+    `_test_registered_hypotheses` reruns a fresh paired bootstrap: what is
+    frozen is WHICH claim to look at (`src_features`, `dst_target`, the
+    concept id), never a value that claim's own defined procedure computes.
+    The dev `dst_feature` is still recorded on each test row (`dev_dst_
+    feature`) beside the private `feature` so a reader can see whether the
+    same feature won again.
+
+    Two families, each its own ledger row (`CLAUDE.md` sec 6.5): the
+    `concept_transfer` family (Holm across every registered claim's
+    intersection-union p, `p_combined = max(p, rev_p)`, since a claim
+    requires BOTH legs to hold -- the standard combination for an AND
+    claim, Berger & Hsu 1996) and the `concept_knob` family, always empty
+    here (sec 37.9's P6a NO-GO; no private counterfactual path is built).
+    """
+    transfer_hyps = [h for h in registry["hypotheses"] if h["stage"] == "concept_transfer"]
+    ids = [h["id"] for h in transfer_hyps]
+    if len(set(ids)) != len(ids):
+        raise ValueError("concept_transfer claims have duplicate ids; Holm is keyed by "
+                         "id, so the family would silently shrink. Re-register with a "
+                         "registry built by the current hypotheses.py")
+    knob_hyps = [h for h in registry["hypotheses"] if h["stage"] == "concept_knob"]
+
+    if knob_hyps:  # pragma: no cover -- defensive; P7 never registers this family
+        knob_block = {"status": "unsupported", "n_registered": len(knob_hyps), "tests": [],
+                     "reason": "concept_knob claims were registered, but P7 does not build "
+                              "the private counterfactual path (sec 37.9's P6a NO-GO); "
+                              "these claims cannot be replicated"}
+    else:
+        knob_block = {"status": "empty", "n_registered": 0, "tests": [],
+                     "reason": _KNOB_FAMILY_LEDGER_NOTE}
+    ledger = [{"family": "concept_knob", "m": len(knob_hyps), "n_null": None,
+              "min_attainable_p_holm": None, "satisfiable": None,
+              "note": _KNOB_FAMILY_LEDGER_NOTE}]
+
+    if not transfer_hyps:
+        return {"status": "skipped", "reason": "no registered concept_transfer hypotheses",
+               "transfer": {"status": "skipped", "tests": []}, "knob": knob_block,
+               "ledger": ledger}
+
+    from ..sae.transfer import _by_stratum, _seed, concept_scores, matched_draws, \
+        series_strata, top_series, transfer_one
+
+    n_null = int(getattr(cfg.confirm, "concept_transfer_n_null", 2000) or 2000)
+    base_seed = cfg.run.seed + 700_000
+    run_dir = cfg.run_dir()
+    device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+
+    targets = sorted({h["src_target"] for h in transfer_hyps}
+                     | {h["dst_target"] for h in transfer_hyps})
+    pooled: dict = {}
+    capture_errors: dict = {}
+    for target in targets:
+        model, layer = target.split("/", 1)
+        try:
+            acts = _capture_private_window_acts(cfg, hub, private, model, layer)
+            pooled[target] = _encode_series_pooled(run_dir, model, layer, acts, device)
+        except Exception as exc:  # capture/encode failure -> every dependent claim
+            capture_errors[target] = f"{type(exc).__name__}: {exc}"  # "not replicable", loudly
+            log.warning("confirm concept replication: capturing/encoding private "
+                       "activations at %s failed (%s); every registered claim touching "
+                       "this target is recorded as not replicable", target,
+                       capture_errors[target])
+
+    strata = series_strata(private.meta)
+    by_stratum = _by_stratum(strata)
+
+    tests, pvals = [], {}
+    for h in transfer_hyps:
+        entry = {"id": h["id"], "concept": h["concept"], "src_target": h["src_target"],
+                 "dst_target": h["dst_target"], "dst_model": h["dst_model"],
+                 "dev_auc": h["dev_auc"], "dev_auc_margin": h["dev_auc_margin"],
+                 "dev_dst_feature": h["dst_feature"]}
+        broken = capture_errors.get(h["src_target"]) or capture_errors.get(h["dst_target"])
+        if broken:
+            entry.update({"status": "not_replicable",
+                         "reason": f"private activation capture/encode failed: {broken}"})
+            tests.append(entry)
+            continue
+        try:
+            src_pooled, dst_pooled = pooled[h["src_target"]], pooled[h["dst_target"]]
+            score_src = concept_scores(src_pooled, h["src_features"])
+            k = min(int(h.get("k_top_series") or 20), max(1, src_pooled.shape[0] - 1))
+            S = top_series(score_src, k)
+            dst_ranks = rankdata(dst_pooled, axis=0)
+            fwd_seed = _seed("confirm_concept", h["id"], base=base_seed)
+            fwd_draws = matched_draws(S, strata, by_stratum, n_null,
+                                      np.random.default_rng(fwd_seed))
+            rev_seed = _seed("confirm_concept", h["id"], "rev", base=base_seed)
+            result = transfer_one(score_src, dst_ranks, S, fwd_draws, strata, by_stratum,
+                                  k=k, n_draws=n_null, seed=rev_seed, p_method="exact",
+                                  fwd_seed=fwd_seed)
+        except ValueError as exc:
+            entry.update({"status": "not_replicable",
+                         "reason": f"private strata could not build a matched null: {exc}"})
+            tests.append(entry)
+            continue
+        p_combined = max(result["p"], result["rev_p"])
+        entry.update({
+            "status": "tested", "k_used": k, "n_null": n_null,
+            "private_auc": result["auc"], "private_null_p95": result["null_p95"],
+            "private_feature": result["feature"], "private_p": result["p"],
+            "private_rev_auc": result["rev_auc"], "private_rev_null_p95": result["rev_null_p95"],
+            "private_rev_p": result["rev_p"], "private_reciprocal": result["reciprocal"],
+            "p_combined": p_combined,
+        })
+        tests.append(entry)
+        pvals[h["id"]] = p_combined
+
+    m = sum(1 for t in tests if t["status"] == "tested")
+    min_attainable_p_holm = (m / (n_null + 1)) if m else None
+    satisfiable = bool(m and min_attainable_p_holm is not None
+                       and min_attainable_p_holm <= cfg.confirm.alpha)
+    adjusted = holm(pvals) if pvals else {}
+    n_confirmed = 0
+    for entry in tests:
+        if entry["status"] != "tested":
+            entry["confirmed"] = False
+            entry["verdict"] = "not replicable"
+            continue
+        entry["p_holm"] = adjusted[entry["id"]]
+        entry["confirmed"] = bool(entry["p_holm"] < cfg.confirm.alpha
+                                  and entry["private_reciprocal"])
+        entry["verdict"] = "confirmed" if entry["confirmed"] else "not confirmed"
+        n_confirmed += int(entry["confirmed"])
+
+    ledger.insert(0, {"family": "concept_transfer", "m": m, "n_null": n_null,
+                      "alpha": cfg.confirm.alpha,
+                      "min_attainable_p_holm": min_attainable_p_holm,
+                      "satisfiable": satisfiable})
+    transfer_block = {"status": "tested", "n_registered": len(transfer_hyps),
+                      "n_tested": m, "n_confirmed": n_confirmed,
+                      "p_combination": "max(p, rev_p) per claim (intersection-union), "
+                                      "then Holm across claims",
+                      "n_null": n_null, "tests": tests}
+    return {"status": "tested", "transfer": transfer_block, "knob": knob_block,
+           "ledger": ledger}

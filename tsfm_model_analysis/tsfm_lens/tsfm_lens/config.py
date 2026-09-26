@@ -302,6 +302,16 @@ class ConfirmConfig:
     max_series: int = 1024
     require_seal: bool = True
     alpha: float = 0.05
+    # ROADMAP.md sec 37.10 P7 -- the null-draw count `_replicate_registered_
+    # concepts` uses to recompute the registered `concept_transfer` claims'
+    # stratum-matched permutation test on private data. `sae.transfer_n_null`
+    # (default 200, floor 1/201) is unsatisfiable for Holm across even a
+    # small registered family: with `concepts.n_registered: 20`,
+    # 20/201=0.0995 > 0.05. Raised here (2000, floor 1/2001) so `m/(n_null+1)`
+    # clears `alpha` -- the same fix P6a's retry applied to its own BH family
+    # (ROADMAP.md sec 37.9), and `satisfiable` is recorded either way rather
+    # than assumed (`CLAUDE.md` sec 6.6).
+    concept_transfer_n_null: int = 2000
 
 
 @dataclass
@@ -940,6 +950,21 @@ class ConceptsConfig:
     # `counterfactual_response.json` so this threshold can be recalibrated
     # against real data rather than guessed twice.
     cf_encode_min_spearman: float = 0.98
+
+    # ROADMAP.md sec 37.10 P7 -- how many `concept_transfer` claims `register`
+    # freezes from dev artifacts before the private epoch is ever touched.
+    # Candidates are reciprocal-FDR atlas-transfer tests
+    # (`sae/atlas_transfer.json`) whose atlas concept is stable
+    # (`sae/concept_stability.json`), ranked by dev AUC margin; `n_registered`
+    # is the cut. More claims spend more of the one private look and tighten
+    # Holm (`CLAUDE.md` sec 6.6's p-floor), so this is judgment, not derived:
+    # 20, decided by the reviewing session (ROADMAP.md sec 37.15 q2).
+    # `stage_input: False`: read only by `analysis/hypotheses.py::run_register`,
+    # never by `run_concept_stage`, so it must not fingerprint the `concepts`
+    # stage itself (the false-refusal shape `describe_from_exemplars` above
+    # already guards against); `register`'s own `Stage.config_keys` declares
+    # `concepts.n_registered` as a field-level key instead.
+    n_registered: int = field(default=20, metadata={"stage_input": False})
 
 
 @dataclass

@@ -8587,6 +8587,65 @@ def _sec_confirm(run_dir: Path, findings: list, n_exploratory: int) -> str:
                    f"internal representations did NOT hold up on fresh data — it may "
                    f"have been a fluke of the original data."),
             registered=True))
+
+    # ROADMAP.md sec 37.10 P7: the concept_transfer family, re-tested on
+    # private strata with the same saved SAE checkpoints, plus the (always
+    # empty) concept_knob family in the same multiplicity ledger.
+    concept_rep = conf.get("concept_replication", {})
+    if concept_rep.get("status") == "tested":
+        transfer = concept_rep.get("transfer", {})
+        tests_c = transfer.get("tests", [])
+        if tests_c:
+            rows = [{
+                "concept": t["concept"],
+                "src → dst": f'{t["src_target"].split("/", 1)[0]} {_short(t["src_target"])} → '
+                            f'{t["dst_model"]} {_short(t["dst_target"])}',
+                "dev AUC": t.get("dev_auc"), "dev margin": t.get("dev_auc_margin"),
+                "private AUC": t.get("private_auc"), "p (Holm)": t.get("p_holm"),
+                "verdict": t.get("verdict", t["status"]),
+            } for t in tests_c]
+            n_conf, n_tested = transfer.get("n_confirmed", 0), transfer.get("n_tested", 0)
+            n_reg = transfer.get("n_registered", 0)
+            inner += (f'<h4>Concept transfer replication ({n_conf} of {n_tested} tested '
+                      f'confirmed, {n_reg} registered)</h4>'
+                      f'<p class="blurb">The top {n_reg} reciprocal-FDR, seed-stable '
+                      f'atlas-transfer tests by dev AUC margin, re-tested on private '
+                      f'strata with the SAME saved SAE checkpoint (never retrained). '
+                      f'Combined per-claim p = max(forward p, reverse p) (both legs must '
+                      f'hold), Holm-corrected across the {n_reg} registered claims '
+                      f'(n_null={transfer.get("n_null")}).</p>'
+                      + _table(pd.DataFrame(rows)))
+            ledger_rows = concept_rep.get("ledger", [])
+            if ledger_rows:
+                inner += '<h4>Concept multiplicity ledger</h4>' + _table(pd.DataFrame(ledger_rows))
+            inner += _note(
+                "Held-out confirmation of a correlational transfer claim: does the "
+                "source model's concept and the destination model's dictionary still "
+                "select the SAME series on data neither the SAE nor the concept atlas "
+                "ever saw.",
+                "'Confirmed' means the two dictionaries still group the same series at "
+                "a Holm-corrected significance on fresh data — it is NOT evidence the "
+                "concept causes the same forecast behavior in both models (that is L5's "
+                "shared-input causal agreement, an entirely separate, dev-only measurement).",
+                "The concept_knob family is empty: sec 37.9's P6a found no dev "
+                "(concept, knob) response surviving BH correction, so no knob claim was "
+                "registered and no private counterfactual path is built.")
+            findings.append(Finding(
+                claim_id=_next_claim_id("confirm"), stage="confirm", evidence_class="descriptive",
+                text=f'CONFIRM — concept transfer: {n_conf}/{n_tested} registered '
+                    f'concept_transfer claims confirmed on private data '
+                    f'(Holm α={conf["alpha"]}).',
+                plain=(f"{n_conf} of {n_tested} claims that two models' dictionaries "
+                       f"select the same series for a shared concept held up on fresh, "
+                       f"never-before-seen data."),
+                registered=True))
+        else:
+            inner += '<p class="blurb">Concept replication: no concept_transfer claims were registered.</p>'
+    elif concept_rep.get("status") == "skipped":
+        inner += (f'<p class="blurb">Concept replication: '
+                  f'{concept_rep.get("reason", "not measured")}.</p>')
+    else:
+        inner += '<p class="blurb">Concept replication: not measured.</p>'
     return inner
 
 

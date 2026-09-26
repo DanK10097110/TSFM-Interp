@@ -303,12 +303,18 @@ def test_new_output_fields_do_not_move_the_confirm_stage_fingerprint(tmp_path):
 
 
 def test_confirm_config_keys_unchanged_by_this_item():
-    """Pins that this item did not (and must not) add a new `ConfirmConfig`
-    field -- the new fields are `confirmation.json` OUTPUTS."""
+    """Pins that the provenance item (B5) did not (and must not) add a new
+    `ConfirmConfig` field -- ITS new fields are `confirmation.json` OUTPUTS.
+    `concept_transfer_n_null` (ROADMAP.md sec 37.10 P7) is a genuine
+    exception to that rule, not a violation of it: it is an actual stage
+    INPUT (`_replicate_registered_concepts`'s null-draw count), so it
+    belongs in the pinned set rather than being read back out of the
+    artifact the way B5's fields are."""
     from tsfm_lens.config import ConfirmConfig
     import dataclasses
     names = {f.name for f in dataclasses.fields(ConfirmConfig)}
-    assert names == {"enabled", "source", "path", "max_series", "require_seal", "alpha"}
+    assert names == {"enabled", "source", "path", "max_series", "require_seal", "alpha",
+                     "concept_transfer_n_null"}
 
 
 # --- consumer audit (sec 11.40): confirmation.json's four named consumers --
