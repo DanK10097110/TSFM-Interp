@@ -10,6 +10,7 @@ and the final report for the exact pytest evidence.
 
 from __future__ import annotations
 
+import json
 import inspect
 import re
 import sys
@@ -568,3 +569,20 @@ def test_q3_groups_metrics_by_their_closest_pair():
            "contrasts": []}
     text, _ = mc._answer_q3(sim)
     assert "<b>A/B</b> on 2 metric(s)" in text and "<b>C/D</b> on 1 metric(s)" in text
+
+
+def test_unscored_structural_profiles_reason_is_rendered(tmp_path, monkeypatch):
+    """`concept_profiles.json` written without ground truth carries
+    `ground_truth.available: false` and a reason; the section must render
+    that reason, not only log it (CLAUDE.md sec 2.5)."""
+    run_dir = _full_fixture(tmp_path)
+    import tsfm_lens.analysis.model_similarity as ms_mod
+    monkeypatch.setattr(ms_mod, "write_model_similarity", lambda *a, **k: None)
+    path = run_dir / "sae" / "concept_profiles.json"
+    prof = json.loads(path.read_text(encoding="utf-8"))
+    prof["ground_truth"] = {"available": False, "reason": "no ground truth for this corpus (planted)"}
+    path.write_text(json.dumps(prof), encoding="utf-8")
+    cfg = _cfg(tmp_path, ["A", "B", "C"])
+    html, status, _ = mc.model_comparison_block(cfg, run_dir, [])
+    assert status == "rendered"
+    assert "no ground truth for this corpus (planted)" in html

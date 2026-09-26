@@ -1014,6 +1014,10 @@ def model_comparison_block(cfg, run_dir, findings: list) -> tuple:
             "pipeline already computes, joined against the cross-model concept atlas's own "
             "evidence ladder (ROADMAP.md sec 37 Spec C). This section answers the three "
             "questions the rest of the report leaves to the reader to join by hand.</p>")
+    gt_status = (profiles or {}).get("ground_truth") or {}
+    if gt_status.get("available") is False:
+        html += ("<p class='blurb'><strong>Structural profiles not scored:</strong> "
+                 f"{_e(gt_status.get('reason', ''))}</p>")
     html += _answer_boxes(verdicts, profiles, similarity, model_names)
     html += _similarity_block(similarity, model_names)
     html += _sharing_block(verdicts, profiles, model_names)
