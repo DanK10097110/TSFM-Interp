@@ -23,10 +23,17 @@ Reuses rather than re-derives: `shared_input_agreement.py`'s `_atlas_parts`
 (unit grouping), `TargetContext` (adapter/SAE/pooled-features/alive-mask
 loading), `matched_null_sets` (the decile-matched random-alive-feature-set
 floor) and `_spearman` (constant-input -> `None`, never `0`, CLAUDE.md sec
-11.37); `transfer.py`'s `concept_scores`, `_seed` (sha256, never Python's
-salted `hash()`) and `_exact_p`/`benjamini_hochberg` for the response
-p-value and its within-target FDR control; `analysis/stats.py::mean_ci` for
-the series-bootstrap CI on the aggregated response.
+11.37); `transfer.py`'s `concept_scores`, `top_series`, `_seed` (sha256,
+never Python's salted `hash()`) and `_exact_p`/`benjamini_hochberg` for the
+response p-value and its within-target FDR control; `analysis/stats.py::
+mean_ci` for the series-bootstrap CI on the aggregated response.
+
+The encode-check that gates every target (does a fresh dose=1.0 recompute
+land in the same space as the persisted store?) is per-concept-part Spearman
+on `concept_scores`, not a whole-vector tolerance on raw SAE-feature values:
+see `_concept_part_encode_checks` and `_ENCODE_CHECK_ATOL`'s docstring for
+why (an absolute epsilon on a sparse dictionary cannot tell precision noise
+from a wrong space, CLAUDE.md sec 8).
 
 Evidence class: still correlational-with-a-planted-cause, not causal -- this
 measures whether the CONCEPT'S OWN SCORE moves with the input property, never
@@ -47,7 +54,7 @@ from ..extraction.alignment import align, pooling_matrix
 from ..extraction.extract import capture_raw_tokens
 from ..utils import batch_slices, load_json, log, sample_rows, save_json
 from .shared_input_agreement import TargetContext, _atlas_parts, _spearman, matched_null_sets
-from .transfer import _exact_p, _seed, benjamini_hochberg, concept_scores
+from .transfer import _exact_p, _seed, benjamini_hochberg, concept_scores, top_series
 
 __all__ = ["counterfactual_response_path", "run_counterfactual_response"]
 
@@ -55,9 +62,20 @@ __all__ = ["counterfactual_response_path", "run_counterfactual_response"]
 # the persisted series-level SAE feature is float16-quantized twice (once
 # encoding, once pooling) before landing in the store, so a from-scratch
 # recomputation cannot be bit-exact -- only close to float16's own precision
-# (~3-4 significant decimal digits, machine eps ~9.8e-4). `rtol` carries most
-# of the budget (features scale with activation magnitude, which varies by
-# layer/model); `atol` covers near-zero features `rtol` alone would starve.
+# (~3-4 significant decimal digits, machine eps ~9.8e-4). Measured against a
+# real run (ROADMAP sec 37.9 P6a go/no-go, first attempt): a fresh recapture
+# differed from the store by a 0.17% RELATIVE max diff on the raw activation
+# itself (bf16-scale precision noise, not a wrong space), yet EVERY one of 4
+# targets failed this whole-vector `atol`/`rtol` check on the raw SAE
+# features by up to 0.8 absolute -- because a sparse TopK SAE's dictionary is
+# mostly near-zero features, and CLAUDE.md sec 8's "absolute epsilons" lesson
+# applies exactly: a fixed `atol` cannot survive many near-zero entries no
+# matter how small the true perturbation is. This whole-vector check is kept
+# below as `sae_feature_diagnostic` (reported, never used to gate); the gate
+# itself is `_concept_part_encode_checks`' per-concept-part Spearman, which
+# only looks at features a concept actually uses and asks the question that
+# matters -- does this concept rank series the same way in both spaces --
+# rather than whether the whole raw dictionary matches to a fixed tolerance.
 _ENCODE_CHECK_ATOL = 1e-3
 _ENCODE_CHECK_RTOL = 1e-2
 _ENCODE_BATCH_SIZE = 64
@@ -151,6 +169,108 @@ def _encode_series_level(adapter, sae, layer: str, contexts: np.ndarray, pool,
             pooled = features.reshape(b, w, -1).mean(axis=1)
             out.append(pooled.astype(np.float64))
     return np.concatenate(out, axis=0)
+
+
+def _raw_pooled_activation(adapter, layer: str, contexts: np.ndarray, pool,
+                           device, batch_size: int) -> np.ndarray:
+    """Fresh window-pooled RAW activation (before any SAE), mean over
+    windows -- exactly `store.py`'s own `pooled/{model}/{layer} =
+    aligned.mean(axis=1)` convention, computed directly from a fresh
+    capture. This is the encode-check's item (a): a scale-aware diagnostic
+    of whether the fresh capture is in the same numeric regime as the store,
+    decoupled entirely from the SAE encoder (so it cannot be confused by the
+    encoder's own nonlinearity or sparsity). Returns `[n_contexts, dim]`
+    float64.
+    """
+    take = min(int(batch_size), int(getattr(adapter.cfg, "batch_size", batch_size)))
+    out = []
+    with torch.no_grad():
+        for s, e in batch_slices(len(contexts), take):
+            tokens = capture_raw_tokens(adapter, contexts[s:e], [layer], autocast=True)[layer]
+            act = align(tokens, pool)
+            out.append(act.mean(dim=1).detach().cpu().numpy())
+    return np.concatenate(out, axis=0).astype(np.float64)
+
+
+def _concept_part_encode_checks(dose1_features: np.ndarray, persisted: np.ndarray,
+                                concept_ids: list, parts: dict, target: str,
+                                min_spearman: float) -> list:
+    """Per atlas concept part at `target`: does the concept's OWN pooled
+    score (the only thing this module reads downstream, `concept_scores`'
+    mean over member features) rank the checked series the same way in the
+    fresh recompute as in the persisted store?
+
+    A pure function on top of two already-encoded `[n_series, dict_size]`
+    arrays (never re-encodes), so it is directly unit-testable with
+    hand-built arrays -- no adapter, SAE or store mock needed. `top_k`
+    overlap is reported alongside Spearman as a second, coarser view of the
+    same question (`transfer.py::top_series`, the atlas's own convention),
+    never used to gate.
+    """
+    out = []
+    n_series = dose1_features.shape[0]
+    k = min(20, n_series)
+    for concept_id in concept_ids:
+        features = parts[(concept_id, target)]["features"]
+        fresh_scores = concept_scores(dose1_features, features)
+        stored_scores = concept_scores(persisted, features)
+        r = _spearman(fresh_scores, stored_scores)
+        overlap = None
+        trivial_agreement = None
+        if r is not None and k > 0:
+            fresh_top = set(top_series(fresh_scores, k).tolist())
+            stored_top = set(top_series(stored_scores, k).tolist())
+            overlap = len(fresh_top & stored_top) / k
+            passes = r >= min_spearman
+        else:
+            # Spearman is undefined only when a score has zero variance
+            # (CLAUDE.md sec 11.37: constant input -> `None`, never `0`) --
+            # which says nothing about a space mismatch by itself. The free
+            # control this module already relies on elsewhere (patch a layer
+            # into itself and require exactly 0.0): if fresh and stored are
+            # THEMSELVES numerically identical, agreement is established
+            # without rank information; if they are constant but disagree,
+            # that IS evidence of a mismatch and must not pass silently.
+            trivial_agreement = bool(np.allclose(fresh_scores, stored_scores,
+                                                 atol=1e-6, rtol=1e-6))
+            passes = trivial_agreement
+        entry = {"concept": concept_id, "n_features": len(features), "n_series": n_series,
+                 "spearman": r, "top_k": k, "top_k_overlap": overlap,
+                 "trivial_agreement": trivial_agreement, "pass": passes}
+        if r is None and passes:
+            entry["reason"] = ("concept score is constant across checked series in both spaces, "
+                                "and the constant values agree exactly (trivial pass)")
+        elif r is None and not passes:
+            entry["reason"] = ("concept score is constant across checked series (Spearman "
+                                "undefined) and the fresh/stored constant values disagree -- "
+                                "cannot confirm the same space")
+        elif not passes:
+            entry["reason"] = (f"fresh-vs-stored concept score Spearman {r!r} is below "
+                                f"concepts.cf_encode_min_spearman={min_spearman!r}")
+        out.append(entry)
+    return out
+
+
+def _spearman_rows(scores: np.ndarray, doses) -> np.ndarray:
+    """Vectorized per-row Spearman of `scores[..., n_doses]` against
+    `doses`: average ranks (ties as `scipy.stats.spearmanr` treats them),
+    then Pearson. A row that is constant across doses is NaN (undefined,
+    never 0 -- CLAUDE.md sec 11.37), matching `_spearman`'s `None`. Exists so
+    the matched null can use enough draws for its BH family to be
+    satisfiable: the per-series `spearmanr` loop cost one call per series
+    per null set."""
+    from scipy.stats import rankdata
+    x = rankdata(np.asarray(scores, dtype=np.float64), axis=-1)
+    y = rankdata(np.asarray(doses, dtype=np.float64))
+    xc = x - x.mean(axis=-1, keepdims=True)
+    yc = y - y.mean()
+    num = (xc * yc).sum(axis=-1)
+    den = np.sqrt((xc ** 2).sum(axis=-1) * (yc ** 2).sum())
+    with np.errstate(invalid="ignore", divide="ignore"):
+        r = num / den
+    const = np.ptp(np.asarray(scores, dtype=np.float64), axis=-1) == 0.0
+    r[const] = np.nan
+    return r
 
 
 def run_counterfactual_response(cfg, run_dir, hub, store, data, device, targets=None) -> dict:
@@ -261,6 +381,8 @@ def run_counterfactual_response(cfg, run_dir, hub, store, data, device, targets=
 
         dose1_rows = sorted({row for knob in knob_names for row in eligibility[knob].tolist()})
         record = {"target": target}
+        concept_ids = sorted({cid for (cid, t) in parts if t == target})
+
         if dose1_rows:
             dose1_rows_arr = np.asarray(dose1_rows, dtype=int)
             dose1_features = _encode_series_level(
@@ -269,29 +391,68 @@ def run_counterfactual_response(cfg, run_dir, hub, store, data, device, targets=
             persisted = np.asarray(
                 store.load(model, layer, level="series", space="sae", rows=dose1_rows_arr),
                 dtype=np.float64)
-            abs_diff = np.abs(dose1_features - persisted)
-            max_abs_diff = float(abs_diff.max())
-            ok = bool(np.allclose(dose1_features, persisted, atol=_ENCODE_CHECK_ATOL,
-                                  rtol=_ENCODE_CHECK_RTOL))
-            record["encode_check"] = {"n_series": len(dose1_rows), "max_abs_diff": max_abs_diff,
-                                      "atol": _ENCODE_CHECK_ATOL, "rtol": _ENCODE_CHECK_RTOL,
-                                      "ok": ok}
+            sae_abs_diff = np.abs(dose1_features - persisted)
+            sae_max_abs_diff = float(sae_abs_diff.max())
+            sae_diag_ok = bool(np.allclose(dose1_features, persisted, atol=_ENCODE_CHECK_ATOL,
+                                           rtol=_ENCODE_CHECK_RTOL))
+
+            raw_fresh = _raw_pooled_activation(ctx.adapter, layer, contexts_native[dose1_rows_arr],
+                                               pool, device, _ENCODE_BATCH_SIZE)
+            raw_stored = np.asarray(
+                store.load(model, layer, level="series", space="act", rows=dose1_rows_arr),
+                dtype=np.float64)
+            raw_abs_diff = np.abs(raw_fresh - raw_stored)
+            raw_abs_mean_stored = float(np.abs(raw_stored).mean())
+            raw_relative_max = (float(raw_abs_diff.max() / raw_abs_mean_stored)
+                                if raw_abs_mean_stored > 0 else None)
+            raw_relative_mean = (float(raw_abs_diff.mean() / raw_abs_mean_stored)
+                                 if raw_abs_mean_stored > 0 else None)
+
+            part_checks = _concept_part_encode_checks(
+                dose1_features, persisted, concept_ids, parts, target,
+                float(c.cf_encode_min_spearman))
+            spearmans = [p["spearman"] for p in part_checks if p["spearman"] is not None]
+            any_pass = any(p["pass"] for p in part_checks) if part_checks else True
+
+            record["encode_check"] = {
+                "n_series": len(dose1_rows),
+                "raw_activation": {"max_abs_diff": float(raw_abs_diff.max()),
+                                   "mean_abs_diff": float(raw_abs_diff.mean()),
+                                   "stored_abs_mean": raw_abs_mean_stored,
+                                   "relative_max_diff": raw_relative_max,
+                                   "relative_mean_diff": raw_relative_mean},
+                "concept_parts": part_checks,
+                "min_spearman_observed": min(spearmans) if spearmans else None,
+                "max_spearman_observed": max(spearmans) if spearmans else None,
+                "sae_feature_diagnostic": {
+                    "max_abs_diff": sae_max_abs_diff, "atol": _ENCODE_CHECK_ATOL,
+                    "rtol": _ENCODE_CHECK_RTOL, "ok": sae_diag_ok,
+                    "note": "diagnostic only, does not gate -- a whole-vector absolute/relative "
+                            "tolerance on raw SAE-feature values cannot tell bf16 precision "
+                            "noise from a wrong space (CLAUDE.md sec 8, 'Absolute epsilons'); "
+                            "concept_parts' per-part Spearman is the actual gate"},
+                "ok": any_pass,
+            }
+            ok = any_pass
         else:
-            record["encode_check"] = {"n_series": 0, "max_abs_diff": None, "ok": True,
+            record["encode_check"] = {"n_series": 0, "concept_parts": [], "ok": True,
                                       "reason": "no eligible series for any knob"}
             ok = True
 
         if not ok:
             record["status"] = "encode_mismatch"
-            record["reason"] = (f"recomputed dose=1.0 SAE features do not match the persisted "
-                                f"store to float16 tolerance (max abs diff "
-                                f"{record['encode_check']['max_abs_diff']!r}) -- every response "
-                                f"for {target} would be measured in the wrong space")
+            record["reason"] = (f"no atlas concept part at {target} clears "
+                                f"concepts.cf_encode_min_spearman="
+                                f"{float(c.cf_encode_min_spearman)!r} between the fresh dose=1.0 "
+                                f"recompute and the persisted store -- every response for "
+                                f"{target} would be measured in the wrong space")
             log.warning("counterfactual_response: %s", record["reason"])
             target_records.append(record)
             continue
 
-        concept_ids = sorted({cid for (cid, t) in parts if t == target})
+        excluded_parts = {p["concept"]: p for p in record["encode_check"]["concept_parts"]
+                          if not p["pass"]}
+
         knob_feats: dict = {}
         for knob in knob_names:
             rows = eligibility[knob]
@@ -309,6 +470,13 @@ def run_counterfactual_response(cfg, run_dir, hub, store, data, device, targets=
         tests = []
         pvals: dict = {}
         for concept_id in concept_ids:
+            if concept_id in excluded_parts:
+                reason = excluded_parts[concept_id].get(
+                    "reason", "encode-check failed for this concept part")
+                for knob in knob_names:
+                    tests.append({"concept": concept_id, "knob": knob,
+                                 "status": "excluded_encode_mismatch", "reason": reason})
+                continue
             features = parts[(concept_id, target)]["features"]
             for knob in knob_names:
                 feats = knob_feats[knob]
@@ -337,13 +505,12 @@ def run_counterfactual_response(cfg, run_dir, hub, store, data, device, targets=
                 null_seed = _seed("cf_null", target, str(sorted(features)), knob, base=base_seed)
                 null_sets, null_diag = matched_null_sets(ctx, features, rows, n_null, null_seed)
                 null_means = []
+                flat = feats.reshape(n * nd, -1)
                 for null_set in null_sets:
-                    null_scores = concept_scores(feats.reshape(n * nd, -1), null_set).reshape(n, nd)
-                    null_per_series = [_spearman(null_scores[i], doses) for i in range(n)]
-                    null_valid = np.array([v for v in null_per_series if v is not None],
-                                         dtype=np.float64)
-                    if null_valid.size:
-                        null_means.append(float(null_valid.mean()))
+                    r = _spearman_rows(concept_scores(flat, null_set).reshape(n, nd), doses)
+                    r = r[np.isfinite(r)]
+                    if r.size:
+                        null_means.append(float(r.mean()))
 
                 abs_null = np.abs(np.asarray(null_means, dtype=np.float64)) if null_means else \
                     np.empty(0)
@@ -367,6 +534,19 @@ def run_counterfactual_response(cfg, run_dir, hub, store, data, device, targets=
                 })
 
         bh = benjamini_hochberg(pvals, fdr_q) if pvals else {}
+        m_tests = len(pvals)
+        min_q_single = (m_tests / (n_null + 1)) if m_tests else None
+        record["bh_family"] = {
+            "n_tests": m_tests, "n_null": n_null, "p_floor": 1.0 / (n_null + 1),
+            "min_attainable_q_single": min_q_single,
+            "satisfiable": bool(min_q_single is not None and min_q_single <= fdr_q),
+            "note": "a single test can survive BH only if n_tests/(n_null+1) <= fdr_q; "
+                    "otherwise 'nothing survives' is the resampling resolution, not a "
+                    "measurement (CLAUDE.md sec 6.5)"}
+        if min_q_single is not None and min_q_single > fdr_q:
+            log.warning("counterfactual_response: %s BH family unsatisfiable (%d tests, "
+                        "n_null=%d, min attainable q %.4f > %.3f)", target, m_tests, n_null,
+                        min_q_single, fdr_q)
         for test in tests:
             if test.get("status") != "scored":
                 continue

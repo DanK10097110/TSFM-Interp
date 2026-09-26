@@ -132,11 +132,24 @@ class _Hub:
 
 
 class _Store:
-    def __init__(self, pooled):
+    def __init__(self, pooled, raw_pooled=None):
         self._pooled = pooled
+        # `space="act"` (raw, pre-SAE): with `alignment.window == CONTEXT_LEN`
+        # (one window spans the whole context, `_Cfg.alignment.window`) and
+        # `_Adapter.token_time_spans` a single full-context span, `align`'s
+        # pooling is the identity, so the "stored" series-level pooled
+        # activation the real store would hold is exactly the context itself
+        # -- matching what a fresh `_raw_pooled_activation` call computes
+        # through the same mocked `capture_raw_tokens`. Defaults to the
+        # contexts already implied by `pooled`'s own construction when a
+        # test does not care about the raw-activation diagnostic.
+        self._raw_pooled = raw_pooled
 
     def load(self, model, layer, level="series", space="sae", rows=None, **kw):
-        return self._pooled if rows is None else self._pooled[np.asarray(rows)]
+        src = self._pooled if space == "sae" else self._raw_pooled
+        if src is None:
+            raise KeyError(f"_Store: no {space!r} array configured for this test")
+        return src if rows is None else src[np.asarray(rows)]
 
 
 class _Cfg:
@@ -151,6 +164,7 @@ class _Cfg:
         cf_doses = [0.0, 0.5, 1.0, 1.5, 2.0]
         cf_n_null = 3
         transfer_fdr_q = 0.05
+        cf_encode_min_spearman = 0.98
 
 
 def _std_encode(x: torch.Tensor) -> torch.Tensor:
@@ -175,7 +189,7 @@ def _constant_encode(x: torch.Tensor) -> torch.Tensor:
         1, DICT_SIZE + 1, dtype=torch.float32)
 
 
-def _wire(monkeypatch, samples, encode_fn, cf_n_null=3, targets=None):
+def _wire(monkeypatch, samples, encode_fn, cf_n_null=3, targets=None, store_perturb=None):
     data = _Data(samples)
     adapter = _Adapter()
     sae = _SAE(encode_fn)
@@ -195,7 +209,11 @@ def _wire(monkeypatch, samples, encode_fn, cf_n_null=3, targets=None):
                         lambda cfg, adapter_, layer, data_, device: {"reachable": True, "reason": ""})
 
     pooled = _std_encode_reference(encode_fn, data.contexts())
-    store = _Store(pooled)
+    stored_pooled = store_perturb(pooled.copy()) if store_perturb is not None else pooled
+    # Identity pooling (one window == the whole context, see `_Store`'s own
+    # comment), so the real store's "act" space would hold exactly the
+    # contexts themselves.
+    store = _Store(stored_pooled, raw_pooled=data.contexts().astype(np.float64))
     hub = _Hub(adapter)
 
     cfg = _Cfg
@@ -220,6 +238,111 @@ def _std_encode_reference(encode_fn, contexts_native: np.ndarray) -> np.ndarray:
 def _write_atlas(run_dir: Path, atlas: dict) -> None:
     from tsfm_lens.utils import save_json
     save_json(run_dir / "sae" / "concept_atlas.json", atlas)
+
+
+# ---------------------------------------------------------------------------
+# Encode-check fixtures (ROADMAP sec 37.9 P6a review): seeds chosen so their
+# std values (feature 0's own quantity, `_std_encode`) are already in
+# ascending order, with a minimum gap of 0.142 between consecutive values --
+# 0.199, 0.506, 0.698, 0.840, 1.279, 2.044 -- so a `store_perturb` that only
+# nudges values by ~1e-3 relative cannot flip any pair's rank, and one that
+# reverses row order flips every pair's rank (Spearman exactly -1.0).
+# ---------------------------------------------------------------------------
+
+_ENCODE_CHECK_SEEDS = [7, 21, 12, 25, 10, 9]
+
+
+def _small_order_preserving_offset(pooled: np.ndarray) -> np.ndarray:
+    """A uniform constant additive offset to the STORED array only: it
+    cannot change which series ranks where for ANY column (adding the same
+    constant to every value never inverts a pairwise comparison), which is
+    the property a real bf16-precision perturbation also has when it stays
+    below a feature's own resolution -- but 0.05 is well above `atol=1e-3,
+    rtol=1e-2`'s allowance for every value in this fixture (largest allowed
+    diff here is ~0.0214, for the biggest std value 2.044), so the OLD
+    whole-vector `allclose` gate would reject it while the new per-concept
+    Spearman gate (correctly) does not care, because rank is exactly
+    preserved. This is deliberately not modeled as literal bf16 rounding
+    (whose error scales down for values near zero, so it would not
+    reliably violate the old gate for THIS demo) -- the point demonstrated
+    is the general one CLAUDE.md sec 8 names: a fixed absolute/relative
+    epsilon on raw values penalizes a perturbation that is functionally
+    harmless (order-preserving) and real bf16 noise on a sparse dictionary's
+    near-zero entries does exactly this in practice (measured: 0.17%
+    relative on the raw activation still failed a whole-vector encode-check
+    by up to 0.8 absolute on a real run, ROADMAP sec 37.9 P6a's go/no-go)."""
+    return pooled + 0.05
+
+
+def _reversed_rows(pooled: np.ndarray) -> np.ndarray:
+    """Row-reversal of the STORED array: every row now holds a DIFFERENT
+    series' feature vector than the fresh recompute does at that index --
+    the general shape of "wrong space" (a misaligned array, a different
+    layer's activations, a stale row mapping). For a fixture built in
+    std-ascending order this decorrelates feature 0 completely (Spearman
+    -1.0), never merely perturbs it."""
+    return pooled[::-1].copy()
+
+
+def test_encode_check_small_precision_noise_passes(monkeypatch, tmp_path):
+    """The scale-aware encode-check (fresh-vs-stored Spearman on each atlas
+    concept part's own pooled score, not a whole-vector absolute/relative
+    tolerance on raw SAE-feature values -- CLAUDE.md sec 8, 'Absolute
+    epsilons') must NOT block scoring on a small, order-preserving
+    perturbation that stands in for real bf16 precision noise. `_wire`'s
+    reference stored array is built from the SAME encode function as the
+    fresh recompute, so without `store_perturb` this would pass trivially
+    with zero noise at all; perturbing only the stored copy makes the
+    fresh-vs-stored comparison genuine."""
+    samples = _make_samples(_ENCODE_CHECK_SEEDS)
+    cfg, hub, store, data, atlas, calls = _wire(monkeypatch, samples, _std_encode, cf_n_null=3,
+                                                store_perturb=_small_order_preserving_offset)
+    run_dir = tmp_path
+    _write_atlas(run_dir, atlas)
+
+    out = cfmod.run_counterfactual_response(cfg, run_dir, hub, store, data, "cpu",
+                                            targets=[TARGET])
+    rec = out["targets"][0]
+    assert rec["status"] == "ok", rec
+    assert rec["encode_check"]["ok"] is True, rec["encode_check"]
+    part = rec["encode_check"]["concept_parts"][0]
+    assert part["concept"] == 1
+    assert part["pass"] is True, part
+    assert part["spearman"] is not None and part["spearman"] >= 0.98, part
+    # This is the whole point of the fix (ROADMAP sec 37.9 P6a review): the
+    # OLD whole-vector encode-check would have rejected this same fixture
+    # (see the diagnostic it leaves behind, `sae_feature_diagnostic`) --
+    # confirmed separately by reverting to `ok = sae_diag_ok` and rerunning
+    # this test (planted regression, see the P6a report).
+    assert rec["encode_check"]["sae_feature_diagnostic"]["ok"] is False, (
+        "this fixture's offset must be big enough to fail the OLD whole-vector "
+        "allclose check -- otherwise this test cannot demonstrate the new gate's "
+        "value over the old one")
+    scored = next(t for t in rec["tests"] if t["concept"] == 1 and t["knob"] == "seasonal_amplitude")
+    assert scored["status"] == "scored", scored
+
+
+def test_encode_check_wrong_space_fails(monkeypatch, tmp_path):
+    """A row-reversed stored array (the shape of a misaligned/wrong-space
+    array) must be caught by the same encode-check and must block scoring
+    for that target, with a stated reason -- never a silent wrong-space
+    score."""
+    samples = _make_samples(_ENCODE_CHECK_SEEDS)
+    cfg, hub, store, data, atlas, calls = _wire(monkeypatch, samples, _std_encode, cf_n_null=3,
+                                                store_perturb=_reversed_rows)
+    run_dir = tmp_path
+    _write_atlas(run_dir, atlas)
+
+    out = cfmod.run_counterfactual_response(cfg, run_dir, hub, store, data, "cpu",
+                                            targets=[TARGET])
+    rec = out["targets"][0]
+    assert rec["status"] == "encode_mismatch", rec
+    assert rec["encode_check"]["ok"] is False
+    part = rec["encode_check"]["concept_parts"][0]
+    assert part["pass"] is False, part
+    assert part["spearman"] is not None and part["spearman"] < 0.98, part
+    assert "reason" in rec and "reason" in part
+    assert "tests" not in rec, "a blocked target must not carry any scored/excluded tests"
 
 
 # ---------------------------------------------------------------------------
@@ -376,3 +499,39 @@ def test_bh_applied_within_target(monkeypatch, tmp_path):
         f"{bh_calls[0].keys()} vs {[(t['concept'], t['knob']) for t in scored]}"
     for t in scored:
         assert "p_bh" in t and "survives_fdr" in t
+
+
+def test_spearman_rows_matches_per_series_spearman():
+    """The vectorized null path must give exactly what the per-series
+    `_spearman` gives, including ties (quantized concept scores tie often)
+    and a constant row (undefined, never 0). Plant: ordinal instead of
+    average ranks in `_spearman_rows` fails the tied rows."""
+    rng = np.random.default_rng(0)
+    doses = [0.0, 0.5, 1.0, 1.5, 2.0]
+    rows = rng.normal(size=(40, 5))
+    rows[:10] = np.round(rows[:10])
+    rows[10] = 3.0
+    got = cfmod._spearman_rows(rows, doses)
+    for i in range(rows.shape[0]):
+        want = cfmod._spearman(rows[i], np.asarray(doses))
+        if want is None:
+            assert np.isnan(got[i])
+        else:
+            assert got[i] == pytest.approx(want, abs=1e-12)
+    assert np.isnan(got[10])
+
+
+def test_bh_family_satisfiability_recorded(monkeypatch, tmp_path):
+    """With few null draws, no test can survive BH however strong its
+    response; that must be recorded, never left to read as a negative.
+    Plant: `satisfiable` always True fails this."""
+    samples = _make_samples([101, 202, 303])
+    cfg, hub, store, data, atlas, calls = _wire(monkeypatch, samples, _std_encode, cf_n_null=3)
+    atlas["rows"].append({"model": MODEL, "layer": LAYER, "feature": 1, "concept": 2})
+    _write_atlas(tmp_path, atlas)
+    out = cfmod.run_counterfactual_response(cfg, tmp_path, hub, store, data, "cpu",
+                                            targets=[TARGET])
+    fam = out["targets"][0]["bh_family"]
+    assert fam["n_tests"] >= 2
+    assert fam["min_attainable_q_single"] == pytest.approx(fam["n_tests"] / 4)
+    assert fam["satisfiable"] is False
