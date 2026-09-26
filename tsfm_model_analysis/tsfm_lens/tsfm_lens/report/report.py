@@ -8596,10 +8596,17 @@ def _sec_confirm(run_dir: Path, findings: list, n_exploratory: int) -> str:
         transfer = concept_rep.get("transfer", {})
         tests_c = transfer.get("tests", [])
         if tests_c:
+            def _feature_col(t: dict) -> str:
+                if t.get("mode", "search") == "frozen":
+                    return t["id"]
+                return f'{t.get("dev_dst_feature")} → {t.get("private_feature")}'
+
             rows = [{
                 "concept": t["concept"],
+                "mode": t.get("mode", "search"),
                 "src → dst": f'{t["src_target"].split("/", 1)[0]} {_short(t["src_target"])} → '
                             f'{t["dst_model"]} {_short(t["dst_target"])}',
+                "feature": _feature_col(t),
                 "dev AUC": t.get("dev_auc"), "dev margin": t.get("dev_auc_margin"),
                 "private AUC": t.get("private_auc"), "p (Holm)": t.get("p_holm"),
                 "verdict": t.get("verdict", t["status"]),
@@ -8626,7 +8633,12 @@ def _sec_confirm(run_dir: Path, findings: list, n_exploratory: int) -> str:
                 "'Confirmed' means the two dictionaries still group the same series at "
                 "a Holm-corrected significance on fresh data — it is NOT evidence the "
                 "concept causes the same forecast behavior in both models (that is L5's "
-                "shared-input causal agreement, an entirely separate, dev-only measurement).",
+                "shared-input causal agreement, an entirely separate, dev-only measurement). "
+                "'search' mode confirms only that the destination dictionary has SOME "
+                "feature that selects the source concept's series (private data re-searches "
+                "the whole dictionary); 'frozen' mode confirms the sharper claim that THIS "
+                "SPECIFIC dev feature pair does, since it is scored with no search and no "
+                "max-over-features null.",
                 "The concept_knob family is empty: sec 37.9's P6a found no dev "
                 "(concept, knob) response surviving BH correction, so no knob claim was "
                 "registered and no private counterfactual path is built.")

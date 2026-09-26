@@ -3230,12 +3230,24 @@ def _l6_status(cid, concept_replication: Optional[dict]) -> tuple:
     if not tests:
         return "not measured", "not measured: no registered concept_transfer claim for this concept"
     n_confirmed = sum(1 for t in tests if t.get("verdict") == "confirmed")
+    # ROADMAP.md sec 37.10 P7b: `mode` defaults to "search" for every pre-P7b
+    # claim (additive key), and is stated in the detail text so a reader
+    # never mistakes a sharper frozen-feature confirmation for a search one
+    # (or vice versa) -- CLAUDE.md sec 8's "labels are claims" lesson.
+    by_mode: dict = {}
+    for t in tests:
+        by_mode.setdefault(t.get("mode", "search"), []).append(t)
+    mode_detail = ", ".join(
+        f"{m}: {sum(1 for t in ts if t.get('verdict') == 'confirmed')}/{len(ts)}"
+        for m, ts in sorted(by_mode.items()))
     if n_confirmed:
-        return "reached", f"confirmed on private data ({n_confirmed}/{len(tests)} registered claim(s))"
+        return "reached", (f"confirmed on private data ({n_confirmed}/{len(tests)} registered "
+                           f"claim(s); by mode -- {mode_detail})")
     if all(t.get("verdict") == "not replicable" for t in tests):
         reasons = sorted({t.get("reason", "unstated") for t in tests})
         return "not measured", f"not replicable: {'; '.join(reasons)}"
-    return "not reached", f"registered but not confirmed on private data ({len(tests)} claim(s))"
+    return "not reached", (f"registered but not confirmed on private data ({len(tests)} "
+                           f"claim(s); by mode -- {mode_detail})")
 
 
 def _rung(n: int, status: str, detail: str) -> dict:

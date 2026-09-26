@@ -594,6 +594,18 @@ def _replicate_registered_concepts(cfg: PipelineConfig, hub, private: BenchmarkD
     requires BOTH legs to hold -- the standard combination for an AND
     claim, Berger & Hsu 1996) and the `concept_knob` family, always empty
     here (sec 37.9's P6a NO-GO; no private counterfactual path is built).
+
+    ROADMAP.md sec 37.10 P7b -- a registered entry's `mode` (defaulting to
+    `"search"` for every pre-P7b claim) selects which claim gets tested here:
+    `"search"` runs the paragraph above unchanged; `"frozen"` calls
+    `transfer_one_fixed_feature` with the FROZEN `dst_feature` instead of
+    `transfer_one`, so the private forward leg scores exactly that one
+    feature against its OWN single-feature null (no argmax, no max-over-
+    features null) -- the sharper claim "this SPECIFIC dev feature pair
+    selects the same series", as opposed to "the destination dictionary has
+    SOME feature that does". The combination rule (`max(p, rev_p)`, Holm
+    across the family) and the two-family ledger shape are IDENTICAL for
+    both modes.
     """
     transfer_hyps = [h for h in registry["hypotheses"] if h["stage"] == "concept_transfer"]
     ids = [h["id"] for h in transfer_hyps]
@@ -621,7 +633,7 @@ def _replicate_registered_concepts(cfg: PipelineConfig, hub, private: BenchmarkD
                "ledger": ledger}
 
     from ..sae.transfer import _by_stratum, _seed, concept_scores, matched_draws, \
-        series_strata, top_series, transfer_one
+        series_strata, top_series, transfer_one, transfer_one_fixed_feature
 
     n_null = int(getattr(cfg.confirm, "concept_transfer_n_null", 2000) or 2000)
     base_seed = cfg.run.seed + 700_000
@@ -649,10 +661,17 @@ def _replicate_registered_concepts(cfg: PipelineConfig, hub, private: BenchmarkD
 
     tests, pvals = [], {}
     for h in transfer_hyps:
+        mode = h.get("mode", "search")
         entry = {"id": h["id"], "concept": h["concept"], "src_target": h["src_target"],
                  "dst_target": h["dst_target"], "dst_model": h["dst_model"],
                  "dev_auc": h["dev_auc"], "dev_auc_margin": h["dev_auc_margin"],
                  "dev_dst_feature": h["dst_feature"]}
+        if mode == "frozen":
+            # Additive-only (`CLAUDE.md` sec 7 invariant 13): a "search"-mode
+            # entry (the common case, and every existing caller/test) gets
+            # none of these keys, so its record stays byte-identical.
+            entry["mode"] = "frozen"
+            entry["dev_p"] = h.get("dev_p")
         broken = capture_errors.get(h["src_target"]) or capture_errors.get(h["dst_target"])
         if broken:
             entry.update({"status": "not_replicable",
@@ -669,9 +688,19 @@ def _replicate_registered_concepts(cfg: PipelineConfig, hub, private: BenchmarkD
             fwd_draws = matched_draws(S, strata, by_stratum, n_null,
                                       np.random.default_rng(fwd_seed))
             rev_seed = _seed("confirm_concept", h["id"], "rev", base=base_seed)
-            result = transfer_one(score_src, dst_ranks, S, fwd_draws, strata, by_stratum,
-                                  k=k, n_draws=n_null, seed=rev_seed, p_method="exact",
-                                  fwd_seed=fwd_seed)
+            if mode == "frozen":
+                # ROADMAP.md sec 37.10 P7b -- no search: the dev-frozen
+                # `dst_feature` is scored against a SINGLE-FEATURE
+                # stratum-matched null, never a max over the destination
+                # dictionary (`test_frozen_null_is_not_max_over_features`).
+                result = transfer_one_fixed_feature(
+                    score_src, dst_ranks, S, fwd_draws, strata, by_stratum,
+                    feature=int(h["dst_feature"]), k=k, n_draws=n_null, seed=rev_seed,
+                    p_method="exact", fwd_seed=fwd_seed)
+            else:
+                result = transfer_one(score_src, dst_ranks, S, fwd_draws, strata, by_stratum,
+                                      k=k, n_draws=n_null, seed=rev_seed, p_method="exact",
+                                      fwd_seed=fwd_seed)
         except ValueError as exc:
             entry.update({"status": "not_replicable",
                          "reason": f"private strata could not build a matched null: {exc}"})
