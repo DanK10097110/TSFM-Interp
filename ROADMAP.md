@@ -36769,7 +36769,8 @@ epoch 1.
 - **Found, not fixed (out of scope).** `sae/concept_profiles.py::run_concept_profiles` calls
   `load_ground_truth_table(cfg.data.path)` without a guard, so the `concepts` stage crashes under a
   smoke config (empty path) as soon as the atlas has ≥1 concept. It should skip with a stated reason
-  (§2.5).
+  (§2.5). *Fixed 2026-09-26: structural fields go unscored, `concept_profiles.json` records
+  `ground_truth.available`/`reason`, and the model-comparison section renders the reason.*
 - **Runtime.** register 4.7 s, confirm 447.3 s, report 53.1 s.
 - **Tests.** 134 passed, 1 skipped across the confirm, hypotheses, atlas, shared-input,
   model-comparison, manifest and smoke files (`test_concept_confirm.py`: 15). The `tsfm_benchmark`
