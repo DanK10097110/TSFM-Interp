@@ -3211,6 +3211,33 @@ def _l5_status(cid, shared_input: Optional[dict]) -> tuple:
     return "partial", f"neither same-effect nor acts-differently on shared inputs ({detail})"
 
 
+def _l6_status(cid, concept_replication: Optional[dict]) -> tuple:
+    """`-> (status, detail)` for L6 (ROADMAP.md sec 37.10 P7): confirmation
+    of a registered `concept_transfer` claim on a fresh, sealed private
+    epoch (`confirm/confirmation.json`'s `concept_replication` key).
+
+    `concept_replication` is that whole block (not a per-concept slice),
+    matching `_l5_status`'s own convention. A concept with no registered
+    claim (it was never in the top `concepts.n_registered` by dev AUC
+    margin, sec 37.10 design item 2) reads "not measured", never a bare
+    "not confirmed" -- absence from the one-shot private look is not the
+    same claim as having been tested and failed (`CLAUDE.md` sec 11.37).
+    """
+    if not concept_replication or concept_replication.get("status") != "tested":
+        return "not measured", _L6_NOT_MEASURED
+    transfer = concept_replication.get("transfer") or {}
+    tests = [t for t in (transfer.get("tests") or []) if t.get("concept") == cid]
+    if not tests:
+        return "not measured", "not measured: no registered concept_transfer claim for this concept"
+    n_confirmed = sum(1 for t in tests if t.get("verdict") == "confirmed")
+    if n_confirmed:
+        return "reached", f"confirmed on private data ({n_confirmed}/{len(tests)} registered claim(s))"
+    if all(t.get("verdict") == "not replicable" for t in tests):
+        reasons = sorted({t.get("reason", "unstated") for t in tests})
+        return "not measured", f"not replicable: {'; '.join(reasons)}"
+    return "not reached", f"registered but not confirmed on private data ({len(tests)} claim(s))"
+
+
 def _rung(n: int, status: str, detail: str) -> dict:
     return {"rung": n, "label": RUNG_LABELS[n - 1], "status": status, "detail": detail}
 
@@ -3256,7 +3283,8 @@ def _derive_concept_verdict(sharing_class, stable):
 
 def concept_verdicts(profiles: Optional[dict], stability: Optional[dict],
                      atlas_transfer: Optional[dict],
-                     shared_input: Optional[dict] = None) -> list:
+                     shared_input: Optional[dict] = None,
+                     concept_replication: Optional[dict] = None) -> list:
     """One row per atlas concept: the evidence-ladder columns (`RUNG_LABELS`)
     plus the single derived `verdict` and `highest_rung` a reader climbs to.
 
@@ -3276,6 +3304,12 @@ def concept_verdicts(profiles: Optional[dict], stability: Optional[dict],
     L5 rung exactly): L5 renders "measured" from it via `_l5_status`, never
     "not measured: P5 not run" once the artifact exists, whether or not this
     particular concept has a test in it.
+
+    `concept_replication` is `confirm/confirmation.json`'s `concept_
+    replication` key (ROADMAP.md sec 37.10 P7; optional, defaults to `None`
+    so a pre-P7 caller reproduces the old, always-"not measured" L6 rung
+    exactly): filled via `_l6_status`, the same "measured whether or not
+    THIS concept has a claim" contract L5 above already established.
 
     Adaptivity contract: no model or architecture name, no `cfg.models[`
     index -- every model name here is read off `profiles`'s own `parts`.
@@ -3337,7 +3371,8 @@ def concept_verdicts(profiles: Optional[dict], stability: Optional[dict],
 
         l5_status, l5_detail = _l5_status(cid, shared_input)
         l5 = _rung(5, l5_status, l5_detail)
-        l6 = _rung(6, "not measured", _L6_NOT_MEASURED)
+        l6_status, l6_detail = _l6_status(cid, concept_replication)
+        l6 = _rung(6, l6_status, l6_detail)
 
         verdict, highest_rung = _derive_concept_verdict(sharing_class, stable)
         rows.append({

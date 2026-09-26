@@ -160,13 +160,141 @@ def _clustering_entries(run_dir: Path) -> list:
     }]
 
 
+# ---------------------------------------------------------------------------
+# ROADMAP.md sec 37.10 P7 -- `concept_transfer` claims, registered from dev
+# atlas artifacts only, before the private epoch is ever touched. The knob
+# family (`concept_knob::`) is a separate, EMPTY family: sec 37.9's P6a
+# go/no-go (0 of 98 tests survived per-target BH) and its pre-registered
+# retry (0 of 151 survived pooled BH) both found nothing to register, so
+# there is no dev response to freeze -- this is recorded as an explicit empty
+# family with its reason, never silently absent (`CLAUDE.md` sec 2.5).
+# ---------------------------------------------------------------------------
+
+_KNOB_FAMILY_EMPTY_REASON = (
+    "no (concept, knob) input response survived BH after correction "
+    "(ROADMAP.md sec 37.9 P6a go/no-go: 0 of 98 tests, per-target BH; the "
+    "registered P6a retry: 0 of 151 tests, pooled BH over 9 more targets). "
+    "The knob family is empty by design (sec 37.10 P7 decision item 3), not "
+    "by omission: no private counterfactual path is built.")
+
+
+def _concept_transfer_candidates(run_dir: Path, concepts_cfg) -> dict:
+    """Rank every reciprocal-FDR, seed-stable atlas-transfer test by its dev
+    AUC margin, and record the full ranking plus the registration cut.
+
+    Candidates are `sae/atlas_transfer.json` tests with `reciprocal_fdr`
+    True whose atlas concept is `stable` in `sae/concept_stability.json`
+    (ROADMAP.md sec 37.10 design item 2). The margin is `min(forward AUC -
+    forward null p95, reverse AUC - reverse null p95)` -- the WEAKER leg,
+    since a reciprocal test needs both legs to clear their own null and the
+    weaker one is what a private re-test is most likely to lose. Ties
+    (not expected with float margins, but not assumed impossible) break on
+    `(concept, src_target, dst_target)` for a deterministic cut regardless
+    of dict/JSON iteration order.
+
+    Degrades to an empty candidate list with a stated reason when the
+    `concepts` stage's artifacts are absent -- this module must not require
+    `concepts.enabled` (a confirm-only run, e.g. `configs/smoke.yaml`,
+    registers its l0/l1/l2/l3/clustering claims regardless, CLAUDE.md sec
+    2.5/sec 11.35's false-refusal shape).
+    """
+    at_path = run_dir / "sae" / "atlas_transfer.json"
+    atlas_path = run_dir / "sae" / "concept_atlas.json"
+    stab_path = run_dir / "sae" / "concept_stability.json"
+    missing = [str(p.relative_to(run_dir)) for p in (at_path, atlas_path, stab_path)
+              if not p.exists()]
+    if missing:
+        return {"candidates": [], "cut": 0,
+               "reason": f"concept atlas artifacts not found: {', '.join(missing)}"}
+
+    at = load_json(at_path)
+    atlas = load_json(atlas_path)
+    stability = load_json(stab_path)
+    stable_ids = {int(c["concept"]) for c in (stability.get("concepts") or [])
+                 if (c.get("stability") or {}).get("stable") is True}
+
+    parts: dict = {}
+    for r in atlas.get("rows") or []:
+        cid = r.get("concept")
+        if cid is None:
+            continue
+        key = (int(cid), f"{r['model']}/{r['layer']}")
+        entry = parts.setdefault(key, {"model": r["model"], "features": set()})
+        entry["features"].add(int(r["feature"]))
+
+    n_reg = int(getattr(concepts_cfg, "n_registered", 20) or 20)
+    candidates = []
+    for t in at.get("tests") or []:
+        if not t.get("reciprocal_fdr"):
+            continue
+        cid = int(t["concept"])
+        if cid not in stable_ids:
+            continue
+        part = parts.get((cid, t["src_target"]))
+        if part is None:
+            continue
+        fwd_margin = float(t["auc"]) - float(t["null_p95"])
+        rev_margin = float(t["rev_auc"]) - float(t["rev_null_p95"])
+        candidates.append({
+            "concept": cid, "src_target": t["src_target"], "src_model": t["src_model"],
+            "src_features": sorted(part["features"]),
+            "dst_target": t["dst_target"], "dst_model": t["dst_model"],
+            "dst_feature": int(t["feature"]),
+            "dev_auc": t["auc"], "dev_null_p95": t["null_p95"],
+            "dev_rev_auc": t["rev_auc"], "dev_rev_null_p95": t["rev_null_p95"],
+            "dev_auc_margin": min(fwd_margin, rev_margin),
+            "k_top_series": at.get("k_top_series"),
+        })
+    candidates.sort(key=lambda c: (-c["dev_auc_margin"], c["concept"],
+                                   c["src_target"], c["dst_target"]))
+    cut = min(n_reg, len(candidates))
+    return {"candidates": candidates, "cut": cut, "n_registered_cfg": n_reg}
+
+
+def _concept_transfer_entries(run_dir: Path, cfg: PipelineConfig) -> tuple:
+    """`-> (hypothesis entries, ranking dict)`. One entry per candidate in
+    the top `cut`, each carrying everything `_replicate_registered_concepts`
+    needs to re-test the FROZEN claim on private data without re-reading
+    `sae/concept_atlas.json` (registration precedes private access; freezing
+    `src_features`/`dst_feature` here, not re-deriving them at confirm time,
+    is the mechanism, ROADMAP.md sec 37.10 design item 4).
+    """
+    ranking = _concept_transfer_candidates(run_dir, cfg.concepts)
+    at_path = run_dir / "sae" / "atlas_transfer.json"
+    art_hash = _sha256_file(at_path) if at_path.exists() else None
+    entries = []
+    for c in ranking["candidates"][:ranking["cut"]]:
+        entries.append({
+            "id": f"concept_transfer::{c['src_target']}::{c['concept']}::{c['dst_model']}",
+            "stage": "concept_transfer", "family": "concept_transfer",
+            "concept": c["concept"], "src_target": c["src_target"], "src_model": c["src_model"],
+            "src_features": c["src_features"], "dst_target": c["dst_target"],
+            "dst_model": c["dst_model"], "dst_feature": c["dst_feature"],
+            "dev_auc": c["dev_auc"], "dev_null_p95": c["dev_null_p95"],
+            "dev_rev_auc": c["dev_rev_auc"], "dev_rev_null_p95": c["dev_rev_null_p95"],
+            "dev_auc_margin": c["dev_auc_margin"], "k_top_series": c["k_top_series"],
+            "artifact": "sae/atlas_transfer.json", "artifact_sha256": art_hash,
+            "statement": (f"Concept {c['concept']} at {c['src_target']} ({c['src_model']}) "
+                         f"transfers to {c['dst_model']} ({c['dst_target']}, feature "
+                         f"{c['dst_feature']}); dev AUC margin "
+                         f"{c['dev_auc_margin']!r} (weaker leg of the reciprocal test)."),
+            "replicable": True,
+        })
+    return entries, ranking
+
+
 def build_registry(cfg: PipelineConfig) -> dict:
     """Pure assembly (no I/O beyond reading already-written dev artifacts)."""
     run_dir = cfg.run_dir()
+    concept_transfer_entries, ct_ranking = _concept_transfer_entries(run_dir, cfg)
     hypotheses = (_l0_entries(run_dir) + _l1_entries(run_dir) + _l2_entries(run_dir)
-                 + _l3_entries(run_dir) + _clustering_entries(run_dir))
+                 + _l3_entries(run_dir) + _clustering_entries(run_dir)
+                 + concept_transfer_entries)
     return {"hypotheses": hypotheses,
-           "n_replicable": sum(1 for h in hypotheses if h["replicable"])}
+           "n_replicable": sum(1 for h in hypotheses if h["replicable"]),
+           "concept_transfer_candidates": ct_ranking,
+           "concept_knob_candidates": {"candidates": [], "cut": 0, "n_registered": 0,
+                                       "reason": _KNOB_FAMILY_EMPTY_REASON}}
 
 
 def run_register(cfg: PipelineConfig) -> None:

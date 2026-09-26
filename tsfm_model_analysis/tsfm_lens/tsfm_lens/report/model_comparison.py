@@ -996,7 +996,16 @@ def model_comparison_block(cfg, run_dir, findings: list) -> tuple:
     stability = _load_json_or_none(run_dir / "sae" / "concept_stability.json")
     atlas_transfer = _load_json_or_none(run_dir / "sae" / "atlas_transfer.json")
     shared_input = _load_json_or_none(run_dir / "sae" / "shared_input_agreement.json")
-    verdicts = derived.concept_verdicts(profiles, stability, atlas_transfer, shared_input)
+    # ROADMAP.md sec 37.10 P7's L6 rung: read from `confirm`'s own artifact,
+    # not a sibling file of its own -- `concept_replication` is one key
+    # inside `confirm/confirmation.json`, the same file l0/l1/l3's
+    # replications already share (CLAUDE.md sec 11.51's whole-file read
+    # discipline, applied here so a confirm-stage rerun cannot leave this
+    # section reading a stale sibling).
+    confirmation = _load_json_or_none(run_dir / "confirm" / "confirmation.json")
+    concept_replication = (confirmation or {}).get("concept_replication")
+    verdicts = derived.concept_verdicts(profiles, stability, atlas_transfer, shared_input,
+                                        concept_replication)
 
     html = "<section class='sec-headline'><div class='eyebrow'>Compare</div>"
     html += ("<h2 class='sec'>Model comparison &mdash; what is shared, what is unique, "
