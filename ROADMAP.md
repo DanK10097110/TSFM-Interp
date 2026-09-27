@@ -28554,7 +28554,24 @@ dev series, and stored predictions for all 965 series.
     - sequential_par 0.8200 → 0.3800
     - **corpus 0.2093 → 0.1067**
   - Every new-source half is at 0.0000, except electricity sequential_par at 0.0800.
-  - Model forecasts on v2 have **not** been run; the reference run still uses `large_run.yaml`.
+  - **Model forecasts, v1 → v2 dev** (all 965 series, adapters' `predict`, seed 0; scratch script
+    `v1_vs_v2.py`, not in the pipeline). Values are flat share (forecast sd < 0.1 × context sd), with
+    median MASE in parentheses:
+
+    | Model | v1 | v2 |
+    |---|---|---|
+    | TimesFM | 0.4943 (1.1469) | **0.3254** (1.1829) |
+    | Chronos-2 | 0.4912 (1.1143) | **0.3202** (1.1268) |
+    | Sundial | 0.3917 (1.3552) | **0.2715** (1.4781) |
+    | Chronos-Bolt | 0.4881 (1.3926) | **0.3171** (1.4910) |
+
+    - Per generator (TimesFM): block_bootstrap 0.9857 → 0.6429; mixture 0.9034 → 0.4759;
+      sequential_par 0.92 → 0.62. The synthetic families are identical by construction.
+    - Median MASE on the new-source block_bootstrap rises (0.699 → 1.4971), because there naive is
+      no longer near-optimal.
+    - Anomaly, not investigated: Sundial's sequential_par flat share *rises* 0.20 → 0.72, while the
+      other three models fall.
+    - The reference run still uses `large_run.yaml`. A full pipeline rerun on v2 has not been done.
   - The built corpus is at repo-root `benchmark_large_v2/` (untracked, like `benchmark_large/`).
     Rebuild with `run_full.py --config configs/large_run_v2.yaml --references monash
     --reference-limit 120`.
