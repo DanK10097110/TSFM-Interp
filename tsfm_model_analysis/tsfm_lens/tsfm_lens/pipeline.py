@@ -215,14 +215,15 @@ def _stages() -> list:
         # enabled: false`, e.g. `configs/smoke.yaml`, must still be able to
         # register its l0/l1/l2/l3/clustering hypotheses; the concept
         # candidate list degrades to an empty, stated-reason block instead,
-        # CLAUDE.md sec 2.5). `concepts.n_registered` is declared field-level
-        # (not via the whole `concepts` section) for the same false-refusal
-        # reason its own docstring in config.py gives.
+        # CLAUDE.md sec 2.5). `concepts.n_registered` and `concepts.
+        # transfer_claim_mode` (ROADMAP.md sec 37.10 P7b) are declared
+        # field-level (not via the whole `concepts` section) for the same
+        # false-refusal reason their own docstrings in config.py give.
         Stage("register", ["l0"],
               lambda c: c.confirm.enabled,
               lambda c: (c.run_dir() / "hypotheses.json").exists(),
               lambda ctx: run_register(ctx.cfg),
-              ("concepts.n_registered",)),
+              ("concepts.n_registered", "concepts.transfer_claim_mode")),
         Stage("confirm", ["register"],
               lambda c: c.confirm.enabled,
               lambda c: (c.run_dir() / "confirm" / "confirmation.json").exists(),

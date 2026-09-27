@@ -29,6 +29,8 @@ from __future__ import annotations
 import hashlib
 from pathlib import Path
 
+import numpy as np
+
 from ..config import PipelineConfig
 from ..utils import load_json, log, save_json
 
@@ -251,6 +253,88 @@ def _concept_transfer_candidates(run_dir: Path, concepts_cfg) -> dict:
     return {"candidates": candidates, "cut": cut, "n_registered_cfg": n_reg}
 
 
+def _concept_transfer_frozen_entries(run_dir: Path, cfg: PipelineConfig, ranking: dict) -> list:
+    """Frozen-feature dev statistics for the SAME top-`cut` candidates
+    `_concept_transfer_candidates` already ranked (identical candidate pool
+    and ranking to `"search"` mode -- ROADMAP.md sec 37.10 P7b decision item
+    2 says so explicitly: only the CLAIM differs, not which claims are
+    picked). Freezes BOTH `src_features` and `dst_feature` (dev's own best
+    destination feature, i.e. the argmax `"search"` mode already found), and
+    records the frozen claim's OWN dev statistics computed with a
+    single-feature stratum-matched null (`sae/transfer.py::
+    transfer_one_fixed_feature`, reusing the SAME `fwd_seed`/`rev_seed`
+    convention `run_atlas_transfer` used to build the search-mode dev
+    statistics, so this is a re-slice of the SAME matched draws through one
+    feature's own column, not a fresh random draw): the forward leg's dev
+    AUC is unchanged from the search `dev_auc` (same feature, same top-`k`
+    set `S`), but its `null_p95`/`p` differ, because the search null maxes
+    over the WHOLE destination dictionary and the frozen null does not.
+
+    Dev-only I/O: reads the run's OWN zarr store (`space="sae"`) and
+    `meta.parquet`, both already-written dev artifacts, never the private
+    corpus -- registration still precedes private access.
+    """
+    if not ranking["candidates"][:ranking["cut"]]:
+        return []
+    from ..extraction.store import ActivationStore, load_meta
+    from ..sae.transfer import (_by_stratum, _pooled_ranks_fns, _seed, concept_scores,
+                                matched_draws, series_strata, top_series,
+                                transfer_one_fixed_feature)
+
+    candidates = ranking["candidates"][:ranking["cut"]]
+    at_path = run_dir / "sae" / "atlas_transfer.json"
+    art_hash = _sha256_file(at_path) if at_path.exists() else None
+
+    meta = load_meta(run_dir)
+    strata = series_strata(meta)
+    by_stratum = _by_stratum(strata)
+    store = ActivationStore(run_dir / "activations.zarr", mode="r")
+    _pooled, _ranks = _pooled_ranks_fns(store)
+
+    sae_cfg, concepts_cfg = cfg.sae, cfg.concepts
+    n_null = int(getattr(sae_cfg, "transfer_n_null", 200) or 200)
+    base_seed = int(getattr(sae_cfg, "transfer_seed", 0) or 0)
+    p_method = str(getattr(concepts_cfg, "transfer_p_method", "exact") or "exact")
+    max_redraw = int(getattr(concepts_cfg, "transfer_max_redraw", 5000) or 5000)
+
+    entries = []
+    for c in candidates:
+        src_pooled = _pooled(c["src_target"])
+        score_src = concept_scores(src_pooled, c["src_features"])
+        k = min(int(c.get("k_top_series") or 20), max(1, src_pooled.shape[0] - 1))
+        S = top_series(score_src, k)
+        fwd_seed = _seed("atlas", c["src_target"], c["concept"], base=base_seed)
+        fwd_rng = np.random.default_rng(fwd_seed)
+        fwd_draws = matched_draws(S, strata, by_stratum, n_null, fwd_rng)
+        dst_ranks = _ranks(c["dst_target"])
+        rev_seed = _seed("atlas", c["src_target"], c["concept"], c["dst_target"], base=base_seed)
+        dev_stat = transfer_one_fixed_feature(
+            score_src, dst_ranks, S, fwd_draws, strata, by_stratum,
+            feature=int(c["dst_feature"]), k=k, n_draws=n_null, seed=rev_seed,
+            p_method=p_method, max_redraw=max_redraw, fwd_seed=fwd_seed)
+        entries.append({
+            "id": f"concept_transfer_frozen::{c['src_target']}::{c['concept']}::"
+                 f"{c['dst_target']}::f{c['dst_feature']}",
+            "stage": "concept_transfer", "family": "concept_transfer", "mode": "frozen",
+            "concept": c["concept"], "src_target": c["src_target"], "src_model": c["src_model"],
+            "src_features": c["src_features"], "dst_target": c["dst_target"],
+            "dst_model": c["dst_model"], "dst_feature": c["dst_feature"],
+            "dev_auc": dev_stat["auc"], "dev_null_p95": dev_stat["null_p95"],
+            "dev_p": dev_stat["p"],
+            "dev_rev_auc": dev_stat["rev_auc"], "dev_rev_null_p95": dev_stat["rev_null_p95"],
+            "dev_rev_p": dev_stat["rev_p"],
+            "dev_auc_margin": c["dev_auc_margin"], "k_top_series": k,
+            "artifact": "sae/atlas_transfer.json", "artifact_sha256": art_hash,
+            "statement": (f"Concept {c['concept']} at {c['src_target']} ({c['src_model']}) "
+                         f"transfers to {c['dst_model']} ({c['dst_target']}), FROZEN feature "
+                         f"{c['dst_feature']} (dev AUC {dev_stat['auc']!r} against a "
+                         f"single-feature null p95 {dev_stat['null_p95']!r}, dev p "
+                         f"{dev_stat['p']!r})."),
+            "replicable": True,
+        })
+    return entries
+
+
 def _concept_transfer_entries(run_dir: Path, cfg: PipelineConfig) -> tuple:
     """`-> (hypothesis entries, ranking dict)`. One entry per candidate in
     the top `cut`, each carrying everything `_replicate_registered_concepts`
@@ -265,8 +349,27 @@ def _concept_transfer_entries(run_dir: Path, cfg: PipelineConfig) -> tuple:
     concept routinely transfers to several layers of the same model, and an
     id that collapses them made `holm()` (keyed by id) silently shrink the
     family (20 registered claims, 9 distinct ids on the reference run).
+
+    ROADMAP.md sec 37.10 P7b -- `concepts.transfer_claim_mode` ("search" |
+    "frozen") switches which CLAIM is registered for the SAME ranked
+    candidate pool (`_concept_transfer_candidates` never branches on mode).
+    `"search"` (the default) is this function's original body, UNCHANGED, so
+    it reproduces P7's registration byte-for-byte (`test_search_mode_
+    unchanged`); `"frozen"` dispatches to `_concept_transfer_frozen_entries`
+    instead, which returns entries carrying a `"mode": "frozen"` key -- an
+    ADDITIVE marker the search-mode entries above never gain (`CLAUDE.md`
+    sec 7 invariant 13), so a reader (or `confirm.py`) can tell the two
+    apart, and a pre-P7b consumer that only ever saw `"search"` entries sees
+    nothing new.
     """
     ranking = _concept_transfer_candidates(run_dir, cfg.concepts)
+    mode = str(getattr(cfg.concepts, "transfer_claim_mode", "search") or "search")
+    if mode not in ("search", "frozen"):
+        raise ValueError(f"concepts.transfer_claim_mode must be 'search' or 'frozen', "
+                         f"got {mode!r}")
+    if mode == "frozen":
+        return _concept_transfer_frozen_entries(run_dir, cfg, ranking), ranking
+
     at_path = run_dir / "sae" / "atlas_transfer.json"
     art_hash = _sha256_file(at_path) if at_path.exists() else None
     entries = []

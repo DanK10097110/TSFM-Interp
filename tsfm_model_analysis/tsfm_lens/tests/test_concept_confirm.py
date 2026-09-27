@@ -23,6 +23,8 @@ from types import SimpleNamespace
 
 import numpy as np
 import pandas as pd
+import pytest
+from scipy.stats import rankdata
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
@@ -31,6 +33,8 @@ from tsfm_lens.analysis import confirm as confirm_mod
 from tsfm_lens.analysis.hypotheses import (build_registry, check_registry_freshness,
                                            run_register)
 from tsfm_lens.config import config_from_dict
+from tsfm_lens.extraction.store import ActivationStore, save_meta
+from tsfm_lens.sae.transfer import matched_draws, series_strata, transfer_one_fixed_feature
 from tsfm_lens.utils import load_json, save_json
 
 
@@ -515,3 +519,235 @@ def test_replication_refuses_duplicate_claim_ids():
     finally:
         _unpatch_capture(orig)
     assert raised
+
+
+# ---------------------------------------------------------------------------
+# ROADMAP.md sec 37.10 P7b -- concepts.transfer_claim_mode: search | frozen.
+# ---------------------------------------------------------------------------
+
+_SEARCH_ENTRY_KEYS = {
+    "id", "stage", "family", "concept", "src_target", "src_model", "src_features",
+    "dst_target", "dst_model", "dst_feature", "dev_auc", "dev_null_p95",
+    "dev_rev_auc", "dev_rev_null_p95", "dev_auc_margin", "k_top_series",
+    "artifact", "artifact_sha256", "statement", "replicable",
+}
+
+
+def test_search_mode_unchanged():
+    """`concepts.transfer_claim_mode` defaults to `"search"`, and it must
+    reproduce P7's own entry shape byte-for-byte, whether left at the
+    default or set explicitly: none of P7b's new keys (`mode`, `dev_p`,
+    `dev_rev_p`) leak into a search-mode registration entry or a search-mode
+    replication test row.
+
+    Plant: routing the default mode through `_concept_transfer_frozen_
+    entries` (an inverted `if mode == "frozen":` in `hypotheses.py`) adds
+    `mode`/`dev_p`/`dev_rev_p` to the registered entry and fails the
+    key-set assertion below (also raises, since frozen registration needs a
+    real store this fixture never builds -- either way, FAILS).
+    """
+    cfg = _cfg()
+    assert cfg.concepts.transfer_claim_mode == "search"
+    tests = [_base_test_row(concept=0, auc=0.9, rev_auc=0.85)]
+    _atlas_fixture(cfg.run_dir(), tests, stable_concepts={0})
+    reg_default = build_registry(cfg)
+    cfg.concepts.transfer_claim_mode = "search"
+    reg_explicit = build_registry(cfg)
+    for reg in (reg_default, reg_explicit):
+        ct = [h for h in reg["hypotheses"] if h["stage"] == "concept_transfer"]
+        assert len(ct) == 1
+        assert set(ct[0].keys()) == _SEARCH_ENTRY_KEYS
+        assert "mode" not in ct[0]
+
+    n = 40
+    src_pooled = np.zeros((n, 1)); src_pooled[:, 0] = np.arange(n, dtype=float)
+    dst_pooled = np.zeros((n, 6)); dst_pooled[:, 5] = np.arange(n, dtype=float)
+    claims = [{"id": "concept_transfer::A/l::0::B", "concept": 0, "src_target": "A/l",
+              "dst_target": "B/l", "dst_model": "B", "src_features": [0], "dst_feature": 5,
+              "k_top_series": 8, "dev_auc": 0.9, "dev_auc_margin": 0.2}]
+    registry = _registry_with_claims(claims)
+    cfg2 = _cfg()
+    cfg2.confirm.concept_transfer_n_null = 300
+    orig = _patch_capture({"A/l": src_pooled, "B/l": dst_pooled})
+    try:
+        out = confirm_mod._replicate_registered_concepts(cfg2, hub=None,
+                                                          private=_private_meta(n),
+                                                          registry=registry)
+    finally:
+        _unpatch_capture(orig)
+    t = out["transfer"]["tests"][0]
+    assert "mode" not in t and "dev_p" not in t
+    assert t["verdict"] == "confirmed"
+
+
+def test_frozen_mode_uses_single_feature_null():
+    """Decoy: the destination has TWO candidate features. Feature 2 matches
+    the source's own order almost perfectly; feature 5 (dev's frozen choice
+    here) is independent noise. Search mode's argmax must find feature 2
+    and confirm; frozen mode is locked onto feature 5 and must NOT confirm.
+
+    Plant: frozen mode falling back to argmax (i.e. calling `transfer_one`
+    instead of `transfer_one_fixed_feature` for a `mode == "frozen"` claim)
+    makes it pick feature 2 too, and `frozen_t["verdict"] == "not confirmed"`
+    fails.
+    """
+    rng = np.random.default_rng(3)
+    n = 40
+    src_pooled = np.zeros((n, 1)); src_pooled[:, 0] = np.arange(n, dtype=float)
+    dst = np.zeros((n, 6))
+    dst[:, 2] = np.arange(n, dtype=float) + rng.normal(0, 0.01, n)   # decoy: near-perfect match
+    dst[:, 5] = rng.permutation(n).astype(float)                    # frozen feature: noise
+
+    cfg = _cfg()
+    cfg.confirm.concept_transfer_n_null = 300
+    private = _private_meta(n)
+
+    search_claim = {"id": "concept_transfer::A/l::0::B", "concept": 0, "src_target": "A/l",
+                    "dst_target": "B/l", "dst_model": "B", "src_features": [0], "dst_feature": 5,
+                    "k_top_series": 8, "dev_auc": 0.95, "dev_auc_margin": 0.3}
+    frozen_claim = {**search_claim, "id": "concept_transfer_frozen::A/l::0::B::f5",
+                   "mode": "frozen"}
+
+    orig = _patch_capture({"A/l": src_pooled, "B/l": dst})
+    try:
+        out_search = confirm_mod._replicate_registered_concepts(
+            cfg, hub=None, private=private, registry=_registry_with_claims([search_claim]))
+        out_frozen = confirm_mod._replicate_registered_concepts(
+            cfg, hub=None, private=private, registry=_registry_with_claims([frozen_claim]))
+    finally:
+        _unpatch_capture(orig)
+
+    search_t = out_search["transfer"]["tests"][0]
+    frozen_t = out_frozen["transfer"]["tests"][0]
+    assert search_t["verdict"] == "confirmed", "search must find the decoy feature and confirm"
+    assert search_t["private_feature"] == 2
+    assert frozen_t["mode"] == "frozen"
+    assert frozen_t["verdict"] == "not confirmed", "frozen is locked to the noisy feature 5"
+    assert frozen_t["private_feature"] == 5
+
+
+def test_frozen_null_is_not_max_over_features():
+    """`transfer_one_fixed_feature`'s forward null is feature 0's OWN AUC
+    distribution over the matched draws -- never a max over the whole
+    destination dictionary. A max over 25 independently-noisy features
+    stochastically dominates any single one of them, so using it here would
+    inflate `null_p95` well above the single-feature value.
+
+    Plant: replacing the null-column selection with `auc_from_ranks(
+    dst_ranks, fwd_draws).max(axis=1)` (the search-mode null) makes
+    `null_p95` jump to the maxed value and the exact-match assertion fails.
+    """
+    from tsfm_lens.sae.transfer import auc_from_ranks
+
+    rng = np.random.default_rng(7)
+    n, n_feat = 60, 25
+    strata = series_strata(pd.DataFrame({"archetype": ["s"] * n, "family": ["fam"] * n}))
+    by_stratum = {v: np.flatnonzero(strata == v) for v in np.unique(strata)}
+    src_scores = rng.normal(0, 1, n)
+    S = np.argsort(-src_scores)[:10]
+    dst_ranks = np.column_stack([rankdata(rng.normal(0, 1, n)) for _ in range(n_feat)])
+    fwd_seed = 123
+    fwd_draws = matched_draws(S, strata, by_stratum, 500, np.random.default_rng(fwd_seed))
+
+    feature = 0
+    null_single = auc_from_ranks(dst_ranks[:, [feature]], fwd_draws)[:, 0]
+    null_all = auc_from_ranks(dst_ranks, fwd_draws)
+    p95_single = float(np.percentile(null_single, 95))
+    p95_maxed = float(np.percentile(null_all.max(axis=1), 95))
+    assert p95_maxed > p95_single + 0.02, "sanity: max over 25 noisy features must dominate one"
+
+    result = transfer_one_fixed_feature(src_scores, dst_ranks, S, fwd_draws, strata, by_stratum,
+                                        feature=feature, k=10, n_draws=500, seed=99,
+                                        p_method="exact", fwd_seed=fwd_seed)
+    assert result["null_p95"] == pytest.approx(p95_single)
+    assert result["null_p95"] != pytest.approx(p95_maxed)
+
+
+def test_frozen_ids_unique_and_carry_feature():
+    """One source concept transferring (FROZEN) to two layers of the same
+    destination model must get two DISTINCT ids, each carrying its own
+    frozen feature -- the frozen-mode counterpart of `test_same_concept_to_
+    several_layers_of_one_model_gets_distinct_ids`'s search-mode regression
+    (20 registered claims collapsed to 9 ids when the id named only the
+    destination model, sec 37.10 P7's `b53802b`)."""
+    cfg = _cfg()
+    cfg.concepts.transfer_claim_mode = "frozen"
+    run_dir = cfg.run_dir()
+    n = 40
+    tests = [_base_test_row(concept=0, src_target="modelA/layerA", dst_target="modelB/layerB1",
+                            feature=3, auc=0.9, rev_auc=0.85),
+             _base_test_row(concept=0, src_target="modelA/layerA", dst_target="modelB/layerB2",
+                            feature=4, auc=0.85, rev_auc=0.8)]
+    _atlas_fixture(run_dir, tests, stable_concepts={0})
+
+    rng = np.random.default_rng(11)
+    store = ActivationStore.create(run_dir / "activations.zarr", n_series=n,
+                                   n_windows=4, window=32, context_len=128)
+    src_pooled = rng.normal(0, 0.1, size=(n, 1))
+    src_pooled[:, 0] = np.arange(n, dtype=float)
+    store.init_sae_layer("modelA", "layerA", 1)
+    store.write_sae_batch("modelA", "layerA", 0, np.repeat(src_pooled[:, None, :], 4, axis=1))
+    for layer, feat in (("layerB1", 3), ("layerB2", 4)):
+        dst_pooled = rng.normal(0, 0.1, size=(n, 6))
+        dst_pooled[:, feat] = np.arange(n, dtype=float)
+        store.init_sae_layer("modelB", layer, 6)
+        store.write_sae_batch("modelB", layer, 0, np.repeat(dst_pooled[:, None, :], 4, axis=1))
+    save_meta(run_dir, pd.DataFrame({"archetype": ["s"] * n, "family": ["fam"] * n}))
+
+    reg = build_registry(cfg)
+    ct = [h for h in reg["hypotheses"] if h["stage"] == "concept_transfer"]
+    assert len(ct) == 2
+    ids = {h["id"] for h in ct}
+    assert len(ids) == 2
+    for h in ct:
+        assert h["mode"] == "frozen"
+        assert f"f{h['dst_feature']}" in h["id"]
+    assert {h["dst_feature"] for h in ct} == {3, 4}
+
+
+def test_report_renders_mode_and_feature_columns(tmp_path):
+    """The confirm section's concept-transfer table gets a `mode` column and
+    a `feature` column: `dev -> private` for search rows, the frozen claim's
+    own id for frozen rows."""
+    from tsfm_lens.report.report import _sec_confirm
+
+    run_dir = tmp_path / "run"
+    (run_dir / "confirm").mkdir(parents=True)
+    save_json(run_dir / "confirm" / "confirmation.json", {
+        "n_private_series": 40, "alpha": 0.05, "tests": [],
+        "n_registered": 0, "n_replicable": 0, "registry_sha256": "abc",
+        "concept_replication": {
+            "status": "tested",
+            "transfer": {"status": "tested", "n_registered": 2, "n_tested": 2,
+                        "n_confirmed": 1, "n_null": 2000,
+                        "tests": [
+                            {"concept": 0, "src_target": "modelA/layerA",
+                             "dst_target": "modelB/layerB", "dst_model": "modelB",
+                             "dev_auc": 0.95, "dev_auc_margin": 0.3,
+                             "dev_dst_feature": 5, "private_feature": 2,
+                             "private_auc": 0.97, "p_holm": 0.01,
+                             "status": "tested", "verdict": "confirmed"},
+                            {"concept": 1, "src_target": "modelA/layerC",
+                             "dst_target": "modelC/layerC", "dst_model": "modelC",
+                             "dev_auc": 0.9, "dev_auc_margin": 0.2,
+                             "dev_dst_feature": 7, "private_feature": 7,
+                             "private_auc": 0.5, "p_holm": 0.8, "mode": "frozen",
+                             "id": "concept_transfer_frozen::modelA/layerC::1::modelC/layerC::f7",
+                             "status": "tested", "verdict": "not confirmed"},
+                        ]},
+            "knob": {"status": "empty", "n_registered": 0, "tests": [],
+                    "reason": "no dev response survived BH (sec 37.9)"},
+            "ledger": [
+                {"family": "concept_transfer", "m": 2, "n_null": 2000,
+                 "min_attainable_p_holm": 0.001, "satisfiable": True},
+                {"family": "concept_knob", "m": 0, "n_null": None,
+                 "min_attainable_p_holm": None, "satisfiable": None},
+            ],
+        },
+    })
+    html = _sec_confirm(run_dir, [], 0)
+    assert "<th>mode</th>" in html
+    assert "<th>feature</th>" in html
+    assert ">search<" in html and ">frozen<" in html
+    assert "5 → 2" in html
+    assert "concept_transfer_frozen::modelA/layerC::1::modelC/layerC::f7" in html

@@ -966,6 +966,26 @@ class ConceptsConfig:
     # `concepts.n_registered` as a field-level key instead.
     n_registered: int = field(default=20, metadata={"stage_input": False})
 
+    # ROADMAP.md sec 37.10 P7b -- which claim a registered `concept_transfer`
+    # entry actually makes. `"search"` (default) is P7's own claim: the
+    # destination's WHOLE dictionary is re-searched on private data against a
+    # max-over-features null, so "confirmed" means only "the destination
+    # layer has SOME feature that selects the source concept's series" (P7's
+    # Findings: the private argmax feature matched dev's in just 6 of 20
+    # claims). `"frozen"` is the sharper claim registered for a fresh
+    # epoch: BOTH `src_features` and dev's own best `dst_feature` are frozen
+    # at registration, and the private forward leg scores exactly that one
+    # feature against a SINGLE-FEATURE stratum-matched null (no max over the
+    # dictionary, since there is no search left to correct for) --
+    # `sae/transfer.py::transfer_one_fixed_feature`. `"search"` must
+    # reproduce P7's registration and replication byte-identically
+    # (`test_search_mode_unchanged`); this field is read only by
+    # `analysis/hypotheses.py`/`analysis/confirm.py`'s concept-transfer path,
+    # so it is declared `stage_input: False` here (same reasoning as
+    # `n_registered` above) and field-level on `register`'s own
+    # `Stage.config_keys` instead.
+    transfer_claim_mode: str = field(default="search", metadata={"stage_input": False})
+
 
 @dataclass
 class PipelineConfig:
