@@ -114,6 +114,50 @@ def _next_claim_id(stage: str) -> str:
     return f"{stage}.{n}"
 
 
+
+# Report structure spec R1 (CLAUDE.md sec 6.7 / ROADMAP.md sec 37): which
+# `builders` eyebrows belong under which numbered Part heading, and the
+# one-line question each Part answers. Data next to `builders`, not a
+# template if/else chain -- `run_report` below joins this against `coverage`
+# (which already states, per eyebrow, whether that section rendered) to
+# build both the Contents table and the Part-grouped section loop from the
+# SAME source, so a section can never appear in the TOC without a matching
+# anchor in the body or vice versa.
+REPORT_PARTS = [
+    ("Part 1 — The setup and whether to trust it",
+     "Whether this run's cross-model comparisons are fair between the "
+     "configured models, and what the benchmark corpus actually contains.",
+     ["Fairness", "Corpus"]),
+    ("Part 2 — How well each model forecasts",
+     "Behavioral accuracy per benchmark family, what each model costs to "
+     "run, and what its input front-end does before any layer runs.",
+     ["L0", "Cost", "Frontend"]),
+    ("Part 3 — Where the forecast forms inside each model",
+     "Which layers were worth the expensive analyses below, what each "
+     "model's own depth profile looks like, and where its forecast "
+     "crystallizes.",
+     ["Screen", "Profile", "Lens"]),
+    ("Part 4 — Do the models represent things the same way?",
+     "Representational geometry and linear stitching between every model "
+     "pair, and how each model clusters the benchmark on its own.",
+     ["L1", "L2", "L4"]),
+    ("Part 5 — What causally drives the forecast",
+     "Corruption sensitivity and within-model activation patching, "
+     "attention structure and head/MLP causality, and the seasonality "
+     "circuit.",
+     ["L3", "Attention", "Circuit"]),
+    ("Part 6 — Features and concepts",
+     "The sparse feature dictionaries trained per model and per layer, the "
+     "concepts they cluster into, whether those concepts are shared across "
+     "models, and concrete per-family case studies.",
+     ["SAE", "Concepts", "Exemplars"]),
+    ("Part 7 — Robustness and held-out confirmation",
+     "How much of the above depends on one analysis-knob choice, and the "
+     "one-shot confirmatory test on the sealed private corpus.",
+     ["Spec curve", "Confirm"]),
+]
+
+
 def run_report(cfg: PipelineConfig) -> Path:
     """Render report.html from the run directory's artifacts.
 
@@ -142,21 +186,27 @@ def run_report(cfg: PipelineConfig) -> Path:
                     for i, m in enumerate(cfg.models)}
     sections, findings, coverage = [], [], []
 
-    # ROADMAP.md sec 37 Spec C: rendered directly after the scorecard, before
-    # "How to read this report" -- a fixed template slot like `bottom_line`
-    # itself, not a `builders` list entry, since the ordering the spec asks
-    # for sits ABOVE where the `sections` loop below even starts rendering.
-    # Still recorded in the SAME `coverage` list every other section uses,
-    # so "Run coverage" states its status/reason exactly like a stage.
+    # Report structure spec R1: the three answer boxes render in the fixed
+    # "At a glance" slot -- next to the Scorecard, above every numbered Part
+    # -- rather than as a full report section, so this stays a direct call
+    # exactly like the single "Compare" block used to be (not a `builders`
+    # entry), just renamed and slimmed to match what it now renders. The
+    # rest of the old "Compare" content (the full similarity evidence, the
+    # sharing map, the unique blocks, the verdict table) is a real section,
+    # "Concepts", built by `_sec_concepts` below and placed in `builders`
+    # directly after "SAE" (Part 6). Both are recorded in the SAME
+    # `coverage` list every other section uses, so "Run coverage" states
+    # each one's status/reason exactly like a stage -- the "Compare" entry
+    # becomes these two.
     try:
-        model_comparison_html, _mc_status, _mc_detail = model_comparison.model_comparison_block(
+        at_a_glance_html, _glance_status, _glance_detail = model_comparison.at_a_glance_block(
             cfg, run_dir, findings)
     except Exception as exc:
-        _mc_status, _mc_detail = "failed", f"{type(exc).__name__}: {exc}"
-        model_comparison_html = ""
-        log.warning("report: section Compare failed: %s", _mc_detail)
-    coverage.append({"eyebrow": "Compare", "title": "Model comparison",
-                     "status": _mc_status, "detail": _mc_detail})
+        _glance_status, _glance_detail = "failed", f"{type(exc).__name__}: {exc}"
+        at_a_glance_html = ""
+        log.warning("report: section At a glance (compare) failed: %s", _glance_detail)
+    coverage.append({"eyebrow": "At a glance", "title": "Model comparison — at a glance",
+                     "status": _glance_status, "detail": _glance_detail})
 
     builders = [
         ("Fairness", "The fairness card",
@@ -199,6 +249,11 @@ def run_report(cfg: PipelineConfig) -> Path:
          "Ridge maps between window states, reported as gain over an input-feature baseline; only that gain is evidence of shared learned structure.",
          ["l2/stitching.json"], "l2",
          lambda: _sec_l2(run_dir, findings)),
+        ("L4", "Activation clusters",
+         "How each model organizes the benchmark, with clusters labeled by what they approximately activate for.",
+         ["clustering/embedding.parquet", "clustering/clusters.json",
+          "clustering/comparison.json"], "clustering",
+         lambda: _sec_clusters(run_dir, model_colors, findings)),
         ("L3", "Perturbation & patching",
          "Where each model's depth reacts to structured corruptions, and where clean activations causally restore corrupted forecasts.",
          ["l3/sensitivity.npz", "l3/meta.json"], "l3",
@@ -207,11 +262,6 @@ def run_report(cfg: PipelineConfig) -> Path:
          "Where heads look as a function of temporal lag, which heads carry seasonal structure, and which heads and MLP blocks forecasts causally depend on.",
          ["attention/arrays.npz", "attention/meta.json"], "attention",
          lambda: _sec_attention(run_dir, model_colors, findings)),
-        ("L4", "Activation clusters",
-         "How each model organizes the benchmark, with clusters labeled by what they approximately activate for.",
-         ["clustering/embedding.parquet", "clustering/clusters.json",
-          "clustering/comparison.json"], "clustering",
-         lambda: _sec_clusters(run_dir, model_colors, findings)),
         ("Circuit", "The seasonality circuit",
          "The smallest set of attention heads that is causally sufficient/necessary for a model's own seasonal forecasting, and whether noising one head's effect decomposes additively across the others (ROADMAP.md §20 H8).",
          [], "seasonality_circuit",
@@ -220,6 +270,10 @@ def run_report(cfg: PipelineConfig) -> Path:
          "Per-target reconstruction/dead-feature/forecast-preservation summary, plus exemplar series for the dictionary's ground-truth-matched features.",
          ["sae/meta.json"], "sae",
          lambda: _sec_sae(cfg, run_dir, findings)),
+        ("Concepts", "Cross-model concepts",
+         "Which of each model's causal features cluster into named concepts, whether another model groups the same series the same way, and how similar every model pair is overall (ROADMAP.md §37 Spec C) -- the evidence behind the compact answer boxes in “At a glance”.",
+         [], "concepts",
+         lambda: _sec_concepts(cfg, run_dir, findings)),
         ("Exemplars", "Exemplar case studies",
          "A few concrete series per family, told end to end: both forecasts, where each model's answer forms in depth, and where it looks in the context.",
          ["exemplars/exemplars.npz", "exemplars/exemplars.json"], "exemplars",
@@ -261,7 +315,18 @@ def run_report(cfg: PipelineConfig) -> Path:
                              "detail": detail})
             continue
         try:
-            inner = build()
+            result = build()
+            # A builder normally returns HTML (or "" to self-skip). "Concepts"
+            # is the one exception (`_sec_concepts`): it wraps `model_
+            # comparison.concept_section_block`'s own `(html, status, detail)`
+            # contract, so a solo run or a missing artifact states ITS OWN
+            # specific reason in the coverage panel rather than the generic
+            # "builder returned no content" every `requires=[]` section falls
+            # back to (CLAUDE.md invariant 8).
+            if isinstance(result, tuple):
+                inner, manual_status, manual_detail = result
+            else:
+                inner, manual_status, manual_detail = result, None, None
             if inner:
                 # ROADMAP.md sec 21 J2: every rendered section leads with its
                 # stage's fixed four-line "what this tells you" doc, pulled
@@ -282,7 +347,7 @@ def run_report(cfg: PipelineConfig) -> Path:
                              "detail": ""})
         else:
             coverage.append({"eyebrow": eyebrow, "title": title, "status": "skipped",
-                             "detail": "builder returned no content"})
+                             "detail": manual_detail or "builder returned no content"})
     if n_exploratory[0] is None:
         n_exploratory[0] = len(findings)
     # ROADMAP.md sec 18 F6's acceptance criterion is a *count*: how many of this
@@ -325,6 +390,7 @@ def run_report(cfg: PipelineConfig) -> Path:
     mock_models = [m.name for m in cfg.models if m.adapter.startswith("mock_")]
     global _MODEL_NAMES_FOR_TEMPLATES
     _MODEL_NAMES_FOR_TEMPLATES = [m.name for m in cfg.models]
+    report_parts = _build_report_parts(coverage, sections)
     html = _TEMPLATE.render(
         title=cfg.report.title, run=cfg.run.name,
         date=datetime.date.today().isoformat(),
@@ -341,11 +407,12 @@ def run_report(cfg: PipelineConfig) -> Path:
         colors=_COLORS,
         dataset_line=_dataset_line(cfg, run_dir),
         findings=findings, finding_groups=_group_findings(findings),
-        sections=sections,
+        sections=sections, parts=report_parts,
         config_text=_config_text(run_dir),
         mock_warning=_mock_warning(mock_models),
         bottom_line=_scorecard(run_dir, cfg),
-        model_comparison_block=model_comparison_html,
+        at_a_glance_extra=at_a_glance_html,
+        at_a_glance_l0=_glance_l0_table(run_dir),
         how_to_read=_how_to_read(cfg.alignment.window),
         glossary_block=_glossary_block(),
         methods_appendix_block=_methods_appendix_block(),
@@ -406,6 +473,49 @@ def run_report(cfg: PipelineConfig) -> Path:
             f"panel. Fix the underlying builder bug, or pass --allow-partial-report "
             f"(cfg.report.allow_partial: true) to proceed anyway.")
     return out
+
+
+def _build_report_parts(coverage: list, sections: list) -> list:
+    """Join `REPORT_PARTS` (which eyebrows belong under which numbered Part,
+    and the one-line question each Part answers) against `coverage`
+    (rendered/skipped/failed per eyebrow, already the single record of that)
+    and `sections` (the rendered HTML itself) into the ONE structure the
+    template reads twice: once for the Contents table of contents, once for
+    the Part-grouped section loop below it. A section can therefore never
+    appear in one without the other -- the TOC is generated from the
+    sections that actually rendered (report structure spec R1), never
+    hand-listed.
+
+    An eyebrow named in `REPORT_PARTS` with no matching `coverage` entry
+    (a stage this build of the pipeline never registered at all) is left
+    out rather than rendered as a phantom "not run" row -- that is a code
+    version mismatch, not a fact about this run, and is not this function's
+    job to surface.
+    """
+    cov_by_eyebrow = {c["eyebrow"]: c for c in coverage}
+    sec_by_eyebrow = {s["eyebrow"]: s for s in sections}
+    parts = []
+    for i, (part_title, intro, eyebrows) in enumerate(REPORT_PARTS, start=1):
+        entries = []
+        for eb in eyebrows:
+            cov = cov_by_eyebrow.get(eb)
+            if cov is None:
+                continue
+            sec = sec_by_eyebrow.get(eb)
+            rendered = cov["status"] == "rendered" and sec is not None
+            entries.append({
+                "eyebrow": eb, "title": cov["title"], "status": cov["status"],
+                "rendered": rendered,
+                "slug": sec["slug"] if rendered else None,
+                "blurb": sec["blurb"] if rendered else "",
+                "html": sec["html"] if rendered else "",
+            })
+        # NB: the key is "entries", never "items" -- `dict.items` is a bound
+        # method, so Jinja's attribute lookup on a plain dict (`p.items`)
+        # silently returns THAT instead of a stored "items" key, and iterating
+        # a bound method raises `TypeError: ... not iterable` (confirmed).
+        parts.append({"slug": f"part-{i}", "title": part_title, "intro": intro, "entries": entries})
+    return parts
 
 
 def _mock_warning(mock_models: list) -> str:
@@ -611,6 +721,23 @@ def _fmt_measure_value(value, unit: str) -> str:
     return f"{body} {unit}".strip()
 
 
+def _glance_l0_table(run_dir: Path) -> str:
+    """One row per model, straight from L0's own `summary["overall"]` --
+    report structure spec R1's "at most one or two small tables ... to draw
+    the reader in" for the "At a glance" slot. Reuses the exact table
+    `_sec_l0` renders under its own "Overall metrics" heading rather than
+    re-deriving it, so the two can never disagree; returns "" (not a stub
+    table) when L0 has not run, matching every other degrade in this module.
+    """
+    path = run_dir / "l0" / "summary.json"
+    if not path.exists():
+        return ""
+    overall = (load_json(path) or {}).get("overall")
+    if not overall:
+        return ""
+    return "<h5>Overall behavioral metrics (L0)</h5>" + _table(pd.DataFrame(overall))
+
+
 def _scorecard(run_dir: Path, cfg: PipelineConfig) -> str:
     """The report's opening: measured rows with their rules printed, not prose.
 
@@ -715,7 +842,7 @@ def _how_to_read(window: int) -> str:
     without being redefined each time. This renders once, first, unconditionally.
     """
     return (
-        '<section class="howto"><div class="eyebrow">Before the numbers</div>'
+        '<section class="howto" id="how-to-read"><div class="eyebrow">Before the numbers</div>'
         '<h2 class="sec">How to read this report</h2>'
         '<p class="blurb">Each section below answers a progressively stronger '
         'question, and each one exists because of a specific limitation in the '
@@ -6277,9 +6404,17 @@ def _sec_sae(cfg: PipelineConfig, run_dir: Path, findings: list) -> str:
     `sae/concepts.json` (ABLATION-space clustering) instead of
     `sae/roles.json`, per sec 30.1's measured result that concepts cluster
     decisively better (mean silhouette 0.450 vs roles' -0.235, at every
-    target checked). This function's own scope stays the per-target summary
-    and the ground-truth exemplar panel; see `sae_concepts_block` and
-    `CLAUDE.md` §6.5's SAE paragraph for the rest.
+    target checked). This function's own scope stays the per-target summary,
+    the ground-truth exemplar panel, and dictionary QUALITY (health,
+    flatness, what each dictionary's features structurally track) --
+    everything CONCEPT-level (the ablation-space clustering block, the
+    superseded activation-matched roles comparison, and the cross-model
+    atlas/similarity evidence) moved to `_sec_concepts` below, rendered as
+    its own "Concepts" section directly after this one (report structure
+    spec R1, CLAUDE.md sec 6.7): a reader asking "is this dictionary worth
+    reading features off" and a reader asking "do two models' concepts
+    agree" are different readers, and the second question used to sit
+    behind four other SAE subsections before this split.
     """
     from ..extraction.store import ActivationStore, load_meta
     from ..sae.ground_truth import load_ground_truth_table
@@ -6419,29 +6554,66 @@ def _sec_sae(cfg: PipelineConfig, run_dir: Path, findings: list) -> str:
                  + inner)
     # Order: is the dictionary sound (health) -> what do the models share and
     # differ on (contrast) -> what does each layer track (heatmap + tables).
-    # The cross-model answer sits above the per-target detail because it is
-    # the question a cross-model section is FOR; before 2026-09-04 a reader
-    # met thirteen per-layer tables first and no synthesis at all.
-    # ROADMAP.md sec 37 Spec C item F: the activation-matched role blocks
-    # (`_sae_capability_block`) are matched by CO-FIRING, not by the causal
-    # ablation effect the Model comparison section's own sharing map uses --
-    # `sae/roles_injection.json`'s own `superseded_by: concepts.json` names
-    # exactly this supersession. Kept renderable (P5's design keeps sec 27's
-    # output regenerable), just collapsed rather than shown by default.
-    capability_html = _sae_capability_block(run_dir, findings)
-    superseded_roles = (_details("Superseded: activation-matched roles", capability_html)
-                        if capability_html else "")
+    # This section's scope ends at dictionary quality; concept-level content
+    # (the causal ablation-space clustering, the superseded activation-
+    # matched roles comparison, and the cross-model atlas) is `_sec_concepts`
+    # below, rendered as its own "Concepts" section right after this one.
     inner = (MODAL_ASSETS + health
              + _sae_flatness_block(cfg, run_dir, findings, df=ablation_df)
              + _sae_contrast_block(run_dir, findings)
-             + superseded_roles + inner)
+             + inner)
     inner += _note(*_SAE_EXEMPLAR_NOTE, summary="What does this table mean?")
     inner += _sae_seed_floor_block(meta_sae)
-    model_names = [m.name for m in cfg.models]
-    from .sae_concepts import sae_concepts_block
-    inner += sae_concepts_block(cfg, run_dir, findings, model_names,
-                                population=flatness_population)
     return inner
+
+
+def _sec_concepts(cfg: PipelineConfig, run_dir: Path, findings: list) -> tuple:
+    """`-> (html, status, detail)` for the "Concepts" report section
+    (report structure spec R1, CLAUDE.md sec 6.7), rendered directly after
+    "SAE" (Part 6): the CONCEPT-level content that used to live at the
+    bottom of the SAE section or at the very top of the whole report --
+
+      - `sae_concepts.py::sae_concepts_block` -- per-target ablation-space
+        clustering (universality, concept cards, causally interesting
+        individual features, misfits);
+      - `_sae_capability_block` -- the superseded, activation-MATCHED
+        (co-firing, not causal-effect) cross-model role comparison, kept
+        renderable but collapsed exactly as it was inside `_sec_sae`
+        (`sae/roles_injection.json`'s own `superseded_by: concepts.json`);
+      - `model_comparison.concept_section_block` -- the full cross-model
+        atlas evidence (pair-similarity figures, the sharing map and concept
+        cards, the per-model unique blocks, the verdict table) that used to
+        render as its own "Compare" section above the Scorecard. Its compact
+        answer boxes render earlier, in "At a glance"
+        (`model_comparison.at_a_glance_block`).
+
+    Each of the three degrades independently and the section as a whole is
+    "rendered" if ANY of them produced content, "skipped" (with the
+    comparison half's own reason) only if all three are empty -- the same
+    per-half degrade discipline `concept_section_block` documents for itself
+    (CLAUDE.md sec 2.5).
+    """
+    from .sae_concepts import sae_concepts_block
+
+    ablation_df = derived.ablation_panel_table(run_dir)
+    flatness_population = derived.flatness_population(ablation_df)
+    model_names = [m.name for m in cfg.models]
+    sae_concepts_html = sae_concepts_block(cfg, run_dir, findings, model_names,
+                                           population=flatness_population)
+    # ROADMAP.md sec 37 Spec C item F: matched by CO-FIRING, not by the
+    # causal ablation effect the atlas sharing map below uses -- kept
+    # renderable (P5's design keeps sec 27's output regenerable), just
+    # collapsed rather than shown by default.
+    capability_html = _sae_capability_block(run_dir, findings)
+    superseded_roles = (_details("Superseded: activation-matched roles", capability_html)
+                        if capability_html else "")
+    compare_html, cmp_status, cmp_detail = model_comparison.concept_section_block(
+        cfg, run_dir, findings)
+
+    html = "".join(part for part in (compare_html, sae_concepts_html, superseded_roles) if part)
+    if not html:
+        return "", "skipped", (cmp_detail or "no concept artifacts for this run")
+    return html, "rendered", ""
 
 
 
@@ -8735,6 +8907,33 @@ tr.cov-skipped td{color:var(--muted)}
 body[data-detail="headline"] section:not(.sec-headline){display:none}
 body[data-detail="headline"] .findings li:not(.registered){display:none}
 body[data-detail="headline"] .fgroup-block:not(:has(li.registered)){display:none}
+.toc{background:var(--panel);border:1px solid var(--line);border-radius:6px;
+  padding:16px 22px;margin:0 0 22px}
+.toc h2{font:600 13px var(--mono);letter-spacing:.1em;text-transform:uppercase;
+  margin:0 0 10px;color:var(--accent)}
+.toc-list{margin:0;padding-left:0;list-style:none;counter-reset:toc}
+.toc-list>li{margin:0 0 10px;font-size:13.5px;line-height:1.5}
+.toc-list>li>a{color:var(--ink);font-weight:600;text-decoration:none}
+.toc-list>li>a:hover{text-decoration:underline}
+.toc-sub{margin:5px 0 0;padding-left:18px;list-style:none}
+.toc-sub li{margin:2px 0;font-size:12.5px;color:var(--muted)}
+.toc-sub a{color:var(--muted);text-decoration:none}
+.toc-sub a:hover{text-decoration:underline}
+.toc-skip{color:var(--muted);font-style:italic}
+.part-heading{margin:34px 0 14px;padding-bottom:8px;border-bottom:2px solid var(--ink)}
+section:first-of-type + .part-heading, .wrap>.part-heading:first-of-type{margin-top:0}
+.part-label{font:600 18px/1.2 var(--mono);color:var(--ink);margin:0}
+.part-intro{color:var(--muted);font-size:13.5px;margin:4px 0 6px;max-width:78ch}
+.back-to-toc{font:11px var(--mono);color:var(--accent);text-decoration:none}
+.back-to-toc:hover{text-decoration:underline}
+.at-a-glance-wrap{margin:0 0 26px}
+.at-a-glance-wrap>h2{font:600 13px var(--mono);letter-spacing:.1em;text-transform:uppercase;
+  margin:0 0 12px;color:var(--accent)}
+.at-a-glance-wrap .howto-pointer{font-size:12.5px;color:var(--muted);margin:8px 0 0}
+.cmp-glance{margin:0 0 8px}
+.appendix{margin-top:8px}
+.appendix>h2{font:600 13px var(--mono);letter-spacing:.1em;text-transform:uppercase;
+  margin:26px 0 12px;color:var(--accent)}
 </style></head><body><div class="wrap">
 <header>
   <div class="kicker">tsfm-lens · cross-architecture comparison</div>
@@ -8750,29 +8949,56 @@ body[data-detail="headline"] .fgroup-block:not(:has(li.registered)){display:none
   <button type="button" data-level="methods" onclick="tsfmSetDetail('methods')">Methods</button>
   <span class="dt-hint">Headline: fairness card + L0 + confirmed findings only · Standard: this report as written · Methods: every collapsed detail expanded</span>
 </div>
-{% if bottom_line %}{{ bottom_line }}{% endif %}
-{% if model_comparison_block %}{{ model_comparison_block }}{% endif %}
-{{ how_to_read }}
-{{ glossary_block }}
-<details class="coverage"{% if any_failed %} open{% endif %}>
-<summary class="{% if any_failed %}coverage-bad{% else %}coverage-ok{% endif %}">
-Run coverage — {{ coverage_summary }}</summary>
-<table class="tbl">
-<tr><th>Section</th><th>Status</th><th>Detail</th></tr>
-{% for c in coverage %}
-<tr class="cov-{{ c.status }}"><td>{{ c.eyebrow }} — {{ c.title }}</td>
-<td>{{ c.status }}</td><td>{{ c.detail }}</td></tr>
+<nav class="toc" id="toc">
+<h2>Contents</h2>
+<ol class="toc-list">
+<li><a href="#at-a-glance">At a glance</a> &mdash; the scorecard, a compact version of the
+model-comparison answers, and a table or two, before any detailed section.</li>
+{% for p in parts %}
+<li><a href="#{{ p.slug }}">{{ p.title }}</a> &mdash; {{ p.intro }}
+{% if p.entries %}<ul class="toc-sub">
+{% for it in p.entries %}
+<li>{% if it.rendered %}<a href="#sec-{{ it.slug }}">{{ it.title }}</a>{% else %}<span class="toc-skip">{{ it.title }} ({{ 'not run' if it.status == 'skipped' else it.status }})</span>{% endif %}</li>
 {% endfor %}
-</table>
-{% if family_resolution_line %}{{ family_resolution_line }}{% endif %}
-</details>
+</ul>{% endif %}
+</li>
+{% endfor %}
+<li><a href="#findings-appendix">Appendix</a> &mdash; every claim ({{ findings|length }}
+claims, grouped by stage), how to read this report, the glossary, methods, run coverage
+and the resolved configuration.</li>
+</ol>
+</nav>
+<div class="at-a-glance-wrap" id="at-a-glance">
+<h2>At a glance</h2>
+{% if bottom_line %}{{ bottom_line }}{% endif %}
+{% if at_a_glance_extra %}{{ at_a_glance_extra }}{% endif %}
+{% if at_a_glance_l0 %}{{ at_a_glance_l0 }}{% endif %}
+<p class="howto-pointer">New to this report? <a href="#how-to-read">How to read this report</a>
+states the evidence-class ladder every section below is ordered by.</p>
+</div>
 {{ alignment_provenance }}
 {% if mock_warning %}{{ mock_warning }}{% endif %}
-{% if findings %}
-<details class="findings">
+{% for p in parts %}
+<div class="part-heading" id="{{ p.slug }}">
+  <p class="part-label">{{ p.title }}</p>
+  <p class="part-intro">{{ p.intro }}</p>
+  <a class="back-to-toc" href="#toc">&uarr; contents</a>
+</div>
+{% for it in p.entries %}{% if it.rendered %}
+<section id="sec-{{ it.slug }}"{% if it.eyebrow in ('Fairness', 'L0', 'Confirm') %} class="sec-headline"{% endif %}>
+  <div class="eyebrow">{{ it.eyebrow }}</div>
+  <h2 class="sec">{{ it.title }}</h2>
+  <p class="blurb">{{ it.blurb }}</p>
+  {{ it.html }}
+</section>
+{% endif %}{% endfor %}
+{% endfor %}
+<div class="appendix" id="appendix">
+<h2>Appendix</h2>
+<details class="findings" id="findings-appendix">
 <summary><h2>Findings &mdash; {{ findings|length }} claims, grouped by stage</h2>
 <p class="findings-summary-text">The findings below are a summary — each is backed by the data,
-tables, and figures in the sections further down this report. Expand to read them.</p></summary>
+tables, and figures in the sections further up this report. Expand to read them.</p></summary>
 <div class="findings-body">
 {% for g in finding_groups %}
 <div class="fgroup-block">
@@ -8793,20 +9019,27 @@ tables, and figures in the sections further down this report. Expand to read the
 </ul>
 </div>{% endfor %}
 </div>
-</details>{% endif %}
-{% for s in sections %}
-<section id="sec-{{ s.slug }}"{% if s.eyebrow in ('Fairness', 'L0', 'Confirm') %} class="sec-headline"{% endif %}>
-  <div class="eyebrow">{{ s.eyebrow }}</div>
-  <h2 class="sec">{{ s.title }}</h2>
-  <p class="blurb">{{ s.blurb }}</p>
-  {{ s.html }}
-</section>
-{% endfor %}
+</details>
+{{ how_to_read }}
+{{ glossary_block }}
 {{ methods_appendix_block }}
 {{ failure_gallery_block }}
+<details class="coverage"{% if any_failed %} open{% endif %}>
+<summary class="{% if any_failed %}coverage-bad{% else %}coverage-ok{% endif %}">
+Run coverage — {{ coverage_summary }}</summary>
+<table class="tbl">
+<tr><th>Section</th><th>Status</th><th>Detail</th></tr>
+{% for c in coverage %}
+<tr class="cov-{{ c.status }}"><td>{{ c.eyebrow }} — {{ c.title }}</td>
+<td>{{ c.status }}</td><td>{{ c.detail }}</td></tr>
+{% endfor %}
+</table>
+{% if family_resolution_line %}{{ family_resolution_line }}{% endif %}
+</details>
 {% if config_text %}
 <details><summary>Resolved configuration</summary><pre>{{ config_text }}</pre></details>
 {% endif %}
+</div>
 <footer>generated by tsfm_lens · sections render only for stages that ran</footer>
 <script>
 // Three-position progressive disclosure. Headline hides every section but
