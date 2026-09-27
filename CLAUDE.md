@@ -458,7 +458,10 @@ in `CLAUDE_FULL.md`.
     layer and require a nonzero change;
   - predict twice with no patch at all and require identical output (§11.49).
 - **Sampled models need seeded `predict()`** whenever two calls are compared:
-  Chronos-T5 and Sundial (§11.50).
+  Chronos-T5 and Sundial (§11.50). The seed must be the *same* one the
+  compared baseline used: P5b's null reseeded with its own seed, which made
+  Sundial scorable in only 1 of 71 tests as a destination (12 after the fix;
+  ROADMAP §37.8).
 - **Match capture precision to patch precision:** autocast off for the clean
   cache (§11.49).
 - **Normalized statistics:**

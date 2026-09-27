@@ -36465,8 +36465,41 @@ Deviations from the design (all recorded in the module docstring):
     null 0.1201 vs 0.003–0.012; Sundial's own battery level null is only
     0.029–0.059. Sundial as source is hit too (level null 0.2295; clears
     14/40). Refuted first: sparse/early firing (Sundial destination features
-    fire on 0.533 of windows vs 0.31–0.32 elsewhere). Fix and re-run delegated
-    (`/tmp/tsfm_specs/p5b_seed_fix_spec.md`); counts above stand until then.
+    fire on 0.533 of windows vs 0.31–0.32 elsewhere).
+    **Fixed 2026-09-27 (merged `8a1b253`, commit `fc37ec0`).** `own_effect_null` now
+    takes `baseline_seed` (reseeds every null `predict()`) and `direction_seed`
+    (direction draws only); `_baseline_for_rows` records its seed and refuses a
+    mismatched caller. Test `test_own_null_uses_baseline_seed_for_sampled_model`
+    (mock sampled adapter) fails under the restored old seeding (`1 failed, 20
+    passed`); a deterministic-adapter test pins byte-identity. Grep of every
+    `manual_seed` site under `sae/` and `analysis/`: this was the only one.
+    Re-run of `shared_input_agreement.json` on an isolated copy, 2053.4630989320576 s:
+    - **Key check:** all 177 tests with no Sundial side are byte-identical
+      (sides, verdicts, statistics).
+    - **Verdicts (288 tests), old → new:** same causal effect 5 → 6, level only
+      15 → 15, shape only 8 → 13, no specific agreement 32 → 43, acts differently
+      9 → 12, not scorable 219 → 199. All 21 changes involve Sundial: 20 from
+      `not scorable` (5 shape only, 12 no specific agreement, 2 acts differently,
+      1 same causal effect: Sundial l.3 → Chronos-Bolt) and 1 no specific
+      agreement → acts differently.
+    - **Sundial as destination:** scorable 1 → 12 of 71, own side clears 1 → 18;
+      median null p95 level 0.1430 → 0.0236, MASE 0.1201 → 0.0143, seasonal
+      3.6558 → 0.4730 (now in line with its own battery). **As source:**
+      scorable 7 → 16 of 40, clears 14 → 35; level null 0.2295 → 0.0548.
+    - Sundial remains the least-scorable destination (12/71 vs 18–28 elsewhere):
+      a real but much smaller gap, consistent with CA-09's single-direction
+      robustness.
+    - **Concept rungs (rendered report):** 4 concepts' L5 verdict changed —
+      concepts 10 and 13 partial → not reached (each gains one `acts
+      differently`), concept 18 reached → not reached (gains one `acts
+      differently` beside its `same causal effect`), concept 11 partial →
+      reached (gains a `same causal effect`). The previous per-concept counts
+      above are superseded.
+    - `runs/full_report_run_4model`: `sae/shared_input_agreement.json`,
+      `sae/concept_stage.json` (summary block) and `report.html` replaced; the
+      old files are kept as `*.pre_seed_fix.*`. `config_resolved.yaml` and
+      `run_manifest.json` left as they were (the re-render's copies differ
+      only in scratch absolute paths and timestamps).
   - The L5 "reached" rule is lenient: 1 `same causal effect` among 12–21
     tests reaches it.
 

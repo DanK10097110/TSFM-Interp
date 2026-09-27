@@ -95,7 +95,7 @@ These instructions are binding for every future session, human or agent.
 | SH-16 | No concept is shared by all 4 models; the multi-model pattern is **convergent** effect from different inputs | 5 |
 | SH-18 | Held-out: 19/20 searched and **20/20 frozen-feature** concept-transfer claims confirm on fresh sealed private epochs | 5 |
 | SH-19 | Unit-level correspondence (CCM) NO-GO: low-rank TSFM representations defeat the rotation control | 5 |
-| CA-06 | Measured on shared series with matched floors, cross-model causal "disagreement" shrinks from 18/19 to 9/288 | 4 |
+| CA-06 | Measured on shared series with matched floors, cross-model causal "disagreement" shrinks from 18/19 to 12/288 (12 of 89 scorable) | 4 |
 | CA-03 | Seasonality circuit: TimesFM uses 1 head, Chronos-T5-Base a non-additive 5-head circuit | 5 |
 | DE-03 | Chronos-2's skip lens is a silent no-op (the head reads only forecast placeholders), so the flat curve means nothing | 5 |
 | DE-04 | Cross-model depth axes do not align: Chronos-T5's encoder is only 0.478 of its stack | 5 |
@@ -541,11 +541,16 @@ These instructions are binding for every future session, human or agent.
     finding `sae.6` reads 14 of 15 scorable pairs act differently.
   - P5b ablates both sides on the *same* series U, and each side must clear
     its own null and beat activation-matched random-feature floors.
-  - Over 288 reciprocal-FDR tests it finds: same causal effect **5**,
-    level only 15, shape only 8, **no specific agreement 32**, **acts
-    differently 9**, not scorable 219.
-- **Evidence.** Causal within-model, compared on shared inputs. **Status:** exploratory; the result reproduced bit-for-bit twice.
-- **Reproduce.** `runs/full_report_run_4model/sae/shared_input_agreement.json` (`sae/shared_input_agreement.py`).
+  - Over 288 reciprocal-FDR tests it finds: same causal effect **6**,
+    level only 15, shape only 13, **no specific agreement 43**, **acts
+    differently 12**, not scorable 199.
+  - **Correction (2026-09-27).** The first published counts were 5 / 15 / 8 /
+    32 / 9 / 219. They changed after a seeding fix to the own-effect null for
+    sampled models (Sundial). All 177 tests with no Sundial side are
+    byte-identical before and after. Of the 89 scorable tests, 12 act
+    differently. ROADMAP §37.8.
+- **Evidence.** Causal within-model, compared on shared inputs. **Status:** exploratory; corrected 2026-09-27.
+- **Reproduce.** `runs/full_report_run_4model/sae/shared_input_agreement.json` (`sae/shared_input_agreement.py`, commit `fc37ec0`; the pre-fix artifact is `shared_input_agreement.pre_seed_fix.json`).
 - **Ref.** ROADMAP §27.3 (~23844–23866), §37.8 P5b (~36309–36447).
 - **Score. 4/5.** Most of the "models act differently" headline came from comparing effects on different inputs. Hold the input fixed before comparing causal effects across models.
 
@@ -846,11 +851,12 @@ These instructions are binding for every future session, human or agent.
     up to 0.4975 (Chronos-T5-Small: 0.124).
   - As a shared-input-agreement destination, only **1 of 71** tests is
     scorable. This is unexplained.
-  - **Correction (2026-09-27).** The 1-of-71 figure is an instrument defect,
+  - **Correction (2026-09-27).** The 1-of-71 figure was an instrument defect,
     not a Sundial property. P5b's own-effect null seeded Sundial's sampled head
-    differently from its baseline, which inflated the null (level p95 0.1430
-    vs 0.029–0.059 in Sundial's own battery). The fix and re-run are pending;
-    see ROADMAP §37.8.
+    differently from its baseline, inflating the null (level p95 0.1430 vs
+    0.029–0.059 in Sundial's own battery). After the fix (merged `8a1b253`),
+    Sundial is scorable as a destination in 12/71 (null p95 0.0236), still the
+    lowest of the four destinations (others 18–28). ROADMAP §37.8.
 - **Evidence.** Descriptive / causal. **Status:** confirmed; the destination-scorability bullet is superseded (instrument defect).
 - **Reproduce.** `--check-alignment` on Sundial configs; `models/conformance.py::_seeded_predict`; `sae/shared_input_agreement.json`.
 - **Ref.** CLAUDE_FULL §11.22, §11.50; ROADMAP §37.8 (~36367).
