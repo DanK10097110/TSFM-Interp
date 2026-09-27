@@ -26,8 +26,11 @@ from tsfm_lens.sae.train import sanitize  # noqa: E402
 from tsfm_lens.utils import load_json, save_json  # noqa: E402
 from tsfm_lens.sae.concept_atlas import cluster_atlas, run_concept_atlas  # noqa: E402
 from tsfm_lens.sae.concept_families import (  # noqa: E402
-    _compose_family_sentence1, _concept_family_majority, _directed_profile,
-    _family_second_sentence, _family_title, cluster_families, load_families, run_concept_families)
+    _compose_family_sentence1, _compose_family_titles, _concept_family_majority,
+    _directed_profile, _family_second_sentence, _level_carrier_caveat, _level_carrier_title,
+    _render_effect_clauses, _tag_family_level_carrier, cluster_families, load_families,
+    run_concept_families)
+from tsfm_lens.sae.plain_text import compose_title  # noqa: E402
 
 _N_CH = len(CHANNELS)
 
@@ -47,6 +50,18 @@ def _candidate(feature: int, channel_values: dict) -> dict:
     return {"feature": feature, "scorable": True,
             "n_channels_clearing": sum(1 for v in channel_values.values() if abs(v) >= 1.0),
             "channels": channels}
+
+
+def _candidate_ls(feature: int, channel_values: dict, level_share=None,
+                  n_shape_channels_clearing: int = 0) -> dict:
+    """`_candidate` plus the P4 fields (`level_share`/`n_shape_channels_
+    clearing`) `_candidate_lookup`/`_tag_family_level_carrier` read directly
+    off the top-level candidate dict -- `_candidate` itself omits them since
+    most fixtures do not exercise the level-carrier guard."""
+    c = _candidate(feature, channel_values)
+    c["level_share"] = level_share
+    c["n_shape_channels_clearing"] = n_shape_channels_clearing
+    return c
 
 
 def _row(channel: str, value: float, rest: float = 0.0) -> dict:
@@ -164,9 +179,14 @@ def test_nearest_centroid_step_recovers_an_orphan_the_draft_clustering_drops():
     "orphan" points at cosine 0.6 to family A's direction, too few (2 <
     `min_members`) to ever form or join a draft cluster of their own, and --
     verified below -- NOT absorbed into family A's draft cluster by average
-    linkage at the chosen threshold either (`draft_labels` reads -1 for
-    both). Only step 2's nearest-centroid pass, run over EVERY row
-    regardless of draft membership, can recover them, and it does."""
+    linkage at threshold 0.65 either (`draft_labels` reads -1 for both).
+    Only step 2's nearest-centroid pass, run over EVERY row regardless of
+    draft membership, can recover them, and it does. Threshold is PINNED to
+    0.65 via a single-value `grid` rather than left to the grid-wide
+    parsimony selection (orchestrator review item 1): this test isolates one
+    mechanism at one threshold, and letting selection pick a looser
+    threshold (e.g. 0.5, where these orphans' cosine 0.6 already clears the
+    draft-merge bar) would silently change what is being tested."""
     N = _N_CH
     rng = np.random.default_rng(5)
 
@@ -193,10 +213,59 @@ def test_nearest_centroid_step_recovers_an_orphan_the_draft_clustering_drops():
         X.append(v + rng.normal(0, 0.02, N))
     X = np.array(X)
 
-    result = cluster_families(X, min_members=5, assign_min=0.5)
+    result = cluster_families(X, min_members=5, assign_min=0.5, grid=(0.65,))
     for i in orphan_idx:
         assert result["draft_labels"][i] == -1, "fixture invalid: orphan must miss the draft stage"
         assert result["labels"][i] == 0, "step 2 must recover the orphan into family A (0)"
+
+
+def test_selection_picks_fewest_families_within_tolerance_not_best_silhouette():
+    """Orchestrator review of F1, item 1 (selection-bias fix), pinned
+    directly: constructed (cos_sep=0.82, noise=0.35, seed 42) so the
+    FINEST grid cut's final-partition silhouette (3 families) is the
+    numeric best (~0.9313), but a COARSER cut (2 families, ~0.9130) sits
+    within the default `sil_tol` (0.02) of it. The parsimony rule must
+    pick the coarser, 2-family cut; a best-fit (argmax silhouette) rule
+    would instead pick the finer, 3-family one -- exactly the
+    selection-bias distinction item 1 requires. Verified empirically
+    (not hand-derived): both silhouette values and the 2-vs-3 split are
+    read off `result['grid']` itself, not asserted from a guess."""
+    N = _N_CH
+    rng = np.random.default_rng(42)
+
+    def direction(idx, mag=6.0):
+        v = np.zeros(N)
+        v[idx] = mag
+        return v
+
+    e0 = direction(0)
+    theta = np.arccos(0.82)
+    orth = np.zeros(N)
+    orth[1] = 1.0
+    e0n = e0 / np.linalg.norm(e0)
+    c2dir = np.cos(theta) * e0n + np.sin(theta) * orth
+    c2dir = c2dir / np.linalg.norm(c2dir) * 6.0
+    e3 = direction(3)
+    X = []
+    for _ in range(6):
+        X.append(e0 + rng.normal(0, 0.35, N))
+    for _ in range(6):
+        X.append(c2dir + rng.normal(0, 0.35, N))
+    for _ in range(6):
+        X.append(e3 + rng.normal(0, 0.35, N))
+    X = np.array(X)
+
+    grid = (0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9)
+    result = cluster_families(X, min_members=6, assign_min=0.5, grid=grid)
+    by_t = {g["min_cosine"]: g for g in result["grid"]}
+    assert by_t[0.9]["n_families"] == 3
+    assert by_t[0.5]["n_families"] == 2
+    best = max(g["final_silhouette"] for g in result["grid"] if g["admissible"])
+    assert by_t[0.9]["final_silhouette"] == pytest.approx(best)
+    assert by_t[0.5]["final_silhouette"] < best
+    assert best - by_t[0.5]["final_silhouette"] < 0.02, "fixture invalid: gap must be within sil_tol"
+    assert result["threshold"] == 0.5, result["threshold"]
+    assert int(result["labels"].max()) + 1 == 2
 
 
 def test_family_assign_min_regression_too_high_a_floor_excludes_the_decoy():
@@ -293,6 +362,162 @@ def test_concept_family_majority_regression_tie_break_is_smallest_id():
 
 
 # ---------------------------------------------------------------------------
+# 3b. Level-carrier guard for families (orchestrator review of F1, item 3):
+#     a family whose members' effect is indistinguishable from a level shift
+#     must not get a shape-claiming title/description from its raw channel
+#     profile, mirroring `concept_atlas.py::_tag_causal_effect`'s existing
+#     guard for tight atlas concepts.
+# ---------------------------------------------------------------------------
+
+def _cand_ls(feature: int, level_share, n_shape_channels_clearing: int = 0) -> dict:
+    return {"feature": feature, "scorable": True,
+           "level_share": level_share, "n_shape_channels_clearing": n_shape_channels_clearing}
+
+
+def test_tag_family_level_carrier_positive():
+    """5 members, all high level_share and none clearing a level-removed
+    shape channel -- must be tagged `level carrier`, with the correct
+    median."""
+    rows = [{"model": "m1", "layer": "L1", "feature": i} for i in range(5)]
+    lookup = {("m1", "L1", i): _cand_ls(i, level_share=v)
+             for i, v in enumerate([0.9, 0.95, 0.99, 0.92, 0.97])}
+    idx = np.arange(5)
+    tag = _tag_family_level_carrier(idx, rows, lookup, level_share_threshold=0.9)
+    assert tag["causal_tag"] == "level carrier"
+    assert tag["level_share_median"] == pytest.approx(0.95)
+    assert tag["n_members_shape_causal"] == 0
+
+
+def test_tag_family_level_carrier_shape_causal_wins_even_with_high_level_share():
+    """Planted regression companion: a SINGLE member clearing a level-removed
+    shape channel must flip the whole family to `shape-causal`, even though
+    every member (including that one) still has a high level_share -- the
+    precedence is "any real shape effect wins", not a vote."""
+    rows = [{"model": "m1", "layer": "L1", "feature": i} for i in range(5)]
+    lookup = {("m1", "L1", i): _cand_ls(i, level_share=0.95, n_shape_channels_clearing=(1 if i == 0 else 0))
+             for i in range(5)}
+    idx = np.arange(5)
+    tag = _tag_family_level_carrier(idx, rows, lookup, level_share_threshold=0.9)
+    assert tag["causal_tag"] == "shape-causal"
+
+
+def test_tag_family_level_carrier_regression_threshold_disabled():
+    """Planted regression: dropping `level_share_threshold` to 0.0 tags a
+    family as a level carrier regardless of its actual level_share, and
+    raising it above 1.0 makes the guard unreachable -- confirming the
+    positive test's tag is the threshold's doing, not incidental to the
+    fixture."""
+    rows = [{"model": "m1", "layer": "L1", "feature": i} for i in range(5)]
+    lookup = {("m1", "L1", i): _cand_ls(i, level_share=0.1) for i in range(5)}
+    idx = np.arange(5)
+    correct = _tag_family_level_carrier(idx, rows, lookup, level_share_threshold=0.9)
+    assert correct["causal_tag"] == "no measured effect"
+    planted_low = _tag_family_level_carrier(idx, rows, lookup, level_share_threshold=0.0)
+    assert planted_low["causal_tag"] == "level carrier"
+
+    rows_high = [{"model": "m1", "layer": "L1", "feature": i} for i in range(5, 10)]
+    lookup_high = {("m1", "L1", i): _cand_ls(i, level_share=0.99) for i in range(5, 10)}
+    idx_high = np.arange(5)
+    should_carry = _tag_family_level_carrier(idx_high, rows_high, lookup_high, level_share_threshold=0.9)
+    assert should_carry["causal_tag"] == "level carrier"
+    planted_high = _tag_family_level_carrier(idx_high, rows_high, lookup_high, level_share_threshold=1.5)
+    assert planted_high["causal_tag"] != "level carrier"
+
+
+def test_level_carrier_title_uses_level_direction_when_resolvable():
+    directed = _row_vec("level", -4.0)
+    cleared = [int(i) for i in np.argsort(-np.abs(directed)) if abs(directed[i]) >= 1.0]
+    assert _level_carrier_title(directed, cleared) == "Level lowerers"
+    directed_up = _row_vec("level", 4.0)
+    cleared_up = [int(i) for i in np.argsort(-np.abs(directed_up)) if abs(directed_up[i]) >= 1.0]
+    assert _level_carrier_title(directed_up, cleared_up) == "Level raisers"
+
+
+def test_level_carrier_title_falls_back_when_level_not_resolvable():
+    """Planted regression: when `level` itself never clears its own null
+    (a family dominated by some other channel, but still tagged a level
+    carrier via `level_share`), the fixed title must fall back to the
+    generic "Level shifters", not silently keep the other channel's name."""
+    directed = _row_vec("trend", 6.0)
+    cleared = [int(i) for i in np.argsort(-np.abs(directed)) if abs(directed[i]) >= 1.0]
+    assert _level_carrier_title(directed, cleared) == "Level shifters"
+
+
+def test_level_carrier_caveat_states_no_specific_shape():
+    text = _level_carrier_caveat(0.95, 5)
+    assert "not separable from a level shift" in text
+    assert "0.95" in text and "5" in text
+
+
+def test_level_carrier_family_gets_level_title_and_caveat_description_end_to_end(tmp_path):
+    """Full pipeline (`run_concept_atlas` -> `run_concept_families`): one
+    draft family (6 members) whose raw channel profile is dominated by
+    `horizon_shape_far` but whose UNDERLYING candidates are all high
+    level_share/no-shape-clearing must come out titled from the level
+    vocabulary with the caveat description, never "Far-horizon shapers".
+    A second, ordinary shape-causal family (dominated by `trend`, low
+    level_share, one shape-clearing member) is included as a control and
+    must NOT get the caveat text."""
+    rng = np.random.default_rng(13)
+    level_carrier_vecs = [_direction(CHANNELS.index("horizon_shape_far")) + rng.normal(0, 0.05, _N_CH)
+                         for _ in range(6)]
+    shape_causal_vecs = [_direction(CHANNELS.index("trend")) + rng.normal(0, 0.05, _N_CH)
+                        for _ in range(6)]
+    cands = (
+        [_candidate_ls(i, {ch: float(v) for ch, v in zip(CHANNELS, vec)}, level_share=0.97)
+         for i, vec in enumerate(level_carrier_vecs)]
+        + [_candidate_ls(i, {ch: float(v) for ch, v in zip(CHANNELS, vec)},
+                        level_share=0.1, n_shape_channels_clearing=1)
+          for i, vec in enumerate(shape_causal_vecs, start=6)])
+    _write_ablation(tmp_path, "m1", "L1", cands)
+    cfg = _cfg(tmp_path / "cfgdir", n_null=20, seed=2)
+
+    atlas = run_concept_atlas(tmp_path, cfg)
+    families = run_concept_families(tmp_path, atlas, cfg)
+    assert families["measured"] is True
+
+    level_fams = [f for f in families["families"] if f["causal_tag"] == "level carrier"]
+    shape_fams = [f for f in families["families"] if f["causal_tag"] == "shape-causal"]
+    assert level_fams, families["families"]
+    assert shape_fams, families["families"]
+
+    lf = level_fams[0]
+    assert lf["title"] in ("Level shifters", "Level raisers", "Level lowerers"), lf["title"]
+    assert "not separable from a level shift" in lf["description"]
+    for sf in shape_fams:
+        assert "not separable from a level shift" not in sf["description"]
+
+
+def test_level_carrier_family_regression_threshold_disabled_reverts_to_confounded_title(tmp_path):
+    """Planted regression on the SAME fixture as above: setting
+    `level_share_threshold` above 1.0 (never reachable) disables the guard,
+    so the level-carrier group must come back with its ordinary,
+    level-confounded channel title ("Far-horizon shapers") instead --
+    confirming the positive test's title is the guard's doing."""
+    rng = np.random.default_rng(13)
+    level_carrier_vecs = [_direction(CHANNELS.index("horizon_shape_far")) + rng.normal(0, 0.05, _N_CH)
+                         for _ in range(6)]
+    shape_causal_vecs = [_direction(CHANNELS.index("trend")) + rng.normal(0, 0.05, _N_CH)
+                        for _ in range(6)]
+    cands = (
+        [_candidate_ls(i, {ch: float(v) for ch, v in zip(CHANNELS, vec)}, level_share=0.97)
+         for i, vec in enumerate(level_carrier_vecs)]
+        + [_candidate_ls(i, {ch: float(v) for ch, v in zip(CHANNELS, vec)},
+                        level_share=0.1, n_shape_channels_clearing=1)
+          for i, vec in enumerate(shape_causal_vecs, start=6)])
+    _write_ablation(tmp_path, "m1", "L1", cands)
+    cfg = _cfg(tmp_path / "cfgdir", n_null=20, seed=2)
+    cfg.concepts.level_share_threshold = 1.5
+
+    atlas = run_concept_atlas(tmp_path, cfg)
+    families = run_concept_families(tmp_path, atlas, cfg)
+    level_fams = [f for f in families["families"] if f["causal_tag"] == "level carrier"]
+    assert not level_fams, families["families"]
+    titles = {f["title"] for f in families["families"]}
+    assert "Far-horizon shapers" in titles, titles
+
+
+# ---------------------------------------------------------------------------
 # 4. Sign convention: titles/descriptions state what the FEATURE DOES, the
 #    negative of the recorded (ablation) signed_effect.
 # ---------------------------------------------------------------------------
@@ -305,7 +530,7 @@ def test_sign_convention_ablating_lowers_seasonal_means_feature_raises_it():
     mean_profile = _row_vec("seasonal", -6.0)
     directed = _directed_profile(mean_profile)
     cleared = [int(i) for i in np.argsort(-np.abs(directed)) if abs(directed[i]) >= 1.0]
-    title = _family_title(directed, cleared, set())
+    title = _compose_family_titles([{"directed_vec": directed, "cleared": cleared, "fires_on": None}])[0]
     assert title == "Seasonality amplifiers", title
     s1 = _compose_family_sentence1([directed], [cleared])[0]
     desc = f"{s1} {_family_second_sentence({'m1': 1}, None)}"
@@ -322,21 +547,124 @@ def test_sign_convention_planted_flip_is_caught():
     mean_profile = _row_vec("seasonal", -6.0)
     unnegated = mean_profile  # the planted bug: no `_directed_profile` call
     cleared = [int(i) for i in np.argsort(-np.abs(unnegated)) if abs(unnegated[i]) >= 1.0]
-    title = _family_title(unnegated, cleared, set())
+    title = _compose_family_titles([{"directed_vec": unnegated, "cleared": cleared, "fires_on": None}])[0]
     assert title == "Seasonality dampeners", title
     assert title != "Seasonality amplifiers"
 
 
 def test_title_uniqueness_within_a_run():
+    """Three families with IDENTICAL profiles (same top channel, nothing
+    else cleared, no fires-on data) give the channel-escalation and
+    fires-on stages nothing to differentiate on -- this is exactly the
+    Roman-numeral last-resort case (orchestrator review item 2), and must
+    still resolve to 3 distinct titles."""
     directed = _row_vec("trend", 6.0)
     cleared = [int(i) for i in np.argsort(-np.abs(directed)) if abs(directed[i]) >= 1.0]
-    used: set = set()
-    t1 = _family_title(directed, cleared, used)
-    t2 = _family_title(directed, cleared, used)
-    t3 = _family_title(directed, cleared, used)
+    prepared = [{"directed_vec": directed, "cleared": cleared, "fires_on": None} for _ in range(3)]
+    t1, t2, t3 = _compose_family_titles(prepared)
     assert len({t1, t2, t3}) == 3, (t1, t2, t3)
     assert t1 == "Trend boosters"
     assert t2.startswith("Trend boosters ")
+
+
+def test_title_disambiguates_via_second_channel_not_roman_numeral():
+    """Orchestrator review of F1, item 2: two families dominated by the SAME
+    top channel (`horizon_shape_near`) but differing on their
+    second-strongest cleared channel must get DISTINCT titles built from
+    that second channel, never a Roman-numeral suffix."""
+    a = _row_vec("horizon_shape_near", 6.0)
+    a[list(CHANNELS).index("level")] = -3.0
+    b = _row_vec("horizon_shape_near", 6.0)
+    b[list(CHANNELS).index("dispersion")] = 3.0
+    cleared_a = [int(i) for i in np.argsort(-np.abs(a)) if abs(a[i]) >= 1.0]
+    cleared_b = [int(i) for i in np.argsort(-np.abs(b)) if abs(b[i]) >= 1.0]
+    prepared = [{"directed_vec": a, "cleared": cleared_a, "fires_on": None},
+               {"directed_vec": b, "cleared": cleared_b, "fires_on": None}]
+    t1, t2 = _compose_family_titles(prepared)
+    assert t1 != t2, (t1, t2)
+    for t in (t1, t2):
+        assert not any(t.endswith(f" {suf}") for suf in ("II", "III", "IV", "V")), t
+    assert "Level lowerers" in t1
+    assert "Volatility amplifiers" in t2
+
+
+def test_title_disambiguation_regression_roman_numeral_alone_would_not_differentiate():
+    """Planted-regression companion: the OLD single-family composer
+    (`plain_text.compose_title`, still used by `concepts.py::plain_name` for
+    tight concepts) can only tell the two families above apart with an
+    arbitrary Roman-numeral suffix -- confirming the channel-based
+    disambiguation above is not vacuously true (a numeral WOULD "work" too,
+    it would just say nothing about why the two families differ)."""
+    a = _row_vec("horizon_shape_near", 6.0)
+    a[list(CHANNELS).index("level")] = -3.0
+    b = _row_vec("horizon_shape_near", 6.0)
+    b[list(CHANNELS).index("dispersion")] = 3.0
+    cleared_a = [int(i) for i in np.argsort(-np.abs(a)) if abs(a[i]) >= 1.0]
+    cleared_b = [int(i) for i in np.argsort(-np.abs(b)) if abs(b[i]) >= 1.0]
+    used: set = set()
+    t1 = compose_title(a, cleared_a, used)
+    t2 = compose_title(b, cleared_b, used)
+    assert t1 == "Near-horizon shapers"
+    assert t2 == "Near-horizon shapers II"
+
+
+def test_horizon_shape_clause_states_amount_not_direction():
+    """Orchestrator review item 4b: `horizon_shape_near`/`_far`'s sign
+    cannot support an up/down claim (`_horizon_shape` takes `abs()` per step
+    before averaging, response.py) -- the description must read as an
+    AMOUNT of reshaping, never a directional bend."""
+    directed = _row_vec("horizon_shape_near", 6.0)
+    cleared = [list(CHANNELS).index("horizon_shape_near")]
+    text = _render_effect_clauses(directed, cleared)
+    assert "increase how much" in text
+    for word in ("upward", "downward", "bend", "bends"):
+        assert word not in text, text
+
+
+def test_horizon_shape_clause_negative_direction_says_decrease():
+    directed = _row_vec("horizon_shape_far", -6.0)
+    cleared = [list(CHANNELS).index("horizon_shape_far")]
+    text = _render_effect_clauses(directed, cleared)
+    assert "decrease how much" in text
+
+
+def test_spectral_centroid_clause_is_directional_higher_or_lower_frequency():
+    """Orchestrator review item 4b: unlike horizon_shape, `spectral_centroid`
+    carries a real, recoverable sign (no `abs()` in `_spectral_centroid`),
+    so its clause DOES get a directional claim."""
+    directed_up = _row_vec("spectral_centroid", 6.0)
+    cleared = [list(CHANNELS).index("spectral_centroid")]
+    text_up = _render_effect_clauses(directed_up, cleared)
+    assert "higher frequencies" in text_up
+
+    directed_down = _row_vec("spectral_centroid", -6.0)
+    text_down = _render_effect_clauses(directed_down, cleared)
+    assert "lower frequencies" in text_down
+
+
+def test_second_sentence_found_only_in_one_model():
+    s = _family_second_sentence({"TimesFM": 3}, None)
+    assert s == "Found only in TimesFM."
+
+
+def test_second_sentence_found_in_multiple_models_and_plain_generator_label():
+    """Orchestrator review item 4a/4c: "Its features come from N model(s)"
+    reads as hedged; "Found in N models (...)" states it plainly, and the
+    fires-on clause maps a raw generator name through the plain-label
+    vocabulary rather than printing it verbatim."""
+    s = _family_second_sentence({"TimesFM": 2, "Chronos-2": 1},
+                                [{"label": "ar_colored_noise", "count": 2}])
+    assert s.startswith("Found in 2 models (Chronos-2, TimesFM)."), s
+    assert "noisy autocorrelated series" in s
+    assert "ar_colored_noise" not in s
+
+
+def test_second_sentence_regression_unmapped_generator_falls_back_to_raw_name():
+    """Planted-regression companion: a generator name with no plain-label
+    entry must still render (fallback to the raw name), not raise or vanish
+    -- CLAUDE.md sec 8's "degrade with a stated fallback"."""
+    s = _family_second_sentence({"TimesFM": 1}, [{"label": "some_future_generator", "count": 1}])
+    assert "some_future_generator" in s
 
 
 def test_sentence1_shortest_unique_prefix_disambiguates_shared_top2():
@@ -423,7 +751,10 @@ def test_run_concept_families_end_to_end_writes_artifact_and_keeps_atlas_byte_id
     for fam in families["families"]:
         assert fam["title"]
         assert fam["description"]
-        assert 2 <= len(fam["title"].split()) <= 6, fam["title"]
+        # A combined ("X & Y") or fires-on-qualified ("X & Y (source)")
+        # title can run longer than a single channel's 2-3 words (item 2);
+        # bounded loosely just to catch a runaway/garbled composition.
+        assert 2 <= len(fam["title"].split()) <= 12, fam["title"]
 
     loaded = load_families(tmp_path)
     assert loaded == families["families"]
@@ -450,6 +781,7 @@ def test_new_family_fields_do_not_move_the_concepts_fingerprint(tmp_path):
     before = fingerprint_stage(resolve_config_keys(cfg, ("concepts",)), {})
     cfg.concepts.atlas_family_min_members = 9
     cfg.concepts.atlas_family_assign_min = 0.2
+    cfg.concepts.atlas_family_sil_tol = 0.5
     after = fingerprint_stage(resolve_config_keys(cfg, ("concepts",)), {})
     assert before == after
 

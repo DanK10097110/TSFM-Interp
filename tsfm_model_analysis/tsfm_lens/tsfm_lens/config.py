@@ -832,6 +832,24 @@ class ConceptsConfig:
     atlas_family_min_members: int = field(default=5, metadata={"stage_input": False})
     atlas_family_assign_min: float = field(default=0.5, metadata={"stage_input": False})
 
+    # Orchestrator review of F1 (ROADMAP.md sec 37): the grid's silhouette was
+    # first scored on each threshold's KEPT DRAFT members only, which rewards
+    # the tightest cut by construction (fewer, better-separated survivors) --
+    # measured on runs/full_report_run_4model, kept members fall from 194 at
+    # 0.5 to 86 at 0.85 while draft silhouette keeps climbing, so the sweep
+    # always picked the loneliest, most over-split threshold (0.85, 14
+    # families). Scored on the FINAL partition instead (every row the
+    # nearest-centroid step actually assigns), the real silhouette is flat
+    # (~0.31-0.34) across the whole grid: the ablation-feature space is a
+    # continuum, not a set of well-separated clusters, so there is no
+    # "correct" k to recover -- the honest choice is the COARSEST one that
+    # does not cost real separation. `atlas_family_sil_tol` is that slack:
+    # among admissible thresholds, keep the fewest families whose final
+    # silhouette is within this much of the best. `stage_input: False` for
+    # the same reason as the two fields above (same reader, same cheap CPU
+    # recompute over already-fingerprinted files).
+    atlas_family_sil_tol: float = field(default=0.02, metadata={"stage_input": False})
+
     # ROADMAP.md sec 37 P2 -- seed stability of atlas concepts, and the
     # within-model transfer ceiling. Is an atlas concept a property of the
     # model, or of one SAE draw? For each already-trained target, this many

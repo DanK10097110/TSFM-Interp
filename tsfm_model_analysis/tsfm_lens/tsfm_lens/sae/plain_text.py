@@ -30,7 +30,9 @@ from .describe import CHANNEL_VERB
 from .response import CHANNELS
 
 __all__ = ["CLEAR_UNITS", "TITLE_NOUN", "FALLBACK_TITLE", "TITLE_SUFFIXES",
-          "directed_profile", "cleared_ranked", "direction_word", "compose_title"]
+          "LEVEL_CARRIER_TITLE", "GENERATOR_PLAIN_LABELS",
+          "directed_profile", "cleared_ranked", "direction_word", "compose_title",
+          "plain_generator_label"]
 
 CLEAR_UNITS = 1.0  # same "cleared its own null" cut concepts.py/concept_atlas.py use.
 
@@ -58,6 +60,52 @@ TITLE_NOUN = {
 }
 FALLBACK_TITLE = "Mixed-effect features"
 TITLE_SUFFIXES = ("II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X")
+
+# ROADMAP.md sec 37.7 P4's level-carrier guard, extended to families
+# (orchestrator review of F1): a group whose members' effect is
+# indistinguishable from a level shift (median `level_share` at/above
+# `concepts.level_share_threshold`, and no member clears a level-removed
+# shape channel) must not be titled from its raw, level-confounded channel
+# profile -- exactly the failure mode `concept_atlas.py::_name_concepts`
+# already guards tight atlas concepts against. This is the fallback title
+# when the family's own `level` channel does not itself clear its null in a
+# resolvable direction (`compose_title` still prefers "Level raisers"/"Level
+# lowerers" when the `level` channel's OWN sign is resolvable -- level_share
+# says how MUCH of the effect is level, not which way).
+LEVEL_CARRIER_TITLE = "Level shifters"
+
+# Plain-English labels for the generator/archetype names
+# `sae/concept_profiles.json`'s per-part hypergeometric enrichment reports
+# (`input_profile.enrichment[0]["label"]`, the bare `generator_*`/`archetype_*`
+# name with its prefix stripped -- see `describe.py::FIELD_GLOSS` for the
+# prefixed canonical list this mirrors). An unmapped name falls back to
+# itself (`plain_generator_label`) rather than guessing a phrase (CLAUDE.md
+# sec 8: degrade with a stated fallback).
+GENERATOR_PLAIN_LABELS = {
+    "parametric": "synthetic parametric series (trend, seasonality and noise, exact ground truth)",
+    "random_parametric": "synthetic randomized-recipe series",
+    "mixture": "real weather/ETT-derived mixtures",
+    "block_bootstrap": "resampled real weather series",
+    "sequential_par": "sequential-PAR real-derived series",
+    "trend_dominant": "strongly trending series",
+    "seasonal_dominant": "strongly seasonal series",
+    "multi_seasonal_complex": "series with several overlapping seasonal cycles",
+    "regime_switching": "series with regime changes",
+    "ar_colored_noise": "noisy autocorrelated series",
+    "anomaly_heavy": "series with frequent anomalies",
+    "clean_low_noise": "clean, low-noise series",
+    "noisy_chaotic": "noisy, chaotic series",
+    "random_walk_drift": "random-walk-with-drift series",
+    "intermittent_bursts": "intermittent/bursty series",
+    "amplitude_modulated": "amplitude-modulated series",
+    "nonsinusoidal_seasonal": "non-sinusoidal seasonal series",
+}
+
+
+def plain_generator_label(name: str) -> str:
+    """Plain-English label for a bare generator/archetype name, falling back
+    to `name` itself when unmapped."""
+    return GENERATOR_PLAIN_LABELS.get(name, name)
 
 
 def directed_profile(mean_profile_vec) -> np.ndarray:

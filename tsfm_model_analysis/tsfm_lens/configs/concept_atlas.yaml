@@ -260,3 +260,8 @@ concepts:
   # default to see what this preset runs with.
   atlas_family_min_members: 5
   atlas_family_assign_min: 0.5
+  # Fewest families whose FINAL-PARTITION silhouette (every assigned row,
+  # cosine) is within this much of the grid's best -- the family space is a
+  # continuum (flat ~0.31-0.34 silhouette across the whole grid), so this is
+  # slack for picking the coarsest defensible cut, not a significance test.
+  atlas_family_sil_tol: 0.02
