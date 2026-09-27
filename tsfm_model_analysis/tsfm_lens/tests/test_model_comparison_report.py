@@ -389,7 +389,7 @@ def test_solo_run_is_skipped_with_a_reason(tmp_path):
     `at_a_glance_block` and `concept_section_block`; both must independently
     honor the same solo-run guard (they render/skip together)."""
     cfg = _cfg(tmp_path, ["A"])
-    for fn in (mc.at_a_glance_block, mc.concept_section_block):
+    for fn in (mc.at_a_glance_block, mc.concept_section_block, mc.similarity_section_block):
         html, status, detail = fn(cfg, tmp_path / "run", [])
         assert html == ""
         assert status == "skipped"
@@ -407,9 +407,15 @@ def test_two_model_run_renders_one_pair_and_w_not_computed(tmp_path, monkeypatch
     assert status == "rendered"
     assert "A / B" in html or "A/B" in html
     assert "not computed" in html
+    # ROADMAP.md sec 37 R2: the pair-similarity evidence (the "A / B" rank
+    # table/figures) moved out of "Concepts" into its own "Similarity"
+    # section (Part 4) -- `concept_section_block` no longer renders it.
+    html3, status3, _ = mc.similarity_section_block(cfg, run_dir, [])
+    assert status3 == "rendered"
+    assert "A / B" in html3 or "A/B" in html3
     html2, status2, _ = mc.concept_section_block(cfg, run_dir, [])
     assert status2 == "rendered"
-    assert "A / B" in html2 or "A/B" in html2
+    assert "A / B" not in html2 and "A/B" not in html2
 
 
 # ---------------------------------------------------------------------------
