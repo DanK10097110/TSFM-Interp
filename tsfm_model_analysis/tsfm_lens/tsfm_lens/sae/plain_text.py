@@ -26,13 +26,13 @@ from __future__ import annotations
 
 import numpy as np
 
-from .describe import CHANNEL_VERB
+from .describe import CHANNEL_GLOSS, CHANNEL_VERB
 from .response import CHANNELS
 
 __all__ = ["CLEAR_UNITS", "TITLE_NOUN", "FALLBACK_TITLE", "TITLE_SUFFIXES",
           "LEVEL_CARRIER_TITLE", "GENERATOR_PLAIN_LABELS",
           "directed_profile", "cleared_ranked", "direction_word", "compose_title",
-          "plain_generator_label"]
+          "plain_generator_label", "axis_channel_label"]
 
 CLEAR_UNITS = 1.0  # same "cleared its own null" cut concepts.py/concept_atlas.py use.
 
@@ -106,6 +106,25 @@ def plain_generator_label(name: str) -> str:
     """Plain-English label for a bare generator/archetype name, falling back
     to `name` itself when unmapped."""
     return GENERATOR_PLAIN_LABELS.get(name, name)
+
+
+def axis_channel_label(channel: str) -> str:
+    """Short, plain axis/legend/chip label for one ablation channel (ROADMAP.md
+    sec 37 R2), DERIVED from `describe.py::CHANNEL_GLOSS` -- never a second,
+    independently hand-maintained vocabulary for the same nine channels
+    (`CLAUDE.md` sec 11.53's "two hand-maintained lists" defect shape).
+    `CHANNEL_GLOSS` gives a full clause ("the forecast's trend slope"); this
+    strips the leading "the forecast's "/"the " so the result reads as a
+    short axis tick or table header rather than a sentence fragment. Falls
+    back to the raw key only for a channel `CHANNEL_GLOSS` does not cover
+    (never expected in practice: every entry in `response.py::CHANNELS` has
+    a `CHANNEL_GLOSS` entry, asserted at import time by `describe.py`)."""
+    text = CHANNEL_GLOSS.get(channel, channel)
+    for prefix in ("the forecast's ", "the "):
+        if text.startswith(prefix):
+            text = text[len(prefix):]
+            break
+    return (text[:1].upper() + text[1:]) if text else channel
 
 
 def directed_profile(mean_profile_vec) -> np.ndarray:

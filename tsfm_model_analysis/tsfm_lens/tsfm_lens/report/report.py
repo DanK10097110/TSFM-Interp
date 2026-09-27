@@ -139,8 +139,10 @@ REPORT_PARTS = [
      ["Screen", "Profile", "Lens"]),
     ("Part 4 — Do the models represent things the same way?",
      "Representational geometry and linear stitching between every model "
-     "pair, and how each model clusters the benchmark on its own.",
-     ["L1", "L2", "L4"]),
+     "pair, how each model clusters the benchmark on its own, and how "
+     "similar every model pair is across every metric this pipeline "
+     "measures independently of the concept atlas below.",
+     ["L1", "L2", "L4", "Similarity"]),
     ("Part 5 — What causally drives the forecast",
      "Corruption sensitivity and within-model activation patching, "
      "attention structure and head/MLP causality, and the seasonality "
@@ -254,6 +256,12 @@ def run_report(cfg: PipelineConfig) -> Path:
          ["clustering/embedding.parquet", "clustering/clusters.json",
           "clustering/comparison.json"], "clustering",
          lambda: _sec_clusters(run_dir, model_colors, findings)),
+        ("Similarity", "Pair similarity across metrics",
+         "Every representation/behavioral/SAE similarity metric this pipeline computes, "
+         "one row per metric, one dot per model pair (ROADMAP.md sec 37 R2) -- moved here "
+         "from \"Concepts\" because it is not about concepts.",
+         [], "concepts",
+         lambda: _sec_similarity(cfg, run_dir, findings)),
         ("L3", "Perturbation & patching",
          "Where each model's depth reacts to structured corruptions, and where clean activations causally restore corrupted forecasts.",
          ["l3/sensitivity.npz", "l3/meta.json"], "l3",
@@ -6567,11 +6575,33 @@ def _sec_sae(cfg: PipelineConfig, run_dir: Path, findings: list) -> str:
     return inner
 
 
+def _sec_similarity(cfg: PipelineConfig, run_dir: Path, findings: list) -> tuple:
+    """`-> (html, status, detail)` for "Pair similarity across metrics"
+    (ROADMAP.md sec 37 R2, Part 4), a thin wrapper around
+    `model_comparison.similarity_section_block` -- moved out of "Concepts"
+    because it is not about concepts (module docstring there)."""
+    return model_comparison.similarity_section_block(cfg, run_dir, findings)
+
+
 def _sec_concepts(cfg: PipelineConfig, run_dir: Path, findings: list) -> tuple:
     """`-> (html, status, detail)` for the "Concepts" report section
-    (report structure spec R1, CLAUDE.md sec 6.7), rendered directly after
-    "SAE" (Part 6): the CONCEPT-level content that used to live at the
-    bottom of the SAE section or at the very top of the whole report --
+    (report structure spec R2, CLAUDE.md sec 6.7/ROADMAP.md sec 37), rendered
+    directly after "SAE" (Part 6).
+
+    ROADMAP.md sec 37 R2 redesigned this section around F1's concept
+    FAMILIES (`sae/concept_families.py`) -- a coarser, plain-language layer
+    above the atlas's own tight concepts. A run with concept families
+    measured (`sae/concept_families.json`, `measured: true`) gets
+    `concept_family_view.family_concepts_block`'s family-centric layout
+    (lead paragraph, card grid, family x model matrix, family effect
+    heatmap, one concept map, per-family drill-down, a compact "what is
+    unique" block, and two collapsed appendices: "Statistical detail" and
+    "Earlier concept units" -- which folds in, still collapsed, the
+    previously-separate blocks below).
+
+    A run WITHOUT concept families falls back to the PRE-R2 layout
+    (unchanged, CLAUDE.md sec 2.5's "degrade with a stated reason"), built
+    from the same three pieces this section always had:
 
       - `sae_concepts.py::sae_concepts_block` -- per-target ablation-space
         clustering (universality, concept cards, causally interesting
@@ -6580,24 +6610,35 @@ def _sec_concepts(cfg: PipelineConfig, run_dir: Path, findings: list) -> tuple:
         (co-firing, not causal-effect) cross-model role comparison, kept
         renderable but collapsed exactly as it was inside `_sec_sae`
         (`sae/roles_injection.json`'s own `superseded_by: concepts.json`);
-      - `model_comparison.concept_section_block` -- the full cross-model
-        atlas evidence (pair-similarity figures, the sharing map and concept
-        cards, the per-model unique blocks, the verdict table) that used to
-        render as its own "Compare" section above the Scorecard. Its compact
-        answer boxes render earlier, in "At a glance"
-        (`model_comparison.at_a_glance_block`).
+      - `model_comparison.concept_section_block` -- the sharing map and
+        concept cards, the per-model unique blocks, and the verdict table
+        (pair-similarity evidence moved to its own "Similarity" section,
+        Part 4, in both layouts -- R2 also moved it out of THIS section).
 
-    Each of the three degrades independently and the section as a whole is
-    "rendered" if ANY of them produced content, "skipped" (with the
+    Each of the three degrades independently and the fallback section as a
+    whole is "rendered" if ANY of them produced content, "skipped" (with the
     comparison half's own reason) only if all three are empty -- the same
     per-half degrade discipline `concept_section_block` documents for itself
     (CLAUDE.md sec 2.5).
     """
+    from . import concept_family_view
     from .sae_concepts import sae_concepts_block
+
+    model_names = [m.name for m in cfg.models]
+    family_html, family_status, family_detail = concept_family_view.family_concepts_block(
+        cfg, run_dir, findings)
+    if family_status == "rendered":
+        return family_html, "rendered", ""
+
+    fallback_note = ""
+    if family_status == "skipped" and "concept families not measured" in family_detail:
+        fallback_note = (
+            "<p class='blurb'><b>Concept families not computed for this run</b> "
+            "(rerun the concepts stage) -- showing the earlier, per-target/atlas layout "
+            f"below instead. ({family_detail}.)</p>")
 
     ablation_df = derived.ablation_panel_table(run_dir)
     flatness_population = derived.flatness_population(ablation_df)
-    model_names = [m.name for m in cfg.models]
     sae_concepts_html = sae_concepts_block(cfg, run_dir, findings, model_names,
                                            population=flatness_population)
     # ROADMAP.md sec 37 Spec C item F: matched by CO-FIRING, not by the
@@ -6613,7 +6654,7 @@ def _sec_concepts(cfg: PipelineConfig, run_dir: Path, findings: list) -> tuple:
     html = "".join(part for part in (compare_html, sae_concepts_html, superseded_roles) if part)
     if not html:
         return "", "skipped", (cmp_detail or "no concept artifacts for this run")
-    return html, "rendered", ""
+    return fallback_note + html, "rendered", ""
 
 
 
@@ -8928,6 +8969,24 @@ footer{color:var(--muted);font:12px var(--mono);margin-top:14px}
 .compare-box{flex:1 1 260px;background:rgba(46,110,142,.04);border:1px solid var(--line);
   border-radius:6px;padding:14px 16px}
 .compare-box h5{margin:0 0 6px;font:600 12.5px var(--mono);color:var(--accent)}
+.family-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+  gap:16px;margin:10px 0 22px}
+.family-card{background:var(--panel);border:1px solid var(--line);border-radius:8px;
+  padding:16px 18px;display:flex;flex-direction:column;gap:8px}
+.family-card h5{margin:0;font:600 16px var(--sans);color:var(--ink)}
+.family-card .fc-desc{margin:0;font-size:13px;color:var(--muted)}
+.family-card .fc-chips{display:flex;flex-wrap:wrap;gap:6px}
+.family-card .fc-badges{display:flex;flex-wrap:wrap;gap:6px}
+.fc-badge{display:inline-block;font:600 11px var(--mono);letter-spacing:.03em;
+  padding:2px 9px;border-radius:999px;border:1px solid var(--accent);color:var(--accent)}
+.fc-badge.fc-level{border-color:#8A6D3B;color:#8A6D3B}
+.fc-effectbar{display:flex;flex-direction:column;gap:3px;font:11px var(--mono);margin-top:4px}
+.fc-effectrow{display:flex;align-items:center;gap:6px}
+.fc-effectlabel{flex:0 0 140px;color:var(--muted);text-align:right;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fc-effecttrack{flex:1;height:8px;background:var(--line);border-radius:4px;position:relative}
+.fc-effectfill{position:absolute;top:0;bottom:0;border-radius:4px}
+.fc-effectval{flex:0 0 42px;color:var(--muted)}
 p.figcap{margin:-4px 0 4px;padding:0 2px;font-size:13px;line-height:1.5;
   color:var(--ink);max-width:82ch}
 details.note{margin:2px 0 18px;border:1px solid var(--line);border-radius:6px;

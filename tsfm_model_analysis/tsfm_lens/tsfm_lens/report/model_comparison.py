@@ -40,24 +40,33 @@ behavioral); this module invents no new statistic and reduces no artifact's
 own arithmetic a second, possibly-diverging way.
 
 Report-structure spec R1 (CLAUDE.md sec 6.7): the single `model_comparison_
-block` this module used to expose is split into two public entry points that
-`report.py` renders in two different places --
+block` this module used to expose is split into three public entry points
+that `report.py` renders in three different places --
 
   - `at_a_glance_block` -- the three answer boxes (text only, no figures)
     plus the pair-similarity rank table, rendered in the fixed "At a glance"
     slot right after the header, alongside the Scorecard;
-  - `concept_section_block` -- everything else (the full similarity
-    evidence with its figures, the sharing map and concept cards, the
-    per-model unique blocks, and the verdict table), rendered as the
-    "Concepts" report SECTION, placed directly after "SAE" in Part 6.
+  - `similarity_section_block` -- the full pair-similarity evidence (figures,
+    rank table, contrasts, per-metric heatmaps) that used to open
+    `concept_section_block` -- ROADMAP.md sec 37 R2 moved it out of
+    "Concepts" entirely (it is not about concepts) into its own "Pair
+    similarity across metrics" report SECTION in Part 4 ("Do the models
+    represent things the same way?"), directly after L1/L2/L4;
+  - `concept_section_block` -- the sharing map and concept cards, the
+    per-model unique blocks, and the verdict table, rendered as the
+    "Concepts" report SECTION, placed directly after "SAE" in Part 6. This
+    is also the FALLBACK layout `report.py::_sec_concepts` renders when a
+    run has no `sae/concept_families.json` (families not computed): the
+    family-centric layout (`report/concept_family_view.py`) supersedes this
+    function's own sharing map/concept cards for a run that has one.
 
-Both read the same two source artifacts and degrade identically (same solo-
-run guard, same missing-both-artifacts guard), since a reader should never
-see the compact answer boxes promise evidence that the detailed section
-below then says was never measured. `at_a_glance_block` is responsible for
+All three read the same two source artifacts and degrade identically (same
+solo-run guard, same missing-artifact guard), since a reader should never
+see the compact answer boxes promise evidence that a detailed section below
+then says was never measured. `at_a_glance_block` is responsible for
 writing `report/model_similarity.json` (via `write_model_similarity`);
-`concept_section_block` only reads it back, since it always renders later
-in the same `run_report` call.
+`similarity_section_block` and `concept_section_block` only read it back,
+since both always render later in the same `run_report` call.
 """
 
 from __future__ import annotations
@@ -76,7 +85,7 @@ from plotly.subplots import make_subplots
 from . import derived
 from .derived import load_json_or_none as _load_json_or_none
 
-__all__ = ["at_a_glance_block", "concept_section_block"]
+__all__ = ["at_a_glance_block", "similarity_section_block", "concept_section_block"]
 
 _CELL_COLORS = {
     "absent": "#E2E6E1", "agreeing": "#2E7D4F",
@@ -663,6 +672,12 @@ def _sharing_map_figure(verdicts: list, profiles: dict, model_names: list):
 
 
 def _effect_profile_figure(concept: dict):
+    """ROADMAP.md sec 37 R2: the x-axis is the channel's PLAIN label
+    (`sae/plain_text.py::axis_channel_label`), never the raw key -- the raw
+    key still appears, but only in the hover's secondary line, per the
+    section's own plain-language rule."""
+    from ..sae.plain_text import axis_channel_label
+
     parts = concept.get("parts") or []
     fig = go.Figure()
     for p in parts:
@@ -671,8 +686,11 @@ def _effect_profile_figure(concept: dict):
         if not mp:
             continue
         channels = list(mp.keys())
-        fig.add_trace(go.Bar(x=channels, y=[mp[c] for c in channels],
-                             name=f"{p['model']}/{p['layer']}"))
+        plain = [axis_channel_label(c) for c in channels]
+        fig.add_trace(go.Bar(
+            x=plain, y=[mp[c] for c in channels], name=f"{p['model']}/{p['layer']}",
+            customdata=channels,
+            hovertemplate="%{x}: %{y:+.3f}x null<br>internal channel key: %{customdata}<extra></extra>"))
     fig.add_hline(y=1.0, line=dict(color="#8A6D3B", dash="dot"))
     fig.add_hline(y=-1.0, line=dict(color="#8A6D3B", dash="dot"))
     fig.update_layout(barmode="group", yaxis_title="signed effect (x null p95)")
@@ -758,7 +776,15 @@ def _fires(ip: dict) -> str:
     return f"{_e(gen)} ({comp.get('dominant_generator_share', 0):.0%})" if gen else "provenance rho"
 
 
-def _concept_card(v: dict, concept: dict, verdict_row: dict, model_names: list) -> str:
+def _concept_card(v: dict, concept: dict, verdict_row: dict, model_names: list,
+                  plain_title: Optional[str] = None) -> str:
+    """`plain_title` (ROADMAP.md sec 37 R2): when given, used as the card's
+    heading INSTEAD of the atlas's own raw machine `name` (e.g. "strong
+    raises horizon_shape_near . ..."), with the machine name demoted to a
+    small "internal name" line inside the body -- the raw name is always
+    printed somewhere in the card (so nothing here changes what a caller can
+    grep for), just never as the primary heading once a plain title is
+    available (`report/concept_family_view.py`'s per-family drill-down)."""
     from .report import _details, _figcap, _frag
 
     fig = _effect_profile_figure(concept)
@@ -780,8 +806,12 @@ def _concept_card(v: dict, concept: dict, verdict_row: dict, model_names: list) 
            f"({_e(rungs[4]['detail'])}). L5 same causal effect on the same inputs: {rungs[5]['status']} "
            f"({_e(rungs[5]['detail'])}). L6: {rungs[6]['detail']}.")
     body += f"<p class='sc-note'>How sure: {sure}</p>"
-    summary = (f"{_e(v['name'] or v['concept'])} — {_e(v['verdict'])} "
-              f"({', '.join(_concept_models(concept))})")
+    raw_name = v['name'] or f"concept {v['concept']}"
+    heading = _e(plain_title) if plain_title else _e(raw_name)
+    if plain_title:
+        body = (f"<p class='sc-note'>internal name: {_e(raw_name)} "
+                f"(concept {v['concept']})</p>") + body
+    summary = f"{heading} — {_e(v['verdict'])} ({', '.join(_concept_models(concept))})"
     return _details(summary, body)
 
 
@@ -849,17 +879,19 @@ def _why_panel(part: dict, model_names: list):
 
 
 def _unique_model_block(model: str, items: list, model_names: list, l0: Optional[pd.DataFrame],
-                        profiles: dict) -> str:
+                        profiles: dict, plain_titles: Optional[dict] = None) -> str:
     from .report import _details, _figcap, _frag, _table
 
+    plain_titles = plain_titles or {}
     out = f"<h5>{_e(model)} -- {_count_phrase(items)}</h5>"
     for v, c, _rep in items:
-        out += _concept_card(v, c, v, model_names)
+        title = plain_titles.get(v["concept"])
+        out += _concept_card(v, c, v, model_names, plain_title=title)
         part = (c.get("parts") or [{}])[0]
         fig = _why_panel(part, model_names)
         if fig is not None:
             out += _frag(fig, height=max(180, 40 * len((part.get("behavioral_link") or {}).get("vs_models", {}) or {}) + 80))
-            out += _figcap(f"Why panel for '{_e(v['name'] or v['concept'])}': behavioral gap on this "
+            out += _figcap(f"Why panel for '{_e(title or v['name'] or v['concept'])}': behavioral gap on this "
                           f"concept's own top-firing series vs. each other model, beside its own "
                           f"ablation MASE effect. {_why_line(part)}")
         rung4 = next((r for r in v["rungs"] if r["rung"] == 4), {})
@@ -900,7 +932,8 @@ def _unique_model_block(model: str, items: list, model_names: list, l0: Optional
     return out
 
 
-def _unique_block(verdicts: list, profiles: Optional[dict], run_dir: Path, model_names: list) -> str:
+def _unique_block(verdicts: list, profiles: Optional[dict], run_dir: Path, model_names: list,
+                  plain_titles: Optional[dict] = None) -> str:
     out = "<h4 id='cmp-unique'>What is unique to each model, and why?</h4>"
     if not profiles or not profiles.get("concepts"):
         return out + "<p class='blurb'>not measured: sae/concept_profiles.json does not exist or has no atlas concepts.</p>"
@@ -913,7 +946,7 @@ def _unique_block(verdicts: list, profiles: Optional[dict], run_dir: Path, model
         if not items:
             out += f"<h5>{_e(m)} -- 0 model-specific concepts (reproducible or not yet measured)</h5>"
             continue
-        out += _unique_model_block(m, items, model_names, l0, profiles)
+        out += _unique_model_block(m, items, model_names, l0, profiles, plain_titles=plain_titles)
     return out
 
 
@@ -1071,20 +1104,59 @@ def at_a_glance_block(cfg, run_dir, findings: list) -> tuple:
     return html, "rendered", ""
 
 
+def similarity_section_block(cfg, run_dir, findings: list) -> tuple:
+    """`-> (html, status, detail)` for the "Pair similarity across metrics"
+    report SECTION (ROADMAP.md sec 37 R2), placed in Part 4 ("Do the models
+    represent things the same way?") directly after L1/L2/L4 -- the full
+    pair-similarity evidence (profile figure, rank table, contrasts,
+    per-metric heatmaps) that used to open `concept_section_block`. Moved
+    out of "Concepts" because it is not about concepts: it compares every
+    model pair on representation/behavioral/SAE similarity metrics that
+    have nothing to do with the concept atlas.
+
+    Reads `report/model_similarity.json` rather than writing it -- by the
+    time `report.py` reaches this section, `at_a_glance_block` has already
+    run (it renders earlier, in "At a glance") and either wrote that file or
+    logged why it could not. Same solo-run guard as every other comparison
+    section; skips separately (with its own stated reason) when the
+    similarity artifact itself is missing, since this section does not need
+    `sae/concept_profiles.json` at all.
+    """
+    run_dir = Path(run_dir)
+    model_names = [m.name for m in cfg.models]
+    if len(model_names) < 2:
+        return "", "skipped", "solo run (1 model) -- nothing to compare"
+    similarity = _load_json_or_none(run_dir / "report" / "model_similarity.json")
+    if not similarity:
+        return "", "skipped", "report/model_similarity.json does not exist"
+    html = ("<p class='blurb'>Every representation/behavioral/SAE similarity metric this "
+           "pipeline already computes, one row per metric, one dot per model pair "
+           "-- the evidence behind the compact “How similar is each pair?” answer box "
+           "in “At a glance” above.</p>")
+    html += _similarity_block(similarity, model_names)
+    return html, "rendered", ""
+
+
 def concept_section_block(cfg, run_dir, findings: list) -> tuple:
     """`-> (html, status, detail)` for the "Concepts" report SECTION (report
-    structure spec R1), placed directly after "SAE": everything the old
-    single "Model comparison" block rendered except the three answer boxes
-    (those render earlier, in "At a glance") -- the full pair-similarity
-    evidence (figures, rank table, contrasts, heatmaps), the sharing map and
-    concept cards, the per-model unique blocks, and the verdict table.
+    structure spec R1): the sharing map and concept cards, the per-model
+    unique blocks, and the verdict table -- everything the old single "Model
+    comparison" block rendered except the three answer boxes (those render
+    earlier, in "At a glance") and the pair-similarity evidence (ROADMAP.md
+    sec 37 R2 moved that to its own "Pair similarity across metrics" section
+    in Part 4, `similarity_section_block` above -- it is not about
+    concepts).
 
-    Reads `report/model_similarity.json` rather than writing it: by the time
-    `report.py` reaches the "Concepts" section, `at_a_glance_block` has
-    already run (it renders earlier in the document) and either wrote that
-    file or logged why it could not. Gated identically to `at_a_glance_
-    block` (same solo-run guard, same missing-both-artifacts guard) so the
-    two blocks are always both-rendered or both-skipped together.
+    This function is ALSO the fallback layout `report.py::_sec_concepts`
+    renders for a run with no `sae/concept_families.json` (concept families,
+    ROADMAP.md sec 37 R2, not computed for this run): a run that has one
+    instead gets `report/concept_family_view.py`'s family-centric layout,
+    which supersedes the sharing map/concept cards below (but not the
+    verdict table or the shared-input table, which it also reuses).
+
+    Gated identically to `at_a_glance_block` (same solo-run guard, same
+    missing-both-artifacts guard) so the two blocks are always both-rendered
+    or both-skipped together.
     """
     run_dir = Path(run_dir)
     model_names = [m.name for m in cfg.models]
@@ -1096,15 +1168,15 @@ def concept_section_block(cfg, run_dir, findings: list) -> tuple:
         return "", "skipped", ("neither sae/concept_profiles.json nor "
                                "report/model_similarity.json exists")
 
-    html = ("<p class='blurb'>Every representation/behavioral/SAE similarity metric this "
-           "pipeline already computes, joined against the cross-model concept atlas's own "
-           "evidence ladder (ROADMAP.md sec 37 Spec C) -- the evidence behind the compact "
-           "answer boxes in “At a glance” above.</p>")
+    html = ("<p class='blurb'>Which of each model's causal features cluster into named "
+           "concepts, joined against the cross-model concept atlas's own evidence ladder "
+           "(ROADMAP.md sec 37 Spec C) -- the evidence behind the compact answer boxes in "
+           "“At a glance” above. Pair-similarity evidence is its own report section "
+           "(Part 4, “Pair similarity across metrics”).</p>")
     gt_status = (profiles or {}).get("ground_truth") or {}
     if gt_status.get("available") is False:
         html += ("<p class='blurb'><strong>Structural profiles not scored:</strong> "
                  f"{_e(gt_status.get('reason', ''))}</p>")
-    html += _similarity_block(similarity, model_names)
     html += _sharing_block(verdicts, profiles, model_names)
     html += _unique_block(verdicts, profiles, run_dir, model_names)
     html += "<h4>Verdict for every concept</h4>" + _verdict_table(verdicts)

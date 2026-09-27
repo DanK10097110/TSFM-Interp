@@ -68,6 +68,19 @@ import here would be the exact two-module import cycle `CLAUDE.md` sec
 11.52 already found and fixed once in `sae/matching.py`/`sae/role_
 matching.py`: this module needs names `report.py` defines, and `report.py`
 needs this module's own entry point.
+
+ROADMAP.md sec 37 R2 (the family-centric redesign of the "Concepts" report
+section, `report/concept_family_view.py`) needs a DIFFERENT composition of
+these same four blocks (universality+transfer stays under "Earlier concept
+units"; the concept map and the atlas figure are dropped entirely there,
+superseded by the new family concept map; the transfer-FDR tables and
+misfits move to "Statistical detail"). Rather than have that module re-walk
+this file's own control flow (and risk a second, silently-diverging
+rendering of the same artifacts), the four blocks below are each a public,
+independently-callable function; `sae_concepts_block` composes them in
+EXACTLY the same order/wrapping this module always has, so its own output
+(and every existing test against it -- the fallback path when concept
+families were not measured for a run) is unchanged byte-for-byte.
 """
 
 from __future__ import annotations
@@ -79,7 +92,8 @@ from typing import Optional
 from . import derived
 from .derived import load_json_or_none as _load_json_or_none
 
-__all__ = ["sae_concepts_block"]
+__all__ = ["sae_concepts_block", "universality_transfer_block",
+          "concept_cards_block", "causal_features_block", "misfits_block"]
 
 
 def _profile_html(profile: list) -> str:
@@ -152,183 +166,118 @@ def _representative_ablation_entry(candidates: Optional[list], features: list) -
     return first_seen
 
 
-def sae_concepts_block(cfg, run_dir: Path, findings: list, model_names: list,
-                       population: Optional[dict] = None) -> str:
-    """The whole "SAE concepts" report subsection. Mirrors `_sae_roles_
-    block`'s signature; see the module docstring for the three blocks and
-    the degradation contract. Returns `""` when `sae/concepts.json` does
-    not exist or carries no targets.
-
-    `population` (ROADMAP.md sec 32.7 Item H2) is `derived.flatness_population`'s
-    run-wide flatness statistics, computed once by the caller
-    (`report.py::_sec_sae`) and passed through unchanged to `ablation_cell`
-    so a per-panel flatness clause here reads the same numbers the section's
-    own flatness table (H3/H4) does.
-    """
-    run_dir = Path(run_dir)
-    if not (run_dir / "sae" / "concepts.json").exists():
-        return ""
-
-    # Lazy, per the module docstring's import-cycle note.
-    from .report import (
-        Finding, _next_claim_id, _details, _note, _table, _frag,
-        _depth_ordered_targets,
-    )
-    from .sae_features import ablation_cell
+def _load_candidates_for(run_dir: Path, target: str, cache: dict) -> list:
+    """`(model, layer) -> candidates` for one target, cached in `cache`
+    (a dict owned and shared by the caller across `concept_cards_block` and
+    `causal_features_block` -- ROADMAP.md sec 37 R2 -- so a target read by
+    the first is not re-read from disk by the second)."""
     from ..sae.train import sanitize
 
-    sae_cfg = getattr(cfg, "sae", None)
-    weights = tuple(getattr(sae_cfg, "interest_weights", None) or (0.5, 0.3, 0.2))
-    max_cards = int(getattr(sae_cfg, "concept_cards_max", None) or 24)
-    misfit_gap = float(getattr(sae_cfg, "concept_misfit_cosine_gap", None) or 0.3)
+    if target not in cache:
+        model, layer = str(target).split("/", 1)
+        path = run_dir / "sae" / sanitize(model) / f"{sanitize(layer)}_ablation.json"
+        art = _load_json_or_none(path)
+        cache[target] = (art.get("candidates") or []) if art else []
+    return cache[target]
 
-    cards = derived.concept_cards(run_dir, weights=weights)
-    if cards.empty:
-        return ""
 
-    concepts_doc = _load_json_or_none(run_dir / "sae" / "concepts.json") or {}
-    targets_doc = concepts_doc.get("targets") or {}
-    features_by_target_id: dict = {}
-    for target_key, rec in targets_doc.items():
-        if not isinstance(rec, dict):
-            continue
-        for concept in rec.get("concepts", []):
-            features_by_target_id[(target_key, concept.get("concept"))] = \
-                concept.get("features") or []
+def universality_transfer_block(run_dir: Path, findings: list) -> str:
+    """Block 1: how many of this run's per-target concepts are universal /
+    partial / model-specific (`derived.concept_universality`), plus the
+    pairwise reciprocal-transfer-rate heatmap (`derived.concept_transfer_
+    matrix`) -- a stated "not measured" when `sae/transfer.json` is absent
+    or empty, never a silently blank table (module docstring point 1)."""
+    from .report import Finding, _next_claim_id, _note, _table, _frag
 
-    meta_sae = _load_json_or_none(run_dir / "sae" / "meta.json") or {}
-    median_norm_by_target = {k: v.get("median_hidden_norm")
-                             for k, v in meta_sae.items() if isinstance(v, dict)}
-
-    inner = "<h4>SAE concepts (ablation-space clustering, ROADMAP.md sec 30)</h4>"
-    inner += (
-        "<p class='blurb'>Concepts cluster probed features on their own "
-        "ABLATION fingerprint -- what each feature does when removed from "
-        "the SAE's own reconstruction, on the series it actually fires on "
-        "(sec 27's battery) -- rather than the INJECTION fingerprint the "
-        "'roles' section above uses. sec 30.1 measured concepts clustering "
-        "decisively better in that space (mean silhouette <b>0.450</b> vs "
-        "roles' <b>&minus;0.235</b>, beating roles at every target "
-        "checked).</p>"
-        # ROADMAP.md sec 32.7c Item I3: state the battery's actual
-        # null-comparison question once, here too -- the card below reuses
-        # `ablation_cell`, whose own collapsing (Item I1) only tells a
-        # reader something WAS measured and cleared nothing, not what
-        # "cleared" means.
-        "<p class='blurb'>A channel counts as cleared only when a member's "
-        "own effect exceeds what removing that much of an ARBITRARY "
-        "random direction does -- not simply whether the forecast moved "
-        "when that member was removed. Each card's chart carries a narrow "
-        "strip below the forecast lines: that is the with/without gap drawn "
-        "on its own scale (its dotted line is zero, i.e. no difference), so "
-        "a small effect stays visible even when the two forecast lines "
-        "above it overlap too closely to tell apart.</p>")
-
-    # -------- block 1: universality + transfer heatmap --------
-    # ROADMAP.md sec 37 Spec C item F: this per-TARGET unit (a concept lives
-    # inside one model's own dictionary; "universal" means "reached by
-    # another model's dictionary", never "the same concept as another
-    # model's") is collected into `per_target_html` rather than `inner`
-    # directly, together with block 2 below, so both land inside ONE
-    # collapsed `<details>` placed AFTER the cross-model atlas -- the atlas
-    # answers the same "is this shared" question in the unit that actually
-    # supersedes this one (a pooled, directly cross-model-clustered concept,
-    # not a per-target one reached only via a separate transfer test).
-    per_target_html = ""
+    out = ""
     uni = derived.concept_universality(run_dir)
     matrix = derived.concept_transfer_matrix(run_dir)
+    cards = derived.concept_cards(run_dir)
     if uni.empty or matrix.empty:
-        per_target_html += (
+        out += (
             "<p class='blurb'>Cross-model concept transfer: <b>not "
             "measured</b> for this run (`sae/transfer.json` is absent or "
             "empty) -- the concept cards below still render each concept's "
             "own causal profile.</p>")
-    else:
-        per_target_html += "<h5>Concept universality</h5>"
-        per_target_html += _table(uni.drop(columns=["concepts"]))
-        models_sorted = list(matrix.columns)
-        import plotly.graph_objects as go  # local: only this block plots
-        fig = go.Figure(data=go.Heatmap(
-            z=matrix.values, x=models_sorted, y=list(matrix.index),
-            colorscale="Viridis", zmin=0, zmax=1,
-            colorbar=dict(title="reciprocal transfer rate"),
-            hovertemplate="%{y} → %{x}: %{z:.2f}<extra></extra>",
-            hoverongaps=False))
-        fig.update_layout(
-            title="Concept transfer rate between models (reciprocal)",
-            xaxis=dict(title="destination model"),
-            yaxis=dict(title="source model", autorange="reversed"))
-        per_target_html += _frag(fig, height=max(320, 60 * len(matrix.index)))
-        per_target_html += _note(
-            "For each source model's concepts, the fraction whose top-firing "
-            "series are grouped the same way by the destination model's own "
-            "SAE dictionary -- reciprocally, in both directions.",
-            "A cell near 1.0 means that source's concepts transfer to the "
-            "destination almost universally; a low cell means most concepts "
-            "are specific to the source. The diagonal is blank -- a model's "
-            "transfer rate against itself is not a comparison.",
-            f"Transfer is a statistical (AUC-based) test against a "
-            f"matched-stratum null (k_top_series="
-            f"{matrix.attrs.get('k_top_series')}, n_null_draws="
-            f"{matrix.attrs.get('n_null_draws')}, stratified by "
-            f"{matrix.attrs.get('stratum_field')}), not a causal claim -- it "
-            f"says the two dictionaries GROUP series alike, not that either "
-            f"model's forecast depends on the other's feature.",
-            summary="What does this heatmap mean?")
+        return out
 
-        n_total = int(uni.attrs.get("n_concepts_total", int(uni["n_concepts"].sum())))
-        n_other = uni.attrs.get("n_other_models")
-        findings.append(Finding(
-            claim_id=_next_claim_id("sae"), stage="sae", evidence_class="descriptive",
-            text=(f"SAE concept universality: of {n_total} concepts across "
-                  f"{cards['target'].nunique()} analyzed target(s), "
-                  + ", ".join(f"{int(r.n_concepts)} {r.bucket}" for r in uni.itertuples())
-                  + (f" (checked against {n_other} other model(s) per target)."
-                     if n_other is not None else ".")),
-            plain=(f"Of {n_total} sparse-feature concepts found across this "
-                   f"run's models, "
-                   + ", ".join(f"{int(r.n_concepts)} are {r.bucket}" for r in uni.itertuples())
-                   + " when checked against every other model's own dictionary."),
-            registered=False))
+    out += "<h5>Concept universality</h5>"
+    out += _table(uni.drop(columns=["concepts"]))
+    models_sorted = list(matrix.columns)
+    import plotly.graph_objects as go  # local: only this block plots
+    fig = go.Figure(data=go.Heatmap(
+        z=matrix.values, x=models_sorted, y=list(matrix.index),
+        colorscale="Viridis", zmin=0, zmax=1,
+        colorbar=dict(title="reciprocal transfer rate"),
+        hovertemplate="%{y} → %{x}: %{z:.2f}<extra></extra>",
+        hoverongaps=False))
+    fig.update_layout(
+        title="Concept transfer rate between models (reciprocal)",
+        xaxis=dict(title="destination model"),
+        yaxis=dict(title="source model", autorange="reversed"))
+    out += _frag(fig, height=max(320, 60 * len(matrix.index)))
+    out += _note(
+        "For each source model's concepts, the fraction whose top-firing "
+        "series are grouped the same way by the destination model's own "
+        "SAE dictionary -- reciprocally, in both directions.",
+        "A cell near 1.0 means that source's concepts transfer to the "
+        "destination almost universally; a low cell means most concepts "
+        "are specific to the source. The diagonal is blank -- a model's "
+        "transfer rate against itself is not a comparison.",
+        f"Transfer is a statistical (AUC-based) test against a "
+        f"matched-stratum null (k_top_series="
+        f"{matrix.attrs.get('k_top_series')}, n_null_draws="
+        f"{matrix.attrs.get('n_null_draws')}, stratified by "
+        f"{matrix.attrs.get('stratum_field')}), not a causal claim -- it "
+        f"says the two dictionaries GROUP series alike, not that either "
+        f"model's forecast depends on the other's feature.",
+        summary="What does this heatmap mean?")
 
-    # -------- concept map (ROADMAP.md sec 32.14, Item M) --------
-    from .sae_concept_map import concept_map_block
-    inner += concept_map_block(run_dir, cfg)
+    n_total = int(uni.attrs.get("n_concepts_total", int(uni["n_concepts"].sum())))
+    n_other = uni.attrs.get("n_other_models")
+    findings.append(Finding(
+        claim_id=_next_claim_id("sae"), stage="sae", evidence_class="descriptive",
+        text=(f"SAE concept universality: of {n_total} concepts across "
+              f"{cards['target'].nunique() if not cards.empty else 0} analyzed target(s), "
+              + ", ".join(f"{int(r.n_concepts)} {r.bucket}" for r in uni.itertuples())
+              + (f" (checked against {n_other} other model(s) per target)."
+                 if n_other is not None else ".")),
+        plain=(f"Of {n_total} sparse-feature concepts found across this "
+               f"run's models, "
+               + ", ".join(f"{int(r.n_concepts)} are {r.bucket}" for r in uni.itertuples())
+               + " when checked against every other model's own dictionary."),
+        registered=False))
+    return out
 
-    # -------- concept atlas, cross-model (ROADMAP.md sec 37.15 q6 option b) --------
-    from .sae_concept_atlas import atlas_block
-    inner += atlas_block(run_dir, cfg)
 
-    # -------- transfer significance + FDR, and atlas transfer (sec 37 P3) --------
-    from .sae_transfer_fdr import transfer_fdr_block
-    inner += transfer_fdr_block(run_dir, cfg)
+def concept_cards_block(cfg, run_dir: Path, findings: list, cards, features_by_target_id: dict,
+                        meta_sae: dict, median_norm_by_target: dict, population,
+                        candidates_by_target: dict) -> str:
+    """Block 2: the top `cfg.sae.concept_cards_max` per-target concepts by
+    `derived.concept_cards`'s own `interest` score, grouped by universality
+    bucket. `candidates_by_target` is a shared cache (module docstring's R2
+    note) mutated in place -- `causal_features_block` below reuses it."""
+    from .report import Finding, _next_claim_id, _details, _depth_ordered_targets
+    from .sae_features import ablation_cell
 
-    # -------- block 2: concept cards --------
+    sae_cfg = getattr(cfg, "sae", None)
+    weights = tuple(getattr(sae_cfg, "interest_weights", None) or (0.5, 0.3, 0.2))
+    max_cards = int(getattr(sae_cfg, "concept_cards_max", None) or 24)
+
+    if cards.empty:
+        return ""
+
     top = cards.head(max_cards).reset_index(drop=True)
     bucket_order = ["universal", "partial", "model-specific", "not comparable", "not measured"]
     present_buckets = [b for b in bucket_order if (top["universality_bucket"] == b).any()]
 
     shown_targets = _depth_ordered_targets(sorted(top["target"].astype(str).unique()))
-    candidates_by_target: dict[str, list] = {}
-
-    def _candidates_for(target: str) -> list:
-        # Lazy, cached load shared by the concept cards below and the
-        # causally-interesting-features block further down -- a target
-        # not among `shown_targets` (no concept formed there at all) still
-        # needs its raw candidates for the latter.
-        if target not in candidates_by_target:
-            model, layer = str(target).split("/", 1)
-            path = run_dir / "sae" / sanitize(model) / f"{sanitize(layer)}_ablation.json"
-            art = _load_json_or_none(path)
-            candidates_by_target[target] = (art.get("candidates") or []) if art else []
-        return candidates_by_target[target]
-
     for target in shown_targets:
-        _candidates_for(target)
+        _load_candidates_for(run_dir, target, candidates_by_target)
 
     w = cards.attrs.get("weights") or {}
-    per_target_html += f"<h5>Concept cards — top {len(top)} of {len(cards)} by interest</h5>"
-    per_target_html += (
+    out = f"<h5>Concept cards — top {len(top)} of {len(cards)} by interest</h5>"
+    out += (
         "<p class='blurb'>interest = "
         f"{w.get('w1_causal_strength', weights[0]):.2f}×causal_strength + "
         f"{w.get('w2_transfer_informative', weights[1]):.2f}×transfer_informative + "
@@ -338,7 +287,7 @@ def sae_concepts_block(cfg, run_dir: Path, findings: list, model_names: list,
 
     for bucket in present_buckets:
         bucket_rows = top[top["universality_bucket"] == bucket]
-        per_target_html += f"<h6>{html.escape(bucket)} ({len(bucket_rows)})</h6>"
+        out += f"<h6>{html.escape(bucket)} ({len(bucket_rows)})</h6>"
         card_bodies = []
         for row in bucket_rows.itertuples():
             candidates = candidates_by_target.get(str(row.target))
@@ -401,7 +350,7 @@ def sae_concepts_block(cfg, run_dir: Path, findings: list, model_names: list,
                 f"{desc_html}{meta_html}{spark_html}"
                 f"{_details('the numbers behind this', numbers_html)}"
                 "</div>")
-        per_target_html += "".join(card_bodies)
+        out += "".join(card_bodies)
 
         # One finding per target represented in this bucket's shown cards --
         # mirrors `_sae_roles_block`'s per-target finding, scoped to what's
@@ -423,32 +372,24 @@ def sae_concepts_block(cfg, run_dir: Path, findings: list, model_names: list,
                        f"moves the forecast beyond what random steering of "
                        f"the same size does."),
                 registered=False))
+    return out
 
-    # ROADMAP.md sec 37 Spec C item F: block 1 + block 2 above are the
-    # per-TARGET unit's own answer to "is this concept shared" -- superseded
-    # by the cross-model atlas rendered above (`atlas_block`) and, further
-    # up the report, the Model comparison section's own sharing map/verdict
-    # ladder. Collapsed, not deleted: the numbers are unchanged inside.
-    inner += _details(
-        "Per-target concepts (earlier unit; the atlas above supersedes it)",
-        per_target_html)
 
-    # -------- block 3: causally interesting individual features --------
-    # ROADMAP.md sec 32.7c / user review, 2026-09-15: the concept cards above
-    # answer "which CLUSTERS of features are interesting", and a target with
-    # few causally-alive features (or causally-alive features that don't
-    # cluster into a cohesive group of >=3) surfaces few or zero cards even
-    # though individual features there were genuinely, strongly causal. This
-    # block answers a different, narrower question directly -- deliberately
-    # NOT folded into "misfits" below, which is about a concept MEMBER's
-    # divergence from its own cluster and has nothing to say about a feature
-    # with no cluster at all.
+def causal_features_block(cfg, run_dir: Path, findings: list, population,
+                          median_norm_by_target: dict, candidates_by_target: dict) -> str:
+    """Block 3: every SAE feature across this run's targets whose own
+    ablation battery cleared at least one channel's null, independent of
+    whether it landed in a per-target concept -- module docstring point 3."""
+    from .report import Finding, _next_claim_id, _details
+    from .sae_features import ablation_cell
+
+    sae_cfg = getattr(cfg, "sae", None)
     feat_max = int(getattr(sae_cfg, "causal_feature_ranking_max", None) or 15)
     feat_df = derived.causal_feature_ranking(run_dir, top_n=feat_max)
     n_causal_total = feat_df.attrs.get("n_total", 0)
-    inner += (f"<h5>Causally interesting individual features — top "
-              f"{len(feat_df)} of {n_causal_total}</h5>")
-    inner += (
+    out = (f"<h5>Causally interesting individual features — top "
+          f"{len(feat_df)} of {n_causal_total}</h5>")
+    out += (
         "<p class='blurb'>Every SAE feature across this run's targets whose "
         "own ablation battery cleared at least one channel's null — "
         "independent of whether it landed in a concept above — ranked by "
@@ -461,96 +402,222 @@ def sae_concepts_block(cfg, run_dir: Path, findings: list, model_names: list,
         "three or more still has its strongest individual features shown "
         "here.</p>")
     if feat_df.empty:
-        inner += ("<p class='blurb'>No feature on any target cleared even "
-                  "one channel's null in the ablation battery.</p>")
-    else:
-        card_bodies = []
-        for row in feat_df.itertuples():
-            candidates = _candidates_for(str(row.target))
-            entry = next((c for c in candidates if c.get("feature") == row.feature), None)
-            spark_html = ablation_cell(
-                entry, max_series=8,
-                median_hidden_norm=median_norm_by_target.get(str(row.target)),
-                population=population)
-            top_ch = "; ".join(
-                f"{html.escape(str(c['channel']))} {c['signed_null_units']:+.2f}x null"
-                for c in (row.top_channels or [])) or "no channel worth naming"
-            concept_note = (f"member of concept '{html.escape(str(row.concept))}' above"
-                            if row.concept else "not part of any formed concept")
-            meta_html = (
-                "<p style='margin:0 0 8px;font-size:12.5px;color:var(--muted)'>"
-                f"{html.escape(str(row.target))}, feature {row.feature} — "
-                f"{concept_note}</p>")
-            mase_txt = (f"{row.mase_null_units:+.2f}x null" if row.mase_null_units is not None
-                       else "not scorable")
-            numbers_html = (
-                f"<p class='blurb'>overall fingerprint magnitude "
-                f"{row.magnitude:.2f}, {row.n_channels_clearing} of 9 channels "
-                f"clearing; mase channel {mase_txt}.<br>"
-                f"top channels: {top_ch}</p>")
-            card_bodies.append(
-                "<div class='concept-card'>"
-                f"{meta_html}{spark_html}"
-                f"{_details('the numbers behind this', numbers_html)}"
-                "</div>")
-        inner += "".join(card_bodies)
+        out += ("<p class='blurb'>No feature on any target cleared even "
+                "one channel's null in the ablation battery.</p>")
+        return out
 
-        best = feat_df.iloc[0]
-        findings.append(Finding(
-            claim_id=_next_claim_id("sae"), stage="sae",
-            evidence_class="causal_within_model",
-            text=(f"SAE causally interesting individual features: "
-                  f"{n_causal_total} feature(s) across "
-                  f"{feat_df['target'].nunique()} target(s) clear at least "
-                  f"one channel's null in the ablation battery; strongest is "
-                  f"{best['target']} feature {best['feature']} "
-                  f"({best['n_channels_clearing']} of 9 channels clearing, "
-                  f"fingerprint magnitude {best['magnitude']:.2f})."),
-            plain=(f"Of {n_causal_total} individual SAE features measured "
-                   f"across this run, feature {best['feature']} in "
-                   f"{best['target']} moves the forecast most convincingly "
-                   f"when ablated."),
-            registered=False))
+    card_bodies = []
+    for row in feat_df.itertuples():
+        candidates = _load_candidates_for(run_dir, str(row.target), candidates_by_target)
+        entry = next((c for c in candidates if c.get("feature") == row.feature), None)
+        spark_html = ablation_cell(
+            entry, max_series=8,
+            median_hidden_norm=median_norm_by_target.get(str(row.target)),
+            population=population)
+        top_ch = "; ".join(
+            f"{html.escape(str(c['channel']))} {c['signed_null_units']:+.2f}x null"
+            for c in (row.top_channels or [])) or "no channel worth naming"
+        concept_note = (f"member of concept '{html.escape(str(row.concept))}' above"
+                        if row.concept else "not part of any formed concept")
+        meta_html = (
+            "<p style='margin:0 0 8px;font-size:12.5px;color:var(--muted)'>"
+            f"{html.escape(str(row.target))}, feature {row.feature} — "
+            f"{concept_note}</p>")
+        mase_txt = (f"{row.mase_null_units:+.2f}x null" if row.mase_null_units is not None
+                   else "not scorable")
+        numbers_html = (
+            f"<p class='blurb'>overall fingerprint magnitude "
+            f"{row.magnitude:.2f}, {row.n_channels_clearing} of 9 channels "
+            f"clearing; mase channel {mase_txt}.<br>"
+            f"top channels: {top_ch}</p>")
+        card_bodies.append(
+            "<div class='concept-card'>"
+            f"{meta_html}{spark_html}"
+            f"{_details('the numbers behind this', numbers_html)}"
+            "</div>")
+    out += "".join(card_bodies)
 
-    # -------- block 4: misfits --------
+    best = feat_df.iloc[0]
+    findings.append(Finding(
+        claim_id=_next_claim_id("sae"), stage="sae",
+        evidence_class="causal_within_model",
+        text=(f"SAE causally interesting individual features: "
+              f"{n_causal_total} feature(s) across "
+              f"{feat_df['target'].nunique()} target(s) clear at least "
+              f"one channel's null in the ablation battery; strongest is "
+              f"{best['target']} feature {best['feature']} "
+              f"({best['n_channels_clearing']} of 9 channels clearing, "
+              f"fingerprint magnitude {best['magnitude']:.2f})."),
+        plain=(f"Of {n_causal_total} individual SAE features measured "
+               f"across this run, feature {best['feature']} in "
+               f"{best['target']} moves the forecast most convincingly "
+               f"when ablated."),
+        registered=False))
+    return out
+
+
+def misfits_block(run_dir: Path, misfit_gap: float) -> str:
+    """Block 4: one collapsed block per model, from `derived.misfit_table`
+    -- module docstring point 4. A genuine, measured ZERO misfits renders
+    differently from "misfit detection never ran here" (CLAUDE.md sec
+    11.37)."""
+    from .report import _details
+
     misfits_df = derived.misfit_table(run_dir, min_cosine_gap=misfit_gap)
     n_checked = misfits_df.attrs.get("n_targets_checked")
-    inner += "<h5>Misfits — members whose own fingerprint diverges from their concept</h5>"
+    out = "<h5>Misfits — members whose own fingerprint diverges from their concept</h5>"
     if n_checked is None:
-        inner += ("<p class='blurb'>Misfit detection: <b>not measured</b> "
-                  "for this run.</p>")
-    elif n_checked == 0:
-        inner += ("<p class='blurb'>Misfit detection: no target's ablation "
-                  "artifact could be loaded from disk, so no member could "
-                  "be checked against its concept's own cohesion.</p>")
-    elif misfits_df.empty:
-        inner += (
+        out += ("<p class='blurb'>Misfit detection: <b>not measured</b> "
+                "for this run.</p>")
+        return out
+    if n_checked == 0:
+        out += ("<p class='blurb'>Misfit detection: no target's ablation "
+                "artifact could be loaded from disk, so no member could "
+                "be checked against its concept's own cohesion.</p>")
+        return out
+    if misfits_df.empty:
+        out += (
             f"<p class='blurb'>Misfit detection: <b>{n_checked}</b> "
             f"target(s) checked at a cosine gap of {misfit_gap:g} below "
             f"each concept's own mean member-to-centroid cosine; <b>zero "
             f"misfits found</b> — every clustered member's own ablation "
             f"fingerprint sits within its concept's own cohesion (matching "
             f"sec 30.1's own \"no orphans\" measurement).</p>")
-    else:
-        inner += (f"<p class='blurb'>{n_checked} target(s) checked; "
-                  f"<b>{len(misfits_df)}</b> misfit(s) found.</p>")
-        for model, sub in misfits_df.groupby("model"):
-            body_parts = []
-            for r in sub.itertuples():
-                own = "; ".join(
-                    f"{c['channel']} {c['signed_null_units']:+.2f}x null"
-                    for c in (r.own_top_channels or [])) or "no channel worth naming"
-                concept_ch = "; ".join(
-                    f"{c['channel']} {c['signed_null_units']:+.2f}x null"
-                    for c in (r.concept_channels or [])) or "no channel worth naming"
-                body_parts.append(
-                    f"<p class='blurb'><b>{html.escape(str(r.target))}</b> "
-                    f"concept {r.concept}, feature {r.feature}: cosine to "
-                    f"centroid {r.cosine_to_centroid:+.3f} vs concept's own "
-                    f"mean member-to-centroid cosine {r.centroid_cosine_mean:+.3f} "
-                    f"(threshold {r.threshold:+.3f}, {r.bar_statistic} minus a "
-                    f"gap of {r.min_cosine_gap:g}).<br>own fingerprint: {own}<br>"
-                    f"concept's fingerprint: {concept_ch}</p>")
-            inner += _details(f"{model}: {len(sub)} misfit(s)", "".join(body_parts))
+        return out
+
+    out += (f"<p class='blurb'>{n_checked} target(s) checked; "
+           f"<b>{len(misfits_df)}</b> misfit(s) found.</p>")
+    for model, sub in misfits_df.groupby("model"):
+        body_parts = []
+        for r in sub.itertuples():
+            own = "; ".join(
+                f"{c['channel']} {c['signed_null_units']:+.2f}x null"
+                for c in (r.own_top_channels or [])) or "no channel worth naming"
+            concept_ch = "; ".join(
+                f"{c['channel']} {c['signed_null_units']:+.2f}x null"
+                for c in (r.concept_channels or [])) or "no channel worth naming"
+            body_parts.append(
+                f"<p class='blurb'><b>{html.escape(str(r.target))}</b> "
+                f"concept {r.concept}, feature {r.feature}: cosine to "
+                f"centroid {r.cosine_to_centroid:+.3f} vs concept's own "
+                f"mean member-to-centroid cosine {r.centroid_cosine_mean:+.3f} "
+                f"(threshold {r.threshold:+.3f}, {r.bar_statistic} minus a "
+                f"gap of {r.min_cosine_gap:g}).<br>own fingerprint: {own}<br>"
+                f"concept's fingerprint: {concept_ch}</p>")
+        out += _details(f"{model}: {len(sub)} misfit(s)", "".join(body_parts))
+    return out
+
+
+def sae_concepts_block(cfg, run_dir: Path, findings: list, model_names: list,
+                       population: Optional[dict] = None) -> str:
+    """The whole "SAE concepts" report subsection. Mirrors `_sae_roles_
+    block`'s signature; see the module docstring for the three blocks and
+    the degradation contract. Returns `""` when `sae/concepts.json` does
+    not exist or carries no targets.
+
+    `population` (ROADMAP.md sec 32.7 Item H2) is `derived.flatness_population`'s
+    run-wide flatness statistics, computed once by the caller
+    (`report.py::_sec_sae`) and passed through unchanged to `ablation_cell`
+    so a per-panel flatness clause here reads the same numbers the section's
+    own flatness table (H3/H4) does.
+    """
+    run_dir = Path(run_dir)
+    if not (run_dir / "sae" / "concepts.json").exists():
+        return ""
+
+    # Lazy, per the module docstring's import-cycle note.
+    from .report import _details
+
+    sae_cfg = getattr(cfg, "sae", None)
+    misfit_gap = float(getattr(sae_cfg, "concept_misfit_cosine_gap", None) or 0.3)
+
+    cards = derived.concept_cards(run_dir, weights=tuple(
+        getattr(sae_cfg, "interest_weights", None) or (0.5, 0.3, 0.2)))
+    if cards.empty:
+        return ""
+
+    concepts_doc = _load_json_or_none(run_dir / "sae" / "concepts.json") or {}
+    targets_doc = concepts_doc.get("targets") or {}
+    features_by_target_id: dict = {}
+    for target_key, rec in targets_doc.items():
+        if not isinstance(rec, dict):
+            continue
+        for concept in rec.get("concepts", []):
+            features_by_target_id[(target_key, concept.get("concept"))] = \
+                concept.get("features") or []
+
+    meta_sae = _load_json_or_none(run_dir / "sae" / "meta.json") or {}
+    median_norm_by_target = {k: v.get("median_hidden_norm")
+                             for k, v in meta_sae.items() if isinstance(v, dict)}
+
+    inner = "<h4>SAE concepts (ablation-space clustering, ROADMAP.md sec 30)</h4>"
+    inner += (
+        "<p class='blurb'>Concepts cluster probed features on their own "
+        "ABLATION fingerprint -- what each feature does when removed from "
+        "the SAE's own reconstruction, on the series it actually fires on "
+        "(sec 27's battery) -- rather than the INJECTION fingerprint the "
+        "'roles' section above uses. sec 30.1 measured concepts clustering "
+        "decisively better in that space (mean silhouette <b>0.450</b> vs "
+        "roles' <b>&minus;0.235</b>, beating roles at every target "
+        "checked).</p>"
+        # ROADMAP.md sec 32.7c Item I3: state the battery's actual
+        # null-comparison question once, here too -- the card below reuses
+        # `ablation_cell`, whose own collapsing (Item I1) only tells a
+        # reader something WAS measured and cleared nothing, not what
+        # "cleared" means.
+        "<p class='blurb'>A channel counts as cleared only when a member's "
+        "own effect exceeds what removing that much of an ARBITRARY "
+        "random direction does -- not simply whether the forecast moved "
+        "when that member was removed. Each card's chart carries a narrow "
+        "strip below the forecast lines: that is the with/without gap drawn "
+        "on its own scale (its dotted line is zero, i.e. no difference), so "
+        "a small effect stays visible even when the two forecast lines "
+        "above it overlap too closely to tell apart.</p>")
+
+    # -------- block 1: universality + transfer heatmap --------
+    # ROADMAP.md sec 37 Spec C item F: this per-TARGET unit (a concept lives
+    # inside one model's own dictionary; "universal" means "reached by
+    # another model's dictionary", never "the same concept as another
+    # model's") is collected into `per_target_html` rather than `inner`
+    # directly, together with block 2 below, so both land inside ONE
+    # collapsed `<details>` placed AFTER the cross-model atlas -- the atlas
+    # answers the same "is this shared" question in the unit that actually
+    # supersedes this one (a pooled, directly cross-model-clustered concept,
+    # not a per-target one reached only via a separate transfer test).
+    per_target_html = universality_transfer_block(run_dir, findings)
+
+    # -------- concept map (ROADMAP.md sec 32.14, Item M) --------
+    from .sae_concept_map import concept_map_block
+    inner += concept_map_block(run_dir, cfg)
+
+    # -------- concept atlas, cross-model (ROADMAP.md sec 37.15 q6 option b) --------
+    from .sae_concept_atlas import atlas_block
+    inner += atlas_block(run_dir, cfg)
+
+    # -------- transfer significance + FDR, and atlas transfer (sec 37 P3) --------
+    from .sae_transfer_fdr import transfer_fdr_block
+    inner += transfer_fdr_block(run_dir, cfg)
+
+    # -------- block 2: concept cards --------
+    candidates_by_target: dict = {}
+    per_target_html += concept_cards_block(
+        cfg, run_dir, findings, cards, features_by_target_id, meta_sae,
+        median_norm_by_target, population, candidates_by_target)
+
+    # ROADMAP.md sec 37 Spec C item F: block 1 + block 2 above are the
+    # per-TARGET unit's own answer to "is this concept shared" -- superseded
+    # by the cross-model atlas rendered above (`atlas_block`) and, further
+    # up the report, the Model comparison section's own sharing map/verdict
+    # ladder. Collapsed, not deleted: the numbers are unchanged inside.
+    inner += _details(
+        "Per-target concepts (earlier unit; the atlas above supersedes it)",
+        per_target_html)
+
+    # -------- block 3: causally interesting individual features --------
+    inner += causal_features_block(cfg, run_dir, findings, population,
+                                   median_norm_by_target, candidates_by_target)
+
+    # -------- block 4: misfits --------
+    inner += misfits_block(run_dir, misfit_gap)
 
     return inner
