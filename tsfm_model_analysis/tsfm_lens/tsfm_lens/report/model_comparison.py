@@ -38,6 +38,26 @@ it (sharing/input agreement: correlational-descriptive; effect profile and
 its own MASE effect: causal within-model; the raw behavioral gap:
 behavioral); this module invents no new statistic and reduces no artifact's
 own arithmetic a second, possibly-diverging way.
+
+Report-structure spec R1 (CLAUDE.md sec 6.7): the single `model_comparison_
+block` this module used to expose is split into two public entry points that
+`report.py` renders in two different places --
+
+  - `at_a_glance_block` -- the three answer boxes (text only, no figures)
+    plus the pair-similarity rank table, rendered in the fixed "At a glance"
+    slot right after the header, alongside the Scorecard;
+  - `concept_section_block` -- everything else (the full similarity
+    evidence with its figures, the sharing map and concept cards, the
+    per-model unique blocks, and the verdict table), rendered as the
+    "Concepts" report SECTION, placed directly after "SAE" in Part 6.
+
+Both read the same two source artifacts and degrade identically (same solo-
+run guard, same missing-both-artifacts guard), since a reader should never
+see the compact answer boxes promise evidence that the detailed section
+below then says was never measured. `at_a_glance_block` is responsible for
+writing `report/model_similarity.json` (via `write_model_similarity`);
+`concept_section_block` only reads it back, since it always renders later
+in the same `run_report` call.
 """
 
 from __future__ import annotations
@@ -56,7 +76,7 @@ from plotly.subplots import make_subplots
 from . import derived
 from .derived import load_json_or_none as _load_json_or_none
 
-__all__ = ["model_comparison_block"]
+__all__ = ["at_a_glance_block", "concept_section_block"]
 
 _CELL_COLORS = {
     "absent": "#E2E6E1", "agreeing": "#2E7D4F",
@@ -964,14 +984,39 @@ def _shared_input_pair_table(shared_input: Optional[dict]) -> str:
 
 
 # ---------------------------------------------------------------------------
-# Driver.
+# Driver -- shared setup, then the two public entry points (report structure
+# spec R1).
 # ---------------------------------------------------------------------------
 
-def model_comparison_block(cfg, run_dir, findings: list) -> tuple:
-    """`-> (html, status, detail)`. `status` in `{"rendered","skipped"}` --
-    genuine bugs are left to raise, so `report.py`'s own call site can
-    record them as `"failed"` exactly like every other section (CLAUDE.md
-    sec 6.7's coverage-panel contract).
+def _load_comparison_artifacts(run_dir: Path):
+    """The two source artifacts plus the derived verdicts, read (never
+    written) -- shared by both public entry points so they can never
+    disagree about which run is comparable or what a concept's verdict is.
+    Returns `(similarity, profiles, verdicts, shared_input)`, with `similarity`/`profiles`
+    possibly `None` (CLAUDE.md sec 2.5: each half degrades on its own)."""
+    similarity = _load_json_or_none(run_dir / "report" / "model_similarity.json")
+    profiles = _load_json_or_none(run_dir / "sae" / "concept_profiles.json")
+    stability = _load_json_or_none(run_dir / "sae" / "concept_stability.json")
+    atlas_transfer = _load_json_or_none(run_dir / "sae" / "atlas_transfer.json")
+    shared_input = _load_json_or_none(run_dir / "sae" / "shared_input_agreement.json")
+    confirmation = _load_json_or_none(run_dir / "confirm" / "confirmation.json")
+    concept_replication = (confirmation or {}).get("concept_replication")
+    verdicts = derived.concept_verdicts(profiles, stability, atlas_transfer, shared_input,
+                                        concept_replication)
+    return similarity, profiles, verdicts, shared_input
+
+
+def at_a_glance_block(cfg, run_dir, findings: list) -> tuple:
+    """`-> (html, status, detail)`, rendered in the fixed "At a glance" slot
+    (report structure spec R1): the three answer boxes, text only -- no
+    figures belong this early -- plus the pair-similarity rank table (an
+    existing helper, no new statistic). The two summary Findings this
+    section used to emit are appended here, not by `concept_section_block`,
+    so a run that renders both never double-counts them.
+
+    Writes `report/model_similarity.json` (`write_model_similarity`) since
+    this is the FIRST of the two blocks `report.py` calls; `concept_section_
+    block` reads that same file back rather than rebuilding it.
     """
     run_dir = Path(run_dir)
     model_names = [m.name for m in cfg.models]
@@ -987,45 +1032,16 @@ def model_comparison_block(cfg, run_dir, findings: list) -> tuple:
         from ..utils import log
         log.warning("model comparison: could not write report/model_similarity.json: %s", exc)
 
-    similarity = _load_json_or_none(run_dir / "report" / "model_similarity.json")
-    profiles = _load_json_or_none(run_dir / "sae" / "concept_profiles.json")
+    similarity, profiles, verdicts, shared_input = _load_comparison_artifacts(run_dir)
     if similarity is None and profiles is None:
         return "", "skipped", ("neither sae/concept_profiles.json nor "
                                "report/model_similarity.json exists")
 
-    stability = _load_json_or_none(run_dir / "sae" / "concept_stability.json")
-    atlas_transfer = _load_json_or_none(run_dir / "sae" / "atlas_transfer.json")
-    shared_input = _load_json_or_none(run_dir / "sae" / "shared_input_agreement.json")
-    # ROADMAP.md sec 37.10 P7's L6 rung: read from `confirm`'s own artifact,
-    # not a sibling file of its own -- `concept_replication` is one key
-    # inside `confirm/confirmation.json`, the same file l0/l1/l3's
-    # replications already share (CLAUDE.md sec 11.51's whole-file read
-    # discipline, applied here so a confirm-stage rerun cannot leave this
-    # section reading a stale sibling).
-    confirmation = _load_json_or_none(run_dir / "confirm" / "confirmation.json")
-    concept_replication = (confirmation or {}).get("concept_replication")
-    verdicts = derived.concept_verdicts(profiles, stability, atlas_transfer, shared_input,
-                                        concept_replication)
-
-    html = "<section class='sec-headline'><div class='eyebrow'>Compare</div>"
-    html += ("<h2 class='sec'>Model comparison &mdash; what is shared, what is unique, "
-            "how similar</h2>")
-    html += ("<p class='blurb'>Every representation/behavioral/SAE similarity metric this "
-            "pipeline already computes, joined against the cross-model concept atlas's own "
-            "evidence ladder (ROADMAP.md sec 37 Spec C). This section answers the three "
-            "questions the rest of the report leaves to the reader to join by hand.</p>")
-    gt_status = (profiles or {}).get("ground_truth") or {}
-    if gt_status.get("available") is False:
-        html += ("<p class='blurb'><strong>Structural profiles not scored:</strong> "
-                 f"{_e(gt_status.get('reason', ''))}</p>")
+    html = "<div class='cmp-glance'>"
     html += _answer_boxes(verdicts, profiles, similarity, model_names)
-    html += _similarity_block(similarity, model_names)
-    html += _sharing_block(verdicts, profiles, model_names)
-    html += _unique_block(verdicts, profiles, run_dir, model_names)
-    html += "<h4>Verdict for every concept</h4>" + _verdict_table(verdicts)
-    html += ("<h4>Shared-input causal agreement, per model pair (ROADMAP.md sec 37.8 P5b)</h4>"
-            + _shared_input_pair_table(shared_input))
-    html += "</section>"
+    if similarity:
+        html += "<h5>Pair-similarity rank table</h5>" + _rank_table_html(similarity)
+    html += "</div>"
 
     n_all_shared = sum(1 for v in verdicts if v["verdict"] == _SHARED_VERDICT
                        and v["n_models"] == len(model_names))
@@ -1052,4 +1068,46 @@ def model_comparison_block(cfg, run_dir, findings: list) -> tuple:
                       "Different ways of measuring how similar two models are broadly "
                       "agree on which pair is closest."),
                 registered=False))
+    return html, "rendered", ""
+
+
+def concept_section_block(cfg, run_dir, findings: list) -> tuple:
+    """`-> (html, status, detail)` for the "Concepts" report SECTION (report
+    structure spec R1), placed directly after "SAE": everything the old
+    single "Model comparison" block rendered except the three answer boxes
+    (those render earlier, in "At a glance") -- the full pair-similarity
+    evidence (figures, rank table, contrasts, heatmaps), the sharing map and
+    concept cards, the per-model unique blocks, and the verdict table.
+
+    Reads `report/model_similarity.json` rather than writing it: by the time
+    `report.py` reaches the "Concepts" section, `at_a_glance_block` has
+    already run (it renders earlier in the document) and either wrote that
+    file or logged why it could not. Gated identically to `at_a_glance_
+    block` (same solo-run guard, same missing-both-artifacts guard) so the
+    two blocks are always both-rendered or both-skipped together.
+    """
+    run_dir = Path(run_dir)
+    model_names = [m.name for m in cfg.models]
+    if len(model_names) < 2:
+        return "", "skipped", "solo run (1 model) -- nothing to compare"
+
+    similarity, profiles, verdicts, shared_input = _load_comparison_artifacts(run_dir)
+    if similarity is None and profiles is None:
+        return "", "skipped", ("neither sae/concept_profiles.json nor "
+                               "report/model_similarity.json exists")
+
+    html = ("<p class='blurb'>Every representation/behavioral/SAE similarity metric this "
+           "pipeline already computes, joined against the cross-model concept atlas's own "
+           "evidence ladder (ROADMAP.md sec 37 Spec C) -- the evidence behind the compact "
+           "answer boxes in “At a glance” above.</p>")
+    gt_status = (profiles or {}).get("ground_truth") or {}
+    if gt_status.get("available") is False:
+        html += ("<p class='blurb'><strong>Structural profiles not scored:</strong> "
+                 f"{_e(gt_status.get('reason', ''))}</p>")
+    html += _similarity_block(similarity, model_names)
+    html += _sharing_block(verdicts, profiles, model_names)
+    html += _unique_block(verdicts, profiles, run_dir, model_names)
+    html += "<h4>Verdict for every concept</h4>" + _verdict_table(verdicts)
+    html += ("<h4>Shared-input causal agreement, per model pair (ROADMAP.md sec 37.8 P5b)</h4>"
+            + _shared_input_pair_table(shared_input))
     return html, "rendered", ""
