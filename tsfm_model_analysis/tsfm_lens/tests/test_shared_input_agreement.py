@@ -497,8 +497,9 @@ def test_acts_differently_when_neither_statistic_clears(monkeypatch, tmp_path):
         level_noise = _NULL_LEVEL_HIGH if fseed % 2 == 0 else _NULL_LEVEL_LOW
         return _stats_raw(level_noise), _stats_shape(r.normal(0, 0.2, n))
 
-    def _fake_own_null(ctx, features, U_key, contexts_u, targets_u, periods_u, seed, n_null):
-        r = np.random.default_rng(seed)
+    def _fake_own_null(ctx, features, U_key, contexts_u, targets_u, periods_u,
+                       baseline_seed, direction_seed, n_null):
+        r = np.random.default_rng(direction_seed)
         return [(_stats_raw(r.normal(0, 0.05, n)), _stats_shape(r.normal(0, 0.05, n)))
                for _ in range(int(n_null))]
 
@@ -598,8 +599,9 @@ def test_no_specific_agreement_when_positive_but_below_floor(monkeypatch, tmp_pa
         level_noise = _NULL_LEVEL_HIGH if fseed % 2 == 0 else _NULL_LEVEL_LOW
         return _stats_raw(level_noise), _stats_shape(r.normal(0, 0.2, n))
 
-    def _fake_own_null(ctx, features, U_key, contexts_u, targets_u, periods_u, seed, n_null):
-        r = np.random.default_rng(seed)
+    def _fake_own_null(ctx, features, U_key, contexts_u, targets_u, periods_u,
+                       baseline_seed, direction_seed, n_null):
+        r = np.random.default_rng(direction_seed)
         return [(_stats_raw(r.normal(0, 0.05, n)), _stats_shape(r.normal(0, 0.05, n)))
                for _ in range(int(n_null))]
 
@@ -697,8 +699,9 @@ def test_own_effect_null_is_random_direction_not_matched_sets(monkeypatch, tmp_p
         r = np.random.default_rng(sia._seed("fallback", ctx.model, tuple(feats), base=0))
         return _stats_raw(r.normal(0, 1000.0, n)), _stats_shape(r.normal(0, 1000.0, n))
 
-    def _fake_own_null(ctx, features, U_key, contexts_u, targets_u, periods_u, seed, n_null):
-        r = np.random.default_rng(seed)
+    def _fake_own_null(ctx, features, U_key, contexts_u, targets_u, periods_u,
+                       baseline_seed, direction_seed, n_null):
+        r = np.random.default_rng(direction_seed)
         return [(_stats_raw(r.normal(0, 0.01, n)), _stats_shape(r.normal(0, 0.01, n)))
                for _ in range(int(n_null))]
 
@@ -857,6 +860,171 @@ def test_seeded_predict_pairs():
     torch.manual_seed(43)
     out3 = adapter.predict(contexts, HORIZON, [0.5])
     assert np.abs(out1["point"] - out3["point"]).max() > 0.0
+
+
+# ---------------------------------------------------------------------------
+# 5b. `own_effect_null`'s baseline seed (fix for ROADMAP.md sec 37.8:
+#     "Sundial as a destination is almost never scorable" -- diagnosed
+#     2026-09-27 as `own_effect_null` reseeding its null forward pass with
+#     `own_null_seed` instead of the side's own baseline seed, injecting
+#     fresh sampling noise into every null delta for a SAMPLED model that
+#     the real ablation delta never carries, since `battery_for_set` always
+#     reseeds with the baseline's own seed).
+# ---------------------------------------------------------------------------
+
+class _SampledAdapter(_Adapter):
+    """A mock of a SAMPLED model (Sundial's flow-matching head; Chronos-T5's
+    decoder, sec 11.50): `predict()`'s output depends on torch's GLOBAL RNG
+    state at call time -- exactly like a real sampled adapter -- layered on
+    top of the same deterministic base signal `_Adapter` produces, so a
+    planted real effect is still measurable through the noise when (and
+    only when) every compared forward pass is reseeded consistently."""
+
+    def __init__(self, name: str, weight: np.ndarray | None = None, noise_scale: float = 0.05):
+        super().__init__(name, weight=weight)
+        self.noise_scale = noise_scale
+
+    def predict(self, contexts, horizon, quantiles):
+        base = super().predict(contexts, horizon, quantiles)
+        noise = torch.randn(base["point"].shape).numpy() * self.noise_scale
+        return {"point": (base["point"] + noise).astype(np.float32)}
+
+
+def _buggy_own_effect_null(ctx, features, U_key, contexts_u, targets_u, periods_u,
+                           baseline_seed, direction_seed, n_null):
+    """Reimplements the PRE-FIX `own_effect_null` verbatim: the null forward
+    pass is reseeded with `direction_seed` (production's `own_null_seed`),
+    never `baseline_seed` (the side's own baseline seed) -- the exact defect
+    this fix addresses. `_baseline_for_rows` is still called with
+    `baseline_seed`, the SAME value `battery_for_set` used to build this
+    (model, layer, U)'s cached baseline, so this reproduces the historical
+    bug (a correctly-shared baseline; an INCORRECTLY reseeded null), not an
+    unrelated cache-consistency failure."""
+    feat_list = [int(features)] if isinstance(features, (int, np.integer)) else \
+        sorted(int(f) for f in features)
+    clean_tokens, baseline_fc, baseline_q = sia._baseline_for_rows(ctx, contexts_u, U_key,
+                                                                   baseline_seed)
+    with torch.no_grad():
+        d_in = clean_tokens.shape[-1]
+        enc = ctx.sae.encode(clean_tokens.reshape(-1, d_in).to(ctx.device))
+        removed = [float(enc[:, f].abs().mean().cpu()) for f in feat_list]
+    nonzero = [m for m in removed if m > 0]
+    null_magnitude = -float(np.mean(nonzero) if nonzero else 1.0)
+
+    rng = np.random.default_rng(direction_seed)
+    out = []
+    for _ in range(int(n_null)):
+        direction = rng.normal(size=ctx.sae.dict_size)
+        direction = direction / (np.linalg.norm(direction) + 1e-12)
+        replacement = sia._direction_steered_replacement(
+            clean_tokens, ctx.sae, ctx.device,
+            torch.as_tensor(direction, dtype=torch.float32), null_magnitude)
+        with sia.token_patch(ctx.adapter.module, ctx.layer, ctx.adapter.token_slice, replacement):
+            torch.manual_seed(direction_seed)  # the bug: should be `baseline_seed`
+            rec = ctx.adapter.predict(contexts_u, ctx.cfg.data.horizon, ctx.cfg.l0.quantiles)
+        stats_raw = sia.battery_statistics(rec["point"], baseline_fc, targets_u, contexts_u,
+                                           periods_u, steered_quantiles=rec.get("quantiles"),
+                                           baseline_quantiles=baseline_q, remove_level=False)
+        stats_shape = sia.battery_statistics(rec["point"], baseline_fc, targets_u, contexts_u,
+                                             periods_u, steered_quantiles=rec.get("quantiles"),
+                                             baseline_quantiles=baseline_q, remove_level=True)
+        out.append((stats_raw, stats_shape))
+    return out
+
+
+def _sampled_dst_harness(tmp_path, monkeypatch, noise_scale: float = 300.0):
+    pooled_a, w_dec_a = _pooled_and_wdec(0, REAL_COL, real_gain=20.0)
+    pooled_b, w_dec_b = _pooled_and_wdec(1, REAL_COL, real_gain=20.0)
+
+    _MODULE_STATE.clear()
+    sia.reset_caches()
+    sae_a, sae_b = _SAE(pooled_a, w_dec_a), _SAE(pooled_b, w_dec_b)
+    saes = {("A", "blocks_0"): sae_a, ("B", "blocks_0"): sae_b}
+    adapters = {"A": _Adapter("A"), "B": _SampledAdapter("B", noise_scale=noise_scale)}
+    hub, store, data, cfg = _Hub(adapters), _Store({"A": pooled_a, "B": pooled_b}), _Data(), _Cfg
+    cfg.concepts.shared_input_n_null = 50
+
+    monkeypatch.setattr(sia, "capture_raw_tokens", _fake_capture)
+    monkeypatch.setattr(sia, "token_patch", _fake_patch)
+    monkeypatch.setattr(sia, "load_sae_checkpoint",
+                        lambda path: saes[(Path(path).parent.name, Path(path).stem)])
+    monkeypatch.setattr(sia, "load_all_windows",
+                        lambda store, model, layer: data.contexts()[:, :D_IN].astype(np.float32))
+    monkeypatch.setattr(sia, "reach_probe", lambda *a, **k: {"reachable": True, "reason": ""})
+
+    score_a = concept_scores(pooled_a, [0])
+    S_a = top_series(score_a, K_TOP)
+    ranks_b = rankdata(pooled_b, axis=0)
+    auc = float(auc_from_ranks(ranks_b, S_a)[1])
+    atlas = {"rows": [{"model": "A", "layer": "blocks.0", "feature": 0, "concept": 1}]}
+    atlas_transfer = {"k_top_series": K_TOP, "tests": [
+        {"concept": 1, "src_target": "A/blocks.0", "src_model": "A",
+         "dst_target": "B/blocks.0", "dst_model": "B", "feature": 1,
+         "auc": auc, "reciprocal_fdr": True},
+    ]}
+    return sia.run_shared_input_agreement(cfg, tmp_path, hub, store, data, "cpu",
+                                          atlas, atlas_transfer)
+
+
+def test_own_null_uses_baseline_seed_for_sampled_model(monkeypatch, tmp_path):
+    """The fix, exercised through the REAL `own_effect_null` (not stubbed):
+    B is a SAMPLED destination with a planted real level effect well above
+    a noise-free random-direction null. With the fix, every forward pass
+    compared against B's baseline (the real ablation AND every null draw) is
+    reseeded with B's own baseline seed, so the sampling noise cancels
+    identically in every delta and the side clears.
+
+    Plant: reverting `own_effect_null`'s `torch.manual_seed(baseline_seed)`
+    back to `torch.manual_seed(direction_seed)` (the pre-fix code -- exactly
+    what `_buggy_own_effect_null` above reimplements) must make this fail:
+    see `test_old_seeding_fails_sampled_destination` for that side of the
+    plant, kept as its own test so a reader sees BOTH directions pass/fail
+    without hand-editing source.
+    """
+    out = _sampled_dst_harness(tmp_path, monkeypatch)
+    test = out["tests"][0]
+    assert test["side_dst"]["level"]["clears_null"] is True, test["side_dst"]["level"]
+    assert "level" in test["side_dst"]["clearing_channels"]
+    assert test["verdict"] != "not scorable", test
+
+
+def test_old_seeding_fails_sampled_destination(monkeypatch, tmp_path):
+    """The other side of the same plant, run automatically (never hand-
+    reverting the source file): monkeypatching `own_effect_null` to
+    `_buggy_own_effect_null` (the verbatim pre-fix reimplementation) on the
+    IDENTICAL fixture `test_own_null_uses_baseline_seed_for_sampled_model`
+    uses must stop B's level channel from clearing -- the sampling noise
+    the null now carries (and the real ablation delta does not) inflates
+    `null_p95` above the planted effect."""
+    monkeypatch.setattr(sia, "own_effect_null", _buggy_own_effect_null)
+    out = _sampled_dst_harness(tmp_path, monkeypatch)
+    test = out["tests"][0]
+    assert test["side_dst"]["level"]["clears_null"] is False, test["side_dst"]["level"]
+
+
+def test_deterministic_adapter_byte_identical_under_old_and_new_seeding(monkeypatch, tmp_path):
+    """CLAUDE.md sec 7 invariant 13 ("legacy artifact keys stay byte-
+    identical"): the fix must be a no-op for every DETERMINISTIC model
+    already recorded (TimesFM, Chronos-2, Chronos-Bolt), because their mock
+    stand-in `_Adapter` never reads torch's global RNG state, so reseeding
+    the null forward pass with the wrong seed cannot change its output at
+    all. Runs the harness once with the real, fixed `own_effect_null` and
+    once with `_buggy_own_effect_null` (the pre-fix reimplementation) and
+    requires the recorded `side_src`/`side_dst` blocks -- and the verdict --
+    to be byte-identical."""
+    pooled_a, w_dec_a = _pooled_and_wdec(0, REAL_COL, real_gain=20.0)
+    pooled_b, w_dec_b = _pooled_and_wdec(1, REAL_COL, real_gain=-20.0)
+
+    out_fixed = _build_run(pooled_a, w_dec_a, pooled_b, w_dec_b, tmp_path / "fixed",
+                           monkeypatch=monkeypatch)
+
+    monkeypatch.setattr(sia, "own_effect_null", _buggy_own_effect_null)
+    out_buggy = _build_run(pooled_a, w_dec_a, pooled_b, w_dec_b, tmp_path / "buggy",
+                           monkeypatch=monkeypatch)
+
+    assert out_fixed["tests"][0]["side_src"] == out_buggy["tests"][0]["side_src"]
+    assert out_fixed["tests"][0]["side_dst"] == out_buggy["tests"][0]["side_dst"]
+    assert out_fixed["tests"][0]["verdict"] == out_buggy["tests"][0]["verdict"]
 
 
 # ---------------------------------------------------------------------------

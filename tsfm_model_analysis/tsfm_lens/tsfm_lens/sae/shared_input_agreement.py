@@ -280,16 +280,32 @@ def reset_caches() -> None:
 
 def _baseline_for_rows(ctx: TargetContext, contexts_u: np.ndarray, U_key: tuple,
                        seed: int) -> tuple:
+    """Cached per `(model, layer, U)`, deliberately not per-seed: every caller
+    at this `(model, layer, U)` must be seeding a comparison against the SAME
+    baseline forecast (§11.49/§11.50), so a caller passing a different seed
+    than the one that produced the cached baseline is a bug, not a cache
+    miss to silently recompute -- it would mean scoring a real or null
+    forward pass against a baseline sampled under a DIFFERENT seed (exactly
+    P5b's own-effect-null defect, ROADMAP.md sec 37.8 "Sundial as a
+    destination is almost never scorable"). The cache therefore records the
+    seed it was built with and asserts every later call agrees."""
     key = (ctx.model, ctx.layer, U_key)
     if key in _baseline_cache:
-        return _baseline_cache[key]
+        cached_seed, cached = _baseline_cache[key]
+        if cached_seed != seed:
+            raise AssertionError(
+                f"_baseline_for_rows: cached baseline for {key} was produced under "
+                f"seed {cached_seed!r}, but this call passed seed {seed!r} -- every "
+                f"caller sharing this (model, layer, U) baseline must pass the same "
+                f"seed the baseline was created with")
+        return cached
     clean_tokens = capture_raw_tokens(ctx.adapter, contexts_u, [ctx.layer])[ctx.layer]
     full_recon = _token_level_replacement(clean_tokens, ctx.sae, ctx.device)
     with token_patch(ctx.adapter.module, ctx.layer, ctx.adapter.token_slice, full_recon):
         torch.manual_seed(seed)
         rec_full = ctx.adapter.predict(contexts_u, ctx.cfg.data.horizon, ctx.cfg.l0.quantiles)
     out = (clean_tokens, rec_full["point"], rec_full.get("quantiles"))
-    _baseline_cache[key] = out
+    _baseline_cache[key] = (seed, out)
     return out
 
 
@@ -324,8 +340,8 @@ def battery_for_set(ctx: TargetContext, features, U_key: tuple, contexts_u: np.n
 
 
 def own_effect_null(ctx: TargetContext, features, U_key: tuple, contexts_u: np.ndarray,
-                    targets_u: np.ndarray, periods_u: np.ndarray, seed: int,
-                    n_null: int) -> list:
+                    targets_u: np.ndarray, periods_u: np.ndarray, baseline_seed: int,
+                    direction_seed: int, n_null: int) -> list:
     """The null that decides whether `features`' own effect on `U` is real at
     all (review of the v1 run, tightening design item 5's floor -- see the
     module docstring's second deviation note): `n_null` row-matched
@@ -335,6 +351,22 @@ def own_effect_null(ctx: TargetContext, features, U_key: tuple, contexts_u: np.n
     handful of other dictionary atoms and are not independent draws from
     "no effect", so using them here starves a small dictionary's floor and
     over-clears a highly selective one.
+
+    **Two seeds, deliberately not one (fix for ROADMAP.md sec 37.8's
+    "Sundial as a destination is almost never scorable", diagnosed
+    2026-09-27 as an instrument defect).** `baseline_seed` MUST be the same seed that
+    produced (or will produce) this `(model, layer, U)`'s cached baseline
+    forecast in `_baseline_for_rows` -- i.e. the side's `seed_src`/`seed_dst`
+    from `battery_for_set` -- and is the ONLY seed used to reseed
+    `torch.manual_seed` before each null `predict()` call below. For a
+    *sampled* model (Sundial's flow-matching head; Chronos-T5 too), seeding
+    the null forward pass with anything else injects fresh sampling noise
+    into `null_delta = null_forecast - baseline_forecast` that the real
+    ablation delta (scored under the SAME `baseline_seed` throughout,
+    `battery_for_set`) never carries, inflating the null far above the real
+    effect and making the side almost never scorable. `direction_seed` seeds
+    ONLY `np.random.default_rng` for the null DIRECTION draws, which do not
+    touch the model's own sampling.
 
     `magnitude` is `-mean(nonzero abs activation of `features` on U)`, the
     same convention `feature_ablation_fingerprints` uses for its own
@@ -347,13 +379,16 @@ def own_effect_null(ctx: TargetContext, features, U_key: tuple, contexts_u: np.n
     property of the specific ablated set, so two different sets at the same
     (target, U) are two different nulls, but a repeated (set, U) -- e.g. the
     same source part scored against two different destinations that share a
-    `U` -- is computed once."""
+    `U` -- is computed once. Both seeds are deterministic functions of
+    exactly these same components (the driver's `_seed(...)` calls), so a
+    repeated (set, U) always implies the same pair of seeds too."""
     feat_list = [int(features)] if isinstance(features, (int, np.integer)) else \
         sorted(int(f) for f in features)
     key = (ctx.model, ctx.layer, tuple(feat_list), U_key)
     if key in _own_null_cache:
         return _own_null_cache[key]
-    clean_tokens, baseline_fc, baseline_q = _baseline_for_rows(ctx, contexts_u, U_key, seed)
+    clean_tokens, baseline_fc, baseline_q = _baseline_for_rows(ctx, contexts_u, U_key,
+                                                               baseline_seed)
     with torch.no_grad():
         d_in = clean_tokens.shape[-1]
         enc = ctx.sae.encode(clean_tokens.reshape(-1, d_in).to(ctx.device))
@@ -361,7 +396,7 @@ def own_effect_null(ctx: TargetContext, features, U_key: tuple, contexts_u: np.n
     nonzero = [m for m in removed if m > 0]
     null_magnitude = -float(np.mean(nonzero) if nonzero else 1.0)
 
-    rng = np.random.default_rng(seed)
+    rng = np.random.default_rng(direction_seed)
     out = []
     for _ in range(int(n_null)):
         direction = rng.normal(size=ctx.sae.dict_size)
@@ -370,7 +405,7 @@ def own_effect_null(ctx: TargetContext, features, U_key: tuple, contexts_u: np.n
             clean_tokens, ctx.sae, ctx.device,
             torch.as_tensor(direction, dtype=torch.float32), null_magnitude)
         with token_patch(ctx.adapter.module, ctx.layer, ctx.adapter.token_slice, replacement):
-            torch.manual_seed(seed)
+            torch.manual_seed(baseline_seed)
             rec = ctx.adapter.predict(contexts_u, ctx.cfg.data.horizon, ctx.cfg.l0.quantiles)
         stats_raw = battery_statistics(rec["point"], baseline_fc, targets_u, contexts_u, periods_u,
                                        steered_quantiles=rec.get("quantiles"),
@@ -724,15 +759,22 @@ def run_shared_input_agreement(cfg, run_dir, hub, store, data, device, atlas: di
         # row-matched random-direction null, never the matched candidate
         # feature sets above (those are ONLY the floor for statistics
         # (i)/(ii) themselves -- see the module docstring).
+        #
+        # Fix (2026-09-27, ROADMAP sec 37.8 "Sundial as a destination is
+        # almost never scorable"): the null forward pass must be reseeded
+        # with the SAME seed that produced this side's cached baseline
+        # (`seed_src`/`seed_dst`, already computed above for `battery_for_set`),
+        # never `own_null_seed`, which now seeds ONLY the direction draws. See
+        # `own_effect_null`'s docstring.
         own_null_seed_a = _seed("shared_input_own_null", unit["src_target"],
                                 tuple(sorted(unit["src_features"])), U_key, base=base_seed)
         own_null_seed_b = _seed("shared_input_own_null", unit["dst_target"],
                                 tuple(sorted(unit["dst_features"])), U_key, base=base_seed)
         n_null_directions = int(getattr(c, "n_null_directions", 16))
         own_null_a = own_effect_null(ctx_src, unit["src_features"], U_key, contexts_u, targets_u,
-                                     periods_u, own_null_seed_a, n_null_directions)
+                                     periods_u, seed_src, own_null_seed_a, n_null_directions)
         own_null_b = own_effect_null(ctx_dst, unit["dst_features"], U_key, contexts_u, targets_u,
-                                     periods_u, own_null_seed_b, n_null_directions)
+                                     periods_u, seed_dst, own_null_seed_b, n_null_directions)
 
         side_a = _side_channel_scores(real_raw_a, real_shape_a, own_null_a)
         side_b = _side_channel_scores(real_raw_b, real_shape_b, own_null_b)
