@@ -3171,6 +3171,85 @@ _L5_NOT_MEASURED = "not measured: P5 not run"
 _L6_NOT_MEASURED = "not confirmed: no fresh private epoch"
 
 
+def _l5_status(cid, shared_input: Optional[dict]) -> tuple:
+    """`-> (status, detail)` for L5 (ROADMAP.md sec 37.8 P5b): cross-model
+    causal agreement, measured on the SAME shared series
+    (`sae/shared_input_agreement.json`). `shared_input` is that whole
+    artifact (not a per-concept slice) -- its `tests` rows carry their own
+    `concept` id, matching `sae/atlas_transfer.json`'s own unit. Verdicts:
+    `same causal effect`, `level only`, `shape only`, `no specific
+    agreement`, `acts differently`, `not scorable` (review of the v1 run
+    added `no specific agreement`: failing to clear the matched-feature
+    floor is the ABSENCE of evidence of agreement, not evidence of
+    disagreement -- `acts differently` is reserved for falling BELOW the
+    floor's lower tail, i.e. worse than matched features agree by chance).
+
+    'reached' ('same causal effect on shared inputs') only when at least one
+    of this concept's tests is `same causal effect` and NONE is `acts
+    differently` -- one disagreeing pair is enough to withhold the reached
+    verdict even if another pair agrees, since "shared" here means every
+    tested pair is at least consistent, not merely that one pair is. Every
+    other outcome (including a mix of `level only`/`shape only`/`no specific
+    agreement`, or nothing reaching `same causal effect`) is `partial`: the
+    rule only ever promotes to 'reached' or demotes to 'not reached' on the
+    same two verdicts, unchanged by the new one.
+    """
+    if not shared_input or not shared_input.get("tests"):
+        return "not measured", _L5_NOT_MEASURED
+    tests = [t for t in shared_input["tests"] if t.get("concept") == cid]
+    if not tests:
+        return "not measured", "not measured: no shared-input test for this concept"
+    counts: dict = {}
+    for t in tests:
+        v = t.get("verdict")
+        counts[v] = counts.get(v, 0) + 1
+    detail = ", ".join(f"{v}: {n}" for v, n in sorted(counts.items()))
+    if counts.get("same causal effect") and not counts.get("acts differently"):
+        return "reached", f"same causal effect on shared inputs ({detail})"
+    if counts.get("acts differently"):
+        return "not reached", f"acts differently on at least one shared-input test ({detail})"
+    return "partial", f"neither same-effect nor acts-differently on shared inputs ({detail})"
+
+
+def _l6_status(cid, concept_replication: Optional[dict]) -> tuple:
+    """`-> (status, detail)` for L6 (ROADMAP.md sec 37.10 P7): confirmation
+    of a registered `concept_transfer` claim on a fresh, sealed private
+    epoch (`confirm/confirmation.json`'s `concept_replication` key).
+
+    `concept_replication` is that whole block (not a per-concept slice),
+    matching `_l5_status`'s own convention. A concept with no registered
+    claim (it was never in the top `concepts.n_registered` by dev AUC
+    margin, sec 37.10 design item 2) reads "not measured", never a bare
+    "not confirmed" -- absence from the one-shot private look is not the
+    same claim as having been tested and failed (`CLAUDE.md` sec 11.37).
+    """
+    if not concept_replication or concept_replication.get("status") != "tested":
+        return "not measured", _L6_NOT_MEASURED
+    transfer = concept_replication.get("transfer") or {}
+    tests = [t for t in (transfer.get("tests") or []) if t.get("concept") == cid]
+    if not tests:
+        return "not measured", "not measured: no registered concept_transfer claim for this concept"
+    n_confirmed = sum(1 for t in tests if t.get("verdict") == "confirmed")
+    # ROADMAP.md sec 37.10 P7b: `mode` defaults to "search" for every pre-P7b
+    # claim (additive key), and is stated in the detail text so a reader
+    # never mistakes a sharper frozen-feature confirmation for a search one
+    # (or vice versa) -- CLAUDE.md sec 8's "labels are claims" lesson.
+    by_mode: dict = {}
+    for t in tests:
+        by_mode.setdefault(t.get("mode", "search"), []).append(t)
+    mode_detail = ", ".join(
+        f"{m}: {sum(1 for t in ts if t.get('verdict') == 'confirmed')}/{len(ts)}"
+        for m, ts in sorted(by_mode.items()))
+    if n_confirmed:
+        return "reached", (f"confirmed on private data ({n_confirmed}/{len(tests)} registered "
+                           f"claim(s); by mode -- {mode_detail})")
+    if all(t.get("verdict") == "not replicable" for t in tests):
+        reasons = sorted({t.get("reason", "unstated") for t in tests})
+        return "not measured", f"not replicable: {'; '.join(reasons)}"
+    return "not reached", (f"registered but not confirmed on private data ({len(tests)} "
+                           f"claim(s); by mode -- {mode_detail})")
+
+
 def _rung(n: int, status: str, detail: str) -> dict:
     return {"rung": n, "label": RUNG_LABELS[n - 1], "status": status, "detail": detail}
 
@@ -3215,7 +3294,9 @@ def _derive_concept_verdict(sharing_class, stable):
 
 
 def concept_verdicts(profiles: Optional[dict], stability: Optional[dict],
-                     atlas_transfer: Optional[dict]) -> list:
+                     atlas_transfer: Optional[dict],
+                     shared_input: Optional[dict] = None,
+                     concept_replication: Optional[dict] = None) -> list:
     """One row per atlas concept: the evidence-ladder columns (`RUNG_LABELS`)
     plus the single derived `verdict` and `highest_rung` a reader climbs to.
 
@@ -3229,6 +3310,18 @@ def concept_verdicts(profiles: Optional[dict], stability: Optional[dict],
     primary path, mirroring `analysis/model_similarity.py::_shared_
     concepts`'s "read defensively" discipline for a sibling artifact it
     does not own).
+
+    `shared_input` is `sae/shared_input_agreement.json` (ROADMAP.md sec 37.8
+    P5b; optional, defaults to `None` so a pre-P5b caller reproduces the old
+    L5 rung exactly): L5 renders "measured" from it via `_l5_status`, never
+    "not measured: P5 not run" once the artifact exists, whether or not this
+    particular concept has a test in it.
+
+    `concept_replication` is `confirm/confirmation.json`'s `concept_
+    replication` key (ROADMAP.md sec 37.10 P7; optional, defaults to `None`
+    so a pre-P7 caller reproduces the old, always-"not measured" L6 rung
+    exactly): filled via `_l6_status`, the same "measured whether or not
+    THIS concept has a claim" contract L5 above already established.
 
     Adaptivity contract: no model or architecture name, no `cfg.models[`
     index -- every model name here is read off `profiles`'s own `parts`.
@@ -3288,8 +3381,10 @@ def concept_verdicts(profiles: Optional[dict], stability: Optional[dict],
             l4 = _rung(4, "not measured", str(transfer_fdr) if isinstance(transfer_fdr, str)
                        else (transfer_reason or "not measured"))
 
-        l5 = _rung(5, "not measured", _L5_NOT_MEASURED)
-        l6 = _rung(6, "not measured", _L6_NOT_MEASURED)
+        l5_status, l5_detail = _l5_status(cid, shared_input)
+        l5 = _rung(5, l5_status, l5_detail)
+        l6_status, l6_detail = _l6_status(cid, concept_replication)
+        l6 = _rung(6, l6_status, l6_detail)
 
         verdict, highest_rung = _derive_concept_verdict(sharing_class, stable)
         rows.append({

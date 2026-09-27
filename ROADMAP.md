@@ -37,6 +37,14 @@
 
 ## 0. How to use this document
 
+> **Results ledger (added 2026-09-26).** This file is the lab notebook. The
+> distilled, scored result set lives in **`FINDINGS.md`** at the repo root.
+> Whenever a Findings block here records a major or interesting result —
+> positive or a confirmed negative — add or correct the matching
+> `FINDINGS.md` entry in the same commit (exact numbers, evidence class,
+> reproduce pointer, this file's §/line, a 1–5 interestingness score). Its
+> header is the binding format.
+
 1. **Before starting work in a session**, read the phase you're picking up
    (§4–§9), its current status checklist, and any linked findings. Don't
    re-derive context that's already written down.
@@ -28477,6 +28485,56 @@ not a measurement or a design question — H1–H4's numbers above are unchanged
 **§32.9's ordering line updated:** `... → H (next)` becomes
 `... → H (done, 2026-09-14) → PRUNE (next)`.
 
+**Addendum (2026-09-27): preprocessing ruled out; flat share traced to corpus composition.**
+This was an orchestrator re-check prompted by a user question ("predictions super smoothed out — is
+something wrong with preprocessing?"). It used scratch scripts outside the repo, 240–400 stratified
+dev series, and stored predictions for all 965 series.
+
+- **Preprocessing is not the cause.** `data.py::_assemble` only crops to context+horizon as float32;
+  no adapter rescales its input. Native library forecasts match the adapters (median |Δ| in
+  context-sd units):
+  - Chronos-2: 0.0026
+  - Chronos-Bolt: 0.0023
+  - TimesFM native `forecast()` with all `ForecastConfig` options on: 0.028. The adapter calls
+    `tfm.model.decode` directly and bypasses `normalize_inputs` / `force_flip_invariance` /
+    `infer_is_positive` / `fix_quantile_crossing`.
+
+  Flat fraction, native vs adapter: TimesFM 0.5167 vs 0.4917; Chronos-2 0.5083 vs 0.5083;
+  Bolt 0.5083 vs 0.5083. The Chronos models' bf16 vs native fp32 is negligible. Sundial's native
+  `generate` fails on the installed transformers (`DynamicCache.seen_tokens` AttributeError), but the
+  adapter's forward path is unaffected.
+- **Smoothness is by design: point = central estimate.** Sundial's single sample has sd ratio
+  0.4195; the median of 20 samples has 0.161 (the target's own sd ratio is ~0.82). The single sample
+  is *worse* (MASE 1.472).
+- **Flat forecasts are rare on periodic contexts.** Periodic here means differenced-series ACF at
+  lags ≥ 8 above 0.3 (91 of 400).
+
+  | Model | Flat, periodic | Flat, non-periodic | MASE flat | MASE non-flat |
+  |---|---|---|---|---|
+  | TimesFM | 0.033 | 0.60 | 0.855 | 1.865 |
+  | Chronos-2 | 0.033 | 0.59 | 0.846 | 1.809 |
+  | Sundial | 0.022 | 0.49 | 0.900 | 2.067 |
+  | Chronos-Bolt | 0.044 | 0.61 | 0.897 | 2.371 |
+
+  All models beat naive (1.904) and seasonal-naive (1.912) on MASE: 1.138 / 1.065 / 1.323 / 1.407.
+- **The flat share is a benchmark-composition effect.** The real-derived tier is 410/965 ≈ 42% of the
+  dev corpus. It is almost entirely Monash `weather` plus ETT (`large_run.yaml` documents that the
+  long Monash hourly domains fail to load).
+  - `block_bootstrap`: 61% zero values, lag1 0.212
+  - `sequential_par`: 36% zeros, lag1 0.115
+  - `mixture`: 25% zero steps, lag1 0.241
+
+  Flat share (TimesFM / C2 / Sundial / Bolt):
+  - `block_bootstrap`: 1.0 / .897 / .966 / .966
+  - `mixture`: .90 / .883 / .808 / .883
+  - `sequential_par`: .905 / .714 / .333 / .667
+  - structured synthetic archetypes: 0
+
+  On `block_bootstrap`, naive median MASE is 0.842 and the context mean's is 1.033, vs models ~0.70–0.74.
+- **Implication.** Nothing to fix in preprocessing. About half the corpus gives the forecast little to
+  move, which caps ablation effect sizes (MN-14). A more predictable real-derived source, or reporting
+  flatness by generator, would address it. Neither is done. See FINDINGS BM-06.
+
 ### 32.7b Complaint 2, second half: 55.8% of the rendered panels are features the battery already scored as causally null ✅ DONE (Item I, 2026-09-13)
 
 > **The question that produced this** (2026-09-12, user, on reading §32.6):
@@ -33996,6 +34054,8 @@ was still on the page to contradict.
 
 ### 35.0 Status, provenance, and the one-paragraph version
 
+🔴 **Closed 2026-09-26 as a NO-GO: see §35.14.** The real-data rotation control showed CCM is not basis-sensitive on these low-rank representations.
+
 🔵 **Re-scoped 2026-09-22 by §37.** First implementation targets **SAE
 features**, with §37 P2's replicate dictionaries as the same-model reference
 spectrum; the residual-stream measurement stays the control §35.4 already calls
@@ -34828,6 +34888,70 @@ and it is worth nothing if CCM has not already cleared §35.10.
    untrained-twin floor, which §29 measured and found three of four twins
    cannot carry.
 
+### 35.14 Findings (2026-09-26): NO-GO. CCM does not measure unit correspondence on these representations
+
+**The work.** It was built by a Sonnet agent from `/tmp/tsfm_specs/s35_spec.md` (branch
+`worktree-agent-addcbd551b7d8b676`, commit `046b96c`). The branch holds
+`analysis/alignment_spectrum.py`, `run_alignment_spectrum.py` and `tests/test_alignment_spectrum.py`
+(12 tests). **Not merged**: the decision closed negative (§2.9), and the commit is the recovery point.
+It was run over the 4-model run's store, with zero forward passes.
+
+- **The synthetic suite passes, with two disclosed re-readings.**
+  1. **Test 3 (rotation) fails its literal criterion.** For an exact rotation, CCM does not fall
+     inside its null CI. The CI is [0.00263, 0.00501] at d=3000, N=100. A Haar rotation leaves each
+     unit a real best-partner correlation of about √(2 ln d / d), which the row-permutation null
+     cannot absorb. The agent re-read the gate as a >100× collapse relative to the identity rung
+     (0.6362 → 0.00609) with CKA unchanged. That re-reading is a deviation from §35.9, which says
+     "abandoned rather than tuned".
+  2. **CCF over-states the core fraction in a core+tail mixture** (1.0 for a planted 0.6). The null
+     spectrum is homogeneous, and the tail's order statistics are not.
+  - Test 7 (size invariance) passes cleanly: |CCM| is 6.6e-5, 8.6e-4 and 9.9e-4 at n_b 50, 500
+    and 5000.
+- **Real N-level result.** CCM is 0.24–0.54, and every CI excludes zero. §35.9 pre-registered this
+  as the surprise that "would need explaining before any F-level number is trusted".
+  - Examples: TimesFM/Chronos-2 0.2470631051534907 at CKA 0.436; Chronos-2/Bolt
+    0.5395807276 at CKA 0.883.
+- **The real rotation control decides it (orchestrator, `scratchpad/s35ctl`, reading the store
+  only).** A Haar rotation of one or both bases of the *real* activations:
+
+  | pair | real CCM | B rotated | both rotated | participation ratio A / B |
+  |---|---|---|---|---|
+  | N TimesFM xf.4 / Chronos-2 b.6 (400 series × 16 windows) | 0.2380 | 0.2131 | 0.2614 | 28.72 / 43.26 |
+  | N Chronos-2 b.0 / Bolt b.0 | 0.5311 | 0.5082 | 0.6131 | 10.85 / 6.44 |
+  | F Chronos-2 b.6 / Bolt b.4 (SAE, 965 series) | 0.1476 | 0.1282 | 0.3313 | 41.55 / 5.60 |
+  | F Sundial l.3 / TimesFM xf.18 (SAE) | 0.1471 | 0.1228 | 0.2947 | 6.87 / 1.54 |
+
+  - Rotating one basis moves CCM by 0.02–0.03. Rotating both **raises** it, up to 2.2× at the
+    F level.
+  - The representations are low-rank: the participation ratio goes as low as 1.54, and the top 10
+    PCs carry 37–92% of the variance. Nearly every direction, including a random one, correlates
+    with the few shared dominant components.
+  - At the F level the rotated heads beat the real ones: 0.3190 vs 0.1749, and 0.3079 vs 0.1206.
+    **SAE atoms are no more matched one-to-one across models than random directions of their
+    dictionaries are.**
+  - The design's premise, "a random rotation of one model's hidden basis ... drives CCM to its
+    null", holds only for isotropic data. It is false here. By §35.9's own rule the section is
+    abandoned, not tuned.
+- **Two further defects**, recorded so they are not re-derived.
+  1. **Window-level null.** It permutes individual windows, so shared window-position structure
+     survives in the real arm only. A series-block permutation null lowers TimesFM/Chronos-2 from
+     0.2380 to 0.1793, while Chronos-2/Bolt barely moves (0.5311 → 0.5095).
+  2. **Biased bootstrap CI.** The CI deduplicates each resample, which leaves about 63% of the
+     series, and CCM depends on N. So every CI sits *below* its own point estimate: 0.2470 against
+     [0.2390, 0.2437], and 0.1476 against [0.1084, 0.1179]. The agent's check used a null fixture
+     (true CCM 0), where a size-driven bias is invisible. A cluster-consistent fix exists: keep the
+     duplicates and permute *series* in the null, so duplicated pairs stay paired in both arms. It
+     was not built.
+- **Other observations (descriptive, not promoted).**
+  - The same-model reference (P2 replicates) is 0.1130–0.3620, above the cross-model range of
+    0.066–0.148.
+  - Signed and |ρ| CCM are identical at the peak cell (0.14764587936229084 vs 0.147648612431962).
+- **§36 stays parked.** Its un-park trigger, the rotation control passing on a real run, has failed.
+- **If this is reopened, it needs a new registered question.** One example is basis-privilege excess
+  = CCM(real) − CCM(both bases rotated), with its own null. It would answer "are units better
+  aligned than random directions", which is what the table above says they are not, rather than
+  "is there correspondence beyond chance".
+
 ---
 
 ## 36. The L1 section becomes two-tier — CCM figures added, CKA demoted behind a measured gate (added 2026-09-22, user-directed — DESIGN ONLY, NOT IMPLEMENTED)
@@ -35345,6 +35469,9 @@ or a checkpoint, so none of it is a `CLAUDE.md` §2.8 background-agent job.
 
 ### 37.0 Status, provenance, and the one-paragraph version
 
+> Concept Atlas results (P0–P8, P7b) are summarized as scored entries in
+> `FINDINGS.md` §B.2/§C/§G; new Findings here must update that file too.
+
 🔴 **DESIGN ONLY. Nothing in this section is implemented.** Every number below
 is either a measurement already recorded elsewhere in this file (cited by
 section) or a grounding fact checked against the code on 2026-09-22 (cited by
@@ -35814,25 +35941,27 @@ replicates, 979.9082707837224 s. **Re-run on the committed code gave a
 byte-identical `concept_stability` artifact** (replicate training 950.5131745003164 s),
 so replicate SAE training is deterministic at a fixed seed on this stack.
 
-**Numbers below are the float64-rank rerun (`384c7cd`, 2026-09-24)** on a
-second isolated copy whose replicates were trained on CPU (all GPUs were
-full; same seeds, 41990 s). The GPU/float16 run had ceilings Chronos-2
-0.9642857142857143, Chronos-Bolt 1.0, Sundial 0.9545454545454546, TimesFM
-0.8695652173913043 and stable-by-universality 4 / 7 / 3. CPU- and
-GPU-trained replicates differ numerically, so the shift cannot be split
-between the rank fix and the device.
+**Float64 check (`384c7cd`, 2026-09-25).** Replicates retrained on GPU,
+with stability recomputed on float64 ranks, reproduce the table below
+exactly: every ceiling, its CI, and stable-by-universality 4 / 7 / 3.
+**The rank fix does not change stability.** A copy whose replicates were
+trained on CPU (all GPUs were full, same seeds, 41990 s) differed: ceilings
+Chronos-2 0.9285714285714286, Chronos-Bolt 0.9285714285714286, Sundial 1.0,
+TimesFM 0.8695652173913043; still 14/19 stable, but concept 14 flipped
+stable → unstable and concept 16 unstable → stable. **CPU- and GPU-trained
+replicates are not interchangeable.** Use GPU replicates for recorded
+numbers.
 
 | model | within-model ceiling | 95% CI (bootstrap over parts) | parts |
 |---|---|---|---|
-| Chronos-2 | 0.9285714285714286 | [0.8214285714285714, 1.0] | 14 |
-| Chronos-Bolt | 0.9285714285714286 | [0.7857142857142857, 1.0] | 7 |
-| Sundial | 1.0 | [1.0, 1.0] | 11 |
-| TimesFM | 0.8695652173913043 | [0.7391304347826086, 0.9782608695652174] | 23 |
+| Chronos-2 | 0.9642857142857143 | [0.8928571428571429, 1.0] | 14 |
+| Chronos-Bolt | 1.0 | [1.0, 1.0] | 7 |
+| Sundial | 0.9545454545454546 | [0.8636363636363636, 1.0] | 11 |
+| TimesFM | 0.8695652173913043 | [0.7385869565217396, 0.9782608695652174] | 23 |
 
-- **Stable: 14/19 = 0.7368421052631579** (unchanged). **Go/no-go: GO** (bar
-  25%, not tuned).
+- **Stable: 14/19 = 0.7368421052631579. Go/no-go: GO** (bar 25%, not tuned).
 - Universality (concepts spanning N models), all → stable: 3 models 7 → 4,
-  2 models 7 → 6, 1 model 5 → 4. No atlas concept spans all 4 models.
+  2 models 7 → 7, 1 model 5 → 3. No atlas concept spans all 4 models.
 - Old per-target `concepts.json` ceiling (only 2 targets have concepts):
   Chronos-Bolt 0.5 (2 parts), TimesFM 1.0 (2 parts) — too few to read.
 - **Relative transfer** (item 5; atlas transfer from P3, exact p, uncorrected
@@ -35842,22 +35971,22 @@ between the rank fix and the device.
 
 | src → dst | tests | R (uncorr.) | R (FDR) | ceil src | ceil dst | R_rel |
 |---|---|---|---|---|---|---|
-| Chronos-2 → Chronos-Bolt | 28 | 0.8214285714285714 | 0.7857142857142857 | 0.9285714285714286 | 0.9285714285714286 | 0.8846153846153846 |
-| Chronos-2 → Sundial | 42 | 0.5714285714285714 | 0.47619047619047616 | 0.9285714285714286 | 1.0 | 0.5929994533288809 |
-| Chronos-2 → TimesFM | 70 | 0.5714285714285714 | 0.5142857142857142 | 0.9285714285714286 | 0.8695652173913043 | 0.6359210677400178 |
-| Chronos-Bolt → Chronos-2 | 21 | 0.8571428571428571 | 0.8571428571428571 | 0.9285714285714286 | 0.9285714285714286 | 0.923076923076923 |
-| Chronos-Bolt → Sundial | 21 | 0.5714285714285714 | 0.5714285714285714 | 0.9285714285714286 | 1.0 | 0.5929994533288809 |
-| Chronos-Bolt → TimesFM | 35 | 0.7714285714285715 | 0.7428571428571429 | 0.9285714285714286 | 0.8695652173913043 | 0.8584934414490242 |
-| Sundial → Chronos-2 | 33 | 0.45454545454545453 | 0.3333333333333333 | 1.0 | 0.9285714285714286 | 0.47170411060251893 |
-| Sundial → Chronos-Bolt | 22 | 0.6818181818181818 | 0.5454545454545454 | 1.0 | 0.9285714285714286 | 0.7075561659037783 |
-| Sundial → TimesFM | 55 | 0.4 | 0.3090909090909091 | 1.0 | 0.8695652173913043 | 0.4289522117905443 |
-| TimesFM → Chronos-2 | 69 | 0.6666666666666666 | 0.6231884057971014 | 0.8695652173913043 | 0.9285714285714286 | 0.7419079123633542 |
-| TimesFM → Chronos-Bolt | 46 | 0.6956521739130435 | 0.6956521739130435 | 0.8695652173913043 | 0.9285714285714286 | 0.7741647781182825 |
-| TimesFM → Sundial | 69 | 0.6086956521739131 | 0.5652173913043478 | 0.8695652173913043 | 1.0 | 0.6527533657682196 |
+| Chronos-2 → Chronos-Bolt | 28 | 0.8214285714285714 | 0.7857142857142857 | 0.9642857142857143 | 1.0 | 0.8365019125713041 |
+| Chronos-2 → Sundial | 42 | 0.5714285714285714 | 0.47619047619047616 | 0.9642857142857143 | 0.9545454545454546 | 0.5956083504537688 |
+| Chronos-2 → TimesFM | 70 | 0.5714285714285714 | 0.5142857142857142 | 0.9642857142857143 | 0.8695652173913043 | 0.6240336444599677 |
+| Chronos-Bolt → Chronos-2 | 21 | 0.8571428571428571 | 0.8571428571428571 | 1.0 | 0.9642857142857143 | 0.8728715609439694 |
+| Chronos-Bolt → Sundial | 21 | 0.5714285714285714 | 0.5714285714285714 | 1.0 | 0.9545454545454546 | 0.5848757893933245 |
+| Chronos-Bolt → TimesFM | 35 | 0.7714285714285715 | 0.7428571428571429 | 1.0 | 0.8695652173913043 | 0.8272649798817641 |
+| Sundial → Chronos-2 | 33 | 0.45454545454545453 | 0.3333333333333333 | 0.9545454545454546 | 0.9642857142857143 | 0.47377936967913425 |
+| Sundial → Chronos-Bolt | 22 | 0.6818181818181818 | 0.5454545454545454 | 0.9545454545454546 | 1.0 | 0.6978631577988531 |
+| Sundial → TimesFM | 55 | 0.4 | 0.3090909090909091 | 0.9545454545454546 | 0.8695652173913043 | 0.43904658609526254 |
+| TimesFM → Chronos-2 | 69 | 0.6666666666666666 | 0.6231884057971014 | 0.8695652173913043 | 0.9642857142857143 | 0.7280392518699623 |
+| TimesFM → Chronos-Bolt | 46 | 0.6956521739130435 | 0.6956521739130435 | 0.8695652173913043 | 1.0 | 0.7460038465922509 |
+| TimesFM → Sundial | 69 | 0.6086956521739131 | 0.5652173913043478 | 0.8695652173913043 | 0.9545454545454546 | 0.6681143701449648 |
 
   Read: the ceilings are near 1, so R_rel ≈ R; every pair sits below its
-  ceiling (max R_rel 0.923076923076923, Chronos-Bolt → Chronos-2). Sundial is
-  the weakest source in all three of its pairs (R_rel 0.429–0.708) and the
+  ceiling (max R_rel 0.8728715609439694, Chronos-Bolt → Chronos-2). Sundial is
+  the weakest source in all three of its pairs (R_rel 0.439–0.698) and the
   Chronos pair the strongest in both directions. The report renders R_rel
   per pair as `input_transfer` in the model-similarity profile
   (`analysis/model_similarity.py`, §37.11).
@@ -36026,6 +36155,102 @@ that are level carriers vs shape-causal, and the channels shape-causal ones
 move. Requires re-running the ablation battery (forward passes) — background
 agent.
 
+**Findings — P4 (2026-09-25, merged `b1a217e` + review `dfaec8b`; Sonnet
+agent, reviewed).** Implemented:
+- `battery_statistics(..., remove_level=False)`;
+- `response.py::level_share` (P0's ratio; `None` with a reason when the
+  denominator is exactly 0);
+- per candidate: `level_share`, a `shape_channels` block (the same battery
+  with the level removed, scored against a level-removed null built from the
+  same null forward passes), and `n_shape_channels_clearing`;
+- per atlas concept: `causal_tag`, `level_share_median`,
+  `n_members_with_level_share`, and (review) `n_members_shape_causal` of
+  `n_members_with_shape_record`;
+- `_compose_batch(..., tags=)`: a `level carrier` concept is named "shifts
+  the level";
+- `concepts.level_share_threshold: 0.9`.
+
+Everything is additive. On the real run, `concept_atlas.json` differs from
+the pre-P4 file only by the new keys: all 19 memberships and all 19 names are
+identical.
+
+- **Channel audit** (decided from the code, proved bit for bit in
+  `test_already_invariant_channels_identical`):
+
+  | channel | level-invariant | why |
+  |---|---|---|
+  | trend | yes | slope fitted after removing each row's mean |
+  | seasonal | yes | reads a nonzero FFT bin only |
+  | dispersion | yes | std removes its own mean; quantile width never sees the point forecast |
+  | spectral_centroid | no | its denominator includes bin 0 |
+  | level | no | it is the removed quantity |
+  | horizon_shape_near / far | no | raw per-step delta |
+  | mase | no | error against the target moves with level |
+  | flatness | no | threshold relative to max \|x\|; random fixtures looked invariant by coincidence, so it is shown by a hand-built counter-example |
+
+- **Review fix.** After level removal, the `level` channel's effect and
+  null are both float rounding (§11.48). It is now unavailable in
+  `shape_channels`, with a stated reason. Before the fix it "cleared" for one
+  TimesFM candidate. That candidate cleared other shape channels too, so no
+  class changed.
+- **Level share**, fresh battery run (n=439 scorable; P0 had n=436):
+  - pooled median 0.5651978345981524; p10 0.07029609241425071; p25
+    0.2466079874493294; p75 0.8248444299261131; p90 0.9496053201841033;
+    max 0.9952391472500276;
+  - fraction > 0.9: 0.18223234624145787 (P0: 0.20642201834862386);
+  - per-model medians: TimesFM 0.6760148520466956, Sundial
+    0.561834947593102, Chronos-2 0.46149602878261997, Chronos-Bolt
+    0.29543150177381716. The order is P0's.
+- **Causal candidates by class**:
+
+  | model | shape-causal | level carrier | no measured effect | total |
+  |---|---|---|---|---|
+  | TimesFM | 46 | 8 | 7 | 61 |
+  | Chronos-2 | 54 | 5 | 2 | 61 |
+  | Sundial | 52 | 0 | 1 | 53 |
+  | Chronos-Bolt | 26 | 0 | 0 | 26 |
+
+  So most causal features change the forecast's *shape* beyond a
+  level-removed null, even where most of their movement is level. The §30.2
+  worry ("fingerprint comparison is one signed scalar") does not hold at
+  candidate level. Shape channels cleared most often:
+  - TimesFM: horizon_shape_near 36;
+  - Chronos-2: dispersion 37;
+  - Sundial: horizon_shape_far 42;
+  - Chronos-Bolt: mase 23.
+- **Atlas tags: all 19 concepts are `shape-causal`**, because item 4's rule
+  fires when any member clears a shape channel. The rule hides a split,
+  which the member counts expose:
+  - 9 of 19 concepts have a median level share ≥ 0.9 (concepts 1, 2, 3,
+    4, 7, 8, 9, 17, 18);
+  - in only 3 of those 9 (7, 8, 17) is every member shape-causal;
+  - concept 18 has 1 of 3 shape-causal members (median level share
+    0.9878165846374678).
+
+  The tag says "some member moves shape". It does not say "this concept is
+  about shape". Read `n_members_shape_causal` beside it. The threshold stays
+  at 0.9, but it decided nothing on this run. **Open**: a `level-dominant`
+  qualifier (median ≥ threshold, and fewer than all members shape-causal),
+  if the report needs one. Not added, because it would be a second judgment
+  threshold with no measurement to calibrate it.
+- **Names:** none changed. The "shifts the level" override is covered by
+  unit tests (including an on-disk `run_concept_atlas` fixture), but no
+  concept on this run qualifies.
+- **Runtime:** ablation battery 180.452 s (13 targets, GPU).
+- **Tests:** 6 in `test_level_removed_battery.py` and 9 in
+  `test_level_removed_concept_tags.py`. Plants:
+  - a whole-batch shift fails `test_pure_level_shift`;
+  - a no-op transform fails 4 of 5;
+  - leaving the null raw fails `test_null_gets_same_transform` (null p95
+    0.42426395416259766 → 3.3941125869750977);
+  - swapping the tag order fails `test_shape_causal_wins_even_with_high_level_share`;
+  - dropping the dominant-clause exclusion fails its collision test;
+  - (review) dropping the level-channel branch fails
+    `test_level_channel_not_scored_after_level_removal`;
+  - (review) dropping the member count fails the shape-wins test.
+
+  160 passed across the concept, response, report and smoke suites.
+
 ### 37.8 P5 — Cross-model causal agreement on shared inputs, with a floor every model can have (~1 session + GPU)
 
 **Why.** Clause 5. Three defects stack (§37.1 row 5): no floor for 5 of 6
@@ -36103,6 +36328,230 @@ series.
 per model pair, beside §27's 1-vs-18, with a short note on how many of §27's
 "acts differently" verdicts survive when both effects are measured on the same
 series.
+
+**Findings — P5a (2026-09-25, merged; Sonnet agent, reviewed).** Implemented:
+- `reach_probe` gates on `relative_reach = cross_patch_delta /
+  forecast_scale > concepts.min_relative_reach`, where `forecast_scale` is
+  the mean absolute clean forecast;
+- a constructed replacement (target clean × 1.5, `reach_method:
+  "constructed"`) when the written diff is exactly 0.0;
+- `forecast_scale == 0` withholds with a stated reason;
+- new additive fields `forecast_scale`, `relative_reach`,
+  `min_relative_reach`, `reach_method`.
+
+Tests: 22 in `test_response_fingerprint.py`. Plant: the old absolute gate
+fails `test_relative_reach_refuses_dead_twin`. Plant: removing the
+escalation fails `test_constructed_replacement_when_identical`.
+
+- **Live relative reach** (4-model run, production path; it reproduced
+  the recorded `cross_patch_delta` bit-for-bit):
+  - ablation gate: minimum 0.18462447478637423 (Chronos-2 encoder.block.10),
+    maximum 13.454734658139376 (TimesFM stacked_xf.18);
+  - stage-2 gate: minimum **0.11251279101337909**.
+- **Untrained twins** (`random_init: true`, production path, bf16):
+  - Chronos-2: 3.0568843567679234e-06 / 5.774114896117189e-06 /
+    5.249195360106535e-07, refused;
+  - Chronos-Bolt: 3.4745999325853425e-05 / 3.2922143489354e-05, refused;
+  - Sundial: 0.68–0.87, reachable;
+  - TimesFM: 0.18686863774548157 at all 5 layers, reachable via the
+    constructed replacement, because its identity stack makes every layer
+    bit-identical. The old code would have called it unreachable.
+
+  §29's fp32 numbers (6.5e-08 and 9.3e-08) came from a different, manual
+  replacement, and the production-path twin values above replace them.
+- **Threshold:** `min_relative_reach` is set to **1e-3** (judgment), not the
+  designed 1e-4. At 1e-4 the Chronos-Bolt twin sat only 3× below the cut.
+  1e-3 is 29× above the highest dead twin and 112× below the live minimum,
+  which meets the "≥100× below live" rule.
+- **Re-derived verdicts: none changed.** All 13 ablation targets and all 13
+  stage-2 targets stay reachable. The only behavior change is on twins,
+  which this run does not configure.
+
+**Findings — P5b (2026-09-25; merged `5184bcd`, review fixes `89bbe7d` and
+`09e0c81`; Sonnet agent, reviewed twice).** Implemented:
+- `sae/shared_input_agreement.py` → `sae/shared_input_agreement.json`, run
+  inside the `concepts` stage after atlas transfer;
+- knobs `concepts.shared_input_enabled` and `shared_input_n_null: 50`;
+- `_feature_ablated_replacement` accepts a feature set (a single int is
+  byte-identical);
+- L5 filled in `derived.concept_verdicts`, and a per-pair verdict table in
+  the model comparison section.
+
+Deviations from the design (all recorded in the module docstring):
+1. **Own artifact.** It writes its own artifact, not a block in
+   `transfer.json`.
+2. **Two nulls.** Scorability is decided by each side's row-matched
+   random-direction null on U, as in the battery. The activation-matched
+   random-feature-set floor is used only for the two agreement statistics.
+   v1 used the feature sets for both, which conflated "does this do
+   anything" with "is this more specific than an equally active feature".
+3. **Verdict split** (orchestrator decision). v1 labelled "neither statistic
+   beats its floor's p95" as `acts differently`, but that is absence of
+   agreement, not disagreement. `acts differently` now requires an observed
+   statistic below the p05 of *both* floors. The middle ground is `no
+   specific agreement`. `shape only` was added for (ii)-without-(i).
+
+- **Unit:** the 288 reciprocal-FDR atlas-transfer tests.
+  - `dst_set_kind`: feature 268, atlas part 20.
+  - No matched pool fell short.
+  - The recomputed S sets reproduce the recorded AUC, asserted once per
+    model pair.
+  - All 13 targets pass P5a's reach gate.
+- **Verdicts** (v2; the run is deterministic and reproduced bit for bit
+  twice, runtime 2049.9 s on one GPU):
+
+  | verdict | v1 (before review) | v2 |
+  |---|---|---|
+  | same causal effect | 16 | 5 |
+  | level only | 15 | 15 |
+  | shape only | 23 | 8 |
+  | no specific agreement | — | 32 |
+  | acts differently | 109 | 9 |
+  | not scorable | 125 | 219 |
+
+  v2 per ordered pair (same / level / shape / acts differently / no specific
+  / not scorable):
+
+  | source → destination | same | level | shape | differs | no specific | not scorable |
+  |---|---|---|---|---|---|---|
+  | Chronos-2 → Chronos-Bolt | 0 | 2 | 0 | 1 | 3 | 16 |
+  | Chronos-2 → Sundial | 0 | 0 | 0 | 0 | 0 | 20 |
+  | Chronos-2 → TimesFM | 1 | 1 | 3 | 4 | 3 | 24 |
+  | Chronos-Bolt → Chronos-2 | 2 | 4 | 2 | 0 | 2 | 8 |
+  | Chronos-Bolt → Sundial | 0 | 0 | 0 | 0 | 0 | 12 |
+  | Chronos-Bolt → TimesFM | 1 | 3 | 2 | 0 | 7 | 13 |
+  | Sundial → Chronos-2 | 0 | 0 | 0 | 0 | 2 | 9 |
+  | Sundial → Chronos-Bolt | 0 | 1 | 0 | 0 | 1 | 10 |
+  | Sundial → TimesFM | 0 | 1 | 0 | 0 | 2 | 14 |
+  | TimesFM → Chronos-2 | 1 | 0 | 1 | 2 | 6 | 33 |
+  | TimesFM → Chronos-Bolt | 0 | 2 | 0 | 2 | 6 | 22 |
+  | TimesFM → Sundial | 0 | 1 | 0 | 0 | 0 | 38 |
+
+  Only 1 of the 71 tests with Sundial as the destination is scorable.
+- **Statistics on the scored tests:**
+  - (i), n=69 (quantiles 10/25/50/75/90%): −0.324 / −0.042 / 0.167 / 0.383
+    / 0.462. Median of the larger floor p95: 0.348. 20 clear; 7 fall below
+    both p05s.
+  - (ii), n=64: −0.442 / 0.355 / 0.886 / 0.953 / 1.000. Median of the larger
+    floor p95: 0.943. 13 clear; 3 fall below.
+
+  Shape-vector cosines are high even for arbitrary equally active features,
+  so (ii) rarely clears: most ablations move the same shape channels in the
+  same direction.
+- **Why 219 are not scorable** (diagnosis, run with the merged code on a copy
+  of the P4 rebuild):
+  - **Destination sides** (184 failures): 134 are features the battery never
+    ablated (the transfer test's best-AUC feature is not a battery candidate);
+    13 were ablated and non-causal; 34 were battery-causal.
+  - **Source sides** (113 failures): all are battery-causal atlas members,
+    causal on their own top 8 series, whose effect over the ≤40 series of U
+    does not beat the random-direction null.
+  - **Dilution is not the cause.** The median side fires on 100% of U, and
+    scoring only its firing rows raises the scorable count from 69 to 72.
+  - **Gate sensitivity** (recorded, not adopted, because the gate would be
+    chosen after seeing results): scoring each side only on its own top-20
+    set within U gives 89 scorable; its top 8 by activation within U gives
+    114. The primary, pre-specified gate is all of U, and it is conservative.
+- **Scale check:** the unsigned level effect tracks series scale (median
+  Spearman 0.336 for real ablations, 0.365 for the random-direction null),
+  but statistic (i) uses the *signed* effect, whose Spearman with scale is
+  −0.018469310373839237 (IQR −0.156 to 0.140). The floor is not a scale
+  artifact.
+- **L5 per atlas concept** (rule: reached = at least one `same causal
+  effect` and no `acts differently`):
+  - reached 4: concepts 2, 6, 12, 18;
+  - partial 10: concepts 0, 1, 5, 7, 9, 10, 11, 13, 14, 17;
+  - not reached 5: concepts 3, 4, 8, 15, 16.
+
+  Two readings:
+  - Concepts 3 and 4 are sharing class `shared (same effect, same inputs)`,
+    yet act differently on shared series (concept 3: 4 of 4 scored tests).
+    The mean effect profile agrees, but *which* series move most is
+    anti-ranked across models.
+  - Concepts 12 and 18 are `single-model`, yet reach L5: another model's
+    best-matched feature, which the battery never ablated, has the same
+    causal effect on the shared series. Atlas membership is bounded by the
+    battery's candidate selection, so "single-model" means "no analogue among
+    the ablated candidates", not "no analogue".
+- **Versus §27's 1-vs-18.** The units differ (19 activation-matched role
+  pairs vs 288 transfer tests), so there is no one-to-one mapping. §27's
+  dominant verdict (18 of 19 "acts differently") does not survive: measured on
+  the same series with a floor, 9 of 69 scorable tests act differently, and
+  32 show no agreement beyond matched features.
+- **Rendered check** (isolated copy): 16 sections, none failed; the per-pair
+  table matches the JSON; concept cards print L5 status (4 reached, 9
+  partial, 4 not reached across the 17 cards). Review fixes in `09e0c81`:
+  - the table note described the pre-review null;
+  - Q1 hardcoded "L5 not measured";
+  - the card printed L5's detail without its status.
+
+  Each fix has a test, and each test fails under a planted regression.
+- **Tests:** 18 in `test_shared_input_agreement.py`. Plants:
+  - old else-branch → `no_specific_agreement` fails;
+  - matched-set own null → `own_effect_null_is_random_direction` fails;
+  - AUC tolerance 10.0 → DID NOT RAISE;
+  - demoting on `no specific agreement` → the L5 partial test fails;
+  - dropping the decile filter → `null_is_matched_on_activation` fails;
+  - single-member set ablation → the set test fails.
+
+  The agent replaced Python `hash()` seeding in test fixtures with `_seed`
+  (sha256), after it made a floor flaky across `PYTHONHASHSEED`. 136 passed
+  across the P5b, P4, concept, report and smoke suites.
+- **Open:**
+  - The set null uses the mean per-feature removed activation. For the 40
+    multi-feature source parts, it is smaller than what the set ablation
+    removes, which favors scorability. 9 scored tests involve a multi-feature
+    set.
+  - Sundial as a destination is almost never scorable. Unexplained.
+    **Diagnosed 2026-09-27 (orchestrator, read-only):** an instrument defect, not a
+    model property. `own_effect_null` seeds its null forward passes with
+    `own_null_seed`, while the cached baseline (and the real ablation, via
+    `battery_for_set`) use the side's baseline seed. For a *sampled* model the
+    null deltas then carry fresh sampling noise the real delta does not.
+    Sundial is the panel's only sampled model; `feature_ablation_fingerprints`
+    uses one seed throughout and is unaffected. Evidence (medians over
+    `shared_input_agreement.json`): Sundial-as-destination level effect
+    0.0100 vs null p95 0.1430 (other destinations: null 0.008–0.047); MASE
+    null 0.1201 vs 0.003–0.012; Sundial's own battery level null is only
+    0.029–0.059. Sundial as source is hit too (level null 0.2295; clears
+    14/40). Refuted first: sparse/early firing (Sundial destination features
+    fire on 0.533 of windows vs 0.31–0.32 elsewhere).
+    **Fixed 2026-09-27 (merged `8a1b253`, commit `fc37ec0`).** `own_effect_null` now
+    takes `baseline_seed` (reseeds every null `predict()`) and `direction_seed`
+    (direction draws only); `_baseline_for_rows` records its seed and refuses a
+    mismatched caller. Test `test_own_null_uses_baseline_seed_for_sampled_model`
+    (mock sampled adapter) fails under the restored old seeding (`1 failed, 20
+    passed`); a deterministic-adapter test pins byte-identity. Grep of every
+    `manual_seed` site under `sae/` and `analysis/`: this was the only one.
+    Re-run of `shared_input_agreement.json` on an isolated copy, 2053.4630989320576 s:
+    - **Key check:** all 177 tests with no Sundial side are byte-identical
+      (sides, verdicts, statistics).
+    - **Verdicts (288 tests), old → new:** same causal effect 5 → 6, level only
+      15 → 15, shape only 8 → 13, no specific agreement 32 → 43, acts differently
+      9 → 12, not scorable 219 → 199. All 21 changes involve Sundial: 20 from
+      `not scorable` (5 shape only, 12 no specific agreement, 2 acts differently,
+      1 same causal effect: Sundial l.3 → Chronos-Bolt) and 1 no specific
+      agreement → acts differently.
+    - **Sundial as destination:** scorable 1 → 12 of 71, own side clears 1 → 18;
+      median null p95 level 0.1430 → 0.0236, MASE 0.1201 → 0.0143, seasonal
+      3.6558 → 0.4730 (now in line with its own battery). **As source:**
+      scorable 7 → 16 of 40, clears 14 → 35; level null 0.2295 → 0.0548.
+    - Sundial remains the least-scorable destination (12/71 vs 18–28 elsewhere):
+      a real but much smaller gap, consistent with CA-09's single-direction
+      robustness.
+    - **Concept rungs (rendered report):** 4 concepts' L5 verdict changed —
+      concepts 10 and 13 partial → not reached (each gains one `acts
+      differently`), concept 18 reached → not reached (gains one `acts
+      differently` beside its `same causal effect`), concept 11 partial →
+      reached (gains a `same causal effect`). The previous per-concept counts
+      above are superseded.
+    - `runs/full_report_run_4model`: `sae/shared_input_agreement.json`,
+      `sae/concept_stage.json` (summary block) and `report.html` replaced; the
+      old files are kept as `*.pre_seed_fix.*`. `config_resolved.yaml` and
+      `run_manifest.json` left as they were (the re-render's copies differ
+      only in scratch absolute paths and timestamps).
+  - The L5 "reached" rule is lenient: 1 `same causal effect` among 12–21
+    tests reaches it.
 
 ### 37.9 P6 — Generator counterfactuals and mediation: the headline experiment (~2 sessions + GPU)
 
@@ -36256,6 +36705,129 @@ stop: that is a real negative about these dictionaries, and building mediation
 on top of it would narrate nothing. Record it and ask whether a different
 layer (e.g. `layer_screen`'s second pick) is worth one more try.
 
+**Findings — P6a (2026-09-25; generator counterfactuals + input response;
+merged `e94eaaa`).** The generator side is `tsfm_benchmark/build_pipeline/counterfactual.py`
+(`KNOBS`, `regenerate()`). The measurement side is `tsfm_lens/sae/counterfactual.py::run_counterfactual_response`,
+which writes `sae/counterfactual_response.json`. It is opt-in (`concepts.cf_enabled: false`)
+and is not wired into the concepts stage or the report; that is P6b. The run was on an isolated copy of
+`runs/full_report_run_4model`.
+- **Knobs.** There are five draw-neutral knobs: `seasonal_amplitude`, `anomaly_magnitude`,
+  `heteroskedastic_depth`, `trend_scale` and `intermittency_rate`.
+  - `trend_scale` refuses to cross the 0/nonzero boundary, because `parametric()` draws differently there.
+  - The load-bearing `noise_scale` plant (a coupled knob) fails `test_non_target_components_bit_identical`.
+  - Golden hashes are unchanged (`tsfm_benchmark` 116 passed, 1 skipped).
+- **Corruption-replay bug, found by the identity check.**
+  - The first `regenerate()` rebuilt only the clean parametric series. **244/298**
+    `anomaly_magnitude`-eligible corpus series failed dose-1.0 identity, and every one of them had a
+    nonempty `provenance.transforms`: `configs/large_run.yaml` applies a post-generation corruption chain.
+  - The fix: `_replay_transforms` reseeds each corruption from the outer `provenance.seed`, as
+    `builder.py::_make_one` does. `scaling` is the exception: it applies its recorded *realized* factor,
+    because the recorded `sigma` cannot redraw it.
+  - After the fix there are 0 mismatches over 1113 eligible (series × knob) combinations. Inside the
+    measurement, dose 1.0 is bit-identical for every knob (max abs diff 0.0).
+  - Eligible series per knob, capped at `cf_max_series` 64: anomaly 64, seasonal 64, trend 64,
+    heteroskedastic 44, intermittency 33.
+- **Encode check redesigned.** The spec's check compared raw SAE-feature vectors against the persisted
+  `space="sae"` rows with an absolute/relative tolerance. It failed on every target.
+  - The cause is bf16 precision noise, not a wrong space. On Chronos-2 the raw-activation relative max diff
+    is 0.02507, and the SAE-feature max abs diff is 0.01056 against atol 1e-3.
+  - An absolute epsilon cannot separate those two cases (§8). The gate is now the per-concept-part score
+    Spearman against the persisted rows, `cf_encode_min_spearman` 0.98. The old check is kept as a
+    diagnostic that does not gate.
+  - All 22 parts pass. Min ρ per target: Chronos-2 0.99601, Bolt 0.99987, Sundial 1.0, TimesFM 0.99999.
+    TimesFM's raw relative max diff is 0.16232, yet its part scores rank identically.
+- **BH family unsatisfiable at the spec's `cf_n_null` 200.** With 20–27 tests per target, the smallest
+  attainable single-test q was 0.0597 > 0.05, so "nothing survives" would have been the resampling
+  resolution, not a measurement.
+  - The fix: `cf_n_null` is now 2000. The null loop uses a vectorized per-row Spearman (`_spearman_rows`,
+    average ranks, NaN for a constant row).
+  - Each target now records `bh_family` (`n_tests`, `p_floor`, `min_attainable_q_single`, `satisfiable`).
+    Min q is 0.01–0.01349, and every family is satisfiable.
+  - Planted regressions: ordinal ranks fail `test_spearman_rows_matches_per_series_spearman`, and a
+    hardcoded `satisfiable=True` fails `test_bh_family_satisfiability_recorded`.
+- **Go/no-go targets.** One per model, chosen by the most stable atlas parts: Chronos-2/encoder.block.6,
+  Chronos-Bolt/encoder.block.4, Sundial/model.layers.10, TimesFM/stacked_xf.6.
+- **Test counts.** 110 (part × knob) tests: 98 scored and 12 undefined.
+  - A test is undefined when every series has a constant score across doses. It is recorded as undefined,
+    never as 0 (§11.37).
+  - Defined series per scored test: median 18, min 1, max 64. 29 of the 98 tests have fewer than 10.
+- **Result: NO-GO at the pre-registered gate. 0 of 98 tests survive BH within target.**
+  - 14 tests respond uncorrected (|mean| > null p95 and the CI excludes 0), against ≤4.9 expected at
+    α=0.05. Binomial p is 0.0003755194824261461, so the dictionaries respond to input structure more
+    often than chance, but no single (concept, knob) response is resolvable after correction.
+  - By knob: intermittency 7, seasonal 5, anomaly 1, trend 1. By target: Bolt 5, Chronos-2 4,
+    Sundial 3, TimesFM 2.
+  - Nearest misses:
+    - Sundial c0 × intermittency: mean −0.9004, 4 defined series, q 0.0600.
+    - Bolt c0 × seasonal: mean −0.8105, CI [−0.929, −0.679], 32 defined, q 0.0650.
+    - Bolt c12 × intermittency: mean +0.6222, 32 defined, q 0.0650.
+  - **What limits it is the null, not power alone.** Null p95 of |mean| runs 0.43–0.73: random alive
+    features matched on activation decile respond to these knobs almost as strongly as the concepts do.
+    A knob moves a large fraction of the dictionary, so a concept's response is rarely *specific*. Many
+    responses are large (|mean| 0.6–0.9) and still sit only just above that floor.
+- **Pre-registered predictions.** Formally unresolved, because no response survives BH. Uncorrected only:
+  - Seasonal amplitude responders appear in Chronos-2 (c7 −0.4899, c8 +0.6556), Bolt (c0 −0.8105,
+    c12 −0.4971) and Sundial (c13 −0.8341), but not in TimesFM.
+  - Anomaly magnitude has one responder, Bolt c6 (−0.5686, 12 defined series). It has none in Sundial,
+    the §30.2 spike specialist. That runs against the prediction's direction, uncorrected.
+- **Runtime.** 89.9 s for the 4 targets (15.7–27.5 s each), so all 13 targets would
+  take about 5 min. Cost is not the constraint.
+- **Tests.** `test_counterfactual.py` has 9 tests and `test_counterfactual_mediation.py` has 11, each with a
+  confirmed plant. `test_shared_input_agreement.py`, `test_concept_atlas.py`,
+  `test_manifest_fingerprint.py` and `test_smoke.py` pass (61 total with the mediation file).
+- **Stopped here, per the go/no-go.** Mediation (P6b) is not built. Options for one more pre-registered
+  try, which the user decides:
+  - `layer_screen`'s second-pick layer;
+  - raising `cf_max_series`. This only helps the anomaly, seasonal and trend knobs, which hit the cap of 64.
+    Intermittency has 33 eligible series and heteroskedastic 44, so the cap does not bind for them.
+  - Neither option lowers the knob-general null floor, which is the binding constraint. Any retry must be
+    registered before it is looked at, with the same gate.
+
+**Registration — P6a retry (2026-09-26, written before the retry was run).** This is the one
+further try that the go/no-go allows. It uses the other layers rather than only `layer_screen`'s
+second pick, so the family is fixed in advance instead of chosen after looking.
+- **Targets.** The 9 atlas targets not scored above:
+  - Chronos-2: encoder.block.8, encoder.block.10.
+  - Chronos-Bolt: encoder.block.3.
+  - Sundial: model.layers.3, model.layers.7.
+  - TimesFM: stacked_xf.2, .10, .16, .18.
+- **Unchanged.** Knobs, doses, `cf_max_series` 64, series selection, encode gate and response rule.
+- **Changed, and only to keep the family satisfiable.** `cf_n_null` is 10000.
+- **Primary rule (GO).** At least 1 test survives BH at q 0.05 over the **pooled** family of every
+  scored test on the 9 targets. Per-target BH over 9 more targets would multiply the chance of a
+  spurious survivor.
+- **Secondary, reported but not gating.** Per-target BH, and the uncorrected enrichment against
+  α=0.05.
+- **If NO-GO.** P6b (mediation) is not built on these dictionaries. The knob-general null floor is
+  recorded as the binding constraint.
+
+**Findings — P6a retry (2026-09-26; the registered rule above, applied unchanged). NO-GO.**
+- **Checks.** Identity is bit-exact for all 5 knobs. The encode gate passes on all 9 targets
+  (33 parts, min ρ 0.99684). Every per-target BH family is satisfiable at `cf_n_null` 10000
+  (min q 0.001–0.003).
+- **Primary rule.** 151 tests were scored and 14 were undefined. Defined series per test: median 10,
+  min 1, max 64.
+  - Pooled BH over all 151: the smallest q is **0.4548**, so **0 survive**. The pooled family was
+    satisfiable (minimum attainable q 0.0151).
+- **Secondary results.**
+  - Per-target BH: 0 survive.
+  - 11 tests respond uncorrected, against ≤7.55 expected. Binomial p is 0.1365604281162953, so unlike
+    the first 4 targets (14/98, p 0.000376) there is no enrichment here.
+  - Uncorrected responders, by knob: seasonal 7, intermittency 2, trend 2, heteroskedastic 1.
+    Sundial/model.layers.7, TimesFM stacked_xf.2, .10 and .16 have none.
+  - The largest responses again sit just above a knob-general floor. Examples:
+    - Sundial/model.layers.3 c6 × seasonal: +0.8722 against null p95 0.8487.
+    - Bolt/encoder.block.3 c13 × heteroskedastic: +0.8663 against 0.8256.
+- **Runtime.** 515.6 s for 9 targets at `cf_n_null` 10000.
+- **Decision, per the registration.** P6b (mediation) is not built on these dictionaries. Across all
+  13 targets, no (concept, knob) input response is resolvable after correction. The binding constraint
+  is the knob-general null: an input knob moves random activation-matched features almost as much as
+  it moves concept features.
+  - For P7, the `concept_knob::` family is therefore empty (§37.10 design item 2).
+  - Reopening this needs a different design question, not another layer. One example: responses of
+    the concept *relative to* its matched features, per series, rather than a response that must beat
+    their distribution. That question must be registered before it is looked at.
+
 ### 37.10 P7 — Register concept claims and confirm them once, on a fresh private epoch (~1 session + GPU)
 
 **Why.** Every concept finding so far is exploratory: dozens of targets,
@@ -36307,6 +36879,117 @@ read three times already.
 
 **Acceptance.** A `concept_replication` block on a fresh epoch, with per-claim
 verdicts, in the atlas run's Findings.
+
+**Findings — P7 (2026-09-26; merged `b812a2a`).** The one-shot confirmation ran on a fresh private
+epoch. The run is preserved as `runs/full_report_run_4model_epoch1`, a copy of the reference run with
+`confirm.path: ../../benchmark_large/private_epoch1`. `configs/concept_atlas.yaml` now points at
+epoch 1.
+- **Epoch 1** (`benchmark_large/private_epoch1`, `regenerate_private(epoch=1)` with `large_run.yaml`'s
+  specs, real-derived tiers included, since the network path worked).
+  - 961 series. By tier: synthetic 551, realism_stress 410. By generator: random_parametric 423,
+    mixture 290, parametric 128, block_bootstrap 70, sequential_par 50.
+  - Sealed with global digest `22037758b857d315565a6cec0b09df8118c62c7b586010f25e44090ade66de3b`.
+- **Cross-split check against `public_dev`.**
+  - Near-duplicates: 5 of 927365 pairs (coverage 1.0, fraction 1e-05).
+  - Composition, χ² p-values: tier 0.974155, group 0.999982, archetype 0.665697.
+  - Energy distance p 0.908046.
+  - TOST (margin 0.2 SD) is `inconclusive`: n is too small for 4 catch22 features. It is not
+    `not_equivalent`, so it is not a stop condition.
+- **Registration (dev only, before private access).**
+  - 20 `concept_transfer` claims were taken from 229 reciprocal-FDR, seed-stable candidates. They are
+    ranked by the weaker leg's dev AUC margin (0.24311375661375667 down to 0.14434523809523814).
+  - The claims come from 3 atlas concepts: concept 6 (8 claims), concept 0 (4) and concept 4 (8).
+  - The `concept_knob` family is registered **empty**, with P6a's NO-GO as the stated reason.
+- **Result.** **19 of 20 confirmed**, Holm within the family (m 20, n_null 2000, minimum attainable
+  Holm p 0.009995, satisfiable).
+  - Private AUC ranges from 0.7966025641025641 to 0.9992948717948718.
+  - 19 claims have Holm p 0.009995 and one has 0.010995. Every forward and reverse p sits at the
+    1/2001 floor except the one failure.
+  - The failure is Chronos-Bolt/encoder.block.4 concept 6 → TimesFM/stacked_xf.10: private AUC
+    0.766, reverse AUC 0.521 against a p95 of 0.569, so it is not reciprocal (Holm p 0.257871).
+  - L6 now renders measured values: concept 4 is 8/8, concept 6 is 7/8, concept 0 is 4/4.
+- **What "confirmed" means here (evidence class).** This is a held-out confirmation of a
+  **correlational** transfer claim: both models single out the same private series. It is not causal.
+  - The forward leg re-searches the destination dictionary on private data, against a
+    max-over-features null, as on dev. The best private destination feature is the dev feature in only
+    **6 of 20** claims.
+  - So the confirmed claim is "the destination layer has a feature that selects the source concept's
+    series, and that feature's own top series score high on the source concept". It is not "this
+    specific pair of features".
+  - A frozen-feature claim is sharper, and could be registered for the next epoch. It was not tested
+    here, because testing it now would be a second look at epoch 1.
+- **Bug found in review and fixed (`b53802b`).**
+  - The claim id named only the destination *model*, so the 20 claims had **9 distinct ids**.
+    `holm()` is keyed by id, so it ran over 9 p-values. Every reported Holm p was wrong (0.0045
+    instead of 0.009995), and the failing claim displayed another claim's adjusted p.
+  - Verdicts were unaffected, because the failure is decided by reciprocity and every other claim
+    sits at the p floor.
+  - Ids now name `dst_target`, and both `build_registry` and the replication refuse duplicate ids.
+    Planted regressions: reverting the id fails
+    `test_same_concept_to_several_layers_of_one_model_gets_distinct_ids`, and removing the guard fails
+    `test_replication_refuses_duplicate_claim_ids`.
+  - The consumed artifact was repaired **without re-reading private data**. The ids were relabeled and
+    Holm recomputed from the recorded per-claim `p_combined`. The originals are kept as
+    `hypotheses.pre_id_fix.json` and `confirm/confirmation.pre_id_fix.json`, and the repair is recorded
+    under `concept_replication.id_repair`, which asserts that the original registry hash matches.
+- **Other review notes.**
+  - The per-claim p is `max(p_fwd, p_rev)` (intersection-union, conservative). The max-vs-min choice
+    is not pinned by its own plant, because the fixture is symmetric; the agent disclosed this.
+  - The agent built the epoch before running the smoke end-to-end test, contrary to the spec's order.
+    The epoch was not consumed until after the smoke test caught a real bug: registration read
+    `stable` flat instead of `stability.stable`, and the fixture had the same wrong shape. That was
+    fixed before `confirm` ran.
+  - The report's source column now names both models.
+- **Found, not fixed (out of scope).** `sae/concept_profiles.py::run_concept_profiles` calls
+  `load_ground_truth_table(cfg.data.path)` without a guard, so the `concepts` stage crashes under a
+  smoke config (empty path) as soon as the atlas has ≥1 concept. It should skip with a stated reason
+  (§2.5). *Fixed 2026-09-26: structural fields go unscored, `concept_profiles.json` records
+  `ground_truth.available`/`reason`, and the model-comparison section renders the reason.*
+- **Runtime.** register 4.7 s, confirm 447.3 s, report 53.1 s.
+- **Tests.** 134 passed, 1 skipped across the confirm, hypotheses, atlas, shared-input,
+  model-comparison, manifest and smoke files (`test_concept_confirm.py`: 15). The `tsfm_benchmark`
+  suite gives 116 passed, 1 skipped.
+
+**Findings — P7b (2026-09-26; frozen-feature claims on a fresh epoch 2; merged `411ea25`).** The run
+is preserved as `runs/full_report_run_4model_epoch2` (`concepts.transfer_claim_mode: frozen`,
+`confirm.path: ../../benchmark_large/private_epoch2`).
+- **Mode.** `concepts.transfer_claim_mode: search | frozen`. The default `search` reproduces P7
+  byte-identically, which a test pins.
+  - `frozen` freezes dev's destination feature and scores it against a **single-feature**
+    stratum-matched null (`sae/transfer.py::transfer_one_fixed_feature`), with no max over the
+    dictionary.
+  - Decoy test: when the frozen feature is noise and another feature matches perfectly, frozen mode
+    rejects the claim and search mode confirms it.
+  - Plants confirmed: frozen falling back to argmax, and a max-over-features null in frozen mode.
+- **Epoch 2** (`benchmark_large/private_epoch2`, real-derived tiers).
+  - 963 series. By tier: synthetic 553, realism_stress 410. By generator: random_parametric 423,
+    mixture 290, parametric 130, block_bootstrap 70, sequential_par 50.
+  - Global digest `f3fc6067edc7b0b488c380e86cf613c92589a708b4265c7b027e40d3affd2632`.
+  - Cross-split against `public_dev`: 5 near-duplicate pairs out of 929295 scored, energy-distance
+    p 0.922539, TOST `inconclusive` (5 catch22 features; not `not_equivalent`).
+- **Result.** **20 of 20 frozen claims confirmed**, with Holm (m 20, n_null 2000, satisfiable) giving
+  p 0.009995 for every claim.
+  - Private forward AUC ranges from 0.7228 (Sundial L10 c0 → Chronos-2 b.8, f1770) to 0.9991.
+    Private reverse AUC ranges from 0.8483 to 0.9990.
+  - All 19 claims that P7 confirmed in search mode also confirm frozen.
+  - P7's only failure, Chronos-Bolt b.4 c6 → TimesFM xf.10, **confirms when frozen**: dev feature
+    f5278 gives forward 0.8223 against a p95 of 0.6155, and reverse 0.9429 against 0.6474. P7's
+    private argmax had picked f4664, whose reverse leg failed. The failure came from the search
+    choosing an unstable feature, not from the claim.
+- **What it now claims (held-out, correlational).** A specific dev feature pair selects the same
+  private series in both directions. The claims come from 3 atlas concepts:
+  - **Concept 6, "dominant lowers seasonal"** (Chronos-2 b.6, Chronos-Bolt b.4, Sundial l.3): 8 claims.
+    The same destination features recur across source models. TimesFM xf.2 f3290 partners the
+    concept in both Chronos-2 and Chronos-Bolt, and so does Sundial l.3 f731.
+  - **Concept 4, "raises near-horizon shape, lowers level"** (Chronos-2 b.8, TimesFM xf.6/.10/.18):
+    8 claims. Its top series are 17–20 of 20 from the real-derived `mixture` generator in 3 of its 4
+    parts, so these claims are largely about one source's series.
+  - **Concept 0, "strong raises seasonal"**: 4 claims. The profiles label it *convergent* (same
+    effect, different inputs across its own parts). Yet specific features in the other models select
+    its series. So the input-sharing partner is not the concept's own causal part in the destination
+    model.
+- **Runtime.** register 8.1 s, confirm 156.4 s, report 53.8 s.
+- **Tests.** `test_concept_confirm.py` has 20 tests. 68 passed across confirm and transfer.
 
 ### 37.11 P8 — Per-concept verdicts and the Concept Atlas report section (~1 session, incremental)
 
@@ -36398,19 +37081,23 @@ section sits directly after the scorecard, as designed.
   generator. The share is bimodal: 23 of 55 parts at 0.0, 23 at ≥0.85.
 - **Profiles on the 4-model run** (19 concepts, 55 parts, 161.81317611597478 s
   on CPU): convergent 7, shared (same effect, same inputs) 4, single-model
-  5, partially shared 3. Stable only: convergent 7, shared 2, single-model 4,
-  partially shared 1. Provenance-driven parts: 24/55.
+  5, partially shared 3. Stable only (GPU replicates, corrected
+  2026-09-25; the CPU replicates gave 7 / 2 / 4 / 1): convergent 7, shared 3,
+  single-model 3, partially shared 1. Provenance-driven parts: 24/55.
 - **Q1 (shared by all):** no atlas concept has members in all 4 models. Of
   the 7 spanning 3 models: 3 not reproducible, 3 convergent, 1 partially
   shared. All 7 convergent concepts are stable. The dominant multi-model
   pattern is the same forecast adjustment reached from different inputs.
-- **Q2 (unique and why):** 4 reproducible model-specific concepts (TimesFM
-  2, Sundial 1, Chronos-Bolt 1, Chronos-2 0). None sits on series where its
-  model beats every other model. 2 of the 4 fire on one real-derived
+- **Q2 (unique and why):** 3 reproducible model-specific concepts under the
+  GPU replicates (TimesFM 1, Sundial 1, Chronos-Bolt 1, Chronos-2 0;
+  corrected 2026-09-25 — the CPU replicates gave 4 with TimesFM 2, the
+  difference being C16, which is unstable on GPU). None sits on series where
+  its model beats every other model. 2 of the 3 fire on one real-derived
   generator (mixture, sequential_par). C17 (TimesFM, random walks): ρ 0.833
   with `has_random_walk`, 19/20 top series `random_walk_drift` (24.78×
   enrichment), `p_max_structural` 0.000999000999000999, but not stable
-  under the CPU replicates. On its top series, TimesFM's log-MASE gap vs
+  under either the CPU or the GPU replicates (its TimesFM/stacked_xf.6 part
+  is non-reciprocal at both replicates). On its top series, TimesFM's log-MASE gap vs
   Chronos-2 is 0.0039 [−0.06, 0.0762] (indistinguishable) and vs Sundial
   −0.2352 [−0.4441, −0.0634]. Ablating it worsens TimesFM's MASE (4.04×
   null p95).
@@ -36419,7 +37106,8 @@ section sits directly after the scorecard, as designed.
     behavior and SAE effect: error agreement 0.9508137661557489, atlas
     co-membership 0.9504574076274207, 3 shared concepts. **Chronos-2/Bolt**
     is closest on geometry and SAE inputs: CKA 0.883013129234314, stitching
-    0.7092976272106171, input-transfer R_rel 0.9038461538461537. The same
+    0.7092976272106171, input-transfer R_rel 0.8546867367576367 (GPU
+    ceilings; 0.9038461538461537 with the CPU ceilings). The same
     Chronos-2/Bolt pair ranks last on error agreement (0.7200189762792106)
     and atlas co-membership (0.47258979206049145).
   - Kendall's W (all 7 metrics) 0.26866549088771313, p 0.07646176911544228.
@@ -36444,9 +37132,21 @@ section sits directly after the scorecard, as designed.
   - the concept names are auto-generated effect strings and hard to read;
   - "worsens … 0.978x the null's p95" can print alongside a clearing member
     (mean vs any-member), which reads oddly;
-  - `runs/full_report_run_4model` itself has not been re-rendered (the
-    ref4 copy carries the §37 artifacts);
-  - the stability numbers rest on CPU-trained replicates.
+  - ~~`runs/full_report_run_4model` itself has not been re-rendered (the
+    ref4 copy carries the §37 artifacts)~~ — resolved 2026-09-25: after a
+    proper `concepts,report` stage run on an isolated copy (current main with
+    P4, P5a and P5b; 3827.160477273166 s; every §37 artifact reproduced
+    bit-identically, apart from runtimes), the copy replaced
+    `runs/full_report_run_4model`. `config_resolved.yaml` has its original
+    relative `out_dir`/`data.path` again. The previous run is kept as
+    `runs/full_report_run_4model.pre_concept_atlas_20260925`;
+  - ~~the stability numbers rest on CPU-trained replicates~~ — resolved
+    2026-09-25: a full concepts-stage rebuild on a fresh ref4 copy (current
+    main, P4 + P5a, GPU replicates, 1463.7746378351003 s, replicate training
+    923.1129205189645 s) reproduces §37.5's GPU ceilings and universality
+    (4 / 7 / 3, 14 of 19 stable) exactly, with the same 19 atlas memberships
+    and names. Kendall's W and every pair rank are unchanged. The re-rendered
+    report is 8,096,542 bytes.
 
 ### 37.12 What this changes elsewhere in the plan
 
@@ -36492,7 +37192,7 @@ stays out; P4's tags feed `compose_name`.
 | 8 | **P6** counterfactuals + mediation | ~2 sessions + GPU | P2, P4 | 🔴 **Stop if no concept responds on one target per model** |
 | 9 | **P7** register + confirm on a fresh epoch | ~1 session + GPU | P2, P3, P6; a fresh private epoch | Consumes the new epoch once |
 | 10 | **P8** verdicts + atlas section | ~1 session, incremental from P2 onward | each item's artifact | Rendered-HTML verification |
-| 11 | §35 on SAE features | per §35 | P2 | §35.9 test 3 (rotation) |
+| 11 | §35 on SAE features | per §35 | P2 | §35.9 test 3 (rotation) — **closed NO-GO 2026-09-26, §35.14** (fails the real-data rotation control) |
 
 Every GPU step goes to a background agent per `CLAUDE.md` §2.8, briefed to
 report numbers, not write Findings.

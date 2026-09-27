@@ -107,7 +107,8 @@ def _spectral_centroid(x: np.ndarray) -> np.ndarray:
 def battery_statistics(steered: np.ndarray, baseline: np.ndarray, targets: np.ndarray,
                        contexts: np.ndarray, periods: np.ndarray,
                        steered_quantiles: np.ndarray | None = None,
-                       baseline_quantiles: np.ndarray | None = None) -> dict:
+                       baseline_quantiles: np.ndarray | None = None,
+                       remove_level: bool = False) -> dict:
     """Per-series signed effect for every channel: `steered` minus `baseline`
     (or, for `mase`/`dispersion`'s width half, the steered value itself
     against `targets`/no baseline, since those are not naturally a
@@ -115,11 +116,53 @@ def battery_statistics(steered: np.ndarray, baseline: np.ndarray, targets: np.nd
     `contexts` `[B, context_len]`, `periods` `[B]`, and the two `*_quantiles`
     `[B, horizon, Q]` or None.
 
+    `remove_level` (ROADMAP.md sec 37.7, P4): when True, `steered` is
+    shifted per series by `-(mean_h(steered) - mean_h(baseline))` BEFORE any
+    channel is computed, so the shifted forecast has the same horizon-mean
+    as `baseline` by construction. Every channel below is then computed on
+    the shifted array -- the same code path, not a second implementation --
+    which is itself the audit `CLAUDE.md` sec 8/`ROADMAP.md` sec 37.7 item 2
+    calls for: a channel already invariant to an additive per-series
+    constant must return the SAME value whether `remove_level` is True or
+    False, and a channel that is not must differ. Decided from the code
+    (confirmed bit-for-bit by `test_already_invariant_channels_identical`):
+
+      invariant   -- `trend` (`trend_slope` subtracts each row's own mean
+                     before fitting, so an additive constant cancels
+                     exactly), `seasonal` (`seasonal_band_magnitude` reads a
+                     NONZERO FFT bin only -- `in_range` requires
+                     `raw_bin >= 1` -- and a constant shift only ever moves
+                     the bin-0/DC magnitude), `dispersion` (`std()` subtracts
+                     its own mean, and the quantile-width sub-statistic never
+                     sees `steered` at all).
+      not invariant -- `spectral_centroid` (its denominator sums EVERY bin
+                     including bin 0, so a level shift changes the whole
+                     spectrum's energy and hence the weighted mean
+                     frequency), `level` (this literal channel IS the level
+                     being removed -- it goes to ~0 by construction),
+                     `horizon_shape_near`/`horizon_shape_far` (built from the
+                     RAW per-step delta `steered - baseline`, which the shift
+                     changes at every step -- this is the intended "shape"
+                     signal), `mase` (absolute error against `targets` moves
+                     with the forecast's level), `flatness` (its
+                     near-constant threshold is relative to `max(|x|)`,
+                     which the shift changes).
+
+    `steered_quantiles` is left untouched: the shift is a property of the
+    POINT forecast only (P0's `level_share` and this module's `level`
+    channel are both point-forecast quantities), so the quantile-width
+    sub-statistic is unaffected either way, exactly as the invariance table
+    above states.
+
     Returns `{channel: {"delta": np.ndarray[B] or None, "available": bool,
     "reason": str}}`. `available=False` for a channel this batch cannot
     score at all (no finite periods for `seasonal`, no quantile spread for
     `dispersion`'s width) -- never a silent zero (sec 11.37).
     """
+    if remove_level:
+        shift = steered.mean(axis=-1) - baseline.mean(axis=-1)
+        steered = steered - shift[..., None]
+
     out = {}
 
     out["trend"] = {"delta": trend_slope(steered) - trend_slope(baseline),
@@ -202,6 +245,77 @@ def summarize_battery(per_series: dict, unit: str = "series", n_boot: int = 500,
                 out[channel]["width_ci"] = None
                 out[channel]["width_reason"] = rec.get("width_reason", "")
     return out
+
+
+def level_share(steered: np.ndarray, baseline: np.ndarray) -> tuple[float | None, str]:
+    """ROADMAP.md sec 37.3 P0's definition, restated as a function so P4
+    (sec 37.7) scores it identically rather than re-deriving it:
+    `mean_s(a_s**2) / mean_s(mean_h(d_s(h)**2))`, where `d_s = steered_s -
+    baseline_s` and `a_s = mean_h(d_s)` -- the fraction of a candidate's mean
+    squared forecast movement that is explained by its own per-series level
+    shift. Both arrays are `[n_rows, horizon]`, already restricted to
+    whatever rows the caller wants scored (a candidate's own top-firing
+    series in `feature_ablation_fingerprints`).
+
+    Returns `(None, reason)` when the denominator is exactly zero -- every
+    row's forecast is bit-identical to baseline across the whole horizon, so
+    the ratio is 0/0, not 0 (`CLAUDE.md` sec 11.37: an undefined statistic
+    must never be reported as a measured zero). `n_rows == 0` is the same
+    undefined case (P0's own 16-of-452 exclusion).
+    """
+    if steered.size == 0:
+        return None, "no top-firing series to score"
+    d = np.asarray(steered, dtype=np.float64) - np.asarray(baseline, dtype=np.float64)
+    a = d.mean(axis=-1)
+    denom = float(np.mean(np.mean(d ** 2, axis=-1)))
+    if not (denom > 0.0):
+        return None, ("exactly-zero denominator: this feature's own top-firing series show "
+                      "no forecast movement at all on any horizon step, so level share is "
+                      "undefined, not zero (CLAUDE.md sec 11.37)")
+    return float(np.mean(a ** 2) / denom), ""
+
+
+def _score_channel_against_null(delta: np.ndarray, null_draws: list) -> dict:
+    """One channel's per-candidate effect (`delta`, already row-selected to
+    the candidate's own rows) scored against its row-matched null draws
+    (`null_draws`, a list of `[n_rows]` ABSOLUTE-value arrays already
+    restricted to the same rows) -- factored out of
+    `feature_ablation_fingerprints` so the raw and level-removed
+    (`remove_level=True`, sec 37.7 P4) scoring paths share one gating
+    implementation rather than two copies that could drift apart. Returns
+    the same per-channel schema `feature_ablation_fingerprints` has always
+    recorded: `available`, `effect`, `signed_effect`, `null_p95`,
+    `clears_null`, `null_degenerate`, `null_nonzero_frac`, `margin`,
+    `reason`. Key order matches the pre-refactor inline code exactly, so
+    JSON output is unaffected (`CLAUDE.md` invariant 13).
+
+    `available=False` (no finite value on this candidate's own rows) is the
+    caller's responsibility to detect and short-circuit before calling this
+    -- kept out of this helper because the caller needs a DIFFERENT `reason`
+    string for that case than the degenerate-null one below.
+    """
+    effect = float(np.nanmean(np.abs(delta)))
+    signed = float(np.nanmean(delta))
+    pooled = np.concatenate(null_draws) if null_draws else np.empty(0)
+    pooled = pooled[np.isfinite(pooled)]
+    p95 = float(np.quantile(pooled, 0.95)) if pooled.size else None
+    # A null with no spread is not a threshold -- see
+    # `feature_ablation_fingerprints`'s own module-level note (sec 11.37):
+    # quantized decoding can leave every null draw at exactly 0, and then any
+    # movement at all would "clear" a channel that measured nothing.
+    degenerate = p95 is not None and not (p95 > 0.0)
+    clears = bool(p95 is not None and not degenerate and effect > p95)
+    return {
+        "available": True, "effect": effect, "signed_effect": signed,
+        "null_p95": p95, "clears_null": clears,
+        "null_degenerate": bool(degenerate),
+        "null_nonzero_frac": (float(np.mean(pooled > 0.0))
+                              if pooled.size else None),
+        "margin": (effect - p95) if (p95 is not None and not degenerate)
+                  else None,
+        "reason": ("every null draw moved this channel by exactly 0, "
+                   "so there is no spread to clear -- not scored")
+                  if degenerate else ""}
 
 
 # ---------------------------------------------------------------------------
@@ -548,18 +662,27 @@ def feature_response_fingerprints(cfg, adapter, layer: str, sae, data, device,
 # ---------------------------------------------------------------------------
 
 def _feature_ablated_replacement(clean_tokens: torch.Tensor, sae, device,
-                                 f_idx: int) -> torch.Tensor:
-    """Token-level SAE reconstruction with exactly one atom zeroed.
+                                 f_idx) -> torch.Tensor:
+    """Token-level SAE reconstruction with one atom, or a SET of atoms
+    (ROADMAP.md sec 37.8 P5b), zeroed together.
 
-    The counterfactual is "this feature, removed" -- not "this feature,
-    reversed" -- so the comparison baseline must be the FULL token-level
+    The counterfactual is "this feature (or feature set), removed" -- not
+    "reversed" -- so the comparison baseline must be the FULL token-level
     reconstruction rather than the raw clean forecast, or the measured
     effect absorbs the whole dictionary's reconstruction error.
     `eval.py::feature_ablation_effects` already establishes that baseline
     convention; this reuses it rather than picking a second one.
+
+    `f_idx` is an `int` (the original, single-feature contract -- unchanged,
+    byte-identical: `features[:, f_idx] = 0.0` already broadcasts the same
+    way for a bare int) or an iterable of ints (an atlas concept part's full
+    membership, sec 37.8 P5b item 3), converted to a sorted list so fancy
+    indexing zeros every member at once.
     """
     b, t, d = clean_tokens.shape
     features = sae.encode(clean_tokens.reshape(-1, d).to(device))
+    if not isinstance(f_idx, (int, np.integer)):
+        f_idx = sorted(int(i) for i in f_idx)
     features[:, f_idx] = 0.0
     recon = sae.decode(features)
     return recon.reshape(b, t, d).cpu()
@@ -712,6 +835,7 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
     rng = np.random.default_rng(seed + 1)
 
     results, n_clearing_cells, n_series_used = [], 0, set()
+    n_shape_clearing_cells = 0
     for chunk_feats, rows in chunks:
         row_pos = {int(r): i for i, r in enumerate(rows)}
         n_series_used.update(int(r) for r in rows)
@@ -731,10 +855,10 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
         torch.manual_seed(seed)
         unpatched_fc = adapter.predict(contexts, cfg.data.horizon, cfg.l0.quantiles)["point"]
 
-        def _stats(rec):
+        def _stats(rec, remove_level=False):
             return battery_statistics(rec["point"], baseline_fc, targets, contexts,
                                       periods, steered_quantiles=rec.get("quantiles"),
-                                      baseline_quantiles=baseline_q)
+                                      baseline_quantiles=baseline_q, remove_level=remove_level)
 
         # Null: remove an arbitrary direction of the same size. The mirror of
         # Component A's injection null (same mechanism, negative magnitude),
@@ -748,24 +872,39 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
         null_magnitude = -float(np.mean(nonzero) if nonzero else 1.0)
 
         null_rows: dict = {ch: [] for ch in CHANNELS}
+        # ROADMAP.md sec 37.7 P4: the level-removed null, computed from the
+        # SAME null forward passes above (no extra forward pass) so a shape
+        # channel is never scored against a level-carrying null -- exactly
+        # the row-matched discipline this function's own docstring states,
+        # applied a second time to the level-removed transform
+        # (`test_null_gets_same_transform` is the load-bearing regression for
+        # this).
+        null_rows_shape: dict = {ch: [] for ch in CHANNELS}
         for _ in range(n_null_directions):
             direction = rng.normal(size=dict_size)
             direction = direction / (np.linalg.norm(direction) + 1e-12)
-            stats = _stats(_forward(_direction_steered_replacement(
+            rec_null = _forward(_direction_steered_replacement(
                 clean_tokens, sae, device,
-                torch.as_tensor(direction, dtype=torch.float32), null_magnitude)))
+                torch.as_tensor(direction, dtype=torch.float32), null_magnitude))
+            stats = _stats(rec_null)
+            stats_shape = _stats(rec_null, remove_level=True)
             for ch in CHANNELS:
                 r = stats[ch]
                 if r["available"] and r["delta"] is not None:
                     null_rows[ch].append(np.abs(np.asarray(r["delta"], dtype=np.float64)))
+                rs = stats_shape[ch]
+                if rs["available"] and rs["delta"] is not None:
+                    null_rows_shape[ch].append(np.abs(np.asarray(rs["delta"], dtype=np.float64)))
 
         for f_idx in chunk_feats:
             rows_f = [int(r) for r in per_candidate_rows[f_idx] if int(r) in row_pos]
             idx = np.array([row_pos[r] for r in rows_f], dtype=int)
             rec = _forward(_feature_ablated_replacement(clean_tokens, sae, device, f_idx))
             stats = _stats(rec)
+            stats_shape = _stats(rec, remove_level=True)
 
             per_channel = {}
+            per_channel_shape = {}
             for ch in CHANNELS:
                 s = stats[ch]
                 if not s["available"] or s["delta"] is None:
@@ -773,57 +912,61 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
                                        "effect": None, "signed_effect": None,
                                        "null_p95": None, "clears_null": False,
                                        "margin": None}
-                    continue
-                delta = np.asarray(s["delta"], dtype=np.float64)[idx]
-                if not np.isfinite(delta).any():
-                    # Every one of THIS candidate's rows is non-finite for
-                    # this channel (e.g. no ground-truth period among its own
-                    # top-firing series). The channel is available for the
-                    # batch and unavailable for this feature -- recording a
-                    # NaN effect instead would put a NaN into every
-                    # downstream fingerprint and comparison.
-                    per_channel[ch] = {
+                else:
+                    delta = np.asarray(s["delta"], dtype=np.float64)[idx]
+                    if not np.isfinite(delta).any():
+                        # Every one of THIS candidate's rows is non-finite for
+                        # this channel (e.g. no ground-truth period among its
+                        # own top-firing series). The channel is available
+                        # for the batch and unavailable for this feature --
+                        # recording a NaN effect instead would put a NaN into
+                        # every downstream fingerprint and comparison.
+                        per_channel[ch] = {
+                            "available": False, "effect": None, "signed_effect": None,
+                            "null_p95": None, "clears_null": False, "margin": None,
+                            "reason": "no finite value on this feature's own "
+                                      "top-firing series"}
+                    else:
+                        # Signed too, and it is not redundant: `effect` is
+                        # what the null p95 (itself unsigned) can legitimately
+                        # be compared against, while DIRECTION is what tells
+                        # two features that fire on the same series apart --
+                        # one ablation raising the level and another lowering
+                        # it are opposite causal roles that an unsigned
+                        # fingerprint would call identical.
+                        draws = [d[idx] for d in null_rows[ch] if d.size == len(rows)]
+                        per_channel[ch] = _score_channel_against_null(delta, draws)
+                        n_clearing_cells += int(per_channel[ch]["clears_null"])
+
+                s_shape = stats_shape[ch]
+                if ch == "level":
+                    per_channel_shape[ch] = {
                         "available": False, "effect": None, "signed_effect": None,
                         "null_p95": None, "clears_null": False, "margin": None,
-                        "reason": "no finite value on this feature's own "
-                                  "top-firing series"}
-                    continue
-                effect = float(np.nanmean(np.abs(delta)))
-                # Signed too, and it is not redundant: `effect` is what the
-                # null p95 (itself unsigned) can legitimately be compared
-                # against, while DIRECTION is what tells two features that
-                # fire on the same series apart -- one ablation raising the
-                # level and another lowering it are opposite causal roles
-                # that an unsigned fingerprint would call identical.
-                signed = float(np.nanmean(delta))
-                draws = [d[idx] for d in null_rows[ch] if d.size == len(rows)]
-                pooled = np.concatenate(draws) if draws else np.empty(0)
-                pooled = pooled[np.isfinite(pooled)]
-                p95 = float(np.quantile(pooled, 0.95)) if pooled.size else None
-                # A null with no spread is not a threshold. Chronos-style
-                # quantized decoding routinely leaves a small perturbation's
-                # forecast bit-identical, so a channel can have EVERY null
-                # draw at exactly 0 -- and then any movement at all "clears"
-                # it, including movement below numerical noise. Measured on
-                # the first real target: 43 cells had p95 exactly 0 and 10 of
-                # them were counted as clearing, ~a third of that run's whole
-                # headline. Same treatment `analysis/agreement.py` gives a
-                # zero-width quantile band (`CLAUDE.md` sec 11.37): absent is
-                # reported as absent, never scored as a pass.
-                degenerate = p95 is not None and not (p95 > 0.0)
-                clears = bool(p95 is not None and not degenerate and effect > p95)
-                n_clearing_cells += int(clears)
-                per_channel[ch] = {
-                    "available": True, "effect": effect, "signed_effect": signed,
-                    "null_p95": p95, "clears_null": clears,
-                    "null_degenerate": bool(degenerate),
-                    "null_nonzero_frac": (float(np.mean(pooled > 0.0))
-                                          if pooled.size else None),
-                    "margin": (effect - p95) if (p95 is not None and not degenerate)
-                              else None,
-                    "reason": ("every null draw moved this channel by exactly 0, "
-                               "so there is no spread to clear -- not scored")
-                              if degenerate else ""}
+                        "reason": "removed by construction: the level-removed forecast has "
+                                  "the baseline's horizon mean, so both effect and null are "
+                                  "float rounding (CLAUDE.md sec 11.48)"}
+                elif not s_shape["available"] or s_shape["delta"] is None:
+                    per_channel_shape[ch] = {"available": False, "reason": s_shape["reason"],
+                                             "effect": None, "signed_effect": None,
+                                             "null_p95": None, "clears_null": False,
+                                             "margin": None}
+                else:
+                    delta_shape = np.asarray(s_shape["delta"], dtype=np.float64)[idx]
+                    if not np.isfinite(delta_shape).any():
+                        per_channel_shape[ch] = {
+                            "available": False, "effect": None, "signed_effect": None,
+                            "null_p95": None, "clears_null": False, "margin": None,
+                            "reason": "no finite value on this feature's own "
+                                      "top-firing series (level-removed)"}
+                    else:
+                        draws_shape = [d[idx] for d in null_rows_shape[ch] if d.size == len(rows)]
+                        per_channel_shape[ch] = _score_channel_against_null(delta_shape, draws_shape)
+                        n_shape_clearing_cells += int(per_channel_shape[ch]["clears_null"])
+
+            level_share_val, level_share_reason = level_share(
+                np.asarray(rec["point"], dtype=np.float64)[idx],
+                np.asarray(baseline_fc, dtype=np.float64)[idx])
 
             keep = rows_f[:max(0, int(keep_forecasts))]
             forecasts = [{
@@ -849,6 +992,17 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
                     in_floor_units(mase_rec["effect"], floor).get("value")
                     if mase_rec.get("effect") is not None and floor else None),
                 "forecasts": forecasts,
+                # ROADMAP.md sec 37.7 P4 -- additive (CLAUDE.md invariant 13):
+                # `level_share` is P0's ratio (sec 37.3) recomputed on this
+                # candidate's own top-firing rows; `shape_channels` is the
+                # SAME 9-channel battery scored with the level shift removed
+                # first (`battery_statistics(..., remove_level=True)`)
+                # against its own row-matched null (`null_rows_shape` above).
+                "level_share": level_share_val,
+                "level_share_reason": level_share_reason,
+                "shape_channels": per_channel_shape,
+                "n_shape_channels_clearing": sum(1 for v in per_channel_shape.values()
+                                                 if v["clears_null"]),
             })
 
     for f_idx in order:
@@ -883,4 +1037,7 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
         "excess_over_chance": n_clearing_cells - (0.05 * n_cells) if n_cells else None,
         "any_feature_clears_any_channel": any(r.get("n_channels_clearing", 0) > 0
                                               for r in scorable),
+        # ROADMAP.md sec 37.7 P4 -- additive, mirrors the raw
+        # `n_clearing_cells` above for the level-removed battery.
+        "n_shape_clearing_cells": int(n_shape_clearing_cells),
     }

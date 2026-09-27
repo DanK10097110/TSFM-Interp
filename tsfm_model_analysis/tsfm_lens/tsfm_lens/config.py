@@ -302,6 +302,16 @@ class ConfirmConfig:
     max_series: int = 1024
     require_seal: bool = True
     alpha: float = 0.05
+    # ROADMAP.md sec 37.10 P7 -- the null-draw count `_replicate_registered_
+    # concepts` uses to recompute the registered `concept_transfer` claims'
+    # stratum-matched permutation test on private data. `sae.transfer_n_null`
+    # (default 200, floor 1/201) is unsatisfiable for Holm across even a
+    # small registered family: with `concepts.n_registered: 20`,
+    # 20/201=0.0995 > 0.05. Raised here (2000, floor 1/2001) so `m/(n_null+1)`
+    # clears `alpha` -- the same fix P6a's retry applied to its own BH family
+    # (ROADMAP.md sec 37.9), and `satisfiable` is recorded either way rather
+    # than assumed (`CLAUDE.md` sec 6.6).
+    concept_transfer_n_null: int = 2000
 
 
 @dataclass
@@ -860,6 +870,150 @@ class ConceptsConfig:
     # sec 37 Spec A item 2's `p_max_structural`).
     profiles_enabled: bool = True
     profile_n_perm: int = 1000
+
+    # ROADMAP.md sec 37.8 P5a -- `analysis/response_reach.py::reach_probe`'s
+    # gate, relative rather than absolute (sec 29.5 found the absolute
+    # `_EPS=1e-12` admits a numerically dead model: Chronos-2's and
+    # Chronos-Bolt's untrained twins, patched with a provably-different
+    # (clean x1.5, fp32) replacement, moved the forecast by a relative
+    # 6.5e-08 and 9.3e-08 -- four orders of magnitude above `_EPS` while
+    # being, relative to the forecast, noise). `reachable` now requires
+    # `cross_delta / forecast_scale > min_relative_reach`, where
+    # `forecast_scale` is the mean absolute clean forecast the probe already
+    # computes. `1e-3` is judgment, set between the measured populations
+    # (sec 37.8's Findings): the dead Chronos-2/Chronos-Bolt twins reach at
+    # most 3.47e-05 relative (29x below), and the live minimum over the 4-model
+    # run's 13 SAE targets is 0.1125 (112x above, meeting the design's
+    # "at least 100x below live" rule). 1e-4 left only 3x to the Bolt twin.
+    # Lives in `concepts:`, not `sae:`, for the same
+    # reason `atlas_min_cosine` does (no pre-existing `sae`-stage fingerprint
+    # to protect); the `concepts` Stage already declares the whole
+    # `concepts` section as a fingerprint key, so this field marks existing
+    # `concepts` artifacts stale without any other change (`CLAUDE.md`
+    # sec 6.1).
+    min_relative_reach: float = 1e-3
+
+    # ROADMAP.md sec 37.7 P4 -- causal fingerprints with the level shift
+    # separated. `sae/response.py::feature_ablation_fingerprints` always
+    # computes `level_share` (sec 37.3 P0's ratio) and a level-removed
+    # `shape_channels` block per candidate (no extra forward pass -- both are
+    # read off the SAME patched forecast already computed for `channels`), so
+    # this knob is judgment only: how high a concept's members' MEDIAN
+    # `level_share` must sit, with no level-removed channel clearing, before
+    # the atlas tags it `level carrier` rather than `shape-causal` or `no
+    # measured effect` (`sae/concept_atlas.py::_tag_causal_effect`). Sec
+    # 37.3 P0 measured the pooled median at 0.535 and the per-model medians
+    # at 0.687/0.542/0.467/0.297 (TimesFM/Sundial/Chronos-2/Chronos-Bolt),
+    # with 20.6% of candidates above 0.9 -- 0.9 is set high enough that only
+    # the candidates P0 already called "almost entirely level" qualify, not
+    # the roughly half whose level share is merely majority.
+    level_share_threshold: float = 0.9
+
+    # ROADMAP.md sec 37.8 P5b -- cross-model causal agreement, measured on
+    # the SAME shared series (`sae/shared_input_agreement.py`), for every
+    # FDR-surviving reciprocal atlas-transfer test. `shared_input_enabled`
+    # gates the whole step (it costs a patched forward pass per (real +
+    # `shared_input_n_null` matched-null) feature-set ablation, per side, per
+    # test); off skips with a stated reason and drops a stale artifact.
+    # `shared_input_n_null` is the number of random ALIVE feature sets each
+    # side draws, matched to its own real set's size and decile of mean
+    # pooled activation on the shared series, to build that side's own
+    # within-run floor for both agreement statistics (never an untrained-twin
+    # floor -- sec 37.8's whole point is that one is obtainable for only 1 of
+    # 6 pairs). Lives in `concepts:`, not `sae:`, for the same reason
+    # `min_relative_reach` does: no pre-existing `sae`-stage fingerprint to
+    # protect, and the `concepts` Stage already declares the whole section as
+    # a fingerprint key.
+    shared_input_enabled: bool = True
+    shared_input_n_null: int = 50
+
+    # ROADMAP.md sec 37.9 P6a -- generator-side input counterfactuals
+    # (`tsfm_benchmark/build_pipeline/counterfactual.py`'s draw-neutral knobs,
+    # measured by `tsfm_lens/sae/counterfactual.py`): does an atlas concept's
+    # causal-feature score actually RESPOND to the structural property its
+    # generator controls, rather than merely correlating with naturally
+    # varying series? Off by default (`cf_enabled`): it re-runs a forward
+    # pass per (series, dose) per (target, knob) on top of the already-heavy
+    # `concepts` battery, and needs `tsfm_benchmark` importable (a separate
+    # install; degrades with a stated reason, `{"status": "unsupported", ...}`,
+    # rather than failing, when it is not). `cf_max_series` bounds the
+    # per-knob series count (`utils.sample_rows`-stratified, never a head
+    # slice -- CLAUDE.md sec 11.38); `cf_doses` is the multiplicative dose
+    # ladder applied to each knob's own recorded value (1.0 must reproduce
+    # the corpus series bit-identically -- asserted inside the measurement,
+    # not only in tests); `cf_n_null` is the number of matched random
+    # alive-feature sets (`shared_input_agreement.matched_null_sets`'s own
+    # decile-matching logic, reused rather than re-derived) that build each
+    # concept's response floor. This step measures INPUT RESPONSE only --
+    # mediation and the cross-model comparison are P6b, gated on this step's
+    # go/no-go result. Lives in `concepts:`, not `sae:`, for the same reason
+    # `min_relative_reach`/`shared_input_enabled` do: no pre-existing
+    # `sae`-stage fingerprint to protect, and the `concepts` Stage already
+    # declares the whole section as a fingerprint key.
+    # `cf_n_null` 2000, not 200: the null's p floor is 1/(n_null+1), and with
+    # ~25 concept x knob tests per target BH cannot pass anything at 200
+    # (25/201 = 0.124 > 0.05; P6a go/no-go, ROADMAP sec 37.9). The null is
+    # scored on already-encoded features, so draws cost no forward passes.
+    cf_enabled: bool = False
+    cf_max_series: int = 64
+    cf_doses: list = field(default_factory=lambda: [0.0, 0.5, 1.0, 1.5, 2.0])
+    cf_n_null: int = 2000
+
+    # Encode-check gate (P6a go/no-go, ROADMAP sec 37.9): a fresh dose=1.0
+    # recompute is compared against the persisted store not by an absolute/
+    # relative tolerance on raw SAE-feature VALUES (an absolute epsilon
+    # cannot tell precision noise from a wrong space, CLAUDE.md sec 8 --
+    # measured directly: a real run's raw activations differed by a 0.17%
+    # relative max diff, bf16-scale precision noise, yet the whole feature
+    # VECTOR failed a 1e-3/1e-2 allclose because sparse TopK SAEs have many
+    # near-zero features an absolute atol cannot survive), but by whether
+    # each atlas concept part's OWN pooled score -- the only thing this
+    # module actually reads downstream -- ranks series the same way in both
+    # spaces. `cf_encode_min_spearman` is a judgment call, not a derived
+    # constant: 0.98 demands the fresh and stored per-series concept scores
+    # be nearly rank-identical, loose enough to absorb genuine bf16 noise on
+    # a smooth, well-populated feature, tight enough that a misaligned or
+    # substituted array (wrong layer, wrong row order) -- which decorrelates
+    # rather than merely perturbing -- cannot pass by chance. The observed
+    # per-part Spearman distribution is always reported in
+    # `counterfactual_response.json` so this threshold can be recalibrated
+    # against real data rather than guessed twice.
+    cf_encode_min_spearman: float = 0.98
+
+    # ROADMAP.md sec 37.10 P7 -- how many `concept_transfer` claims `register`
+    # freezes from dev artifacts before the private epoch is ever touched.
+    # Candidates are reciprocal-FDR atlas-transfer tests
+    # (`sae/atlas_transfer.json`) whose atlas concept is stable
+    # (`sae/concept_stability.json`), ranked by dev AUC margin; `n_registered`
+    # is the cut. More claims spend more of the one private look and tighten
+    # Holm (`CLAUDE.md` sec 6.6's p-floor), so this is judgment, not derived:
+    # 20, decided by the reviewing session (ROADMAP.md sec 37.15 q2).
+    # `stage_input: False`: read only by `analysis/hypotheses.py::run_register`,
+    # never by `run_concept_stage`, so it must not fingerprint the `concepts`
+    # stage itself (the false-refusal shape `describe_from_exemplars` above
+    # already guards against); `register`'s own `Stage.config_keys` declares
+    # `concepts.n_registered` as a field-level key instead.
+    n_registered: int = field(default=20, metadata={"stage_input": False})
+
+    # ROADMAP.md sec 37.10 P7b -- which claim a registered `concept_transfer`
+    # entry actually makes. `"search"` (default) is P7's own claim: the
+    # destination's WHOLE dictionary is re-searched on private data against a
+    # max-over-features null, so "confirmed" means only "the destination
+    # layer has SOME feature that selects the source concept's series" (P7's
+    # Findings: the private argmax feature matched dev's in just 6 of 20
+    # claims). `"frozen"` is the sharper claim registered for a fresh
+    # epoch: BOTH `src_features` and dev's own best `dst_feature` are frozen
+    # at registration, and the private forward leg scores exactly that one
+    # feature against a SINGLE-FEATURE stratum-matched null (no max over the
+    # dictionary, since there is no search left to correct for) --
+    # `sae/transfer.py::transfer_one_fixed_feature`. `"search"` must
+    # reproduce P7's registration and replication byte-identically
+    # (`test_search_mode_unchanged`); this field is read only by
+    # `analysis/hypotheses.py`/`analysis/confirm.py`'s concept-transfer path,
+    # so it is declared `stage_input: False` here (same reasoning as
+    # `n_registered` above) and field-level on `register`'s own
+    # `Stage.config_keys` instead.
+    transfer_claim_mode: str = field(default="search", metadata={"stage_input": False})
 
 
 @dataclass

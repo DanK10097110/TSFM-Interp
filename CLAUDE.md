@@ -10,6 +10,13 @@
 > bulk**. Active work: `ROADMAP.md` §37 (the Concept Atlas, items P0–P8).
 > Section numbers below (§2, §7, §11) match `CLAUDE_FULL.md`, so references in
 > code comments still resolve.
+>
+> **`FINDINGS.md` is the curated results ledger**: every major or interesting
+> result (shared vs unique representations, where/when, per-model character,
+> method positives and confirmed negatives), each with exact numbers, evidence
+> class, a reproduce pointer and a 1–5 interestingness score. **Every new
+> claim goes there** in the same commit as its `ROADMAP.md` Findings block;
+> its header holds the maintenance rules. Read it first for "what do we know".
 
 ---
 
@@ -307,7 +314,10 @@ hypotheses **once** on the sealed private corpus:
 - It requires seal verification.
 - `--force confirm` is recorded as `repeated_look`.
 
-A peeked private set means minting a new epoch. Unregistered findings cannot be
+A peeked private set means minting a new epoch. Concept claims replicate
+under `confirmation.json`'s `concept_replication` key (P7; epoch 1 is
+`benchmark_large/private_epoch1`, consumed by
+`runs/full_report_run_4model_epoch1`). Unregistered findings cannot be
 rescued. L0, L1 and L3 replicate on private data.
 
 ### 6.7 Report (`report/report.py`)
@@ -371,7 +381,15 @@ rescued. L0, L1 and L3 replicate on private data.
    overlap, hypergeometric + BH, never a whole-series ρ; a `sharing_class`
    of shared / partially shared / convergent / single-model; a part is
    provenance-driven when ≥80% of its top-k comes from one real-derived
-   generator), and writes `sae/concept_stage.json`. It
+   generator), then **shared-input causal agreement**
+   (`sae/shared_input_agreement.py` → `sae/shared_input_agreement.json`, the
+   L5 rung: for each reciprocal-FDR atlas-transfer test, both sides are
+   ablated on the same series U; each side must clear its own
+   random-direction null to be scorable, and level concordance (i) and
+   shape cosine (ii) must beat both sides' activation-matched
+   random-feature-set floors; `acts differently` needs a statistic below
+   both floors' p05, otherwise `no specific agreement`), and writes
+   `sae/concept_stage.json`. It
    requires `sae.persist_features: true`, which preflight checks. It skips
    transfer with a stated reason, and deletes its own stale artifacts when it
    does not rewrite them. The preset is `configs/concept_atlas.yaml`.
@@ -386,6 +404,9 @@ rescued. L0, L1 and L3 replicate on private data.
    `report/model_similarity.json`: 7 pair metrics, each on its own scale,
    with a rank consensus (Kendall's W) and contrasts. Metrics are never
    pooled into one score.
+
+Results of this chain (and every other stage) are curated in `FINDINGS.md`
+(sections B–C); add new ones there.
 
 The reference real run is `runs/full_report_run_4model` (TimesFM, Chronos-2,
 Sundial, Chronos-Bolt; 13 targets). Its current per-target concept count is
@@ -437,7 +458,10 @@ in `CLAUDE_FULL.md`.
     layer and require a nonzero change;
   - predict twice with no patch at all and require identical output (§11.49).
 - **Sampled models need seeded `predict()`** whenever two calls are compared:
-  Chronos-T5 and Sundial (§11.50).
+  Chronos-T5 and Sundial (§11.50). The seed must be the *same* one the
+  compared baseline used: P5b's null reseeded with its own seed, which made
+  Sundial scorable in only 1 of 71 tests as a destination (12 after the fix;
+  ROADMAP §37.8).
 - **Match capture precision to patch precision:** autocast off for the clean
   cache (§11.49).
 - **Normalized statistics:**
@@ -464,6 +488,18 @@ in `CLAUDE_FULL.md`.
   An archetype (or a synthetic generator) is a structural recipe, so
   residualizing structure on it flagged 48 of 55 concept parts as
   provenance-driven. Residualize only on true confounds (ROADMAP §37.11).
+- **Absence of agreement is not disagreement.** Failing to beat a floor's
+  p95 is not evidence that two effects differ; that needs the lower tail.
+  P5b's v1 called 109 of 288 tests "acts differently" on this basis; with a
+  p05 test it was 9. Also: the null that asks "does this do anything" (random
+  direction) and the floor that asks "is this more specific than an equally
+  active feature" (matched features) are different nulls (ROADMAP §37.8).
+- **Run invariance controls on real data, not only synthetic data.** CCM
+  passed its rotation test on isotropic synthetic data. On the real, low-rank
+  representations, rotating both bases *raised* it (F-level 0.148 → 0.331),
+  so it was not measuring unit correspondence at all (ROADMAP §35.14). A
+  bootstrap checked only on a true-zero fixture also hides a size-driven
+  bias.
 - **Sparse features and whole-series ρ.** Two sparse SAE features can have
   ρ 0.80 with zero shared top series, and identical top series with low ρ.
   "Same inputs" is a top-k overlap test (ROADMAP §37.11).
@@ -494,6 +530,10 @@ in `CLAUDE_FULL.md`.
   stage's own helper (`ablation_run.ablation_path`), never by hand: real
   layer names contain dots and are `sanitize()`d on disk. Mock layer names
   have no dots, so give fixtures a dotted name.
+- **Keys that collapse.** A dict keyed by an id that under-specifies the
+  claim silently merges entries. 20 registered concept claims had 9 ids
+  (destination model, not layer), so Holm ran over 9 p-values. Refuse
+  duplicate ids where the registry is built (ROADMAP §37.10).
 - **Text I/O.** Always pass `encoding="utf-8"` to `read_text`/`write_text`
   (§11.17).
 - **Remedies.** `--force` only reaches selected stages. An error message that

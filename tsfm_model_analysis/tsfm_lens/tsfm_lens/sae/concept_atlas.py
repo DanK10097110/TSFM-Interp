@@ -353,6 +353,98 @@ def _concept_records(X: np.ndarray, rows: list, labels: np.ndarray,
     return out
 
 
+def _candidate_lookup(run_dir) -> dict:
+    """`(model, layer, feature) -> candidate dict`, read from the SAME raw
+    `sae/<model>/<layer>_ablation.json` files `pooled_features` reads
+    (ROADMAP.md sec 37.7 P4) -- one extra pass over already-small JSON files,
+    not a re-derivation of anything `pooled_features`/`build_concept_matrix`
+    compute. Used only to look up `level_share`/`shape_channels` for features
+    that are already atlas members (`_concept_records`' own `rows`), so this
+    does not need to reproduce `build_concept_matrix`'s causal-only filter --
+    every scorable candidate is indexed, and a caller looks up only the
+    members it already knows about. `withheld`/`skipped` targets have no
+    `candidates` list and contribute nothing, matching `pooled_features`.
+    """
+    run_dir = Path(run_dir)
+    lookup: dict = {}
+    for ablation_file in sorted(run_dir.glob("sae/*/*_ablation.json")):
+        art = load_json(ablation_file)
+        if art.get("withheld") or art.get("skipped"):
+            continue
+        model = str(art.get("model", ablation_file.parent.name))
+        layer = str(art.get("layer", ablation_file.name[: -len("_ablation.json")]))
+        for c in art.get("candidates", []):
+            if not c.get("scorable"):
+                continue
+            lookup[(model, layer, int(c["feature"]))] = c
+    return lookup
+
+
+def _tag_causal_effect(concepts: list, rows: list, lookup: dict, level_share_threshold: float) -> None:
+    """Mutates `concepts` in place, adding `causal_tag`, `level_share_median`
+    and `n_members_with_level_share` (ROADMAP.md sec 37.7 P4, additive --
+    CLAUDE.md invariant 13). Per item 4's rule, checked in this order (a
+    concept with a real shape effect is `shape-causal` regardless of how much
+    of its members' effect is ALSO level, since some real, non-level movement
+    was still measured):
+
+      `shape-causal`        -- at least one member has `n_shape_channels_
+                               clearing > 0` (its level-removed battery
+                               cleared some channel on its own row-matched
+                               null, sec 37.7 item 1).
+      `level carrier`       -- no member clears a level-removed channel, and
+                               the members' MEDIAN `level_share` (over
+                               members where it is defined; sec 37.3 P0's
+                               ratio is undefined, not zero, when a
+                               candidate's own top-firing series show no
+                               movement at all) is >= `level_share_threshold`.
+      `no measured effect`  -- neither of the above: no shape channel
+                               cleared and the level evidence is either
+                               absent or below the threshold.
+
+    A member whose `(model, layer, feature)` is not in `lookup` (an older
+    ablation artifact predating this field) is skipped for BOTH the level-
+    share median and the shape-clearing check, rather than raising -- the
+    concept is then tagged from whatever members do carry the new fields,
+    and `n_members_with_level_share` records how many that was so a reader
+    can see when the tag rests on a partial population.
+
+    `n_members_shape_causal` of `n_members_with_shape_record` makes the
+    any-member rule readable: on the 4-model run every concept is
+    `shape-causal`, including ones whose median level share is 0.99, so the
+    tag alone cannot tell a concept whose members all move shape from one
+    where a single member does.
+    """
+    for rec in concepts:
+        level_shares: list = []
+        any_shape_clears = False
+        n_found = n_shape = 0
+        for i in rec["members"]:
+            r = rows[i]
+            cand = lookup.get((str(r["model"]), str(r["layer"]), int(r["feature"])))
+            if cand is None:
+                continue
+            n_found += 1
+            ls = cand.get("level_share")
+            if ls is not None:
+                level_shares.append(float(ls))
+            if cand.get("n_shape_channels_clearing", 0) > 0:
+                any_shape_clears = True
+                n_shape += 1
+        median_ls = float(np.median(level_shares)) if level_shares else None
+        if any_shape_clears:
+            tag = "shape-causal"
+        elif median_ls is not None and median_ls >= level_share_threshold:
+            tag = "level carrier"
+        else:
+            tag = "no measured effect"
+        rec["causal_tag"] = tag
+        rec["level_share_median"] = median_ls
+        rec["n_members_with_level_share"] = len(level_shares)
+        rec["n_members_shape_causal"] = n_shape
+        rec["n_members_with_shape_record"] = n_found
+
+
 def _name_concepts(concepts: list) -> None:
     """Mutates `concepts` in place, setting `name`. Reuses
     `concepts.py::_compose_batch` DIRECTLY (not the thin per-concept
@@ -364,6 +456,14 @@ def _name_concepts(concepts: list) -> None:
     concept's notion of "cleared" is not a second, independently-invented
     one. Peer keys are each concept's own (already unique, already
     deterministic) `concept` id.
+
+    `causal_tag` (ROADMAP.md sec 37.7 P4, set by `_tag_causal_effect`, which
+    must run first) is passed through to `_compose_batch` so a `level
+    carrier` concept is named "shifts the level" rather than a raw,
+    possibly level-confounded channel word -- see that function's own
+    docstring. Concepts this run's `_tag_causal_effect` never saw (`causal_
+    tag` absent, e.g. a caller that builds `concepts` by hand) are treated
+    as untagged, reproducing the pre-P4 naming exactly.
     """
     if not concepts:
         return
@@ -371,7 +471,8 @@ def _name_concepts(concepts: list) -> None:
     profiles = np.array([[c["mean_profile"][ch] for ch in channel_cols] for c in concepts])
     cleared = np.abs(profiles) >= 1.0
     peers = [c["concept"] for c in concepts]
-    batch = _compose_batch(profiles, cleared, peers)
+    tags = [c.get("causal_tag") for c in concepts]
+    batch = _compose_batch(profiles, cleared, peers, tags=tags)
     for rec, info in zip(concepts, batch):
         rec["name"] = info["name"]
 
@@ -449,11 +550,14 @@ def run_concept_atlas(run_dir, cfg) -> dict:
     min_cosine = float(concepts_cfg.atlas_min_cosine)
     min_members = int(concepts_cfg.atlas_min_members)
     n_null = int(concepts_cfg.atlas_n_null)
+    level_share_threshold = float(getattr(concepts_cfg, "level_share_threshold", 0.9))
     seed = int(getattr(getattr(cfg, "run", None), "seed", 0) or 0)
 
     out_path = run_dir / "sae" / "concept_atlas.json"
     params = {"min_cosine": min_cosine, "min_members": min_members,
-             "linkage": _LINKAGE_METHOD, "n_null": n_null}
+             "linkage": _LINKAGE_METHOD, "n_null": n_null,
+             # ROADMAP.md sec 37.7 P4 -- additive.
+             "level_share_threshold": level_share_threshold}
 
     X, rows = pooled_features(run_dir, causal_only=causal_only)
     n_features = int(X.shape[0])
@@ -520,6 +624,7 @@ def run_concept_atlas(run_dir, cfg) -> dict:
                      for c in concept_ids}
 
     concepts = _concept_records(X, rows, labels, per_concept_p)
+    _tag_causal_effect(concepts, rows, _candidate_lookup(run_dir), level_share_threshold)
     _name_concepts(concepts)
 
     pc1, pc2, ev = _pca_projection(X, seed=seed)

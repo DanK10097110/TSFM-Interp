@@ -626,3 +626,22 @@ def test_binary_field_keeps_its_rho_when_provenance_is_constant():
     rec = next(r for r in cp._structural_field_records(s, joined, cols, seed=0)
                if r["field"] == "has_random_walk")
     assert rec["raw_rho"] > 0.4 and rec["resid_rho"] == rec["raw_rho"]
+
+
+def test_missing_ground_truth_degrades_with_stated_reason(tmp_path, monkeypatch):
+    """A corpus with no sealed ground truth (the smoke config's empty
+    `data.path`) must not crash the concepts stage: structural fields go
+    unscored and the artifact states why (CLAUDE.md sec 2.5)."""
+    _build_pqr_run(tmp_path)
+
+    def _no_gt(path):
+        raise FileNotFoundError("manifest.json")
+
+    monkeypatch.setattr(cp, "load_ground_truth_table", _no_gt)
+    cfg = _run_cfg()
+    atlas = run_concept_atlas(tmp_path, cfg)
+    assert len(atlas["concepts"]) == 2
+    out = cp.run_concept_profiles(tmp_path, cfg)
+    assert out["ground_truth"]["available"] is False
+    assert "manifest.json" in out["ground_truth"]["reason"]
+    assert out["concepts"]

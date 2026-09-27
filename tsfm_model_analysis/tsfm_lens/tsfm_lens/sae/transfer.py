@@ -60,6 +60,14 @@ above already promise stays put:
      the FDR-scored siblings `reach_fdr`/`matrix_fdr`/`universality_fdr` are
      additive.
 
+ROADMAP.md sec 37.10 P7b -- `transfer_one_fixed_feature` is a sharper,
+frozen-feature sibling of `transfer_one`: `analysis/hypotheses.py`/`analysis/
+confirm.py`'s `concepts.transfer_claim_mode: "frozen"` path uses it instead
+of re-deriving an argmax destination feature, so a private replication can
+claim "this SPECIFIC dev feature pair selects the same series" rather than
+only "the destination dictionary has some feature that does". `transfer_one`
+itself is untouched by this addition.
+
 Evidence class is unchanged by any of this: a transfer test (uncorrected or
 FDR-controlled) is still a claim about shared INPUT SELECTIVITY, never about
 a shared causal effect (that is `sae/concept_atlas.py`'s own, narrower claim
@@ -79,7 +87,7 @@ from ..extraction.store import ActivationStore, load_meta
 from ..utils import log, save_json
 
 __all__ = ["series_strata", "concept_scores", "top_series", "matched_draws",
-          "auc_from_ranks", "transfer_one", "run_transfer",
+          "auc_from_ranks", "transfer_one", "transfer_one_fixed_feature", "run_transfer",
           "benjamini_hochberg", "run_atlas_transfer"]
 
 _MAX_REDRAW_DEFAULT = 5000
@@ -408,6 +416,72 @@ def transfer_one(src_scores: np.ndarray, dst_ranks: np.ndarray, S: np.ndarray,
                                    max_redraw=max_redraw)
 
     return {"auc": auc, "feature": best_feature, "null_p95": null_p95,
+           "clears": clears, "p": p, "p_method": p_used,
+           "rev_auc": rev_auc, "rev_null_p95": rev_null_p95,
+           "rev_clears": rev_clears, "rev_p": rev_p, "rev_p_method": rev_p_used,
+           "reciprocal": bool(clears and rev_clears)}
+
+
+def transfer_one_fixed_feature(src_scores: np.ndarray, dst_ranks: np.ndarray, S: np.ndarray,
+                               fwd_draws: np.ndarray, strata: np.ndarray, by_stratum: dict,
+                               feature: int, k: int = 20, n_draws: int = 200, seed: int = 0,
+                               p_method: str = "exact",
+                               max_redraw: int = _MAX_REDRAW_DEFAULT,
+                               fwd_seed: int | None = None) -> dict:
+    """Forward + reverse legs for ONE (concept, destination target) pair with
+    the destination FEATURE FROZEN -- ROADMAP.md sec 37.10 P7b's sharper
+    claim, "this SPECIFIC dev feature pair selects the same series", as
+    opposed to `transfer_one`'s "the destination dictionary has SOME feature
+    that does". `transfer_one` itself is untouched (its own tests, and every
+    existing caller, stay byte-identical); this is the "small helper beside
+    it" the design calls for rather than a fork of the stratum machinery --
+    every argument, and every returned key, matches `transfer_one`'s shape
+    exactly, so a caller can dispatch on `mode` without changing anything
+    else about how it reads the result.
+
+    Only the FORWARD leg's null differs from `transfer_one`: since there is
+    no search over features, `null_p95`/`p` come from `feature`'s OWN AUC
+    over the SAME matched draws, never a max over the whole dictionary (no
+    `.max(axis=1)` anywhere in this function) -- `test_frozen_null_is_not_
+    max_over_features` pins this. The reverse leg is IDENTICAL in shape to
+    `transfer_one`'s own (it never searched either); only its `best_feature`
+    input is `feature` directly instead of an argmax result.
+    """
+    dst_col = dst_ranks[:, [feature]]
+    obs_auc = auc_from_ranks(dst_col, S)
+    auc = float(obs_auc[0])
+    null_auc = auc_from_ranks(dst_col, fwd_draws)[:, 0]
+    null_p95 = float(np.percentile(null_auc, 95))
+    clears = bool(auc > null_p95)
+
+    if p_method == "adaptive" and fwd_seed is None:
+        raise ValueError("transfer_one_fixed_feature: p_method='adaptive' needs fwd_seed, "
+                         "the seed fwd_draws was built from")
+
+    def _fwd_redraw(n: int) -> np.ndarray:
+        draws = matched_draws(S, strata, by_stratum, n, np.random.default_rng(fwd_seed))
+        return auc_from_ranks(dst_col, draws)[:, 0]
+
+    p, p_used = _resolve_p(auc, null_auc, p_method, _fwd_redraw, max_redraw=max_redraw)
+
+    S_b = top_series(dst_ranks[:, feature], k)
+
+    R_src = rankdata(src_scores)[:, None]
+    rev_auc = float(auc_from_ranks(R_src, S_b)[0])
+    rng = np.random.default_rng(seed)
+    rev_draws = matched_draws(S_b, strata, by_stratum, n_draws, rng)
+    rev_null = auc_from_ranks(R_src, rev_draws)[:, 0]
+    rev_null_p95 = float(np.percentile(rev_null, 95))
+    rev_clears = bool(rev_auc > rev_null_p95)
+
+    def _rev_redraw(n: int) -> np.ndarray:
+        draws = matched_draws(S_b, strata, by_stratum, n, np.random.default_rng(seed))
+        return auc_from_ranks(R_src, draws)[:, 0]
+
+    rev_p, rev_p_used = _resolve_p(rev_auc, rev_null, p_method, _rev_redraw,
+                                   max_redraw=max_redraw)
+
+    return {"auc": auc, "feature": int(feature), "null_p95": null_p95,
            "clears": clears, "p": p, "p_method": p_used,
            "rev_auc": rev_auc, "rev_null_p95": rev_null_p95,
            "rev_clears": rev_clears, "rev_p": rev_p, "rev_p_method": rev_p_used,

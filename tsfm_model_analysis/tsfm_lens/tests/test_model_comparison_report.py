@@ -10,6 +10,7 @@ and the final report for the exact pytest evidence.
 
 from __future__ import annotations
 
+import json
 import inspect
 import re
 import sys
@@ -352,16 +353,47 @@ def test_q1_decoy_names_the_all_model_concept_when_one_exists():
     assert "<b>No</b>" not in answer
 
 
+def test_q1_rung_reports_measured_l5_not_a_stale_not_measured():
+    """Once `sae/shared_input_agreement.json` exists, Q1's "how sure" line
+    must report L5's measured status. It hardcoded "L5 ... not measured"
+    before P5b landed. Plant: restoring the hardcoded string fails this."""
+    profiles = {"concepts": [
+        {"concept": 1, "name": "universal concept", "n_models": 3,
+         "parts": [{"model": "A"}, {"model": "B"}, {"model": "C"}],
+         "sharing_class": "shared (same effect, same inputs)", "stable": True,
+         "input_transfer_models_fdr": []}]}
+    shared = {"tests": [{"concept": 1, "verdict": "same causal effect"}]}
+    verdicts = derived.concept_verdicts(profiles, None, None, shared)
+    _, sure = mc._answer_q1(verdicts, 3)
+    assert "1 reached" in sure
+    assert "L5 (same causal effect on the same inputs) and L6" not in sure
+
+
+def test_shared_input_table_note_names_both_nulls():
+    """The note is a claim about the method (CLAUDE.md sec 8, labels are
+    claims): scorability uses each side's random-direction null, and the
+    agreement uses the matched-feature floors. Plant: the pre-review note
+    ("scored against that model's own matched-random-feature-set floor")
+    fails this."""
+    html = mc._shared_input_pair_table({"pair_verdict_counts": {"A->B": {"level only": 1}}})
+    assert "random-direction null" in html
+    assert "own matched-random-feature-set floor" not in html
+
+
 # ---------------------------------------------------------------------------
 # 4. Solo run skips; two-model run renders one pair, W reads "not computed".
 # ---------------------------------------------------------------------------
 
 def test_solo_run_is_skipped_with_a_reason(tmp_path):
+    """Report structure spec R1 split `model_comparison_block` into
+    `at_a_glance_block` and `concept_section_block`; both must independently
+    honor the same solo-run guard (they render/skip together)."""
     cfg = _cfg(tmp_path, ["A"])
-    html, status, detail = mc.model_comparison_block(cfg, tmp_path / "run", [])
-    assert html == ""
-    assert status == "skipped"
-    assert "solo run" in detail
+    for fn in (mc.at_a_glance_block, mc.concept_section_block):
+        html, status, detail = fn(cfg, tmp_path / "run", [])
+        assert html == ""
+        assert status == "skipped"
+        assert "solo run" in detail
 
 
 def test_two_model_run_renders_one_pair_and_w_not_computed(tmp_path, monkeypatch):
@@ -371,10 +403,13 @@ def test_two_model_run_renders_one_pair_and_w_not_computed(tmp_path, monkeypatch
     _write_similarity(run_dir, ["A", "B"])
     cfg = _cfg(tmp_path, ["A", "B"])
     findings = []
-    html, status, detail = mc.model_comparison_block(cfg, run_dir, findings)
+    html, status, detail = mc.at_a_glance_block(cfg, run_dir, findings)
     assert status == "rendered"
     assert "A / B" in html or "A/B" in html
     assert "not computed" in html
+    html2, status2, _ = mc.concept_section_block(cfg, run_dir, [])
+    assert status2 == "rendered"
+    assert "A / B" in html2 or "A/B" in html2
 
 
 # ---------------------------------------------------------------------------
@@ -412,11 +447,14 @@ def test_similarity_profile_axis_ranges_are_per_metric_not_shared():
 # ---------------------------------------------------------------------------
 
 def test_every_figure_in_the_section_is_captioned(tmp_path, monkeypatch):
+    """The figures live in `concept_section_block` (the "Concepts" section's
+    full evidence) since report structure spec R1 -- `at_a_glance_block`
+    is text-only by design."""
     run_dir = _full_fixture(tmp_path)
     import tsfm_lens.analysis.model_similarity as ms_mod
     monkeypatch.setattr(ms_mod, "write_model_similarity", lambda *a, **k: None)
     cfg = _cfg(tmp_path, ["A", "B", "C"])
-    html, status, _ = mc.model_comparison_block(cfg, run_dir, [])
+    html, status, _ = mc.concept_section_block(cfg, run_dir, [])
     assert status == "rendered"
     seq = [
         "fig" if "plotly" in m.group(0) else "cap"
@@ -430,6 +468,22 @@ def test_every_figure_in_the_section_is_captioned(tmp_path, monkeypatch):
     bare = [i for i, kind in enumerate(seq)
            if kind == "fig" and (i + 1 >= len(seq) or seq[i + 1] != "cap")]
     assert not bare, f"{len(bare)} of {n_figs} figures have no caption immediately after them"
+
+
+def test_at_a_glance_block_renders_no_figures(tmp_path, monkeypatch):
+    """Report structure spec R1: "At a glance" is text only -- "No large
+    figures here." Plant: call `_similarity_profile_figure` and splice its
+    `_frag` output into `at_a_glance_block`'s returned html (simulating the
+    figure-adding regression this guards against) -- the assertion below
+    then fails on the spliced-in plotly div (confirmed, then reverted)."""
+    run_dir = _full_fixture(tmp_path)
+    import tsfm_lens.analysis.model_similarity as ms_mod
+    monkeypatch.setattr(ms_mod, "write_model_similarity", lambda *a, **k: None)
+    cfg = _cfg(tmp_path, ["A", "B", "C"])
+    html, status, _ = mc.at_a_glance_block(cfg, run_dir, [])
+    assert status == "rendered"
+    assert "plotly-graph-div" not in html
+    assert "Pair-similarity rank table" in html
 
 
 # ---------------------------------------------------------------------------
@@ -464,9 +518,11 @@ def test_per_target_concepts_are_collapsed_behind_a_details_block():
 
 
 def test_activation_matched_roles_are_collapsed_behind_a_details_block():
+    """Report structure spec R1 moved this block from `_sec_sae` into
+    `_sec_concepts` (the new "Concepts" section, directly after "SAE")."""
     from tsfm_lens.report import report as report_mod
 
-    src = inspect.getsource(report_mod._sec_sae)
+    src = inspect.getsource(report_mod._sec_concepts)
     assert "Superseded: activation-matched roles" in src
 
 
@@ -541,3 +597,20 @@ def test_q3_groups_metrics_by_their_closest_pair():
            "contrasts": []}
     text, _ = mc._answer_q3(sim)
     assert "<b>A/B</b> on 2 metric(s)" in text and "<b>C/D</b> on 1 metric(s)" in text
+
+
+def test_unscored_structural_profiles_reason_is_rendered(tmp_path, monkeypatch):
+    """`concept_profiles.json` written without ground truth carries
+    `ground_truth.available: false` and a reason; the section must render
+    that reason, not only log it (CLAUDE.md sec 2.5)."""
+    run_dir = _full_fixture(tmp_path)
+    import tsfm_lens.analysis.model_similarity as ms_mod
+    monkeypatch.setattr(ms_mod, "write_model_similarity", lambda *a, **k: None)
+    path = run_dir / "sae" / "concept_profiles.json"
+    prof = json.loads(path.read_text(encoding="utf-8"))
+    prof["ground_truth"] = {"available": False, "reason": "no ground truth for this corpus (planted)"}
+    path.write_text(json.dumps(prof), encoding="utf-8")
+    cfg = _cfg(tmp_path, ["A", "B", "C"])
+    html, status, _ = mc.concept_section_block(cfg, run_dir, [])
+    assert status == "rendered"
+    assert "no ground truth for this corpus (planted)" in html

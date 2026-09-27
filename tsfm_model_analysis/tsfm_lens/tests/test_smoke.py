@@ -109,8 +109,10 @@ def test_end_to_end(tmp_path=None):
     # class="note-body">...</div></details>`) nests a `</div>` inside every
     # `<li>`, so a naive first-`</div>` split would truncate the block after
     # the very first finding's caveat instead of at the findings block's own
-    # close (which precedes the first rendered `<section>`).
-    findings_block = html.split('<details class="findings">', 1)[1].split("<section ", 1)[0]
+    # close. Report structure spec R1 moved Findings into the Appendix,
+    # directly followed by "How to read this report" (a `<section>`), so
+    # this delimiter still lands exactly on the findings block's own close.
+    findings_block = html.split('<details class="findings" id="findings-appendix">', 1)[1].split("<section ", 1)[0]
     # Each <li> also carries a registered/exploratory class (ROADMAP.md sec 21
     # J4's Headline mode filters on it), so count both variants rather than a
     # bare `<li>`.

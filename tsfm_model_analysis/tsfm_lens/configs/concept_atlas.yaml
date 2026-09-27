@@ -18,13 +18,17 @@
 #     `sae.persist_features: true` (set below) and refuses at preflight
 #     without it.
 #
-# PRIVATE-EPOCH REQUIREMENT (ROADMAP.md sec 37.10 P7). `confirm.path` still
-# points at benchmark_large's private_test epoch 0, which earlier runs have
-# already confirmed against. That is fine for the claims this config's
-# `register` stage already knew about, and it is NOT a valid one-shot test
-# for concept claims: before registering any `concept_*` hypothesis, mint a
-# fresh private epoch (build_pipeline `regenerate_private(epoch=1)`) and
-# point `confirm.path` at it (CLAUDE.md sec 6.7).
+# PRIVATE-EPOCH REQUIREMENT (ROADMAP.md sec 37.10 P7) -- RESOLVED. `confirm.
+# path` now points at `benchmark_large/private_epoch1`, a fresh private
+# epoch built via `regenerate_private(epoch=1)` and validated against
+# `public_dev` with the cross-split check (near-duplicate fraction 1e-05,
+# composition equality p>0.66 on tier/group/archetype, energy-distance
+# permutation p=0.908, TOST verdict "inconclusive" -- not "not_equivalent")
+# specifically so `concept_transfer` claims (registered from dev atlas
+# artifacts only, before this epoch is touched) can be confirmed once
+# without spending `private_test` (epoch 0) a second time (CLAUDE.md sec
+# 6.7). `private_test` (epoch 0) stays reserved for the pre-existing
+# l0/l1/l3 hypotheses already confirmed against it.
 #
 # Known state at the time this preset was written (sec 37.3 P0): on this
 # corpus the default clustering floor (`sae.concept_min_members: 3`) leaves
@@ -218,10 +222,11 @@ internals:
 confirm:
   enabled: true
   source: sealed
-  path: ../../benchmark_large/private_test  # relative to tsfm_lens/ -- see header's repeated-look note
+  path: ../../benchmark_large/private_epoch1  # relative to tsfm_lens/ -- see header (sec 37.10 P7)
   max_series: 800
   require_seal: true
   alpha: 0.05
+  concept_transfer_n_null: 2000
 
 # ROADMAP.md sec 34 item C1/C2 (2026-09-17): the corpus card and report
 # section, added after this run's own config was first written -- this
@@ -243,6 +248,7 @@ concepts:
   n_features_per_rule: 12  # used only for a target with no Stage 2 artifact
   describe: true           # deterministic sentences into sae/descriptions.json
   describe_top_features: 8
+  n_registered: 20         # ROADMAP.md sec 37.10 P7 decision item 2 (§37.15 q2)
   # ROADMAP.md sec 37 (concept FAMILIES, sae/concept_families.py): a general,
   # human-readable layer above the tight atlas concepts (atlas_min_cosine
   # above). atlas_family_min_members is this layer's own size floor for a

@@ -677,7 +677,15 @@ def run_concept_profiles(run_dir, cfg) -> dict:
     by_stratum = _by_stratum(strata)
     generators = meta["generator"].to_numpy()
     series_ids = meta["series_id"].to_numpy()
-    gt = load_ground_truth_table(cfg.data.path)
+    ground_truth_status = {"available": True, "reason": ""}
+    try:
+        gt = load_ground_truth_table(cfg.data.path)
+    except Exception as exc:  # noqa: BLE001 -- degrade the structural profile, not the stage
+        ground_truth_status = {"available": False,
+                               "reason": (f"no ground truth for this corpus ({type(exc).__name__}: "
+                                          f"{exc}); every structural field is unscored")}
+        log.warning("concept_profiles: %s", ground_truth_status["reason"])
+        gt = pd.DataFrame(columns=list(_STRUCTURAL_FIELDS), dtype=np.float64)
     joined = gt.reindex(series_ids)
     provenance_cols = _residualization_cols(joined.columns)
 
@@ -842,6 +850,7 @@ def run_concept_profiles(run_dir, cfg) -> dict:
                                             "recipes, so residualizing on them removes the "
                                             "structure being measured")},
         "concepts": concepts_out, "summary": summary, "evidence_classes": EVIDENCE_CLASSES,
+        "ground_truth": ground_truth_status,
     }
     save_json(out_path, out)
     log.info("concept profiles: %d concept(s), %d part(s) (%d provenance-driven); "
