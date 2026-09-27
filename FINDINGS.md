@@ -824,6 +824,7 @@ These instructions are binding for every future session, human or agent.
 - **Evidence.** Behavioral. **Status:** confirmed on run.
 - **Reproduce.** `report/derived.py::flatness_population`; `runs/full_report_run_4model/sae/*_ablation.json` (`unpatched`).
 - **Ref.** ROADMAP §32.7 (~28250–28479).
+- **Re-check (2026-09-27).** Preprocessing is ruled out: native library forecasts match the adapters to 0.002–0.028 context sd, and flat fractions match. Flat is 2–4% on periodic contexts vs 49–61% on non-periodic ones. The overall share is driven by the real-derived tier (BM-06). Ref. ROADMAP §32.7 addendum.
 - **Score. 4/5.** Flat forecasts are mostly optimal behavior on noise-like context, and they expose a real, unstated per-model difference in reversion to the mean.
 
 #### PM-08 · `random_init` twins are not one null condition
@@ -1383,3 +1384,17 @@ See SH-20. **4/5.**
 - **Claim.** 244/298 dose-1.0 regenerations failed to reproduce the original, because the post-generation corruption chain was not replayed. After the fix, 0/1113 fail.
 - **Status:** fixed. **Reproduce.** `build_pipeline/counterfactual.py::_replay_transforms`. **Ref.** ROADMAP §37.9 (~36611–36619).
 - **Score. 2/5.** An example of why "dose 1.0 must equal the original" is a mandatory free test.
+
+#### BM-06 · ~42% of the dev corpus is weakly predictable, intermittent real-derived data, and it drives the ~50% flat-forecast share
+- **Claim.**
+  - The real-derived tier is 410/965 series, almost all Monash `weather` plus ETT. Its structure:
+    `block_bootstrap` 61% zeros (lag1 0.212); `sequential_par` 36% zeros (lag1 0.115); `mixture`
+    lag1 0.241.
+  - Flat forecasts there are 0.67–1.0 of series, vs 0 on structured synthetic archetypes.
+  - Preprocessing is not responsible. Native APIs match the adapters to 0.002–0.028 context sd.
+  - Point forecasts are central estimates, so they are flat by design on such data. Sundial single
+    sample sd ratio 0.42 vs median 0.16; the single sample is worse (MASE 1.472).
+- **Evidence.** Behavioral / descriptive. **Status:** measured on dev, orchestrator scratch scripts; not in the pipeline.
+- **Reproduce.** Stored predictions in `runs/full_report_run_4model` by generator; corpus task list in `configs/large_run.yaml`.
+- **Ref.** ROADMAP §32.7 addendum (2026-09-27); PM-07; MN-14.
+- **Score. 4/5.** The ~50% flat share and small ablation effects are partly a property of the corpus, not of the models. Rebalancing the real-derived source would change what the causal battery can see.

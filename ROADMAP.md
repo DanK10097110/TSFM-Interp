@@ -28485,6 +28485,56 @@ not a measurement or a design question — H1–H4's numbers above are unchanged
 **§32.9's ordering line updated:** `... → H (next)` becomes
 `... → H (done, 2026-09-14) → PRUNE (next)`.
 
+**Addendum (2026-09-27): preprocessing ruled out; flat share traced to corpus composition.**
+This was an orchestrator re-check prompted by a user question ("predictions super smoothed out — is
+something wrong with preprocessing?"). It used scratch scripts outside the repo, 240–400 stratified
+dev series, and stored predictions for all 965 series.
+
+- **Preprocessing is not the cause.** `data.py::_assemble` only crops to context+horizon as float32;
+  no adapter rescales its input. Native library forecasts match the adapters (median |Δ| in
+  context-sd units):
+  - Chronos-2: 0.0026
+  - Chronos-Bolt: 0.0023
+  - TimesFM native `forecast()` with all `ForecastConfig` options on: 0.028. The adapter calls
+    `tfm.model.decode` directly and bypasses `normalize_inputs` / `force_flip_invariance` /
+    `infer_is_positive` / `fix_quantile_crossing`.
+
+  Flat fraction, native vs adapter: TimesFM 0.5167 vs 0.4917; Chronos-2 0.5083 vs 0.5083;
+  Bolt 0.5083 vs 0.5083. The Chronos models' bf16 vs native fp32 is negligible. Sundial's native
+  `generate` fails on the installed transformers (`DynamicCache.seen_tokens` AttributeError), but the
+  adapter's forward path is unaffected.
+- **Smoothness is by design: point = central estimate.** Sundial's single sample has sd ratio
+  0.4195; the median of 20 samples has 0.161 (the target's own sd ratio is ~0.82). The single sample
+  is *worse* (MASE 1.472).
+- **Flat forecasts are rare on periodic contexts.** Periodic here means differenced-series ACF at
+  lags ≥ 8 above 0.3 (91 of 400).
+
+  | Model | Flat, periodic | Flat, non-periodic | MASE flat | MASE non-flat |
+  |---|---|---|---|---|
+  | TimesFM | 0.033 | 0.60 | 0.855 | 1.865 |
+  | Chronos-2 | 0.033 | 0.59 | 0.846 | 1.809 |
+  | Sundial | 0.022 | 0.49 | 0.900 | 2.067 |
+  | Chronos-Bolt | 0.044 | 0.61 | 0.897 | 2.371 |
+
+  All models beat naive (1.904) and seasonal-naive (1.912) on MASE: 1.138 / 1.065 / 1.323 / 1.407.
+- **The flat share is a benchmark-composition effect.** The real-derived tier is 410/965 ≈ 42% of the
+  dev corpus. It is almost entirely Monash `weather` plus ETT (`large_run.yaml` documents that the
+  long Monash hourly domains fail to load).
+  - `block_bootstrap`: 61% zero values, lag1 0.212
+  - `sequential_par`: 36% zeros, lag1 0.115
+  - `mixture`: 25% zero steps, lag1 0.241
+
+  Flat share (TimesFM / C2 / Sundial / Bolt):
+  - `block_bootstrap`: 1.0 / .897 / .966 / .966
+  - `mixture`: .90 / .883 / .808 / .883
+  - `sequential_par`: .905 / .714 / .333 / .667
+  - structured synthetic archetypes: 0
+
+  On `block_bootstrap`, naive median MASE is 0.842 and the context mean's is 1.033, vs models ~0.70–0.74.
+- **Implication.** Nothing to fix in preprocessing. About half the corpus gives the forecast little to
+  move, which caps ablation effect sizes (MN-14). A more predictable real-derived source, or reporting
+  flatness by generator, would address it. Neither is done. See FINDINGS BM-06.
+
 ### 32.7b Complaint 2, second half: 55.8% of the rendered panels are features the battery already scored as causally null ✅ DONE (Item I, 2026-09-13)
 
 > **The question that produced this** (2026-09-12, user, on reading §32.6):
