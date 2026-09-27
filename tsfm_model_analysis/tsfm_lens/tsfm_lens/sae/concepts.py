@@ -39,6 +39,9 @@ from pathlib import Path
 import numpy as np
 
 from ..utils import load_json, log, save_json
+from .plain_text import cleared_ranked as _plain_cleared_ranked
+from .plain_text import compose_title as _plain_compose_title
+from .plain_text import directed_profile as _plain_directed_profile
 from .response import CHANNELS
 from .roles import cluster_roles
 
@@ -564,7 +567,8 @@ def compose_name(i: int, profiles: np.ndarray, cleared: np.ndarray, peers: list)
 
 def assign_concept_names(targets: dict) -> None:
     """Mutates `targets` (`run_concepts`'s own artifact structure) in
-    place, setting `name`/`name_lead_diversified` on every concept record.
+    place, setting `name`/`name_lead_diversified`/`plain_name` on every
+    concept record.
 
     `name_lead_diversified` (sec 32.4, Item C): since the name's FIRST
     clause is now always the fixed `dominant_channel` lead, this field no
@@ -586,6 +590,18 @@ def assign_concept_names(targets: dict) -> None:
     list order -- a fixed, content-derived order, not insertion order, so
     the peer tie-break key (`(target, concept_id)`) is what actually
     decides ties, never array position (sec 11.2/sec 11.55).
+
+    `plain_name` (ROADMAP.md sec 37 F1, item 4): a SECOND, additive title
+    using `sae/plain_text.py`'s vocabulary -- the exact same title
+    machinery `sae/concept_families.py` uses for a family's `title`, so a
+    concept and the family it lands in read in the same plain-language
+    register. `plain_text.directed_profile` negates `centroid` the same
+    way `concept_families.py` negates a family's mean profile (SIGN
+    CONVENTION: `signed_effect`/`centroid_null_units` records the effect OF
+    ABLATING a feature; a title states what the feature's PRESENCE does).
+    Uniqueness is enforced over the SAME whole-run peer set as `name`,
+    processed in the SAME fixed order, so `plain_name` collisions get the
+    identical Roman-numeral disambiguation a family's title does.
     """
     peers: list = []
     rows: list = []
@@ -611,6 +627,12 @@ def assign_concept_names(targets: dict) -> None:
         ref["name"] = info["name"]
         ref["name_lead_diversified"] = info["lead_diversified"]
 
+    used_plain_titles: set = set()
+    for i, ref in enumerate(refs):
+        directed_vec = _plain_directed_profile(profiles[i])
+        plain_cleared = _plain_cleared_ranked(directed_vec)
+        ref["plain_name"] = _plain_compose_title(directed_vec, plain_cleared, used_plain_titles)
+
     names_seen: dict = {}
     for target_key, concept in ((p[0], r) for p, r in zip(peers, refs)):
         names_seen.setdefault(concept["name"], []).append((target_key, concept["concept"]))
@@ -623,12 +645,16 @@ def assign_concept_names(targets: dict) -> None:
 def concept_table(candidates: list, X: np.ndarray, feature_ids: list,
                   cluster_result: dict, ablation_art: dict | None = None) -> list[dict]:
     """One record per concept -- sec 30.5's schema, minus the fields later
-    stages own: `name`/`name_lead_diversified` are left `None` HERE (this
-    function does not name its own output) -- naming is a separate,
-    whole-run pass (`assign_concept_names`, sec 30.10 stage 2's
-    `compose_name`) run once ALL targets' concepts exist, since the peer
-    set for concept naming is every concept in the run, not one target's
-    (sec 30.7). `misfits` (sec 30.10 stage 5's `misfits.py`) is left `[]`.
+    stages own: `name`/`name_lead_diversified`/`plain_name` are left `None`
+    HERE (this function does not name its own output) -- naming is a
+    separate, whole-run pass (`assign_concept_names`, sec 30.10 stage 2's
+    `compose_name`, plus ROADMAP.md sec 37 F1's `plain_name`) run once ALL
+    targets' concepts exist, since the peer set for concept naming is every
+    concept in the run, not one target's (sec 30.7). `plain_name` is a
+    SEPARATE, plain-language 2-5 word title (the same `sae/plain_text.py`
+    vocabulary `sae/concept_families.py` titles families with) -- `name`
+    itself stays exactly as `compose_name` produces it, byte-identical
+    (`CLAUDE.md` invariant 13); `plain_name` is additive. `misfits` (sec 30.10 stage 5's `misfits.py`) is left `[]`.
     `description`/`description_generated` are sec 30.7's Qwen narrator,
     design-only per the user's own instruction and correctly absent from
     every stage of this build; left `None`/`False`.
@@ -685,6 +711,7 @@ def concept_table(candidates: list, X: np.ndarray, feature_ids: list,
             "dominant_channel": dominant_channel,
             "name": None,
             "name_lead_diversified": None,
+            "plain_name": None,
             "within_cosine_mean": _within_cosine_mean(members_X),
             "centroid_cosine_mean": _centroid_cosine_mean(members_X, centroid),
             "misfits": [],

@@ -793,6 +793,35 @@ class ConceptsConfig:
     atlas_min_members: int = 3
     atlas_n_null: int = 200
 
+    # ROADMAP.md sec 37 (concept FAMILIES, `sae/concept_families.py`): a
+    # general, human-readable layer above the tight atlas concepts above,
+    # on user review ("many concepts with only one feature, and some
+    # features very close that are not in that concept ... should be more
+    # interpretable and general"). Average-linkage cosine hierarchical
+    # clustering, cut at a silhouette-selected threshold, THEN nearest-
+    # centroid assignment of every pooled feature at `atlas_family_assign_min`
+    # -- a looser, explainable-by-one-rule membership on top of
+    # `atlas_min_cosine`'s tight, every-pair-clears-it concepts above (which
+    # this does not change). `atlas_family_min_members` is this layer's own
+    # size floor (default 5, looser than `atlas_min_members` because a
+    # family is meant to be coarser than a concept).
+    #
+    # `stage_input: False` on both: `sae/concept_families.py::
+    # run_concept_families` is the ONLY reader of these two fields, and it
+    # reads the SAME already-fingerprinted ablation files `run_concept_atlas`
+    # does (via `pooled_features`) -- no new forward pass, no new model load,
+    # seconds of CPU. Fingerprinting them under this whole-section `concepts`
+    # key (CLAUDE.md sec 6.1) would mark every existing run's `concepts`
+    # stage stale for a change that cannot touch anything upstream of the
+    # family layer -- `describe_from_exemplars`'s own precedent above (in
+    # `SAEConfig`) for the identical false-refusal shape (CLAUDE.md sec
+    # 11.35/sec 11.51). A run whose family knobs alone changed self-skips on
+    # its existing `concept_stage.json`; re-deriving families from the
+    # unchanged ablation files with the new knobs is a fresh call to
+    # `run_concept_families`, not a full stage rerun.
+    atlas_family_min_members: int = field(default=5, metadata={"stage_input": False})
+    atlas_family_assign_min: float = field(default=0.5, metadata={"stage_input": False})
+
     # ROADMAP.md sec 37 P2 -- seed stability of atlas concepts, and the
     # within-model transfer ceiling. Is an atlas concept a property of the
     # model, or of one SAE draw? For each already-trained target, this many

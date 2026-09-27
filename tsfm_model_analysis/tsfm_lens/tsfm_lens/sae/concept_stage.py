@@ -35,6 +35,18 @@ since):
      upgraded to within-model causal only when the concept's own ablation
      battery already moved MASE there). Runs only when the atlas has
      concepts, since a profile is a property of an atlas concept.
+  8. concept FAMILIES (`sae/concept_families.py`, ROADMAP.md sec 37, user
+     review: the tight atlas leaves most causal features unassigned and its
+     machine names are unreadable) -> `concept_families.json` -- a coarser,
+     nearest-centroid layer above steps 5-7 that never changes them:
+     average-linkage cosine clustering of the SAME pooled causal features,
+     cut at a silhouette-selected threshold, then every pooled feature
+     (including the atlas's own tight-concept members and everything the
+     tight atlas left unassigned) is reassigned to its nearest family
+     centroid. Deterministic titles/descriptions, best-effort against
+     `profiles`/`stability` if this same call produced them. Runs only when
+     the atlas has concepts, since a family is a coarser view OF the atlas's
+     concepts.
 
 Having no production caller is what let `runs/full_report_run_4model`'s
 `transfer.json` outlive two regenerations of the `concepts.json` it was built
@@ -56,7 +68,9 @@ Same discipline for the atlas: a `concepts.atlas_enabled: false` config, or a
 run with no pooled causal features to cluster (every target withheld/skipped/
 empty), removes any `concept_atlas.json` left from an earlier run rather than
 leaving it beside a `concept_stage.json` that says nothing ran
-(`_drop_stale`, exactly `transfer.json`'s own pattern above).
+(`_drop_stale`, exactly `transfer.json`'s own pattern above). `concept_families.json`
+follows the same rule one artifact further downstream: it is dropped whenever
+the atlas it is built on did not run or has no concepts.
 """
 
 from __future__ import annotations
@@ -221,6 +235,7 @@ def run_concept_stage(cfg, hub, store, data, device) -> dict:
     n_pooled = len(pooled_features(run_dir, causal_only=causal_only)[0])
     atlas_skip = _atlas_skip_reason(cfg, n_pooled)
     atlas = None
+    stability = None
     if atlas_skip:
         log.warning("concepts: atlas skipped -- %s", atlas_skip)
         atlas_block = {"status": "skipped", "reason": atlas_skip,
@@ -297,6 +312,7 @@ def run_concept_stage(cfg, hub, store, data, device) -> dict:
     # property of an atlas concept (exactly `stability`'s own condition
     # above); `_drop_stale` mirrors every other additive artifact's pattern
     # in this stage when it does not rewrite it.
+    profiles = None
     if not c.profiles_enabled:
         profiles_reason = "concepts.profiles_enabled is false"
         profiles_block = {"status": "skipped", "reason": profiles_reason,
@@ -319,16 +335,45 @@ def run_concept_stage(cfg, hub, store, data, device) -> dict:
                           "n_provenance_driven_parts": profiles["summary"]["n_provenance_driven_parts"],
                           "n_parts": profiles["summary"]["n_parts"]}
 
+    # ROADMAP.md sec 37 (concept FAMILIES): a general, human-readable layer
+    # above the tight atlas concepts above (`sae/concept_families.py`).
+    # Additive on top of the atlas -- runs only when the atlas itself has
+    # concepts to organize (exactly `profiles`'s own condition above), and
+    # best-effort reads `profiles`/`stability` if this same call already
+    # produced them (both optional: absent skips only the "fires on"
+    # clause / the seed-stability aggregate, never the whole block).
+    if atlas is None:
+        families_reason = "the atlas did not run (see the atlas block's own skip reason)"
+        families_block = {"status": "skipped", "reason": families_reason,
+                          "removed_stale": _drop_stale(run_dir / "sae" / "concept_families.json")}
+    elif not atlas.get("concepts"):
+        families_reason = "the atlas has no concepts to organize into families"
+        families_block = {"status": "skipped", "reason": families_reason,
+                          "removed_stale": _drop_stale(run_dir / "sae" / "concept_families.json")}
+    else:
+        from .concept_families import run_concept_families
+        families = run_concept_families(run_dir, atlas, cfg, profiles=profiles, stability=stability)
+        if families.get("measured"):
+            families_block = {
+                "status": "ran", "n_families": len(families["families"]),
+                "n_assigned": families["n_assigned"], "frac_assigned": families["frac_assigned"],
+                "threshold": families["threshold"], "n_concepts_split": families["n_concepts_split"],
+                "p_n_families": families["null"]["structure"]["p_n_families"],
+                "p_frac_assigned": families["null"]["structure"]["p_frac_assigned"],
+                "cross_model_verdict": families["null"]["cross_model"]["verdict"]}
+        else:
+            families_block = {"status": "empty", "reason": families.get("reason")}
+
     record = {"schema_version": 1, "targets": [f"{m}/{l}" for m, l in targets],
               "ablation": ablation, "concept_counts": concept_counts,
               "n_concepts": sum(concept_counts.values()), "non_modular": non_modular,
               "transfer": transfer_block, "describe": describe_block, "atlas": atlas_block,
               "stability": stability_block, "atlas_transfer": atlas_transfer_block,
-              "profiles": profiles_block}
+              "profiles": profiles_block, "families": families_block}
     save_json(concept_stage_path(cfg), record)
     log.info("concepts: %d concept(s) across %d target(s) (%d non-modular); transfer %s; "
-             "atlas %s; stability %s; atlas transfer %s; profiles %s",
+             "atlas %s; stability %s; atlas transfer %s; profiles %s; families %s",
              record["n_concepts"], len(concept_counts), len(non_modular),
              transfer_block["status"], atlas_block["status"], stability_block["status"],
-             atlas_transfer_block["status"], profiles_block["status"])
+             atlas_transfer_block["status"], profiles_block["status"], families_block["status"])
     return record
