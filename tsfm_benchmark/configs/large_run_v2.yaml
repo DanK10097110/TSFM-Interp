@@ -1,0 +1,207 @@
+# ============================================================================
+# Large benchmark configuration, v2: a more balanced real-derived tier (ROADMAP D1)
+# ============================================================================
+# `large_run.yaml` is untouched by this file (invariant 1: sealed-corpus
+# regeneration and its golden hashes must stay reproducible, and every new
+# generator/source option is opt-in). This is a *separate* config, not an edit.
+#
+# Why this exists: a flatness investigation found `large_run.yaml`'s dev split
+# (965 series) was 410 series (~42%) real-derived, and that real-derived slice
+# is almost entirely Monash `weather` (plus a 40-series ETT slice):
+#   * `block_bootstrap` on `weather` -- 61% zeros, median lag-1 autocorr 0.212
+#   * `sequential_par` on `weather`  -- 36% zeros, median lag-1 autocorr 0.115
+# TSFMs forecast these flat, correctly, and that dominates the corpus-wide
+# ~50% flat-forecast share. `weather` is pinned rather than sampled from
+# Monash's cross-domain catalog because it is the ONLY domain that loads at
+# all AND is long enough: every long *hourly* Monash domain fails to load
+# in this environment on a frequency-alias bug in `Monash-University/monash_tsf`'s
+# own loading script (parsing pandas offset strings like `'h'`), which is
+# script-backed and therefore can't be patched around under the `datasets<3`
+# pin (`datasets>=3` removed script-based loading outright).
+#
+# `autogluon/chronos_datasets` mirrors several of the same Monash domains (and
+# others) as plain, non-script parquet -- so it sidesteps that loader bug
+# entirely, at no new dependency (`datasets`/`pyarrow` already load it; see
+# `build_pipeline/sources.py`'s `chronos_datasets` kind docstring for how
+# selection and long-series windowing are seeded). Measured live here
+# (see `tests/test_chronos_datasets_source.py` for the loader
+# unit tests, and the D1 handoff report for the measurement script/output):
+#
+#   config                       | n series | zero_frac (median) | lag1 (median) | frac_periodic
+#   ----------------------------- ---------- --------------------- ---------------- --------------
+#   monash_electricity_hourly    |      321  |             0.0001 |         0.9150 |        0.9533
+#   monash_traffic                |      862  |             0.0064 |         0.8430 |        0.9425
+#   monash_pedestrian_counts      |       66  |             0.0018 |         0.9055 |        0.9545
+#   taxi_30min                    |     2428  |             0.0921 |         0.7378 |        0.0150
+#   electricity_15min             |      370  |             0.0001 |         0.9671 |        0.6919
+#   (for comparison) weather (monash, current)         ~61% zeros in block_bootstrap output, lag1 0.212
+#
+# `monash_electricity_hourly` and `monash_traffic` were picked: both are
+# near-zero flat, strongly periodic (>94%), and large enough (321 / 862
+# series) to clear `min_family_series: 15` at both splits with room to spare.
+# `taxi_30min` was passed over for near-zero periodicity (1.5%) despite
+# decent lag-1; `electricity_15min` was passed over only because it is a
+# 284MB single-config download against a 300-series `min_length: 576` need
+# already well covered by the other two -- not because its numbers are worse
+# (they are in fact the strongest lag-1 of the five).
+#
+# Every real-derived family here keeps its OLD count total (410, matching
+# `large_run.yaml`) but roughly half of the weather-sourced tasks are now
+# split with a same-generator twin sourced from the new domains, so a
+# real-derived finding that holds on `weather` and not on `monash_electricity_hourly`
+# / `monash_traffic` (or vice versa) is now a source effect, not assumed away.
+# ETT is untouched (already a second, independent, non-Monash corpus, and
+# cheap). `max_length: 4000` bounds every new-source task's per-series length
+# (`monash_electricity_hourly` is a uniform 26304 points/series,
+# `monash_traffic` 17544 -- both far longer than needed and, for
+# `block_bootstrap`/`sequential_par`, output length IS input length) via a
+# per-series sha256-seeded window rather than a fixed leading slice, so a
+# multi-source task doesn't sample the same calendar slice out of every
+# series it draws (see the `chronos_datasets` kind docstring). 4000 is the
+# same order of magnitude as `weather`'s own median length (11865) scaled
+# down for build cost, not a value tuned to hit any target statistic.
+#
+# Everything else (the two synthetic families, tier labels, corruption
+# pools, alignment length 576 = 512 context + 64 horizon) is copied verbatim
+# from `large_run.yaml` -- see that file's docstring for their rationale.
+#
+# Leakage audit caveat: `--references monash` audits against a generic
+# 6-domain Monash bootstrap reference plus ETT, NOT against the
+# `chronos_datasets` domains these tasks are built from (the reference loader
+# only knows `monash_tsf`). This matches how `large_run.yaml` already treats
+# `weather` (also not source-matched); real-derived samples inherit their
+# source distribution by design (CLAUDE.md sec 4).
+#
+# Build (both splits were built and audited for D1: 965 dev / 967 private,
+# 1932/2000 accepted, every real-derived task 100%):
+#
+#   cd "TSFM Interp"
+#   PYTHONPATH=. python3 tsfm_benchmark/example_runs/run_full.py \
+#       --config tsfm_benchmark/configs/large_run_v2.yaml \
+#       --out <scratch-out-dir> --references monash --reference-limit 120
+#
+# ============================================================================
+
+tasks:
+  # ---------------------------------------------------------------- synthetic
+  # Verbatim from large_run.yaml -- unchanged by this config.
+  - name: diverse_synthetic_backbone
+    generator: random_parametric
+    count: 460
+    tier: synthetic
+    generator_params:
+      length: 576
+      archetypes: [trend_dominant, seasonal_dominant, multi_seasonal_complex,
+                   regime_switching, ar_colored_noise, anomaly_heavy,
+                   clean_low_noise, noisy_chaotic, random_walk_drift,
+                   intermittent_bursts, amplitude_modulated,
+                   nonsinusoidal_seasonal]
+    corruption_pool:
+      - {op: jitter, sigma: [0.01, 0.08]}
+      - {op: scaling, sigma: [0.05, 0.2]}
+      - {op: time_warp, strength: [0.05, 0.25], n_knots: [3, 6]}
+      - {op: dropout, rate: [0.02, 0.1]}
+    n_corruptions: [0, 3]
+
+  - name: seasonal_trend_fixed
+    generator: parametric
+    count: 130
+    tier: synthetic
+    generator_params:
+      length: 576
+      trend: {order: 2, scale: 0.5}
+      seasonalities:
+        - {period: 24, amplitude: 1.0}
+        - {period: 168, amplitude: 0.4}
+      ar_coeffs: [0.6, -0.2]
+      noise_scale: 0.15
+      n_changepoints: 2
+      n_anomalies: 3
+    corruptions:
+      - {op: jitter, sigma: 0.03}
+      - {op: time_warp, strength: 0.1}
+
+  # ------------------------------------------------------------ real-derived
+  # `mixture` / weighted_sum: half on weather (unchanged params, half the old
+  # count), half on the new `monash_electricity_hourly` source.
+  - name: real_weather_weighted_sum
+    generator: mixture
+    count: 70
+    tier: realism_stress
+    generator_params: {mode: weighted_sum, weight_concentration: 0.7}
+    source_sample_size: [3, 8]
+    source_config: {kind: monash, subset: weather, limit: 600, seed: 1, min_length: 576}
+
+  - name: real_electricity_weighted_sum
+    generator: mixture
+    count: 70
+    tier: realism_stress
+    generator_params: {mode: weighted_sum, weight_concentration: 0.7}
+    source_sample_size: [3, 8]
+    source_config: {kind: chronos_datasets, subset: monash_electricity_hourly, limit: 300, seed: 11, min_length: 576, max_length: 4000}
+
+  # `mixture` / multiplicative: half on weather, half on the new
+  # `monash_traffic` source.
+  - name: real_weather_multiplicative
+    generator: mixture
+    count: 55
+    tier: realism_stress
+    generator_params: {mode: multiplicative, weight_concentration: 0.5}
+    source_sample_size: [2, 6]
+    source_config: {kind: monash, subset: weather, limit: 600, seed: 2, min_length: 576}
+
+  - name: real_traffic_multiplicative
+    generator: mixture
+    count: 55
+    tier: realism_stress
+    generator_params: {mode: multiplicative, weight_concentration: 0.5}
+    source_sample_size: [2, 6]
+    source_config: {kind: chronos_datasets, subset: monash_traffic, limit: 600, seed: 12, min_length: 576, max_length: 4000}
+
+  # Second independent real corpus (non-Monash). Unchanged from large_run.yaml.
+  - name: real_ett_mixture
+    generator: mixture
+    count: 40
+    tier: realism_stress
+    generator_params: {mode: weighted_sum, weight_concentration: 0.8}
+    source_sample_size: [2, 4]
+    source_config: {kind: huggingface, dataset: ETDataset/ett, limit: 200, seed: 3, min_length: 576}
+
+  # `block_bootstrap`: half on weather, half on the new `monash_traffic`
+  # source -- traffic has 862 series all >= min_length, so it is a strict
+  # improvement over the cross-domain Monash catalog for this generator's
+  # "one long source series per sample" need (see large_run.yaml's docstring
+  # for the measurement that ruled the cross-domain catalog out originally).
+  - name: real_weather_block_bootstrap
+    generator: block_bootstrap
+    count: 35
+    tier: realism_stress
+    generator_params: {block_length: 24}
+    source_sample_size: [1, 1]
+    source_config: {kind: monash, subset: weather, limit: 600, seed: 4, min_length: 576}
+
+  - name: real_traffic_block_bootstrap
+    generator: block_bootstrap
+    count: 35
+    tier: realism_stress
+    generator_params: {block_length: 24}
+    source_sample_size: [1, 1]
+    source_config: {kind: chronos_datasets, subset: monash_traffic, limit: 600, seed: 13, min_length: 576, max_length: 4000}
+
+  # `sequential_par`: half on weather, half on the new
+  # `monash_electricity_hourly` source.
+  - name: real_weather_sequential_par
+    generator: sequential_par
+    count: 25
+    tier: realism_stress
+    generator_params: {epochs: 64, max_train_length: 512, length: 576}
+    source_sample_size: [4, 8]
+    source_config: {kind: monash, subset: weather, limit: 600, seed: 5, min_length: 576}
+
+  - name: real_electricity_sequential_par
+    generator: sequential_par
+    count: 25
+    tier: realism_stress
+    generator_params: {epochs: 64, max_train_length: 512, length: 576}
+    source_sample_size: [4, 8]
+    source_config: {kind: chronos_datasets, subset: monash_electricity_hourly, limit: 300, seed: 14, min_length: 576, max_length: 4000}

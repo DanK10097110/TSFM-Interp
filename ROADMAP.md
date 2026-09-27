@@ -28533,7 +28533,48 @@ dev series, and stored predictions for all 965 series.
   On `block_bootstrap`, naive median MASE is 0.842 and the context mean's is 1.033, vs models ~0.70–0.74.
 - **Implication.** Nothing to fix in preprocessing. About half the corpus gives the forecast little to
   move, which caps ablation effect sizes (MN-14). A more predictable real-derived source, or reporting
-  flatness by generator, would address it. Neither is done. See FINDINGS BM-06.
+  flatness by generator, would address it. The first was then done (D1, below). See FINDINGS BM-06.
+- **D1 (2026-09-27): a second real source, opt-in.** `build_pipeline/sources.py` gains
+  `kind: chronos_datasets` (parquet `autogluon/chronos_datasets`, not script-backed, sha256-seeded row
+  sampling plus windowing to `max_length`). `configs/large_run_v2.yaml` splits each real-derived
+  generator's weather tasks with a twin built on `monash_electricity_hourly` / `monash_traffic`. The
+  total stays 410. `large_run.yaml` and the golden hashes are untouched.
+  - Candidates measured (median zero fraction / median lag1 / fraction periodic):
+    - electricity_hourly: 0.0001 / 0.9150 / 0.9533
+    - traffic: 0.0064 / 0.8430 / 0.9425
+    - pedestrian_counts: 0.0018 / 0.9055 / 0.9545
+    - taxi_30min: 0.0921 / 0.7378 / 0.0150
+    - electricity_15min: 0.0001 / 0.9671 / 0.6919
+  - Full build: 965 dev / 967 private; 1932/2000 accepted; every real-derived task 100%. All 68
+    rejections are synthetic.
+  - The leakage reference is not source-matched, as for `weather` already.
+  - Naive-flat proxy (lag1 < 0.2 and not periodic), old → new dev:
+    - block_bootstrap 0.4429 → 0.2286
+    - mixture 0.3690 → 0.1552
+    - sequential_par 0.8200 → 0.3800
+    - **corpus 0.2093 → 0.1067**
+  - Every new-source half is at 0.0000, except electricity sequential_par at 0.0800.
+  - **Model forecasts, v1 → v2 dev** (all 965 series, adapters' `predict`, seed 0; scratch script
+    `v1_vs_v2.py`, not in the pipeline). Values are flat share (forecast sd < 0.1 × context sd), with
+    median MASE in parentheses:
+
+    | Model | v1 | v2 |
+    |---|---|---|
+    | TimesFM | 0.4943 (1.1469) | **0.3254** (1.1829) |
+    | Chronos-2 | 0.4912 (1.1143) | **0.3202** (1.1268) |
+    | Sundial | 0.3917 (1.3552) | **0.2715** (1.4781) |
+    | Chronos-Bolt | 0.4881 (1.3926) | **0.3171** (1.4910) |
+
+    - Per generator (TimesFM): block_bootstrap 0.9857 → 0.6429; mixture 0.9034 → 0.4759;
+      sequential_par 0.92 → 0.62. The synthetic families are identical by construction.
+    - Median MASE on the new-source block_bootstrap rises (0.699 → 1.4971), because there naive is
+      no longer near-optimal.
+    - Anomaly, not investigated: Sundial's sequential_par flat share *rises* 0.20 → 0.72, while the
+      other three models fall.
+    - The reference run still uses `large_run.yaml`. A full pipeline rerun on v2 has not been done.
+  - The built corpus is at repo-root `benchmark_large_v2/` (untracked, like `benchmark_large/`).
+    Rebuild with `run_full.py --config configs/large_run_v2.yaml --references monash
+    --reference-limit 120`.
 
 ### 32.7b Complaint 2, second half: 55.8% of the rendered panels are features the battery already scored as causally null ✅ DONE (Item I, 2026-09-13)
 

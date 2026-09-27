@@ -1397,4 +1397,5 @@ See SH-20. **4/5.**
 - **Evidence.** Behavioral / descriptive. **Status:** measured on dev, orchestrator scratch scripts; not in the pipeline.
 - **Reproduce.** Stored predictions in `runs/full_report_run_4model` by generator; corpus task list in `configs/large_run.yaml`.
 - **Ref.** ROADMAP §32.7 addendum (2026-09-27); PM-07; MN-14.
+- **Remedy (D1, opt-in).** `configs/large_run_v2.yaml` adds `autogluon/chronos_datasets` electricity_hourly and traffic twins for each real-derived generator. The naive-flat proxy (lag1 < 0.2 and not periodic) halves corpus-wide, 0.2093 → 0.1067. Actual model flat share on dev falls correspondingly, v1 → v2: TimesFM 0.4943 → 0.3254, Chronos-2 0.4912 → 0.3202, Sundial 0.3917 → 0.2715, Chronos-Bolt 0.4881 → 0.3171. Anomaly, not investigated: Sundial's sequential_par flat share rises 0.20 → 0.72. No full pipeline rerun on v2 yet. Ref. ROADMAP §32.7 D1.
 - **Score. 4/5.** The ~50% flat share and small ablation effects are partly a property of the corpus, not of the models. Rebalancing the real-derived source would change what the causal battery can see.
