@@ -37,6 +37,14 @@
 
 ## 0. How to use this document
 
+> **Results ledger (added 2026-09-26).** This file is the lab notebook. The
+> distilled, scored result set lives in **`FINDINGS.md`** at the repo root.
+> Whenever a Findings block here records a major or interesting result —
+> positive or a confirmed negative — add or correct the matching
+> `FINDINGS.md` entry in the same commit (exact numbers, evidence class,
+> reproduce pointer, this file's §/line, a 1–5 interestingness score). Its
+> header is the binding format.
+
 1. **Before starting work in a session**, read the phase you're picking up
    (§4–§9), its current status checklist, and any linked findings. Don't
    re-derive context that's already written down.
@@ -35410,6 +35418,9 @@ or a checkpoint, so none of it is a `CLAUDE.md` §2.8 background-agent job.
 ## 37. The Concept Atlas — one pipeline for "what concepts, shared how, causal how", with the rigor each claim needs (added 2026-09-22, user-directed — DESIGN ONLY, NOT IMPLEMENTED)
 
 ### 37.0 Status, provenance, and the one-paragraph version
+
+> Concept Atlas results (P0–P8, P7b) are summarized as scored entries in
+> `FINDINGS.md` §B.2/§C/§G; new Findings here must update that file too.
 
 🔴 **DESIGN ONLY. Nothing in this section is implemented.** Every number below
 is either a measurement already recorded elsewhere in this file (cited by

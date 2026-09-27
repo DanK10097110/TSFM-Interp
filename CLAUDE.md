@@ -10,6 +10,13 @@
 > bulk**. Active work: `ROADMAP.md` §37 (the Concept Atlas, items P0–P8).
 > Section numbers below (§2, §7, §11) match `CLAUDE_FULL.md`, so references in
 > code comments still resolve.
+>
+> **`FINDINGS.md` is the curated results ledger**: every major or interesting
+> result (shared vs unique representations, where/when, per-model character,
+> method positives and confirmed negatives), each with exact numbers, evidence
+> class, a reproduce pointer and a 1–5 interestingness score. **Every new
+> claim goes there** in the same commit as its `ROADMAP.md` Findings block;
+> its header holds the maintenance rules. Read it first for "what do we know".
 
 ---
 
@@ -397,6 +404,9 @@ rescued. L0, L1 and L3 replicate on private data.
    `report/model_similarity.json`: 7 pair metrics, each on its own scale,
    with a rank consensus (Kendall's W) and contrasts. Metrics are never
    pooled into one score.
+
+Results of this chain (and every other stage) are curated in `FINDINGS.md`
+(sections B–C); add new ones there.
 
 The reference real run is `runs/full_report_run_4model` (TimesFM, Chronos-2,
 Sundial, Chronos-Bolt; 13 targets). Its current per-target concept count is
