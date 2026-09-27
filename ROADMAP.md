@@ -37189,6 +37189,75 @@ section sits directly after the scorecard, as designed.
     and names. Kendall's W and every pair rank are unchanged. The re-rendered
     report is 8,096,542 bytes.
 
+### 37.11b F1 — Concept families: a coarse, readable level above the tight atlas concepts ✅ DONE (2026-09-27)
+
+**Why.** User complaint (2026-09-27): the atlas is "messy", "many concepts with only one feature, and some
+features very close that are not in that concept … it should be better more interpretable and general
+concepts with clear human readable description".
+
+**Measured cause.** Complete linkage at cosine 0.9 gave 19 concepts of 3–4 members, and **138 of 201
+causal features (69%) were unassigned**. A feature at 0.89 to every member is excluded, and the UMAP map
+drew such features inside the concept. A per-model part was usually one feature. Five names began
+"strong raises horizon_shape_near".
+
+**Built.** `sae/concept_families.py` → `sae/concept_families.json`. It is additive: `concept_atlas.json`
+was verified byte-identical (md5 `fad249077d227cd18bff0c4409c87533`), and the tight concepts, transfer,
+P5b and P7 are untouched.
+- Clustering: average-linkage cosine on the same pooled X, cut on a grid (0.5–0.85). Every feature is
+  then assigned to its nearest family centroid at cosine ≥ `atlas_family_assign_min` (0.5).
+- Selection is the **fewest families whose final-partition silhouette is within
+  `atlas_family_sil_tol` (0.02) of the grid's best**.
+- The three new `concepts.*` fields are `stage_input: False`, so the reference run is not marked stale.
+- `sae/plain_text.py` is shared vocabulary for family titles and the tight concepts' new `plain_name`.
+  Legacy `name` is byte-identical.
+- Sign convention: descriptions state what a feature *does*, i.e. the negative of its ablation effect.
+  This is pinned by a planted-sign test.
+- Level-carrier guard: the P4 standard, applied per family via `_candidate_lookup`.
+
+**Orchestrator correction during review.** v1 scored silhouette on the kept *core* members only. That
+rewards the tightest cut: kept members fall 194 → 86 as the threshold rises. v1 therefore picked 0.85
+(14 families, duplicate titles "Far-horizon shapers" ×3). Scored on the final partition, 0.85 is the
+*worst* option:
+
+| threshold | 0.50 | 0.55 | 0.60 | 0.65 | 0.70 | 0.75 | 0.80 | 0.85 |
+|---|---|---|---|---|---|---|---|---|
+| families | 6 | 8 | 11 | 12 | 16 | 15 | 15 | 14 |
+| final silhouette | 0.3391 | 0.3207 | 0.3179 | 0.3449 | 0.3096 | 0.3136 | 0.2619 | 0.2268 |
+| core-only silhouette | 0.3178 | 0.3159 | 0.3244 | 0.3554 | 0.3440 | 0.3772 | 0.4294 | 0.5184 |
+
+Spherical KMeans k = 3…12 on all rows gives 0.314–0.344, flat.
+
+**Findings (`runs/full_report_run_4model`, scratch copy).**
+- **6 families**, sizes 59/46/29/28/21/13. **196 of 201 (0.9751) assigned.** All 6 span all 4 models.
+- Titles:
+  - Far-horizon shapers
+  - Level raisers
+  - Seasonality dampeners
+  - Near-horizon shapers
+  - Volatility dampeners
+  - Volatility amplifiers
+- The level-carrier guard did not fire: all 6 families are shape-causal (median level_share
+  0.891/0.857/0.481/0.134/0.689/0.733).
+- **Negative:** the families do not beat the column-shuffle structure null.
+  - p_n_families = 0.9851 (null mean 12.955)
+  - p_frac_assigned = 0.8358
+  - silhouette 0.3391 vs null mean 0.3794
+- Effect space is a **continuum**, and families are a descriptive coarse tiling of it, not discovered
+  clusters.
+- Cross-model: purity 0.4103 vs null 0.3730, p_purity_above = 0.0348, verdict "segregated by model".
+  Families are *more* model-segregated than label permutation predicts, even though every family
+  contains all four models.
+- "Fires on" comes from the member tight concepts' top enrichment label. Three families lead with
+  sequential_par, consistent with the provenance-driven parts in §37.11.
+- **Tests:** 33 in `tests/test_concept_families.py`. Plants each failed their test:
+  - argmax selection;
+  - disabled title escalation;
+  - disabled level-carrier branch;
+  - sign flip.
+
+**Next.** R2: redesign the Concepts report section around families (spec
+`/tmp/tsfm_specs/concept_section_redesign_spec.md`).
+
 ### 37.12 What this changes elsewhere in the plan
 
 Edited in place (2026-09-22), not restated here: §35.0 (re-scoped to SAE
