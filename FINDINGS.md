@@ -846,7 +846,12 @@ These instructions are binding for every future session, human or agent.
     up to 0.4975 (Chronos-T5-Small: 0.124).
   - As a shared-input-agreement destination, only **1 of 71** tests is
     scorable. This is unexplained.
-- **Evidence.** Descriptive / causal. **Status:** confirmed; destination scorability is open.
+  - **Correction (2026-09-27).** The 1-of-71 figure is an instrument defect,
+    not a Sundial property. P5b's own-effect null seeded Sundial's sampled head
+    differently from its baseline, which inflated the null (level p95 0.1430
+    vs 0.029–0.059 in Sundial's own battery). The fix and re-run are pending;
+    see ROADMAP §37.8.
+- **Evidence.** Descriptive / causal. **Status:** confirmed; the destination-scorability bullet is superseded (instrument defect).
 - **Reproduce.** `--check-alignment` on Sundial configs; `models/conformance.py::_seeded_predict`; `sae/shared_input_agreement.json`.
 - **Ref.** CLAUDE_FULL §11.22, §11.50; ROADMAP §37.8 (~36367).
 - **Score. 3/5.**

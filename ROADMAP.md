@@ -36453,6 +36453,20 @@ Deviations from the design (all recorded in the module docstring):
     removes, which favors scorability. 9 scored tests involve a multi-feature
     set.
   - Sundial as a destination is almost never scorable. Unexplained.
+    **Diagnosed 2026-09-27 (orchestrator, read-only):** an instrument defect, not a
+    model property. `own_effect_null` seeds its null forward passes with
+    `own_null_seed`, while the cached baseline (and the real ablation, via
+    `battery_for_set`) use the side's baseline seed. For a *sampled* model the
+    null deltas then carry fresh sampling noise the real delta does not.
+    Sundial is the panel's only sampled model; `feature_ablation_fingerprints`
+    uses one seed throughout and is unaffected. Evidence (medians over
+    `shared_input_agreement.json`): Sundial-as-destination level effect
+    0.0100 vs null p95 0.1430 (other destinations: null 0.008–0.047); MASE
+    null 0.1201 vs 0.003–0.012; Sundial's own battery level null is only
+    0.029–0.059. Sundial as source is hit too (level null 0.2295; clears
+    14/40). Refuted first: sparse/early firing (Sundial destination features
+    fire on 0.533 of windows vs 0.31–0.32 elsewhere). Fix and re-run delegated
+    (`/tmp/tsfm_specs/p5b_seed_fix_spec.md`); counts above stand until then.
   - The L5 "reached" rule is lenient: 1 `same causal effect` among 12–21
     tests reaches it.
 
