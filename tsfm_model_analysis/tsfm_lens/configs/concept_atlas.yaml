@@ -249,3 +249,19 @@ concepts:
   describe: true           # deterministic sentences into sae/descriptions.json
   describe_top_features: 8
   n_registered: 20         # ROADMAP.md sec 37.10 P7 decision item 2 (§37.15 q2)
+  # ROADMAP.md sec 37 (concept FAMILIES, sae/concept_families.py): a general,
+  # human-readable layer above the tight atlas concepts (atlas_min_cosine
+  # above). atlas_family_min_members is this layer's own size floor for a
+  # DRAFT family (looser than atlas_min_members since a family is meant to
+  # be coarser than a concept); atlas_family_assign_min is the cosine every
+  # pooled feature must clear against its NEAREST family centroid to be
+  # assigned rather than "idiosyncratic". Both default to the values below;
+  # written explicitly so a reader does not have to know the dataclass
+  # default to see what this preset runs with.
+  atlas_family_min_members: 5
+  atlas_family_assign_min: 0.5
+  # Fewest families whose FINAL-PARTITION silhouette (every assigned row,
+  # cosine) is within this much of the grid's best -- the family space is a
+  # continuum (flat ~0.31-0.34 silhouette across the whole grid), so this is
+  # slack for picking the coarsest defensible cut, not a significance test.
+  atlas_family_sil_tol: 0.02

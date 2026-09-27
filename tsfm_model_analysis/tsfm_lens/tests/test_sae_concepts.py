@@ -242,6 +242,7 @@ def test_concept_table_name_and_misfits_are_placeholders_not_fabricated():
     for concept in concepts:
         assert concept["name"] is None
         assert concept["name_lead_diversified"] is None
+        assert concept["plain_name"] is None
         assert concept["misfits"] == []
         assert concept["description"] is None
         assert concept["description_generated"] is False
@@ -688,3 +689,75 @@ def test_assign_concept_names_skips_withheld_targets():
     }
     assign_concept_names(targets)  # must not raise on the withheld target
     assert targets["M2/L1"]["concepts"][0]["name"] is not None
+
+
+# ---------------------------------------------------------------------------
+# assign_concept_names: plain_name (ROADMAP.md sec 37 F1, item 4)
+# ---------------------------------------------------------------------------
+
+def test_assign_concept_names_plain_name_uses_negated_sign_convention():
+    """`centroid_null_units["trend"] = -6.0` is `signed_effect`'s own
+    ABLATION-direction convention: removing this concept's features LOWERS
+    trend, so the features THEMSELVES raise it. `plain_name` must read this
+    as "Trend boosters" (the raising-trend title), never "Trend dampeners"
+    (which would be the un-negated, ablation-direction reading) -- the same
+    convention `sae/concept_families.py`'s titles already use, verified there
+    by `test_concept_families.py::test_sign_convention_planted_flip_is_caught`."""
+    targets = {
+        "M1/L1": {"concepts": [
+            _concept_record(0, [1, 2], {"trend": -6.0},
+                            [{"channel": "trend", "signed_null_units": -6.0, "n_members_clearing": 2}]),
+        ]},
+    }
+    assign_concept_names(targets)
+    concept = targets["M1/L1"]["concepts"][0]
+    assert concept["plain_name"] == "Trend boosters"
+    assert concept["name"] is not None and "trend" in concept["name"]
+
+
+def test_assign_concept_names_plain_name_unique_within_whole_run():
+    """Two concepts on different targets, both dominated by `trend` in the
+    SAME direction (post-negation) -- `plain_name` must still disambiguate
+    them (Roman-numeral suffix), with the whole-run peer set, not a per-
+    target one, exactly like `name`'s own peer set (sec 30.7)."""
+    targets = {
+        "M1/L1": {"concepts": [
+            _concept_record(0, [1], {"trend": -6.0},
+                            [{"channel": "trend", "signed_null_units": -6.0, "n_members_clearing": 1}]),
+        ]},
+        "M2/L1": {"concepts": [
+            _concept_record(0, [2], {"trend": -5.5},
+                            [{"channel": "trend", "signed_null_units": -5.5, "n_members_clearing": 1}]),
+        ]},
+    }
+    assign_concept_names(targets)
+    plain_a = targets["M1/L1"]["concepts"][0]["plain_name"]
+    plain_b = targets["M2/L1"]["concepts"][0]["plain_name"]
+    assert plain_a == "Trend boosters"
+    assert plain_b == "Trend boosters II"
+    assert plain_a != plain_b
+
+
+def test_assign_concept_names_plain_name_is_additive_legacy_name_untouched():
+    """Adding `plain_name` must not change a single character of the
+    existing, already-audited `name`/`name_lead_diversified` fields
+    (`CLAUDE.md` invariant 13) -- pin both the legacy fields' values AND the
+    new field's presence in the same assertion so a future edit that
+    regresses either is caught here."""
+    targets = {
+        "M1/L1": {"concepts": [
+            _concept_record(0, [1, 2], {"trend": 6.0, "seasonal": 0.0},
+                            [{"channel": "trend", "signed_null_units": 6.0, "n_members_clearing": 2}]),
+        ]},
+        "M2/L1": {"concepts": [
+            _concept_record(0, [3, 4], {"trend": 6.0, "seasonal": 5.5},
+                            [{"channel": "trend", "signed_null_units": 6.0, "n_members_clearing": 2},
+                             {"channel": "seasonal", "signed_null_units": 5.5, "n_members_clearing": 2}]),
+        ]},
+    }
+    assign_concept_names(targets)
+    concept_a = targets["M1/L1"]["concepts"][0]
+    concept_b = targets["M2/L1"]["concepts"][0]
+    assert concept_a["name"] == "dominant raises trend"
+    assert concept_b["name"] == "dominant raises trend · unusually raises seasonal"
+    assert concept_a["plain_name"] is not None and concept_b["plain_name"] is not None
