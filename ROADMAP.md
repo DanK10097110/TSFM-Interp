@@ -37229,7 +37229,7 @@ Spherical KMeans k = 3…12 on all rows gives 0.314–0.344, flat.
 
 **Findings (`runs/full_report_run_4model`, scratch copy).**
 - **6 families**, sizes 59/46/29/28/21/13. **196 of 201 (0.9751) assigned.** All 6 span all 4 models.
-- Titles:
+- Titles (as first generated; renamed in R2 below):
   - Far-horizon shapers
   - Level raisers
   - Seasonality dampeners
@@ -37255,8 +37255,41 @@ Spherical KMeans k = 3…12 on all rows gives 0.314–0.344, flat.
   - disabled level-carrier branch;
   - sign flip.
 
-**Next.** R2: redesign the Concepts report section around families (spec
-`/tmp/tsfm_specs/concept_section_redesign_spec.md`).
+**R2 (2026-09-27, done): Concepts report section redesigned around families.**
+- New module `report/concept_family_view.py`. The section now runs:
+  1. generated lead paragraph, stating the null result in plain words;
+  2. family card grid;
+  3. family × model matrix and family effect heatmap (plain channel names);
+  4. one PCA map with every assigned feature coloured by family, whose caption explains 9-D
+     membership vs 2-D distance;
+  5. per-family drill-down holding the old concept cards;
+  6. unique-to-each-model;
+  7. collapsed "Statistical detail";
+  8. collapsed "Earlier concept units" (per-target concepts, individual features, superseded roles).
+- Pair similarity moved to Part 4 as "Pair similarity across metrics".
+- `runs/full_report_run_4model`:
+  - figures 194 → 211, captions 279 → 296, findings 124 → 126 (the family-level ones);
+  - `sae/concept_families.json` added (computed on a scratch copy and swapped in);
+  - old report kept as `report.pre_r2.html`;
+  - `concept_stage.json` has no `families` summary block for this run: the stage was not rerun.
+- **Label error caught in orchestrator review (CLAUDE.md §8 "labels are claims").**
+  - `horizon_shape_near/_far` are `mean |ablated − baseline|`, a distance: `signed_effect` ≥ 0 by
+    construction, with 0 negatives in 452 candidates.
+  - F1's "what the feature does" negation therefore labelled *every* horizon-shape family "decrease how
+    much the near/far part of the forecast changes", which is false. The channel only supports
+    "removing them moves that part".
+  - Fixed: the clause is undirected, and titles are now "Near-term steerers" / "Long-range steerers"
+    (were "…-horizon shapers"). The plant restoring the old wording fails
+    `test_horizon_shape_clause_is_undirected_magnitude`.
+- Tight concepts inside a family are now named by channel escalation ("Level lowerers & Near-term
+  steerers"), not "Near-horizon shapers VI".
+- Family titles on the reference run:
+  - Long-range steerers
+  - Level raisers
+  - Seasonality dampeners
+  - Near-term steerers
+  - Volatility dampeners
+  - Volatility amplifiers
 
 ### 37.12 What this changes elsewhere in the plan
 

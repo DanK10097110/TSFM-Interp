@@ -548,7 +548,10 @@ in `CLAUDE_FULL.md`.
 - **Adjacent fields.** Two correct fields printed side by side get read as one
   claim. Compute the cross-tab (§11.54).
 - **Labels are claims.** A label naming a transformation ("null-normalized")
-  must be tested like code (§11.57). A shared colour scale silently aggregates
+  must be tested like code (§11.57). A sign convention applied to a *distance* channel
+  (`horizon_shape_*` = mean |ablated − baseline|, always ≥ 0) produced "decreases
+  how much the forecast changes" for every family: check a channel can be
+  negative before giving its sign a meaning (ROADMAP §37.11b R2). A shared colour scale silently aggregates
   channels on different natural scales.
 - **Guards.** A text guard is only as good as its vocabulary, and a guard that
   cannot fire on the current run has not been measured. Run guards over every

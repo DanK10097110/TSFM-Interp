@@ -599,14 +599,15 @@ These instructions are binding for every future session, human or agent.
   - Pooled causal SAE features (201, 9 ablation channels) have a final-partition silhouette of
     0.31–0.345 for every family count from 3 to 16. There are no crisp clusters.
   - A parsimonious cut gives 6 families covering 196 of 201 features, each spanning all 4 models:
-    Far-horizon shapers, Level raisers, Seasonality dampeners, Near-horizon shapers, Volatility
-    dampeners, Volatility amplifiers.
+    Long-range steerers, Level raisers, Seasonality dampeners, Near-term steerers, Volatility
+    dampeners, Volatility amplifiers (the two horizon titles were corrected in R2: those channels
+    are distances, not directions).
   - They do not beat a column-shuffle null: p_n_families 0.9851, p_frac_assigned 0.8358.
   - Membership is more model-segregated than chance (purity p = 0.0348).
   - The tight complete-linkage atlas leaves 69% of features unassigned.
 - **Evidence.** Descriptive. **Status:** exploratory, one run.
 - **Reproduce.** `sae/concept_families.py::run_concept_families` on `runs/full_report_run_4model` → `sae/concept_families.json`.
-- **Ref.** ROADMAP §37.11b.
+- **Ref.** ROADMAP §37.11b (incl. R2).
 - **Score. 4/5.** It reframes "concepts" in effect space as a readable tiling rather than discovered units. It also explains why tight concepts are small and why near neighbours fall outside them.
 
 ---
