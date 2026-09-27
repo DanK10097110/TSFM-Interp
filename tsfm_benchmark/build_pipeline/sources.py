@@ -15,6 +15,37 @@ discover every config the dataset exposes and pool a random sample of them.
 same generic path either way. TIME, BOOM, and ARFBench are left as
 registration points for adapters that need a different yield contract than
 row-per-series HF datasets provide.
+
+``kind: chronos_datasets`` is a second real source, added for ROADMAP D1: a
+flatness investigation found the real-derived tier was ~42% of
+``benchmark_large``'s dev split and almost entirely Monash ``weather`` (61%
+zeros for `block_bootstrap`, 36% for `sequential_par`), because `weather` is
+the only Monash-via-``monash_tsf`` domain whose series are both long enough
+(``min_length``) and loadable at all -- the long *hourly* Monash domains fail
+to load through that dataset's own loading script (a frequency-alias bug
+parsing pandas offset strings like ``'h'``, see ``configs/large_run.yaml``).
+``autogluon/chronos_datasets`` mirrors several of those same Monash domains
+(plus others) as plain parquet, so it sidesteps that bug entirely and is not
+script-backed, which also matters for the ``datasets<3`` pin (`datasets>=3`
+dropped script-based loading outright). Measured here (see
+``configs/large_run_v2.yaml``'s docstring for the numbers): its
+``monash_electricity_hourly`` and ``monash_traffic`` configs are strongly
+periodic and almost never zero or flat, unlike `weather`. Like every other
+real-derived source, these datasets may overlap TSFM pretraining corpora --
+that exposure cannot be verified (CLAUDE.md sec 10) and is a known limitation,
+not something this loader can detect or control.
+
+Unlike the streaming, take-the-first-``limit``-rows single-config path,
+``chronos_datasets`` subsets have few enough rows (tens to low thousands) to
+load non-streamed and index directly, so item *selection* can be a real
+seeded random sample of the pool rather than always the same leading slice --
+mixed via sha256 (``_mix_seed``), never Python's salted, per-process
+``hash()``. The same mixing deterministically windows any series longer than
+``max_length`` (several of these domains are single, multi-year hourly
+recordings 15,000-100,000+ points long) so one real-derived task's build cost
+and stored series length stay bounded without truncating every series to the
+same fixed leading window, which would only ever sample the same calendar
+season across the whole pool.
 """
 
 from __future__ import annotations
@@ -31,6 +62,20 @@ from .schema import SourceRef
 
 def _hash(values: np.ndarray) -> str:
     return hashlib.sha256(np.round(values, 6).tobytes()).hexdigest()
+
+
+def _mix_seed(seed: int, *parts: str) -> int:
+    """Derive a reproducible child seed from an integer seed plus string tags.
+
+    Used wherever a source needs more than one independent random draw
+    (which rows to keep, which window to cut a long series to) from a single
+    config-level ``seed``: mixing in a tag keeps those draws independent of
+    each other without needing a second config field per draw. sha256-based,
+    never Python's ``hash()``, which is randomly salted per process and would
+    make "the same seed" not actually reproduce anything.
+    """
+    digest = hashlib.sha256(f"{seed}:{':'.join(parts)}".encode()).hexdigest()
+    return int(digest, 16) % (2**32 - 1)
 
 
 def _to_series(values: Any) -> np.ndarray | None:
@@ -128,8 +173,33 @@ def load_sources(source_config: dict[str, Any], limit: int | None = None, licens
         raise ValueError("source_config must be a non-empty mapping")
 
     kind = str(source_config.get("kind", source_config.get("source_kind", "huggingface"))).lower()
-    if kind not in {"huggingface", "hf", "monash"}:
+    if kind not in {"huggingface", "hf", "monash", "chronos_datasets"}:
         raise ValueError(f"unsupported source kind '{kind}'")
+
+    if kind == "chronos_datasets":
+        subset = source_config.get("subset") or source_config.get("config") or source_config.get("config_name")
+        if not subset:
+            raise ValueError(
+                "source_config with kind 'chronos_datasets' must include 'subset' "
+                "(one of autogluon/chronos_datasets' config names, e.g. "
+                "'monash_electricity_hourly' or 'monash_traffic')"
+            )
+        dataset_name = source_config.get("dataset") or source_config.get("dataset_name") or "autogluon/chronos_datasets"
+        field_name = source_config.get("field_name") or source_config.get("series_field") or "target"
+        limit = limit if limit is not None else int(source_config.get("limit", 100))
+        return _filter_min_length(
+            _load_chronos_datasets_config(
+                dataset_name=dataset_name,
+                subset=subset,
+                field_name=field_name,
+                split=source_config.get("split", "train"),
+                limit=limit,
+                seed=int(source_config.get("seed", 0)),
+                max_length=source_config.get("max_length"),
+                license=license,
+            ),
+            source_config,
+        )
 
     if kind == "monash":
         dataset_name = source_config.get("dataset") or source_config.get("dataset_name") or source_config.get("name") or "Monash-University/monash_tsf"
@@ -240,6 +310,74 @@ def _load_single_config(
                 break
             ref = SourceRef(corpus=corpus, item_id=f"{idx}:{len(out)}", sha256=_hash(values), license=license)
             out.append((ref, values))
+
+    return out
+
+
+def _load_chronos_datasets_config(
+    dataset_name: str,
+    subset: str,
+    field_name: str,
+    split: str,
+    limit: int,
+    seed: int,
+    max_length: int | None,
+    license: str,
+) -> list[tuple[SourceRef, np.ndarray]]:
+    """Load a deterministic, seeded sample from one ``chronos_datasets`` config.
+
+    Every config this dataset exposes is plain parquet with few enough rows
+    (tens to a few thousand, one full series per row) to index non-streamed,
+    which is what makes a real seeded sample of the pool possible: the
+    streaming, take-the-first-``limit``-rows path every other kind here uses
+    would always draw the same leading slice in file order, seed or no seed.
+    Row selection is mixed from ``seed`` via ``_mix_seed`` (sha256, not
+    ``hash()``) so the same config reproduces the same pool; a series longer
+    than ``max_length`` is windowed to exactly that length at an
+    independently seeded per-row offset, so a task built from several rows
+    doesn't sample the same calendar slice out of every one of them.
+    """
+    try:
+        from datasets import load_dataset
+    except ImportError as exc:
+        raise ImportError("install 'datasets' to load Hugging Face data") from exc
+
+    try:
+        ds = load_dataset(dataset_name, subset, split=split, streaming=False, trust_remote_code=False)
+    except Exception as exc:
+        raise RuntimeError(f"could not load '{dataset_name}' config '{subset}'") from exc
+
+    n_total = len(ds)
+    if n_total == 0:
+        return []
+
+    corpus = f"hf/{dataset_name}/{subset}/{split}"
+    n_keep = min(limit, n_total) if limit is not None else n_total
+    if n_keep < n_total:
+        rng = np.random.default_rng(_mix_seed(seed, dataset_name, subset, "rows"))
+        row_idx = np.sort(rng.choice(n_total, size=n_keep, replace=False))
+    else:
+        row_idx = np.arange(n_total)
+
+    max_length = int(max_length) if max_length else None
+
+    out: list[tuple[SourceRef, np.ndarray]] = []
+    for i in row_idx:
+        row = ds[int(i)]
+        if not isinstance(row, dict) or field_name not in row:
+            continue
+        values = _to_series(row[field_name])
+        if values is None:
+            continue
+        item_id = f"{int(i)}:{field_name}"
+        if max_length and len(values) > max_length:
+            span = len(values) - max_length
+            offset_rng = np.random.default_rng(_mix_seed(seed, dataset_name, subset, "window", str(int(i))))
+            offset = int(offset_rng.integers(0, span + 1))
+            values = values[offset:offset + max_length]
+            item_id = f"{item_id}:w{offset}"
+        ref = SourceRef(corpus=corpus, item_id=item_id, sha256=_hash(values), license=license)
+        out.append((ref, values))
 
     return out
 
