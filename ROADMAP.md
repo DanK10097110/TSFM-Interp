@@ -28555,8 +28555,8 @@ dev series, and stored predictions for all 965 series.
     - **corpus 0.2093 → 0.1067**
   - Every new-source half is at 0.0000, except electricity sequential_par at 0.0800.
   - Model forecasts on v2 have **not** been run; the reference run still uses `large_run.yaml`.
-  - The built corpus is in scratch (`/tmp/tsfm_specs/scratch/d1/benchmark_large_v2`, tmpfs, not
-    durable). Rebuild with `run_full.py --config configs/large_run_v2.yaml --references monash
+  - The built corpus is at repo-root `benchmark_large_v2/` (untracked, like `benchmark_large/`).
+    Rebuild with `run_full.py --config configs/large_run_v2.yaml --references monash
     --reference-limit 120`.
 
 ### 32.7b Complaint 2, second half: 55.8% of the rendered panels are features the battery already scored as causally null ✅ DONE (Item I, 2026-09-13)
