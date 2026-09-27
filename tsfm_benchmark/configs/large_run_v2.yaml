@@ -24,7 +24,7 @@
 # entirely, at no new dependency (`datasets`/`pyarrow` already load it; see
 # `build_pipeline/sources.py`'s `chronos_datasets` kind docstring for how
 # selection and long-series windowing are seeded). Measured live here
-# (see `build_pipeline/tests/test_chronos_datasets_source.py` for the loader
+# (see `tests/test_chronos_datasets_source.py` for the loader
 # unit tests, and the D1 handoff report for the measurement script/output):
 #
 #   config                       | n series | zero_frac (median) | lag1 (median) | frac_periodic
@@ -65,8 +65,15 @@
 # pools, alignment length 576 = 512 context + 64 horizon) is copied verbatim
 # from `large_run.yaml` -- see that file's docstring for their rationale.
 #
-# Build (dev split only was exercised for the D1 handoff; add
-# `--references monash` for the audit exactly as `large_run.yaml` does):
+# Leakage audit caveat: `--references monash` audits against a generic
+# 6-domain Monash bootstrap reference plus ETT, NOT against the
+# `chronos_datasets` domains these tasks are built from (the reference loader
+# only knows `monash_tsf`). This matches how `large_run.yaml` already treats
+# `weather` (also not source-matched); real-derived samples inherit their
+# source distribution by design (CLAUDE.md sec 4).
+#
+# Build (both splits were built and audited for D1: 965 dev / 967 private,
+# 1932/2000 accepted, every real-derived task 100%):
 #
 #   cd "TSFM Interp"
 #   PYTHONPATH=. python3 tsfm_benchmark/example_runs/run_full.py \
