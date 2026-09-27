@@ -36842,6 +36842,47 @@ epoch 1.
   model-comparison, manifest and smoke files (`test_concept_confirm.py`: 15). The `tsfm_benchmark`
   suite gives 116 passed, 1 skipped.
 
+**Findings — P7b (2026-09-26; frozen-feature claims on a fresh epoch 2; merged `411ea25`).** The run
+is preserved as `runs/full_report_run_4model_epoch2` (`concepts.transfer_claim_mode: frozen`,
+`confirm.path: ../../benchmark_large/private_epoch2`).
+- **Mode.** `concepts.transfer_claim_mode: search | frozen`. The default `search` reproduces P7
+  byte-identically, which a test pins.
+  - `frozen` freezes dev's destination feature and scores it against a **single-feature**
+    stratum-matched null (`sae/transfer.py::transfer_one_fixed_feature`), with no max over the
+    dictionary.
+  - Decoy test: when the frozen feature is noise and another feature matches perfectly, frozen mode
+    rejects the claim and search mode confirms it.
+  - Plants confirmed: frozen falling back to argmax, and a max-over-features null in frozen mode.
+- **Epoch 2** (`benchmark_large/private_epoch2`, real-derived tiers).
+  - 963 series. By tier: synthetic 553, realism_stress 410. By generator: random_parametric 423,
+    mixture 290, parametric 130, block_bootstrap 70, sequential_par 50.
+  - Global digest `f3fc6067edc7b0b488c380e86cf613c92589a708b4265c7b027e40d3affd2632`.
+  - Cross-split against `public_dev`: 5 near-duplicate pairs out of 929295 scored, energy-distance
+    p 0.922539, TOST `inconclusive` (5 catch22 features; not `not_equivalent`).
+- **Result.** **20 of 20 frozen claims confirmed**, with Holm (m 20, n_null 2000, satisfiable) giving
+  p 0.009995 for every claim.
+  - Private forward AUC ranges from 0.7228 (Sundial L10 c0 → Chronos-2 b.8, f1770) to 0.9991.
+    Private reverse AUC ranges from 0.8483 to 0.9990.
+  - All 19 claims that P7 confirmed in search mode also confirm frozen.
+  - P7's only failure, Chronos-Bolt b.4 c6 → TimesFM xf.10, **confirms when frozen**: dev feature
+    f5278 gives forward 0.8223 against a p95 of 0.6155, and reverse 0.9429 against 0.6474. P7's
+    private argmax had picked f4664, whose reverse leg failed. The failure came from the search
+    choosing an unstable feature, not from the claim.
+- **What it now claims (held-out, correlational).** A specific dev feature pair selects the same
+  private series in both directions. The claims come from 3 atlas concepts:
+  - **Concept 6, "dominant lowers seasonal"** (Chronos-2 b.6, Chronos-Bolt b.4, Sundial l.3): 8 claims.
+    The same destination features recur across source models. TimesFM xf.2 f3290 partners the
+    concept in both Chronos-2 and Chronos-Bolt, and so does Sundial l.3 f731.
+  - **Concept 4, "raises near-horizon shape, lowers level"** (Chronos-2 b.8, TimesFM xf.6/.10/.18):
+    8 claims. Its top series are 17–20 of 20 from the real-derived `mixture` generator in 3 of its 4
+    parts, so these claims are largely about one source's series.
+  - **Concept 0, "strong raises seasonal"**: 4 claims. The profiles label it *convergent* (same
+    effect, different inputs across its own parts). Yet specific features in the other models select
+    its series. So the input-sharing partner is not the concept's own causal part in the destination
+    model.
+- **Runtime.** register 8.1 s, confirm 156.4 s, report 53.8 s.
+- **Tests.** `test_concept_confirm.py` has 20 tests. 68 passed across confirm and transfer.
+
 ### 37.11 P8 — Per-concept verdicts and the Concept Atlas report section (~1 session, incremental)
 
 **Why.** The claim should be one row a reader can check, not five artifacts
