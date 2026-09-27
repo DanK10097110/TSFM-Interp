@@ -90,16 +90,27 @@ def _atlas_plain_titles(atlas_concepts: list) -> dict:
     (`concepts.py::_compose_batch`) -- unlike per-target concepts, which
     already have F1's `plain_name` -- so this module computes one here,
     read-only, from each atlas concept's own recorded `mean_profile`,
-    processed in a fixed (`concept` id) order for deterministic Roman-
-    numeral disambiguation."""
-    used: set = set()
-    out: dict = {}
-    for c in sorted(atlas_concepts, key=lambda c: int(c["concept"])):
+    processed in a fixed (`concept` id) order.
+
+    Disambiguation uses the families' own batch composer
+    (`concept_families._compose_family_titles`): two concepts sharing a
+    dominant channel are told apart by their next cleared channel(s)
+    ("Near-term steerers & Level raisers"), and a Roman numeral is only the
+    last resort -- "Near-term steerers VI" told the reader nothing. A
+    `level carrier` concept (P4 `causal_tag`) keeps the fixed level title,
+    never a shape-claiming channel combination."""
+    from ..sae.concept_families import _compose_family_titles
+    ordered = sorted(atlas_concepts, key=lambda c: int(c["concept"]))
+    prepared, forced = [], []
+    for c in ordered:
         vec = np.array([float((c.get("mean_profile") or {}).get(ch, 0.0)) for ch in CHANNELS])
         directed = plain_text.directed_profile(vec)
-        cleared = plain_text.cleared_ranked(directed)
-        out[int(c["concept"])] = plain_text.compose_title(directed, cleared, used)
-    return out
+        prepared.append({"directed_vec": directed, "cleared": plain_text.cleared_ranked(directed),
+                         "fires_on": None})
+        forced.append(plain_text.LEVEL_CARRIER_TITLE if c.get("causal_tag") == "level carrier"
+                      else None)
+    titles = _compose_family_titles(prepared, forced_titles=forced)
+    return {int(c["concept"]): title for c, title in zip(ordered, titles)}
 
 
 def _fires_on_html(fires_on) -> str:

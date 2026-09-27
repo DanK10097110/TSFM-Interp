@@ -454,7 +454,7 @@ def test_level_carrier_family_gets_level_title_and_caveat_description_end_to_end
     draft family (6 members) whose raw channel profile is dominated by
     `horizon_shape_far` but whose UNDERLYING candidates are all high
     level_share/no-shape-clearing must come out titled from the level
-    vocabulary with the caveat description, never "Far-horizon shapers".
+    vocabulary with the caveat description, never "Long-range steerers".
     A second, ordinary shape-causal family (dominated by `trend`, low
     level_share, one shape-clearing member) is included as a control and
     must NOT get the caveat text."""
@@ -492,7 +492,7 @@ def test_level_carrier_family_regression_threshold_disabled_reverts_to_confounde
     """Planted regression on the SAME fixture as above: setting
     `level_share_threshold` above 1.0 (never reachable) disables the guard,
     so the level-carrier group must come back with its ordinary,
-    level-confounded channel title ("Far-horizon shapers") instead --
+    level-confounded channel title ("Long-range steerers") instead --
     confirming the positive test's title is the guard's doing."""
     rng = np.random.default_rng(13)
     level_carrier_vecs = [_direction(CHANNELS.index("horizon_shape_far")) + rng.normal(0, 0.05, _N_CH)
@@ -514,7 +514,7 @@ def test_level_carrier_family_regression_threshold_disabled_reverts_to_confounde
     level_fams = [f for f in families["families"] if f["causal_tag"] == "level carrier"]
     assert not level_fams, families["families"]
     titles = {f["title"] for f in families["families"]}
-    assert "Far-horizon shapers" in titles, titles
+    assert "Long-range steerers" in titles, titles
 
 
 # ---------------------------------------------------------------------------
@@ -604,28 +604,27 @@ def test_title_disambiguation_regression_roman_numeral_alone_would_not_different
     used: set = set()
     t1 = compose_title(a, cleared_a, used)
     t2 = compose_title(b, cleared_b, used)
-    assert t1 == "Near-horizon shapers"
-    assert t2 == "Near-horizon shapers II"
+    assert t1 == "Near-term steerers"
+    assert t2 == "Near-term steerers II"
 
 
-def test_horizon_shape_clause_states_amount_not_direction():
-    """Orchestrator review item 4b: `horizon_shape_near`/`_far`'s sign
-    cannot support an up/down claim (`_horizon_shape` takes `abs()` per step
-    before averaging, response.py) -- the description must read as an
-    AMOUNT of reshaping, never a directional bend."""
-    directed = _row_vec("horizon_shape_near", 6.0)
-    cleared = [list(CHANNELS).index("horizon_shape_near")]
-    text = _render_effect_clauses(directed, cleared)
-    assert "increase how much" in text
-    for word in ("upward", "downward", "bend", "bends"):
-        assert word not in text, text
-
-
-def test_horizon_shape_clause_negative_direction_says_decrease():
-    directed = _row_vec("horizon_shape_far", -6.0)
-    cleared = [list(CHANNELS).index("horizon_shape_far")]
-    text = _render_effect_clauses(directed, cleared)
-    assert "decrease how much" in text
+def test_horizon_shape_clause_is_undirected_magnitude():
+    """`horizon_shape_near`/`_far` are a distance |ablated - baseline| (>= 0
+    by construction, response.py::_horizon_shape), so negating them under
+    the "feature does" convention carries no meaning. Both signs must give
+    the same magnitude clause, never "decrease how much ..." or an up/down
+    claim (the F1 v2 wording this replaces)."""
+    idx_near = list(CHANNELS).index("horizon_shape_near")
+    idx_far = list(CHANNELS).index("horizon_shape_far")
+    pos = _render_effect_clauses(_row_vec("horizon_shape_near", 6.0), [idx_near])
+    neg = _render_effect_clauses(_row_vec("horizon_shape_near", -6.0), [idx_near])
+    assert pos == neg, (pos, neg)
+    assert "first third of the forecast" in neg and "removing them moves it" in neg
+    far = _render_effect_clauses(_row_vec("horizon_shape_far", -6.0), [idx_far])
+    assert "last third of the forecast" in far
+    for text in (pos, neg, far):
+        for word in ("decrease", "increase", "upward", "downward", "bend"):
+            assert word not in text, text
 
 
 def test_spectral_centroid_clause_is_directional_higher_or_lower_frequency():

@@ -53,8 +53,8 @@ TITLE_NOUN = {
     ("spectral_centroid", "down"): "Smoothing features",
     ("level", "up"): "Level raisers", ("level", "down"): "Level lowerers",
     ("dispersion", "up"): "Volatility amplifiers", ("dispersion", "down"): "Volatility dampeners",
-    ("horizon_shape_near", None): "Near-horizon shapers",
-    ("horizon_shape_far", None): "Far-horizon shapers",
+    ("horizon_shape_near", None): "Near-term steerers",
+    ("horizon_shape_far", None): "Long-range steerers",
     ("mase", "up"): "Accuracy degraders", ("mase", "down"): "Accuracy improvers",
     ("flatness", "up"): "Flattening features", ("flatness", "down"): "De-flattening features",
 }

@@ -618,40 +618,38 @@ def _compose_family_titles(prepared: list, forced_titles: list | None = None) ->
 
 _MAX_DESC_CLAUSES = 3
 
-# Orchestrator review of F1, item 4: "moves the near horizon of the
-# forecast" is technically honest (see `describe.py::CHANNEL_VERB`'s own
-# comment) but reads as vague. Looked up against `response.py`:
+# Plain-language clauses for the channels whose sign needs special handling
+# (checked against `response.py`):
 #
-#   `horizon_shape_near`/`_far` -- `_horizon_shape` takes `np.abs(steered -
-#   baseline)` PER STEP before averaging (sec `response.py::_horizon_shape`),
-#   so the per-step DIRECTION of the bend (up or down at any given step) is
-#   destroyed before this channel's own value is even formed; "moves"/
-#   `CHANNEL_VERB` is correctly undirected about THAT. What survives is the
-#   AMOUNT of reshaping: a positive `signed_effect` here means ablating the
-#   feature made the near/far horizon deviate MORE from the unablated
-#   forecast, i.e. the feature itself, when present, makes that part of the
-#   forecast deviate LESS (after this module's sign negation) -- an "amount
-#   of reshaping" claim, not a "which way" claim, so the override below reads
-#   as "how much {near/far} changes", never "bends up/down".
-#   `test_concept_families.py::test_horizon_shape_clause_is_amount_not_direction`
-#   pins this reading against the literal up/down claim it must NOT make.
+#   `horizon_shape_near`/`_far` -- `_horizon_shape` is `mean |ablated -
+#   baseline|` over the first/last third of the horizon: a DISTANCE between
+#   the ablated and unablated forecasts, so its `signed_effect` is >= 0 by
+#   construction (0 negatives in 452 candidates on
+#   `runs/full_report_run_4model`). Negating it under the "what the feature
+#   does" convention is meaningless -- the unablated forecast IS the
+#   reference -- and produced the false clause "decrease how much the near
+#   part of the forecast changes" (F1 v2, caught in R2 review). The only
+#   claim this channel supports is magnitude: removing the features moves
+#   that part of the forecast. Both signs therefore map to the same
+#   undirected clause, and `plain_text.py::TITLE_NOUN` titles these
+#   "Near-term steerers"/"Long-range steerers".
+#   `test_concept_families.py::test_horizon_shape_clause_is_undirected_magnitude`
+#   pins this.
 #
 #   `spectral_centroid` -- `_spectral_centroid` is a magnitude-weighted mean
 #   FFT bin with no `abs()` collapsing sign at any step, so its sign IS a
 #   real, recoverable direction: positive means the forecast's spectrum
 #   shifted toward higher frequencies (rougher / less smooth), negative
-#   toward lower frequencies (smoother). `plain_text.py::TITLE_NOUN` already
-#   encodes this same reading ("High-frequency shifters"/"Smoothing
-#   features"); the override below gives the DESCRIPTION the same claim.
+#   toward lower frequencies (smoother).
 _DIRECTIONAL_CLAUSE_OVERRIDE = {
     ("spectral_centroid", True): "shift the forecast toward higher frequencies "
                                  "(a rougher, less smooth shape)",
     ("spectral_centroid", False): "shift the forecast toward lower frequencies "
                                   "(a smoother shape)",
-    ("horizon_shape_near", True): "increase how much the near part of the forecast changes",
-    ("horizon_shape_near", False): "decrease how much the near part of the forecast changes",
-    ("horizon_shape_far", True): "increase how much the far part of the forecast changes",
-    ("horizon_shape_far", False): "decrease how much the far part of the forecast changes",
+    ("horizon_shape_near", True): "steer the first third of the forecast (removing them moves it)",
+    ("horizon_shape_near", False): "steer the first third of the forecast (removing them moves it)",
+    ("horizon_shape_far", True): "steer the last third of the forecast (removing them moves it)",
+    ("horizon_shape_far", False): "steer the last third of the forecast (removing them moves it)",
 }
 
 
