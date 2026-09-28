@@ -42,7 +42,11 @@ def test_headline_mode_css_scopes_to_fairness_l0_confirm_and_registered_findings
     assert "body[data-detail=\"headline\"] .findings li:not(.registered){display:none}" in REPORT_SRC
     # exactly Fairness/L0/Confirm are tagged sec-headline -- not, e.g., L1/L2
     # which would silently smuggle un-headline-worthy sections back in.
-    m = re.search(r"s\.eyebrow in \(([^)]*)\)", REPORT_SRC)
+    # (Matched on the trailing `.eyebrow in (...)` rather than a specific
+    # loop-variable name, since the template's own variable is `it`, not `s`,
+    # and pinning the variable name here would make this test fail on a
+    # harmless rename instead of on the invariant it actually checks.)
+    m = re.search(r"\.eyebrow in \(([^)]*)\)", REPORT_SRC)
     assert m is not None
     tagged = {t.strip().strip("'\"") for t in m.group(1).split(",")}
     assert tagged == {"Fairness", "L0", "Confirm"}

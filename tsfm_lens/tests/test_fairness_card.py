@@ -130,5 +130,10 @@ def test_fairness_section_is_always_rendered_first(built):
     from tsfm_lens.report.report import run_report
     run_report(built)
     coverage = load_json(built.run_dir() / "report" / "coverage.json")["sections"]
-    assert coverage[0]["eyebrow"] == "Fairness"
-    assert coverage[0]["status"] == "rendered"
+    # Report structure spec R1: "At a glance" is a fixed slot rendered above
+    # every numbered Part (not a `builders` entry), so it is unconditionally
+    # coverage[0] regardless of status. Fairness is the first NUMBERED-Part
+    # section -- rendered before any result section -- so it is coverage[1].
+    assert coverage[0]["eyebrow"] == "At a glance"
+    assert coverage[1]["eyebrow"] == "Fairness"
+    assert coverage[1]["status"] == "rendered"
