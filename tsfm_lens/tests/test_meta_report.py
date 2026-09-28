@@ -91,7 +91,8 @@ def test_none_crystallization_depth_and_stability():
     assert "NO -- favored model differs across runs" in html
     assert "run_a" in html and "run_b" in html
 
-    json.loads(json.dumps(meta))  # must be JSON-serializable as written by run_meta_report.py
+    json.loads(json.dumps(meta))  # must be JSON-serializable as written by
+                                   # run_meta_report.py (study driver, dev branch)
     print("none-crystallization-depth and stability test passed")
 
 

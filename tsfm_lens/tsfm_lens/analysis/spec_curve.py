@@ -10,7 +10,7 @@ property of this pipeline, not a hypothetical this module has to argue for.
 
 This is **not a pipeline stage** -- a standalone reducer over one already-
 completed run directory, exactly the shape of `report/meta_report.py` and
-`analysis/error_fingerprint.py`. It re-derives the corpus deterministically
+`analysis/error_fingerprint.py` (dev branch). It re-derives the corpus deterministically
 from the run's own `config_resolved.yaml` (contexts are not persisted in the
 activation store) and reads everything else -- predictions, lens curves,
 layer-screen scores, attention head tables, per-block FLOPs -- from artifacts

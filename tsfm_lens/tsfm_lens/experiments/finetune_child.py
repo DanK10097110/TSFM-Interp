@@ -1,8 +1,9 @@
 """Build a genuine known-lineage pair for provenance detection (`ROADMAP.md`
 sec 6.3.1 Option E, minimally scoped by sec 23.3 D2).
 
-The provenance-detection thread (`analysis/error_fingerprint.py`, sec
-6.3.1 Option C) failed three of its own controls on its first real sweep,
+The provenance-detection thread (`analysis/error_fingerprint.py`, dev
+branch, sec 6.3.1 Option C) failed three of its own controls on its first
+real sweep,
 and the root cause traces to its only "positive" example --
 `chronos-t5-small` vs `chronos-t5-base` -- which, as that same Findings
 block discovered, do **not** share initialization weights at all; they

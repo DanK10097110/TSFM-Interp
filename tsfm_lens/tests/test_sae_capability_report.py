@@ -99,8 +99,9 @@ def run(tmp_path):
 # --- absence is the ordinary state, not a failure ---------------------------
 
 def test_both_reductions_are_empty_without_the_artifact(tmp_path):
-    """`run_sae_compare.py` is a standalone driver, not a pipeline stage, so
-    most runs have no comparison.json and the section must be unchanged."""
+    """`run_sae_compare.py` (study driver, dev branch) is a standalone
+    driver, not a pipeline stage, so most runs have no comparison.json and
+    the section must be unchanged."""
     assert derived.sae_causal_repertoire(tmp_path).empty
     assert derived.sae_causal_agreement(tmp_path).empty
 
@@ -302,8 +303,9 @@ def test_a_deterministic_by_design_chunk_is_not_labelled_a_refusal(run):
     deterministic sentence instead of asking the narrator for one, so
     `accepted: False` no longer implies the guard refused anything. Labelling
     that "fallback" reports a run where nothing failed as a run of failures
-    -- the same correction `run_sae_compare.py::_summary_state` already made
-    for the summary row one level up. The load-bearing half of this test is
+    -- the same correction `run_sae_compare.py::_summary_state` (study
+    driver, dev branch) already made for the summary row one level up. The
+    load-bearing half of this test is
     that the two unaccepted states render DIFFERENTLY; asserting only the new
     label would pass against a version that relabelled both."""
     from tsfm_lens.sae.compare import DETERMINISTIC_BY_DESIGN

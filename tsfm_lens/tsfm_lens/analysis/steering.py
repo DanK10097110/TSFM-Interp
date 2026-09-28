@@ -11,7 +11,7 @@ than "this feature correlates with X."
 Kept as pure numpy reductions over forecast arrays, mirroring
 `spectral_lens.py`'s split between stats here and I/O in `sae/eval.py`'s
 `feature_steering_effects` (parallel to `spectral_lens.py` /
-`run_spectral_lens.py`, just folded into the existing SAE eval module rather
+`run_spectral_lens.py` (study driver, dev branch), just folded into the existing SAE eval module rather
 than a new standalone script since it reuses `feature_ablation_effects`'s
 own `token_patch` plumbing directly).
 

@@ -328,7 +328,8 @@ def search_dict_size(train_activations: np.ndarray, base_cfg: SAETrainConfig, la
 
     Runs entirely on already-cached activations -- no checkpoint load, no
     re-extraction -- so a full ladder costs seconds, matching the pattern
-    `run_sae_capacity_sweep.py` established. Picks the LARGEST size whose
+    `run_sae_capacity_sweep.py` (study driver, dev branch) established.
+    Picks the LARGEST size whose
     measured dead-feature rate clears `max_dead_rate`; if none clears it,
     picks the size with the most ALIVE atoms rather than the largest
     dictionary outright (see `SAEConfig.dict_size_policy`'s docstring for

@@ -819,10 +819,16 @@ tsfm_lens/
   report/              single-file interactive HTML report
   pipeline.py          stage DAG, artifact skipping, dependency resolution
 run.py                 CLI
-run_layer_screen_bakeoff.py, run_crosscoder_feasibility.py,
-run_spectral_lens.py, run_meta_report.py, ...   standalone scripts that
-                       reuse an already-extracted run's config/data/store
-                       for probes that aren't (yet, or ever) pipeline stages
+render_stage_docs.py, render_glossary.py, render_adapter_docs.py
+                       doc generators (`--check` to confirm they aren't stale)
+run_layer_screen_bakeoff.py, run_crosscoder_stage0.py, run_crosscoder_ladder.py,
+run_sae_ablation.py, run_sae_describe.py, run_sae_roles.py, run_probe_sweep.py
+                       standalone scripts kept on `main` because a passing
+                       test imports or invokes each one directly; further
+                       standalone `run_*.py` study drivers that reuse an
+                       already-extracted run's config/data/store for probes
+                       that aren't (yet, or ever) pipeline stages live on the
+                       `dev` branch only
 configs/               default.yaml (real pair), smoke.yaml (mocks)
 tests/test_smoke.py    full pipeline end-to-end + confirmation verdict test
 ```

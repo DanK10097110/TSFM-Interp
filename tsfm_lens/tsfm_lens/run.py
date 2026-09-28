@@ -120,12 +120,13 @@ def _config_summary(path: Path) -> dict:
     if off:
         row["stages"] = "off: " + ",".join(off)
     if "ladder" in raw:
-        row["note"] = "expand with run_scaling_ladder.py --emit-configs"
+        row["note"] = "expand with run_scaling_ladder.py --emit-configs (study driver, dev branch)"
     return row
 
 
 def _print_config_listing(config_dir: Path) -> None:
-    """`--list-configs` (Functionality_Summary.md's config-sprawl finding).
+    """`--list-configs` (Functionality_Summary.md's config-sprawl finding;
+    that file is dev branch only, not on `main`).
 
     ~46 flat YAML files with no entry point is a real usability cost for
     someone who did not write them: the fastest way to find the right one was

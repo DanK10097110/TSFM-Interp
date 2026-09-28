@@ -51,6 +51,12 @@ tsfm_benchmark/outputs/
 
 tsfm_lens/.pytest_tmp/
 
+# Committed validation-report output directories moved to DEV-ONLY (Spec B):
+# regenerate with example_runs/run_validation.py --corpus <dir> --out <name>/
+outputs_full*/
+validation_*/
+benchmark_run*_validation/
+
 # Sealed benchmark corpora (untracked; build with example_runs/run_full.py)
 benchmark_large*/
 benchmark_medium/

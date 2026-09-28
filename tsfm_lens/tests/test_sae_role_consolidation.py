@@ -18,8 +18,8 @@ clustering, kept alive only by its own tests. Deleted along with
 `tests/test_sae_role_matching_report.py`; those four tests' coverage went
 with it. `sae/role_matching.py` (the COMPUTATION module,
 `role_correspondence_table`) is a different, still-live module -- it remains
-the read path for `run_sae_compare.py`'s standalone `roles_injection.json`
-comparison and was not touched.
+the read path for `run_sae_compare.py`'s (study driver, dev branch) standalone
+`roles_injection.json` comparison and was not touched.
 """
 
 from __future__ import annotations

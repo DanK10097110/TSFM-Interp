@@ -21,9 +21,9 @@ result rather than a fabricated zero (`CLAUDE.md` sec 2.5), mirroring how
 `extraction/alignment.py::calibrate_impulse_amplitude` already treats a
 `None` `token_ids()` as a no-op rather than a failure.
 
-Pure numpy reduction, mirroring `quantization_churn.py`'s split between
-pure stats (here) and the I/O that tokenizes real contexts through a live
-model (`analysis/frontend.py`).
+Pure numpy reduction, mirroring `quantization_churn.py`'s (dev branch) split
+between pure stats (here) and the I/O that tokenizes real contexts through a
+live model (`analysis/frontend.py`).
 """
 
 from __future__ import annotations

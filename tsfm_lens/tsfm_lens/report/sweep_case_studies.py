@@ -22,7 +22,8 @@ Selection logic (`select_case_study_values`) is pure and reuses
 reinventing "interesting point" -- an anomalous sweep point is exactly the
 kind of thing worth a narrated example, not just an aggregate bar. The I/O
 (generating example series, running real models, rendering HTML) lives in
-`render_case_studies_html` and the CLI script (`run_sweep_case_studies.py`).
+`render_case_studies_html` and the CLI script (`run_sweep_case_studies.py`,
+study driver, dev branch).
 """
 
 from __future__ import annotations

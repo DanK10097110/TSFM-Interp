@@ -1,7 +1,8 @@
 """The production `sae` stage's dead-dictionary fix (ROADMAP.md sec 23.2 A1).
 
 A1's own measurement (run_sae_capacity_sweep.py, run_sae_corpus_diversity_
-check.py) found the ~95% dead production dictionary was NOT a corpus
+check.py -- both study drivers, dev branch) found the ~95% dead production
+dictionary was NOT a corpus
 problem -- real Monash activations excite *fewer* directions than the
 synthetic benchmark, and the same checkpoints are 93-98% dead at every one
 of 22 layers regardless of layer content. The actual cause is three

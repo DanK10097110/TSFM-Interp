@@ -21,7 +21,8 @@ checked. This module itself is NOT retired: its pure functions stay
 unit-tested directly (`tests/test_sae_roles_also_moves.py`,
 `tests/test_sae_role_evidence.py`) and remain available to any caller that
 still wants injection-space role tables from a `roles_injection.json`
-artifact (e.g. `run_sae_compare.py`, `run_sae_describe.py`).
+artifact (e.g. `run_sae_compare.py` [study driver, dev branch],
+`run_sae_describe.py`).
 """
 
 from __future__ import annotations

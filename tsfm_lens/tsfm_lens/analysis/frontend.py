@@ -21,7 +21,7 @@ standalone run against a checkpoint with nothing else built, exactly like
 3. **Context-truncation from the back** -- what happens to forecast
    quality when the most RECENT context is what's missing (a data-
    staleness/reporting-lag scenario), as opposed to the already-built
-   `phase_sensitivity.py` (sub-patch-width front shifts) and
+   `phase_sensitivity.py` (dev branch; sub-patch-width front shifts) and
    `context_scaling.py` (E20, drops OLD history, keeps recent). Pure stats
    in `analysis/context_truncation.py`.
 4. **NaN / missing-timestep handling** -- does `predict()` error, silently

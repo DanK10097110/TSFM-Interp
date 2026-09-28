@@ -11,7 +11,10 @@
 # THIS FILE IS NOT RUNNABLE BY run.py DIRECTLY. The `ladder:` block below is not
 # part of the pipeline's config schema; it names the rungs. Expand it into five
 # ordinary, individually-runnable configs (one run directory each -- cleaner
-# than five model blocks, given VRAM) with:
+# than five model blocks, given VRAM) with `run_scaling_ladder.py` (study
+# driver, dev branch only -- not present on `main`; this config and the
+# already-expanded configs/_ladder/*.yaml it produced are kept on `main`
+# only as test fixtures, see configs/README.md):
 #
 #   python run_scaling_ladder.py --config configs/scaling_ladder_chronos.yaml \
 #       --emit-configs configs/_ladder

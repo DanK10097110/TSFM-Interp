@@ -306,7 +306,7 @@ def run_agreement(run_dir, *, models: Optional[list] = None, n_boot: int = 2000,
                   n_bins: int = 10, seed: int = 0) -> dict:
     """Read one completed run's stored forecasts and score the agreement heuristic.
 
-    Same read-only contract as `analysis/error_fingerprint.py`: the run's own
+    Same read-only contract as `analysis/error_fingerprint.py` (dev branch): the run's own
     `config_resolved.yaml` and store are the whole input, contexts are
     re-derived through the recorded data config (they are not persisted), and
     nothing is loaded or re-run.
