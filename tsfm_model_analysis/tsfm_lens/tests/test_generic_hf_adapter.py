@@ -98,6 +98,20 @@ class _ShortHeadNet(_PatchNet):
         return {"prediction_outputs": out["prediction_outputs"][:, :2]}
 
 
+class _RevinNet(_PatchNet):
+    """A `forward()` that declares `revin: bool = False` -- mirroring the
+    thuml lineage's own signature (`Sundial`, `Timer`; spec S1 / ROADMAP
+    §32.7 item 2) that `_resolve_revin` exists to detect and correct for.
+    Scales its forecast output by 1000x whenever `revin` is left at its
+    (checkpoint) default so the two cases are trivially distinguishable in a
+    test, without needing real normalization math to tell them apart."""
+
+    def forward(self, past_values, revin=False, **kw):
+        out = super().forward(past_values)
+        out["prediction_outputs"] = out["prediction_outputs"] * (1.0 if revin else 1000.0)
+        return out
+
+
 class _Gen(dict):
     def __init__(self, sequences):
         super().__init__(sequences=sequences)
@@ -303,6 +317,35 @@ def test_a_point_only_head_gives_degenerate_quantiles_and_records_that():
     assert out["quantiles"].shape == (3, 4, 3)
     assert np.array_equal(out["quantiles"][:, :, 0], out["quantiles"][:, :, 2])
     assert a.describe_strategies()["quantiles"] == "degenerate_point"
+
+
+def test_revin_is_enabled_when_forward_declares_it_off_by_default():
+    """Spec S1 item 2, generalized from `sundial_adapter.py`'s hand-written
+    fix: a checkpoint whose OWN `forward()` signature declares `revin`
+    defaulting to `False` (the thuml lineage's convention) gets `revin=True`
+    passed explicitly on every `prepare()`-built call -- matching what that
+    checkpoint's own `.generate()` already defaults to, read off the
+    signature rather than invented."""
+    a = _adapter(_RevinNet)
+    a.ensure_loaded()
+    assert a.describe_strategies()["revin_enabled"] is True
+    prepared = a.prepare(np.ones((2, _CONTEXT), dtype=np.float32))
+    assert prepared["revin"] is True
+    # end to end: forward-field predict() must read the NORMALIZED-path
+    # branch (1x), not the raw-scale default branch (1000x).
+    out = a.predict(np.ones((2, _CONTEXT), dtype=np.float32), 4, [0.5])
+    assert np.max(np.abs(out["point"])) < 100.0  # would be >= 1000x otherwise
+
+
+def test_revin_stays_off_when_forward_has_no_such_parameter():
+    """A checkpoint with no `revin` parameter at all (every existing
+    generic_hf test fixture except `_RevinNet` above) must be completely
+    unaffected -- no `revin` key is added to `prepare()`'s output."""
+    a = _adapter(_PatchNet)
+    a.ensure_loaded()
+    assert a.describe_strategies()["revin_enabled"] is False
+    prepared = a.prepare(np.ones((2, _CONTEXT), dtype=np.float32))
+    assert "revin" not in prepared
 
 
 def test_a_sampled_head_is_preferred_and_gives_real_quantiles():

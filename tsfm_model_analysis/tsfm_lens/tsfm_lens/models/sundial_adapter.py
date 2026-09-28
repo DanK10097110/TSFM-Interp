@@ -91,6 +91,46 @@ against the loaded module tree, independent of the attention-pattern issue
 above. No decoder, no cross-attention: `cross_attention_patterns` stays
 unsupported for the same reason it does for TimesFM.
 
+**Manual per-series input normalization (`revin`), applied in exactly one
+place (`prepare()`), is load-bearing -- not a style choice.** The checkpoint's
+own remote code (`ts_generation_mixin.py`) normalizes each series
+(`x = (x - mean) / std`, denormalizing the sampled output afterward) only on
+its `.generate()` path (`revin=True` there by default); `SundialForCausalLM.
+forward` itself defaults to `revin=False`, and its own `revin=True` branch is
+independently broken for `num_samples > 1` (`predictions * stdev + means`
+fails to broadcast -- confirmed directly: `RuntimeError: size of tensor a
+(20) must match ... (64) at dim 1`). Because this repo's `predict()` and
+`forward()` both call the checkpoint's forward paths directly (never
+`.generate()`, for the two independent reasons above), **every Sundial
+forecast and captured activation in this repo was, before this fix, computed
+on raw-scale input** -- the checkpoint's intended per-series normalization
+never ran. Diagnosed from the frontend stage's own scale-equivariance probe
+reading Sundial's worst residual at 38.4318 context-scale units against
+<=0.0086 for every other model in `runs/full_report_run_4model`, and
+confirmed at the input level: 10x/100x-scaling a context collapses Sundial's
+forecast to flat (0.002 forecast/context sd ratio, MASE 4.13) where manual
+z-scoring the input does not (`CLAUDE.md` sec 8's "silent failures produce
+well-formed output" -- a flat forecast on an out-of-distribution scale reads
+as ordinary model behavior until this probe is read as a bug, not a
+property). The checkpoint's own rule, reproduced exactly (`mu = x.mean(1)`,
+`sd = x.std(1, unbiased=False)`, `sd = sd if sd > 1e-2 else 1`, normalize the
+input by `(x - mu) / sd`, denormalize sampled outputs by `* sd + mu`), is
+applied once in `prepare()` so that `forward()` (capture), `predict()` and
+anything patched through `hooks.token_patch` (whose clean cache is written
+via `prepare()` + `forward()` too, see `extract.py::capture_raw_tokens`) all
+see an identical normalized tensor -- there is no second code path into this
+checkpoint's backbone that could see raw-scale input instead. `prepare()`
+returns a small `_Prepared` container (the normalized tensor plus its
+per-row `mu`/`sd`) rather than a bare tensor specifically so `predict()`
+denormalizes with the *same* stats `forward()` normalized with, rather than
+recomputing them from a second `contexts.mean()/.std()` call that could
+drift from the first if either were ever changed independently. This is
+unconditional (not a config knob): the checkpoint's own intended use always
+normalizes, nothing in this repo's stages needs the raw-scale behavior as a
+comparison arm, and CLAUDE.md sec 2.1's "old behavior stays reproducible
+behind a knob" is about behavior something else *depends on* -- reproducing
+a diagnosed bug is not that.
+
 Written and verified against `transformers==4.57.6`, `torch==2.12.0`,
 `thuml/sundial-base-128m`; run `--check-alignment` again on any future
 library or checkpoint bump, per every other adapter in this file.
@@ -134,13 +174,24 @@ aggregate.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, NamedTuple
 
 import numpy as np
 import torch
 
 from ..utils import log
 from .base import ModelAdapter, _scan_attention, random_init_like
+
+
+class _Prepared(NamedTuple):
+    """Sundial's `prepare()` output: the checkpoint's own per-series
+    normalization rule applied once, plus the exact per-row stats used to
+    apply it -- carried alongside the tensor (rather than recomputed) so
+    `predict()` denormalizes with precisely the same `mu`/`sd` that
+    `forward()` normalized the identical batch with."""
+    normalized: torch.Tensor
+    mu: torch.Tensor
+    sd: torch.Tensor
 
 
 class SundialAdapter(ModelAdapter):
@@ -194,15 +245,24 @@ class SundialAdapter(ModelAdapter):
         n_tokens = (ctx + front_pad) // self._patch
         return n_tokens, front_pad
 
-    def prepare(self, contexts: np.ndarray) -> Any:
-        return torch.from_numpy(np.ascontiguousarray(contexts)).float().to(self.device)
+    def prepare(self, contexts: np.ndarray) -> _Prepared:
+        """Apply the checkpoint's own per-series `revin` rule (module
+        docstring above) -- the single normalization site every other method
+        in this class reads from, so capture, prediction and patching never
+        disagree about what the model saw."""
+        raw = torch.from_numpy(np.ascontiguousarray(contexts)).float().to(self.device)
+        mu = raw.mean(dim=1, keepdim=True)
+        sd = raw.std(dim=1, keepdim=True, unbiased=False)
+        sd = torch.where(sd > 1e-2, sd, torch.ones_like(sd))
+        return _Prepared((raw - mu) / sd, mu, sd)
 
-    def forward(self, prepared: Any) -> None:
-        """One non-cached backbone-only pass -- skips the flow-matching head
-        entirely (not needed to fire capture hooks on `model.layers.{i}`),
-        mirroring `ChronosAdapter`'s "encoder only" capture pattern."""
+    def forward(self, prepared: _Prepared) -> None:
+        """One non-cached backbone-only pass over the NORMALIZED tensor --
+        skips the flow-matching head entirely (not needed to fire capture
+        hooks on `model.layers.{i}`), mirroring `ChronosAdapter`'s "encoder
+        only" capture pattern."""
         with torch.no_grad():
-            self._inner.model(input_ids=prepared, use_cache=False)
+            self._inner.model(input_ids=prepared.normalized, use_cache=False)
 
     def token_time_spans(self) -> np.ndarray:
         """One span per 16-step input patch; the leading patch is clipped
@@ -213,15 +273,19 @@ class SundialAdapter(ModelAdapter):
         return np.clip(spans, 0, self.data_cfg.context_len)
 
     def predict(self, contexts: np.ndarray, horizon: int, quantiles: list) -> dict:
-        """Sample flow-matching forecast trajectories in one forward call and
-        reduce to point (median) and quantiles -- identical reduction to
+        """Sample flow-matching forecast trajectories in one forward call over
+        the NORMALIZED context, denormalize the sampled trajectories with the
+        same per-row `mu`/`sd` `prepare()` computed, then reduce to point
+        (median) and quantiles -- identical reduction to
         `ChronosAdapter.predict`'s handling of its own sampled decoder."""
         num_samples = int(self.cfg.kwargs.get("num_samples", 20))
-        tensor = self.prepare(contexts)
+        prepared = self.prepare(contexts)
         with torch.no_grad():
-            out = self._inner(input_ids=tensor, max_output_length=horizon,
+            out = self._inner(input_ids=prepared.normalized, max_output_length=horizon,
                               num_samples=num_samples, use_cache=False, return_dict=True)
         samples = out.logits[..., :horizon].float().cpu()  # [B, num_samples, horizon]
+        mu, sd = prepared.mu.cpu(), prepared.sd.cpu()
+        samples = samples * sd[:, :, None] + mu[:, :, None]
         q = torch.quantile(samples, torch.tensor(quantiles, dtype=torch.float32), dim=1)
         return {"point": samples.median(dim=1).values.numpy(),
                 "quantiles": q.permute(1, 2, 0).numpy()}
