@@ -28569,8 +28569,32 @@ dev series, and stored predictions for all 965 series.
       sequential_par 0.92 → 0.62. The synthetic families are identical by construction.
     - Median MASE on the new-source block_bootstrap rises (0.699 → 1.4971), because there naive is
       no longer near-optimal.
-    - Anomaly, not investigated: Sundial's sequential_par flat share *rises* 0.20 → 0.72, while the
-      other three models fall.
+    - Anomaly: Sundial's sequential_par flat share *rises* 0.20 → 0.72, while the other three models
+      fall. **Diagnosed 2026-09-27 as an adapter defect** (next bullet).
+  - **Sundial adapter skips the checkpoint's input normalization (S1).**
+    - `thuml/sundial-base-128m` normalizes per series (mean/std "revin") only inside `generate()`.
+      `forward()` defaults to `revin=False`, and its own `revin=True` branch fails to broadcast for
+      `num_samples > 1`.
+    - `generate()` itself is broken on our transformers version, so `models/sundial_adapter.py` calls
+      `forward` directly. Every Sundial forecast and activation is therefore on **raw-scale input**.
+    - The electricity half of v2 sequential_par (values up to ~14,800) shows it:
+      - Sundial is flat on **1.0** (sd ratio 0.0021, MASE 4.134) vs TimesFM 0.32 / Chronos-2 0.32 /
+        Bolt 0.24 (MASE ~1.12);
+      - its 20 samples are nearly identical (spread 0.0006 × context sd);
+      - rescaling the same contexts ×0.001 gives flat 0.12, and z-scoring gives 0.0.
+    - The weather half is unaffected: Sundial 0.36 vs others 0.60–0.92.
+    - The frontend stage had already measured Sundial's worst scale-equivariance residual as **38.4318**
+      context-sd units, vs TimesFM 0.0000 / Chronos-2 0.0086 / Bolt 0.0080 (`frontend.1–4`), but it was
+      read as a model property.
+    - v1 dev impact of manual revin (checkpoint rule: sd floor 1e-2 → 1) is small, because v1 values are
+      small:
+      - median MASE 1.3552 → 1.3111
+      - flat 0.3917 → 0.3782
+      - 80% coverage 0.3761 → 0.3325
+    - So PM-06's under-coverage is *not* caused by this defect.
+    - The in-progress `concept_atlas_v2` run was stopped and its partial run directory deleted, because
+      its Sundial numbers would be invalid. The fix (spec `/tmp/tsfm_specs/sundial_revin_spec.md`) is
+      pending.
     - The reference run still uses `large_run.yaml`. A full pipeline rerun on v2 has not been done.
   - The built corpus is at repo-root `benchmark_large_v2/` (untracked, like `benchmark_large/`).
     Rebuild with `run_full.py --config configs/large_run_v2.yaml --references monash

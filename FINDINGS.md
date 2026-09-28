@@ -843,6 +843,23 @@ These instructions are binding for every future session, human or agent.
 - **Re-check (2026-09-27).** Preprocessing is ruled out: native library forecasts match the adapters to 0.002–0.028 context sd, and flat fractions match. Flat is 2–4% on periodic contexts vs 49–61% on non-periodic ones. The overall share is driven by the real-derived tier (BM-06). Ref. ROADMAP §32.7 addendum.
 - **Score. 4/5.** Flat forecasts are mostly optimal behavior on noise-like context, and they expose a real, unstated per-model difference in reversion to the mean.
 
+#### PM-10 · The Sundial adapter feeds raw-scale input (checkpoint normalization bypassed)
+- **Claim.**
+  - Sundial's remote code normalizes per series only in `generate()`. The adapter calls `forward()`,
+    which defaults to `revin=False`, and whose own revin branch is broken for num_samples > 1. So
+    Sundial never saw normalized input.
+  - Symptoms:
+    - scale-equivariance residual 38.4318 context-sd units, vs ≤ 0.0086 for the other three models;
+    - 100% flat forecasts (MASE 4.134) on large-valued electricity series, where the other models are
+      at 24–32%;
+    - rescaling or z-scoring removes it.
+  - On the small-valued v1 corpus the effect is small: median MASE 1.3552 → 1.3111, 80% coverage
+    0.3761 → 0.3325. Sundial's under-coverage (PM-06) is real, not this defect.
+- **Evidence.** Behavioral, adapter-level (verified at source). **Status:** diagnosed; fix pending (S1).
+- **Reproduce.** Scratch scripts `sundial_scale.py`, `sundial_revin.py`, `sundial_seqpar.py` (session scratchpad); `frontend` findings in `runs/full_report_run_4model`.
+- **Ref.** ROADMAP §32.7 D1 (S1 bullet).
+- **Score. 4/5.** A silent adapter-level input bug that the pipeline's own frontend diagnostic caught numerically, but that nobody read as a bug. It invalidates Sundial on any large-scale corpus.
+
 #### PM-08 · `random_init` twins are not one null condition
 - **Claim.**
   - **TimesFM's twin is an exact identity stack.** `RMSNorm` zero-inits
@@ -1413,5 +1430,5 @@ See SH-20. **4/5.**
 - **Evidence.** Behavioral / descriptive. **Status:** measured on dev, orchestrator scratch scripts; not in the pipeline.
 - **Reproduce.** Stored predictions in `runs/full_report_run_4model` by generator; corpus task list in `configs/large_run.yaml`.
 - **Ref.** ROADMAP §32.7 addendum (2026-09-27); PM-07; MN-14.
-- **Remedy (D1, opt-in).** `configs/large_run_v2.yaml` adds `autogluon/chronos_datasets` electricity_hourly and traffic twins for each real-derived generator. The naive-flat proxy (lag1 < 0.2 and not periodic) halves corpus-wide, 0.2093 → 0.1067. Actual model flat share on dev falls correspondingly, v1 → v2: TimesFM 0.4943 → 0.3254, Chronos-2 0.4912 → 0.3202, Sundial 0.3917 → 0.2715, Chronos-Bolt 0.4881 → 0.3171. Anomaly, not investigated: Sundial's sequential_par flat share rises 0.20 → 0.72. No full pipeline rerun on v2 yet. Ref. ROADMAP §32.7 D1.
+- **Remedy (D1, opt-in).** `configs/large_run_v2.yaml` adds `autogluon/chronos_datasets` electricity_hourly and traffic twins for each real-derived generator. The naive-flat proxy (lag1 < 0.2 and not periodic) halves corpus-wide, 0.2093 → 0.1067. Actual model flat share on dev falls correspondingly, v1 → v2: TimesFM 0.4943 → 0.3254, Chronos-2 0.4912 → 0.3202, Sundial 0.3917 → 0.2715, Chronos-Bolt 0.4881 → 0.3171. Sundial's sequential_par flat share rises 0.20 → 0.72; diagnosed as an adapter defect (PM-10). No full pipeline rerun on v2 yet. Ref. ROADMAP §32.7 D1.
 - **Score. 4/5.** The ~50% flat share and small ablation effects are partly a property of the corpus, not of the models. Rebalancing the real-derived source would change what the causal battery can see.
