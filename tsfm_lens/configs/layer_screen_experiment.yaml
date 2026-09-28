@@ -1,0 +1,120 @@
+# Layer-screening bake-off experiment (ROADMAP.md §6.1.1 / §6.1.1-E).
+#
+# Unlike every other real-checkpoint config in this repo, TimesFM is
+# captured at capture_layer_stride: 1 here (all 20 layers, not the usual
+# 10) -- the whole point of §6.1.1's redesign is that a layer selector must
+# be fair to every layer, and the previous method (§6.1) never even saw the
+# strided-out half of TimesFM's stack. Chronos-T5-Small already captures
+# every block by default. Only the stages the bake-off actually needs are
+# enabled (extract, l0 for forecasts, internals for a cross-check against
+# §6.1's own eff-dim/probe numbers, l3 sensitivity-only for a second gold
+# signal) -- l3 per-window patching, lens, attention, clustering, and the
+# SAE pipeline stage are all off; `run_layer_screen_bakeoff.py` trains its
+# own per-layer SAEs directly rather than through the sae stage, since that
+# stage only supports a fixed target list, not "every layer".
+
+run:
+  name: layer_screen_experiment
+  out_dir: runs
+  device: cuda
+  dtype: bfloat16
+  seed: 0
+  keep_models_loaded: false
+
+data:
+  source: sealed
+  path: ../benchmark_medium/public_dev  # relative to tsfm_lens/ (where run.py is invoked from)
+  context_len: 512
+  horizon: 64
+  max_series: 220
+  family_key: auto
+
+alignment:
+  window: 32
+  sanity_check: true
+
+models:
+  - name: TimesFM
+    adapter: timesfm
+    checkpoint: google/timesfm-2.5-200m-pytorch
+    batch_size: 32
+    capture_layer_stride: 1      # ALL 20 layers -- see header note
+  - name: Chronos-T5-Small
+    adapter: chronos
+    checkpoint: amazon/chronos-t5-small
+    batch_size: 32
+    capture_layer_stride: 1      # 6 encoder blocks, already all of them
+
+l0:
+  enabled: true
+  quantiles: [0.1, 0.5, 0.9]
+
+l1:
+  enabled: false
+
+l2:
+  enabled: false
+
+l3:
+  enabled: true
+  max_series: 220
+  corruptions:
+    noise: {snr_db: 6.0}
+    detrend: {}
+    deseasonalize: {top_k: 2}
+    level_shift: {position_frac: 0.6, scale: 3.0}
+    spike: {count: 3, scale: 6.0}
+    warp: {strength: 0.15}
+    dropout: {frac: 0.15, n_blocks: 3}
+  patching:
+    enabled: false  # per-window patching is expensive and not needed here; sensitivity
+                     # fingerprints alone give §6.1.1-E's secondary gold signal.
+
+lens:
+  enabled: false
+
+attention:
+  enabled: false
+
+exemplars:
+  enabled: false
+
+clustering:
+  enabled: false
+
+# The pipeline's own default layer_screen stage (ROADMAP.md §6.1.1, now
+# wired in ahead of `sae` in every config) runs the bake-off winner
+# (work_bend) as a cheap sanity artifact here too -- independent of, and far
+# cheaper than, run_layer_screen_bakeoff.py's full three-selector-vs-SAE-gold
+# comparison below, which remains the actual experiment this config exists
+# for. Only relevant if `layer_screen` is included in `--stages` explicitly;
+# the documented `--stages extract,l0,internals,l3` command above does not
+# run it.
+layer_screen:
+  enabled: true
+  method: work_bend
+  budget_frac: 0.25
+  min_budget: 2
+
+sae:
+  enabled: false  # run_layer_screen_bakeoff.py trains its own per-layer SAEs directly
+
+report:
+  enabled: false
+
+stats:
+  enabled: true
+  n_boot: 200
+  n_boot_heavy: 100
+  ci: 0.95
+  alpha: 0.05
+  min_series: 8
+
+internals:
+  enabled: true
+  layer_stride: 1
+  max_rows: 15000
+  probe_pca_dim: 50
+
+confirm:
+  enabled: false

@@ -36,7 +36,7 @@ logs and JSON (never cat a large artifact), and read big source files by range.
   artifacts, copy it to an isolated directory first (the orchestrator will name
   one) and work there.
 - `runs/` is gitignored, so a worktree does not contain it — reference the main
-  checkout's `tsfm_model_analysis/tsfm_lens/runs/` by absolute path, read-only.
+  checkout's `tsfm_lens/runs/` by absolute path, read-only.
 - Environment: `conda activate cudaPy` (see `DEPENDENCIES.md`). Cap threads for
   any heavy run: `OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 OPENBLAS_NUM_THREADS=4`.
   The GPUs are shared; pick one with low memory use via `nvidia-smi` and set

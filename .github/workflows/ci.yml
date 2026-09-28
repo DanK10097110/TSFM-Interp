@@ -26,7 +26,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, dev]
   pull_request:
   schedule:
     # Weekly bleeding-edge check (fix item 3's "scheduled weekly").
@@ -62,11 +62,11 @@ jobs:
           # CPU-only torch -- the fast job never touches a GPU (mocks only).
           pip install torch --index-url https://download.pytorch.org/whl/cpu
           pip install -e .
-          pip install -e tsfm_model_analysis/tsfm_lens
+          pip install -e tsfm_lens
 
       - name: compileall (both packages)
         run: |
-          python -m compileall -q tsfm_benchmark tsfm_model_analysis/tsfm_lens
+          python -m compileall -q tsfm_benchmark tsfm_lens
 
       - name: Invariant 11 -- no hardcoded absolute paths
         run: |
@@ -78,7 +78,7 @@ jobs:
               --include='*.py' --include='*.yaml' --include='*.yml' \
               --exclude-dir='.git' --exclude-dir='.github' --exclude-dir='node_modules' \
               --exclude-dir='runs' --exclude-dir='.venv' --exclude-dir='venv' \
-              tsfm_benchmark tsfm_model_analysis; then
+              tsfm_benchmark tsfm_lens; then
             echo "::error::found a literal absolute path -- see CLAUDE.md invariant 11"
             exit 1
           fi
@@ -91,7 +91,7 @@ jobs:
           if grep -rInE '^\s*(path|out_dir):\s*/' \
               --include='*.yaml' --include='*.yml' \
               --exclude-dir='.git' --exclude-dir='.github' --exclude-dir='runs' \
-              tsfm_benchmark tsfm_model_analysis; then
+              tsfm_benchmark tsfm_lens; then
             echo "::error::found a config path:/out_dir: value starting with '/' -- see CLAUDE.md invariant 11, ROADMAP.md sec 15 A18"
             exit 1
           fi
@@ -101,12 +101,12 @@ jobs:
 
       - name: tsfm_lens test suite (includes test_adapter_conformance.py against all mocks)
         run: |
-          cd tsfm_model_analysis/tsfm_lens
+          cd tsfm_lens
           python -m pytest tests -q
 
       - name: Smoke run end-to-end (configs/smoke.yaml, mock adapters, no downloads)
         run: |
-          cd tsfm_model_analysis/tsfm_lens
+          cd tsfm_lens
           python run.py --config configs/smoke.yaml
           python - <<'PY'
           import json, pathlib, sys
@@ -139,8 +139,8 @@ jobs:
         with:
           name: smoke-report
           path: |
-            tsfm_model_analysis/tsfm_lens/runs/smoke/report.html
-            tsfm_model_analysis/tsfm_lens/runs/smoke/report/coverage.json
+            tsfm_lens/runs/smoke/report.html
+            tsfm_lens/runs/smoke/report/coverage.json
           if-no-files-found: warn
 
   pinned:
@@ -169,7 +169,7 @@ jobs:
           # practice, ROADMAP.md's own Findings blocks).
           pip install torch==2.9.1
           pip install -e .
-          pip install -e tsfm_model_analysis/tsfm_lens
+          pip install -e tsfm_lens
 
       - name: tsfm_benchmark test suite
         shell: bash -el {0}
@@ -178,7 +178,7 @@ jobs:
       - name: tsfm_lens test suite
         shell: bash -el {0}
         run: |
-          cd tsfm_model_analysis/tsfm_lens
+          cd tsfm_lens
           python -m pytest tests -q
 
   bleeding:
@@ -209,17 +209,17 @@ jobs:
           pip install torch --index-url https://download.pytorch.org/whl/cpu
           pip install transformers timesfm chronos-forecasting
           pip install -e .
-          pip install -e tsfm_model_analysis/tsfm_lens
+          pip install -e tsfm_lens
 
       - name: tsfm_benchmark test suite
         run: python -m pytest tsfm_benchmark/tests -q
 
       - name: tsfm_lens test suite
         run: |
-          cd tsfm_model_analysis/tsfm_lens
+          cd tsfm_lens
           python -m pytest tests -q
 
       - name: Smoke run end-to-end
         run: |
-          cd tsfm_model_analysis/tsfm_lens
+          cd tsfm_lens
           python run.py --config configs/smoke.yaml

@@ -19,7 +19,6 @@ import conftest
 
 _SIBLING = (
     Path(__file__).resolve().parents[2]
-    / "tsfm_model_analysis"
     / "tsfm_lens"
     / "tests"
     / "conftest.py"
@@ -67,7 +66,7 @@ def test_this_conftest_has_not_drifted_from_the_tsfm_lens_copy():
     mine = _code_half(Path(conftest.__file__).read_text(encoding="utf-8"))
     theirs = _code_half(_SIBLING.read_text(encoding="utf-8"))
     assert mine == theirs, (
-        "tsfm_benchmark/tests/conftest.py and tsfm_model_analysis/tsfm_lens/tests/"
+        "tsfm_benchmark/tests/conftest.py and tsfm_lens/tests/"
         "conftest.py have diverged below their docstrings. They are a deliberate "
         "duplicate; change both, or give them different names and say why."
     )

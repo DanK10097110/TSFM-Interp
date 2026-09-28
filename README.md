@@ -11,14 +11,14 @@ Two parts, each independently installable and independently usable:
   ground-truth-labeled synthetic benchmark corpora, and validates their
   diversity (`benchmark_validation/`). CPU-only; no GPU or model checkpoints
   required. See [`tsfm_benchmark/README.md`](tsfm_benchmark/README.md).
-- **[`tsfm_model_analysis/tsfm_lens/`](tsfm_model_analysis/tsfm_lens/)**
+- **[`tsfm_lens/`](tsfm_lens/)**
   ("tsfm-lens") — a layered interpretability pipeline that runs two (or more)
   supported TSFM checkpoints through a shared analysis stack (behavioral
   comparison, cost/FLOPs, representational geometry, causal perturbation,
   attention analysis, SAEs, ...) and renders one self-contained HTML report.
   GPU-capable (real checkpoints); also runs CPU-only against mock models for a
   fast smoke check. See
-  [`tsfm_model_analysis/tsfm_lens/README.md`](tsfm_model_analysis/tsfm_lens/README.md).
+  [`tsfm_lens/README.md`](tsfm_lens/README.md).
 
 For the full architecture/design-doctrine reference, read `CLAUDE.md`. For
 what's being worked on next, read `ROADMAP.md`.
@@ -43,7 +43,7 @@ shared environment.
 pip install -e .
 
 # tsfm_lens (only needed for the model-analysis half; separate package)
-pip install -e tsfm_model_analysis/tsfm_lens
+pip install -e tsfm_lens
 ```
 
 Both packages can share a single conda/venv environment — see
@@ -65,7 +65,7 @@ PYTHONPATH=. python3 example_runs/run_validation.py \
     --corpus ./benchmark_out/public_dev --out outputs
 
 # --- tsfm-lens smoke run (mock models, no GPU, no downloads, ~minutes) ---
-cd ../tsfm_model_analysis/tsfm_lens
+cd ../tsfm_lens
 python run.py --config configs/smoke.yaml
 # open runs/smoke/report.html in a browser
 ```

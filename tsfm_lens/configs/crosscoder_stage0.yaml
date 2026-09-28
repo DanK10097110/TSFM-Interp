@@ -1,0 +1,74 @@
+# ROADMAP.md §6.2.1 Stage 0 (the dead-feature blocking gate) -- hypothesis H1,
+# "far too little data per atom". The recorded feasibility run trained a
+# 1280-atom dictionary on 4608 aligned rows (3.6 rows/atom, against published
+# SAE practice of 10^3-10^4); this config exists purely to produce a store with
+# an order of magnitude more rows at the SAME layer pair, so H1 can be tested
+# as a rows-only sweep (subsampling rows inside one store) rather than by
+# comparing two differently-built stores -- which is exactly the mistake
+# `CLAUDE.md` §11.24 cost a session to diagnose.
+#
+# Only the `extract` stage is enabled. Nothing here is an analysis run: the
+# layer pair below is *fixed* to `runs/medium_run_chronos_base`'s already-
+# recorded L1 peak-CKA pair (TimesFM stacked_xf.4 <-> Chronos encoder.block.10,
+# CKA=0.381) rather than re-derived, so only those two layers are captured and
+# the store stays small.
+#
+# Two deliberate departures from `medium_run_chronos_base.yaml`, both stated
+# here because they mean this store's rows are NOT interchangeable with that
+# run's:
+#   1. `data.path` is the ~4.3k-sequence `full_multidomain_run1` corpus
+#      (ROADMAP.md §5.1), not the 288-sequence `benchmark_medium`.
+#   2. `context_len: 448` (not 512). 3205 of that corpus's 4288 sequences are
+#      exactly 512 points long, so a 512-context + 64-horizon requirement
+#      (576 points) would admit only 108 of them; 448+64 = 512 admits 3313.
+#      448 is still a multiple of `alignment.window` (14 windows/series) and
+#      still <= chronos-t5's 512 limit.
+# Net: ~3313 series x 14 windows = ~46k aligned rows, ~10x the feasibility run.
+
+run:
+  name: crosscoder_stage0_bigdata
+  out_dir: runs
+  device: cuda
+  dtype: bfloat16
+  seed: 0
+  keep_models_loaded: false
+
+data:
+  source: sealed
+  path: ../tsfm_benchmark/benchmark_out_full1/public_dev  # relative to tsfm_lens/
+  context_len: 448
+  horizon: 64
+  family_key: auto
+
+alignment:
+  window: 32
+  sanity_check: true              # invariant 7; both adapters read 1.00 here historically
+
+models:
+  - name: TimesFM
+    adapter: timesfm
+    checkpoint: google/timesfm-2.5-200m-pytorch
+    batch_size: 32
+    layer_regex: '^stacked_xf\.4$'   # the L1 peak-CKA pair's TimesFM side, only
+    capture_layer_stride: 1
+  - name: Chronos-T5-Base
+    adapter: chronos
+    checkpoint: amazon/chronos-t5-base
+    batch_size: 24
+    layer_regex: '^encoder\.block\.10$'  # the Chronos side of the same pair
+    capture_layer_stride: 1
+
+# Every analysis stage off: this run exists only to write activations.zarr.
+l0: {enabled: false}
+l1: {enabled: false}
+l2: {enabled: false}
+l3: {enabled: false}
+lens: {enabled: false}
+attention: {enabled: false}
+internals: {enabled: false}
+clustering: {enabled: false}
+exemplars: {enabled: false}
+confirm: {enabled: false}
+layer_screen: {enabled: false}
+sae: {enabled: false}
+report: {enabled: false}

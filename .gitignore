@@ -45,11 +45,22 @@ Thumbs.db
 .mypy_cache/
 
 # Generated run outputs and intermediate data
-tsfm_model_analysis/tsfm_lens/runs/
-tsfm_benchmark/outputs/*.parquet
-tsfm_benchmark/outputs/*.npz
-tsfm_benchmark/outputs/*.pkl
-tsfm_benchmark/outputs/*.csv
+runs/
+tsfm_lens/runs/
+tsfm_benchmark/outputs/
 
-tsfm_model_analysis/tsfm_lens/.pytest_tmp/
-tsfm_model_analysis/tsfm_lens/configs/
+tsfm_lens/.pytest_tmp/
+
+# Sealed benchmark corpora (untracked; build with example_runs/run_full.py)
+benchmark_large*/
+benchmark_medium/
+benchmark_out/
+
+# Claude Code local state
+.claude/settings*.json
+.claude/worktrees/
+
+# Misc runtime/log artifacts
+*.pid
+*.log
+.ipynb_checkpoints/
