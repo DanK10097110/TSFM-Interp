@@ -8115,12 +8115,15 @@ def _sec_frontend(run_dir: Path, model_colors: dict, findings: list) -> str:
             if flagged:
                 flagged_models.append(name)
                 text += (f" This residual exceeds {threshold:.4f} ({threshold_basis}): "
-                        f"{name} is not scale-equivariant through this adapter — "
-                        f"possible missing input normalization (see CLAUDE.md §8).")
+                        f"{name} is not scale-equivariant through this adapter at "
+                        f"scale factor {worst_factor} — possible missing input "
+                        f"normalization, or an absolute floor in the model's own "
+                        f"normalization rule (see CLAUDE.md §8).")
                 plain += (f" This is large enough relative to the other models in this "
                          f"run that {name} is likely not scale-equivariant through "
-                         f"this adapter — possible missing input normalization (see "
-                         f"CLAUDE.md §8).")
+                         f"this adapter at a {worst_factor}× scale change — possible "
+                         f"missing input normalization, or an absolute floor in the "
+                         f"model's own normalization rule (see CLAUDE.md §8).")
             findings.append(Finding(
                 claim_id=_next_claim_id("frontend"), stage="frontend", evidence_class="descriptive",
                 text=text, plain=plain, registered=False))

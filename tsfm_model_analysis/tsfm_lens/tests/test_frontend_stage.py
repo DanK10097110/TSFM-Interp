@@ -207,7 +207,7 @@ def test_a_residual_far_above_its_peers_is_flagged_as_not_scale_equivariant(tmp_
             if f.text.startswith(f"Frontend — {name}'s worst scale-equivariance"):
                 by_model[name] = f
     assert set(by_model) == {"Broken", "Good1", "Good2"}
-    flag = "not scale-equivariant through this adapter — possible missing input normalization"
+    flag = "not scale-equivariant through this adapter at scale factor"
     assert flag in by_model["Broken"].text
     assert "CLAUDE.md §8" in by_model["Broken"].text
     assert flag not in by_model["Good1"].text
@@ -219,3 +219,32 @@ def test_a_residual_far_above_its_peers_is_flagged_as_not_scale_equivariant(tmp_
     assert "Flagged in this run" in html
     assert "Broken" in html.split("Flagged in this run:")[1][:50]
     assert "Good1" not in html.split("Flagged in this run:")[1][:50]
+
+
+def test_scale_equivariance_reseeds_sampled_models():
+    """A sampled, perfectly scale-equivariant adapter (forecast = last value
+    times (1 + torch.randn noise)) must give a residual of exactly 0 at scale
+    factor 1: `_predict_batched` reseeds before every call, so the two
+    predict() calls draw identical noise (CLAUDE.md sec 8). Without the
+    reseed the residual is the sampling noise itself."""
+    import numpy as np
+    import torch
+    from types import SimpleNamespace
+    from tsfm_lens.analysis.frontend import _run_scale_equivariance
+
+    class _Sampled:
+        name = "Sampled"
+        cfg = SimpleNamespace(batch_size=4)
+
+        def predict(self, contexts, horizon, quantiles):
+            last = torch.from_numpy(np.asarray(contexts[:, -1:], dtype=np.float64))
+            noise = 1.0 + 0.5 * torch.randn(len(contexts), horizon, dtype=torch.float64)
+            return {"point": (last * noise).numpy()}
+
+    rng = np.random.default_rng(0)
+    contexts = rng.normal(5.0, 2.0, size=(8, 32)).cumsum(axis=1)
+    torch.manual_seed(123)
+    out = _run_scale_equivariance(_Sampled(), contexts, 4, [1.0, 1000.0], n_boot=50, seed=0)
+    for factor in ("1.0", "1000.0"):
+        assert out[factor]["status"] == "measured"
+        assert out[factor]["residual"]["value"] < 1e-9, out[factor]["residual"]

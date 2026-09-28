@@ -112,9 +112,10 @@ forecast to flat (0.002 forecast/context sd ratio, MASE 4.13) where manual
 z-scoring the input does not (`CLAUDE.md` sec 8's "silent failures produce
 well-formed output" -- a flat forecast on an out-of-distribution scale reads
 as ordinary model behavior until this probe is read as a bug, not a
-property). The checkpoint's own rule, reproduced exactly (`mu = x.mean(1)`,
-`sd = x.std(1, unbiased=False)`, `sd = sd if sd > 1e-2 else 1`, normalize the
-input by `(x - mu) / sd`, denormalize sampled outputs by `* sd + mu`), is
+property). The checkpoint's own rule, reproduced from its `generate()` path
+(`ts_generation_mixin.py`, the official API: `mu = x.mean(1)`, `sd =
+x.std(1, unbiased=False) + 1e-5`, normalize the input by `(x - mu) / sd`,
+denormalize sampled outputs by `* sd + mu`), is
 applied once in `prepare()` so that `forward()` (capture), `predict()` and
 anything patched through `hooks.token_patch` (whose clean cache is written
 via `prepare()` + `forward()` too, see `extract.py::capture_raw_tokens`) all
@@ -124,7 +125,13 @@ returns a small `_Prepared` container (the normalized tensor plus its
 per-row `mu`/`sd`) rather than a bare tensor specifically so `predict()`
 denormalizes with the *same* stats `forward()` normalized with, rather than
 recomputing them from a second `contexts.mean()/.std()` call that could
-drift from the first if either were ever changed independently. This is
+drift from the first if either were ever changed independently. The
+checkpoint's `forward(revin=True)` branch uses a DIFFERENT rule (an absolute
+floor, `sd = sd if sd > 1e-2 else 1`) and is broken for `num_samples > 1`;
+its floor also breaks scale-equivariance for small-magnitude series (at a
+0.001x rescale every one of the frontend probe's 64 series fell below it,
+residual 39.47 context-sd units even with seeded sampling), so the
+`generate()` rule is the one reproduced here. This is
 unconditional (not a config knob): the checkpoint's own intended use always
 normalizes, nothing in this repo's stages needs the raw-scale behavior as a
 comparison arm, and CLAUDE.md sec 2.1's "old behavior stays reproducible
@@ -252,8 +259,7 @@ class SundialAdapter(ModelAdapter):
         disagree about what the model saw."""
         raw = torch.from_numpy(np.ascontiguousarray(contexts)).float().to(self.device)
         mu = raw.mean(dim=1, keepdim=True)
-        sd = raw.std(dim=1, keepdim=True, unbiased=False)
-        sd = torch.where(sd > 1e-2, sd, torch.ones_like(sd))
+        sd = raw.std(dim=1, keepdim=True, unbiased=False) + 1e-5
         return _Prepared((raw - mu) / sd, mu, sd)
 
     def forward(self, prepared: _Prepared) -> None:

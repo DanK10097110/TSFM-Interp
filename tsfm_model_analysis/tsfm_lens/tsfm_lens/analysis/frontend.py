@@ -55,6 +55,9 @@ from .stats import _mase_scale
 from .stats import mase as _mase
 
 
+_PREDICT_SEED = 0
+
+
 def _predict_batched(adapter, contexts: np.ndarray, horizon: int, quantiles: list) -> dict:
     """`adapter.predict(contexts, ...)`, chunked by the model's own configured
     `batch_size` rather than passed as one call over every requested series.
@@ -71,9 +74,18 @@ def _predict_batched(adapter, contexts: np.ndarray, horizon: int, quantiles: lis
     bug, not a hypothetical one -- see the frontend-stage trap entry this
     session added to the report. Every diagnostic that calls `predict()`
     over a multi-series batch must call it through here.
+
+    Each batch is reseeded with the same `_PREDICT_SEED` (CLAUDE.md sec 8,
+    "sampled models need seeded predict()"): every diagnostic here compares
+    two `predict()` calls on the same rows (original vs rescaled, full vs
+    truncated context), and for a sampled model (Sundial, Chronos-T5,
+    Lag-Llama) an unseeded pair adds sampling noise to the residual --
+    measured at 0.357 context-sd units for Sundial and 1.335 for Lag-Llama
+    with no rescale at all (spec S1). Deterministic models are unaffected.
     """
     points, quants = [], []
     for s, e in batch_slices(len(contexts), max(1, adapter.cfg.batch_size)):
+        torch.manual_seed(_PREDICT_SEED)
         out = adapter.predict(contexts[s:e], horizon, quantiles)
         points.append(out["point"])
         if "quantiles" in out and out["quantiles"] is not None:

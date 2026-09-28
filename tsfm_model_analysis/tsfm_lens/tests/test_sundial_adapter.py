@@ -127,7 +127,7 @@ def test_predict_reduces_samples_to_point_median_and_quantiles():
     # before comparison, not compared to `samples` directly.
     mu = contexts.mean(axis=1, keepdims=True).astype(np.float64)
     sd = contexts.std(axis=1, keepdims=True).astype(np.float64)
-    sd = np.where(sd > 1e-2, sd, 1.0)
+    sd = sd + 1e-5
     expected_point = samples.median(dim=1).values.numpy() * sd + mu
 
     assert out["point"].shape == (batch, horizon)
@@ -223,10 +223,12 @@ def test_predict_is_scale_equivariant_through_manual_revin_normalization():
     fake inner model above the identical normalized tensor regardless of k),
     and `predict()` denormalizes the sampled output by the same k-scaled
     `mu`/`sd` afterward. `loc=5.0, scale=20.0` keeps `sd * k` above the
-    checkpoint's own `1e-2` floor even at `k=1e-3` (`sd approx 20 * 1e-3 =
-    0.02 > 0.01`), so the floor does not asymmetrically kick in at only one
-    tested scale and break the equivariance the checkpoint's own rule is
-    supposed to have at ordinary amplitudes.
+    `generate()` rule's `+1e-5` epsilon small relative to `sd * k` even at
+    `k=1e-3` (`sd approx 0.02`, so the epsilon is a ~5e-4 relative
+    perturbation): equivariance is near-exact there, and exact to float
+    precision at `k >= 1`. The tolerance at `k=1e-3` is set from that bound,
+    not tuned to pass; the plant (normalization removed) misses it by orders
+    of magnitude.
     """
     horizon = 4
     adapter = _bare_adapter(context_len=32, horizon=horizon, patch=16)
@@ -248,35 +250,34 @@ def test_predict_is_scale_equivariant_through_manual_revin_normalization():
         np.testing.assert_allclose(inner.model.seen.numpy(),
                                    normalized_inputs[k].numpy(), atol=1e-6)
 
-    # The manual normalization is exactly scale-invariant: (kx - k*mu) / (k*sd)
-    # == (x - mu) / sd, so the (nonlinear) inner model sees the same input at
-    # every scale, independent of k.
     np.testing.assert_allclose(normalized_inputs[1e-3].numpy(),
-                               normalized_inputs[1.0].numpy(), atol=1e-5)
+                               normalized_inputs[1.0].numpy(), rtol=2e-3, atol=2e-3)
     np.testing.assert_allclose(normalized_inputs[1e3].numpy(),
                                normalized_inputs[1.0].numpy(), atol=1e-5)
 
     # predict(k * x) == k * predict(x) for every tested k.
-    for k in (1e-3, 1e3):
-        np.testing.assert_allclose(points[k], points[1.0] * k, rtol=1e-4, atol=1e-6)
+    np.testing.assert_allclose(points[1e3], points[1.0] * 1e3, rtol=1e-4, atol=1e-6)
+    np.testing.assert_allclose(points[1e-3], points[1.0] * 1e-3, rtol=5e-3, atol=1e-6)
 
 
-def test_prepare_floors_sd_to_one_on_a_near_constant_context_with_no_nan_or_inf():
-    """Decoy: a context whose std is below the checkpoint's own `1e-2` floor
-    (constructed as visually near-constant, not exactly constant, so the
-    test cannot pass merely by special-casing an exact-zero std) must
-    normalize to `(x - mu) / 1`, never divide by a near-zero std, and must
-    stay fully finite."""
+def test_prepare_uses_generate_rule_epsilon_not_absolute_floor():
+    """Decoy: a near-constant context and a small-magnitude context. The
+    official `generate()` rule is `sd = std + 1e-5` (no absolute floor), so
+    (a) a near-constant row stays finite, and (b) a genuinely varying but
+    small-magnitude row (std 1e-3, below `forward(revin=True)`'s 1e-2 floor)
+    is still divided by its own std -- the floor rule would divide it by 1
+    and break scale-equivariance for small-scale series."""
     adapter = _bare_adapter(context_len=16, horizon=4, patch=16)
     contexts = np.full((2, 16), 7.0, dtype=np.float32)
-    contexts[1, -1] += 1e-6  # near-, not exactly, constant -- the decoy
+    contexts[0, -1] += 1e-6
+    rng = np.random.default_rng(0)
+    contexts[1] = (rng.standard_normal(16) * 1e-3).astype(np.float32)
     prepared = adapter.prepare(contexts)
-
     assert torch.all(torch.isfinite(prepared.normalized))
-    assert torch.all(torch.isfinite(prepared.sd))
-    np.testing.assert_allclose(prepared.sd.numpy().ravel(), [1.0, 1.0], atol=1e-6)
-    expected = contexts - contexts.mean(axis=1, keepdims=True)
-    np.testing.assert_allclose(prepared.normalized.numpy(), expected, atol=1e-4)
+    raw = torch.from_numpy(contexts)
+    expected_sd = raw.std(dim=1, keepdim=True, unbiased=False) + 1e-5
+    np.testing.assert_allclose(prepared.sd.numpy(), expected_sd.numpy(), rtol=1e-5)
+    assert prepared.sd[1].item() < 1e-2
 
 
 @pytest.mark.skipif(not _HAS_CUDA, reason="Sundial's default config targets CUDA")
