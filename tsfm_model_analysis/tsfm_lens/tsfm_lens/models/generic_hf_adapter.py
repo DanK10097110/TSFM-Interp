@@ -204,6 +204,7 @@ class GenericHFAdapter(ModelAdapter):
             "input_kwarg": getattr(self, "_input_kwarg", None),
             "input_rank": getattr(self, "_input_rank", None),
             "aux_kwargs": list(getattr(self, "_aux_kwargs", ())),
+            "revin_enabled": getattr(self, "_revin_enabled", None),
             "layer_regex": self.cfg.layer_regex or self.default_layer_regex,
             "n_capture_layers": len(self.layer_names()) if self._loaded else None,
             "forecast": self._forecast_strategy,
@@ -249,10 +250,41 @@ class GenericHFAdapter(ModelAdapter):
                         "(TimeMoE, Timer), wrong for an actual language model. Check "
                         "--probe-adapter output before trusting any number.", self.name)
         self._no_cache = "use_cache" in params
+        self._revin_enabled = self._resolve_revin(params)
         aux = tuple(k for k in _SYNTHESIZABLE if k in params)
         log.info("generic_hf '%s': input kwarg '%s', synthesizable aux %s",
                  self.name, chosen, list(aux))
         return chosen, aux
+
+    def _resolve_revin(self, params: dict) -> bool:
+        """True when this checkpoint's own `forward()` declares a `revin`
+        parameter defaulting to `False` -- the same class of bug
+        `models/sundial_adapter.py` diagnoses and hand-fixes for Sundial,
+        generalized to whatever the zero-code path meets (`ROADMAP.md` sec
+        32.7 / spec S1 item 2): the thuml lineage's `ts_generation_mixin.py`
+        template normalizes each series (mean/std) by default on the
+        `.generate()` path (`prepare_inputs_for_generation`'s own
+        `revin=True` default) but ships a `forward()` that defaults
+        `revin=False` -- so a direct forward call (this adapter's capture
+        path and the `_try_forward_field` predict fallback both are) forecasts
+        on raw-scale input unless told otherwise. Verified against real
+        `thuml/timer-base-84m` weights: `TimerForPrediction.forward`'s
+        `revin=True` branch is NOT broken for a point-only (single-sample)
+        forecast the way Sundial's is for `num_samples > 1` (Sundial needs a
+        hand-written adapter specifically because that branch IS broken there
+        -- CLAUDE.md sec 8's "silent failures produce well-formed output").
+        Passing `revin=True` explicitly here only ever matches a value the
+        checkpoint's own `.generate()` already defaults to -- it is read off
+        the checkpoint's declared signature, never invented -- but it is
+        still one hand-verified checkpoint's evidence that the branch itself
+        does not crash, not a general guarantee for every future checkpoint
+        this probe fires on; a checkpoint whose `revin=True` branch is broken
+        the way Sundial's is would now raise loudly from `_try_forward_field`
+        instead of silently forecasting unnormalized, which is the correct
+        direction to fail in (`CLAUDE.md` invariant 8).
+        """
+        p = params.get("revin")
+        return bool(p is not None and p.default is False)
 
     def _resolve_input_rank(self) -> int:
         """Whether this model wants `[B, T]` or `[B, T, 1]`, measured by trying both.
@@ -361,6 +393,12 @@ class GenericHFAdapter(ModelAdapter):
             # checkpoint's bug. Disabling a cache cannot change a forecast,
             # which is what separates this from the covariates above.
             prepared["use_cache"] = False
+        if getattr(self, "_revin_enabled", False):
+            # `_resolve_revin`'s diagnosis: match `.generate()`'s own default
+            # on every direct forward() call too (capture, and the
+            # `_try_forward_field` predict fallback), rather than silently
+            # forecasting -- and capturing activations -- on raw-scale input.
+            prepared["revin"] = True
         return prepared
 
     def forward(self, prepared: Any) -> None:

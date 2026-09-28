@@ -173,3 +173,49 @@ def test_report_degrades_per_model_when_only_some_diagnostics_ran(tmp_path):
     assert "not applicable" in html
     assert "handled" in html
     assert len(findings) >= 2  # at least the quantization + nan findings for chronosy
+
+
+def _se_only_frontend_json(residuals: dict) -> dict:
+    """A minimal `frontend.json` with only `scale_equivariance` populated,
+    one `{"1000.0": {residual}}` entry per model -- enough to exercise
+    `_sec_frontend`'s not-scale-equivariant flagging (spec S1 item 3)
+    without the other three diagnostics' fields."""
+    return {"n_series": 10, "context_len": 128, "horizon": 32, "models": {
+        name: {"scale_equivariance": {
+            "1000.0": {"status": "measured", "factor": 1000.0, "n_series": 10,
+                      "n_series_nonfinite": 0,
+                      "residual": {"value": value, "lo": max(0.0, value - 0.01),
+                                  "hi": value + 0.01, "resample_unit": "series"},
+                      "max_residual": value * 1.5}}}
+        for name, value in residuals.items()}}
+
+
+def test_a_residual_far_above_its_peers_is_flagged_as_not_scale_equivariant(tmp_path):
+    """Planted, known answer: 'Broken' sits at 40.0 context-scale units (near
+    Sundial's pre-fix 38.4318, FINDINGS PM-10) while 'Good1'/'Good2' sit at
+    0.008/0.005 (near the other real models' measured residuals) -- so
+    10x-the-median-of-others-floored-at-1.0 puts the threshold near 1.0,
+    comfortably below 'Broken' and comfortably above the other two."""
+    save_json(tmp_path / "frontend" / "frontend.json",
+             _se_only_frontend_json({"Broken": 40.0, "Good1": 0.008, "Good2": 0.005}))
+    findings = []
+    html = _sec_frontend(tmp_path, {"Broken": "#000", "Good1": "#111", "Good2": "#222"},
+                         findings)
+    by_model = {}
+    for f in findings:
+        for name in ("Broken", "Good1", "Good2"):
+            if f.text.startswith(f"Frontend — {name}'s worst scale-equivariance"):
+                by_model[name] = f
+    assert set(by_model) == {"Broken", "Good1", "Good2"}
+    flag = "not scale-equivariant through this adapter — possible missing input normalization"
+    assert flag in by_model["Broken"].text
+    assert "CLAUDE.md §8" in by_model["Broken"].text
+    assert flag not in by_model["Good1"].text
+    assert flag not in by_model["Good2"].text
+    # `Finding.text` above is rendered elsewhere in the full report (the
+    # findings/claims section, via the `f.text` Jinja binding); this
+    # section's OWN html fragment carries the same verdict in its rendered
+    # note (CLAUDE.md sec 2.5: "rendered in the report", not only logged).
+    assert "Flagged in this run" in html
+    assert "Broken" in html.split("Flagged in this run:")[1][:50]
+    assert "Good1" not in html.split("Flagged in this run:")[1][:50]

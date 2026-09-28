@@ -8072,23 +8072,58 @@ def _sec_frontend(run_dir: Path, model_colors: dict, findings: list) -> str:
     if se_rows:
         inner += "<h4>Scale-equivariance</h4>"
         inner += _table(pd.DataFrame(se_rows))
+        worst_by_model = {}
         for name, rec in models.items():
             se = _per_factor_scale_equivariance(rec)
             measured = [(f, s) for f, s in se.items() if s.get("status") == "measured"]
             if measured:
-                worst_factor, worst = max(measured, key=lambda fs: fs[1]["residual"]["value"])
-                findings.append(Finding(
-                    claim_id=_next_claim_id("frontend"), stage="frontend", evidence_class="descriptive",
-                    text=f"Frontend — {name}'s worst scale-equivariance residual across "
-                        f"tested factors is {worst['residual']['value']:.4f} context-scale "
-                        f"units, at scale factor {worst_factor} "
-                        f"(95% CI [{worst['residual']['lo']:.4f}, {worst['residual']['hi']:.4f}]).",
-                    plain=f"Scaling {name}'s input up or down and unscaling the forecast "
-                        f"back doesn't perfectly reproduce the original forecast — the "
-                        f"worst mismatch measured was about "
-                        f"{worst['residual']['value']:.3f} times the series' own typical "
-                        f"step size, at a {worst_factor}× scale change.",
-                    registered=False))
+                worst_by_model[name] = max(measured, key=lambda fs: fs[1]["residual"]["value"])
+        flagged_models = []
+        for name, (worst_factor, worst) in worst_by_model.items():
+            # `CLAUDE.md` sec 8's "absolute epsilons cannot tell 'no effect'
+            # from 'numerically dead'" -- the not-scale-equivariant threshold
+            # is set RELATIVE to the other models measured in this same run
+            # (spec S1 item 3), not a hardcoded constant, so it adapts to
+            # whatever residual scale this run's other adapters actually
+            # produce rather than assuming Sundial's pre-fix 38.4 or
+            # TimesFM's near-0.0 is the universal reference point. Floored at
+            # 1.0 so a run of several already-imperfect models doesn't need a
+            # residual ten times worse than its peers before flagging.
+            others = [w["residual"]["value"] for n, (_, w) in worst_by_model.items()
+                     if n != name]
+            if others:
+                others_median = float(np.median(others))
+                threshold = max(1.0, 10.0 * others_median)
+                threshold_basis = (f"10x the median worst residual across the other "
+                                  f"{len(others)} model(s) in this run "
+                                  f"({others_median:.4f} context-scale units), floored at "
+                                  f"1.0")
+            else:
+                threshold = 1.0
+                threshold_basis = ("a fixed 1.0 context-scale-unit floor (no other models "
+                                   "in this run to compare against)")
+            flagged = worst["residual"]["value"] > threshold
+            text = (f"Frontend — {name}'s worst scale-equivariance residual across "
+                   f"tested factors is {worst['residual']['value']:.4f} context-scale "
+                   f"units, at scale factor {worst_factor} "
+                   f"(95% CI [{worst['residual']['lo']:.4f}, {worst['residual']['hi']:.4f}]).")
+            plain = (f"Scaling {name}'s input up or down and unscaling the forecast "
+                    f"back doesn't perfectly reproduce the original forecast — the "
+                    f"worst mismatch measured was about "
+                    f"{worst['residual']['value']:.3f} times the series' own typical "
+                    f"step size, at a {worst_factor}× scale change.")
+            if flagged:
+                flagged_models.append(name)
+                text += (f" This residual exceeds {threshold:.4f} ({threshold_basis}): "
+                        f"{name} is not scale-equivariant through this adapter — "
+                        f"possible missing input normalization (see CLAUDE.md §8).")
+                plain += (f" This is large enough relative to the other models in this "
+                         f"run that {name} is likely not scale-equivariant through "
+                         f"this adapter — possible missing input normalization (see "
+                         f"CLAUDE.md §8).")
+            findings.append(Finding(
+                claim_id=_next_claim_id("frontend"), stage="frontend", evidence_class="descriptive",
+                text=text, plain=plain, registered=False))
         inner += _note(
             "A forecaster that only cares about a series' shape should predict the same "
             "thing (after unscaling) whether the input arrives as raw units or "
@@ -8098,7 +8133,14 @@ def _sec_frontend(run_dir: Path, model_colors: dict, findings: list) -> str:
             "step size (the same scale MASE uses) so it's comparable across series. Near "
             "zero means the model is effectively scale-equivariant at that factor; a "
             "residual that grows with the scale factor means extreme scales genuinely "
-            "confuse the model's own internal normalization, not just numerical noise.",
+            "confuse the model's own internal normalization, not just numerical noise. "
+            "A model flagged as 'not scale-equivariant through this adapter' crossed a "
+            "threshold set relative to the other models measured in this same run (10x "
+            "their median worst residual, floored at 1.0 context-scale unit) — read this "
+            "as 'this adapter likely bypasses the checkpoint's own input normalization', "
+            "not as an architectural property of the model family."
+            + (f" Flagged in this run: {_name_phrase(sorted(flagged_models))}."
+               if flagged_models else ""),
             "Non-finite series (overflow/underflow at an extreme scale factor) are "
             "excluded from the residual average but counted separately — a model that "
             "fails outright at 1000× is a different, more severe finding than one that "
