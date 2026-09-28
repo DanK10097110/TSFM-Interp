@@ -855,7 +855,11 @@ These instructions are binding for every future session, human or agent.
     - rescaling or z-scoring removes it.
   - On the small-valued v1 corpus the effect is small: median MASE 1.3552 → 1.3111, 80% coverage
     0.3761 → 0.3325. Sundial's under-coverage (PM-06) is real, not this defect.
-- **Evidence.** Behavioral, adapter-level (verified at source). **Status:** diagnosed; fix pending (S1).
+- **Evidence.** Behavioral, adapter-level (verified at source). **Status:** fixed 2026-09-28.
+  - With the checkpoint's `generate()` rule (std + 1e-5), Sundial's residual is 2.9e-05 at ×1000 and
+    0.029955 at ×0.001 (was 3.3741 / 38.4318). v2 electricity flat share 1.0 → 0.08.
+  - The same defect was in `generic_hf` on Timer: 49.7334 / 3.8053 → 0.0198 / 0.0214.
+  - Existing runs' Sundial activations and concept results predate the fix.
 - **Reproduce.** Scratch scripts `sundial_scale.py`, `sundial_revin.py`, `sundial_seqpar.py` (session scratchpad); `frontend` findings in `runs/full_report_run_4model`.
 - **Ref.** ROADMAP §32.7 D1 (S1 bullet).
 - **Score. 4/5.** A silent adapter-level input bug that the pipeline's own frontend diagnostic caught numerically, but that nobody read as a bug. It invalidates Sundial on any large-scale corpus.

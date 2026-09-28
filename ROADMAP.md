@@ -28593,8 +28593,45 @@ dev series, and stored predictions for all 965 series.
       - 80% coverage 0.3761 → 0.3325
     - So PM-06's under-coverage is *not* caused by this defect.
     - The in-progress `concept_atlas_v2` run was stopped and its partial run directory deleted, because
-      its Sundial numbers would be invalid. The fix (spec `/tmp/tsfm_specs/sundial_revin_spec.md`) is
-      pending.
+      its Sundial numbers would be invalid. The fix (spec `/tmp/tsfm_specs/sundial_revin_spec.md`) landed
+      2026-09-28 (next bullet).
+  - **S1 fixed (2026-09-28, merged `3ab3657` + `5f9c9c3`).**
+    - `models/sundial_adapter.py::prepare()` normalizes once, with the checkpoint's **`generate()` rule**:
+      `sd = std(unbiased=False) + 1e-5`, no absolute floor. It returns `_Prepared(normalized, mu, sd)`,
+      so capture, `predict()` and `token_patch` see identical inputs; `predict()` denormalizes samples
+      before reduction.
+    - Correction to my own spec: it prescribed `forward(revin=True)`'s rule (sd floored to 1 below 1e-2).
+      That floor breaks equivariance for small series: at ×0.001 all 64 frontend series fall below it,
+      and the residual is 39.47 even with seeded sampling. Switched to the `generate()` rule.
+    - Sundial scale-equivariance residual (frontend's own `_run_scale_equivariance`, same 64 series):
+
+      | factor | before | after |
+      |---|---|---|
+      | ×1000 | 3.3741 | **2.9e-05** |
+      | ×0.001 | 38.4318 | **0.029955** |
+
+      TimesFM is 2e-06 at both factors.
+    - v1 dev through the adapter (floor-rule variant; the generate rule differs only for sd < 1e-2):
+      median MASE 1.3583 → 1.3109, flat 0.3979 → 0.3772, 80% coverage 0.3700 → 0.3246.
+    - v2 electricity sequential_par: Sundial flat 1.0 → **0.08**.
+    - `--check-alignment Sundial` (min / mean diagonal hit): 0.06 / 0.44 before, **0.12 / 0.48** after
+      (layers 0–3 at 1.00/1.00/1.00/0.88, then the known mid-depth decay).
+    - `--check-adapter`: pass; span-discovery contrast was an absurd 5.37e10 on raw input, now 113.37.
+    - **Same bug in `generic_hf` on Timer**: `TimerForPrediction.forward` defaults to `revin=False`, and
+      the adapter's `generate` attempt always failed silently, so predict fell back to an unnormalized
+      forward. The adapter now passes `revin=True` when a checkpoint's forward declares it defaulting to
+      False. Timer residual ×0.001 / ×1000: 49.7334 / 3.8053 → 0.0198 / 0.0214.
+    - Lag-Llama is not affected (it always RobustScales). Its apparent residual (~1.8) was sampling
+      noise: unseeded noise floor 1.335.
+    - `analysis/frontend.py::_predict_batched` now reseeds every call, so sampled models' residuals no
+      longer include sampling noise (Sundial noise floor 0.357 at no rescale).
+    - The frontend report flags a model whose worst residual exceeds max(1.0, 10× the peers' median),
+      naming the factor and both possible causes.
+    - Tests: the plants each failed their test (floor rule → 2 failed, normalization removed → 4
+      failed, reseed removed → the seeding test fails).
+    - **Consequence:** every existing run's Sundial numbers were computed on raw input. On v1 the
+      behavioural effect is small, but activations, SAEs and concept results for Sundial differ, so
+      they need a rerun.
     - The reference run still uses `large_run.yaml`. A full pipeline rerun on v2 has not been done.
   - The built corpus is at repo-root `benchmark_large_v2/` (untracked, like `benchmark_large/`).
     Rebuild with `run_full.py --config configs/large_run_v2.yaml --references monash
