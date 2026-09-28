@@ -166,9 +166,10 @@ isn't stale — CI runs this.
   the `frontend` stage's scale-equivariance residual: the report flags a
   value above `max(1.0, 10x the peers' median)`.
 - **Sampled decoders.** A model whose `predict()` samples (Chronos-T5,
-  Sundial) needs a **seeded** `predict()`, and any two calls being compared
-  must use the **same** seed. Free control: predict twice with no patch at
-  all and require bit-identical output.
+  Sundial, Lag-Llama — autoregressive sampling from a StudentT head) needs a
+  **seeded** `predict()`, and any two calls being compared must use the
+  **same** seed. Free control: predict twice with no patch at all and require
+  bit-identical output.
 - **Precision.** Forward passes run under bf16 autocast by default. The
   clean cache used for patching (`extraction.hooks`/`capture_raw_tokens`)
   runs with autocast **off**, specifically to match `predict()`'s precision

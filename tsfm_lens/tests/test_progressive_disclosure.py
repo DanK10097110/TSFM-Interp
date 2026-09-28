@@ -78,10 +78,15 @@ def test_rendered_report_finding_items_are_all_tagged_registered_or_exploratory(
     n_findings = len(re.findall(r"<li class=\"(?:registered|exploratory)\">", html))
     assert n_findings > 0
     # every <li> inside the findings block carries exactly one of the two tags
-    # (bounded by the first rendered <section>, since the findings <div> has
-    # nested <div>s of its own and a naive first-</div> split would truncate
-    # too early)
-    findings_block = html.split('<details class="findings">', 1)[1].split('<section id="sec-', 1)[0]
+    # (bounded below by "How to read this report" -- `_how_to_read()` renders
+    # unconditionally, immediately after the findings appendix's closing
+    # </details>. The findings appendix is the LAST thing rendered inside
+    # REPORT_PARTS's loop of <section id="sec-..."> elements -- it is an
+    # appendix after every numbered Part, not interleaved between sections --
+    # so there is no later "<section id=\"sec-" to bound on, and the findings
+    # <div> has nested <div>s/<details> of its own, so a naive first-</div> or
+    # first-</details> split would truncate too early)
+    findings_block = html.split('<details class="findings"', 1)[1].split('id="how-to-read"', 1)[0]
     untagged = re.findall(r"<li(?![^>]*class=\"(?:registered|exploratory)\")", findings_block)
     assert untagged == []
 

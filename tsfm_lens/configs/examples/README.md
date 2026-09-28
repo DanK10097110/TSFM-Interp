@@ -9,8 +9,9 @@ actively-used configs (see each header for its source), not new
 experiments — the full config catalog and its dev/main split are documented
 in [`../README.md`](../README.md).
 
-`--list-configs` only scans `configs/*.yaml` directly, so these do not
-appear in its output; validate one with:
+`--list-configs` lists these too, under an `examples/` prefix (e.g.
+`examples/short_1model`) so the printed name is the actual `--config` path.
+Validate one with:
 
 ```bash
 python run.py --config configs/examples/<name>.yaml --doctor

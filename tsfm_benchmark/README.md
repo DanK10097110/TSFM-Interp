@@ -108,7 +108,7 @@ redundancy (cross-correlation/DTW) and catch22 feature-space diversity are
 kept separate until the report, and diversity is always computed in feature
 space, never on the UMAP coordinates used only for the plot. See
 [`benchmark_validation/README.md`](benchmark_validation/README.md) for how
-each check works, and [`example_runs/WALKTHROUGH.md`](example_runs/WALKTHOUGH.md)
+each check works, and [`example_runs/WALKTHROUGH.md`](example_runs/WALKTHROUGH.md)
 for the full command-by-command walkthrough of both pipelines.
 
 ## CLI quickstart
@@ -135,7 +135,7 @@ PYTHONPATH=. python3 example_runs/run_validation.py \
 ```
 
 `run_full.py --help` and `run_validation.py --help` are the authoritative
-flag lists; see [`example_runs/WALKTHOUGH.md`](example_runs/WALKTHOUGH.md)
+flag lists; see [`example_runs/WALKTHROUGH.md`](example_runs/WALKTHROUGH.md)
 for what each flag does and what each command produces.
 
 ## Adding a real-data source

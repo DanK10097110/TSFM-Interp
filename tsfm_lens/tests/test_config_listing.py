@@ -59,9 +59,39 @@ def test_listing_covers_every_yaml_in_the_directory():
         _print_config_listing(CONFIGS)
     out = buf.getvalue()
     names = sorted(p.stem for p in CONFIGS.glob("*.yaml"))
-    assert f"{len(names)} configs" in out
+    example_names = sorted(p.stem for p in (CONFIGS / "examples").glob("*.yaml"))
+    assert f"{len(names) + len(example_names)} configs" in out
     missing = [n for n in names if n not in out]
     assert not missing, f"configs absent from the listing: {missing}"
+
+
+def test_examples_subdirectory_configs_are_listed_with_a_prefix():
+    """`configs/examples/` holds the curated, doc-verified starting points
+    (`configs/examples/README.md`). They must show up in `--list-configs`
+    too -- a listing that only covers the ~50 dev configs and silently
+    excludes the ones a newcomer is pointed at would defeat the point of
+    curating them -- and with an `examples/` prefix so the printed name is
+    the actual `--config` path to pass."""
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        _print_config_listing(CONFIGS)
+    out = buf.getvalue()
+    assert "examples/short_1model" in out
+    assert "examples/smoke_mock" in out
+
+
+def test_ladder_subdirectory_is_still_excluded():
+    """`configs/_ladder/`'s expanded scaling-ladder configs are machine-
+    generated from `scaling_ladder_chronos.yaml` and were never part of this
+    listing; adding `examples/` must not accidentally widen the scan to every
+    subdirectory."""
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        _print_config_listing(CONFIGS)
+    out = buf.getvalue()
+    ladder_names = [p.stem for p in (CONFIGS / "_ladder").glob("*.yaml")]
+    assert ladder_names, "fixture assumption: _ladder/ has expanded configs to check against"
+    assert not any(n in out for n in ladder_names)
 
 
 def test_disabled_stages_are_reported_from_the_config_itself():

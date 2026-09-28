@@ -33,16 +33,19 @@ override).
 ## Listing and validating
 
 ```bash
-python run.py --list-configs                    # every configs/*.yaml, shape/adapters/purpose derived from its own contents
+python run.py --list-configs                    # every configs/*.yaml plus configs/examples/*.yaml, shape/adapters/purpose derived from its own contents
 python run.py --config configs/<name>.yaml --doctor   # full preflight, incl. loading every model
 ```
 
 `--list-configs` derives everything it prints from the file itself (model
 count → run shape, `enabled: false` flags → which stages are off), not from a
 hand-maintained description — the shape and purpose columns cannot go stale
-the way a hand-written index would. It only scans `configs/*.yaml` directly
-(not subdirectories), so the curated files under `configs/examples/` (below)
-don't appear in its output; validate those with `--doctor` instead.
+the way a hand-written index would. It scans `configs/*.yaml` plus, as a
+second, separately-counted group, `configs/examples/*.yaml` (below), listed
+with an `examples/` prefix (e.g. `examples/short_1model`) so the printed name
+is the actual `--config` path. It does not recurse into any other
+subdirectory (`configs/_ladder/`'s machine-expanded scaling-ladder configs
+stay out of the listing, as before).
 
 ## Configs on `main`
 
@@ -64,8 +67,8 @@ don't appear in its output; validate those with `--doctor` instead.
 
 A smaller, purpose-built set for someone landing on this repo — see
 [`examples/README.md`](examples/README.md) for what each one demonstrates and
-how it was validated. They are not part of `--list-configs`'s scan (see
-above); load them with `--config configs/examples/<name>.yaml`.
+how it was validated. `--list-configs` includes them under an `examples/`
+prefix (see above); load one with `--config configs/examples/<name>.yaml`.
 
 ## Experiment configs (dev branch only)
 

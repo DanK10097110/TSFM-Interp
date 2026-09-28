@@ -132,16 +132,31 @@ def _print_config_listing(config_dir: Path) -> None:
     to grep the directory. This prints them grouped by run shape with each
     file's own header sentence, so the answer to "which config do I run" is a
     command rather than a directory listing.
+
+    Scans `config_dir` itself (never recursively, so `_ladder/`'s expanded
+    ladder configs stay out of the listing as before) plus, separately,
+    `config_dir/examples/` -- the curated, doc-verified starting points
+    (`configs/examples/README.md`). Those are listed with an `examples/`
+    prefix on their name so the run command shown for them is correct
+    (`python run.py --config configs/examples/<name>.yaml`) and so they read
+    as a distinct, smaller set rather than being lost among ~50 dev configs.
     """
     paths = sorted(config_dir.glob("*.yaml"))
-    if not paths:
+    example_dir = config_dir / "examples"
+    example_paths = sorted(example_dir.glob("*.yaml")) if example_dir.is_dir() else []
+    if not paths and not example_paths:
         print(f"no configs found in {config_dir}")
         return
     rows = [_config_summary(p) for p in paths]
+    for p in example_paths:
+        row = _config_summary(p)
+        row["name"] = f"examples/{row['name']}"
+        rows.append(row)
     order = {"solo": 0, "pair": 1, "panel": 2, "-": 3, "?": 4}
     rows.sort(key=lambda r: (order.get(r["shape"], 9), r["name"]))
     width = max(len(r["name"]) for r in rows)
-    print(f"{len(rows)} configs in {config_dir}\n")
+    suffix = f" ({len(example_paths)} under examples/)" if example_paths else ""
+    print(f"{len(rows)} configs in {config_dir}{suffix}\n")
     shape = None
     for row in rows:
         if row["shape"] != shape:

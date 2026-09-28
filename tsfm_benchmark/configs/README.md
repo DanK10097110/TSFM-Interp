@@ -18,7 +18,7 @@ PYTHONPATH=. python3 example_runs/run_full.py --config configs/<name>.yaml --out
 Paths inside a config (e.g. a `source_config` referencing a local file) are
 relative to wherever you invoke the command from, not to the config file
 itself — by convention that's always `tsfm_benchmark/`. See
-[`../example_runs/WALKTHOUGH.md`](../example_runs/WALKTHOUGH.md) for the full
+[`../example_runs/WALKTHROUGH.md`](../example_runs/WALKTHROUGH.md) for the full
 flag reference and what each run produces.
 
 ## Configs on `main`

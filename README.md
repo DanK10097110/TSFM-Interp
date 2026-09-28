@@ -1,4 +1,4 @@
-# TSFM Interpretability Pipeline
+# TSFM-Lens
 
 **TSFM-Lens** is a mechanistic-interpretability toolkit for time-series
 foundation models (TSFMs). It compares architecturally different models —
@@ -14,10 +14,15 @@ corpus, not a single-model microscope.
 
 ## What it answers
 
-- What interpretable concepts does a TSFM actually learn, and do they
-  transfer across a probe drawn from its own dictionary?
+- What interpretable concepts does a TSFM actually learn — as **causal**
+  features (a sparse-autoencoder feature an ablation battery confirms
+  actually moves the forecast), not just activations that happen to
+  correlate with something?
 - Are those concepts **shared** across architecturally different models, or
-  does each model learn something unique?
+  does each model learn something unique? The **concept atlas** clusters each
+  model's causal features into concept families, then tests every family for
+  transfer to every other model — turning "these representations look
+  similar" into a causal, cross-model claim.
 - Do the concepts **causally** affect the forecast, or are they merely
   correlated with it?
 - **Where in depth** does a model's forecast take shape?
@@ -72,6 +77,16 @@ and swap in a real adapter (see
 [`tsfm_lens/configs/examples/short_1model.yaml`](tsfm_lens/configs/examples/short_1model.yaml)
 and [`tsfm_lens/docs/ADDING_A_MODEL.md`](tsfm_lens/docs/ADDING_A_MODEL.md)).
 
+The smoke config skips the flagship analysis for speed: on a real multi-model
+run (see
+[`tsfm_lens/configs/examples/medium_2model.yaml`](tsfm_lens/configs/examples/medium_2model.yaml)
+or `large_4model.yaml`), the `sae` and `concepts` stages train a sparse
+autoencoder per model/layer, find which features are **causal** via an
+ablation battery, cluster each model's causal features into **concept
+families**, and test every family for **cross-model transfer** — the concept
+atlas described in [`tsfm_lens/README.md`](tsfm_lens/README.md#concepts)
+(see also [`#sae`](tsfm_lens/README.md#sae)).
+
 An example run's report and artifacts will be published under `examples/` in
 the repo root — **coming with the first release run**; until then, the smoke
 report above and
@@ -111,7 +126,7 @@ narrative summary:
 | Chronos-Bolt | Encoder + patch regression head | Deterministic | Encoder + head |
 | Chronos-2 | Encoder-only, adds cross-series GROUP attention (out of scope) | Deterministic | Encoder |
 | Sundial | Decoder-only, flow-matching head | Sampled | Full captured stack |
-| Lag-Llama | Decoder-only (contrib adapter) | Deterministic | Full captured stack |
+| Lag-Llama | Decoder-only (contrib adapter) | Sampled (StudentT head) | Full captured stack |
 | `generic_hf` (zero-code) | Whatever the checkpoint is — probed, not hand-declared | Depends on checkpoint | Verified live on Timer (`thuml/timer-base-84m`) |
 | `mock_*` | Synthetic patch/step/encoder-decoder/wave architectures | Deterministic | Used for the CPU-only smoke pipeline and adapter-conformance tests |
 
