@@ -1,4 +1,8 @@
-# Paper: TSFM-Lens (JMLR draft)
+# Paper: TSFM-Lens (JMLR drafts)
+
+Two versions: the full JMLR paper (`main.tex`, under 30 pages including references and appendix)
+and a short JMLR MLOSS-track software paper (`mloss/main.tex`, under 4 pages excluding references,
+sharing `jmlr2e.sty` and `references.bib`; build it from inside `mloss/` with the same commands).
 
 `main.tex` + `sections/*.tex` + `references.bib`, using the official JMLR style
 (`jmlr2e.sty`, from https://github.com/JmlrOrg/jmlr-style-file). Build:
@@ -14,7 +18,7 @@ python figures/make_figures.py            # reads ../examples/concept_atlas_v2/r
 python figures/make_figures.py --run <any run dir>
 ```
 
-`figures/report_*.png` are headless-Chrome screenshots of
+`figures/report_*.png` are headless-Chrome screenshots of (`report_l3_crop.png` is a crop of `report_sec-l3.png`)
 `examples/concept_atlas_v2/report.html`.
 
 Before submission: remove the `preprint` option, fill in the funding /

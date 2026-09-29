@@ -1,107 +1,67 @@
 \section{Measurement Methods}
 \label{sec:methods}
 
-This section defines what each stage measures. Throughout, $x\in\mathbb{R}^{T}$ is a context of length
-$T$ (512 in the case study), $y\in\mathbb{R}^{H}$ the true continuation ($H=64$), $\hat y$ a model's point
-forecast and $h^{(\ell)}$ the residual stream after block $\ell$.
+Throughout, $x\in\mathbb{R}^{T}$ is a context ($T=512$ in the case study), $y\in\mathbb{R}^{H}$ its
+continuation ($H=64$), $\hat y$ a point forecast and $h^{(\ell)}$ the residual stream after block $\ell$.
 
-\subsection{Behavior and cost (L0)}
+\subsection{Behavior, geometry and perturbation (L0--L3)}
 \label{sec:l0}
-
-Accuracy is scored per series with MASE \citep{hyndman2006mase},
-\begin{equation}
-  \mathrm{MASE}(\hat y, y) \;=\; \frac{\tfrac1H\sum_{t=1}^{H}|y_t-\hat y_t|}
-       {\max\!\big(\tfrac{1}{T-m}\sum_{t=m+1}^{T}|x_t-x_{t-m}|,\;\epsilon_x\big)},
-\end{equation}
-with the seasonal lag $m$ taken from ground truth where available, and a scale floor $\epsilon_x$
-because on intermittent series the naive denominator collapses and MASE spuriously improves
-(\fid{MN-23}). sMAPE, pinball loss \citep{gneiting2007scoring} and interval calibration are reported
-alongside. Model pairs are compared with a paired bootstrap over series, per family and overall, with
-Holm correction across all pairs and families \citep{holm1979}. Each model's repeat-run \emph{noise floor}
-(two identical runs with different seeds) is measured so that a difference can be read in floor units;
-a deterministic model has a floor of zero, which the report states rather than using as a referee. The
-\texttt{budget} stage measures parameters by role, FLOPs with PyTorch's \texttt{FlopCounterMode},
-latency, memory and the share of forecast FLOPs spent inside captured blocks (Table~\ref{tab:models}).
-The \texttt{frontend} stage tests the tokenizer before any layer runs: scale equivariance (forecasting
-$c\,x$ should give $c\,\hat y$), NaN handling and quantization resolution.
-
-\subsection{Geometry and linear translatability (L1, L2)}
 \label{sec:l1l2}
-
-For aligned activations $A\in\mathbb{R}^{n\times d_a}$ and $B\in\mathbb{R}^{n\times d_b}$ over the same
-$n$ series (mean-pooled over windows, then centered), linear CKA \citep{kornblith2019cka} is
-\begin{equation}
-  \mathrm{CKA}(A,B) \;=\; \frac{\|B^{\top}A\|_F^2}{\|A^{\top}A\|_F\,\|B^{\top}B\|_F}.
-\end{equation}
-It is computed for every layer pair of every model pair, with a cluster bootstrap over series and a
-shuffled-series null that breaks correspondence while preserving each model's marginal geometry. L2 fits
-ridge maps between layers and reports only the \emph{gain} of the stitched prediction over an
-input-feature baseline, never a raw $R^2$, because a large part of any layer is linearly predictable from
-the input alone. Activation clusterings are compared across models with adjusted mutual information
-\citep{vinh2010ami}. These are \ev{geometric} and \ev{linear-translatable} claims; they say nothing about
-what the model uses.
-
-\subsection{Perturbation and patching (L3)}
 \label{sec:l3}
 
-For each corruption $c$ of the nine in Section~\ref{sec:benchmark}, L3 records a sensitivity
-\emph{fingerprint}, the relative activation change $\|h^{(\ell)}(c(x))-h^{(\ell)}(x)\|/\|h^{(\ell)}(x)\|$ per
-layer, and a within-model \emph{restoration curve}: the fraction of the forecast damage undone by
-patching the clean activations of layer $\ell$ (whole layer, or one window at a time) into the corrupted
-forward pass. Two models are compared by rank-correlating their fingerprints on the relative depth range
-they share, never by transplanting activations between models. Restoration is \ev{causal within-model};
-agreement between models is correlational.
+\paragraph{L0.} Accuracy is MASE \citep{hyndman2006mase} per series, with the seasonal lag from ground truth
+and a scale floor on the naive denominator, without which intermittent series spuriously improve
+(\fid{MN-23}); sMAPE, pinball loss \citep{gneiting2007scoring} and calibration are reported alongside. Pairs
+are compared by a paired series bootstrap per family, Holm-corrected across all pairs and families
+\citep{holm1979}, and read against each model's repeat-run noise floor. \texttt{budget} measures parameters,
+FLOPs, latency and captured-FLOP share; \texttt{frontend} tests scale equivariance, NaN handling and
+quantization before any layer runs.
 
-\subsection{Depth: lens, internals and coverage}
+\paragraph{L1, L2.} For aligned, window-pooled and centered activations $A,B$ over the same series, linear
+CKA \citep{kornblith2019cka} $\|B^{\top}A\|_F^2/(\|A^{\top}A\|_F\|B^{\top}B\|_F)$ is computed for every layer
+pair of every model pair, with a cluster bootstrap and a shuffled-series null. L2 fits ridge maps between
+layers and reports only the \emph{gain} over an input-feature baseline, since much of any layer is linearly
+predictable from the input. Cluster agreement uses AMI \citep{vinh2010ami}. These claims are
+\ev{geometric} or \ev{linear-translatable}.
+
+\paragraph{L3.} For each corruption $c$, the sensitivity \emph{fingerprint} is the relative activation change
+$\|h^{(\ell)}(c(x))-h^{(\ell)}(x)\|/\|h^{(\ell)}(x)\|$ per layer, and the \emph{restoration curve} is the
+fraction of forecast damage undone by patching clean activations of layer $\ell$ (whole, or per window) into
+the corrupted pass. Models are compared by rank-correlating fingerprints on shared relative depth, never by
+transplanting activations. Restoration is \ev{causal within-model}; cross-model agreement is correlational.
+
+\subsection{Depth}
 \label{sec:depth}
 
-A skip lens decodes the forecast from each layer through the model's own head, and a tuned ridge lens
-\citep{belrose2023tuned} fits a per-layer readout; the crystallization depth is the shallowest layer
-whose lens forecast is within tolerance of the final one. \texttt{internals} reports per-layer effective
-dimension (participation ratio), decodability of benchmark families and CKA to the input.
-\texttt{layer\_screen} selects the layers that deserve expensive analysis with a cheap proxy
-(\texttt{work\_bend}). Two design points qualify every depth claim. First, the depth axis is the fraction of
-the \emph{whole} stack's blocks, including uncaptured parts, so Chronos-T5's last captured encoder block
-sits at 0.478 rather than 1.0 (\fid{DE-04}). Second, the lens is withheld for a model whose head reads
-positions the patch never writes (\texttt{forecast\_reads\_patched\_positions}), because such a lens returns
-a perfectly flat and meaningless curve (\fid{DE-03}).
+A skip lens decodes the forecast from each layer through the model's head and a tuned ridge lens
+\citep{belrose2023tuned} fits per-layer readouts; \texttt{internals} reports effective dimension, family
+decodability and CKA to the input. The depth axis is the fraction of the \emph{whole} stack, including
+uncaptured parts, so Chronos-T5's last captured block sits at 0.478 (\fid{DE-04}); and the lens is withheld
+for a model whose head reads positions the patch never writes, where it would return a flat, meaningless
+curve (\fid{DE-03}).
 
 \subsection{Causal concepts}
 \label{sec:concepts}
 
-\paragraph{Sparse dictionaries.} For each target layer, \tool{} trains a TopK sparse autoencoder
-\citep{makhzani2013ksparse,gao2025topk} on token-level activations,
-\begin{equation}
-  z(h) = \operatorname{TopK}\!\big(W_e(h-b_d)+b_e\big),\qquad \hat h = W_d\,z(h) + b_d ,
-\end{equation}
-with the dictionary size chosen by a search, an auxiliary loss that revives dead atoms and a minimum
-number of training steps (\fid{MP-03}). Fidelity, dead rate and forecast preservation are reported per
-target. Because a single SAE seed is not reproducible \citep{paulo2025seeds}, $n_{\text{seeds}}$ replicate
-dictionaries are trained at the primary's size to measure a within-model reproducibility ceiling
-(\fid{MP-04}).
+\paragraph{Sparse dictionaries.} Each target layer gets a TopK SAE \citep{makhzani2013ksparse,gao2025topk},
+$z(h)=\operatorname{TopK}(W_e(h-b_d)+b_e)$, $\hat h=W_d z(h)+b_d$, with searched dictionary size, an auxiliary
+loss reviving dead atoms and a minimum step count (\fid{MP-03}). Since single seeds are not reproducible
+\citep{paulo2025seeds}, replicate dictionaries give a within-model reproducibility ceiling (\fid{MP-04}).
 
-\paragraph{The ablation battery.} A feature $i$ is tested on the $k$ series on which it fires most. For
-those series, the layer's activations are replaced by the SAE reconstruction with $z_i$ set to zero, and the
-forecast is compared with the forecast under the full reconstruction:
+\paragraph{The ablation battery.} Feature $i$ is tested on the $k$ series where it fires most, by comparing
+the forecast under the reconstruction with $z_i=0$ against the full reconstruction:
 \begin{equation}
-  \Delta_i^{(c)}(x) \;=\; g_c\!\big(f(x;\,h^{(\ell)}\!\leftarrow\!\hat h_{-i})\big) - g_c\!\big(f(x;\,h^{(\ell)}\!\leftarrow\!\hat h)\big),
+  \Delta_i^{(c)}(x) = g_c\big(f(x;h^{(\ell)}\!\leftarrow\!\hat h_{-i})\big) - g_c\big(f(x;h^{(\ell)}\!\leftarrow\!\hat h)\big),
   \label{eq:ablation}
 \end{equation}
-where $f(x;\,h\!\leftarrow\!\cdot)$ is the forecast with layer $\ell$ patched and $g_c$ is one of nine
-forecast \emph{channels}: trend, seasonal strength, spectral centroid, level, dispersion, near- and
-far-horizon shape distance, MASE and flatness. Using the full reconstruction, not the clean forecast, as the
-baseline keeps the dictionary's own reconstruction error from being charged to the feature. The
-\emph{null} removes a random unit direction in code space, scaled to the mean magnitude the ablations
-remove, on the \emph{same} series; the feature clears channel $c$ if its mean $|\Delta_i^{(c)}|$ exceeds
-the 95th percentile of the null draws restricted to its own rows. The row matching matters: a feature
-whose top series happen to sit in a high-response regime would otherwise clear a pooled null on that
-alone. The channel vector used downstream is $v_i^{(c)} = \overline{\Delta_i^{(c)}}/q_{95}^{(c)}$, the
-signed mean effect in null units. The near- and far-horizon shape channels are distances ($\ge 0$) and are
-treated as undirected everywhere, including in generated text. Before any feature is scored, a
-\emph{reach probe} requires that patching the layer's own clean activations into itself changes the
-forecast by exactly $0.0$ and that patching another layer's activations changes it by a relative amount
-above $10^{-3}$ (Figure~\ref{fig:battery}). A target that fails the probe is withheld with its reason,
-because a table of zeros from a patch that never lands reads as ``these features do not matter''.
+where $g_c$ is one of nine forecast channels (trend, seasonal strength, spectral centroid, level, dispersion,
+near/far-horizon shape distance, MASE, flatness). Using the reconstruction as baseline keeps the SAE's error
+from being charged to the feature. The null removes a random code direction of matched magnitude on the
+\emph{same} rows; a feature clears channel $c$ if mean $|\Delta_i^{(c)}|$ exceeds the null's 95th percentile
+$q_{95}^{(c)}$, and its channel vector is $v_i^{(c)}=\overline{\Delta_i^{(c)}}/q_{95}^{(c)}$. Shape channels are
+distances and are treated as undirected. A \emph{reach probe} first requires self-patching to change the
+forecast by exactly $0.0$ and cross-layer patching by a relative $>10^{-3}$; otherwise the target is withheld
+with its reason (Figure~\ref{fig:battery}).
 
 \begin{figure}[t]
 \centering
@@ -129,73 +89,36 @@ because a table of zeros from a patch that never lands reads as ``these features
   \draw[arr] (null) -- (chan);
   \draw[arr] (chan) -- node[below,lab]{$\ge$1 clears} (vec);
 \end{tikzpicture}
-\caption{The ablation battery. A target is scored only after both reach controls pass; each feature is
-ablated on its own top-firing series and compared, channel by channel, with a random-direction null on
-exactly those series. Only features that clear at least one channel enter the concept analyses.}
+\caption{The ablation battery. A target is scored only after both reach controls pass; each feature is compared,
+channel by channel, with a random-direction null on exactly its own top-firing series.}
 \label{fig:battery}
 \end{figure}
 
-\paragraph{From features to concepts.} Causal features are grouped at three granularities, each
-answering a different question. \emph{Per-target concepts} cluster one layer's feature vectors with
-$k$-means, choosing $k$ by silhouette \citep{rousseeuw1987silhouette} among values whose smallest cluster
-has at least three members; a target with no admissible $k$ is reported as \emph{non-modular}. (Without
-the minimum-size constraint, silhouette rewards splitting off a single outlier; \fid{SH-20}.) The
-\emph{concept atlas} pools causal features from every model and layer and cuts a complete-linkage
-dendrogram at cosine 0.9, which guarantees that every pair of members has cosine at least 0.9; an atlas
-concept is a shared \emph{causal-effect profile}, not a shared input. \emph{Families} are a coarser,
-readable tiling: average linkage plus nearest-centroid assignment at cosine 0.5, with the number of
-families chosen by a parsimony rule and tested against a column-shuffle null. Families are titled
-deterministically from their directed channels (Figure~\ref{fig:families}).
+\paragraph{From features to concepts.} Causal features are grouped at three granularities. \emph{Per-target
+concepts} cluster one layer's vectors with $k$-means, choosing $k$ by silhouette
+\citep{rousseeuw1987silhouette} among values whose smallest cluster has $\ge$3 members (otherwise silhouette
+rewards splitting off an outlier; \fid{SH-20}); a target with no admissible $k$ is \emph{non-modular}. The
+\emph{atlas} pools features from all models and layers and cuts a complete-linkage dendrogram at cosine 0.9,
+so an atlas concept is a shared causal-effect profile. \emph{Families} are a coarser readable tiling (average
+linkage, cosine 0.5), tested against a column-shuffle null and titled deterministically from their channels.
 
 \subsection{Two notions of sharing}
 \label{sec:sharing}
 
-Whether a concept is ``shared'' between models is two separate questions, and conflating them produces
-wrong answers in both directions (Section~\ref{sec:controls}). \tool{} answers them separately and then
-combines them in an evidence ladder (Figure~\ref{fig:ladder}).
+``Shared'' is two questions, answered separately. \emph{Same inputs}: concept transfer asks whether a feature
+in another model separates a concept's top-$k$ series from the rest (AUC), against stratum-matched random
+subsets, in both directions (\emph{reciprocal} if both clear), with Benjamini-\allowbreak Hochberg
+\citep{benjamini1995fdr} per ordered model pair and leg. Input agreement between concept parts is top-$k$
+overlap (hypergeometric), never whole-series correlation: two sparse features can have $\rho=0.80$ with no
+shared top series (\fid{MN-19}). \emph{Same effect on the same inputs}: every reciprocal-FDR transfer is
+ablated on both sides on the same series set $U$; each side must clear its own null on $U$, and level
+concordance and shape cosine must beat both sides' activation-matched random-feature floors. Falling below the
+floors' 5th percentile is ``acts differently''; merely failing the 95th is ``no specific agreement''
+(\fid{MN-18}).
 
-\paragraph{Same inputs.} \emph{Concept transfer} asks whether some feature in another model separates a
-concept's top-$k$ firing series from the rest, scored by AUC, against a null of random series subsets
-matched on benchmark strata (family and archetype); the test is run in both directions and a transfer is
-\emph{reciprocal} if both legs clear. At atlas scale, $p$-values are corrected by Benjamini--Hochberg
-\citep{benjamini1995fdr} per ordered model pair and leg. When concept profiles compare what two concept
-parts fire on, input agreement is measured as the overlap of their top-$k$ series (hypergeometric test
-with BH), never as a whole-series correlation, because two sparse features can have $\rho=0.80$ with no
-shared top series (\fid{MN-19}).
-
-\paragraph{Same effect on the same inputs.} \emph{Shared-input causal agreement} takes every
-reciprocal-FDR transfer and ablates the feature (or concept part) on each side on the \emph{same} series
-set $U$. Each side must first clear its own random-direction null on $U$ to be scorable. Two statistics,
-level concordance and the cosine of the shape effects, must then beat both sides'
-\emph{activation-matched random-feature floors}: sets of equally active features whose ablation defines
-what agreement looks like by chance. A pair is ``same causal effect'' if both statistics beat both floors,
-``level only'' or ``shape only'' if one does, and ``acts differently'' only if a statistic falls below the
-floors' 5th percentile; failing to beat the 95th percentile is ``no specific agreement''. The distinction
-matters: absence of agreement is not evidence of disagreement (\fid{MN-18}).
-
-\paragraph{Sharing classes.} Each atlas concept then receives a \texttt{sharing\_class}: \emph{shared}
-(same effect and same inputs across models), \emph{partially shared}, \emph{convergent} (same effect,
-different inputs) or \emph{single-model}. A concept part is flagged provenance-driven when at least 80\% of
-its top series come from one real-derived generator.
-
-\begin{figure}[t]
-\centering
-\begin{tikzpicture}[
-  rung/.style={draw, rounded corners=2pt, font=\scriptsize, align=left, text width=0.78\textwidth, minimum height=6.5mm, fill=white},
-  tag/.style={font=\scriptsize\bfseries, anchor=east},
-  arr/.style={-{Stealth[length=1.5mm]}, gray!60!black}]
-  \node[rung] (r1) {\textbf{Same forecast effect:} atlas groups causal features of $\ge$2 models at pairwise cosine $\ge$0.9 \hfill \textit{causal, compared}};
-  \node[rung, above=1.2mm of r1] (r2) {\textbf{Same inputs:} the parts' top-$k$ series overlap beyond chance (hypergeometric, BH) \hfill \textit{correlational}};
-  \node[rung, above=1.2mm of r2] (r3) {\textbf{Reproducible:} concept survives independent SAE seeds (within-model ceiling) \hfill \textit{stability}};
-  \node[rung, above=1.2mm of r3] (r4) {\textbf{Other dictionaries select the same inputs:} reciprocal transfer vs.\ stratum-matched null \hfill \textit{correlational}};
-  \node[rung, above=1.2mm of r4] (r5) {\textbf{Same causal effect on the same inputs:} joint ablation on $U$ beats matched floors \hfill \textit{causal on shared inputs}};
-  \node[rung, above=1.2mm of r5, fill=accent!10] (r6) {\textbf{Confirmed on private data:} registered claim confirmed once on the sealed split \hfill \textit{held-out confirmed}};
-  \foreach \i in {1,...,6}{ \node[tag] at ($(r\i.west)+(-1mm,0)$) {L\i}; }
-\end{tikzpicture}
-\caption{The concept evidence ladder used by the report (computed by \texttt{concept\_verdicts} in \texttt{report/derived.py}).
-Every causal feature has already passed the ablation battery (Figure~\ref{fig:battery}). Each rung is a
-separate test with its own null, and the report states the highest rung each concept reaches together with
-the rule that produced its verdict. ``Shared'' in this paper means the \texttt{shared} sharing class: same
-effect (L1) and same inputs (L2).}
-\label{fig:ladder}
-\end{figure}
+The report combines these into a six-rung ladder per concept (\texttt{report/derived.py}): L1 same forecast
+effect (atlas), L2 same inputs, L3 reproducible across SAE seeds, L4 other dictionaries select the same
+inputs, L5 same causal effect on the same inputs, L6 confirmed on private data. Each atlas concept also gets a
+\texttt{sharing\_class}: \emph{shared} (same effect and inputs), \emph{partially shared}, \emph{convergent}
+(same effect, different inputs) or \emph{single-model}; a part is provenance-driven when $\ge$80\% of its top
+series come from one real-derived generator.

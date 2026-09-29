@@ -1,65 +1,31 @@
 \section{Statistical Protocol}
 \label{sec:statistics}
 
-A system that runs thousands of comparisons per report must control how often it is fooled. \tool{}
-does so with four mechanisms, summarized in Table~\ref{tab:claims}.
+Four mechanisms control how often a report with thousands of comparisons is fooled (Table~\ref{tab:claims}).
 
-\paragraph{The series is the resampling unit.} Windows of one series share its trend, noise process and
-scale, so treating them as independent overstates precision. Every interval and $p$-value in \tool{}
-resamples whole series \citep{efron1993bootstrap,cameron2008cluster}: a paired bootstrap for accuracy
-differences, a cluster bootstrap for CKA, a validation-series interval (probes held fixed) for stitching
-and a paired cluster bootstrap for patching. Train/validation splits are also made by series and sampled
-by stratum, never by slicing the head of a corpus that is stored grouped by task.
+\paragraph{The series is the resampling unit.} Windows of a series share its trend, noise and scale, so every
+interval and $p$-value resamples whole series \citep{efron1993bootstrap,cameron2008cluster}: paired bootstrap
+for accuracy, cluster bootstrap for CKA, validation-series intervals for stitching, paired cluster bootstrap for
+patching. Splits are by series and stratified, never head slices of a task-grouped corpus.
 
-\paragraph{A multiplicity ledger.} Every test is assigned to a named correction family (Holm for
-confirmatory families, Benjamini--Hochberg for discovery-oriented atlas transfers). Resampled $p$-values
-are floored at $1/n_{\text{boot}}$ \citep{phipson2010permutation}, which means a Holm family of $m$ tests
-cannot produce an adjusted $p$ below $m/n_{\text{boot}}$. The ledger computes this attainable minimum
-for every family and flags families in which no test could ever be significant, a failure mode that grows
-silently as models are added (the number of pairwise comparisons is quadratic). The example run has 45
-correction families and 3{,}599 comparisons; its most stringent L0 family (30 tests over 6 model pairs)
-has a minimum attainable Holm $p$ of 0.015 at $n_{\text{boot}}=2000$.
+\paragraph{A multiplicity ledger.} Every test belongs to a named family (Holm for confirmatory families, BH for
+discovery-oriented atlas transfers). Resampled $p$-values are floored at $1/n_{\text{boot}}$
+\citep{phipson2010permutation}, so a Holm family of $m$ tests cannot go below $m/n_{\text{boot}}$; the ledger
+computes this minimum per family and flags families that can never be significant, a failure that grows
+quadratically with the number of models. The example has 45 families and 3{,}599 comparisons; its strictest L0
+family (30 tests) has a minimum Holm $p$ of 0.015 at $n_{\text{boot}}=2000$.
 
-\paragraph{Noise floors and power.} Effects are read against reference values that come from the run
-itself: repeat-run noise floors for accuracy, shuffled-series nulls for CKA, input-feature baselines for
-stitching, random-direction nulls and activation-matched floors for ablations, and replicate-seed
-ceilings for SAE reproducibility. Before the private split is opened, the confirm stage computes each
-registered claim's minimum detectable effect at the private sample size by simulation (for example, a
-$\Delta$MASE of 0.155 at $n=240$ with 80\% power), so that a non-replication can be read as ``absent'' or
-``underpowered''.
+\paragraph{References from the run itself.} Effects are read against repeat-run noise floors, shuffled-series
+nulls, input-feature baselines, random-direction nulls, activation-matched floors and replicate-seed ceilings.
+Before the private split is opened, \texttt{confirm} simulates each claim's minimum detectable effect (e.g.\
+$\Delta$MASE 0.155 at $n=240$, 80\% power), so a non-replication reads as ``absent'' or ``underpowered''.
 
-\paragraph{Register, then confirm once.} The \texttt{register} stage freezes hypotheses drawn from dev
-results into a registry, together with the content hash of each dev artifact a hypothesis came from; the
-registry itself is hashed. The \texttt{confirm} stage refuses to run if a hash does not match, requires
-the private split's seal to verify, tests each claim once and refuses to overwrite its own artifact.
-Forcing a rerun is recorded as \texttt{repeated\_look}, and a consumed split is replaced by minting a new
-epoch (Figure~\ref{fig:confirm}). This is pre-registration \citep{nosek2018preregistration} applied to a
-software pipeline, and a guard against adaptive overfitting of the holdout \citep{dwork2015reusable}.
-Findings that were never registered cannot be rescued after the fact.
-
-\begin{figure}[t]
-\centering
-\begin{tikzpicture}[
-  box/.style={draw, rounded corners=2pt, align=center, font=\scriptsize, minimum height=9mm, fill=white, text width=24mm},
-  arr/.style={-{Stealth[length=1.6mm]}, gray!70!black},
-  lab/.style={font=\scriptsize\itshape, text=gray!70!black}]
-  \node[box, fill=soft] (dev) at (0,0) {dev split\\(exploratory, reusable)};
-  \node[box] (find) at (3.7,0) {typed findings\\(126 in example)};
-  \node[box] (reg) at (7.4,0) {registry: claims +\\artifact hashes,\\sha256-pinned};
-  \node[box, fill=accent!12] (conf) at (11.2,0) {confirm: one look,\\Holm across claims};
-  \node[box, fill=soft] (priv) at (11.2,-2.3) {private split\\(seal verified)};
-  \node[box, fill=soft] (epoch) at (7.4,-2.3) {fresh epoch\\(new seed stride)};
-  \draw[arr] (dev) -- (find);
-  \draw[arr] (find) -- node[above,lab]{select} (reg);
-  \draw[arr] (reg) -- (conf);
-  \draw[arr] (priv) -- node[right,lab]{opened once} (conf);
-  \draw[arr, dashed] (conf.south west) -- node[above left,lab]{if consumed} (epoch.north east);
-  \draw[arr, dashed] (epoch) -- node[below,lab]{replaces} (priv);
-\end{tikzpicture}
-\caption{The confirmatory protocol. Only claims registered before the private split is opened can be
-confirmed; a second look is recorded, and replicating again requires a newly minted epoch.}
-\label{fig:confirm}
-\end{figure}
+\paragraph{Register, then confirm once.} \texttt{register} freezes hypotheses from dev results together with the
+content hash of each source artifact, and hashes the registry. \texttt{confirm} refuses mismatched hashes,
+requires the private seal to verify, tests each claim once and refuses to overwrite its artifact; a forced rerun
+is recorded as \texttt{repeated\_look}, and a consumed split is replaced by a fresh epoch. This is
+pre-registration \citep{nosek2018preregistration} in software, guarding against adaptive holdout reuse
+\citep{dwork2015reusable}; unregistered findings cannot be rescued.
 
 \begin{table}[t]
 \centering

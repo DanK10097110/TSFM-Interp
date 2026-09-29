@@ -1,46 +1,28 @@
 \section{Design Principles}
 \label{sec:principles}
 
-\tool{} is opinionated. Each principle below corresponds to a failure that actually happened during
-development; Section~\ref{sec:controls} lists them with their numbers. The principles are enforced in
-code (as gates, refusals and tests) rather than left as recommendations in documentation.
-
-\begin{description}[leftmargin=1.2em,font=\normalfont\bfseries]
-\item[P1. Ground truth by construction.] Every probe is first validated on a case whose answer is
-  known. The benchmark records every generative component of every synthetic series (trend order and
-  scale, seasonal periods, AR coefficients, changepoints, anomalies, intermittency), so ``does the model
-  represent seasonality?'' can be checked against the truth before it is asked of real data. Every
-  controlled perturbation (detrending, deseasonalizing, level shifts and six others) is applied to
-  series whose components are known, so its effect on the input is known as well.
-\item[P2. Alignment is measured, not declared.] A token's time span is measured from the model's own
-  impulse response and checked against what the adapter declares. Cross-model analysis happens only
-  on a common window axis (Section~\ref{sec:alignment}). A model whose tokens are not time-localized is
-  routed to behavioral analysis only, with the verdict rendered in the report.
-\item[P3. A causal claim needs a null, a reach control and a same-seed baseline.] Every intervention
-  is compared with a random intervention of matched size on the \emph{same} series. Before any
-  intervention is trusted, patching a layer into itself must change the forecast by exactly $0.0$,
-  and patching in a different layer's activations must change it by a nonzero amount. Sampled models
-  are seeded identically in every pair of compared calls.
-\item[P4. The series is the unit of inference.] Windows within a series are not independent. All
-  confidence intervals and $p$-values resample series (paired, cluster or validation-series
-  bootstraps), all $p$-values are floored at $1/n_{\text{boot}}$, and every correction family's
-  attainable minimum is checked against its threshold.
-\item[P5. Explore, then confirm once.] Everything computed on the dev split is exploratory.
-  Hypotheses are frozen with the content hash of the artifact they came from, and the sealed private
-  split is opened once. A second look is recorded as a repeated look, and a fresh epoch must be minted
-  to confirm again.
-\item[P6. Every claim is typed, and failures are loud.] Each finding carries an evidence class
-  (\ev{behavioral}, \ev{descriptive}, \ev{geometric}, \ev{linear-translatable},
-  \ev{causal within-model}, \ev{illustrative}, \ev{held-out confirmed}) and a caveat generated from
-  that class. An unsupported capability is skipped with a reason rendered in the report. An
-  unresolvable slice disables the analysis rather than guessing, and a broken assumption raises.
-\item[P7. Accessible by default.] The deliverable is one self-contained HTML file that a person with no
-  interpretability background can read. Every figure has a caption and a ``What does this mean?''
-  explainer that states the figure's purpose, how to read it and its limitations. The headline
-  scorecard is computed from artifacts by a pure function; no verdict in it is written by hand.
+Each principle corresponds to a failure that actually happened (Section~\ref{sec:controls}) and is enforced
+in code as a gate, refusal or test.
+\begin{description}[leftmargin=1.2em,font=\normalfont\bfseries,itemsep=1pt]
+\item[P1. Ground truth by construction.] Every probe is first validated on a case whose answer is known: the
+  benchmark records every generative component of every synthetic series, and every perturbation is applied
+  to series whose components are known.
+\item[P2. Alignment is measured, not declared.] Token spans are measured from impulse responses; cross-model
+  analysis happens only on a common window axis; models that are not time-localized receive behavioral
+  analysis only.
+\item[P3. Causal claims need a null, a reach control and a same-seed baseline.] Every intervention is compared
+  with a random intervention of matched size on the same series; self-patching must change the forecast by
+  exactly $0.0$ and cross-patching by a nonzero amount; sampled models are seeded identically in compared calls.
+\item[P4. The series is the unit of inference.] All intervals and $p$-values resample series; $p$-values are
+  floored at $1/n_{\text{boot}}$, and each correction family's attainable minimum is checked.
+\item[P5. Explore, then confirm once.] Dev results are exploratory; registered claims are tested once on a
+  sealed split, and a second look is recorded.
+\item[P6. Every claim is typed; failures are loud.] Each finding carries an evidence class
+  (\ev{behavioral}, \ev{descriptive}, \ev{geometric}, \ev{linear-translatable}, \ev{causal within-model},
+  \ev{illustrative}, \ev{held-out confirmed}) and a generated caveat; unsupported analyses are skipped with a
+  rendered reason.
+\item[P7. Accessible by default.] The deliverable is one HTML file a non-specialist can read, with every figure
+  explained and every verdict derived from artifacts rather than written by hand.
 \end{description}
-
-Two further engineering rules protect reproducibility. New behavior is opt-in, so that sealed corpora
-regenerate bit-exactly (golden hashes are pinned in the benchmark tests). And every stage's
-configuration is fingerprinted, so a cached artifact computed under a different configuration is
-refused rather than silently reused.
+New behavior is opt-in so sealed corpora regenerate bit-exactly, and stage configurations are fingerprinted
+so stale cached artifacts are refused.

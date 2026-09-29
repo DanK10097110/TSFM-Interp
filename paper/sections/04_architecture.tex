@@ -1,112 +1,59 @@
 \section{System Architecture}
 \label{sec:architecture}
 
-\subsection{Repository layout}
 \label{sec:layout}
-
-The repository (Figure~\ref{fig:layout}) contains two separately installable packages and a
-published example run. The \texttt{main} branch is the clean, publishable surface. A \texttt{dev}
-branch preserves the full research history: the research log from which \repo{FINDINGS.md} is
-curated, standalone study drivers and experiment configurations that reproduce individual findings.
-
-\begin{figure}[t]
-\centering
-\footnotesize
-\begin{minipage}{0.94\textwidth}
-\renewcommand*\DTstyle{\footnotesize\ttfamily}
-\renewcommand*\DTstylecomment{\footnotesize\rmfamily\itshape\color{gray!60!black}}
-\setlength{\DTbaselineskip}{11pt}
-\dirtree{%
-.1 TSFM-Interp/.
-.2 README.md, FINDINGS.md, DEPENDENCIES.md, CONTRIBUTING.md, CITATION.cff.
-.2 tsfm\_benchmark/\DTcomment{corpus generation and validation (installable package)}.
-.3 build\_pipeline/\DTcomment{generators, leakage audit, sealing, corruptions, counterfactuals}.
-.3 benchmark\_validation/\DTcomment{catch22 diversity, redundancy matching, split exchangeability}.
-.3 configs/, example\_runs/, tests/\DTcomment{golden-hash regeneration tests}.
-.2 tsfm\_lens/\DTcomment{model analysis (installable package)}.
-.3 run.py, configs/examples/, docs/, tests/\DTcomment{CLI, presets, adapters guide, 171 test modules}.
-.3 tsfm\_lens/.
-.4 models/\DTcomment{adapters, derived tiers, conformance, generic\_hf, template}.
-.4 extraction/\DTcomment{hooks, span discovery, alignment gate, zarr store}.
-.4 analysis/\DTcomment{L0--L3, lens, attention, statistics, register/confirm}.
-.4 sae/\DTcomment{TopK SAE, ablation battery, atlas, transfer, shared-input agreement}.
-.4 report/\DTcomment{section builders, derived scorecard, findings, sanitizer}.
-.4 pipeline.py, manifest.py, config.py\DTcomment{stages, gates, fingerprints}.
-.2 examples/concept\_atlas\_v2/\DTcomment{report.html, config.yaml, run/ (per-stage artifacts)}.
-.2 paper/\DTcomment{this paper; figures/make\_figures.py regenerates every data figure}.
-}
-\end{minipage}
-\caption{Repository layout of the \texttt{main} branch. The benchmark and analysis packages are
-independent; the example run folder contains every lightweight artifact of the run analyzed in
-Section~\ref{sec:casestudy}, so its report and this paper's figures can be regenerated without GPUs.}
-\label{fig:layout}
-\end{figure}
+The repository holds two separately installable packages: \texttt{tsfm\_benchmark} (one subpackage for
+generation, audit and sealing, another for diversity and exchangeability) and \texttt{tsfm\_lens} (subpackages for models, extraction, analysis, SAEs and the report, plus the stage
+orchestrator \texttt{pipeline.py}). The folder
+\repodir{examples/concept_atlas_v2} contains the report, configuration and every lightweight artifact of
+the run analyzed in Section~\ref{sec:casestudy}, so the report and this paper's figures can be regenerated
+without GPUs. The \texttt{main} branch is the clean publishable surface; a \texttt{dev} branch keeps the
+research log, standalone study drivers and experiment configurations.
 
 \subsection{Controlled benchmark generation}
 \label{sec:benchmark}
 
-\paragraph{Two leakage tiers.} Real data enter the benchmark only as leakage references, as realism
-calibration and as raw material for explicitly labeled generators. The \emph{synthetic} tier touches
-no real data and has exact ground truth: the \texttt{parametric} generator is additive (trend,
-multiple seasonalities, AR noise, changepoints, anomalies, random walk, intermittency and
-heteroskedasticity), and \texttt{random\_parametric} draws a recipe from one of eight frozen
-archetypes (trend-dominant, seasonal-dominant, multi-seasonal, regime-switching, AR colored noise,
-anomaly-heavy, clean low-noise, noisy chaotic), with four more available opt-in. The
-\emph{real-derived} tier (\texttt{mixture}, \texttt{block\_bootstrap} \citep{kunsch1989block} and
-\texttt{sequential\_par}) inherits its source distribution, and its ground truth is attributional (which
-source, which blocks). Every sample is labeled with its tier. Mixing the tiers in one corpus is a
-deliberate design decision: ``no leakage'' and ``realistic'' pull in opposite directions, and the
-labels let each analysis report its results per tier rather than choosing one of the two.
+Real data enter the benchmark only as leakage references, as realism calibration and as raw material for
+explicitly labeled generators. The \emph{synthetic} tier touches no real data and has exact ground truth:
+\texttt{parametric} is additive (trend, multiple seasonalities, AR noise, changepoints, anomalies, random
+walk, intermittency, heteroskedasticity), and \texttt{random\_parametric} draws a recipe from one of eight
+frozen archetypes (four more are opt-in). The \emph{real-derived} tier (\texttt{mixture},
+\texttt{block\_bootstrap} \citep{kunsch1989block}, \texttt{sequential\_par}) inherits its source distribution
+and has attributional ground truth. Because ``no leakage'' and ``realistic'' pull in opposite directions,
+each sample carries its tier label and analyses report per tier.
 
-\paragraph{Leakage audit and sealing.} Every candidate sample passes a two-stage leakage gate against
-real reference collections (the Monash archive \citep{godahewa2021monash}): a cheap prefilter,
-then banded dynamic time warping \citep{sakoe1978dtw}. It must also pass a cross-split near-duplicate
-check. Dev and private splits draw from disjoint seed ranges; seeds are mixed with SHA-256 (never a
-process-salted hash), and every sample is hashed so that \texttt{load\_sealed(verify=True)} detects
-tampering. Fresh private \emph{epochs} are minted by striding the seed space, so a consumed private
-split can be replaced without touching the dev split.
+Every sample passes a two-stage leakage gate against the Monash archive \citep{godahewa2021monash} (a cheap
+prefilter, then banded DTW; \citealp{sakoe1978dtw}) and a cross-split near-duplicate check. Dev and private
+splits use disjoint seed ranges mixed with SHA-256; every sample is hashed so that
+\texttt{load\_sealed(verify=True)} detects tampering, and fresh private \emph{epochs} are minted by striding
+the seed space. A separate validation package measures redundancy by shape matching and diversity in the
+catch22 feature space \citep{lubba2019catch22} (participation-ratio dimension, \citealp{gao2017pr};
+nearest-neighbor tails), never on a 2-D embedding, and tests dev/private exchangeability with an energy
+distance \citep{szekely2013energy} plus TOST equivalence \citep{schuirmann1987tost} (v1 benchmark: energy
+$p=0.51$, 21 of 22 features equivalent; \fid{MP-09}).
 
-\paragraph{Validation.} A separate package checks that a corpus is diverse and non-redundant.
-Redundancy is measured by shape matching (cross-correlation or DTW). Diversity is measured in the
-catch22 feature space \citep{lubba2019catch22}, never on a 2-D embedding, using the participation-ratio
-effective dimension \citep{gao2017pr}, nearest-neighbor tails and near-collision rates overall and per
-group. Split exchangeability, on which the confirmatory design depends, is tested with an energy
-distance \citep{szekely2013energy} plus per-feature TOST equivalence \citep{schuirmann1987tost}, with a
-three-state verdict. On the v1 benchmark, dev and private are exchangeable (energy $p=0.51$; 21 of 22
-features equivalent; \fid{MP-09}).
-
-\paragraph{Controlled perturbations.} Two perturbation families are built in. Nine structured
-\emph{corruptions} (noise, detrend, deseasonalize, frequency shift, level shift, spike, smooth, warp,
-dropout) drive the L3 sensitivity and patching analyses; because the underlying components are known,
-their effect on the input is known exactly. \emph{Generator counterfactuals} regenerate a series with
-one generative knob moved along a dose ladder while every random draw stays fixed; dose~1.0 must
-reproduce the original bit-exactly, a free identity test that caught a real bug (\fid{BM-05}).
+Two perturbation families are built in: nine structured \emph{corruptions} (noise, detrend, deseasonalize,
+frequency shift, level shift, spike, smooth, warp, dropout), which drive L3, and \emph{generator
+counterfactuals}, which move one generative knob along a dose ladder with every random draw fixed. Dose~1.0
+must reproduce the original bit-exactly, a free identity test that caught a real bug (\fid{BM-05}).
 
 \subsection{Model adapters and capability tiers}
 \label{sec:adapters}
 
-A model enters the system through an adapter (\repo{tsfm_lens/tsfm_lens/models/base.py}) that exposes
-\texttt{load}, \texttt{predict} (point forecast plus requested quantiles, in the original scale), the
-underlying module, input preparation, a forward pass and \texttt{token\_time\_spans} (one contiguous
-time interval per token). Optional methods expose attention and MLP modules and attention patterns.
-The adapter's \emph{capability tier} is derived from which methods a subclass actually overrides, never
-declared: tier~0 (black box: load and predict), tier~1 (observable: hidden states with spans), tier~2
-(steerable: single-pass context, so patching is possible) and tier~3 (decomposable: attention internals).
-A stage that needs a higher tier than a model has is skipped for that model, and the report names the
-missing method. A \emph{missing capability} raises \texttt{CapabilityUnavailable}, a fact about the
-adapter; a \emph{measured} failure of time localization raises \texttt{NotTimeLocalized}, a fact about the
-model, and routes it to behavioral analysis only.
+A model enters through an adapter (\repo{tsfm_lens/tsfm_lens/models/base.py}) exposing \texttt{load},
+\texttt{predict} (point forecast and quantiles in the original scale), the module, input preparation, a
+forward pass and \texttt{token\_time\_spans}. The \emph{capability tier} is derived from which methods a
+subclass overrides, never declared: 0 (black box), 1 (observable hidden states with spans), 2 (steerable:
+single-pass context, so patching is possible) and 3 (decomposable attention). Stages above a model's tier
+are skipped with the missing method named in the report. A missing capability
+(\texttt{CapabilityUnavailable}) is a fact about the adapter; a measured failure of time localization
+(\texttt{NotTimeLocalized}) is a fact about the model and routes it to behavioral analysis only.
 
-Adding a model takes one of three routes. The zero-code \texttt{generic\_hf} adapter discovers layers
-and measures spans for a Hugging Face checkpoint and refuses rather than guesses. It has been verified
-on Timer, which it recovers with 96-step spans from measurement alone (\fid{MP-01}). A hand-written
-adapter is a copy of \repo{tsfm_lens/tsfm_lens/models/TEMPLATE_adapter.py} placed in
-\texttt{models/contrib/}, where it is discovered by an AST scan. In either case
-\texttt{run.py -{}-check-adapter} runs a one-command checklist: patch-identity and patch-reach
-conformance, the alignment gate, span discovery and capability rows. The adapters guide
-(\repo{tsfm_lens/docs/ADDING_A_MODEL.md}) documents the pitfalls we encountered, including a worked
-account of an adapter that silently bypassed the checkpoint's input normalization (Appendix~\ref{app:adapters}).
-Table~\ref{tab:models} lists the models used in this paper.
+New models use the zero-code \texttt{generic\_hf} adapter, which discovers layers and measures spans and
+refuses rather than guesses (verified on Timer, whose 96-step spans it recovers from measurement alone;
+\fid{MP-01}), or a copy of \repo{tsfm_lens/tsfm_lens/models/TEMPLATE_adapter.py} in \texttt{models/contrib/}.
+\texttt{run.py -{}-check-adapter} then runs patch-identity and reach conformance, the alignment gate, span
+discovery and capability checks. Table~\ref{tab:models} lists the models.
 
 \begin{table}[t]
 \centering
@@ -127,39 +74,32 @@ Timer & \texttt{thuml/timer-base-84m} & decoder-only & 96 & deterministic & 2$^{
 Lag-Llama & \texttt{Lag-Llama} & decoder over lags & lags & sampled & 2 & -- & -- \\
 \bottomrule
 \end{tabular}}
-\caption{Models with adapters. The first four form the case study of Section~\ref{sec:casestudy}.
-``Token'' is the number of time steps per input token; ``FLOPs obs.''\ is the share of a full
-forecast's FLOPs spent in captured blocks, measured with PyTorch's FLOP counter
-(\texttt{budget/model\_budget.json}). Sundial's share is low because its sampled flow-matching head runs
-outside the captured pass. $^{a}$Chronos-T5-Base; only the encoder is captured, so the sampled decoder
-is never observed (\fid{DE-05}). $^{b}$Via the zero-code \texttt{generic\_hf} adapter.}
+\caption{Models with adapters; the first four form the case study. ``Token'' is time steps per token;
+``FLOPs obs.''\ is the share of a forecast's FLOPs spent in captured blocks, measured with PyTorch's FLOP
+counter. $^{a}$Chronos-T5-Base, encoder only (\fid{DE-05}). $^{b}$Via \texttt{generic\_hf}.}
 \label{tab:models}
 \end{table}
 
 \subsection{Time alignment across architectures}
 \label{sec:alignment}
 
-Cross-model analysis needs a common index. \tool{} measures each token's span from its impulse
-response (\texttt{extraction/span\_discovery.py}): a perturbation injected at one time step should move
-the tokens whose spans contain it, and the resulting profile is gated on peak-to-pedestal contrast and
-contiguity. Given spans $I_j=[s_j,e_j)$ for tokens $j=1,\dots,n$ and windows
-$W_w=[wL,(w+1)L)$ of width $L$ (32 by default), the overlap-pooling matrix is
+Each token's span is measured from its impulse response (\texttt{extraction/span\_discovery.py}), gated on
+peak-to-pedestal contrast and contiguity. Given spans $I_j$ and windows $W_w=[wL,(w+1)L)$ ($L=32$ by
+default), tokens are overlap-pooled,
 \begin{equation}
-  P_{wj} \;=\; \frac{|I_j \cap W_w|}{\sum_{j'} |I_{j'} \cap W_w|},
-  \qquad \tilde h_w \;=\; \sum_j P_{wj}\, h_j ,
+  P_{wj} = \frac{|I_j \cap W_w|}{\sum_{j'} |I_{j'} \cap W_w|}, \qquad \tilde h_w = \sum_j P_{wj}\, h_j ,
   \label{eq:pooling}
 \end{equation}
-and every cross-model analysis runs on the resulting $[\text{series},\text{window},\text{dim}]$ tensors
-(Figure~\ref{fig:alignment}). A window that receives no token raises an error rather than producing a
-zero row. During extraction an \emph{alignment gate} injects an impulse into each window and checks,
-layer by layer, that the matching pooled window moves most. Because coarse tokens cannot resolve fine
-windows (a 96-step token on 32-step windows can reach at most one third of diagonal hits), the gate
-normalizes hits by their attainable ceiling (\fid{MP-02}). The impulse amplitude is self-calibrated per
-checkpoint and context length.
+and every cross-model analysis runs on $[\text{series},\text{window},\text{dim}]$ tensors
+(Figure~\ref{fig:alignment}); an empty window raises rather than yielding a zero row. During extraction an
+\emph{alignment gate} injects an impulse into each window and checks, per layer, that the matching pooled
+window moves most, normalizing hits by their attainable ceiling (a 96-step token on 32-step windows reaches
+at most one third; \fid{MP-02}), with the impulse amplitude self-calibrated per checkpoint and context
+length.
 
 \begin{figure}[t]
 \centering
-\begin{tikzpicture}[x=0.36mm,y=6mm,font=\scriptsize]
+\begin{tikzpicture}[x=0.36mm,y=5.5mm,font=\scriptsize]
   \foreach \row/\name/\w/\col in {3/TimesFM (32)/32/tfm, 2/{Chronos-2, Sundial, Bolt (16)}/16/ctwo, 1/Chronos-T5 (1)/4/gray, 0/Timer (96)/96/sun}{
     \node[anchor=east] at (-4,\row) {\name};
     \pgfmathtruncatemacro{\n}{288/\w-1}
@@ -173,28 +113,23 @@ checkpoint and context length.
   }
   \node[anchor=east] at (-4,-0.72) {common windows ($L{=}32$)};
   \draw[-{Stealth}, accent] (80,-0.3) -- (80,-0.02);
-  \draw[decorate,decoration={brace,amplitude=3pt,mirror}] (0,-1.15) -- (288,-1.15) node[midway,below=3pt] {time (first 288 context steps shown)};
+  \draw[decorate,decoration={brace,amplitude=3pt,mirror}] (0,-1.15) -- (288,-1.15) node[midway,below=3pt] {time (first 288 context steps)};
 \end{tikzpicture}
-\caption{Architecture-agnostic time alignment. Tokens of each model cover measured, contiguous spans
-of different widths (Chronos-T5's one-step tokens are drawn in groups of four); Equation~\eqref{eq:pooling}
-pools them by overlap onto common windows, so that all cross-model statistics compare the same stretch of
-time.}
+\caption{Time alignment. Tokens cover measured spans of different widths (Chronos-T5's one-step tokens drawn
+in groups of four); Equation~\eqref{eq:pooling} pools them onto common windows.}
 \label{fig:alignment}
 \end{figure}
 
 \subsection{The stage pipeline and its gates}
 \label{sec:stages}
 
-An analysis is a directed pipeline of 19 stages (Figure~\ref{fig:stages}), each writing typed artifacts
-into the run directory. Stages skip themselves when their artifacts exist, and each stage declares the
-configuration keys its artifacts depend on. These are fingerprinted, so a changed setting marks exactly
-the dependent artifacts stale and a stale artifact is refused. Three gates decide what runs and write
-their decisions to JSON, so the report can name them as skip reasons: the \emph{tier gate} (does every
-model support this stage?), the \emph{run-shape gate} (comparison-only stages are dropped for a single
-model) and the \emph{routing gate} (models that are not time-localized receive behavioral analysis
-only). Extraction captures the residual stream into a chunked zarr store in float16 and runs the
-alignment gate. All interventions go through a single primitive (\texttt{hooks.token\_patch}), which
-raises if the model silently splits a batch.
+An analysis is a pipeline of 19 stages (Figure~\ref{fig:stages}) writing typed artifacts. Stages skip
+themselves when their artifacts exist; each declares the configuration keys it depends on, which are
+fingerprinted so that a changed setting marks exactly the dependent artifacts stale. Three gates write their
+decisions to JSON and the report names them as skip reasons: the \emph{tier} gate, the \emph{run-shape} gate
+(comparison stages are dropped for one model) and the \emph{routing} gate. Extraction captures the residual
+stream into a float16 zarr store, and every intervention goes through one primitive
+(\texttt{hooks.token\_patch}), which raises if the model silently splits a batch.
 
 \begin{figure}[t]
 \centering
@@ -239,58 +174,46 @@ raises if the model silently splits a batch.
   \draw[arr] (b2.south -| b1.south) -- (b3.north -| b1.south);
   \draw[arr] (b3.south -| b1.south) -- (b4.north -| b1.south);
   \draw[arr] (b4.south -| b1.south) -- (b5.north -| b1.south);
-  % gates
-  \node[draw, dashed, font=\scriptsize, align=left, anchor=north west, text width=0.8\textwidth, fill=white] at ($(b5.south west)+(0,-3mm)$)
-    {\textbf{Gates} (each writes JSON and a rendered reason): \emph{tier} (required adapter methods present?);
-     \emph{run shape} (solo, pair or panel?); \emph{routing} (tokens time-localized?);
-     \emph{fingerprints} (artifact computed under the current configuration?).};
 \end{tikzpicture}
-\caption{The 19-stage pipeline, grouped by the strongest evidence class each group can produce.
-Stages below a gate that cannot run for a model are skipped for that model with the reason rendered in
-the report. Only \texttt{confirm}, on the sealed private split, produces \ev{held-out confirmed}
-evidence.}
+\caption{The 19-stage pipeline, grouped by the strongest evidence class each group can produce. Gates
+(tier, run shape, routing, configuration fingerprints) skip a stage per model with a rendered reason; only
+\texttt{confirm}, on the sealed private split, produces \ev{held-out confirmed} evidence.}
 \label{fig:stages}
 \end{figure}
 
 \subsection{The report: interpretability for non-specialists}
 \label{sec:report}
 
-The deliverable of a run is a single HTML file with no external dependencies
-(\repo{examples/concept_atlas_v2/report.html}; Appendix~\ref{app:report} shows excerpts). It is designed
-so that a reader with no background in interpretability can follow it, and so that an expert can audit
-every number.
-
+The deliverable is one self-contained HTML file (\repo{examples/concept_atlas_v2/report.html}), written so
+that a reader without interpretability training can follow it and an expert can audit every number
+(Figure~\ref{fig:report}).
 \begin{itemize}
-  \item \textbf{Question-first structure.} After an ``at a glance'' block, seven parts pose plain
-    questions (``Is the comparison fair?'', ``How well does each model forecast?'', ``Where does the
-    forecast form?'', ``Do the models represent things the same way?'', ``What causally drives the
-    forecast?'', ``Features and concepts'', ``Robustness and held-out confirmation''), and each stage
-    section opens with a card stating its question, its method, what a good and a bad result look like,
-    and what it cannot tell you.
-  \item \textbf{Every figure explained.} Each figure has a caption plus a collapsible ``What does this
-    mean?'' note giving its purpose, how to read it and its limitations; the example report contains
-    361 such notes across its 19 sections. A glossary, a methods appendix and a gallery of known failure
-    modes are generated from the code.
-  \item \textbf{Derived, auditable verdicts.} The scorecard (33 rows in the example) is produced by a
-    pure reduction over artifacts with no model names hard-coded: each row shows the measured value, the
-    reference it is compared with (a null, a floor, a ceiling or a baseline) and the rule that turns the
-    two into a verdict, so a reader can apply a different rule to the same numbers. A missing reference
-    renders as ``not comparable''.
-  \item \textbf{Typed findings.} Every claim is a \texttt{Finding} record with an identifier, stage,
-    evidence class, technical text, a plain-language sentence and a caveat generated from the evidence
-    class. The example run emits 126 findings (58 descriptive, 29 behavioral, 21 causal within-model,
-    12 linear-translatable, 4 geometric, 2 illustrative), serialized to \texttt{report/findings.json}.
-  \item \textbf{Nothing silently missing.} A stage that did not run renders as ``not run'' with its gate
-    reason; a stage that raised renders as a visible ``section failed''. A multiplicity ledger lists every
-    correction family (45 families and 3{,}599 comparisons in the example) and flags any family whose
-    smallest attainable adjusted $p$-value cannot reach $\alpha$.
-  \item \textbf{Reading levels.} A toggle switches between a headline view (fairness card, accuracy and
-    confirmed findings only), the standard view and a methods view with every detail expanded.
+  \item \textbf{Question-first.} Seven parts pose plain questions (``Is the comparison fair?'', ``Where does
+    the forecast form?'', ``What causally drives the forecast?'', \dots); each stage opens with a card stating
+    its question, method, what good and bad results look like, and what it cannot tell you.
+  \item \textbf{Every figure explained.} A caption plus a collapsible ``What does this mean?'' note (purpose,
+    how to read, limitations): 361 notes in the example. A glossary and methods appendix are generated from
+    the code, and a toggle switches between headline, standard and methods views.
+  \item \textbf{Derived verdicts.} The scorecard (33 rows) is a pure reduction over artifacts with no model
+    names hard-coded; each row shows the value, its reference (null, floor, ceiling or baseline) and the rule
+    that yields the verdict.
+  \item \textbf{Typed findings.} Each claim is a \texttt{Finding} record with evidence class, plain-language
+    sentence and generated caveat: 126 in the example (58 descriptive, 29 behavioral, 21 causal, 12
+    linear-translatable, 4 geometric, 2 illustrative).
+  \item \textbf{Nothing silently missing.} Skipped stages render their gate reason, failed sections render
+    visibly, and a multiplicity ledger (45 families, 3{,}599 comparisons) flags families that cannot reach
+    $\alpha$.
 \end{itemize}
+The complete analysis is one command,
+\begin{center}\texttt{python run.py -{}-config configs/examples/large\_4model.yaml}\end{center}
+and smaller presets cover a CPU-only mock
+smoke test, a single model and a pair.
 
-\noindent The complete analysis is one command:
-\begin{center}
-\texttt{python run.py -{}-config configs/examples/large\_4model.yaml}
-\end{center}
-and smaller presets cover a CPU-only smoke test with mock models, a single real model and a pair
-(\repo{tsfm_lens/configs/README.md}).
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.72\textwidth]{figures/report_l3_crop.png}
+\caption{Excerpt of the generated report (L3 section of the example run): the stage card states the question,
+method, how to read good and bad results and the limitation, above the per-model corruption-sensitivity
+fingerprints. Every figure carries a caption and an expandable explanation.}
+\label{fig:report}
+\end{figure}
