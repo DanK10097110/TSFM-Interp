@@ -827,6 +827,7 @@ def score_run(run_dir: str | Path, corpus_path: Optional[str] = None,
     out = {
         "schema_version": SCHEMA_VERSION, "construction_seed": seed, "dose": dose,
         "planted_layer": layer, "control_layer": control, "models": list(models),
+        "ablation_null": {n: a.get("ablation_null", "mean_magnitude") for n, a in art_planted.items()},
         "evidence_class": EVIDENCE_CLASS, "limits": list(LIMITS), "thresholds": THRESHOLDS,
         "sae_recovery": recovery,
         "battery_sensitivity": {"by_model": battery, "pooled": sens_all},
