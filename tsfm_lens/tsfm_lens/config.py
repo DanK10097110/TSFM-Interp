@@ -945,6 +945,24 @@ class ConceptsConfig:
     shared_input_enabled: bool = True
     shared_input_n_null: int = 50
 
+    # ROADMAP.md sec 38.3.2 (K3) -- opt-in cap on the shared-input agreement
+    # step's cost. It is the most expensive step of the concepts stage and
+    # its test count grows with the number of directed model pairs (1,223
+    # tests / 10,855 s on 4 models). `None` (default) scores every
+    # reciprocal-FDR transfer, byte-identical to earlier runs. An integer N
+    # keeps, per ordered (source model, destination model) pair, the N tests
+    # with the largest reciprocal transfer margin (the smaller of the
+    # forward and reverse `auc - null_p95`), ties broken by
+    # (concept, source target, destination target, feature); the rest are not
+    # scored, and `shared_input_agreement.json` records `agreement_cap` with
+    # the per-pair kept/dropped counts. The report names the cap wherever it
+    # shows agreement counts. A cap selects on transfer strength, so the
+    # scored tests over-represent strong input agreement; read the verdict
+    # shares as conditional on that selection. Part of the whole-section
+    # `concepts` fingerprint, so setting it marks an older concepts artifact
+    # stale.
+    agreement_max_tests_per_pair: Optional[int] = None
+
     # ROADMAP.md sec 37.9 P6a -- generator-side input counterfactuals
     # (`tsfm_benchmark/build_pipeline/counterfactual.py`'s draw-neutral knobs,
     # measured by `tsfm_lens/sae/counterfactual.py`): does an atlas concept's

@@ -104,7 +104,8 @@ from .response import CHANNELS, _direction_steered_replacement, _feature_ablated
 from .train import load_all_windows, load_sae_checkpoint, sanitize
 from .transfer import _seed, auc_from_ranks, concept_scores, top_series
 
-__all__ = ["shared_input_agreement_path", "run_shared_input_agreement"]
+__all__ = ["shared_input_agreement_path", "run_shared_input_agreement",
+           "cap_units_per_pair"]
 
 SHAPE_CHANNELS = tuple(c for c in CHANNELS if c != "level")
 _VERDICTS = ("same causal effect", "level only", "shape only",
@@ -194,8 +195,63 @@ def build_units(atlas: dict, atlas_transfer: dict) -> list:
             "dst_feature": dst_feature, "dst_features": dst_features,
             "dst_set_kind": dst_kind, "k_top_series": k_top,
             "test_auc": t.get("auc"),
+            "transfer_margin": _transfer_margin(t),
         })
     return units
+
+
+def _transfer_margin(test: dict) -> float | None:
+    """The reciprocal transfer margin of one atlas-transfer test: the smaller
+    of the forward and reverse `auc - null_p95`, so a test is only as strong
+    as its weaker leg. None when either leg's fields are absent (a legacy
+    artifact), which the cap ranks last."""
+    legs = []
+    for auc_key, null_key in (("auc", "null_p95"), ("rev_auc", "rev_null_p95")):
+        if test.get(auc_key) is None or test.get(null_key) is None:
+            return None
+        legs.append(float(test[auc_key]) - float(test[null_key]))
+    return min(legs)
+
+
+def cap_units_per_pair(units: list, cap: int | None) -> tuple:
+    """`(kept_units, record)` under `concepts.agreement_max_tests_per_pair`.
+
+    `cap is None` returns `units` untouched and `record is None`, so the
+    default path is byte-identical to a run without this knob. Otherwise each
+    ordered (src_model, dst_model) pair keeps its `cap` units with the
+    largest `transfer_margin` (None ranks last; ties break on concept, source
+    target, destination target, destination feature so the selection is
+    deterministic), and the original relative order of the kept units is
+    preserved. The record carries per-pair `n_before`, `n_kept` and
+    `n_dropped`, so the report can say the step was capped and by how much.
+    """
+    if cap is None:
+        return units, None
+    cap = int(cap)
+    if cap < 1:
+        raise ValueError(f"concepts.agreement_max_tests_per_pair must be >= 1 or null, got {cap}")
+    by_pair: dict = {}
+    for i, u in enumerate(units):
+        by_pair.setdefault((u["src_model"], u["dst_model"]), []).append(i)
+
+    def _rank(i: int) -> tuple:
+        u = units[i]
+        m = u.get("transfer_margin")
+        return (m is None, -(m if m is not None else 0.0), u["concept"], u["src_target"],
+                u["dst_target"], u["dst_feature"])
+
+    keep: set = set()
+    pairs: dict = {}
+    for (src, dst), idx in sorted(by_pair.items()):
+        kept = sorted(idx, key=_rank)[:cap]
+        keep.update(kept)
+        pairs[f"{src}->{dst}"] = {"n_before": len(idx), "n_kept": len(kept),
+                                  "n_dropped": len(idx) - len(kept)}
+    record = {"max_tests_per_pair": cap, "ranked_by": "reciprocal transfer margin "
+              "(min of forward and reverse auc - null_p95)",
+              "n_before": len(units), "n_kept": len(keep),
+              "n_dropped": len(units) - len(keep), "pairs": pairs}
+    return [u for i, u in enumerate(units) if i in keep], record
 
 
 # ---------------------------------------------------------------------------
@@ -673,6 +729,13 @@ def run_shared_input_agreement(cfg, run_dir, hub, store, data, device, atlas: di
     base_seed = int(cfg.run.seed)
 
     units = build_units(atlas, atlas_transfer)
+    units, cap_record = cap_units_per_pair(
+        units, getattr(c, "agreement_max_tests_per_pair", None))
+    if cap_record is not None:
+        log.warning("shared_input_agreement: capped at %d test(s) per ordered model pair -- "
+                    "%d of %d reciprocal-FDR test(s) not scored",
+                    cap_record["max_tests_per_pair"], cap_record["n_dropped"],
+                    cap_record["n_before"])
 
     periods_full = None
     try:
@@ -857,6 +920,8 @@ def run_shared_input_agreement(cfg, run_dir, hub, store, data, device, atlas: di
         "reach": reach_records,
         "runtime_seconds": time.monotonic() - t0,
     }
+    if cap_record is not None:
+        out["agreement_cap"] = cap_record
     out_path = shared_input_agreement_path(run_dir)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     save_json(out_path, out)
