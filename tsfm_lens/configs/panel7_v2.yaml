@@ -1,9 +1,10 @@
 # The wide-panel dev run (ROADMAP.md sec 38.3, item K3): the four-model
-# `concept_atlas_v2.yaml` body plus Timer, Time-MoE and (when its adapter can
-# load, see below) TTM, on the same v2 corpus. It answers, on more models, the
+# `concept_atlas_v2.yaml` body plus Timer and Time-MoE on the same v2 corpus.
+# It is a SIX-model panel for now. The seventh (TTM) is blocked, see the
+# commented stanza at the end of `models:`. It answers, on more models, the
 # questions the paper's case study answered on four: is there still no concept
 # spanning every model, is convergent still modal, does the families-vs-null
-# result hold, and is Kendall's W over 15 (or 21) model pairs a real test where
+# result hold, and is Kendall's W over 15 (21 with TTM) model pairs a real test where
 # 6 pairs (W = 0.28, p = 0.07) was underpowered.
 #
 #     python run.py --config configs/panel7_v2.yaml --doctor      # preflight
@@ -23,12 +24,11 @@
 #     Sundial 16, Chronos-Bolt 16), so nothing else changes shape. Numbers from
 #     this run are on a 480-step context and are not bit-comparable to
 #     `concept_atlas_v2` (all four v2 models are re-run here anyway);
-#   * three more models (Timer and Time-MoE through `generic_hf`, zero adapter
-#     code; TTM through `models/contrib/ttm_adapter.py`);
-#   * stats.n_boot 5000: 21 pairs x 5 families = 105 L0 tests, and Holm's
+#   * two more models, both through `generic_hf` with zero adapter code;
+#   * stats.n_boot 5000: 21 pairs x 5 families = 105 L0 tests with TTM (75 without), and Holm's
 #     smallest attainable p is 105/n_boot. At the v2 run's 2000 that is
-#     0.0525 > 0.05 (unsatisfiable); at 5000 it is 0.021. `--doctor` prints the
-#     floor for the models actually listed;
+#     0.0525 > 0.05 (unsatisfiable); at 5000 it is 0.021 (0.015 for six models). `--doctor`
+#     prints the floor for the models actually listed;
 #   * concepts.agreement_max_tests_per_pair: 60, the shared-input agreement
 #     step's opt-in cap (the report names it wherever it shows agreement
 #     counts);
@@ -46,11 +46,13 @@
 #     perfect score). alignment.window stays 32 (the panel's finest common
 #     grid), so Timer's window axis is 3x redundant: three windows read one
 #     token. `resolvable_hit_ceiling` accounts for this in the alignment gate.
-#   * Time-MoE: 512 per-timestep tokens at context 512, MoE routing is not
-#     analyzed (the MLP is a mixture; `mlp_info` is unsupported and skipped
-#     with its reason).
-#   * TTM: an MLP-mixer with no attention, so it derives tier 2 at most and
-#     the attention stage records its reason for that model.
+#   * Time-MoE: 480 per-timestep tokens, MoE routing is not analyzed (the MLP
+#     is a mixture; `mlp_info` is unsupported and skipped with its reason).
+#     It needs `input_normalization: zscore` (see its stanza): measured
+#     without it, the frontend scale-equivariance residual was 2.31 / 105.68
+#     (x1000 / x0.001); with it, 0.00496 / 0.0325, in line with Sundial's.
+#   * TTM (not yet in the panel): an MLP-mixer with no attention, so it derives
+#     tier 2 at most and the attention stage records its reason for it.
 #
 # Everything below is `concept_atlas_v2.yaml`'s body; its own comments are
 # kept where they still apply.
@@ -111,6 +113,24 @@ models:
     capture_layer_stride: 1      # 12 decoder blocks, 384 wide, per-timestep tokens
     kwargs:
       auto_class: AutoModelForCausalLM
+      # The checkpoint ships no normalizer and its README z-scores each series
+      # and de-normalizes the forecast. Without this, `frontend` measured a
+      # 0.001x rescale moving Time-MoE's forecast 105.7 context-sd units (the
+      # Sundial normalization bug again, docs/ADDING_A_MODEL.md sec 4).
+      input_normalization: zscore
+  # BLOCKED, not enabled: TTM (ibm-granite/granite-timeseries-ttm-r1). Its
+  # model class lives in `granite-tsfm`, and `granite-tsfm==0.2.28` installs
+  # cleanly into cudaPy but `import tsfm_public` then fails under the pinned
+  # transformers 4.57.6 (ImportError: cannot import name
+  # 'add_model_info_to_auto_map' from 'transformers.utils'). ADDING_A_MODEL.md
+  # D2.2: never move the transformers pin for one model. Uncomment once an
+  # adapter (`models/contrib/ttm_adapter.py`, ADAPTER_NAME "ttm") exists and
+  # loads; n_boot 5000 already covers the 105-test family it adds.
+  # - name: TTM
+  #   adapter: ttm
+  #   checkpoint: ibm-granite/granite-timeseries-ttm-r1
+  #   batch_size: 16
+  #   capture_layer_stride: 1
 
 l0:
   enabled: true
