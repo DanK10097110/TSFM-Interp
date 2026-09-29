@@ -1,0 +1,157 @@
+# UNTRAINED-TWIN FLOOR FOR THE CAUSAL-AGREEMENT RATE (2026-09-09, user-directed).
+#
+# `sae/matching.py::add_role_causal_agreement` writes, on every pair of every
+# run so far:
+#
+#     "untrained_twin_floor": None, "quotable": False,
+#     "quotable_reason": "not measured -- needs run_sae_ablation.py against a
+#      random_init twin of each model"
+#
+# so all six pair verdicts on `runs/full_report_run_4model` render
+# `not quotable`. This config is that missing measurement. It is the same
+# discipline sec 25.6 already enforces for the CORRELATIONAL match rate and
+# sec 6.2.1 Stage 1 established for the crosscoder's `frac_shared`: a
+# cross-model agreement number is not quotable without its own
+# architecture-only floor beside it.
+#
+# WHAT IS HELD FIXED, and why each choice is the like-for-like one:
+#
+#   models          the same four adapters and checkpoints as
+#                   configs/full_report_run_4model.yaml, each with
+#                   `random_init: true` -- same architecture, same tokenizer
+#                   and chronos_config where applicable, fresh weights
+#                   (models/base.py::random_init_like; CLAUDE.md sec 6.2).
+#   corpus          benchmark_large/public_dev, identical to that run. A twin
+#                   scored on a different corpus would confound "untrained"
+#                   with "different input statistics".
+#   sae.targets     PINNED, not `auto`. The real run's targets come from
+#                   layer_screen, which scores learned structure -- an
+#                   untrained twin's screen would legitimately pick different
+#                   layers, and the floor must answer "at THESE layers, how
+#                   much do two untrained twins' role fingerprints agree",
+#                   not "at whichever layers a random net happens to like".
+#                   Only the FOUR layers the six pairs are actually matched at
+#                   are pinned (each model's first target in the real run's
+#                   role-correspondence table), because those are the only
+#                   ones the causal-agreement rate is computed over -- the
+#                   other nine targets cost SAE training and buy no floor.
+#   sae recipe      byte-identical to the real run (aux_k + dict_size_policy
+#                   search + min_train_steps -- sec 23.2 A1's revival).
+#
+# WHAT IS OFF, and why: l0/l1/l2/l3/lens/attention/exemplars/clustering/
+# confirm/budget/frontend all produce numbers this floor does not read, and
+# `confirm` in particular would spend the private corpus (sec 6.7) on a
+# model with no learned structure to confirm anything about. layer_screen is
+# off because sae.targets is pinned. This is an extract + sae run, exactly
+# as configs/null_timesfm_random.yaml is for its own question.
+#
+# AFTER THE PIPELINE, the roles chain must be run per target (it is scripts,
+# not stages -- CLAUDE.md sec 6.5's Components A/B):
+#   python run_stage2_response_fingerprint.py --run runs/null_4model_causal_floor --model M --layer L
+#   python run_sae_roles.py --run runs/null_4model_causal_floor --all
+#   python run_sae_ablation.py --run runs/null_4model_causal_floor --all
+#
+# alignment.on_failure: warn for the SAME reason the real 4-model run sets it
+# (Sundial's diagnosed benign mid-depth decay, sec 11.22) -- and, additionally,
+# because a randomly-initialized net has no reason to produce a clean impulse
+# diagonal at all, so a hard gate here would refuse the very control it is
+# being asked to measure.
+
+run:
+  name: null_4model_causal_floor
+  out_dir: runs
+  device: cuda
+  dtype: bfloat16
+  seed: 0
+  keep_models_loaded: false
+
+data:
+  source: sealed
+  path: ../benchmark_large/public_dev
+  context_len: 512
+  horizon: 64
+  family_key: auto
+
+alignment:
+  window: 32
+  sanity_check: true
+  on_failure: warn
+
+models:
+  - name: TimesFM
+    adapter: timesfm
+    checkpoint: google/timesfm-2.5-200m-pytorch
+    random_init: true
+    batch_size: 32
+    capture_layer_stride: 2
+  - name: Chronos-2
+    adapter: chronos2
+    checkpoint: amazon/chronos-2
+    random_init: true
+    batch_size: 24
+    capture_layer_stride: 1
+  - name: Sundial
+    adapter: sundial
+    checkpoint: thuml/sundial-base-128m
+    random_init: true
+    batch_size: 16
+    capture_layer_stride: 1
+  - name: Chronos-Bolt
+    adapter: chronos_bolt
+    checkpoint: amazon/chronos-bolt-small
+    random_init: true
+    batch_size: 32
+    capture_layer_stride: 1
+
+l0: {enabled: false}
+l1: {enabled: false}
+l2: {enabled: false}
+l3: {enabled: false}
+lens: {enabled: false}
+attention: {enabled: false}
+exemplars: {enabled: false}
+clustering: {enabled: false}
+internals: {enabled: false}
+confirm: {enabled: false}
+budget: {enabled: false}
+frontend: {enabled: false}
+layer_screen: {enabled: false}
+
+sae:
+  enabled: true
+  targets:
+    - {model: TimesFM, layer: stacked_xf.10}
+    - {model: Chronos-2, layer: encoder.block.10}
+    - {model: Sundial, layer: model.layers.10}
+    - {model: Chronos-Bolt, layer: encoder.block.3}
+  dict_size_mult: 8
+  dict_size_policy: search
+  dict_size_ladder: [192, 384, 768, 1536, 3072, 6144]
+  max_dead_rate: 0.30
+  dict_size_search_margin: 0.03
+  dict_size_search_seeds: 2
+  min_fidelity: 0.5
+  k: 32
+  lr: 0.001
+  epochs: 60
+  min_train_steps: 720
+  aux_k: 64
+  aux_coef: 0.03125
+  aux_dead_steps_frac: 0.028
+  n_seeds: 3
+  batch_size: 4096
+  resample_dead_every_epochs: 5
+  forecast_preservation_max_series: 16
+  ground_truth_max_series: 2000
+  persist_features: true
+  real_data_enabled: false
+
+report: {enabled: false}
+
+stats:
+  enabled: true
+  n_boot: 2000
+  n_boot_heavy: 200
+  ci: 0.95
+  alpha: 0.05
+  min_series: 8

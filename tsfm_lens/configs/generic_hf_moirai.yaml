@@ -1,0 +1,48 @@
+# Throwaway probe config for ROADMAP.md sec 34.5 Item D1 -- probing Moirai
+# (Salesforce/moirai-1.0-R-small) through the zero-code generic_hf path.
+# NOT for permanent use; created for a probe sweep session.
+
+run:
+  name: generic_hf_moirai_probe
+  out_dir: runs
+  device: cuda
+  dtype: bfloat16
+  seed: 0
+  keep_models_loaded: false
+
+data:
+  source: sealed
+  path: ../benchmark_medium/public_dev
+  context_len: 480
+  horizon: 64
+  family_key: auto
+  max_series: 120
+
+alignment:
+  window: 32
+  sanity_check: true
+
+models:
+  - name: Moirai
+    adapter: generic_hf
+    checkpoint: Salesforce/moirai-1.0-R-small
+    batch_size: 8
+    capture_layer_stride: 1
+    kwargs:
+      auto_class: AutoModel
+
+l0: {enabled: true, quantiles: [0.1, 0.5, 0.9]}
+budget: {enabled: false}
+layer_screen: {enabled: false}
+internals: {enabled: false}
+lens: {enabled: false}
+l1: {enabled: false}
+l2: {enabled: false}
+l3: {enabled: false}
+attention: {enabled: false}
+clustering: {enabled: false}
+exemplars: {enabled: false}
+sae: {enabled: false}
+confirm: {enabled: false}
+stats: {enabled: true, n_boot: 300, n_boot_heavy: 150, ci: 0.95, alpha: 0.05, min_series: 8}
+report: {enabled: false}
