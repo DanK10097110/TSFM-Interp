@@ -688,7 +688,7 @@ def _feature_ablated_replacement(clean_tokens: torch.Tensor, sae, device,
     return recon.reshape(b, t, d).cpu()
 
 
-def _profile_matched_null_replacement(clean_tokens: torch.Tensor, sae, device, f_idx: int,
+def _profile_matched_null_replacement(clean_tokens: torch.Tensor, sae, device, f_idx,
                                       code: torch.Tensor) -> torch.Tensor:
     """Token-level reconstruction with a RANDOM direction removed, sized to one
     atom's own per-token removal profile.
@@ -702,16 +702,23 @@ def _profile_matched_null_replacement(clean_tokens: torch.Tensor, sae, device, f
     `u = W_dec^T r / ||W_dec^T r||` (`r` a random unit `code` in dictionary
     space). The removal profile is exactly the atom's, on the same rows; only the
     direction is random. The baseline stays the full reconstruction.
+
+    `f_idx` may also be a SET of atoms (the shared-input agreement step ablates
+    an atlas part): the removal at token `t` then has the norm of the set's own
+    removal, `|| sum_{f in set} z_f(t) w_f ||`.
     """
     b, t, d = clean_tokens.shape
     features = sae.encode(clean_tokens.reshape(-1, d).to(device))
-    z = features[:, f_idx].abs()
     recon = sae.decode(features)
     W_dec = sae.W_dec.detach()
     u = code.to(device=W_dec.device, dtype=W_dec.dtype) @ W_dec
     u = u / u.norm().clamp_min(1e-12)
-    w_norm = W_dec[f_idx].norm()
-    removal = (z * w_norm)[:, None] * u[None, :]
+    if isinstance(f_idx, (int, np.integer)):
+        magnitude = features[:, f_idx].abs() * W_dec[f_idx].norm()
+    else:
+        idx = sorted(int(i) for i in f_idx)
+        magnitude = (features[:, idx] @ W_dec[idx]).norm(dim=1)
+    removal = magnitude[:, None] * u[None, :]
     return (recon - removal).reshape(b, t, d).cpu()
 
 

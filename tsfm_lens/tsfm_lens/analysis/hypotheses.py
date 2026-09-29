@@ -781,6 +781,7 @@ def _agreement_entries(run_dir: Path, cfg: PipelineConfig) -> tuple:
             "dst_features": [int(f) for f in t["dst_features"]],
             "dst_set_kind": t.get("dst_set_kind"), "k_top_series": int(t["k_top_series"]),
             "dev_statistics": stats,
+            "ablation_null": _ablation_null_mode(cfg),
             "artifact": "sae/shared_input_agreement.json",
             "artifact_sha256": arts["sae/shared_input_agreement.json"], "artifacts": arts,
             "statement": (f"Concept {t['concept']}: {t['src_model']} ({t['src_target']}) and "
