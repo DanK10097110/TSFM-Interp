@@ -1521,6 +1521,24 @@ def _archetype_block(per_arch: dict, findings: list) -> str:
     return html
 
 
+def _calibration_plain(model: str, gap: float, empirical: float, nominal: float) -> str:
+    """Plain sentence for one model's calibration. The coverage clause must
+    agree with the grade: the original template graded by `gap` but always
+    said the intervals "cover the true value about as often as claimed",
+    which on `runs/concept_atlas_v2` printed "Sundial's stated confidence
+    ranges are poorly calibrated — its forecast intervals cover the true
+    value about as often as claimed" (a self-contradiction)."""
+    grade = "well" if gap < 0.05 else "somewhat" if gap < 0.15 else "poorly"
+    if grade == "well":
+        cover = "cover the true value about as often as claimed"
+    else:
+        direction = "less" if empirical < nominal else "more"
+        degree = "somewhat" if grade == "somewhat" else "noticeably"
+        cover = (f"cover the true value {degree} {direction} often than claimed "
+                 f"({empirical:.0%} vs {nominal:.0%} nominal)")
+    return f"{model}'s stated confidence ranges are {grade} calibrated — its forecast intervals {cover}."
+
+
 def _calibration_block(run_dir: Path, model_colors: dict, findings: list) -> str:
     """Reliability curve, PIT histogram, and interval coverage/sharpness/
     quantile-crossing table (`ROADMAP.md` sec 16 E10). Reuses `run_l0`'s
@@ -1604,10 +1622,8 @@ def _calibration_block(run_dir: Path, model_colors: dict, findings: list) -> str
                 f"outer-interval coverage {d['empirical_coverage']:.3f} "
                 f"(nominal {d['nominal_coverage']:.3f}), "
                 f"quantile-crossing rate {d['quantile_crossing_rate']:.3f}.",
-            plain=f"{model}'s stated confidence ranges are "
-                f"{'well' if gap < 0.05 else 'somewhat' if gap < 0.15 else 'poorly'} "
-                f"calibrated — its forecast intervals cover the true value about as "
-                f"often as claimed.{cross_txt}",
+            plain=_calibration_plain(model, gap, d["empirical_coverage"],
+                                     d["nominal_coverage"]) + cross_txt,
             registered=False))
     return html
 
@@ -4161,6 +4177,25 @@ def _l3_verbose_cases(pmeta: dict, parrs, run_dir: Path) -> str:
     return html
 
 
+_LENS_LATE_DEPTH = 0.95
+
+
+def _lens_plain(model: str, depth) -> str:
+    """Plain sentence for a crystallization depth. A depth at (or next to)
+    the top of the stack leaves nothing "after" it to refine, so the
+    early-settling sentence would contradict itself ("settled by 100% of the
+    way through its layers — the rest of the network only refines it", seen
+    on `runs/concept_atlas_v2` for Sundial)."""
+    if depth is None:
+        return (f"{model} never fully settles on its forecast early — it keeps "
+                f"revising it all the way through its layers.")
+    if depth >= _LENS_LATE_DEPTH:
+        return (f"{model} settles on its forecast only in its last layers "
+                f"(at {depth:.0%} of its depth) — earlier layers do not yet carry it.")
+    return (f"{model} has essentially settled on its forecast by {depth:.0%} of the "
+            f"way through its layers — the rest of the network only refines it.")
+
+
 def _sec_lens(run_dir: Path, model_colors: dict, findings: list) -> str:
     """Skip-lens MASE depth curves with final asymptotes, plus tuned-lens R²."""
     arrays = np.load(run_dir / "lens" / "curves.npz")
@@ -4254,12 +4289,7 @@ def _sec_lens(run_dir: Path, model_colors: dict, findings: list) -> str:
             text=f"Lens — {model}: forecast crystallizes at {where} "
                 f"(within {m['crystallization_tol']:.0%} of final MASE "
                 f"{m['final_mase']:.2f}).",
-            plain=(f"{model} has essentially settled on its forecast by "
-                   f"{depth:.0%} of the way through its layers — the rest of the "
-                   f"network only refines it."
-                   if depth is not None else
-                   f"{model} never fully settles on its forecast early — it keeps "
-                   f"revising it all the way through its layers."),
+            plain=_lens_plain(model, depth),
             registered=False))
 
     if any(f"skip_mase_by_horizon_{m}" in arrays for m in meta):
@@ -7962,6 +7992,25 @@ def _sec_spec_curve(run_dir: Path, findings: list) -> str:
     return inner
 
 
+_SCALE_EXACT_RESIDUAL = 1e-3
+
+
+def _frontend_scale_plain(name: str, residual: float, factor) -> str:
+    """Plain sentence for a worst scale-equivariance residual (units: the
+    series' mean absolute step). Below `_SCALE_EXACT_RESIDUAL` the forecast IS
+    reproduced to display precision, so "doesn't perfectly reproduce ... about
+    0.000 times" (TimesFM, `runs/concept_atlas_v2`) read as a defect."""
+    if residual < _SCALE_EXACT_RESIDUAL:
+        return (f"Scaling {name}'s input up or down and unscaling the forecast back "
+                f"reproduces the original forecast essentially exactly (worst mismatch "
+                f"{residual:.1e} times the series' own typical step size, at a "
+                f"{factor}× scale change).")
+    return (f"Scaling {name}'s input up or down and unscaling the forecast back doesn't "
+            f"perfectly reproduce the original forecast — the worst mismatch measured was "
+            f"about {residual:.3f} times the series' own typical step size, at a "
+            f"{factor}× scale change.")
+
+
 def _sec_frontend(run_dir: Path, model_colors: dict, findings: list) -> str:
     """What each model does to its input before any layer runs (ROADMAP.md
     sec 16 E17): quantization resolution, scale-equivariance, context-
@@ -8107,11 +8156,7 @@ def _sec_frontend(run_dir: Path, model_colors: dict, findings: list) -> str:
                    f"tested factors is {worst['residual']['value']:.4f} context-scale "
                    f"units, at scale factor {worst_factor} "
                    f"(95% CI [{worst['residual']['lo']:.4f}, {worst['residual']['hi']:.4f}]).")
-            plain = (f"Scaling {name}'s input up or down and unscaling the forecast "
-                    f"back doesn't perfectly reproduce the original forecast — the "
-                    f"worst mismatch measured was about "
-                    f"{worst['residual']['value']:.3f} times the series' own typical "
-                    f"step size, at a {worst_factor}× scale change.")
+            plain = _frontend_scale_plain(name, worst["residual"]["value"], worst_factor)
             if flagged:
                 flagged_models.append(name)
                 text += (f" This residual exceeds {threshold:.4f} ({threshold_basis}): "
