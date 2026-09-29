@@ -38213,6 +38213,30 @@ FINDINGS records it either way.
 - regression plants: an in-sample, not cross-fitted, fit; pooling across
   models; and ranking on float16 (§8 "Library dtypes").
 
+#### 38.4.4 Findings — U1/U2 on v2 dev (2026-09-29, branch `k4-reliability`, merged into dev)
+
+Status: the user approved K4 (§38.7). It is built as `analysis/reliability_from_internals.py`, the driver
+`run_reliability_from_internals.py` and a new additive lens artifact `lens/convergence.{npz,json}` (per-series,
+label-free convergence depth; `lens.depth_max_series`, `stage_input: False`, default 0 = no new forward
+passes). Legacy lens artifacts were verified byte-identical on a copy of the v2 run.
+
+- **Result: a clean negative (FINDINGS MN-28).** No model's baseline+internals gain CI excludes 0, for either task.
+  Internals routing does not beat baseline routing: the gap is −0.013214542474756893 [−0.02965822172605901,
+  0.0026436959894803815], p 0.122. The baseline Spearman is already 0.81–0.84.
+- **Consequences:**
+  - no report section, since the design said to promote the driver only if U1 is positive on dev;
+  - the U1 private-registration claim of §38.4.2 is **not registered**, because registering a claim whose dev gain CI
+    includes 0 would spend the one look on a likely null;
+  - U1/U2 are re-run on the 7-model `panel7_v2_dev` run once it finishes (more models make U2 more interesting,
+    with a larger oracle gap). Only if a model's gain CI excludes 0 there does it get registered for K2's look.
+- **Measured caveats:**
+  - Chronos-2 has only the SAE group;
+  - TimesFM has no crystallization norm;
+  - lens depth is near-degenerate (TimesFM 104/965 converge; Sundial 838/965 sit at depth 1.0; Bolt 739/965
+    sit at 0.4545);
+  - the failure rate is 0.094–0.174;
+  - 1 of 36 per-group CIs excludes 0 (Bolt crystallization norm, AUROC), which is not claimed.
+
 #### 38.4.3 Alternative considered: fragility cards from counterfactual stress tests
 
 The idea: use each model's concepts and L3 fingerprints to predict which

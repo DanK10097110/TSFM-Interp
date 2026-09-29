@@ -1413,6 +1413,37 @@ See SH-20. **4/5.**
 - **Ref.** ROADMAP §37.5 (~35883–35892).
 - **Score. 3/5.**
 
+#### MN-28 · Looking inside does not predict forecast failure beyond the model's own quantile width (dev, v2)
+- **Claim.**
+  - **Setup (U1).** Per model, a series' log MASE and its failure flag (MASE above the seasonal-naive MASE) are predicted from free output-only features: quantile width, flatness and catch22 of the context.
+  - **U1 result.** Adding internals (SAE concept-family activations at the last window, per-series lens convergence depth, residual norm at the crystallization layer) gives no gain for any model. Cross-fitted, 936 series (29 MASE-unreliable excluded), series bootstrap n_boot 1000.
+  - **U1 gain, log-MASE Spearman:**
+    - Chronos-2 −0.004538525487737699 [−0.011114460635546608, 0.001579303153024544];
+    - Chronos-Bolt 0.0015074468712488187 [−0.00431583261828489, 0.007117558727123265];
+    - Sundial 0.004392437244468139 [−0.002947812538624474, 0.011878917521050776];
+    - TimesFM −0.004004029536078035 [−0.01042833860707762, 0.001947542083900313].
+  - **U1 gain, failure AUROC:**
+    - Chronos-2 0.0009112349914237594 [−0.021583010754270764, 0.02161872865773572];
+    - Chronos-Bolt 0.017620172849398652 [−0.00303947104788612, 0.039507799948734226];
+    - Sundial 0.002595258692529301 [−0.01689299387157657, 0.022535002261753423];
+    - TimesFM 0.005844155844155874 [−0.008952987027037031, 0.018686576182679344].
+  - **Why there is no room.** The baseline alone reaches Spearman 0.8095725334786167–0.8390565740367988.
+  - **U2 (route each series to the model with the lowest predicted MASE).** Realized mean MASE:
+    - baseline routing 1.6841631168977191;
+    - baseline+internals routing 1.6973776593724759;
+    - best single model (Chronos-2, chosen on the same rows) 1.6908591055335143;
+    - oracle 1.470673442284903.
+  - **U2 gap (baseline − internals):** −0.013214542474756893 [−0.02965822172605901, 0.0026436959894803815], p 0.122. Internals routing is, if anything, worse.
+- **Evidence.** Predictive (behavioral), dev only. **Status:** confirmed negative on dev.
+  - Chronos-2 had only the SAE group (skip lens unavailable, DE-03). TimesFM lacked the crystallization norm (its mean lens never crystallizes).
+  - Lens depth is near-degenerate on several models: TimesFM 104/965 converge; Sundial 838/965 sit at depth 1.0.
+  - The failure task is imbalanced (rate 0.094–0.174).
+  - CIs hold the out-of-fold predictions fixed.
+  - One of 36 per-group CIs excludes 0 (the Chronos-Bolt crystallization-norm AUROC gain). Given the multiplicity, it is not claimed.
+- **Reproduce.** `python run_reliability_from_internals.py --run <copy of runs/concept_atlas_v2 with lens rerun at lens.depth_max_series=965> --out reliability_v2.json`; `analysis/reliability_from_internals.py`.
+- **Ref.** ROADMAP §38.4.4.
+- **Score. 4/5.** Same verdict as PM-12, now for internals: for "when should I distrust this forecast", the free quantile band already carries what the internals carry. A clean practitioner-facing negative, and it bounds claims of practical use from interpretability.
+
 ---
 
 ## H. Benchmark trust
