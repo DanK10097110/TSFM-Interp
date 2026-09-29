@@ -791,12 +791,16 @@ def test_structure_a_is_not_testable_when_a_model_has_no_private_rows():
 
 def test_mde_ablation_effect_shrinks_with_rows_and_names_its_failure_states():
     rng = np.random.default_rng(0)
-    null = rng.normal(0.30, 0.03, 300)
-    few = mde_ablation_effect(rng.normal(0.3, 0.2, 4).clip(0), null, m=8, n_sim=200)
-    many = mde_ablation_effect(rng.normal(0.3, 0.2, 64).clip(0), null, m=8, n_sim=200)
+    null = rng.normal(0.30, 0.01, 300)
+    few = mde_ablation_effect(0.3 + 0.4 * np.linspace(-1, 1, 4), null, m=8, n_sim=300)
+    many = mde_ablation_effect(0.3 + 0.4 * np.linspace(-1, 1, 64), null, m=8, n_sim=300)
     assert few["mde"] is not None and many["mde"] is not None
-    assert many["mde"] < few["mde"], "more rows detect a smaller effect"
-    assert many["mde"] > float(null.min()) * 0.5
+    # Same per-row spread, so only k differs: the mean of 64 rows is 4x tighter
+    # than the mean of 4, and the MDE must reflect that (measured 0.465 vs
+    # 0.362). Planted regression: resampling a fixed 4 rows regardless of k
+    # erases the gap.
+    assert many["mde"] < few["mde"] - 0.05, (few["mde"], many["mde"])
+    assert many["mde"] > float(np.quantile(null, 0.99)), "MDE sits above the null's own tail"
     assert mde_ablation_effect(np.ones(8), null[:20], m=8)["reason"] == "unsatisfiable_correction"
     assert mde_ablation_effect(np.ones(2), null)["reason"] == "n_below_minimum"
     assert mde_ablation_effect(np.ones(8), np.full(300, 0.3))["reason"] == "degenerate_null"
