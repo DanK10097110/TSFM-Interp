@@ -4,7 +4,7 @@ title: "TSFM-Lens: comparative mechanistic interpretability for time-series foun
 type: software
 authors:
   - family-names: Kushnir
-    given-names: Dan
+    given-names: Daniel
 version: 0.1.0
 date-released: "2026-09-28"
 license: MIT
@@ -15,3 +15,4 @@ keywords:
   - time-series
   - foundation-models
   - transformers
+  - TSFMs
