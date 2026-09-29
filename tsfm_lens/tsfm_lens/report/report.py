@@ -8925,7 +8925,8 @@ def _sec_confirm(run_dir: Path, findings: list, n_exploratory: int) -> str:
                       f'hold), Holm-corrected across the {n_reg} registered claims '
                       f'(n_null={transfer.get("n_null")}).</p>'
                       + _table(pd.DataFrame(rows)))
-            ledger_rows = concept_rep.get("ledger", [])
+            ledger_rows = [r for r in concept_rep.get("ledger", [])
+                           if r.get("family") not in _K2_FAMILIES]
             if ledger_rows:
                 inner += '<h4>Concept multiplicity ledger</h4>' + _table(pd.DataFrame(ledger_rows))
             inner += _note(
@@ -8961,6 +8962,162 @@ def _sec_confirm(run_dir: Path, findings: list, n_exploratory: int) -> str:
                   f'{concept_rep.get("reason", "not measured")}.</p>')
     else:
         inner += '<p class="blurb">Concept replication: not measured.</p>'
+    inner += _sec_confirm_causal_concepts(concept_rep, conf, findings)
+    return inner
+
+
+_K2_FAMILIES = ("concept_causal", "concept_atlas", "shared_input_agreement",
+                "concept_structure")
+
+
+def _sec_confirm_causal_concepts(concept_rep: dict, conf: dict, findings: list) -> str:
+    """The four K2 confirmation sub-tables (ROADMAP.md sec 38.2): causal
+    claims, atlas concepts, shared-input agreement and structure, plus their
+    own multiplicity ledger. Rendered from whichever of the
+    `concept_replication` keys `causal` / `atlas` / `agreement` / `structure`
+    exist; a `confirmation.json` from before K2 has none and this returns an
+    empty string, so an older report is unchanged. A `not testable` claim
+    (reach withheld on private data, a side not scorable) is shown as its own
+    state with its reason and is never counted as `not confirmed`."""
+    blocks = [(k, concept_rep.get(k)) for k in ("causal", "atlas", "agreement", "structure")
+              if isinstance(concept_rep.get(k), dict)]
+    if not blocks:
+        return ""
+
+    def _n(v, nd=3):
+        return None if v is None else (round(float(v), nd) if isinstance(v, (int, float)) else v)
+
+    def _mde_cell(t: dict) -> str:
+        mde = t.get("mde") or {}
+        if mde.get("mde") is None:
+            return f"not computable ({mde.get('reason')})" if mde else ""
+        over = mde.get("mde_over_null_p95")
+        return (f"{mde['mde']:.4g}" + (f" ({over:.2f} x null p95)" if over is not None else "")
+                + (" at ceiling" if mde.get("mde_at_ceiling") else ""))
+
+    alpha = conf.get("alpha")
+    inner = ""
+    for key, blk in blocks:
+        tests = blk.get("tests", [])
+        n_conf, n_tested = blk.get("n_confirmed", 0), blk.get("n_tested", 0)
+        n_reg, n_nt = blk.get("n_registered", len(tests)), blk.get("n_not_testable", 0)
+        head = (f'{n_conf} of {n_tested} tested confirmed, {n_reg} registered'
+                + (f', {n_nt} not testable' if n_nt else ''))
+        rows = []
+        if key == "causal":
+            title, cls = "Causal feature claims", "causal_within_model"
+            for t in tests:
+                rows.append({
+                    "claim": f'{t["model"]} {_short(t["layer"])} f{t["feature"]}',
+                    "channel": t["channel"], "sign": "+" if t["sign"] > 0 else "-",
+                    "dev effect / q95": _n(t.get("dev_effect_over_null_p95")),
+                    "private effect": _n(t.get("private_effect"), 4),
+                    "p": _n(t.get("p"), 4), "p method": t.get("p_method"),
+                    "p (Holm)": _n(t.get("p_holm"), 4),
+                    "MDE": _mde_cell(t), "reading": t.get("non_replication_reading") or
+                    t.get("reason", ""), "verdict": t.get("verdict", t["status"])})
+            purpose = ("Held-out test of the causal ablation claims: does ablating the same "
+                       "dev SAE feature on its private top-firing series still move the same "
+                       "forecast channel in the same direction, beyond a random-direction null?")
+            reading = ("'confirmed' = the exact/adaptive permutation p against the "
+                       "random-direction null, Holm-corrected over the tested causal claims, "
+                       "is below alpha AND the sign matches dev. 'MDE' is the smallest "
+                       "effect this test could detect at power 0.8: a non-confirmation with "
+                       "a dev effect below the MDE reads as underpowered, not absent.")
+            limits = ("Within-model causal evidence only. Features are the frozen dev SAE's; "
+                      "nothing was retrained or re-searched. A withheld target (its reach "
+                      "probe failed on private data) is 'not testable', never 'not "
+                      "confirmed'. The MDE resamples the private per-row effects (dev "
+                      "per-row effects are not stored).")
+            plain = (f"{n_conf} of {n_tested} tested feature-ablation claims held up on "
+                     f"fresh data: the same feature still moved the same forecast channel "
+                     f"the same way.")
+        elif key == "atlas":
+            title, cls = "Atlas concept claims", "causal_within_model"
+            for t in tests:
+                rows.append({
+                    "concept": t["concept"], "members (testable/all)":
+                    f'{t.get("n_testable_members")}/{t["n_members"]}',
+                    "models": ", ".join(t.get("models", [])),
+                    "pair fraction >= cos": _n(t.get("private_pair_fraction")),
+                    "centroid cos vs dev": _n(t.get("private_centroid_cosine")),
+                    "p": _n(t.get("p"), 4), "p (Holm)": _n(t.get("p_holm"), 4),
+                    "verdict": t.get("verdict", t["status"]),
+                    "reason": t.get("reason", "")})
+            purpose = ("Held-out test of the seed-stable atlas concepts: do the frozen member "
+                       "features still share a causal effect profile on private data?")
+            reading = ("Statistics are the fraction of member pairs with private cosine >= "
+                       "the atlas threshold and the cosine of the private centroid with the "
+                       "dev centroid, each against random same-composition member sets from "
+                       "the private causal pool. Confirmed needs both to beat that null "
+                       "(Holm), centroid cosine >= the threshold and >= half the pairs.")
+            limits = ("A shared causal effect PROFILE on the forecast, not shared inputs or "
+                      "shared learning. The private causal pool is the frozen dev candidates "
+                      "re-scored on private data, so the null is only as wide as that pool.")
+            plain = (f"{n_conf} of {n_tested} tested atlas concepts still hold together on "
+                     f"fresh data.")
+        elif key == "agreement":
+            title, cls = "Shared-input agreement claims", "causal_within_model"
+            for t in tests:
+                rows.append({
+                    "claim": f'c{t["concept"]} {t["src_target"].split("/", 1)[0]} '
+                             f'{_short(t["src_target"])} → {t["dst_target"].split("/", 1)[0]} '
+                             f'{_short(t["dst_target"])} f{t["dst_feature"]}',
+                    "dev verdict": t["dev_verdict"],
+                    "private verdict": t.get("private_verdict", ""),
+                    "p": _n(t.get("p"), 4), "p (Holm)": _n(t.get("p_holm"), 4),
+                    "verdict": t.get("verdict", t["status"]), "reason": t.get("reason", "")})
+            purpose = ("Held-out test of cross-model causal agreement on the same inputs: "
+                       "'same causal effect' must beat both matched-feature floors again; "
+                       "'acts differently' must fall below both floors' lower tail.")
+            reading = ("Floors are re-drawn on private data; the p is an empirical tail p "
+                       "from the raw floor draws, Holm-corrected. Not beating a p95 floor is "
+                       "never counted as disagreement.")
+            limits = ("Each side must clear its own random-direction null on the private "
+                      "shared series to be scorable; otherwise the claim is 'not testable'. "
+                      "Causal within each model, compared across models only on the same "
+                      "inputs.")
+            plain = (f"{n_conf} of {n_tested} tested cross-model agreement claims held up on "
+                     f"fresh data.")
+        else:
+            title, cls = "Structure claims", "descriptive"
+            for t in tests:
+                rows.append({
+                    "claim": t["id"].split("::", 1)[1],
+                    "private statistic": (
+                        f'{t.get("private_n_concepts")} concept(s), max '
+                        f'{t.get("private_max_models_per_concept")} model(s) per concept'
+                        if "private_n_concepts" in t else
+                        (f'null share {_n(t.get("private_rate"))} (lower 95%: '
+                         f'{_n(t.get("lower_95_one_sided"))}, n={t.get("private_n_features")})'
+                         if "private_rate" in t else "")),
+                    "p": _n(t.get("p"), 4), "p (Holm)": _n(t.get("p_holm"), 4),
+                    "verdict": t.get("verdict", t["status"]), "reason": t.get("reason", "")})
+            purpose = ("Held-out test of two directional aggregates: no atlas concept spans "
+                       "every model, and most activation-prominent features are causally null.")
+            reading = ("The first is rule-based (the atlas recomputed on private vectors of "
+                       "the same pool); the second is confirmed when the private null share's "
+                       "one-sided 95% lower bound exceeds 0.5.")
+            limits = ("The rate is resampled over features stratified by target, not series. "
+                      "'Convergent concepts outnumber shared ones' is exploratory and not "
+                      "registered; 'families do not beat the shuffle null' is a negative "
+                      "result that stays descriptive.")
+            plain = (f"{n_conf} of {n_tested} tested structure claims held up on fresh data.")
+        inner += (f'<h4>{title} ({head})</h4>' + _table(pd.DataFrame(rows))
+                  + _note(purpose, reading, limits))
+        findings.append(Finding(
+            claim_id=_next_claim_id("confirm"), stage="confirm", evidence_class=cls,
+            text=f'CONFIRM — {title.lower()}: {n_conf}/{n_tested} tested registered claims '
+                f'confirmed on private data (Holm alpha={alpha}; {n_nt} not testable).',
+            plain=plain, registered=True))
+    ledger = [r for r in concept_rep.get("ledger", []) if r.get("family") in _K2_FAMILIES]
+    if ledger:
+        inner += ('<h4>Causal-concept multiplicity ledger</h4>'
+                  '<p class="blurb">One Holm family per claim type. <code>m</code> is the '
+                  'registered count, <code>n_null</code> the null each family\'s p-values are '
+                  'resolved against, so the smallest attainable Holm-adjusted p is '
+                  '<code>m/(n_null+1)</code>; the split is refused before it opens if that '
+                  'exceeds alpha.</p>' + _table(pd.DataFrame(ledger)))
     return inner
 
 

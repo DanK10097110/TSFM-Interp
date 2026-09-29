@@ -76,15 +76,45 @@ def ablation_path(run_dir: Path, model: str, layer: str) -> Path:
     return Path(run_dir) / "sae" / sanitize(model) / f"{sanitize(layer)}_ablation.json"
 
 
+def checkpoint_path(run_dir: Path, model: str, layer: str) -> Path:
+    """The primary SAE checkpoint of one target. Built here, once, because
+    real layer names contain dots and are `sanitize()`d on disk -- a path
+    assembled by hand elsewhere finds nothing (`CLAUDE.md` sec 8, "Artifact
+    paths")."""
+    return Path(run_dir) / "sae" / sanitize(model) / f"{sanitize(layer)}.pt"
+
+
 def run_ablation_target(cfg, run_dir: Path, hub, data, store, device, model: str,
                         layer: str, *, top_k_series: int = 8,
                         n_null_directions: int = 16, max_series: int = 64,
-                        keep_forecasts: int = 3, n_features_per_rule: int = 12) -> dict:
+                        keep_forecasts: int = 3, n_features_per_rule: int = 12,
+                        ground_truth_path: str | None = None,
+                        candidates: list | None = None,
+                        activations: np.ndarray | None = None,
+                        keep_null_draws: bool = False) -> dict:
     """The ablation fingerprint for one target. Returns the artifact dict; a
     target with no checkpoint returns a `skipped` record rather than raising,
-    so one missing dictionary does not stop the other targets."""
+    so one missing dictionary does not stop the other targets.
+
+    ROADMAP.md sec 38.2 (K2) -- four optional arguments let `confirm` run the
+    SAME battery on a private corpus with frozen dev choices; every default
+    reproduces the dev behaviour exactly:
+
+    - `ground_truth_path`: the corpus whose sealed manifest supplies the
+      ground-truth seasonal periods for `data`'s series. `None` reads
+      `cfg.data.path` (the dev corpus), which is wrong for private series --
+      their ids are not in the dev table, so the seasonal channel would be
+      silently unavailable.
+    - `candidates`: the frozen candidate list (`[{"feature": int, "rules":
+      [...]}]`). `None` reuses Stage 2's list or `select_candidates`, both of
+      which read the dev store.
+    - `activations`: `[data.n, dict_size]` series-level SAE features of
+      `data`'s own series. `None` encodes the dev store's series rows, which
+      only lines up with `data` when `data` IS the dev corpus.
+    - `keep_null_draws`: forwarded to `feature_ablation_fingerprints`.
+    """
     run_dir = Path(run_dir)
-    ckpt_path = run_dir / "sae" / sanitize(model) / f"{sanitize(layer)}.pt"
+    ckpt_path = checkpoint_path(run_dir, model, layer)
     if not ckpt_path.exists():
         return {"model": model, "layer": layer, "skipped": True,
                 "reason": f"no trained SAE checkpoint at {ckpt_path}"}
@@ -93,10 +123,15 @@ def run_ablation_target(cfg, run_dir: Path, hub, data, store, device, model: str
 
     # SERIES-level pooled features, one row per series in `data`'s own order
     # -- window-level rows name windows and cannot select series.
-    activations = encode_series_level(sae, store, model, layer, np.arange(data.n), device)
+    if activations is None:
+        activations = encode_series_level(sae, store, model, layer, np.arange(data.n), device)
 
     stage2_path = run_dir / "sae" / sanitize(model) / f"{sanitize(layer)}_stage2_response.json"
-    if stage2_path.exists() and not load_json(stage2_path).get("withheld"):
+    if candidates is not None:
+        candidates = [{"feature": int(c["feature"]), "rules": c.get("rules", [])}
+                      for c in candidates]
+        source = "frozen (registered dev candidates)"
+    elif stage2_path.exists() and not load_json(stage2_path).get("withheld"):
         stage2 = load_json(stage2_path)
         candidates = [{"feature": int(c["feature"]), "rules": c.get("rules", [])}
                       for c in stage2["candidates"]]
@@ -117,7 +152,8 @@ def run_ablation_target(cfg, run_dir: Path, hub, data, store, device, model: str
 
     periods_full = None
     try:
-        gt = load_ground_truth_table(cfg.data.path)
+        gt = load_ground_truth_table(ground_truth_path if ground_truth_path is not None
+                                     else cfg.data.path)
         periods_full = gt.reindex(data.meta["series_id"].to_numpy())[
             "seasonal_period_dominant"].to_numpy(dtype=np.float64)
     except Exception as e:
@@ -128,7 +164,7 @@ def run_ablation_target(cfg, run_dir: Path, hub, data, store, device, model: str
         cfg, adapter, layer, sae, data, device, candidates, activations,
         top_k_series=top_k_series, n_null_directions=n_null_directions,
         max_series=max_series, floor=floor, periods_full=periods_full,
-        keep_forecasts=keep_forecasts)
+        keep_forecasts=keep_forecasts, keep_null_draws=keep_null_draws)
 
     if result.get("withheld"):
         log.warning(f"ablation: {model}/{layer} WITHHELD -- "

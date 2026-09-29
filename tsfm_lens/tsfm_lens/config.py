@@ -313,6 +313,35 @@ class ConfirmConfig:
     # than assumed (`CLAUDE.md` sec 6.6).
     concept_transfer_n_null: int = 2000
 
+    # ROADMAP.md sec 38.2 (K2) -- registration and confirmation of the
+    # CAUSAL concept claims (`concept_causal`, `concept_atlas`,
+    # `shared_input_agreement`, `concept_structure`). Opt-in: with the
+    # default `False` the registry and `confirmation.json` are byte-identical
+    # to what they were before K2 existed (`CLAUDE.md` sec 2.1, invariant 13).
+    #
+    # Every field below carries `omit_at_default`: a default value is left out
+    # of the stage fingerprint (`manifest.py`), so adding these fields does
+    # not mark any older run stale (`CLAUDE.md` sec 11.51), while a
+    # NON-default value fingerprints `confirm` (whole-section key) and, for
+    # `register_concept_claims`, `register` (field-level key), so changing it
+    # on a finished run refuses the stale skip instead of silently keeping
+    # the old registry.
+    register_concept_claims: bool = field(default=False, metadata={"omit_at_default": True})
+    # Null directions per registered causal claim on the first private pass.
+    # A claim whose exact p sits on the floor 1/(n+1) is redrawn with
+    # `causal_max_null` directions (the adaptive tail p, sec 37.6/P3), so the
+    # ledger's attainable Holm floor is `m / (causal_max_null + 1)`.
+    causal_n_null: int = field(default=200, metadata={"omit_at_default": True})
+    causal_max_null: int = field(default=1000, metadata={"omit_at_default": True})
+    # Random same-composition member sets per atlas claim (no forward pass).
+    atlas_n_null: int = field(default=2000, metadata={"omit_at_default": True})
+    # Matched random-feature-set draws per side of a shared-input agreement
+    # claim. `shared_input_n_null` (50) cannot survive a Holm family of ~40
+    # (40/51 > alpha), so confirm re-draws the floors at this size.
+    agreement_n_null: int = field(default=1000, metadata={"omit_at_default": True})
+    # Bootstrap resamples for the structure claims' private rate CI.
+    structure_n_boot: int = field(default=2000, metadata={"omit_at_default": True})
+
 
 @dataclass
 class ClusteringConfig:
@@ -1050,6 +1079,20 @@ class ConceptsConfig:
     # `n_registered` above) and field-level on `register`'s own
     # `Stage.config_keys` instead.
     transfer_claim_mode: str = field(default="search", metadata={"stage_input": False})
+
+    # ROADMAP.md sec 38.2 (K2) -- how many `concept_causal` claims `register`
+    # freezes from the dev `*_ablation.json` artifacts (>= 4 per model, seed-
+    # stable atlas members preferred), and how many of the dev "acts
+    # differently" shared-input agreement verdicts join the (all) "same
+    # causal effect" ones. Both are judgment counts (sec 38.2.2). Read only by
+    # `analysis/hypotheses.py`, hence `stage_input: False` here and
+    # field-level on `register`'s own `Stage.config_keys`; `omit_at_default`
+    # keeps older runs' `register` fingerprint unchanged (`CLAUDE.md` sec
+    # 11.51).
+    n_registered_causal: int = field(default=32, metadata={"stage_input": False,
+                                                          "omit_at_default": True})
+    n_registered_agreement_differs: int = field(default=30, metadata={"stage_input": False,
+                                                                      "omit_at_default": True})
 
 
 @dataclass

@@ -43,11 +43,34 @@ def resolve_config_keys(cfg, keys: tuple) -> dict:
             out[key] = {m.name: getattr(m, field) for m in cfg.models}
         elif "." in key:
             obj_name, field = key.split(".", 1)
-            out[key] = getattr(getattr(cfg, obj_name), field)
+            parent = getattr(cfg, obj_name)
+            value = getattr(parent, field)
+            if _omit_at_default(parent, field, value):
+                continue
+            out[key] = value
         else:
             obj = getattr(cfg, key)
             out[key] = _asdict_stage_inputs(obj) if dataclasses.is_dataclass(obj) else obj
     return out
+
+
+def _omit_at_default(obj, name: str, value) -> bool:
+    """True when the dataclass field `name` is marked
+    `metadata={"omit_at_default": True}` and still holds its default.
+
+    Adding a new field to a fingerprinted section (or a new field-level key
+    to a stage) changes every older run's fingerprint and refuses its stale
+    skip (`CLAUDE.md` sec 11.51). A field whose default is a no-op for the
+    stage can be left out of the resolved dict at its default, so the older
+    fingerprint is byte-identical, and enter it only once someone sets it
+    away from the default -- exactly when it starts to matter.
+    """
+    if not dataclasses.is_dataclass(obj):
+        return False
+    for f in dataclasses.fields(obj):
+        if f.name == name and f.metadata.get("omit_at_default") is True:
+            return f.default is not dataclasses.MISSING and value == f.default
+    return False
 
 
 def _asdict_stage_inputs(obj) -> dict:
@@ -71,6 +94,8 @@ def _asdict_stage_inputs(obj) -> dict:
         if f.metadata.get("stage_input") is False:
             continue
         value = getattr(obj, f.name)
+        if _omit_at_default(obj, f.name, value):
+            continue
         out[f.name] = (_asdict_stage_inputs(value)
                        if dataclasses.is_dataclass(value) and not isinstance(value, type)
                        else value)

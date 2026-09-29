@@ -758,7 +758,8 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
                                   max_series: int = 64, seed_offset: int = 260,
                                   floor: dict | None = None,
                                   periods_full: np.ndarray | None = None,
-                                  keep_forecasts: int = 3) -> dict:
+                                  keep_forecasts: int = 3,
+                                  keep_null_draws: bool = False) -> dict:
     """Ablate each candidate on its OWN top-firing series; score the same
     9-channel battery against a ROW-MATCHED random-direction null.
 
@@ -792,6 +793,14 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
     Returns `{"reach": ..., "withheld": True}` and nothing else when the
     target is unreachable (sec 25.1 (7) -- a table of zeros from a patch that
     never lands reads as "these features don't matter").
+
+    `keep_null_draws` (ROADMAP.md sec 38.2, K2; default off, so every existing
+    artifact is byte-identical): each scored channel additionally records
+    `null_draw_means` (one mean-|delta| over the candidate's own rows per
+    null direction -- the null distribution of the SAME statistic as
+    `effect`, from which `confirm` forms a permutation p), and
+    `row_abs_effects` / `row_signed_effects` (the per-row deltas, for the
+    power calculation in `analysis/power.py::mde_ablation_effect`).
     """
     acts = np.asarray(activations, dtype=np.float64)
     if acts.ndim != 2 or acts.shape[0] != data.n:
@@ -937,6 +946,13 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
                         draws = [d[idx] for d in null_rows[ch] if d.size == len(rows)]
                         per_channel[ch] = _score_channel_against_null(delta, draws)
                         n_clearing_cells += int(per_channel[ch]["clears_null"])
+                        if keep_null_draws:
+                            per_channel[ch]["null_draw_means"] = [
+                                float(np.nanmean(d)) for d in draws]
+                            per_channel[ch]["row_abs_effects"] = [
+                                float(v) for v in np.abs(delta)]
+                            per_channel[ch]["row_signed_effects"] = [
+                                float(v) for v in delta]
 
                 s_shape = stats_shape[ch]
                 if ch == "level":

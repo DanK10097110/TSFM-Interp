@@ -150,6 +150,103 @@ def mde_paired_bootstrap(deltas: np.ndarray, alpha: float = 0.05, power: float =
     return out
 
 
+def mde_ablation_effect(row_abs_effects: np.ndarray, null_draw_means: np.ndarray,
+                        alpha: float = 0.05, m: int = 1, power: float = 0.8,
+                        n_sim: int = 400, n_grid: int = 24, seed: int = 0,
+                        null_p95: Optional[float] = None, min_n: int = 3) -> dict:
+    """Smallest true ablation effect a registered `concept_causal` claim's
+    test could detect (`ROADMAP.md` sec 38.2.3), so a non-replication reads
+    as "absent" or "underpowered" rather than one undifferentiated failure.
+
+    The test being characterized: the claim's statistic is the mean |effect|
+    over its `k` top-firing private rows; its null is the same mean over
+    each of `n` random-direction draws (`null_draw_means`, one value per
+    draw); the exact p is `(1 + #{null >= stat}) / (n + 1)`; the claim is
+    confirmed at the Holm level `alpha / m` (the smallest threshold a
+    Holm-corrected family of `m` ever applies -- conservative for every rank
+    but the first, and the only closed form available before the other
+    claims' p-values exist).
+
+    Simulation, in the spirit of `mde_paired_bootstrap` (a parametric formula
+    would describe a different test): centre the observed per-row effects
+    (`d0 = row_abs_effects - mean`) so the noise shape stays and the effect
+    is removed, resample ROWS (the claim's own series, its resampling unit)
+    at the observed `k`, shift the resample by a candidate true mean `mu`,
+    and test it against the observed null draws. Bisect on `mu` for the
+    smallest one whose rejection rate reaches `power`. `mde` is in the
+    channel's own units; `mde_over_null_p95` divides by `null_p95` (the
+    row-level p95 that dev's `effect / null_p95` vector uses) when given, so
+    it reads on the same scale as `sae/concepts.py::ablation_vector`.
+
+    Named `None` states instead of a number, as in `mde_paired_bootstrap`:
+    `unsatisfiable_correction` (`m / (n + 1) > alpha`: no effect of any size
+    can reach the Holm level), `n_below_minimum` (fewer than `min_n` rows),
+    `degenerate_null` (the null draws have no spread, so any nonzero effect
+    trivially "clears" it -- `CLAUDE.md` sec 11.37).
+    """
+    d = np.asarray(row_abs_effects, dtype=np.float64)
+    d = d[np.isfinite(d)]
+    null = np.asarray(null_draw_means, dtype=np.float64)
+    null = null[np.isfinite(null)]
+    k, n = int(d.size), int(null.size)
+    out = {"mde": None, "mde_over_null_p95": None, "mde_at_ceiling": None,
+          "achieved_power_at_observed": None, "k": k, "n_null": n, "m": int(m),
+          "alpha": float(alpha), "power": float(power), "n_sim": int(n_sim),
+          "reason": None}
+    if n == 0:
+        out["reason"] = "degenerate_null"
+        return out
+    min_p = float(m) / (n + 1)
+    out["min_attainable_p_holm"] = min_p
+    if min_p > alpha:
+        out["reason"] = "unsatisfiable_correction"
+        return out
+    if k < min_n:
+        out["reason"] = "n_below_minimum"
+        out["min_n"] = int(min_n)
+        return out
+    if not (float(null.std()) > 0.0):
+        out["reason"] = "degenerate_null"
+        return out
+
+    level = float(alpha) / max(1, int(m))
+    sorted_null = np.sort(null)
+    rng = np.random.default_rng(seed)
+    d0 = d - d.mean()
+
+    def _p(stat: float) -> float:
+        count = n - int(np.searchsorted(sorted_null, stat, side="left"))
+        return (1 + count) / (n + 1)
+
+    def _power_at(mu: float) -> float:
+        hits = 0
+        for _ in range(n_sim):
+            idx = rng.integers(0, k, k)
+            if _p(float(np.mean(d0[idx] + mu))) <= level:
+                hits += 1
+        return hits / n_sim
+
+    out["achieved_power_at_observed"] = _power_at(float(d.mean()))
+    lo_mu, hi_mu = 0.0, max(float(null.max()) * 4.0, float(d.mean()) * 4.0, 1e-12)
+    if _power_at(hi_mu) < power:
+        out["mde"], out["mde_at_ceiling"] = hi_mu, True
+    else:
+        out["mde_at_ceiling"] = False
+        span = hi_mu - lo_mu
+        for _ in range(n_grid):
+            mid = (lo_mu + hi_mu) / 2.0
+            if _power_at(mid) >= power:
+                hi_mu = mid
+            else:
+                lo_mu = mid
+            if (hi_mu - lo_mu) <= _BISECTION_REL_TOL * span:
+                break
+        out["mde"] = hi_mu
+    if null_p95 is not None and float(null_p95) > 0.0:
+        out["mde_over_null_p95"] = float(out["mde"]) / float(null_p95)
+    return out
+
+
 def format_mde_sentence(mde: dict) -> str:
     """The one rendering of an MDE result every L0 table cell shares.
 
