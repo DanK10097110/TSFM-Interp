@@ -22,12 +22,6 @@ chronos = ["chronos-forecasting>=1.2"]
 # new class-based API with no such extra (CLAUDE.md sec 11.8); verified
 # working at timesfm==2.0.2, plain `pip install timesfm` (DEPENDENCIES.md).
 timesfm = ["timesfm>=2.0"]
-# TTM (ibm-granite/granite-timeseries-ttm-r1), ROADMAP.md sec 38.3 (K3). Exactly
-# 0.2.28: 0.3.x downgrades torch and scikit-learn in the shared env (pip
-# --dry-run, 2026-09-29). NOT YET USABLE: 0.2.28 installs cleanly but
-# `import tsfm_public` fails under transformers 4.57.6 (see DEPENDENCIES.md),
-# so no `ttm` adapter exists and this extra is a record, not a working path.
-ttm = ["granite-tsfm==0.2.28"]
 
 [project.scripts]
 tsfm-lens = "tsfm_lens.run:main"
