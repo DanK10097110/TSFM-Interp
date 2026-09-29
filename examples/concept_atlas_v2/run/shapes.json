@@ -1,0 +1,38 @@
+{
+  "shape": "panel",
+  "n_models": 4,
+  "models": [
+    "TimesFM",
+    "Chronos-2",
+    "Sundial",
+    "Chronos-Bolt"
+  ],
+  "reference_model": "TimesFM",
+  "comparison_pairs": [
+    [
+      "TimesFM",
+      "Chronos-2"
+    ],
+    [
+      "TimesFM",
+      "Sundial"
+    ],
+    [
+      "TimesFM",
+      "Chronos-Bolt"
+    ],
+    [
+      "Chronos-2",
+      "Sundial"
+    ],
+    [
+      "Chronos-2",
+      "Chronos-Bolt"
+    ],
+    [
+      "Sundial",
+      "Chronos-Bolt"
+    ]
+  ],
+  "dropped_stages": []
+}

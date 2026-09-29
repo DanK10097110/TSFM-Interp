@@ -1,0 +1,1175 @@
+{
+  "schema_version": 1,
+  "measured": true,
+  "n_sae_seeds": 3,
+  "replicates": 2,
+  "params": {
+    "k_top_series": 20,
+    "n_null_draws": 200,
+    "transfer_seed": 0
+  },
+  "concepts": [
+    {
+      "concept": 0,
+      "stability": {
+        "replicates": 2,
+        "parts": [
+          {
+            "target": "Chronos-2/encoder.block.6",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          },
+          {
+            "target": "Chronos-2/encoder.block.7",
+            "n_features": 2,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          },
+          {
+            "target": "Chronos-2/encoder.block.8",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          },
+          {
+            "target": "TimesFM/stacked_xf.0",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          }
+        ],
+        "stable": true,
+        "frac_parts_stable": 1.0
+      }
+    },
+    {
+      "concept": 1,
+      "stability": {
+        "replicates": 2,
+        "parts": [
+          {
+            "target": "Chronos-2/encoder.block.7",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          },
+          {
+            "target": "Chronos-2/encoder.block.8",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          },
+          {
+            "target": "Chronos-2/encoder.block.9",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          },
+          {
+            "target": "TimesFM/stacked_xf.14",
+            "n_features": 1,
+            "reciprocal_at": [
+              false,
+              false
+            ],
+            "stable": false
+          }
+        ],
+        "stable": false,
+        "frac_parts_stable": 0.75
+      }
+    },
+    {
+      "concept": 2,
+      "stability": {
+        "replicates": 2,
+        "parts": [
+          {
+            "target": "TimesFM/stacked_xf.12",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          },
+          {
+            "target": "TimesFM/stacked_xf.16",
+            "n_features": 2,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          },
+          {
+            "target": "TimesFM/stacked_xf.8",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          }
+        ],
+        "stable": true,
+        "frac_parts_stable": 1.0
+      }
+    },
+    {
+      "concept": 3,
+      "stability": {
+        "replicates": 2,
+        "parts": [
+          {
+            "target": "TimesFM/stacked_xf.14",
+            "n_features": 2,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          },
+          {
+            "target": "TimesFM/stacked_xf.16",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          },
+          {
+            "target": "TimesFM/stacked_xf.8",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          }
+        ],
+        "stable": true,
+        "frac_parts_stable": 1.0
+      }
+    },
+    {
+      "concept": 4,
+      "stability": {
+        "replicates": 2,
+        "parts": [
+          {
+            "target": "Chronos-2/encoder.block.10",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          },
+          {
+            "target": "Sundial/model.layers.8",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          },
+          {
+            "target": "Sundial/model.layers.9",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          }
+        ],
+        "stable": true,
+        "frac_parts_stable": 1.0
+      }
+    },
+    {
+      "concept": 5,
+      "stability": {
+        "replicates": 2,
+        "parts": [
+          {
+            "target": "Chronos-2/encoder.block.5",
+            "n_features": 2,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          },
+          {
+            "target": "Chronos-2/encoder.block.8",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          }
+        ],
+        "stable": true,
+        "frac_parts_stable": 1.0
+      }
+    },
+    {
+      "concept": 6,
+      "stability": {
+        "replicates": 2,
+        "parts": [
+          {
+            "target": "Chronos-2/encoder.block.5",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          },
+          {
+            "target": "Sundial/model.layers.11",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          },
+          {
+            "target": "Sundial/model.layers.6",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          }
+        ],
+        "stable": true,
+        "frac_parts_stable": 1.0
+      }
+    },
+    {
+      "concept": 7,
+      "stability": {
+        "replicates": 2,
+        "parts": [
+          {
+            "target": "Chronos-2/encoder.block.5",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              false
+            ],
+            "stable": false
+          },
+          {
+            "target": "Chronos-2/encoder.block.8",
+            "n_features": 2,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          }
+        ],
+        "stable": false,
+        "frac_parts_stable": 0.5
+      }
+    },
+    {
+      "concept": 8,
+      "stability": {
+        "replicates": 2,
+        "parts": [
+          {
+            "target": "Chronos-2/encoder.block.6",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          },
+          {
+            "target": "Chronos-2/encoder.block.9",
+            "n_features": 1,
+            "reciprocal_at": [
+              false,
+              false
+            ],
+            "stable": false
+          },
+          {
+            "target": "Sundial/model.layers.4",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          }
+        ],
+        "stable": false,
+        "frac_parts_stable": 0.6666666666666666
+      }
+    },
+    {
+      "concept": 9,
+      "stability": {
+        "replicates": 2,
+        "parts": [
+          {
+            "target": "Chronos-2/encoder.block.6",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          },
+          {
+            "target": "Sundial/model.layers.3",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          },
+          {
+            "target": "Sundial/model.layers.5",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          }
+        ],
+        "stable": true,
+        "frac_parts_stable": 1.0
+      }
+    },
+    {
+      "concept": 10,
+      "stability": {
+        "replicates": 2,
+        "parts": [
+          {
+            "target": "Chronos-2/encoder.block.6",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          },
+          {
+            "target": "Sundial/model.layers.10",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          },
+          {
+            "target": "TimesFM/stacked_xf.10",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          }
+        ],
+        "stable": true,
+        "frac_parts_stable": 1.0
+      }
+    },
+    {
+      "concept": 11,
+      "stability": {
+        "replicates": 2,
+        "parts": [
+          {
+            "target": "Chronos-2/encoder.block.7",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          },
+          {
+            "target": "Chronos-2/encoder.block.8",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          },
+          {
+            "target": "Chronos-2/encoder.block.9",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          }
+        ],
+        "stable": true,
+        "frac_parts_stable": 1.0
+      }
+    },
+    {
+      "concept": 12,
+      "stability": {
+        "replicates": 2,
+        "parts": [
+          {
+            "target": "Chronos-2/encoder.block.7",
+            "n_features": 2,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          },
+          {
+            "target": "Sundial/model.layers.10",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          }
+        ],
+        "stable": true,
+        "frac_parts_stable": 1.0
+      }
+    },
+    {
+      "concept": 13,
+      "stability": {
+        "replicates": 2,
+        "parts": [
+          {
+            "target": "Chronos-2/encoder.block.7",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          },
+          {
+            "target": "Chronos-2/encoder.block.8",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          },
+          {
+            "target": "Chronos-2/encoder.block.9",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          }
+        ],
+        "stable": true,
+        "frac_parts_stable": 1.0
+      }
+    },
+    {
+      "concept": 14,
+      "stability": {
+        "replicates": 2,
+        "parts": [
+          {
+            "target": "Chronos-2/encoder.block.7",
+            "n_features": 1,
+            "reciprocal_at": [
+              false,
+              false
+            ],
+            "stable": false
+          },
+          {
+            "target": "Chronos-2/encoder.block.8",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          },
+          {
+            "target": "Sundial/model.layers.6",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          }
+        ],
+        "stable": false,
+        "frac_parts_stable": 0.6666666666666666
+      }
+    },
+    {
+      "concept": 15,
+      "stability": {
+        "replicates": 2,
+        "parts": [
+          {
+            "target": "Chronos-2/encoder.block.8",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          },
+          {
+            "target": "Sundial/model.layers.9",
+            "n_features": 2,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          }
+        ],
+        "stable": true,
+        "frac_parts_stable": 1.0
+      }
+    },
+    {
+      "concept": 16,
+      "stability": {
+        "replicates": 2,
+        "parts": [
+          {
+            "target": "Chronos-2/encoder.block.9",
+            "n_features": 2,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          },
+          {
+            "target": "Chronos-Bolt/encoder.block.4",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          }
+        ],
+        "stable": true,
+        "frac_parts_stable": 1.0
+      }
+    },
+    {
+      "concept": 17,
+      "stability": {
+        "replicates": 2,
+        "parts": [
+          {
+            "target": "Chronos-Bolt/encoder.block.4",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          },
+          {
+            "target": "Chronos-Bolt/encoder.block.5",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          },
+          {
+            "target": "Sundial/model.layers.10",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          }
+        ],
+        "stable": true,
+        "frac_parts_stable": 1.0
+      }
+    },
+    {
+      "concept": 18,
+      "stability": {
+        "replicates": 2,
+        "parts": [
+          {
+            "target": "Chronos-Bolt/encoder.block.5",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          },
+          {
+            "target": "TimesFM/stacked_xf.0",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          },
+          {
+            "target": "TimesFM/stacked_xf.2",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          }
+        ],
+        "stable": true,
+        "frac_parts_stable": 1.0
+      }
+    },
+    {
+      "concept": 19,
+      "stability": {
+        "replicates": 2,
+        "parts": [
+          {
+            "target": "Sundial/model.layers.10",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          },
+          {
+            "target": "Sundial/model.layers.4",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          },
+          {
+            "target": "Sundial/model.layers.6",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          }
+        ],
+        "stable": true,
+        "frac_parts_stable": 1.0
+      }
+    },
+    {
+      "concept": 20,
+      "stability": {
+        "replicates": 2,
+        "parts": [
+          {
+            "target": "Sundial/model.layers.10",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          },
+          {
+            "target": "Sundial/model.layers.8",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          },
+          {
+            "target": "TimesFM/stacked_xf.14",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          }
+        ],
+        "stable": true,
+        "frac_parts_stable": 1.0
+      }
+    },
+    {
+      "concept": 21,
+      "stability": {
+        "replicates": 2,
+        "parts": [
+          {
+            "target": "Sundial/model.layers.4",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          },
+          {
+            "target": "Sundial/model.layers.7",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          },
+          {
+            "target": "Sundial/model.layers.9",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          }
+        ],
+        "stable": true,
+        "frac_parts_stable": 1.0
+      }
+    },
+    {
+      "concept": 22,
+      "stability": {
+        "replicates": 2,
+        "parts": [
+          {
+            "target": "Sundial/model.layers.4",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          },
+          {
+            "target": "Sundial/model.layers.5",
+            "n_features": 2,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          }
+        ],
+        "stable": true,
+        "frac_parts_stable": 1.0
+      }
+    },
+    {
+      "concept": 23,
+      "stability": {
+        "replicates": 2,
+        "parts": [
+          {
+            "target": "Sundial/model.layers.5",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          },
+          {
+            "target": "TimesFM/stacked_xf.4",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          },
+          {
+            "target": "TimesFM/stacked_xf.6",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          }
+        ],
+        "stable": true,
+        "frac_parts_stable": 1.0
+      }
+    },
+    {
+      "concept": 24,
+      "stability": {
+        "replicates": 2,
+        "parts": [
+          {
+            "target": "Sundial/model.layers.5",
+            "n_features": 1,
+            "reciprocal_at": [
+              false,
+              false
+            ],
+            "stable": false
+          },
+          {
+            "target": "Sundial/model.layers.6",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          },
+          {
+            "target": "TimesFM/stacked_xf.12",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          }
+        ],
+        "stable": false,
+        "frac_parts_stable": 0.6666666666666666
+      }
+    },
+    {
+      "concept": 25,
+      "stability": {
+        "replicates": 2,
+        "parts": [
+          {
+            "target": "Sundial/model.layers.7",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          },
+          {
+            "target": "Sundial/model.layers.8",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          },
+          {
+            "target": "Sundial/model.layers.9",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          }
+        ],
+        "stable": true,
+        "frac_parts_stable": 1.0
+      }
+    },
+    {
+      "concept": 26,
+      "stability": {
+        "replicates": 2,
+        "parts": [
+          {
+            "target": "TimesFM/stacked_xf.18",
+            "n_features": 2,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          },
+          {
+            "target": "TimesFM/stacked_xf.6",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          }
+        ],
+        "stable": true,
+        "frac_parts_stable": 1.0
+      }
+    }
+  ],
+  "n_concepts": 27,
+  "n_scored": 27,
+  "n_stable": 22,
+  "frac_stable": 0.8148148148148148,
+  "ceiling": {
+    "by_target": {
+      "Chronos-2/encoder.block.10": {
+        "rate": 1.0,
+        "n_parts": 1
+      },
+      "Chronos-2/encoder.block.5": {
+        "rate": 0.8333333333333334,
+        "n_parts": 3
+      },
+      "Chronos-2/encoder.block.6": {
+        "rate": 1.0,
+        "n_parts": 4
+      },
+      "Chronos-2/encoder.block.7": {
+        "rate": 0.8333333333333334,
+        "n_parts": 6
+      },
+      "Chronos-2/encoder.block.8": {
+        "rate": 1.0,
+        "n_parts": 8
+      },
+      "Chronos-2/encoder.block.9": {
+        "rate": 0.8,
+        "n_parts": 5
+      },
+      "Chronos-Bolt/encoder.block.4": {
+        "rate": 1.0,
+        "n_parts": 2
+      },
+      "Chronos-Bolt/encoder.block.5": {
+        "rate": 1.0,
+        "n_parts": 2
+      },
+      "Sundial/model.layers.10": {
+        "rate": 1.0,
+        "n_parts": 5
+      },
+      "Sundial/model.layers.11": {
+        "rate": 1.0,
+        "n_parts": 1
+      },
+      "Sundial/model.layers.3": {
+        "rate": 1.0,
+        "n_parts": 1
+      },
+      "Sundial/model.layers.4": {
+        "rate": 1.0,
+        "n_parts": 4
+      },
+      "Sundial/model.layers.5": {
+        "rate": 0.75,
+        "n_parts": 4
+      },
+      "Sundial/model.layers.6": {
+        "rate": 1.0,
+        "n_parts": 4
+      },
+      "Sundial/model.layers.7": {
+        "rate": 1.0,
+        "n_parts": 2
+      },
+      "Sundial/model.layers.8": {
+        "rate": 1.0,
+        "n_parts": 3
+      },
+      "Sundial/model.layers.9": {
+        "rate": 1.0,
+        "n_parts": 4
+      },
+      "TimesFM/stacked_xf.0": {
+        "rate": 1.0,
+        "n_parts": 2
+      },
+      "TimesFM/stacked_xf.10": {
+        "rate": 1.0,
+        "n_parts": 1
+      },
+      "TimesFM/stacked_xf.12": {
+        "rate": 1.0,
+        "n_parts": 2
+      },
+      "TimesFM/stacked_xf.14": {
+        "rate": 0.6666666666666666,
+        "n_parts": 3
+      },
+      "TimesFM/stacked_xf.16": {
+        "rate": 1.0,
+        "n_parts": 2
+      },
+      "TimesFM/stacked_xf.18": {
+        "rate": 1.0,
+        "n_parts": 1
+      },
+      "TimesFM/stacked_xf.2": {
+        "rate": 1.0,
+        "n_parts": 1
+      },
+      "TimesFM/stacked_xf.4": {
+        "rate": 1.0,
+        "n_parts": 1
+      },
+      "TimesFM/stacked_xf.6": {
+        "rate": 1.0,
+        "n_parts": 2
+      },
+      "TimesFM/stacked_xf.8": {
+        "rate": 1.0,
+        "n_parts": 2
+      }
+    },
+    "by_model": {
+      "Chronos-2": {
+        "rate": 0.9074074074074074,
+        "ci": [
+          0.7962962962962963,
+          1.0
+        ],
+        "n_parts": 27
+      },
+      "Chronos-Bolt": {
+        "rate": 1.0,
+        "ci": [
+          1.0,
+          1.0
+        ],
+        "n_parts": 4
+      },
+      "Sundial": {
+        "rate": 0.9642857142857143,
+        "ci": [
+          0.8928571428571429,
+          1.0
+        ],
+        "n_parts": 28
+      },
+      "TimesFM": {
+        "rate": 0.9411764705882353,
+        "ci": [
+          0.8235294117647058,
+          1.0
+        ],
+        "n_parts": 17
+      }
+    }
+  },
+  "old_ceiling": {
+    "by_target": {
+      "Chronos-2/encoder.block.6": {
+        "rate": 1.0,
+        "n_parts": 2
+      },
+      "Chronos-2/encoder.block.8": {
+        "rate": 1.0,
+        "n_parts": 2
+      },
+      "Chronos-Bolt/encoder.block.4": {
+        "rate": 1.0,
+        "n_parts": 2
+      },
+      "Sundial/model.layers.5": {
+        "rate": 1.0,
+        "n_parts": 3
+      }
+    },
+    "by_model": {
+      "Chronos-2": {
+        "rate": 1.0,
+        "ci": [
+          1.0,
+          1.0
+        ],
+        "n_parts": 4
+      },
+      "Chronos-Bolt": {
+        "rate": 1.0,
+        "ci": [
+          1.0,
+          1.0
+        ],
+        "n_parts": 2
+      },
+      "Sundial": {
+        "rate": 1.0,
+        "ci": [
+          1.0,
+          1.0
+        ],
+        "n_parts": 3
+      }
+    }
+  },
+  "universality": {
+    "all": {
+      "2": 15,
+      "1": 11,
+      "3": 1
+    },
+    "stable": {
+      "2": 11,
+      "1": 10,
+      "3": 1
+    }
+  }
+}

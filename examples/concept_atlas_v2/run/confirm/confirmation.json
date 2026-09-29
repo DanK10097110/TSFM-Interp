@@ -1,0 +1,979 @@
+{
+  "model_a": "TimesFM",
+  "model_b": "Chronos-2",
+  "n_private_series": 800,
+  "alpha": 0.05,
+  "n_registered": 47,
+  "n_replicable": 31,
+  "registry_sha256": "18557c2e52d976a7059d199457699624d424fe54f61b92eb9490eb80bc4aa6e5",
+  "repeated_look": false,
+  "tests": [
+    {
+      "family": "mixture",
+      "dev_favored": "Chronos-2",
+      "dev_ratio": 1.10494863986969,
+      "mde_private": {
+        "mde": 0.1553914386634528,
+        "mde_floor_units": null,
+        "achieved_power_at_observed": 1.0,
+        "mde_at_ceiling": false,
+        "n": 240,
+        "alpha": 0.05,
+        "power": 0.8,
+        "n_boot": 2000,
+        "n_sim": 400,
+        "reason": null
+      },
+      "status": "tested",
+      "mean": 0.30730074615372965,
+      "lo": 0.20853403719064473,
+      "hi": 0.412600233106253,
+      "p": 0.0005,
+      "n": 240,
+      "n_boot": 2000,
+      "resample_unit": "series",
+      "p_holm": 0.0005,
+      "confirmed": true
+    }
+  ],
+  "overall": {
+    "mean": -0.14784298242768273,
+    "lo": -0.21063730274018597,
+    "hi": -0.08826021630462495,
+    "p": 0.0005,
+    "n": 800,
+    "n_boot": 2000,
+    "resample_unit": "series"
+  },
+  "overall_direction": "positive favors TimesFM",
+  "private_corpus_path": "../../benchmark_large_v2/private_test",
+  "private_corpus_digest": "aadeca94760b6136a4108fc75c7c1fc0a889eaa7776646af568d1cd119a1c7b1",
+  "private_manifest_epoch": 0,
+  "private_visibility": "private",
+  "private_composition": {
+    "by_tier": {
+      "synthetic": 461,
+      "realism_stress": 339
+    },
+    "by_family": {
+      "random_parametric": 354,
+      "mixture": 240,
+      "parametric": 107,
+      "block_bootstrap": 58,
+      "sequential_par": 41
+    }
+  },
+  "dev_corpus_digest": "65e020884dfdb9dfaf4dd004000238232ebc9cbdf3dd3a07d98edd73439896c7",
+  "dev_manifest_epoch": 0,
+  "private_audit": {
+    "state": "measured",
+    "audit": {
+      "schema_version": 1,
+      "gate": {
+        "references": [
+          "hf/Monash-University/monash_tsf/covid_deaths/train",
+          "hf/Monash-University/monash_tsf/saugeenday/train",
+          "hf/Monash-University/monash_tsf/tourism_quarterly/train",
+          "hf/Monash-University/monash_tsf/traffic_weekly/train",
+          "hf/Monash-University/monash_tsf/us_births/train",
+          "hf/Monash-University/monash_tsf/vehicle_trips/train"
+        ],
+        "reference_licenses": {
+          "hf/Monash-University/monash_tsf/tourism_quarterly/train": "unknown",
+          "hf/Monash-University/monash_tsf/saugeenday/train": "unknown",
+          "hf/Monash-University/monash_tsf/traffic_weekly/train": "unknown",
+          "hf/Monash-University/monash_tsf/vehicle_trips/train": "unknown",
+          "hf/Monash-University/monash_tsf/covid_deaths/train": "unknown",
+          "hf/Monash-University/monash_tsf/us_births/train": "unknown"
+        },
+        "reference_n_series": 82,
+        "gate_effective": true,
+        "metric": "dtw",
+        "band": 25,
+        "normalization": "resample256+znorm",
+        "threshold": 0.35,
+        "n_candidates": 2000,
+        "n_rejected": 68,
+        "rejection_rate": 0.034,
+        "accepted_distance_quantiles": {
+          "min": 0.35173091829909253,
+          "p01": 0.3790535521358083,
+          "p05": 0.44749580415548,
+          "p50": 0.7072645456924898
+        },
+        "rejected_distance_quantiles": {
+          "min": 0.1329746181215205,
+          "p01": 0.13561292917759027,
+          "p05": 0.1531590029167594,
+          "p50": 0.28749788116982
+        }
+      },
+      "near_duplicates": {
+        "threshold": 0.05,
+        "target_len": 256,
+        "n_pairs_within_public": 4,
+        "n_pairs_within_private": 3,
+        "n_pairs_across_splits": 14,
+        "worst_pairs_cap": 50,
+        "worst_pairs": [
+          {
+            "a": "0704fcd2d1611e2d",
+            "b": "940ac32e599c9d73",
+            "distance": 0.0008800764002857434,
+            "relation": "across"
+          },
+          {
+            "a": "49051c1ee9ef3cdc",
+            "b": "81fe53770c8df057",
+            "distance": 0.00545943096271393,
+            "relation": "across"
+          },
+          {
+            "a": "aebc216d75f4b9cf",
+            "b": "3b6b596f49145643",
+            "distance": 0.006234785975757065,
+            "relation": "within_public"
+          },
+          {
+            "a": "d33c69294045887a",
+            "b": "c9e976152544a822",
+            "distance": 0.00899481348734668,
+            "relation": "within_public"
+          },
+          {
+            "a": "5a9d3f6afab4f47c",
+            "b": "51d64e0c6aa4e6ae",
+            "distance": 0.019532474621248616,
+            "relation": "across"
+          },
+          {
+            "a": "8a980ec3a0295838",
+            "b": "4b78d9948e8036c8",
+            "distance": 0.02281144066181515,
+            "relation": "across"
+          },
+          {
+            "a": "0a5ed637377ce927",
+            "b": "e6130608df71c296",
+            "distance": 0.03084586663367904,
+            "relation": "across"
+          },
+          {
+            "a": "0a5ed637377ce927",
+            "b": "51d64e0c6aa4e6ae",
+            "distance": 0.03204593077348296,
+            "relation": "across"
+          },
+          {
+            "a": "51d64e0c6aa4e6ae",
+            "b": "e6130608df71c296",
+            "distance": 0.033015444653079734,
+            "relation": "within_private"
+          },
+          {
+            "a": "0a5ed637377ce927",
+            "b": "5a9d3f6afab4f47c",
+            "distance": 0.03640905225611086,
+            "relation": "within_public"
+          },
+          {
+            "a": "2cf771ed199740c0",
+            "b": "57dc0c853192661f",
+            "distance": 0.03824515699342877,
+            "relation": "within_private"
+          },
+          {
+            "a": "aebc216d75f4b9cf",
+            "b": "74e487a128339dd3",
+            "distance": 0.04061948977683042,
+            "relation": "across"
+          },
+          {
+            "a": "41b810977e46fafa",
+            "b": "ea1017f8c11a8806",
+            "distance": 0.0408100232514865,
+            "relation": "across"
+          },
+          {
+            "a": "bd548218cfb25346",
+            "b": "045e6ec5ae760941",
+            "distance": 0.041231907869715256,
+            "relation": "across"
+          },
+          {
+            "a": "5a9d3f6afab4f47c",
+            "b": "e6130608df71c296",
+            "distance": 0.04335665229699879,
+            "relation": "across"
+          },
+          {
+            "a": "0fc797a60ce2f775",
+            "b": "977e9afb0e330bd1",
+            "distance": 0.04514008326005916,
+            "relation": "within_public"
+          },
+          {
+            "a": "ef9326c7b19aaa79",
+            "b": "84970552f70a30ac",
+            "distance": 0.046392305569113675,
+            "relation": "within_private"
+          },
+          {
+            "a": "3b6b596f49145643",
+            "b": "74e487a128339dd3",
+            "distance": 0.04685279236640861,
+            "relation": "across"
+          },
+          {
+            "a": "0ea252068f8e10ad",
+            "b": "6e4895185b8b7cf3",
+            "distance": 0.04687419539791788,
+            "relation": "across"
+          },
+          {
+            "a": "ce55bfddf03ff1f9",
+            "b": "44dcf3cbe72990b4",
+            "distance": 0.04743080432946295,
+            "relation": "across"
+          },
+          {
+            "a": "67fab51c30b778c2",
+            "b": "f1a97d4fc5f5f566",
+            "distance": 0.0475630597117108,
+            "relation": "across"
+          }
+        ]
+      },
+      "realism": {
+        "note": "gap between generated and real reference distributions on summary statistics; used only to tune realism, NEVER a leakage signal (CLAUDE.md sec 4.4) -- render under 'how realistic', never under 'how leak-free'.",
+        "combined": {
+          "mean": {
+            "generated": 41.62474416920975,
+            "reference": 28462.77944940623,
+            "gap": 28421.15470523702
+          },
+          "std": {
+            "generated": 22.942428534433116,
+            "reference": 12868.668547239175,
+            "gap": 12845.72611870474
+          },
+          "autocorr_lag1": {
+            "generated": 0.7133568475199026,
+            "reference": NaN,
+            "gap": NaN
+          },
+          "spectral_centroid": {
+            "generated": 0.15588787328097048,
+            "reference": 0.1776331659427814,
+            "gap": 0.02174529266181091
+          }
+        },
+        "by_tier": {
+          "synthetic": {
+            "mean": {
+              "generated": -0.04654429045678381,
+              "reference": 28462.77944940623,
+              "gap": 28462.825993696686
+            },
+            "std": {
+              "generated": 0.8591392322852615,
+              "reference": 12868.668547239175,
+              "gap": 12867.80940800689
+            },
+            "autocorr_lag1": {
+              "generated": 0.8293528525869132,
+              "reference": NaN,
+              "gap": NaN
+            },
+            "spectral_centroid": {
+              "generated": 0.13636500487499886,
+              "reference": 0.1776331659427814,
+              "gap": 0.04126816106778253
+            }
+          },
+          "realism_stress": {
+            "mean": {
+              "generated": 98.13507681207459,
+              "reference": 28462.77944940623,
+              "gap": 28364.644372594154
+            },
+            "std": {
+              "generated": 52.88952329539458,
+              "reference": 12868.668547239175,
+              "gap": 12815.77902394378
+            },
+            "autocorr_lag1": {
+              "generated": 0.556054947965618,
+              "reference": NaN,
+              "gap": NaN
+            },
+            "spectral_centroid": {
+              "generated": 0.18236278750955645,
+              "reference": 0.1776331659427814,
+              "gap": 0.004729621566775061
+            }
+          }
+        }
+      }
+    },
+    "reason": null
+  },
+  "exchangeability": {
+    "available": false,
+    "reason": "no cross_split.json found at '../../benchmark_large_v2/private_test' -- ROADMAP.md sec 34 item B3 IS implemented (`benchmark_validation/cross_split.py`) but has not been run and persisted for this corpus yet; run `python3 example_runs/run_validation.py --compare-splits <public_dir> <private_dir> --persist-into-private` from tsfm_benchmark/ to compute it"
+  },
+  "private_manifest_reason": null,
+  "cka_replication": {
+    "status": "tested",
+    "layer_a": "stacked_xf.4",
+    "layer_b": "encoder.block.7",
+    "dev_cka": 0.42622295022010803,
+    "private": {
+      "value": 0.4253106415271759,
+      "lo": 0.4162497498095036,
+      "hi": 0.44234531074762345,
+      "resample_unit": "series"
+    },
+    "replicates": true
+  },
+  "l3_replication": {
+    "status": "tested",
+    "model_a": "TimesFM",
+    "model_b": "Chronos-2",
+    "n_private_series": 800,
+    "overall": {
+      "value": 0.5098170165284259,
+      "lo": 0.48894630597650734,
+      "hi": 0.5272890340004435
+    },
+    "tests": [
+      {
+        "corruption": "noise",
+        "dev_rho": -0.7379679144385027,
+        "private": {
+          "value": -0.7423128342245989,
+          "lo": -0.7600350935828878,
+          "hi": -0.7292697192513369
+        },
+        "replicates": true
+      },
+      {
+        "corruption": "detrend",
+        "dev_rho": 0.32987967914438504,
+        "private": {
+          "value": 0.3292112299465241,
+          "lo": 0.2810327540106952,
+          "hi": 0.4927389705882354
+        },
+        "replicates": true
+      },
+      {
+        "corruption": "deseasonalize",
+        "dev_rho": 0.25868983957219255,
+        "private": {
+          "value": 0.26270053475935834,
+          "lo": 0.2339488636363637,
+          "hi": 0.30782085561497324
+        },
+        "replicates": true
+      },
+      {
+        "corruption": "frequency_shift",
+        "dev_rho": 0.22225935828877005,
+        "private": {
+          "value": 0.25300802139037437,
+          "lo": 0.10202205882352947,
+          "hi": 0.38302974598930484
+        },
+        "replicates": true
+      },
+      {
+        "corruption": "level_shift",
+        "dev_rho": 0.04010695187165776,
+        "private": {
+          "value": 0.04879679144385027,
+          "lo": -0.05289104278074865,
+          "hi": 0.09196189839572194
+        },
+        "replicates": true
+      },
+      {
+        "corruption": "spike",
+        "dev_rho": -0.7874331550802139,
+        "private": {
+          "value": -0.7804144385026739,
+          "lo": -0.7927807486631017,
+          "hi": -0.7733790106951872
+        },
+        "replicates": true
+      },
+      {
+        "corruption": "smooth",
+        "dev_rho": -0.4184491978609626,
+        "private": {
+          "value": -0.4662433155080214,
+          "lo": -0.5588485962566845,
+          "hi": -0.38444184491978606
+        },
+        "replicates": true
+      },
+      {
+        "corruption": "warp",
+        "dev_rho": -0.6397058823529412,
+        "private": {
+          "value": -0.6580882352941176,
+          "lo": -0.6928643048128342,
+          "hi": -0.6179562165775402
+        },
+        "replicates": true
+      },
+      {
+        "corruption": "dropout",
+        "dev_rho": 0.49799465240641716,
+        "private": {
+          "value": 0.4923128342245989,
+          "lo": 0.4588820187165776,
+          "hi": 0.5167112299465241
+        },
+        "replicates": true
+      }
+    ]
+  },
+  "concept_replication": {
+    "status": "tested",
+    "transfer": {
+      "status": "tested",
+      "n_registered": 20,
+      "n_tested": 20,
+      "n_confirmed": 20,
+      "p_combination": "max(p, rev_p) per claim (intersection-union), then Holm across claims",
+      "n_null": 2000,
+      "tests": [
+        {
+          "id": "concept_transfer::TimesFM/stacked_xf.0::0::Chronos-2/encoder.block.11",
+          "concept": 0,
+          "src_target": "TimesFM/stacked_xf.0",
+          "dst_target": "Chronos-2/encoder.block.11",
+          "dst_model": "Chronos-2",
+          "dev_auc": 0.9928571428571429,
+          "dev_auc_margin": 0.2860396825396826,
+          "dev_dst_feature": 509,
+          "status": "tested",
+          "k_used": 20,
+          "n_null": 2000,
+          "private_auc": 0.9858333333333333,
+          "private_null_p95": 0.7366089743589743,
+          "private_feature": 662,
+          "private_p": 0.0004997501249375312,
+          "private_rev_auc": 0.9816025641025641,
+          "private_rev_null_p95": 0.5774230769230768,
+          "private_rev_p": 0.0004997501249375312,
+          "private_reciprocal": true,
+          "p_combined": 0.0004997501249375312,
+          "p_holm": 0.009995002498750623,
+          "confirmed": true,
+          "verdict": "confirmed"
+        },
+        {
+          "id": "concept_transfer::TimesFM/stacked_xf.0::0::Sundial/model.layers.5",
+          "concept": 0,
+          "src_target": "TimesFM/stacked_xf.0",
+          "dst_target": "Sundial/model.layers.5",
+          "dst_model": "Sundial",
+          "dev_auc": 0.9888888888888889,
+          "dev_auc_margin": 0.28074603174603185,
+          "dev_dst_feature": 6070,
+          "status": "tested",
+          "k_used": 20,
+          "n_null": 2000,
+          "private_auc": 0.986474358974359,
+          "private_null_p95": 0.7096185897435898,
+          "private_feature": 1610,
+          "private_p": 0.0004997501249375312,
+          "private_rev_auc": 0.9919230769230769,
+          "private_rev_null_p95": 0.5726474358974358,
+          "private_rev_p": 0.0004997501249375312,
+          "private_reciprocal": true,
+          "p_combined": 0.0004997501249375312,
+          "p_holm": 0.009995002498750623,
+          "confirmed": true,
+          "verdict": "confirmed"
+        },
+        {
+          "id": "concept_transfer::TimesFM/stacked_xf.0::0::Sundial/model.layers.3",
+          "concept": 0,
+          "src_target": "TimesFM/stacked_xf.0",
+          "dst_target": "Sundial/model.layers.3",
+          "dst_model": "Sundial",
+          "dev_auc": 0.986984126984127,
+          "dev_auc_margin": 0.2792592592592592,
+          "dev_dst_feature": 2779,
+          "status": "tested",
+          "k_used": 20,
+          "n_null": 2000,
+          "private_auc": 0.9873717948717948,
+          "private_null_p95": 0.7164855769230769,
+          "private_feature": 4936,
+          "private_p": 0.0004997501249375312,
+          "private_rev_auc": 0.9902564102564102,
+          "private_rev_null_p95": 0.5703621794871795,
+          "private_rev_p": 0.0004997501249375312,
+          "private_reciprocal": true,
+          "p_combined": 0.0004997501249375312,
+          "p_holm": 0.009995002498750623,
+          "confirmed": true,
+          "verdict": "confirmed"
+        },
+        {
+          "id": "concept_transfer::TimesFM/stacked_xf.0::0::Sundial/model.layers.4",
+          "concept": 0,
+          "src_target": "TimesFM/stacked_xf.0",
+          "dst_target": "Sundial/model.layers.4",
+          "dst_model": "Sundial",
+          "dev_auc": 0.9842063492063492,
+          "dev_auc_margin": 0.27741005291005294,
+          "dev_dst_feature": 5652,
+          "status": "tested",
+          "k_used": 20,
+          "n_null": 2000,
+          "private_auc": 0.9858333333333333,
+          "private_null_p95": 0.7137275641025641,
+          "private_feature": 5825,
+          "private_p": 0.0004997501249375312,
+          "private_rev_auc": 0.9897435897435898,
+          "private_rev_null_p95": 0.5760897435897436,
+          "private_rev_p": 0.0004997501249375312,
+          "private_reciprocal": true,
+          "p_combined": 0.0004997501249375312,
+          "p_holm": 0.009995002498750623,
+          "confirmed": true,
+          "verdict": "confirmed"
+        },
+        {
+          "id": "concept_transfer::Chronos-2/encoder.block.6::9::TimesFM/stacked_xf.14",
+          "concept": 9,
+          "src_target": "Chronos-2/encoder.block.6",
+          "dst_target": "TimesFM/stacked_xf.14",
+          "dst_model": "TimesFM",
+          "dev_auc": 0.9922222222222222,
+          "dev_auc_margin": 0.2738015873015873,
+          "dev_dst_feature": 630,
+          "status": "tested",
+          "k_used": 20,
+          "n_null": 2000,
+          "private_auc": 0.9712820512820513,
+          "private_null_p95": 0.7186089743589743,
+          "private_feature": 630,
+          "private_p": 0.0004997501249375312,
+          "private_rev_auc": 0.9956410256410256,
+          "private_rev_null_p95": 0.7407692307692307,
+          "private_rev_p": 0.0004997501249375312,
+          "private_reciprocal": true,
+          "p_combined": 0.0004997501249375312,
+          "p_holm": 0.009995002498750623,
+          "confirmed": true,
+          "verdict": "confirmed"
+        },
+        {
+          "id": "concept_transfer::TimesFM/stacked_xf.0::0::Chronos-Bolt/encoder.block.5",
+          "concept": 0,
+          "src_target": "TimesFM/stacked_xf.0",
+          "dst_target": "Chronos-Bolt/encoder.block.5",
+          "dst_model": "Chronos-Bolt",
+          "dev_auc": 0.9956084656084656,
+          "dev_auc_margin": 0.27368386243386245,
+          "dev_dst_feature": 6013,
+          "status": "tested",
+          "k_used": 20,
+          "n_null": 2000,
+          "private_auc": 0.9928846153846154,
+          "private_null_p95": 0.7256105769230768,
+          "private_feature": 6013,
+          "private_p": 0.0004997501249375312,
+          "private_rev_auc": 0.9893589743589744,
+          "private_rev_null_p95": 0.6505480769230769,
+          "private_rev_p": 0.0004997501249375312,
+          "private_reciprocal": true,
+          "p_combined": 0.0004997501249375312,
+          "p_holm": 0.009995002498750623,
+          "confirmed": true,
+          "verdict": "confirmed"
+        },
+        {
+          "id": "concept_transfer::TimesFM/stacked_xf.0::0::Chronos-Bolt/encoder.block.3",
+          "concept": 0,
+          "src_target": "TimesFM/stacked_xf.0",
+          "dst_target": "Chronos-Bolt/encoder.block.3",
+          "dst_model": "Chronos-Bolt",
+          "dev_auc": 0.9958465608465609,
+          "dev_auc_margin": 0.26796560846560846,
+          "dev_dst_feature": 2071,
+          "status": "tested",
+          "k_used": 20,
+          "n_null": 2000,
+          "private_auc": 0.9883974358974359,
+          "private_null_p95": 0.7430833333333333,
+          "private_feature": 4430,
+          "private_p": 0.0004997501249375312,
+          "private_rev_auc": 0.9901282051282051,
+          "private_rev_null_p95": 0.5986714743589744,
+          "private_rev_p": 0.0004997501249375312,
+          "private_reciprocal": true,
+          "p_combined": 0.0004997501249375312,
+          "p_holm": 0.009995002498750623,
+          "confirmed": true,
+          "verdict": "confirmed"
+        },
+        {
+          "id": "concept_transfer::TimesFM/stacked_xf.0::0::Sundial/model.layers.6",
+          "concept": 0,
+          "src_target": "TimesFM/stacked_xf.0",
+          "dst_target": "Sundial/model.layers.6",
+          "dst_model": "Sundial",
+          "dev_auc": 0.9807671957671957,
+          "dev_auc_margin": 0.26594708994709004,
+          "dev_dst_feature": 5652,
+          "status": "tested",
+          "k_used": 20,
+          "n_null": 2000,
+          "private_auc": 0.9883333333333333,
+          "private_null_p95": 0.7187852564102565,
+          "private_feature": 2879,
+          "private_p": 0.0004997501249375312,
+          "private_rev_auc": 0.9853205128205128,
+          "private_rev_null_p95": 0.610488782051282,
+          "private_rev_p": 0.0004997501249375312,
+          "private_reciprocal": true,
+          "p_combined": 0.0004997501249375312,
+          "p_holm": 0.009995002498750623,
+          "confirmed": true,
+          "verdict": "confirmed"
+        },
+        {
+          "id": "concept_transfer::Chronos-2/encoder.block.6::9::TimesFM/stacked_xf.16",
+          "concept": 9,
+          "src_target": "Chronos-2/encoder.block.6",
+          "dst_target": "TimesFM/stacked_xf.16",
+          "dst_model": "TimesFM",
+          "dev_auc": 0.9766137566137566,
+          "dev_auc_margin": 0.2658042328042328,
+          "dev_dst_feature": 2331,
+          "status": "tested",
+          "k_used": 20,
+          "n_null": 2000,
+          "private_auc": 0.9857692307692307,
+          "private_null_p95": 0.7158365384615385,
+          "private_feature": 5711,
+          "private_p": 0.0004997501249375312,
+          "private_rev_auc": 0.982051282051282,
+          "private_rev_null_p95": 0.7377211538461538,
+          "private_rev_p": 0.0004997501249375312,
+          "private_reciprocal": true,
+          "p_combined": 0.0004997501249375312,
+          "p_holm": 0.009995002498750623,
+          "confirmed": true,
+          "verdict": "confirmed"
+        },
+        {
+          "id": "concept_transfer::TimesFM/stacked_xf.0::0::Chronos-2/encoder.block.6",
+          "concept": 0,
+          "src_target": "TimesFM/stacked_xf.0",
+          "dst_target": "Chronos-2/encoder.block.6",
+          "dst_model": "Chronos-2",
+          "dev_auc": 0.9865608465608465,
+          "dev_auc_margin": 0.26555291005291004,
+          "dev_dst_feature": 384,
+          "status": "tested",
+          "k_used": 20,
+          "n_null": 2000,
+          "private_auc": 0.9819230769230769,
+          "private_null_p95": 0.7385929487179488,
+          "private_feature": 384,
+          "private_p": 0.0004997501249375312,
+          "private_rev_auc": 0.97,
+          "private_rev_null_p95": 0.6186987179487179,
+          "private_rev_p": 0.0004997501249375312,
+          "private_reciprocal": true,
+          "p_combined": 0.0004997501249375312,
+          "p_holm": 0.009995002498750623,
+          "confirmed": true,
+          "verdict": "confirmed"
+        },
+        {
+          "id": "concept_transfer::TimesFM/stacked_xf.0::0::Chronos-2/encoder.block.9",
+          "concept": 0,
+          "src_target": "TimesFM/stacked_xf.0",
+          "dst_target": "Chronos-2/encoder.block.9",
+          "dst_model": "Chronos-2",
+          "dev_auc": 0.984973544973545,
+          "dev_auc_margin": 0.2641309523809524,
+          "dev_dst_feature": 2005,
+          "status": "tested",
+          "k_used": 20,
+          "n_null": 2000,
+          "private_auc": 0.9801282051282051,
+          "private_null_p95": 0.7428317307692308,
+          "private_feature": 1166,
+          "private_p": 0.0004997501249375312,
+          "private_rev_auc": 0.9856410256410256,
+          "private_rev_null_p95": 0.5703605769230768,
+          "private_rev_p": 0.0004997501249375312,
+          "private_reciprocal": true,
+          "p_combined": 0.0004997501249375312,
+          "p_holm": 0.009995002498750623,
+          "confirmed": true,
+          "verdict": "confirmed"
+        },
+        {
+          "id": "concept_transfer::TimesFM/stacked_xf.0::0::Chronos-2/encoder.block.5",
+          "concept": 0,
+          "src_target": "TimesFM/stacked_xf.0",
+          "dst_target": "Chronos-2/encoder.block.5",
+          "dst_model": "Chronos-2",
+          "dev_auc": 0.9922751322751323,
+          "dev_auc_margin": 0.26395502645502655,
+          "dev_dst_feature": 4706,
+          "status": "tested",
+          "k_used": 20,
+          "n_null": 2000,
+          "private_auc": 0.9862820512820513,
+          "private_null_p95": 0.7388461538461538,
+          "private_feature": 384,
+          "private_p": 0.0004997501249375312,
+          "private_rev_auc": 0.9771153846153846,
+          "private_rev_null_p95": 0.620113782051282,
+          "private_rev_p": 0.0004997501249375312,
+          "private_reciprocal": true,
+          "p_combined": 0.0004997501249375312,
+          "p_holm": 0.009995002498750623,
+          "confirmed": true,
+          "verdict": "confirmed"
+        },
+        {
+          "id": "concept_transfer::TimesFM/stacked_xf.0::0::Chronos-Bolt/encoder.block.4",
+          "concept": 0,
+          "src_target": "TimesFM/stacked_xf.0",
+          "dst_target": "Chronos-Bolt/encoder.block.4",
+          "dst_model": "Chronos-Bolt",
+          "dev_auc": 0.9944973544973545,
+          "dev_auc_margin": 0.25816534391534396,
+          "dev_dst_feature": 5278,
+          "status": "tested",
+          "k_used": 20,
+          "n_null": 2000,
+          "private_auc": 0.9914102564102564,
+          "private_null_p95": 0.7379182692307692,
+          "private_feature": 6013,
+          "private_p": 0.0004997501249375312,
+          "private_rev_auc": 0.9834615384615385,
+          "private_rev_null_p95": 0.6365208333333333,
+          "private_rev_p": 0.0004997501249375312,
+          "private_reciprocal": true,
+          "p_combined": 0.0004997501249375312,
+          "p_holm": 0.009995002498750623,
+          "confirmed": true,
+          "verdict": "confirmed"
+        },
+        {
+          "id": "concept_transfer::TimesFM/stacked_xf.0::0::Sundial/model.layers.7",
+          "concept": 0,
+          "src_target": "TimesFM/stacked_xf.0",
+          "dst_target": "Sundial/model.layers.7",
+          "dst_model": "Sundial",
+          "dev_auc": 0.9788359788359788,
+          "dev_auc_margin": 0.258,
+          "dev_dst_feature": 5652,
+          "status": "tested",
+          "k_used": 20,
+          "n_null": 2000,
+          "private_auc": 0.9903846153846154,
+          "private_null_p95": 0.7247163461538462,
+          "private_feature": 2898,
+          "private_p": 0.0004997501249375312,
+          "private_rev_auc": 0.9872435897435897,
+          "private_rev_null_p95": 0.6347355769230769,
+          "private_rev_p": 0.0004997501249375312,
+          "private_reciprocal": true,
+          "p_combined": 0.0004997501249375312,
+          "p_holm": 0.009995002498750623,
+          "confirmed": true,
+          "verdict": "confirmed"
+        },
+        {
+          "id": "concept_transfer::TimesFM/stacked_xf.0::0::Sundial/model.layers.8",
+          "concept": 0,
+          "src_target": "TimesFM/stacked_xf.0",
+          "dst_target": "Sundial/model.layers.8",
+          "dst_model": "Sundial",
+          "dev_auc": 0.9762433862433862,
+          "dev_auc_margin": 0.2553994708994709,
+          "dev_dst_feature": 5652,
+          "status": "tested",
+          "k_used": 20,
+          "n_null": 2000,
+          "private_auc": 0.9748076923076923,
+          "private_null_p95": 0.7251282051282051,
+          "private_feature": 5652,
+          "private_p": 0.0004997501249375312,
+          "private_rev_auc": 0.9297435897435897,
+          "private_rev_null_p95": 0.6089455128205129,
+          "private_rev_p": 0.0004997501249375312,
+          "private_reciprocal": true,
+          "p_combined": 0.0004997501249375312,
+          "p_holm": 0.009995002498750623,
+          "confirmed": true,
+          "verdict": "confirmed"
+        },
+        {
+          "id": "concept_transfer::Chronos-2/encoder.block.6::9::TimesFM/stacked_xf.6",
+          "concept": 9,
+          "src_target": "Chronos-2/encoder.block.6",
+          "dst_target": "TimesFM/stacked_xf.6",
+          "dst_model": "TimesFM",
+          "dev_auc": 0.9896296296296296,
+          "dev_auc_margin": 0.2533756613756615,
+          "dev_dst_feature": 3531,
+          "status": "tested",
+          "k_used": 20,
+          "n_null": 2000,
+          "private_auc": 0.9950641025641026,
+          "private_null_p95": 0.7513221153846154,
+          "private_feature": 4728,
+          "private_p": 0.0004997501249375312,
+          "private_rev_auc": 0.9948717948717949,
+          "private_rev_null_p95": 0.7307820512820512,
+          "private_rev_p": 0.0004997501249375312,
+          "private_reciprocal": true,
+          "p_combined": 0.0004997501249375312,
+          "p_holm": 0.009995002498750623,
+          "confirmed": true,
+          "verdict": "confirmed"
+        },
+        {
+          "id": "concept_transfer::TimesFM/stacked_xf.0::0::Chronos-2/encoder.block.7",
+          "concept": 0,
+          "src_target": "TimesFM/stacked_xf.0",
+          "dst_target": "Chronos-2/encoder.block.7",
+          "dst_model": "Chronos-2",
+          "dev_auc": 0.975925925925926,
+          "dev_auc_margin": 0.2493941798941799,
+          "dev_dst_feature": 362,
+          "status": "tested",
+          "k_used": 20,
+          "n_null": 2000,
+          "private_auc": 0.9708333333333333,
+          "private_null_p95": 0.7667195512820513,
+          "private_feature": 2548,
+          "private_p": 0.0004997501249375312,
+          "private_rev_auc": 0.8007692307692308,
+          "private_rev_null_p95": 0.6295544871794873,
+          "private_rev_p": 0.0004997501249375312,
+          "private_reciprocal": true,
+          "p_combined": 0.0004997501249375312,
+          "p_holm": 0.009995002498750623,
+          "confirmed": true,
+          "verdict": "confirmed"
+        },
+        {
+          "id": "concept_transfer::Chronos-2/encoder.block.6::9::TimesFM/stacked_xf.18",
+          "concept": 9,
+          "src_target": "Chronos-2/encoder.block.6",
+          "dst_target": "TimesFM/stacked_xf.18",
+          "dst_model": "TimesFM",
+          "dev_auc": 0.9893386243386243,
+          "dev_auc_margin": 0.2492037037037037,
+          "dev_dst_feature": 859,
+          "status": "tested",
+          "k_used": 20,
+          "n_null": 2000,
+          "private_auc": 0.9910256410256411,
+          "private_null_p95": 0.7572788461538462,
+          "private_feature": 859,
+          "private_p": 0.0004997501249375312,
+          "private_rev_auc": 0.994423076923077,
+          "private_rev_null_p95": 0.7396217948717948,
+          "private_rev_p": 0.0004997501249375312,
+          "private_reciprocal": true,
+          "p_combined": 0.0004997501249375312,
+          "p_holm": 0.009995002498750623,
+          "confirmed": true,
+          "verdict": "confirmed"
+        },
+        {
+          "id": "concept_transfer::TimesFM/stacked_xf.0::0::Chronos-2/encoder.block.8",
+          "concept": 0,
+          "src_target": "TimesFM/stacked_xf.0",
+          "dst_target": "Chronos-2/encoder.block.8",
+          "dst_model": "Chronos-2",
+          "dev_auc": 0.9651851851851851,
+          "dev_auc_margin": 0.24537433862433866,
+          "dev_dst_feature": 5844,
+          "status": "tested",
+          "k_used": 20,
+          "n_null": 2000,
+          "private_auc": 0.9853846153846154,
+          "private_null_p95": 0.745198717948718,
+          "private_feature": 2548,
+          "private_p": 0.0004997501249375312,
+          "private_rev_auc": 0.9753205128205128,
+          "private_rev_null_p95": 0.6053253205128205,
+          "private_rev_p": 0.0004997501249375312,
+          "private_reciprocal": true,
+          "p_combined": 0.0004997501249375312,
+          "p_holm": 0.009995002498750623,
+          "confirmed": true,
+          "verdict": "confirmed"
+        },
+        {
+          "id": "concept_transfer::TimesFM/stacked_xf.0::0::Sundial/model.layers.10",
+          "concept": 0,
+          "src_target": "TimesFM/stacked_xf.0",
+          "dst_target": "Sundial/model.layers.10",
+          "dst_model": "Sundial",
+          "dev_auc": 0.9722751322751323,
+          "dev_auc_margin": 0.24304629629629637,
+          "dev_dst_feature": 1096,
+          "status": "tested",
+          "k_used": 20,
+          "n_null": 2000,
+          "private_auc": 0.975,
+          "private_null_p95": 0.7367355769230769,
+          "private_feature": 1096,
+          "private_p": 0.0004997501249375312,
+          "private_rev_auc": 0.8422435897435897,
+          "private_rev_null_p95": 0.6750208333333334,
+          "private_rev_p": 0.0004997501249375312,
+          "private_reciprocal": true,
+          "p_combined": 0.0004997501249375312,
+          "p_holm": 0.009995002498750623,
+          "confirmed": true,
+          "verdict": "confirmed"
+        }
+      ]
+    },
+    "knob": {
+      "status": "empty",
+      "n_registered": 0,
+      "tests": [],
+      "reason": "empty by design (sec 37.10 P7 decision item 3): sec 37.9's P6a found no (concept, knob) response surviving BH on dev (0/98 go/no-go, 0/151 registered retry), so no dev claim exists to freeze and no private counterfactual path is built."
+    },
+    "ledger": [
+      {
+        "family": "concept_transfer",
+        "m": 20,
+        "n_null": 2000,
+        "alpha": 0.05,
+        "min_attainable_p_holm": 0.009995002498750625,
+        "satisfiable": true
+      },
+      {
+        "family": "concept_knob",
+        "m": 0,
+        "n_null": null,
+        "min_attainable_p_holm": null,
+        "satisfiable": null,
+        "note": "empty by design (sec 37.10 P7 decision item 3): sec 37.9's P6a found no (concept, knob) response surviving BH on dev (0/98 go/no-go, 0/151 registered retry), so no dev claim exists to freeze and no private counterfactual path is built."
+      }
+    ]
+  }
+}

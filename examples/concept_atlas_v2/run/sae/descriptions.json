@@ -1,0 +1,2108 @@
+{
+  "TimesFM/stacked_xf.10": {
+    "features": {
+      "712": {
+        "text": "This feature changed nothing above the random-direction null when removed from the series it fires on; it is strongest on series with a larger number of seasonal components (rho 0.28, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "4370": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger number of seasonal components (rho 0.28, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "5638": {
+        "text": "This feature changed nothing above the random-direction null when removed from the series it fires on; it is strongest on series with a larger number of seasonal components (rho 0.25, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "1136": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller dominant seasonal period (rho 0.25, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "5702": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger number of seasonal components (rho 0.24, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "453": {
+        "text": "This feature moves the forecast's seasonal magnitude on the series it fires on (1.17 times the random-direction null), and also moves its spectral centroid, strongest on series with a larger number of seasonal components (rho 0.24, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "3751": {
+        "text": "This feature changed nothing above the random-direction null when removed from the series it fires on; it is strongest on series with a larger number of seasonal components (rho 0.24, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "3320": {
+        "text": "This feature changed nothing above the random-direction null when removed from the series it fires on; it is strongest on series with a larger number of seasonal components (rho 0.23, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      }
+    },
+    "roles": {},
+    "concepts": {}
+  },
+  "TimesFM/stacked_xf.18": {
+    "features": {
+      "408": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller number of seasonal components (rho 0.23, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "1456": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger dominant seasonal period (rho 0.22, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "8": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger number of seasonal components (rho 0.22, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "593": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger number of seasonal components (rho 0.19, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "1212": {
+        "text": "This feature increases the forecast's overall level on the series it fires on (1.27 times the random-direction null), and also decreases forecast error, strongest on series with a larger number of seasonal components (rho 0.19, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "1061": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger number of seasonal components (rho 0.18, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "582": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger number of seasonal components (rho 0.18, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "1201": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger number of seasonal components (rho 0.18, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      }
+    },
+    "roles": {},
+    "concepts": {}
+  },
+  "TimesFM/stacked_xf.6": {
+    "features": {
+      "3921": {
+        "text": "This feature changed nothing above the random-direction null when removed from the series it fires on; it is strongest on series with a larger number of seasonal components (rho 0.31, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "4664": {
+        "text": "This feature changed nothing above the random-direction null when removed from the series it fires on; it is strongest on series with a smaller dominant seasonal period (rho 0.25, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "453": {
+        "text": "This feature changed nothing above the random-direction null when removed from the series it fires on; it is strongest on series with a larger number of seasonal components (rho 0.24, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "137": {
+        "text": "This feature changed nothing above the random-direction null when removed from the series it fires on; it is strongest on series with a smaller dominant seasonal period (rho 0.22, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "2106": {
+        "text": "This feature moves the near horizon of the forecast on the series it fires on (1.32 times the random-direction null), and also decreases its trend slope, strongest on series with a smaller dominant seasonal period (rho 0.22, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "3751": {
+        "text": "This feature decreases the forecast's spectral centroid on the series it fires on (1.42 times the random-direction null), and also moves the near horizon of the forecast, strongest on series with a smaller dominant seasonal period (rho 0.21, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "3038": {
+        "text": "This feature changed nothing above the random-direction null when removed from the series it fires on; it is strongest on series with a larger number of seasonal components (rho 0.21, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "5638": {
+        "text": "This feature changed nothing above the random-direction null when removed from the series it fires on; it is strongest on series with a smaller dominant seasonal period (rho 0.21, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      }
+    },
+    "roles": {},
+    "concepts": {}
+  },
+  "TimesFM/stacked_xf.16": {
+    "features": {
+      "712": {
+        "text": "This feature decreases the forecast's overall level on the series it fires on (1.06 times the random-direction null), strongest on series with a larger number of seasonal components (rho 0.30, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "3320": {
+        "text": "This feature moves the near horizon of the forecast on the series it fires on (1.02 times the random-direction null), strongest on series with a larger number of seasonal components (rho 0.27, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "3302": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger number of seasonal components (rho 0.26, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "5143": {
+        "text": "This feature changed nothing above the random-direction null when removed from the series it fires on; it is strongest on series with a larger number of seasonal components (rho 0.25, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "301": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger number of seasonal components (rho 0.25, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "3751": {
+        "text": "This feature changed nothing above the random-direction null when removed from the series it fires on; it is strongest on series with a larger number of seasonal components (rho 0.25, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "5638": {
+        "text": "This feature changed nothing above the random-direction null when removed from the series it fires on; it is strongest on series with a larger number of seasonal components (rho 0.24, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "2468": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger number of seasonal components (rho 0.24, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      }
+    },
+    "roles": {},
+    "concepts": {}
+  },
+  "TimesFM/stacked_xf.2": {
+    "features": {
+      "4664": {
+        "text": "This feature changed nothing above the random-direction null when removed from the series it fires on; it is strongest on series with a smaller dominant seasonal period (rho 0.31, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "3751": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller dominant seasonal period (rho 0.30, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "1568": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller dominant seasonal period (rho 0.28, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "5638": {
+        "text": "This feature changed nothing above the random-direction null when removed from the series it fires on; it is strongest on series with a smaller dominant seasonal period (rho 0.28, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "1742": {
+        "text": "This feature changed nothing above the random-direction null when removed from the series it fires on; it is strongest on series with a smaller dominant seasonal period (rho 0.27, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "301": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller dominant seasonal period (rho 0.27, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "1136": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller dominant seasonal period (rho 0.26, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "3534": {
+        "text": "This feature changed nothing above the random-direction null when removed from the series it fires on; it is strongest on series with a smaller dominant seasonal period (rho 0.26, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      }
+    },
+    "roles": {},
+    "concepts": {}
+  },
+  "Chronos-2/encoder.block.8": {
+    "features": {
+      "1209": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger AR coefficient sum (rho 0.29, n 374).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "2594": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller AR coefficient sum (rho 0.26, n 374).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "5513": {
+        "text": "This feature moves the near horizon of the forecast on the series it fires on (2.63 times the random-direction null), and also moves its overall level, strongest on series with a smaller number of seasonal components (rho 0.26, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "587": {
+        "text": "This feature moves the far horizon of the forecast on the series it fires on (2.26 times the random-direction null), and also increases its overall level, strongest on series with a larger AR coefficient sum (rho 0.23, n 374).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "3440": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller dominant seasonal period (rho 0.22, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "2360": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller dominant seasonal period (rho 0.22, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "5523": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger AR coefficient sum (rho 0.21, n 374).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "100": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger AR coefficient sum (rho 0.21, n 374).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      }
+    },
+    "roles": {},
+    "concepts": {
+      "1": {
+        "text": "These 15 features move the far horizon of the forecast (1.63 times the random-direction null), and also move the near horizon of the forecast, strongest on series with a smaller number of seasonal components (rho 0.22, n 3).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "0": {
+        "text": "These 4 features move the far horizon of the forecast (3.20 times the random-direction null), and also move the near horizon of the forecast, increase its trend slope and decrease its spread and its seasonal magnitude.",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      }
+    }
+  },
+  "Chronos-2/encoder.block.10": {
+    "features": {
+      "4020": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger AR coefficient sum (rho 0.30, n 374).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "1119": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller number of seasonal components (rho 0.27, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "4928": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller AR coefficient sum (rho 0.26, n 374).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "2727": {
+        "text": "This feature decreases the forecast's seasonal magnitude on the series it fires on (4.87 times the random-direction null), and also decreases its spread, strongest on series with a smaller number of seasonal components (rho 0.25, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "2522": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger AR coefficient sum (rho 0.24, n 374).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "5264": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger AR coefficient sum (rho 0.24, n 374).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "1941": {
+        "text": "This feature changed nothing above the random-direction null when removed from the series it fires on; it is strongest on series with a smaller number of seasonal components (rho 0.22, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "490": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger dominant seasonal period (rho 0.21, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      }
+    },
+    "roles": {},
+    "concepts": {}
+  },
+  "Chronos-2/encoder.block.11": {
+    "features": {
+      "561": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger number of seasonal components (rho 0.36, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "585": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger AR coefficient sum (rho 0.30, n 374).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "15": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger dominant seasonal period (rho 0.28, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "106": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger dominant seasonal period (rho 0.28, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "82": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger dominant seasonal period (rho 0.26, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "67": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller dominant seasonal period (rho 0.25, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "422": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller number of changepoints (rho 0.24, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "198": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller number of seasonal components (rho 0.24, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      }
+    },
+    "roles": {},
+    "concepts": {}
+  },
+  "Sundial/model.layers.3": {
+    "features": {
+      "2033": {
+        "text": "This feature increases the forecast's overall level on the series it fires on (1.87 times the random-direction null), and also moves the near horizon of the forecast, strongest on series with a smaller dominant seasonal period (rho 0.32, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "2518": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger dominant seasonal period (rho 0.30, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "5767": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller dominant seasonal period (rho 0.30, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "5747": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger dominant seasonal period (rho 0.29, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "2394": {
+        "text": "This feature changed nothing above the random-direction null when removed from the series it fires on; it is strongest on series with a larger number of changepoints (rho 0.27, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "1284": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller dominant seasonal period (rho 0.26, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "1679": {
+        "text": "This feature changed nothing above the random-direction null when removed from the series it fires on; it is strongest on series with a smaller number of seasonal components (rho 0.25, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "5085": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller dominant seasonal period (rho 0.25, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      }
+    },
+    "roles": {},
+    "concepts": {}
+  },
+  "Sundial/model.layers.10": {
+    "features": {
+      "5065": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger dominant seasonal period (rho 0.27, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "5998": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger AR coefficient sum (rho 0.27, n 374).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "4717": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller AR coefficient sum (rho 0.26, n 374).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "3637": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger AR coefficient sum (rho 0.23, n 374).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "4076": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller number of seasonal components (rho 0.23, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "3288": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger number of changepoints (rho 0.23, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "2420": {
+        "text": "This feature changed nothing above the random-direction null when removed from the series it fires on; it is strongest on series with a smaller number of seasonal components (rho 0.22, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "2287": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger AR coefficient sum (rho 0.22, n 374).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      }
+    },
+    "roles": {},
+    "concepts": {}
+  },
+  "Sundial/model.layers.11": {
+    "features": {
+      "2763": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger dominant seasonal period (rho 0.31, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "4578": {
+        "text": "This feature changed nothing above the random-direction null when removed from the series it fires on; it is strongest on series with a smaller number of seasonal components (rho 0.28, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "4502": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger AR coefficient sum (rho 0.27, n 374).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "1201": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger dominant seasonal period (rho 0.26, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "5006": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger number of changepoints (rho 0.26, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "2287": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger AR coefficient sum (rho 0.26, n 374).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "2775": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger dominant seasonal period (rho 0.25, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "5561": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller AR coefficient sum (rho 0.25, n 374).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      }
+    },
+    "roles": {},
+    "concepts": {}
+  },
+  "Chronos-Bolt/encoder.block.4": {
+    "features": {
+      "4325": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller dominant seasonal period (rho 0.27, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "1732": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller AR coefficient sum (rho 0.26, n 374).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "1593": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller number of changepoints (rho 0.25, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "6017": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger number of changepoints (rho 0.25, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "5244": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger dominant seasonal period (rho 0.25, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "2978": {
+        "text": "This feature decreases the forecast's seasonal magnitude on the series it fires on (4.09 times the random-direction null), and also moves forecast error, strongest on series with a smaller number of seasonal components (rho 0.24, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "6004": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller dominant seasonal period (rho 0.23, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "1905": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller dominant seasonal period (rho 0.23, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      }
+    },
+    "roles": {},
+    "concepts": {
+      "0": {
+        "text": "These 8 features increase the forecast's seasonal magnitude (3.27 times the random-direction null), and also increase its spread and move the far horizon of the forecast, strongest on series with a smaller dominant seasonal period (rho 0.01, n 2).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "1": {
+        "text": "These 3 features move the far horizon of the forecast (3.04 times the random-direction null), and also move the near horizon of the forecast, increase its overall level and decrease its spectral centroid.",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      }
+    }
+  },
+  "Chronos-Bolt/encoder.block.5": {
+    "features": {
+      "1866": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller number of changepoints (rho 0.27, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "5560": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller AR coefficient sum (rho 0.25, n 374).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "3471": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller dominant seasonal period (rho 0.25, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "4771": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller number of changepoints (rho 0.25, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "474": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger number of changepoints (rho 0.23, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "5693": {
+        "text": "This feature changed nothing above the random-direction null when removed from the series it fires on; it is strongest on series with a smaller number of changepoints (rho 0.23, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "5566": {
+        "text": "This feature moves forecast error on the series it fires on (2.75 times the random-direction null), and also increases its spread and its seasonal magnitude, strongest on series with a smaller dominant seasonal period (rho 0.22, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "2176": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger number of changepoints (rho 0.22, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      }
+    },
+    "roles": {},
+    "concepts": {}
+  },
+  "TimesFM/stacked_xf.14": {
+    "features": {
+      "712": {
+        "text": "This feature changed nothing above the random-direction null when removed from the series it fires on; it is strongest on series with a larger number of seasonal components (rho 0.28, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "5702": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger number of seasonal components (rho 0.27, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "3320": {
+        "text": "This feature changed nothing above the random-direction null when removed from the series it fires on; it is strongest on series with a larger number of seasonal components (rho 0.26, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "301": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger number of seasonal components (rho 0.26, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "5638": {
+        "text": "This feature changed nothing above the random-direction null when removed from the series it fires on; it is strongest on series with a larger number of seasonal components (rho 0.26, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "4370": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger number of seasonal components (rho 0.26, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "1136": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger number of seasonal components (rho 0.25, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "1568": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger number of seasonal components (rho 0.25, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      }
+    },
+    "roles": {},
+    "concepts": {}
+  },
+  "TimesFM/stacked_xf.4": {
+    "features": {
+      "574": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller dominant seasonal period (rho 0.30, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "3751": {
+        "text": "This feature decreases forecast error on the series it fires on (1.44 times the random-direction null), strongest on series with a smaller dominant seasonal period (rho 0.25, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "956": {
+        "text": "This feature changed nothing above the random-direction null when removed from the series it fires on; it is strongest on series with a smaller dominant seasonal period (rho 0.25, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "2106": {
+        "text": "This feature changed nothing above the random-direction null when removed from the series it fires on; it is strongest on series with a smaller dominant seasonal period (rho 0.25, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "1742": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller dominant seasonal period (rho 0.24, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "5638": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller dominant seasonal period (rho 0.24, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "1136": {
+        "text": "This feature moves the forecast's spectral centroid on the series it fires on (1.62 times the random-direction null), and also moves its seasonal magnitude, strongest on series with a larger number of seasonal components (rho 0.23, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "3038": {
+        "text": "This feature decreases forecast error on the series it fires on (2.77 times the random-direction null), and also increases its spread and moves its trend slope, strongest on series with a smaller dominant seasonal period (rho 0.22, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      }
+    },
+    "roles": {},
+    "concepts": {}
+  },
+  "TimesFM/stacked_xf.0": {
+    "features": {
+      "2996": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller dominant seasonal period (rho 0.26, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "964": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller dominant seasonal period (rho 0.26, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "286": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller dominant seasonal period (rho 0.24, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "5258": {
+        "text": "This feature moves the forecast's spread on the series it fires on (2.01 times the random-direction null), and also moves its trend slope, strongest on series with a larger dominant seasonal period (rho 0.24, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "6042": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller dominant seasonal period (rho 0.24, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "5822": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller dominant seasonal period (rho 0.23, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "3458": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger dominant seasonal period (rho 0.23, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "4537": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger number of changepoints (rho 0.22, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      }
+    },
+    "roles": {},
+    "concepts": {}
+  },
+  "TimesFM/stacked_xf.8": {
+    "features": {
+      "1192": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger number of seasonal components (rho 0.28, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "3534": {
+        "text": "This feature moves forecast error on the series it fires on (1.09 times the random-direction null), strongest on series with a larger number of seasonal components (rho 0.28, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "574": {
+        "text": "This feature increases the forecast's overall level on the series it fires on (1.13 times the random-direction null), and also decreases its spectral centroid, strongest on series with a smaller dominant seasonal period (rho 0.27, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "2106": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller dominant seasonal period (rho 0.25, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "5247": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller dominant seasonal period (rho 0.24, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "712": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger number of seasonal components (rho 0.24, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "4664": {
+        "text": "This feature changed nothing above the random-direction null when removed from the series it fires on; it is strongest on series with a smaller dominant seasonal period (rho 0.23, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "453": {
+        "text": "This feature changed nothing above the random-direction null when removed from the series it fires on; it is strongest on series with a larger number of seasonal components (rho 0.23, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      }
+    },
+    "roles": {},
+    "concepts": {}
+  },
+  "Chronos-2/encoder.block.7": {
+    "features": {
+      "2278": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller dominant seasonal period (rho 0.28, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "3134": {
+        "text": "This feature moves forecast error on the series it fires on (2.44 times the random-direction null), and also decreases its spectral centroid and increases its trend slope, strongest on series with a larger AR coefficient sum (rho 0.26, n 374).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "3440": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller dominant seasonal period (rho 0.24, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "3224": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger number of seasonal components (rho 0.24, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "4426": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller number of seasonal components (rho 0.23, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "5513": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller number of seasonal components (rho 0.23, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "5716": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller AR coefficient sum (rho 0.23, n 374).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "3868": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger dominant seasonal period (rho 0.22, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      }
+    },
+    "roles": {},
+    "concepts": {}
+  },
+  "Chronos-2/encoder.block.9": {
+    "features": {
+      "4680": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller AR coefficient sum (rho 0.25, n 374).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "4051": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller AR coefficient sum (rho 0.24, n 374).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "2727": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger AR coefficient sum (rho 0.23, n 374).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "3432": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller number of seasonal components (rho 0.23, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "4077": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller AR coefficient sum (rho 0.23, n 374).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "1138": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger AR coefficient sum (rho 0.23, n 374).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "1310": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger AR coefficient sum (rho 0.23, n 374).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "5639": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller number of changepoints (rho 0.23, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      }
+    },
+    "roles": {},
+    "concepts": {}
+  },
+  "Sundial/model.layers.9": {
+    "features": {
+      "5065": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger dominant seasonal period (rho 0.28, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "1679": {
+        "text": "This feature changed nothing above the random-direction null when removed from the series it fires on; it is strongest on series with a smaller number of seasonal components (rho 0.27, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "3027": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller AR coefficient sum (rho 0.25, n 374).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "2535": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller AR coefficient sum (rho 0.25, n 374).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "352": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger AR coefficient sum (rho 0.24, n 374).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "1425": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger dominant seasonal period (rho 0.23, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "2953": {
+        "text": "This feature moves the far horizon of the forecast on the series it fires on (1.11 times the random-direction null), strongest on series with a smaller number of seasonal components (rho 0.23, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "1285": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger AR coefficient sum (rho 0.22, n 374).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      }
+    },
+    "roles": {},
+    "concepts": {}
+  },
+  "Sundial/model.layers.6": {
+    "features": {
+      "5065": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger dominant seasonal period (rho 0.38, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "2033": {
+        "text": "This feature moves the near horizon of the forecast on the series it fires on (2.57 times the random-direction null), strongest on series with a smaller dominant seasonal period (rho 0.30, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "2336": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller AR coefficient sum (rho 0.26, n 374).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "4672": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger dominant seasonal period (rho 0.26, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "5686": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger dominant seasonal period (rho 0.25, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "1284": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller dominant seasonal period (rho 0.24, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "5318": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger AR coefficient sum (rho 0.24, n 374).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "4902": {
+        "text": "This feature changed nothing above the random-direction null when removed from the series it fires on; it is strongest on series with a smaller number of seasonal components (rho 0.24, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      }
+    },
+    "roles": {},
+    "concepts": {}
+  },
+  "Sundial/model.layers.7": {
+    "features": {
+      "5065": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger dominant seasonal period (rho 0.38, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "2354": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller number of seasonal components (rho 0.32, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "2033": {
+        "text": "This feature moves the near horizon of the forecast on the series it fires on (3.36 times the random-direction null), and also increases its trend slope, strongest on series with a smaller dominant seasonal period (rho 0.31, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "1284": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller dominant seasonal period (rho 0.27, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "1300": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger dominant seasonal period (rho 0.25, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "2146": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller AR coefficient sum (rho 0.25, n 374).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "3912": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller dominant seasonal period (rho 0.24, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "5413": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger AR coefficient sum (rho 0.23, n 374).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      }
+    },
+    "roles": {},
+    "concepts": {}
+  },
+  "Chronos-Bolt/encoder.block.3": {
+    "features": {
+      "4586": {
+        "text": "This feature changed nothing above the random-direction null when removed from the series it fires on; it is strongest on series with a larger dominant seasonal period (rho 0.29, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "5068": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller dominant seasonal period (rho 0.27, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "2365": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller dominant seasonal period (rho 0.27, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "259": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger dominant seasonal period (rho 0.26, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "4027": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger dominant seasonal period (rho 0.25, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "4140": {
+        "text": "This feature increases the forecast's trend slope on the series it fires on (1.25 times the random-direction null), and also moves the near horizon of the forecast, strongest on series with a smaller dominant seasonal period (rho 0.24, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "3111": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger dominant seasonal period (rho 0.23, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "2514": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger dominant seasonal period (rho 0.23, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      }
+    },
+    "roles": {},
+    "concepts": {}
+  },
+  "TimesFM/stacked_xf.12": {
+    "features": {
+      "712": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger number of seasonal components (rho 0.27, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "5702": {
+        "text": "This feature decreases the forecast's overall level on the series it fires on (2.03 times the random-direction null), strongest on series with a larger number of seasonal components (rho 0.27, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "137": {
+        "text": "This feature changed nothing above the random-direction null when removed from the series it fires on; it is strongest on series with a larger number of seasonal components (rho 0.26, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "574": {
+        "text": "This feature decreases forecast error on the series it fires on (1.29 times the random-direction null), and also decreases its spectral centroid and increases its overall level, strongest on series with a smaller dominant seasonal period (rho 0.26, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "3534": {
+        "text": "This feature changed nothing above the random-direction null when removed from the series it fires on; it is strongest on series with a larger number of seasonal components (rho 0.25, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "533": {
+        "text": "This feature increases the forecast's trend slope on the series it fires on (1.44 times the random-direction null), strongest on series with a larger number of seasonal components (rho 0.25, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "1136": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller dominant seasonal period (rho 0.24, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "453": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger number of seasonal components (rho 0.24, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      }
+    },
+    "roles": {},
+    "concepts": {}
+  },
+  "Chronos-2/encoder.block.6": {
+    "features": {
+      "3087": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller number of seasonal components (rho 0.31, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "652": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller AR coefficient sum (rho 0.29, n 374).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "2346": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger AR coefficient sum (rho 0.28, n 374).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "3585": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger dominant seasonal period (rho 0.27, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "3404": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller AR coefficient sum (rho 0.25, n 374).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "1575": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller AR coefficient sum (rho 0.24, n 374).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "3440": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller dominant seasonal period (rho 0.24, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "623": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger dominant seasonal period (rho 0.23, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      }
+    },
+    "roles": {},
+    "concepts": {
+      "0": {
+        "text": "These 11 features move the far horizon of the forecast (1.79 times the random-direction null), and also move the near horizon of the forecast.",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "1": {
+        "text": "These 3 features move the near horizon of the forecast (4.42 times the random-direction null), and also move the far horizon of the forecast, decrease its overall level and increase forecast error and its spread.",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      }
+    }
+  },
+  "Chronos-2/encoder.block.5": {
+    "features": {
+      "3168": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger AR coefficient sum (rho 0.28, n 374).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "3087": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller number of seasonal components (rho 0.28, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "4297": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger AR coefficient sum (rho 0.27, n 374).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "426": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger dominant seasonal period (rho 0.25, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "5488": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller dominant seasonal period (rho 0.24, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "2917": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller number of changepoints (rho 0.24, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "5793": {
+        "text": "This feature increases the forecast's spread on the series it fires on (5.24 times the random-direction null), and also moves the near horizon of the forecast, strongest on series with a smaller dominant seasonal period (rho 0.24, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "5003": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller dominant seasonal period (rho 0.24, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      }
+    },
+    "roles": {},
+    "concepts": {}
+  },
+  "Sundial/model.layers.5": {
+    "features": {
+      "2033": {
+        "text": "This feature moves the forecast's overall level on the series it fires on (3.11 times the random-direction null), and also moves the near horizon of the forecast, strongest on series with a smaller dominant seasonal period (rho 0.32, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "5065": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger dominant seasonal period (rho 0.32, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "4902": {
+        "text": "This feature changed nothing above the random-direction null when removed from the series it fires on; it is strongest on series with a smaller number of seasonal components (rho 0.28, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "1284": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller dominant seasonal period (rho 0.27, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "853": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger dominant seasonal period (rho 0.25, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "5486": {
+        "text": "This feature changed nothing above the random-direction null when removed from the series it fires on; it is strongest on series with a smaller number of seasonal components (rho 0.25, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "4148": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller dominant seasonal period (rho 0.24, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "1679": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger AR coefficient sum (rho 0.23, n 374).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      }
+    },
+    "roles": {},
+    "concepts": {
+      "1": {
+        "text": "These 5 features were not tested for an effect on the forecast and have no structural correlate.",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "0": {
+        "text": "These 4 features move the far horizon of the forecast (1.18 times the random-direction null), and also move the near horizon of the forecast.",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "2": {
+        "text": "These 3 features move the near horizon of the forecast (2.29 times the random-direction null), and also move the far horizon of the forecast.",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      }
+    }
+  },
+  "Sundial/model.layers.4": {
+    "features": {
+      "2033": {
+        "text": "This feature increases the forecast's overall level on the series it fires on (2.90 times the random-direction null), and also moves the near horizon of the forecast, strongest on series with a smaller dominant seasonal period (rho 0.34, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "5065": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger dominant seasonal period (rho 0.32, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "5486": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller number of seasonal components (rho 0.29, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "5318": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger AR coefficient sum (rho 0.28, n 374).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "1284": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller dominant seasonal period (rho 0.27, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "1626": {
+        "text": "This feature moves the near horizon of the forecast on the series it fires on (1.75 times the random-direction null), and also decreases its spread, strongest on series with a larger number of seasonal components (rho 0.27, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "2354": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller number of seasonal components (rho 0.25, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "4148": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller dominant seasonal period (rho 0.25, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      }
+    },
+    "roles": {},
+    "concepts": {}
+  },
+  "Sundial/model.layers.8": {
+    "features": {
+      "1679": {
+        "text": "This feature changed nothing above the random-direction null when removed from the series it fires on; it is strongest on series with a smaller number of seasonal components (rho 0.27, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "4495": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger dominant seasonal period (rho 0.26, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "2354": {
+        "text": "This feature moves the near horizon of the forecast on the series it fires on (2.11 times the random-direction null), and also decreases its overall level, strongest on series with a smaller number of seasonal components (rho 0.25, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "5065": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger dominant seasonal period (rho 0.25, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "3318": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a larger dominant seasonal period (rho 0.24, n 443).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "4807": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller AR coefficient sum (rho 0.24, n 374).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "5362": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller AR coefficient sum (rho 0.24, n 374).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      },
+      "4902": {
+        "text": "This feature was not tested for an effect on the forecast; it is strongest on series with a smaller number of seasonal components (rho 0.24, n 555).",
+        "accepted": false,
+        "reason": "deterministic only -- LLM generation removed, ROADMAP.md sec 32.7d PRUNE (2026-09-15)",
+        "attempts": 0,
+        "model_id": "",
+        "revision": ""
+      }
+    },
+    "roles": {},
+    "concepts": {}
+  }
+}

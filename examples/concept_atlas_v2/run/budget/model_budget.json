@@ -1,0 +1,473 @@
+{
+  "models": {
+    "TimesFM": {
+      "adapter": "timesfm",
+      "checkpoint": "google/timesfm-2.5-200m-pytorch",
+      "parameters": {
+        "total": 231289280,
+        "trainable": 231289280,
+        "body": 196715200,
+        "front_end": 1806080,
+        "head": 32768000,
+        "interleaved": 0,
+        "n_blocks": 20,
+        "per_block": {
+          "stacked_xf.0": 9835760,
+          "stacked_xf.1": 9835760,
+          "stacked_xf.2": 9835760,
+          "stacked_xf.3": 9835760,
+          "stacked_xf.4": 9835760,
+          "stacked_xf.5": 9835760,
+          "stacked_xf.6": 9835760,
+          "stacked_xf.7": 9835760,
+          "stacked_xf.8": 9835760,
+          "stacked_xf.9": 9835760,
+          "stacked_xf.10": 9835760,
+          "stacked_xf.11": 9835760,
+          "stacked_xf.12": 9835760,
+          "stacked_xf.13": 9835760,
+          "stacked_xf.14": 9835760,
+          "stacked_xf.15": 9835760,
+          "stacked_xf.16": 9835760,
+          "stacked_xf.17": 9835760,
+          "stacked_xf.18": 9835760,
+          "stacked_xf.19": 9835760
+        },
+        "role_split_is_heuristic": true
+      },
+      "forward": {
+        "batch": 8,
+        "context_len": 512,
+        "n_tokens": 16,
+        "timing": {
+          "median_s": 0.03806907683610916,
+          "min_s": 0.03788857161998749,
+          "max_s": 0.038181859999895096,
+          "n": 5
+        },
+        "peak_vram_bytes": 977705472,
+        "flops": 59391344640.0,
+        "flops_per_series": 7423918080.0,
+        "blocks": {
+          "per_block": {
+            "stacked_xf.0": 2527068160.0,
+            "stacked_xf.1": 2527068160.0,
+            "stacked_xf.2": 2527068160.0,
+            "stacked_xf.3": 2527068160.0,
+            "stacked_xf.4": 2527068160.0,
+            "stacked_xf.5": 2527068160.0,
+            "stacked_xf.6": 2527068160.0,
+            "stacked_xf.7": 2527068160.0,
+            "stacked_xf.8": 2527068160.0,
+            "stacked_xf.9": 2527068160.0,
+            "stacked_xf.10": 2527068160.0,
+            "stacked_xf.11": 2527068160.0,
+            "stacked_xf.12": 2527068160.0,
+            "stacked_xf.13": 2527068160.0,
+            "stacked_xf.14": 2527068160.0,
+            "stacked_xf.15": 2527068160.0,
+            "stacked_xf.16": 2527068160.0,
+            "stacked_xf.17": 2527068160.0,
+            "stacked_xf.18": 2527068160.0,
+            "stacked_xf.19": 2527068160.0
+          },
+          "cumulative": {
+            "stacked_xf.0": 2527068160.0,
+            "stacked_xf.1": 5054136320.0,
+            "stacked_xf.2": 7581204480.0,
+            "stacked_xf.3": 10108272640.0,
+            "stacked_xf.4": 12635340800.0,
+            "stacked_xf.5": 15162408960.0,
+            "stacked_xf.6": 17689477120.0,
+            "stacked_xf.7": 20216545280.0,
+            "stacked_xf.8": 22743613440.0,
+            "stacked_xf.9": 25270681600.0,
+            "stacked_xf.10": 27797749760.0,
+            "stacked_xf.11": 30324817920.0,
+            "stacked_xf.12": 32851886080.0,
+            "stacked_xf.13": 35378954240.0,
+            "stacked_xf.14": 37906022400.0,
+            "stacked_xf.15": 40433090560.0,
+            "stacked_xf.16": 42960158720.0,
+            "stacked_xf.17": 45487226880.0,
+            "stacked_xf.18": 48014295040.0,
+            "stacked_xf.19": 50541363200.0
+          },
+          "body_total": 50541363200.0,
+          "fraction_of_forward": 0.8509887005649718
+        }
+      },
+      "hidden_size": null,
+      "flops_sanity": {
+        "analytic_body_matmul_flops": 50359091200.0,
+        "measured_flops": 59391344640.0,
+        "measured_over_analytic": 1.1793569586895165,
+        "verdict": "plausible"
+      },
+      "predict": {
+        "batch": 8,
+        "horizon": 64,
+        "timing": {
+          "median_s": 0.037016868591308594,
+          "min_s": 0.03689892776310444,
+          "max_s": 0.03734896518290043,
+          "n": 3
+        },
+        "peak_vram_bytes": 977705472,
+        "flops": 59391344640.0,
+        "flops_per_series": 7423918080.0
+      },
+      "coverage": {
+        "captured_blocks": 10,
+        "regex_matched_blocks": 20,
+        "block_fraction": 0.5,
+        "captured_params": 98357600,
+        "total_params": 231289280,
+        "param_fraction": 0.4252579280803676,
+        "captured_flops": 25270681600.0,
+        "capture_pass_flops": 59391344640.0,
+        "forecast_flops": 59391344640.0,
+        "flops_fraction_of_capture_pass": 0.4254943502824859,
+        "flops_fraction_of_forecast": 0.4254943502824859,
+        "capture_pass_fraction_of_forecast": 1.0,
+        "uncaptured_surfaces": [
+          "34.6M parameters (15%) lie outside the 20 blocks this run's layer regex matched",
+          "10 of 20 matched blocks are skipped by capture_layer_stride=2"
+        ],
+        "headline_flops_fraction": 0.4254943502824859,
+        "headline_basis": "captured blocks over full-forecast FLOPs",
+        "headline_is_upper_bound": false,
+        "depth_claims_qualified": true
+      }
+    },
+    "Chronos-2": {
+      "adapter": "chronos2",
+      "checkpoint": "amazon/chronos-2",
+      "parameters": {
+        "total": 119477664,
+        "trainable": 119477664,
+        "body": 113273856,
+        "front_end": 2549760,
+        "head": 3654048,
+        "interleaved": 0,
+        "n_blocks": 12,
+        "per_block": {
+          "encoder.block.0": 9439488,
+          "encoder.block.1": 9439488,
+          "encoder.block.2": 9439488,
+          "encoder.block.3": 9439488,
+          "encoder.block.4": 9439488,
+          "encoder.block.5": 9439488,
+          "encoder.block.6": 9439488,
+          "encoder.block.7": 9439488,
+          "encoder.block.8": 9439488,
+          "encoder.block.9": 9439488,
+          "encoder.block.10": 9439488,
+          "encoder.block.11": 9439488
+        },
+        "role_split_is_heuristic": true
+      },
+      "forward": {
+        "batch": 8,
+        "context_len": 512,
+        "n_tokens": 32,
+        "timing": {
+          "median_s": 0.020653223618865013,
+          "min_s": 0.020594488829374313,
+          "max_s": 0.020985912531614304,
+          "n": 5
+        },
+        "peak_vram_bytes": 257922048,
+        "flops": 69231505152.0,
+        "flops_per_series": 8653938144.0,
+        "blocks": {
+          "per_block": {
+            "encoder.block.0": 5627734336.0,
+            "encoder.block.1": 5627734336.0,
+            "encoder.block.2": 5627734336.0,
+            "encoder.block.3": 5627734336.0,
+            "encoder.block.4": 5627734336.0,
+            "encoder.block.5": 5627734336.0,
+            "encoder.block.6": 5627734336.0,
+            "encoder.block.7": 5627734336.0,
+            "encoder.block.8": 5627734336.0,
+            "encoder.block.9": 5627734336.0,
+            "encoder.block.10": 5627734336.0,
+            "encoder.block.11": 5627734336.0
+          },
+          "cumulative": {
+            "encoder.block.0": 5627734336.0,
+            "encoder.block.1": 11255468672.0,
+            "encoder.block.2": 16883203008.0,
+            "encoder.block.3": 22510937344.0,
+            "encoder.block.4": 28138671680.0,
+            "encoder.block.5": 33766406016.0,
+            "encoder.block.6": 39394140352.0,
+            "encoder.block.7": 45021874688.0,
+            "encoder.block.8": 50649609024.0,
+            "encoder.block.9": 56277343360.0,
+            "encoder.block.10": 61905077696.0,
+            "encoder.block.11": 67532812032.0
+          },
+          "body_total": 67532812032.0,
+          "fraction_of_forward": 0.9754635824214646
+        }
+      },
+      "hidden_size": null,
+      "flops_sanity": {
+        "analytic_body_matmul_flops": 57996214272.0,
+        "measured_flops": 69231505152.0,
+        "measured_over_analytic": 1.1937245563530565,
+        "verdict": "plausible"
+      },
+      "predict": {
+        "batch": 8,
+        "horizon": 64,
+        "timing": {
+          "median_s": 0.02168569713830948,
+          "min_s": 0.02166743576526642,
+          "max_s": 0.021908454596996307,
+          "n": 3
+        },
+        "peak_vram_bytes": 257922048,
+        "flops": 69231505152.0,
+        "flops_per_series": 8653938144.0
+      },
+      "coverage": {
+        "captured_blocks": 12,
+        "regex_matched_blocks": 12,
+        "block_fraction": 1.0,
+        "captured_params": 113273856,
+        "total_params": 119477664,
+        "param_fraction": 0.948075583399421,
+        "captured_flops": 67532812032.0,
+        "capture_pass_flops": 69231505152.0,
+        "forecast_flops": 69231505152.0,
+        "flops_fraction_of_capture_pass": 0.9754635824214646,
+        "flops_fraction_of_forecast": 0.9754635824214646,
+        "capture_pass_fraction_of_forecast": 1.0,
+        "uncaptured_surfaces": [],
+        "headline_flops_fraction": 0.9754635824214646,
+        "headline_basis": "captured blocks over full-forecast FLOPs",
+        "headline_is_upper_bound": false,
+        "depth_claims_qualified": false
+      }
+    },
+    "Sundial": {
+      "adapter": "sundial",
+      "checkpoint": "thuml/sundial-base-128m",
+      "parameters": {
+        "total": 128329680,
+        "trainable": 128329680,
+        "body": 113310720,
+        "front_end": 2486784,
+        "head": 12532176,
+        "interleaved": 0,
+        "n_blocks": 12,
+        "per_block": {
+          "model.layers.0": 9442560,
+          "model.layers.1": 9442560,
+          "model.layers.2": 9442560,
+          "model.layers.3": 9442560,
+          "model.layers.4": 9442560,
+          "model.layers.5": 9442560,
+          "model.layers.6": 9442560,
+          "model.layers.7": 9442560,
+          "model.layers.8": 9442560,
+          "model.layers.9": 9442560,
+          "model.layers.10": 9442560,
+          "model.layers.11": 9442560
+        },
+        "role_split_is_heuristic": true
+      },
+      "forward": {
+        "batch": 8,
+        "context_len": 512,
+        "n_tokens": 32,
+        "timing": {
+          "median_s": 0.007374698296189308,
+          "min_s": 0.007048960775136948,
+          "max_s": 0.0075311362743377686,
+          "n": 5
+        },
+        "peak_vram_bytes": 595922432,
+        "flops": 59554922496.0,
+        "flops_per_series": 7444365312.0,
+        "blocks": {
+          "per_block": {
+            "model.layers.0": 4857004032.0,
+            "model.layers.1": 4857004032.0,
+            "model.layers.2": 4857004032.0,
+            "model.layers.3": 4857004032.0,
+            "model.layers.4": 4857004032.0,
+            "model.layers.5": 4857004032.0,
+            "model.layers.6": 4857004032.0,
+            "model.layers.7": 4857004032.0,
+            "model.layers.8": 4857004032.0,
+            "model.layers.9": 4857004032.0,
+            "model.layers.10": 4857004032.0,
+            "model.layers.11": 4857004032.0
+          },
+          "cumulative": {
+            "model.layers.0": 4857004032.0,
+            "model.layers.1": 9714008064.0,
+            "model.layers.2": 14571012096.0,
+            "model.layers.3": 19428016128.0,
+            "model.layers.4": 24285020160.0,
+            "model.layers.5": 29142024192.0,
+            "model.layers.6": 33999028224.0,
+            "model.layers.7": 38856032256.0,
+            "model.layers.8": 43713036288.0,
+            "model.layers.9": 48570040320.0,
+            "model.layers.10": 53427044352.0,
+            "model.layers.11": 58284048384.0
+          },
+          "body_total": 58284048384.0,
+          "fraction_of_forward": 0.978660469047116
+        }
+      },
+      "hidden_size": null,
+      "flops_sanity": {
+        "analytic_body_matmul_flops": 58015088640.0,
+        "measured_flops": 59554922496.0,
+        "measured_over_analytic": 1.0265419547241426,
+        "verdict": "plausible"
+      },
+      "predict": {
+        "batch": 8,
+        "horizon": 64,
+        "timing": {
+          "median_s": 0.05635053664445877,
+          "min_s": 0.05632418394088745,
+          "max_s": 0.05659083276987076,
+          "n": 3
+        },
+        "peak_vram_bytes": 595922432,
+        "flops": 259701866496.0,
+        "flops_per_series": 32462733312.0
+      },
+      "coverage": {
+        "captured_blocks": 12,
+        "regex_matched_blocks": 12,
+        "block_fraction": 1.0,
+        "captured_params": 113310720,
+        "total_params": 128329680,
+        "param_fraction": 0.8829658111825729,
+        "captured_flops": 58284048384.0,
+        "capture_pass_flops": 59554922496.0,
+        "forecast_flops": 259701866496.0,
+        "flops_fraction_of_capture_pass": 0.978660469047116,
+        "flops_fraction_of_forecast": 0.2244267596933028,
+        "capture_pass_fraction_of_forecast": 0.2293203483653718,
+        "uncaptured_surfaces": [
+          "15.0M parameters (12%) lie outside the 12 blocks this run's layer regex matched",
+          "the captured forward pass performs only 23% of the FLOPs of a full forecast at this run's decode settings; the remainder (a decoder, or repeated sampled decode steps) runs unobserved"
+        ],
+        "headline_flops_fraction": 0.2244267596933028,
+        "headline_basis": "captured blocks over full-forecast FLOPs",
+        "headline_is_upper_bound": false,
+        "depth_claims_qualified": true
+      }
+    },
+    "Chronos-Bolt": {
+      "adapter": "chronos_bolt",
+      "checkpoint": "amazon/chronos-bolt-small",
+      "parameters": {
+        "total": 47718016,
+        "trainable": 47718016,
+        "body": 18880768,
+        "front_end": 1134592,
+        "head": 27702656,
+        "interleaved": 0,
+        "n_blocks": 6,
+        "per_block": {
+          "encoder.block.0": 3147008,
+          "encoder.block.1": 3146752,
+          "encoder.block.2": 3146752,
+          "encoder.block.3": 3146752,
+          "encoder.block.4": 3146752,
+          "encoder.block.5": 3146752
+        },
+        "role_split_is_heuristic": true
+      },
+      "forward": {
+        "batch": 8,
+        "context_len": 512,
+        "n_tokens": 32,
+        "timing": {
+          "median_s": 0.013730864971876144,
+          "min_s": 0.013667924329638481,
+          "max_s": 0.013904882594943047,
+          "n": 5
+        },
+        "peak_vram_bytes": 109310976,
+        "flops": 12708511744.0,
+        "flops_per_series": 1588563968.0,
+        "blocks": {
+          "per_block": {
+            "encoder.block.0": 1678786560.0,
+            "encoder.block.1": 1678786560.0,
+            "encoder.block.2": 1678786560.0,
+            "encoder.block.3": 1678786560.0,
+            "encoder.block.4": 1678786560.0,
+            "encoder.block.5": 1678786560.0
+          },
+          "cumulative": {
+            "encoder.block.0": 1678786560.0,
+            "encoder.block.1": 3357573120.0,
+            "encoder.block.2": 5036359680.0,
+            "encoder.block.3": 6715146240.0,
+            "encoder.block.4": 8393932800.0,
+            "encoder.block.5": 10072719360.0
+          },
+          "body_total": 10072719360.0,
+          "fraction_of_forward": 0.7925962978911026
+        }
+      },
+      "hidden_size": null,
+      "flops_sanity": {
+        "analytic_body_matmul_flops": 9666953216.0,
+        "measured_flops": 12708511744.0,
+        "measured_over_analytic": 1.3146346589291282,
+        "verdict": "plausible"
+      },
+      "predict": {
+        "batch": 8,
+        "horizon": 64,
+        "timing": {
+          "median_s": 0.013656474649906158,
+          "min_s": 0.013616885989904404,
+          "max_s": 0.013950072228908539,
+          "n": 3
+        },
+        "peak_vram_bytes": 109310976,
+        "flops": 12708511744.0,
+        "flops_per_series": 1588563968.0
+      },
+      "coverage": {
+        "captured_blocks": 6,
+        "regex_matched_blocks": 6,
+        "block_fraction": 1.0,
+        "captured_params": 18880768,
+        "total_params": 47718016,
+        "param_fraction": 0.3956737849285268,
+        "captured_flops": 10072719360.0,
+        "capture_pass_flops": 12708511744.0,
+        "forecast_flops": 12708511744.0,
+        "flops_fraction_of_capture_pass": 0.7925962978911026,
+        "flops_fraction_of_forecast": 0.7925962978911026,
+        "capture_pass_fraction_of_forecast": 1.0,
+        "uncaptured_surfaces": [
+          "28.8M parameters (60%) lie outside the 6 blocks this run's layer regex matched"
+        ],
+        "headline_flops_fraction": 0.7925962978911026,
+        "headline_basis": "captured blocks over full-forecast FLOPs",
+        "headline_is_upper_bound": false,
+        "depth_claims_qualified": true
+      }
+    }
+  },
+  "batch": 8,
+  "context_len": 512,
+  "horizon": 64
+}

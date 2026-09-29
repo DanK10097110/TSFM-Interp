@@ -1,0 +1,290 @@
+{
+  "TimesFM": {
+    "layer": "stacked_xf.4",
+    "k": 5,
+    "silhouette": 0.18672487139701843,
+    "clusters": {
+      "0": {
+        "label": "mixture (64%) \u00b7 anti-persistent \u00b7 broadband/noisy spectrum",
+        "top_family": "mixture",
+        "purity": 0.6413793103448275,
+        "size": 145,
+        "feature_z": {
+          "dominant_freq": 0.4033296830507983,
+          "spectral_entropy": 1.4386382783270104,
+          "trend_slope": -0.004004292677982342,
+          "lag1_ac": -1.538162120704548,
+          "noise_ratio": 1.4029339165540915
+        }
+      },
+      "1": {
+        "label": "random_parametric (93%) \u00b7 mixed characteristics",
+        "top_family": "random_parametric",
+        "purity": 0.9271523178807947,
+        "size": 302,
+        "feature_z": {
+          "dominant_freq": -0.030947749737166883,
+          "spectral_entropy": -0.28025404815904026,
+          "trend_slope": -0.20460882703392477,
+          "lag1_ac": 0.046169607050120895,
+          "noise_ratio": -0.1556496193668959
+        }
+      },
+      "2": {
+        "label": "mixture (100%) \u00b7 smooth/persistent",
+        "top_family": "mixture",
+        "purity": 1.0,
+        "size": 106,
+        "feature_z": {
+          "dominant_freq": 0.15285886940053287,
+          "spectral_entropy": -0.27704194590031855,
+          "trend_slope": -0.01422996929491103,
+          "lag1_ac": 0.4028863003675205,
+          "noise_ratio": 0.1206058317316316
+        }
+      },
+      "3": {
+        "label": "parametric (74%) \u00b7 clean \u00b7 smooth/persistent",
+        "top_family": "parametric",
+        "purity": 0.7448275862068966,
+        "size": 145,
+        "feature_z": {
+          "dominant_freq": -0.24398527772032522,
+          "spectral_entropy": -0.4940179225998159,
+          "trend_slope": -0.19729127411138636,
+          "lag1_ac": 0.7382782897474138,
+          "noise_ratio": -0.8348048224128746
+        }
+      },
+      "4": {
+        "label": "mixture (37%) \u00b7 rising trend \u00b7 smooth/persistent",
+        "top_family": "mixture",
+        "purity": 0.37254901960784315,
+        "size": 102,
+        "feature_z": {
+          "dominant_freq": -0.2937427304779482,
+          "spectral_entropy": -0.22516453697038316,
+          "trend_slope": 0.9067461196319975,
+          "lag1_ac": 0.5817072606620424,
+          "noise_ratio": -0.472124359063726
+        }
+      }
+    }
+  },
+  "Chronos-2": {
+    "layer": "encoder.block.7",
+    "k": 5,
+    "silhouette": 0.1805415153503418,
+    "clusters": {
+      "0": {
+        "label": "parametric (54%) \u00b7 smooth/persistent \u00b7 clean",
+        "top_family": "parametric",
+        "purity": 0.5404040404040404,
+        "size": 198,
+        "feature_z": {
+          "dominant_freq": -0.1865459864960878,
+          "spectral_entropy": -0.1576705466504449,
+          "trend_slope": -0.07210595350668413,
+          "lag1_ac": 0.6093672766043982,
+          "noise_ratio": -0.5141362001604158
+        }
+      },
+      "1": {
+        "label": "mixture (75%) \u00b7 anti-persistent \u00b7 broadband/noisy spectrum",
+        "top_family": "mixture",
+        "purity": 0.753968253968254,
+        "size": 126,
+        "feature_z": {
+          "dominant_freq": 0.3699937292187152,
+          "spectral_entropy": 1.405532809657501,
+          "trend_slope": 0.01858783882817386,
+          "lag1_ac": -1.4553002724834823,
+          "noise_ratio": 1.351887451406304
+        }
+      },
+      "2": {
+        "label": "mixture (100%) \u00b7 smooth/persistent",
+        "top_family": "mixture",
+        "purity": 1.0,
+        "size": 107,
+        "feature_z": {
+          "dominant_freq": 0.14697091826904415,
+          "spectral_entropy": -0.28328353796757305,
+          "trend_slope": -0.01003918911523514,
+          "lag1_ac": 0.4066757890797809,
+          "noise_ratio": 0.10981883471084573
+        }
+      },
+      "3": {
+        "label": "random_parametric (99%) \u00b7 peaked spectrum \u00b7 clean",
+        "top_family": "random_parametric",
+        "purity": 0.9931506849315068,
+        "size": 146,
+        "feature_z": {
+          "dominant_freq": -0.17765522898978947,
+          "spectral_entropy": -1.0596797556913549,
+          "trend_slope": -0.12798322810259805,
+          "lag1_ac": 0.6226065668608383,
+          "noise_ratio": -0.8318336878905433
+        }
+      },
+      "4": {
+        "label": "random_parametric (64%) \u00b7 mixed characteristics",
+        "top_family": "random_parametric",
+        "purity": 0.6412556053811659,
+        "size": 223,
+        "feature_z": {
+          "dominant_freq": 0.0023707202797703685,
+          "spectral_entropy": 0.17554357449960128,
+          "trend_slope": 0.14212853906433826,
+          "lag1_ac": -0.3215317073594312,
+          "noise_ratio": 0.18456639605139016
+        }
+      }
+    }
+  },
+  "Sundial": {
+    "layer": "model.layers.2",
+    "k": 5,
+    "silhouette": 0.1673669070005417,
+    "clusters": {
+      "0": {
+        "label": "random_parametric (77%) \u00b7 clean \u00b7 peaked spectrum",
+        "top_family": "random_parametric",
+        "purity": 0.7672955974842768,
+        "size": 159,
+        "feature_z": {
+          "dominant_freq": -0.3896672815781327,
+          "spectral_entropy": -0.8552311637613993,
+          "trend_slope": 0.4412861759339112,
+          "lag1_ac": 0.7241593701701035,
+          "noise_ratio": -0.9652927200567833
+        }
+      },
+      "1": {
+        "label": "mixture (93%) \u00b7 smooth/persistent",
+        "top_family": "mixture",
+        "purity": 0.9292035398230089,
+        "size": 113,
+        "feature_z": {
+          "dominant_freq": 0.1953269749865606,
+          "spectral_entropy": -0.34164213011114736,
+          "trend_slope": 0.0031098177964057894,
+          "lag1_ac": 0.4083958035835606,
+          "noise_ratio": 0.14801183715556085
+        }
+      },
+      "2": {
+        "label": "parametric (57%) \u00b7 clean \u00b7 smooth/persistent",
+        "top_family": "parametric",
+        "purity": 0.574468085106383,
+        "size": 188,
+        "feature_z": {
+          "dominant_freq": -0.182734744362443,
+          "spectral_entropy": -0.49754316885223177,
+          "trend_slope": -0.06855694455478843,
+          "lag1_ac": 0.7029389435134652,
+          "noise_ratio": -0.7333995600301528
+        }
+      },
+      "3": {
+        "label": "mixture (59%) \u00b7 broadband/noisy spectrum \u00b7 anti-persistent",
+        "top_family": "mixture",
+        "purity": 0.5864197530864198,
+        "size": 162,
+        "feature_z": {
+          "dominant_freq": 0.360623591521619,
+          "spectral_entropy": 1.3706987431214626,
+          "trend_slope": 0.009036536594600606,
+          "lag1_ac": -1.361983412155891,
+          "noise_ratio": 1.314805627990261
+        }
+      },
+      "4": {
+        "label": "random_parametric (89%) \u00b7 anti-persistent",
+        "top_family": "random_parametric",
+        "purity": 0.8876404494382022,
+        "size": 178,
+        "feature_z": {
+          "dominant_freq": 0.08886662759032986,
+          "spectral_entropy": 0.258832781455983,
+          "trend_slope": -0.33197266085171445,
+          "lag1_ac": -0.40899511763328045,
+          "noise_ratio": 0.3462746267536205
+        }
+      }
+    }
+  },
+  "Chronos-Bolt": {
+    "layer": "encoder.block.2",
+    "k": 5,
+    "silhouette": 0.1803715080022812,
+    "clusters": {
+      "0": {
+        "label": "random_parametric (84%) \u00b7 falling trend \u00b7 clean",
+        "top_family": "random_parametric",
+        "purity": 0.8359375,
+        "size": 128,
+        "feature_z": {
+          "dominant_freq": -0.4474682637538937,
+          "spectral_entropy": -0.7501631939198381,
+          "trend_slope": -1.212039675964841,
+          "lag1_ac": 0.6298422515166234,
+          "noise_ratio": -0.7798225468781265
+        }
+      },
+      "1": {
+        "label": "mixture (74%) \u00b7 anti-persistent \u00b7 broadband/noisy spectrum",
+        "top_family": "mixture",
+        "purity": 0.7364341085271318,
+        "size": 129,
+        "feature_z": {
+          "dominant_freq": 0.3969690283775649,
+          "spectral_entropy": 1.41565503759937,
+          "trend_slope": -0.004601970171882207,
+          "lag1_ac": -1.4310522540215707,
+          "noise_ratio": 1.3729360692606034
+        }
+      },
+      "2": {
+        "label": "random_parametric (72%) \u00b7 anti-persistent \u00b7 noisy",
+        "top_family": "random_parametric",
+        "purity": 0.7163120567375887,
+        "size": 141,
+        "feature_z": {
+          "dominant_freq": 0.42419734780808793,
+          "spectral_entropy": 0.8766723112269114,
+          "trend_slope": 0.10872248442986893,
+          "lag1_ac": -1.0351567362012735,
+          "noise_ratio": 0.9558106660059418
+        }
+      },
+      "3": {
+        "label": "mixture (37%) \u00b7 smooth/persistent",
+        "top_family": "mixture",
+        "purity": 0.36727272727272725,
+        "size": 275,
+        "feature_z": {
+          "dominant_freq": 0.018364521256665718,
+          "spectral_entropy": -0.32984445868121953,
+          "trend_slope": -0.03964077492312654,
+          "lag1_ac": 0.5434503930859589,
+          "noise_ratio": -0.2601764010092601
+        }
+      },
+      "4": {
+        "label": "random_parametric (54%) \u00b7 rising trend \u00b7 clean",
+        "top_family": "random_parametric",
+        "purity": 0.5433070866141733,
+        "size": 127,
+        "feature_z": {
+          "dominant_freq": -0.46295382902937776,
+          "spectral_entropy": -0.9409620533404609,
+          "trend_slope": 1.1913864213913585,
+          "lag1_ac": 0.7912941301032681,
+          "noise_ratio": -1.1063950420721043
+        }
+      }
+    }
+  }
+}

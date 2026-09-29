@@ -1,0 +1,3016 @@
+{
+  "schema_version": 1,
+  "measured": true,
+  "space": "ablation",
+  "params": {
+    "min_members": 5,
+    "assign_min": 0.5,
+    "grid": [
+      0.5,
+      0.55,
+      0.6,
+      0.65,
+      0.7,
+      0.75,
+      0.8,
+      0.85
+    ],
+    "linkage": "average",
+    "n_null": 200,
+    "sil_tol": 0.02,
+    "level_share_threshold": 0.9
+  },
+  "n_features": 293,
+  "n_assigned": 288,
+  "frac_assigned": 0.9829351535836177,
+  "threshold": 0.5,
+  "grid": [
+    {
+      "min_cosine": 0.5,
+      "n_families": 9,
+      "draft_silhouette": 0.24727649134788976,
+      "final_silhouette": 0.28347299822008065,
+      "admissible": true,
+      "n_kept_members": 286,
+      "n_final_assigned": 288,
+      "selected": true
+    },
+    {
+      "min_cosine": 0.55,
+      "n_families": 10,
+      "draft_silhouette": 0.2470073803748719,
+      "final_silhouette": 0.28994673629407736,
+      "admissible": true,
+      "n_kept_members": 282,
+      "n_final_assigned": 287,
+      "selected": false
+    },
+    {
+      "min_cosine": 0.6,
+      "n_families": 16,
+      "draft_silhouette": 0.26290454790650314,
+      "final_silhouette": 0.2986198321665902,
+      "admissible": true,
+      "n_kept_members": 282,
+      "n_final_assigned": 289,
+      "selected": false
+    },
+    {
+      "min_cosine": 0.65,
+      "n_families": 18,
+      "draft_silhouette": 0.2679539623290782,
+      "final_silhouette": 0.2782602297106088,
+      "admissible": true,
+      "n_kept_members": 270,
+      "n_final_assigned": 290,
+      "selected": false
+    },
+    {
+      "min_cosine": 0.7,
+      "n_families": 17,
+      "draft_silhouette": 0.32289837776789626,
+      "final_silhouette": 0.2436055507389627,
+      "admissible": true,
+      "n_kept_members": 233,
+      "n_final_assigned": 290,
+      "selected": false
+    },
+    {
+      "min_cosine": 0.75,
+      "n_families": 20,
+      "draft_silhouette": 0.323710346025615,
+      "final_silhouette": 0.24605521254369825,
+      "admissible": true,
+      "n_kept_members": 224,
+      "n_final_assigned": 291,
+      "selected": false
+    },
+    {
+      "min_cosine": 0.8,
+      "n_families": 22,
+      "draft_silhouette": 0.34917224679771763,
+      "final_silhouette": 0.174514424160736,
+      "admissible": true,
+      "n_kept_members": 179,
+      "n_final_assigned": 287,
+      "selected": false
+    },
+    {
+      "min_cosine": 0.85,
+      "n_families": 19,
+      "draft_silhouette": 0.4219254590604858,
+      "final_silhouette": 0.16297526762561856,
+      "admissible": true,
+      "n_kept_members": 123,
+      "n_final_assigned": 281,
+      "selected": false
+    }
+  ],
+  "selection_rule": "fewest families whose FINAL-partition cosine silhouette is within 0.02 of the grid's best (0.298620); grid [0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85] (evidence class: descriptive -- see module docstring)",
+  "families": [
+    {
+      "family": 0,
+      "title": "Level lowerers",
+      "description": "These features steer the first third of the forecast (removing them moves it), and steer the last third of the forecast (removing them moves it). Found in 4 models (Chronos-2, Chronos-Bolt, Sundial, TimesFM). Its features fire most often on real weather/ETT-derived mixtures.",
+      "n_members": 80,
+      "models": {
+        "Chronos-2": 24,
+        "Chronos-Bolt": 5,
+        "Sundial": 32,
+        "TimesFM": 19
+      },
+      "n_models": 4,
+      "mean_profile_ablation_units": {
+        "trend": -0.10024042271914424,
+        "seasonal": -0.04039299969505412,
+        "spectral_centroid": 0.19550807294463718,
+        "level": 1.9823591449220526,
+        "dispersion": 0.386910584723293,
+        "horizon_shape_near": 2.1971166476284516,
+        "horizon_shape_far": 2.117531745303501,
+        "mase": 0.41343778816958776,
+        "flatness": -0.044359512367594355
+      },
+      "directed_profile_null_units": {
+        "trend": 0.10024042271914424,
+        "seasonal": 0.04039299969505412,
+        "spectral_centroid": -0.19550807294463718,
+        "level": -1.9823591449220526,
+        "dispersion": -0.386910584723293,
+        "horizon_shape_near": -2.1971166476284516,
+        "horizon_shape_far": -2.117531745303501,
+        "mase": -0.41343778816958776,
+        "flatness": 0.044359512367594355
+      },
+      "cleared_channels": [
+        "horizon_shape_near",
+        "horizon_shape_far",
+        "level"
+      ],
+      "causal_tag": "shape-causal",
+      "level_share_median": 0.7338684802381876,
+      "n_members_with_level_share": 80,
+      "n_members_shape_causal": 63,
+      "n_members_with_shape_record": 80,
+      "concept_ids": [
+        2,
+        4,
+        10,
+        12,
+        14,
+        16,
+        18,
+        20,
+        21,
+        22,
+        23,
+        24
+      ],
+      "members": [
+        1,
+        2,
+        6,
+        7,
+        10,
+        14,
+        21,
+        23,
+        29,
+        31,
+        33,
+        35,
+        39,
+        46,
+        50,
+        51,
+        53,
+        58,
+        66,
+        71,
+        76,
+        79,
+        84,
+        86,
+        92,
+        99,
+        109,
+        110,
+        111,
+        119,
+        120,
+        126,
+        129,
+        130,
+        134,
+        145,
+        154,
+        161,
+        162,
+        166,
+        167,
+        168,
+        170,
+        172,
+        173,
+        174,
+        176,
+        179,
+        181,
+        182,
+        185,
+        188,
+        190,
+        203,
+        204,
+        218,
+        219,
+        220,
+        224,
+        226,
+        231,
+        236,
+        241,
+        245,
+        249,
+        251,
+        252,
+        259,
+        260,
+        262,
+        263,
+        271,
+        272,
+        273,
+        274,
+        276,
+        281,
+        284,
+        289,
+        290
+      ],
+      "fires_on": [
+        {
+          "label": "mixture",
+          "count": 9
+        },
+        {
+          "label": "block_bootstrap",
+          "count": 6
+        },
+        {
+          "label": "parametric",
+          "count": 4
+        }
+      ],
+      "cross_model_p": 1.0,
+      "stability": {
+        "status": "ran (concept-level aggregate)",
+        "note": "aggregated from concept_stability.json's per-concept reciprocal-transfer stability; a replicate SAE's own dictionary is never re-ablated into the family space (that needs a full ablation battery per replicate, out of scope here) -- this is 'are this family's member concepts individually seed-stable', not 'does a replicate feature land in this family'",
+        "n_concepts_scored": 12,
+        "n_concepts_stable": 10,
+        "frac_concepts_stable": 0.8333333333333334
+      }
+    },
+    {
+      "family": 1,
+      "title": "Level raisers & Accuracy improvers",
+      "description": "These features steer the last third of the forecast (removing them moves it), and steer the first third of the forecast (removing them moves it). Found in 4 models (Chronos-2, Chronos-Bolt, Sundial, TimesFM). Its features fire most often on real weather/ETT-derived mixtures.",
+      "n_members": 61,
+      "models": {
+        "Chronos-2": 22,
+        "Chronos-Bolt": 1,
+        "Sundial": 16,
+        "TimesFM": 22
+      },
+      "n_models": 4,
+      "mean_profile_ablation_units": {
+        "trend": -0.2514079396969264,
+        "seasonal": -0.17198115250876062,
+        "spectral_centroid": -0.19523903978130625,
+        "level": -2.4485119670104067,
+        "dispersion": -0.3036181533685557,
+        "horizon_shape_near": 2.565229916012181,
+        "horizon_shape_far": 2.6779627969236643,
+        "mase": 2.1796908713984107,
+        "flatness": 0.0018928340819970228
+      },
+      "directed_profile_null_units": {
+        "trend": 0.2514079396969264,
+        "seasonal": 0.17198115250876062,
+        "spectral_centroid": 0.19523903978130625,
+        "level": 2.4485119670104067,
+        "dispersion": 0.3036181533685557,
+        "horizon_shape_near": -2.565229916012181,
+        "horizon_shape_far": -2.6779627969236643,
+        "mase": -2.1796908713984107,
+        "flatness": -0.0018928340819970228
+      },
+      "cleared_channels": [
+        "horizon_shape_far",
+        "horizon_shape_near",
+        "level",
+        "mase"
+      ],
+      "causal_tag": "shape-causal",
+      "level_share_median": 0.6423320692350853,
+      "n_members_with_level_share": 61,
+      "n_members_shape_causal": 47,
+      "n_members_with_shape_record": 61,
+      "concept_ids": [
+        0,
+        3,
+        6,
+        7,
+        8,
+        9,
+        11,
+        13,
+        26
+      ],
+      "members": [
+        3,
+        13,
+        17,
+        22,
+        26,
+        27,
+        30,
+        34,
+        36,
+        40,
+        42,
+        43,
+        47,
+        57,
+        59,
+        60,
+        64,
+        73,
+        75,
+        80,
+        82,
+        87,
+        104,
+        124,
+        127,
+        128,
+        137,
+        142,
+        146,
+        151,
+        153,
+        158,
+        163,
+        165,
+        175,
+        197,
+        212,
+        215,
+        216,
+        235,
+        238,
+        240,
+        242,
+        243,
+        244,
+        247,
+        250,
+        255,
+        256,
+        261,
+        265,
+        266,
+        267,
+        275,
+        277,
+        278,
+        282,
+        283,
+        285,
+        288,
+        291
+      ],
+      "fires_on": [
+        {
+          "label": "mixture",
+          "count": 8
+        },
+        {
+          "label": "seasonal_dominant",
+          "count": 5
+        },
+        {
+          "label": "anomaly_heavy",
+          "count": 3
+        }
+      ],
+      "cross_model_p": 0.9950248756218906,
+      "stability": {
+        "status": "ran (concept-level aggregate)",
+        "note": "aggregated from concept_stability.json's per-concept reciprocal-transfer stability; a replicate SAE's own dictionary is never re-ablated into the family space (that needs a full ablation battery per replicate, out of scope here) -- this is 'are this family's member concepts individually seed-stable', not 'does a replicate feature land in this family'",
+        "n_concepts_scored": 9,
+        "n_concepts_stable": 7,
+        "frac_concepts_stable": 0.7777777777777778
+      }
+    },
+    {
+      "family": 2,
+      "title": "Volatility dampeners",
+      "description": "These features decrease the forecast's spread. Found in 3 models (Chronos-2, Chronos-Bolt, Sundial). Its features fire most often on resampled real weather series.",
+      "n_members": 48,
+      "models": {
+        "Chronos-2": 10,
+        "Chronos-Bolt": 16,
+        "Sundial": 22
+      },
+      "n_models": 3,
+      "mean_profile_ablation_units": {
+        "trend": 0.4718255098509841,
+        "seasonal": 1.8139437936054505,
+        "spectral_centroid": 0.2482847561090518,
+        "level": -0.5553186427790634,
+        "dispersion": 2.1925277088506765,
+        "horizon_shape_near": 1.5248800057666407,
+        "horizon_shape_far": 1.5048495624414044,
+        "mase": 0.09430379201983445,
+        "flatness": -0.08201854746679905
+      },
+      "directed_profile_null_units": {
+        "trend": -0.4718255098509841,
+        "seasonal": -1.8139437936054505,
+        "spectral_centroid": -0.2482847561090518,
+        "level": 0.5553186427790634,
+        "dispersion": -2.1925277088506765,
+        "horizon_shape_near": -1.5248800057666407,
+        "horizon_shape_far": -1.5048495624414044,
+        "mase": -0.09430379201983445,
+        "flatness": 0.08201854746679905
+      },
+      "cleared_channels": [
+        "dispersion",
+        "seasonal",
+        "horizon_shape_near",
+        "horizon_shape_far"
+      ],
+      "causal_tag": "shape-causal",
+      "level_share_median": 0.37695176619708426,
+      "n_members_with_level_share": 48,
+      "n_members_shape_causal": 48,
+      "n_members_with_shape_record": 48,
+      "concept_ids": [
+        5,
+        17,
+        19,
+        25
+      ],
+      "members": [
+        0,
+        9,
+        11,
+        15,
+        24,
+        54,
+        56,
+        63,
+        74,
+        81,
+        88,
+        90,
+        91,
+        94,
+        96,
+        97,
+        98,
+        100,
+        101,
+        102,
+        105,
+        106,
+        107,
+        108,
+        112,
+        114,
+        116,
+        117,
+        122,
+        135,
+        138,
+        144,
+        147,
+        148,
+        155,
+        156,
+        159,
+        169,
+        178,
+        180,
+        191,
+        192,
+        202,
+        205,
+        214,
+        217,
+        221,
+        223
+      ],
+      "fires_on": [
+        {
+          "label": "block_bootstrap",
+          "count": 5
+        },
+        {
+          "label": "seasonal_dominant",
+          "count": 3
+        },
+        {
+          "label": "ar_colored_noise",
+          "count": 2
+        }
+      ],
+      "cross_model_p": 1.0,
+      "stability": {
+        "status": "ran (concept-level aggregate)",
+        "note": "aggregated from concept_stability.json's per-concept reciprocal-transfer stability; a replicate SAE's own dictionary is never re-ablated into the family space (that needs a full ablation battery per replicate, out of scope here) -- this is 'are this family's member concepts individually seed-stable', not 'does a replicate feature land in this family'",
+        "n_concepts_scored": 4,
+        "n_concepts_stable": 4,
+        "frac_concepts_stable": 1.0
+      }
+    },
+    {
+      "family": 3,
+      "title": "Trend boosters & Accuracy improvers",
+      "description": "These features increase the forecast's trend slope, and steer the last third of the forecast (removing them moves it). Found in 3 models (Chronos-2, Sundial, TimesFM).",
+      "n_members": 23,
+      "models": {
+        "Chronos-2": 11,
+        "Sundial": 8,
+        "TimesFM": 4
+      },
+      "n_models": 3,
+      "mean_profile_ablation_units": {
+        "trend": -4.925653886170443,
+        "seasonal": 0.1973296350901755,
+        "spectral_centroid": 1.0637541956363072,
+        "level": -0.4627965914026405,
+        "dispersion": 1.731919622754659,
+        "horizon_shape_near": 2.4870638189247583,
+        "horizon_shape_far": 2.639269797797112,
+        "mase": 1.8886146636317964,
+        "flatness": -0.3121677593248225
+      },
+      "directed_profile_null_units": {
+        "trend": 4.925653886170443,
+        "seasonal": -0.1973296350901755,
+        "spectral_centroid": -1.0637541956363072,
+        "level": 0.4627965914026405,
+        "dispersion": -1.731919622754659,
+        "horizon_shape_near": -2.4870638189247583,
+        "horizon_shape_far": -2.639269797797112,
+        "mase": -1.8886146636317964,
+        "flatness": 0.3121677593248225
+      },
+      "cleared_channels": [
+        "trend",
+        "horizon_shape_far",
+        "horizon_shape_near",
+        "mase",
+        "dispersion",
+        "spectral_centroid"
+      ],
+      "causal_tag": "shape-causal",
+      "level_share_median": 0.3850620550448966,
+      "n_members_with_level_share": 23,
+      "n_members_shape_causal": 21,
+      "n_members_with_shape_record": 23,
+      "concept_ids": [],
+      "members": [
+        4,
+        12,
+        19,
+        25,
+        32,
+        37,
+        38,
+        48,
+        49,
+        65,
+        68,
+        132,
+        149,
+        152,
+        157,
+        189,
+        195,
+        196,
+        209,
+        257,
+        268,
+        270,
+        280
+      ],
+      "fires_on": [],
+      "cross_model_p": 1.0,
+      "stability": {
+        "status": "ran (concept-level aggregate)",
+        "note": "aggregated from concept_stability.json's per-concept reciprocal-transfer stability; a replicate SAE's own dictionary is never re-ablated into the family space (that needs a full ablation battery per replicate, out of scope here) -- this is 'are this family's member concepts individually seed-stable', not 'does a replicate feature land in this family'",
+        "n_concepts_scored": 0,
+        "n_concepts_stable": 0,
+        "frac_concepts_stable": null
+      }
+    },
+    {
+      "family": 4,
+      "title": "Seasonality amplifiers",
+      "description": "These features increase the forecast's seasonal magnitude. Found in 4 models (Chronos-2, Chronos-Bolt, Sundial, TimesFM).",
+      "n_members": 17,
+      "models": {
+        "Chronos-2": 5,
+        "Chronos-Bolt": 1,
+        "Sundial": 6,
+        "TimesFM": 5
+      },
+      "n_models": 4,
+      "mean_profile_ablation_units": {
+        "trend": -0.4494267932485552,
+        "seasonal": -2.1173136140228426,
+        "spectral_centroid": 0.19869487630351637,
+        "level": -0.19056000226204187,
+        "dispersion": 0.01025412809785202,
+        "horizon_shape_near": 1.1067662866389811,
+        "horizon_shape_far": 1.1656430211089432,
+        "mase": 0.5177121657436078,
+        "flatness": 0.05321969696969692
+      },
+      "directed_profile_null_units": {
+        "trend": 0.4494267932485552,
+        "seasonal": 2.1173136140228426,
+        "spectral_centroid": -0.19869487630351637,
+        "level": 0.19056000226204187,
+        "dispersion": -0.01025412809785202,
+        "horizon_shape_near": -1.1067662866389811,
+        "horizon_shape_far": -1.1656430211089432,
+        "mase": -0.5177121657436078,
+        "flatness": -0.05321969696969692
+      },
+      "cleared_channels": [
+        "seasonal",
+        "horizon_shape_far",
+        "horizon_shape_near"
+      ],
+      "causal_tag": "shape-causal",
+      "level_share_median": 0.18120396298039748,
+      "n_members_with_level_share": 17,
+      "n_members_shape_causal": 16,
+      "n_members_with_shape_record": 17,
+      "concept_ids": [],
+      "members": [
+        8,
+        16,
+        20,
+        52,
+        70,
+        95,
+        140,
+        143,
+        171,
+        183,
+        208,
+        229,
+        234,
+        237,
+        239,
+        248,
+        269
+      ],
+      "fires_on": [],
+      "cross_model_p": 0.7910447761194029,
+      "stability": {
+        "status": "ran (concept-level aggregate)",
+        "note": "aggregated from concept_stability.json's per-concept reciprocal-transfer stability; a replicate SAE's own dictionary is never re-ablated into the family space (that needs a full ablation battery per replicate, out of scope here) -- this is 'are this family's member concepts individually seed-stable', not 'does a replicate feature land in this family'",
+        "n_concepts_scored": 0,
+        "n_concepts_stable": 0,
+        "frac_concepts_stable": null
+      }
+    },
+    {
+      "family": 5,
+      "title": "Trend boosters & Volatility amplifiers",
+      "description": "These features increase the forecast's trend slope, and increase the forecast's spread. Found in 4 models (Chronos-2, Chronos-Bolt, Sundial, TimesFM).",
+      "n_members": 12,
+      "models": {
+        "Chronos-2": 3,
+        "Chronos-Bolt": 2,
+        "Sundial": 4,
+        "TimesFM": 3
+      },
+      "n_models": 4,
+      "mean_profile_ablation_units": {
+        "trend": -7.283638628788251,
+        "seasonal": -3.710083633547473,
+        "spectral_centroid": -1.176242735676688,
+        "level": 1.4259187251078826,
+        "dispersion": -4.876186537416055,
+        "horizon_shape_near": 3.8679046341063703,
+        "horizon_shape_far": 2.819040209977711,
+        "mase": 0.07578261886824451,
+        "flatness": 0.21863026819923378
+      },
+      "directed_profile_null_units": {
+        "trend": 7.283638628788251,
+        "seasonal": 3.710083633547473,
+        "spectral_centroid": 1.176242735676688,
+        "level": -1.4259187251078826,
+        "dispersion": 4.876186537416055,
+        "horizon_shape_near": -3.8679046341063703,
+        "horizon_shape_far": -2.819040209977711,
+        "mase": -0.07578261886824451,
+        "flatness": -0.21863026819923378
+      },
+      "cleared_channels": [
+        "trend",
+        "dispersion",
+        "horizon_shape_near",
+        "seasonal",
+        "horizon_shape_far",
+        "level",
+        "spectral_centroid"
+      ],
+      "causal_tag": "shape-causal",
+      "level_share_median": 0.1975518260974311,
+      "n_members_with_level_share": 12,
+      "n_members_shape_causal": 12,
+      "n_members_with_shape_record": 12,
+      "concept_ids": [],
+      "members": [
+        18,
+        45,
+        55,
+        89,
+        93,
+        118,
+        164,
+        201,
+        210,
+        246,
+        264,
+        286
+      ],
+      "fires_on": [],
+      "cross_model_p": 0.6218905472636815,
+      "stability": {
+        "status": "ran (concept-level aggregate)",
+        "note": "aggregated from concept_stability.json's per-concept reciprocal-transfer stability; a replicate SAE's own dictionary is never re-ablated into the family space (that needs a full ablation battery per replicate, out of scope here) -- this is 'are this family's member concepts individually seed-stable', not 'does a replicate feature land in this family'",
+        "n_concepts_scored": 0,
+        "n_concepts_stable": 0,
+        "frac_concepts_stable": null
+      }
+    },
+    {
+      "family": 6,
+      "title": "Level raisers & Trend boosters",
+      "description": "These features steer the last third of the forecast (removing them moves it), and increase the forecast's overall level. Found in 2 models (Chronos-2, Sundial).",
+      "n_members": 18,
+      "models": {
+        "Chronos-2": 4,
+        "Sundial": 14
+      },
+      "n_models": 2,
+      "mean_profile_ablation_units": {
+        "trend": -2.3131447498437443,
+        "seasonal": 0.7944240332557077,
+        "spectral_centroid": -0.8149304093125143,
+        "level": -2.3611496767145073,
+        "dispersion": -1.4652980781360312,
+        "horizon_shape_near": 1.8996074887013665,
+        "horizon_shape_far": 3.073405901475358,
+        "mase": -1.8352046473300117,
+        "flatness": -0.08278987180314562
+      },
+      "directed_profile_null_units": {
+        "trend": 2.3131447498437443,
+        "seasonal": -0.7944240332557077,
+        "spectral_centroid": 0.8149304093125143,
+        "level": 2.3611496767145073,
+        "dispersion": 1.4652980781360312,
+        "horizon_shape_near": -1.8996074887013665,
+        "horizon_shape_far": -3.073405901475358,
+        "mase": 1.8352046473300117,
+        "flatness": 0.08278987180314562
+      },
+      "cleared_channels": [
+        "horizon_shape_far",
+        "level",
+        "trend",
+        "horizon_shape_near",
+        "mase",
+        "dispersion"
+      ],
+      "causal_tag": "shape-causal",
+      "level_share_median": 0.5479581088202263,
+      "n_members_with_level_share": 18,
+      "n_members_shape_causal": 16,
+      "n_members_with_shape_record": 18,
+      "concept_ids": [
+        15
+      ],
+      "members": [
+        5,
+        28,
+        44,
+        72,
+        121,
+        131,
+        133,
+        141,
+        160,
+        184,
+        186,
+        193,
+        199,
+        225,
+        227,
+        230,
+        232,
+        233
+      ],
+      "fires_on": [],
+      "cross_model_p": 1.0,
+      "stability": {
+        "status": "ran (concept-level aggregate)",
+        "note": "aggregated from concept_stability.json's per-concept reciprocal-transfer stability; a replicate SAE's own dictionary is never re-ablated into the family space (that needs a full ablation battery per replicate, out of scope here) -- this is 'are this family's member concepts individually seed-stable', not 'does a replicate feature land in this family'",
+        "n_concepts_scored": 1,
+        "n_concepts_stable": 1,
+        "frac_concepts_stable": 1.0
+      }
+    },
+    {
+      "family": 7,
+      "title": "Trend dampeners",
+      "description": "These features decrease the forecast's trend slope. Found in 4 models (Chronos-2, Chronos-Bolt, Sundial, TimesFM). Its features fire most often on real weather/ETT-derived mixtures.",
+      "n_members": 18,
+      "models": {
+        "Chronos-2": 8,
+        "Chronos-Bolt": 3,
+        "Sundial": 5,
+        "TimesFM": 2
+      },
+      "n_models": 4,
+      "mean_profile_ablation_units": {
+        "trend": 3.1283582238940735,
+        "seasonal": -0.25129207627732764,
+        "spectral_centroid": -0.9189310783921487,
+        "level": 0.6687048275781396,
+        "dispersion": -0.8416518071780277,
+        "horizon_shape_near": 1.8782818071264427,
+        "horizon_shape_far": 2.48122834778089,
+        "mase": -0.6902889495494707,
+        "flatness": -0.059781307685448586
+      },
+      "directed_profile_null_units": {
+        "trend": -3.1283582238940735,
+        "seasonal": 0.25129207627732764,
+        "spectral_centroid": 0.9189310783921487,
+        "level": -0.6687048275781396,
+        "dispersion": 0.8416518071780277,
+        "horizon_shape_near": -1.8782818071264427,
+        "horizon_shape_far": -2.48122834778089,
+        "mase": 0.6902889495494707,
+        "flatness": 0.059781307685448586
+      },
+      "cleared_channels": [
+        "trend",
+        "horizon_shape_far",
+        "horizon_shape_near"
+      ],
+      "causal_tag": "shape-causal",
+      "level_share_median": 0.5094738057725011,
+      "n_members_with_level_share": 18,
+      "n_members_shape_causal": 18,
+      "n_members_with_shape_record": 18,
+      "concept_ids": [
+        1
+      ],
+      "members": [
+        41,
+        61,
+        62,
+        69,
+        77,
+        78,
+        83,
+        85,
+        103,
+        113,
+        115,
+        123,
+        139,
+        150,
+        200,
+        211,
+        253,
+        258
+      ],
+      "fires_on": [
+        {
+          "label": "mixture",
+          "count": 3
+        },
+        {
+          "label": "sequential_par",
+          "count": 1
+        }
+      ],
+      "cross_model_p": 0.8258706467661692,
+      "stability": {
+        "status": "ran (concept-level aggregate)",
+        "note": "aggregated from concept_stability.json's per-concept reciprocal-transfer stability; a replicate SAE's own dictionary is never re-ablated into the family space (that needs a full ablation battery per replicate, out of scope here) -- this is 'are this family's member concepts individually seed-stable', not 'does a replicate feature land in this family'",
+        "n_concepts_scored": 1,
+        "n_concepts_stable": 0,
+        "frac_concepts_stable": 0.0
+      }
+    },
+    {
+      "family": 8,
+      "title": "High-frequency shifters",
+      "description": "These features steer the first third of the forecast (removing them moves it), and shift the forecast toward higher frequencies (a rougher, less smooth shape). Found in 3 models (Chronos-2, Sundial, TimesFM).",
+      "n_members": 11,
+      "models": {
+        "Chronos-2": 1,
+        "Sundial": 9,
+        "TimesFM": 1
+      },
+      "n_models": 3,
+      "mean_profile_ablation_units": {
+        "trend": -0.47199544229349705,
+        "seasonal": 1.4960676762633738,
+        "spectral_centroid": -4.580030592088324,
+        "level": 2.8858017269712573,
+        "dispersion": 1.4369609530144851,
+        "horizon_shape_near": 4.907824571294525,
+        "horizon_shape_far": 2.7221304197872915,
+        "mase": -3.039154565705056,
+        "flatness": -0.18237046458695944
+      },
+      "directed_profile_null_units": {
+        "trend": 0.47199544229349705,
+        "seasonal": -1.4960676762633738,
+        "spectral_centroid": 4.580030592088324,
+        "level": -2.8858017269712573,
+        "dispersion": -1.4369609530144851,
+        "horizon_shape_near": -4.907824571294525,
+        "horizon_shape_far": -2.7221304197872915,
+        "mase": 3.039154565705056,
+        "flatness": 0.18237046458695944
+      },
+      "cleared_channels": [
+        "horizon_shape_near",
+        "spectral_centroid",
+        "mase",
+        "level",
+        "horizon_shape_far",
+        "seasonal",
+        "dispersion"
+      ],
+      "causal_tag": "shape-causal",
+      "level_share_median": 0.249412786434023,
+      "n_members_with_level_share": 11,
+      "n_members_shape_causal": 11,
+      "n_members_with_shape_record": 11,
+      "concept_ids": [],
+      "members": [
+        67,
+        125,
+        136,
+        177,
+        187,
+        194,
+        198,
+        207,
+        222,
+        228,
+        287
+      ],
+      "fires_on": [],
+      "cross_model_p": 0.9800995024875622,
+      "stability": {
+        "status": "ran (concept-level aggregate)",
+        "note": "aggregated from concept_stability.json's per-concept reciprocal-transfer stability; a replicate SAE's own dictionary is never re-ablated into the family space (that needs a full ablation battery per replicate, out of scope here) -- this is 'are this family's member concepts individually seed-stable', not 'does a replicate feature land in this family'",
+        "n_concepts_scored": 0,
+        "n_concepts_stable": 0,
+        "frac_concepts_stable": null
+      }
+    }
+  ],
+  "rows": [
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.10",
+      "feature": 2727,
+      "family": 2
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.10",
+      "feature": 822,
+      "family": 0
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.10",
+      "feature": 4198,
+      "family": 0
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.10",
+      "feature": 5914,
+      "family": 1
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.10",
+      "feature": 3138,
+      "family": 3
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.10",
+      "feature": 1890,
+      "family": 6
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.10",
+      "feature": 1078,
+      "family": 0
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.10",
+      "feature": 1657,
+      "family": 0
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.10",
+      "feature": 3991,
+      "family": 4
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.5",
+      "feature": 1714,
+      "family": 2
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.5",
+      "feature": 1852,
+      "family": 0
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.5",
+      "feature": 221,
+      "family": 2
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.5",
+      "feature": 5723,
+      "family": 3
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.5",
+      "feature": 5693,
+      "family": 1
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.5",
+      "feature": 3690,
+      "family": 0
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.5",
+      "feature": 3874,
+      "family": 2
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.5",
+      "feature": 3608,
+      "family": 4
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.5",
+      "feature": 6066,
+      "family": 1
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.5",
+      "feature": 5793,
+      "family": 5
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.5",
+      "feature": 16,
+      "family": 3
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.5",
+      "feature": 5919,
+      "family": 4
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.5",
+      "feature": 1893,
+      "family": 0
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.5",
+      "feature": 1079,
+      "family": 1
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.5",
+      "feature": 462,
+      "family": 0
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.6",
+      "feature": 1714,
+      "family": 2
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.6",
+      "feature": 5528,
+      "family": 3
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.6",
+      "feature": 4571,
+      "family": 1
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.6",
+      "feature": 259,
+      "family": 1
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.6",
+      "feature": 5231,
+      "family": 6
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.6",
+      "feature": 4757,
+      "family": 0
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.6",
+      "feature": 5849,
+      "family": 1
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.6",
+      "feature": 25,
+      "family": 0
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.6",
+      "feature": 3200,
+      "family": 3
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.6",
+      "feature": 1,
+      "family": 0
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.6",
+      "feature": 3136,
+      "family": 1
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.6",
+      "feature": 1076,
+      "family": 0
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.6",
+      "feature": 251,
+      "family": 1
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.6",
+      "feature": 3987,
+      "family": 3
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.7",
+      "feature": 3327,
+      "family": 3
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.7",
+      "feature": 4757,
+      "family": 0
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.7",
+      "feature": 803,
+      "family": 1
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.7",
+      "feature": 1887,
+      "family": 7
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.7",
+      "feature": 1345,
+      "family": 1
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.7",
+      "feature": 15,
+      "family": 1
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.7",
+      "feature": 1752,
+      "family": 6
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.7",
+      "feature": 5375,
+      "family": 5
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.7",
+      "feature": 2169,
+      "family": 0
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.7",
+      "feature": 1785,
+      "family": 1
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.7",
+      "feature": 3134,
+      "family": 3
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.7",
+      "feature": 5215,
+      "family": 3
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.7",
+      "feature": 102,
+      "family": 0
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.7",
+      "feature": 3907,
+      "family": 0
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.7",
+      "feature": 1888,
+      "family": 4
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.7",
+      "feature": 3989,
+      "family": 0
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.7",
+      "feature": 4994,
+      "family": 2
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.7",
+      "feature": 462,
+      "family": 5
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.8",
+      "feature": 3327,
+      "family": 2
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.8",
+      "feature": 803,
+      "family": 1
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.8",
+      "feature": 4757,
+      "family": 0
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.8",
+      "feature": 2884,
+      "family": 1
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.8",
+      "feature": 15,
+      "family": 1
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.8",
+      "feature": 4005,
+      "family": 7
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.8",
+      "feature": 5700,
+      "family": 7
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.8",
+      "feature": 2555,
+      "family": 2
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.8",
+      "feature": 1785,
+      "family": 1
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.8",
+      "feature": 587,
+      "family": 3
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.8",
+      "feature": 5513,
+      "family": 0
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.8",
+      "feature": 103,
+      "family": 8
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.8",
+      "feature": 3135,
+      "family": 3
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.8",
+      "feature": 3908,
+      "family": 7
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.8",
+      "feature": 1888,
+      "family": 4
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.8",
+      "feature": 1076,
+      "family": 0
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.8",
+      "feature": 252,
+      "family": 6
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.8",
+      "feature": 3990,
+      "family": 1
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.8",
+      "feature": 462,
+      "family": 2
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.9",
+      "feature": 3327,
+      "family": 1
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.9",
+      "feature": 3851,
+      "family": 0
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.9",
+      "feature": 3526,
+      "family": 7
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.9",
+      "feature": 2763,
+      "family": 7
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.9",
+      "feature": 5347,
+      "family": 0
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.9",
+      "feature": 803,
+      "family": 1
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.9",
+      "feature": 1543,
+      "family": 2
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.9",
+      "feature": 1785,
+      "family": 1
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.9",
+      "feature": 4005,
+      "family": 7
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.9",
+      "feature": 2847,
+      "family": 0
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.9",
+      "feature": 3742,
+      "family": 7
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.9",
+      "feature": 3908,
+      "family": 0
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.9",
+      "feature": 463,
+      "family": 1
+    },
+    {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.3",
+      "feature": 5876,
+      "family": 2
+    },
+    {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.3",
+      "feature": 2260,
+      "family": 5
+    },
+    {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.3",
+      "feature": 4094,
+      "family": 2
+    },
+    {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.3",
+      "feature": 910,
+      "family": 2
+    },
+    {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.3",
+      "feature": 4656,
+      "family": 0
+    },
+    {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.3",
+      "feature": 4140,
+      "family": 5
+    },
+    {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.3",
+      "feature": 4642,
+      "family": 2
+    },
+    {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.3",
+      "feature": 2577,
+      "family": 4
+    },
+    {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.4",
+      "feature": 4679,
+      "family": 2
+    },
+    {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.4",
+      "feature": 5876,
+      "family": 2
+    },
+    {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.4",
+      "feature": 2979,
+      "family": 2
+    },
+    {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.4",
+      "feature": 1691,
+      "family": 0
+    },
+    {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.4",
+      "feature": 4366,
+      "family": 2
+    },
+    {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.4",
+      "feature": 2668,
+      "family": 2
+    },
+    {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.4",
+      "feature": 2978,
+      "family": 2
+    },
+    {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.4",
+      "feature": 1936,
+      "family": 7
+    },
+    {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.4",
+      "feature": 4479,
+      "family": 1
+    },
+    {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.4",
+      "feature": 43,
+      "family": 2
+    },
+    {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.4",
+      "feature": 145,
+      "family": 2
+    },
+    {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.5",
+      "feature": 5876,
+      "family": 2
+    },
+    {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.5",
+      "feature": 2063,
+      "family": 2
+    },
+    {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.5",
+      "feature": 4119,
+      "family": 0
+    },
+    {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.5",
+      "feature": 1936,
+      "family": 0
+    },
+    {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.5",
+      "feature": 630,
+      "family": 0
+    },
+    {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.5",
+      "feature": 3638,
+      "family": 2
+    },
+    {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.5",
+      "feature": 5566,
+      "family": 7
+    },
+    {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.5",
+      "feature": 1507,
+      "family": 2
+    },
+    {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.5",
+      "feature": 3906,
+      "family": 7
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.10",
+      "feature": 1679,
+      "family": 2
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.10",
+      "feature": 3448,
+      "family": 2
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.10",
+      "feature": 2839,
+      "family": 5
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.10",
+      "feature": 5918,
+      "family": 0
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.10",
+      "feature": 1935,
+      "family": 0
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.10",
+      "feature": 5901,
+      "family": 6
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.10",
+      "feature": 1999,
+      "family": 2
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.10",
+      "feature": 5187,
+      "family": 7
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.10",
+      "feature": 4741,
+      "family": 1
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.10",
+      "feature": 5217,
+      "family": 8
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.10",
+      "feature": 103,
+      "family": 0
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.10",
+      "feature": 3132,
+      "family": 1
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.10",
+      "feature": 3903,
+      "family": 1
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.10",
+      "feature": 1082,
+      "family": 0
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.10",
+      "feature": 1659,
+      "family": 0
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.10",
+      "feature": 255,
+      "family": 6
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.10",
+      "feature": 4993,
+      "family": 3
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.11",
+      "feature": 883,
+      "family": 6
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.11",
+      "feature": 5918,
+      "family": 0
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.11",
+      "feature": 3355,
+      "family": 2
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.11",
+      "feature": 101,
+      "family": 8
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.11",
+      "feature": 1076,
+      "family": 1
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.11",
+      "feature": 1656,
+      "family": 2
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.11",
+      "feature": 251,
+      "family": 7
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.11",
+      "feature": 3983,
+      "family": 4
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.11",
+      "feature": 4992,
+      "family": 6
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.3",
+      "feature": 2033,
+      "family": 1
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.3",
+      "feature": 882,
+      "family": 4
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.3",
+      "feature": 1626,
+      "family": 2
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.3",
+      "feature": 4761,
+      "family": 0
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.3",
+      "feature": 2363,
+      "family": 1
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.3",
+      "feature": 2702,
+      "family": 2
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.3",
+      "feature": 3911,
+      "family": 2
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.3",
+      "feature": 1892,
+      "family": 3
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.3",
+      "feature": 1078,
+      "family": 7
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.3",
+      "feature": 251,
+      "family": 1
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.3",
+      "feature": 462,
+      "family": 3
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.4",
+      "feature": 2033,
+      "family": 1
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.4",
+      "feature": 5918,
+      "family": 0
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.4",
+      "feature": 3902,
+      "family": 2
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.4",
+      "feature": 1626,
+      "family": 2
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.4",
+      "feature": 3369,
+      "family": 3
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.4",
+      "feature": 882,
+      "family": 1
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.4",
+      "feature": 395,
+      "family": 2
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.4",
+      "feature": 5217,
+      "family": 6
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.4",
+      "feature": 3135,
+      "family": 0
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.4",
+      "feature": 1887,
+      "family": 0
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.4",
+      "feature": 250,
+      "family": 1
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.4",
+      "feature": 4994,
+      "family": 5
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.4",
+      "feature": 5609,
+      "family": 1
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.5",
+      "feature": 2033,
+      "family": 0
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.5",
+      "feature": 5918,
+      "family": 0
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.5",
+      "feature": 4761,
+      "family": 0
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.5",
+      "feature": 3355,
+      "family": 2
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.5",
+      "feature": 882,
+      "family": 0
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.5",
+      "feature": 4645,
+      "family": 4
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.5",
+      "feature": 3907,
+      "family": 0
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.5",
+      "feature": 1887,
+      "family": 0
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.5",
+      "feature": 1074,
+      "family": 0
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.5",
+      "feature": 1652,
+      "family": 1
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.5",
+      "feature": 250,
+      "family": 0
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.5",
+      "feature": 460,
+      "family": 8
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.6",
+      "feature": 2033,
+      "family": 2
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.6",
+      "feature": 5338,
+      "family": 0
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.6",
+      "feature": 4761,
+      "family": 2
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.6",
+      "feature": 5918,
+      "family": 0
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.6",
+      "feature": 3134,
+      "family": 0
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.6",
+      "feature": 3908,
+      "family": 4
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.6",
+      "feature": 1888,
+      "family": 6
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.6",
+      "feature": 1655,
+      "family": 0
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.6",
+      "feature": 4994,
+      "family": 6
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.6",
+      "feature": 5606,
+      "family": 8
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.6",
+      "feature": 461,
+      "family": 0
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.7",
+      "feature": 2033,
+      "family": 3
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.7",
+      "feature": 5918,
+      "family": 0
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.7",
+      "feature": 3448,
+      "family": 2
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.7",
+      "feature": 3255,
+      "family": 2
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.7",
+      "feature": 1072,
+      "family": 6
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.7",
+      "feature": 1652,
+      "family": 8
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.7",
+      "feature": 250,
+      "family": 3
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.7",
+      "feature": 3988,
+      "family": 3
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.7",
+      "feature": 4993,
+      "family": 1
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.7",
+      "feature": 5604,
+      "family": 8
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.7",
+      "feature": 459,
+      "family": 6
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.8",
+      "feature": 3448,
+      "family": 7
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.8",
+      "feature": 2354,
+      "family": 5
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.8",
+      "feature": 4761,
+      "family": 2
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.8",
+      "feature": 1935,
+      "family": 0
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.8",
+      "feature": 5918,
+      "family": 0
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.8",
+      "feature": 2854,
+      "family": 2
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.8",
+      "feature": 2179,
+      "family": null
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.8",
+      "feature": 5568,
+      "family": 8
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.8",
+      "feature": 5213,
+      "family": 4
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.8",
+      "feature": 100,
+      "family": 3
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.8",
+      "feature": 3130,
+      "family": 5
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.8",
+      "feature": 1883,
+      "family": 7
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.8",
+      "feature": 1649,
+      "family": 1
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.8",
+      "feature": 249,
+      "family": null
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.8",
+      "feature": 3981,
+      "family": 2
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.8",
+      "feature": 4992,
+      "family": 1
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.8",
+      "feature": 5604,
+      "family": 1
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.9",
+      "feature": 3448,
+      "family": 2
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.9",
+      "feature": 2953,
+      "family": 0
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.9",
+      "feature": 5918,
+      "family": 0
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.9",
+      "feature": 1935,
+      "family": 0
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.9",
+      "feature": 2854,
+      "family": 2
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.9",
+      "feature": 2609,
+      "family": 8
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.9",
+      "feature": 5568,
+      "family": 2
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.9",
+      "feature": 2813,
+      "family": 0
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.9",
+      "feature": 102,
+      "family": 6
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.9",
+      "feature": 3138,
+      "family": 0
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.9",
+      "feature": 3912,
+      "family": 6
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.9",
+      "feature": 1888,
+      "family": 8
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.9",
+      "feature": 1074,
+      "family": 4
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.9",
+      "feature": 1654,
+      "family": 6
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.9",
+      "feature": 251,
+      "family": 0
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.9",
+      "feature": 5000,
+      "family": 6
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.9",
+      "feature": 5610,
+      "family": 6
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.0",
+      "feature": 6080,
+      "family": 4
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.0",
+      "feature": 3653,
+      "family": 1
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.0",
+      "feature": 4305,
+      "family": 0
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.0",
+      "feature": 5913,
+      "family": 4
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.0",
+      "feature": 944,
+      "family": 1
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.0",
+      "feature": 5258,
+      "family": 4
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.0",
+      "feature": 5894,
+      "family": 1
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.0",
+      "feature": 1377,
+      "family": 0
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.10",
+      "feature": 2106,
+      "family": 1
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.10",
+      "feature": 453,
+      "family": 1
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.10",
+      "feature": 3900,
+      "family": 1
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.10",
+      "feature": 1646,
+      "family": 0
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.12",
+      "feature": 533,
+      "family": 5
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.12",
+      "feature": 574,
+      "family": 1
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.12",
+      "feature": 3653,
+      "family": 4
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.12",
+      "feature": 2468,
+      "family": 0
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.12",
+      "feature": 2106,
+      "family": 1
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.12",
+      "feature": 5702,
+      "family": 0
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.12",
+      "feature": 95,
+      "family": 0
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.12",
+      "feature": 1882,
+      "family": 7
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.12",
+      "feature": 444,
+      "family": null
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.14",
+      "feature": 453,
+      "family": 1
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.14",
+      "feature": 2106,
+      "family": 1
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.14",
+      "feature": 1742,
+      "family": 3
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.14",
+      "feature": 112,
+      "family": 7
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.16",
+      "feature": 3320,
+      "family": 0
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.16",
+      "feature": 4395,
+      "family": 0
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.16",
+      "feature": 2106,
+      "family": 1
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.16",
+      "feature": 533,
+      "family": 0
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.16",
+      "feature": 712,
+      "family": 0
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.16",
+      "feature": 5588,
+      "family": 5
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.16",
+      "feature": 450,
+      "family": 1
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.18",
+      "feature": 1212,
+      "family": 1
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.18",
+      "feature": 200,
+      "family": 1
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.2",
+      "feature": 886,
+      "family": 3
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.2",
+      "feature": 2691,
+      "family": 4
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.2",
+      "feature": 1355,
+      "family": 3
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.2",
+      "feature": 5143,
+      "family": 0
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.2",
+      "feature": 4395,
+      "family": 0
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.2",
+      "feature": 1653,
+      "family": 0
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.4",
+      "feature": 886,
+      "family": 0
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.4",
+      "feature": 3086,
+      "family": 1
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.4",
+      "feature": 95,
+      "family": 0
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.4",
+      "feature": 3751,
+      "family": 1
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.4",
+      "feature": 3038,
+      "family": 1
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.4",
+      "feature": 1136,
+      "family": null
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.4",
+      "feature": 471,
+      "family": 3
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.6",
+      "feature": 3653,
+      "family": 0
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.6",
+      "feature": 2106,
+      "family": 1
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.6",
+      "feature": 3751,
+      "family": 1
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.6",
+      "feature": 712,
+      "family": 0
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.6",
+      "feature": 1568,
+      "family": 1
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.6",
+      "feature": 269,
+      "family": 5
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.6",
+      "feature": 4004,
+      "family": 8
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.8",
+      "feature": 3534,
+      "family": 1
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.8",
+      "feature": 3653,
+      "family": 0
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.8",
+      "feature": 533,
+      "family": 0
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.8",
+      "feature": 574,
+      "family": 1
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.8",
+      "feature": 249,
+      "family": null
+    }
+  ],
+  "concept_family": {
+    "0": {
+      "family": 1,
+      "split": false,
+      "member_family_counts": {
+        "1": 5
+      },
+      "n_distinct_families": 1
+    },
+    "1": {
+      "family": 7,
+      "split": false,
+      "member_family_counts": {
+        "7": 4
+      },
+      "n_distinct_families": 1
+    },
+    "2": {
+      "family": 0,
+      "split": false,
+      "member_family_counts": {
+        "0": 4
+      },
+      "n_distinct_families": 1
+    },
+    "3": {
+      "family": 1,
+      "split": false,
+      "member_family_counts": {
+        "1": 4
+      },
+      "n_distinct_families": 1
+    },
+    "4": {
+      "family": 0,
+      "split": false,
+      "member_family_counts": {
+        "0": 3
+      },
+      "n_distinct_families": 1
+    },
+    "5": {
+      "family": 2,
+      "split": false,
+      "member_family_counts": {
+        "2": 3
+      },
+      "n_distinct_families": 1
+    },
+    "6": {
+      "family": 1,
+      "split": true,
+      "member_family_counts": {
+        "1": 2,
+        "2": 1
+      },
+      "n_distinct_families": 2
+    },
+    "7": {
+      "family": 1,
+      "split": false,
+      "member_family_counts": {
+        "1": 3
+      },
+      "n_distinct_families": 1
+    },
+    "8": {
+      "family": 1,
+      "split": false,
+      "member_family_counts": {
+        "1": 3
+      },
+      "n_distinct_families": 1
+    },
+    "9": {
+      "family": 1,
+      "split": false,
+      "member_family_counts": {
+        "1": 3
+      },
+      "n_distinct_families": 1
+    },
+    "10": {
+      "family": 0,
+      "split": false,
+      "member_family_counts": {
+        "0": 3
+      },
+      "n_distinct_families": 1
+    },
+    "11": {
+      "family": 1,
+      "split": false,
+      "member_family_counts": {
+        "1": 3
+      },
+      "n_distinct_families": 1
+    },
+    "12": {
+      "family": 0,
+      "split": false,
+      "member_family_counts": {
+        "0": 3
+      },
+      "n_distinct_families": 1
+    },
+    "13": {
+      "family": 1,
+      "split": false,
+      "member_family_counts": {
+        "1": 3
+      },
+      "n_distinct_families": 1
+    },
+    "14": {
+      "family": 0,
+      "split": true,
+      "member_family_counts": {
+        "0": 2,
+        "8": 1
+      },
+      "n_distinct_families": 2
+    },
+    "15": {
+      "family": 6,
+      "split": false,
+      "member_family_counts": {
+        "6": 3
+      },
+      "n_distinct_families": 1
+    },
+    "16": {
+      "family": 0,
+      "split": false,
+      "member_family_counts": {
+        "0": 3
+      },
+      "n_distinct_families": 1
+    },
+    "17": {
+      "family": 2,
+      "split": false,
+      "member_family_counts": {
+        "2": 3
+      },
+      "n_distinct_families": 1
+    },
+    "18": {
+      "family": 0,
+      "split": false,
+      "member_family_counts": {
+        "0": 3
+      },
+      "n_distinct_families": 1
+    },
+    "19": {
+      "family": 2,
+      "split": false,
+      "member_family_counts": {
+        "2": 3
+      },
+      "n_distinct_families": 1
+    },
+    "20": {
+      "family": 0,
+      "split": true,
+      "member_family_counts": {
+        "0": 2,
+        "3": 1
+      },
+      "n_distinct_families": 2
+    },
+    "21": {
+      "family": 0,
+      "split": false,
+      "member_family_counts": {
+        "0": 3
+      },
+      "n_distinct_families": 1
+    },
+    "22": {
+      "family": 0,
+      "split": false,
+      "member_family_counts": {
+        "0": 3
+      },
+      "n_distinct_families": 1
+    },
+    "23": {
+      "family": 0,
+      "split": false,
+      "member_family_counts": {
+        "0": 3
+      },
+      "n_distinct_families": 1
+    },
+    "24": {
+      "family": 0,
+      "split": false,
+      "member_family_counts": {
+        "0": 3
+      },
+      "n_distinct_families": 1
+    },
+    "25": {
+      "family": 2,
+      "split": false,
+      "member_family_counts": {
+        "2": 3
+      },
+      "n_distinct_families": 1
+    },
+    "26": {
+      "family": 1,
+      "split": false,
+      "member_family_counts": {
+        "1": 3
+      },
+      "n_distinct_families": 1
+    }
+  },
+  "n_concepts_split": 3,
+  "null": {
+    "structure": {
+      "n_null": 200,
+      "n_families_real": 9,
+      "n_families_null_mean": 14.33,
+      "n_families_null_p95": 16.0,
+      "p_n_families": 1.0,
+      "frac_assigned_real": 0.9829351535836177,
+      "frac_assigned_null_mean": 0.9955290102389077,
+      "frac_assigned_null_p95": 1.0,
+      "p_frac_assigned": 0.9850746268656716,
+      "silhouette_real": 0.28347299822008065,
+      "n_null_with_admissible_threshold": 200,
+      "silhouette_null_mean": 0.37480984249593985,
+      "p_silhouette": 1.0,
+      "p_silhouette_note": "descriptive, not a significance test of separation: the final-partition silhouette is flat across the whole grid on every run measured so far (~0.31-0.34), so a real silhouette near or below the null mean does not mean the families are arbitrary -- p_n_families/p_frac_assigned are the tests that carry the 'is there more structure than chance' claim; p_silhouette only says whether the CHOSEN (coarsest, tolerance-matched) cut happens to also be tighter than chance, which it need not be by construction"
+    },
+    "cross_model": {
+      "n_null": 200,
+      "n_multi_model_real": 9,
+      "n_multi_model_null_mean": 9.0,
+      "p_n_multi_model": 1.0,
+      "p_n_multi_model_below": 1.0,
+      "mean_purity_real": 0.49154761009015896,
+      "mean_purity_null_mean": 0.4399254362633458,
+      "p_purity_above": 0.01990049751243781,
+      "p_purity_below": 0.9850746268656716,
+      "verdict": "segregated by model"
+    }
+  }
+}

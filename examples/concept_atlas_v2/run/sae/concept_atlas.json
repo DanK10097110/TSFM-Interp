@@ -1,0 +1,4051 @@
+{
+  "schema_version": 1,
+  "space": "ablation",
+  "params": {
+    "min_cosine": 0.9,
+    "min_members": 3,
+    "linkage": "complete",
+    "n_null": 200,
+    "level_share_threshold": 0.9
+  },
+  "n_features": 293,
+  "n_assigned": 86,
+  "rows": [
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.10",
+      "feature": 2727,
+      "concept": null,
+      "pc1": 0.6833445032235275,
+      "pc2": -0.35534704947719553,
+      "umap1": 2.512296676635742,
+      "umap2": 9.12476921081543
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.10",
+      "feature": 822,
+      "concept": null,
+      "pc1": 0.39620368845507303,
+      "pc2": 0.288829825032223,
+      "umap1": 3.822195529937744,
+      "umap2": 4.267768383026123
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.10",
+      "feature": 4198,
+      "concept": null,
+      "pc1": -0.031892638981393766,
+      "pc2": 0.6401809853051188,
+      "umap1": 4.739752292633057,
+      "umap2": 4.596780776977539
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.10",
+      "feature": 5914,
+      "concept": null,
+      "pc1": -0.43410548185743675,
+      "pc2": -0.14901793889536316,
+      "umap1": 7.832940101623535,
+      "umap2": 8.439863204956055
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.10",
+      "feature": 3138,
+      "concept": null,
+      "pc1": 0.26026783017184757,
+      "pc2": 0.30144402751101346,
+      "umap1": 4.950403690338135,
+      "umap2": 6.72843599319458
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.10",
+      "feature": 1890,
+      "concept": null,
+      "pc1": -0.41007274428964147,
+      "pc2": -0.3156608789056612,
+      "umap1": 7.206808090209961,
+      "umap2": 8.440277099609375
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.10",
+      "feature": 1078,
+      "concept": null,
+      "pc1": 0.22192186215578502,
+      "pc2": 0.561537990254706,
+      "umap1": 5.191461563110352,
+      "umap2": 4.705895900726318
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.10",
+      "feature": 1657,
+      "concept": 4,
+      "pc1": 0.5256468860243588,
+      "pc2": 0.41480181942231964,
+      "umap1": 3.5139360427856445,
+      "umap2": 4.3756561279296875
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.10",
+      "feature": 3991,
+      "concept": null,
+      "pc1": -0.4151316505208611,
+      "pc2": -0.004307399886793368,
+      "umap1": 8.550857543945312,
+      "umap2": 6.05296516418457
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.5",
+      "feature": 1714,
+      "concept": 5,
+      "pc1": 0.29407783251667635,
+      "pc2": -0.5620816183116918,
+      "umap1": 5.403645992279053,
+      "umap2": 9.274948120117188
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.5",
+      "feature": 1852,
+      "concept": null,
+      "pc1": 0.3425482454975951,
+      "pc2": 0.4554646181893461,
+      "umap1": 5.196325302124023,
+      "umap2": 4.048188209533691
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.5",
+      "feature": 221,
+      "concept": 5,
+      "pc1": 0.3195522336962248,
+      "pc2": -0.5684345274306093,
+      "umap1": 5.1903157234191895,
+      "umap2": 9.297429084777832
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.5",
+      "feature": 5723,
+      "concept": null,
+      "pc1": -0.19416714737574683,
+      "pc2": -4.196560063807111e-05,
+      "umap1": 5.862674236297607,
+      "umap2": 7.490477561950684
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.5",
+      "feature": 5693,
+      "concept": 6,
+      "pc1": 0.03208182123886349,
+      "pc2": -0.5630863116261957,
+      "umap1": 6.259152889251709,
+      "umap2": 9.35420036315918
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.5",
+      "feature": 3690,
+      "concept": null,
+      "pc1": 0.5538397225529144,
+      "pc2": 0.31440194698966917,
+      "umap1": 3.6286540031433105,
+      "umap2": 4.970803737640381
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.5",
+      "feature": 3874,
+      "concept": null,
+      "pc1": 0.2907100517869089,
+      "pc2": -0.19495539933272843,
+      "umap1": 2.929837226867676,
+      "umap2": 8.515958786010742
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.5",
+      "feature": 3608,
+      "concept": null,
+      "pc1": -0.601192960709243,
+      "pc2": 0.3607824802152807,
+      "umap1": 7.634663105010986,
+      "umap2": 6.13419771194458
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.5",
+      "feature": 6066,
+      "concept": null,
+      "pc1": -0.4286668063226701,
+      "pc2": -0.15867059496759067,
+      "umap1": 8.252012252807617,
+      "umap2": 8.738012313842773
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.5",
+      "feature": 5793,
+      "concept": null,
+      "pc1": -0.7144353778088632,
+      "pc2": 0.29540557958320185,
+      "umap1": 7.558420181274414,
+      "umap2": 7.015612602233887
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.5",
+      "feature": 16,
+      "concept": null,
+      "pc1": -0.15794628752404638,
+      "pc2": 0.13740664162705085,
+      "umap1": 5.8109211921691895,
+      "umap2": 6.42180871963501
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.5",
+      "feature": 5919,
+      "concept": null,
+      "pc1": -0.7701476614954984,
+      "pc2": 0.1393812836828623,
+      "umap1": 8.140377044677734,
+      "umap2": 6.451111316680908
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.5",
+      "feature": 1893,
+      "concept": null,
+      "pc1": -0.4542533982806663,
+      "pc2": 0.5790722549267201,
+      "umap1": 7.439250946044922,
+      "umap2": 5.9198198318481445
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.5",
+      "feature": 1079,
+      "concept": 7,
+      "pc1": -0.3343865905877149,
+      "pc2": -0.4139930237779035,
+      "umap1": 8.097633361816406,
+      "umap2": 9.364834785461426
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.5",
+      "feature": 462,
+      "concept": null,
+      "pc1": 0.4398260232902579,
+      "pc2": 0.44668008595785036,
+      "umap1": 4.361313343048096,
+      "umap2": 5.008144855499268
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.6",
+      "feature": 1714,
+      "concept": null,
+      "pc1": 0.3468115432411518,
+      "pc2": -0.5096533824702318,
+      "umap1": 5.129181385040283,
+      "umap2": 9.207372665405273
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.6",
+      "feature": 5528,
+      "concept": null,
+      "pc1": 0.07736522247158675,
+      "pc2": -0.14669033774137144,
+      "umap1": 5.652729511260986,
+      "umap2": 6.9063720703125
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.6",
+      "feature": 4571,
+      "concept": 8,
+      "pc1": -0.19251466077977772,
+      "pc2": -0.5490518805681592,
+      "umap1": 7.338409900665283,
+      "umap2": 8.97636890411377
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.6",
+      "feature": 259,
+      "concept": 0,
+      "pc1": -0.3004063848413185,
+      "pc2": -0.47764502612852894,
+      "umap1": 7.331568241119385,
+      "umap2": 9.534002304077148
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.6",
+      "feature": 5231,
+      "concept": null,
+      "pc1": -0.4308389520733258,
+      "pc2": -0.048119961453467516,
+      "umap1": 7.607980728149414,
+      "umap2": 7.555037975311279
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.6",
+      "feature": 4757,
+      "concept": null,
+      "pc1": 0.3196028776587439,
+      "pc2": 0.4548432172359963,
+      "umap1": 5.1713457107543945,
+      "umap2": 4.0209527015686035
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.6",
+      "feature": 5849,
+      "concept": 9,
+      "pc1": -0.3661869607613193,
+      "pc2": -0.0852295105118909,
+      "umap1": 8.30258846282959,
+      "umap2": 7.710103988647461
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.6",
+      "feature": 25,
+      "concept": 10,
+      "pc1": 0.285429604567656,
+      "pc2": 0.5997131317536576,
+      "umap1": 3.91218638420105,
+      "umap2": 4.292545318603516
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.6",
+      "feature": 3200,
+      "concept": null,
+      "pc1": 0.300722401044855,
+      "pc2": -0.09665702591142886,
+      "umap1": 3.6021196842193604,
+      "umap2": 6.489029407501221
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.6",
+      "feature": 1,
+      "concept": null,
+      "pc1": 0.6706813819207669,
+      "pc2": 0.13235510546581256,
+      "umap1": 3.29414701461792,
+      "umap2": 6.514847278594971
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.6",
+      "feature": 3136,
+      "concept": null,
+      "pc1": -0.29134576512891663,
+      "pc2": -0.6600420503662597,
+      "umap1": 7.656993389129639,
+      "umap2": 9.13332462310791
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.6",
+      "feature": 1076,
+      "concept": null,
+      "pc1": 0.43225480275711553,
+      "pc2": 0.5958631664818527,
+      "umap1": 3.7309961318969727,
+      "umap2": 4.450289249420166
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.6",
+      "feature": 251,
+      "concept": null,
+      "pc1": -0.4097173982873179,
+      "pc2": -0.013995445819266948,
+      "umap1": 6.790205001831055,
+      "umap2": 6.27888298034668
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.6",
+      "feature": 3987,
+      "concept": null,
+      "pc1": -0.07115418022837161,
+      "pc2": -0.26994000019495396,
+      "umap1": 6.616756439208984,
+      "umap2": 9.61610221862793
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.7",
+      "feature": 3327,
+      "concept": null,
+      "pc1": 0.3990873522977786,
+      "pc2": -0.3760771373661955,
+      "umap1": 5.59445333480835,
+      "umap2": 8.690315246582031
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.7",
+      "feature": 4757,
+      "concept": null,
+      "pc1": 0.13212482142341606,
+      "pc2": 0.5704793475486757,
+      "umap1": 5.024346828460693,
+      "umap2": 4.159701347351074
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.7",
+      "feature": 803,
+      "concept": 11,
+      "pc1": -0.6504433809800404,
+      "pc2": 0.16420343985525623,
+      "umap1": 8.060240745544434,
+      "umap2": 7.32648229598999
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.7",
+      "feature": 1887,
+      "concept": 1,
+      "pc1": -0.3777222300160325,
+      "pc2": 0.42572268893416715,
+      "umap1": 6.971630096435547,
+      "umap2": 3.911561965942383
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.7",
+      "feature": 1345,
+      "concept": 0,
+      "pc1": -0.4291792764028893,
+      "pc2": -0.39260379785583416,
+      "umap1": 7.372320175170898,
+      "umap2": 8.928153038024902
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.7",
+      "feature": 15,
+      "concept": 0,
+      "pc1": -0.2918186964685169,
+      "pc2": -0.41931088979320397,
+      "umap1": 7.039587020874023,
+      "umap2": 9.356890678405762
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.7",
+      "feature": 1752,
+      "concept": null,
+      "pc1": -0.04157324045674793,
+      "pc2": -0.4538473220122031,
+      "umap1": 6.615624904632568,
+      "umap2": 9.113112449645996
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.7",
+      "feature": 5375,
+      "concept": null,
+      "pc1": -0.588644508117766,
+      "pc2": 0.16533606047807597,
+      "umap1": 7.86521053314209,
+      "umap2": 7.321935653686523
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.7",
+      "feature": 2169,
+      "concept": 12,
+      "pc1": 0.22200929609732883,
+      "pc2": 0.24559362805208096,
+      "umap1": 5.634848594665527,
+      "umap2": 4.7050604820251465
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.7",
+      "feature": 1785,
+      "concept": 13,
+      "pc1": -0.771121536093002,
+      "pc2": -0.24376910400036242,
+      "umap1": 8.414115905761719,
+      "umap2": 8.008853912353516
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.7",
+      "feature": 3134,
+      "concept": null,
+      "pc1": 0.5614015117091161,
+      "pc2": -0.2210435851250888,
+      "umap1": 3.6660494804382324,
+      "umap2": 7.352639198303223
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.7",
+      "feature": 5215,
+      "concept": null,
+      "pc1": 0.21388139733665024,
+      "pc2": -0.3248958620567771,
+      "umap1": 5.680654525756836,
+      "umap2": 8.47866439819336
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.7",
+      "feature": 102,
+      "concept": null,
+      "pc1": -0.1871677161887853,
+      "pc2": 0.5179976618444707,
+      "umap1": 5.465480327606201,
+      "umap2": 6.058036804199219
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.7",
+      "feature": 3907,
+      "concept": 14,
+      "pc1": 0.03074235515943239,
+      "pc2": 0.6751739972599157,
+      "umap1": 4.418328285217285,
+      "umap2": 4.277466297149658
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.7",
+      "feature": 1888,
+      "concept": null,
+      "pc1": -0.37906817225552075,
+      "pc2": -0.029799937277196785,
+      "umap1": 8.378271102905273,
+      "umap2": 5.805437088012695
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.7",
+      "feature": 3989,
+      "concept": 12,
+      "pc1": 0.238897435198637,
+      "pc2": 0.23655225304048336,
+      "umap1": 5.6766839027404785,
+      "umap2": 4.793406963348389
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.7",
+      "feature": 4994,
+      "concept": null,
+      "pc1": 0.5002509882248164,
+      "pc2": -0.17568594605104285,
+      "umap1": 2.828660726547241,
+      "umap2": 9.262547492980957
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.7",
+      "feature": 462,
+      "concept": null,
+      "pc1": -0.44100298016599165,
+      "pc2": 0.09566917284570245,
+      "umap1": 7.47955846786499,
+      "umap2": 7.4205403327941895
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.8",
+      "feature": 3327,
+      "concept": 5,
+      "pc1": 0.3868428004391336,
+      "pc2": -0.527592447175316,
+      "umap1": 5.267085552215576,
+      "umap2": 9.212224960327148
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.8",
+      "feature": 803,
+      "concept": 11,
+      "pc1": -0.6785209419423998,
+      "pc2": 0.007072080139405305,
+      "umap1": 8.128981590270996,
+      "umap2": 7.498537540435791
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.8",
+      "feature": 4757,
+      "concept": null,
+      "pc1": 0.20533765539139107,
+      "pc2": 0.5019949699470337,
+      "umap1": 5.332822799682617,
+      "umap2": 4.244890213012695
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.8",
+      "feature": 2884,
+      "concept": 7,
+      "pc1": -0.46772473320630925,
+      "pc2": -0.4449584046295084,
+      "umap1": 8.18321418762207,
+      "umap2": 9.444064140319824
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.8",
+      "feature": 15,
+      "concept": 0,
+      "pc1": -0.26235617154556895,
+      "pc2": -0.45559955806643776,
+      "umap1": 6.994162559509277,
+      "umap2": 9.386263847351074
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.8",
+      "feature": 4005,
+      "concept": 1,
+      "pc1": -0.33584703009909395,
+      "pc2": 0.45509473090026203,
+      "umap1": 6.963376522064209,
+      "umap2": 3.874295949935913
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.8",
+      "feature": 5700,
+      "concept": null,
+      "pc1": -0.12853604864851964,
+      "pc2": 0.15924244000276855,
+      "umap1": 6.675780773162842,
+      "umap2": 3.678180694580078
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.8",
+      "feature": 2555,
+      "concept": null,
+      "pc1": 0.6608639796435642,
+      "pc2": 0.1073632149231486,
+      "umap1": 3.228637456893921,
+      "umap2": 7.992642402648926
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.8",
+      "feature": 1785,
+      "concept": 13,
+      "pc1": -0.724452828844727,
+      "pc2": -0.26599566869906077,
+      "umap1": 8.318483352661133,
+      "umap2": 8.11809253692627
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.8",
+      "feature": 587,
+      "concept": null,
+      "pc1": 0.19466509785093822,
+      "pc2": -0.5384022097641521,
+      "umap1": 6.149946689605713,
+      "umap2": 9.279191017150879
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.8",
+      "feature": 5513,
+      "concept": null,
+      "pc1": 0.07121167033895195,
+      "pc2": 0.1059459624566654,
+      "umap1": 5.303752899169922,
+      "umap2": 5.788695812225342
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.8",
+      "feature": 103,
+      "concept": 14,
+      "pc1": 0.07964963184306253,
+      "pc2": 0.6833245641192913,
+      "umap1": 4.578069686889648,
+      "umap2": 4.119017601013184
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.8",
+      "feature": 3135,
+      "concept": null,
+      "pc1": 0.06481268040121088,
+      "pc2": -0.09060511863744347,
+      "umap1": 5.679200172424316,
+      "umap2": 7.766863822937012
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.8",
+      "feature": 3908,
+      "concept": null,
+      "pc1": -0.24996335962115868,
+      "pc2": 0.29510230100965457,
+      "umap1": 6.712409973144531,
+      "umap2": 3.6453542709350586
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.8",
+      "feature": 1888,
+      "concept": null,
+      "pc1": -0.15777923105748665,
+      "pc2": 0.010804925290689726,
+      "umap1": 6.764280796051025,
+      "umap2": 7.294132709503174
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.8",
+      "feature": 1076,
+      "concept": null,
+      "pc1": 0.49625013510700494,
+      "pc2": 0.4252733318002862,
+      "umap1": 3.5118887424468994,
+      "umap2": 4.4449849128723145
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.8",
+      "feature": 252,
+      "concept": 15,
+      "pc1": -0.35148300536429106,
+      "pc2": -0.10738661756829529,
+      "umap1": 6.829369068145752,
+      "umap2": 7.545717239379883
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.8",
+      "feature": 3990,
+      "concept": 7,
+      "pc1": -0.3125006069009499,
+      "pc2": -0.49889060957634107,
+      "umap1": 8.112476348876953,
+      "umap2": 9.421019554138184
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.8",
+      "feature": 462,
+      "concept": null,
+      "pc1": 0.5735932122798145,
+      "pc2": -0.35496058595568264,
+      "umap1": 2.924103260040283,
+      "umap2": 8.786669731140137
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.9",
+      "feature": 3327,
+      "concept": null,
+      "pc1": -0.01771266019894162,
+      "pc2": -0.5264776160643905,
+      "umap1": 6.485925197601318,
+      "umap2": 9.473797798156738
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.9",
+      "feature": 3851,
+      "concept": 16,
+      "pc1": 0.12718780531239615,
+      "pc2": 0.47805939478438086,
+      "umap1": 5.28896951675415,
+      "umap2": 4.622445106506348
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.9",
+      "feature": 3526,
+      "concept": null,
+      "pc1": 0.41788704165934926,
+      "pc2": 0.15241965716171202,
+      "umap1": 5.805189609527588,
+      "umap2": 3.6559369564056396
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.9",
+      "feature": 2763,
+      "concept": null,
+      "pc1": 0.25196447531337657,
+      "pc2": 0.30108144640000667,
+      "umap1": 5.821498394012451,
+      "umap2": 3.7049267292022705
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.9",
+      "feature": 5347,
+      "concept": null,
+      "pc1": 0.0311914566601676,
+      "pc2": 0.42091746035326427,
+      "umap1": 5.793681621551514,
+      "umap2": 4.14885950088501
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.9",
+      "feature": 803,
+      "concept": 11,
+      "pc1": -0.683839936757709,
+      "pc2": 0.0014911806372878257,
+      "umap1": 7.966640949249268,
+      "umap2": 7.568943977355957
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.9",
+      "feature": 1543,
+      "concept": null,
+      "pc1": 0.28868972352804584,
+      "pc2": -0.1376768892070553,
+      "umap1": 2.613619565963745,
+      "umap2": 9.30375862121582
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.9",
+      "feature": 1785,
+      "concept": 13,
+      "pc1": -0.6724659643684519,
+      "pc2": -0.32159855678991944,
+      "umap1": 8.323741912841797,
+      "umap2": 8.333699226379395
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.9",
+      "feature": 4005,
+      "concept": 1,
+      "pc1": -0.3906518612165386,
+      "pc2": 0.3628089698309911,
+      "umap1": 6.978623390197754,
+      "umap2": 3.800380229949951
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.9",
+      "feature": 2847,
+      "concept": 16,
+      "pc1": 0.35829858296769646,
+      "pc2": 0.38396132595883486,
+      "umap1": 4.933198928833008,
+      "umap2": 4.870508670806885
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.9",
+      "feature": 3742,
+      "concept": null,
+      "pc1": -0.2776643976332799,
+      "pc2": 0.03492066285516866,
+      "umap1": 6.878107070922852,
+      "umap2": 3.750901222229004
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.9",
+      "feature": 3908,
+      "concept": null,
+      "pc1": -0.038588658976154586,
+      "pc2": 0.679666202562479,
+      "umap1": 4.432034015655518,
+      "umap2": 4.477986812591553
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.9",
+      "feature": 463,
+      "concept": 8,
+      "pc1": -0.3397211279609139,
+      "pc2": -0.566836917449605,
+      "umap1": 7.202137470245361,
+      "umap2": 9.09576416015625
+    },
+    {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.3",
+      "feature": 5876,
+      "concept": null,
+      "pc1": 0.2522045356260652,
+      "pc2": -0.22081329637992564,
+      "umap1": 4.92441987991333,
+      "umap2": 9.114917755126953
+    },
+    {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.3",
+      "feature": 2260,
+      "concept": null,
+      "pc1": -0.221069462750002,
+      "pc2": 0.4889490526863739,
+      "umap1": 5.908927917480469,
+      "umap2": 7.030069828033447
+    },
+    {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.3",
+      "feature": 4094,
+      "concept": null,
+      "pc1": 0.1299246781579981,
+      "pc2": -0.641322308531448,
+      "umap1": 3.4806671142578125,
+      "umap2": 9.177042961120605
+    },
+    {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.3",
+      "feature": 910,
+      "concept": null,
+      "pc1": 0.28801625636626377,
+      "pc2": -0.5847891753172957,
+      "umap1": 3.733384609222412,
+      "umap2": 9.221870422363281
+    },
+    {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.3",
+      "feature": 4656,
+      "concept": null,
+      "pc1": -0.138062808232616,
+      "pc2": 0.0929370057855487,
+      "umap1": 5.868567943572998,
+      "umap2": 5.582530498504639
+    },
+    {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.3",
+      "feature": 4140,
+      "concept": null,
+      "pc1": -0.32030313601285165,
+      "pc2": 0.365102391904444,
+      "umap1": 5.679166793823242,
+      "umap2": 6.788010597229004
+    },
+    {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.3",
+      "feature": 4642,
+      "concept": null,
+      "pc1": 0.06399072503377268,
+      "pc2": -0.50780372268205,
+      "umap1": 8.176237106323242,
+      "umap2": 10.212547302246094
+    },
+    {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.3",
+      "feature": 2577,
+      "concept": null,
+      "pc1": -0.3796670010013104,
+      "pc2": 0.12976771971555867,
+      "umap1": 7.948002815246582,
+      "umap2": 5.91686487197876
+    },
+    {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.4",
+      "feature": 4679,
+      "concept": null,
+      "pc1": 0.3436832691830748,
+      "pc2": -0.5523541706200337,
+      "umap1": 5.1119794845581055,
+      "umap2": 9.36760139465332
+    },
+    {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.4",
+      "feature": 5876,
+      "concept": null,
+      "pc1": 0.2052365221457217,
+      "pc2": -0.530534779491049,
+      "umap1": 5.115535259246826,
+      "umap2": 9.447457313537598
+    },
+    {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.4",
+      "feature": 2979,
+      "concept": 17,
+      "pc1": 0.5156646710288889,
+      "pc2": -0.5060517494014786,
+      "umap1": 2.880519151687622,
+      "umap2": 9.182788848876953
+    },
+    {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.4",
+      "feature": 1691,
+      "concept": 16,
+      "pc1": 0.23918653926161287,
+      "pc2": 0.5240957285830977,
+      "umap1": 4.946692943572998,
+      "umap2": 4.716503620147705
+    },
+    {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.4",
+      "feature": 4366,
+      "concept": null,
+      "pc1": 0.6612977302941876,
+      "pc2": -0.4004144111796703,
+      "umap1": 3.049269914627075,
+      "umap2": 8.762080192565918
+    },
+    {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.4",
+      "feature": 2668,
+      "concept": null,
+      "pc1": 0.5535444967518196,
+      "pc2": -0.5602442683202049,
+      "umap1": 2.7905430793762207,
+      "umap2": 9.10837459564209
+    },
+    {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.4",
+      "feature": 2978,
+      "concept": null,
+      "pc1": 0.2896787564894715,
+      "pc2": -0.5371588964368263,
+      "umap1": 3.049084424972534,
+      "umap2": 9.28480339050293
+    },
+    {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.4",
+      "feature": 1936,
+      "concept": null,
+      "pc1": -0.21846107358361516,
+      "pc2": 0.5768622126359009,
+      "umap1": 6.25591516494751,
+      "umap2": 4.586304187774658
+    },
+    {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.4",
+      "feature": 4479,
+      "concept": null,
+      "pc1": -0.5846008122964462,
+      "pc2": -0.325385006341111,
+      "umap1": 8.110316276550293,
+      "umap2": 8.066865921020508
+    },
+    {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.4",
+      "feature": 43,
+      "concept": null,
+      "pc1": 0.5201671379597372,
+      "pc2": -0.15477685997046908,
+      "umap1": 2.699985980987549,
+      "umap2": 9.404544830322266
+    },
+    {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.4",
+      "feature": 145,
+      "concept": null,
+      "pc1": 0.3004246635502266,
+      "pc2": -0.19305154819769224,
+      "umap1": 3.20930552482605,
+      "umap2": 8.468382835388184
+    },
+    {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.5",
+      "feature": 5876,
+      "concept": null,
+      "pc1": 0.5850442215334171,
+      "pc2": -0.41479236673670244,
+      "umap1": 5.24721097946167,
+      "umap2": 9.07548999786377
+    },
+    {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.5",
+      "feature": 2063,
+      "concept": 17,
+      "pc1": 0.5286213795582222,
+      "pc2": -0.5625054459189177,
+      "umap1": 3.0232717990875244,
+      "umap2": 9.058239936828613
+    },
+    {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.5",
+      "feature": 4119,
+      "concept": null,
+      "pc1": 0.5233693446230285,
+      "pc2": 0.4094377823352225,
+      "umap1": 4.12939977645874,
+      "umap2": 4.838618755340576
+    },
+    {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.5",
+      "feature": 1936,
+      "concept": 18,
+      "pc1": 0.047369547147997786,
+      "pc2": 0.2975374221861473,
+      "umap1": 5.876657485961914,
+      "umap2": 4.7123122215271
+    },
+    {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.5",
+      "feature": 630,
+      "concept": null,
+      "pc1": 0.32171610159849906,
+      "pc2": 0.502329529715756,
+      "umap1": 4.495347023010254,
+      "umap2": 4.8679327964782715
+    },
+    {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.5",
+      "feature": 3638,
+      "concept": null,
+      "pc1": 0.5506535082845413,
+      "pc2": -0.3093153268156605,
+      "umap1": 2.6311230659484863,
+      "umap2": 9.345707893371582
+    },
+    {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.5",
+      "feature": 5566,
+      "concept": null,
+      "pc1": -0.7715038039407396,
+      "pc2": 0.21020150487921527,
+      "umap1": 8.050951957702637,
+      "umap2": 6.608103275299072
+    },
+    {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.5",
+      "feature": 1507,
+      "concept": null,
+      "pc1": 0.1744021666185321,
+      "pc2": -0.6382073075528185,
+      "umap1": 4.086947441101074,
+      "umap2": 9.362894058227539
+    },
+    {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.5",
+      "feature": 3906,
+      "concept": null,
+      "pc1": -0.08914921983394317,
+      "pc2": 0.14806550225307877,
+      "umap1": 6.569173812866211,
+      "umap2": 3.616790533065796
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.10",
+      "feature": 1679,
+      "concept": 19,
+      "pc1": 0.5803690066769507,
+      "pc2": -0.3095942314434738,
+      "umap1": 4.6486101150512695,
+      "umap2": 8.97425651550293
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.10",
+      "feature": 3448,
+      "concept": 17,
+      "pc1": 0.45292981304066166,
+      "pc2": -0.4537379890098703,
+      "umap1": 3.009183168411255,
+      "umap2": 9.060935020446777
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.10",
+      "feature": 2839,
+      "concept": null,
+      "pc1": -0.6806102346226592,
+      "pc2": 0.33456316322146157,
+      "umap1": 7.196739196777344,
+      "umap2": 4.955849647521973
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.10",
+      "feature": 5918,
+      "concept": 20,
+      "pc1": 0.589665680021685,
+      "pc2": 0.05862549163461912,
+      "umap1": 3.463296890258789,
+      "umap2": 6.5367584228515625
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.10",
+      "feature": 1935,
+      "concept": 10,
+      "pc1": 0.4695075868848582,
+      "pc2": 0.4882285394846226,
+      "umap1": 3.6546010971069336,
+      "umap2": 4.422995567321777
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.10",
+      "feature": 5901,
+      "concept": null,
+      "pc1": 0.23147216165198675,
+      "pc2": -0.05688770628424796,
+      "umap1": 6.090447902679443,
+      "umap2": 8.105199813842773
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.10",
+      "feature": 1999,
+      "concept": null,
+      "pc1": 0.5838431840983339,
+      "pc2": -0.022134742676308595,
+      "umap1": 3.257835626602173,
+      "umap2": 8.173291206359863
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.10",
+      "feature": 5187,
+      "concept": null,
+      "pc1": -0.29842588447403506,
+      "pc2": -0.4585749720771647,
+      "umap1": 7.508795738220215,
+      "umap2": 8.822872161865234
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.10",
+      "feature": 4741,
+      "concept": null,
+      "pc1": -0.40184325600465964,
+      "pc2": -0.20800747838296854,
+      "umap1": 7.295675754547119,
+      "umap2": 8.20167350769043
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.10",
+      "feature": 5217,
+      "concept": null,
+      "pc1": 0.4048291555806036,
+      "pc2": 0.48322976331964185,
+      "umap1": 4.830345630645752,
+      "umap2": 4.133988857269287
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.10",
+      "feature": 103,
+      "concept": null,
+      "pc1": -0.223392972687857,
+      "pc2": 0.2313966179433662,
+      "umap1": 6.536205768585205,
+      "umap2": 5.060881614685059
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.10",
+      "feature": 3132,
+      "concept": null,
+      "pc1": -0.09576454752478851,
+      "pc2": -0.47273596306751303,
+      "umap1": 6.643241882324219,
+      "umap2": 9.574455261230469
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.10",
+      "feature": 3903,
+      "concept": null,
+      "pc1": -0.19569402829622803,
+      "pc2": -0.46311506518978984,
+      "umap1": 6.941526889801025,
+      "umap2": 9.416751861572266
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.10",
+      "feature": 1082,
+      "concept": 12,
+      "pc1": 0.3352858846157421,
+      "pc2": 0.2870351834263103,
+      "umap1": 5.5466694831848145,
+      "umap2": 4.64805793762207
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.10",
+      "feature": 1659,
+      "concept": null,
+      "pc1": -0.25077912126281415,
+      "pc2": 0.37965290396518303,
+      "umap1": 6.537693023681641,
+      "umap2": 6.209714889526367
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.10",
+      "feature": 255,
+      "concept": null,
+      "pc1": 0.2950213022029923,
+      "pc2": 0.07479645509864077,
+      "umap1": 6.482680320739746,
+      "umap2": 7.658107280731201
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.10",
+      "feature": 4993,
+      "concept": null,
+      "pc1": -0.06550139252223483,
+      "pc2": 0.1436758414211403,
+      "umap1": 5.525168418884277,
+      "umap2": 7.206091403961182
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.11",
+      "feature": 883,
+      "concept": null,
+      "pc1": 0.05211356531001637,
+      "pc2": -0.35865445836183174,
+      "umap1": 6.228837490081787,
+      "umap2": 8.579048156738281
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.11",
+      "feature": 5918,
+      "concept": null,
+      "pc1": 0.4307739871609559,
+      "pc2": 0.3181642308162146,
+      "umap1": 5.416666030883789,
+      "umap2": 4.172035217285156
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.11",
+      "feature": 3355,
+      "concept": null,
+      "pc1": 0.7505615935763845,
+      "pc2": 0.022088408026092368,
+      "umap1": 3.3963849544525146,
+      "umap2": 7.029735565185547
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.11",
+      "feature": 101,
+      "concept": null,
+      "pc1": 0.11432872540951067,
+      "pc2": -0.02221275335361021,
+      "umap1": 5.393612861633301,
+      "umap2": 5.292398452758789
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.11",
+      "feature": 1076,
+      "concept": 6,
+      "pc1": 0.04390666511047694,
+      "pc2": -0.5714659460014001,
+      "umap1": 6.287827491760254,
+      "umap2": 9.306180000305176
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.11",
+      "feature": 1656,
+      "concept": null,
+      "pc1": 0.4785073821332982,
+      "pc2": -0.17606953032472233,
+      "umap1": 4.456570148468018,
+      "umap2": 8.933967590332031
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.11",
+      "feature": 251,
+      "concept": null,
+      "pc1": -0.03482066007941798,
+      "pc2": -0.19394120649969826,
+      "umap1": 6.587697505950928,
+      "umap2": 3.507873058319092
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.11",
+      "feature": 3983,
+      "concept": null,
+      "pc1": 0.028406137681315995,
+      "pc2": 0.03874612651735944,
+      "umap1": 8.600057601928711,
+      "umap2": 5.916932582855225
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.11",
+      "feature": 4992,
+      "concept": null,
+      "pc1": -0.47406822873505605,
+      "pc2": -0.08622807805330537,
+      "umap1": 7.395693778991699,
+      "umap2": 7.418759346008301
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.3",
+      "feature": 2033,
+      "concept": null,
+      "pc1": -0.1434781906723312,
+      "pc2": -0.5850086263995076,
+      "umap1": 6.675721168518066,
+      "umap2": 9.332104682922363
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.3",
+      "feature": 882,
+      "concept": null,
+      "pc1": -0.6825886282400221,
+      "pc2": 0.3072606861827877,
+      "umap1": 8.247666358947754,
+      "umap2": 6.33439302444458
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.3",
+      "feature": 1626,
+      "concept": null,
+      "pc1": 0.399257161018721,
+      "pc2": -0.26281058198277946,
+      "umap1": 3.3889846801757812,
+      "umap2": 8.249359130859375
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.3",
+      "feature": 4761,
+      "concept": null,
+      "pc1": 0.4180915372448736,
+      "pc2": 0.012424393774778735,
+      "umap1": 3.939293622970581,
+      "umap2": 6.053041458129883
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.3",
+      "feature": 2363,
+      "concept": null,
+      "pc1": -0.22817944422987357,
+      "pc2": 0.06935026792078833,
+      "umap1": 6.1155009269714355,
+      "umap2": 5.5549845695495605
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.3",
+      "feature": 2702,
+      "concept": null,
+      "pc1": 0.5049640982407059,
+      "pc2": -0.23973392190504686,
+      "umap1": 2.810570240020752,
+      "umap2": 8.888519287109375
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.3",
+      "feature": 3911,
+      "concept": null,
+      "pc1": 0.24475120731635203,
+      "pc2": -0.2272267563228517,
+      "umap1": 4.3798933029174805,
+      "umap2": 6.821549415588379
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.3",
+      "feature": 1892,
+      "concept": null,
+      "pc1": 0.07035764855806334,
+      "pc2": 0.309053299871795,
+      "umap1": 5.546553611755371,
+      "umap2": 7.025882244110107
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.3",
+      "feature": 1078,
+      "concept": null,
+      "pc1": -0.2551106942367244,
+      "pc2": -0.032782457454449826,
+      "umap1": 7.284041404724121,
+      "umap2": 7.504220962524414
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.3",
+      "feature": 251,
+      "concept": 9,
+      "pc1": -0.46238308526760513,
+      "pc2": -0.07760200969429842,
+      "umap1": 8.338489532470703,
+      "umap2": 7.703756332397461
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.3",
+      "feature": 462,
+      "concept": null,
+      "pc1": -0.05299088616649267,
+      "pc2": 0.05605260883912981,
+      "umap1": 5.63476037979126,
+      "umap2": 7.155154705047607
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.4",
+      "feature": 2033,
+      "concept": 8,
+      "pc1": -0.4562773067182001,
+      "pc2": -0.6330769769581825,
+      "umap1": 7.542250633239746,
+      "umap2": 8.852901458740234
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.4",
+      "feature": 5918,
+      "concept": 21,
+      "pc1": 0.11258712324404196,
+      "pc2": 0.181899316131835,
+      "umap1": 4.970657825469971,
+      "umap2": 5.729145050048828
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.4",
+      "feature": 3902,
+      "concept": 19,
+      "pc1": 0.47099358176421907,
+      "pc2": -0.35195063979287694,
+      "umap1": 4.630414962768555,
+      "umap2": 9.053442001342773
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.4",
+      "feature": 1626,
+      "concept": null,
+      "pc1": 0.6170145332929923,
+      "pc2": -0.2319936998471357,
+      "umap1": 3.206247568130493,
+      "umap2": 8.345383644104004
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.4",
+      "feature": 3369,
+      "concept": null,
+      "pc1": 0.3225814754735258,
+      "pc2": 0.21936161279565064,
+      "umap1": 3.723411798477173,
+      "umap2": 6.37471342086792
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.4",
+      "feature": 882,
+      "concept": null,
+      "pc1": -0.22706688919878987,
+      "pc2": 0.05463635757364003,
+      "umap1": 6.091300010681152,
+      "umap2": 5.658505916595459
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.4",
+      "feature": 395,
+      "concept": null,
+      "pc1": 0.3631970251134156,
+      "pc2": -0.4330727877148855,
+      "umap1": 3.404294490814209,
+      "umap2": 8.73415756225586
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.4",
+      "feature": 5217,
+      "concept": null,
+      "pc1": -0.17847092206436044,
+      "pc2": -0.04216095549012876,
+      "umap1": 6.2093963623046875,
+      "umap2": 7.540828227996826
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.4",
+      "feature": 3135,
+      "concept": 22,
+      "pc1": 0.21283577273604037,
+      "pc2": 0.2547778271667242,
+      "umap1": 5.204944610595703,
+      "umap2": 4.841035842895508
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.4",
+      "feature": 1887,
+      "concept": null,
+      "pc1": 0.3080508168006224,
+      "pc2": 0.19524693549666233,
+      "umap1": 5.73590612411499,
+      "umap2": 3.7840158939361572
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.4",
+      "feature": 250,
+      "concept": null,
+      "pc1": -0.6299897957067578,
+      "pc2": -0.3304682339553126,
+      "umap1": 7.642283916473389,
+      "umap2": 8.222925186157227
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.4",
+      "feature": 4994,
+      "concept": null,
+      "pc1": -0.3120971968067926,
+      "pc2": 0.6040183097294572,
+      "umap1": 7.795790195465088,
+      "umap2": 6.2707109451293945
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.4",
+      "feature": 5609,
+      "concept": null,
+      "pc1": -0.10566575825991534,
+      "pc2": -0.31168017551708715,
+      "umap1": 8.084359169006348,
+      "umap2": 9.883941650390625
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.5",
+      "feature": 2033,
+      "concept": null,
+      "pc1": 0.3341444265827764,
+      "pc2": -0.09704247542888039,
+      "umap1": 3.8639185428619385,
+      "umap2": 7.300246238708496
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.5",
+      "feature": 5918,
+      "concept": 23,
+      "pc1": 0.2592422292264216,
+      "pc2": 0.27706927287901034,
+      "umap1": 4.507948398590088,
+      "umap2": 5.964183330535889
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.5",
+      "feature": 4761,
+      "concept": null,
+      "pc1": 0.4607012688189242,
+      "pc2": 0.015957153857780473,
+      "umap1": 3.8858914375305176,
+      "umap2": 5.972290992736816
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.5",
+      "feature": 3355,
+      "concept": null,
+      "pc1": 0.3649114097065757,
+      "pc2": -0.2497205330208607,
+      "umap1": 2.6220500469207764,
+      "umap2": 9.325801849365234
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.5",
+      "feature": 882,
+      "concept": 22,
+      "pc1": 0.08844680891371057,
+      "pc2": 0.26736475352791966,
+      "umap1": 5.307430744171143,
+      "umap2": 5.206178665161133
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.5",
+      "feature": 4645,
+      "concept": null,
+      "pc1": -0.7012008607124391,
+      "pc2": 0.4646009045088319,
+      "umap1": 8.248652458190918,
+      "umap2": 6.243052005767822
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.5",
+      "feature": 3907,
+      "concept": null,
+      "pc1": -0.011280401655774118,
+      "pc2": 0.02259950210091089,
+      "umap1": 5.887939453125,
+      "umap2": 5.255207538604736
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.5",
+      "feature": 1887,
+      "concept": null,
+      "pc1": 0.26576105176188275,
+      "pc2": 0.10490482786268285,
+      "umap1": 4.189270973205566,
+      "umap2": 5.788453578948975
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.5",
+      "feature": 1074,
+      "concept": 22,
+      "pc1": 0.10903061990618831,
+      "pc2": 0.2426174973888859,
+      "umap1": 5.308688640594482,
+      "umap2": 5.311794757843018
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.5",
+      "feature": 1652,
+      "concept": 9,
+      "pc1": -0.5211805532884346,
+      "pc2": -0.04851390434877205,
+      "umap1": 8.394732475280762,
+      "umap2": 7.735856533050537
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.5",
+      "feature": 250,
+      "concept": 24,
+      "pc1": 0.38942302355350694,
+      "pc2": 0.15377808142045962,
+      "umap1": 4.0492472648620605,
+      "umap2": 6.396871566772461
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.5",
+      "feature": 460,
+      "concept": null,
+      "pc1": 0.4962355546598311,
+      "pc2": 0.0867758056634425,
+      "umap1": 3.2473974227905273,
+      "umap2": 8.000606536865234
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.6",
+      "feature": 2033,
+      "concept": 6,
+      "pc1": 0.2420720583656833,
+      "pc2": -0.4272823675297985,
+      "umap1": 5.760776996612549,
+      "umap2": 9.347250938415527
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.6",
+      "feature": 5338,
+      "concept": 24,
+      "pc1": 0.5083632212621454,
+      "pc2": 0.1269706057584024,
+      "umap1": 3.678490400314331,
+      "umap2": 6.393490791320801
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.6",
+      "feature": 4761,
+      "concept": 19,
+      "pc1": 0.5665241484616957,
+      "pc2": -0.20640152035597317,
+      "umap1": 4.7017645835876465,
+      "umap2": 8.908599853515625
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.6",
+      "feature": 5918,
+      "concept": null,
+      "pc1": 0.16951774848870793,
+      "pc2": 0.1739304810983472,
+      "umap1": 4.5303473472595215,
+      "umap2": 5.916011810302734
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.6",
+      "feature": 3134,
+      "concept": null,
+      "pc1": 0.2504007377538308,
+      "pc2": 0.3971461699258827,
+      "umap1": 5.582606315612793,
+      "umap2": 4.175558567047119
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.6",
+      "feature": 3908,
+      "concept": null,
+      "pc1": -0.24045427530824195,
+      "pc2": 0.3399215726121532,
+      "umap1": 8.410236358642578,
+      "umap2": 5.9419403076171875
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.6",
+      "feature": 1888,
+      "concept": null,
+      "pc1": -0.5797068686611142,
+      "pc2": 0.0584979615971959,
+      "umap1": 7.245513439178467,
+      "umap2": 7.113057613372803
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.6",
+      "feature": 1655,
+      "concept": null,
+      "pc1": 0.11450112458707143,
+      "pc2": 0.5901547269240774,
+      "umap1": 4.639581680297852,
+      "umap2": 4.562187194824219
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.6",
+      "feature": 4994,
+      "concept": null,
+      "pc1": -0.13199766772094437,
+      "pc2": -0.3979881338385176,
+      "umap1": 6.842769145965576,
+      "umap2": 7.830486297607422
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.6",
+      "feature": 5606,
+      "concept": null,
+      "pc1": -0.22691160684091122,
+      "pc2": -0.11731864727284796,
+      "umap1": 6.792122840881348,
+      "umap2": 5.5119733810424805
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.6",
+      "feature": 461,
+      "concept": 14,
+      "pc1": 0.2608958725837744,
+      "pc2": 0.5532801549507183,
+      "umap1": 3.9336564540863037,
+      "umap2": 4.182637691497803
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.7",
+      "feature": 2033,
+      "concept": null,
+      "pc1": 0.46359260865067314,
+      "pc2": -0.15662276401246522,
+      "umap1": 3.755215644836426,
+      "umap2": 7.40762186050415
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.7",
+      "feature": 5918,
+      "concept": 21,
+      "pc1": 0.03459790101050713,
+      "pc2": 0.3230275446069628,
+      "umap1": 4.937095642089844,
+      "umap2": 5.769066333770752
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.7",
+      "feature": 3448,
+      "concept": null,
+      "pc1": 0.0801531541495201,
+      "pc2": -0.5514335921633895,
+      "umap1": 4.52128267288208,
+      "umap2": 9.467695236206055
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.7",
+      "feature": 3255,
+      "concept": 25,
+      "pc1": 0.646620353516963,
+      "pc2": -0.2750026858795018,
+      "umap1": 2.8069870471954346,
+      "umap2": 8.57014274597168
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.7",
+      "feature": 1072,
+      "concept": null,
+      "pc1": -0.49464634338397745,
+      "pc2": 0.15685550911281718,
+      "umap1": 7.7555952072143555,
+      "umap2": 7.276834011077881
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.7",
+      "feature": 1652,
+      "concept": null,
+      "pc1": -0.07147413837067061,
+      "pc2": -0.11974735980721027,
+      "umap1": 6.568199157714844,
+      "umap2": 5.448686599731445
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.7",
+      "feature": 250,
+      "concept": null,
+      "pc1": -0.018829019032860793,
+      "pc2": -0.024681931158581347,
+      "umap1": 5.60053825378418,
+      "umap2": 7.39697265625
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.7",
+      "feature": 3988,
+      "concept": null,
+      "pc1": 0.34250612717245843,
+      "pc2": -0.187002704316693,
+      "umap1": 5.809804916381836,
+      "umap2": 8.266499519348145
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.7",
+      "feature": 4993,
+      "concept": null,
+      "pc1": -0.36812363246041835,
+      "pc2": -0.4239794145658256,
+      "umap1": 7.094836235046387,
+      "umap2": 9.356254577636719
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.7",
+      "feature": 5604,
+      "concept": null,
+      "pc1": 0.1702840013074253,
+      "pc2": -0.1426596570063669,
+      "umap1": 6.252664089202881,
+      "umap2": 4.218928813934326
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.7",
+      "feature": 459,
+      "concept": null,
+      "pc1": -0.46335980387744663,
+      "pc2": 0.07343662348249866,
+      "umap1": 7.215359210968018,
+      "umap2": 7.185996055603027
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.8",
+      "feature": 3448,
+      "concept": null,
+      "pc1": -0.15868954535308868,
+      "pc2": -0.40599389595422125,
+      "umap1": 8.31156063079834,
+      "umap2": 9.577677726745605
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.8",
+      "feature": 2354,
+      "concept": null,
+      "pc1": -0.21484779670735232,
+      "pc2": 0.559716562513477,
+      "umap1": 5.548727512359619,
+      "umap2": 6.255663871765137
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.8",
+      "feature": 4761,
+      "concept": null,
+      "pc1": 0.4312873939243128,
+      "pc2": -0.29163005686838483,
+      "umap1": 4.843599796295166,
+      "umap2": 8.996377944946289
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.8",
+      "feature": 1935,
+      "concept": 4,
+      "pc1": 0.5749503243904504,
+      "pc2": 0.37323387568338434,
+      "umap1": 3.5682010650634766,
+      "umap2": 4.476138114929199
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.8",
+      "feature": 5918,
+      "concept": 20,
+      "pc1": 0.5337686519139115,
+      "pc2": 0.15161597683226816,
+      "umap1": 3.477205753326416,
+      "umap2": 6.616379261016846
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.8",
+      "feature": 2854,
+      "concept": 25,
+      "pc1": 0.5104525281474659,
+      "pc2": -0.4206263043162497,
+      "umap1": 2.8930885791778564,
+      "umap2": 8.706902503967285
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.8",
+      "feature": 2179,
+      "concept": null,
+      "pc1": 0.49669047659213855,
+      "pc2": -0.12420602063997768,
+      "umap1": 3.439652681350708,
+      "umap2": 7.476519584655762
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.8",
+      "feature": 5568,
+      "concept": null,
+      "pc1": 0.07119767580937572,
+      "pc2": 0.1340787432770387,
+      "umap1": 6.354801177978516,
+      "umap2": 4.3030619621276855
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.8",
+      "feature": 5213,
+      "concept": null,
+      "pc1": -0.1310416416583733,
+      "pc2": 0.23738473838052332,
+      "umap1": 8.684870719909668,
+      "umap2": 5.84365701675415
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.8",
+      "feature": 100,
+      "concept": null,
+      "pc1": 0.2158801228131058,
+      "pc2": 0.31536333231048735,
+      "umap1": 4.786890029907227,
+      "umap2": 6.546200275421143
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.8",
+      "feature": 3130,
+      "concept": null,
+      "pc1": -0.2925760138797284,
+      "pc2": 0.43682955166396026,
+      "umap1": 7.0013813972473145,
+      "umap2": 7.169001579284668
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.8",
+      "feature": 1883,
+      "concept": null,
+      "pc1": -0.0329433080308804,
+      "pc2": 0.15607014202764727,
+      "umap1": 6.204017162322998,
+      "umap2": 4.031046390533447
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.8",
+      "feature": 1649,
+      "concept": null,
+      "pc1": -0.41473653603804095,
+      "pc2": 0.09707394581502704,
+      "umap1": 6.879118919372559,
+      "umap2": 6.444369792938232
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.8",
+      "feature": 249,
+      "concept": null,
+      "pc1": -0.5893995934877078,
+      "pc2": 0.019647721236063582,
+      "umap1": 7.570032596588135,
+      "umap2": 5.193302631378174
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.8",
+      "feature": 3981,
+      "concept": null,
+      "pc1": 0.5342539344869343,
+      "pc2": -0.3992394257497601,
+      "umap1": 2.6377530097961426,
+      "umap2": 9.2196626663208
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.8",
+      "feature": 4992,
+      "concept": null,
+      "pc1": -0.5004790191992582,
+      "pc2": -0.009614806521436037,
+      "umap1": 7.863710403442383,
+      "umap2": 7.927849292755127
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.8",
+      "feature": 5604,
+      "concept": null,
+      "pc1": -0.305765291713505,
+      "pc2": 0.04963381970236353,
+      "umap1": 6.602644920349121,
+      "umap2": 5.519577980041504
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.9",
+      "feature": 3448,
+      "concept": null,
+      "pc1": 0.23420620123172753,
+      "pc2": -0.47435292150059793,
+      "umap1": 4.604696750640869,
+      "umap2": 9.289393424987793
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.9",
+      "feature": 2953,
+      "concept": null,
+      "pc1": -0.15765367355442034,
+      "pc2": 0.5167659306737641,
+      "umap1": 5.572265148162842,
+      "umap2": 6.079592227935791
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.9",
+      "feature": 5918,
+      "concept": null,
+      "pc1": 0.5114460739737815,
+      "pc2": 0.1394922788009244,
+      "umap1": 3.5296883583068848,
+      "umap2": 6.3707756996154785
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.9",
+      "feature": 1935,
+      "concept": 4,
+      "pc1": 0.4773119845024613,
+      "pc2": 0.44989616975148955,
+      "umap1": 3.5398621559143066,
+      "umap2": 4.545867919921875
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.9",
+      "feature": 2854,
+      "concept": 25,
+      "pc1": 0.4255640247056076,
+      "pc2": -0.453699980284652,
+      "umap1": 2.965655565261841,
+      "umap2": 8.661688804626465
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.9",
+      "feature": 2609,
+      "concept": null,
+      "pc1": -0.3663817902059122,
+      "pc2": 0.4080592586828742,
+      "umap1": 6.894146919250488,
+      "umap2": 4.6249003410339355
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.9",
+      "feature": 5568,
+      "concept": null,
+      "pc1": 0.4850182202083981,
+      "pc2": -0.2615115783306303,
+      "umap1": 3.240600347518921,
+      "umap2": 8.563769340515137
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.9",
+      "feature": 2813,
+      "concept": null,
+      "pc1": 0.18543255264474665,
+      "pc2": 0.25983211896541475,
+      "umap1": 4.660360336303711,
+      "umap2": 5.669253826141357
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.9",
+      "feature": 102,
+      "concept": 15,
+      "pc1": -0.10837003022999331,
+      "pc2": 0.0516384178805366,
+      "umap1": 6.729482173919678,
+      "umap2": 7.515704154968262
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.9",
+      "feature": 3138,
+      "concept": null,
+      "pc1": 0.3385810171436135,
+      "pc2": 0.26288780344216955,
+      "umap1": 4.530700206756592,
+      "umap2": 5.085533618927002
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.9",
+      "feature": 3912,
+      "concept": null,
+      "pc1": -0.02307506529187565,
+      "pc2": -0.4372089847537325,
+      "umap1": 6.285186290740967,
+      "umap2": 8.811659812927246
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.9",
+      "feature": 1888,
+      "concept": null,
+      "pc1": -0.10605646120279316,
+      "pc2": 0.2946102274990983,
+      "umap1": 6.786975860595703,
+      "umap2": 4.579474925994873
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.9",
+      "feature": 1074,
+      "concept": null,
+      "pc1": -0.35617936322212557,
+      "pc2": -0.17439672526000388,
+      "umap1": 8.56071662902832,
+      "umap2": 5.986697196960449
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.9",
+      "feature": 1654,
+      "concept": null,
+      "pc1": -0.017666067241689315,
+      "pc2": -0.0980026957171492,
+      "umap1": 6.256845474243164,
+      "umap2": 7.913778781890869
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.9",
+      "feature": 251,
+      "concept": 21,
+      "pc1": -0.059022099223451356,
+      "pc2": 0.2193211274817775,
+      "umap1": 5.589903831481934,
+      "umap2": 5.583321571350098
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.9",
+      "feature": 5000,
+      "concept": null,
+      "pc1": -0.11622512032312249,
+      "pc2": -0.132525463369165,
+      "umap1": 6.647402763366699,
+      "umap2": 7.775603294372559
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.9",
+      "feature": 5610,
+      "concept": 15,
+      "pc1": -0.23192486681317984,
+      "pc2": 0.21434420070321047,
+      "umap1": 6.666091442108154,
+      "umap2": 7.4695587158203125
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.0",
+      "feature": 6080,
+      "concept": null,
+      "pc1": -0.7603174725122048,
+      "pc2": 0.09165558758038886,
+      "umap1": 8.309213638305664,
+      "umap2": 6.470950126647949
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.0",
+      "feature": 3653,
+      "concept": null,
+      "pc1": -0.2892199456614163,
+      "pc2": 0.05210555977434049,
+      "umap1": 6.434743881225586,
+      "umap2": 5.867366790771484
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.0",
+      "feature": 4305,
+      "concept": null,
+      "pc1": -0.10401109893502708,
+      "pc2": 0.27401435369546223,
+      "umap1": 5.906234264373779,
+      "umap2": 4.967239856719971
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.0",
+      "feature": 5913,
+      "concept": null,
+      "pc1": -0.2736125093776577,
+      "pc2": 0.13036289255756742,
+      "umap1": 8.676600456237793,
+      "umap2": 6.059747219085693
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.0",
+      "feature": 944,
+      "concept": 0,
+      "pc1": -0.3781384977228301,
+      "pc2": -0.48937718428701504,
+      "umap1": 7.326683044433594,
+      "umap2": 9.441325187683105
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.0",
+      "feature": 5258,
+      "concept": null,
+      "pc1": -0.2231246221971937,
+      "pc2": 0.07757125368223675,
+      "umap1": 8.593788146972656,
+      "umap2": 5.975558280944824
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.0",
+      "feature": 5894,
+      "concept": null,
+      "pc1": -0.6360710154427281,
+      "pc2": 0.00492892020628882,
+      "umap1": 8.167781829833984,
+      "umap2": 7.684117317199707
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.0",
+      "feature": 1377,
+      "concept": 18,
+      "pc1": -0.1262039878239124,
+      "pc2": 0.2619746021582905,
+      "umap1": 5.891408920288086,
+      "umap2": 4.9502949714660645
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.10",
+      "feature": 2106,
+      "concept": null,
+      "pc1": -0.2730496315151419,
+      "pc2": -0.4131010326614525,
+      "umap1": 8.446891784667969,
+      "umap2": 10.089614868164062
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.10",
+      "feature": 453,
+      "concept": null,
+      "pc1": -0.6214378737214618,
+      "pc2": -0.21045675025135485,
+      "umap1": 8.34847640991211,
+      "umap2": 9.131295204162598
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.10",
+      "feature": 3900,
+      "concept": null,
+      "pc1": -0.46350907491005855,
+      "pc2": -0.20273097077527757,
+      "umap1": 8.269342422485352,
+      "umap2": 9.727566719055176
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.10",
+      "feature": 1646,
+      "concept": 10,
+      "pc1": 0.5075940159643332,
+      "pc2": 0.5406343076544505,
+      "umap1": 3.836735248565674,
+      "umap2": 4.769744873046875
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.12",
+      "feature": 533,
+      "concept": null,
+      "pc1": -0.10066915934373528,
+      "pc2": 0.5061435911925476,
+      "umap1": 5.2281999588012695,
+      "umap2": 6.591180324554443
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.12",
+      "feature": 574,
+      "concept": null,
+      "pc1": -0.28263410040090625,
+      "pc2": -0.4086831528094877,
+      "umap1": 7.322443962097168,
+      "umap2": 9.58927059173584
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.12",
+      "feature": 3653,
+      "concept": null,
+      "pc1": -0.4216976385328405,
+      "pc2": 0.335943448404433,
+      "umap1": 8.134666442871094,
+      "umap2": 6.390564918518066
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.12",
+      "feature": 2468,
+      "concept": 24,
+      "pc1": 0.4162187848264292,
+      "pc2": 0.1987483213769864,
+      "umap1": 4.071098327636719,
+      "umap2": 6.353775501251221
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.12",
+      "feature": 2106,
+      "concept": null,
+      "pc1": -0.08162961209151404,
+      "pc2": -0.6100274957592933,
+      "umap1": 8.465373992919922,
+      "umap2": 10.106056213378906
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.12",
+      "feature": 5702,
+      "concept": 2,
+      "pc1": -0.01958224121323217,
+      "pc2": 0.5009045069701381,
+      "umap1": 5.053668022155762,
+      "umap2": 6.425694465637207
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.12",
+      "feature": 95,
+      "concept": null,
+      "pc1": 0.05049875288584966,
+      "pc2": 0.5738110533656879,
+      "umap1": 4.727413177490234,
+      "umap2": 6.049515247344971
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.12",
+      "feature": 1882,
+      "concept": null,
+      "pc1": -0.4785797300744274,
+      "pc2": 0.37893863842071407,
+      "umap1": 6.996339321136475,
+      "umap2": 4.605303764343262
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.12",
+      "feature": 444,
+      "concept": null,
+      "pc1": 0.04118408090434133,
+      "pc2": 0.05274362784679829,
+      "umap1": 6.713799953460693,
+      "umap2": 5.859269142150879
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.14",
+      "feature": 453,
+      "concept": 3,
+      "pc1": -0.30248100180890625,
+      "pc2": -0.5158146229368432,
+      "umap1": 8.210779190063477,
+      "umap2": 9.806964874267578
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.14",
+      "feature": 2106,
+      "concept": 3,
+      "pc1": -0.2605391685599381,
+      "pc2": -0.5463193027722036,
+      "umap1": 8.166671752929688,
+      "umap2": 9.776097297668457
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.14",
+      "feature": 1742,
+      "concept": 20,
+      "pc1": 0.6713493951979809,
+      "pc2": 0.04297729399504299,
+      "umap1": 3.5187368392944336,
+      "umap2": 6.70285701751709
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.14",
+      "feature": 112,
+      "concept": 1,
+      "pc1": -0.5272714610849979,
+      "pc2": 0.3886881873184676,
+      "umap1": 7.047702789306641,
+      "umap2": 3.939525604248047
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.16",
+      "feature": 3320,
+      "concept": 2,
+      "pc1": 0.14100079817860395,
+      "pc2": 0.3596186954849366,
+      "umap1": 4.9025702476501465,
+      "umap2": 6.425380229949951
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.16",
+      "feature": 4395,
+      "concept": 2,
+      "pc1": 0.0467746789982335,
+      "pc2": 0.4826844623820386,
+      "umap1": 4.963435173034668,
+      "umap2": 6.129692554473877
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.16",
+      "feature": 2106,
+      "concept": 3,
+      "pc1": -0.2547352007287745,
+      "pc2": -0.5788000506865485,
+      "umap1": 8.20655345916748,
+      "umap2": 9.851543426513672
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.16",
+      "feature": 533,
+      "concept": null,
+      "pc1": 0.10497795741272892,
+      "pc2": 0.49688226313072187,
+      "umap1": 5.053162574768066,
+      "umap2": 6.6110639572143555
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.16",
+      "feature": 712,
+      "concept": null,
+      "pc1": 0.187135846671866,
+      "pc2": 0.6230458505977132,
+      "umap1": 4.400264739990234,
+      "umap2": 5.397722244262695
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.16",
+      "feature": 5588,
+      "concept": null,
+      "pc1": -0.6652940546338514,
+      "pc2": 0.2319034467694344,
+      "umap1": 7.529031753540039,
+      "umap2": 7.05367374420166
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.16",
+      "feature": 450,
+      "concept": null,
+      "pc1": -0.4516512981205091,
+      "pc2": -0.059780937625036744,
+      "umap1": 7.891285419464111,
+      "umap2": 9.693796157836914
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.18",
+      "feature": 1212,
+      "concept": 26,
+      "pc1": -0.28755500524980804,
+      "pc2": -0.5996435165692192,
+      "umap1": 7.493339538574219,
+      "umap2": 9.813990592956543
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.18",
+      "feature": 200,
+      "concept": 26,
+      "pc1": -0.3939866538029808,
+      "pc2": -0.5418050246336513,
+      "umap1": 7.768940448760986,
+      "umap2": 9.870828628540039
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.2",
+      "feature": 886,
+      "concept": null,
+      "pc1": 0.05840831211006219,
+      "pc2": 0.048158647016696324,
+      "umap1": 4.48598575592041,
+      "umap2": 6.264069080352783
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.2",
+      "feature": 2691,
+      "concept": null,
+      "pc1": -0.32996658594258615,
+      "pc2": 0.45539589216375237,
+      "umap1": 7.522995471954346,
+      "umap2": 5.889469623565674
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.2",
+      "feature": 1355,
+      "concept": null,
+      "pc1": 0.1666809205931138,
+      "pc2": -0.425941018755609,
+      "umap1": 5.987460613250732,
+      "umap2": 9.176454544067383
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.2",
+      "feature": 5143,
+      "concept": null,
+      "pc1": -0.06495535325285644,
+      "pc2": 0.2502927951607145,
+      "umap1": 5.7623186111450195,
+      "umap2": 5.077268600463867
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.2",
+      "feature": 4395,
+      "concept": null,
+      "pc1": -0.18813795061299204,
+      "pc2": 0.5293090470326235,
+      "umap1": 7.179396152496338,
+      "umap2": 5.7299933433532715
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.2",
+      "feature": 1653,
+      "concept": 18,
+      "pc1": -0.19796248091206442,
+      "pc2": 0.37929190594395984,
+      "umap1": 6.032690048217773,
+      "umap2": 4.90899133682251
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.4",
+      "feature": 886,
+      "concept": null,
+      "pc1": 0.314517669234304,
+      "pc2": 0.16183246566165638,
+      "umap1": 4.2916460037231445,
+      "umap2": 6.233451843261719
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.4",
+      "feature": 3086,
+      "concept": null,
+      "pc1": -0.5916894851009271,
+      "pc2": -0.5640544174459763,
+      "umap1": 7.991733551025391,
+      "umap2": 8.80898380279541
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.4",
+      "feature": 95,
+      "concept": 23,
+      "pc1": 0.36741699590995175,
+      "pc2": 0.37236599806629267,
+      "umap1": 4.298125743865967,
+      "umap2": 5.9175920486450195
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.4",
+      "feature": 3751,
+      "concept": null,
+      "pc1": -0.45101485020632526,
+      "pc2": -0.27332155757655247,
+      "umap1": 7.6920342445373535,
+      "umap2": 9.901111602783203
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.4",
+      "feature": 3038,
+      "concept": null,
+      "pc1": -0.7118227476117471,
+      "pc2": -0.02427352940389439,
+      "umap1": 7.920202732086182,
+      "umap2": 7.780746936798096
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.4",
+      "feature": 1136,
+      "concept": null,
+      "pc1": -0.017826009897686897,
+      "pc2": -0.3634233512568851,
+      "umap1": 8.32975959777832,
+      "umap2": 10.207573890686035
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.4",
+      "feature": 471,
+      "concept": null,
+      "pc1": 0.5955018953115613,
+      "pc2": -0.032883322070633735,
+      "umap1": 5.555077075958252,
+      "umap2": 8.444795608520508
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.6",
+      "feature": 3653,
+      "concept": 23,
+      "pc1": 0.3516022453569686,
+      "pc2": 0.38522978861767115,
+      "umap1": 4.368061065673828,
+      "umap2": 5.830988883972168
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.6",
+      "feature": 2106,
+      "concept": null,
+      "pc1": -0.24634611142161592,
+      "pc2": -0.44174583297112985,
+      "umap1": 8.455022811889648,
+      "umap2": 10.0257568359375
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.6",
+      "feature": 3751,
+      "concept": null,
+      "pc1": -0.03456339978441996,
+      "pc2": -0.4886029142013738,
+      "umap1": 8.398828506469727,
+      "umap2": 10.015575408935547
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.6",
+      "feature": 712,
+      "concept": null,
+      "pc1": 0.363121137631966,
+      "pc2": 0.208488281561243,
+      "umap1": 4.340632438659668,
+      "umap2": 6.269047737121582
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.6",
+      "feature": 1568,
+      "concept": 26,
+      "pc1": -0.34263009126360733,
+      "pc2": -0.4495436248742815,
+      "umap1": 7.654535293579102,
+      "umap2": 9.92749309539795
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.6",
+      "feature": 269,
+      "concept": null,
+      "pc1": -0.3966460206796009,
+      "pc2": 0.5129010849906918,
+      "umap1": 5.83461332321167,
+      "umap2": 6.973601341247559
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.6",
+      "feature": 4004,
+      "concept": null,
+      "pc1": 0.10760886123030206,
+      "pc2": 0.2674961693661819,
+      "umap1": 6.0218119621276855,
+      "umap2": 4.139053821563721
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.8",
+      "feature": 3534,
+      "concept": 3,
+      "pc1": -0.15301430734693652,
+      "pc2": -0.5336093120066291,
+      "umap1": 8.046802520751953,
+      "umap2": 9.921205520629883
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.8",
+      "feature": 3653,
+      "concept": null,
+      "pc1": -0.06204483066789504,
+      "pc2": 0.3381235876883155,
+      "umap1": 7.1674418449401855,
+      "umap2": 5.70498514175415
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.8",
+      "feature": 533,
+      "concept": 2,
+      "pc1": 0.02799239518888296,
+      "pc2": 0.5070735727111444,
+      "umap1": 4.8914289474487305,
+      "umap2": 6.424450397491455
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.8",
+      "feature": 574,
+      "concept": null,
+      "pc1": -0.33728011096060406,
+      "pc2": -0.3914988179094771,
+      "umap1": 7.5047688484191895,
+      "umap2": 9.334183692932129
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.8",
+      "feature": 249,
+      "concept": null,
+      "pc1": -0.1944504435747026,
+      "pc2": 0.09329636755113616,
+      "umap1": 7.82537841796875,
+      "umap2": 8.386476516723633
+    }
+  ],
+  "concepts": [
+    {
+      "concept": 0,
+      "name": "strong lowers level \u00b7 unusually raises mase",
+      "n_members": 5,
+      "models": {
+        "Chronos-2": 4,
+        "TimesFM": 1
+      },
+      "n_models": 2,
+      "layers": {
+        "Chronos-2/encoder.block.6": 1,
+        "Chronos-2/encoder.block.7": 2,
+        "Chronos-2/encoder.block.8": 1,
+        "TimesFM/stacked_xf.0": 1
+      },
+      "mean_profile": {
+        "trend": -0.41803758908396044,
+        "seasonal": -0.5352339130328819,
+        "spectral_centroid": 0.49588351203531095,
+        "level": -2.5105085658730735,
+        "dispersion": 0.16313138441316608,
+        "horizon_shape_near": 2.3174582571148283,
+        "horizon_shape_far": 2.228439030881451,
+        "mase": 1.805121691606874,
+        "flatness": -0.10923076923076921
+      },
+      "mean_norm": 4.606291161039067,
+      "min_pair_cosine": 0.9420949514546549,
+      "mean_pair_cosine": 0.9600948653920455,
+      "members": [
+        27,
+        42,
+        43,
+        60,
+        238
+      ],
+      "cross_model_p": 0.9751243781094527,
+      "causal_tag": "shape-causal",
+      "level_share_median": 0.9629057001357784,
+      "n_members_with_level_share": 5,
+      "n_members_shape_causal": 2,
+      "n_members_with_shape_record": 5
+    },
+    {
+      "concept": 1,
+      "name": "strong raises trend",
+      "n_members": 4,
+      "models": {
+        "Chronos-2": 3,
+        "TimesFM": 1
+      },
+      "n_models": 2,
+      "layers": {
+        "Chronos-2/encoder.block.7": 1,
+        "Chronos-2/encoder.block.8": 1,
+        "Chronos-2/encoder.block.9": 1,
+        "TimesFM/stacked_xf.14": 1
+      },
+      "mean_profile": {
+        "trend": 2.1848674358758187,
+        "seasonal": 0.0,
+        "spectral_centroid": -0.9496414457365292,
+        "level": 0.9307305912666183,
+        "dispersion": -1.9696033202478107,
+        "horizon_shape_near": 0.5027008557630172,
+        "horizon_shape_far": 1.4172690052623764,
+        "mase": -0.9432544304709501,
+        "flatness": 0.1481598672951806
+      },
+      "mean_norm": 3.7218231761322538,
+      "min_pair_cosine": 0.9176298038398197,
+      "mean_pair_cosine": 0.9620062057373677,
+      "members": [
+        41,
+        61,
+        83,
+        258
+      ],
+      "cross_model_p": 0.9751243781094527,
+      "causal_tag": "shape-causal",
+      "level_share_median": 0.6269800008527491,
+      "n_members_with_level_share": 4,
+      "n_members_shape_causal": 4,
+      "n_members_with_shape_record": 4
+    },
+    {
+      "concept": 2,
+      "name": "mild raises level",
+      "n_members": 4,
+      "models": {
+        "TimesFM": 4
+      },
+      "n_models": 1,
+      "layers": {
+        "TimesFM/stacked_xf.12": 1,
+        "TimesFM/stacked_xf.16": 2,
+        "TimesFM/stacked_xf.8": 1
+      },
+      "mean_profile": {
+        "trend": -0.8904171739629873,
+        "seasonal": -0.2044452293244794,
+        "spectral_centroid": 0.5409909797762652,
+        "level": 1.3077206058409716,
+        "dispersion": -0.28062040992877124,
+        "horizon_shape_near": 1.2598712920036703,
+        "horizon_shape_far": 0.926497804894592,
+        "mase": 1.1683257251258714,
+        "flatness": -0.05900066792804738
+      },
+      "mean_norm": 2.6390060728730824,
+      "min_pair_cosine": 0.9372857453147594,
+      "mean_pair_cosine": 0.9499107808342488,
+      "members": [
+        251,
+        259,
+        260,
+        290
+      ],
+      "cross_model_p": 1.0,
+      "causal_tag": "shape-causal",
+      "level_share_median": 0.877833312404983,
+      "n_members_with_level_share": 4,
+      "n_members_shape_causal": 2,
+      "n_members_with_shape_record": 4
+    },
+    {
+      "concept": 3,
+      "name": "mild raises horizon_shape_near \u00b7 unusually raises mase",
+      "n_members": 4,
+      "models": {
+        "TimesFM": 4
+      },
+      "n_models": 1,
+      "layers": {
+        "TimesFM/stacked_xf.14": 2,
+        "TimesFM/stacked_xf.16": 1,
+        "TimesFM/stacked_xf.8": 1
+      },
+      "mean_profile": {
+        "trend": 0.7799157489668054,
+        "seasonal": 0.14579735898760066,
+        "spectral_centroid": -0.10791469166979646,
+        "level": -0.9942318649865788,
+        "dispersion": 0.2448375976756211,
+        "horizon_shape_near": 1.0562501210177988,
+        "horizon_shape_far": 0.7679029298912593,
+        "mase": 1.0361284149017402,
+        "flatness": -0.23737157534246583
+      },
+      "mean_norm": 2.1465023551657065,
+      "min_pair_cosine": 0.9616117850938529,
+      "mean_pair_cosine": 0.9742772590796361,
+      "members": [
+        255,
+        256,
+        261,
+        288
+      ],
+      "cross_model_p": 1.0,
+      "causal_tag": "shape-causal",
+      "level_share_median": 0.6434418376242265,
+      "n_members_with_level_share": 4,
+      "n_members_shape_causal": 1,
+      "n_members_with_shape_record": 4
+    },
+    {
+      "concept": 4,
+      "name": "strong raises horizon_shape_near \u00b7 unusually lowers mase",
+      "n_members": 3,
+      "models": {
+        "Chronos-2": 1,
+        "Sundial": 2
+      },
+      "n_models": 2,
+      "layers": {
+        "Chronos-2/encoder.block.10": 1,
+        "Sundial/model.layers.8": 1,
+        "Sundial/model.layers.9": 1
+      },
+      "mean_profile": {
+        "trend": -1.338885161449693,
+        "seasonal": 1.0383922739178904,
+        "spectral_centroid": 0.7508557172954214,
+        "level": 1.8973160501763378,
+        "dispersion": 0.7327876475611808,
+        "horizon_shape_near": 2.206700169282841,
+        "horizon_shape_far": 1.3262971461989672,
+        "mase": -1.3071196955574331,
+        "flatness": -0.08333333333333333
+      },
+      "mean_norm": 4.02930358508767,
+      "min_pair_cosine": 0.9386361622058829,
+      "mean_pair_cosine": 0.959047996059963,
+      "members": [
+        7,
+        203,
+        220
+      ],
+      "cross_model_p": 0.8756218905472637,
+      "causal_tag": "shape-causal",
+      "level_share_median": 0.7158532272460263,
+      "n_members_with_level_share": 3,
+      "n_members_shape_causal": 2,
+      "n_members_with_shape_record": 3
+    },
+    {
+      "concept": 5,
+      "name": "strong raises dispersion \u00b7 unusually raises horizon_shape_far",
+      "n_members": 3,
+      "models": {
+        "Chronos-2": 3
+      },
+      "n_models": 1,
+      "layers": {
+        "Chronos-2/encoder.block.5": 2,
+        "Chronos-2/encoder.block.8": 1
+      },
+      "mean_profile": {
+        "trend": -0.37335256181378496,
+        "seasonal": 0.0,
+        "spectral_centroid": 0.18382683729187596,
+        "level": -1.2021351569235226,
+        "dispersion": 2.6259951174990626,
+        "horizon_shape_near": 1.1995163750498572,
+        "horizon_shape_far": 1.1938358732925638,
+        "mase": 0.6332274378858368,
+        "flatness": -0.3186026936026935
+      },
+      "mean_norm": 3.4777997709663637,
+      "min_pair_cosine": 0.9502742100897226,
+      "mean_pair_cosine": 0.9625633596834153,
+      "members": [
+        9,
+        11,
+        56
+      ],
+      "cross_model_p": 1.0,
+      "causal_tag": "shape-causal",
+      "level_share_median": 0.9621883650581109,
+      "n_members_with_level_share": 3,
+      "n_members_shape_causal": 3,
+      "n_members_with_shape_record": 3
+    },
+    {
+      "concept": 6,
+      "name": "strong raises horizon_shape_near \u00b7 unusually lowers level \u00b7 unusually raises dispersion",
+      "n_members": 3,
+      "models": {
+        "Chronos-2": 1,
+        "Sundial": 2
+      },
+      "n_models": 2,
+      "layers": {
+        "Chronos-2/encoder.block.5": 1,
+        "Sundial/model.layers.11": 1,
+        "Sundial/model.layers.6": 1
+      },
+      "mean_profile": {
+        "trend": -0.7530802670736315,
+        "seasonal": 1.0047160023007862,
+        "spectral_centroid": 0.2828370560967795,
+        "level": -2.2445797396180907,
+        "dispersion": 1.5978989265733592,
+        "horizon_shape_near": 2.6146262402420635,
+        "horizon_shape_far": 2.3480992042459135,
+        "mase": 0.6393231624015208,
+        "flatness": 0.07296423135464249
+      },
+      "mean_norm": 4.765036755623261,
+      "min_pair_cosine": 0.9261332808965278,
+      "mean_pair_cosine": 0.9518134844836276,
+      "members": [
+        13,
+        137,
+        178
+      ],
+      "cross_model_p": 0.9054726368159204,
+      "causal_tag": "shape-causal",
+      "level_share_median": 0.8506250480157092,
+      "n_members_with_level_share": 3,
+      "n_members_shape_causal": 3,
+      "n_members_with_shape_record": 3
+    },
+    {
+      "concept": 7,
+      "name": "strong raises horizon_shape_near \u00b7 unusually lowers level \u00b7 unusually raises trend",
+      "n_members": 3,
+      "models": {
+        "Chronos-2": 3
+      },
+      "n_models": 1,
+      "layers": {
+        "Chronos-2/encoder.block.5": 1,
+        "Chronos-2/encoder.block.8": 2
+      },
+      "mean_profile": {
+        "trend": 1.6468991302942182,
+        "seasonal": 0.0,
+        "spectral_centroid": 0.2425236267570868,
+        "level": -2.6942443575184867,
+        "dispersion": -0.47509091588810554,
+        "horizon_shape_near": 3.0696873500309683,
+        "horizon_shape_far": 2.277905914236127,
+        "mase": 1.8547385472898277,
+        "flatness": -0.22186652438753296
+      },
+      "mean_norm": 5.410856083820725,
+      "min_pair_cosine": 0.9317803488684753,
+      "mean_pair_cosine": 0.9557706073653632,
+      "members": [
+        22,
+        59,
+        73
+      ],
+      "cross_model_p": 1.0,
+      "causal_tag": "shape-causal",
+      "level_share_median": 0.686767578125,
+      "n_members_with_level_share": 3,
+      "n_members_shape_causal": 3,
+      "n_members_with_shape_record": 3
+    },
+    {
+      "concept": 8,
+      "name": "strong lowers level \u00b7 unusually lowers spectral_centroid",
+      "n_members": 3,
+      "models": {
+        "Chronos-2": 2,
+        "Sundial": 1
+      },
+      "n_models": 2,
+      "layers": {
+        "Chronos-2/encoder.block.6": 1,
+        "Chronos-2/encoder.block.9": 1,
+        "Sundial/model.layers.4": 1
+      },
+      "mean_profile": {
+        "trend": 0.6841547988910834,
+        "seasonal": 0.18846606129889695,
+        "spectral_centroid": -1.3286541584113618,
+        "level": -3.98722963171344,
+        "dispersion": 0.9249577495075552,
+        "horizon_shape_near": 3.0419018066571906,
+        "horizon_shape_far": 3.1246142105928048,
+        "mase": 1.325387196183527,
+        "flatness": -0.07315162907268181
+      },
+      "mean_norm": 6.430782909700988,
+      "min_pair_cosine": 0.9311820496311953,
+      "mean_pair_cosine": 0.9357074782266545,
+      "members": [
+        26,
+        87,
+        153
+      ],
+      "cross_model_p": 0.9104477611940298,
+      "causal_tag": "shape-causal",
+      "level_share_median": 0.6014590607995269,
+      "n_members_with_level_share": 3,
+      "n_members_shape_causal": 3,
+      "n_members_with_shape_record": 3
+    },
+    {
+      "concept": 9,
+      "name": "strong raises horizon_shape_far \u00b7 unusually raises spectral_centroid",
+      "n_members": 3,
+      "models": {
+        "Chronos-2": 1,
+        "Sundial": 2
+      },
+      "n_models": 2,
+      "layers": {
+        "Chronos-2/encoder.block.6": 1,
+        "Sundial/model.layers.3": 1,
+        "Sundial/model.layers.5": 1
+      },
+      "mean_profile": {
+        "trend": 0.08671888297464525,
+        "seasonal": -0.144719992848309,
+        "spectral_centroid": 1.444081448260918,
+        "level": -1.1115638729980657,
+        "dispersion": -1.77350603661234,
+        "horizon_shape_near": 2.293005809829374,
+        "horizon_shape_far": 2.327315316858924,
+        "mase": 0.6586191389530806,
+        "flatness": 0.09722222222222221
+      },
+      "mean_norm": 4.244581784564915,
+      "min_pair_cosine": 0.9258592031904515,
+      "mean_pair_cosine": 0.9478182623064018,
+      "members": [
+        30,
+        151,
+        175
+      ],
+      "cross_model_p": 0.9402985074626866,
+      "causal_tag": "shape-causal",
+      "level_share_median": 0.2023809516092295,
+      "n_members_with_level_share": 3,
+      "n_members_shape_causal": 2,
+      "n_members_with_shape_record": 3
+    },
+    {
+      "concept": 10,
+      "name": "strong raises level \u00b7 unusually lowers trend",
+      "n_members": 3,
+      "models": {
+        "Chronos-2": 1,
+        "Sundial": 1,
+        "TimesFM": 1
+      },
+      "n_models": 3,
+      "layers": {
+        "Chronos-2/encoder.block.6": 1,
+        "Sundial/model.layers.10": 1,
+        "TimesFM/stacked_xf.10": 1
+      },
+      "mean_profile": {
+        "trend": -1.1336994442872053,
+        "seasonal": 0.3491403927134172,
+        "spectral_centroid": 1.4068616348032996,
+        "level": 3.1903586659754093,
+        "dispersion": 0.8316773310757751,
+        "horizon_shape_near": 2.548781300557655,
+        "horizon_shape_far": 2.5099702547884113,
+        "mase": -1.2494016505087095,
+        "flatness": -0.33749999999999997
+      },
+      "mean_norm": 5.482980419752728,
+      "min_pair_cosine": 0.9191396644077049,
+      "mean_pair_cosine": 0.9245771597576269,
+      "members": [
+        31,
+        120,
+        245
+      ],
+      "cross_model_p": 0.3034825870646766,
+      "causal_tag": "shape-causal",
+      "level_share_median": 0.674955622099991,
+      "n_members_with_level_share": 3,
+      "n_members_shape_causal": 2,
+      "n_members_with_shape_record": 3
+    },
+    {
+      "concept": 11,
+      "name": "strong lowers dispersion",
+      "n_members": 3,
+      "models": {
+        "Chronos-2": 3
+      },
+      "n_models": 1,
+      "layers": {
+        "Chronos-2/encoder.block.7": 1,
+        "Chronos-2/encoder.block.8": 1,
+        "Chronos-2/encoder.block.9": 1
+      },
+      "mean_profile": {
+        "trend": -0.07061957221666133,
+        "seasonal": 0.0,
+        "spectral_centroid": 0.15329263203504984,
+        "level": -1.2531480090108706,
+        "dispersion": -3.520621806212379,
+        "horizon_shape_near": 2.28469370731534,
+        "horizon_shape_far": 2.438681644461778,
+        "mase": 0.9348877732955442,
+        "flatness": 0.006944444444444443
+      },
+      "mean_norm": 5.163997389267188,
+      "min_pair_cosine": 0.9515105633023603,
+      "mean_pair_cosine": 0.9649341220326519,
+      "members": [
+        40,
+        57,
+        80
+      ],
+      "cross_model_p": 1.0,
+      "causal_tag": "shape-causal",
+      "level_share_median": 0.1776308852991556,
+      "n_members_with_level_share": 3,
+      "n_members_shape_causal": 3,
+      "n_members_with_shape_record": 3
+    },
+    {
+      "concept": 12,
+      "name": "strong raises level \u00b7 unusually raises dispersion",
+      "n_members": 3,
+      "models": {
+        "Chronos-2": 2,
+        "Sundial": 1
+      },
+      "n_models": 2,
+      "layers": {
+        "Chronos-2/encoder.block.7": 2,
+        "Sundial/model.layers.10": 1
+      },
+      "mean_profile": {
+        "trend": 1.4016674496801198,
+        "seasonal": 0.0,
+        "spectral_centroid": 0.05679814175924375,
+        "level": 3.110219540446547,
+        "dispersion": 1.8804544240777672,
+        "horizon_shape_near": 1.788447683776048,
+        "horizon_shape_far": 2.7857791824930422,
+        "mase": 2.4794892616978044,
+        "flatness": -0.10119047619047618
+      },
+      "mean_norm": 5.712129278604734,
+      "min_pair_cosine": 0.9563312235124423,
+      "mean_pair_cosine": 0.967384876934751,
+      "members": [
+        46,
+        53,
+        129
+      ],
+      "cross_model_p": 0.900497512437811,
+      "causal_tag": "shape-causal",
+      "level_share_median": 0.31030925141153226,
+      "n_members_with_level_share": 3,
+      "n_members_shape_causal": 2,
+      "n_members_with_shape_record": 3
+    },
+    {
+      "concept": 13,
+      "name": "strong lowers level \u00b7 unusually lowers seasonal",
+      "n_members": 3,
+      "models": {
+        "Chronos-2": 3
+      },
+      "n_models": 1,
+      "layers": {
+        "Chronos-2/encoder.block.7": 1,
+        "Chronos-2/encoder.block.8": 1,
+        "Chronos-2/encoder.block.9": 1
+      },
+      "mean_profile": {
+        "trend": 0.3840883311427512,
+        "seasonal": -2.5029861904086927,
+        "spectral_centroid": -0.058579473900570674,
+        "level": -4.260615541795143,
+        "dispersion": -2.667930059121108,
+        "horizon_shape_near": 3.3696280537572734,
+        "horizon_shape_far": 3.156806257289768,
+        "mase": 1.8156115964634374,
+        "flatness": -0.125
+      },
+      "mean_norm": 7.579180582134001,
+      "min_pair_cosine": 0.962400154649098,
+      "mean_pair_cosine": 0.9723351134442701,
+      "members": [
+        47,
+        64,
+        82
+      ],
+      "cross_model_p": 1.0,
+      "causal_tag": "shape-causal",
+      "level_share_median": 0.7017443674589318,
+      "n_members_with_level_share": 3,
+      "n_members_shape_causal": 3,
+      "n_members_with_shape_record": 3
+    },
+    {
+      "concept": 14,
+      "name": "dominant raises horizon_shape_near",
+      "n_members": 3,
+      "models": {
+        "Chronos-2": 2,
+        "Sundial": 1
+      },
+      "n_models": 2,
+      "layers": {
+        "Chronos-2/encoder.block.7": 1,
+        "Chronos-2/encoder.block.8": 1,
+        "Sundial/model.layers.6": 1
+      },
+      "mean_profile": {
+        "trend": 0.3391616471905979,
+        "seasonal": 0.04640783322756647,
+        "spectral_centroid": 0.4013031425200652,
+        "level": 8.740550092084733,
+        "dispersion": -1.648782017781629,
+        "horizon_shape_near": 8.859239263683097,
+        "horizon_shape_far": 8.354922515545118,
+        "mase": -7.411169675996827,
+        "flatness": -0.25318733605807353
+      },
+      "mean_norm": 17.1711517403505,
+      "min_pair_cosine": 0.9157480744880057,
+      "mean_pair_cosine": 0.9308919088967702,
+      "members": [
+        51,
+        67,
+        188
+      ],
+      "cross_model_p": 0.8756218905472637,
+      "causal_tag": "shape-causal",
+      "level_share_median": 0.9491044100072792,
+      "n_members_with_level_share": 3,
+      "n_members_shape_causal": 3,
+      "n_members_with_shape_record": 3
+    },
+    {
+      "concept": 15,
+      "name": "strong lowers mase",
+      "n_members": 3,
+      "models": {
+        "Chronos-2": 1,
+        "Sundial": 2
+      },
+      "n_models": 2,
+      "layers": {
+        "Chronos-2/encoder.block.8": 1,
+        "Sundial/model.layers.9": 2
+      },
+      "mean_profile": {
+        "trend": -1.5827543964449806,
+        "seasonal": -0.6444572283726958,
+        "spectral_centroid": -0.2611943366581116,
+        "level": -1.2985931025694821,
+        "dispersion": -0.52618886461928,
+        "horizon_shape_near": 1.256580346611026,
+        "horizon_shape_far": 1.6289341719074468,
+        "mase": -2.3099745596652776,
+        "flatness": -0.09588014981273409
+      },
+      "mean_norm": 3.9038788959559594,
+      "min_pair_cosine": 0.917239058132763,
+      "mean_pair_cosine": 0.9249689721618185,
+      "members": [
+        72,
+        225,
+        233
+      ],
+      "cross_model_p": 0.900497512437811,
+      "causal_tag": "shape-causal",
+      "level_share_median": 0.26152577961153856,
+      "n_members_with_level_share": 3,
+      "n_members_shape_causal": 3,
+      "n_members_with_shape_record": 3
+    },
+    {
+      "concept": 16,
+      "name": "strong raises horizon_shape_near \u00b7 unusually raises level",
+      "n_members": 3,
+      "models": {
+        "Chronos-2": 2,
+        "Chronos-Bolt": 1
+      },
+      "n_models": 2,
+      "layers": {
+        "Chronos-2/encoder.block.9": 2,
+        "Chronos-Bolt/encoder.block.4": 1
+      },
+      "mean_profile": {
+        "trend": -0.48995577042917016,
+        "seasonal": 0.1982289868739671,
+        "spectral_centroid": -0.6759689468967771,
+        "level": 2.4626503762853527,
+        "dispersion": 0.4875231335156762,
+        "horizon_shape_near": 2.467467387613982,
+        "horizon_shape_far": 2.2572689952897984,
+        "mase": 0.7028512436422781,
+        "flatness": 0.03306233062330617
+      },
+      "mean_norm": 4.387421594066557,
+      "min_pair_cosine": 0.9300959608372021,
+      "mean_pair_cosine": 0.9463841159654972,
+      "members": [
+        76,
+        84,
+        99
+      ],
+      "cross_model_p": 0.9203980099502488,
+      "causal_tag": "shape-causal",
+      "level_share_median": 0.910925434668205,
+      "n_members_with_level_share": 3,
+      "n_members_shape_causal": 1,
+      "n_members_with_shape_record": 3
+    },
+    {
+      "concept": 17,
+      "name": "strong raises seasonal",
+      "n_members": 3,
+      "models": {
+        "Chronos-Bolt": 2,
+        "Sundial": 1
+      },
+      "n_models": 2,
+      "layers": {
+        "Chronos-Bolt/encoder.block.4": 1,
+        "Chronos-Bolt/encoder.block.5": 1,
+        "Sundial/model.layers.10": 1
+      },
+      "mean_profile": {
+        "trend": 2.030756421498672,
+        "seasonal": 4.1667743163772055,
+        "spectral_centroid": 0.5058779016326861,
+        "level": -0.9737073430851843,
+        "dispersion": 2.354686171893753,
+        "horizon_shape_near": 1.5247698114635204,
+        "horizon_shape_far": 1.3455505728421866,
+        "mase": -0.1780045793332894,
+        "flatness": -0.0625
+      },
+      "mean_norm": 5.754472094006938,
+      "min_pair_cosine": 0.9548951875903715,
+      "mean_pair_cosine": 0.9671988078280633,
+      "members": [
+        98,
+        108,
+        117
+      ],
+      "cross_model_p": 0.8905472636815921,
+      "causal_tag": "shape-causal",
+      "level_share_median": 0.41982284126097674,
+      "n_members_with_level_share": 3,
+      "n_members_shape_causal": 3,
+      "n_members_with_shape_record": 3
+    },
+    {
+      "concept": 18,
+      "name": "strong raises mase",
+      "n_members": 3,
+      "models": {
+        "Chronos-Bolt": 1,
+        "TimesFM": 2
+      },
+      "n_models": 2,
+      "layers": {
+        "Chronos-Bolt/encoder.block.5": 1,
+        "TimesFM/stacked_xf.0": 1,
+        "TimesFM/stacked_xf.2": 1
+      },
+      "mean_profile": {
+        "trend": 2.029145727346792,
+        "seasonal": -0.512444578258449,
+        "spectral_centroid": -0.4975499067315418,
+        "level": 2.350828127299725,
+        "dispersion": -0.35841687429613617,
+        "horizon_shape_near": 2.3634865655091857,
+        "horizon_shape_far": 2.542867439948578,
+        "mase": 3.124177869068749,
+        "flatness": -0.23100743187448403
+      },
+      "mean_norm": 5.764534002177249,
+      "min_pair_cosine": 0.917398199121425,
+      "mean_pair_cosine": 0.9388149571316209,
+      "members": [
+        110,
+        241,
+        273
+      ],
+      "cross_model_p": 0.8855721393034826,
+      "causal_tag": "shape-causal",
+      "level_share_median": 0.9306188932899259,
+      "n_members_with_level_share": 3,
+      "n_members_shape_causal": 3,
+      "n_members_with_shape_record": 3
+    },
+    {
+      "concept": 19,
+      "name": "strong raises dispersion \u00b7 unusually raises spectral_centroid",
+      "n_members": 3,
+      "models": {
+        "Sundial": 3
+      },
+      "n_models": 1,
+      "layers": {
+        "Sundial/model.layers.10": 1,
+        "Sundial/model.layers.4": 1,
+        "Sundial/model.layers.6": 1
+      },
+      "mean_profile": {
+        "trend": 0.8111926974849845,
+        "seasonal": 0.0,
+        "spectral_centroid": 1.154692324529553,
+        "level": 0.06446850340000303,
+        "dispersion": 2.2517634691247683,
+        "horizon_shape_near": 0.9590625724616237,
+        "horizon_shape_far": 1.1068713973131328,
+        "mase": 0.326040589208683,
+        "flatness": -0.020833333333333332
+      },
+      "mean_norm": 3.1153638520850566,
+      "min_pair_cosine": 0.9174612706395827,
+      "mean_pair_cosine": 0.9379035570578881,
+      "members": [
+        116,
+        155,
+        180
+      ],
+      "cross_model_p": 1.0,
+      "causal_tag": "shape-causal",
+      "level_share_median": 0.46077595621544937,
+      "n_members_with_level_share": 3,
+      "n_members_shape_causal": 3,
+      "n_members_with_shape_record": 3
+    },
+    {
+      "concept": 20,
+      "name": "mild raises dispersion",
+      "n_members": 3,
+      "models": {
+        "Sundial": 2,
+        "TimesFM": 1
+      },
+      "n_models": 2,
+      "layers": {
+        "Sundial/model.layers.10": 1,
+        "Sundial/model.layers.8": 1,
+        "TimesFM/stacked_xf.14": 1
+      },
+      "mean_profile": {
+        "trend": -0.45973990809134574,
+        "seasonal": 0.0752752987945229,
+        "spectral_centroid": 0.6301935047841355,
+        "level": 0.6766882944115659,
+        "dispersion": 1.2637944571089916,
+        "horizon_shape_near": 1.1502619041301754,
+        "horizon_shape_far": 0.8873178217132023,
+        "mase": 0.1080706180203087,
+        "flatness": -0.14583333333333334
+      },
+      "mean_norm": 2.233523154175827,
+      "min_pair_cosine": 0.9354459232711667,
+      "mean_pair_cosine": 0.9461594080672372,
+      "members": [
+        119,
+        204,
+        257
+      ],
+      "cross_model_p": 0.9353233830845771,
+      "causal_tag": "shape-causal",
+      "level_share_median": 0.25327354334606494,
+      "n_members_with_level_share": 3,
+      "n_members_shape_causal": 3,
+      "n_members_with_shape_record": 3
+    },
+    {
+      "concept": 21,
+      "name": "strong raises horizon_shape_far \u00b7 unusually raises mase",
+      "n_members": 3,
+      "models": {
+        "Sundial": 3
+      },
+      "n_models": 1,
+      "layers": {
+        "Sundial/model.layers.4": 1,
+        "Sundial/model.layers.7": 1,
+        "Sundial/model.layers.9": 1
+      },
+      "mean_profile": {
+        "trend": 0.9693492808340771,
+        "seasonal": 0.0,
+        "spectral_centroid": 1.1517071768378446,
+        "level": 1.3314240752192223,
+        "dispersion": -0.4988878691327229,
+        "horizon_shape_near": 2.585829735166565,
+        "horizon_shape_far": 3.1224348469874337,
+        "mase": 1.313701292034635,
+        "flatness": 0.17708333333333334
+      },
+      "mean_norm": 4.809627945477999,
+      "min_pair_cosine": 0.9248056693876282,
+      "mean_pair_cosine": 0.9347632017162888,
+      "members": [
+        154,
+        190,
+        231
+      ],
+      "cross_model_p": 1.0,
+      "causal_tag": "shape-causal",
+      "level_share_median": 0.22965679208878106,
+      "n_members_with_level_share": 3,
+      "n_members_shape_causal": 3,
+      "n_members_with_shape_record": 3
+    },
+    {
+      "concept": 22,
+      "name": "strong raises horizon_shape_far \u00b7 unusually raises horizon_shape_near",
+      "n_members": 3,
+      "models": {
+        "Sundial": 3
+      },
+      "n_models": 1,
+      "layers": {
+        "Sundial/model.layers.4": 1,
+        "Sundial/model.layers.5": 2
+      },
+      "mean_profile": {
+        "trend": -0.49203078635265857,
+        "seasonal": 0.0,
+        "spectral_centroid": -0.8794318146630141,
+        "level": 0.9142059582536745,
+        "dispersion": 0.7686864331602382,
+        "horizon_shape_near": 1.9704825037880347,
+        "horizon_shape_far": 2.3506222765121976,
+        "mase": 0.08581982050198866,
+        "flatness": -0.05050505050505077
+      },
+      "mean_norm": 3.497267299379176,
+      "min_pair_cosine": 0.9339927912604609,
+      "mean_pair_cosine": 0.9555678257263884,
+      "members": [
+        161,
+        170,
+        174
+      ],
+      "cross_model_p": 1.0,
+      "causal_tag": "shape-causal",
+      "level_share_median": 0.6086533806922133,
+      "n_members_with_level_share": 3,
+      "n_members_shape_causal": 3,
+      "n_members_with_shape_record": 3
+    },
+    {
+      "concept": 23,
+      "name": "mild raises horizon_shape_near \u00b7 unusually raises horizon_shape_far",
+      "n_members": 3,
+      "models": {
+        "Sundial": 1,
+        "TimesFM": 2
+      },
+      "n_models": 2,
+      "layers": {
+        "Sundial/model.layers.5": 1,
+        "TimesFM/stacked_xf.4": 1,
+        "TimesFM/stacked_xf.6": 1
+      },
+      "mean_profile": {
+        "trend": -0.35170582122255395,
+        "seasonal": 0.0,
+        "spectral_centroid": 0.8274657571338276,
+        "level": 0.9743975254376429,
+        "dispersion": 0.3373517022291231,
+        "horizon_shape_near": 1.203085733492222,
+        "horizon_shape_far": 1.0837686033853424,
+        "mase": 0.32997596120709355,
+        "flatness": 0.08680555555555557
+      },
+      "mean_norm": 2.1700639357793965,
+      "min_pair_cosine": 0.9622804529283279,
+      "mean_pair_cosine": 0.968102414083546,
+      "members": [
+        167,
+        276,
+        281
+      ],
+      "cross_model_p": 0.8656716417910447,
+      "causal_tag": "shape-causal",
+      "level_share_median": 0.8121297327860345,
+      "n_members_with_level_share": 3,
+      "n_members_shape_causal": 1,
+      "n_members_with_shape_record": 3
+    },
+    {
+      "concept": 24,
+      "name": "mild raises horizon_shape_near \u00b7 unusually raises dispersion",
+      "n_members": 3,
+      "models": {
+        "Sundial": 2,
+        "TimesFM": 1
+      },
+      "n_models": 2,
+      "layers": {
+        "Sundial/model.layers.5": 1,
+        "Sundial/model.layers.6": 1,
+        "TimesFM/stacked_xf.12": 1
+      },
+      "mean_profile": {
+        "trend": -0.7416843821774742,
+        "seasonal": 0.0,
+        "spectral_centroid": 0.8148891079306911,
+        "level": 0.9752889712460551,
+        "dispersion": 1.0703920439854975,
+        "horizon_shape_near": 1.1571847939510065,
+        "horizon_shape_far": 0.9664236796222845,
+        "mase": 0.9531849167681141,
+        "flatness": -0.45564516129032273
+      },
+      "mean_norm": 2.6314853185976896,
+      "min_pair_cosine": 0.9214948862285857,
+      "mean_pair_cosine": 0.9510030706947695,
+      "members": [
+        176,
+        179,
+        249
+      ],
+      "cross_model_p": 0.8756218905472637,
+      "causal_tag": "shape-causal",
+      "level_share_median": 0.7755060049214458,
+      "n_members_with_level_share": 3,
+      "n_members_shape_causal": 3,
+      "n_members_with_shape_record": 3
+    },
+    {
+      "concept": 25,
+      "name": "strong raises dispersion \u00b7 unusually raises seasonal",
+      "n_members": 3,
+      "models": {
+        "Sundial": 3
+      },
+      "n_models": 1,
+      "layers": {
+        "Sundial/model.layers.7": 1,
+        "Sundial/model.layers.8": 1,
+        "Sundial/model.layers.9": 1
+      },
+      "mean_profile": {
+        "trend": -0.6286949773561715,
+        "seasonal": 3.4217542986212712,
+        "spectral_centroid": 0.12511455200584168,
+        "level": -1.7149321506413777,
+        "dispersion": 3.9160224266216113,
+        "horizon_shape_near": 2.6188603265695884,
+        "horizon_shape_far": 3.138843427035482,
+        "mase": -2.587442266018322,
+        "flatness": -0.08333333333333333
+      },
+      "mean_norm": 7.408312505660234,
+      "min_pair_cosine": 0.9408633137414356,
+      "mean_pair_cosine": 0.9674048922711188,
+      "members": [
+        192,
+        205,
+        221
+      ],
+      "cross_model_p": 1.0,
+      "causal_tag": "shape-causal",
+      "level_share_median": 0.11709680386574947,
+      "n_members_with_level_share": 3,
+      "n_members_shape_causal": 3,
+      "n_members_with_shape_record": 3
+    },
+    {
+      "concept": 26,
+      "name": "shifts the level",
+      "n_members": 3,
+      "models": {
+        "TimesFM": 3
+      },
+      "n_models": 1,
+      "layers": {
+        "TimesFM/stacked_xf.18": 2,
+        "TimesFM/stacked_xf.6": 1
+      },
+      "mean_profile": {
+        "trend": 0.2500230560859109,
+        "seasonal": 0.0866183606879763,
+        "spectral_centroid": -0.03635498538098009,
+        "level": -1.539541980053797,
+        "dispersion": 0.09913028846958905,
+        "horizon_shape_near": 1.228268252283108,
+        "horizon_shape_far": 1.4523730526372696,
+        "mase": 2.117706266732028,
+        "flatness": -0.006720430107526765
+      },
+      "mean_norm": 3.2942968591696435,
+      "min_pair_cosine": 0.9466369832108025,
+      "mean_pair_cosine": 0.9566141046015,
+      "members": [
+        266,
+        267,
+        285
+      ],
+      "cross_model_p": 1.0,
+      "causal_tag": "level carrier",
+      "level_share_median": 0.9174207236824189,
+      "n_members_with_level_share": 3,
+      "n_members_shape_causal": 0,
+      "n_members_with_shape_record": 3
+    }
+  ],
+  "null": {
+    "structure": {
+      "n_null": 200,
+      "n_concepts_real": 27,
+      "n_concepts_null_mean": 17.265,
+      "n_concepts_null_p95": 22.0,
+      "p_n_concepts": 0.004975124378109453,
+      "frac_assigned_real": 0.2935153583617747,
+      "frac_assigned_null_mean": 0.22112627986348124,
+      "frac_assigned_null_p95": 0.27303754266211605,
+      "p_frac_assigned": 0.01990049751243781
+    },
+    "cross_model": {
+      "n_null": 200,
+      "n_multi_model_real": 16,
+      "n_multi_model_null_mean": 24.535,
+      "n_multi_model_null_p95": 27.0,
+      "p_n_multi_model": 1.0,
+      "p_n_multi_model_below": 0.004975124378109453,
+      "mean_purity_real": 0.7981481481481482,
+      "mean_purity_null_mean": 0.5929783950617283,
+      "p_purity_above": 0.004975124378109453,
+      "p_purity_below": 1.0,
+      "verdict": "segregated by model"
+    }
+  },
+  "pca": {
+    "explained_variance_ratio": [
+      0.22102531344538512,
+      0.20043335763768072
+    ]
+  },
+  "projection": "umap",
+  "naming": "_compose_batch"
+}

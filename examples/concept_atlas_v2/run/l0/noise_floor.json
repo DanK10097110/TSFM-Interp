@@ -1,0 +1,122 @@
+{
+  "TimesFM": {
+    "repeats": 3,
+    "n_series": 16,
+    "deterministic": true,
+    "mase_abs_delta_mean": 0.0,
+    "mase_abs_delta_p95": 0.0,
+    "mase_abs_delta_max": 0.0,
+    "per_family": {
+      "block_bootstrap": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "mixture": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "parametric": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "random_parametric": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sequential_par": {
+        "mean": 0.0,
+        "p95": 0.0
+      }
+    }
+  },
+  "Chronos-2": {
+    "repeats": 3,
+    "n_series": 16,
+    "deterministic": true,
+    "mase_abs_delta_mean": 0.0,
+    "mase_abs_delta_p95": 0.0,
+    "mase_abs_delta_max": 0.0,
+    "per_family": {
+      "block_bootstrap": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "mixture": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "parametric": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "random_parametric": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sequential_par": {
+        "mean": 0.0,
+        "p95": 0.0
+      }
+    }
+  },
+  "Sundial": {
+    "repeats": 3,
+    "n_series": 16,
+    "deterministic": false,
+    "mase_abs_delta_mean": 0.17676453292369843,
+    "mase_abs_delta_p95": 0.6379554271697998,
+    "mase_abs_delta_max": 1.661890983581543,
+    "per_family": {
+      "block_bootstrap": {
+        "mean": 0.014850020408630371,
+        "p95": 0.02090677060186863
+      },
+      "mixture": {
+        "mean": 0.022094279527664185,
+        "p95": 0.03879959136247635
+      },
+      "parametric": {
+        "mean": 0.2981036901473999,
+        "p95": 0.3731266260147095
+      },
+      "random_parametric": {
+        "mean": 0.2993663251399994,
+        "p95": 1.204406499862671
+      },
+      "sequential_par": {
+        "mean": 0.016616955399513245,
+        "p95": 0.02727314457297325
+      }
+    }
+  },
+  "Chronos-Bolt": {
+    "repeats": 3,
+    "n_series": 16,
+    "deterministic": true,
+    "mase_abs_delta_mean": 0.0,
+    "mase_abs_delta_p95": 0.0,
+    "mase_abs_delta_max": 0.0,
+    "per_family": {
+      "block_bootstrap": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "mixture": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "parametric": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "random_parametric": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sequential_par": {
+        "mean": 0.0,
+        "p95": 0.0
+      }
+    }
+  }
+}

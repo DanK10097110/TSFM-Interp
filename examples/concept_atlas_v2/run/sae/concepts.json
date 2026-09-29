@@ -1,0 +1,1608 @@
+{
+  "schema_version": 1,
+  "space": "ablation",
+  "supersedes": "roles_injection.json",
+  "targets": {
+    "Chronos-2/encoder.block.10": {
+      "model": "Chronos-2",
+      "layer": "encoder.block.10",
+      "n_candidates": 24,
+      "n_causal": 9,
+      "n_dropped_no_cleared_channel": 10,
+      "n_dropped_not_scorable": 5,
+      "n_dropped_all_unscored": 0,
+      "k": 1,
+      "silhouette": NaN,
+      "non_modular": true,
+      "reason": "no k in 2..3 partitions 9 candidates into clusters of at least 3 members",
+      "k_sweep": [
+        {
+          "k": 2,
+          "silhouette": 0.30604664680577015,
+          "admissible": false,
+          "min_cluster_size": 2
+        },
+        {
+          "k": 3,
+          "silhouette": 0.30390058848069923,
+          "admissible": false,
+          "min_cluster_size": 1
+        }
+      ],
+      "k_selection_rule": "silhouette-best admissible, k swept 2..3",
+      "channel_columns": [
+        "trend",
+        "seasonal",
+        "spectral_centroid",
+        "level",
+        "dispersion",
+        "horizon_shape_near",
+        "horizon_shape_far",
+        "mase",
+        "flatness"
+      ],
+      "concepts": []
+    },
+    "Chronos-2/encoder.block.11": {
+      "model": "Chronos-2",
+      "layer": "encoder.block.11",
+      "withheld": true,
+      "reason": "patching a different layer's clean tokens into encoder.block.11 moved the forecast by 0, a relative reach of 0 against forecast_scale 25.1123 -- below concepts.min_relative_reach=0.001; this target does not causally reach the forecast head; withhold the causal panel rather than reporting zeros as effects (CLAUDE.md sec 11.42)"
+    },
+    "Chronos-2/encoder.block.5": {
+      "model": "Chronos-2",
+      "layer": "encoder.block.5",
+      "n_candidates": 24,
+      "n_causal": 15,
+      "n_dropped_no_cleared_channel": 2,
+      "n_dropped_not_scorable": 7,
+      "n_dropped_all_unscored": 0,
+      "k": 1,
+      "silhouette": NaN,
+      "non_modular": true,
+      "reason": "no k in 2..5 partitions 15 candidates into clusters of at least 3 members",
+      "k_sweep": [
+        {
+          "k": 2,
+          "silhouette": 0.6379770973326179,
+          "admissible": false,
+          "min_cluster_size": 1
+        },
+        {
+          "k": 3,
+          "silhouette": 0.21532333087665076,
+          "admissible": false,
+          "min_cluster_size": 1
+        },
+        {
+          "k": 4,
+          "silhouette": 0.19645592656955574,
+          "admissible": false,
+          "min_cluster_size": 1
+        },
+        {
+          "k": 5,
+          "silhouette": 0.19328148770353473,
+          "admissible": false,
+          "min_cluster_size": 1
+        }
+      ],
+      "k_selection_rule": "silhouette-best admissible, k swept 2..5",
+      "channel_columns": [
+        "trend",
+        "seasonal",
+        "spectral_centroid",
+        "level",
+        "dispersion",
+        "horizon_shape_near",
+        "horizon_shape_far",
+        "mase",
+        "flatness"
+      ],
+      "concepts": []
+    },
+    "Chronos-2/encoder.block.6": {
+      "model": "Chronos-2",
+      "layer": "encoder.block.6",
+      "n_candidates": 24,
+      "n_causal": 14,
+      "n_dropped_no_cleared_channel": 4,
+      "n_dropped_not_scorable": 6,
+      "n_dropped_all_unscored": 0,
+      "k": 2,
+      "silhouette": 0.33788507688654423,
+      "non_modular": false,
+      "reason": "",
+      "k_sweep": [
+        {
+          "k": 2,
+          "silhouette": 0.33788507688654423,
+          "admissible": true,
+          "min_cluster_size": 3
+        },
+        {
+          "k": 3,
+          "silhouette": 0.2999807906037445,
+          "admissible": false,
+          "min_cluster_size": 1
+        },
+        {
+          "k": 4,
+          "silhouette": 0.32063367480125965,
+          "admissible": false,
+          "min_cluster_size": 1
+        }
+      ],
+      "k_selection_rule": "silhouette-best admissible, k swept 2..4",
+      "channel_columns": [
+        "trend",
+        "seasonal",
+        "spectral_centroid",
+        "level",
+        "dispersion",
+        "horizon_shape_near",
+        "horizon_shape_far",
+        "mase",
+        "flatness"
+      ],
+      "concepts": [
+        {
+          "concept": 0,
+          "features": [
+            1714,
+            5528,
+            5231,
+            4757,
+            5849,
+            25,
+            1,
+            3136,
+            1076,
+            251,
+            3987
+          ],
+          "n_members": 11,
+          "n_members_clearing": 11,
+          "centroid_null_units": {
+            "trend": -0.25775256905970895,
+            "seasonal": 0.0,
+            "spectral_centroid": 0.6282875935277905,
+            "level": -0.10598025309030672,
+            "dispersion": -0.14789934482877196,
+            "horizon_shape_near": 1.4022570020599188,
+            "horizon_shape_far": 1.7875920096487432,
+            "mase": -0.18990268883226094,
+            "flatness": -0.2017553722368713
+          },
+          "profile": [
+            {
+              "channel": "horizon_shape_far",
+              "signed_null_units": 1.7875920096487432,
+              "n_members_clearing": 8
+            },
+            {
+              "channel": "horizon_shape_near",
+              "signed_null_units": 1.4022570020599188,
+              "n_members_clearing": 6
+            }
+          ],
+          "dominant_channel": "horizon_shape_far",
+          "name": "mild raises horizon_shape_far \u00b7 unusually raises horizon_shape_near",
+          "name_lead_diversified": false,
+          "plain_name": "Long-range steerers",
+          "within_cosine_mean": 0.4055907431555654,
+          "centroid_cosine_mean": 0.6626405521809907,
+          "misfits": [],
+          "description": null,
+          "description_generated": false
+        },
+        {
+          "concept": 1,
+          "features": [
+            4571,
+            259,
+            3200
+          ],
+          "n_members": 3,
+          "n_members_clearing": 3,
+          "centroid_null_units": {
+            "trend": -0.52644916254918,
+            "seasonal": 0.10216575959841596,
+            "spectral_centroid": -0.31199248827110143,
+            "level": -3.2055289503056037,
+            "dispersion": 2.0438757675487476,
+            "horizon_shape_near": 4.416291288886313,
+            "horizon_shape_far": 4.284540460221664,
+            "mase": 2.8218941252916934,
+            "flatness": -0.2554432957393485
+          },
+          "profile": [
+            {
+              "channel": "horizon_shape_near",
+              "signed_null_units": 4.416291288886313,
+              "n_members_clearing": 3
+            },
+            {
+              "channel": "horizon_shape_far",
+              "signed_null_units": 4.284540460221664,
+              "n_members_clearing": 3
+            },
+            {
+              "channel": "level",
+              "signed_null_units": -3.2055289503056037,
+              "n_members_clearing": 3
+            },
+            {
+              "channel": "mase",
+              "signed_null_units": 2.8218941252916934,
+              "n_members_clearing": 3
+            },
+            {
+              "channel": "dispersion",
+              "signed_null_units": 2.0438757675487476,
+              "n_members_clearing": 2
+            }
+          ],
+          "dominant_channel": "horizon_shape_near",
+          "name": "strong raises horizon_shape_near \u00b7 unusually raises mase",
+          "name_lead_diversified": false,
+          "plain_name": "Near-term steerers",
+          "within_cosine_mean": 0.7213696083908218,
+          "centroid_cosine_mean": 0.9007032173743331,
+          "misfits": [],
+          "description": null,
+          "description_generated": false
+        }
+      ]
+    },
+    "Chronos-2/encoder.block.7": {
+      "model": "Chronos-2",
+      "layer": "encoder.block.7",
+      "n_candidates": 24,
+      "n_causal": 18,
+      "n_dropped_no_cleared_channel": 2,
+      "n_dropped_not_scorable": 4,
+      "n_dropped_all_unscored": 0,
+      "k": 1,
+      "silhouette": NaN,
+      "non_modular": true,
+      "reason": "no k in 2..6 partitions 18 candidates into clusters of at least 3 members",
+      "k_sweep": [
+        {
+          "k": 2,
+          "silhouette": 0.705254569939656,
+          "admissible": false,
+          "min_cluster_size": 1
+        },
+        {
+          "k": 3,
+          "silhouette": 0.35847374252129877,
+          "admissible": false,
+          "min_cluster_size": 1
+        },
+        {
+          "k": 4,
+          "silhouette": 0.4297602988015874,
+          "admissible": false,
+          "min_cluster_size": 1
+        },
+        {
+          "k": 5,
+          "silhouette": 0.3693701730534648,
+          "admissible": false,
+          "min_cluster_size": 1
+        },
+        {
+          "k": 6,
+          "silhouette": 0.2881398703509912,
+          "admissible": false,
+          "min_cluster_size": 1
+        }
+      ],
+      "k_selection_rule": "silhouette-best admissible, k swept 2..6",
+      "channel_columns": [
+        "trend",
+        "seasonal",
+        "spectral_centroid",
+        "level",
+        "dispersion",
+        "horizon_shape_near",
+        "horizon_shape_far",
+        "mase",
+        "flatness"
+      ],
+      "concepts": []
+    },
+    "Chronos-2/encoder.block.8": {
+      "model": "Chronos-2",
+      "layer": "encoder.block.8",
+      "n_candidates": 24,
+      "n_causal": 19,
+      "n_dropped_no_cleared_channel": 3,
+      "n_dropped_not_scorable": 2,
+      "n_dropped_all_unscored": 0,
+      "k": 2,
+      "silhouette": 0.3190563972199573,
+      "non_modular": false,
+      "reason": "",
+      "k_sweep": [
+        {
+          "k": 2,
+          "silhouette": 0.3190563972199573,
+          "admissible": true,
+          "min_cluster_size": 4
+        },
+        {
+          "k": 3,
+          "silhouette": 0.26120571732959474,
+          "admissible": false,
+          "min_cluster_size": 1
+        },
+        {
+          "k": 4,
+          "silhouette": 0.1726705124047599,
+          "admissible": false,
+          "min_cluster_size": 1
+        },
+        {
+          "k": 5,
+          "silhouette": 0.1827725404666897,
+          "admissible": false,
+          "min_cluster_size": 1
+        },
+        {
+          "k": 6,
+          "silhouette": 0.18199128609540896,
+          "admissible": false,
+          "min_cluster_size": 1
+        }
+      ],
+      "k_selection_rule": "silhouette-best admissible, k swept 2..6",
+      "channel_columns": [
+        "trend",
+        "seasonal",
+        "spectral_centroid",
+        "level",
+        "dispersion",
+        "horizon_shape_near",
+        "horizon_shape_far",
+        "mase",
+        "flatness"
+      ],
+      "concepts": [
+        {
+          "concept": 1,
+          "features": [
+            3327,
+            803,
+            4757,
+            15,
+            4005,
+            5700,
+            2555,
+            587,
+            5513,
+            3135,
+            1888,
+            1076,
+            252,
+            3990,
+            462
+          ],
+          "n_members": 15,
+          "n_members_clearing": 15,
+          "centroid_null_units": {
+            "trend": -0.41966110477921326,
+            "seasonal": 0.14835773419086254,
+            "spectral_centroid": 0.11697226042109625,
+            "level": -0.46765835265359473,
+            "dispersion": 0.4170030977078294,
+            "horizon_shape_near": 1.3913598186214813,
+            "horizon_shape_far": 1.6322948461192253,
+            "mase": 0.058431501480183945,
+            "flatness": 0.012388493922248663
+          },
+          "profile": [
+            {
+              "channel": "horizon_shape_far",
+              "signed_null_units": 1.6322948461192253,
+              "n_members_clearing": 13
+            },
+            {
+              "channel": "horizon_shape_near",
+              "signed_null_units": 1.3913598186214813,
+              "n_members_clearing": 9
+            }
+          ],
+          "dominant_channel": "horizon_shape_far",
+          "name": "mild raises horizon_shape_far \u00b7 unusually raises horizon_shape_near",
+          "name_lead_diversified": false,
+          "plain_name": "Long-range steerers II",
+          "within_cosine_mean": 0.34621362485530494,
+          "centroid_cosine_mean": 0.6172785085586256,
+          "misfits": [],
+          "description": null,
+          "description_generated": false
+        },
+        {
+          "concept": 0,
+          "features": [
+            2884,
+            1785,
+            103,
+            3908
+          ],
+          "n_members": 4,
+          "n_members_clearing": 4,
+          "centroid_null_units": {
+            "trend": 2.309656487668609,
+            "seasonal": -1.2081886028602848,
+            "spectral_centroid": -0.8245091356940114,
+            "level": -0.0939854409186045,
+            "dispersion": -1.5236444559177982,
+            "horizon_shape_near": 3.102460457815073,
+            "horizon_shape_far": 3.2029265261384934,
+            "mase": 0.1134699062610659,
+            "flatness": -0.41058448723131874
+          },
+          "profile": [
+            {
+              "channel": "horizon_shape_far",
+              "signed_null_units": 3.2029265261384934,
+              "n_members_clearing": 4
+            },
+            {
+              "channel": "horizon_shape_near",
+              "signed_null_units": 3.102460457815073,
+              "n_members_clearing": 3
+            },
+            {
+              "channel": "trend",
+              "signed_null_units": 2.309656487668609,
+              "n_members_clearing": 3
+            },
+            {
+              "channel": "dispersion",
+              "signed_null_units": -1.5236444559177982,
+              "n_members_clearing": 4
+            },
+            {
+              "channel": "seasonal",
+              "signed_null_units": -1.2081886028602848,
+              "n_members_clearing": 2
+            }
+          ],
+          "dominant_channel": "horizon_shape_far",
+          "name": "strong raises horizon_shape_far \u00b7 unusually raises trend",
+          "name_lead_diversified": false,
+          "plain_name": "Long-range steerers III",
+          "within_cosine_mean": 0.3295273812339276,
+          "centroid_cosine_mean": 0.7024766217754257,
+          "misfits": [],
+          "description": null,
+          "description_generated": false
+        }
+      ]
+    },
+    "Chronos-2/encoder.block.9": {
+      "model": "Chronos-2",
+      "layer": "encoder.block.9",
+      "n_candidates": 24,
+      "n_causal": 13,
+      "n_dropped_no_cleared_channel": 5,
+      "n_dropped_not_scorable": 6,
+      "n_dropped_all_unscored": 0,
+      "k": 1,
+      "silhouette": NaN,
+      "non_modular": true,
+      "reason": "no k in 2..4 partitions 13 candidates into clusters of at least 3 members",
+      "k_sweep": [
+        {
+          "k": 2,
+          "silhouette": 0.45549629406562464,
+          "admissible": false,
+          "min_cluster_size": 1
+        },
+        {
+          "k": 3,
+          "silhouette": 0.2856715655517513,
+          "admissible": false,
+          "min_cluster_size": 1
+        },
+        {
+          "k": 4,
+          "silhouette": 0.26811519050272825,
+          "admissible": false,
+          "min_cluster_size": 1
+        }
+      ],
+      "k_selection_rule": "silhouette-best admissible, k swept 2..4",
+      "channel_columns": [
+        "trend",
+        "seasonal",
+        "spectral_centroid",
+        "level",
+        "dispersion",
+        "horizon_shape_near",
+        "horizon_shape_far",
+        "mase",
+        "flatness"
+      ],
+      "concepts": []
+    },
+    "Chronos-Bolt/encoder.block.3": {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.3",
+      "n_candidates": 24,
+      "n_causal": 8,
+      "n_dropped_no_cleared_channel": 5,
+      "n_dropped_not_scorable": 11,
+      "n_dropped_all_unscored": 0,
+      "k": 1,
+      "silhouette": NaN,
+      "non_modular": true,
+      "reason": "no k in 2..2 partitions 8 candidates into clusters of at least 3 members",
+      "k_sweep": [
+        {
+          "k": 2,
+          "silhouette": 0.3064423164998783,
+          "admissible": false,
+          "min_cluster_size": 1
+        }
+      ],
+      "k_selection_rule": "silhouette-best admissible, k swept 2..2",
+      "channel_columns": [
+        "trend",
+        "seasonal",
+        "spectral_centroid",
+        "level",
+        "dispersion",
+        "horizon_shape_near",
+        "horizon_shape_far",
+        "mase",
+        "flatness"
+      ],
+      "concepts": []
+    },
+    "Chronos-Bolt/encoder.block.4": {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.4",
+      "n_candidates": 24,
+      "n_causal": 11,
+      "n_dropped_no_cleared_channel": 4,
+      "n_dropped_not_scorable": 9,
+      "n_dropped_all_unscored": 0,
+      "k": 2,
+      "silhouette": 0.2216651243181099,
+      "non_modular": false,
+      "reason": "",
+      "k_sweep": [
+        {
+          "k": 2,
+          "silhouette": 0.2216651243181099,
+          "admissible": true,
+          "min_cluster_size": 3
+        },
+        {
+          "k": 3,
+          "silhouette": 0.1802348361927625,
+          "admissible": false,
+          "min_cluster_size": 2
+        }
+      ],
+      "k_selection_rule": "silhouette-best admissible, k swept 2..3",
+      "channel_columns": [
+        "trend",
+        "seasonal",
+        "spectral_centroid",
+        "level",
+        "dispersion",
+        "horizon_shape_near",
+        "horizon_shape_far",
+        "mase",
+        "flatness"
+      ],
+      "concepts": [
+        {
+          "concept": 0,
+          "features": [
+            4679,
+            5876,
+            2979,
+            4366,
+            2668,
+            2978,
+            4479,
+            43
+          ],
+          "n_members": 8,
+          "n_members_clearing": 8,
+          "centroid_null_units": {
+            "trend": 1.0581653165613323,
+            "seasonal": 3.2672237761143874,
+            "spectral_centroid": 0.40296255102690554,
+            "level": -0.92095861616351,
+            "dispersion": 2.360577369568083,
+            "horizon_shape_near": 1.7335986219576072,
+            "horizon_shape_far": 1.7972355042170165,
+            "mase": 0.8842588594682792,
+            "flatness": -0.09456166733132469
+          },
+          "profile": [
+            {
+              "channel": "seasonal",
+              "signed_null_units": 3.2672237761143874,
+              "n_members_clearing": 5
+            },
+            {
+              "channel": "dispersion",
+              "signed_null_units": 2.360577369568083,
+              "n_members_clearing": 8
+            },
+            {
+              "channel": "horizon_shape_far",
+              "signed_null_units": 1.7972355042170165,
+              "n_members_clearing": 8
+            },
+            {
+              "channel": "horizon_shape_near",
+              "signed_null_units": 1.7335986219576072,
+              "n_members_clearing": 7
+            },
+            {
+              "channel": "trend",
+              "signed_null_units": 1.0581653165613323,
+              "n_members_clearing": 8
+            }
+          ],
+          "dominant_channel": "seasonal",
+          "name": "strong raises seasonal",
+          "name_lead_diversified": false,
+          "plain_name": "Seasonality dampeners",
+          "within_cosine_mean": 0.5760563483038611,
+          "centroid_cosine_mean": 0.7884173600517954,
+          "misfits": [],
+          "description": null,
+          "description_generated": false
+        },
+        {
+          "concept": 1,
+          "features": [
+            1691,
+            1936,
+            145
+          ],
+          "n_members": 3,
+          "n_members_clearing": 3,
+          "centroid_null_units": {
+            "trend": 0.834847936406662,
+            "seasonal": 0.5433140320447525,
+            "spectral_centroid": -1.1346715801641514,
+            "level": 1.9864829932657144,
+            "dispersion": 0.600460843691167,
+            "horizon_shape_near": 2.8820805497000705,
+            "horizon_shape_far": 3.044808627878931,
+            "mase": 0.06934365352846135,
+            "flatness": 0.07937887170757092
+          },
+          "profile": [
+            {
+              "channel": "horizon_shape_far",
+              "signed_null_units": 3.044808627878931,
+              "n_members_clearing": 3
+            },
+            {
+              "channel": "horizon_shape_near",
+              "signed_null_units": 2.8820805497000705,
+              "n_members_clearing": 3
+            },
+            {
+              "channel": "level",
+              "signed_null_units": 1.9864829932657144,
+              "n_members_clearing": 3
+            },
+            {
+              "channel": "spectral_centroid",
+              "signed_null_units": -1.1346715801641514,
+              "n_members_clearing": 3
+            }
+          ],
+          "dominant_channel": "horizon_shape_far",
+          "name": "strong raises horizon_shape_far \u00b7 unusually lowers spectral_centroid",
+          "name_lead_diversified": false,
+          "plain_name": "Long-range steerers IV",
+          "within_cosine_mean": 0.567265916366443,
+          "centroid_cosine_mean": 0.8410483124605083,
+          "misfits": [],
+          "description": null,
+          "description_generated": false
+        }
+      ]
+    },
+    "Chronos-Bolt/encoder.block.5": {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.5",
+      "n_candidates": 24,
+      "n_causal": 9,
+      "n_dropped_no_cleared_channel": 7,
+      "n_dropped_not_scorable": 8,
+      "n_dropped_all_unscored": 0,
+      "k": 1,
+      "silhouette": NaN,
+      "non_modular": true,
+      "reason": "no k in 2..3 partitions 9 candidates into clusters of at least 3 members",
+      "k_sweep": [
+        {
+          "k": 2,
+          "silhouette": 0.4969882621374345,
+          "admissible": false,
+          "min_cluster_size": 1
+        },
+        {
+          "k": 3,
+          "silhouette": 0.37717361228086216,
+          "admissible": false,
+          "min_cluster_size": 1
+        }
+      ],
+      "k_selection_rule": "silhouette-best admissible, k swept 2..3",
+      "channel_columns": [
+        "trend",
+        "seasonal",
+        "spectral_centroid",
+        "level",
+        "dispersion",
+        "horizon_shape_near",
+        "horizon_shape_far",
+        "mase",
+        "flatness"
+      ],
+      "concepts": []
+    },
+    "Sundial/model.layers.10": {
+      "model": "Sundial",
+      "layer": "model.layers.10",
+      "n_candidates": 24,
+      "n_causal": 17,
+      "n_dropped_no_cleared_channel": 5,
+      "n_dropped_not_scorable": 2,
+      "n_dropped_all_unscored": 0,
+      "k": 1,
+      "silhouette": NaN,
+      "non_modular": true,
+      "reason": "no k in 2..5 partitions 17 candidates into clusters of at least 3 members",
+      "k_sweep": [
+        {
+          "k": 2,
+          "silhouette": 0.6708356546269756,
+          "admissible": false,
+          "min_cluster_size": 1
+        },
+        {
+          "k": 3,
+          "silhouette": 0.5727947282754685,
+          "admissible": false,
+          "min_cluster_size": 1
+        },
+        {
+          "k": 4,
+          "silhouette": 0.5857888871153623,
+          "admissible": false,
+          "min_cluster_size": 1
+        },
+        {
+          "k": 5,
+          "silhouette": 0.5667572693841821,
+          "admissible": false,
+          "min_cluster_size": 1
+        }
+      ],
+      "k_selection_rule": "silhouette-best admissible, k swept 2..5",
+      "channel_columns": [
+        "trend",
+        "seasonal",
+        "spectral_centroid",
+        "level",
+        "dispersion",
+        "horizon_shape_near",
+        "horizon_shape_far",
+        "mase",
+        "flatness"
+      ],
+      "concepts": []
+    },
+    "Sundial/model.layers.11": {
+      "model": "Sundial",
+      "layer": "model.layers.11",
+      "n_candidates": 24,
+      "n_causal": 9,
+      "n_dropped_no_cleared_channel": 14,
+      "n_dropped_not_scorable": 1,
+      "n_dropped_all_unscored": 0,
+      "k": 1,
+      "silhouette": NaN,
+      "non_modular": true,
+      "reason": "no k in 2..3 partitions 9 candidates into clusters of at least 3 members",
+      "k_sweep": [
+        {
+          "k": 2,
+          "silhouette": 0.30086962312555077,
+          "admissible": false,
+          "min_cluster_size": 1
+        },
+        {
+          "k": 3,
+          "silhouette": 0.3108318720377049,
+          "admissible": false,
+          "min_cluster_size": 1
+        }
+      ],
+      "k_selection_rule": "silhouette-best admissible, k swept 2..3",
+      "channel_columns": [
+        "trend",
+        "seasonal",
+        "spectral_centroid",
+        "level",
+        "dispersion",
+        "horizon_shape_near",
+        "horizon_shape_far",
+        "mase",
+        "flatness"
+      ],
+      "concepts": []
+    },
+    "Sundial/model.layers.3": {
+      "model": "Sundial",
+      "layer": "model.layers.3",
+      "n_candidates": 24,
+      "n_causal": 11,
+      "n_dropped_no_cleared_channel": 7,
+      "n_dropped_not_scorable": 6,
+      "n_dropped_all_unscored": 0,
+      "k": 1,
+      "silhouette": NaN,
+      "non_modular": true,
+      "reason": "no k in 2..3 partitions 11 candidates into clusters of at least 3 members",
+      "k_sweep": [
+        {
+          "k": 2,
+          "silhouette": 0.3351251413204029,
+          "admissible": false,
+          "min_cluster_size": 1
+        },
+        {
+          "k": 3,
+          "silhouette": 0.20788878026148971,
+          "admissible": false,
+          "min_cluster_size": 1
+        }
+      ],
+      "k_selection_rule": "silhouette-best admissible, k swept 2..3",
+      "channel_columns": [
+        "trend",
+        "seasonal",
+        "spectral_centroid",
+        "level",
+        "dispersion",
+        "horizon_shape_near",
+        "horizon_shape_far",
+        "mase",
+        "flatness"
+      ],
+      "concepts": []
+    },
+    "Sundial/model.layers.4": {
+      "model": "Sundial",
+      "layer": "model.layers.4",
+      "n_candidates": 24,
+      "n_causal": 13,
+      "n_dropped_no_cleared_channel": 7,
+      "n_dropped_not_scorable": 4,
+      "n_dropped_all_unscored": 0,
+      "k": 1,
+      "silhouette": NaN,
+      "non_modular": true,
+      "reason": "no k in 2..4 partitions 13 candidates into clusters of at least 3 members",
+      "k_sweep": [
+        {
+          "k": 2,
+          "silhouette": 0.37179329203168304,
+          "admissible": false,
+          "min_cluster_size": 2
+        },
+        {
+          "k": 3,
+          "silhouette": 0.34144860931410476,
+          "admissible": false,
+          "min_cluster_size": 1
+        },
+        {
+          "k": 4,
+          "silhouette": 0.34143470893291455,
+          "admissible": false,
+          "min_cluster_size": 1
+        }
+      ],
+      "k_selection_rule": "silhouette-best admissible, k swept 2..4",
+      "channel_columns": [
+        "trend",
+        "seasonal",
+        "spectral_centroid",
+        "level",
+        "dispersion",
+        "horizon_shape_near",
+        "horizon_shape_far",
+        "mase",
+        "flatness"
+      ],
+      "concepts": []
+    },
+    "Sundial/model.layers.5": {
+      "model": "Sundial",
+      "layer": "model.layers.5",
+      "n_candidates": 24,
+      "n_causal": 12,
+      "n_dropped_no_cleared_channel": 9,
+      "n_dropped_not_scorable": 3,
+      "n_dropped_all_unscored": 0,
+      "k": 3,
+      "silhouette": 0.19157094720161225,
+      "non_modular": false,
+      "reason": "",
+      "k_sweep": [
+        {
+          "k": 2,
+          "silhouette": 0.18034752005764484,
+          "admissible": true,
+          "min_cluster_size": 3
+        },
+        {
+          "k": 3,
+          "silhouette": 0.19157094720161225,
+          "admissible": true,
+          "min_cluster_size": 3
+        },
+        {
+          "k": 4,
+          "silhouette": 0.10702496434352242,
+          "admissible": false,
+          "min_cluster_size": 1
+        }
+      ],
+      "k_selection_rule": "silhouette-best admissible, k swept 2..4",
+      "channel_columns": [
+        "trend",
+        "seasonal",
+        "spectral_centroid",
+        "level",
+        "dispersion",
+        "horizon_shape_near",
+        "horizon_shape_far",
+        "mase",
+        "flatness"
+      ],
+      "concepts": [
+        {
+          "concept": 1,
+          "features": [
+            3355,
+            882,
+            4645,
+            3907,
+            1652
+          ],
+          "n_members": 5,
+          "n_members_clearing": 5,
+          "centroid_null_units": {
+            "trend": -0.04169089959114173,
+            "seasonal": -0.051439659074481316,
+            "spectral_centroid": -0.09163122918474845,
+            "level": 0.06537692527738938,
+            "dispersion": -0.13656756273935514,
+            "horizon_shape_near": 0.6947397091488506,
+            "horizon_shape_far": 0.658955424018702,
+            "mase": 0.2996641557784199,
+            "flatness": 0.13219696969696954
+          },
+          "profile": [],
+          "dominant_channel": "horizon_shape_near",
+          "name": "moves horizon_shape_near",
+          "name_lead_diversified": false,
+          "plain_name": "Mixed-effect features",
+          "within_cosine_mean": 0.2154868818711048,
+          "centroid_cosine_mean": 0.608720979103411,
+          "misfits": [],
+          "description": null,
+          "description_generated": false
+        },
+        {
+          "concept": 0,
+          "features": [
+            5918,
+            4761,
+            1887,
+            250
+          ],
+          "n_members": 4,
+          "n_members_clearing": 4,
+          "centroid_null_units": {
+            "trend": 0.07428277106504902,
+            "seasonal": 0.0,
+            "spectral_centroid": 0.9706238600665211,
+            "level": 0.874044263829481,
+            "dispersion": 0.7449528748859324,
+            "horizon_shape_near": 1.0270850194977341,
+            "horizon_shape_far": 1.1775134476671378,
+            "mase": 0.8290506343953554,
+            "flatness": -0.21875
+          },
+          "profile": [
+            {
+              "channel": "horizon_shape_far",
+              "signed_null_units": 1.1775134476671378,
+              "n_members_clearing": 3
+            },
+            {
+              "channel": "horizon_shape_near",
+              "signed_null_units": 1.0270850194977341,
+              "n_members_clearing": 2
+            }
+          ],
+          "dominant_channel": "horizon_shape_far",
+          "name": "mild raises horizon_shape_far \u00b7 unusually raises horizon_shape_near",
+          "name_lead_diversified": false,
+          "plain_name": "Long-range steerers V",
+          "within_cosine_mean": 0.8063760685589528,
+          "centroid_cosine_mean": 0.9243418540788506,
+          "misfits": [],
+          "description": null,
+          "description_generated": false
+        },
+        {
+          "concept": 2,
+          "features": [
+            2033,
+            1074,
+            460
+          ],
+          "n_members": 3,
+          "n_members_clearing": 3,
+          "centroid_null_units": {
+            "trend": -0.5140802921255013,
+            "seasonal": 0.5730565910971656,
+            "spectral_centroid": -0.19123659353368458,
+            "level": 0.5564787079647746,
+            "dispersion": 0.9643575043724854,
+            "horizon_shape_near": 2.288235554212546,
+            "horizon_shape_far": 1.5315219172298502,
+            "mase": -0.04905880525345437,
+            "flatness": 0.0
+          },
+          "profile": [
+            {
+              "channel": "horizon_shape_near",
+              "signed_null_units": 2.288235554212546,
+              "n_members_clearing": 3
+            },
+            {
+              "channel": "horizon_shape_far",
+              "signed_null_units": 1.5315219172298502,
+              "n_members_clearing": 3
+            }
+          ],
+          "dominant_channel": "horizon_shape_near",
+          "name": "strong raises horizon_shape_near \u00b7 unusually raises horizon_shape_far",
+          "name_lead_diversified": false,
+          "plain_name": "Near-term steerers II",
+          "within_cosine_mean": 0.8038845520518526,
+          "centroid_cosine_mean": 0.9319927144355481,
+          "misfits": [],
+          "description": null,
+          "description_generated": false
+        }
+      ]
+    },
+    "Sundial/model.layers.6": {
+      "model": "Sundial",
+      "layer": "model.layers.6",
+      "n_candidates": 24,
+      "n_causal": 11,
+      "n_dropped_no_cleared_channel": 9,
+      "n_dropped_not_scorable": 4,
+      "n_dropped_all_unscored": 0,
+      "k": 1,
+      "silhouette": NaN,
+      "non_modular": true,
+      "reason": "no k in 2..3 partitions 11 candidates into clusters of at least 3 members",
+      "k_sweep": [
+        {
+          "k": 2,
+          "silhouette": 0.5077262642609175,
+          "admissible": false,
+          "min_cluster_size": 2
+        },
+        {
+          "k": 3,
+          "silhouette": 0.5657001414227526,
+          "admissible": false,
+          "min_cluster_size": 1
+        }
+      ],
+      "k_selection_rule": "silhouette-best admissible, k swept 2..3",
+      "channel_columns": [
+        "trend",
+        "seasonal",
+        "spectral_centroid",
+        "level",
+        "dispersion",
+        "horizon_shape_near",
+        "horizon_shape_far",
+        "mase",
+        "flatness"
+      ],
+      "concepts": []
+    },
+    "Sundial/model.layers.7": {
+      "model": "Sundial",
+      "layer": "model.layers.7",
+      "n_candidates": 24,
+      "n_causal": 11,
+      "n_dropped_no_cleared_channel": 10,
+      "n_dropped_not_scorable": 3,
+      "n_dropped_all_unscored": 0,
+      "k": 1,
+      "silhouette": NaN,
+      "non_modular": true,
+      "reason": "no k in 2..3 partitions 11 candidates into clusters of at least 3 members",
+      "k_sweep": [
+        {
+          "k": 2,
+          "silhouette": 0.5921567289946356,
+          "admissible": false,
+          "min_cluster_size": 1
+        },
+        {
+          "k": 3,
+          "silhouette": 0.23568995925743197,
+          "admissible": false,
+          "min_cluster_size": 1
+        }
+      ],
+      "k_selection_rule": "silhouette-best admissible, k swept 2..3",
+      "channel_columns": [
+        "trend",
+        "seasonal",
+        "spectral_centroid",
+        "level",
+        "dispersion",
+        "horizon_shape_near",
+        "horizon_shape_far",
+        "mase",
+        "flatness"
+      ],
+      "concepts": []
+    },
+    "Sundial/model.layers.8": {
+      "model": "Sundial",
+      "layer": "model.layers.8",
+      "n_candidates": 24,
+      "n_causal": 17,
+      "n_dropped_no_cleared_channel": 5,
+      "n_dropped_not_scorable": 2,
+      "n_dropped_all_unscored": 0,
+      "k": 1,
+      "silhouette": NaN,
+      "non_modular": true,
+      "reason": "no k in 2..5 partitions 17 candidates into clusters of at least 3 members",
+      "k_sweep": [
+        {
+          "k": 2,
+          "silhouette": 0.5868310061024505,
+          "admissible": false,
+          "min_cluster_size": 1
+        },
+        {
+          "k": 3,
+          "silhouette": 0.2656919845157677,
+          "admissible": false,
+          "min_cluster_size": 1
+        },
+        {
+          "k": 4,
+          "silhouette": 0.24553784268464346,
+          "admissible": false,
+          "min_cluster_size": 1
+        },
+        {
+          "k": 5,
+          "silhouette": 0.26098193337546294,
+          "admissible": false,
+          "min_cluster_size": 1
+        }
+      ],
+      "k_selection_rule": "silhouette-best admissible, k swept 2..5",
+      "channel_columns": [
+        "trend",
+        "seasonal",
+        "spectral_centroid",
+        "level",
+        "dispersion",
+        "horizon_shape_near",
+        "horizon_shape_far",
+        "mase",
+        "flatness"
+      ],
+      "concepts": []
+    },
+    "Sundial/model.layers.9": {
+      "model": "Sundial",
+      "layer": "model.layers.9",
+      "n_candidates": 24,
+      "n_causal": 17,
+      "n_dropped_no_cleared_channel": 6,
+      "n_dropped_not_scorable": 1,
+      "n_dropped_all_unscored": 0,
+      "k": 1,
+      "silhouette": NaN,
+      "non_modular": true,
+      "reason": "no k in 2..5 partitions 17 candidates into clusters of at least 3 members",
+      "k_sweep": [
+        {
+          "k": 2,
+          "silhouette": 0.4418430240464204,
+          "admissible": false,
+          "min_cluster_size": 1
+        },
+        {
+          "k": 3,
+          "silhouette": 0.39112559542342096,
+          "admissible": false,
+          "min_cluster_size": 1
+        },
+        {
+          "k": 4,
+          "silhouette": 0.1450109653521617,
+          "admissible": false,
+          "min_cluster_size": 1
+        },
+        {
+          "k": 5,
+          "silhouette": 0.15663073468428187,
+          "admissible": false,
+          "min_cluster_size": 1
+        }
+      ],
+      "k_selection_rule": "silhouette-best admissible, k swept 2..5",
+      "channel_columns": [
+        "trend",
+        "seasonal",
+        "spectral_centroid",
+        "level",
+        "dispersion",
+        "horizon_shape_near",
+        "horizon_shape_far",
+        "mase",
+        "flatness"
+      ],
+      "concepts": []
+    },
+    "TimesFM/stacked_xf.0": {
+      "model": "TimesFM",
+      "layer": "stacked_xf.0",
+      "n_candidates": 24,
+      "n_causal": 8,
+      "n_dropped_no_cleared_channel": 4,
+      "n_dropped_not_scorable": 12,
+      "n_dropped_all_unscored": 0,
+      "k": 1,
+      "silhouette": NaN,
+      "non_modular": true,
+      "reason": "no k in 2..2 partitions 8 candidates into clusters of at least 3 members",
+      "k_sweep": [
+        {
+          "k": 2,
+          "silhouette": 0.37388018049633964,
+          "admissible": false,
+          "min_cluster_size": 2
+        }
+      ],
+      "k_selection_rule": "silhouette-best admissible, k swept 2..2",
+      "channel_columns": [
+        "trend",
+        "seasonal",
+        "spectral_centroid",
+        "level",
+        "dispersion",
+        "horizon_shape_near",
+        "horizon_shape_far",
+        "mase",
+        "flatness"
+      ],
+      "concepts": []
+    },
+    "TimesFM/stacked_xf.10": {
+      "model": "TimesFM",
+      "layer": "stacked_xf.10",
+      "n_candidates": 24,
+      "n_causal": 4,
+      "n_dropped_no_cleared_channel": 10,
+      "n_dropped_not_scorable": 10,
+      "n_dropped_all_unscored": 0,
+      "k": 1,
+      "silhouette": NaN,
+      "non_modular": true,
+      "reason": "no k in 2..1 partitions 4 candidates into clusters of at least 3 members",
+      "k_sweep": [],
+      "k_selection_rule": "silhouette-best admissible, k swept 2..1",
+      "channel_columns": [
+        "trend",
+        "seasonal",
+        "spectral_centroid",
+        "level",
+        "dispersion",
+        "horizon_shape_near",
+        "horizon_shape_far",
+        "mase",
+        "flatness"
+      ],
+      "concepts": []
+    },
+    "TimesFM/stacked_xf.12": {
+      "model": "TimesFM",
+      "layer": "stacked_xf.12",
+      "n_candidates": 24,
+      "n_causal": 9,
+      "n_dropped_no_cleared_channel": 9,
+      "n_dropped_not_scorable": 6,
+      "n_dropped_all_unscored": 0,
+      "k": 1,
+      "silhouette": NaN,
+      "non_modular": true,
+      "reason": "no k in 2..3 partitions 9 candidates into clusters of at least 3 members",
+      "k_sweep": [
+        {
+          "k": 2,
+          "silhouette": 0.2655497574758763,
+          "admissible": false,
+          "min_cluster_size": 2
+        },
+        {
+          "k": 3,
+          "silhouette": 0.22270524921719728,
+          "admissible": false,
+          "min_cluster_size": 2
+        }
+      ],
+      "k_selection_rule": "silhouette-best admissible, k swept 2..3",
+      "channel_columns": [
+        "trend",
+        "seasonal",
+        "spectral_centroid",
+        "level",
+        "dispersion",
+        "horizon_shape_near",
+        "horizon_shape_far",
+        "mase",
+        "flatness"
+      ],
+      "concepts": []
+    },
+    "TimesFM/stacked_xf.14": {
+      "model": "TimesFM",
+      "layer": "stacked_xf.14",
+      "n_candidates": 24,
+      "n_causal": 4,
+      "n_dropped_no_cleared_channel": 10,
+      "n_dropped_not_scorable": 10,
+      "n_dropped_all_unscored": 0,
+      "k": 1,
+      "silhouette": NaN,
+      "non_modular": true,
+      "reason": "no k in 2..1 partitions 4 candidates into clusters of at least 3 members",
+      "k_sweep": [],
+      "k_selection_rule": "silhouette-best admissible, k swept 2..1",
+      "channel_columns": [
+        "trend",
+        "seasonal",
+        "spectral_centroid",
+        "level",
+        "dispersion",
+        "horizon_shape_near",
+        "horizon_shape_far",
+        "mase",
+        "flatness"
+      ],
+      "concepts": []
+    },
+    "TimesFM/stacked_xf.16": {
+      "model": "TimesFM",
+      "layer": "stacked_xf.16",
+      "n_candidates": 24,
+      "n_causal": 7,
+      "n_dropped_no_cleared_channel": 8,
+      "n_dropped_not_scorable": 9,
+      "n_dropped_all_unscored": 0,
+      "k": 1,
+      "silhouette": NaN,
+      "non_modular": true,
+      "reason": "no k in 2..2 partitions 7 candidates into clusters of at least 3 members",
+      "k_sweep": [
+        {
+          "k": 2,
+          "silhouette": 0.2634747039746748,
+          "admissible": false,
+          "min_cluster_size": 2
+        }
+      ],
+      "k_selection_rule": "silhouette-best admissible, k swept 2..2",
+      "channel_columns": [
+        "trend",
+        "seasonal",
+        "spectral_centroid",
+        "level",
+        "dispersion",
+        "horizon_shape_near",
+        "horizon_shape_far",
+        "mase",
+        "flatness"
+      ],
+      "concepts": []
+    },
+    "TimesFM/stacked_xf.18": {
+      "model": "TimesFM",
+      "layer": "stacked_xf.18",
+      "n_candidates": 24,
+      "n_causal": 2,
+      "n_dropped_no_cleared_channel": 11,
+      "n_dropped_not_scorable": 11,
+      "n_dropped_all_unscored": 0,
+      "k": 1,
+      "silhouette": NaN,
+      "non_modular": true,
+      "reason": "only 2 causal candidate(s) -- fewer than 4, not clustered",
+      "k_sweep": null,
+      "k_selection_rule": "too few candidates",
+      "channel_columns": [
+        "trend",
+        "seasonal",
+        "spectral_centroid",
+        "level",
+        "dispersion",
+        "horizon_shape_near",
+        "horizon_shape_far",
+        "mase",
+        "flatness"
+      ],
+      "concepts": []
+    },
+    "TimesFM/stacked_xf.2": {
+      "model": "TimesFM",
+      "layer": "stacked_xf.2",
+      "n_candidates": 24,
+      "n_causal": 6,
+      "n_dropped_no_cleared_channel": 8,
+      "n_dropped_not_scorable": 10,
+      "n_dropped_all_unscored": 0,
+      "k": 1,
+      "silhouette": NaN,
+      "non_modular": true,
+      "reason": "no k in 2..2 partitions 6 candidates into clusters of at least 3 members",
+      "k_sweep": [
+        {
+          "k": 2,
+          "silhouette": 0.3226361449787079,
+          "admissible": false,
+          "min_cluster_size": 2
+        }
+      ],
+      "k_selection_rule": "silhouette-best admissible, k swept 2..2",
+      "channel_columns": [
+        "trend",
+        "seasonal",
+        "spectral_centroid",
+        "level",
+        "dispersion",
+        "horizon_shape_near",
+        "horizon_shape_far",
+        "mase",
+        "flatness"
+      ],
+      "concepts": []
+    },
+    "TimesFM/stacked_xf.4": {
+      "model": "TimesFM",
+      "layer": "stacked_xf.4",
+      "n_candidates": 24,
+      "n_causal": 7,
+      "n_dropped_no_cleared_channel": 9,
+      "n_dropped_not_scorable": 8,
+      "n_dropped_all_unscored": 0,
+      "k": 1,
+      "silhouette": NaN,
+      "non_modular": true,
+      "reason": "no k in 2..2 partitions 7 candidates into clusters of at least 3 members",
+      "k_sweep": [
+        {
+          "k": 2,
+          "silhouette": 0.27719375973642424,
+          "admissible": false,
+          "min_cluster_size": 1
+        }
+      ],
+      "k_selection_rule": "silhouette-best admissible, k swept 2..2",
+      "channel_columns": [
+        "trend",
+        "seasonal",
+        "spectral_centroid",
+        "level",
+        "dispersion",
+        "horizon_shape_near",
+        "horizon_shape_far",
+        "mase",
+        "flatness"
+      ],
+      "concepts": []
+    },
+    "TimesFM/stacked_xf.6": {
+      "model": "TimesFM",
+      "layer": "stacked_xf.6",
+      "n_candidates": 24,
+      "n_causal": 7,
+      "n_dropped_no_cleared_channel": 8,
+      "n_dropped_not_scorable": 9,
+      "n_dropped_all_unscored": 0,
+      "k": 1,
+      "silhouette": NaN,
+      "non_modular": true,
+      "reason": "no k in 2..2 partitions 7 candidates into clusters of at least 3 members",
+      "k_sweep": [
+        {
+          "k": 2,
+          "silhouette": 0.6359427733338228,
+          "admissible": false,
+          "min_cluster_size": 1
+        }
+      ],
+      "k_selection_rule": "silhouette-best admissible, k swept 2..2",
+      "channel_columns": [
+        "trend",
+        "seasonal",
+        "spectral_centroid",
+        "level",
+        "dispersion",
+        "horizon_shape_near",
+        "horizon_shape_far",
+        "mase",
+        "flatness"
+      ],
+      "concepts": []
+    },
+    "TimesFM/stacked_xf.8": {
+      "model": "TimesFM",
+      "layer": "stacked_xf.8",
+      "n_candidates": 24,
+      "n_causal": 5,
+      "n_dropped_no_cleared_channel": 10,
+      "n_dropped_not_scorable": 9,
+      "n_dropped_all_unscored": 0,
+      "k": 1,
+      "silhouette": NaN,
+      "non_modular": true,
+      "reason": "no k in 2..1 partitions 5 candidates into clusters of at least 3 members",
+      "k_sweep": [],
+      "k_selection_rule": "silhouette-best admissible, k swept 2..1",
+      "channel_columns": [
+        "trend",
+        "seasonal",
+        "spectral_centroid",
+        "level",
+        "dispersion",
+        "horizon_shape_near",
+        "horizon_shape_far",
+        "mase",
+        "flatness"
+      ],
+      "concepts": []
+    }
+  }
+}

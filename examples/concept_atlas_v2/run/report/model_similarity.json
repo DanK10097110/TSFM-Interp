@@ -1,0 +1,1380 @@
+{
+  "schema_version": 1,
+  "models": [
+    "TimesFM",
+    "Chronos-2",
+    "Sundial",
+    "Chronos-Bolt"
+  ],
+  "pairs": [
+    {
+      "model_a": "TimesFM",
+      "model_b": "Chronos-2",
+      "key": "TimesFM|Chronos-2"
+    },
+    {
+      "model_a": "TimesFM",
+      "model_b": "Sundial",
+      "key": "TimesFM|Sundial"
+    },
+    {
+      "model_a": "TimesFM",
+      "model_b": "Chronos-Bolt",
+      "key": "TimesFM|Chronos-Bolt"
+    },
+    {
+      "model_a": "Chronos-2",
+      "model_b": "Sundial",
+      "key": "Chronos-2|Sundial"
+    },
+    {
+      "model_a": "Chronos-2",
+      "model_b": "Chronos-Bolt",
+      "key": "Chronos-2|Chronos-Bolt"
+    },
+    {
+      "model_a": "Sundial",
+      "model_b": "Chronos-Bolt",
+      "key": "Sundial|Chronos-Bolt"
+    }
+  ],
+  "metrics": {
+    "error_agreement": {
+      "label": "Error agreement",
+      "family": "behavioral",
+      "what_it_measures": "Whether the two models make similar per-series forecast errors (Spearman correlation of log MASE across series).",
+      "evidence_class": "behavioral",
+      "higher_means": "more similar",
+      "reference_text": "Every pair's raw agreement tends to run high because series difficulty dominates MASE for every model; read the DIFFERENCES between pairs, and the partial correlation controlling for a model-free difficulty covariate (detail.partial), rather than the raw value alone.",
+      "pairs": {
+        "TimesFM|Chronos-2": {
+          "value": 0.9473193473193473,
+          "ci": [
+            0.9339468194491619,
+            0.9589702062228074
+          ],
+          "reference": null,
+          "evidence_class": "behavioral",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "n_series": 936,
+            "partial": {
+              "status": "measured",
+              "value": 0.8856454230549075,
+              "ci": [
+                0.855990500654889,
+                0.9109885225114616
+              ],
+              "n_series": 936
+            }
+          }
+        },
+        "TimesFM|Sundial": {
+          "value": 0.886127733776676,
+          "ci": [
+            0.8609715517977401,
+            0.9085685288308142
+          ],
+          "reference": null,
+          "evidence_class": "behavioral",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "n_series": 936,
+            "partial": {
+              "status": "measured",
+              "value": 0.7289344512745728,
+              "ci": [
+                0.6757199450428556,
+                0.7772694473947626
+              ],
+              "n_series": 936
+            }
+          }
+        },
+        "TimesFM|Chronos-Bolt": {
+          "value": 0.7409042983718105,
+          "ci": [
+            0.69041908805222,
+            0.7874497246296549
+          ],
+          "reference": null,
+          "evidence_class": "behavioral",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "n_series": 936,
+            "partial": {
+              "status": "measured",
+              "value": 0.3729089998526924,
+              "ci": [
+                0.2885066772788824,
+                0.4615299010294847
+              ],
+              "n_series": 936
+            }
+          }
+        },
+        "Chronos-2|Sundial": {
+          "value": 0.8747128904326468,
+          "ci": [
+            0.8491422774253572,
+            0.8982572213382151
+          ],
+          "reference": null,
+          "evidence_class": "behavioral",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "n_series": 936,
+            "partial": {
+              "status": "measured",
+              "value": 0.7075621890100868,
+              "ci": [
+                0.653520226104813,
+                0.7562296091759714
+              ],
+              "n_series": 936
+            }
+          }
+        },
+        "Chronos-2|Chronos-Bolt": {
+          "value": 0.7283828252438963,
+          "ci": [
+            0.6765778105958233,
+            0.7764045129056374
+          ],
+          "reference": null,
+          "evidence_class": "behavioral",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "n_series": 936,
+            "partial": {
+              "status": "measured",
+              "value": 0.3535163142678684,
+              "ci": [
+                0.27250696046228046,
+                0.43746459684464006
+              ],
+              "n_series": 936
+            }
+          }
+        },
+        "Sundial|Chronos-Bolt": {
+          "value": 0.82063297783682,
+          "ci": [
+            0.7846887026020991,
+            0.8523758290730229
+          ],
+          "reference": null,
+          "evidence_class": "behavioral",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "n_series": 936,
+            "partial": {
+              "status": "measured",
+              "value": 0.5000796435193858,
+              "ci": [
+                0.42654768733614873,
+                0.5732870291929666
+              ],
+              "n_series": 936
+            }
+          }
+        }
+      }
+    },
+    "cka_best": {
+      "label": "Best-layer CKA",
+      "family": "geometric",
+      "what_it_measures": "The most similar pair of layers' linear representational geometry: the max linear CKA over every layer-pair between the two models.",
+      "evidence_class": "geometric",
+      "higher_means": "more similar",
+      "reference_text": "A max over many layer pairs is biased upward relative to any single pre-specified pair; read it against the shuffled-series null (reference) and the mean over the whole matrix (detail.mean_cka), never the max alone.",
+      "pairs": {
+        "TimesFM|Chronos-2": {
+          "value": 0.42622295022010803,
+          "ci": [
+            0.4175321884453297,
+            0.4421655163168907
+          ],
+          "reference": {
+            "kind": "null",
+            "value": 0.03728002160787582,
+            "text": "linear CKA at this same layer pair after breaking series correspondence (shuffled-series null)"
+          },
+          "evidence_class": "geometric",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "layer_a": "stacked_xf.4",
+            "layer_b": "encoder.block.7",
+            "rel_depth_a": 0.21052631578947367,
+            "rel_depth_b": 0.6363636363636364,
+            "rel_depth_basis": "l1_meta",
+            "mean_cka": 0.2780853807926178,
+            "matrix_shape": [
+              10,
+              12
+            ]
+          }
+        },
+        "TimesFM|Sundial": {
+          "value": 0.4115135669708252,
+          "ci": [
+            0.3990172579884529,
+            0.42783116549253464
+          ],
+          "reference": {
+            "kind": "null",
+            "value": 0.04644367545843124,
+            "text": "linear CKA at this same layer pair after breaking series correspondence (shuffled-series null)"
+          },
+          "evidence_class": "geometric",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "layer_a": "stacked_xf.4",
+            "layer_b": "model.layers.2",
+            "rel_depth_a": 0.21052631578947367,
+            "rel_depth_b": 0.18181818181818182,
+            "rel_depth_basis": "l1_meta",
+            "mean_cka": 0.24853792786598206,
+            "matrix_shape": [
+              10,
+              12
+            ]
+          }
+        },
+        "TimesFM|Chronos-Bolt": {
+          "value": 0.3811757266521454,
+          "ci": [
+            0.3705017097294331,
+            0.39692438691854476
+          ],
+          "reference": {
+            "kind": "null",
+            "value": 0.011675349809229374,
+            "text": "linear CKA at this same layer pair after breaking series correspondence (shuffled-series null)"
+          },
+          "evidence_class": "geometric",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "layer_a": "stacked_xf.4",
+            "layer_b": "encoder.block.2",
+            "rel_depth_a": 0.21052631578947367,
+            "rel_depth_b": 0.18181818181818182,
+            "rel_depth_basis": "l1_meta",
+            "mean_cka": 0.2390972524881363,
+            "matrix_shape": [
+              10,
+              6
+            ]
+          }
+        },
+        "Chronos-2|Sundial": {
+          "value": 0.913385272026062,
+          "ci": [
+            0.9068360567092896,
+            0.9194915071129799
+          ],
+          "reference": {
+            "kind": "null",
+            "value": 0.0014424389228224754,
+            "text": "linear CKA at this same layer pair after breaking series correspondence (shuffled-series null)"
+          },
+          "evidence_class": "geometric",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "layer_a": "encoder.block.0",
+            "layer_b": "model.layers.0",
+            "rel_depth_a": 0.0,
+            "rel_depth_b": 0.0,
+            "rel_depth_basis": "l1_meta",
+            "mean_cka": 0.40737900137901306,
+            "matrix_shape": [
+              12,
+              12
+            ]
+          }
+        },
+        "Chronos-2|Chronos-Bolt": {
+          "value": 0.9086330533027649,
+          "ci": [
+            0.8999199241399765,
+            0.9158120438456535
+          ],
+          "reference": {
+            "kind": "null",
+            "value": 0.0009911330067552625,
+            "text": "linear CKA at this same layer pair after breaking series correspondence (shuffled-series null)"
+          },
+          "evidence_class": "geometric",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "layer_a": "encoder.block.0",
+            "layer_b": "encoder.block.0",
+            "rel_depth_a": 0.0,
+            "rel_depth_b": 0.0,
+            "rel_depth_basis": "l1_meta",
+            "mean_cka": 0.6525829434394836,
+            "matrix_shape": [
+              12,
+              6
+            ]
+          }
+        },
+        "Sundial|Chronos-Bolt": {
+          "value": 0.928092360496521,
+          "ci": [
+            0.9236184224486351,
+            0.9324037358164787
+          ],
+          "reference": {
+            "kind": "null",
+            "value": 0.0008157313684932887,
+            "text": "linear CKA at this same layer pair after breaking series correspondence (shuffled-series null)"
+          },
+          "evidence_class": "geometric",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "layer_a": "model.layers.0",
+            "layer_b": "encoder.block.0",
+            "rel_depth_a": 0.0,
+            "rel_depth_b": 0.0,
+            "rel_depth_basis": "l1_meta",
+            "mean_cka": 0.4236181676387787,
+            "matrix_shape": [
+              12,
+              6
+            ]
+          }
+        }
+      }
+    },
+    "stitching_gain": {
+      "label": "Stitching gain",
+      "family": "linear",
+      "what_it_measures": "How much of one model's activations a linear probe trained on the other model's activations explains, beyond an input-feature baseline (both directions, averaged).",
+      "evidence_class": "linear-translatable",
+      "higher_means": "more similar",
+      "reference_text": "0 = no better than the input-feature baseline (CLAUDE.md invariant 3); a positive gain is linear-translatable structure, never causal evidence on its own.",
+      "pairs": {
+        "TimesFM|Chronos-2": {
+          "value": 0.6585497856140137,
+          "ci": null,
+          "reference": {
+            "kind": "baseline",
+            "value": 0.0,
+            "text": "0 = no better than the input-feature baseline (CLAUDE.md invariant 3)"
+          },
+          "evidence_class": "linear-translatable",
+          "status": "measured",
+          "reason": "CI is reported per direction in detail, not for the two-direction mean",
+          "detail": {
+            "TimesFM->Chronos-2": {
+              "best_gain": 0.706548810005188,
+              "gain_ci": [
+                0.6830580191894811,
+                0.7254253564421886
+              ],
+              "src_layer": "stacked_xf.2",
+              "dst_layer": "encoder.block.0"
+            },
+            "Chronos-2->TimesFM": {
+              "best_gain": 0.6105507612228394,
+              "gain_ci": [
+                0.5924071662104433,
+                0.6303107899098103
+              ],
+              "src_layer": "encoder.block.1",
+              "dst_layer": "stacked_xf.0"
+            }
+          }
+        },
+        "TimesFM|Sundial": {
+          "value": 0.6453210115432739,
+          "ci": null,
+          "reference": {
+            "kind": "baseline",
+            "value": 0.0,
+            "text": "0 = no better than the input-feature baseline (CLAUDE.md invariant 3)"
+          },
+          "evidence_class": "linear-translatable",
+          "status": "measured",
+          "reason": "CI is reported per direction in detail, not for the two-direction mean",
+          "detail": {
+            "TimesFM->Sundial": {
+              "best_gain": 0.6814255118370056,
+              "gain_ci": [
+                0.6681235284628513,
+                0.6952737832555749
+              ],
+              "src_layer": "stacked_xf.4",
+              "dst_layer": "model.layers.4"
+            },
+            "Sundial->TimesFM": {
+              "best_gain": 0.6092165112495422,
+              "gain_ci": [
+                0.5794036920125073,
+                0.6381285786820935
+              ],
+              "src_layer": "model.layers.10",
+              "dst_layer": "stacked_xf.18"
+            }
+          }
+        },
+        "TimesFM|Chronos-Bolt": {
+          "value": 0.6144498884677887,
+          "ci": null,
+          "reference": {
+            "kind": "baseline",
+            "value": 0.0,
+            "text": "0 = no better than the input-feature baseline (CLAUDE.md invariant 3)"
+          },
+          "evidence_class": "linear-translatable",
+          "status": "measured",
+          "reason": "CI is reported per direction in detail, not for the two-direction mean",
+          "detail": {
+            "TimesFM->Chronos-Bolt": {
+              "best_gain": 0.6490959525108337,
+              "gain_ci": [
+                0.6256204433950077,
+                0.6726791181952444
+              ],
+              "src_layer": "stacked_xf.2",
+              "dst_layer": "encoder.block.0"
+            },
+            "Chronos-Bolt->TimesFM": {
+              "best_gain": 0.5798038244247437,
+              "gain_ci": [
+                0.5592185009659084,
+                0.6018288794819787
+              ],
+              "src_layer": "encoder.block.2",
+              "dst_layer": "stacked_xf.0"
+            }
+          }
+        },
+        "Chronos-2|Sundial": {
+          "value": 0.9011796116828918,
+          "ci": null,
+          "reference": {
+            "kind": "baseline",
+            "value": 0.0,
+            "text": "0 = no better than the input-feature baseline (CLAUDE.md invariant 3)"
+          },
+          "evidence_class": "linear-translatable",
+          "status": "measured",
+          "reason": "CI is reported per direction in detail, not for the two-direction mean",
+          "detail": {
+            "Chronos-2->Sundial": {
+              "best_gain": 0.8912531137466431,
+              "gain_ci": [
+                0.8801540307393987,
+                0.9046241742922562
+              ],
+              "src_layer": "encoder.block.0",
+              "dst_layer": "model.layers.0"
+            },
+            "Sundial->Chronos-2": {
+              "best_gain": 0.9111061096191406,
+              "gain_ci": [
+                0.9008850000144509,
+                0.9197829700615733
+              ],
+              "src_layer": "model.layers.1",
+              "dst_layer": "encoder.block.0"
+            }
+          }
+        },
+        "Chronos-2|Chronos-Bolt": {
+          "value": 0.9004030525684357,
+          "ci": null,
+          "reference": {
+            "kind": "baseline",
+            "value": 0.0,
+            "text": "0 = no better than the input-feature baseline (CLAUDE.md invariant 3)"
+          },
+          "evidence_class": "linear-translatable",
+          "status": "measured",
+          "reason": "CI is reported per direction in detail, not for the two-direction mean",
+          "detail": {
+            "Chronos-2->Chronos-Bolt": {
+              "best_gain": 0.8926326632499695,
+              "gain_ci": [
+                0.8788916894785452,
+                0.9064519455591408
+              ],
+              "src_layer": "encoder.block.0",
+              "dst_layer": "encoder.block.0"
+            },
+            "Chronos-Bolt->Chronos-2": {
+              "best_gain": 0.9081734418869019,
+              "gain_ci": [
+                0.8982053446418875,
+                0.9167738171860892
+              ],
+              "src_layer": "encoder.block.1",
+              "dst_layer": "encoder.block.0"
+            }
+          }
+        },
+        "Sundial|Chronos-Bolt": {
+          "value": 0.8717306554317474,
+          "ci": null,
+          "reference": {
+            "kind": "baseline",
+            "value": 0.0,
+            "text": "0 = no better than the input-feature baseline (CLAUDE.md invariant 3)"
+          },
+          "evidence_class": "linear-translatable",
+          "status": "measured",
+          "reason": "CI is reported per direction in detail, not for the two-direction mean",
+          "detail": {
+            "Sundial->Chronos-Bolt": {
+              "best_gain": 0.8782976865768433,
+              "gain_ci": [
+                0.8636980271581347,
+                0.8929994513628526
+              ],
+              "src_layer": "model.layers.1",
+              "dst_layer": "encoder.block.0"
+            },
+            "Chronos-Bolt->Sundial": {
+              "best_gain": 0.8651636242866516,
+              "gain_ci": [
+                0.8535828577984171,
+                0.8778961837763559
+              ],
+              "src_layer": "encoder.block.0",
+              "dst_layer": "model.layers.0"
+            }
+          }
+        }
+      }
+    },
+    "cluster_ami": {
+      "label": "Cluster agreement (AMI)",
+      "family": "clustering",
+      "what_it_measures": "Whether the two models' activation clusters group the same series together (adjusted mutual information).",
+      "evidence_class": "descriptive",
+      "higher_means": "more similar",
+      "reference_text": "0 = chance agreement (AMI is already chance-adjusted).",
+      "pairs": {
+        "TimesFM|Chronos-2": {
+          "value": 0.601199869522107,
+          "ci": [
+            0.5681925058533831,
+            0.6326379985469921
+          ],
+          "reference": {
+            "kind": "chance",
+            "value": 0.0,
+            "text": "0 = chance agreement (AMI is already chance-adjusted)"
+          },
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "n_rows_a": 5,
+            "n_cols_b": 5
+          }
+        },
+        "TimesFM|Sundial": {
+          "value": 0.6837893109928884,
+          "ci": [
+            0.6498256811429383,
+            0.7185473138003062
+          ],
+          "reference": {
+            "kind": "chance",
+            "value": 0.0,
+            "text": "0 = chance agreement (AMI is already chance-adjusted)"
+          },
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "n_rows_a": 5,
+            "n_cols_b": 5
+          }
+        },
+        "TimesFM|Chronos-Bolt": {
+          "value": 0.42171078436961235,
+          "ci": [
+            0.4012986416291113,
+            0.46137423140228206
+          ],
+          "reference": {
+            "kind": "chance",
+            "value": 0.0,
+            "text": "0 = chance agreement (AMI is already chance-adjusted)"
+          },
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "n_rows_a": 5,
+            "n_cols_b": 5
+          }
+        },
+        "Chronos-2|Sundial": {
+          "value": 0.5888700919310486,
+          "ci": [
+            0.55678792427787,
+            0.6246840253550575
+          ],
+          "reference": {
+            "kind": "chance",
+            "value": 0.0,
+            "text": "0 = chance agreement (AMI is already chance-adjusted)"
+          },
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "n_rows_a": 5,
+            "n_cols_b": 5
+          }
+        },
+        "Chronos-2|Chronos-Bolt": {
+          "value": 0.4523983611609728,
+          "ci": [
+            0.4295926265424638,
+            0.49539569688356616
+          ],
+          "reference": {
+            "kind": "chance",
+            "value": 0.0,
+            "text": "0 = chance agreement (AMI is already chance-adjusted)"
+          },
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "n_rows_a": 5,
+            "n_cols_b": 5
+          }
+        },
+        "Sundial|Chronos-Bolt": {
+          "value": 0.5097216542414532,
+          "ci": [
+            0.48263298772838975,
+            0.5491906088727683
+          ],
+          "reference": {
+            "kind": "chance",
+            "value": 0.0,
+            "text": "0 = chance agreement (AMI is already chance-adjusted)"
+          },
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "n_rows_a": 5,
+            "n_cols_b": 5
+          }
+        }
+      }
+    },
+    "atlas_co_membership": {
+      "label": "Atlas co-membership",
+      "family": "sae_effect",
+      "what_it_measures": "How often the two models' causally-ablated SAE features land in the same cross-model concept (shared causal effect profile), versus a model-label permutation null.",
+      "evidence_class": "causal within-model",
+      "higher_means": "more similar",
+      "reference_text": "1 = exactly the co-membership rate expected under a model-label permutation that preserves each model's own row count; the two-tailed p-values in detail say whether the observed count is an outlier in either direction.",
+      "pairs": {
+        "TimesFM|Chronos-2": {
+          "value": 0.37142503404729477,
+          "ci": null,
+          "reference": {
+            "kind": "null",
+            "value": 8.077,
+            "text": "expected co-membership count under a model-label permutation preserving each model's own row count (matches sae/concept_atlas.py's cross-model null)"
+          },
+          "evidence_class": "causal within-model",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "observed": 3,
+            "expected": 8.077,
+            "p_above": 0.997002997002997,
+            "p_below": 0.011988011988011988,
+            "n_null": 1000,
+            "n_concepts": 27,
+            "value_basis": "ratio"
+          }
+        },
+        "TimesFM|Sundial": {
+          "value": 0.3975352812562115,
+          "ci": null,
+          "reference": {
+            "kind": "null",
+            "value": 10.062,
+            "text": "expected co-membership count under a model-label permutation preserving each model's own row count (matches sae/concept_atlas.py's cross-model null)"
+          },
+          "evidence_class": "causal within-model",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "observed": 4,
+            "expected": 10.062,
+            "p_above": 0.998001998001998,
+            "p_below": 0.00999000999000999,
+            "n_null": 1000,
+            "n_concepts": 27,
+            "value_basis": "ratio"
+          }
+        },
+        "TimesFM|Chronos-Bolt": {
+          "value": 0.3281916639317361,
+          "ci": null,
+          "reference": {
+            "kind": "null",
+            "value": 3.047,
+            "text": "expected co-membership count under a model-label permutation preserving each model's own row count (matches sae/concept_atlas.py's cross-model null)"
+          },
+          "evidence_class": "causal within-model",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "observed": 1,
+            "expected": 3.047,
+            "p_above": 0.965034965034965,
+            "p_below": 0.16183816183816183,
+            "n_null": 1000,
+            "n_concepts": 27,
+            "value_basis": "ratio"
+          }
+        },
+        "Chronos-2|Sundial": {
+          "value": 0.5876303804906713,
+          "ci": null,
+          "reference": {
+            "kind": "null",
+            "value": 13.614,
+            "text": "expected co-membership count under a model-label permutation preserving each model's own row count (matches sae/concept_atlas.py's cross-model null)"
+          },
+          "evidence_class": "causal within-model",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "observed": 8,
+            "expected": 13.614,
+            "p_above": 0.9920079920079921,
+            "p_below": 0.014985014985014986,
+            "n_null": 1000,
+            "n_concepts": 27,
+            "value_basis": "ratio"
+          }
+        },
+        "Chronos-2|Chronos-Bolt": {
+          "value": 0.23640661938534277,
+          "ci": null,
+          "reference": {
+            "kind": "null",
+            "value": 4.23,
+            "text": "expected co-membership count under a model-label permutation preserving each model's own row count (matches sae/concept_atlas.py's cross-model null)"
+          },
+          "evidence_class": "causal within-model",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "observed": 1,
+            "expected": 4.23,
+            "p_above": 0.994005994005994,
+            "p_below": 0.04795204795204795,
+            "n_null": 1000,
+            "n_concepts": 27,
+            "value_basis": "ratio"
+          }
+        },
+        "Sundial|Chronos-Bolt": {
+          "value": 0.19204916458613405,
+          "ci": null,
+          "reference": {
+            "kind": "null",
+            "value": 5.207,
+            "text": "expected co-membership count under a model-label permutation preserving each model's own row count (matches sae/concept_atlas.py's cross-model null)"
+          },
+          "evidence_class": "causal within-model",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "observed": 1,
+            "expected": 5.207,
+            "p_above": 0.999000999000999,
+            "p_below": 0.014985014985014986,
+            "n_null": 1000,
+            "n_concepts": 27,
+            "value_basis": "ratio"
+          }
+        }
+      }
+    },
+    "input_transfer": {
+      "label": "Input transfer",
+      "family": "sae_input",
+      "what_it_measures": "Whether an atlas concept's top-firing series in one model are also grouped by the OTHER model's own SAE dictionary (shared input selectivity, both directions).",
+      "evidence_class": "descriptive",
+      "higher_means": "more similar",
+      "reference_text": "R_rel = 1 means cross-model transfer matches each model's own within-model (replicate-SAE) reproducibility ceiling; below 1 means cross-model transfer is weaker than a model's own reproducibility already allows.",
+      "pairs": {
+        "TimesFM|Chronos-2": {
+          "value": 0.7873020106178814,
+          "ci": null,
+          "reference": {
+            "kind": "ceiling",
+            "value": 1.0,
+            "text": "R_rel = 1 means cross-model transfer matches the within-model replicate-SAE reproducibility ceiling"
+          },
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": "value = mean of R_rel across the direction(s) tested",
+          "detail": {
+            "TimesFM->Chronos-2": {
+              "n_tests": 119,
+              "R_unc": 0.8403361344537815,
+              "R_fdr": 0.8235294117647058,
+              "R_rel": 0.9093191721214355,
+              "ceiling_src": 0.9411764705882353,
+              "ceiling_dst": 0.9074074074074074
+            },
+            "Chronos-2->TimesFM": {
+              "n_tests": 270,
+              "R_unc": 0.6148148148148148,
+              "R_fdr": 0.5703703703703704,
+              "R_rel": 0.6652848491143274,
+              "ceiling_src": 0.9074074074074074,
+              "ceiling_dst": 0.9411764705882353
+            },
+            "value_basis": "R_rel"
+          }
+        },
+        "TimesFM|Sundial": {
+          "value": 0.882975633581647,
+          "ci": null,
+          "reference": {
+            "kind": "ceiling",
+            "value": 1.0,
+            "text": "R_rel = 1 means cross-model transfer matches the within-model replicate-SAE reproducibility ceiling"
+          },
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": "value = mean of R_rel across the direction(s) tested",
+          "detail": {
+            "TimesFM->Sundial": {
+              "n_tests": 153,
+              "R_unc": 0.8823529411764706,
+              "R_fdr": 0.8758169934640523,
+              "R_rel": 0.9261982170436855,
+              "ceiling_src": 0.9411764705882353,
+              "ceiling_dst": 0.9642857142857143
+            },
+            "Sundial->TimesFM": {
+              "n_tests": 280,
+              "R_unc": 0.8,
+              "R_fdr": 0.7821428571428571,
+              "R_rel": 0.8397530501196083,
+              "ceiling_src": 0.9642857142857143,
+              "ceiling_dst": 0.9411764705882353
+            },
+            "value_basis": "R_rel"
+          }
+        },
+        "TimesFM|Chronos-Bolt": {
+          "value": 0.7768719239445041,
+          "ci": null,
+          "reference": {
+            "kind": "ceiling",
+            "value": 1.0,
+            "text": "R_rel = 1 means cross-model transfer matches the within-model replicate-SAE reproducibility ceiling"
+          },
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": "value = mean of R_rel across the direction(s) tested",
+          "detail": {
+            "TimesFM->Chronos-Bolt": {
+              "n_tests": 51,
+              "R_unc": 0.8823529411764706,
+              "R_fdr": 0.8627450980392157,
+              "R_rel": 0.9095085938862486,
+              "ceiling_src": 0.9411764705882353,
+              "ceiling_dst": 1.0
+            },
+            "Chronos-Bolt->TimesFM": {
+              "n_tests": 40,
+              "R_unc": 0.625,
+              "R_fdr": 0.625,
+              "R_rel": 0.6442352540027595,
+              "ceiling_src": 1.0,
+              "ceiling_dst": 0.9411764705882353
+            },
+            "value_basis": "R_rel"
+          }
+        },
+        "Chronos-2|Sundial": {
+          "value": 0.8663376294695426,
+          "ci": null,
+          "reference": {
+            "kind": "ceiling",
+            "value": 1.0,
+            "text": "R_rel = 1 means cross-model transfer matches the within-model replicate-SAE reproducibility ceiling"
+          },
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": "value = mean of R_rel across the direction(s) tested",
+          "detail": {
+            "Chronos-2->Sundial": {
+              "n_tests": 243,
+              "R_unc": 0.7942386831275721,
+              "R_fdr": 0.7818930041152263,
+              "R_rel": 0.8490768673102537,
+              "ceiling_src": 0.9074074074074074,
+              "ceiling_dst": 0.9642857142857143
+            },
+            "Sundial->Chronos-2": {
+              "n_tests": 196,
+              "R_unc": 0.826530612244898,
+              "R_fdr": 0.8112244897959183,
+              "R_rel": 0.8835983916288317,
+              "ceiling_src": 0.9642857142857143,
+              "ceiling_dst": 0.9074074074074074
+            },
+            "value_basis": "R_rel"
+          }
+        },
+        "Chronos-2|Chronos-Bolt": {
+          "value": 0.8718091327536122,
+          "ci": null,
+          "reference": {
+            "kind": "ceiling",
+            "value": 1.0,
+            "text": "R_rel = 1 means cross-model transfer matches the within-model replicate-SAE reproducibility ceiling"
+          },
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": "value = mean of R_rel across the direction(s) tested",
+          "detail": {
+            "Chronos-2->Chronos-Bolt": {
+              "n_tests": 81,
+              "R_unc": 0.8395061728395061,
+              "R_fdr": 0.8271604938271605,
+              "R_rel": 0.8812978968743709,
+              "ceiling_src": 0.9074074074074074,
+              "ceiling_dst": 1.0
+            },
+            "Chronos-Bolt->Chronos-2": {
+              "n_tests": 28,
+              "R_unc": 0.8214285714285714,
+              "R_fdr": 0.8214285714285714,
+              "R_rel": 0.8623203686328534,
+              "ceiling_src": 1.0,
+              "ceiling_dst": 0.9074074074074074
+            },
+            "value_basis": "R_rel"
+          }
+        },
+        "Sundial|Chronos-Bolt": {
+          "value": 0.9496519297307076,
+          "ci": null,
+          "reference": {
+            "kind": "ceiling",
+            "value": 1.0,
+            "text": "R_rel = 1 means cross-model transfer matches the within-model replicate-SAE reproducibility ceiling"
+          },
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": "value = mean of R_rel across the direction(s) tested",
+          "detail": {
+            "Sundial->Chronos-Bolt": {
+              "n_tests": 84,
+              "R_unc": 0.8928571428571429,
+              "R_fdr": 0.8928571428571429,
+              "R_rel": 0.909241209316635,
+              "ceiling_src": 0.9642857142857143,
+              "ceiling_dst": 1.0
+            },
+            "Chronos-Bolt->Sundial": {
+              "n_tests": 36,
+              "R_unc": 0.9722222222222222,
+              "R_fdr": 0.9722222222222222,
+              "R_rel": 0.9900626501447802,
+              "ceiling_src": 1.0,
+              "ceiling_dst": 0.9642857142857143
+            },
+            "value_basis": "R_rel"
+          }
+        }
+      }
+    },
+    "shared_concepts": {
+      "label": "Shared concepts",
+      "family": "sae_combined",
+      "what_it_measures": "Count of cross-model concepts classed as sharing BOTH causal effect and input selectivity between the two models.",
+      "evidence_class": "descriptive",
+      "higher_means": "more similar",
+      "reference_text": "A raw count, not a rate; read alongside the total number of atlas concepts available in this run.",
+      "pairs": {
+        "TimesFM|Chronos-2": {
+          "value": 0.0,
+          "ci": null,
+          "reference": null,
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "concepts": [],
+            "n_total_concepts": 27
+          }
+        },
+        "TimesFM|Sundial": {
+          "value": 1.0,
+          "ci": null,
+          "reference": null,
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "concepts": [
+              10
+            ],
+            "n_total_concepts": 27
+          }
+        },
+        "TimesFM|Chronos-Bolt": {
+          "value": 1.0,
+          "ci": null,
+          "reference": null,
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "concepts": [
+              18
+            ],
+            "n_total_concepts": 27
+          }
+        },
+        "Chronos-2|Sundial": {
+          "value": 1.0,
+          "ci": null,
+          "reference": null,
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "concepts": [
+              9
+            ],
+            "n_total_concepts": 27
+          }
+        },
+        "Chronos-2|Chronos-Bolt": {
+          "value": 0.0,
+          "ci": null,
+          "reference": null,
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "concepts": [],
+            "n_total_concepts": 27
+          }
+        },
+        "Sundial|Chronos-Bolt": {
+          "value": 0.0,
+          "ci": null,
+          "reference": null,
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "concepts": [],
+            "n_total_concepts": 27
+          }
+        }
+      }
+    }
+  },
+  "consensus": {
+    "rank_table": {
+      "error_agreement": {
+        "TimesFM|Chronos-2": 1.0,
+        "TimesFM|Sundial": 2.0,
+        "TimesFM|Chronos-Bolt": 5.0,
+        "Chronos-2|Sundial": 3.0,
+        "Chronos-2|Chronos-Bolt": 6.0,
+        "Sundial|Chronos-Bolt": 4.0
+      },
+      "cka_best": {
+        "TimesFM|Chronos-2": 4.0,
+        "TimesFM|Sundial": 5.0,
+        "TimesFM|Chronos-Bolt": 6.0,
+        "Chronos-2|Sundial": 2.0,
+        "Chronos-2|Chronos-Bolt": 3.0,
+        "Sundial|Chronos-Bolt": 1.0
+      },
+      "stitching_gain": {
+        "TimesFM|Chronos-2": 4.0,
+        "TimesFM|Sundial": 5.0,
+        "TimesFM|Chronos-Bolt": 6.0,
+        "Chronos-2|Sundial": 1.0,
+        "Chronos-2|Chronos-Bolt": 2.0,
+        "Sundial|Chronos-Bolt": 3.0
+      },
+      "cluster_ami": {
+        "TimesFM|Chronos-2": 2.0,
+        "TimesFM|Sundial": 1.0,
+        "TimesFM|Chronos-Bolt": 6.0,
+        "Chronos-2|Sundial": 3.0,
+        "Chronos-2|Chronos-Bolt": 5.0,
+        "Sundial|Chronos-Bolt": 4.0
+      },
+      "atlas_co_membership": {
+        "TimesFM|Chronos-2": 3.0,
+        "TimesFM|Sundial": 2.0,
+        "TimesFM|Chronos-Bolt": 4.0,
+        "Chronos-2|Sundial": 1.0,
+        "Chronos-2|Chronos-Bolt": 5.0,
+        "Sundial|Chronos-Bolt": 6.0
+      },
+      "input_transfer": {
+        "TimesFM|Chronos-2": 5.0,
+        "TimesFM|Sundial": 2.0,
+        "TimesFM|Chronos-Bolt": 6.0,
+        "Chronos-2|Sundial": 4.0,
+        "Chronos-2|Chronos-Bolt": 3.0,
+        "Sundial|Chronos-Bolt": 1.0
+      },
+      "shared_concepts": {
+        "TimesFM|Chronos-2": 5.0,
+        "TimesFM|Sundial": 2.0,
+        "TimesFM|Chronos-Bolt": 2.0,
+        "Chronos-2|Sundial": 2.0,
+        "Chronos-2|Chronos-Bolt": 5.0,
+        "Sundial|Chronos-Bolt": 5.0
+      }
+    },
+    "extremes": {
+      "error_agreement": {
+        "most_similar": "TimesFM|Chronos-2",
+        "most_similar_value": 0.9473193473193473,
+        "least_similar": "Chronos-2|Chronos-Bolt",
+        "least_similar_value": 0.7283828252438963
+      },
+      "cka_best": {
+        "most_similar": "Sundial|Chronos-Bolt",
+        "most_similar_value": 0.928092360496521,
+        "least_similar": "TimesFM|Chronos-Bolt",
+        "least_similar_value": 0.3811757266521454
+      },
+      "stitching_gain": {
+        "most_similar": "Chronos-2|Sundial",
+        "most_similar_value": 0.9011796116828918,
+        "least_similar": "TimesFM|Chronos-Bolt",
+        "least_similar_value": 0.6144498884677887
+      },
+      "cluster_ami": {
+        "most_similar": "TimesFM|Sundial",
+        "most_similar_value": 0.6837893109928884,
+        "least_similar": "TimesFM|Chronos-Bolt",
+        "least_similar_value": 0.42171078436961235
+      },
+      "atlas_co_membership": {
+        "most_similar": "Chronos-2|Sundial",
+        "most_similar_value": 0.5876303804906713,
+        "least_similar": "Sundial|Chronos-Bolt",
+        "least_similar_value": 0.19204916458613405
+      },
+      "input_transfer": {
+        "most_similar": "Sundial|Chronos-Bolt",
+        "most_similar_value": 0.9496519297307076,
+        "least_similar": "TimesFM|Chronos-Bolt",
+        "least_similar_value": 0.7768719239445041
+      },
+      "shared_concepts": {
+        "most_similar": "TimesFM|Sundial",
+        "most_similar_value": 1.0,
+        "least_similar": "TimesFM|Chronos-2",
+        "least_similar_value": 0.0
+      }
+    },
+    "kendall_w_all": {
+      "w": 0.2814948764315853,
+      "p": 0.06996501749125437,
+      "n_metrics": 7,
+      "n_pairs": 6,
+      "metrics_used": [
+        "atlas_co_membership",
+        "cka_best",
+        "cluster_ami",
+        "error_agreement",
+        "input_transfer",
+        "shared_concepts",
+        "stitching_gain"
+      ],
+      "n_perm": 2000
+    },
+    "kendall_w_representation": {
+      "w": 0.5301587301587302,
+      "p": 0.13793103448275862,
+      "n_metrics": 3,
+      "n_pairs": 6,
+      "metrics_used": [
+        "cka_best",
+        "cluster_ami",
+        "stitching_gain"
+      ],
+      "n_perm": 2000
+    },
+    "per_pair": {
+      "TimesFM|Chronos-2": {
+        "median_rank": 4.0,
+        "rank_range": 4.0,
+        "n_metrics": 7
+      },
+      "TimesFM|Sundial": {
+        "median_rank": 2.0,
+        "rank_range": 4.0,
+        "n_metrics": 7
+      },
+      "TimesFM|Chronos-Bolt": {
+        "median_rank": 6.0,
+        "rank_range": 4.0,
+        "n_metrics": 7
+      },
+      "Chronos-2|Sundial": {
+        "median_rank": 2.0,
+        "rank_range": 3.0,
+        "n_metrics": 7
+      },
+      "Chronos-2|Chronos-Bolt": {
+        "median_rank": 5.0,
+        "rank_range": 4.0,
+        "n_metrics": 7
+      },
+      "Sundial|Chronos-Bolt": {
+        "median_rank": 4.0,
+        "rank_range": 5.0,
+        "n_metrics": 7
+      }
+    },
+    "note": "With only a handful of model pairs, Kendall's W has low power: a non-significant p does NOT mean the metrics agree, and a significant one should still be read alongside the per-metric rank table above, not instead of it."
+  },
+  "contrasts": [
+    {
+      "pair": "Sundial|Chronos-Bolt",
+      "metric_hi": "cka_best",
+      "rank_hi": 1.0,
+      "metric_lo": "atlas_co_membership",
+      "rank_lo": 6.0,
+      "gap": 5.0
+    },
+    {
+      "pair": "Sundial|Chronos-Bolt",
+      "metric_hi": "input_transfer",
+      "rank_hi": 1.0,
+      "metric_lo": "atlas_co_membership",
+      "rank_lo": 6.0,
+      "gap": 5.0
+    },
+    {
+      "pair": "Chronos-2|Chronos-Bolt",
+      "metric_hi": "stitching_gain",
+      "rank_hi": 2.0,
+      "metric_lo": "error_agreement",
+      "rank_lo": 6.0,
+      "gap": 4.0
+    },
+    {
+      "pair": "Sundial|Chronos-Bolt",
+      "metric_hi": "cka_best",
+      "rank_hi": 1.0,
+      "metric_lo": "shared_concepts",
+      "rank_lo": 5.0,
+      "gap": 4.0
+    },
+    {
+      "pair": "Sundial|Chronos-Bolt",
+      "metric_hi": "input_transfer",
+      "rank_hi": 1.0,
+      "metric_lo": "shared_concepts",
+      "rank_lo": 5.0,
+      "gap": 4.0
+    },
+    {
+      "pair": "TimesFM|Chronos-2",
+      "metric_hi": "error_agreement",
+      "rank_hi": 1.0,
+      "metric_lo": "input_transfer",
+      "rank_lo": 5.0,
+      "gap": 4.0
+    },
+    {
+      "pair": "TimesFM|Chronos-2",
+      "metric_hi": "error_agreement",
+      "rank_hi": 1.0,
+      "metric_lo": "shared_concepts",
+      "rank_lo": 5.0,
+      "gap": 4.0
+    },
+    {
+      "pair": "TimesFM|Chronos-Bolt",
+      "metric_hi": "shared_concepts",
+      "rank_hi": 2.0,
+      "metric_lo": "cka_best",
+      "rank_lo": 6.0,
+      "gap": 4.0
+    },
+    {
+      "pair": "TimesFM|Chronos-Bolt",
+      "metric_hi": "shared_concepts",
+      "rank_hi": 2.0,
+      "metric_lo": "stitching_gain",
+      "rank_lo": 6.0,
+      "gap": 4.0
+    },
+    {
+      "pair": "TimesFM|Chronos-Bolt",
+      "metric_hi": "shared_concepts",
+      "rank_hi": 2.0,
+      "metric_lo": "cluster_ami",
+      "rank_lo": 6.0,
+      "gap": 4.0
+    },
+    {
+      "pair": "TimesFM|Chronos-Bolt",
+      "metric_hi": "shared_concepts",
+      "rank_hi": 2.0,
+      "metric_lo": "input_transfer",
+      "rank_lo": 6.0,
+      "gap": 4.0
+    },
+    {
+      "pair": "TimesFM|Sundial",
+      "metric_hi": "cluster_ami",
+      "rank_hi": 1.0,
+      "metric_lo": "cka_best",
+      "rank_lo": 5.0,
+      "gap": 4.0
+    },
+    {
+      "pair": "TimesFM|Sundial",
+      "metric_hi": "cluster_ami",
+      "rank_hi": 1.0,
+      "metric_lo": "stitching_gain",
+      "rank_lo": 5.0,
+      "gap": 4.0
+    }
+  ]
+}

@@ -1,0 +1,198 @@
+{
+  "TimesFM": {
+    "per_layer": {
+      "stacked_xf.0": 1.0,
+      "stacked_xf.2": 1.0,
+      "stacked_xf.4": 1.0,
+      "stacked_xf.6": 1.0,
+      "stacked_xf.8": 1.0,
+      "stacked_xf.10": 1.0,
+      "stacked_xf.12": 1.0,
+      "stacked_xf.14": 1.0,
+      "stacked_xf.16": 1.0,
+      "stacked_xf.18": 1.0
+    },
+    "layers_probed": [
+      "stacked_xf.0",
+      "stacked_xf.2",
+      "stacked_xf.4",
+      "stacked_xf.6",
+      "stacked_xf.8",
+      "stacked_xf.10",
+      "stacked_xf.12",
+      "stacked_xf.14",
+      "stacked_xf.16",
+      "stacked_xf.18"
+    ],
+    "n_layers_probed": 10,
+    "min": 1.0,
+    "mean": 1.0,
+    "window": 32,
+    "shallowest_layer": "stacked_xf.0",
+    "shallowest_frac": 1.0,
+    "resolvable_ceiling": {
+      "ceiling": 1.0,
+      "n_windows": 16,
+      "n_distinguishable": 16,
+      "window": 32
+    },
+    "shallowest_frac_of_ceiling": 1.0,
+    "min_diagonal_frac_threshold": 0.5,
+    "on_failure": "warn",
+    "passed": true,
+    "amplitude": 0.25,
+    "calibration": {
+      "amplitude": 0.25,
+      "calibrated": false,
+      "sweep": [],
+      "reason": "adapter.token_ids() is None -- no re-quantizing tokenizer for an impulse to confound; calibration is a no-op (ROADMAP.md sec 15 A20(d))"
+    }
+  },
+  "Chronos-2": {
+    "per_layer": {
+      "encoder.block.0": 1.0,
+      "encoder.block.1": 1.0,
+      "encoder.block.2": 1.0,
+      "encoder.block.3": 1.0,
+      "encoder.block.4": 1.0,
+      "encoder.block.5": 1.0,
+      "encoder.block.6": 1.0,
+      "encoder.block.7": 1.0,
+      "encoder.block.8": 1.0,
+      "encoder.block.9": 1.0,
+      "encoder.block.10": 1.0,
+      "encoder.block.11": 1.0
+    },
+    "layers_probed": [
+      "encoder.block.0",
+      "encoder.block.1",
+      "encoder.block.2",
+      "encoder.block.3",
+      "encoder.block.4",
+      "encoder.block.5",
+      "encoder.block.6",
+      "encoder.block.7",
+      "encoder.block.8",
+      "encoder.block.9",
+      "encoder.block.10",
+      "encoder.block.11"
+    ],
+    "n_layers_probed": 12,
+    "min": 1.0,
+    "mean": 1.0,
+    "window": 32,
+    "shallowest_layer": "encoder.block.0",
+    "shallowest_frac": 1.0,
+    "resolvable_ceiling": {
+      "ceiling": 1.0,
+      "n_windows": 16,
+      "n_distinguishable": 16,
+      "window": 32
+    },
+    "shallowest_frac_of_ceiling": 1.0,
+    "min_diagonal_frac_threshold": 0.5,
+    "on_failure": "warn",
+    "passed": true,
+    "amplitude": 0.25,
+    "calibration": {
+      "amplitude": 0.25,
+      "calibrated": false,
+      "sweep": [],
+      "reason": "adapter.token_ids() is None -- no re-quantizing tokenizer for an impulse to confound; calibration is a no-op (ROADMAP.md sec 15 A20(d))"
+    }
+  },
+  "Sundial": {
+    "per_layer": {
+      "model.layers.0": 1.0,
+      "model.layers.1": 1.0,
+      "model.layers.2": 1.0,
+      "model.layers.3": 0.875,
+      "model.layers.4": 0.375,
+      "model.layers.5": 0.375,
+      "model.layers.6": 0.3125,
+      "model.layers.7": 0.1875,
+      "model.layers.8": 0.1875,
+      "model.layers.9": 0.125,
+      "model.layers.10": 0.1875,
+      "model.layers.11": 0.1875
+    },
+    "layers_probed": [
+      "model.layers.0",
+      "model.layers.1",
+      "model.layers.2",
+      "model.layers.3",
+      "model.layers.4",
+      "model.layers.5",
+      "model.layers.6",
+      "model.layers.7",
+      "model.layers.8",
+      "model.layers.9",
+      "model.layers.10",
+      "model.layers.11"
+    ],
+    "n_layers_probed": 12,
+    "min": 0.125,
+    "mean": 0.484375,
+    "window": 32,
+    "shallowest_layer": "model.layers.0",
+    "shallowest_frac": 1.0,
+    "resolvable_ceiling": {
+      "ceiling": 1.0,
+      "n_windows": 16,
+      "n_distinguishable": 16,
+      "window": 32
+    },
+    "shallowest_frac_of_ceiling": 1.0,
+    "min_diagonal_frac_threshold": 0.5,
+    "on_failure": "warn",
+    "passed": true,
+    "amplitude": 0.25,
+    "calibration": {
+      "amplitude": 0.25,
+      "calibrated": false,
+      "sweep": [],
+      "reason": "adapter.token_ids() is None -- no re-quantizing tokenizer for an impulse to confound; calibration is a no-op (ROADMAP.md sec 15 A20(d))"
+    }
+  },
+  "Chronos-Bolt": {
+    "per_layer": {
+      "encoder.block.0": 1.0,
+      "encoder.block.1": 1.0,
+      "encoder.block.2": 1.0,
+      "encoder.block.3": 1.0,
+      "encoder.block.4": 1.0,
+      "encoder.block.5": 1.0
+    },
+    "layers_probed": [
+      "encoder.block.0",
+      "encoder.block.1",
+      "encoder.block.2",
+      "encoder.block.3",
+      "encoder.block.4",
+      "encoder.block.5"
+    ],
+    "n_layers_probed": 6,
+    "min": 1.0,
+    "mean": 1.0,
+    "window": 32,
+    "shallowest_layer": "encoder.block.0",
+    "shallowest_frac": 1.0,
+    "resolvable_ceiling": {
+      "ceiling": 1.0,
+      "n_windows": 16,
+      "n_distinguishable": 16,
+      "window": 32
+    },
+    "shallowest_frac_of_ceiling": 1.0,
+    "min_diagonal_frac_threshold": 0.5,
+    "on_failure": "warn",
+    "passed": true,
+    "amplitude": 0.25,
+    "calibration": {
+      "amplitude": 0.25,
+      "calibrated": false,
+      "sweep": [],
+      "reason": "adapter.token_ids() is None -- no re-quantizing tokenizer for an impulse to confound; calibration is a no-op (ROADMAP.md sec 15 A20(d))"
+    }
+  }
+}

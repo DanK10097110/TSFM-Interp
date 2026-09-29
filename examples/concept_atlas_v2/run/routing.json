@@ -1,0 +1,18 @@
+{
+  "TimesFM": {
+    "eligible": "full",
+    "measured": false
+  },
+  "Chronos-2": {
+    "eligible": "full",
+    "measured": false
+  },
+  "Sundial": {
+    "eligible": "full",
+    "measured": false
+  },
+  "Chronos-Bolt": {
+    "eligible": "full",
+    "measured": false
+  }
+}

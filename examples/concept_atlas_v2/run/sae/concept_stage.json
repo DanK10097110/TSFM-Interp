@@ -1,0 +1,319 @@
+{
+  "schema_version": 1,
+  "targets": [
+    "TimesFM/stacked_xf.10",
+    "TimesFM/stacked_xf.18",
+    "TimesFM/stacked_xf.6",
+    "TimesFM/stacked_xf.16",
+    "TimesFM/stacked_xf.2",
+    "Chronos-2/encoder.block.8",
+    "Chronos-2/encoder.block.10",
+    "Chronos-2/encoder.block.11",
+    "Sundial/model.layers.3",
+    "Sundial/model.layers.10",
+    "Sundial/model.layers.11",
+    "Chronos-Bolt/encoder.block.4",
+    "Chronos-Bolt/encoder.block.5",
+    "TimesFM/stacked_xf.14",
+    "TimesFM/stacked_xf.4",
+    "TimesFM/stacked_xf.0",
+    "TimesFM/stacked_xf.8",
+    "Chronos-2/encoder.block.7",
+    "Chronos-2/encoder.block.9",
+    "Sundial/model.layers.9",
+    "Sundial/model.layers.6",
+    "Sundial/model.layers.7",
+    "Chronos-Bolt/encoder.block.3",
+    "TimesFM/stacked_xf.12",
+    "Chronos-2/encoder.block.6",
+    "Chronos-2/encoder.block.5",
+    "Sundial/model.layers.5",
+    "Sundial/model.layers.4",
+    "Sundial/model.layers.8"
+  ],
+  "ablation": {
+    "TimesFM/stacked_xf.10": {
+      "state": "measured",
+      "path": "sae/TimesFM/stacked_xf_10_ablation.json",
+      "reason": "stacked_xf.10 reaches the forecast: cross-patch delta 3.54403, relative reach 0.146385 (measured) (self-patch control 0, exactly 0.0 as required)"
+    },
+    "TimesFM/stacked_xf.18": {
+      "state": "measured",
+      "path": "sae/TimesFM/stacked_xf_18_ablation.json",
+      "reason": "stacked_xf.18 reaches the forecast: cross-patch delta 51.3902, relative reach 2.12266 (measured) (self-patch control 0, exactly 0.0 as required)"
+    },
+    "TimesFM/stacked_xf.6": {
+      "state": "measured",
+      "path": "sae/TimesFM/stacked_xf_6_ablation.json",
+      "reason": "stacked_xf.6 reaches the forecast: cross-patch delta 5.61503, relative reach 0.231927 (measured) (self-patch control 0, exactly 0.0 as required)"
+    },
+    "TimesFM/stacked_xf.16": {
+      "state": "measured",
+      "path": "sae/TimesFM/stacked_xf_16_ablation.json",
+      "reason": "stacked_xf.16 reaches the forecast: cross-patch delta 22.5057, relative reach 0.929591 (measured) (self-patch control 0, exactly 0.0 as required)"
+    },
+    "TimesFM/stacked_xf.2": {
+      "state": "measured",
+      "path": "sae/TimesFM/stacked_xf_2_ablation.json",
+      "reason": "stacked_xf.2 reaches the forecast: cross-patch delta 1.32565, relative reach 0.0547554 (measured) (self-patch control 0, exactly 0.0 as required)"
+    },
+    "TimesFM/stacked_xf.14": {
+      "state": "measured",
+      "path": "sae/TimesFM/stacked_xf_14_ablation.json",
+      "reason": "stacked_xf.14 reaches the forecast: cross-patch delta 6.6256, relative reach 0.273668 (measured) (self-patch control 0, exactly 0.0 as required)"
+    },
+    "TimesFM/stacked_xf.4": {
+      "state": "measured",
+      "path": "sae/TimesFM/stacked_xf_4_ablation.json",
+      "reason": "stacked_xf.4 reaches the forecast: cross-patch delta 3.67628, relative reach 0.151847 (measured) (self-patch control 0, exactly 0.0 as required)"
+    },
+    "TimesFM/stacked_xf.0": {
+      "state": "measured",
+      "path": "sae/TimesFM/stacked_xf_0_ablation.json",
+      "reason": "stacked_xf.0 reaches the forecast: cross-patch delta 3.27973, relative reach 0.135468 (measured) (self-patch control 0, exactly 0.0 as required)"
+    },
+    "TimesFM/stacked_xf.8": {
+      "state": "measured",
+      "path": "sae/TimesFM/stacked_xf_8_ablation.json",
+      "reason": "stacked_xf.8 reaches the forecast: cross-patch delta 4.19901, relative reach 0.173439 (measured) (self-patch control 0, exactly 0.0 as required)"
+    },
+    "TimesFM/stacked_xf.12": {
+      "state": "measured",
+      "path": "sae/TimesFM/stacked_xf_12_ablation.json",
+      "reason": "stacked_xf.12 reaches the forecast: cross-patch delta 6.01235, relative reach 0.248338 (measured) (self-patch control 0, exactly 0.0 as required)"
+    },
+    "Chronos-2/encoder.block.8": {
+      "state": "measured",
+      "path": "sae/Chronos-2/encoder_block_8_ablation.json",
+      "reason": "encoder.block.8 reaches the forecast: cross-patch delta 1.43762, relative reach 0.0572476 (measured) (self-patch control 0, exactly 0.0 as required)"
+    },
+    "Chronos-2/encoder.block.10": {
+      "state": "measured",
+      "path": "sae/Chronos-2/encoder_block_10_ablation.json",
+      "reason": "encoder.block.10 reaches the forecast: cross-patch delta 1.56848, relative reach 0.0624588 (measured) (self-patch control 0, exactly 0.0 as required)"
+    },
+    "Chronos-2/encoder.block.11": {
+      "state": "withheld",
+      "path": "sae/Chronos-2/encoder_block_11_ablation.json",
+      "reason": "patching a different layer's clean tokens into encoder.block.11 moved the forecast by 0, a relative reach of 0 against forecast_scale 25.1123 -- below concepts.min_relative_reach=0.001; this target does not causally reach the forecast head; withhold the causal panel rather than reporting zeros as effects (CLAUDE.md sec 11.42)"
+    },
+    "Chronos-2/encoder.block.7": {
+      "state": "measured",
+      "path": "sae/Chronos-2/encoder_block_7_ablation.json",
+      "reason": "encoder.block.7 reaches the forecast: cross-patch delta 2.5813, relative reach 0.10279 (measured) (self-patch control 0, exactly 0.0 as required)"
+    },
+    "Chronos-2/encoder.block.9": {
+      "state": "measured",
+      "path": "sae/Chronos-2/encoder_block_9_ablation.json",
+      "reason": "encoder.block.9 reaches the forecast: cross-patch delta 1.21124, relative reach 0.0482328 (measured) (self-patch control 0, exactly 0.0 as required)"
+    },
+    "Chronos-2/encoder.block.6": {
+      "state": "measured",
+      "path": "sae/Chronos-2/encoder_block_6_ablation.json",
+      "reason": "encoder.block.6 reaches the forecast: cross-patch delta 3.20319, relative reach 0.127555 (measured) (self-patch control 0, exactly 0.0 as required)"
+    },
+    "Chronos-2/encoder.block.5": {
+      "state": "measured",
+      "path": "sae/Chronos-2/encoder_block_5_ablation.json",
+      "reason": "encoder.block.5 reaches the forecast: cross-patch delta 3.31397, relative reach 0.131966 (measured) (self-patch control 0, exactly 0.0 as required)"
+    },
+    "Sundial/model.layers.3": {
+      "state": "measured",
+      "path": "sae/Sundial/model_layers_3_ablation.json",
+      "reason": "model.layers.3 reaches the forecast: cross-patch delta 1.97329, relative reach 0.0795428 (measured) (self-patch control 0, exactly 0.0 as required)"
+    },
+    "Sundial/model.layers.10": {
+      "state": "measured",
+      "path": "sae/Sundial/model_layers_10_ablation.json",
+      "reason": "model.layers.10 reaches the forecast: cross-patch delta 2.1241, relative reach 0.085622 (measured) (self-patch control 0, exactly 0.0 as required)"
+    },
+    "Sundial/model.layers.11": {
+      "state": "measured",
+      "path": "sae/Sundial/model_layers_11_ablation.json",
+      "reason": "model.layers.11 reaches the forecast: cross-patch delta 5.70797, relative reach 0.230087 (measured) (self-patch control 0, exactly 0.0 as required)"
+    },
+    "Sundial/model.layers.9": {
+      "state": "measured",
+      "path": "sae/Sundial/model_layers_9_ablation.json",
+      "reason": "model.layers.9 reaches the forecast: cross-patch delta 5.99308, relative reach 0.24158 (measured) (self-patch control 0, exactly 0.0 as required)"
+    },
+    "Sundial/model.layers.6": {
+      "state": "measured",
+      "path": "sae/Sundial/model_layers_6_ablation.json",
+      "reason": "model.layers.6 reaches the forecast: cross-patch delta 3.11208, relative reach 0.125447 (measured) (self-patch control 0, exactly 0.0 as required)"
+    },
+    "Sundial/model.layers.7": {
+      "state": "measured",
+      "path": "sae/Sundial/model_layers_7_ablation.json",
+      "reason": "model.layers.7 reaches the forecast: cross-patch delta 2.17001, relative reach 0.0874726 (measured) (self-patch control 0, exactly 0.0 as required)"
+    },
+    "Sundial/model.layers.5": {
+      "state": "measured",
+      "path": "sae/Sundial/model_layers_5_ablation.json",
+      "reason": "model.layers.5 reaches the forecast: cross-patch delta 2.39669, relative reach 0.0966101 (measured) (self-patch control 0, exactly 0.0 as required)"
+    },
+    "Sundial/model.layers.4": {
+      "state": "measured",
+      "path": "sae/Sundial/model_layers_4_ablation.json",
+      "reason": "model.layers.4 reaches the forecast: cross-patch delta 1.73889, relative reach 0.0700941 (measured) (self-patch control 0, exactly 0.0 as required)"
+    },
+    "Sundial/model.layers.8": {
+      "state": "measured",
+      "path": "sae/Sundial/model_layers_8_ablation.json",
+      "reason": "model.layers.8 reaches the forecast: cross-patch delta 5.0504, relative reach 0.203581 (measured) (self-patch control 0, exactly 0.0 as required)"
+    },
+    "Chronos-Bolt/encoder.block.4": {
+      "state": "measured",
+      "path": "sae/Chronos-Bolt/encoder_block_4_ablation.json",
+      "reason": "encoder.block.4 reaches the forecast: cross-patch delta 2.24495, relative reach 0.0832018 (measured) (self-patch control 0, exactly 0.0 as required)"
+    },
+    "Chronos-Bolt/encoder.block.5": {
+      "state": "measured",
+      "path": "sae/Chronos-Bolt/encoder_block_5_ablation.json",
+      "reason": "encoder.block.5 reaches the forecast: cross-patch delta 3.11936, relative reach 0.115609 (measured) (self-patch control 0, exactly 0.0 as required)"
+    },
+    "Chronos-Bolt/encoder.block.3": {
+      "state": "measured",
+      "path": "sae/Chronos-Bolt/encoder_block_3_ablation.json",
+      "reason": "encoder.block.3 reaches the forecast: cross-patch delta 1.62654, relative reach 0.0602822 (measured) (self-patch control 0, exactly 0.0 as required)"
+    }
+  },
+  "concept_counts": {
+    "Chronos-2/encoder.block.10": 0,
+    "Chronos-2/encoder.block.11": 0,
+    "Chronos-2/encoder.block.5": 0,
+    "Chronos-2/encoder.block.6": 2,
+    "Chronos-2/encoder.block.7": 0,
+    "Chronos-2/encoder.block.8": 2,
+    "Chronos-2/encoder.block.9": 0,
+    "Chronos-Bolt/encoder.block.3": 0,
+    "Chronos-Bolt/encoder.block.4": 2,
+    "Chronos-Bolt/encoder.block.5": 0,
+    "Sundial/model.layers.10": 0,
+    "Sundial/model.layers.11": 0,
+    "Sundial/model.layers.3": 0,
+    "Sundial/model.layers.4": 0,
+    "Sundial/model.layers.5": 3,
+    "Sundial/model.layers.6": 0,
+    "Sundial/model.layers.7": 0,
+    "Sundial/model.layers.8": 0,
+    "Sundial/model.layers.9": 0,
+    "TimesFM/stacked_xf.0": 0,
+    "TimesFM/stacked_xf.10": 0,
+    "TimesFM/stacked_xf.12": 0,
+    "TimesFM/stacked_xf.14": 0,
+    "TimesFM/stacked_xf.16": 0,
+    "TimesFM/stacked_xf.18": 0,
+    "TimesFM/stacked_xf.2": 0,
+    "TimesFM/stacked_xf.4": 0,
+    "TimesFM/stacked_xf.6": 0,
+    "TimesFM/stacked_xf.8": 0
+  },
+  "n_concepts": 9,
+  "non_modular": [
+    "Chronos-2/encoder.block.10",
+    "Chronos-2/encoder.block.5",
+    "Chronos-2/encoder.block.7",
+    "Chronos-2/encoder.block.9",
+    "Chronos-Bolt/encoder.block.3",
+    "Chronos-Bolt/encoder.block.5",
+    "Sundial/model.layers.10",
+    "Sundial/model.layers.11",
+    "Sundial/model.layers.3",
+    "Sundial/model.layers.4",
+    "Sundial/model.layers.6",
+    "Sundial/model.layers.7",
+    "Sundial/model.layers.8",
+    "Sundial/model.layers.9",
+    "TimesFM/stacked_xf.0",
+    "TimesFM/stacked_xf.10",
+    "TimesFM/stacked_xf.12",
+    "TimesFM/stacked_xf.14",
+    "TimesFM/stacked_xf.16",
+    "TimesFM/stacked_xf.18",
+    "TimesFM/stacked_xf.2",
+    "TimesFM/stacked_xf.4",
+    "TimesFM/stacked_xf.6",
+    "TimesFM/stacked_xf.8"
+  ],
+  "transfer": {
+    "status": "ran",
+    "n_pairs": 195,
+    "n_forward_clear": 189,
+    "n_reciprocal": 183
+  },
+  "describe": {
+    "status": "ran",
+    "n_targets": 29
+  },
+  "atlas": {
+    "status": "ran",
+    "n_features": 293,
+    "n_assigned": 86,
+    "n_concepts": 27,
+    "n_multi_model": 16
+  },
+  "stability": {
+    "status": "ran",
+    "n_sae_seeds": 3,
+    "n_concepts": 27,
+    "n_scored": 27,
+    "n_stable": 22,
+    "frac_stable": 0.8148148148148148,
+    "replicate_train_seconds": 1767.905017863959
+  },
+  "atlas_transfer": {
+    "status": "ran",
+    "n_tests": 1581,
+    "n_ordered_pairs": 12,
+    "n_uncorrected_reciprocal": 1251,
+    "n_fdr_reciprocal": 1223
+  },
+  "shared_input_agreement": {
+    "status": "ran",
+    "n_tests": 1223,
+    "verdict_counts": {
+      "not scorable": 803,
+      "no specific agreement": 264,
+      "level only": 52,
+      "shape only": 29,
+      "acts differently": 64,
+      "same causal effect": 11
+    },
+    "dst_set_kind_counts": {
+      "feature": 1188,
+      "atlas_part": 35
+    },
+    "n_short_matched_pool": 0,
+    "runtime_seconds": 10854.893453257158
+  },
+  "profiles": {
+    "status": "ran",
+    "n_concepts": 27,
+    "sharing_class_counts": {
+      "convergent (same effect, different inputs)": 13,
+      "single-model": 11,
+      "shared (same effect, same inputs)": 2,
+      "partially shared": 1
+    },
+    "sharing_class_counts_stable_only": {
+      "convergent (same effect, different inputs)": 9,
+      "single-model": 10,
+      "shared (same effect, same inputs)": 2,
+      "partially shared": 1
+    },
+    "n_provenance_driven_parts": 27,
+    "n_parts": 76
+  },
+  "families": {
+    "status": "ran",
+    "n_families": 9,
+    "n_assigned": 288,
+    "frac_assigned": 0.9829351535836177,
+    "threshold": 0.5,
+    "n_concepts_split": 3,
+    "p_n_families": 1.0,
+    "p_frac_assigned": 0.9850746268656716,
+    "cross_model_verdict": "segregated by model"
+  }
+}

@@ -1,0 +1,586 @@
+{
+  "TimesFM": {
+    "layers": [
+      "stacked_xf.0",
+      "stacked_xf.4",
+      "stacked_xf.8",
+      "stacked_xf.12",
+      "stacked_xf.16"
+    ],
+    "corruptions": [
+      "deseasonalize",
+      "noise",
+      "level_shift",
+      "spike",
+      "warp",
+      "dropout"
+    ],
+    "rel_depth": [
+      0.0,
+      0.21052631578947367,
+      0.42105263157894735,
+      0.631578947368421,
+      0.8421052631578947
+    ],
+    "depth_axis": "block",
+    "windows": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15
+    ],
+    "window_size": 32,
+    "whole_context_patch": false,
+    "verbose": {
+      "deseasonalize": {
+        "layer": "stacked_xf.16",
+        "window": 15,
+        "series_ids": [
+          "d54b542c0edbac49",
+          "c334536c37301114"
+        ],
+        "families": [
+          "random_parametric",
+          "mixture"
+        ],
+        "future_excursion": [
+          0.0,
+          0.0
+        ]
+      },
+      "noise": {
+        "layer": "stacked_xf.16",
+        "window": 13,
+        "series_ids": [
+          "d54b542c0edbac49",
+          "c334536c37301114"
+        ],
+        "families": [
+          "random_parametric",
+          "mixture"
+        ],
+        "future_excursion": [
+          0.0,
+          0.0
+        ]
+      },
+      "level_shift": {
+        "layer": "stacked_xf.0",
+        "window": 15,
+        "series_ids": [
+          "d54b542c0edbac49",
+          "c334536c37301114"
+        ],
+        "families": [
+          "random_parametric",
+          "mixture"
+        ],
+        "future_excursion": [
+          0.0,
+          0.0
+        ]
+      },
+      "spike": {
+        "layer": "stacked_xf.0",
+        "window": 2,
+        "series_ids": [
+          "d54b542c0edbac49",
+          "c334536c37301114"
+        ],
+        "families": [
+          "random_parametric",
+          "mixture"
+        ],
+        "future_excursion": [
+          0.0,
+          0.0
+        ]
+      },
+      "warp": {
+        "layer": "stacked_xf.12",
+        "window": 13,
+        "series_ids": [
+          "d54b542c0edbac49",
+          "c334536c37301114"
+        ],
+        "families": [
+          "random_parametric",
+          "mixture"
+        ],
+        "future_excursion": [
+          0.0,
+          0.0
+        ]
+      },
+      "dropout": {
+        "layer": "stacked_xf.4",
+        "window": 5,
+        "series_ids": [
+          "d54b542c0edbac49",
+          "c334536c37301114"
+        ],
+        "families": [
+          "random_parametric",
+          "mixture"
+        ],
+        "future_excursion": [
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "n_requested": 16,
+    "n_realized": 16,
+    "limited_by": null
+  },
+  "Chronos-2": {
+    "layers": [
+      "encoder.block.0",
+      "encoder.block.2",
+      "encoder.block.4",
+      "encoder.block.6",
+      "encoder.block.8",
+      "encoder.block.10"
+    ],
+    "corruptions": [
+      "deseasonalize",
+      "noise",
+      "level_shift",
+      "spike",
+      "warp",
+      "dropout"
+    ],
+    "rel_depth": [
+      0.0,
+      0.18181818181818182,
+      0.36363636363636365,
+      0.5454545454545454,
+      0.7272727272727273,
+      0.9090909090909091
+    ],
+    "depth_axis": "block",
+    "windows": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15
+    ],
+    "window_size": 32,
+    "whole_context_patch": false,
+    "verbose": {
+      "deseasonalize": {
+        "layer": "encoder.block.0",
+        "window": 9,
+        "series_ids": [
+          "d54b542c0edbac49",
+          "c334536c37301114"
+        ],
+        "families": [
+          "random_parametric",
+          "mixture"
+        ],
+        "future_excursion": [
+          0.0,
+          0.0
+        ]
+      },
+      "noise": {
+        "layer": "encoder.block.0",
+        "window": 10,
+        "series_ids": [
+          "d54b542c0edbac49",
+          "c334536c37301114"
+        ],
+        "families": [
+          "random_parametric",
+          "mixture"
+        ],
+        "future_excursion": [
+          0.0,
+          0.0
+        ]
+      },
+      "level_shift": {
+        "layer": "encoder.block.0",
+        "window": 15,
+        "series_ids": [
+          "d54b542c0edbac49",
+          "c334536c37301114"
+        ],
+        "families": [
+          "random_parametric",
+          "mixture"
+        ],
+        "future_excursion": [
+          0.0,
+          0.0
+        ]
+      },
+      "spike": {
+        "layer": "encoder.block.6",
+        "window": 6,
+        "series_ids": [
+          "d54b542c0edbac49",
+          "c334536c37301114"
+        ],
+        "families": [
+          "random_parametric",
+          "mixture"
+        ],
+        "future_excursion": [
+          0.0,
+          0.0
+        ]
+      },
+      "warp": {
+        "layer": "encoder.block.0",
+        "window": 2,
+        "series_ids": [
+          "d54b542c0edbac49",
+          "c334536c37301114"
+        ],
+        "families": [
+          "random_parametric",
+          "mixture"
+        ],
+        "future_excursion": [
+          0.0,
+          0.0
+        ]
+      },
+      "dropout": {
+        "layer": "encoder.block.2",
+        "window": 5,
+        "series_ids": [
+          "d54b542c0edbac49",
+          "c334536c37301114"
+        ],
+        "families": [
+          "random_parametric",
+          "mixture"
+        ],
+        "future_excursion": [
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "n_requested": 16,
+    "n_realized": 16,
+    "limited_by": null
+  },
+  "Sundial": {
+    "layers": [
+      "model.layers.0",
+      "model.layers.2",
+      "model.layers.4",
+      "model.layers.6",
+      "model.layers.8",
+      "model.layers.10"
+    ],
+    "corruptions": [
+      "deseasonalize",
+      "noise",
+      "level_shift",
+      "spike",
+      "warp",
+      "dropout"
+    ],
+    "rel_depth": [
+      0.0,
+      0.18181818181818182,
+      0.36363636363636365,
+      0.5454545454545454,
+      0.7272727272727273,
+      0.9090909090909091
+    ],
+    "depth_axis": "block",
+    "windows": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15
+    ],
+    "window_size": 32,
+    "whole_context_patch": false,
+    "verbose": {
+      "deseasonalize": {
+        "layer": "model.layers.10",
+        "window": 15,
+        "series_ids": [
+          "d54b542c0edbac49",
+          "c334536c37301114"
+        ],
+        "families": [
+          "random_parametric",
+          "mixture"
+        ],
+        "future_excursion": [
+          0.0,
+          0.0
+        ]
+      },
+      "noise": {
+        "layer": "model.layers.2",
+        "window": 15,
+        "series_ids": [
+          "d54b542c0edbac49",
+          "c334536c37301114"
+        ],
+        "families": [
+          "random_parametric",
+          "mixture"
+        ],
+        "future_excursion": [
+          0.0,
+          0.0
+        ]
+      },
+      "level_shift": {
+        "layer": "model.layers.8",
+        "window": 15,
+        "series_ids": [
+          "d54b542c0edbac49",
+          "c334536c37301114"
+        ],
+        "families": [
+          "random_parametric",
+          "mixture"
+        ],
+        "future_excursion": [
+          0.0,
+          0.0
+        ]
+      },
+      "spike": {
+        "layer": "model.layers.2",
+        "window": 6,
+        "series_ids": [
+          "d54b542c0edbac49",
+          "c334536c37301114"
+        ],
+        "families": [
+          "random_parametric",
+          "mixture"
+        ],
+        "future_excursion": [
+          0.0,
+          0.0
+        ]
+      },
+      "warp": {
+        "layer": "model.layers.10",
+        "window": 15,
+        "series_ids": [
+          "d54b542c0edbac49",
+          "c334536c37301114"
+        ],
+        "families": [
+          "random_parametric",
+          "mixture"
+        ],
+        "future_excursion": [
+          0.0,
+          0.0
+        ]
+      },
+      "dropout": {
+        "layer": "model.layers.6",
+        "window": 15,
+        "series_ids": [
+          "d54b542c0edbac49",
+          "c334536c37301114"
+        ],
+        "families": [
+          "random_parametric",
+          "mixture"
+        ],
+        "future_excursion": [
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "n_requested": 16,
+    "n_realized": 16,
+    "limited_by": null
+  },
+  "Chronos-Bolt": {
+    "layers": [
+      "encoder.block.0",
+      "encoder.block.2",
+      "encoder.block.4"
+    ],
+    "corruptions": [
+      "deseasonalize",
+      "noise",
+      "level_shift",
+      "spike",
+      "warp",
+      "dropout"
+    ],
+    "rel_depth": [
+      0.0,
+      0.18181818181818182,
+      0.36363636363636365
+    ],
+    "depth_axis": "block",
+    "windows": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15
+    ],
+    "window_size": 32,
+    "whole_context_patch": false,
+    "verbose": {
+      "deseasonalize": {
+        "layer": "encoder.block.4",
+        "window": 15,
+        "series_ids": [
+          "d54b542c0edbac49",
+          "c334536c37301114"
+        ],
+        "families": [
+          "random_parametric",
+          "mixture"
+        ],
+        "future_excursion": [
+          0.0,
+          0.0
+        ]
+      },
+      "noise": {
+        "layer": "encoder.block.0",
+        "window": 15,
+        "series_ids": [
+          "d54b542c0edbac49",
+          "c334536c37301114"
+        ],
+        "families": [
+          "random_parametric",
+          "mixture"
+        ],
+        "future_excursion": [
+          0.0,
+          0.0
+        ]
+      },
+      "level_shift": {
+        "layer": "encoder.block.0",
+        "window": 15,
+        "series_ids": [
+          "d54b542c0edbac49",
+          "c334536c37301114"
+        ],
+        "families": [
+          "random_parametric",
+          "mixture"
+        ],
+        "future_excursion": [
+          0.0,
+          0.0
+        ]
+      },
+      "spike": {
+        "layer": "encoder.block.0",
+        "window": 14,
+        "series_ids": [
+          "d54b542c0edbac49",
+          "c334536c37301114"
+        ],
+        "families": [
+          "random_parametric",
+          "mixture"
+        ],
+        "future_excursion": [
+          0.0,
+          0.0
+        ]
+      },
+      "warp": {
+        "layer": "encoder.block.0",
+        "window": 11,
+        "series_ids": [
+          "d54b542c0edbac49",
+          "c334536c37301114"
+        ],
+        "families": [
+          "random_parametric",
+          "mixture"
+        ],
+        "future_excursion": [
+          0.0,
+          0.0
+        ]
+      },
+      "dropout": {
+        "layer": "encoder.block.0",
+        "window": 9,
+        "series_ids": [
+          "d54b542c0edbac49",
+          "c334536c37301114"
+        ],
+        "families": [
+          "random_parametric",
+          "mixture"
+        ],
+        "future_excursion": [
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "n_requested": 16,
+    "n_realized": 16,
+    "limited_by": null
+  }
+}

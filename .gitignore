@@ -64,3 +64,7 @@ benchmark_out/
 *.pid
 *.log
 .ipynb_checkpoints/
+# The published example run ships its lightweight JSON/parquet artifacts on purpose
+!examples/**/
+!examples/**/*.json
+!examples/**/*.parquet

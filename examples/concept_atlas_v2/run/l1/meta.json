@@ -1,0 +1,1586 @@
+{
+  "model_a": "TimesFM",
+  "model_b": "Chronos-2",
+  "layers_a": [
+    "stacked_xf.0",
+    "stacked_xf.2",
+    "stacked_xf.4",
+    "stacked_xf.6",
+    "stacked_xf.8",
+    "stacked_xf.10",
+    "stacked_xf.12",
+    "stacked_xf.14",
+    "stacked_xf.16",
+    "stacked_xf.18"
+  ],
+  "layers_b": [
+    "encoder.block.0",
+    "encoder.block.1",
+    "encoder.block.2",
+    "encoder.block.3",
+    "encoder.block.4",
+    "encoder.block.5",
+    "encoder.block.6",
+    "encoder.block.7",
+    "encoder.block.8",
+    "encoder.block.9",
+    "encoder.block.10",
+    "encoder.block.11"
+  ],
+  "families": [
+    "block_bootstrap",
+    "mixture",
+    "parametric",
+    "random_parametric",
+    "sequential_par"
+  ],
+  "best_pair": {
+    "layer_a": "stacked_xf.4",
+    "layer_b": "encoder.block.7",
+    "cka": 0.42622295022010803,
+    "ci": {
+      "value": 0.42622295022010803,
+      "lo": 0.4175321884453297,
+      "hi": 0.4421655163168907,
+      "resample_unit": "series"
+    },
+    "null_ci": {
+      "value": 0.03728002160787582,
+      "lo": 0.036661263555288315,
+      "hi": 0.03779665380716324
+    },
+    "rel_depth_a": 0.21052631578947367,
+    "rel_depth_b": 0.6363636363636364
+  },
+  "families_ci": {
+    "block_bootstrap": {
+      "value": 0.9391573071479797,
+      "lo": 0.9149631470441818,
+      "hi": 0.9609081864356994,
+      "resample_unit": "series"
+    },
+    "mixture": {
+      "value": 0.7620518803596497,
+      "lo": 0.7268650561571122,
+      "hi": 0.8101583927869797,
+      "resample_unit": "series"
+    },
+    "parametric": {
+      "value": 0.6368340253829956,
+      "lo": 0.605587112903595,
+      "hi": 0.7142460823059082,
+      "resample_unit": "series"
+    },
+    "random_parametric": {
+      "value": 0.7240694165229797,
+      "lo": 0.6979749545454978,
+      "hi": 0.7624516010284423,
+      "resample_unit": "series"
+    },
+    "sequential_par": {
+      "value": 0.9658598899841309,
+      "lo": 0.9562536180019379,
+      "hi": 0.975076274573803,
+      "resample_unit": "series"
+    }
+  },
+  "depth_curve": [
+    {
+      "layer_a": "stacked_xf.0",
+      "layer_b": "encoder.block.3",
+      "cka": 0.35879552364349365
+    },
+    {
+      "layer_a": "stacked_xf.2",
+      "layer_b": "encoder.block.5",
+      "cka": 0.4158569276332855
+    },
+    {
+      "layer_a": "stacked_xf.4",
+      "layer_b": "encoder.block.7",
+      "cka": 0.42622295022010803
+    },
+    {
+      "layer_a": "stacked_xf.6",
+      "layer_b": "encoder.block.7",
+      "cka": 0.3906163275241852
+    },
+    {
+      "layer_a": "stacked_xf.8",
+      "layer_b": "encoder.block.7",
+      "cka": 0.35824331641197205
+    },
+    {
+      "layer_a": "stacked_xf.10",
+      "layer_b": "encoder.block.8",
+      "cka": 0.3473474681377411
+    },
+    {
+      "layer_a": "stacked_xf.12",
+      "layer_b": "encoder.block.11",
+      "cka": 0.3320065438747406
+    },
+    {
+      "layer_a": "stacked_xf.14",
+      "layer_b": "encoder.block.11",
+      "cka": 0.31023314595222473
+    },
+    {
+      "layer_a": "stacked_xf.16",
+      "layer_b": "encoder.block.11",
+      "cka": 0.21547618508338928
+    },
+    {
+      "layer_a": "stacked_xf.18",
+      "layer_b": "encoder.block.7",
+      "cka": 0.18176180124282837
+    }
+  ],
+  "rsa": [
+    {
+      "layer_a": "stacked_xf.0",
+      "layer_b": "encoder.block.3",
+      "spearman": 0.5927288406140214
+    },
+    {
+      "layer_a": "stacked_xf.2",
+      "layer_b": "encoder.block.5",
+      "spearman": 0.7053132141765237
+    },
+    {
+      "layer_a": "stacked_xf.4",
+      "layer_b": "encoder.block.7",
+      "spearman": 0.6525912064928231
+    },
+    {
+      "layer_a": "stacked_xf.6",
+      "layer_b": "encoder.block.7",
+      "spearman": 0.6587499236635332
+    },
+    {
+      "layer_a": "stacked_xf.8",
+      "layer_b": "encoder.block.7",
+      "spearman": 0.6465020636518855
+    },
+    {
+      "layer_a": "stacked_xf.10",
+      "layer_b": "encoder.block.8",
+      "spearman": 0.5729816314764049
+    },
+    {
+      "layer_a": "stacked_xf.12",
+      "layer_b": "encoder.block.11",
+      "spearman": 0.45144433873280054
+    },
+    {
+      "layer_a": "stacked_xf.14",
+      "layer_b": "encoder.block.11",
+      "spearman": 0.41554096222124925
+    },
+    {
+      "layer_a": "stacked_xf.16",
+      "layer_b": "encoder.block.11",
+      "spearman": 0.44398584706722266
+    },
+    {
+      "layer_a": "stacked_xf.18",
+      "layer_b": "encoder.block.7",
+      "spearman": 0.4626989971173243
+    }
+  ],
+  "n_rows_window": 15440,
+  "family_comparisons": null,
+  "depth_axis_a": "block",
+  "depth_axis_b": "block",
+  "rel_depth_a": [
+    0.0,
+    0.10526315789473684,
+    0.21052631578947367,
+    0.3157894736842105,
+    0.42105263157894735,
+    0.5263157894736842,
+    0.631578947368421,
+    0.7368421052631579,
+    0.8421052631578947,
+    0.9473684210526315
+  ],
+  "rel_depth_b": [
+    0.0,
+    0.09090909090909091,
+    0.18181818181818182,
+    0.2727272727272727,
+    0.36363636363636365,
+    0.45454545454545453,
+    0.5454545454545454,
+    0.6363636363636364,
+    0.7272727272727273,
+    0.8181818181818182,
+    0.9090909090909091,
+    1.0
+  ],
+  "pairs": [
+    {
+      "model_a": "TimesFM",
+      "model_b": "Chronos-2",
+      "layers_a": [
+        "stacked_xf.0",
+        "stacked_xf.2",
+        "stacked_xf.4",
+        "stacked_xf.6",
+        "stacked_xf.8",
+        "stacked_xf.10",
+        "stacked_xf.12",
+        "stacked_xf.14",
+        "stacked_xf.16",
+        "stacked_xf.18"
+      ],
+      "layers_b": [
+        "encoder.block.0",
+        "encoder.block.1",
+        "encoder.block.2",
+        "encoder.block.3",
+        "encoder.block.4",
+        "encoder.block.5",
+        "encoder.block.6",
+        "encoder.block.7",
+        "encoder.block.8",
+        "encoder.block.9",
+        "encoder.block.10",
+        "encoder.block.11"
+      ],
+      "families": [
+        "block_bootstrap",
+        "mixture",
+        "parametric",
+        "random_parametric",
+        "sequential_par"
+      ],
+      "best_pair": {
+        "layer_a": "stacked_xf.4",
+        "layer_b": "encoder.block.7",
+        "cka": 0.42622295022010803,
+        "ci": {
+          "value": 0.42622295022010803,
+          "lo": 0.4175321884453297,
+          "hi": 0.4421655163168907,
+          "resample_unit": "series"
+        },
+        "null_ci": {
+          "value": 0.03728002160787582,
+          "lo": 0.036661263555288315,
+          "hi": 0.03779665380716324
+        },
+        "rel_depth_a": 0.21052631578947367,
+        "rel_depth_b": 0.6363636363636364
+      },
+      "families_ci": {
+        "block_bootstrap": {
+          "value": 0.9391573071479797,
+          "lo": 0.9149631470441818,
+          "hi": 0.9609081864356994,
+          "resample_unit": "series"
+        },
+        "mixture": {
+          "value": 0.7620518803596497,
+          "lo": 0.7268650561571122,
+          "hi": 0.8101583927869797,
+          "resample_unit": "series"
+        },
+        "parametric": {
+          "value": 0.6368340253829956,
+          "lo": 0.605587112903595,
+          "hi": 0.7142460823059082,
+          "resample_unit": "series"
+        },
+        "random_parametric": {
+          "value": 0.7240694165229797,
+          "lo": 0.6979749545454978,
+          "hi": 0.7624516010284423,
+          "resample_unit": "series"
+        },
+        "sequential_par": {
+          "value": 0.9658598899841309,
+          "lo": 0.9562536180019379,
+          "hi": 0.975076274573803,
+          "resample_unit": "series"
+        }
+      },
+      "depth_curve": [
+        {
+          "layer_a": "stacked_xf.0",
+          "layer_b": "encoder.block.3",
+          "cka": 0.35879552364349365
+        },
+        {
+          "layer_a": "stacked_xf.2",
+          "layer_b": "encoder.block.5",
+          "cka": 0.4158569276332855
+        },
+        {
+          "layer_a": "stacked_xf.4",
+          "layer_b": "encoder.block.7",
+          "cka": 0.42622295022010803
+        },
+        {
+          "layer_a": "stacked_xf.6",
+          "layer_b": "encoder.block.7",
+          "cka": 0.3906163275241852
+        },
+        {
+          "layer_a": "stacked_xf.8",
+          "layer_b": "encoder.block.7",
+          "cka": 0.35824331641197205
+        },
+        {
+          "layer_a": "stacked_xf.10",
+          "layer_b": "encoder.block.8",
+          "cka": 0.3473474681377411
+        },
+        {
+          "layer_a": "stacked_xf.12",
+          "layer_b": "encoder.block.11",
+          "cka": 0.3320065438747406
+        },
+        {
+          "layer_a": "stacked_xf.14",
+          "layer_b": "encoder.block.11",
+          "cka": 0.31023314595222473
+        },
+        {
+          "layer_a": "stacked_xf.16",
+          "layer_b": "encoder.block.11",
+          "cka": 0.21547618508338928
+        },
+        {
+          "layer_a": "stacked_xf.18",
+          "layer_b": "encoder.block.7",
+          "cka": 0.18176180124282837
+        }
+      ],
+      "rsa": [
+        {
+          "layer_a": "stacked_xf.0",
+          "layer_b": "encoder.block.3",
+          "spearman": 0.5927288406140214
+        },
+        {
+          "layer_a": "stacked_xf.2",
+          "layer_b": "encoder.block.5",
+          "spearman": 0.7053132141765237
+        },
+        {
+          "layer_a": "stacked_xf.4",
+          "layer_b": "encoder.block.7",
+          "spearman": 0.6525912064928231
+        },
+        {
+          "layer_a": "stacked_xf.6",
+          "layer_b": "encoder.block.7",
+          "spearman": 0.6587499236635332
+        },
+        {
+          "layer_a": "stacked_xf.8",
+          "layer_b": "encoder.block.7",
+          "spearman": 0.6465020636518855
+        },
+        {
+          "layer_a": "stacked_xf.10",
+          "layer_b": "encoder.block.8",
+          "spearman": 0.5729816314764049
+        },
+        {
+          "layer_a": "stacked_xf.12",
+          "layer_b": "encoder.block.11",
+          "spearman": 0.45144433873280054
+        },
+        {
+          "layer_a": "stacked_xf.14",
+          "layer_b": "encoder.block.11",
+          "spearman": 0.41554096222124925
+        },
+        {
+          "layer_a": "stacked_xf.16",
+          "layer_b": "encoder.block.11",
+          "spearman": 0.44398584706722266
+        },
+        {
+          "layer_a": "stacked_xf.18",
+          "layer_b": "encoder.block.7",
+          "spearman": 0.4626989971173243
+        }
+      ],
+      "n_rows_window": 15440,
+      "family_comparisons": null,
+      "depth_axis_a": "block",
+      "depth_axis_b": "block",
+      "rel_depth_a": [
+        0.0,
+        0.10526315789473684,
+        0.21052631578947367,
+        0.3157894736842105,
+        0.42105263157894735,
+        0.5263157894736842,
+        0.631578947368421,
+        0.7368421052631579,
+        0.8421052631578947,
+        0.9473684210526315
+      ],
+      "rel_depth_b": [
+        0.0,
+        0.09090909090909091,
+        0.18181818181818182,
+        0.2727272727272727,
+        0.36363636363636365,
+        0.45454545454545453,
+        0.5454545454545454,
+        0.6363636363636364,
+        0.7272727272727273,
+        0.8181818181818182,
+        0.9090909090909091,
+        1.0
+      ]
+    },
+    {
+      "model_a": "TimesFM",
+      "model_b": "Sundial",
+      "layers_a": [
+        "stacked_xf.0",
+        "stacked_xf.2",
+        "stacked_xf.4",
+        "stacked_xf.6",
+        "stacked_xf.8",
+        "stacked_xf.10",
+        "stacked_xf.12",
+        "stacked_xf.14",
+        "stacked_xf.16",
+        "stacked_xf.18"
+      ],
+      "layers_b": [
+        "model.layers.0",
+        "model.layers.1",
+        "model.layers.2",
+        "model.layers.3",
+        "model.layers.4",
+        "model.layers.5",
+        "model.layers.6",
+        "model.layers.7",
+        "model.layers.8",
+        "model.layers.9",
+        "model.layers.10",
+        "model.layers.11"
+      ],
+      "families": [
+        "block_bootstrap",
+        "mixture",
+        "parametric",
+        "random_parametric",
+        "sequential_par"
+      ],
+      "best_pair": {
+        "layer_a": "stacked_xf.4",
+        "layer_b": "model.layers.2",
+        "cka": 0.4115135669708252,
+        "ci": {
+          "value": 0.4115135669708252,
+          "lo": 0.3990172579884529,
+          "hi": 0.42783116549253464,
+          "resample_unit": "series"
+        },
+        "null_ci": {
+          "value": 0.04644367545843124,
+          "lo": 0.0454699732363224,
+          "hi": 0.047413889318704605
+        },
+        "rel_depth_a": 0.21052631578947367,
+        "rel_depth_b": 0.18181818181818182
+      },
+      "families_ci": {
+        "block_bootstrap": {
+          "value": 0.944180965423584,
+          "lo": 0.9228131473064423,
+          "hi": 0.9655082523822784,
+          "resample_unit": "series"
+        },
+        "mixture": {
+          "value": 0.7711978554725647,
+          "lo": 0.7408863216638565,
+          "hi": 0.8144207820296288,
+          "resample_unit": "series"
+        },
+        "parametric": {
+          "value": 0.8118623495101929,
+          "lo": 0.7938392564654351,
+          "hi": 0.8531246080994606,
+          "resample_unit": "series"
+        },
+        "random_parametric": {
+          "value": 0.6983494758605957,
+          "lo": 0.669259811937809,
+          "hi": 0.7419950470328331,
+          "resample_unit": "series"
+        },
+        "sequential_par": {
+          "value": 0.9660163521766663,
+          "lo": 0.9504266783595086,
+          "hi": 0.9773053109645844,
+          "resample_unit": "series"
+        }
+      },
+      "depth_curve": [
+        {
+          "layer_a": "stacked_xf.0",
+          "layer_b": "model.layers.1",
+          "cka": 0.29215818643569946
+        },
+        {
+          "layer_a": "stacked_xf.2",
+          "layer_b": "model.layers.2",
+          "cka": 0.4085688292980194
+        },
+        {
+          "layer_a": "stacked_xf.4",
+          "layer_b": "model.layers.2",
+          "cka": 0.4115135669708252
+        },
+        {
+          "layer_a": "stacked_xf.6",
+          "layer_b": "model.layers.2",
+          "cka": 0.3666897118091583
+        },
+        {
+          "layer_a": "stacked_xf.8",
+          "layer_b": "model.layers.10",
+          "cka": 0.3392057716846466
+        },
+        {
+          "layer_a": "stacked_xf.10",
+          "layer_b": "model.layers.10",
+          "cka": 0.32516440749168396
+        },
+        {
+          "layer_a": "stacked_xf.12",
+          "layer_b": "model.layers.10",
+          "cka": 0.28632715344429016
+        },
+        {
+          "layer_a": "stacked_xf.14",
+          "layer_b": "model.layers.10",
+          "cka": 0.2428465038537979
+        },
+        {
+          "layer_a": "stacked_xf.16",
+          "layer_b": "model.layers.4",
+          "cka": 0.2667680084705353
+        },
+        {
+          "layer_a": "stacked_xf.18",
+          "layer_b": "model.layers.4",
+          "cka": 0.396480530500412
+        }
+      ],
+      "rsa": [
+        {
+          "layer_a": "stacked_xf.0",
+          "layer_b": "model.layers.1",
+          "spearman": 0.5867688827206539
+        },
+        {
+          "layer_a": "stacked_xf.2",
+          "layer_b": "model.layers.2",
+          "spearman": 0.6767913350057736
+        },
+        {
+          "layer_a": "stacked_xf.4",
+          "layer_b": "model.layers.2",
+          "spearman": 0.7395277028690972
+        },
+        {
+          "layer_a": "stacked_xf.6",
+          "layer_b": "model.layers.2",
+          "spearman": 0.7169089331897797
+        },
+        {
+          "layer_a": "stacked_xf.8",
+          "layer_b": "model.layers.10",
+          "spearman": 0.6463619493184113
+        },
+        {
+          "layer_a": "stacked_xf.10",
+          "layer_b": "model.layers.10",
+          "spearman": 0.6392537511775278
+        },
+        {
+          "layer_a": "stacked_xf.12",
+          "layer_b": "model.layers.10",
+          "spearman": 0.6060888207251581
+        },
+        {
+          "layer_a": "stacked_xf.14",
+          "layer_b": "model.layers.10",
+          "spearman": 0.5896602010384183
+        },
+        {
+          "layer_a": "stacked_xf.16",
+          "layer_b": "model.layers.4",
+          "spearman": 0.5479166098417196
+        },
+        {
+          "layer_a": "stacked_xf.18",
+          "layer_b": "model.layers.4",
+          "spearman": 0.4883662585673283
+        }
+      ],
+      "n_rows_window": 15440,
+      "family_comparisons": null,
+      "depth_axis_a": "block",
+      "depth_axis_b": "block",
+      "rel_depth_a": [
+        0.0,
+        0.10526315789473684,
+        0.21052631578947367,
+        0.3157894736842105,
+        0.42105263157894735,
+        0.5263157894736842,
+        0.631578947368421,
+        0.7368421052631579,
+        0.8421052631578947,
+        0.9473684210526315
+      ],
+      "rel_depth_b": [
+        0.0,
+        0.09090909090909091,
+        0.18181818181818182,
+        0.2727272727272727,
+        0.36363636363636365,
+        0.45454545454545453,
+        0.5454545454545454,
+        0.6363636363636364,
+        0.7272727272727273,
+        0.8181818181818182,
+        0.9090909090909091,
+        1.0
+      ]
+    },
+    {
+      "model_a": "TimesFM",
+      "model_b": "Chronos-Bolt",
+      "layers_a": [
+        "stacked_xf.0",
+        "stacked_xf.2",
+        "stacked_xf.4",
+        "stacked_xf.6",
+        "stacked_xf.8",
+        "stacked_xf.10",
+        "stacked_xf.12",
+        "stacked_xf.14",
+        "stacked_xf.16",
+        "stacked_xf.18"
+      ],
+      "layers_b": [
+        "encoder.block.0",
+        "encoder.block.1",
+        "encoder.block.2",
+        "encoder.block.3",
+        "encoder.block.4",
+        "encoder.block.5"
+      ],
+      "families": [
+        "block_bootstrap",
+        "mixture",
+        "parametric",
+        "random_parametric",
+        "sequential_par"
+      ],
+      "best_pair": {
+        "layer_a": "stacked_xf.4",
+        "layer_b": "encoder.block.2",
+        "cka": 0.3811757266521454,
+        "ci": {
+          "value": 0.3811757266521454,
+          "lo": 0.3705017097294331,
+          "hi": 0.39692438691854476,
+          "resample_unit": "series"
+        },
+        "null_ci": {
+          "value": 0.011675349809229374,
+          "lo": 0.01130584441125393,
+          "hi": 0.011957136914134026
+        },
+        "rel_depth_a": 0.21052631578947367,
+        "rel_depth_b": 0.18181818181818182
+      },
+      "families_ci": {
+        "block_bootstrap": {
+          "value": 0.9384896159172058,
+          "lo": 0.9158897221088409,
+          "hi": 0.9618534073233604,
+          "resample_unit": "series"
+        },
+        "mixture": {
+          "value": 0.7691503763198853,
+          "lo": 0.7404866486787796,
+          "hi": 0.8019771859049797,
+          "resample_unit": "series"
+        },
+        "parametric": {
+          "value": 0.6859032511711121,
+          "lo": 0.619942520558834,
+          "hi": 0.7547970369458199,
+          "resample_unit": "series"
+        },
+        "random_parametric": {
+          "value": 0.7182627320289612,
+          "lo": 0.6943230122327805,
+          "hi": 0.7507438719272613,
+          "resample_unit": "series"
+        },
+        "sequential_par": {
+          "value": 0.9572089314460754,
+          "lo": 0.9335378840565681,
+          "hi": 0.9628313258290291,
+          "resample_unit": "series"
+        }
+      },
+      "depth_curve": [
+        {
+          "layer_a": "stacked_xf.0",
+          "layer_b": "encoder.block.2",
+          "cka": 0.3033057451248169
+        },
+        {
+          "layer_a": "stacked_xf.2",
+          "layer_b": "encoder.block.2",
+          "cka": 0.36920902132987976
+        },
+        {
+          "layer_a": "stacked_xf.4",
+          "layer_b": "encoder.block.2",
+          "cka": 0.3811757266521454
+        },
+        {
+          "layer_a": "stacked_xf.6",
+          "layer_b": "encoder.block.2",
+          "cka": 0.3325093388557434
+        },
+        {
+          "layer_a": "stacked_xf.8",
+          "layer_b": "encoder.block.4",
+          "cka": 0.28849419951438904
+        },
+        {
+          "layer_a": "stacked_xf.10",
+          "layer_b": "encoder.block.4",
+          "cka": 0.26761573553085327
+        },
+        {
+          "layer_a": "stacked_xf.12",
+          "layer_b": "encoder.block.4",
+          "cka": 0.23726172745227814
+        },
+        {
+          "layer_a": "stacked_xf.14",
+          "layer_b": "encoder.block.4",
+          "cka": 0.19860148429870605
+        },
+        {
+          "layer_a": "stacked_xf.16",
+          "layer_b": "encoder.block.4",
+          "cka": 0.1538536697626114
+        },
+        {
+          "layer_a": "stacked_xf.18",
+          "layer_b": "encoder.block.4",
+          "cka": 0.13475000858306885
+        }
+      ],
+      "rsa": [
+        {
+          "layer_a": "stacked_xf.0",
+          "layer_b": "encoder.block.2",
+          "spearman": 0.5610666860245139
+        },
+        {
+          "layer_a": "stacked_xf.2",
+          "layer_b": "encoder.block.2",
+          "spearman": 0.6906707762842403
+        },
+        {
+          "layer_a": "stacked_xf.4",
+          "layer_b": "encoder.block.2",
+          "spearman": 0.7235784196210285
+        },
+        {
+          "layer_a": "stacked_xf.6",
+          "layer_b": "encoder.block.2",
+          "spearman": 0.6770064732384983
+        },
+        {
+          "layer_a": "stacked_xf.8",
+          "layer_b": "encoder.block.4",
+          "spearman": 0.6273608800755396
+        },
+        {
+          "layer_a": "stacked_xf.10",
+          "layer_b": "encoder.block.4",
+          "spearman": 0.5823054573752586
+        },
+        {
+          "layer_a": "stacked_xf.12",
+          "layer_b": "encoder.block.4",
+          "spearman": 0.5756390059291089
+        },
+        {
+          "layer_a": "stacked_xf.14",
+          "layer_b": "encoder.block.4",
+          "spearman": 0.5303251021917165
+        },
+        {
+          "layer_a": "stacked_xf.16",
+          "layer_b": "encoder.block.4",
+          "spearman": 0.5148388287009964
+        },
+        {
+          "layer_a": "stacked_xf.18",
+          "layer_b": "encoder.block.4",
+          "spearman": 0.5390624866130361
+        }
+      ],
+      "n_rows_window": 15440,
+      "family_comparisons": null,
+      "depth_axis_a": "block",
+      "depth_axis_b": "block",
+      "rel_depth_a": [
+        0.0,
+        0.10526315789473684,
+        0.21052631578947367,
+        0.3157894736842105,
+        0.42105263157894735,
+        0.5263157894736842,
+        0.631578947368421,
+        0.7368421052631579,
+        0.8421052631578947,
+        0.9473684210526315
+      ],
+      "rel_depth_b": [
+        0.0,
+        0.09090909090909091,
+        0.18181818181818182,
+        0.2727272727272727,
+        0.36363636363636365,
+        0.45454545454545453
+      ]
+    },
+    {
+      "model_a": "Chronos-2",
+      "model_b": "Sundial",
+      "layers_a": [
+        "encoder.block.0",
+        "encoder.block.1",
+        "encoder.block.2",
+        "encoder.block.3",
+        "encoder.block.4",
+        "encoder.block.5",
+        "encoder.block.6",
+        "encoder.block.7",
+        "encoder.block.8",
+        "encoder.block.9",
+        "encoder.block.10",
+        "encoder.block.11"
+      ],
+      "layers_b": [
+        "model.layers.0",
+        "model.layers.1",
+        "model.layers.2",
+        "model.layers.3",
+        "model.layers.4",
+        "model.layers.5",
+        "model.layers.6",
+        "model.layers.7",
+        "model.layers.8",
+        "model.layers.9",
+        "model.layers.10",
+        "model.layers.11"
+      ],
+      "families": [
+        "block_bootstrap",
+        "mixture",
+        "parametric",
+        "random_parametric",
+        "sequential_par"
+      ],
+      "best_pair": {
+        "layer_a": "encoder.block.0",
+        "layer_b": "model.layers.0",
+        "cka": 0.913385272026062,
+        "ci": {
+          "value": 0.913385272026062,
+          "lo": 0.9068360567092896,
+          "hi": 0.9194915071129799,
+          "resample_unit": "series"
+        },
+        "null_ci": {
+          "value": 0.0014424389228224754,
+          "lo": 0.0013573308242484927,
+          "hi": 0.0015331002650782466
+        },
+        "rel_depth_a": 0.0,
+        "rel_depth_b": 0.0
+      },
+      "families_ci": {
+        "block_bootstrap": {
+          "value": 0.982770562171936,
+          "lo": 0.9752849102020263,
+          "hi": 0.9886141657829285,
+          "resample_unit": "series"
+        },
+        "mixture": {
+          "value": 0.9657773375511169,
+          "lo": 0.9596304789185524,
+          "hi": 0.9715171575546264,
+          "resample_unit": "series"
+        },
+        "parametric": {
+          "value": 0.944697380065918,
+          "lo": 0.9229237928986549,
+          "hi": 0.9632249891757965,
+          "resample_unit": "series"
+        },
+        "random_parametric": {
+          "value": 0.9228119850158691,
+          "lo": 0.9118837267160416,
+          "hi": 0.9328131154179573,
+          "resample_unit": "series"
+        },
+        "sequential_par": {
+          "value": 0.9841243028640747,
+          "lo": 0.9785490915179252,
+          "hi": 0.9894715249538422,
+          "resample_unit": "series"
+        }
+      },
+      "depth_curve": [
+        {
+          "layer_a": "encoder.block.0",
+          "layer_b": "model.layers.0",
+          "cka": 0.913385272026062
+        },
+        {
+          "layer_a": "encoder.block.1",
+          "layer_b": "model.layers.0",
+          "cka": 0.8974482417106628
+        },
+        {
+          "layer_a": "encoder.block.2",
+          "layer_b": "model.layers.0",
+          "cka": 0.8808608651161194
+        },
+        {
+          "layer_a": "encoder.block.3",
+          "layer_b": "model.layers.0",
+          "cka": 0.8482882976531982
+        },
+        {
+          "layer_a": "encoder.block.4",
+          "layer_b": "model.layers.1",
+          "cka": 0.8159490823745728
+        },
+        {
+          "layer_a": "encoder.block.5",
+          "layer_b": "model.layers.1",
+          "cka": 0.7842790484428406
+        },
+        {
+          "layer_a": "encoder.block.6",
+          "layer_b": "model.layers.1",
+          "cka": 0.7580614686012268
+        },
+        {
+          "layer_a": "encoder.block.7",
+          "layer_b": "model.layers.1",
+          "cka": 0.6589637994766235
+        },
+        {
+          "layer_a": "encoder.block.8",
+          "layer_b": "model.layers.1",
+          "cka": 0.569005012512207
+        },
+        {
+          "layer_a": "encoder.block.9",
+          "layer_b": "model.layers.11",
+          "cka": 0.5065829157829285
+        },
+        {
+          "layer_a": "encoder.block.10",
+          "layer_b": "model.layers.11",
+          "cka": 0.4922572374343872
+        },
+        {
+          "layer_a": "encoder.block.11",
+          "layer_b": "model.layers.11",
+          "cka": 0.4320349395275116
+        }
+      ],
+      "rsa": [
+        {
+          "layer_a": "encoder.block.0",
+          "layer_b": "model.layers.0",
+          "spearman": 0.8436681008138471
+        },
+        {
+          "layer_a": "encoder.block.1",
+          "layer_b": "model.layers.0",
+          "spearman": 0.8075979860526931
+        },
+        {
+          "layer_a": "encoder.block.2",
+          "layer_b": "model.layers.0",
+          "spearman": 0.7809081233535626
+        },
+        {
+          "layer_a": "encoder.block.3",
+          "layer_b": "model.layers.0",
+          "spearman": 0.7385209780844562
+        },
+        {
+          "layer_a": "encoder.block.4",
+          "layer_b": "model.layers.1",
+          "spearman": 0.7982477231313507
+        },
+        {
+          "layer_a": "encoder.block.5",
+          "layer_b": "model.layers.1",
+          "spearman": 0.789641180368155
+        },
+        {
+          "layer_a": "encoder.block.6",
+          "layer_b": "model.layers.1",
+          "spearman": 0.7691022061549304
+        },
+        {
+          "layer_a": "encoder.block.7",
+          "layer_b": "model.layers.1",
+          "spearman": 0.650670455896626
+        },
+        {
+          "layer_a": "encoder.block.8",
+          "layer_b": "model.layers.1",
+          "spearman": 0.5607596461123382
+        },
+        {
+          "layer_a": "encoder.block.9",
+          "layer_b": "model.layers.11",
+          "spearman": 0.4893878415275288
+        },
+        {
+          "layer_a": "encoder.block.10",
+          "layer_b": "model.layers.11",
+          "spearman": 0.497497762908947
+        },
+        {
+          "layer_a": "encoder.block.11",
+          "layer_b": "model.layers.11",
+          "spearman": 0.2835216208947408
+        }
+      ],
+      "n_rows_window": 15440,
+      "family_comparisons": null,
+      "depth_axis_a": "block",
+      "depth_axis_b": "block",
+      "rel_depth_a": [
+        0.0,
+        0.09090909090909091,
+        0.18181818181818182,
+        0.2727272727272727,
+        0.36363636363636365,
+        0.45454545454545453,
+        0.5454545454545454,
+        0.6363636363636364,
+        0.7272727272727273,
+        0.8181818181818182,
+        0.9090909090909091,
+        1.0
+      ],
+      "rel_depth_b": [
+        0.0,
+        0.09090909090909091,
+        0.18181818181818182,
+        0.2727272727272727,
+        0.36363636363636365,
+        0.45454545454545453,
+        0.5454545454545454,
+        0.6363636363636364,
+        0.7272727272727273,
+        0.8181818181818182,
+        0.9090909090909091,
+        1.0
+      ]
+    },
+    {
+      "model_a": "Chronos-2",
+      "model_b": "Chronos-Bolt",
+      "layers_a": [
+        "encoder.block.0",
+        "encoder.block.1",
+        "encoder.block.2",
+        "encoder.block.3",
+        "encoder.block.4",
+        "encoder.block.5",
+        "encoder.block.6",
+        "encoder.block.7",
+        "encoder.block.8",
+        "encoder.block.9",
+        "encoder.block.10",
+        "encoder.block.11"
+      ],
+      "layers_b": [
+        "encoder.block.0",
+        "encoder.block.1",
+        "encoder.block.2",
+        "encoder.block.3",
+        "encoder.block.4",
+        "encoder.block.5"
+      ],
+      "families": [
+        "block_bootstrap",
+        "mixture",
+        "parametric",
+        "random_parametric",
+        "sequential_par"
+      ],
+      "best_pair": {
+        "layer_a": "encoder.block.0",
+        "layer_b": "encoder.block.0",
+        "cka": 0.9086330533027649,
+        "ci": {
+          "value": 0.9086330533027649,
+          "lo": 0.8999199241399765,
+          "hi": 0.9158120438456535,
+          "resample_unit": "series"
+        },
+        "null_ci": {
+          "value": 0.0009911330067552625,
+          "lo": 0.0008564226445741951,
+          "hi": 0.00118426070548594
+        },
+        "rel_depth_a": 0.0,
+        "rel_depth_b": 0.0
+      },
+      "families_ci": {
+        "block_bootstrap": {
+          "value": 0.9817882180213928,
+          "lo": 0.9754457622766495,
+          "hi": 0.987913703918457,
+          "resample_unit": "series"
+        },
+        "mixture": {
+          "value": 0.9594632387161255,
+          "lo": 0.9525550961494446,
+          "hi": 0.9669904708862305,
+          "resample_unit": "series"
+        },
+        "parametric": {
+          "value": 0.9417102932929993,
+          "lo": 0.9228108167648316,
+          "hi": 0.9570636108517647,
+          "resample_unit": "series"
+        },
+        "random_parametric": {
+          "value": 0.8918715715408325,
+          "lo": 0.8744904890656471,
+          "hi": 0.9054355829954147,
+          "resample_unit": "series"
+        },
+        "sequential_par": {
+          "value": 0.9825769066810608,
+          "lo": 0.9715669423341751,
+          "hi": 0.9866170540452004,
+          "resample_unit": "series"
+        }
+      },
+      "depth_curve": [
+        {
+          "layer_a": "encoder.block.0",
+          "layer_b": "encoder.block.0",
+          "cka": 0.9086330533027649
+        },
+        {
+          "layer_a": "encoder.block.1",
+          "layer_b": "encoder.block.1",
+          "cka": 0.8934240341186523
+        },
+        {
+          "layer_a": "encoder.block.2",
+          "layer_b": "encoder.block.2",
+          "cka": 0.8917757272720337
+        },
+        {
+          "layer_a": "encoder.block.3",
+          "layer_b": "encoder.block.2",
+          "cka": 0.8751158118247986
+        },
+        {
+          "layer_a": "encoder.block.4",
+          "layer_b": "encoder.block.2",
+          "cka": 0.8456478714942932
+        },
+        {
+          "layer_a": "encoder.block.5",
+          "layer_b": "encoder.block.3",
+          "cka": 0.8172978758811951
+        },
+        {
+          "layer_a": "encoder.block.6",
+          "layer_b": "encoder.block.3",
+          "cka": 0.7927883863449097
+        },
+        {
+          "layer_a": "encoder.block.7",
+          "layer_b": "encoder.block.4",
+          "cka": 0.712042510509491
+        },
+        {
+          "layer_a": "encoder.block.8",
+          "layer_b": "encoder.block.4",
+          "cka": 0.6335127949714661
+        },
+        {
+          "layer_a": "encoder.block.9",
+          "layer_b": "encoder.block.4",
+          "cka": 0.5373791456222534
+        },
+        {
+          "layer_a": "encoder.block.10",
+          "layer_b": "encoder.block.4",
+          "cka": 0.466351717710495
+        },
+        {
+          "layer_a": "encoder.block.11",
+          "layer_b": "encoder.block.4",
+          "cka": 0.2702559232711792
+        }
+      ],
+      "rsa": [
+        {
+          "layer_a": "encoder.block.0",
+          "layer_b": "encoder.block.0",
+          "spearman": 0.8865938715107223
+        },
+        {
+          "layer_a": "encoder.block.1",
+          "layer_b": "encoder.block.1",
+          "spearman": 0.9162034652943574
+        },
+        {
+          "layer_a": "encoder.block.2",
+          "layer_b": "encoder.block.2",
+          "spearman": 0.9002769517591821
+        },
+        {
+          "layer_a": "encoder.block.3",
+          "layer_b": "encoder.block.2",
+          "spearman": 0.874877293698813
+        },
+        {
+          "layer_a": "encoder.block.4",
+          "layer_b": "encoder.block.2",
+          "spearman": 0.8384257886409207
+        },
+        {
+          "layer_a": "encoder.block.5",
+          "layer_b": "encoder.block.3",
+          "spearman": 0.8429723091830257
+        },
+        {
+          "layer_a": "encoder.block.6",
+          "layer_b": "encoder.block.3",
+          "spearman": 0.813070140426041
+        },
+        {
+          "layer_a": "encoder.block.7",
+          "layer_b": "encoder.block.4",
+          "spearman": 0.6922806756638687
+        },
+        {
+          "layer_a": "encoder.block.8",
+          "layer_b": "encoder.block.4",
+          "spearman": 0.6015652166079097
+        },
+        {
+          "layer_a": "encoder.block.9",
+          "layer_b": "encoder.block.4",
+          "spearman": 0.4988627256180934
+        },
+        {
+          "layer_a": "encoder.block.10",
+          "layer_b": "encoder.block.4",
+          "spearman": 0.5048856342052207
+        },
+        {
+          "layer_a": "encoder.block.11",
+          "layer_b": "encoder.block.4",
+          "spearman": 0.608617577277711
+        }
+      ],
+      "n_rows_window": 15440,
+      "family_comparisons": null,
+      "depth_axis_a": "block",
+      "depth_axis_b": "block",
+      "rel_depth_a": [
+        0.0,
+        0.09090909090909091,
+        0.18181818181818182,
+        0.2727272727272727,
+        0.36363636363636365,
+        0.45454545454545453,
+        0.5454545454545454,
+        0.6363636363636364,
+        0.7272727272727273,
+        0.8181818181818182,
+        0.9090909090909091,
+        1.0
+      ],
+      "rel_depth_b": [
+        0.0,
+        0.09090909090909091,
+        0.18181818181818182,
+        0.2727272727272727,
+        0.36363636363636365,
+        0.45454545454545453
+      ]
+    },
+    {
+      "model_a": "Sundial",
+      "model_b": "Chronos-Bolt",
+      "layers_a": [
+        "model.layers.0",
+        "model.layers.1",
+        "model.layers.2",
+        "model.layers.3",
+        "model.layers.4",
+        "model.layers.5",
+        "model.layers.6",
+        "model.layers.7",
+        "model.layers.8",
+        "model.layers.9",
+        "model.layers.10",
+        "model.layers.11"
+      ],
+      "layers_b": [
+        "encoder.block.0",
+        "encoder.block.1",
+        "encoder.block.2",
+        "encoder.block.3",
+        "encoder.block.4",
+        "encoder.block.5"
+      ],
+      "families": [
+        "block_bootstrap",
+        "mixture",
+        "parametric",
+        "random_parametric",
+        "sequential_par"
+      ],
+      "best_pair": {
+        "layer_a": "model.layers.0",
+        "layer_b": "encoder.block.0",
+        "cka": 0.928092360496521,
+        "ci": {
+          "value": 0.928092360496521,
+          "lo": 0.9236184224486351,
+          "hi": 0.9324037358164787,
+          "resample_unit": "series"
+        },
+        "null_ci": {
+          "value": 0.0008157313684932887,
+          "lo": 0.0006795186782255769,
+          "hi": 0.0009883848251774907
+        },
+        "rel_depth_a": 0.0,
+        "rel_depth_b": 0.0
+      },
+      "families_ci": {
+        "block_bootstrap": {
+          "value": 0.9915233850479126,
+          "lo": 0.9885523959994316,
+          "hi": 0.9942364394664764,
+          "resample_unit": "series"
+        },
+        "mixture": {
+          "value": 0.9747800230979919,
+          "lo": 0.9701165318489074,
+          "hi": 0.978981827199459,
+          "resample_unit": "series"
+        },
+        "parametric": {
+          "value": 0.9512103199958801,
+          "lo": 0.9317782610654831,
+          "hi": 0.964993593096733,
+          "resample_unit": "series"
+        },
+        "random_parametric": {
+          "value": 0.9646976590156555,
+          "lo": 0.9581819131970406,
+          "hi": 0.9690088465809822,
+          "resample_unit": "series"
+        },
+        "sequential_par": {
+          "value": 0.9781612753868103,
+          "lo": 0.9655813843011856,
+          "hi": 0.9883523464202881,
+          "resample_unit": "series"
+        }
+      },
+      "depth_curve": [
+        {
+          "layer_a": "model.layers.0",
+          "layer_b": "encoder.block.0",
+          "cka": 0.928092360496521
+        },
+        {
+          "layer_a": "model.layers.1",
+          "layer_b": "encoder.block.1",
+          "cka": 0.9062660336494446
+        },
+        {
+          "layer_a": "model.layers.2",
+          "layer_b": "encoder.block.2",
+          "cka": 0.7667009830474854
+        },
+        {
+          "layer_a": "model.layers.3",
+          "layer_b": "encoder.block.2",
+          "cka": 0.5980495810508728
+        },
+        {
+          "layer_a": "model.layers.4",
+          "layer_b": "encoder.block.4",
+          "cka": 0.2948608994483948
+        },
+        {
+          "layer_a": "model.layers.5",
+          "layer_b": "encoder.block.4",
+          "cka": 0.284961074590683
+        },
+        {
+          "layer_a": "model.layers.6",
+          "layer_b": "encoder.block.4",
+          "cka": 0.2878665626049042
+        },
+        {
+          "layer_a": "model.layers.7",
+          "layer_b": "encoder.block.4",
+          "cka": 0.3052152395248413
+        },
+        {
+          "layer_a": "model.layers.8",
+          "layer_b": "encoder.block.4",
+          "cka": 0.3345799744129181
+        },
+        {
+          "layer_a": "model.layers.9",
+          "layer_b": "encoder.block.4",
+          "cka": 0.36596205830574036
+        },
+        {
+          "layer_a": "model.layers.10",
+          "layer_b": "encoder.block.4",
+          "cka": 0.44741111993789673
+        },
+        {
+          "layer_a": "model.layers.11",
+          "layer_b": "encoder.block.4",
+          "cka": 0.3672817647457123
+        }
+      ],
+      "rsa": [
+        {
+          "layer_a": "model.layers.0",
+          "layer_b": "encoder.block.0",
+          "spearman": 0.9282353288890848
+        },
+        {
+          "layer_a": "model.layers.1",
+          "layer_b": "encoder.block.1",
+          "spearman": 0.923891992456336
+        },
+        {
+          "layer_a": "model.layers.2",
+          "layer_b": "encoder.block.2",
+          "spearman": 0.8931203703881604
+        },
+        {
+          "layer_a": "model.layers.3",
+          "layer_b": "encoder.block.2",
+          "spearman": 0.8668439088135714
+        },
+        {
+          "layer_a": "model.layers.4",
+          "layer_b": "encoder.block.4",
+          "spearman": 0.8111581662246915
+        },
+        {
+          "layer_a": "model.layers.5",
+          "layer_b": "encoder.block.4",
+          "spearman": 0.8011743531326081
+        },
+        {
+          "layer_a": "model.layers.6",
+          "layer_b": "encoder.block.4",
+          "spearman": 0.7688942024001545
+        },
+        {
+          "layer_a": "model.layers.7",
+          "layer_b": "encoder.block.4",
+          "spearman": 0.7589432057384876
+        },
+        {
+          "layer_a": "model.layers.8",
+          "layer_b": "encoder.block.4",
+          "spearman": 0.7060686015495453
+        },
+        {
+          "layer_a": "model.layers.9",
+          "layer_b": "encoder.block.4",
+          "spearman": 0.6515169253891601
+        },
+        {
+          "layer_a": "model.layers.10",
+          "layer_b": "encoder.block.4",
+          "spearman": 0.6451957001503451
+        },
+        {
+          "layer_a": "model.layers.11",
+          "layer_b": "encoder.block.4",
+          "spearman": 0.5951980305408892
+        }
+      ],
+      "n_rows_window": 15440,
+      "family_comparisons": null,
+      "depth_axis_a": "block",
+      "depth_axis_b": "block",
+      "rel_depth_a": [
+        0.0,
+        0.09090909090909091,
+        0.18181818181818182,
+        0.2727272727272727,
+        0.36363636363636365,
+        0.45454545454545453,
+        0.5454545454545454,
+        0.6363636363636364,
+        0.7272727272727273,
+        0.8181818181818182,
+        0.9090909090909091,
+        1.0
+      ],
+      "rel_depth_b": [
+        0.0,
+        0.09090909090909091,
+        0.18181818181818182,
+        0.2727272727272727,
+        0.36363636363636365,
+        0.45454545454545453
+      ]
+    }
+  ],
+  "run_shape": "panel"
+}
