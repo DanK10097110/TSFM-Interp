@@ -440,7 +440,13 @@ class GenericHFAdapter(ModelAdapter):
         response is diffuse has no contiguous token->time map, and handing the
         pooling matrix an invented one would put every cross-model number on a
         fiction (`CLAUDE.md` sec 6.3).
+
+        Loads first: `pipeline.resolve_routing` calls this on a freshly built,
+        still-unloaded adapter, and `_spans` only exists once `load` has run,
+        so a fresh 2-model run with any `generic_hf` model died with an
+        AttributeError before extraction (found onboarding Timer, K3).
         """
+        self.ensure_loaded()
         if self._spans is None:
             from ..extraction.span_discovery import discover_spans
             self._discovery = discover_spans(self, context_len=self.data_cfg.context_len)

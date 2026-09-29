@@ -369,3 +369,14 @@ def test_skeleton_only_collapses_whole_numeric_segments():
     collapsing every digit anywhere would merge unrelated stacks."""
     assert _skeleton("model.layers.11.attn") == "model.layers.#.attn"
     assert _skeleton("model.layer2.attn") == "model.layer2.attn"
+
+
+def test_token_time_spans_on_an_unloaded_adapter_loads_it_first():
+    """`resolve_routing` asks a freshly built adapter for its spans before any
+    stage has loaded it. `_spans` only exists after `load`, so this used to
+    raise AttributeError and kill every fresh run containing a generic_hf model."""
+    a = _adapter(_PatchNet)
+    assert not a._loaded
+    spans = a.token_time_spans()
+    assert a._loaded
+    assert spans.shape[0] > 0
