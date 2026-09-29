@@ -210,7 +210,7 @@ internals:
 confirm:
   enabled: true
   source: sealed
-  path: ../benchmark_large_v2/private_test  # relative to tsfm_lens/ -- v2's own sealed private split, unpeeked
+  path: ../benchmark_large_v2/private_test  # relative to tsfm_lens/ -- v2's own sealed private split; its first look was consumed by the published example run, so mint a fresh epoch for a genuine confirmation
   max_series: 800
   require_seal: true
   alpha: 0.05
