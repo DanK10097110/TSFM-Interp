@@ -47,7 +47,7 @@
 \newcommand{\ev}[1]{\textsc{#1}}
 
 \jmlrheading{}{2026}{1-\pageref{LastPage}}{}{}{}{Daniel Kushnir and Hao Wang}
-\ShortHeadings{Controlled, Causal and Confirmatory Interpretability of TSFMs}{Kushnir and Wang}
+\ShortHeadings{Controlled Causal Interpretability of TSFMs}{Kushnir and Wang}
 \firstpageno{1}
 
 \begin{document}
@@ -61,34 +61,23 @@
 \maketitle
 
 \begin{abstract}%
-Time-series foundation models (TSFMs) are now deployed zero-shot in forecasting pipelines, yet
-almost nothing is known about what they compute, and the tools that made language models
-inspectable do not transfer: TSFM tokens cover different spans of time from one architecture to the
-next, no ground truth exists for what a ``concept'' in a forecast should be, and the causal effects
-of internal features are small enough that uncontrolled measurements produce confident false
-positives. We present \tool{}, an open-source system that turns a list of model checkpoints into a
-single, self-contained interpretability report with one command. It is built on three commitments.
-First, it is controlled: a leakage-audited synthetic benchmark whose generative components
-are known exactly, together with structured input perturbations, provides known answers against
-which every probe is validated. Second, it is causal: concepts are defined by what removing
-them does to the forecast, measured against row-matched random-direction nulls and gated by reach
-controls. Third, it is confirmatory: exploratory claims are registered by content hash and
-tested once on a sealed private split. Architecture-agnostic time alignment makes decoder-only,
-encoder-only and encoder--decoder models with token widths from 1 to 96 steps comparable, and every
-reported number carries a typed evidence class and a generated caveat. Applied to TimesFM,
-Chronos-2, Sundial and Chronos-Bolt, the system finds that the models' causal features change
-forecast level and shape far more often than trend or seasonality; that the models agree on
-which inputs a concept groups (20 of 20 registered transfer claims confirmed on 800 held-out
-series) but rarely on what it does to those inputs (11 of 1{,}223 shared-input tests show the
-same causal effect); and that no concept is shared by all four models. We also document
-more than a dozen cases in which a plausible, well-formed result was wrong and the system's own
-controls caught it. Code, configurations, a complete example run and a ledger of every finding with
-its reproduction pointer are public.
+Time-series foundation models (TSFMs) are deployed zero-shot, yet the tools that made language models
+inspectable do not transfer: tokens span different lengths of time across architectures, no ground truth
+defines a forecasting ``concept'', and causal effects of internal features are small enough that uncontrolled
+measurements produce confident false positives. We present \tool{}, an open-source system that turns a list of
+checkpoints into one self-contained interpretability report with one command. It is controlled: a
+leakage-audited synthetic benchmark with known generative components validates every probe. It is causal:
+concepts are defined by what removing them does to the forecast, against matched random-direction nulls and
+reach controls. It is confirmatory: exploratory claims are registered and tested once on a sealed split.
+Applied to TimesFM, Chronos-2, Sundial and Chronos-Bolt, it finds that causal features mainly change forecast
+level and shape; that models agree on which inputs a concept groups (20 of 20 registered claims confirmed on 800
+held-out series) but rarely on what it does to them (11 of 1{,}223 tests); and that no concept is shared by all
+four models. We also document fourteen plausible results that the system's own controls showed to be wrong.
 \end{abstract}
 
 \begin{keywords}
   mechanistic interpretability, time-series foundation models, sparse autoencoders, causal
-  intervention, representation similarity, synthetic benchmarks, pre-registration, open-source software
+  intervention, pre-registration
 \end{keywords}
 
 \input{sections/01_introduction}
