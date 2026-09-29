@@ -7,7 +7,8 @@ model is like, and which methods do and do not work, including confirmed
 negatives. Each entry is a claim with exact numbers, an evidence class, a way to
 reproduce it, and a pointer to the full record.
 
-`ROADMAP.md` is the lab notebook: every attempt, dated, in full. This file is the
+`ROADMAP.md` is the lab notebook: every attempt, dated, in full. It lives on the
+`dev` branch only; the `Ref.` lines below cite its sections. This file is the
 distilled result set. It exists so that design decisions can be reasoned about,
 and new reports written, without mining a 37k-line notebook.
 
