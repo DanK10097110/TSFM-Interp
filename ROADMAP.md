@@ -38091,6 +38091,17 @@ under transformers 4.57.6.
   `DEPENDENCIES.md` versions and now quotes the recorded provenance.
   **To do:** refresh `DEPENDENCIES.md` so the documented pins match the
   environment that produced the published numbers (invariant 12).
+  **Done (2026-09-29, merge 48adf4b):**
+  - `DEPENDENCIES.md` now matches the import-time versions in cudaPy: torch
+    2.12.0, scikit-learn 1.7.2, datasets 2.19.2, tqdm 4.68.3; mkl is not
+    installed (nomkl, openblas 0.3.33).
+  - It documents the stale dist-infos: torch 2.9.1+cu130, scikit_learn 1.9.0,
+    datasets 3.6.0, pandas 2.2.3.
+  - `clean_reinstall.sh` was removed. It pinned `datasets==3.6.0` against the
+    `<3` bound (first flagged in ROADMAP_ARCHIVE A18, never fixed) and is the
+    likely source of those dist-infos.
+  - Still open: `DEPENDENCIES.md` §4–§5 describe tsfmPy-era mkl checks that
+    do not apply to the openblas-backed cudaPy.
 
 #### 38.3.3 Held-out interaction with K2
 
