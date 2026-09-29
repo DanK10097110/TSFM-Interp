@@ -588,6 +588,55 @@ def test_title_disambiguates_via_second_channel_not_roman_numeral():
     assert "Volatility amplifiers" in t2
 
 
+def _cleared(vec):
+    return [int(i) for i in np.argsort(-np.abs(vec)) if abs(vec[i]) >= 1.0]
+
+
+def test_title_leads_with_directed_channel_not_the_ubiquitous_horizon_distance():
+    """`runs/concept_atlas_v2` (ROADMAP sec 37.11c): both horizon-distance
+    channels clear in every family, so titles led by them read "Near-term
+    steerers & Long-range steerers" vs "Long-range steerers & Near-term
+    steerers" for two families whose real difference was the level SIGN.
+    Planted: equal-strength distances in swapped order, level -2 vs +2.5."""
+    a = _row_vec("horizon_shape_near", 2.2)
+    a[list(CHANNELS).index("horizon_shape_far")] = 2.1
+    a[list(CHANNELS).index("level")] = -1.98
+    b = _row_vec("horizon_shape_far", 2.7)
+    b[list(CHANNELS).index("horizon_shape_near")] = 2.6
+    b[list(CHANNELS).index("level")] = 2.45
+    prepared = [{"directed_vec": a, "cleared": _cleared(a), "fires_on": None},
+                {"directed_vec": b, "cleared": _cleared(b), "fires_on": None}]
+    t1, t2 = _compose_family_titles(prepared)
+    assert t1 == "Level lowerers", t1
+    assert t2 == "Level raisers", t2
+
+
+def test_reversed_join_order_is_a_title_collision():
+    """Decoy for the set-based collision key: two distance-only families whose
+    cleared lists are the same two channels in swapped order. String equality
+    calls "A & B" and "B & A" distinct; a reader cannot tell them apart, so
+    the composer must escalate past them. The single-channel families c and d
+    force a and b past their one-channel titles onto exactly that pair."""
+    a = _row_vec("horizon_shape_near", 3.0)
+    a[list(CHANNELS).index("horizon_shape_far")] = 2.0
+    b = _row_vec("horizon_shape_far", 3.0)
+    b[list(CHANNELS).index("horizon_shape_near")] = 2.0
+    c = _row_vec("horizon_shape_near", 3.0)
+    d = _row_vec("horizon_shape_far", 3.0)
+    prepared = [{"directed_vec": v, "cleared": _cleared(v), "fires_on": None} for v in (a, b, c, d)]
+    titles = _compose_family_titles(prepared)
+    keys = [frozenset(t.split(" & ")) for t in titles]
+    assert len(set(keys)) == 4, titles
+
+
+def test_distance_only_family_keeps_its_distance_title():
+    """A family whose ONLY cleared channel is a horizon distance is still
+    named by it (the reordering demotes distances, never drops them)."""
+    a = _row_vec("horizon_shape_near", 3.0)
+    (t,) = _compose_family_titles([{"directed_vec": a, "cleared": _cleared(a), "fires_on": None}])
+    assert t == "Near-term steerers", t
+
+
 def test_title_disambiguation_regression_roman_numeral_alone_would_not_differentiate():
     """Planted-regression companion: the OLD single-family composer
     (`plain_text.compose_title`, still used by `concepts.py::plain_name` for

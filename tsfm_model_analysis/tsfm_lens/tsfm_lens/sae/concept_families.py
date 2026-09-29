@@ -530,6 +530,32 @@ def _combined_channel_title(directed_vec: np.ndarray, cleared: list, k: int) -> 
     return " & ".join(seen)
 
 
+_UNDIRECTED_TITLE_CHANNELS = frozenset(
+    CHANNELS.index(c) for c in ("horizon_shape_near", "horizon_shape_far"))
+
+
+def _title_order(cleared: list) -> list:
+    """`cleared` reordered for TITLES: directed channels first (strength order
+    kept), the undirected distance channels (`horizon_shape_near/_far`) last.
+    Those channels clear in nearly every family, because any ablation that
+    changes the forecast at all moves its near and far thirds, so leading a
+    title with them names what families share rather than what separates
+    them. Measured on `runs/concept_atlas_v2`: 9/9 families cleared both, and
+    two families titled "Near-term steerers & Long-range steerers" /
+    "Long-range steerers & Near-term steerers" differed only in level sign
+    (-1.98 vs +2.45 null units). A family whose ONLY cleared channels are
+    distances keeps them."""
+    return ([c for c in cleared if c not in _UNDIRECTED_TITLE_CHANNELS]
+            + [c for c in cleared if c in _UNDIRECTED_TITLE_CHANNELS])
+
+
+def _title_key(title: str) -> frozenset:
+    """Collision key for a composed title: the SET of its " & "-joined
+    phrases, so "A & B" and "B & A" collide (a reader cannot tell them
+    apart) instead of passing as distinct strings."""
+    return frozenset(title.split(" & "))
+
+
 def _compose_family_titles(prepared: list, forced_titles: list | None = None) -> list:
     """Batch title composer across the WHOLE run (orchestrator review of F1,
     item 2): "II"/"III" told a reader nothing about what actually differs
@@ -564,7 +590,7 @@ def _compose_family_titles(prepared: list, forced_titles: list | None = None) ->
     def candidate(i: int, k: int) -> str:
         if forced_titles[i] is not None:
             return forced_titles[i]
-        return _combined_channel_title(prepared[i]["directed_vec"], prepared[i]["cleared"], k)
+        return _combined_channel_title(prepared[i]["directed_vec"], _title_order(prepared[i]["cleared"]), k)
 
     channel_titles: list = [None] * n
     resolved: list = [False] * n
@@ -573,7 +599,7 @@ def _compose_family_titles(prepared: list, forced_titles: list | None = None) ->
         chosen = candidate(i, cap)
         for k in range(1, cap + 1):
             cand = candidate(i, k)
-            collides = any(candidate(j, min(k, max(max_k[j], 1))) == cand
+            collides = any(_title_key(candidate(j, min(k, max(max_k[j], 1)))) == _title_key(cand)
                           for j in range(n) if j != i)
             if not collides:
                 chosen = cand
@@ -596,7 +622,8 @@ def _compose_family_titles(prepared: list, forced_titles: list | None = None) ->
         if fo is None:
             continue
         collides = any(
-            (titles[j] == fo) or (not resolved[j] and fires_on_candidate(j) == fo)
+            (_title_key(titles[j]) == _title_key(fo))
+            or (not resolved[j] and _title_key(fires_on_candidate(j) or "") == _title_key(fo))
             for j in range(n) if j != i)
         if not collides:
             titles[i] = fo
@@ -607,11 +634,11 @@ def _compose_family_titles(prepared: list, forced_titles: list | None = None) ->
     for title in titles:
         final = title
         k = 0
-        while final in used:
+        while _title_key(final) in used:
             suffix = TITLE_SUFFIXES[min(k, len(TITLE_SUFFIXES) - 1)]
             final = f"{title} {suffix}"
             k += 1
-        used.add(final)
+        used.add(_title_key(final))
         out.append(final)
     return out
 
