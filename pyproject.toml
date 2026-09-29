@@ -24,8 +24,9 @@ dependencies = [
 #     HF forecasting datasets) are script-backed, and datasets>=3 removed
 #     script-based dataset loading entirely ("Dataset scripts are no longer
 #     supported"). >=2.18 was the original (correct) floor; the missing upper
-#     bound is what broke once a newer datasets got installed. 2.21.0 is the
-#     verified-working pin.
+#     bound is what broke once a newer datasets got installed. 2.21.0 was
+#     verified on the earlier tsfmPy env; the reference env (cudaPy) runs
+#     2.19.2 (DEPENDENCIES.md sec 3).
 #   - tsbootstrap's public API was fully rewritten between versions (the
 #     class-based MovingBlockBootstrap(...).bootstrap(...) this was
 #     originally written against no longer exists as of 0.7.1, replaced by a

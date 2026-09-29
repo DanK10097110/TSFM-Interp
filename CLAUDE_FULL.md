@@ -685,8 +685,8 @@ TSFM-Interp/
 │                                      # ROADMAP.md 2026-08-18; append-only, not a source of truth
 ├── DEPENDENCIES.md                    # exact verified library versions + env recreation (§7 invariant 12)
 ├── pyproject.toml                     # root package = tsfm-benchmark only (see below)
-├── clean_reinstall.sh                 # pinned torch 2.9.1+cu130 / numpy 2.1.0 / transformers
-│                                       # env rebuild script — not part of the analysis code
+│   (clean_reinstall.sh removed 2026-09-29: it pinned datasets==3.6.0 against the <3
+│    bound and uninstalled every pip package; DEPENDENCIES.md sec 2 is the setup recipe)
 ├── tsfm_benchmark/
 │   ├── build_pipeline/          # the generation package
 │   │   ├── schema.py            # TimeSeriesSample, GroundTruth, Provenance, SourceRef, ProvenanceStep
