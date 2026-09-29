@@ -1,0 +1,88 @@
+\section{Statistical Protocol}
+\label{sec:statistics}
+
+A system that runs thousands of comparisons per report must control how often it is fooled. \tool{}
+does so with four mechanisms, summarized in Table~\ref{tab:claims}.
+
+\paragraph{The series is the resampling unit.} Windows of one series share its trend, noise process and
+scale, so treating them as independent overstates precision. Every interval and $p$-value in \tool{}
+resamples whole series \citep{efron1993bootstrap,cameron2008cluster}: a paired bootstrap for accuracy
+differences, a cluster bootstrap for CKA, a validation-series interval (probes held fixed) for stitching
+and a paired cluster bootstrap for patching. Train/validation splits are also made by series and sampled
+by stratum, never by slicing the head of a corpus that is stored grouped by task.
+
+\paragraph{A multiplicity ledger.} Every test is assigned to a named correction family (Holm for
+confirmatory families, Benjamini--Hochberg for discovery-oriented atlas transfers). Resampled $p$-values
+are floored at $1/n_{\text{boot}}$ \citep{phipson2010permutation}, which means a Holm family of $m$ tests
+cannot produce an adjusted $p$ below $m/n_{\text{boot}}$. The ledger computes this attainable minimum
+for every family and flags families in which no test could ever be significant, a failure mode that grows
+silently as models are added (the number of pairwise comparisons is quadratic). The example run has 45
+correction families and 3{,}599 comparisons; its most stringent L0 family (30 tests over 6 model pairs)
+has a minimum attainable Holm $p$ of 0.015 at $n_{\text{boot}}=2000$.
+
+\paragraph{Noise floors and power.} Effects are read against reference values that come from the run
+itself: repeat-run noise floors for accuracy, shuffled-series nulls for CKA, input-feature baselines for
+stitching, random-direction nulls and activation-matched floors for ablations, and replicate-seed
+ceilings for SAE reproducibility. Before the private split is opened, the confirm stage computes each
+registered claim's minimum detectable effect at the private sample size by simulation (for example, a
+$\Delta$MASE of 0.155 at $n=240$ with 80\% power), so that a non-replication can be read as ``absent'' or
+``underpowered''.
+
+\paragraph{Register, then confirm once.} The \texttt{register} stage freezes hypotheses drawn from dev
+results into a registry, together with the content hash of each dev artifact a hypothesis came from; the
+registry itself is hashed. The \texttt{confirm} stage refuses to run if a hash does not match, requires
+the private split's seal to verify, tests each claim once and refuses to overwrite its own artifact.
+Forcing a rerun is recorded as \texttt{repeated\_look}, and a consumed split is replaced by minting a new
+epoch (Figure~\ref{fig:confirm}). This is pre-registration \citep{nosek2018preregistration} applied to a
+software pipeline, and a guard against adaptive overfitting of the holdout \citep{dwork2015reusable}.
+Findings that were never registered cannot be rescued after the fact.
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[
+  box/.style={draw, rounded corners=2pt, align=center, font=\scriptsize, minimum height=9mm, fill=white, text width=24mm},
+  arr/.style={-{Stealth[length=1.6mm]}, gray!70!black},
+  lab/.style={font=\scriptsize\itshape, text=gray!70!black}]
+  \node[box, fill=soft] (dev) at (0,0) {dev split\\(exploratory, reusable)};
+  \node[box] (find) at (3.7,0) {typed findings\\(126 in example)};
+  \node[box] (reg) at (7.4,0) {registry: claims +\\artifact hashes,\\sha256-pinned};
+  \node[box, fill=accent!12] (conf) at (11.2,0) {confirm: one look,\\Holm across claims};
+  \node[box, fill=soft] (priv) at (11.2,-2.3) {private split\\(seal verified)};
+  \node[box, fill=soft] (epoch) at (7.4,-2.3) {fresh epoch\\(new seed stride)};
+  \draw[arr] (dev) -- (find);
+  \draw[arr] (find) -- node[above,lab]{select} (reg);
+  \draw[arr] (reg) -- (conf);
+  \draw[arr] (priv) -- node[right,lab]{opened once} (conf);
+  \draw[arr, dashed] (conf.south west) -- node[above left,lab]{if consumed} (epoch.north east);
+  \draw[arr, dashed] (epoch) -- node[below,lab]{replaces} (priv);
+\end{tikzpicture}
+\caption{The confirmatory protocol. Only claims registered before the private split is opened can be
+confirmed; a second look is recorded, and replicating again requires a newly minted epoch.}
+\label{fig:confirm}
+\end{figure}
+
+\begin{table}[t]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabularx}{\textwidth}{@{}>{\raggedright}p{2.6cm}>{\raggedright}p{2.7cm}>{\raggedright}X>{\raggedright}p{1.9cm}l@{}}
+\toprule
+Claim type & Test statistic & Null / reference & Correction & Held-out \\
+\midrule
+Model A more accurate (per family) & paired $\Delta$MASE, series bootstrap & zero difference; repeat-run noise floor & Holm over all pairs $\times$ families & \cmark \\
+Layers share geometry & linear CKA, cluster bootstrap & shuffled-series null at the same layer pair & per model pair & \cmark \\
+Layer linearly translatable & ridge stitching gain & input-feature baseline (gain $=0$) & per pair & -- \\
+Depth reaction agrees & Spearman $\rho$ of fingerprints on shared depth & bootstrap CI of $\rho$ & per corruption & \cmark \\
+Layer restores forecast & restoration fraction & self-patch $=0$, cross-patch $\neq 0$ & per model & -- \\
+Feature is causal & mean $|\Delta^{(c)}|$ on own rows & row-matched random-direction $q_{95}$ & per channel (count vs.\ chance) & -- \\
+Concept reproducible & best-match cosine across seeds & within-model replicate ceiling & -- & -- \\
+Same inputs & top-$k$ AUC in other model & stratum-matched random subsets & BH per ordered pair and leg; Holm when registered & \cmark \\
+Same effect on same inputs & level concordance; shape cosine & activation-matched feature-set floors ($q_{95}$ agree, $q_{05}$ differ) & per test & -- \\
+Families are real & number and coverage of families & column-shuffle null & -- & -- \\
+\bottomrule
+\end{tabularx}
+\caption{Every claim type the case study reports, the statistic that tests it, the reference it must
+beat, its multiplicity correction and whether the \texttt{confirm} stage currently re-tests it on
+private data. Claim types without a held-out mark are reported as exploratory.}
+\label{tab:claims}
+\end{table}

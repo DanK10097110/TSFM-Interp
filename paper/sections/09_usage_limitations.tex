@@ -1,0 +1,101 @@
+\section{Using and Extending \tool{}}
+\label{sec:usage}
+
+\paragraph{Workflow.} A typical user installs the two packages, builds or downloads a benchmark, and runs one
+configuration:
+\begin{center}
+\begin{minipage}{0.95\textwidth}
+\footnotesize
+\begin{verbatim}
+pip install -e . && pip install -e tsfm_lens
+cd tsfm_benchmark && PYTHONPATH=. python3 example_runs/run_full.py \
+       --config configs/example.yaml --out ./benchmark_out --references monash
+cd ../tsfm_lens && python run.py --config configs/examples/medium_2model.yaml
+\end{verbatim}
+\end{minipage}
+\end{center}
+The CLI also provides \texttt{-{}-doctor} (preflight checks), \texttt{-{}-list-configs}, \texttt{-{}-stages} and
+\texttt{-{}-force} for partial reruns, \texttt{-{}-check-alignment} and \texttt{-{}-check-adapter} for new
+checkpoints or library upgrades, and \texttt{-{}-verify-provenance}, which compares a run's recorded
+environment with the current one. A CPU-only smoke configuration with mock models runs every stage in
+minutes and is part of continuous integration. The worked example
+(\repo{tsfm_lens/docs/worked_example.md}) walks through a report section by section.
+
+\paragraph{Cost.} The full four-model analysis of Section~\ref{sec:casestudy} takes 6.4 hours on one 24~GB GPU.
+Most of the time goes to SAE training and the causal concept battery; stages up to and including L3 finish in
+about 16 minutes. Single-model and two-model presets are proportionally cheaper, and every stage can be
+disabled in the configuration.
+
+\paragraph{Adding a model.} The zero-code path handles checkpoints that load through
+\texttt{transformers.AutoConfig}; of eight TSFM checkpoints probed, two (Timer and Time-MoE) resolved this way,
+and five that ship standalone packages (Toto, MOMENT, Lag-Llama, Moirai, TTM) need a hand-written adapter
+(\fid{MN-25}). The adapter template, the one-command checklist and the adapters guide are designed for that
+case. The guide's checklist covers input normalization, seeded sampling, precision, batch chunking, layer
+regexes, span contiguity, encoder--decoder capture, reach controls and random-weight twins
+(Appendix~\ref{app:adapters}).
+
+\paragraph{Extending the analysis.} New sections are added as report builders with a declared artifact
+requirement; a missing artifact renders as ``not run'' and an exception as ``section failed'', so an extension
+cannot silently drop content. New findings use the \texttt{Finding} record, which forces an evidence class.
+New configuration fields declare which stage artifacts they affect, so fingerprints stay correct.
+
+\section{Limitations and Threats to Validity}
+\label{sec:limitations}
+
+\paragraph{Scope of the models.} The case study covers four models, all transformers with contiguous
+patch tokens. Models whose tokens read disjoint lags (Lag-Llama) defeat contiguity-based span discovery and
+are analyzed with reduced scope (\fid{MN-25}). The analysis is univariate by design: Chronos-2's cross-series
+group attention has no time interval and is not measured, so every Chronos-2 claim concerns its time axis
+only (\fid{PM-13}). Chronos-T5's decoder and Sundial's flow-matching head are not captured, so their depth
+claims concern part of the computation (Table~\ref{tab:models}).
+
+\paragraph{Synthetic ground truth.} The benchmark's ground truth is exact only for the synthetic tier. Its
+generators encode our assumptions about what structure matters, and catch22 features may miss
+task-specific properties. The real-derived tier inherits real distributions but gives only attributional
+ground truth, and 27 of 76 concept parts in the example run are dominated by one real-derived generator.
+Whether a real corpus overlaps a model's pretraining data cannot be verified.
+
+\paragraph{What was confirmed.} Held-out confirmation currently covers accuracy, geometry, perturbation
+agreement and input-level concept transfer. The causal concept results (families, sharing classes,
+shared-input agreement) replicate across two corpora but have not been tested on a sealed split, and should
+be read as exploratory. The 20 confirmed transfer claims of the v2 run come from two concepts. The v2 split's
+exchangeability test was not persisted for this run (the v1 splits and two fresh epochs are exchangeable;
+\fid{MP-09}).
+
+\paragraph{SAE dependence.} Concept results depend on the dictionary: its size, sparsity, revival recipe and
+seed. The system measures this dependence (seed-stability ceilings, fidelity, dead rates, reconstruction
+cost) but cannot remove it. With a fixed recipe, feature death is governed by layer geometry, not the recipe
+(alive atoms scale with effective dimension with exponent 1.02; \fid{MP-05}), so a single SAE configuration is
+not equally informative for every model.
+
+\paragraph{Usability for novices.} The report was designed for readers without an interpretability
+background, with plain-language explainers throughout. We have not run a user study, so claims about
+accessibility rest on design, not on measured comprehension.
+
+\paragraph{The controls are not exhaustive.} Section~\ref{sec:controls} lists failures that were caught.
+Controls cannot catch an error for which nobody has written a known-answer case, and the most dangerous
+failures in the table produced clean, confident output.
+
+\section{Conclusion}
+\label{sec:conclusion}
+
+Interpretability of time-series foundation models is harder than it looks. Tokens mean different things in
+different models, there is no annotated ground truth, and the causal effects of internal features are small
+enough that measurement artifacts dominate unless they are controlled. \tool{} addresses these problems with a
+controlled benchmark, measured time alignment, causal concepts gated by nulls and reach probes, and a
+register-then-confirm protocol. It packages all of this behind one command and a report written for
+non-specialists.
+
+Applied to four architecturally distinct TSFMs, the system gives answers to our research questions that are
+both general and falsifiable. The models' causal features act mainly on forecast level and shape, forming a
+continuum rather than discrete concepts. Different models detect the same things, and this replicates on
+sealed data, but they rarely use them the same way: shared effects on shared inputs are rare, convergent
+concepts dominate, and no concept is common to all four models. Individual features matter causally but
+account for little of the forecast. And the fourteen cases in which a plausible result was wrong show why these
+conclusions needed the controls that produced them. We hope the system, its example run and its ledger of
+findings, positive and negative, make such controlled, causal and confirmatory analysis the default for
+forecasting models.
+
+\paragraph{Availability.} Code (MIT license), configurations, the example run and the findings ledger are at
+\url{\repourl}. The \texttt{main} branch holds the publishable system; the \texttt{dev} branch holds the full
+research log, study drivers and experiment configurations.

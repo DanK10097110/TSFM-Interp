@@ -1,0 +1,77 @@
+\section{Controls Change Conclusions}
+\label{sec:controls}
+
+How can a reader know that an interpretability system is better than a careful script that runs the same
+methods? For a tool whose purpose is to find out what is true about models, one useful answer is a
+record of cases in which the obvious analysis produced an answer, the answer was wrong, and a specific
+control caught it. Table~\ref{tab:controls} lists fourteen such cases from the development of \tool{}. Each
+row gives what the uncontrolled analysis reported, what the controlled analysis found and the control that
+now runs by default. In every case the uncontrolled output was well-formed, plausible and, in several cases,
+more interesting than the truth. None of them raised an error.
+
+\begin{table}[p]
+\centering
+\scriptsize
+\setlength{\tabcolsep}{2.5pt}
+\renewcommand{\arraystretch}{1.12}
+\begin{tabularx}{\textwidth}{@{}p{0.3cm}>{\raggedright}p{2.35cm}>{\raggedright}X>{\raggedright}X>{\raggedright}p{2.6cm}l@{}}
+\toprule
+\# & Analysis & Uncontrolled result & Controlled result & Built-in control & ID \\
+\midrule
+\multicolumn{6}{@{}l}{\textit{Interventions that never landed or were not identical}} \\
+1 & Skip lens, Chronos-2 & MASE byte-identical (1.564247) at all 12 layers: ``forecast formed at layer 0'' & The head reads placeholder tokens the patch never writes; real reach by depth 0.737, 0.643, 0.282, 0.095, 0.000 & reach probe; lens withheld when the head does not read patched positions & DE-03 \\
+2 & Patching with bf16 cache & Aggregates within 0.66\% of CI width of the corrected values & Self-patch was 0.00214, not 0; 71\% of role assignments at one layer changed & self-patch must be exactly 0.0; clean cache with autocast off & MN-24 \\
+3 & Sampled model (Sundial) as causal destination & Scorable in 1 of 71 tests: ``Sundial is causally inert'' & Null reseeded differently from its baseline; after the fix, scorable in 12 of 71 & identical seeds across every compared pair of calls & PM-09 \\
+4 & Scale equivariance, Sundial & Residual 38.43 context s.d.\ read as a model property; 100\% flat forecasts on electricity & Adapter bypassed the checkpoint's normalization; residual 0.030, flat share 0.08 & frontend residual flagged against peers & PM-15 \\
+\midrule
+\multicolumn{6}{@{}l}{\textit{Nulls that were too weak, or asked the wrong question}} \\
+5 & Concept transfer & Uniform random-subset null: 30 of 30 concepts transfer & Stratum-matched null: 56.3\% forward, 46.1\% reciprocal & null matched on benchmark strata & SH-14 \\
+6 & Cross-model causal comparison & 18 of 19 activation-matched roles ``fire together, act differently'' & Same series, own nulls, matched floors: 12 of 89 scorable tests act differently & shared-input agreement with matched floors & CA-06 \\
+7 & Disagreement test & 109 of 288 tests ``act differently'' (failing a $q_{95}$ bar) & Lower-tail test: 9 act differently; 32 show no specific agreement & $q_{05}$ required for disagreement & MN-18 \\
+8 & Random-weight twins as causal floor & One floor per model & TimesFM's twin is an exact identity stack yet reaches the forecast (0.187); Chronos twins are numerically dead ($<10^{-7}$); floor exists for 1 of 6 pairs & within-run matched-feature floors; relative reach gate & PM-08 \\
+9 & SAE names from ground truth & 11 of 11 headline features named after corpus provenance & After residualizing, 82 of 88 cards (93\%) ranked float-rounding noise ($\rho$ 0.203 $\to$ 0.615) & residual-scale floor; control bounded from both sides & MN-05 \\
+\midrule
+\multicolumn{6}{@{}l}{\textit{Metrics that did not measure what they were named for}} \\
+10 & CKA and stitching for lineage & Related trained pair shows high similarity (CKA 0.734) & Untrained same-architecture pair is higher (0.878; $p=0.0005$) & random-init twin comparison & MN-01 \\
+11 & Unit-level correspondence & 0.24--0.54, every CI excludes 0 & Rotating both bases \emph{raises} it (0.148 $\to$ 0.331) & rotation control on real activations & SH-19 \\
+12 & Captured-depth chart & Chronos-T5 fully observed (1.0), TimesFM 0.851 & Share of forecast FLOPs: Chronos-T5 14.4\%, TimesFM 42.5\% & FLOP-based coverage from the full forecast & DE-05 \\
+13 & Span refusal statistic & ``Diffuse'' spans: refuses 3 of 5 correct adapters & Statistic grew with token count; peak-to-pedestal contrast accepts all (IoU 1.0) & gates normalized by attainable ceiling & MP-01 \\
+14 & Single-seed SAE as gold standard & Layer selector beats random on 2 of 3 architectures & Verdict flips with the extraction seed; 3-seed average agrees across seeds & replicate SAE seeds & MP-04 \\
+\bottomrule
+\end{tabularx}
+\caption{Fourteen documented cases in which an uncontrolled analysis gave a well-formed wrong answer and a
+built-in control changed the conclusion. Every control listed runs in the default configuration. Full accounts, including the exact commands, are in \repo{FINDINGS.md}
+under each ID.}
+\label{tab:controls}
+\end{table}
+
+\paragraph{Three failure classes.} The cases fall into three classes, and each class maps onto a design
+principle of Section~\ref{sec:principles}. \emph{Interventions that never landed} (rows 1--4) produce flat
+curves, tables of zeros or perfectly matching numbers, which read as strong negative results. The remedy
+(P3) costs almost nothing: patching a layer into itself must return exactly 0.0, patching another layer must
+return a nonzero change, two unpatched predictions must be identical, and the input front end must behave
+like the peers'. \emph{Nulls that were too weak} (rows 5--9) produce inflated positive results, and the
+failure often looks like a success: 30 of 30 concepts transferring, 93\% of headline features ``explained''.
+The remedy is a null matched on the right confound and measured on the same rows, bounded from both sides,
+with the lower tail used for claims of difference. \emph{Metrics that did not measure what they were named
+for} (rows 10--14) are caught only by validating the metric on a case whose answer is known (P1): an untrained
+twin, a random rotation, a checkpoint whose spans are known, a replicate seed.
+
+\paragraph{Smaller failures of the same kind.} The ledger records further cases of each class. A headline
+result that an SAE reconstruction \emph{improves} on the clean forecast ($-0.346$ $\Delta$MASE) replicated in 1 of 5
+seeds and was retracted (\fid{MN-16}). A layer-spacing rule rejected the top-scoring TimesFM layer and admitted
+two below the mean (\fid{DE-08}). A sign convention applied to a distance channel generated the sentence
+``decreases how much the forecast changes'' for every family, which is meaningless for a quantity that
+cannot be negative (\fid{CA-10}). And a small grounded language model asked to narrate features produced a new
+class of unsupported claim after each of four guard-strengthening passes; in the final pass 2 of the 4
+summaries that passed every guard were wrong, while 6 of 6 deterministic sentences were correct
+(\fid{MN-06}). \tool{} therefore composes every report sentence deterministically from measured values.
+
+\paragraph{What this does and does not show.} Table~\ref{tab:controls} is not a benchmark in which \tool{}
+beats a baseline on a metric. It is a set of counterexamples: for each row, a pipeline that applies the same
+method without the control would have reported the uncontrolled result. We regard this as the strongest
+evidence available that the controls are necessary. It is necessarily incomplete: the table can list only the
+failures that were caught, and Section~\ref{sec:limitations} discusses what the controls cannot catch. Every
+control in the table runs in the default configuration, and the project's verification standard
+(\repo{CONTRIBUTING.md}) requires each new test's load-bearing assertion to be shown failing against a
+deliberately planted regression before it is merged.

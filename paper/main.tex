@@ -1,0 +1,115 @@
+\documentclass[twoside,11pt]{article}
+
+% JMLR style (https://github.com/JmlrOrg/jmlr-style-file). Remove `preprint`
+% for the submission build once volume/paper-id are assigned.
+\usepackage[abbrvbib,preprint]{jmlr2e}
+
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,fit,backgrounds,calc,shapes.geometric,decorations.pathreplacing}
+\usepackage{lastpage}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{pifont}
+\usepackage{dirtree}
+\usepackage{longtable}
+
+\setlist{itemsep=2pt,topsep=3pt}
+\setlength{\emergencystretch}{3em}
+
+\definecolor{tfm}{HTML}{2f6f8f}
+\definecolor{ctwo}{HTML}{9b4f7f}
+\definecolor{sun}{HTML}{3d7f5a}
+\definecolor{bolt}{HTML}{8a6a3a}
+\definecolor{accent}{HTML}{c0602a}
+\definecolor{ok}{HTML}{2e7d32}
+\definecolor{bad}{HTML}{c62828}
+\definecolor{soft}{HTML}{eef2f5}
+
+\newcommand{\repourl}{https://github.com/DanK10097110/TSFM-Interp}
+\newcommand{\repo}[1]{\href{\repourl/blob/main/#1}{\nolinkurl{#1}}}
+\newcommand{\repodir}[1]{\href{\repourl/tree/main/#1}{\nolinkurl{#1}}}
+\newcommand{\fid}[1]{\href{\repourl/blob/main/FINDINGS.md}{\textsf{#1}}}
+\newcommand{\tool}{\textsc{TSFM-Lens}}
+\newcommand{\cmark}{\ding{51}}
+\newcommand{\xmark}{\ding{55}}
+\newcommand{\pmark}{$\circ$}
+\newcommand{\ev}[1]{\textsc{#1}}
+
+\jmlrheading{}{2026}{1-\pageref{LastPage}}{}{}{}{Dan Kushnir}
+\ShortHeadings{Controlled, Causal and Confirmatory Interpretability of TSFMs}{Kushnir}
+\firstpageno{1}
+
+\begin{document}
+
+\title{\tool: Controlled, Causal and Confirmatory Interpretability\\ for Time-Series Foundation Models}
+
+\author{\name Dan Kushnir \email dan.kushnir@spialert.com}
+
+\editor{}
+
+\maketitle
+
+\begin{abstract}%
+Time-series foundation models (TSFMs) are now deployed zero-shot in forecasting pipelines, yet
+almost nothing is known about what they compute, and the tools that made language models
+inspectable do not transfer: TSFM tokens cover different spans of time from one architecture to the
+next, no ground truth exists for what a ``concept'' in a forecast should be, and the causal effects
+of internal features are small enough that uncontrolled measurements produce confident false
+positives. We present \tool{}, an open-source system that turns a list of model checkpoints into a
+single, self-contained interpretability report with one command. It is built on three commitments.
+First, it is \emph{controlled}: a leakage-audited synthetic benchmark whose generative components
+are known exactly, together with structured input perturbations, provides known answers against
+which every probe is validated. Second, it is \emph{causal}: concepts are defined by what removing
+them does to the forecast, measured against row-matched random-direction nulls and gated by reach
+controls. Third, it is \emph{confirmatory}: exploratory claims are registered by content hash and
+tested once on a sealed private split. Architecture-agnostic time alignment makes decoder-only,
+encoder-only and encoder--decoder models with token widths from 1 to 96 steps comparable, and every
+reported number carries a typed evidence class and a generated caveat. Applied to TimesFM,
+Chronos-2, Sundial and Chronos-Bolt, the system finds that the models' causal features change
+forecast level and shape far more often than trend or seasonality; that the models agree on
+\emph{which inputs} a concept groups (20 of 20 registered transfer claims confirmed on 800 held-out
+series) but rarely on \emph{what it does} to those inputs (11 of 1{,}223 shared-input tests show the
+same causal effect); and that no concept is shared by all four models. We also document
+more than a dozen cases in which a plausible, well-formed result was wrong and the system's own
+controls caught it. Code, configurations, a complete example run and a ledger of every finding with
+its reproduction pointer are public.
+\end{abstract}
+
+\begin{keywords}
+  mechanistic interpretability, time-series foundation models, sparse autoencoders, causal
+  intervention, representation similarity, synthetic benchmarks, pre-registration, open-source software
+\end{keywords}
+
+\input{sections/01_introduction}
+\input{sections/02_related}
+\input{sections/03_principles}
+\input{sections/04_architecture}
+\input{sections/05_methods}
+\input{sections/06_statistics}
+\input{sections/07_case_study}
+\input{sections/08_controls}
+\input{sections/09_usage_limitations}
+
+\acks{The author thanks the maintainers of the open checkpoints and libraries this work builds on
+(TimesFM, Chronos, Sundial, Timer, Lag-Llama, PyTorch, scikit-learn, zarr, plotly and
+catch22). \textbf{Funding and competing interests:} [to be completed by the author before
+submission].}
+
+\newpage
+\appendix
+\input{sections/appendix}
+
+\vskip 0.2in
+\bibliography{references}
+
+\end{document}
