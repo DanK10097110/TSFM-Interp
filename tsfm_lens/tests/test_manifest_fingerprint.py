@@ -178,7 +178,7 @@ def test_sections_with_no_exempt_fields_resolve_exactly_as_asdict_did(tmp_path):
     """
     import dataclasses, json
     cfg = _plain_cfg(tmp_path)
-    for section in ("data", "l1", "l3", "lens", "attention"):
+    for section in ("data", "l1", "l3", "attention"):
         obj = getattr(cfg, section)
         exempt = [f.name for f in dataclasses.fields(obj)
                   if f.metadata.get("stage_input") is False]

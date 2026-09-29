@@ -51,7 +51,7 @@ def run_lens(cfg: PipelineConfig, hub, store: ActivationStore, data: BenchmarkDa
     """Compute skip-lens and tuned-lens depth curves for every configured model."""
     out_dir = cfg.run_dir() / "lens"
     out_dir.mkdir(parents=True, exist_ok=True)
-    meta, arrays = {}, {}
+    meta, arrays, convergence = {}, {}, {}
     for mcfg in cfg.models:
         adapter = hub.get(mcfg.name)
         adapter.ensure_loaded()
@@ -60,10 +60,12 @@ def run_lens(cfg: PipelineConfig, hub, store: ActivationStore, data: BenchmarkDa
         meta[mcfg.name] = result["meta"]
         for key, arr in result["arrays"].items():
             arrays[f"{key}_{mcfg.name}"] = arr
+        convergence[mcfg.name] = result["convergence"]
         if not cfg.run.keep_models_loaded:
             hub.release(mcfg.name)
     np.savez(out_dir / "curves.npz", **arrays)
     save_json(out_dir / "lens.json", meta)
+    _write_convergence(out_dir, convergence)
     for model, m in meta.items():
         if not m.get("skip_lens_available", True):
             log.info("lens %s: skip lens unavailable (%s); tuned lens only",
@@ -71,6 +73,55 @@ def run_lens(cfg: PipelineConfig, hub, store: ActivationStore, data: BenchmarkDa
             continue
         log.info("lens %s: final MASE %.3f, crystallization depth %s",
                  model, m["final_mase"], m["crystallization_depth"])
+
+
+CONVERGENCE_RULE = (
+    "first captured layer at which mean_h |lens_forecast - final_forecast| / scale "
+    "<= tol, scale = mean |diff(context)| (the L0 MASE scale), tol = "
+    "lens.crystallization_tol; label-free (no targets enter it); a series that never "
+    "gets within tol at any captured layer is recorded as not converged")
+
+
+def convergence_depths(lens_fc: np.ndarray, final_fc: np.ndarray, scale: np.ndarray,
+                       tol: float, depths: np.ndarray) -> dict:
+    """Per-series convergence depth of the skip lens onto the model's own forecast.
+
+    `lens_fc` is `[n_layers, B, horizon]`, `final_fc` `[B, horizon]`, `scale`
+    `[B]`. The distance of layer l to the final forecast is
+    `mean_h |lens_l - final| / scale`; a series converges at the first layer
+    whose distance is `<= tol` (`CONVERGENCE_RULE`). Unlike the mean-curve
+    `crystallization_depths`, which compares lens MASE against the final MASE
+    and so reads the targets, this rule uses only forecasts, so the value is
+    available at inference and can serve as a predictor of failure. Returns
+    `layer_index` (`-1` when never converged), `rel_depth` (`nan` when never
+    converged) and the boolean `converged`.
+    """
+    dist = np.abs(lens_fc - final_fc[None]).mean(axis=2) / scale[None]
+    ok = dist <= tol
+    converged = ok.any(axis=0)
+    first = np.where(converged, ok.argmax(axis=0), -1)
+    rel = np.where(converged, np.asarray(depths, dtype=np.float64)[np.maximum(first, 0)],
+                   np.nan)
+    return {"layer_index": first.astype(np.int64), "rel_depth": rel,
+            "converged": converged}
+
+
+def _write_convergence(out_dir, convergence: dict) -> None:
+    """Persist per-series convergence depths beside, never inside, the legacy artifacts.
+
+    `curves.npz` and `lens.json` keep exactly their legacy keys
+    (`CLAUDE.md` invariant 13); the per-series depths live in
+    `convergence.npz` (`series_id_/layer_index_/rel_depth_/converged_<model>`)
+    with `convergence.json` carrying the rule, the tolerance and, for a model
+    whose skip lens is unavailable, the stated reason.
+    """
+    arrays, meta = {}, {}
+    for model, rec in convergence.items():
+        meta[model] = {k: v for k, v in rec.items() if k != "arrays"}
+        for key, arr in rec.get("arrays", {}).items():
+            arrays[f"{key}_{model}"] = arr
+    np.savez(out_dir / "convergence.npz", **arrays)
+    save_json(out_dir / "convergence.json", meta)
 
 
 def skip_lens_forecasts(adapter, layers: list, contexts: np.ndarray, horizon: int,
@@ -168,7 +219,9 @@ def _model_lens(cfg: PipelineConfig, adapter, store: ActivationStore,
             meta["n_series_tuned"] = n_tuned
             arrays["tuned_r2_model"] = r2_model
             arrays["tuned_r2_true"] = r2_true
-        return {"meta": meta, "arrays": arrays}
+        return {"meta": meta, "arrays": arrays,
+                "convergence": {"available": False, "rule": CONVERGENCE_RULE,
+                                "reason": meta["skip_lens_unavailable_reason"]}}
 
     lens_fc, final_fc = skip_lens_forecasts(adapter, layers, contexts,
                                             data.horizon, cfg.l0.quantiles,
@@ -211,7 +264,48 @@ def _model_lens(cfg: PipelineConfig, adapter, store: ActivationStore,
         meta["n_series_tuned"] = n_tuned
         arrays["tuned_r2_model"] = r2_model
         arrays["tuned_r2_true"] = r2_true
-    return {"meta": meta, "arrays": arrays}
+    conv_rows, conv = _convergence_for_rows(
+        cfg, adapter, data, layers, depths, rows, lens_fc, final_fc, scale)
+    return {"meta": meta, "arrays": arrays,
+            "convergence": {
+                "available": True, "rule": CONVERGENCE_RULE,
+                "tol": cfg.lens.crystallization_tol, "layers": layers,
+                "rel_depth_axis": depths.tolist(), "n_series": int(len(conv_rows)),
+                "depth_max_series": cfg.lens.depth_max_series,
+                "n_converged": int(conv["converged"].sum()),
+                "arrays": {
+                    "series_id": data.meta["series_id"].to_numpy()[conv_rows].astype(str),
+                    "rows": conv_rows.astype(np.int64),
+                    "layer_index": conv["layer_index"], "rel_depth": conv["rel_depth"],
+                    "converged": conv["converged"]}}}
+
+
+def _convergence_for_rows(cfg: PipelineConfig, adapter, data: BenchmarkData, layers: list,
+                          depths: np.ndarray, rows: np.ndarray, lens_fc: np.ndarray,
+                          final_fc: np.ndarray, scale: np.ndarray) -> tuple:
+    """Per-series convergence depths for the legacy lens rows, or a larger sample.
+
+    With `lens.depth_max_series` at its default of 0 (or no larger than the
+    legacy sample) the depths come from the forecasts `_model_lens` already
+    holds: no extra forward pass. Otherwise a separate stratified sample is
+    forecast in chunks of the model's batch size, since `token_patch` needs
+    one batch per call; the legacy curves are untouched either way.
+    """
+    want = int(cfg.lens.depth_max_series)
+    if want <= len(rows):
+        return rows, convergence_depths(lens_fc, final_fc, scale,
+                                        cfg.lens.crystallization_tol, depths)
+    big = sample_rows(data.n, want, cfg.run.seed + 86, strata=data.meta["family"].to_numpy())
+    contexts = data.contexts()[big]
+    bscale = np.abs(np.diff(contexts, axis=1)).mean(axis=1) + 1e-8
+    parts = []
+    for s, e in batch_slices(len(big), adapter.cfg.batch_size):
+        lf, ff = skip_lens_forecasts(adapter, layers, contexts[s:e], data.horizon,
+                                     cfg.l0.quantiles, cfg.run.seed + 81)
+        parts.append(convergence_depths(lf, ff, bscale[s:e], cfg.lens.crystallization_tol,
+                                        depths))
+    merged = {k: np.concatenate([p[k] for p in parts]) for k in parts[0]}
+    return big, merged
 
 
 def _tuned_lens(cfg: PipelineConfig, adapter, store: ActivationStore,
