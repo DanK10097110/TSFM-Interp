@@ -652,6 +652,26 @@ def _statistic_ii(side_a: dict, side_b: dict, null_stats_a: list, null_stats_b: 
            "clears": clears, "below_floor": below_floor}
 
 
+def _verdict(stat_i: dict, stat_ii: dict) -> str:
+    """The verdict chain of a scorable test, from the two statistics.
+
+    Extracted unchanged from `run_shared_input_agreement` (ROADMAP.md sec 38.1,
+    K1) so the rule can be tested on its own. Review item 2: failing to clear a
+    matched-feature floor is the ABSENCE of evidence of agreement, not evidence
+    of disagreement, so `acts differently` is reserved for an observed statistic
+    below the p05 of BOTH sides' floors.
+    """
+    if stat_i["clears"] and stat_ii["clears"]:
+        return "same causal effect"
+    if stat_i["clears"]:
+        return "level only"
+    if stat_ii["clears"]:
+        return "shape only"
+    if stat_i["below_floor"] or stat_ii["below_floor"]:
+        return "acts differently"
+    return "no specific agreement"
+
+
 # ---------------------------------------------------------------------------
 # 7. Driver.
 # ---------------------------------------------------------------------------
@@ -818,17 +838,7 @@ def run_shared_input_agreement(cfg, run_dir, hub, store, data, device, atlas: di
         # `acts differently` is reserved for an observed statistic falling
         # BELOW the p05 of BOTH sides' floors -- worse than matched,
         # equally-active features already agree by chance.
-        if stat_i["clears"] and stat_ii["clears"]:
-            verdict = "same causal effect"
-        elif stat_i["clears"]:
-            verdict = "level only"
-        elif stat_ii["clears"]:
-            verdict = "shape only"
-        elif stat_i["below_floor"] or stat_ii["below_floor"]:
-            verdict = "acts differently"
-        else:
-            verdict = "no specific agreement"
-        record["verdict"] = verdict
+        record["verdict"] = _verdict(stat_i, stat_ii)
         tests.append(record)
 
     verdict_counts: dict = {}
