@@ -38243,6 +38243,17 @@ writes Findings here and in FINDINGS.md.
 
 ### 38.7 Open questions — user decisions
 
+✅ **Decided 2026-09-29 by the user:** *"approve K4, 7-model panel first with
+TTM, start K5 and K1."*
+- Q1: K4 (U1/U2) approved.
+- Q2: the 7-model panel runs on dev first; K2 registers from it and confirms
+  once.
+- Q3: TTM is the seventh model (panel: TimesFM, Chronos-2, Sundial,
+  Chronos-Bolt, Timer, Time-MoE, TTM).
+- Q4 and Q5 were not answered. K2's size is decided at registration. K1 runs
+  the designed 5 × 5 grid after a one-seed smoke pass.
+- K5 and K1 start now.
+
 1. **K4.** Approve U1/U2 (failure prediction and routing from internals,
    against the quantile-width baseline) as the practical-use experiment, or
    the fallback §38.4.3, or none.
