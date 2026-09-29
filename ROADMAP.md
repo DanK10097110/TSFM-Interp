@@ -37398,7 +37398,20 @@ the shared-input agreement step alone took 10854.9 s (1223 tests vs 288 on the r
 top two channels in rank order: "Near-term steerers & Long-range steerers" (80) and "Long-range steerers &
 Near-term steerers" (61). They are distinct centroids (different channel ranks), but a reader cannot tell them
 apart. Fix before publishing the report as the example: title by the family's *distinguishing* channels (vs the
-other families), or order the joined nouns canonically and add the differentiating channel. Not yet done.
+other families), or order the joined nouns canonically and add the differentiating channel.
+- **Fixed 2026-09-29 (commit f2ed2a9).** Measured cause: both horizon-distance channels clear in 9/9 v2
+  families (any ablation that changes the forecast moves its near and far thirds). Titles now order directed
+  channels first (distances last, kept for distance-only families), and title collisions compare the SET of
+  joined phrases, so "A & B" collides with "B & A". Plants: identity reorder fails
+  `test_title_leads_with_directed_channel_not_the_ubiquitous_horizon_distance`; a string collision key fails
+  `test_reversed_join_order_is_a_title_collision` (1 failed each). `concept_families.json` recomputed in place on
+  both runs (backups `*.pre_title_fix.json`); only `families[].title` changed. Reports re-rendered (backups
+  `report.pre_title_fix.html`, `report.pre_title_fix/`); the reference run needed `--allow-stale` (pre-existing
+  stale fingerprints on layer_screen/sae/concepts/register/confirm). 126 findings before and after on both.
+  v2 titles: Level lowerers, Level raisers & Accuracy improvers, Volatility dampeners, Trend boosters & Accuracy
+  improvers, Seasonality amplifiers, Trend boosters & Volatility amplifiers, Level raisers & Trend boosters,
+  Trend dampeners, High-frequency shifters. Reference: Accuracy improvers, Level raisers, Seasonality dampeners,
+  Volatility amplifiers & Seasonality amplifiers, Volatility dampeners, Volatility amplifiers & Trend dampeners.
 
 ### 37.12 What this changes elsewhere in the plan
 
