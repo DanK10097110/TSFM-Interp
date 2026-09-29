@@ -688,6 +688,33 @@ def _feature_ablated_replacement(clean_tokens: torch.Tensor, sae, device,
     return recon.reshape(b, t, d).cpu()
 
 
+def _profile_matched_null_replacement(clean_tokens: torch.Tensor, sae, device, f_idx: int,
+                                      code: torch.Tensor) -> torch.Tensor:
+    """Token-level reconstruction with a RANDOM direction removed, sized to one
+    atom's own per-token removal profile.
+
+    The atom's ablation removes `z_f(t) w_f` from token `t`: an amount that is
+    zero where the atom is silent and large on its top rows. The legacy null
+    removes ONE uniform amount everywhere (the chunk's mean |z| over all tokens,
+    zeros included), which is far below a dense or strong atom's removal on its
+    own rows, so such an atom clears it on size alone. Here the null removes, at
+    every token `t`, a vector of norm `|z_f(t)| ||w_f||` along
+    `u = W_dec^T r / ||W_dec^T r||` (`r` a random unit `code` in dictionary
+    space). The removal profile is exactly the atom's, on the same rows; only the
+    direction is random. The baseline stays the full reconstruction.
+    """
+    b, t, d = clean_tokens.shape
+    features = sae.encode(clean_tokens.reshape(-1, d).to(device))
+    z = features[:, f_idx].abs()
+    recon = sae.decode(features)
+    W_dec = sae.W_dec.detach()
+    u = code.to(device=W_dec.device, dtype=W_dec.dtype) @ W_dec
+    u = u / u.norm().clamp_min(1e-12)
+    w_norm = W_dec[f_idx].norm()
+    removal = (z * w_norm)[:, None] * u[None, :]
+    return (recon - removal).reshape(b, t, d).cpu()
+
+
 def top_firing_rows(activations: np.ndarray, f_idx: int, k: int) -> np.ndarray:
     """The `k` series row indices this atom fires hardest on, strongest first.
 
@@ -758,9 +785,18 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
                                   max_series: int = 64, seed_offset: int = 260,
                                   floor: dict | None = None,
                                   periods_full: np.ndarray | None = None,
-                                  keep_forecasts: int = 3) -> dict:
+                                  keep_forecasts: int = 3,
+                                  null_mode: str = "mean_magnitude") -> dict:
     """Ablate each candidate on its OWN top-firing series; score the same
     9-channel battery against a ROW-MATCHED random-direction null.
+
+    `null_mode` (`sae.ablation_null`): `"mean_magnitude"` is the legacy null
+    (one uniform removal size for the whole chunk, `n_null_directions` forwards
+    per chunk), byte-identical to before. `"profile_matched"` draws
+    `n_null_directions` random directions PER FEATURE, each removed with that
+    feature's own per-token profile (`_profile_matched_null_replacement`), at
+    `n_null_directions` extra forwards per feature; the row matching and the
+    level-removed shape null are unchanged.
 
     Same reach gate, same baseline convention and same channels as
     `feature_response_fingerprints` -- the two differ only in intervention
@@ -833,6 +869,10 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
     d_in, dict_size = sae.d_in, sae.dict_size
     seed = cfg.run.seed + seed_offset
     rng = np.random.default_rng(seed + 1)
+    if null_mode not in ("mean_magnitude", "profile_matched"):
+        raise ValueError(f"unknown ablation null mode {null_mode!r}: expected "
+                         f"'mean_magnitude' or 'profile_matched'")
+    profile_rng = np.random.default_rng(seed + 2)
 
     results, n_clearing_cells, n_series_used = [], 0, set()
     n_shape_clearing_cells = 0
@@ -880,7 +920,7 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
         # (`test_null_gets_same_transform` is the load-bearing regression for
         # this).
         null_rows_shape: dict = {ch: [] for ch in CHANNELS}
-        for _ in range(n_null_directions):
+        for _ in range(n_null_directions if null_mode == "mean_magnitude" else 0):
             direction = rng.normal(size=dict_size)
             direction = direction / (np.linalg.norm(direction) + 1e-12)
             rec_null = _forward(_direction_steered_replacement(
@@ -899,6 +939,24 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
         for f_idx in chunk_feats:
             rows_f = [int(r) for r in per_candidate_rows[f_idx] if int(r) in row_pos]
             idx = np.array([row_pos[r] for r in rows_f], dtype=int)
+            if null_mode == "profile_matched":
+                null_rows = {ch: [] for ch in CHANNELS}
+                null_rows_shape = {ch: [] for ch in CHANNELS}
+                for _ in range(n_null_directions):
+                    code = profile_rng.normal(size=dict_size)
+                    code = code / (np.linalg.norm(code) + 1e-12)
+                    rec_null = _forward(_profile_matched_null_replacement(
+                        clean_tokens, sae, device, int(f_idx),
+                        torch.as_tensor(code, dtype=torch.float32)))
+                    stats = _stats(rec_null)
+                    stats_shape = _stats(rec_null, remove_level=True)
+                    for ch in CHANNELS:
+                        r = stats[ch]
+                        if r["available"] and r["delta"] is not None:
+                            null_rows[ch].append(np.abs(np.asarray(r["delta"], dtype=np.float64)))
+                        rs = stats_shape[ch]
+                        if rs["available"] and rs["delta"] is not None:
+                            null_rows_shape[ch].append(np.abs(np.asarray(rs["delta"], dtype=np.float64)))
             rec = _forward(_feature_ablated_replacement(clean_tokens, sae, device, f_idx))
             stats = _stats(rec)
             stats_shape = _stats(rec, remove_level=True)
@@ -1021,6 +1079,7 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
         "top_k_series": int(top_k_series), "n_series_union": len(n_series_used),
         "n_chunks": len(chunks), "series_per_chunk_cap": int(cap),
         "n_null_directions": int(n_null_directions),
+        **({"ablation_null": null_mode} if null_mode != "mean_magnitude" else {}),
         "candidates": results,
         "n_clearing_cells": int(n_clearing_cells),
         "chance_expected_cells": 0.05 * n_cells,
