@@ -3,7 +3,7 @@
 > **Purpose.** The authoritative, empirically-verified record of what's
 > actually installed and working for this repo, on this machine, right now.
 > `tsfm_benchmark/pyproject.toml`, `tsfm_benchmark/benchmark_validation/requirements.txt`,
-> and `tsfm_model_analysis/tsfm_lens/requirements.txt`/`pyproject.toml` declare
+> and `tsfm_lens/requirements.txt`/`pyproject.toml` declare
 > **loose minimum bounds** for pip installability; this file is the **exact,
 > tested-together set** — the one to reach for when recreating the
 > environment or diagnosing a version-drift bug. Several exact pins below
@@ -55,7 +55,7 @@ torch.randn(1000,1000, device="cuda") @ itself  ->  OK
 All four coexist in the single `tsfmPy` conda-forge environment, on Python
 3.12.13. **`tsfmPy` is the one environment for the whole repo** — both
 `tsfm_benchmark`/`benchmark_validation` (CPU-only workloads: generation,
-validation, leakage audit) and `tsfm_model_analysis/tsfm_lens` (GPU-capable:
+validation, leakage audit) and `tsfm_lens` (GPU-capable:
 real-checkpoint extraction and analysis) run out of it. Nothing here needs a
 second environment.
 
@@ -105,7 +105,7 @@ pip install gluonts==0.17.0 lightning==2.6.6   # models/contrib/lag_llama_adapte
 # magnitude heavier, so a single merged package would force every install to
 # pull both. Install whichever half you need into this one shared env.
 pip install -e .                              # from repo root: tsfm_benchmark + example_runs
-pip install -e tsfm_model_analysis/tsfm_lens   # tsfm_lens
+pip install -e tsfm_lens   # tsfm_lens
 ```
 
 This is a reconstruction from what's verified installed today (§3), not a
@@ -182,7 +182,7 @@ print('all clear')
 python -m pytest tsfm_benchmark/tests -q
 
 # 5. tsfm_lens end-to-end smoke test (expect all three to print "passed")
-cd tsfm_model_analysis/tsfm_lens && python tests/test_smoke.py
+cd tsfm_lens && python tests/test_smoke.py
 ```
 
 ---

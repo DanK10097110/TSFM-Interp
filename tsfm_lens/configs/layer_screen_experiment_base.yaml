@@ -1,0 +1,133 @@
+# Layer-screening bake-off experiment, "base" size (ROADMAP.md §6.1.1, the
+# still-open "does `work_bend` remain the bake-off winner on a second
+# Chronos size" follow-up).
+#
+# Directly modeled on configs/layer_screen_experiment_v4.yaml (the current,
+# most stable bake-off config -- fixed corpus, no head-slice/row-sampling
+# noise, n_gold_replicates-averaged gold ranking) but swaps the Chronos
+# checkpoint from amazon/chronos-t5-small (6 encoder blocks, the ONLY
+# Chronos size the §6.1.1-E bake-off has ever been run against) to
+# amazon/chronos-t5-base (12 encoder blocks, already verified working
+# elsewhere in this repo via configs/medium_run_chronos_base.yaml), both at
+# capture_layer_stride: 1 so every layer of both models is screened fairly
+# (R2). Sundial is deliberately DROPPED here: the third-architecture
+# question is already closed (§6.1.1's Findings), and this run's whole
+# purpose is a clean, directly-comparable TWO-way replication of the
+# *original* two-model (TimesFM + Chronos-T5-*) bake-off at a different
+# Chronos size, not a three-way run that would dilute the comparison with
+# an unrelated architecture. Same stage set as v4: extract, l0 (forecasts),
+# internals (eff-dim/probe cross-check), l3 sensitivity-only (secondary
+# gold signal, no per-window patching -- that's configs/
+# layer_screen_experiment_v5_patching.yaml's job, on the ORIGINAL
+# Chronos-T5-Small pairing) -- lens, attention, clustering, sae, confirm,
+# l1, l2 all off. `data.max_series`/`l3.max_series` are omitted, exactly as
+# in v4, so the full fixed 288-row `benchmark_medium/public_dev` corpus is
+# used with no row-sampling noise.
+
+run:
+  name: layer_screen_experiment_base
+  out_dir: runs
+  device: cuda
+  dtype: bfloat16
+  seed: 0
+  keep_models_loaded: false
+
+data:
+  source: sealed
+  path: ../benchmark_medium/public_dev  # relative to tsfm_lens/ (where run.py is invoked from)
+  context_len: 512
+  horizon: 64
+  # max_series intentionally omitted -- full 288-row corpus, no sampling (matches v4).
+  family_key: auto
+
+alignment:
+  window: 32
+  sanity_check: true
+
+models:
+  - name: TimesFM
+    adapter: timesfm
+    checkpoint: google/timesfm-2.5-200m-pytorch
+    batch_size: 32
+    capture_layer_stride: 1      # ALL 20 layers -- unchanged from v4
+  - name: Chronos-T5-Base
+    adapter: chronos
+    checkpoint: amazon/chronos-t5-base
+    batch_size: 32
+    capture_layer_stride: 1      # ALL 12 encoder blocks (was 6 for Chronos-T5-Small in v4)
+
+l0:
+  enabled: true
+  quantiles: [0.1, 0.5, 0.9]
+
+l1:
+  enabled: false
+
+l2:
+  enabled: false
+
+l3:
+  enabled: true
+  # max_series intentionally omitted -- see header note; l3's own default (512) already
+  # exceeds the corpus size, so this was never actually capping anything smaller than
+  # `data.max_series` was, but omitted anyway so no knob in this config subsamples.
+  corruptions:
+    noise: {snr_db: 6.0}
+    detrend: {}
+    deseasonalize: {top_k: 2}
+    level_shift: {position_frac: 0.6, scale: 3.0}
+    spike: {count: 3, scale: 6.0}
+    warp: {strength: 0.15}
+    dropout: {frac: 0.15, n_blocks: 3}
+  patching:
+    enabled: false  # per-window patching is expensive and not needed here; sensitivity
+                     # fingerprints alone give §6.1.1-E's secondary gold signal.
+
+lens:
+  enabled: false
+
+attention:
+  enabled: false
+
+exemplars:
+  enabled: false
+
+clustering:
+  enabled: false
+
+# The pipeline's own default layer_screen stage (ROADMAP.md §6.1.1, now
+# wired in ahead of `sae` in every config) runs the bake-off winner
+# (work_bend) as a cheap sanity artifact here too -- independent of, and far
+# cheaper than, run_layer_screen_bakeoff.py's full three-selector-vs-SAE-gold
+# comparison below, which remains the actual experiment this config exists
+# for. Only relevant if `layer_screen` is included in `--stages` explicitly;
+# the documented `--stages extract,l0,internals,l3` command above does not
+# run it.
+layer_screen:
+  enabled: true
+  method: work_bend
+  budget_frac: 0.25
+  min_budget: 2
+
+sae:
+  enabled: false  # run_layer_screen_bakeoff.py trains its own per-layer SAEs directly
+
+report:
+  enabled: false
+
+stats:
+  enabled: true
+  n_boot: 200
+  n_boot_heavy: 100
+  ci: 0.95
+  alpha: 0.05
+  min_series: 8
+
+internals:
+  enabled: true
+  layer_stride: 1
+  max_rows: 15000
+  probe_pca_dim: 50
+
+confirm:
+  enabled: false

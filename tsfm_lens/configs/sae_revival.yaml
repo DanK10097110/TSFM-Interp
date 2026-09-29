@@ -1,0 +1,277 @@
+# ROADMAP.md sec 23.2 A1: the pre-registered validation protocol for the
+# production `sae` stage's dead-dictionary fix. Everything outside `run.name`
+# and the `sae:` block is a byte-identical copy of
+# configs/medium_run_chronos_base.yaml -- this run directory
+# (runs/sae_revival) starts as a copy of runs/medium_run_chronos_base's
+# already-extracted artifacts (extract/l0/l1/l2/l3/internals/lens/
+# layer_screen/budget/clustering/attention/exemplars all reused, their config
+# fingerprints unaffected by anything changed here); only `sae`/`report` are
+# rerun (`--stages sae,report --force sae,report`).
+#
+# Settings, in the fix's own dependency order (CLAUDE.md sec 23.2 A1):
+#   min_train_steps: 720      -- (b): Stage 0's own ~720-step budget on its
+#                                 46382-row store; this run's ~8608 rows
+#                                 (4608 benchmark + 4000 real) at
+#                                 batch_size 4096 is 3 steps/epoch, so this
+#                                 raises epochs to 240 -- exactly A1
+#                                 finding 2's already-measured winning cell.
+#   aux_dead_steps_frac: 0.028 -- Stage 0's aux_dead_steps=20 at ~720 steps
+#                                 is 20/720=2.8%; this keeps the WARM-UP
+#                                 FRACTION fixed rather than the absolute
+#                                 step count, so it does not re-eat a large
+#                                 share of a still-small budget the way the
+#                                 absolute default did (A1 finding 4).
+#   aux_k: 64                  -- (a), landed together with (b) per the
+#                                 spec's explicit ordering -- flipping it
+#                                 alone (item 9's first attempt) barely
+#                                 moved the dead rate while the warm-up ate
+#                                 the budget.
+#   dict_size_policy: search   -- (c): search a ladder per target instead of
+#                                 the arbitrary dict_size_mult * d_in.
+#   max_dead_rate: 0.30        -- (d)'s acceptance bar, also (c)'s search
+#                                 target.
+#   n_seeds: 5                 -- the pre-registered 5-seed validation.
+#
+# Acceptance (pre-registered, ROADMAP.md sec 23.2 A1): both models <= 0.30
+# dead at >= 4 of 5 seeds ON THIS PRODUCTION CORPUS, fidelity >= 0.70 at
+# every seed, the gate visible in the regenerated report, and
+# n_optimizer_steps recorded. Pre-registered negative outcome: if a model
+# cannot clear the bar at ANY ladder size even at the full step budget, that
+# is A1 finding 3's saturation being a real capacity property of that
+# layer -- the honest result is a per-layer statement, not a softened bar.
+#
+# This does NOT flip any repo-wide default. `configs/medium_run_chronos_
+# base.yaml` and every already-recorded SAE number are unaffected -- this is
+# a new run.name, never a rerun into an existing run dir (sec 15 A3).
+
+run:
+  name: sae_revival
+  out_dir: runs
+  device: cuda
+  dtype: bfloat16
+  seed: 0
+  keep_models_loaded: false     # true if both models + headroom fit in VRAM
+
+data:
+  source: sealed
+  path: ../benchmark_medium/public_dev  # relative to tsfm_lens/ (where run.py is invoked from)
+  context_len: 512
+  horizon: 64
+  family_key: auto
+
+alignment:
+  window: 32
+  sanity_check: true
+
+models:
+  - name: TimesFM
+    adapter: timesfm
+    checkpoint: google/timesfm-2.5-200m-pytorch
+    batch_size: 32
+    capture_layer_stride: 2      # 20 layers -> 10 capture points
+  - name: Chronos-T5-Base
+    adapter: chronos
+    checkpoint: amazon/chronos-t5-base
+    batch_size: 24               # base is 2x chronos-t5-small; lower batch for VRAM headroom
+    capture_layer_stride: 1       # 12 encoder blocks (vs small's 6)
+
+l0:
+  enabled: true
+  quantiles: [0.1, 0.5, 0.9]
+
+l1:
+  enabled: true
+  layer_stride: 1
+  max_rows: 20000
+  family_conditioned: true
+  min_family_series: 15         # every family here has >= 40 series
+  rsa: true
+  rsa_max_series: 300
+
+l2:
+  enabled: true
+  layer_stride: 1
+  lambdas: [0.001, 0.01, 0.1, 1.0]
+  val_frac: 0.25
+  max_rows: 15000
+  input_baseline: true
+
+l3:
+  enabled: true
+  max_series: 300
+  corruptions:
+    noise: {snr_db: 6.0}
+    detrend: {}
+    deseasonalize: {top_k: 2}
+    frequency_shift: {factor: 2.0}
+    level_shift: {position_frac: 0.6, scale: 3.0}
+    spike: {count: 3, scale: 6.0}
+    smooth: {kernel: 9}
+    warp: {strength: 0.15}
+    dropout: {frac: 0.15, n_blocks: 3}
+  patching:
+    enabled: true
+    layer_stride: 2
+    corruptions: [deseasonalize, noise, level_shift, spike, warp, dropout]
+    max_series: 24                # must be <= every model's batch_size
+    per_window: true              # layer x window restoration heatmaps
+    window_stride: 1              # full time resolution (dataset is small enough)
+
+lens:
+  enabled: true
+  layer_stride: 1
+  max_series: 24                  # must be <= every model's batch_size
+  tuned: true
+  tuned_max_series: 300
+  val_frac: 0.25
+  lambdas: [0.001, 0.01, 0.1, 1.0]
+  crystallization_tol: 0.1
+
+attention:
+  enabled: true
+  patterns: true
+  max_series: 150
+  batch_series: 16                # base's T=512 attn patterns cost ~2x small's; halved vs medium_run
+  max_lag_tokens: 128
+  ablation: true
+  ablation_max_series: 24         # must be <= every model's batch_size
+  head_layer_stride: 1
+  top_k: 5
+
+exemplars:
+  enabled: true
+  per_family: 3
+  max_families: 3                 # this corpus has 3 families
+
+clustering:
+  enabled: true
+  layer: auto
+  k: auto
+  pca_dim: 50
+  max_series: 300
+  use_umap: true
+
+# Layer screening (ROADMAP.md §6.1.1) now runs by default ahead of `sae` --
+# it is left enabled here purely so its selection is visible in the report;
+# `sae.targets` below stays pinned to the exact layers §5.3/§6.2's Findings
+# already document numbers for (picked from tuned-lens R^2, predating
+# layer_screen), so re-running this exact config reproduces that recorded
+# result. A fresh run wanting the new default selector should clear
+# `sae.targets` to `[]` ("auto") instead of copying these explicit picks.
+layer_screen:
+  enabled: true
+  method: work_bend
+  budget_frac: 0.25
+  min_budget: 2
+
+sae:
+  enabled: true
+  targets:                        # same two targets as medium_run_chronos_base.yaml -- see
+                                   # that config's comments for why these layers were pinned
+    - model: TimesFM
+      layer: stacked_xf.18
+    - model: Chronos-T5-Base
+      layer: encoder.block.6
+  dict_size_mult: 8                # inert once dict_size_policy: search resolves a size, kept
+                                   # so this config still parses under the old policy for diffing
+  dict_size_policy: search         # (c) -- ROADMAP.md sec 23.2 A1
+  dict_size_ladder: [128, 176, 192, 256, 384, 512, 768, 1024, 1536, 2048]
+                                   # 176/192 added 2026-08-21 (ROADMAP.md sec 23.2 A1's
+                                   # "real bench+real-training verification" Findings): the
+                                   # original ladder's 128->256 jump straddled Chronos-T5-Base's
+                                   # true dead-rate/size boundary, so `search_dict_size`'s
+                                   # max(passing, key=dict_size) rule locked onto 256 -- a
+                                   # candidate whose 5-seed real-regime mean (0.304) sits just
+                                   # over the 0.30 bar (256 still fails outright under this
+                                   # densified ladder: 0.304+-0.011). 192 was independently
+                                   # verified at 5 seeds under this exact config's real
+                                   # bench+real-augmented regime (checkpoint reload, real Monash
+                                   # data) to clear with real margin: dead rates
+                                   # [0.182, 0.260, 0.177, 0.208, 0.266], worst seed 0.2656,
+                                   # ~13% below the bar -- 5 of 5 seeds pass, vs 256's exact-
+                                   # boundary failure. TimesFM's own chosen size (2048) is
+                                   # unaffected -- this widening only changes which candidate
+                                   # Chronos-T5-Base's own search settles on.
+  max_dead_rate: 0.30              # (d) -- the search target AND the rendered gate
+  k: 32
+  lr: 0.001
+  epochs: 60
+  min_train_steps: 720             # (b) -- see header note; raises this corpus's effective
+                                   # epoch count to ~240 at this run's row count/batch_size
+  aux_dead_steps_frac: 0.028       # (b) companion -- Stage 0's own warm-up FRACTION, not its
+                                   # absolute step count (A1 finding 4)
+  aux_k: 64                        # (a) -- landed together with (b), per the spec's ordering
+  aux_coef: 0.03125                # Stage 0's own value (production default was 1/32 already)
+  batch_size: 4096
+  resample_dead_every_epochs: 5   # fixes the dead-feature collapse found on the first run --
+                                   # see ROADMAP.md §6.2's Findings for the two real bugs this
+                                   # took to get right (uncalibrated scale, stale Adam moments)
+  forecast_preservation_max_series: 24  # must be <= every target model's batch_size
+  ground_truth_max_series: 2000
+  real_data_enabled: true          # UNCHANGED from production -- A1 finding 1 already measured
+                                   # this is not the cause (real rows excite fewer directions,
+                                   # not more), so turning it off here would not be a fair test
+                                   # of the fix and would also not match the production config
+                                   # this validation is meant to validate.
+  real_data_source: "Monash-University/monash_tsf"
+  real_data_n_windows: 4000
+  real_data_pool_limit: 500
+  n_seeds: 5                       # the pre-registered 5-seed validation (ROADMAP.md sec 13's
+                                   # seed-floor mechanism, sec 23.2 A1's acceptance protocol)
+  dict_size_search_seeds: 5        # matches the densified-ladder verification run's own
+                                   # search-time seed count, so the search's own selection is
+                                   # measured at the same confidence as the outer acceptance
+                                   # check rather than reverting to a single noisy draw
+  min_fidelity: 0.5                # matches the densified-ladder verification run; keeps the
+                                   # search from ever picking a collapsed-reconstruction
+                                   # candidate the way the original validation run's TimesFM
+                                   # single-draw (fidelity -0.99 at dict_size 2048) could have
+  feature_ablation_enabled: true   # ROADMAP.md sec 7 bullet 3 / sec 16 E15's second half,
+                                   # sec 23.2 C1: both were never evaluated once against this
+                                   # ~95%-dead production dictionary (candidates come from
+                                   # ground-truth-matched features, which barely exist in a
+                                   # near-dead dictionary) -- now that item 9 (A1) has this
+                                   # target's dictionary verified alive (dead 0.22/0.18), this
+                                   # is the first live-checkpoint test of either check.
+  feature_ablation_max_series: 24  # must be <= every target model's batch_size, same rule as
+                                   # forecast_preservation_max_series above -- CORRECTED: this
+                                   # was first left at the 64 default on the (wrong) assumption
+                                   # that capped_take clamps it silently at runtime; the real
+                                   # preflight check hard-FAILs instead (`CLAUDE.md` sec 2.5's
+                                   # "never silently produce a wrong value" doctrine applied to
+                                   # this exact knob), caught immediately by the first live run.
+  feature_steering_enabled: true   # ROADMAP.md sec 23.2 C1: E14's directional-steering claim
+                                   # has never produced one non-null direction_match, diagnosed
+                                   # as (a) the top-50 truncation dropping both directional
+                                   # fields entirely -- fixed via must_include_fields, already
+                                   # in sae/train.py -- and (b) depends on A1 (an alive
+                                   # dictionary), now closed. This is that dependency clearing.
+  feature_steering_max_series: 24  # must be <= every target model's batch_size -- see the
+                                   # feature_ablation_max_series comment above for why this
+                                   # isn't left at the 64 default.
+
+report:
+  enabled: true
+  title: Size-variant control · TimesFM 2.5 vs Chronos-T5-Base, ~300 series (part real data)
+
+stats:
+  enabled: true
+  n_boot: 500
+  n_boot_heavy: 200
+  ci: 0.95
+  alpha: 0.05
+  min_series: 8
+
+internals:
+  enabled: true
+  layer_stride: 1
+  max_rows: 15000
+  probe_pca_dim: 50
+
+confirm:
+  enabled: true
+  source: sealed
+  path: ../benchmark_medium/private_test  # relative to tsfm_lens/ (where run.py is invoked from)
+  max_series: 300
+  require_seal: true
+  alpha: 0.05

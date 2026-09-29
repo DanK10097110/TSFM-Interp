@@ -1,0 +1,116 @@
+# Curated example: Sundial alone (solo run shape) -- the flow-matching,
+# SAMPLED decoder-only architecture. Derived from configs/sundial_phase4_check.yaml
+# (TimesFM vs. Sundial) by dropping the TimesFM entry, so the run-shape gate
+# (not a hand-edited stage list) is what drops the comparison-only stages
+# (l1, l2, clustering, exemplars, confirm) -- see configs/examples/short_1model.yaml's
+# header for why that discipline matters.
+#
+# Sundial's `predict()` samples, so any two compared calls need the SAME
+# seed (CLAUDE.md sec 6.2's recurring-lessons list) -- the adapter handles
+# this internally; nothing in this config needs to set a seed for that
+# purpose. Sundial's `attention_patterns` is deliberately unsupported (its
+# docstring explains why), so `attention.patterns: true` here is a live
+# exercise of the degrade-gracefully path (invariant 8): the stage logs
+# "unsupported" and skips that one figure rather than crashing, while head/MLP
+# ablation still runs through its discovered output projections.
+#
+# Point `data.path` at a sealed PUBLIC (dev) directory, e.g. one built from
+# tsfm_benchmark/configs/medium_run.yaml.
+#
+# Validated: loads through the config loader and appears under --doctor in
+# this checkout (2026-09-28); not run to completion here (real checkpoint,
+# GPU required).
+
+run:
+  name: sundial_solo
+  out_dir: runs
+  device: cuda
+  dtype: bfloat16
+  seed: 0
+  keep_models_loaded: false
+
+data:
+  source: sealed
+  path: ../benchmark_medium/public_dev   # relative to tsfm_lens/ -- point this at your own sealed corpus
+  context_len: 512
+  horizon: 64
+  family_key: auto
+
+alignment:
+  window: 32
+  sanity_check: true
+  # Sundial's own default-amplitude --check-alignment reads low at mid-depth
+  # for a verified, benign reason (sundial_adapter.py's docstring) rather
+  # than a broken mapping; the in-pipeline gate only checks the shallowest
+  # captured layer regardless (a perfect 1.00 for Sundial), so it passes
+  # without needing on_failure: warn here.
+
+models:
+  - name: Sundial
+    adapter: sundial
+    checkpoint: thuml/sundial-base-128m
+    batch_size: 16
+    capture_layer_stride: 1
+
+l0:
+  enabled: true
+  quantiles: [0.1, 0.5, 0.9]
+
+l3:
+  enabled: true
+  max_series: 150
+  corruptions:
+    noise: {snr_db: 6.0}
+    level_shift: {position_frac: 0.6, scale: 3.0}
+  patching:
+    enabled: false
+
+attention:
+  # patterns: true is deliberate even though Sundial doesn't support them --
+  # see header.
+  enabled: true
+  patterns: true
+  max_series: 64
+  batch_series: 8
+  max_lag_tokens: 64
+  ablation: true
+  ablation_max_series: 16
+  head_layer_stride: 1
+  top_k: 5
+
+# Comparison-only stages: left enabled so the run-shape gate is what narrows
+# a solo run (see header).
+l1:
+  enabled: true
+l2:
+  enabled: false
+lens:
+  enabled: false
+exemplars:
+  enabled: true
+clustering:
+  enabled: true
+layer_screen:
+  enabled: false
+sae:
+  enabled: false
+confirm:
+  enabled: false
+
+report:
+  enabled: true
+  title: "Example: Sundial alone (solo run shape)"
+
+stats:
+  enabled: true
+  n_boot: 300
+  n_boot_heavy: 150
+  ci: 0.95
+  alpha: 0.05
+  min_series: 8
+
+internals:
+  enabled: true
+  layer_stride: 1
+  max_rows: 15000
+  probe_pca_dim: 50

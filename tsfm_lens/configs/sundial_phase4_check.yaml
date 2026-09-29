@@ -1,0 +1,118 @@
+# Phase 4 (ROADMAP.md §9) validation run: Sundial (the new adapter) vs
+# TimesFM, on the same corpus as configs/medium_run_chronos_base.yaml /
+# configs/chronos2_phase4_check.yaml. l0/l1/internals are the required
+# minimum per this phase's own checklist; attention (ablation only, no
+# patterns -- Sundial's attention_patterns is unsupported, see
+# sundial_adapter.py's docstring) and l3 (sensitivity only, no per-window
+# patching) are included as a bonus real-checkpoint exercise of
+# attention_info/mlp_info head/MLP ablation and the corruption battery.
+# l2/lens/clustering/sae/confirm stay off; this is an adapter-validation
+# run, not a flagship comparison.
+
+run:
+  name: sundial_phase4_check
+  out_dir: runs
+  device: cuda
+  dtype: bfloat16
+  seed: 0
+  keep_models_loaded: false
+
+data:
+  source: sealed
+  path: ../benchmark_medium/public_dev
+  context_len: 512
+  horizon: 64
+  family_key: auto
+
+alignment:
+  window: 32
+  sanity_check: true
+  # Sundial's own default-amplitude --check-alignment reads low at mid-depth
+  # for a verified, benign reason (sundial_adapter.py's docstring) rather
+  # than a broken mapping; the in-pipeline gate only checks the shallowest
+  # captured layer regardless (a perfect 1.00 for Sundial), so it passes
+  # without needing on_failure: warn here.
+
+models:
+  - name: TimesFM
+    adapter: timesfm
+    checkpoint: google/timesfm-2.5-200m-pytorch
+    batch_size: 32
+    capture_layer_stride: 2
+  - name: Sundial
+    adapter: sundial
+    checkpoint: thuml/sundial-base-128m
+    batch_size: 16
+    capture_layer_stride: 1
+
+l0:
+  enabled: true
+  quantiles: [0.1, 0.5, 0.9]
+
+l1:
+  enabled: true
+  layer_stride: 1
+  max_rows: 20000
+  family_conditioned: true
+  min_family_series: 15
+  rsa: false
+
+l2:
+  enabled: false
+
+l3:
+  enabled: true
+  max_series: 150
+  corruptions:
+    noise: {snr_db: 6.0}
+    level_shift: {position_frac: 0.6, scale: 3.0}
+  patching:
+    enabled: false
+
+lens:
+  enabled: false
+
+attention:
+  # patterns: true is deliberate even though Sundial doesn't support them --
+  # exercises the real degrade-gracefully path (invariant 8) in a live mixed-
+  # capability run: TimesFM gets real periodicity-head/lag-profile numbers,
+  # Sundial's attention_patterns() returns None and the stage logs
+  # "unsupported" and skips, with no crash and no report-section failure.
+  enabled: true
+  patterns: true
+  max_series: 64
+  batch_series: 8
+  max_lag_tokens: 64
+  ablation: true
+  ablation_max_series: 16
+  head_layer_stride: 1
+  top_k: 5
+
+exemplars:
+  enabled: false
+clustering:
+  enabled: false
+layer_screen:
+  enabled: false
+sae:
+  enabled: false
+confirm:
+  enabled: false
+
+report:
+  enabled: true
+  title: "Phase 4 adapter check: Sundial vs TimesFM"
+
+stats:
+  enabled: true
+  n_boot: 300
+  n_boot_heavy: 150
+  ci: 0.95
+  alpha: 0.05
+  min_series: 8
+
+internals:
+  enabled: true
+  layer_stride: 1
+  max_rows: 15000
+  probe_pca_dim: 50

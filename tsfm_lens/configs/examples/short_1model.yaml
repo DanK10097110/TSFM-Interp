@@ -1,0 +1,140 @@
+# Curated example: ONE real model, a small corpus slice, solo run shape.
+#
+# Demonstrates the run-shape gate (CLAUDE.md sec 6.1): a solo run (one entry
+# under `models:`) automatically drops every comparison-only stage (l1, l2,
+# clustering, exemplars, confirm) with a stated reason in shapes.json and the
+# report's coverage panel -- nothing below is disabled by hand, exactly the
+# discipline configs/smoke_solo.yaml documents for the mock equivalent. l0,
+# l3, lens, internals, attention, budget, and frontend all still run, because
+# none of them require a second model.
+#
+# Chronos-Bolt-small is used because it is small and DETERMINISTIC (a patch
+# regression head, not a sampled decoder), so this is a good first real-model
+# config to point at a freshly-built corpus: no seeding subtlety, fast to
+# load, fast to run. Swap in any other adapter from tsfm_lens/ADAPTERS.md by
+# changing the one entry under `models:`.
+#
+# Point `data.path` at a sealed PUBLIC (dev) directory produced by
+# tsfm_benchmark (see ../../tsfm_benchmark/README.md and
+# ../../tsfm_benchmark/example_runs/WALKTHOUGH.md) -- ../benchmark_medium
+# below is a placeholder matching this repo's other real-model configs
+# (default.yaml, generic_hf_timer.yaml), not a directory that ships with the
+# repo. Validated in this checkout (2026-09-28) by running the corpus and
+# extract stages only, against a small scratch corpus, on a free GPU:
+#
+#     python run.py --config configs/examples/short_1model.yaml --doctor
+#     python run.py --config configs/examples/short_1model.yaml --stages corpus,extract
+
+run:
+  name: short_1model
+  out_dir: runs
+  device: cuda
+  dtype: bfloat16
+  seed: 0
+  keep_models_loaded: false
+
+data:
+  source: sealed
+  path: ../benchmark_medium/public_dev   # relative to tsfm_lens/ -- point this at your own sealed corpus
+  context_len: 256
+  horizon: 32
+  family_key: auto
+  max_series: 80                         # deliberately small: this is a first-touch example, not a flagship run
+
+alignment:
+  window: 32
+  sanity_check: true
+
+models:
+  - name: Chronos-Bolt
+    adapter: chronos_bolt
+    checkpoint: amazon/chronos-bolt-small
+    batch_size: 32
+    capture_layer_stride: 1
+
+l0:
+  enabled: true
+  quantiles: [0.1, 0.5, 0.9]
+
+budget:
+  enabled: true
+
+frontend:
+  enabled: true
+
+layer_screen:
+  enabled: true
+  method: work_bend
+  budget_frac: 0.25
+  min_budget: 2
+
+internals:
+  enabled: true
+  layer_stride: 1
+  max_rows: 8000
+  probe_pca_dim: 20
+
+lens:
+  enabled: true
+  layer_stride: 1
+  max_series: 32                  # must be <= models[*].batch_size
+  tuned: true
+  tuned_max_series: 80
+  val_frac: 0.25
+  crystallization_tol: 0.1
+
+l3:
+  enabled: true
+  max_series: 80
+  corruptions:
+    noise: {snr_db: 6.0}
+    detrend: {}
+    deseasonalize: {top_k: 2}
+    level_shift: {position_frac: 0.6, scale: 3.0}
+  patching:
+    enabled: true
+    layer_stride: 1
+    corruptions: [deseasonalize, noise]
+    max_series: 32                # must be <= models[*].batch_size
+    per_window: true
+    window_stride: 2
+
+attention:
+  enabled: true
+  patterns: true
+  max_series: 60
+  batch_series: 8
+  max_lag_tokens: 64
+  ablation: true
+  ablation_max_series: 32
+  head_layer_stride: 1
+  top_k: 5
+
+# Comparison-only stages: left enabled so the run-shape gate is what narrows
+# a solo run, not a human pre-editing the config (see header). They will
+# render as "skipped -- solo run" in the report's coverage panel.
+l1:
+  enabled: true
+l2:
+  enabled: true
+clustering:
+  enabled: true
+exemplars:
+  enabled: true
+confirm:
+  enabled: false   # would also need a sealed private split; left off here
+
+sae:
+  enabled: false
+
+stats:
+  enabled: true
+  n_boot: 300
+  n_boot_heavy: 150
+  ci: 0.95
+  alpha: 0.05
+  min_series: 8
+
+report:
+  enabled: true
+  title: "Example: one real model, solo run shape (Chronos-Bolt)"

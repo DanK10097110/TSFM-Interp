@@ -1,0 +1,62 @@
+# ROADMAP.md sec 23.3 D2 / sec 6.3.1 Option E: score `analysis/error_fingerprint.py`
+# (sec 6.3.1 Option C's reducer) against a GENUINE known-lineage positive pair for
+# the first time -- two children of `amazon/chronos-t5-small`, fine-tuned on disjoint
+# data via `run_finetune_child.py`, sharing initialization and nothing else.
+#
+# Only `extract`+`l0` are needed: `error_fingerprint.py` reads `store.load_predictions`
+# (written by `l0`) and `contexts()`/`targets()` from `config_resolved.yaml`'s own data
+# config -- no activation-level analysis, no alignment. Everything else is off so a
+# `--stages l0` run costs two cheap forward passes, not a full pipeline.
+#
+# Fill in `checkpoint:` below with the actual output dirs from `run_finetune_child.py`
+# (defaults to <lineage_out>/child_light and <lineage_out>/child_drifted).
+
+run:
+  name: lineage_pair
+  out_dir: runs
+  device: cuda
+  dtype: float32
+  seed: 0
+
+data:
+  source: sealed
+  path: ../benchmark_medium/public_dev
+  context_len: 64
+  horizon: 64      # must equal amazon/chronos-t5-small's baked-in prediction_length
+                   # (ROADMAP.md sec 23.3 D2's second Findings -- chronos-forecasting's
+                   # tokenizer hard-asserts this)
+  family_key: auto
+
+alignment:
+  sanity_check: false      # nothing here captures activations for cross-model alignment
+
+models:
+  - name: child_light
+    adapter: chronos
+    checkpoint: runs/lineage_pair_children/child_light
+    batch_size: 16
+  - name: child_drifted
+    adapter: chronos
+    checkpoint: runs/lineage_pair_children/child_drifted
+    batch_size: 16
+
+l0:
+  enabled: true
+  quantiles: [0.1, 0.5, 0.9]
+
+l1: {enabled: false}
+l2: {enabled: false}
+l3: {enabled: false}
+lens: {enabled: false}
+attention: {enabled: false}
+clustering: {enabled: false}
+exemplars: {enabled: false}
+internals: {enabled: false}
+confirm: {enabled: false}
+layer_screen: {enabled: false}
+budget: {enabled: false}
+sae: {enabled: false}
+
+report:
+  enabled: true
+  title: Lineage pair (Option E) · two children of chronos-t5-small, disjoint data

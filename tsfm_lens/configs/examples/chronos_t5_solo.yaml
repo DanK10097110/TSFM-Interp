@@ -1,0 +1,128 @@
+# Curated example: Chronos-T5 alone (solo run shape) -- the encoder-decoder
+# architecture, SAMPLED decoder, only the encoder captured (CLAUDE.md sec 1:
+# "the capture asymmetry follows from that: TimesFM's captured stack does
+# everything, while Chronos-T5's captured stack only reads the context").
+# Model knobs are copied from configs/default.yaml's Chronos entry; the
+# solo shape is new (default.yaml pairs it with TimesFM).
+#
+# Two things that matter for this architecture specifically:
+#   * `predict()` samples (kwargs.num_samples below), so any two compared
+#     calls need the SAME seed -- the adapter handles this internally.
+#   * Depth is capped at the encoder: the report's depth axis (`block` by
+#     default, CLAUDE.md sec 6.3) tops out around 0.48 for Chronos-T5-Base,
+#     not 1.0 -- read any depth-located claim about this model with that in
+#     mind.
+#
+# Point `data.path` at a sealed PUBLIC (dev) directory, e.g. one built from
+# tsfm_benchmark/configs/medium_run.yaml.
+#
+# Validated: loads through the config loader and appears under --doctor in
+# this checkout (2026-09-28); not run to completion here (real checkpoint,
+# GPU required).
+
+run:
+  name: chronos_t5_solo
+  out_dir: runs
+  device: cuda
+  dtype: bfloat16
+  seed: 0
+  keep_models_loaded: false
+
+data:
+  source: sealed
+  path: ../benchmark_medium/public_dev   # relative to tsfm_lens/ -- point this at your own sealed corpus
+  context_len: 512
+  horizon: 64
+  family_key: auto
+
+alignment:
+  window: 32
+  sanity_check: true
+
+models:
+  - name: Chronos-T5
+    adapter: chronos
+    checkpoint: amazon/chronos-t5-base
+    batch_size: 32
+    capture_layer_stride: 1      # 12 encoder blocks
+    kwargs:
+      num_samples: 20
+
+l0:
+  enabled: true
+  quantiles: [0.1, 0.5, 0.9]
+
+l3:
+  enabled: true
+  max_series: 150
+  corruptions:
+    noise: {snr_db: 6.0}
+    detrend: {}
+    deseasonalize: {top_k: 2}
+    level_shift: {position_frac: 0.6, scale: 3.0}
+  patching:
+    enabled: true
+    layer_stride: 1
+    corruptions: [deseasonalize, noise]
+    max_series: 24                # must be <= models[*].batch_size
+    per_window: true
+    window_stride: 2
+
+lens:
+  enabled: true
+  layer_stride: 1
+  max_series: 24
+  tuned: true
+  tuned_max_series: 300
+  val_frac: 0.25
+  crystallization_tol: 0.1
+
+attention:
+  enabled: true
+  patterns: true
+  max_series: 100
+  batch_series: 8
+  max_lag_tokens: 96
+  ablation: true
+  ablation_max_series: 24
+  head_layer_stride: 1
+  top_k: 5
+
+layer_screen:
+  enabled: true
+  method: work_bend
+  budget_frac: 0.25
+  min_budget: 2
+
+internals:
+  enabled: true
+  layer_stride: 1
+  max_rows: 15000
+  probe_pca_dim: 50
+
+# Comparison-only stages: left enabled so the run-shape gate is what narrows
+# a solo run (see configs/examples/short_1model.yaml's header for why).
+l1:
+  enabled: true
+l2:
+  enabled: true
+clustering:
+  enabled: true
+exemplars:
+  enabled: true
+sae:
+  enabled: false
+confirm:
+  enabled: false
+
+report:
+  enabled: true
+  title: "Example: Chronos-T5 alone (solo run shape, encoder-only capture)"
+
+stats:
+  enabled: true
+  n_boot: 300
+  n_boot_heavy: 150
+  ci: 0.95
+  alpha: 0.05
+  min_series: 8

@@ -1,0 +1,66 @@
+# Curated example: Lag-Llama alone (solo run shape) -- a contrib adapter
+# (tsfm_lens/models/contrib/lag_llama_adapter.py), demonstrating that a
+# hand-written adapter living outside the built-in models/ package works
+# through exactly the same pipeline as a built-in one. Derived from
+# configs/lag_llama_vs_chronos.yaml by dropping the Chronos-T5-Small entry,
+# so the run-shape gate (not a hand-edited stage list) drops the
+# comparison-only stages.
+#
+# Lag-Llama checkpoint license: Apache License 2.0 (verified against
+# https://github.com/time-series-foundation-models/lag-llama's own LICENSE
+# file and preserved verbatim in every vendored file's header under
+# tsfm_lens/models/contrib/_lag_llama_vendor/).
+#
+# Point `data.path` at a sealed PUBLIC (dev) directory, e.g. one built from
+# tsfm_benchmark/configs/medium_run.yaml.
+#
+# Validated: loads through the config loader and appears under --doctor in
+# this checkout (2026-09-28); not run to completion here (real checkpoint,
+# GPU required).
+
+run:
+  name: lag_llama_solo
+  out_dir: runs
+  device: cuda
+  dtype: float32
+  seed: 0
+  keep_models_loaded: false
+
+data:
+  source: sealed
+  path: ../benchmark_medium/public_dev   # relative to tsfm_lens/ -- point this at your own sealed corpus
+  context_len: 480
+  horizon: 64
+  family_key: auto
+  max_series: 80
+
+alignment:
+  window: 32
+  sanity_check: true
+
+models:
+  - name: LagLlama
+    adapter: lag_llama
+    checkpoint: time-series-foundation-models/Lag-Llama
+    batch_size: 40
+    capture_layer_stride: 1
+
+l0: {enabled: true, quantiles: [0.1, 0.5, 0.9]}
+budget: {enabled: true}
+layer_screen: {enabled: true}
+internals: {enabled: true}
+lens: {enabled: true, max_series: 40}
+l3: {enabled: true, patching: {max_series: 40}}
+attention: {enabled: true, batch_series: 8, ablation_max_series: 40}
+sae: {enabled: false}
+confirm: {enabled: false}
+
+# Comparison-only stages: left enabled so the run-shape gate is what narrows
+# a solo run (see header).
+l1: {enabled: true, layer_stride: 1, max_rows: 8000, min_family_series: 8, rsa: true, rsa_max_series: 80}
+l2: {enabled: true, layer_stride: 1, max_rows: 4000, val_frac: 0.3}
+clustering: {enabled: true}
+exemplars: {enabled: true}
+
+stats: {enabled: true, n_boot: 500, n_boot_heavy: 200, ci: 0.95, alpha: 0.05, min_series: 8}
+report: {enabled: true, verbose: false, title: "Example: Lag-Llama alone (solo run shape)"}

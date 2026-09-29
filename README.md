@@ -1,78 +1,205 @@
-# TSFM Interpretability Pipeline
+# TSFM-Lens
 
-Mechanistic interpretability tooling for time-series foundation models (TSFMs) —
-built to compare architecturally different models (TimesFM, Chronos, and others)
-on equal footing, through leakage-audited synthetic benchmarking, layered
-representational/causal analysis, and cross-architecture comparison.
+**TSFM-Lens** is a mechanistic-interpretability toolkit for time-series
+foundation models (TSFMs). It compares architecturally different models —
+TimesFM (decoder-only), the Chronos family (encoder-decoder and
+encoder-only), Sundial (flow-matching), Lag-Llama, and any Hugging Face
+checkpoint via a zero-code probe path — on equal footing, using a
+leakage-audited synthetic benchmark, a layered representational/causal
+analysis stack, and statistically-corrected cross-architecture comparison.
+The usability model is inspired by `transformer-lens`, but the tool itself is
+comparative by design: aligned representations across models, series-level
+bootstrap statistics, and a one-shot confirmation on a sealed held-out
+corpus, not a single-model microscope.
 
-Two parts, each independently installable and independently usable:
+## What it answers
 
-- **[`tsfm_benchmark/`](tsfm_benchmark/)** — generates leakage-audited, sealed,
-  ground-truth-labeled synthetic benchmark corpora, and validates their
-  diversity (`benchmark_validation/`). CPU-only; no GPU or model checkpoints
-  required. See [`tsfm_benchmark/README.md`](tsfm_benchmark/README.md).
-- **[`tsfm_model_analysis/tsfm_lens/`](tsfm_model_analysis/tsfm_lens/)**
-  ("tsfm-lens") — a layered interpretability pipeline that runs two (or more)
-  supported TSFM checkpoints through a shared analysis stack (behavioral
-  comparison, cost/FLOPs, representational geometry, causal perturbation,
-  attention analysis, SAEs, ...) and renders one self-contained HTML report.
-  GPU-capable (real checkpoints); also runs CPU-only against mock models for a
-  fast smoke check. See
-  [`tsfm_model_analysis/tsfm_lens/README.md`](tsfm_model_analysis/tsfm_lens/README.md).
+- What interpretable concepts does a TSFM actually learn — as **causal**
+  features (a sparse-autoencoder feature an ablation battery confirms
+  actually moves the forecast), not just activations that happen to
+  correlate with something?
+- Are those concepts **shared** across architecturally different models, or
+  does each model learn something unique? The **concept atlas** clusters each
+  model's causal features into concept families, then tests every family for
+  transfer to every other model — turning "these representations look
+  similar" into a causal, cross-model claim.
+- Do the concepts **causally** affect the forecast, or are they merely
+  correlated with it?
+- **Where in depth** does a model's forecast take shape?
+- Which model is better, on which kinds of data, and at what compute cost?
 
-For the full architecture/design-doctrine reference, read `CLAUDE.md`. For
-what's being worked on next, read `ROADMAP.md`.
+## Two packages
 
-## Install
-
-This repo is **two separate installable packages, on purpose** — not an
-in-progress merge. The root `pyproject.toml` packages only `tsfm_benchmark`
-(+ `benchmark_validation` + `example_runs`); `tsfm_lens` has its own, separate
-`pyproject.toml` one level down. The two packages' dependency sets barely
-overlap and differ by an order of magnitude in weight: `tsfm_benchmark`'s core
-dependencies are numpy/scipy/pyyaml; `tsfm_lens`'s core dependencies (torch,
-zarr, plotly, scikit-learn) are far heavier, plus optional model-loading
-libraries (`transformers`, `timesfm`, `chronos-forecasting`) for real
-checkpoints. A single merged package would force every install — including
-someone who only wants to generate benchmark data and never touches a GPU — to
-pull the union of both. So: install whichever half you need, or both, into one
-shared environment.
-
-```bash
-# from the repo root: tsfm_benchmark + benchmark_validation + example_runs
-pip install -e .
-
-# tsfm_lens (only needed for the model-analysis half; separate package)
-pip install -e tsfm_model_analysis/tsfm_lens
+```
+.
+├── tsfm_benchmark/      # generation + validation of a synthetic benchmark corpus
+│   ├── build_pipeline/       # generators, corruptions, leakage audit, sealing
+│   ├── benchmark_validation/ # redundancy + catch22 diversity report
+│   ├── example_runs/         # CLI entry points + a walkthrough
+│   └── configs/
+└── tsfm_lens/          # the interpretability pipeline ("tsfm-lens")
+    ├── tsfm_lens/             # the package: models, extraction, analysis, report
+    ├── docs/                  # adapter guide, worked example, notebooks
+    ├── configs/               # run configs, including configs/examples/
+    └── run.py                 # CLI entry point
 ```
 
-Both packages can share a single conda/venv environment — see
-[`DEPENDENCIES.md`](DEPENDENCIES.md) for exact, verified-working library
-versions, full environment recreation steps, and a list of load-bearing
-version pins with why each one matters (several exist only because a looser
-bound broke in a documented way — see `CLAUDE.md` §11 for the full trap log).
+They are separately installable on purpose (see [Install](#install)) and
+their dependency sets barely overlap: `tsfm_benchmark` is CPU-only
+(numpy/scipy/pyyaml); `tsfm_lens` needs torch, zarr, and plotly, plus
+optional model-loading libraries for real checkpoints.
 
 ## Quickstart
 
 ```bash
-# --- Benchmark generation (fast, no GPU, no downloads) ---
+# 1. Build a small synthetic benchmark corpus (fast, no GPU, no downloads)
 cd tsfm_benchmark
 PYTHONPATH=. python3 example_runs/run_full.py --config configs/example.yaml \
-    --out ./benchmark_out --references monash --threshold 0.35 --epoch 0
+    --out ./benchmark_out --max-count 15
 
-# --- Benchmark validation ---
+# 2. Validate it (redundancy + catch22 feature-space diversity)
 PYTHONPATH=. python3 example_runs/run_validation.py \
     --corpus ./benchmark_out/public_dev --out outputs
 
-# --- tsfm-lens smoke run (mock models, no GPU, no downloads, ~minutes) ---
-cd ../tsfm_model_analysis/tsfm_lens
+# 3. Run the tsfm-lens smoke pipeline (two mock architectures, CPU-only, ~30s)
+cd ../tsfm_lens
 python run.py --config configs/smoke.yaml
 # open runs/smoke/report.html in a browser
 ```
 
-`CLAUDE.md` §8 has the full CLI reference, including real-checkpoint runs,
-stage selection/reruns, and adapter development. See
-[`tsfm_benchmark/example_runs/WALKTHROUGH.md`](tsfm_benchmark/example_runs/WALKTHROUGH.md)
-and
-[`tsfm_benchmark/benchmark_validation/README.md`](tsfm_benchmark/benchmark_validation/README.md)
-for a deeper walkthrough of the benchmark half.
+Every command above was run against this checkout. Step 3 exercises the full
+19-stage pipeline — extraction, behavioral comparison, representational
+geometry, causal patching, attention analysis, activation clustering, and a
+one-shot confirmation on a (smoke-mode) held-out split — against synthetic
+mock architectures, so it needs no GPU and no model download. To run it
+against a real checkpoint, point `data.path` at a sealed corpus from step 1
+and swap in a real adapter (see
+[`tsfm_lens/configs/examples/short_1model.yaml`](tsfm_lens/configs/examples/short_1model.yaml)
+and [`tsfm_lens/docs/ADDING_A_MODEL.md`](tsfm_lens/docs/ADDING_A_MODEL.md)).
+
+The smoke config skips the flagship analysis for speed: on a real multi-model
+run (see
+[`tsfm_lens/configs/examples/medium_2model.yaml`](tsfm_lens/configs/examples/medium_2model.yaml)
+or `large_4model.yaml`), the `sae` and `concepts` stages train a sparse
+autoencoder per model/layer, find which features are **causal** via an
+ablation battery, cluster each model's causal features into **concept
+families**, and test every family for **cross-model transfer** — the concept
+atlas described in [`tsfm_lens/README.md`](tsfm_lens/README.md#concepts)
+(see also [`#sae`](tsfm_lens/README.md#sae)).
+
+An example run's report and artifacts will be published under `examples/` in
+the repo root — **coming with the first release run**; until then, the smoke
+report above and
+[`tsfm_lens/docs/worked_example.md`](tsfm_lens/docs/worked_example.md) (a
+section-by-section reading of one real TimesFM-vs-Chronos report) are the
+closest thing to a live example.
+
+## Install
+
+Two separate installable packages, not an in-progress merge — install
+whichever half you need, or both, into one shared environment:
+
+```bash
+# tsfm_benchmark + benchmark_validation + example_runs (root pyproject.toml)
+pip install -e .
+
+# tsfm_lens (separate pyproject.toml, one level down)
+pip install -e tsfm_lens
+```
+
+See [`DEPENDENCIES.md`](DEPENDENCIES.md) for the exact, verified-working
+library versions and the load-bearing version pins (each one exists because
+a looser bound broke in a documented way — `zarr<3`, `datasets<3`,
+`tsbootstrap>=0.7`'s rewritten API, and others).
+
+## Model support
+
+Every adapter's tier, capabilities, and default checkpoint are generated
+from the live registry in
+[`tsfm_lens/ADAPTERS.md`](tsfm_lens/tsfm_lens/ADAPTERS.md) — this table is the
+narrative summary:
+
+| Model | Architecture | Determinism | What's captured |
+|---|---|---|---|
+| TimesFM 2.5 | Decoder-only, 32-step patch tokens | Deterministic | The whole captured stack does both context-reading and generation |
+| Chronos-T5 | T5 encoder-decoder, 1 token/timestep | Sampled decoder | Only the **encoder** — the decoder is not captured, so depth claims are claims about the encoder |
+| Chronos-Bolt | Encoder + patch regression head | Deterministic | Encoder + head |
+| Chronos-2 | Encoder-only, adds cross-series GROUP attention (out of scope) | Deterministic | Encoder |
+| Sundial | Decoder-only, flow-matching head | Sampled | Full captured stack |
+| Lag-Llama | Decoder-only (contrib adapter) | Sampled (StudentT head) | Full captured stack |
+| `generic_hf` (zero-code) | Whatever the checkpoint is — probed, not hand-declared | Depends on checkpoint | Verified live on Timer (`thuml/timer-base-84m`) |
+| `mock_*` | Synthetic patch/step/encoder-decoder/wave architectures | Deterministic | Used for the CPU-only smoke pipeline and adapter-conformance tests |
+
+Adding a new checkpoint starts with the zero-code `generic_hf` probe path
+before any adapter code is written — see
+[`tsfm_lens/docs/ADDING_A_MODEL.md`](tsfm_lens/docs/ADDING_A_MODEL.md).
+
+## The evidence-class ladder
+
+No single measurement supports the claim "these two models share structure."
+Every finding in a report states which rung it stands on, so a
+correlational number can never be misread as causal:
+
+1. **Descriptive** — a per-model profile (effective dimensionality, family
+   decodability) with no cross-model comparison at all.
+2. **L1 — geometric.** Do two models' representations of the same data look
+   similar (linear CKA)? Correlational: both models seeing the same input is
+   enough to inflate this on its own.
+3. **L2 — linear-translatable.** Can a linear map from one model's layer
+   predict another's, **beyond** what a hand-built input-feature baseline
+   already explains? Still not causal.
+4. **L3 — causal, within-model.** Does patching a model's own clean
+   activations back into a corrupted forward pass restore the forecast?
+   Causal, but never transplanted between models — cross-model comparison is
+   always two separately-measured within-model curves placed side by side.
+5. **Illustrative** — a hand-picked exemplar case study: real, but not a
+   statistical claim.
+6. **Confirmed** — a dev-corpus hypothesis, pre-registered, then re-tested
+   exactly once against a sealed private corpus. The gold standard.
+
+## Documentation
+
+| Doc | What's in it |
+|---|---|
+| [`tsfm_benchmark/README.md`](tsfm_benchmark/README.md) | Leakage tiers, generators, archetypes, the audit, sealing/epochs, CLI |
+| [`tsfm_benchmark/configs/README.md`](tsfm_benchmark/configs/README.md) | Every config on `main`, what it builds, and how to add a real-data source |
+| [`tsfm_benchmark/example_runs/WALKTHROUGH.md`](tsfm_benchmark/example_runs/WALKTHROUGH.md) | Command-by-command walkthrough of both CLIs |
+| [`tsfm_benchmark/benchmark_validation/README.md`](tsfm_benchmark/benchmark_validation/README.md) | How the diversity/redundancy report works |
+| [`tsfm_lens/README.md`](tsfm_lens/README.md) | The stage pipeline, gates, statistics doctrine, CLI reference |
+| [`tsfm_lens/docs/ADDING_A_MODEL.md`](tsfm_lens/docs/ADDING_A_MODEL.md) | The `ModelAdapter` contract, the decision tree for adding a model, and the Sundial normalization case study |
+| [`tsfm_lens/ADAPTERS.md`](tsfm_lens/tsfm_lens/ADAPTERS.md) | Generated: every registered adapter's tier and capabilities |
+| [`tsfm_lens/configs/README.md`](tsfm_lens/configs/README.md) | The config system, fingerprints/staleness, and every config on `main` |
+| [`tsfm_lens/docs/worked_example.md`](tsfm_lens/docs/worked_example.md) | Reading one real report section by section |
+| [`tsfm_lens/docs/notebooks/`](tsfm_lens/docs/notebooks/) | Two runnable notebooks: an end-to-end smoke run, and reading a confirm verdict |
+| [`CONTRIBUTING.md`](CONTRIBUTING.md) | The dev → main workflow, test/plant discipline, doc-render checks |
+| [`CHANGELOG.md`](CHANGELOG.md) | Release history |
+| [`DEPENDENCIES.md`](DEPENDENCIES.md) | Exact, verified-working library versions and why each pin exists |
+| `CLAUDE.md` | The full architecture/engineering-doctrine reference (development manual) |
+
+Design history, every dated reconciliation note, and the full research log
+live on the `dev` branch, not here.
+
+## Citation
+
+See [`CITATION.cff`](CITATION.cff). In brief:
+
+```bibtex
+@software{tsfmlens,
+  author  = {Kushnir, Dan},
+  title   = {TSFM-Lens: comparative mechanistic interpretability for
+             time-series foundation models},
+  version = {0.1.0},
+  url     = {https://github.com/DanK10097110/TSFM-Interp}
+}
+```
+
+## License
+
+MIT — see [`LICENSE`](LICENSE).
+
+## Branches
+
+`main` is the stable, publishable branch: the two packages, their tests, and
+curated documentation and example configs. `dev` carries the full research
+history — the raw research log, every experiment config, and the standalone
+study-driver scripts behind each recorded finding.

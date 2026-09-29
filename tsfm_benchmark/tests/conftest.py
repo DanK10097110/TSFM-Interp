@@ -17,7 +17,7 @@ numpy. pytest gives that ordering for free: conftest.py is imported during
 collection, ahead of the test modules it applies to, and `import pytest` alone
 pulls in neither numpy nor torch (checked, not assumed).
 
-This file is a deliberate duplicate of tsfm_model_analysis/tsfm_lens/tests/
+This file is a deliberate duplicate of tsfm_lens/tests/
 conftest.py, not an oversight. The two packages install independently (CLAUDE.md
 sec 3) and share no import path, so a common module would couple them for the
 sake of five assignments. Keep the code below identical to that file's; only the

@@ -1,0 +1,17 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "TSFM-Lens: comparative mechanistic interpretability for time-series foundation models"
+type: software
+authors:
+  - family-names: Kushnir
+    given-names: Dan
+version: 0.1.0
+date-released: "2026-09-28"
+license: MIT
+repository-code: "https://github.com/DanK10097110/TSFM-Interp"
+keywords:
+  - interpretability
+  - mechanistic-interpretability
+  - time-series
+  - foundation-models
+  - transformers

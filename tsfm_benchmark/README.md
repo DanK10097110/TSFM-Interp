@@ -45,6 +45,38 @@ benchmark gets it scraped), and combines two mechanisms:
 You publish the generator and protocol; the canonical scoring numbers come from
 the sealed private corpus.
 
+## Generators and archetypes
+
+Two generator families back the two tiers:
+
+- **`parametric`** (synthetic) is additive: trend, one or more seasonalities,
+  AR-colored noise, changepoints, point anomalies, an optional random-walk
+  component, intermittency, and heteroskedasticity. Every component's exact
+  parameters are recorded as ground truth.
+- **`random_parametric`** (synthetic) draws a whole recipe at once from an
+  **archetype** — a named, qualitatively distinct structural regime (e.g.
+  `trend_dominant`, `seasonal_dominant`, `regime_switching`,
+  `noisy_chaotic`). The original 8 archetypes are a **frozen default** used
+  by every sealed corpus's `rng.choice(len(names))`; 4 more
+  (`random_walk_drift`, `intermittent_bursts`, `amplitude_modulated`,
+  `nonsinusoidal_seasonal`) are opt-in via an explicit `archetypes: [...]`
+  list in a task's `generator_params`. **Never edit the default archetype
+  list** — growing it changes what index every existing seed maps to and
+  silently breaks bit-exact regeneration of every sealed corpus already
+  built from it.
+- **`mixture`, `block_bootstrap`, `sequential_par`** (`real_derived`) inject
+  real source series — a weighted/multiplicative mixture, a moving-block
+  bootstrap, or a learned sequential synthesizer (SDV `PARSynthesizer`) —
+  and record full attribution provenance. They inherit the source
+  distribution, so every sample is admitted only after the leakage audit
+  passes (see below).
+
+A generator that inherits its source series' length (`block_bootstrap`) can
+silently produce an empty family if the source is shorter than
+`context_len + horizon`; pass `min_length` in `source_config` to guard
+against this, and smoke-build any new corpus config with `--max-count` first
+to check the realized per-family length range.
+
 ## Leakage gate
 
 Two-stage and shift-invariant. A cheap z-normalised Euclidean nearest-neighbour
@@ -56,6 +88,108 @@ plain Euclidean rather than 26x more. DTW uses the `dtaidistance` C backend when
 installed and falls back to a banded numpy implementation otherwise. DTW and
 Euclidean distances live on different scales, so `threshold` must be calibrated
 per metric.
+
+## Sealing, epochs, and validation
+
+Sealing and epoch-based regeneration are the defence against *future*
+contamination (the benchmark getting scraped once published):
+`seal_corpus`/`load_sealed(verify=True)` hash every sample and the whole
+split, so tampering, truncation, or a public/private mix-up is caught on
+load. Public and private splits are drawn from disjoint seed ranges, so they
+share a distribution but never an instance. When an existing private split
+is suspected of having leaked into a model's training data,
+`regenerate_private` mints a fresh epoch from a new, non-overlapping seed
+range — every prior epoch stays independently reproducible from its own
+seed.
+
+Once a corpus is built, **validate it** with the companion
+`benchmark_validation` pipeline before trusting it for anything — shape
+redundancy (cross-correlation/DTW) and catch22 feature-space diversity are
+kept separate until the report, and diversity is always computed in feature
+space, never on the UMAP coordinates used only for the plot. See
+[`benchmark_validation/README.md`](benchmark_validation/README.md) for how
+each check works, and [`example_runs/WALKTHROUGH.md`](example_runs/WALKTHROUGH.md)
+for the full command-by-command walkthrough of both pipelines.
+
+## CLI quickstart
+
+Every command below runs from inside `tsfm_benchmark/`:
+
+```bash
+# Build a corpus from a YAML config (a few seconds with --max-count)
+PYTHONPATH=. python3 example_runs/run_full.py --config configs/example.yaml \
+    --out ./benchmark_out --max-count 15
+
+# The same build, with the leakage gate doing real work against Monash
+# reference series (omitting --references leaves the gate a documented no-op)
+PYTHONPATH=. python3 example_runs/run_full.py --config configs/example.yaml \
+    --out ./benchmark_out --references monash --threshold 0.35 --epoch 0
+
+# Mint a fresh, non-overlapping private epoch (e.g. after a suspected leak)
+PYTHONPATH=. python3 example_runs/run_full.py --config configs/example.yaml \
+    --out ./benchmark_out --epoch 1
+
+# Validate the resulting public split
+PYTHONPATH=. python3 example_runs/run_validation.py \
+    --corpus ./benchmark_out/public_dev --out outputs
+```
+
+`run_full.py --help` and `run_validation.py --help` are the authoritative
+flag lists; see [`example_runs/WALKTHROUGH.md`](example_runs/WALKTHROUGH.md)
+for what each flag does and what each command produces.
+
+## Adding a real-data source
+
+Real data is used only as (1) a leakage-gate reference, (2) realism
+calibration, and (3) raw material for the `real_derived` generators — never
+copied into the benchmark directly (invariant 10). `sources.py`'s
+`load_sources` works against any Hugging Face dataset repo id; `kind: monash`
+is a convenience alias for `Monash-University/monash_tsf`.
+
+`kind: chronos_datasets` is the second, newer real source
+(`autogluon/chronos_datasets`), added because several long, strongly
+periodic Monash domains (`electricity_hourly`, `traffic`) fail to load
+through `monash_tsf`'s own script (a pandas frequency-alias bug), leaving the
+real-derived tier dominated by `weather`. `chronos_datasets` mirrors the same
+domains as plain parquet, sidestepping that bug entirely (and isn't
+script-backed, which matters for the `datasets<3` pin). Example
+`source_config`, straight out of `configs/large_run_v2.yaml`:
+
+```yaml
+tasks:
+  - name: real_electricity_hourly
+    generator: mixture
+    generator_params: {mode: weighted_sum, weight_concentration: 0.7}
+    source_sample_size: [3, 8]
+    source_config:
+      kind: chronos_datasets
+      subset: monash_electricity_hourly   # one of chronos_datasets' own config names
+      limit: 300
+      seed: 11
+      min_length: 576                     # >= context_len + horizon
+      max_length: 4000                    # longer series are sha256-windowed, not truncated to a fixed leading slice
+```
+
+Selection and windowing are both seeded via sha256 mixing (never Python's
+salted `hash()`), so the same config reproduces the same sample. Adding a
+different source is the same shape: register a new `kind` in `sources.py`
+that yields the canonical `(values, SourceRef)` form, record its license on
+the `SourceRef`, and add it to the leakage-reference loader if it should also
+serve as an audit reference. The `TIME`, `BOOM`, and `ARFBench` adapters are
+left as registration points for a future contributor — their current access
+paths/licenses weren't verified here.
+
+## Reproducibility: golden hashes and opt-in generator options
+
+Sealed corpora used across this repo's own runs are pinned by golden hashes
+in `tsfm_benchmark/tests`, so a code change that silently alters what a
+config builds is caught by the test suite, not discovered downstream in a
+model-comparison run. This is why **new generator options are always
+opt-in** (the archetype extension above is the canonical example): a
+default-list change that reorders `rng.choice`, or a new corruption inserted
+into an existing pipeline, changes every existing seed's output and breaks
+bit-exact regeneration. If you add a knob, default it to reproduce today's
+behavior exactly, and require an explicit opt-in to get the new one.
 
 ## What I deliberately recommend against
 

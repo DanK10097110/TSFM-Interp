@@ -2,45 +2,44 @@
 
 This guide covers three things: running a small example to see the generation
 pipeline work, running the full config-driven build, and running the
-verification/validation report pipeline that lives in its own folder. Every
-command below has been run as written.
+verification/validation report pipeline that lives alongside it. Every
+command below has been run as written, from `tsfm_benchmark/`.
 
 ## Repository layout
 
 ```
-project_root/
-├── tsfm_benchmark/              # generation pipeline
-│   ├── tsfm_benchmark/          #   the package
-│   ├── configs/example.yaml     #   declarative benchmark config
-│   ├── examples/run_smoke.py    #   small example (Part 1)
-│   ├── examples/run_full.py     #   full config-driven build (Part 2)
-│   └── requirements.txt
-├── benchmark_validation/        # verification report pipeline (the subfolder)
-│   ├── benchmark_validation/    #   the package
-│   ├── examples/run_validation.py   # validation run (Part 3)
-│   ├── outputs/                 #   where reports and plots land
-│   └── requirements.txt
-└── WALKTHROUGH.md               # this file
+tsfm_benchmark/
+├── build_pipeline/              # generation: sources, generators, audit, sealing
+├── benchmark_validation/        # verification: redundancy + diversity report
+├── example_runs/                # CLI entry points for both halves (this file's home)
+│   ├── run_smoke.py             #   small in-memory example (Part 1)
+│   ├── run_full.py              #   full config-driven build (Part 2)
+│   ├── run_validation.py        #   validation report (Part 3)
+│   └── WALKTHROUGH.md           #   this file
+├── configs/example.yaml         # declarative benchmark config used below
+├── outputs/                     # run_validation.py's default --out target
+└── requirements.txt
 ```
 
-If your copy nests `benchmark_validation/` inside `tsfm_benchmark/`, the only
-thing that changes is the `PYTHONPATH` in the commands below — adjust the
-relative path to point at wherever the `tsfm_benchmark` package sits.
+All three `example_runs/*.py` scripts are run with `PYTHONPATH=.` from inside
+`tsfm_benchmark/` (so the sibling `build_pipeline`/`benchmark_validation`
+packages resolve), not from `tsfm_benchmark/example_runs/` itself.
 
 ## Prerequisites
 
-Python 3.10+. Install each pipeline's dependencies:
+Python 3.10+. Install the package (from the repo root) plus the optional
+real-data extras this walkthrough uses:
 
 ```
-pip install -r tsfm_benchmark/requirements.txt
-pip install -r benchmark_validation/requirements.txt
+pip install -e .
+pip install -e ".[real-data]"     # datasets, dtaidistance, tsbootstrap, sdv
 ```
 
-The generation core runs on `numpy`, `scipy`, and `dtaidistance` (a fast DTW
-backend with a pure-numpy fallback). `run_full.py` also needs `PyYAML`. The
-validation pipeline additionally needs `pycatch22`, `umap-learn`, `plotly`, and
-`scikit-learn`. Pulling real Monash reference data (optional, Part 2) needs
-`datasets` and network access to HuggingFace.
+The generation core runs on `numpy`, `scipy`, and (optionally) `dtaidistance`
+(a fast DTW backend with a pure-numpy fallback). The validation pipeline
+additionally needs `pycatch22`, `umap-learn`, `plotly`, and `scikit-learn`
+(all in `tsfm_benchmark/requirements.txt`). Pulling real Monash/`chronos_datasets`
+reference data needs `datasets` and network access to Hugging Face.
 
 ---
 
@@ -50,12 +49,13 @@ Run the smoke test from inside the generation package:
 
 ```
 cd tsfm_benchmark
-PYTHONPATH=. python3 examples/run_smoke.py
+PYTHONPATH=. python3 example_runs/run_smoke.py
 ```
 
 This builds a tiny benchmark entirely in memory, seals the public and private
 splits to temporary directories, reloads and integrity-checks the private
-corpus, then prints a summary. Expected output:
+corpus, then prints a summary. Expected output (verified against this
+checkout):
 
 ```
 epoch        : 0
@@ -87,7 +87,7 @@ times, with an optional ordered chain of corruptions:
 | `count` | How many sequences this task contributes to each split. |
 | `generator_params` | Keyword arguments passed straight to the generator. |
 | `corruptions` | Ordered list of `{op, ...params}`; each is applied and recorded. |
-| `tier` | `synthetic` (leakage-safe) or `realism_stress` (real-derived). |
+| `tier` | `synthetic` (leakage-safe) or `real_derived` (real-derived; see `CLAUDE.md` §4). |
 
 The smoke test hard-codes one `TaskSpec` in Python. Part 2 loads a list of them
 from YAML instead.
@@ -124,17 +124,18 @@ Run the build:
 
 ```
 cd tsfm_benchmark
-PYTHONPATH=. python3 examples/run_full.py --config configs/example.yaml --out ./benchmark_out
+PYTHONPATH=. python3 example_runs/run_full.py --config configs/example.yaml --out ./benchmark_out
 ```
 
 For a quick end-to-end check without generating hundreds of series, cap the
 per-task count:
 
 ```
-PYTHONPATH=. python3 examples/run_full.py --config configs/example.yaml --out ./benchmark_out --max-count 15
+PYTHONPATH=. python3 example_runs/run_full.py --config configs/example.yaml --out ./benchmark_out --max-count 15
 ```
 
-Flags:
+Flags actually accepted by `run_full.py` (run `--help` for the current,
+authoritative list — this table is not exhaustive):
 
 | Flag | Default | Meaning |
 |---|---|---|
@@ -146,6 +147,8 @@ Flags:
 | `--reference-limit` | `100` | How many real series per Monash subset to load. |
 | `--threshold` | `0.35` | Minimum leakage distance for a sample to be admitted. |
 | `--max-count` | (none) | Cap per-task `count` for a fast run. |
+| `--sources` | `none` | Inject real source series into source-dependent generators (`monash`). |
+| `--source-limit`, `--source-subset`, `--source-n-domains` | — | Tune which/how many real series `--sources` injects. |
 
 ### What it produces
 
@@ -172,61 +175,71 @@ non-overlapping seed range.
 Volume is set entirely by the config: roughly `sum(count) × 2 splits` per epoch.
 No external data is required for the synthetic tier. Passing `--references none`
 means the leakage gate has nothing to compare against and every sample passes
-trivially; pass `--references monash` to load real series so the gate can
-actually reject look-alikes. The real-derived tasks in the config (for example
+trivially — the sealed manifest records `extra.audit.gate.gate_effective=false`
+so this is visible after the fact, not silently indistinguishable from a real
+pass. Pass `--references monash` to load real series so the gate can actually
+reject look-alikes. The real-derived tasks in the config (for example
 `cross_domain_mixture`) are skipped by this runner because their generators need
 real source series injected in code rather than declared in YAML — build those
 by calling the `mixture`, `block_bootstrap`, or `sequential_par` generators
-directly with loaded sources, then feed the results through the same builder.
+directly with loaded sources (or pass `--sources monash`), then feed the
+results through the same builder.
 
 ---
 
 ## Part 3 — The verification report pipeline
 
-This lives in `benchmark_validation/` and inspects a benchmark for redundancy
-and diversity. Point it at a sealed corpus produced in Part 2:
+This lives in `benchmark_validation/` (a subpackage of `tsfm_benchmark/`, not a
+separate top-level package) and inspects a benchmark for redundancy and
+diversity. Its CLI entry point is `example_runs/run_validation.py`, run from
+the same `tsfm_benchmark/` directory as Parts 1 and 2. Point it at a sealed
+corpus produced in Part 2:
 
 ```
-cd benchmark_validation
-PYTHONPATH=. python3 examples/run_validation.py --corpus ../tsfm_benchmark/benchmark_out/public_dev --out outputs
+cd tsfm_benchmark
+PYTHONPATH=. python3 example_runs/run_validation.py --corpus ./benchmark_out/public_dev --out outputs
 ```
 
-In `--corpus` mode it reads `corpus.jsonl` directly, so it does **not** need the
-generation package on the path. Flags:
+In `--corpus` mode it reads `corpus.jsonl` directly. Flags actually accepted
+by `run_validation.py` (run `--help` for the current, authoritative list —
+this table is not exhaustive; recent additions include `--blocked`/`--n-blocks`
+for very large corpora and `--compare-splits` for the dev/private
+exchangeability check in `cross_split.py`):
 
 | Flag | Default | Meaning |
 |---|---|---|
-| `--corpus` | (none) | Sealed corpus directory to validate; omit for the built-in demo. |
-| `--out` | `outputs` | Where the report and plot are written. |
-| `--method` | `xcorr` | Matcher: `xcorr` (rolling cross-correlation) or `dtw` (localized). |
+| `--corpus` | `./benchmark_out/public_dev` if it exists | Sealed corpus directory to validate. |
+| `--demo` | off | Run the standalone demo benchmark instead of a real corpus (never the default). |
+| `--out` | `outputs` | Where the report and plots are written. |
+| `--method` | `dtw` | Matcher: `dtw` (localized, tolerates warping) or the cheaper `xcorr`. |
 | `--catch24` | off | Use catch24 (adds mean and std) instead of catch22. |
 | `--redundancy-threshold` | `0.97` | Similarity at/above which a pair is flagged redundant. |
 | `--max-sequences` | (none) | Subsample for the O(n²) matcher on large corpora. |
+| `--group-by` | `task` | Grouping key (`task`/`tier`/`group`/`archetype`) for per-group breakdowns. |
 
 ### What it produces
 
-Two files in `--out`:
-
-- `validation_report.json` — the numbers: redundancy fraction and bucketed
-  similarity histogram, flagged near-duplicate pairs, catch22 feature summary,
-  and the feature-space diversity metrics (effective dimensionality,
-  nearest-neighbour distance tail, near-collision fraction, top-varying
-  features).
-- `feature_space_3d.html` — a standalone interactive 3D plot of the catch22
-  feature space (UMAP), colored by the generator that produced each sequence.
-  Open it in any browser and rotate. The geometry is for visual inspection only;
-  every diversity number in the JSON is computed in the feature space, not on
-  these coordinates.
+`--out` gets a `validation_report.json` (redundancy fraction and bucketed
+similarity histogram, flagged near-duplicate pairs, catch22 feature summary,
+and the feature-space diversity metrics: effective dimensionality,
+nearest-neighbour distance tail, near-collision fraction, top-varying
+features, per-group breakdowns and gate verdicts) plus several standalone
+interactive Plotly HTML plots (composition, redundancy histogram, feature
+variance, a 3D catch22/UMAP embedding, and more — the exact set is whatever
+this version of the pipeline renders; treat the directory listing, not this
+paragraph, as the source of truth). The 3D embedding is for visual inspection
+only; every diversity number in the JSON is computed in the catch22 feature
+space, never on those plotted coordinates (`CLAUDE.md` §5, invariant 4).
 
 ### Demo mode
 
 With no `--corpus`, the runner builds its own small benchmark (five distinct
 generators plus five planted near-duplicates) so the pipeline can be exercised
-standalone. This mode imports the generation package, so put it on the path:
+standalone:
 
 ```
-cd benchmark_validation
-PYTHONPATH=../tsfm_benchmark:. python3 examples/run_validation.py
+cd tsfm_benchmark
+PYTHONPATH=. python3 example_runs/run_validation.py --demo
 ```
 
 The planted duplicates should surface at similarity 1.0000 in the report — a
@@ -238,8 +251,9 @@ The two pipelines chain cleanly: Part 2 writes `public_dev/`, Part 3 reads it
 with `--corpus`. A full loop:
 
 ```
-cd tsfm_benchmark && PYTHONPATH=. python3 examples/run_full.py --out ./benchmark_out --max-count 15
-cd ../benchmark_validation && PYTHONPATH=. python3 examples/run_validation.py --corpus ../tsfm_benchmark/benchmark_out/public_dev --out outputs
+cd tsfm_benchmark
+PYTHONPATH=. python3 example_runs/run_full.py --out ./benchmark_out --max-count 15
+PYTHONPATH=. python3 example_runs/run_validation.py --corpus ./benchmark_out/public_dev --out outputs
 ```
 
 ---
@@ -282,11 +296,11 @@ cd ../benchmark_validation && PYTHONPATH=. python3 examples/run_validation.py --
 
 | Key | Default | Meaning |
 |---|---|---|
-| `method` | `xcorr` | Matcher type. |
+| `method` | `dtw` | Matcher type. |
 | `length` | 256 | Equal-bucket length for matching. |
 | `lag_frac` / `window_frac` | 0.1 | Cross-correlation lag band / DTW window. |
 | `n_buckets` | 10 | Equal-frequency buckets for the redundancy histogram. |
-| `redundancy_threshold` | 0.95 | Similarity at/above which a pair is redundant. |
+| `redundancy_threshold` | 0.97 | Similarity at/above which a pair is redundant. |
 | `catch24` | False | Add mean and std to the 22 catch22 features. |
 | `n_neighbors` / `min_dist` | 15 / 0.1 | UMAP layout parameters (plot only). |
 

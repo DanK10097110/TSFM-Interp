@@ -1,0 +1,189 @@
+# Curated example: a PAIR of real models, a medium corpus, every stage
+# including SAE + concepts at modest sizes -- the smallest config that
+# exercises the full concept-atlas chain end to end (CLAUDE.md sec 6.8)
+# without the cost of the flagship 4-model run (see large_4model.yaml).
+#
+# TimesFM (decoder-only, 32-step patches, deterministic) + Chronos-2
+# (encoder-only, deterministic) -- both deterministic, so no seeded-predict()
+# subtlety to worry about while learning the pipeline. Knobs below are
+# copied from configs/default.yaml (behavioral/geometry/causal stages) and
+# configs/concept_atlas.yaml (sae/concepts), each scaled down: smaller
+# dict_size_ladder, fewer SAE seeds, a smaller ablation battery.
+#
+# Point `data.path` at a sealed PUBLIC (dev) directory built at "medium"
+# scale, e.g. tsfm_benchmark/configs/medium_run.yaml
+# (PYTHONPATH=. python3 example_runs/run_full.py --config configs/medium_run.yaml --out ...).
+#
+# Validated: loads through the config loader and appears under --doctor in
+# this checkout (2026-09-28); not run to completion here (needs two real
+# checkpoints + SAE training -- tens of minutes to hours of GPU time,
+# CLAUDE.md sec 2.8: long compute is delegated, not run inline for a docs
+# pass).
+
+run:
+  name: medium_2model
+  out_dir: runs
+  device: cuda
+  dtype: bfloat16
+  seed: 0
+  keep_models_loaded: false
+
+data:
+  source: sealed
+  path: ../benchmark_medium/public_dev   # relative to tsfm_lens/ -- point this at your own sealed corpus
+  context_len: 512
+  horizon: 64
+  family_key: auto
+
+alignment:
+  window: 32
+  sanity_check: true
+
+models:
+  - name: TimesFM
+    adapter: timesfm
+    checkpoint: google/timesfm-2.5-200m-pytorch
+    batch_size: 32
+    capture_layer_stride: 2      # 20 layers -> 10 capture points
+  - name: Chronos-2
+    adapter: chronos2
+    checkpoint: amazon/chronos-2
+    batch_size: 24
+    capture_layer_stride: 1      # 12 encoder blocks, no decoder to capture
+
+l0:
+  enabled: true
+  quantiles: [0.1, 0.5, 0.9]
+
+l1:
+  enabled: true
+  layer_stride: 1
+  max_rows: 20000
+  family_conditioned: true
+  min_family_series: 15
+  rsa: true
+  rsa_max_series: 400
+
+l2:
+  enabled: true
+  layer_stride: 1
+  lambdas: [0.001, 0.01, 0.1, 1.0]
+  val_frac: 0.25
+  max_rows: 20000
+  input_baseline: true
+
+l3:
+  enabled: true
+  max_series: 200
+  corruptions:
+    noise: {snr_db: 6.0}
+    detrend: {}
+    deseasonalize: {top_k: 2}
+    level_shift: {position_frac: 0.6, scale: 3.0}
+    spike: {count: 3, scale: 6.0}
+  patching:
+    enabled: true
+    layer_stride: 2
+    corruptions: [deseasonalize, noise, level_shift]
+    max_series: 24                # must be <= every model's batch_size
+    per_window: true
+    window_stride: 2
+
+lens:
+  enabled: true
+  layer_stride: 1
+  max_series: 24                  # must be <= every model's batch_size
+  tuned: true
+  tuned_max_series: 400
+  val_frac: 0.25
+  lambdas: [0.001, 0.01, 0.1, 1.0]
+  crystallization_tol: 0.1
+
+attention:
+  enabled: true
+  patterns: true
+  max_series: 150
+  batch_series: 12
+  max_lag_tokens: 96
+  ablation: true
+  ablation_max_series: 24
+  head_layer_stride: 1
+  top_k: 5
+
+exemplars:
+  enabled: true
+  per_family: 2
+  max_families: 5
+
+clustering:
+  enabled: true
+  layer: auto
+  k: auto
+  pca_dim: 50
+  max_series: 400
+  use_umap: true
+
+layer_screen:
+  enabled: true
+  method: work_bend
+  budget_frac: 0.25
+  min_budget: 2
+
+# SAE + concept chain at modest scale (CLAUDE.md sec 6.8). Requires
+# sae.persist_features: true for the concepts stage.
+sae:
+  enabled: true
+  targets: []                    # "auto" -- layer_screen's own selection, both models
+  dict_size_mult: 8
+  dict_size_policy: search
+  dict_size_ladder: [96, 192, 384, 768]   # shorter ladder than the flagship run
+  max_dead_rate: 0.30
+  dict_size_search_margin: 0.03
+  dict_size_search_seeds: 1
+  min_fidelity: 0.5
+  k: 32
+  lr: 0.001
+  epochs: 40
+  min_train_steps: 400
+  aux_k: 32
+  aux_coef: 0.03125
+  aux_dead_steps_frac: 0.028
+  n_seeds: 2
+  batch_size: 2048
+  resample_dead_every_epochs: 5
+  forecast_preservation_max_series: 24   # must be <= every model's batch_size
+  ground_truth_max_series: 800
+  persist_features: true
+
+concepts:
+  enabled: true
+  top_k_series: 8
+  n_null_directions: 12
+  max_series: 32
+  keep_forecasts: 2
+  n_features_per_rule: 8
+  describe: true
+  describe_top_features: 6
+  n_registered: 10
+
+report:
+  enabled: true
+  verbose: true
+  title: "Example: TimesFM + Chronos-2, medium corpus, full concept chain"
+
+stats:
+  enabled: true
+  n_boot: 500
+  n_boot_heavy: 200
+  ci: 0.95
+  alpha: 0.05
+  min_series: 8
+
+internals:
+  enabled: true
+  layer_stride: 1
+  max_rows: 20000
+  probe_pca_dim: 50
+
+confirm:
+  enabled: false   # would also need a sealed private split; see large_4model.yaml
