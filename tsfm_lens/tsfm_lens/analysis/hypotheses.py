@@ -15,13 +15,21 @@ from. `confirm` requires this file, verifies every referenced hash still
 matches before running, and tests exactly the registered set — no more, no
 fewer.
 
-Not every stage's statistic is replicated by `confirm` yet (only `l0`
-family strengths and `l1`'s peak-CKA pair, matching the replication
-`confirm.py` already implemented before this module existed). L2's
-stitching gain, L3's fingerprint agreement, and L4's clustering AMI are
+Not every stage's statistic is replicated by `confirm` yet. `l0` family
+strengths, `l1`'s peak-CKA pair, `l3`'s per-corruption fingerprint agreement
+(`_replicate_registered_l3`) and the `concept_transfer` claims are replicated.
+L2's stitching gain, L4's clustering AMI and the per-archetype L0 strengths are
 still registered here (so they count in the multiplicity ledger and their
 own hash is pinned), but marked `replicable: False` with a stated reason —
 a real, stated gap, not a silent omission (`CLAUDE.md` §2.5).
+
+`ROADMAP.md` sec 38.2 (K2) adds four opt-in causal-concept claim types
+(`concept_causal`, `concept_atlas`, `shared_input_agreement`,
+`concept_structure`), enabled by `confirm.register_concept_claims`. With it
+off (the default) this module registers exactly what it registered before.
+Each such claim is frozen from dev artifacts (dev SAE checkpoints, dev
+feature ids, dev channel and sign) and pins the sha256 of every artifact it
+reads, `.pt` checkpoints included (`artifacts`).
 """
 
 from __future__ import annotations
@@ -393,23 +401,569 @@ def _concept_transfer_entries(run_dir: Path, cfg: PipelineConfig) -> tuple:
     return entries, ranking
 
 
+# ---------------------------------------------------------------------------
+# ROADMAP.md sec 38.2 (K2) -- registration of the CAUSAL concept claims.
+#
+# Opt-in behind `confirm.register_concept_claims`: with it off, `build_registry`
+# returns exactly what it returned before this section existed (same entries,
+# same keys), so every existing registry and its `registry_sha256` stay
+# byte-identical (`CLAUDE.md` sec 2.1, invariant 13). Every claim below is
+# FROZEN from dev artifacts only -- dev SAE checkpoints, dev feature ids, dev
+# channel and sign -- and records the sha256 of EVERY dev artifact it reads
+# (`artifacts`, checked by `check_registry_freshness`), the `.pt` checkpoints
+# included, so a retrained dictionary refuses to be confirmed against.
+# ---------------------------------------------------------------------------
+
+CONCEPT_CLAIM_STAGES = ("concept_causal", "concept_atlas", "shared_input_agreement",
+                        "concept_structure")
+
+_NOT_REGISTERED_FAMILIES_REASON = (
+    "'families do not beat the shuffle null' is a NEGATIVE structure result: "
+    "confirming a null needs an equivalence margin that nobody has justified "
+    "(sec 38.2.2 item 5). It stays descriptive.")
+_STRUCTURE_C_REASON = (
+    "'convergent concepts outnumber shared ones among multi-model concepts' is "
+    "exploratory, not registered: it is low-powered at ~16 multi-model "
+    "concepts and its classes come from a union-find over input-agreement "
+    "pairs that has no private counterpart (sec 38.2.2 item 4c).")
+
+
+def _rel(run_dir: Path, path: Path) -> str:
+    return Path(path).relative_to(run_dir).as_posix()
+
+
+class _Hasher:
+    """`{run-relative path: sha256}` for the dev artifacts one registration
+    reads, hashed once per file however many claims cite it."""
+
+    def __init__(self, run_dir: Path):
+        self.run_dir, self._cache = run_dir, {}
+
+    def __call__(self, path: Path) -> tuple:
+        rel = _rel(self.run_dir, path)
+        if rel not in self._cache:
+            self._cache[rel] = _sha256_file(path)
+        return rel, self._cache[rel]
+
+    def many(self, paths) -> dict:
+        return dict(self(p) for p in paths if Path(p).exists())
+
+
+def _ablation_null_mode(cfg) -> str:
+    """The ablation null the dev battery used (`sae.ablation_null`; the field
+    may not exist on an older checkout, in which case it is the legacy
+    `mean_magnitude`). Recorded on every causal claim: `confirm` refuses to
+    test it against a different null."""
+    return str(getattr(cfg.sae, "ablation_null", "mean_magnitude") or "mean_magnitude")
+
+
+def _dev_ablation_targets(run_dir: Path) -> list:
+    """`[(model, layer, artifact dict, path)]` for every non-withheld,
+    non-skipped target. Paths come from `ablation_run.ablation_path`, never
+    by hand; a glob hit whose helper path does not exist is dropped rather
+    than guessed at."""
+    from ..sae.ablation_run import ablation_path
+
+    out = []
+    for f in sorted(run_dir.glob("sae/*/*_ablation.json")):
+        art = load_json(f)
+        if art.get("withheld") or art.get("skipped"):
+            continue
+        model = art.get("model", f.parent.name)
+        layer = art.get("layer", f.name[: -len("_ablation.json")])
+        path = ablation_path(run_dir, model, layer)
+        if path.exists():
+            out.append((str(model), str(layer), art, path))
+    return out
+
+
+def _stable_atlas_members(run_dir: Path) -> tuple:
+    """`(set of (model, layer, feature) in seed-stable concepts, {member:
+    concept id}, paths read)`. Empty when the atlas or the stability artifact
+    is absent -- the preference for stable members then simply does not
+    apply, and the ranking says so."""
+    atlas_p = run_dir / "sae" / "concept_atlas.json"
+    stab_p = run_dir / "sae" / "concept_stability.json"
+    if not atlas_p.exists() or not stab_p.exists():
+        return set(), {}, []
+    atlas, stab = load_json(atlas_p), load_json(stab_p)
+    stable_ids = {int(c["concept"]) for c in (stab.get("concepts") or [])
+                  if (c.get("stability") or {}).get("stable") is True}
+    members, concept_of = set(), {}
+    for r in atlas.get("rows") or []:
+        cid = r.get("concept")
+        if cid is not None and int(cid) in stable_ids:
+            key = (str(r["model"]), str(r["layer"]), int(r["feature"]))
+            members.add(key)
+            concept_of[key] = int(cid)
+    return members, concept_of, [atlas_p, stab_p]
+
+
+def _best_channel(candidate: dict) -> tuple | None:
+    """`(channel, effect / null_p95, signed_effect, rec)` for the channel a
+    dev candidate clears by the widest effect / q95 margin, or `None`. A
+    channel with a degenerate null, an unavailable value or an exactly-zero
+    signed effect (no sign to freeze) is never chosen."""
+    best = None
+    for ch, rec in (candidate.get("channels") or {}).items():
+        if not rec.get("available", True) or not rec.get("clears_null"):
+            continue
+        p95, eff, signed = rec.get("null_p95"), rec.get("effect"), rec.get("signed_effect")
+        if not p95 or eff is None or signed is None or float(signed) == 0.0:
+            continue
+        ratio = float(eff) / float(p95)
+        if best is None or ratio > best[1]:
+            best = (ch, ratio, float(signed), rec)
+    return best
+
+
+def _select_causal(cands: list, n_total: int, min_per_model: int = 4) -> list:
+    """The registration cut: >= `min_per_model` per model, then the best of
+    the rest, seed-stable atlas members first at both steps.
+
+    Ranking key is `(not stable, -effect/q95 ratio, model, layer, feature,
+    channel)` -- fully ordered, so the cut does not depend on dict or JSON
+    iteration order (`CLAUDE.md` sec 11.55). A model with fewer than
+    `min_per_model` candidates contributes what it has.
+    """
+    def _key(c):
+        return (not c["stable"], -c["ratio"], c["model"], c["layer"], c["feature"], c["channel"])
+
+    ranked = sorted(cands, key=_key)
+    chosen, seen = [], set()
+    for model in sorted({c["model"] for c in ranked}):
+        for c in [c for c in ranked if c["model"] == model][:min_per_model]:
+            chosen.append(c)
+            seen.add(id(c))
+    for c in ranked:
+        if len(chosen) >= n_total:
+            break
+        if id(c) not in seen:
+            chosen.append(c)
+            seen.add(id(c))
+    return sorted(chosen, key=_key)
+
+
+def _concept_causal_candidates(run_dir: Path, concepts_cfg) -> dict:
+    """Every dev feature that clears its random-direction null on some
+    channel, ranked, and the registration cut.
+
+    Reads each target's `sae/<model>/<layer>_ablation.json` (path from
+    `ablation_run.ablation_path`). One candidate per (target, feature): its
+    strongest channel by `effect / null_p95` and that channel's dev sign.
+    `concepts.n_registered_causal` (default 32, a judgment count, sec
+    38.2.2) is the cut, with at least 4 per model and a preference for
+    members of seed-stable atlas concepts. Degrades to an empty list with a
+    stated reason when no ablation artifact exists, so a confirm-only run
+    (e.g. `configs/smoke.yaml`) still registers its other claims.
+    """
+    targets = _dev_ablation_targets(run_dir)
+    n_reg = int(getattr(concepts_cfg, "n_registered_causal", 32) or 32)
+    if not targets:
+        return {"candidates": [], "cut": 0, "n_registered_cfg": n_reg,
+                "reason": "no sae/<model>/<layer>_ablation.json artifact found"}
+    stable_members, concept_of, _paths = _stable_atlas_members(run_dir)
+    cands = []
+    for model, layer, art, path in targets:
+        for c in art.get("candidates") or []:
+            if not c.get("scorable") or not c.get("n_channels_clearing"):
+                continue
+            best = _best_channel(c)
+            if best is None:
+                continue
+            ch, ratio, signed, rec = best
+            key = (model, layer, int(c["feature"]))
+            cands.append({
+                "model": model, "layer": layer, "feature": int(c["feature"]),
+                "channel": ch, "ratio": ratio, "sign": 1 if signed > 0 else -1,
+                "effect": float(rec["effect"]), "signed_effect": signed,
+                "null_p95": float(rec["null_p95"]),
+                "n_top_series": int(c.get("n_top_series") or 0),
+                "top_k_series": art.get("top_k_series"),
+                "n_null_directions": art.get("n_null_directions"),
+                "stable": key in stable_members, "atlas_concept": concept_of.get(key),
+                "path": path})
+    cut = _select_causal(cands, n_reg)
+    return {"candidates": cands, "cut": cut, "n_registered_cfg": n_reg,
+            "n_stable_preferred": sum(1 for c in cands if c["stable"]),
+            "stable_preference_applied": bool(stable_members)}
+
+
+def _concept_causal_entries(run_dir: Path, cfg: PipelineConfig) -> tuple:
+    """`-> (entries, ranking summary)`. Claim
+    `concept_causal::{model}::{layer}::f{feature}::{channel}`: "ablating this
+    feature on its private top-k firing series moves this channel with this
+    sign beyond the row-matched random-direction null". The id names model,
+    layer, feature AND channel: an id missing any of them silently merges
+    distinct claims and shrinks the Holm family (`CLAUDE.md` sec 8, "Keys
+    that collapse")."""
+    from ..sae.ablation_run import checkpoint_path
+
+    ranking = _concept_causal_candidates(run_dir, cfg.concepts)
+    hasher = _Hasher(run_dir)
+    null_mode = _ablation_null_mode(cfg)
+    entries = []
+    for c in ranking["cut"] if ranking["cut"] else []:
+        art_rel, art_sha = hasher(c["path"])
+        arts = hasher.many([c["path"], checkpoint_path(run_dir, c["model"], c["layer"])])
+        entries.append({
+            "id": f"concept_causal::{c['model']}::{c['layer']}::f{c['feature']}::{c['channel']}",
+            "stage": "concept_causal", "family": "concept_causal",
+            "statistic": "ablation_channel_effect_vs_random_direction_null",
+            "model": c["model"], "layer": c["layer"], "target": f"{c['model']}/{c['layer']}",
+            "feature": c["feature"], "channel": c["channel"], "sign": c["sign"],
+            "dev_effect": c["effect"], "dev_signed_effect": c["signed_effect"],
+            "dev_null_p95": c["null_p95"], "dev_effect_over_null_p95": c["ratio"],
+            "dev_n_top_series": c["n_top_series"],
+            "k_top_series": c["top_k_series"] or 8,
+            "dev_n_null_directions": c["n_null_directions"],
+            "ablation_null": null_mode,
+            "seed_stable_atlas_member": c["stable"], "atlas_concept": c["atlas_concept"],
+            "artifact": art_rel, "artifact_sha256": art_sha, "artifacts": arts,
+            "statement": (f"Ablating feature {c['feature']} of {c['model']}/{c['layer']} "
+                         f"on its top-firing series moves the '{c['channel']}' channel "
+                         f"{'up' if c['sign'] > 0 else 'down'} beyond a random-direction "
+                         f"null (dev effect {c['effect']!r} vs null p95 {c['null_p95']!r})."),
+            "replicable": True,
+        })
+    summary = {k: v for k, v in ranking.items() if k not in ("candidates", "cut")}
+    summary.update({"n_candidates": len(ranking["candidates"]), "cut": len(entries),
+                    "cut_ids": [e["id"] for e in entries]})
+    return entries, summary
+
+
+def _dev_vectors(run_dir: Path) -> dict:
+    """`{(model, layer, feature): 9-vector}` of the dev ablation vectors
+    (`sae/concepts.py::ablation_vector`, never re-derived here)."""
+    from ..sae.concepts import ablation_vector
+
+    out = {}
+    for model, layer, art, _path in _dev_ablation_targets(run_dir):
+        for c in art.get("candidates") or []:
+            if c.get("scorable"):
+                vec = ablation_vector(c)
+                if vec is not None:
+                    out[(model, layer, int(c["feature"]))] = [float(v) for v in vec]
+    return out
+
+
+def _atlas_candidates(run_dir: Path, cfg: PipelineConfig) -> tuple:
+    """`concept_atlas::{concept}` -- "this seed-stable atlas concept's
+    members still form a concept on private data". One claim per stable
+    dev concept (an atlas concept id is global across models, so it is
+    unique by construction). Members, their dev 9-vectors, the dev centroid
+    and the clustering thresholds are all frozen here."""
+    from ..sae.ablation_run import ablation_path, checkpoint_path
+
+    atlas_p = run_dir / "sae" / "concept_atlas.json"
+    stab_p = run_dir / "sae" / "concept_stability.json"
+    if not atlas_p.exists() or not stab_p.exists():
+        return [], {"reason": "concept atlas artifacts not found"}
+    atlas, stab = load_json(atlas_p), load_json(stab_p)
+    stable_ids = sorted({int(c["concept"]) for c in (stab.get("concepts") or [])
+                        if (c.get("stability") or {}).get("stable") is True})
+    vectors = _dev_vectors(run_dir)
+    params = atlas.get("params") or {}
+    hasher = _Hasher(run_dir)
+    entries = []
+    for cid in stable_ids:
+        members = [{"model": str(r["model"]), "layer": str(r["layer"]),
+                    "feature": int(r["feature"])}
+                   for r in atlas.get("rows") or [] if r.get("concept") == cid]
+        members.sort(key=lambda m: (m["model"], m["layer"], m["feature"]))
+        for m in members:
+            m["dev_vector"] = vectors.get((m["model"], m["layer"], m["feature"]))
+        have = [np.asarray(m["dev_vector"], dtype=np.float64) for m in members
+                if m["dev_vector"] is not None]
+        if len(have) < 2:
+            continue
+        unit = np.stack([v / np.linalg.norm(v) for v in have if np.linalg.norm(v) > 0])
+        centroid = unit.mean(axis=0)
+        centroid = centroid / (np.linalg.norm(centroid) or 1.0)
+        target_paths = []
+        for t in sorted({(m["model"], m["layer"]) for m in members}):
+            target_paths += [ablation_path(run_dir, *t), checkpoint_path(run_dir, *t)]
+        arts = hasher.many([atlas_p, stab_p] + target_paths)
+        models = sorted({m["model"] for m in members})
+        entries.append({
+            "id": f"concept_atlas::{cid}", "stage": "concept_atlas", "family": "concept_atlas",
+            "statistic": "member_pair_cosine_fraction_and_centroid_cosine",
+            "concept": cid, "members": members, "models": models,
+            "dev_centroid": [float(v) for v in centroid],
+            "min_cosine": float(params.get("min_cosine", 0.9)),
+            "min_members": int(params.get("min_members", 3)),
+            "artifact": "sae/concept_atlas.json", "artifact_sha256": arts["sae/concept_atlas.json"],
+            "artifacts": arts,
+            "statement": (f"Seed-stable atlas concept {cid} ({len(members)} member feature(s) "
+                         f"across {', '.join(models)}) still forms a concept on private data."),
+            "replicable": True,
+        })
+    return entries, {"n_stable_concepts": len(stable_ids), "n_registered": len(entries)}
+
+
+def _agreement_candidates(run_dir: Path, concepts_cfg) -> dict:
+    """Dev shared-input agreement tests with a DEFINITE verdict, ranked, and
+    the registration cut: every `same causal effect` test, plus
+    `concepts.n_registered_agreement_differs` (default 30, judgment) of the
+    `acts differently` ones, round-robin across ordered model pairs and
+    deepest-below-floor first within a pair. `not scorable`, `no specific
+    agreement`, `level only` and `shape only` are not claims of agreement or
+    disagreement and are not registered."""
+    p = run_dir / "sae" / "shared_input_agreement.json"
+    at_p = run_dir / "sae" / "atlas_transfer.json"
+    n_diff = int(getattr(concepts_cfg, "n_registered_agreement_differs", 30) or 30)
+    if not p.exists():
+        return {"candidates": [], "cut": [], "reason": "sae/shared_input_agreement.json not found"}
+    doc = load_json(p)
+    k_top = int(load_json(at_p).get("k_top_series", 20)) if at_p.exists() else 20
+    same, differs = [], []
+    for t in doc.get("tests") or []:
+        v = t.get("verdict")
+        if v not in ("same causal effect", "acts differently"):
+            continue
+        depths = []
+        for key in ("statistic_i", "statistic_ii"):
+            st = t.get(key) or {}
+            if st.get("observed") is not None and st.get("floor_p05_src") is not None:
+                depths.append(float(st["observed"]) - min(float(st["floor_p05_src"]),
+                                                          float(st["floor_p05_dst"])))
+        rec = dict(t, k_top_series=k_top, depth=min(depths) if depths else 0.0)
+        (same if v == "same causal effect" else differs).append(rec)
+
+    def _ord(r):
+        return (r["src_target"], r["dst_target"], int(r["concept"]), int(r["dst_feature"]))
+
+    same.sort(key=_ord)
+    by_pair: dict = {}
+    for r in sorted(differs, key=lambda r: (r["depth"],) + _ord(r)):
+        by_pair.setdefault((r["src_model"], r["dst_model"]), []).append(r)
+    picked = []
+    while len(picked) < n_diff and any(by_pair.values()):
+        for pair in sorted(by_pair):
+            if by_pair[pair] and len(picked) < n_diff:
+                picked.append(by_pair[pair].pop(0))
+    return {"candidates": same + differs, "cut": same + sorted(picked, key=_ord),
+            "n_same": len(same), "n_differs_available": len(differs),
+            "n_differs_registered": len(picked), "n_registered_differs_cfg": n_diff}
+
+
+def _agreement_entries(run_dir: Path, cfg: PipelineConfig) -> tuple:
+    """`shared_input_agreement::{src target}::{dst target}::c{concept}::
+    f{dst feature}::{verdict}`. The spec's `{src}::{dst}::{verdict}` id
+    under-specifies the claim (one target pair carries many concepts), so
+    concept and destination feature are part of it. Source set, destination
+    set and `k` are frozen here."""
+    from ..sae.ablation_run import checkpoint_path
+
+    ranking = _agreement_candidates(run_dir, cfg.concepts)
+    hasher = _Hasher(run_dir)
+    entries = []
+    for t in ranking["cut"]:
+        paths = [run_dir / "sae" / "shared_input_agreement.json",
+                 run_dir / "sae" / "atlas_transfer.json",
+                 checkpoint_path(run_dir, *t["src_target"].split("/", 1)),
+                 checkpoint_path(run_dir, *t["dst_target"].split("/", 1))]
+        arts = hasher.many(paths)
+        stats = {k: {f: (t.get(k) or {}).get(f) for f in
+                     ("observed", "floor_p95_src", "floor_p95_dst", "floor_p05_src",
+                      "floor_p05_dst", "clears", "below_floor")}
+                 for k in ("statistic_i", "statistic_ii")}
+        entries.append({
+            "id": (f"shared_input_agreement::{t['src_target']}::{t['dst_target']}::"
+                   f"c{t['concept']}::f{t['dst_feature']}::{t['verdict']}"),
+            "stage": "shared_input_agreement", "family": "shared_input_agreement",
+            "statistic": "shared_input_causal_agreement",
+            "dev_verdict": t["verdict"], "concept": int(t["concept"]),
+            "src_target": t["src_target"], "src_model": t["src_model"],
+            "src_features": [int(f) for f in t["src_features"]],
+            "dst_target": t["dst_target"], "dst_model": t["dst_model"],
+            "dst_feature": int(t["dst_feature"]),
+            "dst_features": [int(f) for f in t["dst_features"]],
+            "dst_set_kind": t.get("dst_set_kind"), "k_top_series": int(t["k_top_series"]),
+            "dev_statistics": stats,
+            "artifact": "sae/shared_input_agreement.json",
+            "artifact_sha256": arts["sae/shared_input_agreement.json"], "artifacts": arts,
+            "statement": (f"Concept {t['concept']}: {t['src_model']} ({t['src_target']}) and "
+                         f"{t['dst_model']} ({t['dst_target']}, feature {t['dst_feature']}) "
+                         f"'{t['verdict']}' on their shared top series."),
+            "replicable": True,
+        })
+    summary = {k: v for k, v in ranking.items() if k not in ("candidates", "cut")}
+    summary.update({"n_candidates": len(ranking["candidates"]), "cut": len(entries)})
+    return entries, summary
+
+
+def _structure_candidates(run_dir: Path, cfg: PipelineConfig) -> tuple:
+    """The two registered directional aggregates (sec 38.2.2 item 4), each
+    registered only when it HOLDS on dev (registering a claim dev already
+    contradicts would spend the look on nothing):
+
+    (a) `concept_structure::no_concept_in_all_models` -- no atlas concept has
+        causal members in every model of the pooled panel. Rule-based (no
+        p-value): confirmed if the atlas recomputed on the private battery
+        vectors of the SAME dev causal pool also has none.
+    (b) `concept_structure::majority_prominent_features_causally_null` --
+        among the dev ablation candidates (activation-prominent by
+        construction), more than half clear no channel (dev 64.4%, FINDINGS
+        MN-14). Confirmed if the private rate's one-sided lower 95% bound is
+        above 0.5; carries a bootstrap p, so it is the family's only
+        p-valued claim.
+
+    (c) is exploratory and not registered (`_STRUCTURE_C_REASON`).
+    """
+    from ..sae.ablation_run import ablation_path, checkpoint_path
+
+    atlas_p = run_dir / "sae" / "concept_atlas.json"
+    targets = _dev_ablation_targets(run_dir)
+    hasher = _Hasher(run_dir)
+    entries, notes = [], {"exploratory_not_registered": _STRUCTURE_C_REASON}
+
+    if atlas_p.exists():
+        atlas = load_json(atlas_p)
+        rows = [{"model": str(r["model"]), "layer": str(r["layer"]),
+                 "feature": int(r["feature"])} for r in atlas.get("rows") or []]
+        models = sorted({r["model"] for r in rows})
+        max_models = max((int(c.get("n_models") or 0) for c in atlas.get("concepts") or []),
+                         default=0)
+        if len(models) >= 2 and max_models < len(models):
+            params = atlas.get("params") or {}
+            tpaths = []
+            for t in sorted({(r["model"], r["layer"]) for r in rows}):
+                tpaths += [ablation_path(run_dir, *t), checkpoint_path(run_dir, *t)]
+            arts = hasher.many([atlas_p] + tpaths)
+            entries.append({
+                "id": "concept_structure::no_concept_in_all_models", "stage": "concept_structure",
+                "family": "concept_structure", "statistic": "atlas_models_per_concept",
+                "p_valued": False, "dev_models": models, "dev_max_models_per_concept": max_models,
+                "pool": rows, "min_cosine": float(params.get("min_cosine", 0.9)),
+                "min_members": int(params.get("min_members", 3)),
+                "artifact": "sae/concept_atlas.json",
+                "artifact_sha256": arts["sae/concept_atlas.json"], "artifacts": arts,
+                "statement": (f"No atlas concept has causal members in all {len(models)} "
+                             f"models (dev maximum {max_models})."),
+                "replicable": True})
+        else:
+            notes["no_concept_in_all_models"] = (
+                f"not registered: it does not hold on dev (models in pool {len(models)}, "
+                f"maximum models per concept {max_models})")
+    else:
+        notes["no_concept_in_all_models"] = "not registered: sae/concept_atlas.json not found"
+
+    n_scorable = n_null = 0
+    per_target = {}
+    for model, layer, art, path in targets:
+        feats = [int(c["feature"]) for c in art.get("candidates") or [] if c.get("scorable")]
+        nulls = sum(1 for c in art.get("candidates") or []
+                    if c.get("scorable") and not c.get("n_channels_clearing"))
+        if feats:
+            per_target[f"{model}/{layer}"] = feats
+        n_scorable += len(feats)
+        n_null += nulls
+    if n_scorable and n_null / n_scorable > 0.5:
+        tpaths = []
+        for model, layer, _art, path in targets:
+            tpaths += [path, checkpoint_path(run_dir, model, layer)]
+        arts = hasher.many(tpaths)
+        entries.append({
+            "id": "concept_structure::majority_prominent_features_causally_null",
+            "stage": "concept_structure", "family": "concept_structure",
+            "statistic": "causally_null_rate", "p_valued": True,
+            "dev_n_features": n_scorable, "dev_n_null": n_null, "dev_rate": n_null / n_scorable,
+            "candidates": per_target,
+            "artifact": _rel(run_dir, targets[0][3]),
+            "artifact_sha256": arts[_rel(run_dir, targets[0][3])], "artifacts": arts,
+            "statement": (f"More than half of the activation-prominent dev features are "
+                         f"causally null (dev {n_null}/{n_scorable} = "
+                         f"{n_null / n_scorable:.3f})."),
+            "replicable": True})
+    else:
+        notes["majority_prominent_features_causally_null"] = (
+            "not registered: no scorable dev candidates" if not n_scorable else
+            f"not registered: the dev null rate {n_null / n_scorable:.3f} is not above 0.5")
+    return entries, notes
+
+
+def _concept_claim_entries(run_dir: Path, cfg: PipelineConfig) -> tuple:
+    """All K2 entries, or `([], {})` when `confirm.register_concept_claims` is
+    off (the byte-identical default)."""
+    if not bool(getattr(cfg.confirm, "register_concept_claims", False)):
+        return [], {}
+    causal, causal_sum = _concept_causal_entries(run_dir, cfg)
+    atlas, atlas_sum = _atlas_candidates(run_dir, cfg)
+    agree, agree_sum = _agreement_entries(run_dir, cfg)
+    struct, struct_notes = _structure_candidates(run_dir, cfg)
+    return causal + atlas + agree + struct, {
+        "concept_causal": causal_sum, "concept_atlas": atlas_sum,
+        "shared_input_agreement": agree_sum, "concept_structure": struct_notes,
+        "not_registered": {"families_beat_shuffle_null": _NOT_REGISTERED_FAMILIES_REASON},
+        "ablation_null": _ablation_null_mode(cfg)}
+
+
+# One Holm family per claim type. `n` is the size of the null each family's
+# p-values are resolved against, so the smallest attainable Holm-adjusted p
+# is `m / (n + 1)`; a family is unsatisfiable once that exceeds alpha.
+_FAMILY_NULL_FIELD = {"concept_causal": "causal_max_null", "concept_atlas": "atlas_n_null",
+                      "shared_input_agreement": "agreement_n_null",
+                      "concept_structure": "structure_n_boot"}
+
+
+def claim_family_budget(cfg: PipelineConfig, registry: dict | None = None) -> list:
+    """`[{"family", "m", "n_null", "alpha", "min_attainable_p_holm",
+    "satisfiable", "basis"}]` for the four K2 claim families.
+
+    With a registry, `m` is the number of registered claims of that type
+    (only the p-valued ones for `concept_structure`). Without one (a
+    `--doctor` run before `register`), `m` is the config's own upper bound
+    where the config has one (`concepts.n_registered_causal`), and families
+    whose count is a property of the dev artifacts are reported as
+    `m: None` with `basis: "unknown before register"` rather than guessed
+    (`CLAUDE.md` sec 11.34). One function feeds both `confirm`'s refusal and
+    the doctor row, so the two cannot disagree.
+    """
+    alpha = float(cfg.confirm.alpha)
+    rows = []
+    for family, field_name in _FAMILY_NULL_FIELD.items():
+        n_null = int(getattr(cfg.confirm, field_name))
+        if registry is not None:
+            hyps = [h for h in registry["hypotheses"] if h["stage"] == family]
+            if family == "concept_structure":
+                hyps = [h for h in hyps if h.get("p_valued")]
+            m, basis = len(hyps), "registered claims"
+        elif family == "concept_causal":
+            m, basis = int(cfg.concepts.n_registered_causal), "upper bound: n_registered_causal"
+        elif family == "concept_structure":
+            m, basis = 1, "at most one p-valued structure claim"
+        else:
+            m, basis = None, "unknown before register"
+        floor = (m / (n_null + 1)) if m else None
+        rows.append({"family": family, "m": m, "n_null": n_null, "alpha": alpha,
+                     "min_attainable_p_holm": floor,
+                     "satisfiable": (floor <= alpha) if floor is not None else None,
+                     "basis": basis})
+    return rows
+
+
 def build_registry(cfg: PipelineConfig) -> dict:
     """Pure assembly (no I/O beyond reading already-written dev artifacts)."""
     run_dir = cfg.run_dir()
     concept_transfer_entries, ct_ranking = _concept_transfer_entries(run_dir, cfg)
+    causal_entries, causal_summary = _concept_claim_entries(run_dir, cfg)
     hypotheses = (_l0_entries(run_dir) + _l1_entries(run_dir) + _l2_entries(run_dir)
                  + _l3_entries(run_dir) + _clustering_entries(run_dir)
-                 + concept_transfer_entries)
+                 + concept_transfer_entries + causal_entries)
     ids = [h["id"] for h in hypotheses]
     dup = sorted({i for i in ids if ids.count(i) > 1})
     if dup:
         raise ValueError(f"hypothesis registry has duplicate ids {dup}; every claim "
                          f"must be individually addressable (Holm is keyed by id)")
-    return {"hypotheses": hypotheses,
-           "n_replicable": sum(1 for h in hypotheses if h["replicable"]),
-           "concept_transfer_candidates": ct_ranking,
-           "concept_knob_candidates": {"candidates": [], "cut": 0, "n_registered": 0,
-                                       "reason": _KNOB_FAMILY_EMPTY_REASON}}
+    registry = {"hypotheses": hypotheses,
+               "n_replicable": sum(1 for h in hypotheses if h["replicable"]),
+               "concept_transfer_candidates": ct_ranking,
+               "concept_knob_candidates": {"candidates": [], "cut": 0, "n_registered": 0,
+                                           "reason": _KNOB_FAMILY_EMPTY_REASON}}
+    if causal_summary:
+        registry["concept_claim_candidates"] = causal_summary
+    return registry
 
 
 def run_register(cfg: PipelineConfig) -> None:
@@ -432,14 +986,17 @@ def check_registry_freshness(cfg: PipelineConfig, registry: dict) -> None:
     run_dir = cfg.run_dir()
     drifted = []
     for h in registry["hypotheses"]:
-        art_path = run_dir / h["artifact"]
-        if not art_path.exists():
-            drifted.append(f"{h['artifact']} (no longer exists)")
-            continue
-        current = _sha256_file(art_path)
-        if current != h["artifact_sha256"]:
-            drifted.append(f"{h['artifact']} (hash changed: registered "
-                           f"{h['artifact_sha256'][:12]}, now {current[:12]})")
+        pinned = {h["artifact"]: h["artifact_sha256"]}
+        pinned.update(h.get("artifacts") or {})
+        for rel, registered in pinned.items():
+            art_path = run_dir / rel
+            if not art_path.exists():
+                drifted.append(f"{rel} (no longer exists)")
+                continue
+            current = _sha256_file(art_path)
+            if current != registered:
+                drifted.append(f"{rel} (hash changed: registered "
+                               f"{registered[:12]}, now {current[:12]})")
     if drifted:
         raise RuntimeError(
             "confirm refuses to run: hypotheses.json was registered against artifacts that "

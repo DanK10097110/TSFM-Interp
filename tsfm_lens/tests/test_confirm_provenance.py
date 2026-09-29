@@ -309,12 +309,18 @@ def test_confirm_config_keys_unchanged_by_this_item():
     exception to that rule, not a violation of it: it is an actual stage
     INPUT (`_replicate_registered_concepts`'s null-draw count), so it
     belongs in the pinned set rather than being read back out of the
-    artifact the way B5's fields are."""
+    artifact the way B5's fields are. ROADMAP.md sec 38.2 (K2) added six
+    more genuine stage inputs (the causal-concept claim knobs), each marked
+    `omit_at_default` so an older run's fingerprint is unchanged
+    (`tests/test_concept_causal_confirm.py::test_new_fields_do_not_move_
+    older_fingerprints`)."""
     from tsfm_lens.config import ConfirmConfig
     import dataclasses
     names = {f.name for f in dataclasses.fields(ConfirmConfig)}
     assert names == {"enabled", "source", "path", "max_series", "require_seal", "alpha",
-                     "concept_transfer_n_null"}
+                     "concept_transfer_n_null", "register_concept_claims", "causal_n_null",
+                     "causal_max_null", "atlas_n_null", "agreement_n_null",
+                     "structure_n_boot"}
 
 
 # --- consumer audit (sec 11.40): confirmation.json's four named consumers --

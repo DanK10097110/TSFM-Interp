@@ -262,17 +262,29 @@ class TargetContext:
     """Everything one (model, layer) target needs, loaded once and cached by
     the driver across every unit that touches it."""
 
-    def __init__(self, cfg, hub, store, data, run_dir, model: str, layer: str, device):
+    def __init__(self, cfg, hub, store, data, run_dir, model: str, layer: str, device,
+                 pooled: np.ndarray | None = None, alive_mask: np.ndarray | None = None):
+        """`pooled` / `alive_mask` (ROADMAP.md sec 38.2, K2) replace the dev
+        store reads for a run on a private corpus: `pooled` is the frozen
+        SAE's series-level features of `data`'s own series, `alive_mask` the
+        frozen dictionary's alive atoms. Both `None` (the default) reads
+        `store`, exactly as before."""
         self.cfg, self.device = cfg, device
         self.model, self.layer = model, layer
         ckpt_path = Path(run_dir) / "sae" / sanitize(model) / f"{sanitize(layer)}.pt"
         self.sae = load_sae_checkpoint(str(ckpt_path)).to(device)
         self.adapter = hub.get(model)
         self.adapter.ensure_loaded()
-        self.pooled = np.asarray(store.load(model, layer, level="series", space="sae"),
-                                 dtype=np.float64)
-        bench = load_all_windows(store, model, layer)
-        self.alive_mask = alive_feature_mask(self.sae, bench, device)
+        if pooled is None:
+            self.pooled = np.asarray(store.load(model, layer, level="series", space="sae"),
+                                     dtype=np.float64)
+        else:
+            self.pooled = np.asarray(pooled, dtype=np.float64)
+        if alive_mask is None:
+            bench = load_all_windows(store, model, layer)
+            self.alive_mask = alive_feature_mask(self.sae, bench, device)
+        else:
+            self.alive_mask = np.asarray(alive_mask, dtype=bool)
         self.reach = reach_probe(cfg, self.adapter, layer, data, device)
         self._ranks = None
 
@@ -623,14 +635,18 @@ def _quantile05(values: list) -> float | None:
     return float(np.quantile(values, 0.05)) if values else None
 
 
-def _statistic_i(level_a_real, level_b_real, null_stats_a: list, null_stats_b: list) -> dict:
+def _statistic_i(level_a_real, level_b_real, null_stats_a: list, null_stats_b: list,
+                 keep_values: bool = False) -> dict:
     """Item 4(i): per-series Spearman concordance of the signed level effect,
     against BOTH sides' matched-null floors (item 5). `clears` (beats both
     p95s) and `below_floor` (falls below both p05s -- review's second
     deviation note: disagreement beyond what matched, equally-active
     features produce by chance, never merely "did not clear") are reported
     together; neither implies the other, and both can be false (the
-    ordinary "no specific agreement" case)."""
+    ordinary "no specific agreement" case). `keep_values` (ROADMAP.md sec
+    38.2, K2; default off, so every dev artifact is byte-identical) also
+    returns the raw floor draws, from which `confirm` forms empirical tail
+    p-values."""
     obs = _spearman(level_a_real, level_b_real)
     floor_src = []
     for stats_raw, _stats_shape in null_stats_a:
@@ -650,10 +666,13 @@ def _statistic_i(level_a_real, level_b_real, null_stats_a: list, null_stats_b: l
                  and obs > p95_src and obs > p95_dst)
     below_floor = bool(obs is not None and p05_src is not None and p05_dst is not None
                        and obs < p05_src and obs < p05_dst)
-    return {"observed": obs, "floor_p95_src": p95_src, "floor_p95_dst": p95_dst,
+    out = {"observed": obs, "floor_p95_src": p95_src, "floor_p95_dst": p95_dst,
            "floor_p05_src": p05_src, "floor_p05_dst": p05_dst,
            "n_floor_src": len(floor_src), "n_floor_dst": len(floor_dst),
            "clears": clears, "below_floor": below_floor}
+    if keep_values:
+        out["floor_values_src"], out["floor_values_dst"] = floor_src, floor_dst
+    return out
 
 
 def _null_normalized_vector(null_stats_shape: dict, side_scores: dict, mask: list) -> np.ndarray:
@@ -673,7 +692,7 @@ def _null_normalized_vector(null_stats_shape: dict, side_scores: dict, mask: lis
 
 
 def _statistic_ii(side_a: dict, side_b: dict, null_stats_a: list, null_stats_b: list,
-                  mask: list) -> dict:
+                  mask: list, keep_values: bool = False) -> dict:
     """Item 4(ii): cosine of the null-normalized shape-channel vectors, over
     channels clearing in either model, against both sides' matched-null
     floors. See `_statistic_i` for `clears` vs `below_floor`."""
@@ -702,10 +721,13 @@ def _statistic_ii(side_a: dict, side_b: dict, null_stats_a: list, null_stats_b: 
                  and obs > p95_src and obs > p95_dst)
     below_floor = bool(obs is not None and p05_src is not None and p05_dst is not None
                        and obs < p05_src and obs < p05_dst)
-    return {"observed": obs, "floor_p95_src": p95_src, "floor_p95_dst": p95_dst,
+    out = {"observed": obs, "floor_p95_src": p95_src, "floor_p95_dst": p95_dst,
            "floor_p05_src": p05_src, "floor_p05_dst": p05_dst,
            "n_floor_src": len(floor_src), "n_floor_dst": len(floor_dst),
            "clears": clears, "below_floor": below_floor}
+    if keep_values:
+        out["floor_values_src"], out["floor_values_dst"] = floor_src, floor_dst
+    return out
 
 
 def _verdict(stat_i: dict, stat_ii: dict) -> str:
@@ -733,7 +755,12 @@ def _verdict(stat_i: dict, stat_ii: dict) -> str:
 # ---------------------------------------------------------------------------
 
 def run_shared_input_agreement(cfg, run_dir, hub, store, data, device, atlas: dict,
-                               atlas_transfer: dict) -> dict:
+                               atlas_transfer: dict, *, units: list | None = None,
+                               private_pooled: dict | None = None,
+                               private_alive: dict | None = None,
+                               ground_truth_path: str | None = None,
+                               n_null: int | None = None, base_seed: int | None = None,
+                               keep_floor_values: bool = False, write: bool = True) -> dict:
     """Score every FDR-surviving reciprocal atlas-transfer test and write
     `sae/shared_input_agreement.json`. Gates each target's reach FIRST (P5a),
     then ablates on the shared series `U`, scores each side's own effect
@@ -742,15 +769,31 @@ def run_shared_input_agreement(cfg, run_dir, hub, store, data, device, atlas: di
     own matched-random-SET floor, and assigns a verdict from both floors'
     p95 (clears) and p05 (below_floor, review item 2). See the module
     docstring for both deviations from ROADMAP.md sec 37.8.
+
+    ROADMAP.md sec 38.2 (K2) -- the keyword-only arguments let `confirm`
+    re-run exactly this measurement on a PRIVATE corpus with frozen dev
+    choices; every default reproduces the dev run. `units` replaces
+    `build_units(atlas, atlas_transfer)` with frozen (source set, destination
+    set) units; `private_pooled` / `private_alive` (`"model/layer"` ->
+    array) replace the dev store reads in each `TargetContext`;
+    `ground_truth_path` points the seasonal-period lookup at the private
+    corpus's sealed manifest; `n_null` / `base_seed` override the floor size
+    and the seed base; `keep_floor_values` keeps the raw floor draws on each
+    statistic; `write=False` returns the artifact without writing
+    `sae/shared_input_agreement.json` (a private measurement must never
+    overwrite the dev artifact a registered hash pins).
     """
     t0 = time.monotonic()
     c = cfg.concepts
-    n_null = int(getattr(c, "shared_input_n_null", 50))
-    base_seed = int(cfg.run.seed)
+    n_null = int(n_null if n_null is not None else getattr(c, "shared_input_n_null", 50))
+    base_seed = int(base_seed if base_seed is not None else cfg.run.seed)
 
-    units = build_units(atlas, atlas_transfer)
-    units, cap_record = cap_units_per_pair(
-        units, getattr(c, "agreement_max_tests_per_pair", None))
+    if units is None:
+        units = build_units(atlas, atlas_transfer)
+        units, cap_record = cap_units_per_pair(
+            units, getattr(c, "agreement_max_tests_per_pair", None))
+    else:
+        units, cap_record = list(units), None
     if cap_record is not None:
         log.warning("shared_input_agreement: capped at %d test(s) per ordered model pair -- "
                     "%d of %d reciprocal-FDR test(s) not scored",
@@ -759,7 +802,8 @@ def run_shared_input_agreement(cfg, run_dir, hub, store, data, device, atlas: di
 
     periods_full = None
     try:
-        gt = load_ground_truth_table(cfg.data.path)
+        gt = load_ground_truth_table(ground_truth_path if ground_truth_path is not None
+                                     else cfg.data.path)
         periods_full = gt.reindex(data.meta["series_id"].to_numpy())[
             "seasonal_period_dominant"].to_numpy(dtype=np.float64)
     except Exception as exc:  # noqa: BLE001 -- degrade the seasonal channel, not the module
@@ -771,7 +815,10 @@ def run_shared_input_agreement(cfg, run_dir, hub, store, data, device, atlas: di
     def _ctx(target: str) -> TargetContext:
         if target not in contexts:
             model, layer = _target_key(target)
-            contexts[target] = TargetContext(cfg, hub, store, data, run_dir, model, layer, device)
+            contexts[target] = TargetContext(
+                cfg, hub, store, data, run_dir, model, layer, device,
+                pooled=(private_pooled or {}).get(target),
+                alive_mask=(private_alive or {}).get(target))
         return contexts[target]
 
     verified_pairs = set()
@@ -885,12 +932,14 @@ def run_shared_input_agreement(cfg, run_dir, hub, store, data, device, atlas: di
 
         level_a_real = _channel_deltas(real_raw_a, "level")
         level_b_real = _channel_deltas(real_raw_b, "level")
-        stat_i = _statistic_i(level_a_real, level_b_real, null_stats_a, null_stats_b)
+        stat_i = _statistic_i(level_a_real, level_b_real, null_stats_a, null_stats_b,
+                              keep_values=keep_floor_values)
 
         mask = [ch for ch in SHAPE_CHANNELS
                if side_a["shape"][ch]["available"] and side_b["shape"][ch]["available"]
                and (side_a["shape"][ch]["clears_null"] or side_b["shape"][ch]["clears_null"])]
-        stat_ii = _statistic_ii(side_a, side_b, null_stats_a, null_stats_b, mask)
+        stat_ii = _statistic_ii(side_a, side_b, null_stats_a, null_stats_b, mask,
+                                keep_values=keep_floor_values)
 
         record["statistic_i"] = stat_i
         record["statistic_ii"] = stat_ii
@@ -932,6 +981,10 @@ def run_shared_input_agreement(cfg, run_dir, hub, store, data, device, atlas: di
     }
     if cap_record is not None:
         out["agreement_cap"] = cap_record
+    if not write:
+        log.info("shared input agreement: %d test(s), verdicts=%s, %.1fs (not written)",
+                 len(tests), verdict_counts, out["runtime_seconds"])
+        return out
     out_path = shared_input_agreement_path(run_dir)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     save_json(out_path, out)
