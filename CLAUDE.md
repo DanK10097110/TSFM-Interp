@@ -17,6 +17,13 @@
 > class, a reproduce pointer and a 1–5 interestingness score. **Every new
 > claim goes there** in the same commit as its `ROADMAP.md` Findings block;
 > its header holds the maintenance rules. Read it first for "what do we know".
+>
+> **Branches.** `dev` holds everything: `ROADMAP.md`, `ROADMAP_ARCHIVE.md`,
+> `CLAUDE_FULL.md`, experiment configs, standalone `run_*.py` study drivers and
+> their tests. `main` is the clean publish branch without them. Develop on `dev`
+> and merge to `main`; after each merge check that no dev-only file came back
+> (a merge keeps `main`'s removals unless `dev` edited that file). Code comments
+> cite `ROADMAP.md`/`CLAUDE_FULL.md` sections; those files exist only on `dev`.
 
 ---
 
@@ -36,7 +43,7 @@ where in depth the forecast forms, and what each model is better at.
 |---|---|---|
 | Benchmark generation | `tsfm_benchmark/build_pipeline` | Leakage-audited, sealed, ground-truth-labeled synthetic corpora |
 | Benchmark validation | `tsfm_benchmark/benchmark_validation` | Prove a corpus is diverse and non-redundant |
-| Model analysis | `tsfm_model_analysis/tsfm_lens` | Layered pipeline ("tsfm-lens") → one interactive HTML report |
+| Model analysis | `tsfm_lens` | Layered pipeline ("tsfm-lens") → one interactive HTML report |
 
 Two separately installable packages on purpose (root `pyproject.toml` =
 `tsfm_benchmark`; `tsfm_lens` has its own). Their dependencies barely overlap.
@@ -103,7 +110,7 @@ captured stack only *reads* the context.
 
 ```bash
 source ~/miniforge3/etc/profile.d/conda.sh && conda activate cudaPy
-cd tsfm_model_analysis/tsfm_lens            # tsfm_lens paths/configs are relative to here
+cd tsfm_lens                                # tsfm_lens paths/configs are relative to here
 export OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 OPENBLAS_NUM_THREADS=4   # shared 32-core box
 nvidia-smi                                   # pick a free GPU: CUDA_VISIBLE_DEVICES=N
 python -m pytest tests/<file>.py -q          # tests/conftest.py caps threads itself
@@ -410,7 +417,11 @@ Results of this chain (and every other stage) are curated in `FINDINGS.md`
 
 The reference real run is `runs/full_report_run_4model` (TimesFM, Chronos-2,
 Sundial, Chronos-Bolt; 13 targets). Its current per-target concept count is
-**4** (11 of 13 targets are non-modular).
+**4** (11 of 13 targets are non-modular). Its Sundial numbers predate the
+Sundial normalization fix (FINDINGS PM-15). The first run with the fixed
+Sundial is `runs/concept_atlas_v2` (v2 corpus, 29 targets, confirmed once on
+the v2 private split; ROADMAP §37.11c); its lightweight artifacts are
+published in `examples/concept_atlas_v2/`.
 
 ---
 
