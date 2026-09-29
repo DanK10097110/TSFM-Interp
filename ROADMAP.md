@@ -38066,6 +38066,23 @@ under transformers 4.57.6.
   the shallowest layer by design (§15 A2; deep-layer decay is normal in causal
   decoders, CLAUDE_FULL §11.22). An amplitude sweep and backward-leakage check
   per §11.22 was delegated.
+  **Resolved (2026-09-29, commit a463eac):** architectural, not bad spans.
+  - With normalization off, backward leakage is exactly 0 in all 48
+    layer×amplitude cells, every miss lands later, and span IoU is 1.000.
+  - Layers 5–11 sit at chance (0.07–0.20) at amplitudes of 0.05× and above.
+  - Recorded as FINDINGS DE-09. Window-level claims on Time-MoE layers ≥5
+    must carry this caveat.
+- **Follow-up round (a463eac):**
+  - Chronos-T5-Base replaced TTM in `panel7_v2.yaml`. The paired check vs
+    TimesFM (120 series) gave median MASE 1.3937900066375732 vs
+    1.3070001602172852 (naive 2.7683534622192383). Its alignment table is
+    blocks 0–5 at 1.00 and blocks 6–11 at 0.93.
+  - The `ttm` extra and the granite-tsfm row were removed.
+  - Lag-Llama does not have the unloaded-spans bug.
+  - `--doctor`: 26 checks, 23 pass, 3 warn (alignment minimums: Sundial
+    0.13, Timer 0.13, Time-MoE 0.07), 0 fail. Holm floor 105/5000 = 0.021.
+- **Merged into dev as b81c30d.** The 7-model dev run (`panel7_v2_dev`) was
+  launched 2026-09-29 in the /tmp `k3wt` worktree, detached, on GPU 0.
 - **Environment discrepancy (pre-existing, found in review).** `cudaPy` runs
   conda torch 2.12.0 and scikit-learn 1.7.2 (installed 2026-07-01), shadowing
   pip dist-infos of torch 2.9.1+cu130 and scikit-learn 1.9.0 (2026-06-24).

@@ -741,6 +741,21 @@ These instructions are binding for every future session, human or agent.
 - **Ref.** ROADMAP §34 A2 (~30777–30817), §31.1 (~27104–27140).
 - **Score. 4/5.** Any claim keyed on "the important layers" must name its selector and check alternatives.
 
+#### DE-09 · Time-MoE's window alignment decays to chance past layer 4, with zero backward leakage (architectural, not bad spans)
+- **Claim.**
+  - Per-layer impulse checks in float32, normalization off, at 0.04/0.2/0.4/1.0× the calibrated 0.25 amplitude.
+    - Backward leakage is exactly 0.00e+00 in every layer and amplitude cell.
+    - Across all 48 cells the argmax never lands earlier; every miss lands in a later window.
+    - Spans have IoU 1.000 against the declared ones.
+  - Diagonal hit fraction at 0.01: layers 0–4 1.00; layers 5/6/7 0.60/0.60/0.40; layer 11 0.33. At 0.05 and above, layers 5–11 are 0.07–0.20, which is chance.
+  - Sundial reference at 0.25, layers 0–11: 1.00, 1.00, 1.00, 0.93, 0.53, 0.33, 0.27, 0.13, 0.27, 0.27, 0.27, 0.20. Its backward leakage of 3.5e-3 to 1.5e-2 comes entirely from its global z-score normalization.
+  - Time-MoE decays much sooner than Sundial: at 0.01 Sundial is 1.00 through layer 10.
+  - Method trap: with z-score normalization on, bf16 showed "backward leakage" of 0.06–0.6. Z-scoring rescales every position when one point changes, so leakage must be measured with normalization off.
+- **Evidence.** Descriptive (instrument validation). **Status:** measured, one checkpoint (Maple728/TimeMoE-50M) at context 480.
+- **Reproduce.** `scratchpad`-only diagnostic (`diag_align.py`, recorded in ROADMAP §38.3); the `panel7_v2` extract alignment table.
+- **Ref.** ROADMAP §38.3 (K3 onboarding review); CLAUDE_FULL §11.22.
+- **Score. 3/5.** The extract gate reads only the shallowest layer and passes. Window-level claims on Time-MoE layers ≥5 (per-window patching, window-resolved cross-model depth) are weak and must say so.
+
 ---
 
 ## E. Per-model character
