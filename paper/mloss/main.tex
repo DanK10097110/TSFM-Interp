@@ -64,8 +64,8 @@ MIT license at \url{\repourl}.
 
 \section{Introduction}
 
-Pretrained forecasters such as TimesFM \citep{das2024timesfm}, Chronos \citep{ansari2024chronos}
-and Sundial \citep{liu2025sundial} are used zero-shot, yet little is known about what they
+Pretrained forecasters such as TimesFM \citep{das2024timesfm} and Chronos \citep{ansari2024chronos}
+are used zero-shot, yet little is known about what they
 compute. Interpretability libraries built for language models work on one model at a time, and three properties of
 TSFMs make a direct transfer unreliable: tokens cover 1 to 96 time steps depending on the architecture, so positions
 are not comparable across models; real series carry no labels for trend, seasonality or noise, so probes cannot be
@@ -118,8 +118,7 @@ dictionaries, and leave the experimental design to the user. Recent TSFM studies
 model \citep{mishra2026dissecting,oublal2026timesae,divo2026zeitgeist}. \tool{} builds on the same primitives but
 adds what a cross-architecture comparison needs to be trustworthy (Table~\ref{tab:tools}): a measured time axis,
 known answers, matched nulls with reach controls, correction for multiple testing, one-shot confirmation and a
-report that states the evidence behind every claim. It is complementary to these libraries rather than a
-replacement.
+report that states the evidence behind every claim. It complements these libraries rather than replacing them.
 
 \begin{table}[t]
 \centering
@@ -154,8 +153,10 @@ After \texttt{pip install -e . \&\& pip install -e tsfm\_lens}, one command runs
 single model and a pair. The repository includes a complete four-model example run with its report and per-stage
 artifacts, and a ledger of every finding with its reproduction command. The code is MIT-licensed; over 2{,}100 tests
 run in continuous integration against pinned and, weekly, latest dependencies, and each load-bearing assertion must
-be shown to fail against a planted regression. Documentation covers installation, adding models, a report walkthrough
-and generated stage and glossary references. Code: \url{\repourl}.
+be shown to fail against a planted regression. Documentation covers installation, adding models and a report walkthrough. Code: \url{\repourl}.
+
+\acks{Computational resources were provided by Hao Wang. This work received no external funding, and the authors
+declare no competing interests.}
 
 \vskip 0.2in
 \bibliography{../references}

@@ -21,7 +21,6 @@ python figures/make_figures.py --run <any run dir>
 `figures/report_*.png` are headless-Chrome screenshots of (`report_l3_crop.png` is a crop of `report_sec-l3.png`)
 `examples/concept_atlas_v2/report.html`.
 
-Before submission: remove the `preprint` option, fill in the funding /
-competing-interests statement in `main.tex`, and spot-check bibliography
+Before submission: remove the `preprint` option, add author affiliations, and spot-check bibliography
 metadata (entries marked `verified` in `references.bib` were checked against
 arXiv/venue pages on 2026-09-29).
