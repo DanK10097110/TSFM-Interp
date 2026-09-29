@@ -9,67 +9,67 @@ per-model character; MP method positives; MN method negatives; BM benchmark trus
 \begin{center}
 \scriptsize
 \setlength{\tabcolsep}{3pt}
-\begin{longtable}{@{}l>{\raggedright}p{9.2cm}>{\raggedright}p{2.6cm}c@{}}
-\caption{Ledger entries cited in this paper (score = interestingness, 1--5).}\label{tab:ledger}\\
+\begin{longtable}{@{}l>{\raggedright}p{8.3cm}>{\raggedright}p{2.3cm}>{\raggedright}p{1.5cm}c@{}}
+\caption{Ledger entries cited in this paper (score = interestingness, 1--5). $^{*}$Section (\S) or table (T) of this paper where the result is reported.}\label{tab:ledger}\\
 \toprule
-ID & Claim (abridged) & Evidence / status & Score \\
+ID & Claim (abridged) & Evidence / status & In paper$^{*}$ & Score \\
 \midrule
 \endfirsthead
 \toprule
-ID & Claim (abridged) & Evidence / status & Score \\
+ID & Claim (abridged) & Evidence / status & In paper$^{*}$ & Score \\
 \midrule
 \endhead
 \bottomrule
 \endfoot
-SH-01 & Peak CKA 0.38--0.47 above shuffled-series nulls (0.02--0.16) across five architectures, including Timer via the zero-code adapter & geometric; exploratory & 5 \\
-SH-05 & CKA and clustering AMI rank model pairs differently on three panels & geometric vs.\ descriptive; replicated & 5 \\
-SH-06 & Pair similarity splits into a geometric camp and a behavioral/causal camp; 7 metrics never pooled & mixed; exploratory & 5 \\
-SH-14 & Concept transfer on shared inputs vs.\ stratum-matched null: 56.3\% forward, 46.1\% reciprocal; uniform null gave false 30/30 & correlational; exploratory & 5 \\
-SH-16 & No atlas concept spans all four models; convergent is the modal sharing class & descriptive over causal parts; exploratory & 5 \\
-SH-18 & Registered concept-transfer claims confirmed on private data: 19/20, 20/20 frozen, 20/20 on v2 & held-out confirmed & 5 \\
-SH-19 & Unit-level correspondence fails rotation controls (0.148 $\to$ 0.331); participation ratio as low as 1.54 & geometric; negative & 5 \\
-SH-20 & 11 of 13 targets non-modular once a minimum cluster size is enforced & descriptive; confirmed & 4 \\
-CA-01 & Perturbation-fingerprint agreement is pair-specific; TimesFM/Chronos-2 replicates on private data & causal within-model; held-out & 4 \\
-CA-03 & Seasonality circuit: 1 head (TimesFM) vs.\ 5 non-additive heads (Chronos-T5-Base) & causal within-model; exploratory & 4 \\
-CA-04 & Attention mass at seasonal lags uncorrelated with causal importance ($\rho=0.026$, $-0.118$) & causal vs.\ descriptive; exploratory & 4 \\
-CA-06 & On shared inputs with matched floors, most apparent cross-model disagreement disappears (18/19 $\to$ 12/89) & causal on shared inputs; exploratory, 2 corpora & 5 \\
-CA-07 & Median level share of a causal feature's effect 0.535; most features shape-causal beyond a level-removed null & causal within-model; exploratory & 4 \\
-CA-10 & Causal effect space is a continuum; families tile it but do not beat a shuffle null & descriptive; exploratory, 2 corpora & 4 \\
-DE-01 & Whole-layer patching hides a depth-intensifying recency effect in the last pre-horizon window & causal within-model; exploratory & 4 \\
-DE-03 & Chronos-2 skip lens was a silent no-op (identical MASE at 12 layers); corrected reach 0.737 $\to$ 0.000 & causal within-model; confirmed & 5 \\
-DE-04 & Chronos-T5 encoder ends at depth 0.478 on a whole-stack axis; 50\% comparable overlap with TimesFM & descriptive; confirmed & 5 \\
-DE-05 & Captured share of forecast FLOPs: 14.35\% (Chronos-T5-Base) to 97.5\% (Chronos-2) & descriptive; confirmed & 5 \\
-DE-08 & Layer selection depends almost entirely on the selector (0/3 robust layers) & descriptive; confirmed & 4 \\
-PM-05 & Chronos-2 most accurate and best observed; winners vary by family; held-out on v2 & behavioral; partly held-out & 4 \\
-PM-07 & Models differ ${\sim}5.4\times$ in reversion to the mean; flat forecasts driven by weakly predictable data & behavioral; confirmed on run & 4 \\
-PM-08 & Random-weight twins are not one null: identity stack (TimesFM) vs.\ dead forecasts (Chronos-2/Bolt) & architecture fact; confirmed & 5 \\
-PM-09 & Sundial scorable as causal destination 1/71 $\to$ 12/71 after seeding fix & causal; corrected & 3 \\
-PM-11 & Causally load-bearing TimesFM random-walk concept fails seed stability & causal within-model; unstable & 3 \\
-PM-13 & Chronos-2 group attention unmeasured by design & scope statement & 3 \\
-PM-15 & Sundial adapter bypassed checkpoint normalization; residual 38.43 $\to$ 0.030 & behavioral; fixed & 4 \\
-MP-01 & Token spans can be measured (IoU 1.0 on 6 checkpoints); zero-code adapter follows & method; confirmed & 5 \\
-MP-02 & Alignment gates must be normalized by their attainable ceiling & method; confirmed & 3 \\
-MP-03 & AuxK revival recovers dead SAE atoms 10--13$\times$ on real activations & method; adopted & 4 \\
-MP-04 & Single-seed SAE gold ranking flips a bake-off verdict; 3 seeds fix it & method; fixed & 5 \\
-MP-05 & SAE feature death set by layer geometry (exponent 1.02), not recipe & correlational; replicated & 5 \\
-MP-06 & Ground-truth alignment of SAE features is real only over a permutation null & correlational; exploratory & 3 \\
-MP-07 & Ablation battery discriminates: 2.49--6.61$\times$ chance & causal within-model; confirmed & 4 \\
-MP-09 & Dev and private splits exchangeable (energy $p=0.51$; TOST 21/22) & held-out validation & 3 \\
-MN-01 & Similarity cannot detect lineage: untrained pair 0.878 $>$ trained related pair 0.734 & geometric; negative & 5 \\
-MN-05 & Residualizing on provenance made 93\% of headline cards float-rounding noise & method; fixed & 5 \\
-MN-06 & A grounded small LLM narrator fabricates comparisons; guards do not converge & method; negative & 5 \\
-MN-07 & Causal fingerprints are nearly one-dimensional (PR 2.09) & causal, compared; negative & 4 \\
-MN-14 & 64.4\% of visually prominent SAE features are causally null & causal within-model & 4 \\
-MN-15 & SAE reconstruction moves the forecast ${\sim}3.5\times$ more than removing a feature & causal within-model & 4 \\
-MN-16 & ``Reconstruction beats clean forecast'' replicated in 1/5 seeds; retracted & causal; retracted & 4 \\
-MN-17 & Generator-counterfactual concept mediation: 0/98 and 0/151 & correlational; negative & 5 \\
-MN-18 & Absence of agreement is not disagreement: 109/288 $\to$ 9 & method; fixed & 4 \\
-MN-19 & ``Same inputs'' must be top-$k$ overlap, not whole-series correlation & method; fixed & 4 \\
-MN-21 & Reviving dead features hurts ground-truth alignment in TimesFM at every depth & correlational vs.\ causal; exploratory & 5 \\
-MN-23 & MASE denominator floors out on intermittent series & metric caveat & 3 \\
-MN-24 & A precision mismatch left aggregates intact but reorganized 71\% of a partition & method; fixed & 4 \\
-MN-25 & Zero-code adapter resolves 2 of 8 probed TSFM checkpoints & descriptive; open & 3 \\
-BM-05 & Counterfactual identity check caught a corruption-replay bug (244/298 $\to$ 0/1113) & benchmark; fixed & 2 \\
+SH-01 & Peak CKA 0.38--0.47 above shuffled-series nulls (0.02--0.16) across five architectures, including Timer via the zero-code adapter & geometric; exploratory & \S\ref{sec:casestudy}, T\ref{tab:results} & 5 \\
+SH-05 & CKA and clustering AMI rank model pairs differently on three panels & geometric vs.\ descriptive; replicated & T\ref{tab:results} & 5 \\
+SH-06 & Pair similarity splits into a geometric camp and a behavioral/causal camp; 7 metrics never pooled & mixed; exploratory & T\ref{tab:results} & 5 \\
+SH-14 & Concept transfer on shared inputs vs.\ stratum-matched null: 56.3\% forward, 46.1\% reciprocal; uniform null gave false 30/30 & correlational; exploratory & T\ref{tab:controls} & 5 \\
+SH-16 & No atlas concept spans all four models; convergent is the modal sharing class & descriptive over causal parts; exploratory & \S\ref{sec:casestudy}, T\ref{tab:results} & 5 \\
+SH-18 & Registered concept-transfer claims confirmed on private data: 19/20, 20/20 frozen, 20/20 on v2 & held-out confirmed & \S\ref{sec:casestudy}, T\ref{tab:results} & 5 \\
+SH-19 & Unit-level correspondence fails rotation controls (0.148 $\to$ 0.331); participation ratio as low as 1.54 & geometric; negative & \S\ref{sec:casestudy}, T\ref{tab:controls} & 5 \\
+SH-20 & 11 of 13 targets non-modular once a minimum cluster size is enforced & descriptive; confirmed & \S\ref{sec:methods} & 4 \\
+CA-01 & Perturbation-fingerprint agreement is pair-specific; TimesFM/Chronos-2 replicates on private data & causal within-model; held-out & T\ref{tab:results} & 4 \\
+CA-03 & Seasonality circuit: 1 head (TimesFM) vs.\ 5 non-additive heads (Chronos-T5-Base) & causal within-model; exploratory & \S\ref{sec:casestudy} & 4 \\
+CA-04 & Attention mass at seasonal lags uncorrelated with causal importance ($\rho=0.026$, $-0.118$) & causal vs.\ descriptive; exploratory & \S\ref{sec:casestudy}, T\ref{tab:results} & 4 \\
+CA-06 & On shared inputs with matched floors, most apparent cross-model disagreement disappears (18/19 $\to$ 12/89) & causal on shared inputs; exploratory, 2 corpora & \S\ref{sec:casestudy}, T\ref{tab:results}, T\ref{tab:controls} & 5 \\
+CA-07 & Median level share of a causal feature's effect 0.535; most features shape-causal beyond a level-removed null & causal within-model; exploratory & \S\ref{sec:casestudy} & 4 \\
+CA-10 & Causal effect space is a continuum; families tile it but do not beat a shuffle null & descriptive; exploratory, 2 corpora & \S\ref{sec:casestudy}, T\ref{tab:results} & 4 \\
+DE-01 & Whole-layer patching hides a depth-intensifying recency effect in the last pre-horizon window & causal within-model; exploratory & \S\ref{sec:casestudy} & 4 \\
+DE-03 & Chronos-2 skip lens was a silent no-op (identical MASE at 12 layers); corrected reach 0.737 $\to$ 0.000 & causal within-model; confirmed & \S\ref{sec:methods}, \S\ref{sec:casestudy}, T\ref{tab:controls} & 5 \\
+DE-04 & Chronos-T5 encoder ends at depth 0.478 on a whole-stack axis; 50\% comparable overlap with TimesFM & descriptive; confirmed & \S\ref{sec:methods}, \S\ref{sec:casestudy} & 5 \\
+DE-05 & Captured share of forecast FLOPs: 14.35\% (Chronos-T5-Base) to 97.5\% (Chronos-2) & descriptive; confirmed & \S\ref{sec:architecture}, \S\ref{sec:casestudy}, T\ref{tab:results}, T\ref{tab:controls} & 5 \\
+DE-08 & Layer selection depends almost entirely on the selector (0/3 robust layers) & descriptive; confirmed & \S\ref{sec:casestudy} & 4 \\
+PM-05 & Chronos-2 most accurate and best observed; winners vary by family; held-out on v2 & behavioral; partly held-out & T\ref{tab:results} & 4 \\
+PM-07 & Models differ ${\sim}5.4\times$ in reversion to the mean; flat forecasts driven by weakly predictable data & behavioral; confirmed on run & \S\ref{sec:related} & 4 \\
+PM-08 & Random-weight twins are not one null: identity stack (TimesFM) vs.\ dead forecasts (Chronos-2/Bolt) & architecture fact; confirmed & T\ref{tab:controls} & 5 \\
+PM-09 & Sundial scorable as causal destination 1/71 $\to$ 12/71 after seeding fix & causal; corrected & T\ref{tab:controls} & 3 \\
+PM-11 & Causally load-bearing TimesFM random-walk concept fails seed stability & causal within-model; unstable & \S\ref{sec:casestudy} & 3 \\
+PM-13 & Chronos-2 group attention unmeasured by design & scope statement & \S\ref{sec:usage} & 3 \\
+PM-15 & Sundial adapter bypassed checkpoint normalization; residual 38.43 $\to$ 0.030 & behavioral; fixed & \S\ref{sec:casestudy}, T\ref{tab:controls} & 4 \\
+MP-01 & Token spans can be measured (IoU 1.0 on 6 checkpoints); zero-code adapter follows & method; confirmed & \S\ref{sec:architecture}, T\ref{tab:controls} & 5 \\
+MP-02 & Alignment gates must be normalized by their attainable ceiling & method; confirmed & \S\ref{sec:architecture} & 3 \\
+MP-03 & AuxK revival recovers dead SAE atoms 10--13$\times$ on real activations & method; adopted & \S\ref{sec:methods} & 4 \\
+MP-04 & Single-seed SAE gold ranking flips a bake-off verdict; 3 seeds fix it & method; fixed & \S\ref{sec:methods}, T\ref{tab:controls} & 5 \\
+MP-05 & SAE feature death set by layer geometry (exponent 1.02), not recipe & correlational; replicated & \S\ref{sec:usage} & 5 \\
+MP-06 & Ground-truth alignment of SAE features is real only over a permutation null & correlational; exploratory & \S\ref{sec:casestudy} & 3 \\
+MP-07 & Ablation battery discriminates: 2.49--6.61$\times$ chance & causal within-model; confirmed & \S\ref{sec:casestudy} & 4 \\
+MP-09 & Dev and private splits exchangeable (energy $p=0.51$; TOST 21/22) & held-out validation & \S\ref{sec:architecture} & 3 \\
+MN-01 & Similarity cannot detect lineage: untrained pair 0.878 $>$ trained related pair 0.734 & geometric; negative & \S\ref{sec:casestudy}, T\ref{tab:results}, T\ref{tab:controls} & 5 \\
+MN-05 & Residualizing on provenance made 93\% of headline cards float-rounding noise & method; fixed & T\ref{tab:controls} & 5 \\
+MN-06 & A grounded small LLM narrator fabricates comparisons; guards do not converge & method; negative & \S\ref{sec:controls} & 5 \\
+MN-07 & Causal fingerprints are nearly one-dimensional (PR 2.09) & causal, compared; negative & \S\ref{sec:casestudy} & 4 \\
+MN-14 & 64.4\% of visually prominent SAE features are causally null & causal within-model & \S\ref{sec:casestudy}, T\ref{tab:results} & 4 \\
+MN-15 & SAE reconstruction moves the forecast ${\sim}3.5\times$ more than removing a feature & causal within-model & \S\ref{sec:casestudy}, T\ref{tab:results} & 4 \\
+MN-16 & ``Reconstruction beats clean forecast'' replicated in 1/5 seeds; retracted & causal; retracted & \S\ref{sec:controls} & 4 \\
+MN-17 & Generator-counterfactual concept mediation: 0/98 and 0/151 & correlational; negative & \S\ref{sec:casestudy}, T\ref{tab:results} & 5 \\
+MN-18 & Absence of agreement is not disagreement: 109/288 $\to$ 9 & method; fixed & \S\ref{sec:methods}, T\ref{tab:controls} & 4 \\
+MN-19 & ``Same inputs'' must be top-$k$ overlap, not whole-series correlation & method; fixed & \S\ref{sec:methods} & 4 \\
+MN-21 & Reviving dead features hurts ground-truth alignment in TimesFM at every depth & correlational vs.\ causal; exploratory & \S\ref{sec:casestudy} & 5 \\
+MN-23 & MASE denominator floors out on intermittent series & metric caveat & \S\ref{sec:methods} & 3 \\
+MN-24 & A precision mismatch left aggregates intact but reorganized 71\% of a partition & method; fixed & T\ref{tab:controls} & 4 \\
+MN-25 & Zero-code adapter resolves 2 of 8 probed TSFM checkpoints & descriptive; open & \S\ref{sec:usage} & 3 \\
+BM-05 & Counterfactual identity check caught a corruption-replay bug (244/298 $\to$ 0/1113) & benchmark; fixed & \S\ref{sec:architecture} & 2 \\
 \end{longtable}
 \end{center}
 

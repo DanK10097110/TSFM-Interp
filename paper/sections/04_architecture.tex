@@ -50,8 +50,8 @@ are skipped with the missing method named in the report. A missing capability
 (\texttt{NotTimeLocalized}) is a fact about the model and routes it to behavioral analysis only.
 
 New models use the zero-code \texttt{generic\_hf} adapter, which discovers layers and measures spans and
-refuses rather than guesses (verified on Timer, whose 96-step spans it recovers from measurement alone;
-\fid{MP-01}), or a copy of \repo{tsfm_lens/tsfm_lens/models/TEMPLATE_adapter.py} in \texttt{models/contrib/}.
+refuses rather than guesses (its span discovery reproduces all six hand-written adapters' spans exactly, mean
+IoU 1.0, and recovers Timer's 96-step spans from measurement alone; \fid{MP-01}), or a copy of \repo{tsfm_lens/tsfm_lens/models/TEMPLATE_adapter.py} in \texttt{models/contrib/}.
 \texttt{run.py -{}-check-adapter} then runs patch-identity and reach conformance, the alignment gate, span
 discovery and capability checks. Table~\ref{tab:models} lists the models.
 
@@ -181,11 +181,12 @@ stream into a float16 zarr store, and every intervention goes through one primit
 \label{fig:stages}
 \end{figure}
 
-\subsection{The report: interpretability for non-specialists}
+\subsection{The report: designed to be readable by newcomers}
 \label{sec:report}
 
-The deliverable is one self-contained HTML file (\repo{examples/concept_atlas_v2/report.html}), written so
-that a reader without interpretability training can follow it and an expert can audit every number
+The deliverable is one self-contained HTML file (\repo{examples/concept_atlas_v2/report.html}), designed
+with the intention that a reader without interpretability training can follow it, while an expert can audit
+every number
 (Figure~\ref{fig:report}).
 \begin{itemize}
   \item \textbf{Question-first.} Seven parts pose plain questions (``Is the comparison fair?'', ``Where does

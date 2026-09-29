@@ -109,7 +109,7 @@ to 0.331) because the layers are so low-rank (\fid{SH-19}).
 \paragraph{Models agree on which inputs a concept groups.} 1{,}223 of 1{,}581 atlas transfer tests are
 reciprocal after BH correction. Twenty claims registered from dev alone were all confirmed on the 800 private
 series (Holm, maximum adjusted $p=0.0100$; AUC 0.971--0.995 against null 95th percentiles of 0.57--0.77;
-Figure~\ref{fig:heldout}b), replicating on three independent private draws (\fid{SH-18}). This is an
+Figure~\ref{fig:heldout}b), replicating on three independent private draws (19/20, 20/20 and 20/20; \fid{SH-18}). This is an
 input-level claim, and the 20 claims come from two concepts with only 6 of 20 private best features identical
 to dev: the destination has \emph{some} feature selecting the same series.
 
@@ -156,10 +156,11 @@ $\rho=0.510$ [0.489, 0.527]; Figure~\ref{fig:heldout}a): the models react at mat
 deseasonalizing, frequency shift and dropout, and at opposite depths to noise ($-0.742$), spikes ($-0.780$),
 warps ($-0.658$) and smoothing ($-0.466$). In TimesFM, whole-layer restoration is flat across depth but
 per-window restoration concentrates just before the horizon and grows with depth (\texttt{noise}: 0.068 at
-layer 0 to 0.412 at layer 16; \fid{DE-01}). Depth \emph{locations} need two qualifications that every report
+layer 0 to 0.412 at layer 16; exploratory, $n\approx300$; \fid{DE-01}). Depth \emph{locations} need two qualifications that every report
 renders: captured compute ranges from 14\% (Chronos-T5-Base) to 98\% (Chronos-2) of a forecast (\fid{DE-05}),
 and Chronos-T5's last encoder block sits at 0.478 on the whole-stack axis (\fid{DE-04}). No selected layer was
-robust across three layer selectors (\fid{DE-08}).
+robust across three layer selectors for any model (Jaccard overlap with the default selection as low as 0.0;
+\fid{DE-08}).
 
 \paragraph{Answer to RQ4.} Depth-resolved reaction profiles are reproducible; absolute depth locations are
 comparable only after accounting for captured compute and the depth convention.

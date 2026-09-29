@@ -38196,6 +38196,22 @@ Also:
   repo.
 - The controls table (Table 6) is self-contained. Keep its ID column.
 
+✅ **K5.1 and K5.2 done (2026-09-29).**
+- **K5.1.** All six accessibility claims were reworded to the intent form, and
+  the limitations sentence now reads "Readability for newcomers is a design
+  intention; no user study measured comprehension."
+- **K5.2.** Bare citations: on inspection, MP-02, MN-21, DE-01 and MN-25
+  already had their numbers in the same sentence (the scan split sentences at
+  line breaks). Numbers were added for MP-01 (mean IoU 1.0 on six adapters),
+  SH-20 (silhouettes 0.607–0.717, all one-outlier splits), SH-18 (19/20,
+  20/20, 20/20), DE-01 (exploratory, n≈300), DE-08 (Jaccard as low as 0.0)
+  and MP-05 (exponent 1.02, ρ 0.58 over 45 cells).
+- **Ledger.** The appendix ledger gained an "In paper" column, generated from
+  the actual `\fid` and table citations. All 48 rows map to a section or
+  table.
+- **Pages.** The paper went to 30 pages, and removing the forced page break
+  before the appendix brought it back to 29. The MLOSS paper is still 4 pages.
+
 #### 38.5.3 Absorbing K1–K4 into the paper (page budget: stay under 30 including references)
 
 - **K1** → a new subsection "Known-answer validation" in Methods (about ½

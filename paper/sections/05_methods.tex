@@ -96,8 +96,8 @@ channel by channel, with a random-direction null on exactly its own top-firing s
 
 \paragraph{From features to concepts.} Causal features are grouped at three granularities. \emph{Per-target
 concepts} cluster one layer's vectors with $k$-means, choosing $k$ by silhouette
-\citep{rousseeuw1987silhouette} among values whose smallest cluster has $\ge$3 members (otherwise silhouette
-rewards splitting off an outlier; \fid{SH-20}); a target with no admissible $k$ is \emph{non-modular}. The
+\citep{rousseeuw1987silhouette} among values whose smallest cluster has $\ge$3 members (without it, the four
+highest silhouettes on the reference run, 0.607--0.717, were all one-outlier splits; \fid{SH-20}); a target with no admissible $k$ is \emph{non-modular}. The
 \emph{atlas} pools features from all models and layers and cuts a complete-linkage dendrogram at cosine 0.9,
 so an atlas concept is a shared causal-effect profile. \emph{Families} are a coarser readable tiling (average
 linkage, cosine 0.5), tested against a column-shuffle null and titled deterministically from their channels.
