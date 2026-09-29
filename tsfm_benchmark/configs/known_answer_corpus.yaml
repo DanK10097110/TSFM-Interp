@@ -1,0 +1,84 @@
+# Synthetic-only corpus for K1 known-answer validation (ROADMAP.md sec 38.1.3).
+#
+# The three synthetic tasks of configs/example.yaml, verbatim (parametric x2,
+# random_parametric x1) -- the real-derived `mixture` task is dropped so the
+# build touches no real data and needs no network. Build with
+#
+#   PYTHONPATH=. python3 example_runs/run_full.py --config configs/known_answer_corpus.yaml \
+#       --out <corpus_dir> --references none --max-count 200
+#
+# `--references none` is acceptable HERE and only here: with zero real data in
+# the corpus there is nothing to leak, so the leakage gate has no job (the
+# sealed manifest records gate_effective=false, which is the truth). --max-count
+# 200 gives 3 x 200 = 600 public_dev series. Full parameter documentation lives
+# in configs/example.yaml.
+tasks:
+- name: seasonal_trend_synthetic
+  generator: parametric
+  count: 200
+  tier: synthetic
+  generator_params:
+    length: 512
+    trend:
+      order: 2
+      scale: 0.5
+    seasonalities:
+    - period: 24
+      amplitude: 1.0
+    - period: 168
+      amplitude: 0.4
+    ar_coeffs:
+    - 0.6
+    - -0.2
+    noise_scale: 0.15
+    n_changepoints: 2
+    n_anomalies: 3
+    anomaly_magnitude: 4.0
+  corruptions:
+  - op: jitter
+    sigma: 0.03
+  - op: time_warp
+    strength: 0.1
+- name: regime_switching_synthetic
+  generator: parametric
+  count: 200
+  tier: synthetic
+  generator_params:
+    length: 512
+    seasonalities:
+    - period: 50
+      amplitude: 1.5
+    noise_scale: 0.25
+    n_changepoints: 5
+  corruptions:
+  - op: dropout
+    rate: 0.05
+- name: diverse_synthetic
+  generator: random_parametric
+  count: 200
+  tier: synthetic
+  generator_params:
+    length: 512
+  corruption_pool:
+  - op: jitter
+    sigma:
+    - 0.01
+    - 0.08
+  - op: scaling
+    sigma:
+    - 0.05
+    - 0.2
+  - op: time_warp
+    strength:
+    - 0.05
+    - 0.25
+    n_knots:
+    - 3
+    - 6
+  - op: dropout
+    rate:
+    - 0.02
+    - 0.1
+  n_corruptions:
+  - 0
+  - 3

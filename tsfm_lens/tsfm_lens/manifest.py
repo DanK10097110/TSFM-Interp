@@ -25,6 +25,9 @@ from .utils import load_json, save_json
 MANIFEST_VERSION = 1
 
 
+_OMITTED_AT_DEFAULT = {"sae.ablation_null": "mean_magnitude"}
+
+
 def resolve_config_keys(cfg, keys: tuple) -> dict:
     """Resolve a stage's declared config keys against a `PipelineConfig`.
 
@@ -35,6 +38,9 @@ def resolve_config_keys(cfg, keys: tuple) -> dict:
       - `"data"`             -> that whole nested dataclass, as a dict
       - `"models[*].field"`  -> `{model_name: value}` across every model
       - `"data.context_len"` -> one field of one nested dataclass
+    A field-level key listed in `_OMITTED_AT_DEFAULT` is left out while it holds
+    its default, so declaring a new opt-in knob does not change any existing
+    run's fingerprint (CLAUDE.md sec 11.51); it enters only once it is set.
     """
     out = {}
     for key in keys:
@@ -43,7 +49,10 @@ def resolve_config_keys(cfg, keys: tuple) -> dict:
             out[key] = {m.name: getattr(m, field) for m in cfg.models}
         elif "." in key:
             obj_name, field = key.split(".", 1)
-            out[key] = getattr(getattr(cfg, obj_name), field)
+            value = getattr(getattr(cfg, obj_name), field)
+            if key in _OMITTED_AT_DEFAULT and value == _OMITTED_AT_DEFAULT[key]:
+                continue
+            out[key] = value
         else:
             obj = getattr(cfg, key)
             out[key] = _asdict_stage_inputs(obj) if dataclasses.is_dataclass(obj) else obj

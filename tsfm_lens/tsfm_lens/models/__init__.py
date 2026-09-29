@@ -20,6 +20,7 @@ from . import contrib
 from .base import ModelAdapter
 from .mock import (MockBlackBoxAdapter, MockEncDecAdapter, MockPatchAdapter,
                    MockStepAdapter, MockWaveAdapter)
+from .mock_planted import MockPlantedAdapter
 
 ADAPTERS: Dict[str, type] = {
     "mock_patch": MockPatchAdapter,
@@ -27,6 +28,7 @@ ADAPTERS: Dict[str, type] = {
     "mock_wave": MockWaveAdapter,
     "mock_encdec": MockEncDecAdapter,
     "mock_blackbox": MockBlackBoxAdapter,
+    "mock_planted": MockPlantedAdapter,
 }
 
 

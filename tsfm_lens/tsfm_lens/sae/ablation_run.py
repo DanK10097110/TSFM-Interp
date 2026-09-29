@@ -128,7 +128,8 @@ def run_ablation_target(cfg, run_dir: Path, hub, data, store, device, model: str
         cfg, adapter, layer, sae, data, device, candidates, activations,
         top_k_series=top_k_series, n_null_directions=n_null_directions,
         max_series=max_series, floor=floor, periods_full=periods_full,
-        keep_forecasts=keep_forecasts)
+        keep_forecasts=keep_forecasts,
+        null_mode=str(getattr(cfg.sae, "ablation_null", "mean_magnitude")))
 
     if result.get("withheld"):
         log.warning(f"ablation: {model}/{layer} WITHHELD -- "

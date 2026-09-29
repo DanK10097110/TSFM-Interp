@@ -35,7 +35,7 @@ CONFIGS = Path(__file__).resolve().parents[1] / "configs"
 EXPECTED_TIERS = {
     "chronos": 3, "chronos2": 3, "chronos_bolt": 2, "generic_hf": 2,
     "mock_blackbox": 0, "mock_encdec": 3, "mock_patch": 3, "mock_step": 3,
-    "mock_wave": 3, "sundial": 2, "timesfm": 3,
+    "mock_planted": 3, "mock_wave": 3, "sundial": 2, "timesfm": 3,
 }
 
 

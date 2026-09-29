@@ -709,6 +709,13 @@ class SAEConfig:
     transfer_seed: int = 0
     interest_weights: tuple = field(default=(0.5, 0.3, 0.2),
                                     metadata={"stage_input": False})
+    # The random-direction null of the ablation battery (`sae/response.py::
+    # feature_ablation_fingerprints`). `mean_magnitude` (default, unchanged):
+    # one uniform removal size per chunk. `profile_matched`: per feature, random
+    # directions removed with that feature's own per-token profile (n_null
+    # extra forwards per feature). Declared field by field on the concepts stage
+    # (`sae.ablation_null`) and left out of the `sae` stage's inputs.
+    ablation_null: str = field(default="mean_magnitude", metadata={"stage_input": False})
 
 
 @dataclass
