@@ -222,6 +222,12 @@ layer_screen:
 
 sae:
   enabled: true
+  # Profile-matched battery null (FINDINGS MN-29, ROADMAP sec 38.1.7): each
+  # null draw removes the feature's own per-token amount along a random
+  # decoded direction. The legacy `mean_magnitude` null failed the
+  # known-answer gate on 5/5 seeds; this one passed on 5/5. Field-level on the
+  # concepts stage only, so sae training and every earlier stage stay current.
+  ablation_null: profile_matched
   targets: []                     # "auto" -- layer_screen's own selection, every model
   dict_size_mult: 8
   dict_size_policy: search
