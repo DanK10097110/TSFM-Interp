@@ -8353,7 +8353,7 @@ def _sec_seasonality_circuit(run_dir: Path, model_colors: dict, findings: list) 
 
     Not a pipeline stage (`seasonality_circuit/` is written by the standalone
     `run_seasonality_circuit.py` (study driver, dev branch), mirroring
-    `run_layer_screen_bakeoff.py`'s own
+    `run_layer_screen_bakeoff.py`'s own (also dev branch)
     "not every analysis needs to be wired into `pipeline.py`" precedent), so
     this degrades to "" — logged, per `CLAUDE.md` sec 2.5 — rather than
     reading a config `enabled` flag that does not exist for this analysis.

@@ -72,27 +72,16 @@ prefix (see above); load one with `--config configs/examples/<name>.yaml`.
 
 ## Test-fixture configs (kept on main, not curated)
 
-These belong to dev-only experiment groups by subject, but a currently
-passing `main` test loads each one directly by path, so removing it would
-break the test rather than just removing an example. They are not part of
-the curated set above and are not a starting point for a new run:
-
-| Config | Kept on `main` by |
-|---|---|
-| `scaling_ladder_chronos.yaml` | `tests/test_config_listing.py::test_a_config_outside_the_schema_is_listed_with_a_note_not_dropped` |
-| `_ladder/ladder_{base,tiny,small,mini,large}.yaml` | `tests/test_config_listing.py::test_ladder_subdirectory_is_still_excluded` (needs at least one already-expanded ladder config on disk) |
-| `crosscoder_stage0.yaml` | `tests/test_config_listing.py::test_disabled_stages_are_reported_from_the_config_itself` |
-| `crosscoder_stage0_gate.yaml` | `tests/test_stage0_gate_config.py`, `tests/test_v0_scorecard.py` |
-| `crosscoder_stage0_winner.yaml` | `tests/test_stage0_winner_config.py` |
-
-The study drivers these configs were written for are dev-branch-only, with
-two exceptions that stay on `main` for the identical reason (a passing test
-imports them directly): `run_crosscoder_stage0.py` (imported by
-`test_stage0_gate_config.py`, `test_stage0_winner_config.py`,
-`test_stage0_criteria.py`, `test_stage0_baseline_sizing.py`) and
-`run_crosscoder_ladder.py` (imported by `test_v0_scorecard.py`).
-`run_scaling_ladder.py` itself has no such importer and is dev-only; only its
-two config artifacts above are pinned.
+None currently. `scaling_ladder_chronos.yaml`, `configs/_ladder/`'s expanded
+configs, and `crosscoder_stage0.yaml`/`_gate.yaml`/`_winner.yaml` used to be
+pinned here by tests that loaded them directly by path
+(`tests/test_config_listing.py`'s ladder-exclusion and disabled-stages tests,
+and the `run_crosscoder_stage0.py`-testing files respectively). Those tests
+now build synthetic fixtures in `tmp_path` instead, so none of those configs,
+nor the `run_crosscoder_stage0.py`/`run_crosscoder_ladder.py`/
+`run_layer_screen_bakeoff.py` study drivers that used to be pinned on `main`
+the same way, need to stay on `main` any more; see the "Experiment configs"
+table below for where they moved.
 
 ## Experiment configs (dev branch only)
 
@@ -104,8 +93,9 @@ the `dev` branch (grouped here by the `ROADMAP.md` item they belong to; grep
 
 | Group | Files | Reproduces |
 |---|---|---|
-| Crosscoder Stage 0 (remainder) | `crosscoder_stage0_layers.yaml`, `crosscoder_stage0_null.yaml`, `crosscoder_stage0_replicate640.yaml` | Further joint-dictionary feasibility variants (`crosscoder_stage0.yaml`, `_gate.yaml` and `_winner.yaml` stay on `main` as test fixtures — see above) |
-| Layer-screen bake-off | `layer_screen_experiment*.yaml` (9 files) | The comparison that chose `work_bend` as the default layer-screening method (driver: `run_layer_screen_bakeoff.py`, which also stays on `main` — imported directly by `tests/test_l3_patching_secondary_gold.py`) |
+| Crosscoder Stage 0 | `crosscoder_stage0.yaml`, `crosscoder_stage0_gate.yaml`, `crosscoder_stage0_winner.yaml`, `crosscoder_stage0_layers.yaml`, `crosscoder_stage0_null.yaml`, `crosscoder_stage0_replicate640.yaml` | Joint-dictionary feasibility variants and the two exit-criteria configs (drivers: `run_crosscoder_stage0.py`, `run_crosscoder_ladder.py`; `sae/crosscoder_eval.py` moved with them, since nothing on `main` imports it once their own tests moved too) |
+| Layer-screen bake-off | `layer_screen_experiment*.yaml` (9 files) | The comparison that chose `work_bend` as the default layer-screening method (driver: `run_layer_screen_bakeoff.py`) |
+| Scaling ladder (Chronos) | `scaling_ladder_chronos.yaml`, `_ladder/ladder_{base,tiny,small,mini,large}.yaml` | The seed config and its `run_scaling_ladder.py --emit-configs`-expanded per-size sweep configs |
 | Adapter-development checks | `chronos2_adapter_check.yaml`, `chronos2_phase4_check.yaml`, `sundial_adapter_check.yaml`, `sundial_phase4_check.yaml`, `smoke_lag_llama.yaml`, `lag_llama_vs_chronos.yaml` | The original per-adapter validation runs; superseded on `main` by the renamed, curated copies in `configs/examples/` |
 | Historical full-report runs | `full_report_run.yaml`, `_3model`, `_large`, `_large_revived.yaml`, `medium_run.yaml`, `medium_run_chronos_base.yaml` | Dated, superseded predecessors of `full_report_run_4model.yaml` |
 | Medium-run variants/checks | `medium_run_chronos_base_auxk.yaml`, `_feature_ablation_check`, `_feature_steering_check`, `_l3_input_energy.yaml`, `e9_internals_null_check.yaml`, `f5_matched_resolution.yaml`, `frontend_check.yaml` | Targeted ablation/sanity studies |

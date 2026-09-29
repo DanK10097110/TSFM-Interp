@@ -2,8 +2,8 @@
 renders whatever Stage 1/2/3 artifacts a run directory happens to hold under
 `seasonality_circuit/`. Not a pipeline stage -- `run_seasonality_circuit.py`
 (study driver, dev branch) writes these files standalone, mirroring
-`run_layer_screen_bakeoff.py`'s own precedent -- so this section must
-degrade to "" (logged, CLAUDE.md sec 2.5)
+`run_layer_screen_bakeoff.py`'s own (also dev branch) precedent -- so this
+section must degrade to "" (logged, CLAUDE.md sec 2.5)
 rather than reading a config `enabled` flag that does not exist for this
 analysis, and must degrade per model and per stage within a model.
 """

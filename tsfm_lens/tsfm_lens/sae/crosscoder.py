@@ -138,8 +138,9 @@ class CrosscoderSAE(nn.Module):
         JumpReLU at the persisted running threshold `self.threshold` --
         per-row hard TopK needs a full batch to define "top k", which isn't
         available one row at a time at inference, or when
-        `crosscoder_eval.py`'s `SourceView.encode` calls this directly on a
-        single source's pre-activations. `_batch_topk` is what sets
+        `crosscoder_eval.py` (study driver, dev branch)'s `SourceView.encode`
+        calls this directly on a single source's pre-activations.
+        `_batch_topk` is what sets
         `self.threshold` during training.
         """
         pre = torch.relu(pre)
@@ -242,8 +243,9 @@ class CrosscoderSAE(nn.Module):
         This is the fix for the EMA-vs-calibration problem documented on
         `_batch_topk`: every eval-side consumer that needs V2's dictionary
         (`alive_mask`, `dead_feature_rate`, `per_source_fidelity`,
-        `crosscoder_eval.py`'s `atom_buckets`/`latent_scaling_confirm`/
-        `atom_subset_alignment`/`score_variant`) already batches rows (8192
+        `crosscoder_eval.py` (study driver, dev branch)'s `atom_buckets`/
+        `latent_scaling_confirm`/`atom_subset_alignment`/`score_variant`)
+        already batches rows (8192
         at a time, per those functions' own defaults) rather than
         encoding one row in isolation, so there is no need to approximate
         training's batch-level selection with any single fixed cutoff --
@@ -254,8 +256,9 @@ class CrosscoderSAE(nn.Module):
 
         `per_row` mode (V1) is unchanged -- `sparsify` already needs no
         batch context there, so this just delegates. The one path this
-        deliberately does NOT change is `crosscoder_eval.py`'s `SourceView`
-        (used only by `eval.py::forecast_preservation`), which encodes a
+        deliberately does NOT change is `crosscoder_eval.py` (study driver,
+        dev branch)'s `SourceView` (used only by `eval.py::
+        forecast_preservation`), which encodes a
         single source's contribution alone under an adapter's own live
         forward pass -- a genuinely different, smaller-batch/single-row
         inference scenario `sparsify`'s persisted threshold exists for.

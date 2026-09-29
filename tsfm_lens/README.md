@@ -751,8 +751,9 @@ SAE), the `layer_screen` stage (`analysis/layer_screen.py`, method
 `work_bend` by default) scores each model's own layers as a cheap
 residual-trajectory proxy for "worth a closer look," and
 `sae.targets: auto` consumes its selection. It runs automatically right
-after `extract`; `run_layer_screen_bakeoff.py` is the standalone,
-null-controlled comparison that chose `work_bend` over the alternatives.
+after `extract`; `run_layer_screen_bakeoff.py` (study driver, dev branch) is
+the standalone, null-controlled comparison that chose `work_bend` over the
+alternatives.
 
 **SAE phase.** `sae.enabled: true` trains a real `TopKSAE`
 (`sae/models.py`/`train.py`) straight from the store's activations, with a
@@ -821,14 +822,15 @@ tsfm_lens/
 run.py                 CLI
 render_stage_docs.py, render_glossary.py, render_adapter_docs.py
                        doc generators (`--check` to confirm they aren't stale)
-run_layer_screen_bakeoff.py, run_crosscoder_stage0.py, run_crosscoder_ladder.py,
 run_sae_ablation.py, run_sae_describe.py, run_sae_roles.py, run_probe_sweep.py
                        standalone scripts kept on `main` because a passing
-                       test imports or invokes each one directly; further
-                       standalone `run_*.py` study drivers that reuse an
-                       already-extracted run's config/data/store for probes
-                       that aren't (yet, or ever) pipeline stages live on the
-                       `dev` branch only
+                       test imports or invokes each one directly; every other
+                       standalone `run_*.py` study driver (including
+                       run_layer_screen_bakeoff.py, run_crosscoder_stage0.py
+                       and run_crosscoder_ladder.py, once their own study-only
+                       tests moved with them) that reuses an already-extracted
+                       run's config/data/store for probes that aren't (yet, or
+                       ever) pipeline stages lives on the `dev` branch only
 configs/               default.yaml (real pair), smoke.yaml (mocks)
 tests/test_smoke.py    full pipeline end-to-end + confirmation verdict test
 ```

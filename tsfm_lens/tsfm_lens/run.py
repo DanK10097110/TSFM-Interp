@@ -76,9 +76,10 @@ def _config_summary(path: Path) -> dict:
     the two stale-prose corrections this repo has already had to make).
 
     Parsed with `yaml.safe_load`, not `load_config`, on purpose:
-    `scaling_ladder_chronos.yaml`'s `ladder:` block is deliberately outside
-    the config schema, and a listing that could not show the configs that
-    need explaining most would be the wrong trade.
+    `scaling_ladder_chronos.yaml` (study driver seed config, dev branch)'s
+    `ladder:` block is deliberately outside the config schema, and a listing
+    that could not show the configs that need explaining most would be the
+    wrong trade.
     """
     import yaml
 

@@ -16,6 +16,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pytest
 import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -41,6 +42,23 @@ def test_topk_sae_shapes_and_sparsity():
     dec_norms = sae.W_dec.norm(dim=1)
     assert torch.allclose(dec_norms, torch.ones_like(dec_norms), atol=1e-5)
     print("TopKSAE shapes/sparsity test passed")
+
+
+def test_measured_l0_can_sit_below_k_because_relu_precedes_topk():
+    """`TopKSAE.sparsify` ReLUs before it selects, so a row with fewer than k
+    positive pre-activations keeps fewer than k atoms -- moved here from the
+    (now dev-branch) crosscoder V0 scorecard tests, since this is a property
+    of `TopKSAE.encode` itself, not of that study. `test_topk_sae_shapes_and_
+    sparsity` above never exercises this because Gaussian input rarely has
+    fewer than k positive pre-activations; this plants that case directly."""
+    torch.manual_seed(0)
+    sae = TopKSAE(d_in=6, dict_size=8, k=4)
+    with torch.no_grad():
+        sae.W_enc.zero_()
+        sae.b_enc.copy_(torch.tensor([1.0, 1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0]))
+    features = sae.encode(torch.zeros(5, 6))
+    assert int((features.abs() > 0).sum(dim=-1)[0]) == 2, "only the 2 positive atoms survive"
+    print("ReLU-precedes-topk L0 test passed")
 
 
 def test_train_sae_reduces_loss_and_reconstructs():
@@ -152,6 +170,66 @@ def test_ground_truth_matching_skips_when_too_few_valid():
     result = best_ground_truth_matches(features, gt, series_ids, ["trend_order"], min_valid=10)
     assert result["features"] == []
     print("too-few-valid guard test passed")
+
+
+def _gt_fixture(n_series: int = 120, n_features: int = 8, seed: int = 0):
+    """Features whose first column tracks `field_strong` and second `field_weak`.
+
+    Moved here from the (now dev-branch) crosscoder V0 scorecard tests: the
+    three tests below pin `top_features`'s truncation behavior, which is load-
+    bearing pipeline code (`run_sae_roles.py` calls with `top_features=0`;
+    `describe_run.py`/`concept_stage.py` call with the truncated default), not
+    something specific to that study.
+    """
+    rng = np.random.default_rng(seed)
+    strong = rng.normal(size=n_series)
+    weak = rng.normal(size=n_series)
+    features = rng.normal(size=(n_series, n_features)) * 0.5
+    features[:, 0] += 3.0 * strong
+    features[:, 1] += 0.6 * weak
+    series_ids = np.array([f"s{i}" for i in range(n_series)])
+    frame = pd.DataFrame({"field_strong": strong, "field_weak": weak,
+                          "generator": "parametric"}, index=series_ids)
+    return features, frame, series_ids, ["field_strong", "field_weak"]
+
+
+def test_top_features_default_reproduces_every_existing_caller_exactly():
+    """The parameter exists so `sae/matching.py`'s V0-style candidate-pool
+    truncation is controllable. A default that changed the returned list
+    would silently rewrite every recorded `sae/meta.json` feature table."""
+    features, frame, ids, cols = _gt_fixture(n_features=80)
+    default = best_ground_truth_matches(features, frame, ids, cols)
+    explicit = best_ground_truth_matches(features, frame, ids, cols, top_features=50)
+    assert default["features"] == explicit["features"]
+    assert len(default["features"]) == 50
+    assert default["n_features"] == 80
+
+
+def test_the_untruncated_pool_is_larger_and_lower_scoring_than_the_top_fifty():
+    """`run_sae_roles.py` calls with `top_features=0` precisely because the
+    top 50 are selected *by* |rho|, which inflates the mean if read as a
+    representative sample rather than a display top-N."""
+    features, frame, ids, cols = _gt_fixture(n_features=80)
+    full = best_ground_truth_matches(features, frame, ids, cols, top_features=0)
+    top50 = best_ground_truth_matches(features, frame, ids, cols, top_features=50)
+    assert len(full["features"]) == 80
+    assert len(top50["features"]) == 50
+    mean_full = np.mean([abs(f["rho"]) for f in full["features"]])
+    mean_top = np.mean([abs(f["rho"]) for f in top50["features"]])
+    assert mean_top > mean_full, "truncating by |rho| must inflate the mean, or the " \
+                                 "selection effect this defends against does not exist"
+
+
+def test_headline_alignment_was_always_over_the_full_population():
+    """`n_features_matched`/`mean_abs_rho_matched` never saw the truncation, so
+    the `abs_rho_matched` list has to agree with them exactly -- otherwise a
+    downstream bootstrap would resample a different population than the point
+    estimate."""
+    features, frame, ids, cols = _gt_fixture(n_features=80)
+    res = best_ground_truth_matches(features, frame, ids, cols)
+    assert len(res["abs_rho_matched"]) == res["n_features_matched"]
+    assert np.mean(res["abs_rho_matched"]) == pytest.approx(res["mean_abs_rho_matched"])
+    assert res["n_features_matched"] > len(res["features"])
 
 
 def test_select_feature_exemplars_ranks_by_activation_descending():
@@ -319,12 +397,16 @@ def test_feature_ablated_replacement_removes_exactly_that_features_contribution(
 
 if __name__ == "__main__":
     test_topk_sae_shapes_and_sparsity()
+    test_measured_l0_can_sit_below_k_because_relu_precedes_topk()
     test_train_sae_reduces_loss_and_reconstructs()
     test_dead_neuron_resampling_improves_not_destroys_reconstruction()
     test_dead_feature_rate_in_valid_range()
     test_save_and_load_checkpoint_roundtrip()
     test_ground_truth_matching_finds_planted_correlation()
     test_ground_truth_matching_skips_when_too_few_valid()
+    test_top_features_default_reproduces_every_existing_caller_exactly()
+    test_the_untruncated_pool_is_larger_and_lower_scoring_than_the_top_fifty()
+    test_headline_alignment_was_always_over_the_full_population()
     test_select_feature_exemplars_ranks_by_activation_descending()
     test_build_exemplar_table_matches_planted_feature_to_field_value()
     test_build_exemplar_table_skips_unmatched_features()
