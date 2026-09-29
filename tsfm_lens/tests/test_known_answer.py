@@ -231,3 +231,67 @@ def test_opposite_effect_pair_is_acts_differently():
     same_b = level_a * 2.0
     stat_s = _statistic_i(level_a, same_b, _floors(rng, same_b), _floors(rng, level_a))
     assert _verdict(stat_s, stat_ii) == "level only"
+
+
+def _entangled_fixture():
+    """A real trend concept R (direction e0, beta 0.02), an input-only decoy whose
+    atom is e1 + 0.9 e0 (an SAE superposition that carries R), and an input-only
+    decoy whose atom is exactly e2 (nothing carried). Both decoy atoms clear the
+    same non-planted channel, so only the carried effect tells them apart."""
+    eye = np.eye(4)
+    real = {**_concept("shared_trend_1", "shared", "trend", -1, eye[0]), "beta": 0.02}
+    mixed = {**_concept("inert_1", "decoy_input_only", None, 0, eye[1]), "beta": 0.0}
+    pure = {**_concept("inert_2", "decoy_input_only", None, 0, eye[2]), "beta": 0.0}
+    decoder = np.stack([eye[0], eye[1] + 0.9 * eye[0], eye[2]])
+    art = {"withheld": False, "candidates": [_cand(0, {"trend": +1.0}), _cand(1, {"mase": 0.5}),
+                                             _cand(2, {"mase": 0.5})]}
+    matches = _matches(("shared_trend_1", 0), ("inert_1", 1), ("inert_2", 2))
+    return art, matches, [real, mixed, pure], decoder
+
+
+def test_entangled_decoy_clear_is_attributed_to_the_object_it_carries():
+    """Both decoy atoms clear `mase`; the one that carries the real trend concept
+    is entangled (its clear is that concept's effect, `attributed_to`), the pure
+    one is a genuine false positive."""
+    art, matches, concepts, decoder = _entangled_fixture()
+    out = ka.score_battery(art, matches, concepts, decoder)
+    rec = {r["id"]: r for r in out["records"]}
+    assert rec["inert_1"]["entangled"] is True and rec["inert_1"]["attributed_to"] == "shared_trend_1"
+    assert rec["inert_2"]["entangled"] is False
+    fp = out["decoy_input_only_unentangled"]
+    assert (fp["n"], fp["n_true"], fp["rate"]) == (1, 1, 1.0)
+    ent = out["decoy_input_only_entangled"]
+    assert (ent["n"], ent["n_cleared"], ent["attributed_to"]) == (1, 1, ["shared_trend_1"])
+    assert out["decoy_input_only"]["n_true"] == 2, "the raw rate stays reported beside the corrected one"
+    legacy = ka.score_battery(art, matches, concepts)
+    assert "entangled" not in {k for r in legacy["records"] for k in r}, "opt-in: no decoder, no rule"
+
+
+def test_control_layer_fpr_excludes_atoms_that_carry_planted_effect():
+    """Three scorable atoms: one carries a planted effect and clears four channels,
+    two carry none and one of them clears one channel. Only the two are scored."""
+    art = {"withheld": False, "candidates": [
+        _cand(0, {"trend": 1.0, "level": 1.0, "mase": 1.0, "seasonal": 1.0}),
+        _cand(1, {}), _cand(2, {"mase": 1.0})]}
+    out = ka.score_control_fpr(art, carried={0: 0.05, 1: 0.0, 2: 0.001}, threshold=0.01)
+    assert out["status"] == "scored"
+    assert out["n_features"] == 2 and out["n_features_carrying_planted_excluded"] == 1
+    assert out["n_cells"] == 18 and out["n_clear"] == 1
+    assert out["fpr"] == pytest.approx(1 / 18)
+    assert out["feature_fpr_any_channel"] == pytest.approx(0.5)
+    unfiltered = ka.score_control_fpr(art)
+    assert unfiltered["n_features"] == 3 and unfiltered["n_clear"] == 5
+
+
+def test_decoy_matched_atoms_never_set_a_parts_planted_class():
+    """A part holding a real shared atom and a decoy atom is `shared`; a part
+    holding only a decoy atom is unmatched (this used to raise a KeyError in
+    `score_transfer`, which indexed the expected-verdict table by decoy class)."""
+    classes = {("M", "s1"): "shared", ("M", "d1"): "decoy_input_only"}
+    feat = {("M", 10): ["s1"], ("M", 11): ["d1"]}
+    rows = [{"concept": 0, "model": "M", "layer": "blocks.2", "feature": 10},
+            {"concept": 0, "model": "M", "layer": "blocks.2", "feature": 11},
+            {"concept": 1, "model": "M", "layer": "blocks.2", "feature": 11}]
+    assert ka._part_class(rows, 0, "M/blocks.2", feat, classes) == ("shared", "")
+    cls, why = ka._part_class(rows, 1, "M/blocks.2", feat, classes)
+    assert cls is None and "decoy" in why

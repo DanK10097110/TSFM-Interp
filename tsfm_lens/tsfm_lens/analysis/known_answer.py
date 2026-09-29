@@ -27,6 +27,21 @@ Doctrine, applied:
 * **The planted channel AND sign.** Sensitivity is "the best-matching feature
   clears the planted channel with the planted sign", not "clears something"; both
   are reported so a feature that moves the wrong thing is visible.
+* **Entanglement is attributed, not counted as a false positive.** A trained SAE
+  atom is a superposition, so the atom matched to a decoy can also carry a real
+  planted object. The planted directions are known, so the atom's exact carried
+  effect (`carried_effect`, dual-basis coordinates times the head weights) is
+  computed; an atom carrying at least `entanglement_min` clears through that
+  object and the clear is attributed to it. At seed 0, dose 1 every input-only
+  decoy atom that cleared carried at least that much and none that carried less
+  did. Sub-null decoys are weak TRUE effects (see `models/mock_planted.py`), so
+  their clear rate is reported as a weak-effect detection rate, never as
+  specificity.
+* **The control layer follows the planted block.** It is reachable (patching an
+  earlier layer's tokens into it removes the planted writes), so its battery is
+  not withheld. Its atoms that carry a material planted effect are excluded; the
+  per-cell FPR is read on the rest and stratified by leak, because a trained SAE
+  has no atom with exactly zero planted content.
 * **Evidence class.** Method validation on a constructed model. It does not show
   that real TSFM concepts are shaped like planted ones.
 * **The stop gate is computed from pre-set thresholds** (`THRESHOLDS`) and written
@@ -59,13 +74,16 @@ THRESHOLDS = {
     "probe_min_abs_rho": 0.3,
     "atlas_recovery_min": 0.8,
     "correlation_causation_seeds": "4 of 5",
+    "entanglement_min_fraction": 0.5,
 }
 REAL_CLASSES = ("shared", "convergent", "opposite", "unique")
 DECOY_CLASSES = ("decoy_input_only", "decoy_sub_null")
 EVIDENCE_CLASS = "method validation on a constructed model"
 LIMITS = ("Does not show that real TSFM concepts are shaped like planted ones.",
-          "The control layer's effects reach the head only through a dense random "
-          "background readout; a clear there is a clear of a non-planted effect.")
+          "The control layer follows the planted block, so its residual carries the planted "
+          "directions too; only atoms that carry no material planted effect are scored there, and "
+          "their effects reach the head only through a dense random background readout.")
+_LEAK_STRATA = ((0.0, 0.25), (0.25, 0.5), (0.5, 1.0))
 _TRANSFER_EXPECTED = {"shared": True, "opposite": True, "convergent": False, "unique": False}
 _SHARING_EXPECTED = {"shared": "shared", "convergent": "convergent",
                      "opposite": "single-model", "unique": "single-model"}
@@ -117,6 +135,40 @@ def match_decoder(decoder: np.ndarray, concepts: list,
     return out
 
 
+def entanglement_min(concepts: list) -> float:
+    """The carried-effect level above which an atom counts as entangled with the
+    planted objects: `entanglement_min_fraction` of the median `|beta|` of the real
+    objects. An atom that carries half a typical planted object's effect has a
+    genuine causal path through it, so a battery clear on it is not a false positive.
+    """
+    betas = [abs(float(c["beta"])) for c in concepts if c["cls"] in REAL_CLASSES]
+    if not betas:
+        return float("inf")
+    return THRESHOLDS["entanglement_min_fraction"] * float(np.median(betas))
+
+
+def carried_effect(decoder_row: np.ndarray, concepts: list, exclude_id: Optional[str] = None) -> dict:
+    """The planted effect an atom carries through the objects it overlaps.
+
+    The planted directions `D` are known, so the atom's coordinate on object `j` in
+    the (non-orthogonal) planted basis is exact: `a = (D^T D)^-1 D^T w_hat`. Ablating
+    the atom removes `a_j` of object `j`'s coefficient, whose head weight is
+    `beta_j`, so `sum_j |a_j beta_j|` is the effect the atom moves through the
+    planted objects other than `exclude_id` (the atom's own object, for a decoy).
+    Returns that sum, its largest single contributor and the object it belongs to.
+    """
+    D = np.stack([np.asarray(c["direction"], dtype=np.float64) for c in concepts], axis=1)
+    w = np.asarray(decoder_row, dtype=np.float64)
+    w = w / max(float(np.linalg.norm(w)), 1e-12)
+    a = np.linalg.solve(D.T @ D, D.T @ w)
+    terms = [(c["id"], abs(float(a[j]) * float(c["beta"]))) for j, c in enumerate(concepts)
+             if c["id"] != exclude_id and float(c["beta"]) != 0.0]
+    if not terms:
+        return {"carried": 0.0, "top_object": None, "top_carried": 0.0}
+    top = max(terms, key=lambda t: t[1])
+    return {"carried": float(sum(t[1] for t in terms)), "top_object": top[0], "top_carried": float(top[1])}
+
+
 def score_recovery(matches: dict, concepts: list) -> dict:
     """SAE recovery per class: the fraction of planted directions with a decoder
     row at cosine >= `recovery_cosine`. Reported as a curve; no gate (it is an SAE
@@ -138,7 +190,8 @@ def _candidate_index(art: dict) -> dict:
     return {int(c["feature"]): c for c in art.get("candidates", [])}
 
 
-def score_battery(art: dict, matches: dict, concepts: list) -> dict:
+def score_battery(art: dict, matches: dict, concepts: list,
+                  decoder: Optional[np.ndarray] = None) -> dict:
     """Sensitivity and specificity of the battery for one target, from its
     `*_ablation.json` and the planted best-match table.
 
@@ -147,17 +200,33 @@ def score_battery(art: dict, matches: dict, concepts: list) -> dict:
     series, is a stated third state. Reports both `planted_channel_and_sign` (the
     pass criterion) and `any_channel` (kept beside it so the difference is a
     number, not a re-run).
+
+    Entanglement rule (K1 fix round). With `decoder` given, a decoy's matched atom
+    is checked for the planted effect it carries through OTHER planted objects
+    (`carried_effect`). An atom whose carried effect reaches `entanglement_min` is
+    `entangled`: it is an SAE superposition of the decoy with a real object, so its
+    clear is attributed to the object it carries (`attributed_to`) and is not a
+    decoy false positive. `decoy_input_only` keeps the raw rate; the specificity
+    rate is `decoy_input_only_unentangled`. Measured at seed 0, dose 1: every
+    input-only decoy atom that cleared carried at least the threshold, and none that
+    carried less did.
     """
     if art.get("withheld") or art.get("skipped"):
         reason = art.get("reason") or (art.get("reach") or {}).get("reason") or "target skipped"
         return not_scorable(f"battery withheld for this target: {reason}")
     cand = _candidate_index(art)
+    threshold = entanglement_min(concepts) if decoder is not None else None
     records = []
     for c in concepts:
         m = matches[c["id"]]
         rec = {"id": c["id"], "cls": c["cls"], "kind": c["kind"], "feature": m["feature"],
                "cosine": m["cosine"], "recovered": m["recovered"],
                "expected_sign": expected_ablation_sign(c)}
+        if decoder is not None and c["cls"] in DECOY_CLASSES:
+            ce = carried_effect(np.asarray(decoder)[m["feature"]], concepts, exclude_id=c["id"])
+            rec["carried_effect"] = ce["carried"]
+            rec["carried_top_object"] = ce["top_object"]
+            rec["entangled"] = bool(m["recovered"] and ce["carried"] >= threshold)
         cr = cand.get(m["feature"])
         if not m["recovered"]:
             rec["status"] = "not recovered"
@@ -170,6 +239,8 @@ def score_battery(art: dict, matches: dict, concepts: list) -> dict:
             rec["status"] = "scored"
             rec["channels_clearing"] = clearing
             rec["any_channel"] = bool(clearing)
+            if rec.get("entangled"):
+                rec["attributed_to"] = rec["carried_top_object"] if clearing else None
             kind = c["kind"]
             crec = chans.get(kind) if kind else None
             rec["planted_channel_clears"] = bool(crec and crec.get("clears_null"))
@@ -188,6 +259,16 @@ def score_battery(art: dict, matches: dict, concepts: list) -> dict:
                 "rate": (sum(int(r[field]) for r in rows) / len(rows) if rows else None)}
 
     real = [r for r in records if r["cls"] in REAL_CLASSES]
+
+    def _unentangled(cls):
+        return [r for r in records if r["cls"] == cls and not r.get("entangled")]
+
+    def _entangled(cls):
+        rows = [r for r in records if r["cls"] == cls and r.get("entangled") and r["status"] == "scored"]
+        return {"n": len(rows), "n_cleared": sum(int(r["any_channel"]) for r in rows),
+                "attributed_to": sorted({r["attributed_to"] for r in rows if r.get("attributed_to")}),
+                "threshold": threshold}
+
     out = {"records": records,
            "sensitivity_planted_channel_and_sign": _rate(real, "planted_channel_and_sign"),
            "sensitivity_any_channel": _rate(real, "any_channel"),
@@ -203,15 +284,32 @@ def score_battery(art: dict, matches: dict, concepts: list) -> dict:
            "decoy_sub_null_any_channel": _rate([r for r in records if r["cls"] == "decoy_sub_null"],
                                                "any_channel"),
            "decoy_sub_null_planted_channel": _rate([r for r in records if r["cls"] == "decoy_sub_null"],
-                                                   "planted_channel_clears")}
+                                                   "planted_channel_clears"),
+           "decoy_input_only_unentangled": _rate(_unentangled("decoy_input_only"), "any_channel"),
+           "decoy_input_only_entangled": _entangled("decoy_input_only"),
+           "decoy_sub_null_unentangled": _rate(_unentangled("decoy_sub_null"), "any_channel"),
+           "decoy_sub_null_entangled": _entangled("decoy_sub_null")}
     if not real or not out["sensitivity_planted_channel_and_sign"]["n"]:
         out["sensitivity_note"] = "no recovered, scorable real concept in this target"
     return scored(**out)
 
 
-def score_control_fpr(art: dict) -> dict:
+def score_control_fpr(art: dict, carried: Optional[dict] = None,
+                      threshold: Optional[float] = None) -> dict:
     """Per-cell false-positive rate over every (feature, channel) cell of the
-    non-planted control layer's ablation artifact.
+    control layer's ablation artifact.
+
+    The control layer is a block AFTER the planted block, so it is reachable (a
+    cross-layer patch from blocks.0 removes the planted writes and moves the
+    forecast) and its residual still carries the planted directions. Its atoms
+    that carry a material planted effect (`carried[feature] >= threshold`, the
+    `entanglement_min` rule of `carried_effect`) are excluded and counted; the
+    rest overlap the planted objects negligibly, so a clear on them is a false
+    positive. Reported per cell (the gate) and per feature (any channel clears),
+    because nine channels at a per-cell 5% level clear some channel far more often
+    than 5% of features. `by_carried_leak` stratifies the per-cell rate by how much
+    planted effect the atom carries (in units of the threshold): a trained SAE has
+    no atom with exactly zero planted content, and the rate rises with the leak.
 
     A cell counts when its channel is available and its null has spread
     (`null_p95` present and the null not degenerate); a cell the battery could not
@@ -222,11 +320,24 @@ def score_control_fpr(art: dict) -> dict:
         return not_scorable(f"control layer battery withheld: {reason}")
     n_cells = n_clear = n_excluded = 0
     per_channel = {ch: {"n_cells": 0, "n_clear": 0} for ch in CHANNELS}
-    n_features = 0
+    strata = {f"[{lo:g},{hi:g})": {"n_atoms": 0, "n_cells": 0, "n_clear": 0}
+              for lo, hi in _LEAK_STRATA}
+    n_features = n_carrying = n_feat_clear = 0
     for c in art.get("candidates", []):
         if not c.get("scorable"):
             continue
+        if carried is not None and threshold is not None \
+                and carried.get(int(c["feature"]), 0.0) >= threshold:
+            n_carrying += 1
+            continue
         n_features += 1
+        stratum = None
+        if carried is not None and threshold:
+            leak = carried.get(int(c["feature"]), 0.0) / threshold
+            key = next((f"[{lo:g},{hi:g})" for lo, hi in _LEAK_STRATA if lo <= leak < hi), None)
+            stratum = strata.get(key)
+            if stratum is not None:
+                stratum["n_atoms"] += 1
         for ch in CHANNELS:
             rec = (c.get("channels") or {}).get(ch) or {}
             if (not rec.get("available", True) or rec.get("null_p95") is None
@@ -235,19 +346,28 @@ def score_control_fpr(art: dict) -> dict:
                 continue
             n_cells += 1
             per_channel[ch]["n_cells"] += 1
+            if stratum is not None:
+                stratum["n_cells"] += 1
             if rec.get("clears_null"):
                 n_clear += 1
                 per_channel[ch]["n_clear"] += 1
+                if stratum is not None:
+                    stratum["n_clear"] += 1
     if n_cells == 0:
         return not_scorable("no scorable (feature, channel) cell on the control layer",
                             n_features=n_features, n_cells_excluded=n_excluded)
-    for v in per_channel.values():
+    for v in list(per_channel.values()) + list(strata.values()):
         v["fpr"] = v["n_clear"] / v["n_cells"] if v["n_cells"] else None
+    n_feat_clear = sum(1 for c in art["candidates"] if c.get("scorable") and c.get("n_channels_clearing")
+                       and not (carried is not None and threshold is not None
+                                and carried.get(int(c["feature"]), 0.0) >= threshold))
     return scored(n_features=n_features, n_cells=n_cells, n_clear=n_clear,
+                  n_features_carrying_planted_excluded=n_carrying,
+                  n_features_clearing_any_channel=n_feat_clear,
+                  feature_fpr_any_channel=n_feat_clear / n_features if n_features else None,
                   n_cells_excluded=n_excluded, fpr=n_clear / n_cells,
                   nominal=THRESHOLDS["fpr_nominal"], per_channel=per_channel,
-                  n_features_clearing_any=sum(
-                      1 for c in art["candidates"] if c.get("scorable") and c.get("n_channels_clearing")))
+                  by_carried_leak={"unit": "carried effect / entanglement threshold", "strata": strata})
 
 
 def score_correlation_vs_causation(decoy_rho: dict, battery: dict, concepts: list) -> dict:
@@ -259,13 +379,17 @@ def score_correlation_vs_causation(decoy_rho: dict, battery: dict, concepts: lis
     every recovered input-only decoy is found (|rho| >= `probe_min_abs_rho`) AND
     clears no channel; `holds_lenient` only requires that none clears one of the
     four planted-effect channels. A not-scorable battery leaves the rung not
-    scorable.
+    scorable. Decoys whose atom is `entangled` with a real planted object (see
+    `score_battery`) are excluded and counted: their clear is that object's effect.
     """
     if battery.get("status") != "scored":
         return not_scorable("battery not scorable: " + str(battery.get("reason")))
-    rows = [r for r in battery["records"] if r["cls"] == "decoy_input_only" and r["status"] == "scored"]
+    all_rows = [r for r in battery["records"] if r["cls"] == "decoy_input_only" and r["status"] == "scored"]
+    rows = [r for r in all_rows if not r.get("entangled")]
+    n_entangled = len(all_rows) - len(rows)
     if not rows:
-        return not_scorable("no input-only decoy was recovered and scorable")
+        return not_scorable("no unentangled input-only decoy was recovered and scorable",
+                            n_entangled_excluded=n_entangled)
     planted_kinds = ("level", "trend", "seasonal", "dispersion")
     detail = []
     for r in rows:
@@ -277,7 +401,7 @@ def score_correlation_vs_causation(decoy_rho: dict, battery: dict, concepts: lis
                        "probe_finds": bool(found), "battery_rejects": bool(rejected),
                        "battery_rejects_planted_channels": bool(rejected_lenient),
                        "channels_clearing": r["channels_clearing"]})
-    return scored(n=len(detail), detail=detail,
+    return scored(n=len(detail), detail=detail, n_entangled_excluded=n_entangled,
                   n_probe_finds=sum(d["probe_finds"] for d in detail),
                   n_battery_rejects=sum(d["battery_rejects"] for d in detail),
                   holds=bool(all(d["probe_finds"] and d["battery_rejects"] for d in detail)),
@@ -381,16 +505,22 @@ def score_atlas(atlas: dict, matches_by_model: dict, concepts_by_model: dict, la
 def _part_class(atlas_rows: list, concept: int, target: str, feat_to_planted: dict,
                 classes: dict) -> tuple:
     """`(class, reason)` of an atlas concept's part at one target: the single planted
-    class of its matched members, or (None, why) when it is mixed or unmatched."""
+    class of its matched real members, or (None, why) when it is mixed or unmatched.
+    An atom matched to a decoy is not a real object and never sets the class."""
     model, layer = target.split("/", 1)
-    seen = set()
+    seen, decoys = set(), 0
     for r in atlas_rows:
         if r.get("concept") != concept or f"{r['model']}/{r['layer']}" != target:
             continue
         for pid in feat_to_planted.get((r["model"], int(r["feature"])), []):
-            seen.add(classes[(r["model"], pid)])
+            cls = classes[(r["model"], pid)]
+            if cls in DECOY_CLASSES:
+                decoys += 1
+            else:
+                seen.add(cls)
     if not seen:
-        return None, "the part holds no atom matched to a planted object"
+        return None, ("the part holds only decoy-matched atoms" if decoys
+                      else "the part holds no atom matched to a planted object")
     if len(seen) > 1:
         return None, "the part mixes planted classes " + ", ".join(sorted(seen))
     return next(iter(seen)), ""
@@ -448,7 +578,8 @@ def score_sharing_class(atlas: dict, profiles: dict, feat_to_planted: dict, clas
         for r in atlas["rows"]:
             if r.get("concept") == cid and r["layer"] == layer:
                 for pid in feat_to_planted.get((r["model"], int(r["feature"])), []):
-                    seen.add(classes[(r["model"], pid)])
+                    if classes[(r["model"], pid)] not in DECOY_CLASSES:
+                        seen.add(classes[(r["model"], pid)])
         if not seen:
             excluded["no planted-matched member"] = excluded.get("no planted-matched member", 0) + 1
             continue
@@ -602,18 +733,26 @@ def score_run(run_dir: str | Path, corpus_path: Optional[str] = None,
     concepts_by_model = {n: s["concepts"] for n, s in models.items()}
     classes = {(n, c["id"]): c["cls"] for n, cs in concepts_by_model.items() for c in cs}
     matches_by_model, art_planted, art_control = {}, {}, {}
+    decoders, carried_control = {}, {}
     for name in models:
         ckpt = run_dir / "sae" / sanitize(name) / f"{sanitize(layer)}.pt"
-        matches_by_model[name] = match_decoder(load_sae_checkpoint(str(ckpt)).W_dec.detach().numpy(),
-                                               concepts_by_model[name])
+        decoders[name] = load_sae_checkpoint(str(ckpt)).W_dec.detach().numpy()
+        matches_by_model[name] = match_decoder(decoders[name], concepts_by_model[name])
+        cck = run_dir / "sae" / sanitize(name) / f"{sanitize(control)}.pt"
+        if cck.exists():
+            cdec = load_sae_checkpoint(str(cck)).W_dec.detach().numpy()
+            carried_control[name] = {i: carried_effect(cdec[i], concepts_by_model[name])["carried"]
+                                     for i in range(cdec.shape[0])}
         art_planted[name] = load_json(ablation_path(run_dir, name, layer))
         cpath = ablation_path(run_dir, name, control)
         art_control[name] = load_json(cpath) if cpath.exists() else {"skipped": True,
                                                                     "reason": f"no artifact at {cpath}"}
 
     recovery = {n: score_recovery(matches_by_model[n], concepts_by_model[n]) for n in models}
-    battery = {n: score_battery(art_planted[n], matches_by_model[n], concepts_by_model[n]) for n in models}
-    fpr = {n: score_control_fpr(art_control[n]) for n in models}
+    battery = {n: score_battery(art_planted[n], matches_by_model[n], concepts_by_model[n], decoders[n])
+               for n in models}
+    fpr = {n: score_control_fpr(art_control[n], carried_control.get(n),
+                                entanglement_min(concepts_by_model[n])) for n in models}
 
     sens_rows = [b for b in battery.values() if b["status"] == "scored"]
     n_true = sum(b["sensitivity_planted_channel_and_sign"]["n_true"] for b in sens_rows)
@@ -624,13 +763,16 @@ def score_run(run_dir: str | Path, corpus_path: Optional[str] = None,
                 "n_recovered_real": sum(b["n_real_recovered"] for b in sens_rows),
                 "n_real": sum(b["n_real"] for b in sens_rows)}
     spec_clear = {}
-    for key in ("decoy_input_only", "decoy_sub_null_any_channel", "decoy_sub_null_planted_channel"):
+    for key in ("decoy_input_only", "decoy_input_only_unentangled", "decoy_sub_null_any_channel",
+                "decoy_sub_null_planted_channel", "decoy_sub_null_unentangled"):
         n = sum(b[key]["n"] for b in sens_rows)
         spec_clear[key] = {"n": n, "n_cleared": sum(b[key]["n_true"] for b in sens_rows),
                            "rate": (sum(b[key]["n_true"] for b in sens_rows) / n if n else None)}
     fpr_rows = [f for f in fpr.values() if f["status"] == "scored"]
     n_cells = sum(f["n_cells"] for f in fpr_rows)
     fpr_all = (sum(f["n_clear"] for f in fpr_rows) / n_cells) if n_cells else None
+    n_feat = sum(f["n_features"] for f in fpr_rows)
+    feature_fpr = (sum(f["n_features_clearing_any_channel"] for f in fpr_rows) / n_feat) if n_feat else None
 
     corr = {}
     for name in models:
@@ -690,6 +832,8 @@ def score_run(run_dir: str | Path, corpus_path: Optional[str] = None,
         "battery_sensitivity": {"by_model": battery, "pooled": sens_all},
         "battery_specificity": {"decoys": spec_clear, "control_layer_fpr_by_model": fpr,
                                 "control_layer_fpr": {"n_cells": n_cells, "fpr": fpr_all,
+                                                      "n_features": n_feat,
+                                                      "feature_fpr_any_channel": feature_fpr,
                                                       "nominal": THRESHOLDS["fpr_nominal"]}},
         "correlation_vs_causation": corr,
         "concepts": atlas_r, "transfer": transfer_r, "sharing_class": sharing_r,
@@ -759,6 +903,12 @@ def aggregate_cells(cells: list) -> dict:
                 col(lambda c: c["battery_specificity"]["control_layer_fpr"]["fpr"]), 100 * i + 4),
             "decoy_input_only_clear_rate": _mean_ci(
                 col(lambda c: c["battery_specificity"]["decoys"]["decoy_input_only"]["rate"]), 100 * i + 5),
+            "decoy_input_only_unentangled_clear_rate": _mean_ci(
+                col(lambda c: c["battery_specificity"]["decoys"]["decoy_input_only_unentangled"]["rate"]),
+                100 * i + 12),
+            "control_layer_feature_fpr_any_channel": _mean_ci(
+                col(lambda c: c["battery_specificity"]["control_layer_fpr"]["feature_fpr_any_channel"]),
+                100 * i + 13),
             "decoy_sub_null_clear_rate": _mean_ci(
                 col(lambda c: c["battery_specificity"]["decoys"]["decoy_sub_null_any_channel"]["rate"]),
                 100 * i + 6),
