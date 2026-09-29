@@ -38024,6 +38024,25 @@ a transformer with a different front end. That makes 7 models. **User decision
   - Kendall's W over 21 pairs instead of 6. At 6 pairs, W = 0.28 with p = 0.07
     was underpowered, so 21 pairs is a real test.
 
+**Dependency check (2026-09-29).** The user's constraint: the repo must
+install into ONE shared environment; a model whose package conflicts is
+dropped, never given its own env. Checked with `pip install --dry-run`
+against cudaPy:
+- `granite-tsfm` 0.3.9 would downgrade torch (2.12 → 2.11) and scikit-learn
+  (→ 1.7.2).
+- `granite-tsfm==0.2.28` installs only itself; its declared requirements have
+  no conflicting upper bounds (`transformers[torch]>=4.38`, `numpy<3`,
+  `torch<3`).
+- `toto-ts` 0.2.0 would downgrade numpy to 1.26.4, torch to 2.7.0 and
+  transformers to 4.52.1. **Toto is ruled out.**
+
+TTM therefore goes ahead on `granite-tsfm==0.2.28`, subject to it loading
+under transformers 4.57.6.
+
+**Disk.** `runs/concept_atlas_v2` is 5.2 GB, so a 7-model run is about
+9–10 GB, more than the home quota's headroom (48.7/51 GB). The run goes in a
+/tmp worktree (`k3-panel7`), and only lightweight artifacts come back.
+
 #### 38.3.3 Held-out interaction with K2
 
 K2 and K3 both want the one fresh epoch.
