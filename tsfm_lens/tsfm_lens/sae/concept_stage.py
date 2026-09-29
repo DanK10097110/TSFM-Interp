@@ -111,6 +111,10 @@ def preflight_problem(cfg) -> str | None:
         return ("the `concepts` stage needs `sae.persist_features: true` -- cross-model "
                 "transfer reads each target's persisted SAE features (space='sae'), "
                 "and a concept run without them cannot produce its central artifact")
+    cap = getattr(cfg.concepts, "agreement_max_tests_per_pair", None)
+    if cap is not None and (isinstance(cap, bool) or not isinstance(cap, int) or cap < 1):
+        return (f"`concepts.agreement_max_tests_per_pair` must be null or an integer >= 1, "
+                f"got {cap!r}")
     return None
 
 
@@ -350,6 +354,8 @@ def run_concept_stage(cfg, hub, store, data, device) -> dict:
                               "dst_set_kind_counts": sia["dst_set_kind_counts"],
                               "n_short_matched_pool": sia["n_short_matched_pool"],
                               "runtime_seconds": sia["runtime_seconds"]}
+        if "agreement_cap" in sia:
+            shared_input_block["agreement_cap"] = sia["agreement_cap"]
 
     # ROADMAP.md sec 37 Spec A: per-concept profiles (`sae/concept_profiles.py`)
     # -- what a concept's parts fire on, whether models sharing its effect

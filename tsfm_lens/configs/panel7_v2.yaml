@@ -1,0 +1,315 @@
+# The wide-panel dev run (ROADMAP.md sec 38.3, item K3): the four-model
+# `concept_atlas_v2.yaml` body plus Timer, Time-MoE and Chronos-T5-Base on the
+# same v2 corpus: a SEVEN-model panel (TTM was dropped, see end of `models:`). It answers, on more models, the
+# questions the paper's case study answered on four: is there still no concept
+# spanning every model, is convergent still modal, does the families-vs-null
+# result hold, and is Kendall's W over 21 model pairs a real test where
+# 6 pairs (W = 0.28, p = 0.07) was underpowered.
+#
+#     python run.py --config configs/panel7_v2.yaml --doctor      # preflight
+#     python run.py --config configs/panel7_v2.yaml --stages extract,budget,frontend,layer_screen,l0,internals,lens,l1,l2,l3,attention,cluster,sae
+#     python run.py --config configs/panel7_v2.yaml --stages concepts
+#     python run.py --config configs/panel7_v2.yaml --stages exemplars,report
+#
+# Staged so a failure in `concepts` does not repeat SAE training.
+#
+# What differs from `concept_atlas_v2.yaml`, and only this:
+#   * run.name, so nothing writes into an existing run;
+#   * data.context_len 480, not 512. MEASURED (ROADMAP.md sec 38.3.2 step 5): at
+#     context 512 Timer's token 0 reads [0, 512) and span discovery REFUSES it
+#     (contiguity 0.600 < 0.950), which would route Timer to L0 only; at 480 =
+#     5 x 96 its five tokens are exactly [0,96) ... [384,480). 480 is also a
+#     multiple of every other model's patch width (TimesFM 32, Chronos-2 16,
+#     Sundial 16, Chronos-Bolt 16), so nothing else changes shape. Numbers from
+#     this run are on a 480-step context and are not bit-comparable to
+#     `concept_atlas_v2` (all four v2 models are re-run here anyway);
+#   * three more models: Timer and Time-MoE through `generic_hf` (zero adapter
+#     code) and Chronos-T5-Base through the existing `chronos` adapter;
+#   * stats.n_boot 5000: 21 pairs x 5 families = 105 L0 tests, and Holm's
+#     smallest attainable p is 105/n_boot. At the v2 run's 2000 that is
+#     0.0525 > 0.05 (unsatisfiable); at 5000 it is 0.021. `--doctor`
+#     prints the floor for the models actually listed;
+#   * concepts.agreement_max_tests_per_pair: 60, the shared-input agreement
+#     step's opt-in cap (the report names it wherever it shows agreement
+#     counts);
+#   * confirm is DISABLED, which also disables `register`. Every existing
+#     private split is consumed (v1 epochs 0-2, v2 epoch 0), and a repeated
+#     look is recorded as such and cannot be rescued. K2 mints a fresh v2
+#     epoch later and registers claims from THIS run's artifacts before
+#     touching it (ROADMAP.md sec 38.2, 38.3.3). Nothing in this config
+#     points at any private split;
+#   * report title.
+#
+# Model-specific choices:
+#   * Timer: 96-timestep tokens, point-only head (its quantile band is
+#     degenerate, so L0 calibration for Timer renders "not measured", never a
+#     perfect score). alignment.window stays 32 (the panel's finest common
+#     grid), so Timer's window axis is 3x redundant: three windows read one
+#     token. `resolvable_hit_ceiling` accounts for this in the alignment gate.
+#   * Time-MoE: 480 per-timestep tokens, MoE routing is not analyzed (the MLP
+#     is a mixture; `mlp_info` is unsupported and skipped with its reason).
+#     It needs `input_normalization: zscore` (see its stanza): measured
+#     without it, the frontend scale-equivariance residual was 2.31 / 105.68
+#     (x1000 / x0.001); with it, 0.00496 / 0.0325, in line with Sundial's.
+#   * Chronos-T5-Base: 1-step tokens, so 480 is fine; only its encoder is
+#     captured, its decoder samples (predict() must be seeded by callers).
+#
+# Everything below is `concept_atlas_v2.yaml`'s body; its own comments are
+# kept where they still apply.
+
+run:
+  name: panel7_v2_dev
+  out_dir: runs
+  device: cuda
+  dtype: bfloat16
+  seed: 0
+  keep_models_loaded: false
+
+data:
+  source: sealed
+  path: ../benchmark_large_v2/public_dev  # relative to tsfm_lens/ (where run.py is invoked from)
+  context_len: 480   # NOT v2's 512: see header (Timer's 96-step tokens need a multiple of 96)
+  horizon: 64
+  family_key: auto
+
+alignment:
+  window: 32
+  sanity_check: true
+  on_failure: warn   # Sundial's diagnosed, benign mid-depth decay -- see header
+
+models:
+  - name: TimesFM
+    adapter: timesfm
+    checkpoint: google/timesfm-2.5-200m-pytorch
+    batch_size: 32
+    capture_layer_stride: 2      # 20 layers -> 10 capture points
+  - name: Chronos-2
+    adapter: chronos2
+    checkpoint: amazon/chronos-2
+    batch_size: 24
+    capture_layer_stride: 1      # 12 encoder blocks, no decoder to capture
+  - name: Sundial
+    adapter: sundial
+    checkpoint: thuml/sundial-base-128m
+    batch_size: 16               # binds every
+                                 # "<= every model's batch_size" cap below
+    capture_layer_stride: 1      # 12 decoder blocks
+  - name: Chronos-Bolt
+    adapter: chronos_bolt
+    checkpoint: amazon/chronos-bolt-small
+    batch_size: 32
+    capture_layer_stride: 1      # encoder blocks, deterministic quantile head
+  - name: Timer
+    adapter: generic_hf          # no adapter file; every seam is probed and logged
+    checkpoint: thuml/timer-base-84m
+    batch_size: 16
+    capture_layer_stride: 1      # 8 decoder blocks; point-only head
+    kwargs:
+      auto_class: AutoModelForCausalLM   # AutoModel alone is the headless backbone
+  - name: Time-MoE
+    adapter: generic_hf
+    checkpoint: Maple728/TimeMoE-50M
+    batch_size: 16               # same as Sundial and Timer -- binds every cap below
+    capture_layer_stride: 1      # 12 decoder blocks, 384 wide, per-timestep tokens
+    kwargs:
+      auto_class: AutoModelForCausalLM
+      # The checkpoint ships no normalizer and its README z-scores each series
+      # and de-normalizes the forecast. Without this, `frontend` measured a
+      # 0.001x rescale moving Time-MoE's forecast 105.7 context-sd units (the
+      # Sundial normalization bug again, docs/ADDING_A_MODEL.md sec 4).
+      input_normalization: zscore
+  - name: Chronos-T5-Base
+    adapter: chronos
+    checkpoint: amazon/chronos-t5-base
+    batch_size: 24               # base is 2x chronos-t5-small; same as every earlier config
+    capture_layer_stride: 1      # 12 encoder blocks; 1 step per token; sampled decoder
+                                 # (not captured). Compared predict() calls are seeded by
+                                 # the calling stages, not by a config knob (CLAUDE.md 11.50).
+  # TTM (ibm-granite/granite-timeseries-ttm-r1) was dropped from the panel:
+  # `granite-tsfm==0.2.28` fails to import under transformers 4.57.6, and
+  # 0.3.x downgrades torch and scikit-learn.
+
+l0:
+  enabled: true
+  quantiles: [0.1, 0.5, 0.9]
+  calibration: true
+
+l1:
+  enabled: true
+  layer_stride: 1
+  max_rows: 20000
+  family_conditioned: true
+  min_family_series: 15
+  rsa: true
+  rsa_max_series: 800
+
+l2:
+  enabled: true
+  layer_stride: 1
+  lambdas: [0.001, 0.01, 0.1, 1.0]
+  val_frac: 0.25
+  max_rows: 40000
+  input_baseline: true
+
+l3:
+  enabled: true
+  max_series: 800
+  corruptions:
+    # Same measured, non-default strengths as full_report_run_large*.yaml
+    # (measured over 200 series of this repo's own corpus -- see that
+    # file's header for the energy numbers). Restated here because this
+    # file overrides the whole corruptions block.
+    noise: {snr_db: 0.0}
+    detrend: {}
+    deseasonalize: {top_k: 2}
+    frequency_shift: {factor: 2.0}
+    level_shift: {position_frac: 0.6, scale: 3.0}
+    spike: {count: 8, scale: 10.0}
+    smooth: {kernel: 9}
+    warp: {strength: 0.15}
+    dropout: {frac: 0.15, n_blocks: 3}
+  patching:
+    enabled: true
+    layer_stride: 2
+    corruptions: [deseasonalize, noise, level_shift, spike, warp, dropout]
+    max_series: 16                # must be <= every model's batch_size (Sundial, Timer, Time-MoE: 16)
+    per_window: true
+    window_stride: 1
+
+lens:
+  enabled: true
+  layer_stride: 1
+  max_series: 16                  # must be <= every model's batch_size (Sundial, Timer, Time-MoE: 16)
+  tuned: true
+  tuned_max_series: 800
+  val_frac: 0.25
+  lambdas: [0.001, 0.01, 0.1, 1.0]
+  crystallization_tol: 0.1
+
+attention:
+  enabled: true
+  patterns: true                  # TimesFM/Chronos-2 real patterns; Sundial/
+                                  # Chronos-Bolt degrade to "unsupported" and
+                                  # skip, per invariant 8 -- both adapters'
+                                  # docstrings declare attention_patterns
+                                  # unsupported deliberately
+  max_series: 400
+  batch_series: 16
+  max_lag_tokens: 128
+  ablation: true
+  ablation_max_series: 16         # must be <= every model's batch_size (Sundial, Timer, Time-MoE: 16)
+  head_layer_stride: 1
+  top_k: 5
+
+exemplars:
+  enabled: true
+  per_family: 3
+  max_families: 5                 # this corpus has 5 families -- see header
+
+clustering:
+  enabled: true
+  layer: auto
+  k: auto
+  pca_dim: 50
+  max_series: 800
+  use_umap: true
+
+layer_screen:
+  enabled: true
+  method: work_bend
+  budget_frac: 0.25
+  min_budget: 2
+
+sae:
+  enabled: true
+  targets: []                     # "auto" -- layer_screen's own selection, every model
+  dict_size_mult: 8
+  dict_size_policy: search
+  dict_size_ladder: [192, 384, 768, 1536, 3072, 6144]
+  max_dead_rate: 0.30
+  dict_size_search_margin: 0.03
+  dict_size_search_seeds: 2
+  min_fidelity: 0.5
+  k: 32
+  lr: 0.001
+  epochs: 60
+  min_train_steps: 720
+  aux_k: 64
+  aux_coef: 0.03125
+  aux_dead_steps_frac: 0.028
+  n_seeds: 3
+  batch_size: 4096
+  resample_dead_every_epochs: 5
+  forecast_preservation_max_series: 16   # must be <= every model's batch_size (Sundial, Timer, Time-MoE: 16)
+  ground_truth_max_series: 2000
+  persist_features: true
+  real_data_enabled: true
+  real_data_source: "Monash-University/monash_tsf"
+  real_data_n_windows: 4000
+  real_data_pool_limit: 500
+
+report:
+  enabled: true
+  verbose: true
+  verbose_series: 2
+  title: Wide panel — TimesFM 2.5, Chronos-2, Sundial, Chronos-Bolt, Timer, Time-MoE, Chronos-T5-Base
+
+stats:
+  enabled: true
+  n_boot: 5000              # 21 pairs x 5 families = 105 tests: Holm floor 0.021 -- see header
+  n_boot_heavy: 200
+  ci: 0.95
+  alpha: 0.05
+  min_series: 8
+
+internals:
+  enabled: true
+  layer_stride: 1
+  max_rows: 40000
+  probe_pca_dim: 50
+  probe_max_iter: 2000        # CLAUDE.md sec 11.47: the historical 300 does
+                              # not converge at this corpus size
+
+confirm:
+  enabled: false   # disables `register` too. All private splits are consumed; see header.
+
+# ROADMAP.md sec 34 item C1/C2 (2026-09-17): the corpus card and report
+# section, added after this run's own config was first written -- this
+# points it at the already-computed benchmark_validation report for
+# benchmark_large's public_dev split. That report predates item C1.3's
+# writer change (no corpus_digest field), so the card must render it under
+# the explicit "provenance unverified" transitional label rather than
+# either trusting it silently or refusing it -- a real exercise of that
+# specific code path, not just the smoke config's synthetic-corpus one.
+corpus:
+  enabled: true
+  validation_report: ../validation_large/validation_report.json  # relative to tsfm_lens/
+concepts:
+  enabled: true
+  top_k_series: 8          # each feature's own strongest-firing series ablated on
+  n_null_directions: 16    # random-direction null draws per candidate
+  max_series: 64
+  keep_forecasts: 3        # with/without forecast pairs kept for the report overlay
+  n_features_per_rule: 12  # used only for a target with no Stage 2 artifact
+  describe: true           # deterministic sentences into sae/descriptions.json
+  describe_top_features: 8
+  n_registered: 20         # unused while confirm is disabled (kept for the K2 re-enable)
+  agreement_max_tests_per_pair: 60   # opt-in cap on the shared-input agreement step (K3);
+                                     # ranked by reciprocal transfer margin, recorded in
+                                     # sae/shared_input_agreement.json and named in the report
+  # ROADMAP.md sec 37 (concept FAMILIES, sae/concept_families.py): a general,
+  # human-readable layer above the tight atlas concepts (atlas_min_cosine
+  # above). atlas_family_min_members is this layer's own size floor for a
+  # DRAFT family (looser than atlas_min_members since a family is meant to
+  # be coarser than a concept); atlas_family_assign_min is the cosine every
+  # pooled feature must clear against its NEAREST family centroid to be
+  # assigned rather than "idiosyncratic". Both default to the values below;
+  # written explicitly so a reader does not have to know the dataclass
+  # default to see what this preset runs with.
+  atlas_family_min_members: 5
+  atlas_family_assign_min: 0.5
+  # Fewest families whose FINAL-PARTITION silhouette (every assigned row,
+  # cosine) is within this much of the grid's best -- the family space is a
+  # continuum (flat ~0.31-0.34 silhouette across the whole grid), so this is
+  # slack for picking the coarsest defensible cut, not a significance test.
+  atlas_family_sil_tol: 0.02

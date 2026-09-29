@@ -368,7 +368,7 @@ class _Cfg:
 
 
 def _build_run(pooled_a, w_dec_a, pooled_b, w_dec_b, run_dir, reach=None, n_null=50,
-               monkeypatch=None, weight_b=None):
+               monkeypatch=None, weight_b=None, cap=None, twin_margins=None):
     """Wires a full two-model harness and runs `run_shared_input_agreement`.
     `reach` is `{"A": bool, "B": bool}`, default both reachable. `weight_b`
     overrides B's per-horizon response shape (default: the same as A's)."""
@@ -383,6 +383,7 @@ def _build_run(pooled_a, w_dec_a, pooled_b, w_dec_b, run_dir, reach=None, n_null
     data = _Data()
     cfg = _Cfg
     cfg.concepts.shared_input_n_null = n_null
+    cfg.concepts.agreement_max_tests_per_pair = cap
 
     monkeypatch.setattr(sia, "capture_raw_tokens", _fake_capture)
     monkeypatch.setattr(sia, "token_patch", _fake_patch)
@@ -404,6 +405,14 @@ def _build_run(pooled_a, w_dec_a, pooled_b, w_dec_b, run_dir, reach=None, n_null
          "dst_target": "B/blocks.0", "dst_model": "B", "feature": 1,
          "auc": auc, "reciprocal_fdr": True},
     ]}
+    if twin_margins is not None:
+        real_build = sia.build_units
+
+        def _twinned(atlas_, at_):
+            base = real_build(atlas_, at_)[0]
+            return [{**base, "concept": cid, "transfer_margin": m}
+                    for cid, m in twin_margins.items()]
+        monkeypatch.setattr(sia, "build_units", _twinned)
     return sia.run_shared_input_agreement(cfg, run_dir, hub, store, data,
                                           "cpu", atlas, atlas_transfer)
 
@@ -1085,3 +1094,125 @@ def test_l5_partial_on_no_specific_agreement_alone():
     rows = derived.concept_verdicts(profiles, None, None, shared_input)
     l5 = rows[0]["rungs"][4]
     assert l5["status"] == "partial"
+
+
+# ---------------------------------------------------------------------------
+# K3 (ROADMAP.md sec 38.3.2): the opt-in per-pair cap on agreement tests.
+# ---------------------------------------------------------------------------
+
+def _unit(src, dst, concept, margin):
+    return {"src_model": src, "dst_model": dst, "concept": concept,
+            "src_target": f"{src}/blocks.0", "dst_target": f"{dst}/blocks.0",
+            "dst_feature": concept, "transfer_margin": margin}
+
+
+def test_cap_none_returns_units_untouched():
+    units = [_unit("A", "B", i, 0.1 * i) for i in range(5)]
+    kept, record = sia.cap_units_per_pair(units, None)
+    assert kept is units
+    assert record is None
+
+
+def test_cap_keeps_strongest_margin_per_ordered_pair_and_counts_the_dropped():
+    units = ([_unit("A", "B", 1, 0.05), _unit("A", "B", 2, 0.40), _unit("A", "B", 3, 0.20)]
+             + [_unit("B", "A", 4, 0.01), _unit("B", "A", 5, 0.02)]
+             + [_unit("A", "C", 6, 0.30)])
+    kept, record = sia.cap_units_per_pair(units, 2)
+    assert sorted(u["concept"] for u in kept) == [2, 3, 4, 5, 6]
+    assert [u["concept"] for u in kept] == [2, 3, 4, 5, 6]
+    assert record["pairs"]["A->B"] == {"n_before": 3, "n_kept": 2, "n_dropped": 1}
+    assert record["pairs"]["B->A"] == {"n_before": 2, "n_kept": 2, "n_dropped": 0}
+    assert record["pairs"]["A->C"]["n_dropped"] == 0
+    assert (record["n_before"], record["n_kept"], record["n_dropped"]) == (6, 5, 1)
+
+
+def test_cap_ranks_missing_margin_last_and_breaks_ties_deterministically():
+    units = [_unit("A", "B", 9, None), _unit("A", "B", 3, 0.2), _unit("A", "B", 2, 0.2)]
+    kept, _ = sia.cap_units_per_pair(units, 2)
+    assert sorted(u["concept"] for u in kept) == [2, 3]
+
+
+def test_cap_rejects_non_positive():
+    with pytest.raises(ValueError):
+        sia.cap_units_per_pair([_unit("A", "B", 1, 0.1)], 0)
+
+
+def test_transfer_margin_is_the_weaker_leg():
+    t = {"auc": 0.9, "null_p95": 0.6, "rev_auc": 0.7, "rev_null_p95": 0.6}
+    assert sia._transfer_margin(t) == pytest.approx(0.1)
+    assert sia._transfer_margin({"auc": 0.9, "null_p95": 0.6}) is None
+
+
+def test_build_units_carries_the_transfer_margin():
+    atlas = _atlas([{"model": "A", "layer": "blocks.0", "feature": 0, "concept": 1}])
+    atlas_transfer = {"k_top_series": 20, "tests": [
+        {"concept": 1, "src_target": "A/blocks.0", "src_model": "A",
+         "dst_target": "B/blocks.0", "dst_model": "B", "feature": 9, "auc": 0.9,
+         "null_p95": 0.6, "rev_auc": 0.8, "rev_null_p95": 0.6, "reciprocal_fdr": True}]}
+    assert sia.build_units(atlas, atlas_transfer)[0]["transfer_margin"] == pytest.approx(0.2)
+
+
+def test_driver_scores_only_the_strongest_test_and_records_the_cap(monkeypatch, tmp_path):
+    pooled_a, w_dec_a = _pooled_and_wdec(0, REAL_COL, real_gain=20.0)
+    pooled_b, w_dec_b = _pooled_and_wdec(1, REAL_COL, real_gain=20.0)
+    out = _build_run(pooled_a, w_dec_a, pooled_b, w_dec_b, tmp_path, monkeypatch=monkeypatch,
+                     cap=1, twin_margins={1: 0.05, 2: 0.50})
+    assert out["n_tests"] == 1
+    assert out["tests"][0]["concept"] == 2
+    assert out["agreement_cap"]["pairs"]["A->B"] == {"n_before": 2, "n_kept": 1, "n_dropped": 1}
+    saved = sia.load_json(sia.shared_input_agreement_path(tmp_path))
+    assert saved["agreement_cap"]["n_dropped"] == 1
+
+
+def test_driver_without_cap_has_no_cap_key_and_scores_everything(monkeypatch, tmp_path):
+    pooled_a, w_dec_a = _pooled_and_wdec(0, REAL_COL, real_gain=20.0)
+    pooled_b, w_dec_b = _pooled_and_wdec(1, REAL_COL, real_gain=20.0)
+    out = _build_run(pooled_a, w_dec_a, pooled_b, w_dec_b, tmp_path, monkeypatch=monkeypatch,
+                     cap=None, twin_margins={1: 0.05, 2: 0.50})
+    assert out["n_tests"] == 2
+    assert "agreement_cap" not in out
+
+
+def test_report_says_the_agreement_step_was_capped():
+    from tsfm_lens.report import model_comparison as mc
+
+    counts = {"A->B": {"same causal effect": 1}}
+    plain = mc._shared_input_pair_table({"pair_verdict_counts": counts})
+    capped = mc._shared_input_pair_table({
+        "pair_verdict_counts": counts,
+        "agreement_cap": {"max_tests_per_pair": 60, "n_before": 130, "n_kept": 60,
+                          "n_dropped": 70,
+                          "pairs": {"A->B": {"n_before": 130, "n_kept": 60, "n_dropped": 70}}}})
+    assert "Capped" not in plain
+    assert "Capped" in capped and "70 of 130" in capped and "A-&gt;B: 70" in capped
+
+
+def test_agreement_cap_is_a_concepts_stage_input():
+    import tempfile
+    from tests.test_concept_stage import _cfg
+    from tsfm_lens.manifest import resolve_config_keys
+    from tsfm_lens.pipeline import _stage_by_name
+
+    cfg = _cfg(tempfile.mkdtemp())
+    assert cfg.concepts.agreement_max_tests_per_pair is None
+    sae_keys = _stage_by_name("sae").config_keys
+    concept_keys = _stage_by_name("concepts").config_keys
+    sae_before = resolve_config_keys(cfg, sae_keys)
+    before = resolve_config_keys(cfg, concept_keys)
+    cfg.concepts.agreement_max_tests_per_pair = 60
+    assert resolve_config_keys(cfg, concept_keys) != before
+    assert resolve_config_keys(cfg, sae_keys) == sae_before
+
+
+def test_preflight_refuses_a_bad_cap():
+    import tempfile
+    from tests.test_concept_stage import _cfg
+    from tsfm_lens.sae.concept_stage import preflight_problem
+
+    cfg = _cfg(tempfile.mkdtemp())
+    cfg.sae.persist_features = True
+    assert preflight_problem(cfg) is None
+    cfg.concepts.agreement_max_tests_per_pair = 0
+    assert "agreement_max_tests_per_pair" in preflight_problem(cfg)
+    cfg.concepts.agreement_max_tests_per_pair = 60
+    assert preflight_problem(cfg) is None

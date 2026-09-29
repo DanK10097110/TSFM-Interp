@@ -997,8 +997,20 @@ def _shared_input_pair_table(shared_input: Optional[dict]) -> str:
         cells = "".join(f"<td>{counts.get(v, 0)}</td>" for v in verdicts)
         body.append(f"<tr><td>{_e(pair)}</td>{cells}<td>{total}</td></tr>")
     table = f"<table class='tbl'><thead>{head}</thead><tbody>{''.join(body)}</tbody></table>"
+    cap = shared_input.get("agreement_cap")
+    cap_html = ""
+    if cap:
+        dropped = {p: r["n_dropped"] for p, r in (cap.get("pairs") or {}).items() if r["n_dropped"]}
+        detail = "; ".join(f"{_e(p)}: {n}" for p, n in sorted(dropped.items())) or "none in any pair"
+        cap_html = (
+            f"<p class='blurb'><b>Capped.</b> This step was limited to the "
+            f"{int(cap['max_tests_per_pair'])} strongest tests per ordered model pair "
+            f"(<code>concepts.agreement_max_tests_per_pair</code>, ranked by reciprocal transfer "
+            f"margin), so {int(cap['n_dropped'])} of {int(cap['n_before'])} "
+            f"reciprocal-FDR tests were not scored. Not scored, by pair: {detail}. The counts "
+            f"below describe the strongest-transfer tests only.</p>")
     from .report import _note
-    note = _note(
+    note = cap_html + _note(
         "Cross-model causal agreement, per ordered model pair, on the SAME shared "
         "series -- every FDR-surviving reciprocal atlas-transfer test's verdict.",
         "Each cell counts (concept, source target, destination target) tests scored "
