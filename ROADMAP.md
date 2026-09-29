@@ -37775,6 +37775,38 @@ concept's, differing only in head weight.
 
 ### 38.2 K2 — Held-out confirmation of the causal-concept claims
 
+#### 38.1.7 Findings — K1 known-answer validation (2026-09-29, branch `k1-known-answer`, merged into dev as part of 60c17ba)
+
+- **Built:**
+  - `models/mock_planted.py`: an analytic planted-concept pair, with decoys and a reachable control layer `blocks.3` after
+    the planted block;
+  - `analysis/known_answer.py`, `run_known_answer.py`, `configs/known_answer.yaml`;
+  - a synthetic-only corpus built with `--references none --max-count 200` (600 series, 2 families).
+- **Design corrections found by measuring (my design had these wrong):**
+  - (i) a control layer BEFORE the planted block is unreachable, because the planted block reads the stashed input, so
+    the control moved after it;
+  - (ii) the head's background readout (gamma 0.05) made non-planted atoms genuinely causal, so
+    `background_gain` = 0;
+  - (iii) "sub-null" decoys are weak TRUE effects (0.6–4.3× null p95), so they are reported as weak-effect detection,
+    not specificity;
+  - (iv) input-only decoy clears were SAE entanglement: atoms carrying planted effect through other objects (3/3 with
+    carried effect 0.0132–0.0137 vs 0/3 at 0.001–0.0079). The attribution rule `entanglement_min` was tuned on seed 0;
+  - (v) convergent readouts overlapped through correlated corpus features, so B's readout is now chosen for minimal
+    rank correlation (|ρ| 0.0004–0.015).
+- **The headline, FINDINGS MN-29.** With the legacy battery null, the gate fails on all 5 seeds (per-cell FPR
+  0.16818181818181818–0.2483974358974359). The cause is that the null is sized to a chunk-wide mean |z|, zeros included,
+  and removed uniformly. The opt-in `sae.ablation_null: profile_matched` null passes on all 5 (FPR ≤
+  0.002844950213371266, sensitivity 0.7–1.0). On a real v2 TimesFM layer, clearing cells go 29 → 9 against a chance
+  level of 8.1.
+- **Consequences:**
+  - every causal-feature count in B.2/C is an upper bound until the full v2 re-score (running: K1 agent, round 4,
+    which also brings the matched null to `shared_input_agreement.own_effect_null`);
+  - the 7-model run (`panel7_v2_dev`) is guarded to stop at the concepts stage and resume with `profile_matched`;
+  - K2 must use the matched null. K2 records the null mode per claim and refuses a mismatch before opening the split;
+  - paper §5/§7 text on causal features must be revised once the re-score lands (K5.3).
+- **Why the default stays legacy.** Doctrine: old behaviour stays reproducible behind a knob. New presets set
+  `profile_matched` explicitly. Whether the default flips is decided after the v2 re-score.
+
 #### 38.2.1 Why, grounded
 
 **What is registered today** (`analysis/hypotheses.py`):
@@ -37951,6 +37983,20 @@ Fixtures: the K1 planted pair. Its opposite-effect concept is the decoy for
 
 **Dependency.** K1's stop gate must pass first. A lenient battery would spend
 the one look confirming a lenient statistic.
+
+**K2 plumbing merged (2026-09-29, 60c17ba; built on mocks only, no epoch minted, no private split opened).**
+- Registration of the four claim types is opt-in via `confirm.register_concept_claims`.
+- Every new field is `omit_at_default`, one manifest mechanism, unified at merge with K1's `sae.ablation_null`.
+- Default registries and confirmation were verified byte-identical on smoke.
+- Deviations from §38.2.2–38.2.3:
+  - agreement floors are redrawn at `confirm.agreement_n_null` 1000, because dev's 50 gives a Holm floor of 41/51 > α;
+    about 1.5 h for ~41 claims;
+  - the adaptive p is a two-pass redraw (200 → 1000), not tail extrapolation;
+  - the MDE resamples private per-row effects, because dev per-row deltas are not stored;
+  - structure (b) bootstraps features stratified by target, not series (the denominator is features);
+  - agreement ids carry the concept and destination feature, against key collapse.
+- 20 plant→test pairs verified.
+- Not yet exercised on real data. Registration waits for the 7-model run under the matched null.
 
 ### 38.3 K3 — A wider panel
 

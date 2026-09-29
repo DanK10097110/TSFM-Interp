@@ -111,6 +111,7 @@ These instructions are binding for every future session, human or agent.
 | MP-04 | A single-seed SAE "gold ranking" flips a bake-off verdict; averaging 3 seeds fixes it | 5 |
 | MP-05 | SAE feature death is a property of the layer's geometry (alive atoms ∝ effective dim, exponent 1.02) | 5 |
 | MN-21 | Reviving dead SAE features *hurts* causal alignment at 5/5 TimesFM depths | 5 |
+| MN-29 | The battery's legacy null is lenient: known-answer gate fails on 5/5 seeds (FPR 0.17–0.25), passes on 5/5 with a profile-matched null; one real TimesFM layer drops from 29 to 9 clearing cells (chance 8.1) | 5 |
 
 ---
 
@@ -1444,6 +1445,29 @@ See SH-20. **4/5.**
 - **Ref.** ROADMAP §38.4.4.
 - **Score. 4/5.** Same verdict as PM-12, now for internals: for "when should I distrust this forecast", the free quantile band already carries what the internals carry. A clean practitioner-facing negative, and it bounds claims of practical use from interpretability.
 
+
+#### MN-29 · The ablation battery's legacy null is lenient: a known-answer forecaster fails the gate with it and passes with a profile-matched null
+- **Claim.**
+  - **The flaw.** The legacy random-direction null (`sae/response.py`, `null_magnitude`) removes ONE uniform amount from every token: the chunk's mean |z| over all tokens and rows, zeros included, averaged over the chunk's features. The feature ablation removes z_f(t)·w_f, which is large exactly on the feature's own top-firing rows. A strong or dense atom therefore clears the null on size alone. The same sizing is used by the shared-input agreement step's `own_effect_null`.
+  - **Known-answer test.** The planted forecaster `mock_planted` was run at dose 1, seeds 0–4. Seed 0 tuned `entanglement_min`; seeds 1–4 are held out. The gate (fixed before any data) is control-layer FPR ≤ 0.10 and sensitivity ≥ 0.5.
+    - Legacy null: **stop on all 5 seeds**. Per-cell FPR 0.2483974358974359, 0.20353982300884957, 0.21862348178137653, 0.22468354430379747, 0.16818181818181818; per-feature FPR 0.338–0.465.
+    - Opt-in `sae.ablation_null: profile_matched` (each null draw removes, at every token, |z_f(t)|·‖w_f‖ along a random decoded direction; the removal profile is the feature's own and only the direction is random): **pass on all 5**. Per-cell FPR 0.0, 0.0, 0.002844950213371266, 0.0, 0.0. Sensitivity 1.0, 0.7, 0.8333333333333334, 0.8888888888888888, 0.9.
+  - **Seed 0 downstream, legacy vs profile:**
+    - sub-null decoys cleared 4/4 vs 0/4;
+    - input-only decoys cleared (raw) 2/4 vs 0/4;
+    - atlas ARI 0.3357664233576642 vs 0.46938775510204084;
+    - sharing-class accuracy 0.36363636363636365 vs 0.7142857142857143;
+    - transfer accuracy 0.6153846153846154 vs 0.4444444444444444;
+    - control-layer atlas rows 151 vs 28.
+  - **Real data, one target.** On `concept_atlas_v2` TimesFM `stacked_xf.12` (18 scorable candidates, same seed, on a copy):
+    - the legacy re-run reproduced the recorded artifact exactly: 29 clearing cells, 9 features;
+    - profile-matched: **9 cells, 4 features, against a chance level of 8.1 cells** (0.05 × 162).
+- **Evidence.** Known-answer instrument validation (planted ground truth), plus one real target.
+- **Status:** the flaw is confirmed. Its real-data extent is open: a full v2 re-score under the matched null is running. **Until it lands, every causal-feature count and every downstream concept number in B.2/C was measured with the lenient null and is an upper bound.** This includes MN-14's 64.4%, the per-target concept counts, the atlas, transfer, agreement (CA-06) and sharing classes.
+- **Caveat.** In the planted world, a random decoded direction overlaps the planted span more than a p_perp atom does, so the matched null may be over-strict there (sensitivity falls to 0.7–0.9, and weak true effects are never detected).
+- **Reproduce.** `python run_known_answer.py --config configs/known_answer.yaml --null mean_magnitude|profile_matched` (seeds 0–4, dose 1); `sae/response.py::_profile_matched_null_replacement`; `tests/test_*profile*`.
+- **Ref.** ROADMAP §38.1.7.
+- **Score. 5/5.** The known-answer test did its job: it caught a lenient statistic behind the project's causal claims, and the held-out seeds show the fix.
 ---
 
 ## H. Benchmark trust
