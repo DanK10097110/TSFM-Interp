@@ -188,7 +188,7 @@ See [`CITATION.cff`](CITATION.cff). In brief:
 
 ```bibtex
 @software{tsfmlens,
-  author  = {Kushnir, Dan},
+  author  = {Kushnir, Daniel},
   title   = {TSFM-Lens: comparative mechanistic interpretability for
              time-series foundation models},
   version = {0.1.0},

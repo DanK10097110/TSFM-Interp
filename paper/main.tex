@@ -46,15 +46,15 @@
 \newcommand{\pmark}{$\circ$}
 \newcommand{\ev}[1]{\textsc{#1}}
 
-\jmlrheading{}{2026}{1-\pageref{LastPage}}{}{}{}{Dan Kushnir}
-\ShortHeadings{Controlled, Causal and Confirmatory Interpretability of TSFMs}{Kushnir}
+\jmlrheading{}{2026}{1-\pageref{LastPage}}{}{}{}{Daniel Kushnir and Hao Wang}
+\ShortHeadings{Controlled, Causal and Confirmatory Interpretability of TSFMs}{Kushnir and Wang}
 \firstpageno{1}
 
 \begin{document}
 
-\title{\tool: Controlled, Causal and Confirmatory Interpretability\\ for Time-Series Foundation Models}
+\title{\tool: Controlled, Causal and Confirmatory\\ Interpretability for Time-Series Foundation Models}
 
-\author{\name Dan Kushnir \email dan.kushnir@spialert.com}
+\author{\name Daniel Kushnir \AND \name Hao Wang}
 
 \editor{}
 
@@ -68,18 +68,18 @@ next, no ground truth exists for what a ``concept'' in a forecast should be, and
 of internal features are small enough that uncontrolled measurements produce confident false
 positives. We present \tool{}, an open-source system that turns a list of model checkpoints into a
 single, self-contained interpretability report with one command. It is built on three commitments.
-First, it is \emph{controlled}: a leakage-audited synthetic benchmark whose generative components
+First, it is controlled: a leakage-audited synthetic benchmark whose generative components
 are known exactly, together with structured input perturbations, provides known answers against
-which every probe is validated. Second, it is \emph{causal}: concepts are defined by what removing
+which every probe is validated. Second, it is causal: concepts are defined by what removing
 them does to the forecast, measured against row-matched random-direction nulls and gated by reach
-controls. Third, it is \emph{confirmatory}: exploratory claims are registered by content hash and
+controls. Third, it is confirmatory: exploratory claims are registered by content hash and
 tested once on a sealed private split. Architecture-agnostic time alignment makes decoder-only,
 encoder-only and encoder--decoder models with token widths from 1 to 96 steps comparable, and every
 reported number carries a typed evidence class and a generated caveat. Applied to TimesFM,
 Chronos-2, Sundial and Chronos-Bolt, the system finds that the models' causal features change
 forecast level and shape far more often than trend or seasonality; that the models agree on
-\emph{which inputs} a concept groups (20 of 20 registered transfer claims confirmed on 800 held-out
-series) but rarely on \emph{what it does} to those inputs (11 of 1{,}223 shared-input tests show the
+which inputs a concept groups (20 of 20 registered transfer claims confirmed on 800 held-out
+series) but rarely on what it does to those inputs (11 of 1{,}223 shared-input tests show the
 same causal effect); and that no concept is shared by all four models. We also document
 more than a dozen cases in which a plausible, well-formed result was wrong and the system's own
 controls caught it. Code, configurations, a complete example run and a ledger of every finding with
@@ -102,9 +102,9 @@ its reproduction pointer are public.
 \FloatBarrier
 \input{sections/09_usage_limitations}
 
-\acks{The author thanks the maintainers of the open checkpoints and libraries this work builds on
+\acks{The authors thank the maintainers of the open checkpoints and libraries this work builds on
 (TimesFM, Chronos, Sundial, Timer, Lag-Llama, PyTorch, scikit-learn, zarr, plotly and
-catch22). \textbf{Funding and competing interests:} [to be completed by the author before
+catch22). \textbf{Funding and competing interests:} [to be completed by the authors before
 submission].}
 
 \newpage

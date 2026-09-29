@@ -79,36 +79,7 @@ from it.
 
 \begin{figure}[t]
 \centering
-\begin{tikzpicture}[
-  node distance=3.5mm and 6mm,
-  box/.style={draw, rounded corners=2pt, align=center, font=\footnotesize, minimum height=7.5mm, fill=white},
-  pkg/.style={draw=gray!60, dashed, rounded corners=4pt, inner sep=5pt},
-  arr/.style={-{Stealth[length=2mm]}, thick, gray!70!black}]
-  \node[box] (gen) {Generators\\{\scriptsize parametric, archetypes, real-derived}};
-  \node[box, below=of gen] (aud) {Leakage audit\\{\scriptsize banded DTW vs.\ references}};
-  \node[box, below=of aud] (seal) {Seal \& split\\{\scriptsize sha256 digests, epochs}};
-  \node[box, below=of seal] (val) {Validation\\{\scriptsize catch22 diversity, exchangeability}};
-  \draw[arr] (gen) -- (aud); \draw[arr] (aud) -- (seal); \draw[arr] (seal) -- (val);
-  \begin{scope}[on background layer]
-    \node[pkg, fit=(gen)(val), label={[font=\small\bfseries]above:\texttt{tsfm\_benchmark}}] {};
-  \end{scope}
-  \node[box, right=12mm of aud, fill=soft] (dev) {Dev split\\{\scriptsize ground-truth labels}};
-  \node[box, below=of dev, fill=soft] (priv) {Private split\\{\scriptsize sealed, used once}};
-  \draw[arr] (seal.east) -- ++(4mm,0) |- (dev.west);
-  \draw[arr] (seal.east) -- ++(4mm,0) |- (priv.west);
-  \node[box, right=14mm of dev, yshift=9mm] (ad) {Adapters \& tiers\\{\scriptsize measured spans}};
-  \node[box, below=of ad] (st) {19 fingerprinted stages\\{\scriptsize behavior $\to$ geometry $\to$ causality $\to$ concepts}};
-  \node[box, below=of st] (reg) {Register $\to$ confirm once};
-  \node[box, below=of reg] (rep) {Self-contained HTML report\\{\scriptsize typed findings, plain-language notes}};
-  \draw[arr] (ad) -- (st); \draw[arr] (st) -- (reg); \draw[arr] (reg) -- (rep);
-  \begin{scope}[on background layer]
-    \node[pkg, fit=(ad)(rep), label={[font=\small\bfseries]above:\texttt{tsfm\_lens}}] {};
-  \end{scope}
-  \draw[arr] (dev.east) -- (st.west);
-  \draw[arr] (priv.east) -- (reg.west);
-  \node[box, above=5mm of ad, fill=soft] (ck) {Model checkpoints + one YAML config};
-  \draw[arr] (ck) -- (ad);
-\end{tikzpicture}
+\input{figures/overview.tex}
 \caption{System overview. \texttt{tsfm\_benchmark} produces leakage-audited, sealed corpora with exact
 ground truth; \texttt{tsfm\_lens} turns a configuration naming checkpoints into one report. Dev findings
 are exploratory; the private split is opened once, by \texttt{confirm}, for claims registered in advance.}

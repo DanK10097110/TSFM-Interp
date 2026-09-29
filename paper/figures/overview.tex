@@ -1,0 +1,32 @@
+% System architecture figure, shared by ../main.tex (Figure 1) and ../mloss/main.tex.
+% Needs the colors `accent` and `soft` and the TikZ libraries positioning, fit, backgrounds.
+\begin{tikzpicture}[
+  node distance=2.2mm and 6mm,
+  box/.style={draw, rounded corners=2pt, align=center, font=\footnotesize, minimum height=6.5mm, fill=white},
+  pkg/.style={draw=gray!60, dashed, rounded corners=4pt, inner sep=5pt},
+  arr/.style={-{Stealth[length=2mm]}, thick, gray!70!black}]
+  \node[box] (gen) {Generators\\{\scriptsize synthetic + real-derived tiers}};
+  \node[box, below=of gen] (aud) {Leakage audit\\{\scriptsize banded DTW vs.\ references}};
+  \node[box, below=of aud] (seal) {Seal \& split\\{\scriptsize SHA-256 digests, epochs}};
+  \node[box, below=of seal] (val) {Validation\\{\scriptsize catch22 diversity, exchangeability}};
+  \draw[arr] (gen) -- (aud); \draw[arr] (aud) -- (seal); \draw[arr] (seal) -- (val);
+  \begin{scope}[on background layer]
+    \node[pkg, fit=(gen)(val), label={[font=\small\bfseries]below:\texttt{tsfm\_benchmark}}] {};
+  \end{scope}
+  \node[box, right=10mm of aud, fill=soft] (dev) {Dev split\\{\scriptsize ground-truth labels}};
+  \node[box, below=of dev, fill=soft] (priv) {Private split\\{\scriptsize sealed, used once}};
+  \draw[arr] (seal.east) -- ++(3mm,0) |- (dev.west);
+  \draw[arr] (seal.east) -- ++(3mm,0) |- (priv.west);
+  \node[box, right=12mm of dev, yshift=12mm, text width=45mm] (ad) {Adapters, derived capability tiers\\{\scriptsize measured token$\to$time spans, alignment gate}};
+  \node[box, below=of ad, text width=45mm] (st) {19 fingerprinted stages\\{\scriptsize behavior $\to$ geometry $\to$ causal patching $\to$ SAE concepts}};
+  \node[box, below=of st, text width=45mm] (reg) {Register (hash-pinned) $\to$ confirm once};
+  \node[box, below=of reg, text width=45mm, fill=accent!12] (rep) {Self-contained HTML report\\{\scriptsize typed findings, derived scorecard, explainers}};
+  \draw[arr] (ad) -- (st); \draw[arr] (st) -- (reg); \draw[arr] (reg) -- (rep);
+  \begin{scope}[on background layer]
+    \node[pkg, fit=(ad)(rep), label={[font=\small\bfseries]below:\texttt{tsfm\_lens}}] (lens) {};
+  \end{scope}
+  \draw[arr] (dev.east) -- (st.west);
+  \draw[arr] (priv.east) -- (reg.west);
+  \node[box, above=6mm of lens.north, fill=soft] (ck) {Checkpoints + one YAML config};
+  \draw[arr] (ck) -- (lens.north);
+\end{tikzpicture}

@@ -14,6 +14,11 @@
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta,positioning,fit,backgrounds,calc}
 \usepackage{lastpage}
+\usepackage{graphicx}
+\usepackage{pifont}
+\newcommand{\cmark}{\ding{51}}
+\newcommand{\xmark}{\ding{55}}
+\newcommand{\pmark}{$\circ$}
 
 \setlist{itemsep=1pt,topsep=2pt}
 \setlength{\emergencystretch}{3em}
@@ -27,15 +32,15 @@
 \newcommand{\repourl}{https://github.com/DanK10097110/TSFM-Interp}
 \newcommand{\tool}{\textsc{TSFM-Lens}}
 
-\jmlrheading{}{2026}{1-\pageref{LastPage}}{}{}{}{Dan Kushnir}
-\ShortHeadings{TSFM-Lens: Comparative Interpretability of TSFMs}{Kushnir}
+\jmlrheading{}{2026}{1-\pageref{LastPage}}{}{}{}{Daniel Kushnir and Hao Wang}
+\ShortHeadings{TSFM-Lens: Comparative Interpretability of TSFMs}{Kushnir and Wang}
 \firstpageno{1}
 
 \begin{document}
 
-\title{\tool: A Python Toolkit for Controlled, Causal and\\ Confirmatory Interpretability of Time-Series Foundation Models}
+\title{\tool: Controlled, Causal and Confirmatory\\ Interpretability of Time-Series Foundation Models}
 
-\author{\name Dan Kushnir \email dan.kushnir@spialert.com}
+\author{\name Daniel Kushnir \AND \name Hao Wang}
 
 \editor{}
 
@@ -59,17 +64,14 @@ MIT license at \url{\repourl}.
 
 \section{Introduction}
 
-Pretrained forecasters such as TimesFM \citep{das2024timesfm}, Chronos \citep{ansari2024chronos,
-ansari2025chronos2}, Sundial \citep{liu2025sundial} and Timer \citep{liu2024timer} are used zero-shot, yet
-little is known about what they compute. Libraries such as TransformerLens \citep{nanda2022transformerlens},
-pyvene \citep{wu2024pyvene}, nnsight \citep{fiottokaufman2025nnsight} and SAELens \citep{bloom2024saelens}
-provide hooks, patching and sparse dictionaries for one model at a time. Three properties of TSFMs make a
-direct transfer unreliable: tokens cover 1 to 96 time steps depending on the architecture, so positions are
-not comparable across models; real series carry no labels for trend, seasonality or noise, so probes cannot
-be checked; and the causal effects of internal features are small enough that an uncontrolled measurement
-yields a confident false positive. \tool{} is built around these problems. It is a \emph{comparative} tool:
-its unit of analysis is a panel of models on a shared benchmark, and its output is a report that a
-non-specialist can read and an expert can audit.
+Pretrained forecasters such as TimesFM \citep{das2024timesfm}, Chronos \citep{ansari2024chronos}
+and Sundial \citep{liu2025sundial} are used zero-shot, yet little is known about what they
+compute. Interpretability libraries built for language models work on one model at a time, and three properties of
+TSFMs make a direct transfer unreliable: tokens cover 1 to 96 time steps depending on the architecture, so positions
+are not comparable across models; real series carry no labels for trend, seasonality or noise, so probes cannot be
+checked; and the causal effects of internal features are small enough that an uncontrolled measurement yields a
+confident false positive. \tool{} is a comparative tool built around these problems: its unit of analysis is a panel
+of models on a shared benchmark, and its output is a report that a non-specialist can read and an expert can audit.
 
 \section{Architecture}
 
@@ -79,115 +81,81 @@ report. Their dependencies overlap only in NumPy, SciPy and PyYAML, so the bench
 
 \begin{figure}[t]
 \centering
-\begin{tikzpicture}[
-  node distance=3mm and 6mm,
-  box/.style={draw, rounded corners=2pt, align=center, font=\footnotesize, minimum height=7mm, fill=white},
-  pkg/.style={draw=gray!60, dashed, rounded corners=4pt, inner sep=5pt},
-  arr/.style={-{Stealth[length=2mm]}, thick, gray!70!black}]
-  \node[box] (gen) {Generators\\{\scriptsize synthetic + real-derived tiers}};
-  \node[box, below=of gen] (aud) {Leakage audit\\{\scriptsize banded DTW vs.\ references}};
-  \node[box, below=of aud] (seal) {Seal \& split\\{\scriptsize SHA-256 digests, epochs}};
-  \node[box, below=of seal] (val) {Validation\\{\scriptsize catch22 diversity, exchangeability}};
-  \draw[arr] (gen) -- (aud); \draw[arr] (aud) -- (seal); \draw[arr] (seal) -- (val);
-  \begin{scope}[on background layer]
-    \node[pkg, fit=(gen)(val), label={[font=\small\bfseries]below:\texttt{tsfm\_benchmark}}] {};
-  \end{scope}
-  \node[box, right=10mm of aud, fill=soft] (dev) {Dev split\\{\scriptsize ground-truth labels}};
-  \node[box, below=of dev, fill=soft] (priv) {Private split\\{\scriptsize sealed, used once}};
-  \draw[arr] (seal.east) -- ++(3mm,0) |- (dev.west);
-  \draw[arr] (seal.east) -- ++(3mm,0) |- (priv.west);
-  \node[box, right=12mm of dev, yshift=12mm, text width=45mm] (ad) {Adapters, derived capability tiers\\{\scriptsize measured token$\to$time spans, alignment gate}};
-  \node[box, below=of ad, text width=45mm] (st) {19 fingerprinted stages\\{\scriptsize behavior $\to$ geometry $\to$ causal patching $\to$ SAE concepts}};
-  \node[box, below=of st, text width=45mm] (reg) {Register (hash-pinned) $\to$ confirm once};
-  \node[box, below=of reg, text width=45mm, fill=accent!12] (rep) {Self-contained HTML report\\{\scriptsize typed findings, derived scorecard, explainers}};
-  \draw[arr] (ad) -- (st); \draw[arr] (st) -- (reg); \draw[arr] (reg) -- (rep);
-  \begin{scope}[on background layer]
-    \node[pkg, fit=(ad)(rep), label={[font=\small\bfseries]below:\texttt{tsfm\_lens}}] (lens) {};
-  \end{scope}
-  \draw[arr] (dev.east) -- (st.west);
-  \draw[arr] (priv.east) -- (reg.west);
-  \node[box, above=6mm of lens.north, fill=soft] (ck) {Checkpoints + one YAML config};
-  \draw[arr] (ck) -- (lens.north);
-\end{tikzpicture}
+\input{../figures/overview.tex}
 \caption{Architecture of \tool{}. The benchmark package produces leakage-audited, sealed corpora with exact
 ground truth. The analysis package loads each checkpoint through an adapter, runs a gated stage pipeline on
 the dev split, confirms registered claims once on the private split and renders one report.}
 \label{fig:arch}
 \end{figure}
 
-\paragraph{Benchmark.} Generators come in two labeled tiers: a \emph{synthetic} tier (additive parametric
-series and frozen archetypes) that touches no real data and records every generative component, and a
-\emph{real-derived} tier (mixtures, block bootstrap, sequential synthesis) with attributional ground truth.
-Every sample passes a leakage audit against real reference archives; dev and private splits come from
-disjoint seed ranges, are hashed, and can be re-minted as fresh epochs. A validation module measures diversity
-in catch22 feature space and tests dev/private exchangeability. Structured corruptions and single-knob
-generator counterfactuals provide controlled perturbations with known effects.
+\paragraph{Benchmark.} Generators come in two labeled tiers: a synthetic tier that touches no real data and records
+every generative component, and a real-derived tier with attributional ground truth. Samples pass a leakage audit
+against real archives; dev and private splits use disjoint seeds, are hashed and can be re-minted as fresh epochs.
+Structured corruptions and single-knob counterfactuals give perturbations with known effects.
 
-\paragraph{Adapters.} A model is wrapped by an adapter that exposes loading, prediction, the module and token
-time spans. Its capability tier (black box, observable, steerable, decomposable) is \emph{derived} from the
-methods it implements, and stages that need a higher tier are skipped with the reason rendered in the report.
-A zero-code adapter discovers layers and \emph{measures} token spans from impulse responses for Hugging Face
-checkpoints, refusing rather than guessing; hand-written adapters start from a template, and a single command
-(\texttt{-{}-check-adapter}) runs conformance, reach and alignment checks.
+\paragraph{Adapters and alignment.} An adapter exposes loading, prediction, the module and token time spans; its
+capability tier is derived from the methods it implements, and stages needing a higher tier are skipped with the
+reason rendered. A zero-code adapter measures token spans from impulse responses for Hugging Face checkpoints and
+refuses rather than guesses. Tokens are overlap-pooled onto common time windows, verified per layer by an alignment
+gate, so every cross-model statistic compares the same stretch of time.
 
-\paragraph{Alignment and stages.} Tokens are overlap-pooled onto common time windows, so every cross-model
-statistic compares the same stretch of time; an alignment gate verifies this per layer during extraction. The
-pipeline has 19 stages grouped by the evidence they can produce: behavioral (accuracy, calibration, cost, tokenizer
-checks), descriptive (effective dimension, logit-lens style depth profiles), geometric and linear-translatable
-(CKA, RSA, stitching gain over an input baseline), causal within-model (corruption fingerprints, activation
-patching, head ablation) and concept-level (TopK sparse autoencoders, a feature ablation battery, cross-model
-concept matching). Each stage declares the configuration keys it depends on; these are fingerprinted, so cached
-artifacts are reused only when still valid.
+\paragraph{Stages.} Nineteen stages produce evidence of increasing strength: behavioral (accuracy, calibration, cost),
+descriptive (depth profiles, lenses), geometric (CKA, stitching gain over an input baseline), causal within-model
+(corruption fingerprints, patching, head ablation) and concept-level. A sparse-autoencoder feature counts as causal
+only if removing it changes a forecast channel more than a random direction of matched size on the same series, after
+reach controls confirm the intervention lands; concepts are then matched across models on two levels, same inputs and
+same effect on those inputs. Stage inputs are fingerprinted, so cached artifacts are reused only while valid.
 
-\paragraph{Causal concepts.} A sparse-dictionary feature counts as causal only if removing it changes a forecast
-channel (level, trend, seasonality, shape, accuracy, \dots) more than removing a random direction of matched size
-on the same series, after reach controls confirm that the intervention lands (self-patch exactly zero,
-cross-patch nonzero). Causal features are clustered into concepts within and across models, and sharing is tested
-at two levels: whether two models' concepts select the \emph{same inputs}, and whether they have the \emph{same
-effect on those inputs}, each against its own null.
+\paragraph{Statistics and report.} Intervals resample series, not windows; a multiplicity ledger flags correction
+families that cannot reach significance; and exploratory claims are frozen in a hash-pinned registry and tested once
+on the sealed split. The output is one self-contained HTML file whose sections pose plain questions, whose figures each
+carry an explanation of how to read them, and whose every claim states its evidence class and a generated caveat.
 
-\paragraph{Statistics and confirmation.} All intervals and $p$-values resample series rather than windows. Every
-test belongs to a named correction family, and a multiplicity ledger flags families whose smallest attainable
-adjusted $p$-value cannot reach the significance level. Exploratory claims are frozen in a hash-pinned registry
-and tested once on the sealed split; a repeated look is recorded.
+\section{Comparison with Existing Tools}
 
-\paragraph{Report.} The output is one HTML file without external dependencies. Sections pose plain questions
-(``Is the comparison fair?'', ``What causally drives the forecast?''), every figure carries a caption and an
-expandable explanation of how to read it and what it cannot show, the scorecard is derived from artifacts by
-explicit rules with no model names hard-coded, and every claim is a typed record with an evidence class and a
-generated caveat. Skipped or failed sections render visibly with their reason.
+General interpretability libraries are single-model microscopes: they supply hooks, caching, patching and sparse
+dictionaries, and leave the experimental design to the user. Recent TSFM studies train sparse autoencoders on one
+model \citep{mishra2026dissecting,oublal2026timesae,divo2026zeitgeist}. \tool{} builds on the same primitives but
+adds what a cross-architecture comparison needs to be trustworthy (Table~\ref{tab:tools}): a measured time axis,
+known answers, matched nulls with reach controls, correction for multiple testing, one-shot confirmation and a
+report that states the evidence behind every claim. It is complementary to these libraries rather than a
+replacement.
 
-\section{Usage}
+\begin{table}[t]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3.5pt}
+\begin{tabular}{@{}lcccccc@{}}
+\toprule
+Capability & \rotatebox{70}{TransformerLens} & \rotatebox{70}{nnsight / pyvene} & \rotatebox{70}{SAELens} & \rotatebox{70}{Captum} & \rotatebox{70}{TSFM SAE studies} & \rotatebox{70}{\textbf{\tool{}}} \\
+\midrule
+Hooks, caching, activation patching                        & \cmark & \cmark & \pmark & \pmark & \pmark & \cmark \\
+Sparse dictionaries and feature ablation                   & \pmark & \pmark & \cmark & \xmark & \cmark & \cmark \\
+TSFMs without per-model engineering                        & \xmark & \pmark & \xmark & \pmark & \xmark & \cmark \\
+Measured token$\to$time alignment across architectures     & \xmark & \xmark & \xmark & \xmark & \xmark & \cmark \\
+Benchmark with exact ground truth and leakage audit        & \xmark & \xmark & \xmark & \xmark & \pmark & \cmark \\
+Random-direction nulls and reach controls per ablation     & \xmark & \xmark & \xmark & \xmark & \xmark & \cmark \\
+Cross-model concept matching (inputs vs.\ effects)          & \xmark & \xmark & \xmark & \xmark & \xmark & \cmark \\
+Series-level resampling and multiplicity ledger            & \xmark & \xmark & \xmark & \xmark & \xmark & \cmark \\
+Registered one-shot confirmation on sealed data            & \xmark & \xmark & \xmark & \xmark & \xmark & \cmark \\
+One-command report with typed evidence per claim           & \xmark & \xmark & \pmark & \xmark & \xmark & \cmark \\
+\bottomrule
+\end{tabular}
+\caption{Capabilities for comparative TSFM interpretability: \cmark{} provided, \pmark{} partial or possible with
+user code, \xmark{} not provided. Libraries: \citet{nanda2022transformerlens,fiottokaufman2025nnsight,wu2024pyvene,
+bloom2024saelens,kokhlikyan2020captum}; TSFM SAE studies judged from the papers.}
+\label{tab:tools}
+\end{table}
 
-After \texttt{pip install -e . \&\& pip install -e tsfm\_lens}, a full analysis is
-\begin{center}\texttt{python run.py -{}-config configs/examples/large\_4model.yaml}\end{center}
-Presets cover a CPU-only smoke test with mock models (minutes), a single model and a pair. The CLI also offers
-a preflight check (\texttt{-{}-doctor}), partial reruns (\texttt{-{}-stages}, \texttt{-{}-force}), alignment and
-adapter checks for new checkpoints, and a provenance diff between a run's recorded environment and the current
-one. New report sections, claims and configuration fields plug into declared interfaces that keep the fingerprints
-and evidence classes consistent.
+\section{Usage, Quality and Availability}
 
-\paragraph{Example.} The repository includes a complete run on TimesFM~2.5, Chronos-2, Sundial and Chronos-Bolt
-(\texttt{examples/concept\_atlas\_v2}: report, configuration and per-stage artifacts; 6.4 hours on one 24~GB
-GPU). In it, 293 sparse features clear their causal nulls, mostly acting on forecast level and shape; the models
-agree on which inputs a concept groups (20 of 20 registered claims confirmed on 800 sealed series) but rarely on
-what it does to them. A curated ledger (\texttt{FINDINGS.md}) records every result, positive and negative, with
-its evidence class and reproduction command, including cases where a built-in control overturned a plausible but
-wrong result.
-
-\section{Quality and Availability}
-
-The code is released under the MIT license. The test suite (over 2{,}100 tests for \texttt{tsfm\_lens}, plus
-golden-hash regeneration tests for the benchmark) runs in continuous integration on mock adapters, against
-pinned dependencies and, weekly, against the latest releases of the load-bearing libraries. Tests follow a
-planted-answer standard: each load-bearing assertion must be shown to fail against a deliberately planted
-regression. Documentation includes a README, a guide to adding models with a pitfall checklist, a worked report
-walkthrough, and stage, adapter and glossary documentation generated from the code (with
-a \texttt{-{}-check} mode that detects drift). Exact
-dependency pins and the reason for each are recorded in \texttt{DEPENDENCIES.md}, and every run records its
-environment. \tool{} is univariate by design, captures only the parts of a model an adapter exposes, and relies on
-synthetic ground truth whose generators encode assumptions about which structure matters; the report states these
-limits alongside the results they qualify.
+After \texttt{pip install -e . \&\& pip install -e tsfm\_lens}, one command runs a full analysis
+(\texttt{python run.py -{}-config configs/examples/large\_4model.yaml}); presets cover a CPU-only mock smoke test, a
+single model and a pair. The repository includes a complete four-model example run with its report and per-stage
+artifacts, and a ledger of every finding with its reproduction command. The code is MIT-licensed; over 2{,}100 tests
+run in continuous integration against pinned and, weekly, latest dependencies, and each load-bearing assertion must
+be shown to fail against a planted regression. Documentation covers installation, adding models, a report walkthrough
+and generated stage and glossary references. Code: \url{\repourl}.
 
 \vskip 0.2in
 \bibliography{../references}
