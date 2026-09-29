@@ -38043,6 +38043,38 @@ under transformers 4.57.6.
 9–10 GB, more than the home quota's headroom (48.7/51 GB). The run goes in a
 /tmp worktree (`k3-panel7`), and only lightweight artifacts come back.
 
+**K3 onboarding review (2026-09-29, branch `k3-panel7`, not merged yet).**
+- **TTM dropped.** `granite-tsfm==0.2.28` installs cleanly, but
+  `import tsfm_public` fails under transformers 4.57.6 (`ImportError: cannot
+  import name 'add_model_info_to_auto_map' from 'transformers.utils'`, raised
+  in `tsfm_public/toolkit/processor.py`). It was uninstalled again. The
+  replacement is **Chronos-T5-Base** (existing adapter, no new dependency;
+  adds an encoder–decoder with 1-step tokens). The panel is TimesFM,
+  Chronos-2, Sundial, Chronos-Bolt, Timer, Time-MoE and Chronos-T5-Base.
+- **Measured deviations:**
+  - context 480, not 512: at 512, Timer's token 0 spans [0,512) and span
+    discovery refuses it (contiguity 0.600 vs 0.950), routing Timer to L0
+    only;
+  - Time-MoE needs the opt-in `generic_hf` `input_normalization: zscore`
+    (scale residual 105.68 → 0.032512 at ×0.001; the checkpoint ships no
+    normalizer, the PM-15 failure class again).
+- **Bug fixed on the branch:** `GenericHFAdapter.token_time_spans()` raised on
+  an unloaded adapter, and `resolve_routing` calls it on a fresh one, so any
+  fresh run with a `generic_hf` model crashed.
+- **Open before the run:** Time-MoE's alignment table is 0.87/1.00/1.00 at
+  layers 0–2, then 0.13, 0.47, and 0.07 at layers 5–11. The gate reads only
+  the shallowest layer by design (§15 A2; deep-layer decay is normal in causal
+  decoders, CLAUDE_FULL §11.22). An amplitude sweep and backward-leakage check
+  per §11.22 was delegated.
+- **Environment discrepancy (pre-existing, found in review).** `cudaPy` runs
+  conda torch 2.12.0 and scikit-learn 1.7.2 (installed 2026-07-01), shadowing
+  pip dist-infos of torch 2.9.1+cu130 and scikit-learn 1.9.0 (2026-06-24).
+  `DEPENDENCIES.md` pins the latter. The v2 run's `run_manifest.json`
+  provenance records 2.12.0 / 1.7.2. The paper had quoted the
+  `DEPENDENCIES.md` versions and now quotes the recorded provenance.
+  **To do:** refresh `DEPENDENCIES.md` so the documented pins match the
+  environment that produced the published numbers (invariant 12).
+
 #### 38.3.3 Held-out interaction with K2
 
 K2 and K3 both want the one fresh epoch.

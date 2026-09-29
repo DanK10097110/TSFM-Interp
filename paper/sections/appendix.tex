@@ -114,9 +114,10 @@ artifacts (activations and SAE weights omitted for size); \texttt{paper/figures/
 regenerates all data figures. From \texttt{tsfm\_lens/}, \texttt{python run.py -{}-config
 configs/concept\_atlas\_v2.yaml} reproduces the run (add \texttt{-{}-stages report} to re-render, and
 \texttt{-{}-verify-provenance runs/concept\_atlas\_v2} to diff environments). The private split was opened once
-(2026-09-28), so re-confirming requires a fresh epoch. Environment: Python 3.12, numpy 2.1.0, PyTorch 2.9.1 (CUDA
-13.0), transformers 4.57.6, timesfm 2.0.2, chronos-forecasting 2.3.1, zarr 2.18.7 (zarr~3 stores read back empty
-under the v2 API), scikit-learn 1.9.0; all pins with reasons are in \repo{DEPENDENCIES.md}. Tests: 2{,}112 passed,
+(2026-09-28), so re-confirming requires a fresh epoch. Environment, as recorded in the run's
+\texttt{run\_manifest.json}: Python 3.12.13, numpy 2.1.0, PyTorch 2.12.0 (CUDA 12.9 build), transformers 4.57.6,
+timesfm 2.0.2, chronos-forecasting 2.3.1, zarr 2.18.7 (zarr~3 stores read back empty under the v2 API), pandas 2.3.3,
+scikit-learn 1.7.2; load-bearing pins and their reasons are in \repo{DEPENDENCIES.md}. Tests: 2{,}112 passed,
 27 skipped (\texttt{tsfm\_lens}); 124 passed, 1 skipped (\texttt{tsfm\_benchmark}). Wall-clock time on one RTX
 A5000: 23{,}151 s in total, of which \texttt{sae} 8{,}594 s and \texttt{concepts} 13{,}377 s (shared-input
 agreement 10{,}855 s); every other stage under 4 minutes.
