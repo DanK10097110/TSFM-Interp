@@ -167,7 +167,8 @@ def build_evidence(run_dir: Path, cfg, top_features: int = 8,
         sep = (entry.get("ground_truth_alignment") or {}).get("separated")
         if not sep:
             log.info(f"sae describe: {key} has no `separated` block; skipping "
-                     f"(run backfill_separated.py or re-run the sae stage)")
+                     f"(run backfill_separated.py [study driver, dev branch] "
+                     f"or re-run the sae stage)")
             continue
         resp = _response_artifact(run_dir, model, layer)
         null_p95 = (resp or {}).get("null_p95") or {}

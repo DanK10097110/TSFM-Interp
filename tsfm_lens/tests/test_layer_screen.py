@@ -6,7 +6,8 @@ Everything here uses small synthetic data with a *known* correct answer
 factor) rather than real run artifacts -- this is a regression suite for
 the selector/scoring *logic*, not a re-verification of the empirical
 bake-off result recorded in ROADMAP.md (that lives in
-`runs/layer_screen_bakeoff.json`, regenerable via `run_layer_screen_bakeoff.py`).
+`runs/layer_screen_bakeoff.json`, regenerable via
+`run_layer_screen_bakeoff.py`, study driver, dev branch).
 """
 
 from __future__ import annotations

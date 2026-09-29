@@ -13,8 +13,9 @@ own store) and re-runs nothing.
 The comparison logic (`compare_at_point`, `summarize_param_sweep`,
 `build_bias_card`) is pure and unit-testable against small synthetic sweep
 dicts; the I/O (loading real sweep JSONs, rendering HTML) lives in
-`render_bias_card_html` and the CLI script (`run_bias_card.py`), the same
-split `sae/ground_truth.py` and `analysis/parameter_sweep.py` already use.
+`render_bias_card_html` and the CLI script (`run_bias_card.py`, study driver,
+dev branch), the same split `sae/ground_truth.py` and
+`analysis/parameter_sweep.py` already use.
 
 A model is only ever called "favored" at a sweep point when its bootstrap
 CI does not overlap the other model's -- a raw point-estimate ratio would
@@ -87,7 +88,8 @@ def build_bias_card(summaries: list[dict], caveats: Optional[dict[str, str]] = N
     models' cards -- e.g. a sweep whose scoring metric is known to be
     unreliable in part of its range. Kept as a caller-supplied argument
     (not hardcoded here) so this stays a generic aggregator; the concrete
-    caveat text this session found lives in `run_bias_card.py`.
+    caveat text this session found lives in `run_bias_card.py` (study driver,
+    dev branch).
     """
     caveats = caveats or {}
     cards: dict[str, list[str]] = {}

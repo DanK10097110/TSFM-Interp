@@ -8,10 +8,10 @@ and it turns the one page teaching a reader to check numbers into the one page
 that doesn't.
 
 The run directory it quotes (`runs/medium_run_chronos_base`) is gitignored, so
-the artifact checks **skip** rather than fail when it is absent, the same
-pattern `test_stage0_winner_config.py` uses for its own committed-config-
-versus-real-artifact check. The structural checks below do not skip: those
-hold on any checkout.
+the artifact checks **skip** rather than fail when it is absent -- the same
+committed-config-versus-real-artifact pattern the (dev-branch-only) Stage 0
+config tests used. The structural checks below do not skip: those hold on
+any checkout.
 """
 
 from __future__ import annotations

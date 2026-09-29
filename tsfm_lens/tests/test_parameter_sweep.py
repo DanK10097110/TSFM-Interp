@@ -4,8 +4,8 @@ Runnable directly (`python tests/test_parameter_sweep.py`) or via pytest.
 `build_recipe`/`generate_sweep_data` are pure/deterministic (no model, no
 GPU -- `parametric()` is plain numpy), so these are exercised for real
 rather than mocked; the live-model scoring loop lives in
-`run_parameter_sweep.py` itself and is exercised there against real
-checkpoints, not here.
+`run_parameter_sweep.py` (study driver, dev branch) itself and is exercised
+there against real checkpoints, not here.
 """
 
 from __future__ import annotations

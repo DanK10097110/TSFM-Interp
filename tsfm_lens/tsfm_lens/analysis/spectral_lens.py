@@ -17,8 +17,9 @@ error in that band, not against zero, matching the skip lens's existing
 convention throughout.
 
 Kept as a pure numpy reduction over already-computed forecasts + a period
-array, mirroring `phase_sensitivity.py`/`quantization_churn.py`'s split
-between pure stats and the I/O-doing CLI script (`run_spectral_lens.py`).
+array, mirroring `phase_sensitivity.py`/`quantization_churn.py`'s (module +
+driver both dev branch only) split between pure stats and the I/O-doing CLI
+script (`run_spectral_lens.py`, study driver, dev branch).
 """
 
 from __future__ import annotations

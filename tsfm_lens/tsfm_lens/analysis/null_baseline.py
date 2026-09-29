@@ -14,8 +14,9 @@ touched, nothing is re-run. `compare_l1_depth_curve`/`compare_l2_depth_curve`
 extend the single-peak-pair test to every depth along the real run's own
 best layer correspondence, each against both models' own architecture-only
 floor at the *matching* layer index (not each null run's own best pair).
-Mirrors `sae/crosscoder.py` / `run_crosscoder_feasibility.py`'s existing
-pattern of reading one already-extracted run directory's artifacts directly.
+Mirrors `sae/crosscoder.py` / `run_crosscoder_feasibility.py`'s (study driver,
+dev branch) existing pattern of reading one already-extracted run
+directory's artifacts directly.
 
 Why a paired bootstrap is valid here (and preferred over an unpaired one):
 a real cross-model run and its corresponding null run(s) load the same

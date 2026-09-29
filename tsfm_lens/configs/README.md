@@ -70,6 +70,19 @@ A smaller, purpose-built set for someone landing on this repo — see
 how it was validated. `--list-configs` includes them under an `examples/`
 prefix (see above); load one with `--config configs/examples/<name>.yaml`.
 
+## Test-fixture configs (kept on main, not curated)
+
+None currently. `scaling_ladder_chronos.yaml`, `configs/_ladder/`'s expanded
+configs, and `crosscoder_stage0.yaml`/`_gate.yaml`/`_winner.yaml` used to be
+pinned here by tests that loaded them directly by path
+(`tests/test_config_listing.py`'s ladder-exclusion and disabled-stages tests,
+and the `run_crosscoder_stage0.py`-testing files respectively). Those tests
+now build synthetic fixtures in `tmp_path` instead, so none of those configs,
+nor the `run_crosscoder_stage0.py`/`run_crosscoder_ladder.py`/
+`run_layer_screen_bakeoff.py` study drivers that used to be pinned on `main`
+the same way, need to stay on `main` any more; see the "Experiment configs"
+table below for where they moved.
+
 ## Experiment configs (dev branch only)
 
 These reproduce a specific, already-recorded study rather than being a
@@ -80,9 +93,9 @@ the `dev` branch (grouped here by the `ROADMAP.md` item they belong to; grep
 
 | Group | Files | Reproduces |
 |---|---|---|
-| Scaling ladder | `_ladder/ladder_{base,tiny,small,mini,large}.yaml`, `scaling_ladder_chronos.yaml` | A generated model-size sweep (`run_scaling_ladder.py --emit-configs`) |
-| Crosscoder Stage 0 | `crosscoder_stage0*.yaml` (6 files) | A joint-dictionary feasibility study |
-| Layer-screen bake-off | `layer_screen_experiment*.yaml` (9 files) | The comparison that chose `work_bend` as the default layer-screening method |
+| Crosscoder Stage 0 | `crosscoder_stage0.yaml`, `crosscoder_stage0_gate.yaml`, `crosscoder_stage0_winner.yaml`, `crosscoder_stage0_layers.yaml`, `crosscoder_stage0_null.yaml`, `crosscoder_stage0_replicate640.yaml` | Joint-dictionary feasibility variants and the two exit-criteria configs (drivers: `run_crosscoder_stage0.py`, `run_crosscoder_ladder.py`; `sae/crosscoder_eval.py` moved with them, since nothing on `main` imports it once their own tests moved too) |
+| Layer-screen bake-off | `layer_screen_experiment*.yaml` (9 files) | The comparison that chose `work_bend` as the default layer-screening method (driver: `run_layer_screen_bakeoff.py`) |
+| Scaling ladder (Chronos) | `scaling_ladder_chronos.yaml`, `_ladder/ladder_{base,tiny,small,mini,large}.yaml` | The seed config and its `run_scaling_ladder.py --emit-configs`-expanded per-size sweep configs |
 | Adapter-development checks | `chronos2_adapter_check.yaml`, `chronos2_phase4_check.yaml`, `sundial_adapter_check.yaml`, `sundial_phase4_check.yaml`, `smoke_lag_llama.yaml`, `lag_llama_vs_chronos.yaml` | The original per-adapter validation runs; superseded on `main` by the renamed, curated copies in `configs/examples/` |
 | Historical full-report runs | `full_report_run.yaml`, `_3model`, `_large`, `_large_revived.yaml`, `medium_run.yaml`, `medium_run_chronos_base.yaml` | Dated, superseded predecessors of `full_report_run_4model.yaml` |
 | Medium-run variants/checks | `medium_run_chronos_base_auxk.yaml`, `_feature_ablation_check`, `_feature_steering_check`, `_l3_input_energy.yaml`, `e9_internals_null_check.yaml`, `f5_matched_resolution.yaml`, `frontend_check.yaml` | Targeted ablation/sanity studies |

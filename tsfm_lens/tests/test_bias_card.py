@@ -2,7 +2,7 @@
 
 Runnable directly (`python tests/test_bias_card.py`) or via pytest. Uses
 small synthetic sweep dicts matching `param_sweep_*.json`'s real schema
-(`run_parameter_sweep.py`) rather than any live model or GPU -- the
+(`run_parameter_sweep.py`, study driver, dev branch) rather than any live model or GPU -- the
 comparison/aggregation logic is pure, and the HTML render is exercised with
 tiny fixture data, not a real checkpoint's sweep.
 """

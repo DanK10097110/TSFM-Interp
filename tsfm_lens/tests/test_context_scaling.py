@@ -5,7 +5,8 @@ Runnable directly (`python tests/test_context_scaling.py`) or via pytest.
 `score_context_length_sweep` are pure/deterministic (no model, no GPU --
 `parametric()` is plain numpy), so these are exercised for real rather than
 mocked; the live-model scoring loop lives in `run_context_scaling_sweep.py`
-itself and is exercised there against real checkpoints, not here.
+(study driver, dev branch) itself and is exercised there against real
+checkpoints, not here.
 """
 
 from __future__ import annotations

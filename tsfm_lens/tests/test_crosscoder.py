@@ -6,7 +6,7 @@ Runnable directly (`python tests/test_crosscoder.py`) or via pytest. All
 synthetic, with a planted ground truth -- this is a regression suite for the
 mechanism, not a re-verification of the real-checkpoint feasibility result
 recorded in ROADMAP.md (that lives in `runs/crosscoder_feasibility.json`,
-regenerable via `run_crosscoder_feasibility.py`).
+regenerable via `run_crosscoder_feasibility.py`, study driver, dev branch).
 """
 
 from __future__ import annotations

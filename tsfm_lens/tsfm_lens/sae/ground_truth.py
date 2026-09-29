@@ -261,7 +261,8 @@ def _ridge_cross_fitted_residuals(x: np.ndarray, y: np.ndarray, n_folds: int,
     """Residuals of `y` on one-hot provenance columns `x`, each row predicted out of fold.
 
     Closed-form ridge on the normal equations, the same pattern
-    `analysis/error_fingerprint.py::_cross_fitted_residuals` already uses for
+    `analysis/error_fingerprint.py::_cross_fitted_residuals` (dev branch)
+    already uses for
     exactly the reason ROADMAP.md sec 11.36 names: a control that silently
     explains nothing is indistinguishable from one that works unless it is
     scored out of fold, and this residualization has precisely that shape
@@ -310,9 +311,10 @@ def residualize_against_provenance(gt: pd.DataFrame, structural_field: str,
     so the regression is fit only on rows the structural field can itself be
     evaluated on.
 
-    `alpha` defaults far lower than `analysis/error_fingerprint.py`'s
-    same-shaped `_cross_fitted_residuals` (1.0, tuned for a ~200-column
-    basis): the provenance basis here is a handful of one-hot columns, and a
+    `alpha` defaults far lower than `analysis/error_fingerprint.py`'s (dev
+    branch) same-shaped `_cross_fitted_residuals` (1.0, tuned for a
+    ~200-column basis): the provenance basis here is a handful of one-hot
+    columns, and a
     fixed `alpha=1.0` ridge penalty measurably under-corrects it. Confirmed
     directly (not assumed) with a fully-confounded synthetic case (a binary
     `tier` dummy explaining a structural field almost exactly,

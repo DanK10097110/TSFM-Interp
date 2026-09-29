@@ -28,8 +28,9 @@ breakage waiting for the next reader) is the IRREVERSIBLE half of stage 4:
 renaming one run's `sae/roles.json` to `sae/roles_injection.json`, carrying
 the sec 30.1 gate measurement that justifies the supersession. It is not
 part of `run_concepts` and is never invoked automatically by any pipeline
-stage or CLI driver -- see `retire_roles.py` for the one-shot script that
-calls it against a single, explicitly-named run directory.
+stage or CLI driver -- see `retire_roles.py` (study driver, dev branch) for
+the one-shot script that calls it against a single, explicitly-named run
+directory.
 """
 
 from __future__ import annotations
@@ -62,7 +63,8 @@ SUPERSEDED_REASON = (
     "13 targets. `sae/concepts.json` is the report's replacement "
     "throughout (`report/sae_concepts.py::sae_concepts_block`); this file "
     "is kept, not deleted, because `run_sae_describe.py`, "
-    "`run_sae_compare.py` and `sae/role_matching.py`'s untrained-twin floor "
+    "`run_sae_compare.py` (study driver, dev branch) and "
+    "`sae/role_matching.py`'s untrained-twin floor "
     "all still read the injection-space evidence it carries.")
 
 _MIN_CAUSAL_CANDIDATES = 4
@@ -857,8 +859,9 @@ def supersede_roles_artifact(run_dir: Path,
     was written (`run_sae_describe.py`, `sae/role_matching.py`'s
     `untrained_twin_role_floor`/`role_population_vectors`, all of which key
     or filter by dict-ness/prefix before dereferencing) except
-    `run_sae_compare.py::load_inputs`, which was fixed in the same change
-    to filter to dict-valued entries before iterating. A future consumer
+    `run_sae_compare.py::load_inputs` (study driver, dev branch), which was
+    fixed in the same change to filter to dict-valued entries before
+    iterating. A future consumer
     that iterates every top-level key/value assuming each is a target
     record must apply the same filter.
 

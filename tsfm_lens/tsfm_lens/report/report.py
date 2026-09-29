@@ -287,7 +287,7 @@ def run_report(cfg: PipelineConfig) -> Path:
          ["exemplars/exemplars.npz", "exemplars/exemplars.json"], "exemplars",
          lambda: _sec_exemplars(run_dir, model_colors, findings, cfg.alignment.depth_axis)),
         ("Spec curve", "Analysis-knob robustness",
-         "How much of each headline claim above depends on one particular analysis-knob choice rather than on the models themselves (ROADMAP.md §34 item A2). Not a pipeline stage: run `run_spec_curve.py` separately against this run directory to populate it.",
+         "How much of each headline claim above depends on one particular analysis-knob choice rather than on the models themselves (ROADMAP.md §34 item A2). Not a pipeline stage: run `run_spec_curve.py` (study driver, dev branch) separately against this run directory to populate it.",
          [], "spec_curve",
          lambda: _sec_spec_curve(run_dir, findings)),
         ("Confirm", "Private benchmark confirmation",
@@ -5715,8 +5715,9 @@ def _sae_capability_block(run_dir: Path, findings: list) -> str:
     between the two batteries that the run may not have.
 
     Reads `sae/comparison.json` only, via two pure reductions. That artifact
-    comes from `run_sae_compare.py`, a standalone driver rather than a
-    pipeline stage, so its absence is the ordinary state of a run: this
+    comes from `run_sae_compare.py` (study driver, dev branch), a standalone
+    driver rather than a pipeline stage, so its absence is the ordinary
+    state of a run: this
     returns "" and the section is unchanged, exactly as
     `sae_concepts_block` does without `sae/concepts.json` (ROADMAP.md sec
     30, Stage 4).
@@ -6338,7 +6339,8 @@ def _sae_target_panel(cfg, store, run_dir: Path, key: str, model: str, layer: st
                   "legacy all-fields match -- that match reports corpus "
                   "bookkeeping labels (which generator wrote the series) as if "
                   "they were model findings. Run "
-                  "<code>backfill_separated.py --run &lt;run&gt;</code>, or "
+                  "<code>backfill_separated.py --run &lt;run&gt;</code> "
+                  "(study driver, dev branch), or "
                   "re-run the <code>sae</code> stage, to populate it.</p>")
         return out, None
     # Read the causal artifact before building the cards: the number of
@@ -8395,7 +8397,8 @@ def _sec_seasonality_circuit(run_dir: Path, model_colors: dict, findings: list) 
     """ROADMAP.md sec 20 H8 Stage 4: the minimal-sufficient-head-set circuit.
 
     Not a pipeline stage (`seasonality_circuit/` is written by the standalone
-    `run_seasonality_circuit.py`, mirroring `layer_screen_bakeoff.py`'s own
+    `run_seasonality_circuit.py` (study driver, dev branch), mirroring
+    `run_layer_screen_bakeoff.py`'s own (also dev branch)
     "not every analysis needs to be wired into `pipeline.py`" precedent), so
     this degrades to "" — logged, per `CLAUDE.md` sec 2.5 — rather than
     reading a config `enabled` flag that does not exist for this analysis.
@@ -8411,7 +8414,8 @@ def _sec_seasonality_circuit(run_dir: Path, model_colors: dict, findings: list) 
     circuit_dir = run_dir / "seasonality_circuit"
     if not circuit_dir.exists():
         log.info("report: seasonality_circuit section skipped (no seasonality_circuit/ "
-                 "directory -- run run_seasonality_circuit.py first)")
+                 "directory -- run run_seasonality_circuit.py [study driver, "
+                 "dev branch] first)")
         return ""
 
     models = sorted({p.name.split("_stage")[0] for p in circuit_dir.glob("*_stage*.json")})

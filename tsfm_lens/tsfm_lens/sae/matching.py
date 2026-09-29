@@ -409,7 +409,8 @@ def add_causal_agreement(match_result: dict, ablation_a: dict | None,
 # The same causal second opinion, at ROLE granularity (ROADMAP.md sec 27).
 #
 # `match_cross_model_features` above has no caller outside
-# `crosscoder_eval.py`; the surface the report actually renders is
+# `crosscoder_eval.py` (study driver, dev branch); the surface the report
+# actually renders is
 # `role_matching.py`'s role correspondence table. So the causal check is
 # attached there too rather than only at a granularity nothing displays --
 # and by reusing `causal_agreement`/`causal_permutation_null` unchanged,

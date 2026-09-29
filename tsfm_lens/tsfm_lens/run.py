@@ -76,9 +76,10 @@ def _config_summary(path: Path) -> dict:
     the two stale-prose corrections this repo has already had to make).
 
     Parsed with `yaml.safe_load`, not `load_config`, on purpose:
-    `scaling_ladder_chronos.yaml`'s `ladder:` block is deliberately outside
-    the config schema, and a listing that could not show the configs that
-    need explaining most would be the wrong trade.
+    `scaling_ladder_chronos.yaml` (study driver seed config, dev branch)'s
+    `ladder:` block is deliberately outside the config schema, and a listing
+    that could not show the configs that need explaining most would be the
+    wrong trade.
     """
     import yaml
 
@@ -120,12 +121,13 @@ def _config_summary(path: Path) -> dict:
     if off:
         row["stages"] = "off: " + ",".join(off)
     if "ladder" in raw:
-        row["note"] = "expand with run_scaling_ladder.py --emit-configs"
+        row["note"] = "expand with run_scaling_ladder.py --emit-configs (study driver, dev branch)"
     return row
 
 
 def _print_config_listing(config_dir: Path) -> None:
-    """`--list-configs` (Functionality_Summary.md's config-sprawl finding).
+    """`--list-configs` (Functionality_Summary.md's config-sprawl finding;
+    that file is dev branch only, not on `main`).
 
     ~46 flat YAML files with no entry point is a real usability cost for
     someone who did not write them: the fastest way to find the right one was

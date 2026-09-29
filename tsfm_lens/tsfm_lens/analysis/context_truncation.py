@@ -2,7 +2,7 @@
 
 Distinct from two already-built, superficially similar diagnostics:
 
-- `analysis/phase_sensitivity.py` trims 0..patch_width-1 points off the
+- `analysis/phase_sensitivity.py` (dev branch) trims 0..patch_width-1 points off the
   context's FRONT (the oldest end) to test patch-boundary aliasing -- a
   small, sub-patch-width shift, holding the true context endpoint fixed.
 - `analysis/context_scaling.py` (ROADMAP.md sec 16 E20) also trims off the
@@ -27,8 +27,8 @@ model must forecast further into the future to reach the same calendar
 target.
 
 Pure numpy reduction over an already-computed `{avail_len: per-series MASE
-array}` mapping, mirroring `phase_sensitivity.py`'s own split between pure
-stats (here) and the I/O that calls `adapter.predict()`
+array}` mapping, mirroring `phase_sensitivity.py`'s (dev branch) own split
+between pure stats (here) and the I/O that calls `adapter.predict()`
 (`analysis/frontend.py`).
 """
 

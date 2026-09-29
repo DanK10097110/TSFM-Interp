@@ -1157,7 +1157,8 @@ def check_contrast_text(text: str, c: Contrast) -> str:
 
 
 # The marker `describe_contrasts` records instead of a refusal reason when a
-# chunk was never sent to the narrator. Read by `run_sae_compare.py` and by
+# chunk was never sent to the narrator. Read by `run_sae_compare.py` (study
+# driver, dev branch) and by
 # `report/derived.py::sae_contrast_chunks`, which both report three states --
 # narrated, refused, and deliberately deterministic -- because collapsing the
 # last two labels a run where nothing failed as a run of failures (sec 11.37).

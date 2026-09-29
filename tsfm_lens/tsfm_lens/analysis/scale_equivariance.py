@@ -57,7 +57,7 @@ def scale_equivariance_stats(point_orig: np.ndarray, point_unscaled: np.ndarray,
     # non-finite forecast; a non-finite residual would otherwise poison the
     # bootstrap mean silently. Excluded from the aggregate, counted rather
     # than hidden (`CLAUDE.md` sec 2.5), mirroring
-    # `phase_sensitivity.py::phase_sensitivity_stats`'s own exclusion of
+    # `phase_sensitivity.py::phase_sensitivity_stats`'s (dev branch) own exclusion of
     # near-zero-MASE series from its CV average.
     finite = np.isfinite(residual)
     n_nonfinite = int((~finite).sum())

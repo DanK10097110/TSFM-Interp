@@ -1794,7 +1794,7 @@ def sae_seed_floor(meta_sae: dict, interpretable_ratio: float = 2.0) -> pd.DataF
 
     - **A third of it was a control reporting its own success.**
       `mase_clean_window`/`mase_clean_token` are the FROZEN-STORE control
-      (`run_sae_repeat_variance.py`): the unpatched forecast cannot depend
+      (`run_sae_repeat_variance.py`, study driver, dev branch): the unpatched forecast cannot depend
       on an SAE seed, so their spread must be exactly zero. Twenty-six rows
       reading `sd 0.000000` are not twenty-six measurements; they are one
       verdict, and it belongs in a sentence. It is still checked -- a
@@ -2067,8 +2067,8 @@ def _chunk_state(c: dict) -> str:
     for one (sec 28.17), so `accepted: False` no longer means "the guard
     refused this". Collapsing the two would report a run where nothing
     failed as a run of failures, which is sec 11.37's shape and is exactly
-    the correction `run_sae_compare.py::_summary_state` already made one
-    level up.
+    the correction `run_sae_compare.py::_summary_state` (study driver, dev
+    branch) already made one level up.
     """
     if c.get("accepted"):
         return "narrator"
@@ -2186,8 +2186,9 @@ def sae_causal_repertoire(run_dir: Path) -> pd.DataFrame:
     and no model name, architecture family or positional index appears here.
 
     Returns an empty frame when the artifact is absent -- `run_sae_compare.py`
-    is a standalone driver like `run_sae_roles.py`, not a pipeline stage, so
-    its absence is the ordinary state of a run and not a failure.
+    (study driver, dev branch) is a standalone driver like `run_sae_roles.py`,
+    not a pipeline stage, so its absence is the ordinary state of a run and
+    not a failure.
     """
     doc = load_json_or_none(Path(run_dir) / "sae" / "comparison.json")
     prof = (doc or {}).get("capability_profile") or {}

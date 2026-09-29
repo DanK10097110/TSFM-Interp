@@ -97,8 +97,9 @@ def score_context_length_sweep(predict_fn: Callable[[np.ndarray, int], np.ndarra
     """Per-series MASE at each swept context length, target window held fixed.
 
     `predict_fn(contexts, horizon) -> point forecast [n, horizon]` -- callers
-    pass a closure over their own live adapter (see `run_context_scaling_sweep.py`)
-    so this stays model-agnostic and is testable with a planted stand-in.
+    pass a closure over their own live adapter (see `run_context_scaling_sweep.py`,
+    study driver, dev branch) so this stays model-agnostic and is testable
+    with a planted stand-in.
     """
     targets = full_series[:, max_context_len:max_context_len + horizon]
     n = full_series.shape[0]
