@@ -87,12 +87,13 @@ families**, and test every family for **cross-model transfer** — the concept
 atlas described in [`tsfm_lens/README.md`](tsfm_lens/README.md#concepts)
 (see also [`#sae`](tsfm_lens/README.md#sae)).
 
-An example run's report and artifacts will be published under `examples/` in
-the repo root — **coming with the first release run**; until then, the smoke
-report above and
-[`tsfm_lens/docs/worked_example.md`](tsfm_lens/docs/worked_example.md) (a
-section-by-section reading of one real TimesFM-vs-Chronos report) are the
-closest thing to a live example.
+**See a real run before running one:**
+[`examples/concept_atlas_v2/`](examples/concept_atlas_v2/) holds a complete
+four-model run (TimesFM, Chronos-2, Sundial, Chronos-Bolt). It contains the
+interactive `report.html`, the per-stage artifacts it was built from, the
+exact config, and a write-up of what the run found and which results held up
+on the sealed held-out split. For a section-by-section reading of a report,
+see [`tsfm_lens/docs/worked_example.md`](tsfm_lens/docs/worked_example.md).
 
 ## Install
 
@@ -161,6 +162,8 @@ correlational number can never be misread as causal:
 
 | Doc | What's in it |
 |---|---|
+| [`examples/concept_atlas_v2/`](examples/concept_atlas_v2/) | A complete four-model run: report, per-stage artifacts, config and findings write-up |
+| [`FINDINGS.md`](FINDINGS.md) | The curated results ledger: every result so far, with exact numbers, evidence class and a 1–5 score (its `ROADMAP.md` references live on `dev`) |
 | [`tsfm_benchmark/README.md`](tsfm_benchmark/README.md) | Leakage tiers, generators, archetypes, the audit, sealing/epochs, CLI |
 | [`tsfm_benchmark/configs/README.md`](tsfm_benchmark/configs/README.md) | Every config on `main`, what it builds, and how to add a real-data source |
 | [`tsfm_benchmark/example_runs/WALKTHROUGH.md`](tsfm_benchmark/example_runs/WALKTHROUGH.md) | Command-by-command walkthrough of both CLIs |

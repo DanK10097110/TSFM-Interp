@@ -1,0 +1,336 @@
+run:
+  name: concept_atlas_v2
+  out_dir: runs
+  device: cuda
+  dtype: bfloat16
+  seed: 0
+  keep_models_loaded: false
+data:
+  source: sealed
+  path: ../../benchmark_large_v2/public_dev
+  context_len: 512
+  horizon: 64
+  max_series: null
+  family_key: auto
+  smoke_series_per_family: 20
+models:
+- name: TimesFM
+  adapter: timesfm
+  checkpoint: google/timesfm-2.5-200m-pytorch
+  layer_regex: ''
+  batch_size: 32
+  capture_layer_stride: 2
+  kwargs: {}
+  random_init: false
+- name: Chronos-2
+  adapter: chronos2
+  checkpoint: amazon/chronos-2
+  layer_regex: ''
+  batch_size: 24
+  capture_layer_stride: 1
+  kwargs: {}
+  random_init: false
+- name: Sundial
+  adapter: sundial
+  checkpoint: thuml/sundial-base-128m
+  layer_regex: ''
+  batch_size: 16
+  capture_layer_stride: 1
+  kwargs: {}
+  random_init: false
+- name: Chronos-Bolt
+  adapter: chronos_bolt
+  checkpoint: amazon/chronos-bolt-small
+  layer_regex: ''
+  batch_size: 32
+  capture_layer_stride: 1
+  kwargs: {}
+  random_init: false
+alignment:
+  window: 32
+  sanity_check: true
+  min_diagonal_frac: 0.5
+  on_failure: warn
+  calibrate_amplitude: true
+  depth_axis: block
+extraction:
+  enabled: true
+  store_dtype: float16
+l0:
+  enabled: true
+  quantiles:
+  - 0.1
+  - 0.5
+  - 0.9
+  scale: mean_abs_diff
+  min_scale_frac: 0.05
+  noise_floor_repeats: 3
+  noise_floor_series: 16
+  calibration: true
+  horizon_resolved: true
+l1:
+  enabled: true
+  layer_stride: 1
+  max_rows: 20000
+  family_conditioned: true
+  min_family_series: 15
+  rsa: true
+  rsa_max_series: 800
+l2:
+  enabled: true
+  layer_stride: 1
+  lambdas:
+  - 0.001
+  - 0.01
+  - 0.1
+  - 1.0
+  val_frac: 0.25
+  max_rows: 40000
+  input_baseline: true
+l3:
+  enabled: true
+  corruptions:
+    noise:
+      snr_db: 0.0
+    detrend: {}
+    deseasonalize:
+      top_k: 2
+    frequency_shift:
+      factor: 2.0
+    level_shift:
+      position_frac: 0.6
+      scale: 3.0
+    spike:
+      count: 8
+      scale: 10.0
+    smooth:
+      kernel: 9
+    warp:
+      strength: 0.15
+    dropout:
+      frac: 0.15
+      n_blocks: 3
+  max_series: 800
+  patching:
+    enabled: true
+    layer_stride: 2
+    corruptions:
+    - deseasonalize
+    - noise
+    - level_shift
+    - spike
+    - warp
+    - dropout
+    max_series: 16
+    num_samples: 8
+    per_window: true
+    window_stride: 1
+    horizon_resolved: true
+  calibrate: none
+lens:
+  enabled: true
+  layer_stride: 1
+  max_series: 16
+  tuned: true
+  tuned_max_series: 800
+  val_frac: 0.25
+  lambdas:
+  - 0.001
+  - 0.01
+  - 0.1
+  - 1.0
+  crystallization_tol: 0.1
+  horizon_resolved: true
+attention:
+  enabled: true
+  patterns: true
+  max_series: 400
+  batch_series: 16
+  max_lag_tokens: 128
+  ablation: true
+  ablation_max_series: 16
+  head_layer_stride: 1
+  top_k: 5
+  resolution_mode: matched
+exemplars:
+  enabled: true
+  per_family: 3
+  max_families: 5
+stats:
+  enabled: true
+  n_boot: 2000
+  n_boot_heavy: 200
+  ci: 0.95
+  alpha: 0.05
+  min_series: 8
+internals:
+  enabled: true
+  layer_stride: 1
+  max_rows: 40000
+  probe_pca_dim: 50
+  probe_permutation_repeats: 5
+  probe_max_iter: 2000
+confirm:
+  enabled: true
+  source: sealed
+  path: ../../benchmark_large_v2/private_test
+  max_series: 800
+  require_seal: true
+  alpha: 0.05
+  concept_transfer_n_null: 2000
+clustering:
+  enabled: true
+  layer: auto
+  k: auto
+  pca_dim: 50
+  max_series: 800
+  use_umap: true
+layer_screen:
+  enabled: true
+  method: work_bend
+  budget_frac: 0.25
+  min_budget: 2
+  max_series: 100000
+  use_curvature: true
+  min_gap: 1
+  seed: null
+  stride: 1
+  require_full_capture: true
+  keep_store: false
+budget:
+  enabled: true
+  batch: 8
+  repeats: 5
+  warmup: 2
+  measure_predict: true
+  predict_repeats: 3
+frontend:
+  enabled: true
+  max_series: 64
+  quantization_resolution: true
+  scale_equivariance: true
+  scale_factors:
+  - 1000.0
+  - 0.001
+  context_truncation: true
+  context_truncation_n_points: 5
+  context_truncation_min_frac: 0.125
+  nan_handling: true
+  nan_frac: 0.05
+  nan_series: 8
+sae:
+  enabled: true
+  checkpoints: {}
+  targets: []
+  dict_size_mult: 8
+  k: 32
+  lr: 0.001
+  epochs: 60
+  batch_size: 4096
+  resample_dead_every_epochs: 5
+  aux_k: 64
+  aux_coef: 0.03125
+  aux_dead_steps: 20
+  min_train_steps: 720
+  aux_dead_steps_frac: 0.028
+  dict_size_policy: search
+  dict_size_ladder:
+  - 192
+  - 384
+  - 768
+  - 1536
+  - 3072
+  - 6144
+  max_dead_rate: 0.3
+  min_fidelity: 0.5
+  dict_size_search_seeds: 2
+  dict_size_search_margin: 0.03
+  n_seeds: 3
+  holdout_frac: 0.2
+  min_fidelity_gate: 0.85
+  max_abs_delta_mase: 0.25
+  layer_substitution_attempts: 2
+  forecast_preservation_max_series: 16
+  ground_truth_max_series: 2000
+  ground_truth_permutation_repeats: 3
+  ground_truth_permutation_max_features: 2000
+  real_data_enabled: true
+  real_data_source: Monash-University/monash_tsf
+  real_data_n_windows: 4000
+  real_data_pool_limit: 500
+  feature_ablation_enabled: false
+  feature_ablation_top_k: 8
+  feature_ablation_max_series: 64
+  feature_steering_enabled: false
+  feature_steering_top_k: 8
+  feature_steering_max_series: 64
+  feature_steering_strength_sigma: 2.0
+  persist_features: true
+  role_k: auto
+  role_min_silhouette: 0.1
+  role_matching_untrained_twin_runs: {}
+  role_matching_cosine_threshold: 0.5
+  role_matching_depth_tolerance: 0.15
+  describe_from_exemplars: true
+  concepts_enabled: true
+  concept_causal_only: true
+  concept_k: auto
+  concept_min_silhouette: 0.1
+  concept_min_members: 3
+  concept_misfit_cosine_gap: 0.3
+  concept_cards_max: 24
+  transfer_enabled: true
+  transfer_top_k: 20
+  transfer_n_null: 200
+  transfer_seed: 0
+  interest_weights:
+  - 0.5
+  - 0.3
+  - 0.2
+report:
+  enabled: true
+  title: "Concept Atlas \u2014 TimesFM 2.5, Chronos-2, Sundial, Chronos-Bolt"
+  verbose: true
+  verbose_series: 2
+  allow_partial: false
+corpus:
+  enabled: true
+  validation_report: ../../validation_large/validation_report.json
+concepts:
+  enabled: true
+  top_k_series: 8
+  n_null_directions: 16
+  max_series: 64
+  keep_forecasts: 3
+  n_features_per_rule: 12
+  describe: true
+  describe_top_features: 8
+  atlas_enabled: true
+  atlas_min_cosine: 0.9
+  atlas_min_members: 3
+  atlas_n_null: 200
+  atlas_family_min_members: 5
+  atlas_family_assign_min: 0.5
+  atlas_family_sil_tol: 0.02
+  n_sae_seeds: 3
+  transfer_p_method: exact
+  transfer_fdr_q: 0.05
+  transfer_max_redraw: 5000
+  profiles_enabled: true
+  profile_n_perm: 1000
+  min_relative_reach: 0.001
+  level_share_threshold: 0.9
+  shared_input_enabled: true
+  shared_input_n_null: 50
+  cf_enabled: false
+  cf_max_series: 64
+  cf_doses:
+  - 0.0
+  - 0.5
+  - 1.0
+  - 1.5
+  - 2.0
+  cf_n_null: 2000
+  cf_encode_min_spearman: 0.98
+  n_registered: 20
+  transfer_claim_mode: search
