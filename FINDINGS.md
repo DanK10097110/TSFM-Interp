@@ -348,6 +348,7 @@ These instructions are binding for every future session, human or agent.
   - The atlas has 19 concepts from 201 pooled causal features (63 assigned;
     min_cosine 0.9, complete linkage, ≥3 members).
 - **Evidence.** Descriptive taxonomy over causal (ablation) and correlational (top-k overlap, hypergeometric + BH) parts. **Status:** exploratory (dev).
+- **Replication (2026-09-29).** `runs/concept_atlas_v2` (v2 corpus, fixed Sundial; ROADMAP §37.11c), 29 targets, 27 tight concepts: again no 4-model concept (n_models 1:11, 2:15, 3:1, 4:0); sharing classes convergent 13, single-model 11, shared 2, partially shared 1 (stable only: 9 / 10 / 2 / 1). Convergent stays the most common multi-model class. Still dev.
 - **Reproduce.** `runs/full_report_run_4model/sae/concept_profiles.json`, `sae/concept_atlas.json`; `report/findings.json` `compare.1`.
 - **Ref.** ROADMAP §37.3, §37.11 P8 (~36929–36941).
 - **Score. 5/5.** The headline answer to the founding question on this panel: TSFMs converge on shared *forecast adjustments* far more than on shared *feature detectors*.
@@ -395,6 +396,7 @@ These instructions are binding for every future session, human or agent.
       parts, so it is provenance-heavy.
     - Concept 0, "strong raises seasonal": 4 claims. It is labelled
       convergent, yet features in other models select its series.
+  - **Replication on a different corpus (2026-09-29).** `runs/concept_atlas_v2` (v2 corpus, fixed Sundial; ROADMAP §37.11c), P7 search mode on the unpeeked v2 private split (800 series, epoch 0, first look): **20/20 confirmed**, Holm max 0.009995, private AUC 0.9708–0.9951; 6/20 private best features equal dev's. Caveat: the 20 claims come from 2 concepts (16 from concept 0, Chronos-2 + TimesFM "strong lowers level"; 4 from concept 9, Chronos-2 + Sundial).
   - **Other held-out results from the same epoch-1 confirmation.** Peak-CKA
     pair CKA 0.44 [0.43, 0.45]; 7/9 L3 fingerprint agreements (overall ρ
     0.50); Chronos-2 > others on `mixture` (ΔMASE 0.2222, p 0.0005).
@@ -549,7 +551,8 @@ These instructions are binding for every future session, human or agent.
     sampled models (Sundial). All 177 tests with no Sundial side are
     byte-identical before and after. Of the 89 scorable tests, 12 act
     differently. ROADMAP §37.8.
-- **Evidence.** Causal within-model, compared on shared inputs. **Status:** exploratory; corrected 2026-09-27.
+- **Replication (2026-09-29).** `runs/concept_atlas_v2` (v2 corpus, fixed Sundial; ROADMAP §37.11c), 1223 reciprocal-FDR tests: same causal effect 11, level only 52, shape only 29, no specific agreement 264, acts differently 64, not scorable 803. Of 420 scorable, 64 (15.2%) act differently (reference 12/89 = 13.5%). Runtime 10854.9 s.
+- **Evidence.** Causal within-model, compared on shared inputs. **Status:** exploratory; corrected 2026-09-27; replicated on the v2 corpus 2026-09-29.
 - **Reproduce.** `runs/full_report_run_4model/sae/shared_input_agreement.json` (`sae/shared_input_agreement.py`, commit `fc37ec0`; the pre-fix artifact is `shared_input_agreement.pre_seed_fix.json`).
 - **Ref.** ROADMAP §27.3 (~23844–23866), §37.8 P5b (~36309–36447).
 - **Score. 4/5.** Most of the "models act differently" headline came from comparing effects on different inputs. Hold the input fixed before comparing causal effects across models.
@@ -606,6 +609,7 @@ These instructions are binding for every future session, human or agent.
   - Membership is more model-segregated than chance (purity p = 0.0348).
   - The tight complete-linkage atlas leaves 69% of features unassigned.
 - **Evidence.** Descriptive. **Status:** exploratory, one run.
+- **Replication (2026-09-29).** `runs/concept_atlas_v2` (v2 corpus, fixed Sundial; ROADMAP §37.11c): 293 causal features → 9 families, 288/293 (0.9829) assigned; null again not beaten (p_n_families 1.0, p_frac_assigned 0.9851); "segregated by model"; 3 tight concepts split. Two families' titles are near-identical ("Near-term steerers & Long-range steerers" / "Long-range steerers & Near-term steerers"), an open labelling issue (ROADMAP §37.11c).
 - **Reproduce.** `sae/concept_families.py::run_concept_families` on `runs/full_report_run_4model` → `sae/concept_families.json`.
 - **Ref.** ROADMAP §37.11b (incl. R2).
 - **Score. 4/5.** It reframes "concepts" in effect space as a readable tiling rather than discovered units. It also explains why tight concepts are small and why near neighbours fall outside them.
@@ -808,6 +812,7 @@ These instructions are binding for every future session, human or agent.
     - Chronos-2's edge over Chronos-Bolt (1.68 vs 2.13) costs 5.4× the
       compute (8.65 vs 1.59 GFLOPs/series).
     - Chronos-2 > others on `mixture` is held-out confirmed (SH-18).
+  - **v2 corpus (2026-09-29).** `runs/concept_atlas_v2` (v2 corpus, fixed Sundial; ROADMAP §37.11c): dev median MASE Chronos-2 1.1251, TimesFM 1.1829, Sundial 1.3335, Chronos-Bolt 1.4913 (naive 2.6829, seasonal naive 2.0280). Held-out on v2 private (800 series): overall TimesFM-vs-Chronos-2 effect −0.1478 [−0.2106, −0.0883], p 0.0005, where positive favours TimesFM, so Chronos-2 is better; the registered claim that Chronos-2 is better on `mixture` confirms again (0.3073 [0.2085, 0.4126], p_holm 0.0005, n 240).
 - **Evidence.** Behavioral + descriptive. **Status:** partly held-out confirmed.
 - **Reproduce.** `runs/full_report_run_large/{budget/model_budget.json,l0/metrics.parquet,confirm/confirmation.json}`; 4-model `l0/summary.json`, `report/findings.json` `l0.*`, `budget.*`.
 - **Ref.** ROADMAP §24.7(20) (~19395–19453).
@@ -843,7 +848,7 @@ These instructions are binding for every future session, human or agent.
 - **Re-check (2026-09-27).** Preprocessing is ruled out: native library forecasts match the adapters to 0.002–0.028 context sd, and flat fractions match. Flat is 2–4% on periodic contexts vs 49–61% on non-periodic ones. The overall share is driven by the real-derived tier (BM-06). Ref. ROADMAP §32.7 addendum.
 - **Score. 4/5.** Flat forecasts are mostly optimal behavior on noise-like context, and they expose a real, unstated per-model difference in reversion to the mean.
 
-#### PM-10 · The Sundial adapter feeds raw-scale input (checkpoint normalization bypassed)
+#### PM-15 · The Sundial adapter feeds raw-scale input (checkpoint normalization bypassed)
 - **Claim.**
   - Sundial's remote code normalizes per series only in `generate()`. The adapter calls `forward()`,
     which defaults to `revin=False`, and whose own revin branch is broken for num_samples > 1. So
@@ -860,6 +865,8 @@ These instructions are binding for every future session, human or agent.
     0.029955 at ×0.001 (was 3.3741 / 38.4318). v2 electricity flat share 1.0 → 0.08.
   - The same defect was in `generic_hf` on Timer: 49.7334 / 3.8053 → 0.0198 / 0.0214.
   - Existing runs' Sundial activations and concept results predate the fix.
+  - **In-pipeline check (2026-09-29).** `runs/concept_atlas_v2` (v2 corpus, fixed Sundial; ROADMAP §37.11c): frontend residual 3.302e-05 (×1000) / 0.03318 (×0.001), vs TimesFM 1.965e-06, Chronos-2 0.009253, Chronos-Bolt 0.008653 at ×0.001.
+  - **Correction (2026-09-29).** This entry was first filed as PM-10, an ID already in use (Chronos-T5 decoder attention). Renumbered to PM-15; IDs are never reused.
 - **Reproduce.** Scratch scripts `sundial_scale.py`, `sundial_revin.py`, `sundial_seqpar.py` (session scratchpad); `frontend` findings in `runs/full_report_run_4model`.
 - **Ref.** ROADMAP §32.7 D1 (S1 bullet).
 - **Score. 4/5.** A silent adapter-level input bug that the pipeline's own frontend diagnostic caught numerically, but that nobody read as a bug. It invalidates Sundial on any large-scale corpus.
@@ -1434,5 +1441,5 @@ See SH-20. **4/5.**
 - **Evidence.** Behavioral / descriptive. **Status:** measured on dev, orchestrator scratch scripts; not in the pipeline.
 - **Reproduce.** Stored predictions in `runs/full_report_run_4model` by generator; corpus task list in `configs/large_run.yaml`.
 - **Ref.** ROADMAP §32.7 addendum (2026-09-27); PM-07; MN-14.
-- **Remedy (D1, opt-in).** `configs/large_run_v2.yaml` adds `autogluon/chronos_datasets` electricity_hourly and traffic twins for each real-derived generator. The naive-flat proxy (lag1 < 0.2 and not periodic) halves corpus-wide, 0.2093 → 0.1067. Actual model flat share on dev falls correspondingly, v1 → v2: TimesFM 0.4943 → 0.3254, Chronos-2 0.4912 → 0.3202, Sundial 0.3917 → 0.2715, Chronos-Bolt 0.4881 → 0.3171. Sundial's sequential_par flat share rises 0.20 → 0.72; diagnosed as an adapter defect (PM-10). No full pipeline rerun on v2 yet. Ref. ROADMAP §32.7 D1.
+- **Remedy (D1, opt-in).** `configs/large_run_v2.yaml` adds `autogluon/chronos_datasets` electricity_hourly and traffic twins for each real-derived generator. The naive-flat proxy (lag1 < 0.2 and not periodic) halves corpus-wide, 0.2093 → 0.1067. Actual model flat share on dev falls correspondingly, v1 → v2: TimesFM 0.4943 → 0.3254, Chronos-2 0.4912 → 0.3202, Sundial 0.3917 → 0.2715, Chronos-Bolt 0.4881 → 0.3171. Sundial's sequential_par flat share rises 0.20 → 0.72; diagnosed as an adapter defect (PM-15). No full pipeline rerun on v2 yet. Ref. ROADMAP §32.7 D1.
 - **Score. 4/5.** The ~50% flat share and small ablation effects are partly a property of the corpus, not of the models. Rebalancing the real-derived source would change what the causal battery can see.

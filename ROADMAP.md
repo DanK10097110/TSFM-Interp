@@ -37352,6 +37352,54 @@ Spherical KMeans k = 3…12 on all rows gives 0.314–0.344, flat.
   - Volatility dampeners
   - Volatility amplifiers
 
+### 37.11c V2 — Full Concept Atlas run on the v2 corpus with the fixed Sundial adapter ✅ DONE (2026-09-29)
+
+**Run.** `runs/concept_atlas_v2` (config `configs/concept_atlas_v2.yaml` = the `full_report_run_4model` body on
+`benchmark_large_v2/public_dev`, D1 corpus; confirm on the unpeeked `benchmark_large_v2/private_test`, epoch 0).
+Main at `141d7bd` (S1 Sundial revin fix included). Exit 0; report 18 sections, 126 findings. This invocation ran 13:05 → 19:31 on 2026-09-28;
+the shared-input agreement step alone took 10854.9 s (1223 tests vs 288 on the reference run).
+
+**Findings (all dev = exploratory unless marked held-out).**
+- **Frontend.** Sundial's scale-equivariance residual is 3.302e-05 (×1000) / 0.03318 (×0.001) context-sd units,
+  in line with the other three (TimesFM 1.784e-06 / 1.965e-06, Chronos-2 0.008717 / 0.009253, Chronos-Bolt
+  0.008448 / 0.008653). The reference run's 3.374 / 38.43 is gone: the S1 fix holds inside the pipeline.
+- **L0 median MASE (dev, 965 series).** Chronos-2 1.1251, TimesFM 1.1829, Sundial 1.3335, Chronos-Bolt 1.4913;
+  naive 2.6829, seasonal naive 2.0280. (Reference v1 run: 1.1129 / 1.1469 / 1.3670 / 1.3931.) Sundial moves from
+  last-but-one tied with Bolt to clearly ahead of Bolt.
+- **Held-out confirm (v2 private, 800 series, first look, `repeated_look: false`).**
+  - Registered 47 hypotheses, 31 replicable.
+  - TimesFM vs Chronos-2 overall ΔMASE −0.1478 [−0.2106, −0.0883], p 0.0005 (favours Chronos-2).
+  - The registered family claim (Chronos-2 better on `mixture`, dev ratio 1.1049) confirms: 0.3073 [0.2085, 0.4126],
+    p_holm 0.0005 (n 240).
+  - CKA (TimesFM xf.4 ↔ Chronos-2 b.7) replicates: dev 0.4262 → private 0.4253 [0.4162, 0.4423].
+  - L3 corruption fingerprints replicate (overall ρ 0.5098 [0.4889, 0.5273]); e.g. noise −0.7380 → −0.7423.
+  - **Concept transfer (P7 search mode): 20/20 confirmed**, Holm max 0.009995, private AUC 0.9708–0.9951.
+    Only 6/20 private best features equal the dev feature (as in epoch 1). Caveat: the 20 top-margin claims come
+    from only 2 concepts (16 from concept 0 "strong lowers level", Chronos-2 ×4 + TimesFM ×1; 4 from concept 9,
+    Chronos-2 + Sundial), so this is 2 concepts replicating, not 20 independent ones.
+  - Exchangeability was not tested: no `cross_split.json` for the v2 corpus (rendered as a skip reason).
+- **Concept chain (29 SAE targets, vs 13).**
+  - Per-target KMeans: 9 concepts, 24/29 targets non-modular.
+  - Atlas: 293 causal features, 86 assigned (29.4%), 27 tight concepts; n_models per concept 1:11, 2:15, 3:1, 4:0.
+  - Seed stability: 22/27 = 0.8148 stable (n_sae_seeds 3).
+  - Atlas transfer: 1581 tests, 1251 uncorrected reciprocal, 1223 reciprocal after BH.
+  - Profiles: convergent 13, single-model 11, shared 2, partially shared 1 (stable only: 9 / 10 / 2 / 1);
+    27 of 76 parts provenance-driven.
+  - Shared-input agreement (P5b), 1223 tests: not scorable 803, no specific agreement 264, level only 52,
+    shape only 29, acts differently 64, same causal effect 11. Of 420 scorable, 64 (15.2%) act differently
+    (reference: 12 of 89 = 13.5%).
+  - Families (F1): 9 families, 288/293 assigned (0.9829); structure null not beaten (p_n_families 1.0,
+    p_frac_assigned 0.9851); cross-model verdict "segregated by model"; 3 tight concepts split.
+- **Replication of the reference run's qualitative answers on a different corpus + fixed Sundial:** no 4-model
+  concept (SH-16), convergent the most common multi-model class (SH-16), a continuum not clusters (CA-10), most
+  cross-model "disagreement" is non-scorable or non-specific (CA-06), concept transfer confirms held-out (SH-18).
+
+**Open issue found in review (labels).** Two v2 families get near-identical titles because the title joins the
+top two channels in rank order: "Near-term steerers & Long-range steerers" (80) and "Long-range steerers &
+Near-term steerers" (61). They are distinct centroids (different channel ranks), but a reader cannot tell them
+apart. Fix before publishing the report as the example: title by the family's *distinguishing* channels (vs the
+other families), or order the joined nouns canonically and add the differentiating channel. Not yet done.
+
 ### 37.12 What this changes elsewhere in the plan
 
 Edited in place (2026-09-22), not restated here: §35.0 (re-scoped to SAE
