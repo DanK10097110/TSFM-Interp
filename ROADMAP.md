@@ -959,6 +959,20 @@ Three things a session picking this up must know before opening §34:
   pipeline") → package E. §22.3's other halves stay parked; §22.8's three
   outright rejections are untouched.
 
+**21 (queued first, 2026-09-29). 📋 DESIGN ONLY — §38, publication readiness
+(user-directed).** The JMLR draft's two weakest points for a reviewer:
+- the causal battery has never been scored against a known answer (MP-07 is a
+  rate above chance, not specificity);
+- every causal-concept number is exploratory (confirm re-tests only the 20
+  correlational transfer claims).
+
+§38 designs K1 (a forecaster with planted concepts and decoys), K2 (register
+causal, atlas and agreement claims; confirm once on a fresh v2 epoch), K3 (a
+6–7-model panel), K4 (a practical use: failure prediction and routing from
+internals against the quantile-width baseline, **proposed, awaiting the
+user**) and K5 (paper edits). Start at **§38.6**. K1 has a stop gate that
+blocks K2.
+
 **20 (queued ahead of 18 and 19). 📋 DESIGN ONLY — §37, the Concept Atlas
 (added 2026-09-22, user-directed).** The repo's most interesting claim — *this
 concept is learned, shared across models, and causally moves the forecast* —
@@ -37518,3 +37532,748 @@ report numbers, not write Findings.
    and P3 (transfer per atlas concept) once the atlas exists. The
    `min_cosine` default comes from the calibration recorded in §37.4's atlas
    Findings.
+
+
+## 38. Publication readiness — known-answer validation, held-out causal concepts, a wider panel, a practical use, and a self-contained paper (added 2026-09-29, user-directed — DESIGN ONLY, NOT IMPLEMENTED)
+
+### 38.0 Status, provenance, and the one-paragraph version
+
+🔴 **DESIGN ONLY. Nothing in this section is implemented.** Every grounding
+fact was checked against the code on 2026-09-29 and is cited by `file:line`
+(paths under `tsfm_lens/tsfm_lens/` unless stated otherwise). Recorded numbers
+cite this file's sections or `FINDINGS.md` IDs. No run was made, and no
+artifact changed.
+
+**Provenance.** The user asked for an assessment of the JMLR paper
+(`paper/main.tex`, 29 pages; MLOSS version `paper/mloss/main.tex`, 4 pages)
+and of its chances. The review named five improvements:
+1. show the method recovers known answers;
+2. confirm the causal-concept claims on held-out data;
+3. add more models;
+4. show a practical use (steering was proposed);
+5. make the paper self-contained and soften the novice claim.
+
+The user's direction: *"design into roadmap the 1,2,3, and 5 suggestions. for
+5 though, the novice claim can be softened, just say it was created with the
+intention that any novice would be able to understand. Don't implement yet,
+create detailed designs for now. Think about 4 and whether there is a
+different practical use that could work and align with the purpose of the
+repo."*
+
+This section holds those designs: **K1** (known answers), **K2** (held-out
+causal concepts), **K3** (wider panel), **K4** (a practical use, proposed and
+awaiting a user decision), and **K5** (paper edits).
+
+**The one-paragraph version.** The paper's weakest point for a reviewer is
+that the causal-concept machinery is only ever validated against its own
+nulls. No experiment shows that the battery *finds* a causal direction that is
+known to exist, or *rejects* one known not to. MP-07's "2.49–6.61× chance" is a
+chance-rate comparison, not specificity against known negatives, and its own
+within-dictionary control has randomly nominated atoms clearing about 4 of 12.
+Only a planted model can tell "many atoms really move forecasts" apart from
+"the null is lenient" (grounding for K1, §38.1.1).
+
+The second weakest point is that every causal-concept number in the case study
+is exploratory. `confirm` re-tests only the 20 `concept_transfer` claims, which
+are correlational (`analysis/hypotheses.py:183-253`, `analysis/confirm.py:566-748`).
+
+K1 builds a forecaster with planted concepts and scores the whole chain
+against it. K2 registers causal claims and confirms them once on a fresh
+epoch. K3 widens the panel from 4 to 6–7 models. K4 replaces steering with a
+prediction test that the repo's doctrine can referee. K5 is a list of paper
+edits. The recommended order, with its reasoning, is §38.6.
+
+**Who this is written for.** A session with no memory of this conversation,
+implementing from this text alone. Choices that are judgment calls are marked
+**(judgment)**, and those that belong to the user are collected in §38.7.
+
+### 38.1 K1 — Known-answer validation: a forecaster with planted concepts
+
+#### 38.1.1 Why, grounded
+
+- **No mock has planted internal structure.** `models/mock.py:65-95` (`_MockNet`)
+  is a patch embedding, N residual attention+MLP blocks and
+  `head(h.mean(dim=1))`, with default `nn` init under `torch.manual_seed(seed)`
+  (`mock.py:71`). The variants are `mock_patch`, `mock_step`, `mock_wave` and
+  `mock_encdec` (`mock.py:183-214`). No direction encodes anything.
+- **Existing planted-answer tests are unit-level with stubs.**
+  - `tests/test_concept_atlas.py:53` `_three_direction_fixture` plants 3
+    directions in battery space.
+  - `tests/test_shared_input_agreement.py:280` uses a linear `_SAE` stub.
+  - `sae/crosscoder_eval.py:591` `planted_sources()` plants 6 causes over 8
+    dims, but on activations only, with no forecaster.
+  - None of them plants structure in a model's weights and runs the chain from
+    SAE training to shared-input agreement.
+- **The chain already runs end to end on mocks.** `tests/test_concept_stage.py:31-62`
+  runs `extract → sae → concepts` on `mock_patch` + `mock_step`. The limitation
+  is that it uses smoke data, which carries no ground truth
+  (`tsfm_lens/data.py:271-307`), and `configs/smoke.yaml` has no `sae:` or
+  `concepts:` section (`SAEConfig.enabled` defaults to False, `config.py:407`).
+- **What MP-07 measures** (FINDINGS MP-07): (feature, channel) cells whose effect
+  beats the row-matched null's p95, against 0.05 × cells. That is a rate above
+  chance. It is not a false-positive rate on features known to be inert.
+
+#### 38.1.2 The planted forecaster (`models/mock_planted.py`, built-in adapter `mock_planted`)
+
+A hand-constructed network in which a designated **planted layer** writes known
+directions into the residual stream, and the head reads a known linear
+function of them. It is built on `_MockNet`'s block structure so that hooks,
+`token_patch`, spans and tier derivation behave exactly as for the other
+mocks, making it tier 3 by derivation (`models/base.py:188-213`).
+
+1. **Feature-carrying embedding.** The first `c` coordinates of each patch token
+   are fixed, hand-set functions of that patch's raw values, computed after the
+   model's own per-series normalization:
+   - patch mean;
+   - least-squares slope;
+   - residual standard deviation;
+   - projections onto sin/cos at the corpus's two most common periods;
+   - a spike statistic (max |x − median| / MAD).
+
+   The remaining coordinates are a random projection, as in `_MockNet`. This
+   gives the planted block something to read without learned weights.
+2. **The planted block** (`blocks.P`, P = 2 of 5 by default) adds, for each
+   planted concept `k`, a vector `a_k(x) · d_k` to every token of the
+   last-context window. Here `a_k(x) = ReLU(w_kᵀ f(x) − τ_k)` is a
+   *thresholded* readout of an input property, so the concept is sparse and
+   fires only on the series that have the property (threshold set so that each
+   concept fires on 10–30% of the corpus). `d_k` are unit directions.
+3. **Superposition controls.** The `d_k` are **not** orthogonal: pairwise cosine
+   is drawn in [0, 0.3] **(judgment)**. Background random-projection
+   coordinates keep a realistic noise floor. Remaining blocks are initialized
+   near identity (weights × 0.05), so the planted signal survives to the head
+   while the stack is not trivially linear.
+4. **The head** adds, per concept, a known effect on the forecast:
+
+   | Concept kind | Effect on the forecast |
+   |---|---|
+   | level | `+β_k · a_k` added to every horizon step |
+   | trend | `β_k · a_k · t/H` ramp |
+   | seasonality | `β_k · a_k` × a sinusoid at the concept's period |
+   | dispersion | scale of the quantile band only |
+
+   The effects map one-to-one onto battery channels (`sae/response.py:42`
+   `CHANNELS`: level, trend, seasonal, dispersion). A **dose multiplier** `s`
+   scales every `β_k` so effect size can be swept.
+5. **Decoys (the known negatives).** Each is a direction written exactly like a
+   concept, so the only difference is causal:
+   - **input-only**: the direction encodes a property, but the head's weight on
+     it is 0. It is correlated with the input and causally inert, so it must be
+     rejected by the battery and must still be found by a correlational probe.
+   - **sub-null**: the head reads it with an effect below the random-direction
+     null's median (β set from a calibration run). It must be rejected.
+   - **opposite-effect twin**: used only in the model pair (item 6). It shares
+     the same input readout as a concept in model A, but has the opposite sign
+     in model B.
+6. **A planted model pair** for the cross-model rungs. `mock_planted` takes a
+   `plant_set` kwarg, and two configurations share a vocabulary of planted
+   concepts:
+
+   | Class | Definition | Expected verdict |
+   |---|---|---|
+   | shared | same readout, same effect in A and B | `sharing_class: shared`; shared-input agreement "same causal effect" |
+   | convergent | different readout, same effect | same effect, but transfer should **not** be reciprocal; `convergent` |
+   | same input, opposite effect | identical readout, opposite sign | reciprocal transfer; agreement "acts differently" — the only planted test of the lower-tail rule (MN-18) |
+   | unique | present in A only | `single-model` |
+
+7. **The ground-truth manifest.** The adapter writes
+   `known_answer/planted_manifest.json` with, per planted object: id, kind
+   (concept or decoy class), `d_k`, readout weights and threshold, effect
+   channel, sign, β, dose, and model(s). The scorer reads only this file and
+   the run's artifacts.
+
+**Invariants the adapter's unit tests must prove analytically** (they carry
+the ground truth, so they are tested first):
+- (i) self-patch exactly 0.0 and cross-patch nonzero at the planted layer, so
+  `analysis/response_reach.py:69` passes;
+- (ii) projecting out `d_k` at the planted layer changes the forecast by
+  exactly the planted component (tolerance 1e-5, float32) on series where
+  `a_k > 0`, and by 0 where `a_k = 0`;
+- (iii) an input-only decoy's projection changes the forecast by exactly 0;
+- (iv) two identical `predict()` calls are identical (§11.49).
+
+#### 38.1.3 Corpus and runs
+
+- **Corpus.** A small synthetic-only sealed corpus, because smoke data has no
+  ground truth. Build it from `tsfm_benchmark` with the `parametric` and
+  `random_parametric` families only, via an existing example config with
+  `--max-count` (e.g. 600 series). Set `data.source: sealed` so
+  `sae/ground_truth.py:129` `load_ground_truth_table` supplies
+  `seasonal_period_dominant` (without it the seasonal channel is unavailable:
+  `sae/ablation_run.py:118-125`).
+- **Grid.**
+  - 5 construction seeds × dose `s ∈ {0.25, 0.5, 1, 2, 4}` × the planted pair
+    (A, B) **(judgment: 25 runs)**.
+  - Mock nets are tiny (dim 40–64, 5 layers), so the `sae` and `concepts`
+    stages cost minutes each on CPU. The whole grid is about 1–3 CPU hours,
+    run in the background (CLAUDE.md §2.8).
+- **Config.** `configs/known_answer.yaml`:
+  - sae targets = the planted layer plus one non-planted layer (the negative
+    control layer);
+  - `concepts.enabled: true`;
+  - `sae.persist_features: true`;
+  - `concept_min_members` at its default of 3, with at least 3 planted
+    concepts of each effect kind, so the atlas can form them.
+
+#### 38.1.4 What is scored (`analysis/known_answer.py`, driver `run_known_answer.py`)
+
+Each metric is reported per dose with a CI over construction seeds, and over
+series where the metric is series-level.
+
+| Rung | Metric | Pass criterion (pre-set, **judgment**) |
+|---|---|---|
+| SAE recovery | For each planted `d_k`, the max cosine of any decoder row with `d_k`; recovered if ≥ 0.9 | report the curve; no gate (an SAE limit, not a battery limit) |
+| Battery sensitivity | Fraction of *recovered* planted concepts whose best-matching feature clears ≥1 channel, and clears the **planted** channel with the **planted sign** | ≥ 0.8 at s = 1 |
+| Battery specificity | Clearing rate of the features best-matching input-only and sub-null decoys; per-cell false-positive rate over all (feature, channel) cells on the **non-planted control layer** | per-cell FPR ≤ 0.10 (nominal 0.05) |
+| Correlation ≠ causation | Input-only decoys: a ground-truth correlation probe (`sae/ground_truth.py`) finds them, the battery rejects them | both hold in ≥ 4/5 seeds |
+| Concepts | Adjusted Rand of atlas concepts vs planted labels; planted concepts recovered as atlas concepts | ARI reported; recovery ≥ 0.8 at s = 1 |
+| Transfer | Shared and opposite-effect planted pairs reciprocal; convergent pairs not reciprocal | confusion matrix |
+| Sharing class | `concept_profiles` class vs planted class | confusion matrix; accuracy reported |
+| Shared-input agreement | shared → "same causal effect"; opposite → "acts differently"; decoys → "not scorable" | confusion matrix |
+
+**The power curve is the paper's figure**: sensitivity and FPR against dose,
+with the real models' median causal effect (0.0395 context sd, MN-15) marked
+on the dose axis. That places the case study's features on a measured
+detection curve.
+
+**Stop gate.** If per-cell FPR > 0.10 on the control layer, or sensitivity at
+s = 1 < 0.5, stop. Diagnose the battery before K2 spends an epoch or the paper
+cites the battery's causal counts. **An FPR above nominal is itself a
+FINDINGS entry**, whatever the diagnosis.
+
+#### 38.1.5 Tests and planted regressions (CLAUDE.md §9)
+
+Each regression must be confirmed to fail its test:
+
+| Test | Planted regression that must make it fail |
+|---|---|
+| `test_mock_planted_projection_removes_exactly_the_planted_component` | set the head weight for concept 0 to 0 |
+| `test_input_only_decoy_is_causally_inert` | give the decoy a head weight of 1e-3 |
+| `test_known_answer_scorer_counts_decoy_clear_as_false_positive` | swap the decoy/concept labels in a fixture manifest |
+| `test_known_answer_sensitivity_uses_planted_channel_and_sign` | score "any channel" instead |
+| `test_opposite_effect_pair_is_acts_differently` | a p95-only disagreement rule, i.e. the MN-18 v1 rule |
+
+The fixture's confusable case is a decoy whose readout equals a real
+concept's, differing only in head weight.
+
+#### 38.1.6 Where it lands, and evidence class
+
+- Code:
+  - `models/mock_planted.py`, registered in `models/__init__.py:24-30`
+    `ADAPTERS` (built-in, because tests depend on it);
+  - `analysis/known_answer.py`;
+  - `run_known_answer.py` (dev driver);
+  - `configs/known_answer.yaml`.
+- Outputs:
+  - a FINDINGS entry (method validation, MP-class);
+  - a paper table and figure (§38.5);
+  - optionally a "Method validation" card in the report, rendered only when
+    `known_answer/` exists (builder `requires`).
+- Evidence class: **method validation on a constructed model.** The paper must
+  say what it does not show: that real TSFM concepts are shaped like planted
+  ones.
+
+### 38.2 K2 — Held-out confirmation of the causal-concept claims
+
+#### 38.2.1 Why, grounded
+
+**What is registered today** (`analysis/hypotheses.py`):
+- `l0_family`, replicable (:55-63);
+- `l0_archetype`, not replicable (:70-83);
+- `l1_peak_cka` (:96-103);
+- `l2_gain::{direction}`, not replicable (:115-124);
+- `l3_agreement::{corruption}`, replicable (:136-143; the module docstring at
+  :21-23 wrongly says it is not — fix in passing);
+- `clustering_ami`, not replicable (:155-161);
+- `concept_transfer` / `concept_transfer_frozen` (:256-392).
+
+On v2, 47 claims are registered and 31 are replicable: 20 concept_transfer,
+9 l3, 1 l0 and 1 l1.
+
+**What confirm cannot re-test today:**
+- **The ablation battery.** `sae/ablation_run.py:79-141` scores on the dev
+  store (`encode_series_level(sae, store, …)`) and reads ground truth from
+  `cfg.data.path` (:120).
+- **Shared-input agreement.** `sae/shared_input_agreement.py:659` reads
+  `space="sae"` features from the dev store (:216-218) and `data.contexts()`
+  (:730).
+- **Sharing classes.** `sae/concept_profiles.py:594-614` and `:775-798`
+  compute them as a union-find over input-agreement pairs, not over causal
+  verdicts.
+- **Families and the 64.4% null rate** are also unregistered.
+
+**What exists to build on:**
+- `confirm` already captures private window activations at registered targets
+  (`analysis/confirm.py:516-542`).
+- It already encodes them with the saved **dev** SAE checkpoint
+  `sae/<model>/<layer>.pt`, never retrained (:545-563).
+- Those checkpoints, including the `@r1`/`@r2` seed replicates, exist in the
+  full run `tsfm_lens/runs/concept_atlas_v2`, which is not the slimmed example
+  folder.
+
+**Epochs.** Every existing private split is consumed:
+- v1 epochs 0–2;
+- v2 epoch 0, first look, `repeated_look: false`.
+
+Minting uses `tsfm_benchmark/build_pipeline/builder.py`:
+- `_EPOCH_STRIDE = 100_000_000` (:32);
+- private seed = public seed + `private_seed_offset` (1,000,000) (:141, :210-212);
+- `regenerate_private(epoch=N)` (:248) seals a private split only.
+
+**Power.** `analysis/power.py` supports only paired-bootstrap deltas
+(`mde_paired_bootstrap`). There is no MDE for any concept claim.
+
+#### 38.2.2 New claim types (all frozen: dev SAE checkpoints, dev feature ids, dev channel and sign)
+
+1. **`concept_causal::{model}::{layer}::{feature}::{channel}`** — "ablating this
+   feature on its private top-k firing series moves channel c with sign s
+   beyond the row-matched random-direction null."
+   - **Selection.** From the dev `*_ablation.json` of each target, take
+     features that clear, ranked by effect / q95 margin. Keep the top
+     `concepts.n_registered_causal` (default 32 **(judgment)**), stratified so
+     each model contributes at least 4. Prefer features that are members of
+     seed-stable atlas concepts (`concept_stability.json`).
+   - **Test.** On private series, encode with the frozen SAE. Take the
+     feature's private top-k (k = 8, as dev). Run `feature_ablation_fingerprints`
+     (`sae/response.py:755`) with `candidates=[feature]`. Statistic: the signed
+     mean effect on channel c, in the planted direction.
+   - **p-value.** With the dev default of 16 null directions, p ≥ 1/17, which
+     cannot survive Holm over 32 claims. Two options:
+     - use the P3 adaptive tail p (`transfer_p_method: adaptive`, §37.6),
+       validated there against many-draw exact p;
+     - or raise `n_null_directions` to about 700 for registered features only
+       (cost: 700 × 8 rows × forward passes per claim, chunked; for 32 claims
+       about 180k forward passes of one layer patch).
+
+     **Recommend the adaptive p with 200 draws (judgment).** The reach probe
+     must pass on private first. A withheld target makes its claims "not
+     testable", never "not confirmed".
+2. **`concept_atlas::{concept_id}`** — "this seed-stable atlas concept's members
+   still form a concept on private data."
+   - **Test.** Re-run the battery on private for every dev atlas member, with
+     frozen features. This is the battery part of the concepts stage, about
+     750 s on dev (13,377 s total − 10,855 s agreement − 1,768 s seeds).
+   - **Statistic.** The fraction of member pairs with private cosine ≥
+     `atlas_min_cosine` (0.9), and the cosine of the private centroid with the
+     dev centroid.
+   - **Confirmed** if the centroid cosine ≥ 0.9 and at least half of the
+     member pairs hold. Its null is the same statistic for random same-size
+     member sets drawn from the private causal pool (row-matched per model).
+3. **`shared_input_agreement::{src}::{dst}::{verdict}`** — register the dev
+   pairs with a *definite* verdict (the 11 "same causal effect", and a
+   stratified subset of about 30 of the 64 "acts differently"; **judgment**).
+   - **Test.** Re-run `shared_input_agreement` on private with frozen features
+     and the private top-k as U.
+   - **Confirmed:** a "same" claim must beat both floors' p95 on both
+     statistics again. An "acts differently" claim must fall below both floors'
+     p05 on at least one statistic.
+   - Cost: about 10,855 s / 1,223 tests ≈ 8.9 s per test, so about 6 min for 41.
+4. **`concept_structure` (directional aggregates, one claim each):**
+   - (a) "no atlas concept has causal members in all four models": recompute
+     the atlas on the private battery vectors of the dev causal pool;
+     confirmed if the private atlas also has none;
+   - (b) "among activation-prominent features, more than half are causally
+     null": private lower 95% CI bound > 0.5 (dev 64.4%, FINDINGS MN-14);
+   - (c) "convergent concepts outnumber shared ones among multi-model
+     concepts": private count comparison with a bootstrap over series.
+
+   (c) is low-powered at 16 multi-model concepts. Register (a) and (b), and
+   report (c) as exploratory **(judgment)**.
+5. **Not registered, with the reason rendered:** "families do not beat the
+   shuffle null". It is a negative structure result; confirming a null needs an
+   equivalence margin that no one has justified. It stays descriptive.
+
+#### 38.2.3 Plumbing
+
+- **Register.** Add the new candidate builders to `analysis/hypotheses.py`:
+  `_concept_causal_candidates`, `_atlas_candidates`, `_agreement_candidates`
+  and `_structure_candidates`.
+  - Each entry carries `artifact_sha256` for every dev artifact it reads:
+    `*_ablation.json`, `concept_atlas.json`, `concept_stability.json`,
+    `shared_input_agreement.json`, and each `.pt` checkpoint's sha256.
+  - Ids must include model **and** layer **and** feature: the §37.10 key-collapse
+    trap, where 20 claims had 9 ids. `build_registry`'s duplicate refusal
+    (:403-407) stays.
+- **Confirm.** Add `_confirm_concept_causal`, `_confirm_atlas`,
+  `_confirm_agreement` and `_confirm_structure` to `analysis/confirm.py`.
+  - All of them go through one private activation cache: extend
+    `_capture_private_window_acts` to capture every target any claim needs,
+    once.
+  - The battery gets `data` = the private BenchmarkData, and
+    `periods_full` = the private corpus's ground-truth periods, read through
+    the sealed private manifest rather than `cfg.data.path` (a new optional
+    `ground_truth_path` argument on `run_ablation_target`, defaulting to
+    today's behavior).
+- **Artifact compatibility (invariant 13).** New keys go under
+  `confirmation.json → concept_replication`: `causal`, `atlas`, `agreement` and
+  `structure`. The existing transfer keys stay byte-identical.
+- **Multiplicity.** One Holm family per claim type. All families are declared
+  in the ledger with their `min_attainable_p_holm`, and the ledger's
+  `satisfiable` check must pass **before** the private split is opened: a
+  `--doctor` row and a refusal inside `confirm`.
+- **Power.** Add `mde_ablation_effect` to `analysis/power.py`: resample the dev
+  per-row effects and null draws at the private k and compute the smallest
+  effect / q95 detectable with power 0.8. Report it beside each causal claim, so
+  a non-replication reads as "absent" or "underpowered".
+- **Sampled models (§11.50).** Every compared `predict()` pair on private uses
+  the *same* seed as its baseline. Sundial is a destination in agreement
+  claims (the P5b trap, §37.8).
+- **Report.** The confirm section gains four sub-tables. The concept evidence
+  ladder's L6 rung ("confirmed on private data") becomes reachable for causal
+  claims, not only transfer (`report/derived.py` `concept_verdicts`).
+
+#### 38.2.4 The epoch
+
+- **Mint v2 private epoch 1** with `regenerate_private(epoch=1)` on
+  `benchmark_large_v2`. It needs the real-data path for the real-derived tiers.
+  The v1 epochs 1–2 were minted this way, so the path works, but re-verify
+  network access to Monash/ETT first.
+- Seal-verify, and give the run a new name (`concept_atlas_v2_epoch1`).
+- **Register before minting.** The registry hash is recorded before the private
+  corpus is built, so "registered before looking" holds by construction.
+- **One look covers every new claim type.** Existing transfer claims may be
+  re-registered in frozen mode, which would be their fourth replication, at the
+  cost of one more Holm family.
+
+#### 38.2.5 Tests and planted regressions
+
+| Test | Planted regression that must make it fail |
+|---|---|
+| `test_concept_causal_claim_ids_unique_per_model_layer_feature` | an id missing the layer |
+| `test_confirm_battery_uses_private_ground_truth_periods` | read `cfg.data.path` |
+| `test_confirm_causal_uses_frozen_dev_sae_not_retrained` | a retrain call |
+| `test_withheld_private_target_is_not_testable_not_failed` | map withheld to confirmed False |
+| `test_confirm_refuses_unsatisfiable_holm_family_before_opening` | remove the check |
+| `test_agreement_acts_differently_needs_lower_tail_on_private` | a p95 rule |
+
+Fixtures: the K1 planted pair. Its opposite-effect concept is the decoy for
+"acts differently", and its input-only decoy is the decoy for causal claims.
+
+**Dependency.** K1's stop gate must pass first. A lenient battery would spend
+the one look confirming a lenient statistic.
+
+### 38.3 K3 — A wider panel
+
+#### 38.3.1 Candidates, grounded
+
+Probe results come from `docs/probe_sweep.md` and FINDINGS MN-25 / MP-01;
+architecture rows follow §19.1 (ROADMAP ~13536-13548, every row tagged
+`[VERIFY]`).
+
+| Model | Status in the repo | What it adds | Cost |
+|---|---|---|---|
+| **Timer** (`thuml/timer-base-84m`) | ✅ `generic_hf`; 96-step spans recovered by measurement (MP-01) | coarsest tokens in the panel; decoder-only | config only; point-only head, so calibration renders "not measured" |
+| **Time-MoE** (`Maple728/TimeMoE-50M`) | ✅ resolves via `generic_hf` (480 per-step tokens, 12 blocks, width 384); `mlp_info` warns | first per-timestep **decoder-only** (Chronos-T5 is enc-dec); first MoE | config only; MoE routing not analyzed (state it, per §2.5) |
+| **Toto** (`Datadog/Toto-Open-Base-1.0`) | ❌ crashes in AutoConfig; needs `toto-ts` | decoder-only patch model with a robust scaler front end, a live test of the Sundial normalization pitfall | contrib adapter, 300–800 lines (inferred from existing 150–414) |
+| **TTM** (`ibm-granite/granite-timeseries-ttm-r1`) | ❌ `tinytimemixer` needs `granite-tsfm` | **first non-transformer** (MLP-mixer): tier 2 at most, attention stage skipped with the reason rendered | contrib adapter; tests the tier machinery on a real model |
+| MOMENT (`AutonLab/MOMENT-1-small`) | ❌ needs `momentfm` | second encoder-only, masked | **[VERIFY] whether a zero-shot forecast path exists**; if forecasting needs a trained head, what is interpreted is no longer the released model → exclude |
+| Moirai | ❌ needs `uni2ts`; license cc-by-nc-4.0; multi-patch-size means `token_width` is not one number | — | exclude, reason recorded (license + alignment) |
+| Lag-Llama | contrib adapter exists; disjoint lag reads defeat contiguity | — | stays routed to reduced scope (MN-25) |
+
+**Recommended panel (judgment):** the current 4 + Timer + Time-MoE, which is
+config-only, + one of TTM or Toto. TTM adds architectural diversity; Toto adds
+a transformer with a different front end. That makes 7 models. **User decision
+(§38.7 Q3).**
+
+#### 38.3.2 What must change before a 7-model run
+
+- **Statistics.** 21 pairs × 5 families = 105 L0 family tests. At the v2
+  run's `n_boot: 2000`, the Holm floor is 105/2000 = 0.0525 > 0.05, so the
+  correction is unsatisfiable (`analysis/l0_behavioral.py:568`,
+  `analysis/power.py:89` flags it). Set `stats.n_boot ≥ 5000` in the new
+  config. `--doctor` computes the floor before the run.
+- **Transfer scopes** grow from 12 to 42 directed pairs. BH stays per ordered
+  pair and leg.
+- **The shared-input agreement bottleneck.** 10,855 s for 1,223 tests on 4
+  models, and the reciprocal-transfer count scales roughly with directed pairs,
+  so ~3.5× means about 10.5 h for this step alone.
+  - Add an opt-in cap, `concepts.agreement_max_tests_per_pair`: top-N by
+    transfer margin per ordered pair. Default `None` reproduces today's
+    behavior (§2.1 doctrine). Declare it a stage input on `concepts`
+    (§11.51).
+  - **(judgment)** N = 60 gives at most 2,520 tests, about 6.2 h.
+- **Total cost estimate (inferred).**
+  - Today: `sae` 8,594 s + `concepts` 13,377 s of a 23,151 s run.
+  - The per-model parts scale ×1.75, and the per-pair parts ×3.5.
+  - The estimate is 15–25 h on one A5000. Run in the background, staged
+    (`--stages extract,…,sae`, then `concepts`, then the rest) so a failure
+    does not repeat SAE training.
+- **Environment.** `uni2ts`, `momentfm`, `time-moe`, `toto-ts` and
+  `granite-tsfm` are not installed in cudaPy.
+  - D2.2 says never downgrade `transformers` for one model. If a package pins
+    an incompatible version, that model is dropped, not the pin moved.
+  - Every added package goes into `DEPENDENCIES.md` with its reason
+    (invariant 12).
+- **Per-model onboarding.** Follow the D2.1 checklist in order:
+  1. `--probe-adapter`;
+  2. license;
+  3. `--discover-layers` with an anchored regex;
+  4. read the **full** per-layer `--check-alignment` table (invariant 7);
+  5. `--discover-spans` stride 1, compared by IoU;
+  6. conformance;
+  7. smoke config, then a paired real run with one existing model.
+
+  Sampled heads need seeded `predict()` (§11.50). Record each adapter's
+  normalization check: the frontend scale residual against its peers (the
+  PM-15 flag).
+- **Which results to re-derive.** Every RQ answer in the paper, on the
+  7-model dev run:
+  - is there still no concept spanning all models;
+  - is convergent still modal;
+  - does the families-vs-null result hold;
+  - Kendall's W over 21 pairs instead of 6. At 6 pairs, W = 0.28 with p = 0.07
+    was underpowered, so 21 pairs is a real test.
+
+#### 38.3.3 Held-out interaction with K2
+
+K2 and K3 both want the one fresh epoch.
+
+- **Recommended (judgment):** run K3's 7-model panel on dev first. Then build
+  K2's registry from *that* run and confirm once on v2 epoch 1. One epoch then
+  confirms causal claims on the panel the paper reports.
+- **The faster alternative:** run K2 now on the 4-model run, then run K3 as
+  dev-only. This spends epoch 1 on a panel the paper then widens, so the
+  wider panel's causal claims stay exploratory.
+
+**User decision (§38.7 Q2).**
+
+### 38.4 K4 — A practical use that fits the repo (PROPOSED — awaiting a user decision)
+
+#### 38.4.1 Why not steering
+
+- **It already exists and was measured.** `analysis/steering.py` (§16 E14) and
+  `sae/eval.py::feature_steering_effects`: steering the best
+  `seasonal_amplitude_max` feature by ±2σ moves the forecast as predicted in
+  TimesFM and **backwards** in Chronos-T5-Base, twice (FINDINGS CA-05). A
+  steering demo would restate a known result.
+- **It is outside the purpose.** The repo exists to *understand and compare*
+  models with typed, refereed evidence (CLAUDE.md §1). Editing a model is a
+  within-model intervention with no comparative question attached. No
+  practitioner deploys a TSFM with a hand-steered residual stream, so it would
+  read as a trick rather than a use.
+
+#### 38.4.2 The proposal: "does looking inside tell you when to distrust a forecast, and which model to use instead?"
+
+This is the practitioner's question, and the repo already refereed a
+behavioral answer to it. §20 H4 (`analysis/agreement.py`, FINDINGS PM-12)
+found that cross-model disagreement predicts error (Spearman 0.716) but
+**loses to each model's own quantile width** in 10 of 11 model-runs. That sets
+the bar: a practical use of *interpretability* must beat the free,
+output-only baseline. That is exactly the gain-over-baseline doctrine L2
+already follows (invariant 3).
+
+**U1 — failure prediction from internals, beyond the free baseline.**
+
+- **Target, per series and model:** log MASE, plus a binary "failure"
+  indicator: MASE above that series' seasonal-naive MASE.
+- **Baseline features** (free at inference, no internals):
+  - the model's own mean relative quantile width;
+  - the forecast's flatness (the collapse signal, PM-07);
+  - the context's catch22 features (pycatch22, the extractor
+    `benchmark_validation` already uses).
+- **Internal features:**
+  - (a) the 9 family activations at the last context window at each SAE
+    target (series-level `space="sae"`, `store.load(..., space="sae")`);
+  - (b) per-series lens convergence depth: the first layer whose lens forecast
+    is within tolerance of the final one. The lens computes per-series MASE in
+    memory (`analysis/lens.py:176`, `per_series`) but persists only the mean
+    curve and CIs (:181-195), so persisting a per-series convergence depth is
+    a new key (invariant 13);
+  - (c) the norm of the last-window residual stream at the crystallization
+    layer **(judgment; cheap)**.
+- **Method.** Ridge (log MASE) and logistic (failure) regressions, cross-fitted
+  over series folds stratified by generator family (§11.38). Score = Spearman
+  (resp. AUROC) of the *baseline + internals* model minus the *baseline* model.
+  CI by series cluster bootstrap. Per model, never pooled; per family as a
+  secondary.
+- **The registered claim (joins K2's one look):** for model M, internals add a
+  positive gain whose private lower CI bound is > 0.
+- **Evidence class:** **predictive (behavioral)**, explicitly not causal. The
+  report must say that a feature predicting failure is not a cause of failure.
+
+**U2 — per-series model choice (secondary endpoint, same features).**
+
+- For each series, route to the model with the lowest predicted MASE.
+- Report the realized MASE of four policies on private data:
+  - routing on baseline features only;
+  - routing on baseline + internals;
+  - the best single model;
+  - the oracle.
+- **The value of interpretability is the gap between the first two routings.**
+  This turns the repo's research question "what each model is better at"
+  (CLAUDE.md §1) into a held-out prediction instead of per-family averages.
+
+**Why it fits.**
+- It is comparative: it needs the whole panel.
+- It reuses artifacts every full run already writes (SAE features, lens,
+  L0 per-series metrics in `l0/metrics.parquet`: `model, series_id, family,
+  archetype, generator, mase, …`).
+- It follows the gain-over-baseline and series-resampling doctrines, and is
+  refereed on sealed data.
+- The concept families give each prediction a readable *why*: which family's
+  activation carries the weight.
+
+**The honest expectation.** H4 lost to the same kind of baseline, so U1 may
+lose too. A clean negative ("the band you already have is as good as looking
+inside") is still a publishable, useful statement for practitioners, and
+FINDINGS records it either way.
+
+**Implementation sketch.**
+- `analysis/reliability_from_internals.py`, a pure reduction over run
+  artifacts plus the one new lens key.
+- Standalone driver `run_reliability_from_internals.py` (dev) first. Promote
+  it to a report section only if U1 is positive on dev.
+- Cost: seconds to minutes once artifacts exist. Private scoring needs private
+  SAE features and lens depths, which K2's private capture can produce in the
+  same pass.
+
+**Tests:**
+- a planted fixture where one internal feature carries failure information
+  that the baseline lacks (gain > 0), plus a decoy internal feature that
+  duplicates the baseline (gain ≈ 0);
+- regression plants: an in-sample, not cross-fitted, fit; pooling across
+  models; and ranking on float16 (§8 "Library dtypes").
+
+#### 38.4.3 Alternative considered: fragility cards from counterfactual stress tests
+
+The idea: use each model's concepts and L3 fingerprints to predict which
+structural input change it mishandles, generate targeted counterfactual series
+with the benchmark's dose ladders, and verify on fresh series.
+
+It is weaker for two reasons:
+- The behavioral half is already answered per family by L0.
+- The mechanistic half leans on knob→concept specificity, which was a
+  confirmed negative twice: 0/98, then 0/151 (FINDINGS MN-17).
+
+Kept as a fallback, not recommended.
+
+### 38.5 K5 — Paper edits (self-contained; softened accessibility claim)
+
+#### 38.5.1 Soften the novice claim
+
+The user's wording: *"created with the intention that any novice would be
+able to understand."* Replace every present-tense capability claim with an
+intent claim:
+
+| File:line (2026-09-29) | Now | Replace with |
+|---|---|---|
+| `paper/sections/03_principles.tex:24` | "P7. Accessible by default. The deliverable is one HTML file a non-specialist can read" | "P7. Written for newcomers. The deliverable is one HTML file, designed with the intention that a reader new to interpretability can follow it" |
+| `paper/sections/04_architecture.tex:184` | subsection "The report: interpretability for non-specialists" | "The report: designed to be readable by newcomers" |
+| `paper/sections/04_architecture.tex:188` | "written so that a reader without interpretability training can follow it" | "designed with the intention that a reader without interpretability training can follow it" |
+| `paper/sections/02_related.tex:53` | table row "One-command, novice-readable report" | "One-command report designed for non-experts" |
+| `paper/sections/09_usage_limitations.tex:50` | "a report for non-specialists" | "a report designed to be understandable by newcomers" |
+| `paper/mloss/main.tex:74` | "a report that a non-specialist can read" | "a report designed so that a newcomer can read it" |
+
+Keep the limitations sentence stating that comprehension was not measured.
+
+#### 38.5.2 Self-containment audit
+
+The paper cites 43 `\fid{}` ledger IDs in the main text (counted 2026-09-29).
+**Rule:** every main-text claim states its number, its comparison (null,
+floor or baseline) and its n, or points to a table or figure *in the paper*.
+The ID stays as a pointer only.
+
+A heuristic scan (a sentence containing an ID but no digit) flags these bare
+citations:
+- `04_architecture.tex`: MP-09 (split exchangeability, has numbers in the
+  previous clause, OK), MP-01, MP-02;
+- `05_methods.tex`: SH-20;
+- `07_case_study.tex`: SH-18, MN-21, DE-01, DE-08;
+- `09_usage_limitations.tex`: MN-25 (has numbers, OK), MP-05.
+
+For each, add the number and method in one clause:
+- MP-01: "IoU 1.0 on 6 checkpoints";
+- MP-02: "a 96-step token on 32-step windows reaches at most ⅓";
+- SH-18: "19/20, 20/20 and 20/20 on three draws";
+- DE-08: "0 of 3 selectors agree";
+- MP-05: "alive atoms scale with effective dimension, exponent 1.02";
+- and so on, taking each number from the FINDINGS entry.
+
+Also:
+- The ledger appendix (`paper/sections/appendix.tex`) already abridges each
+  claim with numbers. Add a column "In paper" naming the section or
+  table that carries it, so a reviewer can go from ID to evidence without the
+  repo.
+- The controls table (Table 6) is self-contained. Keep its ID column.
+
+#### 38.5.3 Absorbing K1–K4 into the paper (page budget: stay under 30 including references)
+
+- **K1** → a new subsection "Known-answer validation" in Methods (about ½
+  page): the planted-model table and the power-curve figure. It replaces
+  "the battery discriminates (MP-07)" in RQ1 with the measured sensitivity and
+  FPR.
+- **K2** → Table `tab:results` status column; a fourth panel in
+  `fig:heldout`, with causal claims confirmed on the private split
+  (`make_figures.py`, new panel); and RQ2/RQ3 text changing "exploratory" to
+  the measured replication.
+- **K3** → every case-study number changes. Regenerate figures with
+  `paper/figures/make_figures.py --run <new run>`, and do a text-number pass
+  against the new artifacts. **Never edit numbers by hand from memory; quote
+  from the artifact** (CLAUDE.md §9).
+- **K4** → one paragraph plus one small table (U1 gain per model, U2 routing
+  MASE) in the case study, if the user approves K4.
+- **Budget.** About +1.5 pages. Offset by cutting §8's "smaller cases"
+  paragraph and the related-work methods paragraph by a third **(judgment)**.
+- **Other pre-submission items** (not designs; user decisions from the same
+  conversation):
+  - corresponding-author postal address and email (JMLR requires them; the
+    user asked not to list their email, so this needs a choice);
+  - affiliations;
+  - the AI-use statement;
+  - a cover letter;
+  - one track at a time: main track or MLOSS, not both concurrently.
+
+### 38.6 Ordering, cost, and gates
+
+| # | Item | Cost | Blocked by | Gate |
+|---|---|---|---|---|
+| 1 | **K5.1** soften the accessibility claim | minutes | — | rebuild the paper, grep the PDF text |
+| 2 | **K5.2** self-containment pass | ~0.5 session | — | re-run the bare-citation scan: zero hits |
+| 3 | **K1** planted forecaster + scorer | ~1.5 sessions + ~2 CPU-h (background) | — | 🔴 **stop if per-cell FPR > 0.10 or sensitivity(s=1) < 0.5** |
+| 4 | **K3** panel onboarding (Timer, Time-MoE: config; TTM/Toto: adapter) | ~0.5 session config-only; +1–2 sessions per adapter | user choice Q3 | each model passes the D2.1 checklist, alignment read in full |
+| 5 | **K3** 7-model dev run | 15–25 GPU-h (background, staged) | 4; `n_boot ≥ 5000`; agreement cap decided | `--doctor` multiplicity satisfiable |
+| 6 | **K4** U1/U2 on dev | ~1 session, CPU | 5 (or the current run); user approval Q4 | registered only if dev gain > 0 |
+| 7 | **K2** register (from run 5, or the current 4-model run) | ~1 session | K1 gate; Q2 | registry hashed **before** minting |
+| 8 | **K2** mint v2 epoch 1 + confirm once | ~1–3 GPU-h (background) | 7 | one look; `repeated_look: false` |
+| 9 | **K5.3** absorb results into both papers | ~1 session | 3, 5, 8 (6) | rendered-PDF check, pages < 30 / MLOSS body ≤ 4 |
+
+Every GPU or long CPU step goes to a background agent, briefed to report
+numbers, not write Findings (CLAUDE.md §2.8). Only the orchestrating session
+writes Findings here and in FINDINGS.md.
+
+### 38.7 Open questions — user decisions
+
+1. **K4.** Approve U1/U2 (failure prediction and routing from internals,
+   against the quantile-width baseline) as the practical-use experiment, or
+   the fallback §38.4.3, or none.
+2. **K2/K3 order.** Confirm on the 7-model panel (recommended: K3 dev first,
+   then one look), or confirm the current 4-model run now.
+3. **K3 panel.** Timer + Time-MoE + TTM (architectural diversity), or +
+   Toto (a transformer with a different front end), or both (8 models,
+   `n_boot` ≥ 7000, cost rises further).
+4. **K2 size.** About 32 causal + ~22 atlas + ~41 agreement + 2 structure
+   claims, each type its own Holm family. Fewer claims give more power per
+   claim.
+5. **K1 dose grid and construction seeds.** 5 × 5 as designed, or fewer for a
+   first pass.
+
+### 38.8 Traps that apply, named so they are not rediscovered
+
+- **§11.49** — capture with autocast on, patch in `predict()` precision
+  (autocast off). The planted forecaster must be tested in both.
+- **§11.50** — the same seed for every compared `predict()` pair on private
+  data; Sundial and Chronos-T5 sample.
+- **§11.37 / MN-18** — "not scorable" and "not testable" are third states,
+  never failures. Disagreement needs the lower tail.
+- **§37.10 key collapse** — claim ids carry model, layer, feature and channel.
+- **§11.38** — strata-aware sampling for every private subset and CV fold.
+- **§8 "Library dtypes"** — cast float16 store reads to float64 before ranking
+  (K4's Spearman/AUROC).
+- **§11.51** — every new config field is classified as a stage input in the
+  same edit: `concepts.n_registered_causal`,
+  `concepts.agreement_max_tests_per_pair`, `stats.n_boot` changes.
+- **§11.24** — before comparing the 7-model run to v2 numbers, `git log` the
+  shared paths between the two runs' dates.
+- **Artifact paths** — build paths to `*_ablation.json` and `.pt` with each
+  stage's own helper (`ablation_run.ablation_path`); real layer names contain
+  dots.
