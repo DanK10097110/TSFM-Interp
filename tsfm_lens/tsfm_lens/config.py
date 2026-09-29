@@ -187,6 +187,13 @@ class LensConfig:
     # (in addition to the whole-horizon-averaged number) from the same
     # already-computed skip-lens forecasts, no new forward passes.
     horizon_resolved: bool = True
+    # ROADMAP.md sec 38.4 K4: number of series whose per-series convergence
+    # depth is persisted to `lens/convergence.npz`. 0 keeps the legacy sample
+    # (no extra forward pass); a larger value forecasts a separate stratified
+    # sample in batch-sized chunks. `stage_input: False`: it only sizes that
+    # additive artifact, no legacy lens artifact reads it, and fingerprinting
+    # it would mark every older run stale. Change it with `--force lens`.
+    depth_max_series: int = field(default=0, metadata={"stage_input": False})
 
 
 @dataclass
