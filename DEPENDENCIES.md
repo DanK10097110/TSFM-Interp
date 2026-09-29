@@ -26,9 +26,29 @@
 > a new gotcha. `torch` in that env was `2.12.0` (vs. this file's verified
 > `2.9.1+cu130`) and worked with no observed issue for that run, but was
 > not deliberately re-verified package-by-package the way the `tsfmPy` env
-> below was — **this file's exact-version table (§3) still describes only
-> `tsfmPy`**; treat any other environment as "spot-check the pins in §5
-> before trusting it," not as covered by this file.
+> below was — *(superseded 2026-09-29: §3 now describes `cudaPy`, whose torch
+> is 2.12.0; see the Refresh note above)*; treat any other environment as
+> "spot-check the pins in §5 before trusting it," not as covered by this file.
+>
+> **Refresh (2026-09-29): the table in §3 now describes `cudaPy`, the
+> environment that produced the published numbers.** The `runs/concept_atlas_v2`
+> manifest records torch 2.12.0, scikit-learn 1.7.2, numpy 2.1.0, pandas 2.3.3,
+> zarr 2.18.7, transformers 4.57.6, timesfm 2.0.2, chronos 2.3.1, python
+> 3.12.13, CUDA 12.9, RTX A5000. §3 was re-derived from `import X;
+> X.__version__` in that env. The earlier `tsfmPy` (Windows) values that
+> differ are kept in prose where they explain a verification (§1).
+>
+> **Stale pip dist-infos, and which version is authoritative.** `cudaPy`
+> holds leftover `*.dist-info` directories from older pip installs that are
+> shadowed by the conda packages actually on `sys.path`: `torch-2.9.1+cu130`
+> (imported: conda `pytorch` 2.12.0, `cuda129` build), `scikit_learn-1.9.0`
+> (imported: 1.7.2), `datasets-3.6.0` (imported: 2.19.2) and `pandas-2.2.3`
+> (imported: 2.3.3). `pip list` / `pip show` / `conda list` can therefore
+> report a version that is not the one running (`conda list` shows datasets
+> 3.6.0 and pandas 2.2.3 as `pypi_0`). **The `import`-time `__version__` is
+> authoritative**; `pycatch22` and `timesfm` expose no `__version__`, so their
+> dist-info version is used (single dist-info each, no shadowing).
+> `--verify-provenance` records import-time versions.
 >
 > **Update this file whenever a library version changes** — a new pin, a
 > loosened/tightened bound, a newly-discovered fragile interaction. See
@@ -52,6 +72,9 @@ sdv 1.14.0 (imports ctgan/deepecho)  ->  imports cleanly
 torch.randn(1000,1000, device="cuda") @ itself  ->  OK
 ```
 
+(These figures are the 2026-08-04 `tsfmPy` verification; on `cudaPy` the
+same checks pass with torch 2.12.0, CUDA 12.9 and an openblas-backed numpy,
+see §3.)
 All four coexist in the single `tsfmPy` conda-forge environment, on Python
 3.12.13. **`tsfmPy` is the one environment for the whole repo** — both
 `tsfm_benchmark`/`benchmark_validation` (CPU-only workloads: generation,
@@ -81,13 +104,14 @@ conda activate tsfmPy
 
 # Core numeric/ML stack — pin mkl explicitly (see §4 "why pinned")
 conda install -c conda-forge numpy=2.1.0 mkl=2024.2.2 scipy pandas \
-    scikit-learn pyyaml jinja2 tqdm zarr=2.18.7 plotly=5.24.1 \
-    pycatch22 umap-learn dtaidistance datasets=2.21.0 tsbootstrap=0.7.1 \
+    scikit-learn=1.7.2 pandas=2.3.3 pyyaml jinja2 tqdm zarr=2.18.7 plotly=5.24.1 \
+    pycatch22 umap-learn dtaidistance datasets=2.19.2 tsbootstrap=0.7.1 \
     sdv=1.14.0 -y
 
-# GPU-capable torch stack (CUDA 13.0 build; swap the index URL / build for
-# a different CUDA version or CPU-only — see PyTorch's own install matrix)
-pip install torch==2.9.1+cu130 --index-url https://download.pytorch.org/whl/cu130
+# GPU-capable torch stack. The reference environment (cudaPy) runs conda-forge
+# pytorch 2.12.0 (cuda129 build); the earlier tsfmPy env used the pip wheel
+# torch==2.9.1+cu130 (--index-url https://download.pytorch.org/whl/cu130).
+conda install -c conda-forge "pytorch=2.12.0=cuda129*" -y
 
 # Model libraries (real-checkpoint adapters)
 pip install transformers==4.57.6 timesfm==2.0.2 chronos-forecasting==2.3.1
@@ -96,7 +120,8 @@ pip install transformers==4.57.6 timesfm==2.0.2 chronos-forecasting==2.3.1
 # checkpoint that contrib adapter targets, not for the core five hand-written
 # adapters above. gluonts + lightning installed cleanly against this env's
 # torch==2.9.1+cu130 / transformers==4.57.6 with no downgrade of either
-# (ROADMAP.md Item D2).
+# (ROADMAP.md Item D2; the same gluonts/lightning also import under
+# torch 2.12.0 in cudaPy).
 pip install gluonts==0.17.0 lightning==2.6.6   # models/contrib/lag_llama_adapter.py
 
 # tsfm_benchmark + tsfm_lens themselves, editable -- two SEPARATE packages,
@@ -121,12 +146,12 @@ pin harder.
 
 | Package | Version | Source | Why this exact version matters |
 |---|---|---|---|
-| `python` | 3.12.13 | conda-forge | — |
+| `python` | 3.12.13 | conda-forge | Same in `cudaPy` and the manifest. |
 | `numpy` | 2.1.0 | conda-forge | Golden-hash regression test (`CLAUDE.md` §7 invariant 1, `ROADMAP.md` sec 15 A8) is **currently green** against this exact version in this environment (re-verified 2026-08-06). The leading cross-version-instability hypothesis was checked directly (`default_rng(0).choice(100,5,replace=False)` and `.normal(size=5)` compared bit-for-bit against numpy 1.26.4 in an isolated venv) and **did not reproduce** — both primitives are identical across 1.26.4 and 2.1.0. The originally-reported mismatch (`CLAUDE.md` §11.13, a from-scratch environment on an unspecified earlier session) remains unexplained; still don't bump numpy casually, but the specific "choice isn't stream-stable" story is refuted for these two versions, not confirmed. |
-| `mkl` | 2024.2.2 | conda-forge | Must match `numpy` 2.1.0's build era. A newer MKL (2025+, e.g. pulled in transitively by some `sdv`/pytorch installs) causes an unhandled SEH crash (`0xc06d007f`) on **any** matmul with this numpy build (`CLAUDE.md` §11.13). Verified together with CUDA torch 2.9.1+cu130 today with no crash (§1). |
+| `mkl` | 2024.2.2 (tsfmPy only; **not installed in `cudaPy`**, which uses `nomkl` + openblas 0.3.33) | conda-forge | Must match `numpy` 2.1.0's build era. A newer MKL (2025+, e.g. pulled in transitively by some `sdv`/pytorch installs) causes an unhandled SEH crash (`0xc06d007f`) on **any** matmul with this numpy build (`CLAUDE.md` §11.13). Verified together with CUDA torch 2.9.1+cu130 today with no crash (§1). |
 | `scipy` | 1.18.0 | pip (pypi) | — |
 | `pandas` | 2.3.3 | conda-forge | — |
-| `scikit-learn` | 1.9.0 | conda-forge | — |
+| `scikit-learn` | 1.7.2 | conda-forge | Earlier revision of this file listed 1.9.0 (a stale pip dist-info, not what is imported). Matches the `concept_atlas_v2` manifest. |
 | `pyyaml` | 6.0.3 | conda-forge | — |
 | `jinja2` | 3.1.6 | conda-forge | Report templating (`tsfm_lens/report/report.py`). |
 | `plotly` | 5.24.1 | conda-forge | Report figures; `tsfm_lens/report/report.py` loads plotly.js 2.32.0 from CDN separately (embedded `<script>` tag, not this pip package). |
@@ -134,10 +159,10 @@ pin harder.
 | `pycatch22` | 0.4.5 | conda-forge | catch22/catch24 feature extraction (`benchmark_validation/features.py`). |
 | `umap-learn` | 0.5.12 | conda-forge | 3D embedding for the validation report / `tsfm_lens` clustering map. |
 | `dtaidistance` | 2.4.0 | conda-forge | Fast C DTW for the leakage gate and shape matcher; both have a numpy fallback if this is absent. |
-| `datasets` | 2.21.0 | conda-forge | **Must stay `<3`.** `datasets>=3` removed script-based dataset loading entirely, and `Monash-University/monash_tsf` is script-backed — a hard `RuntimeError`, not a warning (`CLAUDE.md` §11.9). |
+| `datasets` | 2.19.2 | conda-forge | **Must stay `<3`.** `datasets>=3` removed script-based dataset loading entirely, and `Monash-University/monash_tsf` is script-backed — a hard `RuntimeError`, not a warning (`CLAUDE.md` §11.9). |
 | `tsbootstrap` | 0.7.1 | pip (pypi) | Public API was fully rewritten at some version before this; `generators.py:block_bootstrap` targets this version's functional `bootstrap(X, method=MovingBlock(...), ...)` API, not the older class-based one (`CLAUDE.md` §11.10). |
 | `sdv` | 1.14.0 | conda-forge | `PARSynthesizer` (the `sequential_par` generator, `CLAUDE.md` §11.11). No `random_state` parameter at this version — that generator's reproducibility is best-effort, not bit-exact, by design. Pulls in `ctgan` 0.12.1 / `deepecho` 0.8.1. |
-| `torch` | 2.9.1+cu130 | pip (pytorch.org wheel) | CUDA 13.0 build; confirmed working against the installed driver (580.88) and this numpy/mkl pair (§1). A CPU-only build works too for anything not needing GPU, but this repo's real-checkpoint `tsfm_lens` runs need the CUDA build. |
+| `torch` | 2.12.0 (conda `cuda129_generic_py312_h5a42d78_200`, CUDA runtime 12.9) | conda-forge | Matches the `concept_atlas_v2` manifest (driver 535.216.03, RTX A5000). Earlier revision listed 2.9.1+cu130 (tsfmPy pip wheel; its dist-info is still present in cudaPy but shadowed). Confirmed working against this numpy (§1 records the earlier 2.9.1 check). A CPU-only build works too for anything not needing GPU, but this repo's real-checkpoint `tsfm_lens` runs need the CUDA build. |
 | `transformers` | 4.57.6 | pip (pypi) | Backend for the Chronos adapter. Installing this + `timesfm`/`chronos-forecasting` downgraded `huggingface-hub` from a previously-installed 1.26.0 to 0.36.2 — re-verified this doesn't break `datasets`-based Monash/ETT loading. |
 | `huggingface-hub` | 0.36.2 | pip (pypi) | See `transformers` note above — a `timesfm`/`chronos-forecasting` transitive constraint, not chosen directly. |
 | `timesfm` | 2.0.2 | pip (pypi) | **Not the same API as pre-2.0 releases.** `timesfm>=2.0` removed the old `TimesFmHparams`/`TimesFmCheckpoint`/`TimesFm` class API entirely; `models/timesfm_adapter.py` targets the new `TimesFM_2p5_200M_torch` class-based API and defaults to checkpoint `google/timesfm-2.5-200m-pytorch` (20 layers), not the older 2.0/500M checkpoint (50 layers) — see `CLAUDE.md` §11.8. An older pre-2.0 `timesfm` install needs a different (unmaintained-here) adapter. |
@@ -149,10 +174,10 @@ pin harder.
 | `accelerate` | 1.14.0 | pip (pypi) | Transitive (model library dependency). |
 | `ctgan` | 0.12.1 | conda-forge | Transitive via `sdv`. |
 | `deepecho` | 0.8.1 | conda-forge | Transitive via `sdv`; the actual RNN backend `sequential_par` trains (`CLAUDE.md` §11.14 — per-timestep training cost is why `max_train_length` truncation exists). |
-| `tqdm` | 4.70.0 | conda-forge | Progress bars across both packages. |
+| `tqdm` | 4.68.3 | conda-forge | Progress bars across both packages. |
 
 Full transitive package list (~286 packages) can be regenerated any time
-with `conda list -n tsfmPy`; it's intentionally not dumped here in full —
+with `conda list -n cudaPy` (mind the stale dist-infos above); it's intentionally not dumped here in full —
 the table above is every package this repo's own code directly imports or
 that has a documented version-sensitive gotcha (cross-checked against
 `import`/`from` statements across both packages, not just recalled from
