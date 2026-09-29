@@ -39,10 +39,14 @@
 # concepts (shared, convergent, same-input-opposite-effect; unique to A) and
 # decoys (input-only, sub-null). Both are 32-step patch models, 64 wide, 5
 # blocks; the planted block is blocks.2. Two SAE targets per model:
-# blocks.2 (the planted layer) and blocks.0 (the NON-PLANTED CONTROL layer:
-# it precedes the planted block, so it carries no planted direction and the
-# planted effects are computed from the raw input, out of reach of any
-# ablation there). Per-cell false positives are read on blocks.0.
+# blocks.2 (the planted layer) and blocks.3 (the CONTROL layer, a block AFTER
+# the planted one). It is reachable: patching blocks.0's clean tokens into it
+# removes the planted writes and moves the forecast, so the reach probe passes
+# (a control BEFORE the planted block is not, because the planted block
+# computes from a side-channel stash of the input, so nothing patched at an
+# earlier layer can change what it writes). Its residual still carries the
+# planted directions, so the scorer excludes atoms that carry a material
+# planted effect and reads per-cell false positives on the rest.
 
 run:
   name: known_answer
@@ -78,9 +82,9 @@ sae:
   enabled: true
   targets:
     - {model: PlantedA, layer: blocks.2}
-    - {model: PlantedA, layer: blocks.0}
+    - {model: PlantedA, layer: blocks.3}
     - {model: PlantedB, layer: blocks.2}
-    - {model: PlantedB, layer: blocks.0}
+    - {model: PlantedB, layer: blocks.3}
   dict_size_mult: 4             # 256 atoms over 64 dims, 21 planted directions
   k: 8
   epochs: 300                   # 15 optimizer steps per epoch at batch_size 256;

@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import re
 import sys
 from pathlib import Path
 
@@ -68,12 +69,22 @@ def build_cell_config(config_path: str, corpus: str | None, out: str, seed: int,
 
 
 def control_layer(cfg, planted_layer: str) -> str:
-    """The one non-planted SAE target layer the config names (per model, the same one)."""
+    """The one non-planted SAE target layer the config names (per model, the same one).
+
+    It must come AFTER the planted block: a layer before it is unreachable (the
+    planted block computes from the input, not from the residual stream), so its
+    battery is withheld by the reach probe and no false-positive rate exists.
+    """
     layers = {t["layer"] for t in cfg.sae.targets} - {planted_layer}
     if len(layers) != 1:
         raise ValueError(f"the config must name exactly one non-planted control layer among its "
                          f"sae.targets, got {sorted(layers)}")
-    return next(iter(layers))
+    control = next(iter(layers))
+    index = lambda name: int(re.findall(r"\d+", name)[-1])
+    if index(control) <= index(planted_layer):
+        raise ValueError(f"the control layer '{control}' must follow the planted layer "
+                         f"'{planted_layer}' to be reachable")
+    return control
 
 
 def write_manifest(cfg, run_dir: Path) -> Path:

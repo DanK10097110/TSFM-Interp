@@ -29,7 +29,7 @@ def test_config_has_no_absolute_paths_and_names_the_pair():
     assert {m["adapter"] for m in raw["models"]} == {"mock_planted"}
     assert {m["kwargs"]["plant_set"] for m in raw["models"]} == {"A", "B"}
     layers = {t["layer"] for t in raw["sae"]["targets"]}
-    assert layers == {"blocks.2", "blocks.0"}
+    assert layers == {"blocks.2", "blocks.3"}
     assert raw["sae"]["persist_features"] is True and raw["concepts"]["enabled"] is True
 
 
@@ -42,9 +42,12 @@ def test_cell_config_sets_seed_dose_and_paths_without_touching_the_template():
     assert all(m.kwargs["construction_seed"] == 3 and m.kwargs["dose"] == 0.25 for m in cfg.models)
     assert {m.kwargs["plant_set"] for m in cfg.models} == {"A", "B"}
     assert CONFIG.read_text(encoding="utf-8") == before
-    assert rka.control_layer(cfg, "blocks.2") == "blocks.0"
+    assert rka.control_layer(cfg, "blocks.2") == "blocks.3"
     cfg.sae.targets.append({"model": "PlantedA", "layer": "blocks.1"})
     with pytest.raises(ValueError, match="exactly one"):
+        rka.control_layer(cfg, "blocks.2")
+    cfg.sae.targets = [{"model": "PlantedA", "layer": "blocks.2"}, {"model": "PlantedA", "layer": "blocks.1"}]
+    with pytest.raises(ValueError, match="must follow"):
         rka.control_layer(cfg, "blocks.2")
 
 
