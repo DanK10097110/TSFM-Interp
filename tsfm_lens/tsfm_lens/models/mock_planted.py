@@ -45,7 +45,15 @@ never Python `hash()`):
   it is exactly orthogonal to the ramp in the FFT bin the battery reads),
   dispersion (an alternating +-1 pattern, which moves the point forecast's sd
   and scales the quantile band). The dose `s` multiplies every real concept's
-  `beta_k`.
+  `beta_k`. `gamma` is `background_gain`, default 0.0: the head reads nothing but
+  the planted coefficients, so an atom that carries no planted direction is
+  EXACTLY inert. A first version used `gamma = 0.05`; measured at seed 0, dose 1
+  it gave the atoms of the feature coordinates an effect of about half a real
+  concept's (a unit-scale removal moves the forecast by `0.05 * ||v|| / 8` context
+  sd), and the control layer's per-cell false-positive rate was 0.4176 because
+  those atoms were genuinely causal. The battery was right and the known
+  negative was not one. The gain stays available as a kwarg to reproduce that
+  stress condition.
 * **Effect size is defined, not tuned.** `beta_k` is set so the RMS planted
   forecast displacement on the concept's own top-8 firing series is
   `DOSE_UNIT_EFFECT * s` context standard deviations, with `DOSE_UNIT_EFFECT`
@@ -54,8 +62,20 @@ never Python `hash()`):
 * **Known negatives.** `input_only` decoys are written exactly like concepts but
   `beta = 0`: correlated with the input, causally inert. `sub_null` decoys have
   a fixed RMS effect of `SUB_NULL_FRACTION * DOSE_UNIT_EFFECT`, independent of
-  dose, chosen from the calibration run recorded in `run_known_answer.py`'s
-  output to sit below the random-direction null's p95.
+  dose. They are WEAK true effects, not known negatives: measured at seed 0,
+  dose 1 (K1 fix round) the effect of their matched atoms sits near or above the
+  random-direction null's p95 on several channels (ratios 0.6 to 4.3), so a clear
+  is a detection of a genuine small effect, and `analysis/known_answer.py`
+  reports them as a weak-effect probe, not as a false-positive rate.
+* **Reachable control.** The planted block computes from a side-channel stash of
+  the input's features, not from the residual stream, so a layer BEFORE it cannot
+  change what it writes and its ablation battery is withheld by the reach probe.
+  The control layer is therefore a block AFTER the planted one (`blocks.3`):
+  patching blocks.0's clean tokens into it removes every planted write, so the
+  forecast moves (relative reach far above `min_relative_reach`) and a
+  self-patch is exactly 0.0. Its residual still carries the planted directions;
+  the scorer reads false positives only on atoms that carry no material planted
+  effect.
 * **The pair.** `plant_set` in {"A", "B"} gives the two members of a pair that
   share a vocabulary: `shared` (same readout, same effect), `convergent`
   (different readout, same effect), `opposite` (same readout, opposite sign;
@@ -151,8 +171,19 @@ def _readout_key(row: dict, role: str) -> str:
     return f"{row['id']}@{role}" if row["cls"] == "convergent" else row["id"]
 
 
-def _draw_readouts(rows: list, construction_seed: int) -> dict:
-    """`{readout_key: weight vector [N_FEATURES]}`, distinct across keys.
+def _draw_readouts(rows: list, construction_seed: int, series_score=None) -> tuple:
+    """`({readout_key: weight vector [N_FEATURES]}, {convergent id: |rho|})`, distinct
+    across keys.
+
+    With `series_score(w, id) -> [n_series]` (the object's series-level activation `a_k(x)`
+    under readout `w`, threshold calibrated as the object's own would be),
+    each convergent object's model-B readout is re-picked among the unused
+    readouts to be the one whose score is LEAST rank-correlated with its model-A
+    partner's. Convergent means "same effect, different inputs"; without this the
+    eight corpus features are so correlated across series that two random
+    readouts pick overlapping series and an atlas transfer test cannot tell a
+    convergent pair from a shared one. The achieved `|rho|` is returned and
+    recorded in the manifest.
 
     A random readout reads two features with random signs, unit norm. The
     input-only decoys read a single feature chosen to correlate with a
@@ -171,12 +202,36 @@ def _draw_readouts(rows: list, construction_seed: int) -> dict:
         w = np.zeros(N_FEATURES)
         w[i], w[j] = si, sj
         out[key] = w / np.linalg.norm(w)
+    independence: dict = {}
+    if series_score is not None:
+        from scipy.stats import spearmanr
+        used = {tuple(np.nonzero(w)[0]) + tuple(w[np.nonzero(w)[0]]) for w in out.values()}
+        pool = []
+        for i, j, si, sj in combos:
+            w = np.zeros(N_FEATURES)
+            w[i], w[j] = si, sj
+            pool.append(w / np.linalg.norm(w))
+        sig = lambda w: tuple(np.nonzero(w)[0]) + tuple(w[np.nonzero(w)[0]])
+        for cid in sorted({r["id"] for r in rows if r["cls"] == "convergent"}):
+            a_key, b_key = f"{cid}@A", f"{cid}@B"
+            used.discard(sig(out[b_key]))
+            score_a = series_score(out[a_key], cid)
+            best = None
+            for w in pool:
+                if sig(w) in used:
+                    continue
+                rho = abs(float(spearmanr(score_a, series_score(w, cid)).statistic))
+                if best is None or rho < best[0]:
+                    best = (rho, w)
+            out[b_key] = best[1]
+            used.add(sig(best[1]))
+            independence[cid] = best[0]
     for key, spec in _INERT_READOUTS.items():
         w = np.zeros(N_FEATURES)
         for name, val in spec.items():
             w[FEATURE_NAMES.index(name)] = val
         out[key] = w
-    return out
+    return out, independence
 
 
 def _draw_directions(ids: list, dim: int, construction_seed: int, role: str) -> dict:
@@ -276,7 +331,6 @@ def build_spec(construction_seed: int, dose: float, plant_set: str, dim: int, pa
     role = plant_set
     rows = [r for r in concept_table() if role in r["roles"]]
     all_rows = concept_table()
-    readouts = _draw_readouts(all_rows, construction_seed)
     directions = _draw_directions([r["id"] for r in rows], dim, construction_seed, role)
 
     raw = contexts_to_features(contexts, patch, periods)
@@ -286,9 +340,16 @@ def build_spec(construction_seed: int, dose: float, plant_set: str, dim: int, pa
     flat = raw[cal].reshape(-1, N_FEATURES)
     feat_mean, feat_std = flat.mean(dim=0), flat.std(dim=0) + 1e-9
     f_z = (raw - feat_mean) / feat_std
-
     rng_frac = np.random.default_rng(_seed(construction_seed, "firing"))
     targets = {r["id"]: float(rng_frac.uniform(*FIRING_RANGE)) for r in all_rows}
+
+    def series_activation(w: np.ndarray, cid: str) -> np.ndarray:
+        wt = torch.from_numpy(w).double()
+        tau = float(np.quantile((f_z[cal] @ wt).max(dim=1).values.numpy(), 1.0 - targets[cid]))
+        a = planted_activations(f_z, wt[None, :], torch.tensor([tau], dtype=torch.float64), AMPLITUDE)
+        return a[..., 0].mean(dim=1).numpy()
+
+    readouts, independence = _draw_readouts(all_rows, construction_seed, series_activation)
 
     concepts = []
     for r in rows:
@@ -314,6 +375,7 @@ def build_spec(construction_seed: int, dose: float, plant_set: str, dim: int, pa
             "readout_weights": w.numpy().tolist(), "readout_threshold": tau,
             "direction": directions[r["id"]].tolist(), "beta": float(beta),
             "rms_effect_on_top_series_ctx_sd": float(abs(beta) * top_mean),
+            "partner_input_abs_spearman": independence.get(r["id"]),
             "firing_fraction": float(np.mean(a_series > 0.0)),
             "series_activation": a_series.tolist(),
         })
@@ -378,7 +440,8 @@ class _PlantedWrite(nn.Module):
 class _PlantedNet(nn.Module):
     """Feature-carrying embedding, planted block, near-identity blocks, known head."""
 
-    def __init__(self, spec: dict, n_layers: int, n_heads: int, horizon: int, seed: int):
+    def __init__(self, spec: dict, n_layers: int, n_heads: int, horizon: int, seed: int,
+                 background_gain: float = 0.0):
         super().__init__()
         dim, patch = spec["dim"], spec["patch"]
         self.patch, self.dim, self.horizon = patch, dim, horizon
@@ -408,7 +471,7 @@ class _PlantedNet(nn.Module):
         planted.write = _PlantedWrite(W, tau, D)
         self.register_buffer("W_bg", torch.randn(horizon, dim, generator=gen, dtype=torch.float64)
                              / np.sqrt(dim))
-        self.gamma = 0.05
+        self.gamma = float(background_gain)
         shapes = _shapes(horizon)
         self.register_buffer("shape_mat", torch.tensor(
             np.stack([shapes[c["kind"]] if c["kind"] else np.zeros(horizon) for c in concepts]),
@@ -456,7 +519,7 @@ class MockPlantedAdapter(_MockAdapterBase):
     `construction_seed` (int, default 0), `dose` (float, default 1.0),
     `periods` (two periods for the amplitude features, default [24, 50], the
     two most common periods of the synthetic known-answer corpus),
-    `planted_block` (default 2). The calibration corpus is the run's own data
+    `planted_block` (default 2), `background_gain` (default 0.0, see below). The calibration corpus is the run's own data
     (`data:`), so the firing thresholds are calibrated on exactly the series
     the pipeline will feed the model.
     """
@@ -485,13 +548,15 @@ class MockPlantedAdapter(_MockAdapterBase):
         net_seed = _seed(cseed, "net", plant_set)
         if self.cfg.random_init:
             net_seed += self._RANDOM_INIT_SEED_OFFSET
-        self._net = _PlantedNet(self._spec, self.n_layers, self.n_heads,
-                                self.data_cfg.horizon, net_seed % (2 ** 31)).to(self.device)
+        self._background_gain = float(self._kwarg("background_gain", 0.0))
+        self._net = _PlantedNet(self._spec, self.n_layers, self.n_heads, self.data_cfg.horizon,
+                                net_seed % (2 ** 31), self._background_gain).to(self.device)
 
     def manifest(self) -> dict:
         """The ground truth for this member of the pair (JSON-serialisable)."""
         self.ensure_loaded()
-        return {**self._spec, "model": self.name, "planted_layer": f"blocks.{self._spec['planted_block']}"}
+        return {**self._spec, "model": self.name, "background_gain": self._background_gain,
+                "planted_layer": f"blocks.{self._spec['planted_block']}"}
 
     def predict(self, contexts: np.ndarray, horizon: int, quantiles: list) -> dict:
         """Deterministic point forecast; the quantile band is `sd_ctx * ppf(q)`

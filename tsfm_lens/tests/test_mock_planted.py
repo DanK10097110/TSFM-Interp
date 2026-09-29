@@ -41,6 +41,7 @@ HORIZON = 32
 QUANTILES = [0.1, 0.5, 0.9]
 TOL = 1e-5
 PLANTED = "blocks.2"
+CONTROL = "blocks.3"
 
 
 def _data_cfg() -> DataConfig:
@@ -123,6 +124,25 @@ def test_self_patch_is_exactly_zero_and_cross_patch_is_not(world):
     reach = reach_probe(cfg, adapter, PLANTED, data, torch.device("cpu"), max_series=16)
     assert reach["reachable"], reach["reason"]
     assert reach["self_patch_delta"] == 0.0 and reach["cross_patch_delta"] > 0.0
+
+
+def test_control_layer_after_the_planted_block_is_reachable_and_one_before_is_not(world):
+    """The control layer must pass the real reach probe (self-patch exactly 0.0,
+    cross-layer relative change above `min_relative_reach`); a layer BEFORE the
+    planted block cannot, because the planted block computes from the input."""
+    from tsfm_lens.analysis.response_reach import reach_probe
+    from tsfm_lens.config import config_from_dict
+    from tests.test_smoke import build_config
+    adapter, data, manifest, rows = world
+    cfg = config_from_dict(build_config("/tmp/unused"))
+    cfg.data.context_len, cfg.data.horizon = 256, HORIZON
+    after = reach_probe(cfg, adapter, CONTROL, data, torch.device("cpu"), max_series=16)
+    assert after["reachable"], after["reason"]
+    assert after["self_patch_delta"] == 0.0
+    assert after["relative_reach"] > max(1e-3, cfg.concepts.min_relative_reach)
+    before = reach_probe(cfg, adapter, "blocks.1", data, torch.device("cpu"), max_series=16)
+    assert not before["reachable"]
+    assert before["relative_reach"] < 1e-3
 
 
 def test_mock_planted_projection_removes_exactly_the_planted_component(world):
@@ -222,3 +242,23 @@ def test_pair_vocabulary_matches_the_table():
     assert all(n >= 3 for n in counts.values()), counts
     assert {r["cls"] for r in concept_table()} >= {"shared", "convergent", "opposite", "unique",
                                                    "decoy_input_only", "decoy_sub_null"}
+
+
+def test_convergent_pairs_read_rank_independent_inputs_and_shared_pairs_identical_ones():
+    """Convergent means same effect, DIFFERENT inputs: the two models' series-level
+    activations of a convergent object are rank-uncorrelated (|rho| < 0.1, recorded
+    in the manifest), while a shared object's are identical."""
+    from scipy.stats import spearmanr
+    a, b = _adapter("A"), _adapter("B")
+    ma = {c["id"]: c for c in a.manifest()["concepts"]}
+    mb = {c["id"]: c for c in b.manifest()["concepts"]}
+    conv = [i for i, c in ma.items() if c["cls"] == "convergent"]
+    assert len(conv) == 6
+    for i in conv:
+        rho = abs(spearmanr(ma[i]["series_activation"], mb[i]["series_activation"]).statistic)
+        assert rho < 0.1, (i, rho)
+        assert ma[i]["readout_weights"] != mb[i]["readout_weights"]
+        assert ma[i]["partner_input_abs_spearman"] == pytest.approx(rho, abs=1e-9)
+    for i, c in ma.items():
+        if c["cls"] == "shared":
+            assert c["series_activation"] == mb[i]["series_activation"]
