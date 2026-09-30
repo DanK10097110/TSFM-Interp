@@ -93,7 +93,7 @@ These instructions are binding for every future session, human or agent.
 | SH-10 | Joint crosscoder loses to independent post-hoc-matched SAEs on its pre-registered rule (0.2787 vs 0.3204) | 5 |
 | SH-14 | Cross-model concept transfer works when matched on shared **inputs** (not causal fingerprints); ~46–56% of concepts transfer | 5 |
 | SH-15 | Sharing a causal-effect profile goes with *less* shared input selectivity (OR 0.345, p 0.027) | 5 |
-| SH-16 | No concept is shared by all 4 models; the multi-model pattern is **convergent** effect from different inputs | 5 |
+| SH-16 | No concept is shared by all 4 models; the multi-model pattern is **convergent** effect from different inputs. **Under the matched null (MN-29) the convergent class vanishes (13 → 0 on v2); superseded pending the power check** | 5 |
 | SH-18 | Held-out: 19/20 searched and **20/20 frozen-feature** concept-transfer claims confirm on fresh sealed private epochs | 5 |
 | SH-19 | Unit-level correspondence (CCM) NO-GO: low-rank TSFM representations defeat the rotation control | 5 |
 | CA-06 | Measured on shared series with matched floors, cross-model causal "disagreement" shrinks from 18/19 to 12/288 (12 of 89 scorable) | 4 |
@@ -111,7 +111,7 @@ These instructions are binding for every future session, human or agent.
 | MP-04 | A single-seed SAE "gold ranking" flips a bake-off verdict; averaging 3 seeds fixes it | 5 |
 | MP-05 | SAE feature death is a property of the layer's geometry (alive atoms ∝ effective dim, exponent 1.02) | 5 |
 | MN-21 | Reviving dead SAE features *hurts* causal alignment at 5/5 TimesFM depths | 5 |
-| MN-29 | The battery's legacy null is lenient: known-answer gate fails on 5/5 seeds (FPR 0.17–0.25), passes on 5/5 with a profile-matched null; one real TimesFM layer drops from 29 to 9 clearing cells (chance 8.1) | 5 |
+| MN-29 | The battery's legacy null is lenient: known-answer gate fails on 5/5 seeds (FPR 0.17–0.25), passes on 5/5 with a profile-matched null; on v2, causal features 293 → 110 (13.0× → 3.06× empirical chance), per-target concepts 9 → 0, convergent atlas concepts 13 → 0 | 5 |
 
 ---
 
@@ -321,6 +321,7 @@ These instructions are binding for every future session, human or agent.
   - At atlas level with BH per ordered pair and leg: 511 tests, 316
     uncorrected reciprocal, **288 FDR-reciprocal** (float64 ranks).
 - **Evidence.** Correlational (input agreement). **Status:** exploratory; byte-reproducible at a fixed seed. Held-out confirmation is in SH-18.
+- **Re-measured under the profile-matched null (2026-09-30, MN-29; v2 copy, same features and seed).** Atlas-transfer tests fall from 1581 to 431, and reciprocal-FDR transfers from 1223 to 372 (86% of tests reciprocal in both runs). Input-level transfer of the surviving causal features holds at the same rate; the base is smaller.
 - **Reproduce.** `sae/transfer.py::run_transfer`; `runs/full_report_run_4model/sae/transfer.json`, `sae/atlas_transfer.json`.
 - **Ref.** ROADMAP §30.2 (~25702–25884), §37.6 (~36018–36025).
 - **Score. 5/5.** Establishes the method: match concepts on what features respond to, and treat the causal fingerprint only as a description (see MN-09).
@@ -334,6 +335,7 @@ These instructions are binding for every future session, human or agent.
   - Odds ratio 0.345, Fisher two-sided p **0.0275**. With float16 ranks it
     read OR 0.487, p 0.097.
 - **Evidence.** Correlational. **Status:** exploratory (dev).
+- **Re-measured under the profile-matched null (2026-09-30, MN-29; v2 copy, same features and seed).** Not recomputed directly. The profile null leaves 3 'shared' and 0 'convergent' atlas concepts, too few to repeat the OR test (legacy v2 base: 27 concepts).
 - **Reproduce.** `sae/atlas_transfer.json` × `sae/concept_atlas.json`, `runs/full_report_run_4model`.
 - **Ref.** ROADMAP §37.6 (~36026–36044).
 - **Score. 5/5.** "Same effect on the forecast" and "responds to the same inputs" are different claims and can anti-correlate. This drives the sharing taxonomy in SH-16.
@@ -351,6 +353,7 @@ These instructions are binding for every future session, human or agent.
     min_cosine 0.9, complete linkage, ≥3 members).
 - **Evidence.** Descriptive taxonomy over causal (ablation) and correlational (top-k overlap, hypergeometric + BH) parts. **Status:** exploratory (dev).
 - **Replication (2026-09-29).** `runs/concept_atlas_v2` (v2 corpus, fixed Sundial; ROADMAP §37.11c), 29 targets, 27 tight concepts: again no 4-model concept (n_models 1:11, 2:15, 3:1, 4:0); sharing classes convergent 13, single-model 11, shared 2, partially shared 1 (stable only: 9 / 10 / 2 / 1). Convergent stays the most common multi-model class. Still dev.
+- **Re-measured under the profile-matched null (2026-09-30, MN-29; v2 copy, same features and seed).** The v2 atlas shrinks from 27 concepts (16 multi-model, from 293 pooled causal features) to **7 (3 multi-model, from 110)**. Sharing classes: convergent 13 → **0**, single-model 11 → 4, shared 2 → 3, partially shared 1 → 0. **The 'mostly convergent' headline does not survive the matched null**: the convergent class was built from features the lenient null admitted. 'No concept spans all four models' still holds, but on a far smaller base. Status of this entry: superseded pending the power check and the 7-model run.
 - **Reproduce.** `runs/full_report_run_4model/sae/concept_profiles.json`, `sae/concept_atlas.json`; `report/findings.json` `compare.1`.
 - **Ref.** ROADMAP §37.3, §37.11 P8 (~36929–36941).
 - **Score. 5/5.** The headline answer to the founding question on this panel: TSFMs converge on shared *forecast adjustments* far more than on shared *feature detectors*.
@@ -366,6 +369,7 @@ These instructions are binding for every future session, human or agent.
   - **Sundial is the weakest source in all 3 of its outbound pairs**
     (0.439–0.698).
 - **Evidence.** Descriptive (reproducibility) + correlational. **Status:** exploratory. CPU-trained replicates flip 2 concepts' status (MN-27), so GPU replicates are canonical.
+- **Re-measured under the profile-matched null (2026-09-30, MN-29; v2 copy, same features and seed).** All 7 profile-null atlas concepts are seed-stable (7/7), against 22/27 under legacy. Stability rises as the set shrinks to its strongest members.
 - **Reproduce.** `sae/concept_stability.json` (`concepts.n_sae_seeds: 3`), `runs/full_report_run_4model`.
 - **Ref.** ROADMAP §37.5 (~35788–35937).
 - **Score. 4/5.** Gives cross-model transfer the "two runs of the same model" denominator that convergent-learning claims need.
@@ -440,6 +444,7 @@ These instructions are binding for every future session, human or agent.
   - The old unconstrained metric's top four silhouettes (0.717, 0.674,
     0.636, 0.607) were all `[big, 1]` splits.
 - **Evidence.** Descriptive (clustering over causal vectors). **Status:** confirmed; this motivated pooling features across models into the atlas.
+- **Re-measured under the profile-matched null (2026-09-30, MN-29; v2 copy, same features and seed).** v2 per-target concepts go from 9 to **0** (28/28 measured targets non-modular). Causal features per target are 0–8; 24/28 have fewer than 6, and the 5 with ≥6 have a min cluster < 3 at every admissible k. About 62% of profile clears are chance-level (110 clearing features vs a 67.88 chance expectation). This is a **low-power result, not a measured absence**: k = 8 rows × 16 null draws. A power check at k = 16/32 is running (ROADMAP §38.1.8).
 - **Reproduce.** `sae/concepts.py::_sweep_k`; `runs/full_report_run_4model/sae/concepts.json` (`concept_min_members` 1 vs 3).
 - **Ref.** ROADMAP §32.1, §32.5 D, §32.13 (~29179–29247).
 - **Score. 4/5.** A real result about how modular TSFM causal features are (mostly not, at this dictionary size), plus a general silhouette trap.
@@ -555,6 +560,7 @@ These instructions are binding for every future session, human or agent.
     differently. ROADMAP §37.8.
 - **Replication (2026-09-29).** `runs/concept_atlas_v2` (v2 corpus, fixed Sundial; ROADMAP §37.11c), 1223 reciprocal-FDR tests: same causal effect 11, level only 52, shape only 29, no specific agreement 264, acts differently 64, not scorable 803. Of 420 scorable, 64 (15.2%) act differently (reference 12/89 = 13.5%). Runtime 10854.9 s.
 - **Evidence.** Causal within-model, compared on shared inputs. **Status:** exploratory; corrected 2026-09-27; replicated on the v2 corpus 2026-09-29.
+- **Re-measured under the profile-matched null (2026-09-30, MN-29; v2 copy, same features and seed).** v2 agreement verdicts go from same 11 / level-only 52 / shape-only 29 / no specific agreement 264 / acts differently 64 / not scorable 803 (1223 tests) to **7 / 4 / 8 / 28 / 10 / 315 (372 tests)**, with the matched null now also at the agreement step's own-effect gate. 'Acts differently' stays rare (10). Not-scorable rises from 66% to 85%, because fewer sides clear their own matched null on U.
 - **Reproduce.** `runs/full_report_run_4model/sae/shared_input_agreement.json` (`sae/shared_input_agreement.py`, commit `fc37ec0`; the pre-fix artifact is `shared_input_agreement.pre_seed_fix.json`).
 - **Ref.** ROADMAP §27.3 (~23844–23866), §37.8 P5b (~36309–36447).
 - **Score. 4/5.** Most of the "models act differently" headline came from comparing effects on different inputs. Hold the input fixed before comparing causal effects across models.
@@ -583,6 +589,7 @@ These instructions are binding for every future session, human or agent.
     the lowest ablation count (47).
   - Ablation exceeds injection only at Chronos-2 blocks 6 and 8.
 - **Evidence.** Causal within-model (two interventions). **Status:** confirmed on run.
+- **Re-measured under the profile-matched null (2026-09-30, MN-29; v2 copy, same features and seed).** Not re-measured. Its own-site ablation arm used the legacy null, so the size of the injection-vs-ablation gap is uncertain. Read the ablation side as an upper bound.
 - **Reproduce.** `sae/response.py::feature_response_fingerprints` vs `feature_ablation_fingerprints`.
 - **Ref.** ROADMAP §27.3 (~23809–23823).
 - **Score. 4/5.** Steering a direction in and removing a feature where it fires are different questions with different answers.
@@ -613,6 +620,7 @@ These instructions are binding for every future session, human or agent.
 - **Correction (2026-09-29, titles only).** The horizon-distance channels clear in every family, so titles led by them named what families share. Titles now lead with directed channels (commit f2ed2a9); membership, sizes and nulls are unchanged (only `families[].title` differs in `concept_families.json`). Reference-run titles are now: Accuracy improvers (59), Level raisers (46), Seasonality dampeners (29), Volatility amplifiers & Seasonality amplifiers (28), Volatility dampeners (21), Volatility amplifiers & Trend dampeners (13).
 - **Evidence.** Descriptive. **Status:** exploratory; replicated on the v2 corpus.
 - **Replication (2026-09-29).** `runs/concept_atlas_v2` (v2 corpus, fixed Sundial; ROADMAP §37.11c): 293 causal features → 9 families, 288/293 (0.9829) assigned; null again not beaten (p_n_families 1.0, p_frac_assigned 0.9851); "segregated by model"; 3 tight concepts split. Two families' titles were near-identical ("Near-term steerers & Long-range steerers" / "Long-range steerers & Near-term steerers"); fixed the same day (titles lead with directed channels, commit f2ed2a9). v2 family titles are now: Level lowerers (80), Level raisers & Accuracy improvers (61), Volatility dampeners (48), Trend boosters & Accuracy improvers (23), Seasonality amplifiers (17), Trend boosters & Volatility amplifiers (12), Level raisers & Trend boosters (18), Trend dampeners (18), High-frequency shifters (11).
+- **Re-measured under the profile-matched null (2026-09-30, MN-29; v2 copy, same features and seed).** Families: 5 at threshold 0.85 (92/110 assigned), p_n_families 0.3781094527363184, p_frac_assigned 0.38308457711442784; still 'segregated by model', and still not beating the shuffle null. The continuum reading survives.
 - **Reproduce.** `sae/concept_families.py::run_concept_families` on `runs/full_report_run_4model` → `sae/concept_families.json`.
 - **Ref.** ROADMAP §37.11b (incl. R2).
 - **Score. 4/5.** It reframes "concepts" in effect space as a readable tiling rather than discovered units. It also explains why tight concepts are small and why near neighbours fall outside them.
@@ -1088,6 +1096,7 @@ These instructions are binding for every future session, human or agent.
     (4/12 vs 8–9/12).
   - Across the 4-model battery, clearing cells run 2.49×–6.61× chance.
 - **Evidence.** Causal within-model. **Status:** confirmed. The first pass applied to one model only, because of an autocast defect (MN-24).
+- **Re-measured under the profile-matched null (2026-09-30, MN-29; v2 copy, same features and seed).** The battery's `0.05 × cells` chance line is not a chance rate (effect is a mean over k rows vs the p95 of pooled per-row null values). The leave-one-draw-out empirical rate is 0.024605 (legacy) / 0.019711 (profile) per cell. Against it, legacy clears 1348 cells vs 103.6875 expected (13.0006×) and profile 254 vs 83.0625 (3.0579×), with 20/28 targets BH-significant under profile (27/28 legacy). The battery still discriminates, but the legacy null inflated clears about 5-fold (1348 → 254), because it removed a size-mismatched amount.
 - **Reproduce.** `run_stage2_response_fingerprint.py`; `sae/response.py::feature_ablation_fingerprints`.
 - **Ref.** ROADMAP §25.23 (~21263–21422), §27.3.
 - **Score. 4/5.** The foundation of every causal concept claim.
@@ -1271,6 +1280,7 @@ See SH-20. **4/5.**
     channels, covering 724/1297 panels.
   - The share clearing nothing is 54.5–71.1% per model.
 - **Evidence.** Causal within-model. **Status:** fixed (null panels collapsed).
+- **Re-measured under the profile-matched null (2026-09-30, MN-29; v2 copy, same features and seed).** On v2 (672 candidates) the share clearing 0/9 channels is 0.5639880952380952 under the legacy null and **0.8363095238095238** under the profile-matched null (scorable only: 0.4068825910931174 → 0.7773279352226721). By model: Chronos-2 0.389 → 0.799, Chronos-Bolt 0.611 → 0.847, Sundial 0.454 → 0.843, TimesFM 0.754 → 0.850. The claim strengthens: most activation-prominent features are causally null.
 - **Reproduce.** `runs/full_report_run_4model/sae/*_ablation.json` (`n_channels_clearing`).
 - **Ref.** ROADMAP §32.7b (~28480–28675).
 - **Score. 4/5.** Detecting features by activation alone is not evidence that they matter: most high-activation features do nothing causally.
@@ -1321,6 +1331,7 @@ See SH-20. **4/5.**
 #### MN-18 · Absence of agreement is not disagreement
 - **Claim.** P5b's first pass called 109 of 288 tests "acts differently" because it failed an upper-tail (p95) floor. With a lower-tail (p05) test on both statistics, the count is **9**; 32 are "no specific agreement".
 - **Evidence.** Method. **Status:** fixed.
+- **Re-measured under the profile-matched null (2026-09-30, MN-29; v2 copy, same features and seed).** The lower-tail rule is unchanged. Under the profile null, 10 of 372 tests are 'acts differently' (legacy 64 of 1223).
 - **Reproduce.** `sae/shared_input_agreement.py`.
 - **Ref.** ROADMAP §37.8 (~36309–36447); CLAUDE.md §8.
 - **Score. 4/5.**
@@ -1483,7 +1494,14 @@ See SH-20. **4/5.**
     - the legacy re-run reproduced the recorded artifact exactly: 29 clearing cells, 9 features;
     - profile-matched: **9 cells, 4 features, against a chance level of 8.1 cells** (0.05 × 162).
 - **Evidence.** Known-answer instrument validation (planted ground truth), plus one real target.
-- **Status:** the flaw is confirmed. Its real-data extent is open: a full v2 re-score under the matched null is running. **Until it lands, every causal-feature count and every downstream concept number in B.2/C was measured with the lenient null and is an upper bound.** This includes MN-14's 64.4%, the per-target concept counts, the atlas, transfer, agreement (CA-06) and sharing classes.
+- **Status:** the flaw is confirmed. Its real-data extent is open: a full v2 re-score under the matched null is running.
+- **Real-data extent (2026-09-30, v2 copy; ROADMAP §38.1.8).**
+  - Clearing features 293 → 110, cells 1348 → 254.
+  - Against the leave-one-draw-out empirical chance rate (≈2% per cell, not the nominal 5%), that is 13.0006× → 3.0579× chance, with 20/28 targets BH-significant under the matched null.
+  - Per-target concepts 9 → 0 (low power at k = 8).
+  - Atlas 27 → 7, convergent 13 → 0.
+  - A covariance-shaped ('on-manifold') matched null clears even fewer (106 cells, 1.1277× chance), so the isotropic matched null is not over-strict.
+  - The affected entries (MP-07, MN-14, SH-14–17, SH-20, CA-06, CA-08, CA-10, MN-18) each carry a 're-measured' line. **Until it lands, every causal-feature count and every downstream concept number in B.2/C was measured with the lenient null and is an upper bound.** This includes MN-14's 64.4%, the per-target concept counts, the atlas, transfer, agreement (CA-06) and sharing classes.
 - **Caveat.** In the planted world, a random decoded direction overlaps the planted span more than a p_perp atom does, so the matched null may be over-strict there (sensitivity falls to 0.7–0.9, and weak true effects are never detected).
 - **Reproduce.** `python run_known_answer.py --config configs/known_answer.yaml --null mean_magnitude|profile_matched` (seeds 0–4, dose 1); `sae/response.py::_profile_matched_null_replacement`; `tests/test_*profile*`.
 - **Ref.** ROADMAP §38.1.7.

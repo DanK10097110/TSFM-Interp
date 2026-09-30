@@ -37851,6 +37851,28 @@ Setup:
   the legacy null's concept picture shrinks by roughly 4× in causal features and 5× in clearing cells once the null
   removes the feature's own per-token amount.
 
+**Round 5 resolved both open questions (2026-09-30; merged as 0dffae1).**
+- **Empirical chance** (leave-one-draw-out, opt-in `sae.ablation_empirical_chance`) is 0.024605 per cell for the
+  legacy null and 0.019711 for the profile null, not 0.05.
+  - Legacy: 1348 vs 103.6875 expected (13.0006×), 27/28 targets BH-significant.
+  - Profile: 254 vs 83.0625 (3.0579×), 20/28.
+  - Cov: 106 vs 94.0 (1.1277×), 5/28.
+  - The legacy re-run reproduced its recorded clears exactly (0 mismatches over 4214 cells).
+  - On K1 the leave-one-out rate does NOT predict the legacy false positives (4.7% vs a measured 19.3%): pseudo-features
+    are exchangeable with the null, so it cannot see size mismatch. For both profile modes it upper-bounds the measured FPR.
+- **Over-strictness is not supported.** `profile_matched_cov` (a direction drawn with the chunk's activation
+  covariance) passes K1 (sensitivity 0.9162, FPR 5/2948) but clears fewer real cells than isotropic profile.
+  **Decision: isotropic `profile_matched` is the battery null for new runs.**
+- **The 0 per-target concepts is low power.** About 62% of profile clears are at chance level (110 vs a 67.88
+  expectation), and only 5 targets reach ≥6 causal features.
+  - Round 6 measures k = 16/32 rows × 32 draws on K1 and v2 before the 7-model concepts stage runs, so the settings are
+    fixed before its data is seen.
+- **Bug fixed:** the agreement step's content-keyed caches persisted across in-process runs, so K1 cells after the first
+  in a process could read a stale battery. The real v2 runs are unaffected (one per process). The K1 agreement-rung
+  numbers from rounds 3–5 are unverified until re-run in round 6.
+- **FINDINGS updated:** MN-29 real-data extent; 're-measured' lines on MP-07, MN-14, SH-14–17, SH-20, CA-06, CA-08,
+  CA-10, MN-18; SH-16's headline row marked superseded.
+
 #### 38.2.1 Why, grounded
 
 **What is registered today** (`analysis/hypotheses.py`):
