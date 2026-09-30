@@ -5875,6 +5875,45 @@ def _sae_capability_block(run_dir: Path, findings: list) -> str:
         "complete either way.",
         "How to read this comparison")
 
+def _sae_training_incident_notes(run_dir: Path) -> str:
+    """Red lines for SAE training events that changed what was trained.
+
+    Two recorded events, both absent from `sae/meta.json` on a clean run (so
+    this returns `""` and old artifacts render unchanged): real-data rows the
+    model returned NaN/inf for and that were dropped from the training set
+    (`n_real_data_rows_dropped_nonfinite`), and ladder cells whose training
+    diverged and were excluded from the dict-size choice
+    (`dict_size_search.failed_cells`). Rendered in the body because a dictionary
+    chosen among fewer sizes, or trained on fewer rows, than configured is not
+    what the config says (`CLAUDE.md` sec 2.5).
+    """
+    meta = load_json(run_dir / "sae" / "meta.json") or {}
+    dropped = {k: e["n_real_data_rows_dropped_nonfinite"] for k, e in meta.items()
+               if isinstance(e, dict) and e.get("n_real_data_rows_dropped_nonfinite")}
+    failed = {k: (e.get("dict_size_search") or {}).get("failed_cells") for k, e in meta.items()
+              if isinstance(e, dict) and (e.get("dict_size_search") or {}).get("failed_cells")}
+    out = ""
+    if dropped:
+        out += (f"<p class='mockwarn'>\u26a0 {len(dropped)} dictionar"
+                f"{'y was' if len(dropped) == 1 else 'ies were'} trained without some "
+                f"real-data augmentation rows, because the model returned NaN/inf for "
+                f"those real contexts (for example a constant series) and a single "
+                f"non-finite row destroys every SAE weight: "
+                f"{', '.join(f'{k} ({n} rows dropped)' for k, n in dropped.items())}.</p>")
+    if failed:
+        parts = []
+        for k, cells in failed.items():
+            parts.append(f"{k} (dictionary size"
+                         f"{'s' if len(cells) > 1 else ''} "
+                         f"{', '.join(str(c['dict_size']) for c in cells)})")
+        out += (f"<p class='mockwarn'>\u26a0 Training diverged to NaN/inf for some "
+                f"candidate dictionary sizes, which were excluded from the dict-size "
+                f"search; the size was chosen among the remaining ones. Reasons are in "
+                f"<code>dict_size_search.failed_cells</code> in sae/meta.json: "
+                f"{'; '.join(parts)}.</p>")
+    return out
+
+
 def _sae_health_block(run_dir: Path, findings: list) -> str:
     """One row per SAE target: is this dictionary worth reading features off?
 
@@ -5957,6 +5996,8 @@ def _sae_health_block(run_dir: Path, findings: list) -> str:
                 f"label-permutation null, so their feature names carry no more "
                 f"signal than shuffled labels would: "
                 f"{', '.join(not_clearing)}.</p>")
+
+    out += _sae_training_incident_notes(run_dir)
 
     # Figure first, then the table. The figure answers the three questions
     # that are comparisons ACROSS targets, which is what a reader cannot do

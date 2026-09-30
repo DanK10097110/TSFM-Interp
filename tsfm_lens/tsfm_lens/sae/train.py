@@ -8,6 +8,7 @@ everywhere downstream of extraction" discipline (`CLAUDE.md` §6.4).
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -51,6 +52,46 @@ class SAETrainConfig:
     # See `config.py::SAEConfig.min_train_steps` for why this exists.
     min_train_steps: int = 0
     aux_dead_steps_frac: float = 0.0
+
+
+class NonFiniteTrainingError(FloatingPointError):
+    """SAE training met a NaN/inf, either in its input or in its own loss/weights.
+
+    `kind` separates the two because they have opposite remedies. `"input"`
+    means the activation matrix handed to `train_sae` already held non-finite
+    values: every dictionary size would fail identically, so it is never
+    skipped per ladder cell. `"diverged"` means the optimization itself blew
+    up at this configuration (one ladder cell's learning rate, dictionary
+    size or seed), which `search_dict_size` may record and route around.
+    The message names the target, dictionary size, seed and the epoch/step at
+    which the first non-finite value was observed (`CLAUDE.md` sec 2.5).
+    """
+
+    def __init__(self, message: str, kind: str, context: str = "", dict_size: int = 0,
+                 seed: int = 0, epoch: int | None = None, step: int | None = None):
+        super().__init__(message)
+        self.kind, self.context, self.dict_size, self.seed = kind, context, dict_size, seed
+        self.epoch, self.step = epoch, step
+
+    def record(self) -> dict:
+        """JSON-able description for the SAE artifact."""
+        return {"dict_size": self.dict_size, "seed": self.seed, "kind": self.kind,
+                "epoch": self.epoch, "step": self.step, "reason": str(self)}
+
+
+def drop_nonfinite_rows(activations: np.ndarray) -> tuple:
+    """`(finite_rows, n_dropped)`: rows holding any NaN/inf removed, order kept.
+
+    Exists for the real-data augmentation rows. A model can return NaN for a
+    legitimate real context (Timer's input normalization on a constant
+    series: 5 of 266 Monash windows, 75 pooled rows, in the 7-model run), and
+    one NaN row in a batch turns every SAE weight NaN at the first optimizer
+    step. Returns the input object itself when nothing is dropped.
+    """
+    bad = ~np.isfinite(activations).all(axis=-1)
+    if not bad.any():
+        return activations, 0
+    return activations[~bad], int(bad.sum())
 
 
 def load_all_windows(store: ActivationStore, model: str, layer: str) -> np.ndarray:
@@ -244,7 +285,8 @@ def resample_dead_neurons(sae: TopKSAE, fired: torch.Tensor, x: torch.Tensor,
     return int(dead.numel())
 
 
-def train_sae(activations: np.ndarray, cfg: SAETrainConfig, device: torch.device) -> tuple:
+def train_sae(activations: np.ndarray, cfg: SAETrainConfig, device: torch.device,
+              context: str = "") -> tuple:
     """Train one TopK SAE on a [N, D] activation matrix; returns (sae, per-epoch MSE history).
 
     `cfg.min_train_steps`/`cfg.aux_dead_steps_frac` (ROADMAP.md sec 23.2
@@ -256,11 +298,25 @@ def train_sae(activations: np.ndarray, cfg: SAETrainConfig, device: torch.device
     `sae.train_meta` -- not returned as a third tuple element, so every
     existing `sae, history = train_sae(...)` call site keeps working
     unchanged; only `run_sae` reads it.
+
+    Raises `NonFiniteTrainingError` (naming `context`, dictionary size, seed,
+    epoch and step) instead of training on, or through, a NaN/inf: a NaN in
+    one batch makes every weight NaN at the next optimizer step, and the first
+    symptom was then an unrelated `torch.multinomial` error in the resampler
+    epochs later. The checks read values the loop already computes, so a run
+    that never diverges is bit-identical.
     """
     rng = torch.Generator().manual_seed(cfg.seed)
     x = torch.from_numpy(activations)
     d_in = x.shape[-1]
     dict_size = cfg.dict_size or cfg.dict_size_mult * d_in
+    where = f"{context or 'SAE'} dict_size={dict_size} seed={cfg.seed}"
+    n_bad = int((~torch.isfinite(x).all(dim=-1)).sum())
+    if n_bad:
+        raise NonFiniteTrainingError(
+            f"{where}: {n_bad} of {x.shape[0]} training rows hold NaN/inf before any "
+            f"optimizer step; the activations are not trainable as given",
+            kind="input", context=context, dict_size=dict_size, seed=cfg.seed)
     sae = TopKSAE(d_in, dict_size, cfg.k, generator=rng).to(device)
     opt = torch.optim.Adam(sae.parameters(), lr=cfg.lr)
 
@@ -290,6 +346,13 @@ def train_sae(activations: np.ndarray, cfg: SAETrainConfig, device: torch.device
                                       steps_since_fired >= aux_dead_steps, cfg.aux_k)
             if aux is not None:
                 loss = loss + cfg.aux_coef * aux
+            mse_value = mse.item()
+            if not math.isfinite(mse_value):
+                raise NonFiniteTrainingError(
+                    f"{where}: non-finite reconstruction loss ({mse_value}) at epoch "
+                    f"{epoch}, step {s // cfg.batch_size} (lr={cfg.lr}); training diverged",
+                    kind="diverged", context=context, dict_size=dict_size, seed=cfg.seed,
+                    epoch=epoch, step=s // cfg.batch_size)
             opt.zero_grad()
             loss.backward()
             opt.step()
@@ -301,7 +364,13 @@ def train_sae(activations: np.ndarray, cfg: SAETrainConfig, device: torch.device
             # History records the reconstruction MSE only, never the aux term,
             # so an aux_k run's curve stays comparable to every aux-free run
             # already on record.
-            epoch_loss += mse.item() * (e - s)
+            epoch_loss += mse_value * (e - s)
+        if not all(bool(torch.isfinite(p).all()) for p in sae.parameters()):
+            raise NonFiniteTrainingError(
+                f"{where}: non-finite SAE weights at the end of epoch {epoch} "
+                f"(lr={cfg.lr}); training diverged",
+                kind="diverged", context=context, dict_size=dict_size, seed=cfg.seed,
+                epoch=epoch, step=steps_per_epoch - 1)
         history.append(epoch_loss / n)
         if cfg.resample_dead_every_epochs and (epoch + 1) % cfg.resample_dead_every_epochs == 0:
             sample = x[perm[: min(n, cfg.batch_size * 4)]].to(device)
@@ -323,7 +392,7 @@ def search_dict_size(train_activations: np.ndarray, base_cfg: SAETrainConfig, la
                      max_dead_rate: float, device: torch.device,
                      eval_activations: np.ndarray = None,
                      min_fidelity: float = 0.0, n_seeds: int = 1,
-                     margin: float = 0.0) -> dict:
+                     margin: float = 0.0, context: str = "") -> dict:
     """Train one SAE per candidate dictionary size and pick one (ROADMAP.md sec 23.2 A1(c)).
 
     Runs entirely on already-cached activations -- no checkpoint load, no
@@ -387,19 +456,42 @@ def search_dict_size(train_activations: np.ndarray, base_cfg: SAETrainConfig, la
     tightens the passing filter to
     `dead_feature_rate <= max_dead_rate - margin`, so the selection is
     pushed toward a size with real headroom instead of the bare minimum.
+
+    A cell whose optimization diverges (`NonFiniteTrainingError`, kind
+    `"diverged"`) is not allowed to kill the search: it is left out of
+    `ladder`, recorded under a `failed_cells` key (only present when a cell
+    failed, so a clean search's artifact is unchanged) with its reason, and the
+    choice is made among the finite cells. If EVERY cell fails the search
+    raises, naming each. Non-finite INPUT (kind `"input"`) always raises: it
+    would fail every cell identically, and skipping them all would hide a data
+    bug behind a generic failure.
     """
     from dataclasses import replace
     from .eval import seed_spread
     if eval_activations is None:
         eval_activations = train_activations
+    train_kwargs = {"context": context} if context else {}
     ladder_results = []
+    failed_cells = []
     for size in sorted({int(s) for s in ladder}):
         dead_draws, fid_draws = [], []
+        failure = None
         for i in range(max(1, n_seeds)):
             cell_cfg = replace(base_cfg, dict_size=size, seed=base_cfg.seed + i)
-            sae, _ = train_sae(train_activations, cell_cfg, device)
+            try:
+                sae, _ = train_sae(train_activations, cell_cfg, device, **train_kwargs)
+            except NonFiniteTrainingError as exc:
+                if exc.kind != "diverged":
+                    raise
+                failure = exc
+                break
             dead_draws.append(dead_feature_rate(sae, eval_activations, device))
             fid_draws.append(reconstruction_fidelity(sae, eval_activations, device))
+        if failure is not None:
+            failed_cells.append(failure.record())
+            log.warning(f"sae dict-size search: size={size} FAILED and is excluded from "
+                        f"the choice -- {failure}")
+            continue
         dead_stats = seed_spread(dead_draws)
         fid_stats = seed_spread(fid_draws)
         dead, fid = dead_stats["mean"], fid_stats["mean"]
@@ -415,6 +507,12 @@ def search_dict_size(train_activations: np.ndarray, base_cfg: SAETrainConfig, la
     # default of exactly 0.0 would silently start excluding any candidate
     # whose fidelity happens to be negative (a real, observed collapse; see
     # ROADMAP.md sec 23.2 A1's 2026-08-21 finding), which is not a no-op.
+    if not ladder_results:
+        raise NonFiniteTrainingError(
+            f"{context or 'SAE'}: every dictionary size in the ladder diverged, so no "
+            f"dictionary can be chosen: "
+            + "; ".join(f"{c['dict_size']}: {c['reason']}" for c in failed_cells),
+            kind="diverged", context=context)
     passing = [r for r in ladder_results
               if r["dead_feature_rate"] <= max_dead_rate - margin
               and (min_fidelity <= 0 or r["reconstruction_fidelity"] >= min_fidelity)]
@@ -424,9 +522,12 @@ def search_dict_size(train_activations: np.ndarray, base_cfg: SAETrainConfig, la
     else:
         chosen = max(ladder_results, key=lambda r: r["n_alive"])
         target_met = False
-    return {"ladder": ladder_results, "chosen_dict_size": chosen["dict_size"],
+    out = {"ladder": ladder_results, "chosen_dict_size": chosen["dict_size"],
            "target_met": target_met, "max_dead_rate": max_dead_rate,
            "min_fidelity": min_fidelity, "margin": margin}
+    if failed_cells:
+        out["failed_cells"] = failed_cells
+    return out
 
 
 def encode_and_persist_features(store: ActivationStore, model: str, layer: str,
@@ -620,9 +721,15 @@ def run_sae(cfg: PipelineConfig, hub: ModelHub, store: ActivationStore,
             log.info(f"sae: {key} no held-out split -- {split['reason']}")
         train_activations = bench_train
         n_real = 0
+        n_real_dropped = 0
         if cfg.sae.real_data_enabled:
             real_activations = extract_real_activations(
                 adapter, layer, real_contexts, cfg.alignment.window, cfg.sae.batch_size, device)
+            real_activations, n_real_dropped = drop_nonfinite_rows(real_activations)
+            if n_real_dropped:
+                log.warning(f"sae: {key} dropped {n_real_dropped} non-finite real-data "
+                            f"activation rows (the model returned NaN/inf for some real "
+                            f"contexts, e.g. a constant series); recorded in sae/meta.json")
             n_real = real_activations.shape[0]
             train_activations = np.concatenate([bench_train, real_activations], axis=0)
             log.info(f"sae: augmented {key} training set with {n_real} real-data rows "
@@ -643,7 +750,8 @@ def run_sae(cfg: PipelineConfig, hub: ModelHub, store: ActivationStore,
                                                 eval_activations=bench_train,
                                                 min_fidelity=cfg.sae.min_fidelity,
                                                 n_seeds=cfg.sae.dict_size_search_seeds,
-                                                margin=cfg.sae.dict_size_search_margin)
+                                                margin=cfg.sae.dict_size_search_margin,
+                                                context=key)
             train_cfg.dict_size = dict_size_search["chosen_dict_size"]
             if not dict_size_search["target_met"]:
                 log.warning(f"sae: {key} dict-size search found NO ladder size clearing "
@@ -654,7 +762,7 @@ def run_sae(cfg: PipelineConfig, hub: ModelHub, store: ActivationStore,
             log.info(f"sae: {key} dict_size_policy=search skipped -- explicit "
                      f"dict_size={explicit_dict_size} on this target takes priority")
 
-        sae, history = train_sae(train_activations, train_cfg, device)
+        sae, history = train_sae(train_activations, train_cfg, device, context=key)
 
         ckpt_path = out_dir / sanitize(model) / f"{sanitize(layer)}.pt"
         save_sae(sae, ckpt_path)
@@ -832,7 +940,8 @@ def run_sae(cfg: PipelineConfig, hub: ModelHub, store: ActivationStore,
                 log.info(f"sae: noise-floor replicate {offset}/{cfg.sae.n_seeds - 1} for {key} "
                          f"(seed {seed})")
                 replicate, _ = train_sae(train_activations, _train_config(
-                    cfg, seed, dict_size=train_cfg.dict_size), device)
+                    cfg, seed, dict_size=train_cfg.dict_size), device,
+                    context=f"{key} seed-floor replicate")
                 per_seed.append(_repeat_metrics(cfg, adapter, layer, replicate, store, data,
                                                 device, bench_train, key, seed))
             seed_floor = {"n_seeds": cfg.sae.n_seeds, "per_seed": per_seed,
@@ -910,6 +1019,8 @@ def run_sae(cfg: PipelineConfig, hub: ModelHub, store: ActivationStore,
             "dict_size_search": dict_size_search,
             "median_hidden_norm": median_hidden_norm,
         }
+        if n_real_dropped:
+            results[key]["n_real_data_rows_dropped_nonfinite"] = n_real_dropped
     save_json(out_dir / "meta.json", results)
 
     if cfg.sae.persist_features:
@@ -923,7 +1034,8 @@ def run_sae(cfg: PipelineConfig, hub: ModelHub, store: ActivationStore,
 
 
 def train_sae_replicate(train_activations: np.ndarray, cfg: PipelineConfig, seed: int,
-                        dict_size: int, device: torch.device) -> tuple:
+                        dict_size: int, device: torch.device,
+                        context: str = "") -> tuple:
     """One replicate dictionary at the PRIMARY's own recorded `dict_size`
     (ROADMAP.md sec 37 P2 -- "is an atlas concept a property of the model, or
     of one SAE draw?").
@@ -940,7 +1052,7 @@ def train_sae_replicate(train_activations: np.ndarray, cfg: PipelineConfig, seed
     as the primary's did, via the same `_train_config` `run_sae` itself uses.
     """
     train_cfg = _train_config(cfg, seed, dict_size=int(dict_size))
-    return train_sae(train_activations, train_cfg, device)
+    return train_sae(train_activations, train_cfg, device, context=context)
 
 
 def run_sae_replicates(cfg: PipelineConfig, hub: ModelHub, store: ActivationStore,
@@ -991,6 +1103,7 @@ def run_sae_replicates(cfg: PipelineConfig, hub: ModelHub, store: ActivationStor
                 real_activations = extract_real_activations(
                     adapter, layer, real_contexts, cfg.alignment.window,
                     cfg.sae.batch_size, device)
+                real_activations, _ = drop_nonfinite_rows(real_activations)
                 train_activations = np.concatenate([bench_train, real_activations], axis=0)
 
             seeds, checkpoints = [], []
@@ -998,7 +1111,8 @@ def run_sae_replicates(cfg: PipelineConfig, hub: ModelHub, store: ActivationStor
                 seed = cfg.run.seed + i
                 log.info(f"sae replicates: training {key} replicate {i}/{int(n_replicates) - 1} "
                          f"(seed {seed}, dict_size={dict_size})")
-                sae, _history = train_sae_replicate(train_activations, cfg, seed, dict_size, device)
+                sae, _history = train_sae_replicate(train_activations, cfg, seed, dict_size, device,
+                                                    context=f"{key} replicate")
                 ckpt_path = out_dir / sanitize(model) / f"{sanitize(layer)}@r{i}.pt"
                 save_sae(sae, ckpt_path)
                 encode_and_persist_features(store, model, layer, sae, device,
