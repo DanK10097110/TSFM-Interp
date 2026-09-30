@@ -37873,6 +37873,27 @@ Setup:
 - **FINDINGS updated:** MN-29 real-data extent; 're-measured' lines on MP-07, MN-14, SH-14–17, SH-20, CA-06, CA-08,
   CA-10, MN-18; SH-16's headline row marked superseded.
 
+**Round 6: power (2026-09-30, merged bb24479). A larger battery does not recover concept-level power.**
+
+v2 copy, `profile_matched`, battery only, same candidates:
+
+| (k, n_null) | clears / empirical expected | ratio | BH-sig targets | causal features | targets ≥6 | admit a k |
+|---|---|---|---|---|---|---|
+| (8, 16) | 254 / 83.0625 | 3.0579 | 20 | 110 | 5 | 0 |
+| (16, 32) | 188 / 57.0 | 3.2982 | 16 | 90 | 3 | 0 |
+| (32, 32) | 259 / 132.1875 | 1.9593 | 11 | 101 | 3 | 1 (Chronos-2 block.7, k=2, silhouette 0.202) |
+
+- **The limit is sparsity, not k.** 178/672 candidates never fire on any series and are unscorable at every setting.
+  At the requested k = 32, 337 scorable features have fewer than 32 firing rows.
+- **The effective k is silently capped** by each target's batch cap. At k = 32: TimesFM and Bolt 32, Chronos-2 24,
+  Sundial 16, so "k = 32" is not one setting across models. **To do:** record the effective k per target in the
+  ablation artifact and render it. It is harmless at k = 8, because every batch cap is ≥ 16.
+- **K1 at both larger settings:** passes on 5/5 seeds, sensitivity 0.8491 / 0.8691, control FPR 4/2966 and 4/2972.
+- **Decision (made before the 7-model concepts data exists):** keep (8, 16) + `profile_matched` +
+  `ablation_empirical_chance: true` for `panel7_v2_dev`.
+- **Agreement-rung re-run (26 cells, each in its own process):** 21 cells are identical. Round 3's profile_matched
+  cells changed, mainly because round 3 predates the agreement-step matched null. Round 5's agreement numbers stand.
+
 #### 38.2.1 Why, grounded
 
 **What is registered today** (`analysis/hypotheses.py`):

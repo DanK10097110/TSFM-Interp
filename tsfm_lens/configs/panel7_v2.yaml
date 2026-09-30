@@ -228,6 +228,10 @@ sae:
   # known-answer gate on 5/5 seeds; this one passed on 5/5. Field-level on the
   # concepts stage only, so sae training and every earlier stage stay current.
   ablation_null: profile_matched
+  # Leave-one-draw-out empirical chance rate per cell (ROADMAP sec 38.1.8):
+  # the battery's nominal 0.05 x cells is not a chance line (effect is a mean
+  # over k rows vs the p95 of pooled per-row null draws; measured ~2%).
+  ablation_empirical_chance: true
   targets: []                     # "auto" -- layer_screen's own selection, every model
   dict_size_mult: 8
   dict_size_policy: search
