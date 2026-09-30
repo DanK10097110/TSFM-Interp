@@ -807,6 +807,7 @@ def run_shared_input_agreement(cfg, run_dir, hub, store, data, device, atlas: di
     overwrite the dev artifact a registered hash pins).
     """
     t0 = time.monotonic()
+    reset_caches()
     c = cfg.concepts
     n_null = int(n_null if n_null is not None else getattr(c, "shared_input_n_null", 50))
     base_seed = int(base_seed if base_seed is not None else cfg.run.seed)
