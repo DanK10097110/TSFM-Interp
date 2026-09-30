@@ -56,10 +56,15 @@ the forecast under the reconstruction with $z_i=0$ against the full reconstructi
 \end{equation}
 where $g_c$ is one of nine forecast channels (trend, seasonal strength, spectral centroid, level, dispersion,
 near/far-horizon shape distance, MASE, flatness). Using the reconstruction as baseline keeps the SAE's error
-from being charged to the feature. The null removes a random code direction of matched magnitude on the
-\emph{same} rows; a feature clears channel $c$ if mean $|\Delta_i^{(c)}|$ exceeds the null's 95th percentile
-$q_{95}^{(c)}$, and its channel vector is $v_i^{(c)}=\overline{\Delta_i^{(c)}}/q_{95}^{(c)}$. Shape channels are
-distances and are treated as undirected. A \emph{reach probe} first requires self-patching to change the
+from being charged to the feature. The null is \emph{profile-matched}: on the \emph{same} rows, each of 16
+draws removes, at every token $t$, exactly the amount the feature removes, $|z_i(t)|\,\|w_i\|$, along a random
+decoded direction, so only the direction differs. A feature clears channel $c$ if mean $|\Delta_i^{(c)}|$
+exceeds the pooled null's 95th percentile $q_{95}^{(c)}$, and its channel vector is
+$v_i^{(c)}=\overline{\Delta_i^{(c)}}/q_{95}^{(c)}$. Shape channels are distances and are treated as undirected.
+Because a mean over rows is compared with a percentile of single rows, the chance rate is not 5\%; it is
+estimated per cell by scoring each null draw against the others (about 2\% on the case study). An earlier null
+removed one uniform, batch-averaged amount; the known-answer test of Section~\ref{sec:controls} showed it
+lenient (\fid{MN-29}). A \emph{reach probe} first requires self-patching to change the
 forecast by exactly $0.0$ and cross-layer patching by a relative $>10^{-3}$; otherwise the target is withheld
 with its reason (Figure~\ref{fig:battery}).
 
@@ -76,7 +81,7 @@ with its reason (Figure~\ref{fig:battery}).
   \node[box] (rows) at (10.6,0) {feature $i$: its\\top-$k$ firing series};
   \node[box, fill=bad!8] (wh) at (5.25,1.7) {target withheld,\\reason rendered};
   \node[box] (abl) at (10.6,-2.2) {forecast with $\hat h_{-i}$\\vs.\ with $\hat h$\\(same seed)};
-  \node[box] (null) at (7.0,-2.2) {row-matched null:\\random code direction,\\matched magnitude};
+  \node[box] (null) at (7.0,-2.2) {row-matched null:\\random direction, the\\feature's own profile};
   \node[box] (chan) at (3.5,-2.2) {each of 9 channels:\\$|\overline{\Delta}|>q_{95}$ of null?};
   \node[box, fill=accent!12] (vec) at (0,-2.2) {causal feature\\$v_i=\overline{\Delta}/q_{95}$};
   \draw[arr] (tgt) -- (self);
