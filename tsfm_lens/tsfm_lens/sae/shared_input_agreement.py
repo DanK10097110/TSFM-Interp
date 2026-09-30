@@ -100,7 +100,7 @@ from ..utils import load_json, log, save_json
 from .eval import _token_level_replacement
 from .ground_truth import load_ground_truth_table
 from .response import CHANNELS, _direction_steered_replacement, _feature_ablated_replacement, \
-    _profile_matched_null_replacement, \
+    ABLATION_NULL_MODES, _profile_matched_null_replacement, \
     _score_channel_against_null, alive_feature_mask, battery_statistics
 from .train import load_all_windows, load_sae_checkpoint, sanitize
 from .transfer import _seed, auc_from_ranks, concept_scores, top_series
@@ -462,9 +462,9 @@ def own_effect_null(ctx: TargetContext, features, U_key: tuple, contexts_u: np.n
     carries the mode, so the two modes never read each other's draws."""
     feat_list = [int(features)] if isinstance(features, (int, np.integer)) else \
         sorted(int(f) for f in features)
-    if null_mode not in ("mean_magnitude", "profile_matched"):
+    if null_mode not in ABLATION_NULL_MODES:
         raise ValueError(f"unknown ablation null mode {null_mode!r}: expected "
-                         f"'mean_magnitude' or 'profile_matched'")
+                         f"one of {ABLATION_NULL_MODES}")
     key = (ctx.model, ctx.layer, tuple(feat_list), U_key)
     if null_mode != "mean_magnitude":
         key = key + (null_mode,)
@@ -482,12 +482,15 @@ def own_effect_null(ctx: TargetContext, features, U_key: tuple, contexts_u: np.n
     rng = np.random.default_rng(direction_seed)
     out = []
     for _ in range(int(n_null)):
-        direction = rng.normal(size=ctx.sae.dict_size)
+        cov = null_mode == "profile_matched_cov"
+        direction = rng.normal(size=(clean_tokens.shape[0] * clean_tokens.shape[1]) if cov
+                               else ctx.sae.dict_size)
         direction = direction / (np.linalg.norm(direction) + 1e-12)
-        if null_mode == "profile_matched":
+        if null_mode in ("profile_matched", "profile_matched_cov"):
             replacement = _profile_matched_null_replacement(
                 clean_tokens, ctx.sae, ctx.device, feat_list,
-                torch.as_tensor(direction, dtype=torch.float32))
+                torch.as_tensor(direction, dtype=torch.float32),
+                direction="covariance" if cov else "decoder")
         else:
             replacement = _direction_steered_replacement(
                 clean_tokens, ctx.sae, ctx.device,
@@ -804,6 +807,7 @@ def run_shared_input_agreement(cfg, run_dir, hub, store, data, device, atlas: di
     overwrite the dev artifact a registered hash pins).
     """
     t0 = time.monotonic()
+    reset_caches()
     c = cfg.concepts
     n_null = int(n_null if n_null is not None else getattr(c, "shared_input_n_null", 50))
     base_seed = int(base_seed if base_seed is not None else cfg.run.seed)

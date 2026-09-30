@@ -750,8 +750,14 @@ class SAEConfig:
     # directions removed with that feature's own per-token profile (n_null
     # extra forwards per feature). Declared field by field on the concepts stage
     # (`sae.ablation_null`) and left out of the `sae` stage's inputs.
+    # `profile_matched_cov`: the same per-feature profile with the direction drawn
+    # from the chunk's own token covariance (on-manifold).
     ablation_null: str = field(default="mean_magnitude", metadata={"stage_input": False,
                                                                   "omit_at_default": True})
+    # Opt-in: also record the battery's leave-one-draw-out empirical chance clear
+    # rate (`empirical_chance` in `*_ablation.json`); default off, artifacts unchanged.
+    ablation_empirical_chance: bool = field(default=False, metadata={"stage_input": False,
+                                                                     "omit_at_default": True})
 
 
 @dataclass
