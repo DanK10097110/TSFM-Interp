@@ -206,7 +206,7 @@ def test_l0_without_nonfinite_writes_no_artifact():
     assert not (cfg.run_dir() / "l0" / "nonfinite_forecasts.json").exists()
 
 
-def test_lens_drops_nonfinite_series_and_raises_when_all_are(monkeypatch):
+def test_lens_drops_nonfinite_series_and_records_the_count(monkeypatch):
     from tsfm_lens.analysis import lens as lens_mod
     real = lens_mod.skip_lens_forecasts
 
@@ -225,3 +225,18 @@ def test_lens_drops_nonfinite_series_and_raises_when_all_are(monkeypatch):
         if m.get("skip_lens_available", True):
             assert m["n_series_nonfinite_dropped"] == 1
             assert all(np.isfinite(v["value"]) for v in m["mase_ci"])
+
+
+def test_lens_raises_loudly_when_every_series_is_nonfinite(monkeypatch):
+    from tsfm_lens.analysis import lens as lens_mod
+    real = lens_mod.skip_lens_forecasts
+
+    def all_nan(adapter, layers, contexts, horizon, quantiles, seed):
+        lens_fc, final = real(adapter, layers, contexts, horizon, quantiles, seed)
+        return np.full_like(lens_fc, np.nan), np.full_like(final, np.nan)
+
+    monkeypatch.setattr(lens_mod, "skip_lens_forecasts", all_nan)
+    cfg = config_from_dict(build_config(tempfile.mkdtemp()))
+    run_pipeline(cfg, stages=["extract", "l0"])
+    with pytest.raises(ValueError, match="non-finite forecast"):
+        run_pipeline(cfg, stages=["lens"])
