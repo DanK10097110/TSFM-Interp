@@ -184,6 +184,11 @@ layer_screen:
 
 sae:
   enabled: true
+  # PINNED to the legacy null: this run's recorded concepts artifacts were made
+  # with it, and the default is now `profile_matched` (the legacy null failed the
+  # known-answer gate on 5/5 seeds, FINDINGS MN-29). Pinned, the run stays current
+  # and reproducible; drop the line to re-run under the stricter null.
+  ablation_null: mean_magnitude
   targets: []                     # "auto" -- layer_screen's own selection, all 4 models
   dict_size_mult: 8
   dict_size_policy: search

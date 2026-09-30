@@ -166,7 +166,7 @@ def run_ablation_target(cfg, run_dir: Path, hub, data, store, device, model: str
         top_k_series=top_k_series, n_null_directions=n_null_directions,
         max_series=max_series, floor=floor, periods_full=periods_full,
         keep_forecasts=keep_forecasts, keep_null_draws=keep_null_draws,
-        null_mode=str(getattr(cfg.sae, "ablation_null", "mean_magnitude")),
+        null_mode=cfg_null_mode(cfg),
         empirical_chance=bool(empirical_chance or getattr(cfg.sae, "ablation_empirical_chance", False)))
 
     if result.get("withheld"):
@@ -178,6 +178,46 @@ def run_ablation_target(cfg, run_dir: Path, hub, data, store, device, model: str
                  f"({result['clearing_cells_over_chance_ratio']:.2f}x chance, "
                  f"{result['excess_over_chance']:+.1f} cells)")
     return {"model": model, "layer": layer, "candidate_source": source, **result}
+
+
+LEGACY_NULL = "mean_magnitude"
+
+
+def cfg_null_mode(cfg) -> str:
+    """The ablation null the config asks for (`sae.ablation_null`). A config object
+    with no such attribute (an older checkout's) is the legacy null, the same
+    reading every other reader uses; a real `SAEConfig` always has the field."""
+    return str(getattr(getattr(cfg, "sae", None), "ablation_null", LEGACY_NULL) or LEGACY_NULL)
+
+
+def artifact_null_mode(art: dict) -> str:
+    """The null an ablation artifact was made with. A MISSING key means the
+    legacy null (older artifacts never recorded it), independent of the
+    config default."""
+    return str(art.get("ablation_null") or LEGACY_NULL)
+
+
+def check_ablation_null_modes(cfg, run_dir: Path) -> None:
+    """Refuse, loudly, to build on an on-disk `*_ablation.json` whose recorded
+    null differs from `sae.ablation_null`. Belt and braces beyond the stage
+    fingerprint (which already marks a legacy-null concepts artifact stale
+    under the new default): a stray or orphaned artifact from another mode
+    would otherwise be pooled into concepts/atlas/agreement. Skipped and
+    withheld artifacts record no battery and are not checked."""
+    want = cfg_null_mode(cfg)
+    bad = []
+    for p in sorted((Path(run_dir) / "sae").glob("*/*_ablation.json")):
+        art = load_json(p)
+        if art.get("skipped") or art.get("withheld"):
+            continue
+        got = artifact_null_mode(art)
+        if got != want:
+            bad.append(f"{p.relative_to(run_dir)} ({got})")
+    if bad:
+        raise RuntimeError(
+            f"sae.ablation_null is {want!r} but these ablation artifacts were made with "
+            f"a different null: {', '.join(bad)}. Delete them (or rerun with --stages concepts "
+            f"--force concepts, which rewrites the targets' artifacts) or set sae.ablation_null to match.")
 
 
 def run_ablation_all(cfg, run_dir: Path, hub, data, store, device, targets: list,

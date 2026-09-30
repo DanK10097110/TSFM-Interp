@@ -90,7 +90,7 @@ import time
 from pathlib import Path
 
 from ..utils import load_json, log, save_json, set_seed
-from .ablation_run import run_ablation_all
+from .ablation_run import check_ablation_null_modes, run_ablation_all
 from .concept_atlas import pooled_features, run_concept_atlas
 from .concepts import run_concepts
 from .shared_input_agreement import run_shared_input_agreement, shared_input_agreement_path
@@ -223,6 +223,7 @@ def run_concept_stage(cfg, hub, store, data, device) -> dict:
         if not cfg.run.keep_models_loaded:
             hub.release(model)
 
+    check_ablation_null_modes(cfg, run_dir)
     ablation = {}
     for path in written:
         art = load_json(path)

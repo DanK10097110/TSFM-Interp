@@ -39,7 +39,10 @@ def resolve_config_keys(cfg, keys: tuple) -> dict:
     A field marked `metadata={"omit_at_default": True}` is left out while it
     holds its default (`_omit_at_default`), so declaring a new opt-in knob does
     not change any existing run's fingerprint (CLAUDE.md sec 11.51); it enters
-    only once it is set.
+    only once it is set. `metadata={"omit_at_value": V}` is the variant for a
+    field whose DEFAULT later moved: it is left out while it holds the LEGACY
+    value V (so runs fingerprinted before the move stay byte-identical when
+    they pin V) and included at every other value, including the new default.
     """
     out = {}
     for key in keys:
@@ -61,7 +64,10 @@ def resolve_config_keys(cfg, keys: tuple) -> dict:
 
 def _omit_at_default(obj, name: str, value) -> bool:
     """True when the dataclass field `name` is marked
-    `metadata={"omit_at_default": True}` and still holds its default.
+    `metadata={"omit_at_default": True}` and still holds its default, or is
+    marked `metadata={"omit_at_value": V}` and holds V (the legacy value of a
+    field whose default moved away from it; the key then stays in the
+    fingerprint at the new default, so old artifacts read as stale).
 
     Adding a new field to a fingerprinted section (or a new field-level key
     to a stage) changes every older run's fingerprint and refuses its stale
@@ -73,7 +79,11 @@ def _omit_at_default(obj, name: str, value) -> bool:
     if not dataclasses.is_dataclass(obj):
         return False
     for f in dataclasses.fields(obj):
-        if f.name == name and f.metadata.get("omit_at_default") is True:
+        if f.name != name:
+            continue
+        if "omit_at_value" in f.metadata:
+            return value == f.metadata["omit_at_value"]
+        if f.metadata.get("omit_at_default") is True:
             return f.default is not dataclasses.MISSING and value == f.default
     return False
 

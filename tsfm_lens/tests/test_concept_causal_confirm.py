@@ -34,7 +34,16 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from tests.test_concept_stage import _cfg as _stage_cfg  # noqa: E402
+from tests.test_concept_stage import _cfg as _base_stage_cfg  # noqa: E402
+
+
+def _stage_cfg(*args, **kwargs):
+    """These tests register and compare claims frozen under the LEGACY null
+    (`mean_magnitude`), so every cfg here pins it; the default is now
+    `profile_matched`."""
+    cfg = _base_stage_cfg(*args, **kwargs)
+    cfg.sae.ablation_null = "mean_magnitude"
+    return cfg
 from tsfm_lens.analysis import confirm as confirm_mod  # noqa: E402
 from tsfm_lens.analysis.hypotheses import (CONCEPT_CLAIM_STAGES, build_registry,  # noqa: E402
                                            check_registry_freshness,

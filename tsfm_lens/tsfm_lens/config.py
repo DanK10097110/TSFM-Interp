@@ -745,15 +745,21 @@ class SAEConfig:
     interest_weights: tuple = field(default=(0.5, 0.3, 0.2),
                                     metadata={"stage_input": False})
     # The random-direction null of the ablation battery (`sae/response.py::
-    # feature_ablation_fingerprints`). `mean_magnitude` (default, unchanged):
-    # one uniform removal size per chunk. `profile_matched`: per feature, random
-    # directions removed with that feature's own per-token profile (n_null
-    # extra forwards per feature). Declared field by field on the concepts stage
-    # (`sae.ablation_null`) and left out of the `sae` stage's inputs.
+    # feature_ablation_fingerprints`). `profile_matched` (DEFAULT since the
+    # legacy null failed the known-answer gate on 5/5 seeds, FINDINGS MN-29):
+    # per feature, random directions removed with that feature's own per-token
+    # profile (n_null extra forwards per feature). `mean_magnitude` (legacy,
+    # pin it to reproduce older runs): one uniform removal size per chunk.
+    # Declared field by field on the concepts stage (`sae.ablation_null`) and
+    # left out of the `sae` stage's inputs. `omit_at_value`, not
+    # `omit_at_default`: the key is omitted at the LEGACY value, so a pinned
+    # legacy run keeps its old fingerprint and a default run (key present)
+    # reads an old legacy concepts artifact as stale.
     # `profile_matched_cov`: the same per-feature profile with the direction drawn
     # from the chunk's own token covariance (on-manifold).
-    ablation_null: str = field(default="mean_magnitude", metadata={"stage_input": False,
-                                                                  "omit_at_default": True})
+    ablation_null: str = field(default="profile_matched",
+                               metadata={"stage_input": False,
+                                         "omit_at_value": "mean_magnitude"})
     # Opt-in: also record the battery's leave-one-draw-out empirical chance clear
     # rate (`empirical_chance` in `*_ablation.json`); default off, artifacts unchanged.
     ablation_empirical_chance: bool = field(default=False, metadata={"stage_input": False,
