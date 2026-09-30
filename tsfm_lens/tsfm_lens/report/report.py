@@ -1436,8 +1436,10 @@ def _ci_str(d: dict, key: str = "value") -> str:
     """Format 'value [lo, hi]' when CI keys are present."""
     if d is None:
         return "n/a"
+    if d.get(key) is None:
+        return "not defined"
     v = f'{d[key]:.2f}'
-    if "lo" in d and "hi" in d:
+    if d.get("lo") is not None and d.get("hi") is not None:
         return f'{v} [{d["lo"]:.2f}, {d["hi"]:.2f}]'
     return v
 
@@ -1468,6 +1470,9 @@ def _err_y(entries: list) -> dict | None:
     the CI bound in that direction) without fabricating a wider interval.
     """
     if not entries or "lo" not in entries[0] or entries[0]["lo"] is None:
+        return None
+    if any(e.get("value") is None or e.get("lo") is None or e.get("hi") is None
+           for e in entries):
         return None
     vals = np.array([e["value"] for e in entries])
     hi = np.array([e["hi"] for e in entries])
@@ -3214,6 +3219,28 @@ def _sec_l2(run_dir: Path, findings: list) -> str:
     return inner
 
 
+def _undefined_agreement_note(pairwise: list) -> str:
+    """Caption sentence naming every fingerprint-agreement rho that is NOT
+    DEFINED (constant or non-finite depth profile) and why, per model pair.
+    Empty when every rho is defined, so such reports are unchanged. A missing
+    bar here means "undefined", never "zero agreement"."""
+    parts = []
+    for e in pairwise:
+        ag = e.get("agreement") or {}
+        und = ag.get("undefined") or {}
+        if not und:
+            continue
+        items = "; ".join(f"{c}: {r}" for c, r in und.items())
+        boots = ag.get("n_undefined_resamples") or {}
+        extra = (f" ({sum(boots.values())} undefined bootstrap draws were excluded "
+                 f"from the intervals)" if boots else "")
+        parts.append(f"{e.get('a')} vs {e.get('b')} -- {items}{extra}")
+    if not parts:
+        return ""
+    return (" Not defined (shown as a gap, never as zero agreement): "
+            + " | ".join(parts) + ".")
+
+
 def _corruption_breakdown_block(run_dir: Path, findings: list) -> str:
     """One row per (corruption, model): what the corruption touched, what it moved.
 
@@ -3462,6 +3489,14 @@ def _sec_l3(run_dir: Path, model_colors: dict, findings: list) -> str:
         "magnitudes are not directly comparable across models — only the "
         "column *shape* (where the peak is) should be compared.")
 
+    beh_dropped = meta.get("behavior_nonfinite_dropped") or {}
+    if beh_dropped:
+        inner += ('<p class="blurb" style="color:var(--bad,#b00020);font-weight:600">'
+                  'Non-finite forecasts: '
+                  + _esc("; ".join(f"{m}: {len(ids)} series" for m, ids in beh_dropped.items()))
+                  + ' gave a non-finite forecast (clean or corrupted) and were dropped from '
+                    'that model\'s behavioral-change statistics; the series ids are in '
+                    '<code>l3/meta.json</code> under <code>behavior_nonfinite_dropped</code>.</p>')
     agreement = meta.get("agreement") or {}
     # ROADMAP.md sec 24.3. Rendered as a NAMED absence, not omitted: a section
     # that simply vanishes reads as a stage that failed, and everything else
@@ -3508,11 +3543,12 @@ def _sec_l3(run_dir: Path, model_colors: dict, findings: list) -> str:
                             + "); agreement is computed over that overlap only (never "
                               "extrapolated across it), so the un-overlapped depth is "
                               "excluded rather than invented.")
+        undef_note = _undefined_agreement_note(pw)
         inner += ("<h4>Cross-model fingerprint agreement</h4>" + _frag(bar, 320)
                   + _figcap("One bar group per corruption, one bar per model pair — "
                             "every pair in the run is shown and named, so a bar is "
                             "never read as a statement about models it does not "
-                            "compare.")
+                            "compare." + undef_note)
                   + _note(
             "Each model's per-corruption fingerprint (the column above) is "
             "interpolated onto the depth range each pair of models actually shares "
@@ -3608,6 +3644,8 @@ def _sec_l3(run_dir: Path, model_colors: dict, findings: list) -> str:
         overall = _ag["overall"]
         worst = _ag["most_divergent"]
         agree = _ag["per_corruption"]
+        if overall.get("value") is None or worst is None:
+            continue
         a_name = _entry.get("a") or "model A"
         b_name = _entry.get("b") or "model B"
         findings.append(Finding(
@@ -8981,12 +9019,17 @@ def _sec_confirm(run_dir: Path, findings: list, n_exploratory: int) -> str:
     l3rep = conf.get("l3_replication", {})
     if l3rep.get("status") == "tested" and l3rep.get("tests"):
         rows = [{"corruption": t["corruption"],
-                 "dev ρ": f'{t["dev_rho"]:+.3f}',
+                 "dev ρ": ("not defined" if t["dev_rho"] is None
+                           else f'{t["dev_rho"]:+.3f}'),
                  "private ρ (95% CI)": _ci_str(t["private"]),
-                 "verdict": "replicates" if t["replicates"] else "does NOT replicate"}
+                 "verdict": ("not defined (undefined private correlation)"
+                             if t["replicates"] is None else
+                             "replicates" if t["replicates"] else "does NOT replicate")}
                 for t in l3rep["tests"]]
         n_ok = sum(1 for t in l3rep["tests"] if t["replicates"])
-        inner += (f'<h4>Perturbation replication ({n_ok} of {len(rows)} replicate)</h4>'
+        n_undef = sum(1 for t in l3rep["tests"] if t["replicates"] is None)
+        inner += (f'<h4>Perturbation replication ({n_ok} of {len(rows)} replicate'
+                  f'{f"; {n_undef} not defined" if n_undef else ""})</h4>'
                   f'<p class="blurb">The whole corruption battery re-run on '
                   f'{l3rep["n_private_series"]} private series — same corruptions at the '
                   f'same strengths, same fingerprint, same paired cluster bootstrap — and '

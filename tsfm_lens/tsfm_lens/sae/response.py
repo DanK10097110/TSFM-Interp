@@ -90,10 +90,14 @@ def _horizon_shape(x: np.ndarray, baseline: np.ndarray) -> tuple:
 def _flatness(x: np.ndarray, rel_tol: float = 1e-3) -> np.ndarray:
     """Fraction of near-constant consecutive steps, per series -- the
     intermittency-sensitive channel. Scale-relative: a step is "flat" when
-    its first difference is small relative to the series' own amplitude."""
+    its first difference is small relative to the series' own amplitude.
+    A non-finite row is NaN, not 0.0: `NaN < tol` is False, so it would
+    otherwise score as "no flat steps", a finite and wrong value."""
     scale = (np.abs(x).max(axis=-1, keepdims=True) + 1e-8)
     d = np.abs(np.diff(x, axis=-1)) / scale
-    return (d < rel_tol).mean(axis=-1)
+    flat = (d < rel_tol).mean(axis=-1)
+    finite = np.isfinite(x).all(axis=-1)
+    return flat if finite.all() else np.where(finite, flat, np.nan)
 
 
 def _spectral_centroid(x: np.ndarray) -> np.ndarray:
@@ -247,6 +251,21 @@ def summarize_battery(per_series: dict, unit: str = "series", n_boot: int = 500,
     return out
 
 
+def count_nonfinite_skipped(delta: np.ndarray, channel: str, bad_forecast: np.ndarray) -> int:
+    """Rows of a candidate's per-series `delta` that the scoring's `nanmean` /
+    finite filter silently dropped, counted so the skip is recorded.
+
+    `seasonal` is NaN by design on a series with no ground-truth period, which
+    is not a forecast fault, so for that channel only rows whose own forecast
+    (steered or baseline) was non-finite are counted (`bad_forecast`). Every
+    other channel counts every non-finite row.
+    """
+    bad = ~np.isfinite(np.asarray(delta, dtype=np.float64))
+    if channel == "seasonal":
+        bad = bad & np.asarray(bad_forecast, dtype=bool)
+    return int(bad.sum())
+
+
 def level_share(steered: np.ndarray, baseline: np.ndarray) -> tuple[float | None, str]:
     """ROADMAP.md sec 37.3 P0's definition, restated as a function so P4
     (sec 37.7) scores it identically rather than re-deriving it:
@@ -266,6 +285,12 @@ def level_share(steered: np.ndarray, baseline: np.ndarray) -> tuple[float | None
     if steered.size == 0:
         return None, "no top-firing series to score"
     d = np.asarray(steered, dtype=np.float64) - np.asarray(baseline, dtype=np.float64)
+    finite_rows = np.isfinite(d).all(axis=-1)
+    if not finite_rows.all():
+        d = d[finite_rows]
+        if d.size == 0:
+            return None, ("every top-firing series has a non-finite forecast, so level "
+                          "share is undefined")
     a = d.mean(axis=-1)
     denom = float(np.mean(np.mean(d ** 2, axis=-1)))
     if not (denom > 0.0):
@@ -586,6 +611,9 @@ def feature_response_fingerprints(cfg, adapter, layer: str, sae, data, device,
                         "signed_mean": float(np.nanmean(rec["delta"])),
                         "null_p95": p95, "null_mean": null_mean.get(ch),
                         "clears_null": clears}
+                n_skipped = int((~np.isfinite(np.asarray(rec["delta"], dtype=np.float64))).sum())
+                if n_skipped:
+                    entry["n_nonfinite_rows_skipped"] = n_skipped
                 if ch == "mase":
                     entry["floor_units"] = in_floor_units(entry["signed_mean"], floor)
                 per_channel[ch] = entry
@@ -1053,6 +1081,7 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
         for f_idx in chunk_feats:
             rows_f = [int(r) for r in per_candidate_rows[f_idx] if int(r) in row_pos]
             idx = np.array([row_pos[r] for r in rows_f], dtype=int)
+            bad_forecast = np.zeros(idx.size, dtype=bool)
             if null_mode in ("profile_matched", "profile_matched_cov"):
                 null_rows = {ch: [] for ch in CHANNELS}
                 null_rows_shape = {ch: [] for ch in CHANNELS}
@@ -1077,6 +1106,8 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
             rec = _forward(_feature_ablated_replacement(clean_tokens, sae, device, f_idx))
             stats = _stats(rec)
             stats_shape = _stats(rec, remove_level=True)
+            bad_forecast = ~(np.isfinite(np.asarray(rec["point"], dtype=np.float64)[idx]).all(axis=-1)
+                             & np.isfinite(np.asarray(baseline_fc, dtype=np.float64)[idx]).all(axis=-1))
 
             per_channel = {}
             per_channel_shape = {}
@@ -1101,6 +1132,9 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
                             "null_p95": None, "clears_null": False, "margin": None,
                             "reason": "no finite value on this feature's own "
                                       "top-firing series"}
+                        n_skipped = count_nonfinite_skipped(delta, ch, bad_forecast)
+                        if n_skipped:
+                            per_channel[ch]["n_nonfinite_rows_skipped"] = n_skipped
                     else:
                         # Signed too, and it is not redundant: `effect` is
                         # what the null p95 (itself unsigned) can legitimately
@@ -1111,6 +1145,9 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
                         # fingerprint would call identical.
                         draws = [d[idx] for d in null_rows[ch] if d.size == len(rows)]
                         per_channel[ch] = _score_channel_against_null(delta, draws)
+                        n_skipped = count_nonfinite_skipped(delta, ch, bad_forecast)
+                        if n_skipped:
+                            per_channel[ch]["n_nonfinite_rows_skipped"] = n_skipped
                         n_clearing_cells += int(per_channel[ch]["clears_null"])
                         if empirical_chance:
                             per_channel[ch]["empirical_chance"] = _lodo_pseudo_clear_rate(draws)
@@ -1143,9 +1180,15 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
                             "null_p95": None, "clears_null": False, "margin": None,
                             "reason": "no finite value on this feature's own "
                                       "top-firing series (level-removed)"}
+                        n_skipped = count_nonfinite_skipped(delta_shape, ch, bad_forecast)
+                        if n_skipped:
+                            per_channel_shape[ch]["n_nonfinite_rows_skipped"] = n_skipped
                     else:
                         draws_shape = [d[idx] for d in null_rows_shape[ch] if d.size == len(rows)]
                         per_channel_shape[ch] = _score_channel_against_null(delta_shape, draws_shape)
+                        n_skipped = count_nonfinite_skipped(delta_shape, ch, bad_forecast)
+                        if n_skipped:
+                            per_channel_shape[ch]["n_nonfinite_rows_skipped"] = n_skipped
                         n_shape_clearing_cells += int(per_channel_shape[ch]["clears_null"])
 
             level_share_val, level_share_reason = level_share(
@@ -1168,6 +1211,8 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
             results.append({
                 "feature": f_idx, "rules": rules[f_idx],
                 "n_top_series": int(idx.size), "n_rows_scored": int(idx.size),
+                **({"n_nonfinite_forecast_rows": int(bad_forecast.sum())}
+                   if bad_forecast.any() else {}),
                 "scorable": True,
                 "mean_activation_on_top": float(np.mean(acts[rows_f, f_idx])),
                 "channels": per_channel,
@@ -1201,6 +1246,7 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
     scorable = [r for r in results if r.get("scorable")]
     n_cells = len(scorable) * len(CHANNELS)
     row_coverage = effective_k_summary(results, top_k_series, cap)
+    n_nonfinite_rows = sum(int(r.get("n_nonfinite_forecast_rows", 0)) for r in scorable)
     chance_block = {}
     if empirical_chance:
         per_ch = {}
@@ -1225,6 +1271,10 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
         **({"ablation_null": null_mode} if null_mode != "mean_magnitude" else {}),
         **chance_block,
         "row_coverage": row_coverage,
+        **({"n_nonfinite_forecast_rows_total": n_nonfinite_rows,
+            "n_candidates_with_nonfinite_rows": sum(
+                1 for r in scorable if r.get("n_nonfinite_forecast_rows"))}
+           if n_nonfinite_rows else {}),
         "candidates": results,
         "n_clearing_cells": int(n_clearing_cells),
         "chance_expected_cells": 0.05 * n_cells,

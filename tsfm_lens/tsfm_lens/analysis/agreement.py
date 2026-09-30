@@ -45,7 +45,7 @@ from typing import Optional
 
 import numpy as np
 
-from ..extraction.store import ActivationStore
+from ..extraction.store import ActivationStore, nonfinite_series_mask
 from ..utils import log
 from .stats import _mase_scale, bootstrap_ci
 
@@ -192,6 +192,16 @@ def agreement_reliability(store: ActivationStore, model_a: str, model_b: str,
     *A* is about to be wrong.
     """
     pa, pb = store.load_predictions(model_a), store.load_predictions(model_b)
+    bad_rows = np.flatnonzero(nonfinite_series_mask(pa["point"], pa["quantiles"])
+                              | nonfinite_series_mask(pb["point"], pb["quantiles"]))
+    if bad_rows.size:
+        keep = np.setdiff1d(np.arange(len(contexts)), bad_rows)
+        log.warning("agreement: dropping %d series with a non-finite stored forecast "
+                    "(pred/<model> `nonfinite_predictions` record)", bad_rows.size)
+        pa = {k: v[keep] for k, v in pa.items()}
+        pb = {k: v[keep] for k, v in pb.items()}
+        contexts, targets = contexts[keep], targets[keep]
+        families = None if families is None else np.asarray(families)[keep]
     scale = _mase_scale(contexts, scale_mode)
     err = {model_a: _mase(pa["point"], targets, scale),
            model_b: _mase(pb["point"], targets, scale)}
@@ -274,6 +284,7 @@ def agreement_reliability(store: ActivationStore, model_a: str, model_b: str,
     out = {
         "model_a": model_a, "model_b": model_b,
         "n_series": int(len(targets)), "horizon": int(h),
+        **({"n_series_nonfinite_dropped": int(bad_rows.size)} if bad_rows.size else {}),
         "scale_mode": scale_mode,
         "signal_means": {k: float(v.mean()) for k, v in signals.items()},
         "signal_sd": {k: float(v.std()) for k, v in signals.items()},

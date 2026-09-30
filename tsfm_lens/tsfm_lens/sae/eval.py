@@ -431,6 +431,10 @@ def feature_steering_effects(cfg: PipelineConfig, adapter, layer: str, sae,
                 "trend_response": trend_response,
                 "seasonal_response": seasonal_response,
             }
+            n_bad_rows = int((~(np.isfinite(np.asarray(f_steered, dtype=np.float64)).all(axis=-1)
+                                & np.isfinite(np.asarray(f_full, dtype=np.float64)).all(axis=-1))).sum())
+            if n_bad_rows:
+                signed[sign_name]["n_nonfinite_forecast_rows"] = n_bad_rows
 
         feature_results.append({
             "feature": int(f_idx),

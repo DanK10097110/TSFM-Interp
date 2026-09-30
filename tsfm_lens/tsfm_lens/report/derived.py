@@ -1513,12 +1513,13 @@ def replication_summary(run_dir: Path) -> pd.DataFrame:
     l3_tests = l3.get("tests") or []
     if l3.get("status") == "tested" and l3_tests:
         held = sum(1 for t in l3_tests if t.get("replicates"))
+        n_undef = sum(1 for t in l3_tests if t.get("replicates", True) is None)
         rows.append({
             "what was re-tested": "Where in depth models react to corruption",
             "evidence class": "causal within model",
             "held up": held,
-            "did not": len(l3_tests) - held,
-            "not testable": 0,
+            "did not": len(l3_tests) - held - n_undef,
+            "not testable": n_undef,
             "what a failure would mean": (
                 "the depth agreement was a property of those particular series, "
                 "not of the models"),

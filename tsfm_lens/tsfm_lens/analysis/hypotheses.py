@@ -141,6 +141,8 @@ def _l3_entries(run_dir: Path) -> list:
     art_hash = _sha256_file(path)
     entries = []
     for corruption, val in (l3.get("agreement", {}).get("per_corruption") or {}).items():
+        if val.get("value") is None:
+            continue
         entries.append({
             "id": f"l3_agreement::{corruption}", "stage": "l3",
             "statistic": "fingerprint_agreement_rho", "corruption": corruption,

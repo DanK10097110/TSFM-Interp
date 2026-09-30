@@ -465,6 +465,13 @@ def _replicate_registered_l3(cfg: PipelineConfig, hub, private: BenchmarkData,
             continue
         priv = got["per_corruption"][cname]
         dev_rho = dev_per[cname]["value"]
+        if priv.get("lo") is None or priv.get("hi") is None or dev_rho is None:
+            tests.append({"corruption": cname, "dev_rho": dev_rho, "private": priv,
+                          "replicates": None,
+                          "reason": "a correlation is not defined (constant or "
+                                    "non-finite depth profile), so it is neither "
+                                    "replicated nor refuted"})
+            continue
         tests.append({"corruption": cname, "dev_rho": dev_rho, "private": priv,
                       "replicates": bool(priv["lo"] <= dev_rho <= priv["hi"])})
     return {"status": "tested", "model_a": a.name, "model_b": b.name,

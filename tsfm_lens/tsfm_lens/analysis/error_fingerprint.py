@@ -69,7 +69,7 @@ from typing import Optional
 
 import numpy as np
 
-from ..extraction.store import ActivationStore
+from ..extraction.store import ActivationStore, nonfinite_series_mask
 from ..utils import log
 from .l0_behavioral import _mase_scale
 from .stats import bootstrap_ci, mase_reliability
@@ -163,6 +163,15 @@ def _corr(a: np.ndarray, b: np.ndarray) -> float:
     return 0.0 if d < 1e-12 else float((a * b).sum() / d)
 
 
+def _nonfinite_rows_of(store, model: str) -> np.ndarray:
+    """`[N]` bool over the store's rows: a non-finite stored point or quantile
+    forecast (the same rule as the store's write-time `nonfinite_predictions`
+    record)."""
+    preds = store.load_predictions(model)
+    point = np.asarray(preds["point"])
+    return nonfinite_series_mask(point, preds.get("quantiles", point))
+
+
 def _scaled_errors(store: ActivationStore, model: str, contexts: np.ndarray,
                    targets: np.ndarray, scale_mode: str,
                    row_mask: Optional[np.ndarray] = None) -> np.ndarray:
@@ -233,6 +242,15 @@ def error_fingerprint(store: ActivationStore, model_a: str, model_b: str,
     scale_full = np.asarray(_mase_scale(contexts, scale_mode), dtype=np.float64)
     reliable = mase_reliability(contexts, targets, scale_mode, min_scale_frac=min_scale_frac)
     n_excluded = int((~reliable).sum())
+    nonfinite_rows = np.flatnonzero(_nonfinite_rows_of(store, model_a)
+                                    | _nonfinite_rows_of(store, model_b))
+    n_nonfinite = int((reliable[nonfinite_rows]).sum())
+    if n_nonfinite:
+        log.warning("error fingerprint %s vs %s: excluding %d series with a non-finite "
+                    "stored forecast (pred/<model> `nonfinite_predictions` record)",
+                    model_a, model_b, n_nonfinite)
+        reliable = reliable.copy()
+        reliable[nonfinite_rows] = False
     if n_excluded:
         log.warning("error fingerprint %s vs %s: excluding %d of %d series with an "
                     "unreliable (near-zero) MASE scale before correlating -- see "
@@ -267,7 +285,9 @@ def error_fingerprint(store: ActivationStore, model_a: str, model_b: str,
     ok = r2_a > 0.0 and r2_b > 0.0
     out = {
         "model_a": model_a, "model_b": model_b, "n_series": int(n),
-        "n_excluded_unreliable": n_excluded, "min_scale_frac": float(min_scale_frac),
+        "n_excluded_unreliable": n_excluded,
+        **({"n_excluded_nonfinite_forecast": n_nonfinite} if n_nonfinite else {}),
+        "min_scale_frac": float(min_scale_frac),
         "horizon": int(horizon), "n_folds": int(n_folds), "scale_mode": scale_mode,
         "difficulty_basis": names,
         "difficulty_oof_r2": {model_a: r2_a, model_b: r2_b},
