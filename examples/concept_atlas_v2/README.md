@@ -96,6 +96,26 @@ baselines themselves.
 
 ### Concepts: what the models learn and share (sparse autoencoder features + ablation)
 
+> **Correction (2026-09-30): this section was measured with a lenient null.**
+> The random-direction null used in this run removed one uniform, batch-averaged
+> amount from every token. A feature's ablation removes its full activation where
+> it fires hardest, so strong features cleared that null on size alone. A
+> known-answer forecaster with planted concepts caught the problem: 17–25% of
+> features on a layer with no planted effect cleared, on 5 of 5 seeds.
+>
+> This same run was re-scored under a **profile-matched** null, in which each null
+> draw removes the feature's own per-token amount along a random direction:
+> - causal features: 293 → **110** (3.06× the empirical chance rate; 20 of 28
+>   layers significant);
+> - tight concepts: 27 → **7** (3 multi-model);
+> - convergent concepts: 13 → **0**;
+> - features clearing no channel: 56% → **84%**.
+>
+> Treat the numbers below as upper bounds. The profile-matched null is the
+> default for new runs, and the original lenient null remains available as
+> `sae.ablation_null: mean_magnitude`. Full account: `FINDINGS.md` MN-29 and the
+> "re-measured" lines on each affected entry.
+
 An SAE (sparse autoencoder) splits each chosen layer into features. Each
 feature is then removed on the series it fires on, and the forecast change is
 measured against a random-direction null. This gives causal, within-model
