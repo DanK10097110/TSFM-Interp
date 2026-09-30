@@ -27,6 +27,7 @@ from tsfm_lens.pipeline import Context  # noqa: E402
 from tsfm_lens.sae.ablation_run import ablation_path, run_ablation_target  # noqa: E402
 from tsfm_lens.sae.concept_stage import _trained_targets  # noqa: E402
 from tsfm_lens.sae.response import ABLATION_NULL_MODES  # noqa: E402
+from tsfm_lens.sae.response import row_coverage_line  # noqa: E402
 from tsfm_lens.utils import log, save_json, set_seed, setup_logging  # noqa: E402
 
 
@@ -55,6 +56,7 @@ def main(argv=None) -> int:
     c = cfg.concepts
     t0 = time.time()
     by_model: dict = {}
+    coverage: dict = {}
     for model, layer in targets:
         if args.models and model not in args.models:
             continue
@@ -67,12 +69,20 @@ def main(argv=None) -> int:
                 max_series=c.max_series, keep_forecasts=c.keep_forecasts,
                 n_features_per_rule=c.n_features_per_rule,
                 empirical_chance=args.empirical_chance)
+            if isinstance(res.get("row_coverage"), dict):
+                coverage[f"{model}/{layer}"] = res["row_coverage"]
+                log.info("battery-only: rows scored: %s",
+                         row_coverage_line(f"{model}/{layer}", res["row_coverage"]))
             p = ablation_path(out, model, layer)
             p.parent.mkdir(parents=True, exist_ok=True)
             save_json(p, res)
             log.info("battery-only: %s/%s -> %s (%.0f s elapsed)", model, layer, p, time.time() - t0)
         if not cfg.run.keep_models_loaded:
             ctx.hub.release(model)
+    for target, cov in coverage.items():
+        (log.warning if cov.get("cap_binds") else log.info)(
+            "battery-only summary: %s", row_coverage_line(target, cov))
+    save_json(out / "row_coverage.json", coverage)
     log.info("battery-only: done in %.1f s", time.time() - t0)
     return 0
 

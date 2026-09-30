@@ -37,6 +37,7 @@ from tsfm_lens.analysis.known_answer import aggregate_cells, score_run  # noqa: 
 from tsfm_lens.config import load_config  # noqa: E402
 from tsfm_lens.models import build_adapter  # noqa: E402
 from tsfm_lens.pipeline import run_pipeline  # noqa: E402
+from tsfm_lens.sae.response import row_coverage_line  # noqa: E402
 from tsfm_lens.utils import load_json, log, resolve_device, resolve_dtype, save_json, setup_logging  # noqa: E402
 
 DEFAULT_CONFIG = "configs/known_answer.yaml"
@@ -115,6 +116,16 @@ def write_manifest(cfg, run_dir: Path) -> Path:
     return path
 
 
+def cell_row_coverage(run_dir: Path) -> dict:
+    """`target -> row_coverage` for every ablation artifact a cell wrote."""
+    out = {}
+    for path in sorted((Path(run_dir) / "sae").glob("*/*_ablation.json")):
+        art = load_json(path)
+        if isinstance(art, dict) and isinstance(art.get("row_coverage"), dict):
+            out[f"{path.parent.name}/{path.name[:-len('_ablation.json')]}"] = art["row_coverage"]
+    return out
+
+
 def run_cell(args, seed: int, dose: float) -> dict:
     cfg = build_cell_config(args.config, args.corpus, args.out, seed, dose, args.device, args.null,
                           args.empirical_chance, args.top_k, args.n_null)
@@ -156,11 +167,19 @@ def main(argv: list | None = None) -> dict:
     args = ap.parse_args(argv)
     setup_logging()
 
-    cells = []
+    cells, coverage = [], {}
     for seed in args.seeds:
         for dose in args.doses:
             cells.append(run_cell(args, seed, dose))
+            cell_dir = Path(args.out) / "cells" / cell_name(seed, dose)
+            for target, cov in cell_row_coverage(cell_dir).items():
+                coverage[f"{cell_name(seed, dose)}/{target}"] = cov
     aggregate = aggregate_cells(cells)
+    if coverage:
+        aggregate["row_coverage"] = coverage
+        for key, cov in coverage.items():
+            (log.warning if cov.get("cap_binds") else log.info)(
+                "known answer: rows scored: %s", row_coverage_line(key, cov))
     out = Path(args.out) / "known_answer_aggregate.json"
     save_json(out, aggregate)
     log.info("known answer: aggregate %s -> stop gate %s %s", out, aggregate["stop_gate"]["verdict"],
