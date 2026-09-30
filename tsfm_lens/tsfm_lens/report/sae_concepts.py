@@ -181,6 +181,72 @@ def _load_candidates_for(run_dir: Path, target: str, cache: dict) -> list:
     return cache[target]
 
 
+def row_coverage_rows(run_dir: Path) -> list:
+    """One record per ablation artifact: the k requested, the chunk cap, and how
+    many candidates were scored on fewer rows than that (or none).
+
+    Reads the artifact's `row_coverage` block and, for an artifact written
+    before it existed, derives the same numbers from its own `top_k_series`,
+    `series_per_chunk_cap` and per-candidate `n_top_series`. A withheld
+    artifact has no candidates and is skipped.
+    """
+    from ..sae.response import effective_k_summary
+
+    rows = []
+    for path in sorted((Path(run_dir) / "sae").glob("*/*_ablation.json")):
+        art = _load_json_or_none(path)
+        if not isinstance(art, dict) or art.get("withheld"):
+            continue
+        cov = art.get("row_coverage")
+        if not isinstance(cov, dict):
+            if art.get("top_k_series") is None or art.get("series_per_chunk_cap") is None:
+                continue
+            cov = effective_k_summary(art.get("candidates") or [], art["top_k_series"],
+                                      art["series_per_chunk_cap"])
+        rows.append({"target": f"{path.parent.name}/{path.name[:-len('_ablation.json')]}", **cov})
+    return rows
+
+
+def row_coverage_block(run_dir: Path) -> str:
+    """Per-target table of requested k, chunk cap and short/zero-row candidates.
+
+    `top_k_series` is a request: a sparse feature fires on fewer series, and the
+    chunk cap silently truncates to the strongest rows. A target whose cap is
+    below the requested k gets a visible warning, not only a table cell.
+    """
+    rows = row_coverage_rows(run_dir)
+    if not rows:
+        return ""
+    binding = [r["target"] for r in rows if r.get("cap_binds")]
+    out = ("<h5>Rows each feature was actually ablated on</h5>"
+           "<p class='blurb'>The battery asks for each feature's top "
+           "<code>top_k_series</code> firing series but scores fewer when a feature "
+           "fires on fewer series, or when the per-chunk cap "
+           "(<code>min(concepts.max_series, model batch size)</code>) truncates "
+           "to its strongest rows. Effective k is the smaller of the request "
+           "and the cap; candidates below it are <i>short</i>.</p>")
+    if binding:
+        out += ("<p class='blurb' style='color:var(--bad,#b00020);font-weight:600'>"
+                "Warning: the chunk cap is below the requested k on "
+                f"{len(binding)} target(s) ({html.escape(', '.join(binding))}). "
+                "Those features were scored on fewer rows than requested, so "
+                "their effects are not comparable with targets scored on the "
+                "full k.</p>")
+    body = "".join(
+        "<tr><td>{t}</td><td>{k}</td><td>{cap}</td><td>{ke}</td><td>{n}</td>"
+        "<td>{short}</td><td>{zero}</td><td>{full}</td></tr>".format(
+            t=html.escape(r["target"]), k=r["top_k_requested"], cap=r["effective_k_cap"],
+            ke=r["effective_k"], n=r["n_candidates"], short=r["n_candidates_short"],
+            zero=r["n_candidates_zero_rows"], full=r["n_candidates_full"])
+        for r in rows)
+    out += ("<table><thead><tr><th>target</th>"
+            "<th>requested k</th><th>chunk cap</th><th>effective k</th>"
+            "<th>candidates</th><th>short (&lt; effective k)</th>"
+            "<th>zero rows</th><th>full</th></tr></thead>"
+            f"<tbody>{body}</tbody></table>")
+    return out
+
+
 def universality_transfer_block(run_dir: Path, findings: list) -> str:
     """Block 1: how many of this run's per-target concepts are universal /
     partial / model-specific (`derived.concept_universality`), plus the
@@ -573,6 +639,8 @@ def sae_concepts_block(cfg, run_dir: Path, findings: list, model_names: list,
         "on its own scale (its dotted line is zero, i.e. no difference), so "
         "a small effect stays visible even when the two forecast lines "
         "above it overlap too closely to tell apart.</p>")
+
+    inner += row_coverage_block(run_dir)
 
     # -------- block 1: universality + transfer heatmap --------
     # ROADMAP.md sec 37 Spec C item F: this per-TARGET unit (a concept lives

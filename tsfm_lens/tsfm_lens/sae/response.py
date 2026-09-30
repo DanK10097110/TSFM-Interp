@@ -836,6 +836,43 @@ def _pack_chunks(per_candidate_rows: dict, order: list, cap: int) -> list:
     return chunks
 
 
+def effective_k_summary(candidates: list, top_k_requested: int, cap: int) -> dict:
+    """How many rows each candidate was ACTUALLY scored on, against the k asked for.
+
+    `top_k_series` is a request, not a guarantee: a sparse atom fires on fewer
+    than k series (`top_firing_rows` never pads with silent rows), and the
+    per-chunk cap (`min(concepts.max_series, model batch_size)`) truncates an
+    atom's rows to its strongest `cap`. `effective_k_cap` is that binding
+    per-target maximum, `min(top_k_requested, cap)`; a candidate is `short`
+    when it was scored on fewer rows than that. Reads `n_rows_scored` and falls
+    back to the legacy `n_top_series`, so it also summarizes older artifacts.
+    """
+    k_eff = min(int(top_k_requested), int(cap))
+    counts = [int(c.get("n_rows_scored", c.get("n_top_series") or 0)) for c in candidates]
+    return {
+        "top_k_requested": int(top_k_requested),
+        "effective_k_cap": int(cap),
+        "effective_k": int(k_eff),
+        "cap_binds": bool(cap < top_k_requested),
+        "n_candidates": len(counts),
+        "n_candidates_zero_rows": sum(1 for n in counts if n == 0),
+        "n_candidates_short": sum(1 for n in counts if 0 < n < k_eff),
+        "n_candidates_full": sum(1 for n in counts if n == k_eff),
+    }
+
+
+def row_coverage_line(target: str, cov: dict) -> str:
+    """One-line text form of an artifact's `row_coverage`, for driver summaries.
+
+    Names the cap loudly when it is below the requested k.
+    """
+    warn = "  ** CAP BELOW REQUESTED K **" if cov.get("cap_binds") else ""
+    return (f"{target}: requested k={cov['top_k_requested']} cap={cov['effective_k_cap']} "
+            f"effective k={cov['effective_k']}; {cov['n_candidates']} candidates: "
+            f"{cov['n_candidates_full']} full, {cov['n_candidates_short']} short, "
+            f"{cov['n_candidates_zero_rows']} zero rows{warn}")
+
+
 def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
                                   candidates: list, activations: np.ndarray,
                                   top_k_series: int = 8, n_null_directions: int = 16,
@@ -1130,7 +1167,8 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
             mase_rec = per_channel.get("mase", {})
             results.append({
                 "feature": f_idx, "rules": rules[f_idx],
-                "n_top_series": int(idx.size), "scorable": True,
+                "n_top_series": int(idx.size), "n_rows_scored": int(idx.size),
+                "scorable": True,
                 "mean_activation_on_top": float(np.mean(acts[rows_f, f_idx])),
                 "channels": per_channel,
                 "n_channels_clearing": sum(1 for v in per_channel.values()
@@ -1155,13 +1193,14 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
     for f_idx in order:
         if not any(r["feature"] == f_idx for r in results):
             results.append({"feature": f_idx, "rules": rules[f_idx], "n_top_series": 0,
-                            "scorable": False,
+                            "n_rows_scored": 0, "scorable": False,
                             "reason": "this atom fires on no series, so there is "
                                       "no regime to ablate it in"})
     results.sort(key=lambda r: order.index(r["feature"]))
 
     scorable = [r for r in results if r.get("scorable")]
     n_cells = len(scorable) * len(CHANNELS)
+    row_coverage = effective_k_summary(results, top_k_series, cap)
     chance_block = {}
     if empirical_chance:
         per_ch = {}
@@ -1185,6 +1224,7 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
         "n_null_directions": int(n_null_directions),
         **({"ablation_null": null_mode} if null_mode != "mean_magnitude" else {}),
         **chance_block,
+        "row_coverage": row_coverage,
         "candidates": results,
         "n_clearing_cells": int(n_clearing_cells),
         "chance_expected_cells": 0.05 * n_cells,
