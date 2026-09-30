@@ -204,14 +204,15 @@ def test_the_agreement_driver_passes_the_configured_null_mode_to_both_sides(monk
     assert "ablation_null" not in out["tests"][0]
 
 
-def test_a_second_run_in_the_same_process_never_reads_the_first_runs_caches(monkeypatch, tmp_path):
+def test_the_driver_empties_its_content_keyed_caches_on_entry(monkeypatch, tmp_path):
     """The baseline, battery and own-null caches are keyed by content (model, layer, U,
     features), not by run. `run_known_answer` runs several cells in ONE process, each a
-    different planted network and construction seed, and a later cell crashed on a stale
-    baseline cached under the earlier cell's seed (and could have read a stale battery
-    silently). `run_shared_input_agreement` therefore empties them on entry. Planted
-    regression: drop the reset and the second call raises the baseline-seed
-    AssertionError."""
+    different planted network and construction seed; a later cell crashed on a baseline
+    cached under an earlier cell's seed, and a stale battery would have been read
+    silently (the battery cache is consulted before the baseline's seed check).
+    `run_shared_input_agreement` therefore empties them on entry. Planted regression:
+    drop the reset and the second direct call never resets, leaving the first run's
+    entries in place."""
     from tests import test_shared_input_agreement as T
     pooled_a, w_dec_a = T._pooled_and_wdec(0, T.REAL_COL, real_gain=20.0)
     pooled_b, w_dec_b = T._pooled_and_wdec(1, T.REAL_COL, real_gain=20.0)
@@ -225,8 +226,10 @@ def test_a_second_run_in_the_same_process_never_reads_the_first_runs_caches(monk
     monkeypatch.setattr(sia, "run_shared_input_agreement", capture)
     T._build_run(pooled_a, w_dec_a, pooled_b, w_dec_b, tmp_path, monkeypatch=monkeypatch)
     (args, kw), = calls
-    assert sia._baseline_cache
-    second = real(*args, **{**kw, "base_seed": 7})
-    sia.reset_caches()
-    fresh = real(*args, **{**kw, "base_seed": 7})
-    assert [t["verdict"] for t in second["tests"]] == [t["verdict"] for t in fresh["tests"]]
+    assert sia._baseline_cache and sia._battery_cache
+    resets = []
+    original = sia.reset_caches
+    monkeypatch.setattr(sia, "reset_caches", lambda: (resets.append(1), original())[1])
+    sia._baseline_cache[("stale", "x", ())] = (1, None)
+    real(*args, **{**kw, "base_seed": 12345})
+    assert resets and ("stale", "x", ()) not in sia._baseline_cache
