@@ -102,16 +102,19 @@ blocked by anything found in this environment today; that note in
 conda create -n tsfmPy python=3.12 -y
 conda activate tsfmPy
 
-# Core numeric/ML stack — pin mkl explicitly (see §4 "why pinned")
-conda install -c conda-forge numpy=2.1.0 mkl=2024.2.2 scipy pandas \
+# Core numeric/ML stack + GPU torch in ONE solve, BLAS = nomkl + openblas like
+# the reference env (cudaPy). conda-forge pytorch 2.12.0 requires mkl >=2026 or
+# nomkl, so the old tsfmPy pin mkl=2024.2.2 is unsatisfiable next to it (and a
+# newer MKL crashes numpy 2.1.0, §4) -- nomkl avoids MKL entirely. The earlier
+# tsfmPy env used the pip wheel torch==2.9.1+cu130 instead. For a CPU-only
+# machine use "pytorch=2.12.0=cpu*" (what CI's "pinned" job installs).
+conda install -c conda-forge --strict-channel-priority nomkl numpy=2.1.0 scipy \
     scikit-learn=1.7.2 pandas=2.3.3 pyyaml jinja2 tqdm zarr=2.18.7 plotly=5.24.1 \
-    pycatch22 umap-learn dtaidistance datasets=2.19.2 tsbootstrap=0.7.1 \
-    sdv=1.14.0 -y
+    pycatch22 umap-learn dtaidistance datasets=2.19.2 sdv=1.14.0 \
+    "pytorch=2.12.0=cuda129*" -y
 
-# GPU-capable torch stack. The reference environment (cudaPy) runs conda-forge
-# pytorch 2.12.0 (cuda129 build); the earlier tsfmPy env used the pip wheel
-# torch==2.9.1+cu130 (--index-url https://download.pytorch.org/whl/cu130).
-conda install -c conda-forge "pytorch=2.12.0=cuda129*" -y
+# tsbootstrap is not on conda-forge (PyPI only, as in cudaPy)
+pip install tsbootstrap==0.7.1
 
 # Model libraries (real-checkpoint adapters)
 pip install transformers==4.57.6 timesfm==2.0.2 chronos-forecasting==2.3.1
