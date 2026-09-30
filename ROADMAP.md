@@ -37807,6 +37807,50 @@ concept's, differing only in head weight.
 - **Why the default stays legacy.** Doctrine: old behaviour stays reproducible behind a knob. New presets set
   `profile_matched` explicitly. Whether the default flips is decided after the v2 re-score.
 
+#### 38.1.8 Findings — the full v2 re-score under the profile-matched null (2026-09-30; interpretation OPEN)
+
+Setup:
+- A copy of `runs/concept_atlas_v2` (`k1out/v2_profile/`) re-ran the concepts stage with `sae.ablation_null:
+  profile_matched`, the agreement step included (e4ff401).
+- The private split and `confirm` were untouched (confirm/ timestamps are still 09-28).
+- Wall time: 5713.78 s, against 13376.65 s legacy.
+- Plumbing verified:
+  - all 28 measured ablation files carry the mode and pass reach (self-patch exactly 0.0, min cross-patch
+    1.2112371921539307);
+  - the atlas pools exactly the per-target causal features (110);
+  - 363/372 agreement tests carry the mode; the other 9 are early "not scorable" outs on the withheld
+    Chronos-2 block.11.
+
+| Row | Legacy | Profile | FINDINGS |
+|---|---|---|---|
+| features clearing ≥1 channel (of 672 tested, 494 scorable) | 293 | 110 | MP-07, CA-08 |
+| clearing cells (of 4446) | 1348 | 254 | MP-07 |
+| candidates clearing 0/9 (all 672) | 0.5639880952380952 | 0.8363095238095238 | MN-14 |
+| per-target concepts / non-modular targets | 9 / 24 | 0 / 28 | SH-20 |
+| atlas concepts / multi-model | 27 / 16 | 7 / 3 | SH-16 |
+| seed-stable atlas concepts | 22/27 | 7/7 | SH-17 |
+| atlas-transfer reciprocal-FDR | 1223 (of 1581) | 372 (of 431) | SH-14 |
+| agreement: same / level / shape / none / differs / not scorable | 11/52/29/264/64/803 | 7/4/8/28/10/315 | CA-06, MN-18 |
+| sharing: convergent / single / shared / partial | 13/11/2/1 | 0/4/3/0 | SH-15, SH-16 |
+| families vs shuffle null (p_n_families) | 1.0 | 0.3781094527363184 (still not beaten) | CA-10 |
+
+- **The zero is the selection rule working, not a fault.** Under profile, causal features per target range over
+  0–8; 24/28 targets have fewer than 6, and the 5 with ≥6 all have a min cluster < 3 at every admissible k.
+- **The pooled margin** (max over channels of effect/null_p95) has a median of 1.2756096905068377 → 0.7083333333333334,
+  and the fraction ≥1 falls from 0.5951417004048583 to 0.24116424116424118.
+
+**Why the interpretation is open.**
+- The code's chance line (`chance_expected_cells` = 0.05 × cells = 222.3) is NOT a chance rate. The rule compares
+  a MEAN over the feature's k rows with the p95 of POOLED per-row null values, so under exchangeability the clear
+  rate is well below 5%. "254 vs 222.3" therefore does not mean "at chance".
+- The isotropic random decoded direction may be off-manifold, which would make the profile null over-strict.
+- Both are being measured (K1 agent round 5):
+  - a leave-one-draw-out empirical chance rate, in both modes, on v2 and on K1;
+  - a covariance-shaped `profile_matched_cov` mode, gated on K1 first.
+- **No FINDINGS entry changes until then**, beyond MN-29's upper-bound status. The robust statement already holds:
+  the legacy null's concept picture shrinks by roughly 4× in causal features and 5× in clearing cells once the null
+  removes the feature's own per-token amount.
+
 #### 38.2.1 Why, grounded
 
 **What is registered today** (`analysis/hypotheses.py`):
