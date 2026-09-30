@@ -188,13 +188,15 @@ def test_unknown_null_mode_is_refused(wired):
 
 
 def test_ablation_null_moves_the_concepts_fingerprint_only_when_set():
-    """Field-level stage input, absent at its default so older runs stay current."""
+    """Field-level stage input, absent at the LEGACY value (`omit_at_value`) so
+    runs fingerprinted before the default moved stay current when they pin it."""
     from tsfm_lens.config import load_config
     from tsfm_lens.manifest import resolve_config_keys
     from tsfm_lens.pipeline import _stages
     cfg = load_config(str(ROOT / "configs" / "known_answer.yaml"))
     stage = {s.name: s for s in _stages()}["concepts"]
     assert "sae.ablation_null" in stage.config_keys
+    cfg.sae.ablation_null = "mean_magnitude"
     assert "sae.ablation_null" not in resolve_config_keys(cfg, stage.config_keys)
     sae_before = resolve_config_keys(cfg, {s.name: s for s in _stages()}["sae"].config_keys)
     cfg.sae.ablation_null = "profile_matched"
