@@ -38207,7 +38207,12 @@ under transformers 4.57.6.
   - clean runs are byte-identical (TimesFM retrain sha256 equal).
 - **Pre-flight search on all 8 new-model targets:** no divergence. Two Time-MoE targets (`model.layers.1`,
   `model.layers.11`) sit at ~0.98 dead at every size above 384, and will go through `run_sae`'s substitution path.
-- **Open (to do):** Timer's NaN on constant input is an adapter/frontend gap. `frontend`'s NaN-handling probe does not
+- **Resolved (2026-09-30, merge dbc3463; FINDINGS PM-16):**
+  - `frontend` probes constant contexts, and `--doctor` warns.
+  - L0 and the lens drop non-finite series loudly. Both had been silently wrong: a per-model series set, and CI [nan, nan].
+  - Timer is the only one of 7 models that returns NaN. It does so at every constant level; noise with sd ≤ 1e-4 still gives NaN.
+  - Inputs are left unaltered.
+- **Original note:** Timer's NaN on constant input is an adapter/frontend gap. `frontend`'s NaN-handling probe does not
   test a constant context. Add a constant-context probe to `frontend` and decide whether `generic_hf` should guard it.
 - **Resumed** at 12:30 on 2026-09-30. Every stage through `cluster` was skipped as current. A guard stops the run at
   `concepts` until the K1 round-5 null question (§38.1.8) is settled.

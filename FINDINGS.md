@@ -973,6 +973,26 @@ These instructions are binding for every future session, human or agent.
 - **Ref.** ROADMAP §32.7b(2) (~28516–28535).
 - **Score. 3/5.**
 
+#### PM-16 · Timer returns all-NaN forecasts and activations on a constant context; the other six panel models do not
+- **Claim.**
+  - Setup: context 480, horizon 64, constants 0.0, 1.0, 1e3 and 1 + 1e-7 noise, with and without autocast.
+  - `thuml/timer-base-84m` (via `generic_hf`) gives 100% NaN forecasts and NaN activations in all 8/8 captured layers, in all four cases.
+  - Measured on 1 + N(0, sd): NaN for sd ≤ 1e-4, finite from sd = 1e-3.
+  - TimesFM, Chronos-2, Sundial, Chronos-Bolt and Time-MoE (with `input_normalization: zscore`) return the constant, within 2e-7 of it.
+  - Chronos-T5-Base is finite but off by 0.0015–0.0029 in units of |constant|+1.
+  - Consequence: 5 constant Monash windows in the SAE real-data augmentation poisoned the first optimizer step and crashed the 7-model run (ROADMAP §38.3).
+  - Consequence: before the fix, L0 silently averaged over a different series set per model when a model returned NaN (pandas skips NaN), with CI [nan, nan] and a finite p. The same happened in the skip lens (NaN curves read as "never converges").
+- **Evidence.** Behavioral. **Status:** measured.
+  - `frontend` now probes constant contexts and renders a loud row.
+  - `--doctor` warns.
+  - L0 and the lens drop non-finite series from every model and record them.
+  - SAE training drops non-finite real-data rows.
+  - Model inputs are never altered by default: an epsilon large enough to help (≥ 1e-3 at level 1) would materially rewrite the input.
+  - Still unguarded: predictions stored raw and read by L3/attention/agreement, where NaN is mostly skipped via nanmean. Relevant only if a constant series enters a sampled corpus.
+- **Reproduce.** `analysis/constant_context.py`, `frontend.constant_context`, `tests/test_constant_context.py`.
+- **Ref.** ROADMAP §38.3 (7-model run crash).
+- **Score. 3/5.** A zero-code adapter can pass the alignment gate and still fail on a trivial input. "Loads and aligns" is not "handles every input".
+
 ---
 
 ## F. Method results — positives (what works, and was adopted)
