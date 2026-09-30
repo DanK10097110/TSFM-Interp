@@ -688,8 +688,12 @@ def _feature_ablated_replacement(clean_tokens: torch.Tensor, sae, device,
     return recon.reshape(b, t, d).cpu()
 
 
+ABLATION_NULL_MODES = ("mean_magnitude", "profile_matched", "profile_matched_cov")
+
+
 def _profile_matched_null_replacement(clean_tokens: torch.Tensor, sae, device, f_idx,
-                                      code: torch.Tensor) -> torch.Tensor:
+                                      code: torch.Tensor,
+                                      direction: str = "decoder") -> torch.Tensor:
     """Token-level reconstruction with a RANDOM direction removed, sized to one
     atom's own per-token removal profile.
 
@@ -698,20 +702,40 @@ def _profile_matched_null_replacement(clean_tokens: torch.Tensor, sae, device, f
     removes ONE uniform amount everywhere (the chunk's mean |z| over all tokens,
     zeros included), which is far below a dense or strong atom's removal on its
     own rows, so such an atom clears it on size alone. Here the null removes, at
-    every token `t`, a vector of norm `|z_f(t)| ||w_f||` along
-    `u = W_dec^T r / ||W_dec^T r||` (`r` a random unit `code` in dictionary
-    space). The removal profile is exactly the atom's, on the same rows; only the
-    direction is random. The baseline stays the full reconstruction.
+    every token `t`, a vector of norm `|z_f(t)| ||w_f||` along a random unit
+    direction `u`. The removal profile is exactly the atom's, on the same rows;
+    only the direction is random. The baseline stays the full reconstruction.
+
+    `direction="decoder"` (mode `profile_matched`): `u = W_dec^T r / ||.||`, `r` a
+    random unit `code` in dictionary space. An isotropic code can point off the
+    activation manifold, where a removal may disrupt the model more than any real
+    direction would.
+
+    `direction="covariance"` (mode `profile_matched_cov`): `code` is a standard
+    normal vector with one entry per token of the chunk, and
+    `u = sum_i code_i (x_i - mean(x)) / ||.||`, a random signed combination of
+    the chunk's own centered clean token activations. That is a draw from a
+    Gaussian whose covariance is the chunk's sample covariance of the layer's
+    clean tokens (`u ~ Sigma^{1/2} g` up to scale), obtained without a `d x d`
+    factorization, so the direction lies in the span the model actually uses on
+    these rows. It is deterministic given the caller's seeded generator.
 
     `f_idx` may also be a SET of atoms (the shared-input agreement step ablates
     an atlas part): the removal at token `t` then has the norm of the set's own
     removal, `|| sum_{f in set} z_f(t) w_f ||`.
     """
     b, t, d = clean_tokens.shape
-    features = sae.encode(clean_tokens.reshape(-1, d).to(device))
+    flat = clean_tokens.reshape(-1, d).to(device)
+    features = sae.encode(flat)
     recon = sae.decode(features)
     W_dec = sae.W_dec.detach()
-    u = code.to(device=W_dec.device, dtype=W_dec.dtype) @ W_dec
+    if direction == "covariance":
+        x = flat.to(W_dec.dtype)
+        u = code.to(device=x.device, dtype=x.dtype) @ (x - x.mean(dim=0, keepdim=True))
+    elif direction == "decoder":
+        u = code.to(device=W_dec.device, dtype=W_dec.dtype) @ W_dec
+    else:
+        raise ValueError(f"unknown null direction {direction!r}")
     u = u / u.norm().clamp_min(1e-12)
     if isinstance(f_idx, (int, np.integer)):
         magnitude = features[:, f_idx].abs() * W_dec[f_idx].norm()
@@ -720,6 +744,32 @@ def _profile_matched_null_replacement(clean_tokens: torch.Tensor, sae, device, f
         magnitude = (features[:, idx] @ W_dec[idx]).norm(dim=1)
     removal = magnitude[:, None] * u[None, :]
     return (recon - removal).reshape(b, t, d).cpu()
+
+
+def _lodo_pseudo_clear_rate(draws: list) -> float | None:
+    """Leave-one-draw-out empirical clear rate of the battery's own rule.
+
+    `_score_channel_against_null` clears a cell when the MEAN over the
+    feature's k rows of |delta| exceeds the p95 of the POOLED row-level null
+    (`n_draws` x k values). A mean over k rows has much less spread than single
+    rows, so under exchangeability the clear rate is far below the nominal 5%
+    and `0.05 x cells` is not a chance line. Here each null draw in turn is a
+    pseudo-feature: its row mean against the p95 of the remaining draws pooled,
+    exactly the real rule (including the degenerate-null refusal). The return is
+    the fraction of draws that clear, `None` with fewer than two draws.
+    """
+    if len(draws) < 2:
+        return None
+    n_clear = 0
+    for j, dj in enumerate(draws):
+        rest = np.concatenate([d for i, d in enumerate(draws) if i != j])
+        rest = rest[np.isfinite(rest)]
+        if not rest.size:
+            continue
+        p95 = float(np.quantile(rest, 0.95))
+        if p95 > 0.0 and float(np.nanmean(dj)) > p95:
+            n_clear += 1
+    return n_clear / len(draws)
 
 
 def top_firing_rows(activations: np.ndarray, f_idx: int, k: int) -> np.ndarray:
@@ -794,7 +844,8 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
                                   periods_full: np.ndarray | None = None,
                                   keep_forecasts: int = 3,
                                   null_mode: str = "mean_magnitude",
-                                  keep_null_draws: bool = False) -> dict:
+                                  keep_null_draws: bool = False,
+                                  empirical_chance: bool = False) -> dict:
     """Ablate each candidate on its OWN top-firing series; score the same
     9-channel battery against a ROW-MATCHED random-direction null.
 
@@ -804,7 +855,17 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
     `n_null_directions` random directions PER FEATURE, each removed with that
     feature's own per-token profile (`_profile_matched_null_replacement`), at
     `n_null_directions` extra forwards per feature; the row matching and the
-    level-removed shape null are unchanged.
+    level-removed shape null are unchanged. `"profile_matched_cov"` is the same
+    per-feature profile with the direction drawn from the chunk's own token
+    covariance instead of the dictionary (`_profile_matched_null_replacement`).
+
+    `empirical_chance` (default off; every artifact is then byte-identical):
+    each scored raw channel also records `empirical_chance`, the
+    leave-one-draw-out pseudo-clear rate of the real rule
+    (`_lodo_pseudo_clear_rate`), and the artifact gets a top-level
+    `empirical_chance` block (cells, expected cells, per channel). Then
+    `chance_expected_cells` (`0.05 x cells`) keeps its historical value and is
+    not a chance line; this block is.
 
     Same reach gate, same baseline convention and same channels as
     `feature_response_fingerprints` -- the two differ only in intervention
@@ -885,9 +946,9 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
     d_in, dict_size = sae.d_in, sae.dict_size
     seed = cfg.run.seed + seed_offset
     rng = np.random.default_rng(seed + 1)
-    if null_mode not in ("mean_magnitude", "profile_matched"):
+    if null_mode not in ABLATION_NULL_MODES:
         raise ValueError(f"unknown ablation null mode {null_mode!r}: expected "
-                         f"'mean_magnitude' or 'profile_matched'")
+                         f"one of {ABLATION_NULL_MODES}")
     profile_rng = np.random.default_rng(seed + 2)
 
     results, n_clearing_cells, n_series_used = [], 0, set()
@@ -955,15 +1016,18 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
         for f_idx in chunk_feats:
             rows_f = [int(r) for r in per_candidate_rows[f_idx] if int(r) in row_pos]
             idx = np.array([row_pos[r] for r in rows_f], dtype=int)
-            if null_mode == "profile_matched":
+            if null_mode in ("profile_matched", "profile_matched_cov"):
                 null_rows = {ch: [] for ch in CHANNELS}
                 null_rows_shape = {ch: [] for ch in CHANNELS}
+                cov = null_mode == "profile_matched_cov"
                 for _ in range(n_null_directions):
-                    code = profile_rng.normal(size=dict_size)
+                    code = profile_rng.normal(size=(clean_tokens.shape[0] * clean_tokens.shape[1])
+                                              if cov else dict_size)
                     code = code / (np.linalg.norm(code) + 1e-12)
                     rec_null = _forward(_profile_matched_null_replacement(
                         clean_tokens, sae, device, int(f_idx),
-                        torch.as_tensor(code, dtype=torch.float32)))
+                        torch.as_tensor(code, dtype=torch.float32),
+                        direction="covariance" if cov else "decoder"))
                     stats = _stats(rec_null)
                     stats_shape = _stats(rec_null, remove_level=True)
                     for ch in CHANNELS:
@@ -1011,6 +1075,8 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
                         draws = [d[idx] for d in null_rows[ch] if d.size == len(rows)]
                         per_channel[ch] = _score_channel_against_null(delta, draws)
                         n_clearing_cells += int(per_channel[ch]["clears_null"])
+                        if empirical_chance:
+                            per_channel[ch]["empirical_chance"] = _lodo_pseudo_clear_rate(draws)
                         if keep_null_draws:
                             per_channel[ch]["null_draw_means"] = [
                                 float(np.nanmean(d)) for d in draws]
@@ -1096,6 +1162,21 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
 
     scorable = [r for r in results if r.get("scorable")]
     n_cells = len(scorable) * len(CHANNELS)
+    chance_block = {}
+    if empirical_chance:
+        per_ch = {}
+        for ch in CHANNELS:
+            rates = [r["channels"][ch].get("empirical_chance") for r in scorable
+                     if r["channels"][ch].get("available")
+                     and r["channels"][ch].get("empirical_chance") is not None]
+            per_ch[ch] = {"n_cells": len(rates), "expected_cells": float(np.sum(rates))}
+        tot_cells = sum(v["n_cells"] for v in per_ch.values())
+        tot_exp = sum(v["expected_cells"] for v in per_ch.values())
+        chance_block = {"empirical_chance": {
+            "rule": "leave-one-draw-out pseudo-clear rate of the real rule",
+            "n_cells": int(tot_cells), "expected_cells": float(tot_exp),
+            "rate": (tot_exp / tot_cells) if tot_cells else None,
+            "per_channel": per_ch}}
     return {
         "reach": reach, "withheld": False,
         "intervention": "ablate", "conditioning": "top_firing",
@@ -1103,6 +1184,7 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
         "n_chunks": len(chunks), "series_per_chunk_cap": int(cap),
         "n_null_directions": int(n_null_directions),
         **({"ablation_null": null_mode} if null_mode != "mean_magnitude" else {}),
+        **chance_block,
         "candidates": results,
         "n_clearing_cells": int(n_clearing_cells),
         "chance_expected_cells": 0.05 * n_cells,

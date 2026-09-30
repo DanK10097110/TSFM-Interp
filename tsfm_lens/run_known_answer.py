@@ -48,7 +48,8 @@ def cell_name(seed: int, dose: float) -> str:
 
 
 def build_cell_config(config_path: str, corpus: str | None, out: str, seed: int, dose: float,
-                      device: str | None, null_mode: str | None = None):
+                      device: str | None, null_mode: str | None = None,
+                      empirical_chance: bool = False):
     """The template config with this cell's construction seed, dose, run name and paths.
 
     `run.seed` is set to the construction seed as well, so the SAE initialisation
@@ -65,6 +66,8 @@ def build_cell_config(config_path: str, corpus: str | None, out: str, seed: int,
         cfg.data.path = corpus
     if null_mode:
         cfg.sae.ablation_null = null_mode
+    if empirical_chance:
+        cfg.sae.ablation_empirical_chance = True
     for m in cfg.models:
         m.kwargs = {**m.kwargs, "construction_seed": int(seed), "dose": float(dose)}
     return cfg
@@ -108,7 +111,8 @@ def write_manifest(cfg, run_dir: Path) -> Path:
 
 
 def run_cell(args, seed: int, dose: float) -> dict:
-    cfg = build_cell_config(args.config, args.corpus, args.out, seed, dose, args.device, args.null)
+    cfg = build_cell_config(args.config, args.corpus, args.out, seed, dose, args.device, args.null,
+                          args.empirical_chance)
     run_dir = cfg.run_dir()
     result_path = run_dir / "known_answer" / "known_answer.json"
     if result_path.exists() and not args.force:
@@ -131,9 +135,12 @@ def main(argv: list | None = None) -> dict:
     ap.add_argument("--seeds", type=int, nargs="+", default=[0, 1, 2, 3, 4])
     ap.add_argument("--doses", type=float, nargs="+", default=[0.25, 0.5, 1.0, 2.0, 4.0])
     ap.add_argument("--device", default=None)
-    ap.add_argument("--null", choices=("mean_magnitude", "profile_matched"), default=None,
+    ap.add_argument("--null", choices=("mean_magnitude", "profile_matched", "profile_matched_cov"),
+                    default=None,
                     help="sae.ablation_null for every cell (default: the config's own); use a "
                          "separate --out per mode")
+    ap.add_argument("--empirical-chance", action="store_true",
+                    help="also record the battery's leave-one-draw-out empirical chance rate")
     ap.add_argument("--force", action="store_true")
     ap.add_argument("--score-only", action="store_true",
                     help="re-score existing cell directories without running the pipeline")
