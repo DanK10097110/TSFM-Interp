@@ -38193,6 +38193,25 @@ under transformers 4.57.6.
   - Still open: `DEPENDENCIES.md` §4–§5 describe tsfmPy-era mkl checks that
     do not apply to the openblas-backed cudaPy.
 
+**7-model run, attempt 1 crashed in `sae` (2026-09-29 19:47); fixed and resumed (2026-09-30, merge 22f0beb).**
+- **The error:** `torch.multinomial` in `resample_dead_neurons` raised "probability entry < 0" on Timer
+  `model.layers.4`.
+- **Root cause (measured):** the SAE's real-data augmentation rows (`real_data_enabled`) include 5 constant Monash
+  windows (std ≈ 1e-7), on which **Timer returns all-NaN activations**: 75 rows, 76,800 values. The dev store was
+  clean. The first optimizer step went NaN and nothing checked until the resampler, about 5 epochs later.
+- **Fix:**
+  - non-finite real-data rows are dropped and counted (`n_real_data_rows_dropped_nonfinite`, present only when > 0);
+  - `NonFiniteTrainingError` names the target, dict size, seed, epoch and step;
+  - a diverging ladder cell is skipped and recorded (`failed_cells`); an input-level NaN is never skipped;
+  - both are rendered in the SAE health block;
+  - clean runs are byte-identical (TimesFM retrain sha256 equal).
+- **Pre-flight search on all 8 new-model targets:** no divergence. Two Time-MoE targets (`model.layers.1`,
+  `model.layers.11`) sit at ~0.98 dead at every size above 384, and will go through `run_sae`'s substitution path.
+- **Open (to do):** Timer's NaN on constant input is an adapter/frontend gap. `frontend`'s NaN-handling probe does not
+  test a constant context. Add a constant-context probe to `frontend` and decide whether `generic_hf` should guard it.
+- **Resumed** at 12:30 on 2026-09-30. Every stage through `cluster` was skipped as current. A guard stops the run at
+  `concepts` until the K1 round-5 null question (§38.1.8) is settled.
+
 #### 38.3.3 Held-out interaction with K2
 
 K2 and K3 both want the one fresh epoch.
