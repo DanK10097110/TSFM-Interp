@@ -102,8 +102,9 @@ gate, so every cross-model statistic compares the same stretch of time.
 \paragraph{Stages.} Nineteen stages produce evidence of increasing strength: behavioral (accuracy, calibration, cost),
 descriptive (depth profiles, lenses), geometric (CKA, stitching gain over an input baseline), causal within-model
 (corruption fingerprints, patching, head ablation) and concept-level. A sparse-autoencoder feature counts as causal
-only if removing it changes a forecast channel more than a random direction of matched size on the same series, after
-reach controls confirm the intervention lands; concepts are then matched across models on two levels, same inputs and
+only if removing it changes a forecast channel more than removing the same per-token amount along a random direction on
+the same series, after reach controls confirm the intervention lands; a shipped planted-concept forecaster holds this test to a
+fixed false-positive gate; concepts are then matched across models on two levels, same inputs and
 same effect on those inputs. Stage inputs are fingerprinted, so cached artifacts are reused only while valid.
 
 \paragraph{Statistics and report.} Intervals resample series, not windows; a multiplicity ledger flags correction
@@ -118,7 +119,7 @@ dictionaries, and leave the experimental design to the user. Recent TSFM studies
 model \citep{mishra2026dissecting,oublal2026timesae,divo2026zeitgeist}. \tool{} builds on the same primitives but
 adds what a cross-architecture comparison needs to be trustworthy (Table~\ref{tab:tools}): a measured time axis,
 known answers, matched nulls with reach controls, correction for multiple testing, one-shot confirmation and a
-report that states the evidence behind every claim. It complements these libraries rather than replacing them.
+report that states the evidence behind every claim.
 
 \begin{table}[t]
 \centering
@@ -133,7 +134,8 @@ Sparse dictionaries and feature ablation                   & \pmark & \pmark & \
 TSFMs without per-model engineering                        & \xmark & \pmark & \xmark & \pmark & \xmark & \cmark \\
 Measured token$\to$time alignment across architectures     & \xmark & \xmark & \xmark & \xmark & \xmark & \cmark \\
 Benchmark with exact ground truth and leakage audit        & \xmark & \xmark & \xmark & \xmark & \pmark & \cmark \\
-Random-direction nulls and reach controls per ablation     & \xmark & \xmark & \xmark & \xmark & \xmark & \cmark \\
+Profile-matched random-direction nulls and reach controls & \xmark & \xmark & \xmark & \xmark & \xmark & \cmark \\
+Known-answer forecaster with planted concepts and decoys  & \xmark & \xmark & \xmark & \xmark & \xmark & \cmark \\
 Cross-model concept matching (inputs vs.\ effects)          & \xmark & \xmark & \xmark & \xmark & \xmark & \cmark \\
 Series-level resampling and multiplicity ledger            & \xmark & \xmark & \xmark & \xmark & \xmark & \cmark \\
 Registered one-shot confirmation on sealed data            & \xmark & \xmark & \xmark & \xmark & \xmark & \cmark \\
@@ -151,9 +153,9 @@ bloom2024saelens,kokhlikyan2020captum}; TSFM SAE studies judged from the papers.
 After \texttt{pip install -e . \&\& pip install -e tsfm\_lens}, one command runs a full analysis
 (\texttt{python run.py -{}-config configs/examples/large\_4model.yaml}); presets cover a CPU-only mock smoke test, a
 single model and a pair. The repository includes a complete four-model example run with its report and per-stage
-artifacts, and a ledger of every finding with its reproduction command. The code is MIT-licensed; over 2{,}100 tests
+artifacts, and a ledger of every finding with its reproduction command. The code is MIT-licensed; over 2{,}300 tests
 run in continuous integration against pinned and, weekly, latest dependencies, and each load-bearing assertion must
-be shown to fail against a planted regression. Documentation covers installation, adding models and a report walkthrough. Code: \url{\repourl}.
+be shown to fail against a planted regression. Code: \url{\repourl}.
 
 \acks{Computational resources were provided by Hao Wang. This work received no external funding, and the authors
 declare no competing interests.}
