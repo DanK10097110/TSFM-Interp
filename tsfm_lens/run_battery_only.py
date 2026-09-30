@@ -37,10 +37,16 @@ def main(argv=None) -> int:
     ap.add_argument("--out", required=True)
     ap.add_argument("--models", nargs="*", default=None, help="restrict to these models")
     ap.add_argument("--empirical-chance", action="store_true")
+    ap.add_argument("--top-k", type=int, default=None, help="override concepts.top_k_series")
+    ap.add_argument("--n-null", type=int, default=None, help="override concepts.n_null_directions")
     args = ap.parse_args(argv)
     setup_logging()
     cfg = load_config(args.config)
     cfg.sae.ablation_null = args.null
+    if args.top_k:
+        cfg.concepts.top_k_series = int(args.top_k)
+    if args.n_null:
+        cfg.concepts.n_null_directions = int(args.n_null)
     run_dir = cfg.run_dir()
     out = Path(args.out)
     set_seed(cfg.run.seed)

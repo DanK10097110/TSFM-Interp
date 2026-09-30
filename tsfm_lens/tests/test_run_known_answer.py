@@ -105,3 +105,11 @@ def test_aggregate_gate_reads_dose_one_sensitivity_and_every_dose_fpr():
     assert high_fpr["stop_gate"]["verdict"] == "stop" and "FPR" in high_fpr["stop_gate"]["reasons"][0]
     no_dose_one = ka.aggregate_cells([_cell(0, 0.5, 0.9, 0.04)])
     assert no_dose_one["stop_gate"]["verdict"] == "not scorable"
+
+
+def test_cell_config_overrides_the_battery_size_only_when_asked():
+    base = rka.build_cell_config(str(CONFIG), None, "/o", 0, 1.0, None)
+    big = rka.build_cell_config(str(CONFIG), None, "/o", 0, 1.0, None, top_k=32, n_null=64)
+    assert (base.concepts.top_k_series, base.concepts.n_null_directions) == (8, 16)
+    assert (big.concepts.top_k_series, big.concepts.n_null_directions) == (32, 64)
+    assert rka.build_cell_config(str(CONFIG), None, "/o", 0, 1.0, None).concepts.top_k_series == 8
