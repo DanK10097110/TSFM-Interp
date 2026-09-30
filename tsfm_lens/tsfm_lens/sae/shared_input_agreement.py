@@ -100,6 +100,7 @@ from ..utils import load_json, log, save_json
 from .eval import _token_level_replacement
 from .ground_truth import load_ground_truth_table
 from .response import CHANNELS, _direction_steered_replacement, _feature_ablated_replacement, \
+    _profile_matched_null_replacement, \
     _score_channel_against_null, alive_feature_mask, battery_statistics
 from .train import load_all_windows, load_sae_checkpoint, sanitize
 from .transfer import _seed, auc_from_ranks, concept_scores, top_series
@@ -409,7 +410,8 @@ def battery_for_set(ctx: TargetContext, features, U_key: tuple, contexts_u: np.n
 
 def own_effect_null(ctx: TargetContext, features, U_key: tuple, contexts_u: np.ndarray,
                     targets_u: np.ndarray, periods_u: np.ndarray, baseline_seed: int,
-                    direction_seed: int, n_null: int) -> list:
+                    direction_seed: int, n_null: int,
+                    null_mode: str = "mean_magnitude") -> list:
     """The null that decides whether `features`' own effect on `U` is real at
     all (review of the v1 run, tightening design item 5's floor -- see the
     module docstring's second deviation note): `n_null` row-matched
@@ -449,10 +451,23 @@ def own_effect_null(ctx: TargetContext, features, U_key: tuple, contexts_u: np.n
     same source part scored against two different destinations that share a
     `U` -- is computed once. Both seeds are deterministic functions of
     exactly these same components (the driver's `_seed(...)` calls), so a
-    repeated (set, U) always implies the same pair of seeds too."""
+    repeated (set, U) always implies the same pair of seeds too.
+
+    `null_mode` (`sae.ablation_null`, K1 round 4): `"mean_magnitude"` is the
+    legacy null above, byte-identical, cache key unchanged. `"profile_matched"`
+    removes, at every token, a vector of norm `|| sum_{f in set} z_f(t) w_f ||`
+    (the set's own per-token removal on `U`) along a random decoded direction
+    (`response._profile_matched_null_replacement`), so the null has the ablated
+    set's exact removal profile and only the direction is random. Its cache key
+    carries the mode, so the two modes never read each other's draws."""
     feat_list = [int(features)] if isinstance(features, (int, np.integer)) else \
         sorted(int(f) for f in features)
+    if null_mode not in ("mean_magnitude", "profile_matched"):
+        raise ValueError(f"unknown ablation null mode {null_mode!r}: expected "
+                         f"'mean_magnitude' or 'profile_matched'")
     key = (ctx.model, ctx.layer, tuple(feat_list), U_key)
+    if null_mode != "mean_magnitude":
+        key = key + (null_mode,)
     if key in _own_null_cache:
         return _own_null_cache[key]
     clean_tokens, baseline_fc, baseline_q = _baseline_for_rows(ctx, contexts_u, U_key,
@@ -469,9 +484,14 @@ def own_effect_null(ctx: TargetContext, features, U_key: tuple, contexts_u: np.n
     for _ in range(int(n_null)):
         direction = rng.normal(size=ctx.sae.dict_size)
         direction = direction / (np.linalg.norm(direction) + 1e-12)
-        replacement = _direction_steered_replacement(
-            clean_tokens, ctx.sae, ctx.device,
-            torch.as_tensor(direction, dtype=torch.float32), null_magnitude)
+        if null_mode == "profile_matched":
+            replacement = _profile_matched_null_replacement(
+                clean_tokens, ctx.sae, ctx.device, feat_list,
+                torch.as_tensor(direction, dtype=torch.float32))
+        else:
+            replacement = _direction_steered_replacement(
+                clean_tokens, ctx.sae, ctx.device,
+                torch.as_tensor(direction, dtype=torch.float32), null_magnitude)
         with token_patch(ctx.adapter.module, ctx.layer, ctx.adapter.token_slice, replacement):
             torch.manual_seed(baseline_seed)
             rec = ctx.adapter.predict(contexts_u, ctx.cfg.data.horizon, ctx.cfg.l0.quantiles)
@@ -901,10 +921,15 @@ def run_shared_input_agreement(cfg, run_dir, hub, store, data, device, atlas: di
         own_null_seed_b = _seed("shared_input_own_null", unit["dst_target"],
                                 tuple(sorted(unit["dst_features"])), U_key, base=base_seed)
         n_null_directions = int(getattr(c, "n_null_directions", 16))
+        null_mode = str(getattr(getattr(cfg, "sae", None), "ablation_null", "mean_magnitude")
+                        or "mean_magnitude")
+        mode_kw = {} if null_mode == "mean_magnitude" else {"null_mode": null_mode}
         own_null_a = own_effect_null(ctx_src, unit["src_features"], U_key, contexts_u, targets_u,
-                                     periods_u, seed_src, own_null_seed_a, n_null_directions)
+                                     periods_u, seed_src, own_null_seed_a, n_null_directions,
+                                     **mode_kw)
         own_null_b = own_effect_null(ctx_dst, unit["dst_features"], U_key, contexts_u, targets_u,
-                                     periods_u, seed_dst, own_null_seed_b, n_null_directions)
+                                     periods_u, seed_dst, own_null_seed_b, n_null_directions,
+                                     **mode_kw)
 
         side_a = _side_channel_scores(real_raw_a, real_shape_a, own_null_a)
         side_b = _side_channel_scores(real_raw_b, real_shape_b, own_null_b)
@@ -915,6 +940,7 @@ def run_shared_input_agreement(cfg, run_dir, hub, store, data, device, atlas: di
             "matched_null_diag": {"src": diag_a, "dst": diag_b},
             "own_effect_null": {"src": {"n_directions": n_null_directions, "n": len(own_null_a)},
                                "dst": {"n_directions": n_null_directions, "n": len(own_null_b)}},
+            **({"ablation_null": null_mode} if null_mode != "mean_magnitude" else {}),
             "side_src": {"clearing_channels": clearing_a, "level": side_a["level"],
                         "shape": side_a["shape"]},
             "side_dst": {"clearing_channels": clearing_b, "level": side_b["level"],

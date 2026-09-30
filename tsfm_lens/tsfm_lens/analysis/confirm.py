@@ -852,9 +852,12 @@ def check_concept_claims_before_opening(cfg: PipelineConfig, registry: dict) -> 
                 f"register fewer claims")
     mode = str(getattr(cfg.sae, "ablation_null", "mean_magnitude") or "mean_magnitude")
     frozen = {h.get("ablation_null") for h in _concept_claims(registry, "concept_causal")}
+    frozen |= {h["ablation_null"] for h in _concept_claims(registry, "shared_input_agreement")
+               if "ablation_null" in h}
     if frozen and frozen != {mode}:
         problems.append(
-            f"registered causal claims were frozen under ablation null {sorted(frozen)} but "
+            f"registered causal and agreement claims were frozen under ablation null "
+            f"{sorted(frozen)} but "
             f"sae.ablation_null is {mode!r}; the private battery must use the null dev used")
     if problems:
         raise RuntimeError(

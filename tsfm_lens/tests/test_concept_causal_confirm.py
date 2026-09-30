@@ -482,6 +482,28 @@ def test_confirm_refuses_ablation_null_mismatch_before_opening(dev_run, monkeypa
         confirm_mod.run_confirm(cfg, hub=None)
 
 
+def test_confirm_refuses_agreement_claims_frozen_under_another_null(dev_run, monkeypatch):
+    """Registered agreement claims record the null mode and are covered by the same
+    refusal: with every causal claim frozen under `profile_matched` and only the
+    agreement claims frozen under the legacy null, a `profile_matched` config still
+    refuses. Planted regression: dropping the agreement claims from the frozen set."""
+    cfg = _fresh_run(dev_run)
+    _write_registry(cfg, 8)
+    path = cfg.run_dir() / "hypotheses.json"
+    registry = load_json(path)
+    agreement = [h for h in registry["hypotheses"] if h["stage"] == "shared_input_agreement"]
+    assert agreement and {h["ablation_null"] for h in agreement} == {"mean_magnitude"}
+    for h in registry["hypotheses"]:
+        if h["stage"] == "concept_causal":
+            h["ablation_null"] = "profile_matched"
+    save_json(path, registry)
+    cfg.sae.ablation_null = "profile_matched"
+    monkeypatch.setattr(confirm_mod, "_load_private",
+                        lambda c: (_ for _ in ()).throw(AssertionError("opened")))
+    with pytest.raises(RuntimeError, match="ablation null"):
+        confirm_mod.run_confirm(cfg, hub=None)
+
+
 def test_doctor_row_matches_the_confirm_refusal(dev_run):
     from tsfm_lens.doctor import check_concept_claim_budget, run_preflight
     cfg = _fresh_run(dev_run)
