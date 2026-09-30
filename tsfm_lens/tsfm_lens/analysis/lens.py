@@ -226,6 +226,21 @@ def _model_lens(cfg: PipelineConfig, adapter, store: ActivationStore,
     lens_fc, final_fc = skip_lens_forecasts(adapter, layers, contexts,
                                             data.horizon, cfg.l0.quantiles,
                                             cfg.run.seed + 81)
+    bad = ~(np.isfinite(final_fc).all(axis=1) & np.isfinite(lens_fc).all(axis=(0, 2)))
+    n_nonfinite = int(bad.sum())
+    if n_nonfinite:
+        if n_nonfinite == len(bad):
+            raise ValueError(
+                f"lens {adapter.name}: every one of the {len(bad)} sampled series gave a "
+                f"non-finite forecast (final or patched) -- the skip lens has nothing to "
+                f"score. Check the `frontend` constant-context row for this model.")
+        log.warning("lens %s: %d of %d sampled series gave a non-finite forecast (constant "
+                    "or degenerate context?) and are dropped from the skip-lens curves "
+                    "(recorded as n_series_nonfinite_dropped)", adapter.name, n_nonfinite,
+                    len(bad))
+        keep = ~bad
+        lens_fc, final_fc, targets, scale = lens_fc[:, keep], final_fc[keep], targets[keep], scale[keep]
+        rows, take = rows[keep], int(keep.sum())
     per_series = np.abs(lens_fc - targets[None]).mean(axis=2) / scale[None]
     per_series_h = np.abs(lens_fc - targets[None]) / scale[None, :, None]  # [layers, B, horizon]
     agreement = (np.abs(lens_fc - final_fc[None]).mean(axis=2) / scale[None]).mean(axis=1)
@@ -249,6 +264,8 @@ def _model_lens(cfg: PipelineConfig, adapter, store: ActivationStore,
             "crystallization_tol": cfg.lens.crystallization_tol,
             "n_series_skip": int(take), "n_requested_skip": cap["n_requested"],
             "limited_by_skip": cap["limited_by"]}
+    if n_nonfinite:
+        meta["n_series_nonfinite_dropped"] = n_nonfinite
     arrays = {"skip_mase": mase_curve.astype(np.float32),
               "skip_agreement": agreement.astype(np.float32)}
 

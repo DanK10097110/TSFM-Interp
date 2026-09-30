@@ -491,6 +491,33 @@ def _check_capped_stages(cfg: PipelineConfig) -> list:
     return checks
 
 
+def _check_constant_context(adapter, cfg: PipelineConfig, name: str) -> DoctorCheck:
+    """Warn when a model returns a non-finite forecast or activation (or raises)
+    on constant contexts -- the same probe the `frontend` stage runs. A warn,
+    never a fail: the model is usable, but constant windows in a real-data path
+    yield unusable rows (Timer via `generic_hf`: all-NaN, which crashed SAE
+    training before the consumer dropped non-finite rows)."""
+    from .analysis.frontend import _run_constant_context
+    try:
+        stats = _run_constant_context(adapter, int(cfg.data.context_len),
+                                      int(cfg.data.horizon), cfg.run.seed + 903)
+    except Exception as e:
+        return DoctorCheck(f"constant context: {name}", "warn",
+                           f"probe itself failed: {type(e).__name__}: {e}", "")
+    if stats["verdict"] == "finite":
+        return DoctorCheck(f"constant context: {name}", "pass",
+                           f"finite forecast and activations on {stats['n_cases']} constant "
+                           f"inputs (max deviation {stats['max_deviation_units']:.1e})")
+    return DoctorCheck(
+        f"constant context: {name}", "warn",
+        f"verdict '{stats['verdict']}': forecast finite={stats['finite_forecast']}, "
+        f"activations finite={stats['finite_activations']}, raised={stats['n_raised']}"
+        f"/{stats['n_cases']}",
+        "constant windows (real corpora contain some) give this model unusable rows; "
+        "consumers drop non-finite rows and the `frontend` report row flags it. Model "
+        "inputs are not altered by default")
+
+
 def _check_adapters_full(cfg: PipelineConfig) -> list:
     """Loads every configured model -- only run from `--doctor`, never the
     default preflight. Mirrors `run.py --check-alignment` plus
@@ -538,6 +565,7 @@ def _check_adapters_full(cfg: PipelineConfig) -> list:
         except Exception as e:
             checks.append(DoctorCheck(f"alignment: {m.name}", "fail", str(e), ""))
         finally:
+            checks.append(_check_constant_context(adapter, cfg, m.name))
             ctx.hub.release(m.name)
     return checks
 
