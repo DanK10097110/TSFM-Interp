@@ -37893,6 +37893,15 @@ v2 copy, `profile_matched`, battery only, same candidates:
   `ablation_empirical_chance: true` for `panel7_v2_dev`.
 - **Agreement-rung re-run (26 cells, each in its own process):** 21 cells are identical. Round 3's profile_matched
   cells changed, mainly because round 3 predates the agreement-step matched null. Round 5's agreement numbers stand.
+- **Default flipped (2026-09-30, merge of branch `null-default`).** `sae.ablation_null` now defaults to
+  `profile_matched`. The fingerprint omits the key at the *legacy* value (`omit_at_value: mean_magnitude`), so the
+  four presets whose recorded concepts artifacts used the legacy null (`full_report_run_4model`, `concept_atlas_v2`,
+  `examples/large_4model`, `examples/concept_atlas_v2/config.yaml`) pin `mean_magnitude` and keep their fingerprints.
+  A default run reads a legacy concepts artifact as stale. The concepts stage also refuses to pool on-disk
+  `*_ablation.json` files made under a different null (`check_ablation_null_modes`). A missing key means legacy,
+  whatever the config default. Plants (each checked against `tests/test_ablation_null_default.py`): default
+  reverted → 5 failed; `omit_at_value` ignored → 1 failed; check not called → 1 failed; check never raises → 2
+  failed. The effective-k to-do above is done (744c722, `row_coverage` / `n_rows_scored`).
 
 #### 38.2.1 Why, grounded
 
