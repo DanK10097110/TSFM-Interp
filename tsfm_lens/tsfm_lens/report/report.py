@@ -2593,7 +2593,26 @@ def _sec_l0(run_dir: Path, model_colors: dict, findings: list) -> str:
     # run produced a family-test table (ROADMAP.md sec 18 F8).
     inner += _other_pairs_block(summary, findings)
     inner += _multiplicity_block(run_dir, summary, findings)
-    return inner
+    return _nonfinite_forecast_banner(run_dir) + inner
+
+
+def _nonfinite_forecast_banner(run_dir: Path) -> str:
+    """Loud banner when any model returned non-finite forecasts in L0 (the
+    series were dropped from every model's comparison; see
+    `l0_behavioral.nonfinite_forecast_rows`). Empty string when the artifact is
+    absent, i.e. for every run that had no such series."""
+    path = run_dir / "l0" / "nonfinite_forecasts.json"
+    if not path.exists():
+        return ""
+    rec = load_json(path)
+    who = "; ".join(f"{m}: {d['n_series']} series" for m, d in rec["per_model"].items())
+    fams = ", ".join(f"{f} ({n})" for f, n in rec["dropped_by_family"].items())
+    return ('<p class="blurb">⚠ <b>Non-finite forecasts in L0</b> — '
+            f'{who}. These {rec["n_series_dropped_from_comparison"]} of '
+            f'{rec["n_series_total"]} series ({fams}) were removed from every model\'s '
+            'MASE/sMAPE/pinball comparison so all models are scored on one series set; '
+            'the model input was not altered. Listed in '
+            '<code>l0/nonfinite_forecasts.json</code>.</p>')
 
 
 def _all_pairs_block(pairs, primary: dict, row_fn, title: str,
@@ -4217,6 +4236,13 @@ def _sec_lens(run_dir: Path, model_colors: dict, findings: list) -> str:
               "separate mechanism (a probe fit on stored states, no patching) and "
               "does cover " + _join_and(sorted(no_skip)) + ".</p>",
             open_=True)
+    dropped = {k: v["n_series_nonfinite_dropped"] for k, v in skip_meta.items()
+               if v.get("n_series_nonfinite_dropped")}
+    if dropped:
+        inner += ('<p class="blurb">⚠ <b>Non-finite forecasts in the skip lens</b> — '
+                  + "; ".join(f"{k}: {n} series" for k, n in sorted(dropped.items()))
+                  + ' gave a non-finite forecast (final or patched) and were dropped from '
+                  'that model\'s skip-lens curves; the model input was not altered.</p>')
     fig = go.Figure()
     for model, m in skip_meta.items():
         color = model_colors.get(model)
@@ -8353,6 +8379,74 @@ def _sec_frontend(run_dir: Path, model_colors: dict, findings: list) -> str:
             "verdict here says nothing about forecast QUALITY on ordinary, well-formed "
             "input; it only characterizes what happens at this one specific failure "
             "mode.")
+
+    def _yn(v) -> str:
+        return "—" if v is None else ("yes" if v else "NO")
+
+    const_rows, const_bad, const_missing = [], [], []
+    for name, rec in models.items():
+        cc = rec.get("constant_context")
+        if cc is None:
+            const_missing.append(name)
+            continue
+        if cc.get("status") != "measured":
+            const_rows.append({"model": name, "verdict": cc.get("status", "not_run"),
+                               "finite forecast": "—", "finite activations": "—",
+                               "max forecast deviation": "—"})
+            continue
+        dev = cc.get("max_deviation_units")
+        const_rows.append({"model": name, "verdict": cc["verdict"].upper()
+                           if cc["verdict"] != "finite" else "finite",
+                           "finite forecast": _yn(cc.get("finite_forecast")),
+                           "finite activations": _yn(cc.get("finite_activations")),
+                           "max forecast deviation": "—" if dev is None else f"{dev:.2e}"})
+        if cc["verdict"] != "finite":
+            const_bad.append((name, cc))
+        findings.append(Finding(
+            claim_id=_next_claim_id("frontend"), stage="frontend", evidence_class="behavioral",
+            text=f"Frontend — {name}'s constant-context verdict is '{cc['verdict']}' over "
+                f"{cc['n_cases']} constant inputs (0, 1, 1e3, 1 plus 1e-7 noise): "
+                f"{cc['n_raised']} raised, {cc['n_nonfinite_forecast']} gave a non-finite "
+                f"forecast, {cc['n_nonfinite_activations']} gave non-finite activations"
+                + ("" if dev is None else f"; worst forecast deviation from the constant "
+                   f"{dev:.2e} (units of |constant|+1)") + ".",
+            plain=(f"{name} handles a flat, constant input normally: its forecast and "
+                   f"internal activations stay finite." if cc["verdict"] == "finite" else
+                   f"{name} does not cope with a flat, constant input "
+                   f"({cc['verdict']}): any constant window in a real corpus will give it "
+                   f"a broken row."),
+            registered=False))
+    if const_rows or const_missing:
+        inner += "<h4>Constant-context handling</h4>"
+        for name, cc in const_bad:
+            inner += (f'<p class="blurb">⚠ <b>{name}: constant context gives a '
+                      f'{cc["verdict"]} result</b> — forecast finite: '
+                      f'{_yn(cc.get("finite_forecast"))}, activations finite: '
+                      f'{_yn(cc.get("finite_activations"))}. Every constant window (real '
+                      f'corpora contain them) yields a non-finite row for this model; '
+                      f'downstream consumers drop or flag such rows rather than use them. '
+                      f'The model input is not altered to hide this.</p>')
+        if const_missing:
+            inner += (f'<p class="blurb">Constant-context probe not measured for '
+                      f'{_name_phrase(sorted(const_missing))} (artifact predates the probe '
+                      f'or it was disabled via <code>frontend.constant_context</code>).</p>')
+        if const_rows:
+            inner += _table(pd.DataFrame(const_rows))
+        inner += _note(
+            "Whether each model still produces a finite forecast and finite internal "
+            "activations when its context is perfectly flat (0, 1, 1000, and 1 plus "
+            "1e-7 noise), and how far the forecast lands from that constant "
+            "(in units of |constant| + 1).",
+            "'finite' with a deviation near 0 means the model forecasts the flat line "
+            "back. A finite row with a large deviation means a finite but wrong level. "
+            "A non-finite forecast or activation (shown in capitals and flagged above) "
+            "is the dangerous case: no error is raised, the model simply emits NaN, and "
+            "any consumer that ingests the row inherits it.",
+            "Four hand-built inputs at the run's own context length and horizon, two "
+            "series each; behavioral, input/output only. It does not say how close to "
+            "constant a real window has to be to fail (a model's threshold is its own), "
+            "and it measures, never repairs: adapters do not silently perturb constant "
+            "inputs.")
 
     return inner
 

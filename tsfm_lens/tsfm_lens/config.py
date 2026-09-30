@@ -405,7 +405,7 @@ class FrontendConfig:
     standalone run against a checkpoint with nothing else built, same
     pattern as `budget`).
 
-    Each of the four diagnostics has its own enable flag: a model whose
+    Each diagnostic has its own enable flag: a model whose
     architecture makes one inapplicable (e.g. `quantization_resolution` on
     a continuous-embedding model with no re-quantizing tokenizer) degrades
     to an explicit `not_applicable` record rather than skipping the whole
@@ -436,6 +436,12 @@ class FrontendConfig:
     # handle), not an effect-size estimate needing a bootstrap CI.
     nan_frac: float = 0.05
     nan_series: int = 8
+
+    # Constant-context probe (0, 1, 1e3, 1 + 1e-7 noise): finite forecast and
+    # activations? `omit_at_default` so declaring it leaves every existing run's
+    # `frontend` fingerprint byte-identical; an older frontend.json simply
+    # lacks the `constant_context` key and the report says so.
+    constant_context: bool = field(default=True, metadata={"omit_at_default": True})
 
 
 @dataclass

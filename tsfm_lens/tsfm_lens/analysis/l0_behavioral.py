@@ -41,31 +41,52 @@ def run_l0(cfg: PipelineConfig, hub, data: BenchmarkData, store: ActivationStore
         k = min(data.n, cfg.l0.noise_floor_series)
         nf_rows = sample_rows(data.n, k, cfg.run.seed + 77, strata=data.meta["family"].to_numpy())
     frames, noise_floor, calibration, horizon_resolved, reliability = [], {}, {}, {}, {}
+    nonfinite = {}
     for mcfg in cfg.models:
         adapter = hub.get(mcfg.name)
         adapter.ensure_loaded()
         point, quants = _predict_all(adapter, contexts, data.horizon, cfg.l0.quantiles)
         store.write_predictions(mcfg.name, point, quants)
+        bad = nonfinite_forecast_rows(point, quants)
+        if bad.any():
+            nonfinite[mcfg.name] = bad
+            log.warning("L0: '%s' returned a non-finite forecast for %d of %d series "
+                        "(constant or degenerate contexts?) -- those series are dropped "
+                        "from EVERY model's L0 comparison and listed in "
+                        "l0/nonfinite_forecasts.json", mcfg.name, int(bad.sum()), len(bad))
+        ok = ~bad
         frames.append(_score(mcfg.name, point, quants, contexts, targets,
                              cfg.l0.quantiles, data.meta, cfg.l0.scale, cfg.l0.min_scale_frac))
+        families_all = data.meta["family"].to_numpy()
         if cfg.l0.calibration and len(cfg.l0.quantiles) >= 2:
             calibration[mcfg.name] = summarize_calibration(
-                quants, cfg.l0.quantiles, targets, data.meta["family"].to_numpy())
+                quants[ok], cfg.l0.quantiles, targets[ok], families_all[ok])
             reliability[mcfg.name] = reliability_from_own_width(
-                point, quants, targets, _mase_scale(contexts, cfg.l0.scale))
+                point[ok], quants[ok], targets[ok], _mase_scale(contexts[ok], cfg.l0.scale))
         if cfg.l0.horizon_resolved and data.horizon > 1:
             horizon_resolved[mcfg.name] = _summarize_by_horizon(
-                point, quants, targets, contexts, cfg.l0.quantiles, cfg.l0.scale,
-                data.meta["family"].to_numpy())
+                point[ok], quants[ok], targets[ok], contexts[ok], cfg.l0.quantiles,
+                cfg.l0.scale, families_all[ok])
         if nf_rows is not None:
+            nf_ok = nf_rows[ok[nf_rows]]
             noise_floor[mcfg.name] = _measure_noise_floor(
-                adapter, contexts[nf_rows], targets[nf_rows], data.horizon, cfg.l0.quantiles,
-                cfg.l0.scale, cfg.l0.noise_floor_repeats, data.meta["family"].to_numpy()[nf_rows])
+                adapter, contexts[nf_ok], targets[nf_ok], data.horizon, cfg.l0.quantiles,
+                cfg.l0.scale, cfg.l0.noise_floor_repeats, families_all[nf_ok])
         if not cfg.run.keep_models_loaded:
             hub.release(mcfg.name)
     frames.extend(_no_skill_frames(contexts, targets, data.horizon, cfg.l0.quantiles,
                                    data.meta, cfg.l0.scale, cfg.l0.min_scale_frac))
     metrics = pd.concat(frames, ignore_index=True)
+    stale = out_dir / "nonfinite_forecasts.json"
+    if nonfinite:
+        any_bad = np.any(np.stack(list(nonfinite.values())), axis=0)
+        dropped_ids = data.meta["series_id"].to_numpy()[any_bad]
+        metrics = metrics[~metrics["series_id"].isin(dropped_ids)].reset_index(drop=True)
+        save_json(stale, nonfinite_forecast_record(
+            nonfinite, data.meta["series_id"].to_numpy(),
+            data.meta["family"].to_numpy(), any_bad))
+    elif stale.exists():
+        stale.unlink()
     metrics.to_parquet(out_dir / "metrics.parquet")
     save_json(out_dir / "summary.json", _summarize(metrics, cfg, noise_floor))
     if noise_floor:
@@ -84,6 +105,41 @@ def run_l0(cfg: PipelineConfig, hub, data: BenchmarkData, store: ActivationStore
 # comparison between two named models, not a reduction over all of them
 # (`CLAUDE.md` sec 6.5). L0/L1/L2/clustering measure every pair.
 _DESIGNATED_PAIR_ONLY_STAGES = ("l3_agreement", "exemplars", "confirm")
+
+
+def nonfinite_forecast_rows(point: np.ndarray, quants: np.ndarray) -> np.ndarray:
+    """`[n_series]` bool, True where the point or any quantile forecast is non-finite.
+
+    A NaN forecast scores as NaN MASE, which pandas' `mean` silently skips (a
+    model-specific series set) while a bootstrap CI over the same column is NaN
+    yet its p-value is still finite -- a bogus verdict with a well-formed
+    shape. Measured on a planted fixture (4 NaN series in one model's family:
+    mean 0.975, CI [nan, nan], p 0.0025). Such series are dropped from every
+    model's comparison and recorded, never averaged over quietly.
+    """
+    p = np.asarray(point)
+    q = np.asarray(quants)
+    return ~(np.isfinite(p).reshape(len(p), -1).all(axis=1)
+             & np.isfinite(q).reshape(len(q), -1).all(axis=1))
+
+
+def nonfinite_forecast_record(per_model: dict, series_ids: np.ndarray, families: np.ndarray,
+                              any_bad: np.ndarray) -> dict:
+    """The `l0/nonfinite_forecasts.json` payload: who produced non-finite
+    forecasts, on which series, and what was dropped as a result. Written only
+    when something was non-finite, so runs without it are byte-identical."""
+    return {
+        "per_model": {m: {"n_series": int(b.sum()),
+                          "series_ids": [str(x) for x in series_ids[b]]}
+                      for m, b in per_model.items()},
+        "n_series_total": int(len(any_bad)),
+        "n_series_dropped_from_comparison": int(any_bad.sum()),
+        "dropped_by_family": {str(f): int((families[any_bad] == f).sum())
+                              for f in sorted(set(families[any_bad].tolist()))},
+        "note": ("series with a non-finite forecast from ANY model are removed from "
+                 "every model's L0 metrics so all models are compared on one series "
+                 "set; l0 stored predictions still contain the raw non-finite values"),
+    }
 
 
 def _summarize_by_horizon(point: np.ndarray, quants: np.ndarray, targets: np.ndarray,
