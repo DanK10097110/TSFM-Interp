@@ -579,6 +579,30 @@ def _channel_deltas(stats: dict, channel: str, idx: np.ndarray | None = None) ->
     return d if idx is None else d[idx]
 
 
+def _n_nonfinite_level_rows(stats: dict) -> int:
+    """Rows of the shared series whose level delta is non-finite. The level
+    delta is a difference of horizon means, so it is non-finite exactly when a
+    row's steered or baseline forecast is."""
+    d = _channel_deltas(stats, "level")
+    return 0 if d is None else int((~np.isfinite(d)).sum())
+
+
+def nonfinite_row_record(real_raw_a: dict, real_raw_b: dict, null_stats_a: list,
+                         null_stats_b: list, own_null_a: list, own_null_b: list) -> dict:
+    """Per-test count of shared-series rows the `nanmean`/finite-filter scoring
+    silently skipped, per side, plus how many null draws had any. `{}` when
+    nothing was non-finite, so such tests are recorded byte-identically."""
+    def draws(seq):
+        return sum(1 for sr, _ in seq if _n_nonfinite_level_rows(sr) > 0)
+    rec = {"src_rows": _n_nonfinite_level_rows(real_raw_a),
+           "dst_rows": _n_nonfinite_level_rows(real_raw_b),
+           "src_matched_null_draws": draws(null_stats_a),
+           "dst_matched_null_draws": draws(null_stats_b),
+           "src_own_null_draws": draws(own_null_a),
+           "dst_own_null_draws": draws(own_null_b)}
+    return rec if any(rec.values()) else {}
+
+
 def _side_channel_scores(real_stats_raw: dict, real_stats_shape: dict,
                          own_null: list) -> dict:
     """`-> {"level": score_dict, "shape": {channel: score_dict}}`, each
@@ -938,6 +962,10 @@ def run_shared_input_agreement(cfg, run_dir, hub, store, data, device, atlas: di
         side_a = _side_channel_scores(real_raw_a, real_shape_a, own_null_a)
         side_b = _side_channel_scores(real_raw_b, real_shape_b, own_null_b)
         clearing_a, clearing_b = _clearing_channels(side_a), _clearing_channels(side_b)
+        nonfinite_rec = nonfinite_row_record(real_raw_a, real_raw_b, null_stats_a,
+                                             null_stats_b, own_null_a, own_null_b)
+        if nonfinite_rec:
+            record["nonfinite_rows_skipped"] = nonfinite_rec
 
         record.update({
             "U": list(U_key), "n_shared_series": int(U.size),
@@ -995,6 +1023,7 @@ def run_shared_input_agreement(cfg, run_dir, hub, store, data, device, atlas: di
         concept_counts.setdefault(str(r["concept"]), {})
         concept_counts[str(r["concept"])][v] = concept_counts[str(r["concept"])].get(v, 0) + 1
 
+    n_tests_nonfinite = sum(1 for r in tests if r.get("nonfinite_rows_skipped"))
     out = {
         "schema_version": 1,
         "params": {"n_null": n_null, "shape_channels": list(SHAPE_CHANNELS),
@@ -1002,6 +1031,11 @@ def run_shared_input_agreement(cfg, run_dir, hub, store, data, device, atlas: di
         "n_tests": len(tests),
         "dst_set_kind_counts": dst_kind_counts,
         "n_short_matched_pool": n_short_pool,
+        **({"n_tests_with_nonfinite_rows": n_tests_nonfinite,
+            "n_nonfinite_rows_total": sum(
+                r["nonfinite_rows_skipped"]["src_rows"] + r["nonfinite_rows_skipped"]["dst_rows"]
+                for r in tests if r.get("nonfinite_rows_skipped"))}
+           if n_tests_nonfinite else {}),
         "tests": tests,
         "verdict_counts": verdict_counts,
         "pair_verdict_counts": pair_counts,

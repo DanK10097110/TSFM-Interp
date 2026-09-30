@@ -147,12 +147,14 @@ def score_single_head_effects(cfg: PipelineConfig, adapter, store: ActivationSto
     acfg = cfg.attention
     rows, contexts, targets, scale, families, fam_list, seed = \
         _attn._ablation_setup(cfg, data)
-    periods = np.array([dominant_period(c) for c in contexts], dtype=np.float64)
 
     if store.has_predictions(adapter.name):
         f_clean = store.load_predictions(adapter.name)["point"][rows]
     else:
         f_clean = predict_rows(adapter, contexts, data.horizon, cfg.l0.quantiles, seed)
+    (f_clean, contexts, targets, scale, families, fam_list, n_dropped
+     ) = _attn.drop_nonfinite_clean(f_clean, contexts, targets, scale, families, fam_list)
+    periods = np.array([dominant_period(c) for c in contexts], dtype=np.float64)
     mase_clean = np.abs(f_clean - targets).mean(axis=1) / scale
     power_clean = seasonal_power(f_clean, periods)
 
@@ -180,7 +182,8 @@ def score_single_head_effects(cfg: PipelineConfig, adapter, store: ActivationSto
     return {"head_delta": head_d, "head_delta_family": head_f,
            "head_power_loss": power_loss, "block_names": block_names,
            "top_power_heads": top_power_heads,
-           "n_series": int(len(rows)), "families": fam_list}
+           "n_series": int(len(contexts)), "families": fam_list,
+           **({"n_series_nonfinite_dropped": n_dropped} if n_dropped else {})}
 
 
 def _rank_head_matrix(scores: np.ndarray, block_names: list, k: int) -> list:

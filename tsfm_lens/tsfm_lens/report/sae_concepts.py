@@ -203,7 +203,14 @@ def row_coverage_rows(run_dir: Path) -> list:
                 continue
             cov = effective_k_summary(art.get("candidates") or [], art["top_k_series"],
                                       art["series_per_chunk_cap"])
-        rows.append({"target": f"{path.parent.name}/{path.name[:-len('_ablation.json')]}", **cov})
+        row = {"target": f"{path.parent.name}/{path.name[:-len('_ablation.json')]}", **cov}
+        cands = art.get("candidates") or []
+        nf = sum(int(c.get("n_nonfinite_forecast_rows", 0)) for c in cands)
+        if nf:
+            row["nonfinite_total"] = nf
+            row["nonfinite_candidates"] = sum(
+                1 for c in cands if c.get("n_nonfinite_forecast_rows"))
+        rows.append(row)
     return rows
 
 
@@ -232,6 +239,17 @@ def row_coverage_block(run_dir: Path) -> str:
                 "Those features were scored on fewer rows than requested, so "
                 "their effects are not comparable with targets scored on the "
                 "full k.</p>")
+    bad = [(r["target"], r["nonfinite_total"], r["nonfinite_candidates"])
+           for r in rows if r.get("nonfinite_total")]
+    if bad:
+        out += ("<p class='blurb' style='color:var(--bad,#b00020);font-weight:600'>"
+                f"Non-finite forecasts: {sum(b[1] for b in bad)} (feature, series) row(s) "
+                f"across {len(bad)} target(s) had a non-finite steered or baseline forecast "
+                "and were skipped, not scored (per-feature "
+                "<code>n_nonfinite_forecast_rows</code>, per-channel "
+                "<code>n_nonfinite_rows_skipped</code> in the ablation artifact). Affected: "
+                + html.escape("; ".join(f"{t}: {n} rows / {c} feature(s)" for t, n, c in bad))
+                + ".</p>")
     body = "".join(
         "<tr><td>{t}</td><td>{k}</td><td>{cap}</td><td>{ke}</td><td>{n}</td>"
         "<td>{short}</td><td>{zero}</td><td>{full}</td></tr>".format(

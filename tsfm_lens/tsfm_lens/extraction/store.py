@@ -182,6 +182,30 @@ class ActivationStore:
         g = self.root.require_group(f"pred/{model}")
         g.create_dataset("point", data=point.astype(np.float32), overwrite=True)
         g.create_dataset("quantiles", data=quantiles.astype(np.float32), overwrite=True)
+        bad = nonfinite_series_mask(point, quantiles)
+        if bad.any():
+            g.attrs["nonfinite_predictions"] = {
+                "n_series": int(bad.sum()), "n_total": int(len(bad)),
+                "rows": [int(i) for i in np.flatnonzero(bad)]}
+            from ..utils import log
+            log.warning("store: pred/%s holds non-finite forecasts for %d of %d series "
+                        "(stored unaltered; rows recorded in the group's "
+                        "`nonfinite_predictions` attr)", model, int(bad.sum()), len(bad))
+        elif "nonfinite_predictions" in g.attrs:
+            del g.attrs["nonfinite_predictions"]
+
+    def nonfinite_prediction_rows(self, model: str) -> np.ndarray:
+        """Row indices whose stored forecast (point or any quantile) is non-finite.
+
+        Read from the write-time record when present; otherwise computed from
+        the stored arrays, so a store written before the record existed is
+        still answered correctly. Empty when every stored forecast is finite.
+        """
+        g = self.root[f"pred/{model}"]
+        rec = g.attrs.get("nonfinite_predictions")
+        if rec is not None:
+            return np.asarray(rec["rows"], dtype=int)
+        return np.flatnonzero(nonfinite_series_mask(g["point"][:], g["quantiles"][:]))
 
     def write_targets(self, targets: np.ndarray) -> None:
         """Persist forecast ground truth once per run."""
@@ -379,6 +403,13 @@ class ActivationStore:
 
     def has_predictions(self, model: str) -> bool:
         return f"pred/{model}" in self.root and "point" in self.root[f"pred/{model}"]
+
+
+def nonfinite_series_mask(point: np.ndarray, quantiles: np.ndarray) -> np.ndarray:
+    """`[N]` bool, True where the point or any quantile forecast is non-finite."""
+    p, q = np.asarray(point), np.asarray(quantiles)
+    return ~(np.isfinite(p).reshape(len(p), -1).all(axis=1)
+             & np.isfinite(q).reshape(len(q), -1).all(axis=1))
 
 
 def meta_path(run_dir: Path) -> Path:
