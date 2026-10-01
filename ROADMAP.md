@@ -38535,6 +38535,17 @@ passes). Legacy lens artifacts were verified byte-identical on a copy of the v2 
   [−0.04434203534836439, 0.010350486925193851], p 0.258. Both routers are WORSE than always picking the best single
   model (Chronos-2, 1.8559481862647405; best-single minus internals −0.10788907898534791, p 0.001). Oracle
   1.5230948618844153.
+- **Fold-seed robustness (2026-10-01; seeds 1–4 added to seed 0).** The K2-u1 agent showed that fold assignment
+  alone moves a no-signal mock's gain between about −0.02 and +0.04, so the dev CI (a bootstrap over fixed
+  out-of-fold predictions) leaves out fold variance. Re-run with `--seed 1..4`:
+  - Timer gains 0.030310590743556798, 0.036080231129527296, 0.03449691148978218, 0.030794213236027934,
+    0.03277048245163661;
+  - Time-MoE gains 0.011873989992855383, 0.015195058383651538, 0.011883279070239672, 0.01172527834468351,
+    0.010632868442613463;
+  - every CI excludes 0 (lowest lower bounds 0.017827438286936118 and 0.003000385916276248);
+  - Chronos-Bolt and Chronos-T5-Base, the next-largest gains, include 0 at all 5 seeds.
+
+  The two registrations stand. U2 at seed 1: gap −0.015308919335737376, p 0.328.
 - **Registration (per §38.4.4's rule):** U1 log-MASE-Spearman for Timer and Time-MoE is registered for K2's look.
   14 dev tests were run and 2 selected, which is legitimate because private confirmation is the referee. U2 is not
   registered.
