@@ -94,7 +94,7 @@ These instructions are binding for every future session, human or agent.
 | SH-14 | Cross-model concept transfer works when matched on shared **inputs** (not causal fingerprints); ~46–56% of concepts transfer | 5 |
 | SH-15 | Sharing a causal-effect profile goes with *less* shared input selectivity (OR 0.345, p 0.027) | 5 |
 | SH-16 | No concept is shared by all 4 models; the multi-model pattern is **convergent** effect from different inputs. **Under the matched null (MN-29) the convergent class vanishes (13 → 0 on v2); superseded pending the power check** | 5 |
-| SH-22 | At 7 models under the matched null, the atlas is **segregated by model** (cross-model mixing below chance, p 0.025); the only same-effect-same-inputs agreement (7/1290 tests) is one Chronos-2 ↔ Chronos-Bolt concept | 5 |
+| SH-22 | At 7 models under the matched null, the atlas is **segregated by model** (cross-model mixing below chance, p 0.025). The full same-effect verdict (7/1290) is one Chronos-2 ↔ Chronos-Bolt concept, but 1053 tests are underpowered and partial agreement crosses families (level only 35, shape only 9); the strict rung's sensitivity is unmeasured | 5 |
 | SH-18 | Held-out: 19/20 searched and **20/20 frozen-feature** concept-transfer claims confirm on fresh sealed private epochs | 5 |
 | SH-19 | Unit-level correspondence (CCM) NO-GO: low-rank TSFM representations defeat the rotation control | 5 |
 | CA-06 | Measured on shared series with matched floors, cross-model causal "disagreement" shrinks from 18/19 to 12/288 (12 of 89 scorable) | 4 |
@@ -475,12 +475,13 @@ These instructions are binding for every future session, human or agent.
 
 ---
 
-#### SH-22 · At 7 models, causal concepts are segregated by model; the only same-effect agreement is inside the Chronos family
+#### SH-22 · At 7 models, the atlas is segregated by model, and the full same-effect verdict is reached only inside the Chronos family; the strict rung is underpowered
 - **Claim.**
   - The pooled atlas has more structure than chance: 11 concepts vs a column-shuffle null p95 of 5.049999999999983 (p 0.004975124378109453).
   - But its clusters are **purer by model than random assignment**: 9 multi-model concepts vs a null mean of 10.755 (p_below 0.024875621890547265); mean model purity 0.5909090909090909 vs 0.4741287878787878 (p_above 0.024875621890547265). Verdict `segregated by model`. The coarser families (9) are also segregated by model and no more numerous than null (p 0.6766169154228856).
   - Shared-input causal agreement over 1290 tests: same causal effect 7, acts differently 22, shape only 9, level only 45, no specific agreement 133, not scorable 1074.
   - **All 7 'same causal effect' verdicts are Chronos-2 ↔ Chronos-Bolt, in one atlas concept** ('mild raises dispersion'). Six of them share the Chronos-Bolt block-4 feature set, so this is one lineage-shared concept, not seven.
+- **Correction (2026-10-01, same day): the L5 result is mostly undecided, not a measured difference.** 1053 of the 1074 not-scorable tests fail because at least one side's single-feature ablation does not clear its own null on the ~24 shared series (526 neither side, 434 only the source clears, 93 only the destination clears; 21 have no side record). Across families, 172 tests are scorable: level only 35, shape only 9, acts differently 19, no specific agreement 109, same causal effect 0. Within the Chronos family, 44 of 233 are scorable: same causal effect 7, level only 10, acts differently 3, no specific agreement 24. Partial agreement does cross families. At the profile level, atlas concept 6 ('shifts the level', Chronos-2 / Chronos-Bolt / Sundial) and concept 4 (with Timer) are classed shared. The 'same causal effect' verdict requires level AND shape to beat both matched floors, with single-feature ablations, so its cross-architecture sensitivity is unmeasured. Next: a known-answer test of the rung across two different planted architectures, and whole-concept (feature-set) ablation, before K2 spends the private epoch (ROADMAP §38.3.4).
 - **Models / layers.** TimesFM, Chronos-2, Sundial, Chronos-Bolt, Timer, Time-MoE, Chronos-T5-Base (encoder); 56 targets, 55 measured.
 - **Evidence.** Descriptive (atlas structure vs nulls) + causal within-model on shared inputs (L5, each side against its own null and matched floors). **Status:** exploratory (dev); K2 confirmation pending.
 - **Reproduce.** `runs/panel7_v2_dev/sae/concept_atlas.json` (`null`), `sae/shared_input_agreement.json`, `sae/concept_stage.json`; `configs/panel7_v2.yaml` at dev 4ace6a4.

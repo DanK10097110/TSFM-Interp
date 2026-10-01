@@ -38338,6 +38338,17 @@ inode exhaustion crash (the machine is shared; ~700k of 944k inodes belonged to 
   v2 re-score (§38.1.8: 7 atlas concepts, 3 multi-model) rather than reversing it. The "convergent" class
   reappears (5), but cross-model mixing below chance means convergence is not more common than chance would
   produce.
+- **Correction (2026-10-01, after the user asked whether the strict rung is too strict).** The L5 headline above
+  overstates. 1053 of the 1074 not-scorable tests fail because at least one side's single-feature ablation does not
+  clear its own null on U (526 neither side, 434 source only, 93 destination only). Cross-family scorable tests
+  (172): level only 35, shape only 9, acts differently 19, no specific agreement 109, same causal effect 0.
+  Within the Chronos family (44 scorable of 233): same 7, level only 10, acts differently 3, no specific agreement 24.
+  The "same causal effect" verdict is conjunctive (level AND shape over both floors) and uses single-feature
+  ablations; a shared concept spread over several features would fail it. Its cross-architecture sensitivity has
+  never been measured. **Plan:** (1) a known-answer test of the L5 rung, with the same concept planted in two
+  *different* mock architectures, plus the opposite-effect decoy; (2) whole-concept ablation (`dst_set_kind:
+  atlas_part`, 21 tests now) and a larger U; (3) report partial agreement as its own rung. **The private epoch is
+  not minted until (1)–(2) are measured**, so agreement claims are registered under the final rung.
 - **Decision (made 2026-10-01, before any registration or epoch minting).** K2 registers concept claims only from
   targets whose clears are BH-significant against their own empirical chance (the 22 above). Claims touching
   Timer's per-target concepts are therefore not registered. This gate is stricter than the stage's current
