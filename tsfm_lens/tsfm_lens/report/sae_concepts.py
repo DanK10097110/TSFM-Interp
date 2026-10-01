@@ -265,6 +265,112 @@ def row_coverage_block(run_dir: Path) -> str:
     return out
 
 
+def empirical_chance_rows(run_dir: Path) -> list:
+    """One record per ablation artifact: observed clears against empirical chance.
+
+    A scored artifact that carries `empirical_chance` is `status: "measured"`
+    with its `n_clearing_cells`, the leave-one-draw-out `expected_cells`, their
+    ratio and the legacy nominal `chance_expected_cells`. A scored artifact
+    without that block is `not_measured`; a withheld or skipped one keeps its
+    reason. Nothing is substituted for a missing empirical expectation.
+    """
+    rows = []
+    for path in sorted((Path(run_dir) / "sae").glob("*/*_ablation.json")):
+        art = _load_json_or_none(path)
+        if not isinstance(art, dict):
+            continue
+        row = {"model": path.parent.name, "layer": path.name[:-len("_ablation.json")]}
+        if art.get("withheld") or art.get("skipped"):
+            reason = art.get("reason") or (art.get("reach") or {}).get("reason") or "no reason recorded"
+            row.update(status="withheld" if art.get("withheld") else "skipped", reason=str(reason))
+        else:
+            emp = art.get("empirical_chance")
+            if isinstance(emp, dict) and emp.get("expected_cells") is not None:
+                exp = float(emp["expected_cells"])
+                n = int(art["n_clearing_cells"])
+                row.update(status="measured", n_clearing=n, expected=exp,
+                           ratio=(n / exp) if exp else None,
+                           nominal=float(art.get("chance_expected_cells", float("nan"))))
+            else:
+                row.update(status="not_measured",
+                           reason="empirical chance not measured; set "
+                                  "sae.ablation_empirical_chance: true")
+        rows.append(row)
+    return rows
+
+
+def empirical_chance_block(run_dir: Path) -> str:
+    """Per-target table of clearing cells against the empirical chance expectation.
+
+    The nominal `0.05 x cells` line is shown only in its own labelled column. A
+    target with no `empirical_chance` block, or a withheld/skipped one, renders
+    its stated reason instead of numbers and is excluded from the totals, which
+    are per-model and overall sums over measured targets only.
+    """
+    from .report import _note
+
+    rows = empirical_chance_rows(run_dir)
+    if not rows:
+        return ""
+    out = "<h5>Clearing cells against empirical chance</h5>"
+    measured = [r for r in rows if r["status"] == "measured"]
+    if not measured:
+        out += ("<p class='blurb'>Empirical chance not measured; set "
+                "<code>sae.ablation_empirical_chance: true</code>. The nominal 5% "
+                "line is not a chance expectation and is not shown here as one.</p>")
+        return out
+
+    def fmt_ratio(n, e):
+        return f"{n / e:.4f}x" if e else "n/a"
+
+    def num_row(label_m, label_l, n, e, nom, bold=False):
+        cells = [html.escape(label_m), html.escape(label_l), str(n), f"{e:.2f}",
+                 fmt_ratio(n, e), f"{nom:.2f}"]
+        tag = "th" if bold else "td"
+        return "<tr>" + "".join(f"<{tag}>{c}</{tag}>" for c in cells) + "</tr>"
+
+    body = ""
+    models = list(dict.fromkeys(r["model"] for r in rows))
+    for m in models:
+        mine = [r for r in rows if r["model"] == m]
+        for r in mine:
+            if r["status"] == "measured":
+                body += num_row(r["model"], r["layer"], r["n_clearing"], r["expected"],
+                                r["nominal"])
+            else:
+                body += ("<tr><td>{m}</td><td>{l}</td><td colspan='4'>{st}: {why}</td></tr>"
+                         .format(m=html.escape(m), l=html.escape(r["layer"]),
+                                 st=r["status"].replace("_", " "), why=html.escape(r["reason"])))
+        mm = [r for r in mine if r["status"] == "measured"]
+        if mm:
+            body += num_row(m, "model total", sum(r["n_clearing"] for r in mm),
+                            sum(r["expected"] for r in mm), sum(r["nominal"] for r in mm),
+                            bold=True)
+    body += num_row("all models", "overall total", sum(r["n_clearing"] for r in measured),
+                    sum(r["expected"] for r in measured), sum(r["nominal"] for r in measured),
+                    bold=True)
+    n_excl = len(rows) - len(measured)
+    out += ("<table class='tbl'><thead><tr><th>model</th><th>layer</th>"
+            "<th>clearing cells</th><th>empirical expected cells</th>"
+            "<th>ratio (empirical)</th><th>nominal-5% expected cells</th></tr></thead>"
+            f"<tbody>{body}</tbody></table>")
+    out += _note(
+        "Observed (feature, channel) cells that clear the random-direction null, "
+        "per target, against the number the null itself would clear by chance "
+        "(leave-one-draw-out). "
+        + (f"{n_excl} target(s) are listed with their reason and are not in the totals."
+           if n_excl else "Every target is in the totals."),
+        "A ratio of 1 means the battery clears no more cells than the null does "
+        "to itself; above 1 is excess. The nominal-5% column is the legacy "
+        "0.05 x cells line, kept for comparison only: the measured rate is "
+        "typically far below 5%, so the nominal line understates the excess.",
+        "Descriptive evidence class. The leave-one-draw-out rate treats "
+        "pseudo-features as exchangeable with the null, so it upper-bounds false "
+        "positives for the profile null but cannot detect a size-mismatched null.",
+        summary="What does this table mean?")
+    return out
+
+
 def universality_transfer_block(run_dir: Path, findings: list) -> str:
     """Block 1: how many of this run's per-target concepts are universal /
     partial / model-specific (`derived.concept_universality`), plus the
@@ -659,6 +765,7 @@ def sae_concepts_block(cfg, run_dir: Path, findings: list, model_names: list,
         "above it overlap too closely to tell apart.</p>")
 
     inner += row_coverage_block(run_dir)
+    inner += empirical_chance_block(run_dir)
 
     # -------- block 1: universality + transfer heatmap --------
     # ROADMAP.md sec 37 Spec C item F: this per-TARGET unit (a concept lives
