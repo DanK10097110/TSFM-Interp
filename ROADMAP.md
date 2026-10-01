@@ -38282,6 +38282,67 @@ K2 and K3 both want the one fresh epoch.
 
 **User decision (§38.7 Q2).**
 
+#### 38.3.4 Findings — the 7-model concepts run (`panel7_v2_dev`, finished 2026-10-01 08:27; dev only)
+
+The run used `configs/panel7_v2.yaml` at dev 4ace6a4: 7 models, context 480, profile-matched null with
+(k, n_null) = (8, 16), empirical chance on. The concepts stage was relaunched at 16:56 on 2026-09-30 after a /tmp
+inode exhaustion crash (the machine is shared; ~700k of 944k inodes belonged to other users). The report has
+17 sections and 232 findings. Lightweight artifacts and every SAE checkpoint are copied to
+`tsfm_lens/runs/panel7_v2_dev` in the main checkout (4.6G). The full run with stores stays in `k3wt`.
+
+- **The battery clears 442 cells against 178.75 expected by empirical chance (2.4727×)** over 55 measured targets
+  (Chronos-2 block 11 is withheld: cross-patch reach 0).
+  - By model: Chronos-Bolt 26 / 4.5625 (5.6986×), Time-MoE 92 / 22.9375 (4.0109×), TimesFM 68 / 21.625 (3.1445×),
+    Chronos-2 92 / 31.3125 (2.9381×), Sundial 88 / 40.8125 (2.1562×), Chronos-T5-Base 46 / 28.0 (1.6429×),
+    **Timer 30 / 29.5 (1.0169×)**.
+  - With a per-target binomial test against each target's empirical rate and BH at 0.05, 22 of 55 targets are
+    significant: Chronos-2 5, TimesFM 4, Sundial 4, Time-MoE 4, Chronos-T5-Base 3, Chronos-Bolt 2, **Timer 0**.
+  - **The log line misled.** The battery's log line reports "expected by chance" as the NOMINAL 0.05 × cells
+    (459.9 in total), which read the whole run as 0.96× chance. The empirical leave-one-draw-out rate is 0.003–0.04
+    per cell. The report did not render the comparison at all. Fix in progress (branch `chance-render`): the log
+    labels both numbers, and the report renders clears against empirical chance per target.
+- **Per-target concepts: 10, on 5 of 56 targets** (Chronos-2 block 9, Sundial layers 5 and 8, Timer layers 3 and 7,
+  2 each). 50 targets are non-modular. **Timer's 4 concepts sit on targets whose clears are not above chance**
+  (q 0.272 and 0.163), so they are clusters of possibly-chance features. Nothing in the concepts step currently
+  conditions on per-target significance.
+- **Atlas: 11 concepts from 194 pooled causal features (35 assigned), 9 multi-model.**
+  - Structure beats its null: 11 concepts vs a null p95 of 5.049999999999983 (p 0.004975124378109453); assigned
+    fraction 0.18041237113402062 vs p95 0.08788659793814424.
+  - **Cross-model mixing is BELOW chance:** 9 multi-model concepts vs a null mean of 10.755 (p_below
+    0.024875621890547265). Mean model purity is 0.5909090909090909 vs 0.4741287878787878 (p_above
+    0.024875621890547265). Verdict: `segregated by model`. No concept's own `cross_model_p` is below 0.5224.
+  - Models per concept: 1 → 2, 2 → 4, 3 → 5; **no concept spans more than 3 of the 7 models**.
+  - Seed stability: 9/11 stable (0.8181818181818182). By models per concept, stable only: 1 → 2, 2 → 3, 3 → 4.
+  - Sharing classes: convergent 5, shared 2, partially shared 2, single-model 2 (stable only: 4 / 2 / 1 / 2).
+    12 of 33 parts are provenance-driven.
+  - Families (cosine 0.5): 9, covering 0.9896907216494846 of features, no more than the column-shuffle null
+    (p 0.6766169154228856), and `segregated by model`.
+- **Shared-input causal agreement (L5), 1290 tests** (cap 60 per ordered pair; 6 of 1296 dropped):
+  - not scorable 1074, no specific agreement 133, level only 45, acts differently 22, shape only 9, **same causal
+    effect 7**.
+  - **All 7 "same causal effect" verdicts are Chronos-2 ↔ Chronos-Bolt, all in atlas concept 4** ("mild raises
+    dispersion"). Six of them share the Chronos-Bolt block-4 feature set (the seventh is Chronos-2 block 8 →
+    Bolt block 5), so this is one shared concept within the Chronos family seen from several layers, not seven
+    independent agreements. U = 23–28 shared series.
+  - 9 of the 22 "acts differently" are Chronos-2 → TimesFM.
+  - Scorable tests by destination: Time-MoE 42, Sundial 39, TimesFM 36, Chronos-2 30, Timer 26, Chronos-Bolt 22,
+    Chronos-T5-Base 21.
+- **Transfer:** concept transfer 474 tests, 359 forward and 282 reciprocal. Atlas transfer 1584 tests over 42
+  ordered pairs, 1296 reciprocal after FDR (1323 uncorrected).
+- **L0 (overall MASE, lower is better):** Chronos-2 1.8559481862647405, TimesFM 1.9455445072792794, Sundial
+  2.131022131167487, Chronos-T5-Base 2.2128332492625233, Chronos-Bolt 2.3428787948696317, Timer
+  2.5798586489321953, Time-MoE 4.835479807301792.
+- **Reading.** At 7 models under the matched null, causal concepts are real but model-specific. The atlas has
+  more structure than chance, yet its clusters are purer by model than random assignment, and the only
+  same-effect-same-inputs agreement is inside one model family (Chronos-2/Chronos-Bolt). This sharpens the
+  v2 re-score (§38.1.8: 7 atlas concepts, 3 multi-model) rather than reversing it. The "convergent" class
+  reappears (5), but cross-model mixing below chance means convergence is not more common than chance would
+  produce.
+- **Decision (made 2026-10-01, before any registration or epoch minting).** K2 registers concept claims only from
+  targets whose clears are BH-significant against their own empirical chance (the 22 above). Claims touching
+  Timer's per-target concepts are therefore not registered. This gate is stricter than the stage's current
+  behaviour and is written down before the private epoch is minted.
+
 ### 38.4 K4 — A practical use that fits the repo (PROPOSED — awaiting a user decision)
 
 #### 38.4.1 Why not steering

@@ -94,6 +94,7 @@ These instructions are binding for every future session, human or agent.
 | SH-14 | Cross-model concept transfer works when matched on shared **inputs** (not causal fingerprints); ~46–56% of concepts transfer | 5 |
 | SH-15 | Sharing a causal-effect profile goes with *less* shared input selectivity (OR 0.345, p 0.027) | 5 |
 | SH-16 | No concept is shared by all 4 models; the multi-model pattern is **convergent** effect from different inputs. **Under the matched null (MN-29) the convergent class vanishes (13 → 0 on v2); superseded pending the power check** | 5 |
+| SH-22 | At 7 models under the matched null, the atlas is **segregated by model** (cross-model mixing below chance, p 0.025); the only same-effect-same-inputs agreement (7/1290 tests) is one Chronos-2 ↔ Chronos-Bolt concept | 5 |
 | SH-18 | Held-out: 19/20 searched and **20/20 frozen-feature** concept-transfer claims confirm on fresh sealed private epochs | 5 |
 | SH-19 | Unit-level correspondence (CCM) NO-GO: low-rank TSFM representations defeat the rotation control | 5 |
 | CA-06 | Measured on shared series with matched floors, cross-model causal "disagreement" shrinks from 18/19 to 12/288 (12 of 89 scorable) | 4 |
@@ -354,6 +355,7 @@ These instructions are binding for every future session, human or agent.
 - **Evidence.** Descriptive taxonomy over causal (ablation) and correlational (top-k overlap, hypergeometric + BH) parts. **Status:** exploratory (dev).
 - **Replication (2026-09-29).** `runs/concept_atlas_v2` (v2 corpus, fixed Sundial; ROADMAP §37.11c), 29 targets, 27 tight concepts: again no 4-model concept (n_models 1:11, 2:15, 3:1, 4:0); sharing classes convergent 13, single-model 11, shared 2, partially shared 1 (stable only: 9 / 10 / 2 / 1). Convergent stays the most common multi-model class. Still dev.
 - **Re-measured under the profile-matched null (2026-09-30, MN-29; v2 copy, same features and seed).** The v2 atlas shrinks from 27 concepts (16 multi-model, from 293 pooled causal features) to **7 (3 multi-model, from 110)**. Sharing classes: convergent 13 → **0**, single-model 11 → 4, shared 2 → 3, partially shared 1 → 0. **The 'mostly convergent' headline does not survive the matched null**: the convergent class was built from features the lenient null admitted. 'No concept spans all four models' still holds, but on a far smaller base. Status of this entry: superseded pending the power check and the 7-model run.
+- **7-model panel (2026-10-01, `runs/panel7_v2_dev`, 7 models, profile-matched null, ROADMAP §38.3.4).** 11 atlas concepts from 194 pooled causal features, 9 multi-model; **none spans more than 3 of the 7 models** (models per concept 1:2, 2:4, 3:5). Sharing classes convergent 5, shared 2, partially shared 2, single-model 2 (stable only 4 / 2 / 1 / 2). But cross-model mixing is *below* chance (SH-22), so 'convergent' is no more common than random assignment would produce. 'No concept spans the whole panel' holds; 'mostly convergent' is not restored.
 - **Reproduce.** `runs/full_report_run_4model/sae/concept_profiles.json`, `sae/concept_atlas.json`; `report/findings.json` `compare.1`.
 - **Ref.** ROADMAP §37.3, §37.11 P8 (~36929–36941).
 - **Score. 5/5.** The headline answer to the founding question on this panel: TSFMs converge on shared *forecast adjustments* far more than on shared *feature detectors*.
@@ -370,6 +372,7 @@ These instructions are binding for every future session, human or agent.
     (0.439–0.698).
 - **Evidence.** Descriptive (reproducibility) + correlational. **Status:** exploratory. CPU-trained replicates flip 2 concepts' status (MN-27), so GPU replicates are canonical.
 - **Re-measured under the profile-matched null (2026-09-30, MN-29; v2 copy, same features and seed).** All 7 profile-null atlas concepts are seed-stable (7/7), against 22/27 under legacy. Stability rises as the set shrinks to its strongest members.
+- **7-model panel (2026-10-01, `runs/panel7_v2_dev`, 7 models, profile-matched null, ROADMAP §38.3.4).** 9/11 atlas concepts seed-stable (0.8181818181818182), 3 replicate SAEs per target.
 - **Reproduce.** `sae/concept_stability.json` (`concepts.n_sae_seeds: 3`), `runs/full_report_run_4model`.
 - **Ref.** ROADMAP §37.5 (~35788–35937).
 - **Score. 4/5.** Gives cross-model transfer the "two runs of the same model" denominator that convergent-learning claims need.
@@ -445,6 +448,7 @@ These instructions are binding for every future session, human or agent.
     0.636, 0.607) were all `[big, 1]` splits.
 - **Evidence.** Descriptive (clustering over causal vectors). **Status:** confirmed; this motivated pooling features across models into the atlas.
 - **Re-measured under the profile-matched null (2026-09-30, MN-29; v2 copy, same features and seed).** v2 per-target concepts go from 9 to **0** (28/28 measured targets non-modular). Causal features per target are 0–8; 24/28 have fewer than 6, and the 5 with ≥6 have a min cluster < 3 at every admissible k. About 62% of profile clears are chance-level (110 clearing features vs a 67.88 chance expectation). This is a **low-power result, not a measured absence**: k = 8 rows × 16 null draws. Power check (ROADMAP §38.1.8, round 6): raising (k, n_null) to (16, 32) or (32, 32) does not help. It gives 3 targets with ≥6 causal features, and 0 or 1 targets admitting a k. The binding limit is feature sparsity: 178/672 candidates never fire and are unscorable at any setting.
+- **7-model panel (2026-10-01, `runs/panel7_v2_dev`, 7 models, profile-matched null, ROADMAP §38.3.4).** 10 per-target concepts on 5 of 56 targets (Chronos-2 block 9, Sundial layers 5 and 8, Timer layers 3 and 7; 2 each); 50 non-modular. **Timer's 4 concepts sit on targets whose clears are not above empirical chance** (BH q 0.272 and 0.163; Timer overall 1.0169× chance, PM-17), so the concepts step should condition on per-target significance. K2 registers only from the 22 BH-significant targets.
 - **Reproduce.** `sae/concepts.py::_sweep_k`; `runs/full_report_run_4model/sae/concepts.json` (`concept_min_members` 1 vs 3).
 - **Ref.** ROADMAP §32.1, §32.5 D, §32.13 (~29179–29247).
 - **Score. 4/5.** A real result about how modular TSFM causal features are (mostly not, at this dictionary size), plus a general silhouette trap.
@@ -470,6 +474,18 @@ These instructions are binding for every future session, human or agent.
 - **Score. 4/5.** Recasts "what is each model better at" as how strongly, not which, forecast properties its features control.
 
 ---
+
+#### SH-22 · At 7 models, causal concepts are segregated by model; the only same-effect agreement is inside the Chronos family
+- **Claim.**
+  - The pooled atlas has more structure than chance: 11 concepts vs a column-shuffle null p95 of 5.049999999999983 (p 0.004975124378109453).
+  - But its clusters are **purer by model than random assignment**: 9 multi-model concepts vs a null mean of 10.755 (p_below 0.024875621890547265); mean model purity 0.5909090909090909 vs 0.4741287878787878 (p_above 0.024875621890547265). Verdict `segregated by model`. The coarser families (9) are also segregated by model and no more numerous than null (p 0.6766169154228856).
+  - Shared-input causal agreement over 1290 tests: same causal effect 7, acts differently 22, shape only 9, level only 45, no specific agreement 133, not scorable 1074.
+  - **All 7 'same causal effect' verdicts are Chronos-2 ↔ Chronos-Bolt, in one atlas concept** ('mild raises dispersion'). Six of them share the Chronos-Bolt block-4 feature set, so this is one lineage-shared concept, not seven.
+- **Models / layers.** TimesFM, Chronos-2, Sundial, Chronos-Bolt, Timer, Time-MoE, Chronos-T5-Base (encoder); 56 targets, 55 measured.
+- **Evidence.** Descriptive (atlas structure vs nulls) + causal within-model on shared inputs (L5, each side against its own null and matched floors). **Status:** exploratory (dev); K2 confirmation pending.
+- **Reproduce.** `runs/panel7_v2_dev/sae/concept_atlas.json` (`null`), `sae/shared_input_agreement.json`, `sae/concept_stage.json`; `configs/panel7_v2.yaml` at dev 4ace6a4.
+- **Ref.** ROADMAP §38.3.4.
+- **Score. 5/5.** Answers the founding sharing question on the widest panel: causal forecast adjustments are mostly model-specific, and the one clear case of the same effect on the same inputs follows model lineage.
 
 ## C. Causal comparison (within-model causal evidence compared across models)
 
@@ -1003,6 +1019,14 @@ These instructions are binding for every future session, human or agent.
 
 ---
 
+#### PM-17 · Timer's SAE features do not clear the ablation null above chance
+- **Claim.** On the 7-model panel, Timer's 6 targets give 30 clearing cells against 29.5 expected by empirical chance (1.0169×), and 0 of 6 targets are BH-significant. Every other model is above chance (1.6429× Chronos-T5-Base to 5.6986× Chronos-Bolt). Timer's targets do reach the forecast (relative reach 0.0659104–0.260557), so this is not an unreachable layer: its features' ablations are not more forecast-specific than random directions of the same size.
+- **Models / layers.** Timer (`thuml/timer-base-84m`, `generic_hf`), model.layers 1, 2, 3, 4, 6, 7.
+- **Evidence.** Causal within-model (ablation vs profile-matched null), descriptive aggregate. **Status:** exploratory (dev).
+- **Reproduce.** `runs/panel7_v2_dev/sae/Timer/*_ablation.json` (`empirical_chance`); clears from the run log (to be rendered by `chance-render`).
+- **Ref.** ROADMAP §38.3.4.
+- **Score. 3/5.** A per-model fact that changes how Timer's concepts are read, and a reason to gate concepts on per-target significance.
+
 ## F. Method results — positives (what works, and was adopted)
 
 #### MP-01 · Token→time spans can be measured, and a zero-code adapter follows
@@ -1503,6 +1527,7 @@ See SH-20. **4/5.**
   - A covariance-shaped ('on-manifold') matched null clears even fewer (106 cells, 1.1277× chance), so the isotropic matched null is not over-strict.
   - The affected entries (MP-07, MN-14, SH-14–17, SH-20, CA-06, CA-08, CA-10, MN-18) each carry a 're-measured' line. **Until it lands, every causal-feature count and every downstream concept number in B.2/C was measured with the lenient null and is an upper bound.** This includes MN-14's 64.4%, the per-target concept counts, the atlas, transfer, agreement (CA-06) and sharing classes.
 - **Caveat.** In the planted world, a random decoded direction overlaps the planted span more than a p_perp atom does, so the matched null may be over-strict there (sensitivity falls to 0.7–0.9, and weak true effects are never detected).
+- **A second mislabel (2026-10-01, `runs/panel7_v2_dev`, 7 models, profile-matched null, ROADMAP §38.3.4).** The battery's log line called `0.05 × cells` 'expected by chance'. The measured leave-one-draw-out rate is 0.003–0.04 per cell, so the 7-model run read as 442 / 459.9 = 0.96× chance in the log; against the empirical expectation it is 442 / 178.75 = **2.4727×**. The report never rendered the comparison. Fixed by labelling both numbers and rendering clears vs empirical chance per target (branch `chance-render`).
 - **Reproduce.** `python run_known_answer.py --config configs/known_answer.yaml --null mean_magnitude|profile_matched` (seeds 0–4, dose 1); `sae/response.py::_profile_matched_null_replacement`; `tests/test_*profile*`.
 - **Ref.** ROADMAP §38.1.7.
 - **Score. 5/5.** The known-answer test did its job: it caught a lenient statistic behind the project's causal claims, and the held-out seeds show the fix.
