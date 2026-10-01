@@ -173,11 +173,31 @@ def run_ablation_target(cfg, run_dir: Path, hub, data, store, device, model: str
         log.warning(f"ablation: {model}/{layer} WITHHELD -- "
                     f"{result.get('reason') or result['reach']['reason']}")
     else:
-        log.info(f"ablation: {model}/{layer}: {result['n_clearing_cells']} clearing "
-                 f"cells vs {result['chance_expected_cells']:.2f} expected by chance "
-                 f"({result['clearing_cells_over_chance_ratio']:.2f}x chance, "
-                 f"{result['excess_over_chance']:+.1f} cells)")
+        log.info(clearing_log_line(model, layer, result))
     return {"model": model, "layer": layer, "candidate_source": source, **result}
+
+
+def clearing_log_line(model: str, layer: str, result: dict) -> str:
+    """The one-line summary of clearing cells against chance for a scored target.
+
+    With `empirical_chance` in the result, the observed clears are read against
+    its leave-one-draw-out `expected_cells` and the ratio is the empirical one;
+    the nominal 5% expectation stays in the line under its own label. Without
+    it only the nominal expectation exists and the line says so. The recorded
+    artifact keys are not touched.
+    """
+    n_clear = result["n_clearing_cells"]
+    nominal = (f"nominal 5%: {result['chance_expected_cells']:.2f} expected, "
+               f"{result['clearing_cells_over_chance_ratio']:.2f}x, "
+               f"{result['excess_over_chance']:+.1f} cells")
+    emp = result.get("empirical_chance")
+    if emp and emp.get("expected_cells"):
+        return (f"ablation: {model}/{layer}: {n_clear} clearing cells vs "
+                f"{emp['expected_cells']:.2f} expected by empirical chance "
+                f"(leave-one-draw-out) ({n_clear / emp['expected_cells']:.2f}x "
+                f"empirical chance; {nominal})")
+    return (f"ablation: {model}/{layer}: {n_clear} clearing cells vs "
+            f"{result['chance_expected_cells']:.2f} expected by chance ({nominal})")
 
 
 LEGACY_NULL = "mean_magnitude"
