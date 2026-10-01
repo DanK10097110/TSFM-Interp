@@ -226,6 +226,7 @@ def _stages() -> list:
               lambda ctx: run_register(ctx.cfg),
               ("concepts.n_registered", "concepts.transfer_claim_mode",
                "confirm.register_concept_claims", "concepts.n_registered_causal",
+               "confirm.register_requires_target_significance",
                "concepts.n_registered_agreement_differs")),
         Stage("confirm", ["register"],
               lambda c: c.confirm.enabled,

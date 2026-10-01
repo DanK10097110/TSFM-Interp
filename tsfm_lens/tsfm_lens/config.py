@@ -334,6 +334,14 @@ class ConfirmConfig:
     # on a finished run refuses the stale skip instead of silently keeping
     # the old registry.
     register_concept_claims: bool = field(default=False, metadata={"omit_at_default": True})
+    # ROADMAP.md sec 38.3.4 -- when on, claims are registered only from targets
+    # whose battery clears are BH-significant against their own empirical
+    # chance (`analysis/target_significance.py`); excluded claims are recorded
+    # with their reason, and a target without `empirical_chance` makes
+    # registration refuse. Fingerprints `register` (field-level key) and
+    # `confirm` (whole section) only when on.
+    register_requires_target_significance: bool = field(
+        default=False, metadata={"omit_at_default": True})
     # Null directions per registered causal claim on the first private pass.
     # A claim whose exact p sits on the floor 1/(n+1) is redrawn with
     # `causal_max_null` directions (the adaptive tail p, sec 37.6/P3), so the

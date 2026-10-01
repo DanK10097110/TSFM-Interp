@@ -318,7 +318,8 @@ def test_confirm_config_keys_unchanged_by_this_item():
     import dataclasses
     names = {f.name for f in dataclasses.fields(ConfirmConfig)}
     assert names == {"enabled", "source", "path", "max_series", "require_seal", "alpha",
-                     "concept_transfer_n_null", "register_concept_claims", "causal_n_null",
+                     "concept_transfer_n_null", "register_concept_claims",
+                     "register_requires_target_significance", "causal_n_null",
                      "causal_max_null", "atlas_n_null", "agreement_n_null",
                      "structure_n_boot"}
 
