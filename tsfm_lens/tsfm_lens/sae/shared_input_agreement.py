@@ -82,6 +82,17 @@ Evidence class: causal WITHIN each model (an ablation, scored against that
 model's own random-direction null), compared ACROSS models only on the same
 corpus inputs -- never a transplant of one model's activation into another
 (invariant 5).
+
+Opt-in variants (ROADMAP.md sec 38.3.5, the L5 known-answer study,
+`analysis/l5_known_answer.py`; all default to the behaviour above, byte-
+identical units, artifacts and stage fingerprints): `concepts.agreement_dst_set`
+(what is ablated at the destination: the best feature, the concept's atlas part
+there, or the top-N features by forward AUC), `concepts.agreement_k_top_series`
+(the size of each side's top-series set, hence of `U`) and
+`concepts.agreement_partial_rung` (a per-test `rung` and a `partial_agreement`
+summary that counts "level only" and "shape only" as `partial`, beside and never
+merged into "same"). The source side needs no analogue of the destination knob:
+it is already the atlas part of the concept at the source target.
 """
 
 from __future__ import annotations
@@ -106,8 +117,10 @@ from .train import load_all_windows, load_sae_checkpoint, sanitize
 from .transfer import _seed, auc_from_ranks, concept_scores, top_series
 
 __all__ = ["shared_input_agreement_path", "run_shared_input_agreement",
-           "cap_units_per_pair"]
+           "cap_units_per_pair", "DST_SET_MODES", "matched_dst_set", "agreement_rung",
+           "partial_agreement_summary"]
 
+DST_SET_MODES = ("feature", "concept_part", "matched_set")
 SHAPE_CHANNELS = tuple(c for c in CHANNELS if c != "level")
 _VERDICTS = ("same causal effect", "level only", "shape only",
             "acts differently", "no specific agreement", "not scorable")
@@ -164,14 +177,30 @@ def _index_by_target_feature(atlas: dict) -> dict:
     return out
 
 
-def build_units(atlas: dict, atlas_transfer: dict) -> list:
+def build_units(atlas: dict, atlas_transfer: dict, dst_set: str = "feature",
+                k_top_series: int | None = None) -> list:
     """Every `reciprocal_fdr` test in `atlas_transfer`, resolved into a
     (source set, destination set) work unit. A test whose source concept-part
     is absent from `atlas["rows"]` (should not happen -- that part is exactly
-    what produced the test) is skipped defensively rather than raising."""
+    what produced the test) is skipped defensively rather than raising.
+
+    `dst_set` and `k_top_series` (ROADMAP.md sec 38.3.5; both default to the
+    historical behaviour, byte-identical units) select the opt-in variants of
+    the rung. `dst_set="concept_part"` ablates, at the destination, the atlas
+    part of the SAME concept at the destination target when the atlas has one
+    (`dst_set_kind` `concept_part`), else falls back to the default rule.
+    `dst_set="matched_set"` marks the unit `dst_set_request="matched_set"`;
+    `run_shared_input_agreement` resolves it to the destination's top-N
+    features by forward AUC once the destination's ranks are loaded.
+    `k_top_series` replaces the size of each side's top-series set (hence of
+    `U`); the atlas-transfer test's own k is kept as `transfer_k_top_series`,
+    because the recorded AUC only reproduces at that k."""
+    if dst_set not in DST_SET_MODES:
+        raise ValueError(f"unknown dst_set {dst_set!r}: expected one of {DST_SET_MODES}")
     src_parts = _atlas_parts(atlas)
     by_target_feature = _index_by_target_feature(atlas)
     k_top = int(atlas_transfer.get("k_top_series", 20))
+    k_use = k_top if k_top_series is None else int(k_top_series)
     units = []
     for t in atlas_transfer.get("tests") or []:
         if not t.get("reciprocal_fdr"):
@@ -183,22 +212,68 @@ def build_units(atlas: dict, atlas_transfer: dict) -> list:
             continue
         dst_feature = int(t["feature"])
         hit = by_target_feature.get((t["dst_target"], dst_feature))
-        if hit is not None:
+        dst_part = (src_parts.get((int(t["concept"]), t["dst_target"]))
+                    if dst_set == "concept_part" else None)
+        if dst_part is not None:
+            dst_features = dst_part["features"]
+            dst_kind = "concept_part"
+        elif hit is not None:
             _dst_concept, dst_features = hit
             dst_kind = "atlas_part"
         else:
             dst_features = [dst_feature]
             dst_kind = "feature"
-        units.append({
+        unit = {
             "concept": int(t["concept"]), "src_target": t["src_target"],
             "src_model": t["src_model"], "src_features": part["features"],
             "dst_target": t["dst_target"], "dst_model": t["dst_model"],
             "dst_feature": dst_feature, "dst_features": dst_features,
-            "dst_set_kind": dst_kind, "k_top_series": k_top,
+            "dst_set_kind": dst_kind, "k_top_series": k_use,
             "test_auc": t.get("auc"),
             "transfer_margin": _transfer_margin(t),
-        })
+        }
+        if k_use != k_top:
+            unit["transfer_k_top_series"] = k_top
+        if dst_set == "matched_set":
+            unit["dst_set_request"] = "matched_set"
+        units.append(unit)
     return units
+
+
+def matched_dst_set(ctx_dst: "TargetContext", S_src: np.ndarray, size: int) -> list:
+    """The destination's `size` alive features with the highest forward AUC on the
+    source concept's top series `S_src`, sorted by feature index. Key-free: it uses
+    only the destination's own feature ranks, so it is defined for every test, and
+    it always contains the transfer test's best feature (the AUC argmax) when that
+    feature is alive."""
+    auc = auc_from_ranks(ctx_dst.ranks, S_src)
+    auc = np.where(ctx_dst.alive_mask, auc, -np.inf)
+    order = np.lexsort((np.arange(auc.size), -auc))
+    return sorted(int(f) for f in order[:max(1, int(size))] if np.isfinite(auc[f]))
+
+
+def agreement_rung(verdict: str) -> str:
+    """The partial-agreement rung of a verdict (`concepts.agreement_partial_rung`):
+    `same`, `partial` ("level only" or "shape only"), `differs`, `none` ("no
+    specific agreement") or `not scorable`. A pure relabelling: `partial` is never
+    merged into `same`."""
+    return {"same causal effect": "same", "level only": "partial", "shape only": "partial",
+            "acts differently": "differs", "no specific agreement": "none",
+            "not scorable": "not scorable"}[verdict]
+
+
+def partial_agreement_summary(tests: list) -> dict:
+    """Counts of the rungs over `tests`, with `partial` split into its two kinds and
+    `same_or_partial` reported beside, never instead of, `same`."""
+    counts = {"same": 0, "partial": 0, "partial_level_only": 0, "partial_shape_only": 0,
+              "differs": 0, "none": 0, "not scorable": 0}
+    for t in tests:
+        rung = agreement_rung(t["verdict"])
+        counts[rung] += 1
+        if rung == "partial":
+            counts["partial_level_only" if t["verdict"] == "level only" else "partial_shape_only"] += 1
+    counts["same_or_partial"] = counts["same"] + counts["partial"]
+    return counts
 
 
 def _transfer_margin(test: dict) -> float | None:
@@ -777,14 +852,28 @@ def _statistic_ii(side_a: dict, side_b: dict, null_stats_a: list, null_stats_b: 
     return out
 
 
-def _verdict(stat_i: dict, stat_ii: dict) -> str:
+def firing_defined(clearing_a: list, clearing_b: list, mask: list) -> dict:
+    """Whether each statistic measures a channel BOTH sides clear
+    (`concepts.agreement_require_defined_firing`). Statistic (i) is the
+    concordance of the signed LEVEL effect, so it is defined only when `level`
+    clears its own random-direction null on both sides; statistic (ii) is the
+    cosine over `mask`, so it is defined only when each side clears at least
+    one channel of `mask`. A statistic computed on a channel one side does not
+    clear compares that side's noise, so a below-p05 value there is not
+    evidence that the two effects differ."""
+    return {"i": "level" in clearing_a and "level" in clearing_b,
+            "ii": bool(set(clearing_a) & set(mask)) and bool(set(clearing_b) & set(mask))}
+
+
+def _verdict(stat_i: dict, stat_ii: dict, defined: dict | None = None) -> str:
     """The verdict chain of a scorable test, from the two statistics.
 
     Extracted unchanged from `run_shared_input_agreement` (ROADMAP.md sec 38.1,
     K1) so the rule can be tested on its own. Review item 2: failing to clear a
     matched-feature floor is the ABSENCE of evidence of agreement, not evidence
     of disagreement, so `acts differently` is reserved for an observed statistic
-    below the p05 of BOTH sides' floors.
+    below the p05 of BOTH sides' floors. With `defined` (from `firing_defined`,
+    opt-in) a below-p05 statistic counts only when it is defined.
     """
     if stat_i["clears"] and stat_ii["clears"]:
         return "same causal effect"
@@ -792,7 +881,9 @@ def _verdict(stat_i: dict, stat_ii: dict) -> str:
         return "level only"
     if stat_ii["clears"]:
         return "shape only"
-    if stat_i["below_floor"] or stat_ii["below_floor"]:
+    fires_i = stat_i["below_floor"] and (defined is None or defined["i"])
+    fires_ii = stat_ii["below_floor"] and (defined is None or defined["ii"])
+    if fires_i or fires_ii:
         return "acts differently"
     return "no specific agreement"
 
@@ -837,7 +928,12 @@ def run_shared_input_agreement(cfg, run_dir, hub, store, data, device, atlas: di
     base_seed = int(base_seed if base_seed is not None else cfg.run.seed)
 
     if units is None:
-        units = build_units(atlas, atlas_transfer)
+        unit_kwargs = {}
+        if getattr(c, "agreement_dst_set", "feature") != "feature":
+            unit_kwargs["dst_set"] = c.agreement_dst_set
+        if getattr(c, "agreement_k_top_series", None) is not None:
+            unit_kwargs["k_top_series"] = c.agreement_k_top_series
+        units = build_units(atlas, atlas_transfer, **unit_kwargs)
         units, cap_record = cap_units_per_pair(
             units, getattr(c, "agreement_max_tests_per_pair", None))
     else:
@@ -875,8 +971,13 @@ def run_shared_input_agreement(cfg, run_dir, hub, store, data, device, atlas: di
     dst_kind_counts = {"feature": 0, "atlas_part": 0}
     n_short_pool = 0
 
+    partial_rung = bool(getattr(c, "agreement_partial_rung", False))
+    require_defined = bool(getattr(c, "agreement_require_defined_firing", False))
+
     for unit in units:
-        dst_kind_counts[unit["dst_set_kind"]] += 1
+        kind_at_start = "matched_set" if unit.get("dst_set_request") == "matched_set" \
+            else unit["dst_set_kind"]
+        dst_kind_counts[kind_at_start] = dst_kind_counts.get(kind_at_start, 0) + 1
         ctx_src, ctx_dst = _ctx(unit["src_target"]), _ctx(unit["dst_target"])
         reach_records.setdefault(unit["src_target"], ctx_src.reach)
         reach_records.setdefault(unit["dst_target"], ctx_dst.reach)
@@ -898,8 +999,13 @@ def run_shared_input_agreement(cfg, run_dir, hub, store, data, device, atlas: di
             continue
 
         S_src, S_dst, _score_src = series_sets(ctx_src, ctx_dst, unit)
+        if unit.get("dst_set_request") == "matched_set":
+            unit = {**unit, "dst_features": matched_dst_set(ctx_dst, S_src, len(unit["src_features"])),
+                    "dst_set_kind": "matched_set"}
+            record["dst_features"], record["dst_set_kind"] = unit["dst_features"], "matched_set"
         pair_key = (unit["src_model"], unit["dst_model"])
-        if pair_key not in verified_pairs and unit["test_auc"] is not None:
+        auc_reproducible = unit.get("transfer_k_top_series", unit["k_top_series"]) == unit["k_top_series"]
+        if pair_key not in verified_pairs and unit["test_auc"] is not None and auc_reproducible:
             verify_auc_reproduces(ctx_dst, S_src, unit["dst_feature"], unit["test_auc"])
             verified_pairs.add(pair_key)
 
@@ -1008,9 +1114,15 @@ def run_shared_input_agreement(cfg, run_dir, hub, store, data, device, atlas: di
         # `acts differently` is reserved for an observed statistic falling
         # BELOW the p05 of BOTH sides' floors -- worse than matched,
         # equally-active features already agree by chance.
-        record["verdict"] = _verdict(stat_i, stat_ii)
+        defined = firing_defined(clearing_a, clearing_b, mask)
+        if require_defined:
+            record["firing_defined"] = defined
+        record["verdict"] = _verdict(stat_i, stat_ii, defined if require_defined else None)
         tests.append(record)
 
+    if partial_rung:
+        for r in tests:
+            r["rung"] = agreement_rung(r["verdict"])
     verdict_counts: dict = {}
     pair_counts: dict = {}
     concept_counts: dict = {}
@@ -1045,6 +1157,8 @@ def run_shared_input_agreement(cfg, run_dir, hub, store, data, device, atlas: di
     }
     if cap_record is not None:
         out["agreement_cap"] = cap_record
+    if partial_rung:
+        out["partial_agreement"] = partial_agreement_summary(tests)
     if not write:
         log.info("shared input agreement: %d test(s), verdicts=%s, %.1fs (not written)",
                  len(tests), verdict_counts, out["runtime_seconds"])
