@@ -464,3 +464,62 @@ def test_driver_config_has_two_different_architectures_and_no_absolute_paths():
     assert cfg.run.seed == 3 and cfg.data.path == "/c/public_dev"
     assert all(m.kwargs["construction_seed"] == 3 and m.kwargs["dose"] == 2.0 for m in cfg.models)
     assert drv._targets(cfg) == {"ArchA": "ArchA/blocks.2", "ArchB": "ArchB/blocks.4"}
+
+
+def _stat(observed, clears=False, below=False):
+    return {"observed": observed, "clears": clears, "below_floor": below}
+
+
+_X_I = _stat(-0.999, below=True)
+_X_II = _stat(0.952)
+_X_SRC = ["spectral_centroid", "dispersion"]
+_X_DST = ["spectral_centroid", "dispersion", "horizon_shape_near", "horizon_shape_far"]
+_X_MASK = ["spectral_centroid", "dispersion", "horizon_shape_near", "horizon_shape_far"]
+
+
+def test_pure_dispersion_decoy_is_not_acts_differently_under_the_defined_rule():
+    """Case x (a truly shared effect with no level component, planted from the numbers
+    of a real false disagreement: level concordance -0.999 below both p05, shape cosine
+    0.952, `level` clearing on neither side). The old rule reads 'acts differently';
+    the defined rule must not, because statistic (i) compares two sides' level noise.
+    Plant: dropping the `defined` condition in `_verdict` restores the false call."""
+    defined = sia.firing_defined(_X_SRC, _X_DST, _X_MASK)
+    assert defined == {"i": False, "ii": True}
+    assert sia._verdict(_X_I, _X_II) == "acts differently"
+    assert sia._verdict(_X_I, _X_II, defined) == "no specific agreement"
+
+
+def test_opposite_effect_decoy_is_still_acts_differently_under_the_defined_rule():
+    """Case c keeps its verdict: level clears on both sides, so statistic (i) is
+    defined and its below-p05 value still fires. Plant: `firing_defined` returning
+    False for `i` makes this read 'no specific agreement'."""
+    both = ["level", "trend", "horizon_shape_near"]
+    defined = sia.firing_defined(both, both, ["trend", "horizon_shape_near"])
+    assert defined == {"i": True, "ii": True}
+    assert sia._verdict(_stat(-1.0, below=True), _stat(-0.8, below=True), defined) == "acts differently"
+    assert sia._verdict(_stat(-1.0, below=True), _stat(0.9), defined) == "acts differently"
+
+
+def test_defined_rule_needs_both_sides_to_clear_a_channel_the_statistic_measures():
+    assert sia.firing_defined(["level"], ["dispersion"], ["dispersion"]) == {"i": False, "ii": False}
+    assert sia.firing_defined(["level", "trend"], ["level", "dispersion"], ["trend", "dispersion"]) == \
+        {"i": True, "ii": True}
+    assert sia.firing_defined(["level", "trend"], ["level"], ["trend"]) == {"i": True, "ii": False}
+    assert sia._verdict(_stat(0.3), _stat(-0.5, below=True), {"i": True, "ii": False}) == \
+        "no specific agreement"
+    assert sia._verdict(_stat(0.9, clears=True), _stat(0.9, clears=True), {"i": False, "ii": False}) == \
+        "same causal effect"
+
+
+def test_defined_firing_knob_is_omitted_at_its_default():
+    import tempfile
+    from tests.test_concept_stage import _cfg
+    from tsfm_lens.manifest import resolve_config_keys
+    from tsfm_lens.pipeline import _stage_by_name
+
+    cfg = _cfg(tempfile.mkdtemp())
+    keys = _stage_by_name("concepts").config_keys
+    before = resolve_config_keys(cfg, keys)
+    assert "agreement_require_defined_firing" not in repr(before)
+    cfg.concepts.agreement_require_defined_firing = True
+    assert resolve_config_keys(cfg, keys) != before

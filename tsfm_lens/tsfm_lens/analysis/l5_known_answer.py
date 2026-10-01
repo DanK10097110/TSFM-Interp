@@ -92,6 +92,7 @@ VARIANT_SPECS = {
     "V1b": {"src": "all", "dst_set": "matched_set", "k_mult": 1},
     "V2x2": {"src": "main", "dst_set": "feature", "k_mult": 2},
     "V2x4": {"src": "main", "dst_set": "feature", "k_mult": 4},
+    "V0fix": {"src": "main", "dst_set": "feature", "k_mult": 1, "defined": True},
 }
 GATED_VARIANTS = ("V0", "V1", "V2x2", "V2x4", "V3")
 
@@ -264,6 +265,8 @@ def rung_rows(variant_name: str, seed: int, agreement: dict, index: dict) -> lis
             "stat_i_below_floor": si.get("below_floor"),
             "stat_ii": sii.get("observed"), "stat_ii_clears": sii.get("clears"),
             "stat_ii_below_floor": sii.get("below_floor"),
+            "detail": {"statistic_i": si, "statistic_ii": sii, "shape_mask": t.get("shape_mask"),
+                       "firing_defined": t.get("firing_defined")},
         })
     return rows
 
@@ -309,11 +312,15 @@ def variant_summary(rows: list, seeds: list, partial_counts: bool, direction: st
             "differs_rate_all_seeds": n_differs / n_seeds,
             "not_scorable_rate": (n_ns / n if n else None),
         }
+    truly_same = [r for r in sel if CASE_SPECS[r["case"]]["role"] in ("shared", "diagnostic")]
+    false_disagree = sum(r["verdict"] == DIFFERS for r in truly_same)
     decoy_n = sum(out_cases[c]["n_testable"] for c in DECOY_CASES)
     decoy_false = sum(out_cases[c]["n_counted_same"] for c in DECOY_CASES)
     scored_cases = [r for r in sel if CASE_SPECS[r["case"]]["role"] != "control"]
     return {
         "direction": direction, "partial_counts": bool(partial_counts), "cases": out_cases,
+        "false_disagreement": {"n": len(truly_same), "n_false": false_disagree,
+                               "rate": (false_disagree / len(truly_same) if truly_same else None)},
         "decoy_false_same": {"n": decoy_n, "n_false": decoy_false,
                              "rate": (decoy_false / decoy_n if decoy_n else None)},
         "not_scorable_overall": {"n": len(sel),

@@ -146,6 +146,7 @@ def score_cell(cfg, run_dir: Path, manifests: dict, variants: list) -> dict:
         cfg_v.concepts.agreement_k_top_series = (k_transfer * spec["k_mult"]
                                                  if spec["k_mult"] > 1 else None)
         cfg_v.concepts.agreement_partial_rung = True
+        cfg_v.concepts.agreement_require_defined_firing = bool(spec.get("defined", False))
         t0 = time.monotonic()
         rows[name] = []
         for direction in ((models[0], models[1]), (models[1], models[0])):
@@ -207,12 +208,16 @@ def aggregate(cells: list, variants: list) -> dict:
     readings = [(v, v, False) for v in variants]
     if "V0" in variants:
         readings.append(("V3", "V0", True))
+    if "V0fix" in variants:
+        readings.append(("V3fix", "V0fix", True))
     for name, src, partial in readings:
         summaries[name] = {d: l5.variant_summary(all_rows[src], seeds, partial, d)
                            for d in (forward, reverse)}
         gates[name] = l5.gate_variant(summaries[name][forward])
         if name == "V3":
             table["V3"] = table["V0"]
+        if name == "V3fix":
+            table["V3fix"] = table["V0fix"]
     wall = {v: {"per_seed": [c["wall_seconds"].get(v) for c in cells],
                 "mean": float(np.mean([c["wall_seconds"][v] for c in cells if v in c["wall_seconds"]]))}
             for v in variants}

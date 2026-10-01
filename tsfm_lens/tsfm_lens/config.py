@@ -1043,6 +1043,7 @@ class ConceptsConfig:
     agreement_dst_set: str = field(default="feature", metadata={"omit_at_default": True})
     agreement_k_top_series: Optional[int] = field(default=None, metadata={"omit_at_default": True})
     agreement_partial_rung: bool = field(default=False, metadata={"omit_at_default": True})
+    agreement_require_defined_firing: bool = field(default=False, metadata={"omit_at_default": True})
 
     # ROADMAP.md sec 37.9 P6a -- generator-side input counterfactuals
     # (`tsfm_benchmark/build_pipeline/counterfactual.py`'s draw-neutral knobs,

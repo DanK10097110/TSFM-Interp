@@ -852,14 +852,28 @@ def _statistic_ii(side_a: dict, side_b: dict, null_stats_a: list, null_stats_b: 
     return out
 
 
-def _verdict(stat_i: dict, stat_ii: dict) -> str:
+def firing_defined(clearing_a: list, clearing_b: list, mask: list) -> dict:
+    """Whether each statistic measures a channel BOTH sides clear
+    (`concepts.agreement_require_defined_firing`). Statistic (i) is the
+    concordance of the signed LEVEL effect, so it is defined only when `level`
+    clears its own random-direction null on both sides; statistic (ii) is the
+    cosine over `mask`, so it is defined only when each side clears at least
+    one channel of `mask`. A statistic computed on a channel one side does not
+    clear compares that side's noise, so a below-p05 value there is not
+    evidence that the two effects differ."""
+    return {"i": "level" in clearing_a and "level" in clearing_b,
+            "ii": bool(set(clearing_a) & set(mask)) and bool(set(clearing_b) & set(mask))}
+
+
+def _verdict(stat_i: dict, stat_ii: dict, defined: dict | None = None) -> str:
     """The verdict chain of a scorable test, from the two statistics.
 
     Extracted unchanged from `run_shared_input_agreement` (ROADMAP.md sec 38.1,
     K1) so the rule can be tested on its own. Review item 2: failing to clear a
     matched-feature floor is the ABSENCE of evidence of agreement, not evidence
     of disagreement, so `acts differently` is reserved for an observed statistic
-    below the p05 of BOTH sides' floors.
+    below the p05 of BOTH sides' floors. With `defined` (from `firing_defined`,
+    opt-in) a below-p05 statistic counts only when it is defined.
     """
     if stat_i["clears"] and stat_ii["clears"]:
         return "same causal effect"
@@ -867,7 +881,9 @@ def _verdict(stat_i: dict, stat_ii: dict) -> str:
         return "level only"
     if stat_ii["clears"]:
         return "shape only"
-    if stat_i["below_floor"] or stat_ii["below_floor"]:
+    fires_i = stat_i["below_floor"] and (defined is None or defined["i"])
+    fires_ii = stat_ii["below_floor"] and (defined is None or defined["ii"])
+    if fires_i or fires_ii:
         return "acts differently"
     return "no specific agreement"
 
@@ -956,6 +972,7 @@ def run_shared_input_agreement(cfg, run_dir, hub, store, data, device, atlas: di
     n_short_pool = 0
 
     partial_rung = bool(getattr(c, "agreement_partial_rung", False))
+    require_defined = bool(getattr(c, "agreement_require_defined_firing", False))
 
     for unit in units:
         kind_at_start = "matched_set" if unit.get("dst_set_request") == "matched_set" \
@@ -1097,7 +1114,10 @@ def run_shared_input_agreement(cfg, run_dir, hub, store, data, device, atlas: di
         # `acts differently` is reserved for an observed statistic falling
         # BELOW the p05 of BOTH sides' floors -- worse than matched,
         # equally-active features already agree by chance.
-        record["verdict"] = _verdict(stat_i, stat_ii)
+        defined = firing_defined(clearing_a, clearing_b, mask)
+        if require_defined:
+            record["firing_defined"] = defined
+        record["verdict"] = _verdict(stat_i, stat_ii, defined if require_defined else None)
         tests.append(record)
 
     if partial_rung:
