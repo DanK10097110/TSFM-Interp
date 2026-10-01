@@ -37940,6 +37940,22 @@ point the dry runs used).
 
 Next: mint v2 private epoch 1, seal-verify it, run the cross-split check, set `confirm.path`, and confirm ONCE.
 
+**v2 epoch 1 REJECTED before any model saw it (2026-10-01).** It was minted with seed 0 and epoch 1 from
+`large_run_v2.yaml`'s specs:
+- 1000 candidates, 39 rejected by the DTW leakage gate, 961 accepted;
+- seal digest `abfb31bab4436de84ddd8b732d239c8172d0d66a61b9090f72fc3c1a33d0dfea`;
+- cross-split vs `public_dev`: near-duplicates 5/927365; χ² p tier 0.974155, group 0.999982, archetype 0.665697;
+  energy p 0.68016; TOST inconclusive.
+
+**But 716 of its 961 sample hashes equal v1 `benchmark_large/private_epoch1`'s**, the split consumed by the v1
+confirm (`runs/full_report_run_4model_epoch1`). Epoch seeds depend only on (seed, epoch), and v1 and v2 share most
+synthetic specs, so the same series regenerate. Shared hashes with every other split are 0: v2 public_dev,
+v2 private_test, v1 public_dev, v1 private_test, v1 private_epoch2. A previously looked-at series cannot referee a
+claim (§6.6), so the corpus is kept, unopened by any model, as
+`benchmark_large_v2/REJECTED_private_epoch1_overlaps_v1_epoch1`. **Lesson:** a "fresh" epoch must be checked for
+hash overlap against EVERY prior split of EVERY corpus version, not only its own; the epoch number is shared across
+corpus versions that reuse specs. **Replacement:** v2 epoch 3, an epoch number no corpus has used.
+
 #### 38.2.1 Why, grounded
 
 **What is registered today** (`analysis/hypotheses.py`):
