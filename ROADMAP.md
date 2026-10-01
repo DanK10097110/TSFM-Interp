@@ -37956,6 +37956,18 @@ claim (§6.6), so the corpus is kept, unopened by any model, as
 hash overlap against EVERY prior split of EVERY corpus version, not only its own; the epoch number is shared across
 corpus versions that reuse specs. **Replacement:** v2 epoch 3, an epoch number no corpus has used.
 
+**v2 epoch 3 minted and accepted (2026-10-01, after registration).** `regenerate_private(specs, seed=0, epoch=3)` with
+`large_run_v2.yaml`'s specs and Monash references (limit 120), real-derived tiers included:
+- 1000 candidates, 29 rejected by the DTW gate, 971 accepted; min accepted nearest distance 0.35237325850300966;
+- `load_sealed(verify=True)` passes, digest `6b4d17cc2cc2e8f53ef6c88cb39b2e83954276ae1067dba55f053fbff3d9bbec`;
+- **0 shared sample hashes and 0 shared ids with all 7 other splits** (v1: public_dev, private_test, epochs 1–2;
+  v2: public_dev, private_test, the rejected epoch 1);
+- cross-split vs v2 public_dev: near-duplicates 6/937015 (coverage 1.0); χ² p tier 0.943482, group 0.999932;
+  energy distance −0.005955, p 0.951024; TOST inconclusive (not `not_equivalent`, so not a stop condition);
+- shortest series 576 steps (≥ 544 needed).
+
+`confirm.path` now points at it.
+
 #### 38.2.1 Why, grounded
 
 **What is registered today** (`analysis/hypotheses.py`):
