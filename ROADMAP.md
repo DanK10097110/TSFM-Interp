@@ -37926,6 +37926,20 @@ Decisions:
   gain's series-bootstrap lower bound is > 0. A frozen dev model scored on private would add domain shift to the
   question.
 
+**K2 REGISTERED (2026-10-01 13:50:18, before any v2 epoch-1 data exists).** Registered on `runs/panel7_v2_dev`
+(k3wt, dev 99bc94f + the confirm-enable commit) with every K2/K4 flag on: per-target gate, defined-firing rule,
+U1 claims (dev K4 JSON sha256 `ea85745f2c9bc4c068348eaf755a2a59ce3b0eb49d716ddb8cc6d555b015c6dd`).
+`run_register` was called directly, because `run.py`'s preflight refuses an empty `confirm.path` (the same entry
+point the dry runs used).
+- 128 hypotheses (82 replicable): l2 42, concept_causal 32, concept_transfer 20, shared_input_agreement 11
+  (4 same, 7 differs), l3 9, concept_atlas 4, l0_archetype 3, concept_structure 2, reliability_u1 2, l0 1, l1 1,
+  clustering 1.
+- **`hypotheses.json` sha256 `ff6c4f9e75a9cf9838fa633d2b115c095cd2016464d874375a092d125f093b8c`**, identical to the
+  dry run's.
+- A copy is in the main checkout's `tsfm_lens/runs/panel7_v2_dev/`.
+
+Next: mint v2 private epoch 1, seal-verify it, run the cross-split check, set `confirm.path`, and confirm ONCE.
+
 #### 38.2.1 Why, grounded
 
 **What is registered today** (`analysis/hypotheses.py`):
