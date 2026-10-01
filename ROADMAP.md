@@ -38475,6 +38475,25 @@ passes). Legacy lens artifacts were verified byte-identical on a copy of the v2 
   - the failure rate is 0.094–0.174;
   - 1 of 36 per-group CIs excludes 0 (Bolt crystallization norm, AUROC), which is not claimed.
 
+**K4 on the 7-model panel (2026-10-01, `runs/panel7_v2_dev`, driver at dev 011a7f9, read-only; output
+`scratchpad/k4p7/reliability_panel7.json`, n = 941 series, 1000 bootstraps over series).**
+- Lens depth is unavailable for every model (`lens/convergence.json` absent: `lens.depth_max_series` was 0 in
+  `panel7_v2.yaml`). Groups used: SAE families (8) and crystallization norm, where it exists. TimesFM has SAE only.
+- **U1 gain CIs that exclude 0 (log-MASE Spearman):** Timer +0.030310590743556798 [+0.018647995847319663,
+  +0.04301877629706014] (baseline 0.7866839995570046); Time-MoE +0.011873989992855383 [+0.004531001655895828,
+  +0.01920766804668001] (baseline 0.8532070719690352). Both come from the SAE-family group (Timer +0.028594502104732133,
+  Time-MoE +0.01322725735021657). Every other model/task CI includes 0, and **no failure-AUROC gain excludes 0**.
+  These are the two weakest models (MASE 2.5798586489321953 and 4.835479807301792; failure rates 0.30499468650371947
+  and 0.6216790648246546), so internals add most where the free baseline is weakest.
+- **U2 routing stays negative:** baseline routing 1.947559678401894 [1.8136828363036621, 2.070088787634498],
+  baseline+internals 1.9638372652500882 [1.8370895508426, 2.092846972907524]; gap −0.01627758684819429
+  [−0.04434203534836439, 0.010350486925193851], p 0.258. Both routers are WORSE than always picking the best single
+  model (Chronos-2, 1.8559481862647405; best-single minus internals −0.10788907898534791, p 0.001). Oracle
+  1.5230948618844153.
+- **Registration (per §38.4.4's rule):** U1 log-MASE-Spearman for Timer and Time-MoE is registered for K2's look.
+  14 dev tests were run and 2 selected, which is legitimate because private confirmation is the referee. U2 is not
+  registered.
+
 #### 38.4.3 Alternative considered: fragility cards from counterfactual stress tests
 
 The idea: use each model's concepts and L3 fingerprints to predict which

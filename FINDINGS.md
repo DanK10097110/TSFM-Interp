@@ -1497,6 +1497,7 @@ See SH-20. **4/5.**
   - The failure task is imbalanced (rate 0.094–0.174).
   - CIs hold the out-of-fold predictions fixed.
   - One of 36 per-group CIs excludes 0 (the Chronos-Bolt crystallization-norm AUROC gain). Given the multiplicity, it is not claimed.
+- **7-model panel (2026-10-01, `runs/panel7_v2_dev`, ROADMAP §38.4.4).** Routing stays negative: internals routing 1.9638372652500882 vs baseline routing 1.947559678401894 (gap p 0.258), and both lose to always using Chronos-2 (1.8559481862647405; p 0.001). U1 is a **narrow partial positive**: SAE-family activations add to the free baseline's error ranking for the two weakest models only (Timer +0.030310590743556798 [+0.018647995847319663, +0.04301877629706014], Time-MoE +0.011873989992855383 [+0.004531001655895828, +0.01920766804668001]); no failure-AUROC gain excludes 0. Both are registered for the K2 private look; still dev.
 - **Reproduce.** `python run_reliability_from_internals.py --run <copy of runs/concept_atlas_v2 with lens rerun at lens.depth_max_series=965> --out reliability_v2.json`; `analysis/reliability_from_internals.py`.
 - **Ref.** ROADMAP §38.4.4.
 - **Score. 4/5.** Same verdict as PM-12, now for internals: for "when should I distrust this forecast", the free quantile band already carries what the internals carry. A clean practitioner-facing negative, and it bounds claims of practical use from interpretability.
