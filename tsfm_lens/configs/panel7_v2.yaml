@@ -287,6 +287,10 @@ confirm:
   # split). Registration reads this run's dev artifacts only.
   register_concept_claims: true
   register_requires_target_significance: true   # ROADMAP.md sec 38.3.4: only BH-significant targets
+  register_requires_defined_firing: true        # ROADMAP.md sec 38.3.4: an 'acts differently' claim is
+                                                # registered (and confirmed) only if its firing statistic
+                                                # is defined (L5 defined-firing rule, recomputed from the
+                                                # dev JSON; the dev agreement step is not rerun)
   register_reliability_claims: true             # ROADMAP.md sec 38.4: U1, one claim per (model, task)
   reliability_dev_json: reliability_panel7.json # dev K4 JSON from run_reliability_from_internals.py,
                                                 # copied into the run directory (relative to it) or an
