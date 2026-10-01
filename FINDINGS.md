@@ -1544,6 +1544,13 @@ See SH-20. **4/5.**
   - No variant reaches the pre-fixed gate (sensitivity ≥ 0.5 on both): set ablation 0.2 / 0.0, a 2× larger U 0.6 / 0.0, a 4× larger U 0.4 / 0.0, partial agreement as its own rung 0.6 / 0.2.
   - Decoys are never called "same" (0/9 under every variant). So "same" is specific but insensitive, and an absence of "same" across architectures is uninformative.
   - A shared, same-sign pure-dispersion concept reads "acts differently" in 3/10 directed tests (diagnosis open).
+- **Diagnosis of the false disagreement (2026-10-01, branch `l5-known-answer` 0953ff3).**
+  - In every false call on the shared pure-dispersion concept, statistic (i) fires (level concordance, e.g. −0.999 against both floors' p05 of about −0.49 and −0.46), while `level` clears its own null on NEITHER side. Statistic (ii) stays high (0.887–1.0).
+  - Level concordance was compared on two sub-null residuals that happen to be deterministically opposite in sign. There is no sign inversion on the dispersion channel.
+  - The truly shared a and b cases never read "acts differently" (0/10 each).
+  - Fix (opt-in `concepts.agreement_require_defined_firing`): a below-p05 statistic counts only if it is defined, meaning (i) needs `level` to clear on both sides, and (ii) needs both sides to clear a shape-mask channel.
+  - With the fix, false disagreement goes 3/30 → 0/30 (dose 1) and 4/30 → 0/30 (dose 2). The opposite-effect decoy is still caught (2/10, unchanged), and the gate's sensitivity numbers are unchanged.
+  - **Real data:** 4 of `panel7_v2_dev`'s 22 'acts differently' tests have an undefined firing statistic. The other 18 are genuine: level clears on both sides with negative concordance (−0.347 to −0.727).
 - **Models / layers.** Mock pair (ArchA `blocks.2`, ArchB `blocks.4`).
 - **Evidence.** Known-answer validation of a method (planted ground truth, decoys, held-out seeds). **Status:** measured; diagnosis of the false disagreement open.
 - **Reproduce.** `run_l5_known_answer.py`, `configs/l5_known_answer.yaml` (branch `l5-known-answer`, f832798); `runs/l5ka/scored_dose{1,2}/l5_known_answer_aggregate.json`.

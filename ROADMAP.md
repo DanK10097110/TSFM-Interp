@@ -38391,6 +38391,12 @@ inode exhaustion crash (the machine is shared; ~700k of 944k inodes belonged to 
   - **Open defect:** x is planted SHARED (same sign) yet reads "acts differently" in 3/10 directed V0 tests (1–4
     under the other variants). A false disagreement from the rung's conservative verdict. Being diagnosed (which
     statistic fires, and how many of the real run's 22 "acts differently" tests share the mechanism).
+  - **Defect resolved (2026-10-01, 0953ff3, merged).** Level concordance fired on channels neither side cleared.
+    The opt-in rule `concepts.agreement_require_defined_firing` removes every false disagreement (3/30 → 0/30
+    and 4/30 → 0/30) and keeps c (2/10). On the real run it changes 4 of the 22 "acts differently" tests. K2
+    applies it by recomputing verdicts from the stored records at registration and confirm
+    (`confirm.register_requires_defined_firing`, branch `k2-defined`), so the 12.5 h dev agreement step is not
+    re-run.
   - **Consequence for K2:** epochs are mintable (`_EPOCH_STRIDE`), so a better rung does not need to hold the
     epoch. The "acts differently" defect does, since 8 of the 12 dry-run agreement claims are "differs". The epoch
     stays unminted until it is resolved.
