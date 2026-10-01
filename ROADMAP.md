@@ -38726,3 +38726,153 @@ TTM, start K5 and K1."*
 - **Artifact paths** — build paths to `*_ablation.json` and `.pt` with each
   stage's own helper (`ablation_run.ablation_path`); real layer names contain
   dots.
+
+---
+
+## 39. Forecast repair — causal blame for good and bad forecasts, and interpretable feature-level edits (added 2026-10-01, user-proposed — DESIGN ONLY, NOT IMPLEMENTED; start after K2 confirm is done)
+
+### 39.0 Status, provenance, and the one-paragraph version
+
+**Status:** design approved in principle by the user on 2026-10-01. The user's words: *"What if for the practical
+application of this repo, we were able answer the question 'what is causing good and bad predictions for this
+model?' ... ablating each feature individually per layer and seeing exactly how much that changes MASE on average
+to top k (20 ish or more) firing series ... each feature can come with a average and std of added mase ... a model
+could potentially be steered to be more accurate on certain series ... may need to be a completely separate model
+trained on top of the SAE of each layer ... sort of like a crosscoder ... possible change the output in a certain
+way (i.e. less variance of output, more seasonality awareness, etc.) ... almost a form of finetuning ... localized
+interventions in a human interpretable way."* Implement only after K2's single private look is complete
+(§38.2), using Sonnet subagents. The orchestrating session reviews their work and writes the Findings.
+
+**One paragraph.** For a model, attribute forecast error causally to SAE features. Ablate each feature on its
+top-k firing series, record the signed change in MASE (mean, s.d., series-bootstrap CI) against a profile-matched
+null, and split the result into harmful features (removing them lowers MASE) and helpful ones. Then test whether
+edits chosen on training series improve **held-out** series:
+- single-feature gains;
+- sparse greedy edit sets;
+- a learned **SAE-basis adapter**: per-feature (optionally input-conditional) gains over the frozen SAEs of several
+  layers, trained through the frozen model, sparsity-penalized so the edit list stays short and readable;
+- goal knobs ("less dispersion", "more seasonal") built from the battery's channel effects.
+
+Each edit is a named feature with a stated effect, so the result is an auditable, localized form of fine-tuning.
+It must beat or match cheap baselines to claim accuracy. If it does not, it still delivers the blame table, and
+the claim says only that.
+
+**Relation to earlier decisions.** §38.4.1 set steering aside because it had no comparative or practical question
+and would read as a trick. This section supplies the practical question (repair a model's errors locally and
+readably), refereed by held-out data. It does not reopen steering as a demo. Steering results already on record
+still apply: CA-05 (steering moves TimesFM as predicted and Chronos-T5-Base backwards), MN-29 (lenient nulls), SH-20
+(single features are weak), MN-28 (internals predict error mainly for weak models).
+
+### 39.1 What already exists (reuse, do not rebuild)
+
+- `sae/response.py::feature_ablation_fingerprints`: one-feature ablation on top-k firing series, 9 channels
+  including `mase`, profile-matched null (`sae.ablation_null`), reach probe, seeded predict for sampled models,
+  empirical chance. Today the `mase` channel is stored null-normalized (`signed_effect / null_p95`), not in MASE
+  units, and k = 8.
+- `analysis/steering.py` / `sae/eval.py::feature_steering_effects`: ±σ steering with directional metrics.
+- `hooks.py::token_patch` (the single intervention primitive), with the `max_series ≤ batch_size` rule.
+- K1 / L5 known-answer harness: `models/mock_planted.py`, `analysis/known_answer.py`, `analysis/l5_known_answer.py`.
+- K4 baselines and folds: `analysis/reliability_from_internals.py` (free baseline features, series-stratified CV).
+- Sealed private epochs and the `register` / `confirm` machinery (§38.2), and the K2 per-target gate
+  (`analysis/target_significance.py`).
+
+### 39.2 Non-negotiable design rules
+
+1. **Held-out or it did not happen.** Edits are chosen on a training split of series and scored on a disjoint
+   test split, stratified by family/archetype with `utils.sample_rows` (the series is the unit, invariant 2). Any
+   in-sample improvement is reported only as a diagnostic, labelled "in-sample". The final claim is registered and
+   confirmed once on a fresh private epoch.
+2. **Error-preserving edits.** An edit adds only the change in the feature's decoded contribution,
+   h ← h + Σ_f (g_f − 1)·z_f(h)·w_f. The SAE reconstruction never replaces h. Free control: all g_f = 1 must change
+   the forecast by exactly 0.0 (§8 free controls). A cross-layer edit must change it by a nonzero amount.
+3. **Causal, not correlational, blame.** A feature that fires on hard series but whose removal does not change
+   MASE beyond the null gets no blame. Report both the activation-weighted correlation with MASE and the causal
+   ΔMASE side by side. A planted decoy (§39.4) must show they differ.
+4. **Units and nulls.** Blame is stored in MASE units (ΔMASE per series), plus the null-normalized value. Each
+   feature's ΔMASE is compared with a profile-matched null on the same rows; nominal 5% is never used as chance
+   (§38.3.4).
+5. **Deterministic models first.** TimesFM, Chronos-2, Chronos-Bolt, Timer, Time-MoE. Sampled models (Sundial,
+   Chronos-T5) only with the same seed for every compared pair of calls, and with a repeat-run noise floor.
+6. **Side effects are part of the result.** An edit's effect is reported on the series where the feature fires
+   AND on all other series (it can hurt where it fires weakly). An edit that helps its target set but hurts overall
+   MASE beyond the noise floor is reported as harmful.
+7. **Baselines (an accuracy claim must beat or match them on held-out series):**
+   - B1: an output-level ridge correction on free baseline features (K4's set);
+   - B2: LoRA, or last-block fine-tuning, with a parameter count matched to the adapter;
+   - B3: "use the best single model" (Chronos-2 on `panel7_v2_dev`) and K4's routers.
+
+   If an interpretable edit loses to B1 or B2, the claim is about interpretability and localization, not accuracy,
+   and the report says so.
+8. **New behaviour is opt-in**, with `omit_at_default` fingerprints. Existing artifacts stay byte-identical
+   (invariant 13).
+
+### 39.3 Phases and stop gates
+
+**R0 — Known answer (mocks only; gate before any real run).** Extend `mock_planted` (opt-in) with:
+- a planted **harmful** concept (adds forecast error on a series subset);
+- a planted **helpful** concept;
+- a **decoy** that fires on hard series but has no causal effect on error;
+- a **side-effect** concept (helps its subset, hurts elsewhere).
+
+Gate, fixed before data: the blame table ranks the harmful and helpful concepts with the correct sign at ≥ 0.8 of
+seeds; the decoy gets no significant causal blame in ≥ 0.9; a held-out zero-edit of the harmful concept lowers
+test MASE with a series-bootstrap CI excluding 0; side effects are detected. Five held-out seeds, with K1's seed
+convention.
+
+**R1 — Blame table on real data (descriptive / causal within-model).**
+- Per target and feature: ΔMASE on the top-k firing series (k = 32, effective k recorded): mean, s.d., series-
+  bootstrap CI, null p95, null-normalized value, per-family breakdown.
+- Run on 2 deterministic models first (Chronos-2, TimesFM), 3–4 layers each, from `panel7_v2_dev`'s frozen SAEs.
+- Output `repair/<model>/<layer>_blame.json`, plus a report section listing the top harmful and helpful features,
+  each with its description (`describe_run`) and exemplar.
+- Stop gate: if no feature's ΔMASE CI excludes 0 after BH over features within a target, stop at R1 and record
+  the negative.
+
+**R2 — Single-feature edits, held out.** For each feature with a significant ΔMASE on train, gains g ∈ {0, 0.5, 1.5,
+2}, chosen on train and scored on test. Report test ΔMASE on firing series and on all series, and the side effects.
+Stop gate: at least one edit improves test MASE on its firing series with a CI excluding 0 and no overall harm
+beyond the noise floor.
+
+**R3 — Sparse greedy edit sets.** Forward selection on train, with validation-based stopping inside train; scored
+on test against B1/B3. Report the edit list as readable rows: feature, layer, gain, description, effect.
+
+**R4 — Learned SAE-basis adapter (the user's "separate model on top of the SAEs").** Per-feature gains g_f, or a
+small conditional gate g_f(z) (linear in the codes of all adapted layers), for several layers jointly.
+- Error-preserving edits (rule 2); trained by backprop through the frozen model; loss is MASE or pinball on train;
+  L1/L0 on (g − 1) for sparsity.
+- Compared with B1/B2/B3 on test, at a matched parameter count.
+- Interpretability check: the top 10 edits by |g − 1| must have descriptions and battery channel effects that
+  agree with the direction of improvement; report agreement rates.
+- Domain test (the "separate contexts" claim): train on one family or real-derived generator and test on held-out
+  series of that context, plus a no-harm check on the other contexts.
+
+**R5 — Goal knobs.** Map a goal to features through battery channel effects ("less dispersion": features whose
+ablation lowers the dispersion channel). Test on held-out series that the targeted channel moves as intended and
+measure the MASE change per family. A knob that moves its channel but worsens MASE is reported as such.
+
+**R6 — Registration and confirmation.** Register the R2–R4 edits that pass on dev (frozen SAEs, gains, selection
+spec, hashes) and confirm them once on a fresh private epoch (`_EPOCH_STRIDE`; not the epoch spent by K2).
+
+### 39.4 Traps that apply
+
+- Selection on the outcome (rule 1); regression to the mean on the worst series (pick edits on train, score on test).
+- §11.42 silent no-op: an edit at a layer the head does not read gives a clean zero. Run the reach probe first.
+- §11.49 precision: clean cache with autocast off; edits applied at `predict()` precision.
+- §11.50 seeds for sampled models; MN-24 bf16 self-patch is not 0.
+- MN-29 lenient null; §38.3.4 nominal chance; SH-20 weak single features (expect R1 to be power-limited, which is
+  why R4 exists).
+- MN-21: revived dead features hurt causal alignment. Use the primary SAEs, not revived ones, unless measured.
+- Head-slicing corpora (§11.38); dotted layer names in paths (`ablation_run.ablation_path`).
+
+### 39.5 Cost estimate (to refine after R0)
+
+R0 is CPU minutes per seed. R1 on 2 models × 4 layers × ~24 candidates × k = 32 rows × 16 null draws comes to a few
+GPU hours. R4 training is minutes to an hour per model on one GPU. R6 costs one confirm run.
+
+### 39.6 Novelty and evidence class
+
+Evidence: causal within-model (blame), and behavioral held-out (repair), with held-out confirmation at R6. The
+novel element for TSFMs is an auditable, feature-level repair whose every edit is named and measured, with a known
+answer that separates "fires on bad series" from "causes bad forecasts". Comparable work exists for language
+models (representation fine-tuning, SAE feature steering); none is known for forecasting models. That should be
+checked with a literature search at R0.
