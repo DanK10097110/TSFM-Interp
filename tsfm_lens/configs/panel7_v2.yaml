@@ -282,6 +282,15 @@ internals:
 
 confirm:
   enabled: false   # disables `register` too. All private splits are consumed; see header.
+  # K2/K4 claim registration, ON for the epoch that K2 mints later (it takes
+  # effect only once `enabled` is true and nothing here points at a private
+  # split). Registration reads this run's dev artifacts only.
+  register_concept_claims: true
+  register_requires_target_significance: true   # ROADMAP.md sec 38.3.4: only BH-significant targets
+  register_reliability_claims: true             # ROADMAP.md sec 38.4: U1, one claim per (model, task)
+  reliability_dev_json: reliability_panel7.json # dev K4 JSON from run_reliability_from_internals.py,
+                                                # copied into the run directory (relative to it) or an
+                                                # absolute path; its sha256 is pinned at registration
 
 # ROADMAP.md sec 34 item C1/C2 (2026-09-17): the corpus card and report
 # section, added after this run's own config was first written -- this

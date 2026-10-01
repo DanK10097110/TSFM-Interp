@@ -342,6 +342,16 @@ class ConfirmConfig:
     # `confirm` (whole section) only when on.
     register_requires_target_significance: bool = field(
         default=False, metadata={"omit_at_default": True})
+    # ROADMAP.md sec 38.4 (K4) -- register and confirm the U1 reliability
+    # claims ("do internals predict a model's per-series error beyond the free
+    # baseline?"): one `reliability_u1` claim per (model, task) whose DEV gain
+    # CI lower bound is > 0 in the dev K4 JSON at `reliability_dev_json`
+    # (absolute, or relative to the run directory; written by
+    # `run_reliability_from_internals.py`). `confirm` REFITS the frozen
+    # procedure on private series. Both fields fingerprint `register`
+    # (field-level key) and `confirm` only once set.
+    register_reliability_claims: bool = field(default=False, metadata={"omit_at_default": True})
+    reliability_dev_json: str = field(default="", metadata={"omit_at_default": True})
     # Null directions per registered causal claim on the first private pass.
     # A claim whose exact p sits on the floor 1/(n+1) is redrawn with
     # `causal_max_null` directions (the adaptive tail p, sec 37.6/P3), so the

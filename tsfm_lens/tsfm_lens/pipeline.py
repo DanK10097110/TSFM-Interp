@@ -227,6 +227,7 @@ def _stages() -> list:
               ("concepts.n_registered", "concepts.transfer_claim_mode",
                "confirm.register_concept_claims", "concepts.n_registered_causal",
                "confirm.register_requires_target_significance",
+               "confirm.register_reliability_claims", "confirm.reliability_dev_json",
                "concepts.n_registered_agreement_differs")),
         Stage("confirm", ["register"],
               lambda c: c.confirm.enabled,

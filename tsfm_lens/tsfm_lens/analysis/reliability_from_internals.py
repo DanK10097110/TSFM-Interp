@@ -123,13 +123,13 @@ def stratified_folds(strata: np.ndarray, n_folds: int, seed: int) -> np.ndarray:
     return folds
 
 
-def _make_ridge(seed: int):
+def _make_ridge(seed: int, alphas=ALPHAS):
     from sklearn.impute import SimpleImputer
     from sklearn.linear_model import RidgeCV
     from sklearn.pipeline import make_pipeline
     from sklearn.preprocessing import StandardScaler
     return make_pipeline(SimpleImputer(strategy="median"), StandardScaler(),
-                         RidgeCV(alphas=ALPHAS))
+                         RidgeCV(alphas=tuple(alphas)))
 
 
 def _make_logistic(seed: int):
@@ -145,7 +145,8 @@ def _make_logistic(seed: int):
 
 
 def cross_fitted_predictions(X: np.ndarray, y: np.ndarray, strata: np.ndarray, kind: str,
-                             n_folds: int = 5, n_repeats: int = 3, seed: int = 0) -> np.ndarray:
+                             n_folds: int = 5, n_repeats: int = 3, seed: int = 0,
+                             alphas=ALPHAS) -> np.ndarray:
     """Out-of-fold prediction for every series; no series is scored by a fit that saw it.
 
     `kind` is `"ridge"` (predicts `y`) or `"logistic"` (predicts P(y = 1)).
@@ -153,7 +154,9 @@ def cross_fitted_predictions(X: np.ndarray, y: np.ndarray, strata: np.ndarray, k
     series' prediction is the mean of its out-of-fold predictions across
     repeats, which reduces fold-assignment noise without letting any fit
     see the series it scores. Imputation, standardization and the ridge
-    penalty or logistic C are all chosen inside the training fold.
+    penalty or logistic C are all chosen inside the training fold. `alphas`
+    is the ridge grid (default `ALPHAS`); `confirm` passes the grid frozen at
+    registration.
     """
     X = np.asarray(X, dtype=np.float64)
     y = np.asarray(y, dtype=np.float64)
@@ -166,7 +169,7 @@ def cross_fitted_predictions(X: np.ndarray, y: np.ndarray, strata: np.ndarray, k
             if len(te) == 0:
                 continue
             if kind == "ridge":
-                model = _make_ridge(seed).fit(X[tr], y[tr])
+                model = _make_ridge(seed, alphas).fit(X[tr], y[tr])
                 out[te] += model.predict(X[te])
             else:
                 model = _make_logistic(_seed("inner", rep, f, base=seed)).fit(X[tr], y[tr].astype(int))
@@ -179,14 +182,17 @@ def _score_with_ci(fn, pred: np.ndarray, y: np.ndarray, n_boot: int, seed: int) 
 
 
 def _gain_with_ci(fn, pred_base: np.ndarray, pred_full: np.ndarray, y: np.ndarray,
-                  n_boot: int, seed: int) -> dict:
+                  n_boot: int, seed: int, with_p: bool = False) -> dict:
     out = bootstrap_ci_diff(lambda idx: fn(pred_full[idx], y[idx]),
                             lambda idx: fn(pred_base[idx], y[idx]),
                             len(y), n_boot=n_boot, seed=seed, paired=True)
-    return {"baseline_plus_internals": out["a"], "baseline": out["b"],
-            "gain": out["diff"], "lo": out["diff_lo"], "hi": out["diff_hi"],
-            "ci_excludes_zero_positive": bool(out["diff_lo"] > 0), "n_boot": n_boot,
-            "resample_unit": out["resample_unit"]}
+    rec = {"baseline_plus_internals": out["a"], "baseline": out["b"],
+           "gain": out["diff"], "lo": out["diff_lo"], "hi": out["diff_hi"],
+           "ci_excludes_zero_positive": bool(out["diff_lo"] > 0), "n_boot": n_boot,
+           "resample_unit": out["resample_unit"]}
+    if with_p:
+        rec["p"] = out["p"]
+    return rec
 
 
 def _stack(blocks: list) -> np.ndarray:
@@ -276,6 +282,69 @@ def analyze_model(log_mase: np.ndarray, failure: np.ndarray, baseline: np.ndarra
                            **_gain_with_ci(fn, pb[sel], pf[sel], yy[sel], n_boot,
                                            _seed(task, "fam", label, base=seed))}
     return {"record": record, "predictions": preds}
+
+
+U1_TASK_LOG_MASE = "log_mase_spearman"
+
+
+def u1_gain(log_mase: np.ndarray, baseline: np.ndarray, internals: np.ndarray,
+            strata: np.ndarray, *, n_folds: int, n_repeats: int, n_boot: int, model_seed: int,
+            alphas=ALPHAS) -> dict:
+    """The U1 log-MASE gain of one model, refit from arrays: exactly the
+    `analyze_model` procedure for the `log_mase_spearman` task, with the same
+    per-key seeds, so a refit on the dev arrays reproduces the dev record.
+
+    `internals` is `[n, q]` (every internal group concatenated in dev order),
+    `model_seed` is the per-model seed `run_reliability` derived
+    (`_seed("model", name, base=seed)`) and `alphas` the ridge grid. Returns
+    the `_gain_with_ci` record plus the two-sided bootstrap `p` (floored at
+    `1/n_boot`). Used by `confirm` to refit the frozen procedure on private
+    series.
+    """
+    pb = cross_fitted_predictions(baseline, log_mase, strata, "ridge", n_folds, n_repeats,
+                                  _seed("ridge", "baseline", base=model_seed), alphas)
+    X = np.concatenate([np.asarray(baseline, dtype=np.float64),
+                        np.asarray(internals, dtype=np.float64)], axis=1)
+    pf = cross_fitted_predictions(X, log_mase, strata, "ridge", n_folds, n_repeats,
+                                  _seed("ridge", "baseline+internals", base=model_seed), alphas)
+    return _gain_with_ci(spearman, pb, pf, log_mase, n_boot,
+                         _seed(U1_TASK_LOG_MASE, "g", base=model_seed), with_p=True)
+
+
+def model_seed_for(name: str, seed: int) -> int:
+    """The per-model seed `run_reliability` hands `analyze_model`."""
+    return _seed("model", name, base=seed)
+
+
+def baseline_feature_names() -> list:
+    """Names of the baseline columns in order, from the same definitions
+    `baseline_features` uses (two output-only signals, then catch22)."""
+    _, names = context_catch22(np.sin(np.linspace(0.0, 12.0, 64))[None, :])
+    return ["log1p_own_width", "log10_forecast_flatness"] + [f"catch22_{n}" for n in names]
+
+
+def family_columns(last_by_layer: dict, family_rows: list, model: str,
+                   n: int) -> tuple:
+    """`(X [n, n_families], family_ids)` from in-memory last-window SAE
+    activations `{layer: [n, dict_size]}`: the same per-family sum
+    `family_activation_features` takes from the store, for a caller (confirm)
+    that encodes private activations itself. Only layers present in
+    `last_by_layer` contribute; families with no member there give no column."""
+    total = {}
+    for r in family_rows:
+        if r["model"] == model and r["layer"] in last_by_layer:
+            col = total.setdefault(int(r["family"]), np.zeros(n, dtype=np.float64))
+            col += np.asarray(last_by_layer[r["layer"]], dtype=np.float64)[:, int(r["feature"])]
+    fam_ids = sorted(total)
+    if not fam_ids:
+        return np.zeros((0, 0)), []
+    return np.column_stack([total[f] for f in fam_ids]), fam_ids
+
+
+def crystallization_norm_feature(last_window_act: np.ndarray) -> np.ndarray:
+    """`[n, 1]` log norm of last-window residual states, as `load_run_inputs` builds it."""
+    last = np.asarray(last_window_act, dtype=np.float64)
+    return np.log(np.linalg.norm(last, axis=1) + 1e-12)[:, None]
 
 
 def route_policies(mase: dict, pred_base: dict, pred_full: dict, n_boot: int = 1000,
@@ -525,7 +594,7 @@ def load_run_inputs(run_dir, data_path: Optional[str] = None, top_n: int = 16) -
             n_rows = len(ids)
             last = np.concatenate([_last_window(store, name, layer, s, min(s + 128, n_rows), "act")
                                    for s in range(0, n_rows, 128)])
-            groups["crystallization_norm"] = np.log(np.linalg.norm(last, axis=1) + 1e-12)[:, None]
+            groups["crystallization_norm"] = crystallization_norm_feature(last)
             notes["crystallization_layer"] = layer
         models[name] = {"mase": column(name, "mase"), "baseline": base,
                         "baseline_names": base_names, "groups": groups,

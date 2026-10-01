@@ -37,6 +37,17 @@ are BH-significant against their own empirical chance
 (`analysis/target_significance.py`); every claim it removes is recorded in the
 registry's `concept_claim_candidates` with its target, p and q, and a target
 without `empirical_chance` makes registration refuse.
+
+`confirm.register_reliability_claims` (ROADMAP.md sec 38.4 / K4's U1, opt-in as
+well) registers one `reliability_u1` claim per (model, task) whose DEV gain CI
+lower bound over the free baseline is > 0, read from a dev K4 JSON
+(`confirm.reliability_dev_json`, written by `run_reliability_from_internals.py`).
+Each claim freezes the whole refit spec (feature groups, family definitions,
+baseline list, ridge grid, folds, repeats, seed, strata, n_boot) and the sha256
+of `concept_families.json`, the SAE checkpoints and the dev JSON, because
+`confirm` REFITS that procedure on private series (frozen SAEs, never
+retrained) rather than scoring a frozen dev model. The claim family is its own
+Holm family (`reliability_u1`) in `claim_family_budget`.
 """
 
 from __future__ import annotations
@@ -1043,6 +1054,226 @@ def _concept_claim_entries(run_dir: Path, cfg: PipelineConfig) -> tuple:
     return causal + atlas + agree + struct, summary
 
 
+# ---------------------------------------------------------------------------
+# ROADMAP.md sec 38.4 (K4) -- U1 reliability claims. Opt-in:
+# `confirm.register_reliability_claims`. FROZEN from one dev K4 JSON plus the
+# artifacts its feature definitions come from.
+# ---------------------------------------------------------------------------
+
+RELIABILITY_STAGE = "reliability_u1"
+RELIABILITY_SUPPORTED_TASKS = ("log_mase_spearman",)
+_RELIABILITY_BASELINE_DEFINITION = (
+    "log1p of the model's own mean relative quantile width (MASE units), log10 of "
+    "forecast sd over context sd (+1e-3), then catch22 of the z-scored context "
+    "(analysis/reliability_from_internals.py::baseline_features)")
+_RELIABILITY_ROW_FILTER = (
+    "series with mase_reliable and a finite MASE for the claim's own model (dev scored the "
+    "series reliable and finite for every panel model; the private split has L0 only for "
+    "the registered models)")
+
+
+def _pin(run_dir: Path, path: Path) -> tuple:
+    """`(key, sha256)` of one pinned artifact: the run-relative posix path
+    when it lives inside the run directory, else the resolved absolute path
+    (a dev K4 JSON kept outside the run). `check_registry_freshness` joins
+    the key onto the run directory, which leaves an absolute key untouched."""
+    path = Path(path).resolve()
+    try:
+        key = path.relative_to(Path(run_dir).resolve()).as_posix()
+    except ValueError:
+        key = str(path)
+    return key, _sha256_file(path)
+
+
+def _reliability_dev_json_path(run_dir: Path, cfg: PipelineConfig) -> Path | None:
+    """The dev K4 JSON named by `confirm.reliability_dev_json` (absolute, or
+    relative to the run directory), `None` when the claims are off. Refuses
+    when exactly one of the two fields is set, or the file is missing: a flag
+    that registers nothing must say so."""
+    on = bool(getattr(cfg.confirm, "register_reliability_claims", False))
+    raw = str(getattr(cfg.confirm, "reliability_dev_json", "") or "")
+    if not on:
+        if raw:
+            raise ValueError(
+                "confirm.reliability_dev_json is set but confirm.register_reliability_claims "
+                "is off, so no reliability claim would be registered; turn the flag on or "
+                "clear the path")
+        return None
+    if not raw:
+        raise ValueError(
+            "confirm.register_reliability_claims is on but confirm.reliability_dev_json is "
+            "empty; point it at the dev K4 JSON from run_reliability_from_internals.py")
+    path = Path(raw)
+    path = path if path.is_absolute() else Path(run_dir) / path
+    if not path.exists():
+        raise ValueError(f"confirm.reliability_dev_json {str(path)!r} does not exist")
+    return path
+
+
+def _reliability_frozen_families(run_dir: Path, model: str, fam_rows: list) -> tuple:
+    """`(families, layers)` for one model: the concept-family membership
+    `load_run_inputs` summed at dev, restricted to the layers that had persisted
+    SAE features (the store's own `has_sae_features` when the activation store
+    exists, else the layers with a saved checkpoint) and a checkpoint to freeze.
+    `families` is `[{"family": int, "members": [{"layer", "feature"}]}]`."""
+    from ..sae.ablation_run import checkpoint_path
+
+    store = None
+    if (Path(run_dir) / "activations.zarr").exists():
+        from ..extraction.store import ActivationStore
+        store = ActivationStore(Path(run_dir) / "activations.zarr", mode="r")
+    members: dict = {}
+    layers = set()
+    for r in fam_rows:
+        if r["model"] != model:
+            continue
+        layer = r["layer"]
+        has_ckpt = checkpoint_path(run_dir, model, layer).exists()
+        persisted = store.has_sae_features(model, layer) if store is not None else has_ckpt
+        if not (has_ckpt and persisted):
+            continue
+        layers.add(layer)
+        members.setdefault(int(r["family"]), []).append(
+            {"layer": layer, "feature": int(r["feature"])})
+    fams = [{"family": f, "members": sorted(ms, key=lambda m: (m["layer"], m["feature"]))}
+            for f, ms in sorted(members.items())]
+    return fams, sorted(layers)
+
+
+def _reliability_u1_entries(run_dir: Path, cfg: PipelineConfig) -> tuple:
+    """`-> (entries, summary)` for the `reliability_u1` claims, or `([], {})`
+    when `confirm.register_reliability_claims` is off (the byte-identical
+    default).
+
+    Claim `reliability_u1::{model}::{task}`: "adding this model's internals to
+    its free baseline raises the out-of-fold Spearman with log MASE, with a
+    private series-bootstrap gain CI lower bound above 0". Registered per
+    (model, task) whose DEV gain CI lower bound is > 0 (never the point
+    estimate). The id names model AND task, so `build_registry`'s duplicate
+    refusal covers it. A dev positive that cannot be frozen (a lens-depth
+    group, no concept-family artifact, a task `confirm` does not refit, family
+    ids that do not reproduce dev's columns) is listed in the summary with the
+    reason instead of being registered, so the dev tests run and the claims
+    chosen are both on record."""
+    from ..sae.ablation_run import checkpoint_path
+    from . import reliability_from_internals as rfi
+
+    dev_path = _reliability_dev_json_path(run_dir, cfg)
+    if dev_path is None:
+        return [], {}
+    dev_key, dev_sha = _pin(run_dir, dev_path)
+    dev = load_json(dev_path)
+    settings = dev["settings"]
+    fam_rows = rfi._family_rows(run_dir)
+    fam_key, fam_sha = None, None
+    fam_path = Path(run_dir) / "sae" / "concept_families.json"
+    if fam_path.exists():
+        fam_key, fam_sha = _pin(run_dir, fam_path)
+    baseline_names = rfi.baseline_feature_names()
+    entries, tests = [], []
+    for model in sorted(dev["models"]):
+        rec = dev["models"][model]
+        for task, res in sorted((rec.get("u1") or {}).items()):
+            if not isinstance(res, dict) or not res.get("scorable"):
+                continue
+            gain = res["gain"]
+            row = {"model": model, "task": task, "gain": gain["gain"], "lo": gain["lo"],
+                   "hi": gain["hi"], "n": res["n"], "registered": False, "reason": ""}
+            tests.append(row)
+            if not gain["lo"] > 0:
+                row["reason"] = "dev gain CI lower bound is not > 0"
+                continue
+            if task not in RELIABILITY_SUPPORTED_TASKS:
+                row["reason"] = f"confirm does not refit task {task!r}"
+                continue
+            groups = rec.get("internal_groups") or {}
+            unsupported = sorted(set(groups) - {"sae_families", "crystallization_norm"})
+            if unsupported:
+                row["reason"] = (f"internal group(s) {unsupported} cannot be recomputed on "
+                                 f"private data")
+                continue
+            if "sae_families" in groups and (fam_rows is None or fam_key is None):
+                row["reason"] = "sae/concept_families.json is absent or not measured"
+                continue
+            spec_groups, arts = {}, {dev_key: dev_sha}
+            if fam_key:
+                arts[fam_key] = fam_sha
+            if "sae_families" in groups:
+                fams, layers = _reliability_frozen_families(run_dir, model, fam_rows)
+                cols = [str(f["family"]) for f in fams]
+                dev_cols = ((rec.get("notes") or {}).get("sae_choice") or {}).get("columns")
+                if dev_cols != cols:
+                    row["reason"] = (f"frozen family ids {cols} do not reproduce the dev "
+                                     f"columns {dev_cols}")
+                    continue
+                spec_groups["sae_families"] = {
+                    "families": fams, "layers": layers,
+                    "definition": "sum over the family's member SAE features of the frozen "
+                                  "SAE's last-window activation, added across layers"}
+                arts.update(dict(_pin(run_dir, checkpoint_path(run_dir, model, layer))
+                                 for layer in layers))
+            if "crystallization_norm" in groups:
+                layer = (rec.get("notes") or {}).get("crystallization_layer")
+                if not layer:
+                    row["reason"] = "dev record names no crystallization layer"
+                    continue
+                spec_groups["crystallization_norm"] = {
+                    "layer": layer,
+                    "definition": "log(L2 norm of the last-window residual state + 1e-12)"}
+            if len(baseline_names) != rec.get("baseline_features"):
+                row["reason"] = (f"baseline has {len(baseline_names)} columns now but "
+                                 f"{rec.get('baseline_features')} at dev")
+                continue
+            model_seed = rfi.model_seed_for(model, int(settings["seed"]))
+            row["registered"] = True
+            entries.append({
+                "id": f"{RELIABILITY_STAGE}::{model}::{task}",
+                "stage": RELIABILITY_STAGE, "family": RELIABILITY_STAGE,
+                "statistic": "gain_of_baseline_plus_internals_over_baseline_spearman_log_mase",
+                "model": model, "task": task,
+                "spec": {
+                    "task": task, "kind": "ridge", "metric": "spearman",
+                    "baseline_features": baseline_names,
+                    "baseline_definition": _RELIABILITY_BASELINE_DEFINITION,
+                    "groups": spec_groups,
+                    "ridge_alphas": [float(a) for a in settings["ridge_alphas"]],
+                    "n_folds": int(settings["n_folds"]), "n_repeats": int(settings["n_repeats"]),
+                    "seed": int(settings["seed"]), "model_seed": model_seed,
+                    "cv_strata": settings.get("cv_strata", "family"),
+                    "n_boot": int(settings["n_boot"]), "ci_level": 0.95,
+                    "row_filter": _RELIABILITY_ROW_FILTER},
+                "dev": {"gain": gain["gain"], "lo": gain["lo"], "hi": gain["hi"],
+                        "baseline": gain["baseline"],
+                        "baseline_plus_internals": gain["baseline_plus_internals"],
+                        "n": res["n"], "n_series_dev": dev.get("n_series")},
+                "artifact": dev_key, "artifact_sha256": dev_sha, "artifacts": arts,
+                "statement": (f"Adding {model}'s internals to its free baseline raises the "
+                              f"out-of-fold Spearman with log MASE (dev gain "
+                              f"{gain['gain']!r}, CI lower bound {gain['lo']!r}); a refit on "
+                              f"private series has a gain CI lower bound above 0. Predictive "
+                              f"(behavioral) evidence, not causal."),
+                "replicable": True})
+    summary = {"dev_json": dev_key, "dev_json_sha256": dev_sha,
+               "rule": "registered per (model, task) when the dev gain CI lower bound is > 0",
+               "n_dev_tests": len(tests), "n_registered": len(entries), "tests": tests}
+    return entries, summary
+
+
+def _reliability_n_boot(cfg: PipelineConfig, registry: dict | None) -> int | None:
+    """The bootstrap size the `reliability_u1` family's p-values are floored
+    at: the smallest frozen `n_boot` among the registered claims, else the dev
+    JSON's own, else unknown."""
+    if registry is not None:
+        hyps = [h for h in registry["hypotheses"] if h["stage"] == RELIABILITY_STAGE]
+        if hyps:
+            return min(int(h["spec"]["n_boot"]) for h in hyps)
+    raw = str(getattr(cfg.confirm, "reliability_dev_json", "") or "")
+    if not raw:
+        return None
+    path = Path(raw) if Path(raw).is_absolute() else cfg.run_dir() / raw
+    return int(load_json(path)["settings"]["n_boot"]) if path.exists() else None
+
+
 # One Holm family per claim type. `n` is the size of the null each family's
 # p-values are resolved against, so the smallest attainable Holm-adjusted p
 # is `m / (n + 1)`; a family is unsatisfiable once that exceeds alpha.
@@ -1053,7 +1284,11 @@ _FAMILY_NULL_FIELD = {"concept_causal": "causal_max_null", "concept_atlas": "atl
 
 def claim_family_budget(cfg: PipelineConfig, registry: dict | None = None) -> list:
     """`[{"family", "m", "n_null", "alpha", "min_attainable_p_holm",
-    "satisfiable", "basis"}]` for the four K2 claim families.
+    "satisfiable", "basis"}]` for the four K2 claim families, plus a
+    `reliability_u1` row only when that claim type is registered (or, with no
+    registry, enabled), so every other configuration reads the same rows as
+    before. The `reliability_u1` family's `n_null` is the frozen bootstrap
+    size and its floor is `m / n_boot` (a bootstrap p is floored at 1/n_boot).
 
     With a registry, `m` is the number of registered claims of that type
     (only the p-valued ones for `concept_structure`). Without one (a
@@ -1084,6 +1319,20 @@ def claim_family_budget(cfg: PipelineConfig, registry: dict | None = None) -> li
                      "min_attainable_p_holm": floor,
                      "satisfiable": (floor <= alpha) if floor is not None else None,
                      "basis": basis})
+    has_u1 = registry is not None and any(
+        h["stage"] == RELIABILITY_STAGE for h in registry["hypotheses"])
+    enabled = bool(getattr(cfg.confirm, "register_reliability_claims", False))
+    if has_u1 or (registry is None and enabled):
+        n_boot = _reliability_n_boot(cfg, registry)
+        m = (len([h for h in registry["hypotheses"] if h["stage"] == RELIABILITY_STAGE])
+             if registry is not None else None)
+        floor = (m / n_boot) if m and n_boot else None
+        rows.append({"family": RELIABILITY_STAGE, "m": m, "n_null": n_boot, "alpha": alpha,
+                     "min_attainable_p_holm": floor,
+                     "satisfiable": (floor <= alpha) if floor is not None else None,
+                     "basis": ("registered claims; p floored at 1/n_boot, so the Holm floor "
+                               "is m/n_boot" if registry is not None
+                               else "unknown before register")})
     return rows
 
 
@@ -1092,9 +1341,10 @@ def build_registry(cfg: PipelineConfig) -> dict:
     run_dir = cfg.run_dir()
     concept_transfer_entries, ct_ranking = _concept_transfer_entries(run_dir, cfg)
     causal_entries, causal_summary = _concept_claim_entries(run_dir, cfg)
+    reliability_entries, reliability_summary = _reliability_u1_entries(run_dir, cfg)
     hypotheses = (_l0_entries(run_dir) + _l1_entries(run_dir) + _l2_entries(run_dir)
                  + _l3_entries(run_dir) + _clustering_entries(run_dir)
-                 + concept_transfer_entries + causal_entries)
+                 + concept_transfer_entries + causal_entries + reliability_entries)
     ids = [h["id"] for h in hypotheses]
     dup = sorted({i for i in ids if ids.count(i) > 1})
     if dup:
@@ -1107,6 +1357,8 @@ def build_registry(cfg: PipelineConfig) -> dict:
                                            "reason": _KNOB_FAMILY_EMPTY_REASON}}
     if causal_summary:
         registry["concept_claim_candidates"] = causal_summary
+    if reliability_summary:
+        registry["reliability_u1_candidates"] = reliability_summary
     return registry
 
 
