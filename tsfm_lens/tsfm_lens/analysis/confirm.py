@@ -21,6 +21,15 @@ on a sealed private corpus the models and the analysis never touched:
    family is registered empty (sec 37.9's P6a found nothing to freeze) and
    is recorded that way, never silently dropped.
 
+4. U1 reliability replication (ROADMAP.md sec 38.4, opt-in): each registered
+   `reliability_u1` claim REFITS the frozen K4 procedure on PRIVATE series
+   (`_confirm_reliability_u1`): frozen SAE checkpoints (never retrained),
+   frozen family definitions, the same folds, ridge grid and seed, asking
+   whether the series-bootstrap gain CI lower bound of baseline+internals
+   over the free baseline is > 0, at Holm across the family. A frozen dev
+   model scored on private data would add domain shift to the question,
+   which is why it is a refit.
+
 Discipline matters more than machinery here: run this once, at the end.
 Repeated peeking consumes the private benchmark (regenerate a fresh epoch
 via tsfm_benchmark if that happens). The stage refuses to overwrite existing
@@ -32,6 +41,7 @@ from __future__ import annotations
 
 import dataclasses
 import hashlib
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -49,7 +59,7 @@ from .l0_behavioral import _predict_all, _score
 from .l1_geometry import linear_cka
 from .power import mde_paired_bootstrap
 from .stats import bootstrap_ci, holm, paired_bootstrap
-from .hypotheses import CONCEPT_CLAIM_STAGES
+from .hypotheses import CONCEPT_CLAIM_STAGES, RELIABILITY_STAGE
 
 # Corpus identity (ROADMAP.md sec 34 item B5): a manifest-derived field
 # degrades to this reason, never a bare `None`, when the confirm.source is
@@ -107,7 +117,8 @@ def run_confirm(cfg: PipelineConfig, hub, forced: bool = False) -> None:
     # ROADMAP.md sec 38.2: refuse an unsatisfiable Holm family (or a null-mode
     # mismatch) BEFORE the private split is opened. A no-op when no K2 claim
     # was registered.
-    if any(h["stage"] in CONCEPT_CLAIM_STAGES for h in registry["hypotheses"]):
+    if any(h["stage"] in CONCEPT_CLAIM_STAGES or h["stage"] == RELIABILITY_STAGE
+           for h in registry["hypotheses"]):
         check_concept_claims_before_opening(cfg, registry)
 
     log.warning("CONFIRM: running the one-shot private-benchmark confirmation; "
@@ -135,6 +146,9 @@ def run_confirm(cfg: PipelineConfig, hub, forced: bool = False) -> None:
                                                          acts_cache=acts_cache or None)
     if k2_claims:
         concept_replication = _replicate_causal_concept_claims(
+            cfg, hub, private, registry, concept_replication, acts_cache, capture_errors)
+    if any(h["stage"] == RELIABILITY_STAGE for h in registry["hypotheses"]):
+        concept_replication = _replicate_reliability_u1(
             cfg, hub, private, registry, concept_replication, acts_cache, capture_errors)
 
     confirmed = sum(1 for h in hypotheses["tests"] if h["confirmed"])
@@ -1502,6 +1516,230 @@ def _replicate_causal_concept_claims(cfg: PipelineConfig, hub, private: Benchmar
                        "n_not_testable": blk.get("n_not_testable")})
     out["ledger"] = ledger
     if out.get("status") == "skipped" and any(k in out for k in tested.values()):
+        out["status"] = "tested"
+        out.pop("reason", None)
+    return out
+
+
+# ---------------------------------------------------------------------------
+# ROADMAP.md sec 38.4 (K4) -- replication of the U1 reliability claims.
+#
+# The claim is about a PROCEDURE ("internals add a positive gain over the free
+# baseline"), so confirm refits it on private series with everything the
+# registry froze: SAE checkpoints (sha256-pinned, never retrained), family
+# membership, baseline definition, ridge grid, folds, repeats, seed, strata
+# and bootstrap size. It does not score a frozen dev model: that would add
+# domain shift to the question. Three states, never two: `confirmed`,
+# `not confirmed`, `not testable` (an input this private run cannot supply).
+# ---------------------------------------------------------------------------
+
+_RELIABILITY_EVIDENCE = "predictive (behavioral); not causal"
+
+
+def _reliability_layers(h: dict) -> list:
+    """Every `model/layer` target a registered `reliability_u1` claim reads on
+    private data: the SAE layers of its families and its crystallization layer."""
+    groups = h["spec"]["groups"]
+    layers = list((groups.get("sae_families") or {}).get("layers", []))
+    if "crystallization_norm" in groups:
+        layers.append(groups["crystallization_norm"]["layer"])
+    return sorted({f"{h['model']}/{layer}" for layer in layers})
+
+
+def _frozen_last_window_features(run_dir, model: str, layer: str, acts: torch.Tensor,
+                                 device: torch.device) -> np.ndarray:
+    """Last-context-window SAE activations `[n, dict_size]` (float64) of private
+    window activations, encoded with the FROZEN dev checkpoint
+    (`ablation_run.checkpoint_path`), the window the dev K4 feature read from
+    the store's `space="sae"` window level. Nothing is trained here."""
+    from ..sae.ablation_run import checkpoint_path
+    from ..sae.train import load_sae_checkpoint
+
+    sae = load_sae_checkpoint(str(checkpoint_path(run_dir, model, layer))).to(device)
+    sae.eval()
+    with torch.no_grad():
+        return sae.encode(acts[:, -1, :].float().to(device)).cpu().numpy().astype(np.float64)
+
+
+def _reliability_internal_columns(run_dir, h: dict, acts: dict, n: int,
+                                  device: torch.device) -> tuple:
+    """`(matrix [n, q], "")` of one claim's internal feature columns in the
+    frozen order (SAE family sums, then the crystallization norm), built from
+    window activations `acts[model/layer]` with the FROZEN checkpoints; or
+    `(None, reason)` when the family ids do not reproduce. The same builder
+    works on any split's activations, which is how a test checks it against
+    the dev store route."""
+    from . import reliability_from_internals as rfi
+
+    model, groups = h["model"], h["spec"]["groups"]
+    blocks = []
+    if "sae_families" in groups:
+        g = groups["sae_families"]
+        rows = [{"model": model, "layer": mem["layer"], "feature": mem["feature"],
+                 "family": fam["family"]} for fam in g["families"] for mem in fam["members"]]
+        last = {layer: _frozen_last_window_features(run_dir, model, layer,
+                                                    acts[f"{model}/{layer}"], device)
+                for layer in g["layers"]}
+        X, fam_ids = rfi.family_columns(last, rows, model, n)
+        if fam_ids != [f["family"] for f in g["families"]]:
+            return None, "private family columns differ from the frozen family ids"
+        blocks.append(X)
+    if "crystallization_norm" in groups:
+        layer = groups["crystallization_norm"]["layer"]
+        blocks.append(rfi.crystallization_norm_feature(
+            acts[f"{model}/{layer}"][:, -1, :].float().numpy()))
+    return np.concatenate(blocks, axis=1), ""
+
+
+def _private_l0(cfg: PipelineConfig, hub, private: BenchmarkData, model: str) -> dict:
+    """One model's private forecasts and L0 table: `{"point", "quants", "scored"}`,
+    with the same `_score` arguments dev's L0 stage used."""
+    adapter = hub.get(model)
+    adapter.ensure_loaded()
+    contexts = private.contexts()
+    point, quants = _predict_all(adapter, contexts, private.horizon, cfg.l0.quantiles)
+    scored = _score(model, point, quants, contexts, private.targets(), cfg.l0.quantiles,
+                    private.meta, cfg.l0.scale, cfg.l0.min_scale_frac)
+    return {"point": point, "quants": quants, "scored": scored}
+
+
+def _reliability_not_testable(entry: dict, reason: str) -> dict:
+    entry.update({"status": _NOT_TESTABLE, "reason": reason})
+    return entry
+
+
+def _score_reliability_claim(cfg: PipelineConfig, hub, private: BenchmarkData, run_dir,
+                             h: dict, acts: dict, errors: dict, l0_cache: dict) -> dict:
+    """Refit one registered U1 claim on private series and return its row.
+
+    Checks, before any private number is computed, that every pinned
+    artifact still has its registered sha256 and that the frozen seed
+    reproduces. Then: private L0 (`mase`, `mase_reliable`) and the free
+    baseline from the model's own forecasts, the frozen SAE family sums and
+    crystallization norm from the shared private activation cache, and
+    `reliability_from_internals.u1_gain` with the frozen spec. A claim whose
+    inputs this private run cannot supply is `not testable` with the reason."""
+    from . import reliability_from_internals as rfi
+    from .stats import _mase_scale
+
+    spec, model = h["spec"], h["model"]
+    entry = {"id": h["id"], "model": model, "task": h["task"], "dev": h["dev"],
+             "spec_n_boot": spec["n_boot"]}
+    if h["task"] not in ("log_mase_spearman",):
+        return _reliability_not_testable(entry, f"task {h['task']!r} is not refit by confirm")
+    changed = []
+    for rel, registered in {h["artifact"]: h["artifact_sha256"], **(h.get("artifacts") or {})}.items():
+        path = Path(run_dir) / rel
+        if not path.exists() or hashlib.sha256(path.read_bytes()).hexdigest() != registered:
+            changed.append(rel)
+    if changed:
+        return _reliability_not_testable(
+            entry, f"frozen artifact(s) changed since registration: {sorted(changed)}")
+    if rfi.model_seed_for(model, int(spec["seed"])) != int(spec["model_seed"]):
+        return _reliability_not_testable(entry, "the frozen model seed does not reproduce")
+    targets = _reliability_layers(h)
+    bad = {t: errors[t] for t in targets if t in errors}
+    if bad:
+        return _reliability_not_testable(entry, f"private capture failed: {bad}")
+    missing = [t for t in targets if t not in acts]
+    if missing:
+        return _reliability_not_testable(entry, f"no private activations at {missing}")
+    try:
+        if model not in l0_cache:
+            l0_cache[model] = _private_l0(cfg, hub, private, model)
+    except Exception as exc:
+        return _reliability_not_testable(
+            entry, f"private L0 unavailable: {type(exc).__name__}: {exc}")
+    l0 = l0_cache[model]
+    scored = l0["scored"]
+    contexts = private.contexts()
+    scale = _mase_scale(contexts, cfg.l0.scale)
+    c22, c22_names = rfi.context_catch22(contexts)
+    base, base_names, _ = rfi.baseline_features(l0["point"], l0["quants"], contexts, scale,
+                                                c22, c22_names)
+    if base_names != spec["baseline_features"]:
+        return _reliability_not_testable(entry, "the baseline feature list differs from the "
+                                                "frozen one")
+    internals, reason = _reliability_internal_columns(run_dir, h, acts, private.n,
+                                                      _device_for(cfg))
+    if reason:
+        return _reliability_not_testable(entry, reason)
+    mase = scored["mase"].to_numpy(dtype=np.float64)
+    keep = scored["mase_reliable"].to_numpy(dtype=bool) & np.isfinite(mase)
+    idx = np.flatnonzero(keep)
+    if len(idx) < max(int(cfg.stats.min_series), 2 * int(spec["n_folds"])):
+        return _reliability_not_testable(
+            entry, f"only {len(idx)} reliable private series with a finite MASE")
+    res = rfi.u1_gain(np.log(np.maximum(mase[idx], 1e-6)), base[idx],
+                      internals[idx],
+                      private.meta["family"].astype(str).to_numpy()[idx],
+                      n_folds=int(spec["n_folds"]), n_repeats=int(spec["n_repeats"]),
+                      n_boot=int(spec["n_boot"]), model_seed=int(spec["model_seed"]),
+                      alphas=spec["ridge_alphas"])
+    entry.update({"status": "tested", "n": int(len(idx)),
+                  "n_excluded": int(private.n - len(idx)), **res})
+    return entry
+
+
+def _confirm_reliability_u1(cfg, hub, private, run_dir, registry: dict, acts: dict,
+                            errors: dict) -> dict:
+    """Refit every `reliability_u1` claim on private series, Holm over the family.
+
+    Confirmed iff the claim's private series-bootstrap gain CI lower bound is
+    > 0 AND its two-sided bootstrap p is below `confirm.alpha` after Holm
+    across the TESTED claims of this family (a bootstrap p is floored at
+    `1/n_boot`, so the family's smallest attainable adjusted p is `m/n_boot`,
+    the ledger row `claim_family_budget` declares and `confirm` checks before
+    opening the split). `not testable` claims stay out of the family and are
+    never `not confirmed`. Evidence class: predictive (behavioral), not causal."""
+    claims = _concept_claims(registry, RELIABILITY_STAGE)
+    ids = [h["id"] for h in claims]
+    if len(set(ids)) != len(ids):
+        raise ValueError("reliability_u1 claims have duplicate ids; Holm is keyed by id, so "
+                         "the family would silently shrink")
+    alpha = float(cfg.confirm.alpha)
+    l0_cache: dict = {}
+    tests = [_score_reliability_claim(cfg, hub, private, run_dir, h, acts, errors, l0_cache)
+             for h in claims]
+    m, n_conf = _holm_confirm(tests, "p", alpha,
+                              extra_ok=lambda t: t["lo"] > 0 and t["gain"] > 0)
+    return {"status": "tested", "family": RELIABILITY_STAGE, "n_registered": len(claims),
+            "n_tested": m, "n_confirmed": n_conf,
+            "n_not_testable": sum(1 for t in tests if t["status"] != "tested"),
+            "evidence_class": _RELIABILITY_EVIDENCE,
+            "p_combination": "two-sided series-bootstrap p of the gain, Holm across the tested "
+                             "claims of this family; the gain CI lower bound must also be > 0",
+            "caveat": "A feature that predicts error is not a cause of error; this is predictive "
+                      "(behavioral) evidence only.",
+            "tests": tests}
+
+
+def _replicate_reliability_u1(cfg: PipelineConfig, hub, private: BenchmarkData, registry: dict,
+                              replication: dict, acts: dict, errors: dict) -> dict:
+    """Add the `reliability_u1` block (and its ledger row) to `replication`.
+
+    Captures, in one sweep per model, only the targets the shared private
+    cache `acts` does not already hold. Existing keys are never rewritten
+    (invariant 13); a run that registered no U1 claim never reaches here."""
+    from .hypotheses import claim_family_budget
+
+    claims = _concept_claims(registry, RELIABILITY_STAGE)
+    need = sorted({t for h in claims for t in _reliability_layers(h)} - set(acts) - set(errors))
+    acts, errors = dict(acts), dict(errors)
+    if need:
+        more, more_err = _capture_private_targets(cfg, hub, private, need)
+        acts.update(more)
+        errors.update(more_err)
+    block = _confirm_reliability_u1(cfg, hub, private, cfg.run_dir(), registry, acts, errors)
+    out = dict(replication)
+    out["reliability_u1"] = block
+    ledger = list(out.get("ledger") or [])
+    for row in claim_family_budget(cfg, registry):
+        if row["family"] == RELIABILITY_STAGE and row["m"]:
+            ledger.append({**row, "n_tested": block["n_tested"],
+                           "n_not_testable": block["n_not_testable"]})
+    out["ledger"] = ledger
+    if out.get("status") == "skipped":
         out["status"] = "tested"
         out.pop("reason", None)
     return out
