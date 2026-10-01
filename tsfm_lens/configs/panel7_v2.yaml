@@ -281,7 +281,10 @@ internals:
                               # not converge at this corpus size
 
 confirm:
-  enabled: false   # disables `register` too. All private splits are consumed; see header.
+  enabled: true    # K2 (2026-10-01): registration from THIS run's dev artifacts happens FIRST,
+                   # with `path` empty; v2 private epoch 1 is minted only after the registry hash is
+                   # recorded (ROADMAP.md sec 38.2.4), then `path` is set and confirm runs ONCE.
+  path: ""         # set to ../benchmark_large_v2/private_epoch1 only after registration
   # K2/K4 claim registration, ON for the epoch that K2 mints later (it takes
   # effect only once `enabled` is true and nothing here points at a private
   # split). Registration reads this run's dev artifacts only.
