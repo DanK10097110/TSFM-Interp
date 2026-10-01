@@ -37903,6 +37903,29 @@ v2 copy, `profile_matched`, battery only, same candidates:
   reverted → 5 failed; `omit_at_value` ignored → 1 failed; check not called → 1 failed; check never raises → 2
   failed. The effective-k to-do above is done (744c722, `row_coverage` / `n_rows_scored`).
 
+**K2 per-target gate merged (2026-10-01, branch `k2-gate`).** The gate is opt-in
+(`confirm.register_requires_target_significance`, `omit_at_default`) and lives in one function,
+`analysis/target_significance.py`. With the gate off, real-data registries are byte-identical: 77 hypotheses with
+claims off and 149 with claims on. Dry run on an isolated copy of `panel7_v2_dev`, gate on:
+- 22/55 targets significant;
+- causal 32 → 32 (the cut refills from significant targets; 81 of 113 pool candidates removed; Timer 4 → 0);
+- atlas 9 → 4 (concepts 0, 1, 3, 4 and 10 excluded);
+- agreement 29 → 12 (4 same + 8 differs; Chronos-2 ↔ Bolt concept 4 keeps 4 of its 7 "same" tests);
+- structure 2 → 2 (ungated by design: gating a panel-level rate on targets chosen for excess clears would condition
+  on the outcome);
+- 149 → 127 hypotheses in total, and every Holm family is satisfiable.
+
+Unregistered dry-run hash: `b410246452846b62accbf12886c6da0ec500ea473ffc2c334710c5062b568e81`. That registry is
+superseded once the L5 rung is settled.
+
+Decisions:
+- The 20 frozen `concept_transfer` claims stay ungated, because they are input-selectivity (AUC) claims that do
+  not depend on battery clears.
+- The K4 U1 claim type does not exist yet and will be built. Confirm REFITS the ridge on private data with the
+  frozen dev feature definitions (frozen SAEs and families, the same folds/alpha grid/seed) and asks whether the
+  gain's series-bootstrap lower bound is > 0. A frozen dev model scored on private would add domain shift to the
+  question.
+
 #### 38.2.1 Why, grounded
 
 **What is registered today** (`analysis/hypotheses.py`):
