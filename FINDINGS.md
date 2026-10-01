@@ -94,6 +94,7 @@ These instructions are binding for every future session, human or agent.
 | SH-14 | Cross-model concept transfer works when matched on shared **inputs** (not causal fingerprints); ~46–56% of concepts transfer | 5 |
 | SH-15 | Sharing a causal-effect profile goes with *less* shared input selectivity (OR 0.345, p 0.027) | 5 |
 | SH-16 | No concept is shared by all 4 models; the multi-model pattern is **convergent** effect from different inputs. **Under the matched null (MN-29) the convergent class vanishes (13 → 0 on v2); superseded pending the power check** | 5 |
+| MN-30 | The L5 'same causal effect' rung is specific (0/9 decoys) but insensitive on a known answer (0.4 / 0.0 on planted shared concepts across architectures); cross-architecture absences are uninformative |  5 |
 | SH-22 | At 7 models under the matched null, the atlas is **segregated by model** (cross-model mixing below chance, p 0.025). The full same-effect verdict (7/1290) is one Chronos-2 ↔ Chronos-Bolt concept, but 1053 tests are underpowered and partial agreement crosses families (level only 35, shape only 9); the strict rung's sensitivity is unmeasured | 5 |
 | SH-18 | Held-out: 19/20 searched and **20/20 frozen-feature** concept-transfer claims confirm on fresh sealed private epochs | 5 |
 | SH-19 | Unit-level correspondence (CCM) NO-GO: low-rank TSFM representations defeat the rotation control | 5 |
@@ -482,6 +483,7 @@ These instructions are binding for every future session, human or agent.
   - Shared-input causal agreement over 1290 tests: same causal effect 7, acts differently 22, shape only 9, level only 45, no specific agreement 133, not scorable 1074.
   - **All 7 'same causal effect' verdicts are Chronos-2 ↔ Chronos-Bolt, in one atlas concept** ('mild raises dispersion'). Six of them share the Chronos-Bolt block-4 feature set, so this is one lineage-shared concept, not seven.
 - **Correction (2026-10-01, same day): the L5 result is mostly undecided, not a measured difference.** 1053 of the 1074 not-scorable tests fail because at least one side's single-feature ablation does not clear its own null on the ~24 shared series (526 neither side, 434 only the source clears, 93 only the destination clears; 21 have no side record). Across families, 172 tests are scorable: level only 35, shape only 9, acts differently 19, no specific agreement 109, same causal effect 0. Within the Chronos family, 44 of 233 are scorable: same causal effect 7, level only 10, acts differently 3, no specific agreement 24. Partial agreement does cross families. At the profile level, atlas concept 6 ('shifts the level', Chronos-2 / Chronos-Bolt / Sundial) and concept 4 (with Timer) are classed shared. The 'same causal effect' verdict requires level AND shape to beat both matched floors, with single-feature ablations, so its cross-architecture sensitivity is unmeasured. Next: a known-answer test of the rung across two different planted architectures, and whole-concept (feature-set) ablation, before K2 spends the private epoch (ROADMAP §38.3.4).
+- **Known-answer check (2026-10-01, MN-30).** On a planted pair of different architectures, the rung finds a truly shared concept in 0.4 (single direction) and 0.0 (distributed) of seeds, with 0/9 false 'same'. **The within-Chronos-only pattern is therefore a sensitivity limit of the rung, not evidence that sharing follows lineage.**
 - **Models / layers.** TimesFM, Chronos-2, Sundial, Chronos-Bolt, Timer, Time-MoE, Chronos-T5-Base (encoder); 56 targets, 55 measured.
 - **Evidence.** Descriptive (atlas structure vs nulls) + causal within-model on shared inputs (L5, each side against its own null and matched floors). **Status:** exploratory (dev); K2 confirmation pending.
 - **Reproduce.** `runs/panel7_v2_dev/sae/concept_atlas.json` (`null`), `sae/shared_input_agreement.json`, `sae/concept_stage.json`; `configs/panel7_v2.yaml` at dev 4ace6a4.
@@ -1534,6 +1536,19 @@ See SH-20. **4/5.**
 - **Ref.** ROADMAP §38.1.7.
 - **Score. 5/5.** The known-answer test did its job: it caught a lenient statistic behind the project's causal claims, and the held-out seeds show the fix.
 ---
+
+#### MN-30 · The shared-input causal-agreement rung (L5) misses most truly shared concepts across architectures, and can call a shared concept "acts differently"
+- **Claim.**
+  - Known answer: two `mock_planted` architectures that differ in width (64 vs 96), depth (5 vs 7) and residual basis (random rotation), with planted shared and decoy concepts, 5 scored seeds.
+  - The current rung reads a shared single-direction concept "same causal effect" in 0.4 of seeds, and a shared concept spread over 3–4 directions in 0.0.
+  - No variant reaches the pre-fixed gate (sensitivity ≥ 0.5 on both): set ablation 0.2 / 0.0, a 2× larger U 0.6 / 0.0, a 4× larger U 0.4 / 0.0, partial agreement as its own rung 0.6 / 0.2.
+  - Decoys are never called "same" (0/9 under every variant). So "same" is specific but insensitive, and an absence of "same" across architectures is uninformative.
+  - A shared, same-sign pure-dispersion concept reads "acts differently" in 3/10 directed tests (diagnosis open).
+- **Models / layers.** Mock pair (ArchA `blocks.2`, ArchB `blocks.4`).
+- **Evidence.** Known-answer validation of a method (planted ground truth, decoys, held-out seeds). **Status:** measured; diagnosis of the false disagreement open.
+- **Reproduce.** `run_l5_known_answer.py`, `configs/l5_known_answer.yaml` (branch `l5-known-answer`, f832798); `runs/l5ka/scored_dose{1,2}/l5_known_answer_aggregate.json`.
+- **Ref.** ROADMAP §38.3.4 (L5 known-answer bullet).
+- **Score. 5/5.** Decides how to read every cross-model "same causal effect" claim: positives stand, negatives do not, and SH-22's "only the Chronos family" is a sensitivity limit, not a finding about lineage.
 
 ## H. Benchmark trust
 

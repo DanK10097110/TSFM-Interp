@@ -38372,6 +38372,28 @@ inode exhaustion crash (the machine is shared; ~700k of 944k inodes belonged to 
   *different* mock architectures, plus the opposite-effect decoy; (2) whole-concept ablation (`dst_set_kind:
   atlas_part`, 21 tests now) and a larger U; (3) report partial agreement as its own rung. **The private epoch is
   not minted until (1)–(2) are measured**, so agreement claims are registered under the final rung.
+- **L5 known-answer result (2026-10-01, branch `l5-known-answer` f832798, mocks only; 5 scored seeds 0–4, design
+  tuned on pilot seeds 100–103).** Two `mock_planted` architectures:
+  - A: width 64, depth 5, planted block at layer 2. B: width 96, depth 7, planted block at layer 4, residual basis
+    randomly rotated. SAEs of 256 and 384 atoms.
+  - Planted: a shared concept (a: one direction; b: spread over 3 and 4 directions), an opposite-effect decoy (c),
+    an input-only decoy (d), a control (e), and a shared pure-dispersion concept (x).
+  - The gate was fixed in advance: sensitivity ≥ 0.5 on a and b, decoy false-same ≤ 0.10, and c reads "acts
+    differently" ≥ 0.5.
+  - **No variant is adequate.** At dose 1, sensitivity (a, b) is: current rung V0 0.4 / 0.0; set ablation V1
+    0.2 / 0.0; V2x2 0.6 / 0.0; V2x4 0.4 / 0.0; partial-as-its-own-rung V3 0.6 / 0.2. Decoy false-same is 0.0 for
+    every variant. c is detected at 0.0 (V0, V3) to 0.4. Dose 2 agrees except V2x2 a 0.4 and V1 b 0.2.
+  - The control is never scorable (10/10). Most misses on a and b are "not scorable" or "level only": a side's
+    ablation does not clear its own null on U.
+  - **The rung's "same" verdict is specific (0/9 false) but insensitive, so cross-family absences of "same" on real
+    data are uninformative.** The user's prior (some concepts should be shared across architectures) is not
+    contradicted by §38.3.4's L5 numbers.
+  - **Open defect:** x is planted SHARED (same sign) yet reads "acts differently" in 3/10 directed V0 tests (1–4
+    under the other variants). A false disagreement from the rung's conservative verdict. Being diagnosed (which
+    statistic fires, and how many of the real run's 22 "acts differently" tests share the mechanism).
+  - **Consequence for K2:** epochs are mintable (`_EPOCH_STRIDE`), so a better rung does not need to hold the
+    epoch. The "acts differently" defect does, since 8 of the 12 dry-run agreement claims are "differs". The epoch
+    stays unminted until it is resolved.
 - **Decision (made 2026-10-01, before any registration or epoch minting).** K2 registers concept claims only from
   targets whose clears are BH-significant against their own empirical chance (the 22 above). Claims touching
   Timer's per-target concepts are therefore not registered. This gate is stricter than the stage's current
