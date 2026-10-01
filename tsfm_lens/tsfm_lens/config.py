@@ -342,6 +342,17 @@ class ConfirmConfig:
     # `confirm` (whole section) only when on.
     register_requires_target_significance: bool = field(
         default=False, metadata={"omit_at_default": True})
+    # ROADMAP.md sec 38.3.4 (L5 defined-firing rule) -- when on, an agreement
+    # claim whose dev verdict is `acts differently` is registered as `differs`
+    # only if the firing statistic is DEFINED (`firing_defined`: (i) needs
+    # `level` to clear on both sides, (ii) needs both sides to clear a shape
+    # channel); the rest are recorded under `excluded`. The rule is frozen in
+    # each agreement claim and `confirm` applies it to the private verdict.
+    # The dev verdicts are recomputed from `shared_input_agreement.json`, so
+    # the dev agreement step is not rerun. Fingerprints `register`
+    # (field-level key) and `confirm` (whole section) only when on.
+    register_requires_defined_firing: bool = field(
+        default=False, metadata={"omit_at_default": True})
     # ROADMAP.md sec 38.4 (K4) -- register and confirm the U1 reliability
     # claims ("do internals predict a model's per-series error beyond the free
     # baseline?"): one `reliability_u1` claim per (model, task) whose DEV gain

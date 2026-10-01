@@ -888,6 +888,29 @@ def _verdict(stat_i: dict, stat_ii: dict, defined: dict | None = None) -> str:
     return "no specific agreement"
 
 
+def record_firing_defined(record: dict) -> dict:
+    """`firing_defined` evaluated on a stored scorable test record (its two
+    sides' clearing channels and its `shape_mask`). A record lacking one of
+    those fields raises `KeyError` rather than being guessed at."""
+    return firing_defined(record["side_src"]["clearing_channels"],
+                          record["side_dst"]["clearing_channels"], record["shape_mask"])
+
+
+def recompute_verdict_defined(record: dict) -> str:
+    """The verdict a stored test record would have under the defined-firing rule
+    (`concepts.agreement_require_defined_firing`), recomputed from the record
+    alone with `firing_defined` and `_verdict` so there is exactly one
+    implementation of the rule. A record that never reached the statistics
+    ("not scorable") keeps its verdict. A scorable record lacking a field the
+    rule needs raises `KeyError` rather than guessing."""
+    if "statistic_i" not in record or "statistic_ii" not in record:
+        if record.get("verdict") == "not scorable":
+            return record["verdict"]
+        raise KeyError("scorable record lacks statistic_i/statistic_ii")
+    return _verdict(record["statistic_i"], record["statistic_ii"],
+                    record_firing_defined(record))
+
+
 # ---------------------------------------------------------------------------
 # 7. Driver.
 # ---------------------------------------------------------------------------

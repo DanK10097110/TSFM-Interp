@@ -1223,7 +1223,11 @@ def _confirm_agreement(cfg, hub, private, run_dir, registry: dict, feats: dict,
     differently` claim needs one statistic BELOW both floors' p05 (the lower
     tail: p = the min over statistics of the max of the two left-tail p's).
     Failing to beat a p95 is never evidence of disagreement (`CLAUDE.md` sec
-    8). A side that is not scorable on private data makes the claim `not
+    8). A claim frozen with `requires_defined_firing`
+    (`confirm.register_requires_defined_firing` at registration) applies the
+    L5 defined-firing rule to its private test: only a statistic that
+    `firing_defined` marks defined can fire (and enter p), and a claim with
+    no defined statistic is `not testable`. A side that is not scorable on private data makes the claim `not
     testable`. Sampled models seed every compared predict pair identically
     inside `shared_input_agreement` (baseline, ablation and null share one
     seed per side)."""
@@ -1275,6 +1279,9 @@ def _confirm_agreement(cfg, hub, private, run_dir, registry: dict, feats: dict,
                                           "floor_p05_src", "floor_p05_dst", "clears",
                                           "below_floor", "n_floor_src", "n_floor_dst")}
                 for k, s in (("statistic_i", si), ("statistic_ii", sii))}
+            if h.get("requires_defined_firing"):
+                defined = sia.record_firing_defined(t)
+                entry["firing_defined"] = defined
             if h["dev_verdict"] == "same causal effect":
                 ps = [_tail_p(s["observed"], s[f"floor_values_{side}"], "right")
                       for s in (si, sii) for side in ("src", "dst")
@@ -1282,6 +1289,24 @@ def _confirm_agreement(cfg, hub, private, run_dir, registry: dict, feats: dict,
                 entry["p"] = max(ps) if len(stats) == 2 and ps else float("nan")
                 entry["rule"] = "both statistics beat both floors' p95 (verdict same causal effect)"
                 entry["rule_holds"] = bool(t["verdict"] == "same causal effect")
+            elif h.get("requires_defined_firing"):
+                live = [s for s, k in ((si, "i"), (sii, "ii"))
+                        if s.get("observed") is not None and defined[k]]
+                if not live:
+                    entry.update({"status": _NOT_TESTABLE, "reason": (
+                        "firing statistic undefined on private data under the defined-firing "
+                        "rule: (i) needs `level` to clear on both sides, (ii) needs both sides "
+                        "to clear a shape channel")})
+                else:
+                    ps = [max(_tail_p(s["observed"], s["floor_values_src"], "left"),
+                              _tail_p(s["observed"], s["floor_values_dst"], "left"))
+                          for s in live]
+                    entry["p"] = min(ps)
+                    entry["rule"] = ("at least one DEFINED statistic below BOTH floors' p05 "
+                                     "(lower tail); (i) is defined only when `level` clears on "
+                                     "both sides, (ii) only when both sides clear a shape "
+                                     "channel; not clearing a p95 is not disagreement")
+                    entry["rule_holds"] = bool(any(s.get("below_floor") for s in live))
             else:
                 ps = [max(_tail_p(s["observed"], s["floor_values_src"], "left"),
                           _tail_p(s["observed"], s["floor_values_dst"], "left"))

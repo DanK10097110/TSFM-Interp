@@ -38,6 +38,14 @@ are BH-significant against their own empirical chance
 registry's `concept_claim_candidates` with its target, p and q, and a target
 without `empirical_chance` makes registration refuse.
 
+`confirm.register_requires_defined_firing` (ROADMAP.md sec 38.3.4, opt-in) reads
+every dev agreement candidate with the verdict recomputed under the L5
+defined-firing rule (`sae/shared_input_agreement.py::recompute_verdict_defined`,
+the very `firing_defined` and `_verdict` the stage uses): an `acts differently`
+test whose firing statistic is undefined is not registered as `differs` and is
+listed under `excluded` with its reason. `same` tests are unaffected, and each
+registered agreement claim freezes the rule so `confirm` applies it too.
+
 `confirm.register_reliability_claims` (ROADMAP.md sec 38.4 / K4's U1, opt-in as
 well) registers one `reliability_u1` claim per (model, task) whose DEV gain CI
 lower bound over the free baseline is > 0, read from a dev K4 JSON
@@ -802,7 +810,8 @@ def _atlas_candidates(run_dir: Path, cfg: PipelineConfig, sig: dict | None = Non
     return entries, summary
 
 
-def _agreement_candidates(run_dir: Path, concepts_cfg, sig: dict | None = None) -> dict:
+def _agreement_candidates(run_dir: Path, concepts_cfg, sig: dict | None = None,
+                          require_defined: bool = False) -> dict:
     """Dev shared-input agreement tests with a DEFINITE verdict, ranked, and
     the registration cut: every `same causal effect` test, plus
     `concepts.n_registered_agreement_differs` (default 30, judgment) of the
@@ -813,7 +822,13 @@ def _agreement_candidates(run_dir: Path, concepts_cfg, sig: dict | None = None) 
 
     With the per-target gate (`sig`), a test whose source OR destination
     target is non-significant is removed before the cut (so the cut is
-    filled from eligible tests) and listed under `excluded`."""
+    filled from eligible tests) and listed under `excluded`.
+
+    With `require_defined` (`confirm.register_requires_defined_firing`), every
+    `acts differently` test is first re-read under the defined-firing rule; one
+    whose recomputed verdict is not `acts differently` is removed before the
+    gate and the cut, and listed under `excluded` with the recomputed verdict
+    and which statistic was undefined."""
     p = run_dir / "sae" / "shared_input_agreement.json"
     at_p = run_dir / "sae" / "atlas_transfer.json"
     n_diff = int(getattr(concepts_cfg, "n_registered_agreement_differs", 30) or 30)
@@ -821,11 +836,33 @@ def _agreement_candidates(run_dir: Path, concepts_cfg, sig: dict | None = None) 
         return {"candidates": [], "cut": [], "reason": "sae/shared_input_agreement.json not found"}
     doc = load_json(p)
     k_top = int(load_json(at_p).get("k_top_series", 20)) if at_p.exists() else 20
-    same_all, differs_all = [], []
+    same_all, differs_all, undefined = [], [], []
     for t in doc.get("tests") or []:
         v = t.get("verdict")
         if v not in ("same causal effect", "acts differently"):
             continue
+        if require_defined and v == "acts differently":
+            from ..sae.shared_input_agreement import (
+                recompute_verdict_defined, record_firing_defined)
+
+            try:
+                recomputed = recompute_verdict_defined(t)
+            except KeyError as exc:
+                raise ValueError(
+                    f"confirm.register_requires_defined_firing is on but the dev agreement "
+                    f"record {_agreement_id(t)!r} lacks the field {exc} the defined-firing "
+                    f"rule needs; the rule is not guessed at") from exc
+            if recomputed != v:
+                defined = record_firing_defined(t)
+                undefined.append({
+                    "id": _agreement_id(t), "claim_type": "shared_input_agreement",
+                    "targets": [], "recomputed_verdict": recomputed,
+                    "firing_defined": defined,
+                    "reason": ("firing statistic undefined under the L5 defined-firing rule "
+                               f"(ROADMAP.md sec 38.3.4): (i) defined={defined['i']}, "
+                               f"(ii) defined={defined['ii']}; recomputed verdict "
+                               f"{recomputed!r}, so it is not registered as 'differs'")})
+                continue
         depths = []
         for key in ("statistic_i", "statistic_ii"):
             st = t.get(key) or {}
@@ -869,6 +906,10 @@ def _agreement_candidates(run_dir: Path, concepts_cfg, sig: dict | None = None) 
     cut = same + sorted(picked, key=_ord)
     if sig is not None:
         gate["n_after_gate"] = len(cut)
+    if require_defined:
+        gate["requires_defined_firing"] = True
+        gate["n_excluded_undefined_firing"] = len(undefined)
+        gate["excluded"] = sorted(undefined, key=lambda e: e["id"]) + gate.get("excluded", [])
     return {"candidates": same + differs, "cut": cut,
             "n_same": len(same), "n_differs_available": len(differs),
             "n_differs_registered": len(picked), "n_registered_differs_cfg": n_diff, **gate}
@@ -882,7 +923,8 @@ def _agreement_entries(run_dir: Path, cfg: PipelineConfig, sig: dict | None = No
     set and `k` are frozen here."""
     from ..sae.ablation_run import checkpoint_path
 
-    ranking = _agreement_candidates(run_dir, cfg.concepts, sig)
+    require_defined = bool(getattr(cfg.confirm, "register_requires_defined_firing", False))
+    ranking = _agreement_candidates(run_dir, cfg.concepts, sig, require_defined)
     hasher = _Hasher(run_dir)
     entries = []
     for t in ranking["cut"]:
@@ -915,6 +957,11 @@ def _agreement_entries(run_dir: Path, cfg: PipelineConfig, sig: dict | None = No
                          f"'{t['verdict']}' on their shared top series."),
             "replicable": True,
         })
+        if require_defined:
+            from ..sae.shared_input_agreement import record_firing_defined
+
+            entries[-1]["requires_defined_firing"] = True
+            entries[-1]["dev_firing_defined"] = record_firing_defined(t)
     summary = {k: v for k, v in ranking.items() if k not in ("candidates", "cut")}
     summary.update({"n_candidates": len(ranking["candidates"]), "cut": len(entries)})
     return entries, summary
@@ -1038,6 +1085,12 @@ def _concept_claim_entries(run_dir: Path, cfg: PipelineConfig) -> tuple:
                 "confirm.register_concept_claims is off, so no concept claim would be "
                 "registered and the gate would silently do nothing; turn on "
                 "register_concept_claims or turn the gate off")
+        if bool(getattr(cfg.confirm, "register_requires_defined_firing", False)):
+            raise ValueError(
+                "confirm.register_requires_defined_firing is on but "
+                "confirm.register_concept_claims is off, so no agreement claim would be "
+                "registered and the rule would silently do nothing; turn on "
+                "register_concept_claims or turn the rule off")
         return [], {}
     sig = _target_gate_table(run_dir, cfg)
     causal, causal_sum = _concept_causal_entries(run_dir, cfg, sig)
