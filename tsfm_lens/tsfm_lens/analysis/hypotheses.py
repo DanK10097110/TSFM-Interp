@@ -30,6 +30,13 @@ off (the default) this module registers exactly what it registered before.
 Each such claim is frozen from dev artifacts (dev SAE checkpoints, dev
 feature ids, dev channel and sign) and pins the sha256 of every artifact it
 reads, `.pt` checkpoints included (`artifacts`).
+
+`confirm.register_requires_target_significance` (ROADMAP.md sec 38.3.4, also
+opt-in) additionally restricts those claims to targets whose battery clears
+are BH-significant against their own empirical chance
+(`analysis/target_significance.py`); every claim it removes is recorded in the
+registry's `concept_claim_candidates` with its target, p and q, and a target
+without `empirical_chance` makes registration refuse.
 """
 
 from __future__ import annotations
@@ -501,6 +508,56 @@ def _stable_atlas_members(run_dir: Path) -> tuple:
     return members, concept_of, [atlas_p, stab_p]
 
 
+def _target_gate_table(run_dir: Path, cfg: PipelineConfig) -> dict | None:
+    """The per-target significance table when
+    `confirm.register_requires_target_significance` is on, else `None` (the
+    byte-identical default). Computed once per registration from every
+    measured target's own `empirical_chance`
+    (`analysis/target_significance.py::target_significance`), so all four
+    claim builders gate against the same BH family. Raises
+    `TargetChanceMissing` rather than falling back to the nominal 0.05."""
+    if not bool(getattr(cfg.confirm, "register_requires_target_significance", False)):
+        return None
+    from .target_significance import target_significance
+
+    return target_significance(
+        [(m, l, art) for m, l, art, _p in _dev_ablation_targets(run_dir)])
+
+
+def _target_ok(sig: dict | None, target: str) -> bool:
+    """`True` when no gate is on or `target` is BH-significant. A target the
+    table does not know (never measured) is not significant."""
+    return sig is None or bool((sig["targets"].get(target) or {}).get("significant"))
+
+
+def _target_record(sig: dict, target: str) -> dict:
+    """`{target, p, q_value}` of one target (nulls for an unmeasured one),
+    the reason fields every excluded claim carries."""
+    t = sig["targets"].get(target) or {}
+    return {"target": target, "clearing_cells": t.get("clearing_cells"),
+            "p": t.get("p"), "q_value": t.get("q_value"), "q": sig["q"]}
+
+
+def _exclusion(sig: dict, claim_id: str, claim_type: str, targets: list) -> dict:
+    """The ledger row for a candidate the gate removed: its id, type, the
+    offending target(s) with p and BH q, and a stated reason."""
+    recs = [_target_record(sig, t) for t in sorted(set(targets)) if not _target_ok(sig, t)]
+    return {"id": claim_id, "claim_type": claim_type, "targets": recs,
+            "reason": ("target's battery clears are not BH-significant against its own "
+                       f"empirical chance at q={sig['q']} (ROADMAP.md sec 38.3.4): "
+                       + "; ".join(f"{r['target']} p={r['p']!r} q={r['q_value']!r}"
+                                   for r in recs))}
+
+
+def _causal_id(c: dict) -> str:
+    return f"concept_causal::{c['model']}::{c['layer']}::f{c['feature']}::{c['channel']}"
+
+
+def _agreement_id(t: dict) -> str:
+    return (f"shared_input_agreement::{t['src_target']}::{t['dst_target']}::"
+            f"c{t['concept']}::f{t['dst_feature']}::{t['verdict']}")
+
+
 def _best_channel(candidate: dict) -> tuple | None:
     """`(channel, effect / null_p95, signed_effect, rec)` for the channel a
     dev candidate clears by the widest effect / q95 margin, or `None`. A
@@ -546,7 +603,7 @@ def _select_causal(cands: list, n_total: int, min_per_model: int = 4) -> list:
     return sorted(chosen, key=_key)
 
 
-def _concept_causal_candidates(run_dir: Path, concepts_cfg) -> dict:
+def _concept_causal_candidates(run_dir: Path, concepts_cfg, sig: dict | None = None) -> dict:
     """Every dev feature that clears its random-direction null on some
     channel, ranked, and the registration cut.
 
@@ -558,6 +615,12 @@ def _concept_causal_candidates(run_dir: Path, concepts_cfg) -> dict:
     members of seed-stable atlas concepts. Degrades to an empty list with a
     stated reason when no ablation artifact exists, so a confirm-only run
     (e.g. `configs/smoke.yaml`) still registers its other claims.
+
+    `sig` (the per-target gate table, `None` = no gate) removes candidates on
+    non-significant targets BEFORE the cut, so the cut is filled from
+    significant targets; the claims the ungated cut would have registered on
+    a removed target come back under `excluded` with their reason, and
+    `n_pool_excluded_by_gate` counts the whole removed pool.
     """
     targets = _dev_ablation_targets(run_dir)
     n_reg = int(getattr(concepts_cfg, "n_registered_causal", 32) or 32)
@@ -586,12 +649,23 @@ def _concept_causal_candidates(run_dir: Path, concepts_cfg) -> dict:
                 "stable": key in stable_members, "atlas_concept": concept_of.get(key),
                 "path": path})
     cut = _select_causal(cands, n_reg)
+    gate = {}
+    if sig is not None:
+        kept = [c for c in cands if _target_ok(sig, f"{c['model']}/{c['layer']}")]
+        gated_cut = _select_causal(kept, n_reg)
+        gate = {"n_before_gate": len(cut), "n_after_gate": len(gated_cut),
+                "n_pool_excluded_by_gate": len(cands) - len(kept),
+                "excluded": [_exclusion(sig, _causal_id(c), "concept_causal",
+                                        [f"{c['model']}/{c['layer']}"])
+                             for c in cut if not _target_ok(sig, f"{c['model']}/{c['layer']}")]}
+        cands, cut = kept, gated_cut
     return {"candidates": cands, "cut": cut, "n_registered_cfg": n_reg,
             "n_stable_preferred": sum(1 for c in cands if c["stable"]),
-            "stable_preference_applied": bool(stable_members)}
+            "stable_preference_applied": bool(stable_members), **gate}
 
 
-def _concept_causal_entries(run_dir: Path, cfg: PipelineConfig) -> tuple:
+def _concept_causal_entries(run_dir: Path, cfg: PipelineConfig,
+                            sig: dict | None = None) -> tuple:
     """`-> (entries, ranking summary)`. Claim
     `concept_causal::{model}::{layer}::f{feature}::{channel}`: "ablating this
     feature on its private top-k firing series moves this channel with this
@@ -601,7 +675,7 @@ def _concept_causal_entries(run_dir: Path, cfg: PipelineConfig) -> tuple:
     that collapse")."""
     from ..sae.ablation_run import checkpoint_path
 
-    ranking = _concept_causal_candidates(run_dir, cfg.concepts)
+    ranking = _concept_causal_candidates(run_dir, cfg.concepts, sig)
     hasher = _Hasher(run_dir)
     null_mode = _ablation_null_mode(cfg)
     entries = []
@@ -609,7 +683,7 @@ def _concept_causal_entries(run_dir: Path, cfg: PipelineConfig) -> tuple:
         art_rel, art_sha = hasher(c["path"])
         arts = hasher.many([c["path"], checkpoint_path(run_dir, c["model"], c["layer"])])
         entries.append({
-            "id": f"concept_causal::{c['model']}::{c['layer']}::f{c['feature']}::{c['channel']}",
+            "id": _causal_id(c),
             "stage": "concept_causal", "family": "concept_causal",
             "statistic": "ablation_channel_effect_vs_random_direction_null",
             "model": c["model"], "layer": c["layer"], "target": f"{c['model']}/{c['layer']}",
@@ -649,12 +723,17 @@ def _dev_vectors(run_dir: Path) -> dict:
     return out
 
 
-def _atlas_candidates(run_dir: Path, cfg: PipelineConfig) -> tuple:
+def _atlas_candidates(run_dir: Path, cfg: PipelineConfig, sig: dict | None = None) -> tuple:
     """`concept_atlas::{concept}` -- "this seed-stable atlas concept's
     members still form a concept on private data". One claim per stable
     dev concept (an atlas concept id is global across models, so it is
     unique by construction). Members, their dev 9-vectors, the dev centroid
-    and the clustering thresholds are all frozen here."""
+    and the clustering thresholds are all frozen here.
+
+    With the per-target gate (`sig`), a concept with ANY member on a
+    non-significant target is not registered and is listed under `excluded`:
+    the claim is that the whole member set re-forms, so one chance-level
+    member makes it a claim about possibly-chance features."""
     from ..sae.ablation_run import ablation_path, checkpoint_path
 
     atlas_p = run_dir / "sae" / "concept_atlas.json"
@@ -667,7 +746,7 @@ def _atlas_candidates(run_dir: Path, cfg: PipelineConfig) -> tuple:
     vectors = _dev_vectors(run_dir)
     params = atlas.get("params") or {}
     hasher = _Hasher(run_dir)
-    entries = []
+    entries, excluded = [], []
     for cid in stable_ids:
         members = [{"model": str(r["model"]), "layer": str(r["layer"]),
                     "feature": int(r["feature"])}
@@ -678,6 +757,11 @@ def _atlas_candidates(run_dir: Path, cfg: PipelineConfig) -> tuple:
         have = [np.asarray(m["dev_vector"], dtype=np.float64) for m in members
                 if m["dev_vector"] is not None]
         if len(have) < 2:
+            continue
+        if sig is not None and not all(_target_ok(sig, f"{m['model']}/{m['layer']}")
+                                       for m in members):
+            excluded.append(_exclusion(sig, f"concept_atlas::{cid}", "concept_atlas",
+                                       [f"{m['model']}/{m['layer']}" for m in members]))
             continue
         unit = np.stack([v / np.linalg.norm(v) for v in have if np.linalg.norm(v) > 0])
         centroid = unit.mean(axis=0)
@@ -700,17 +784,25 @@ def _atlas_candidates(run_dir: Path, cfg: PipelineConfig) -> tuple:
                          f"across {', '.join(models)}) still forms a concept on private data."),
             "replicable": True,
         })
-    return entries, {"n_stable_concepts": len(stable_ids), "n_registered": len(entries)}
+    summary = {"n_stable_concepts": len(stable_ids), "n_registered": len(entries)}
+    if sig is not None:
+        summary.update({"n_before_gate": len(entries) + len(excluded),
+                        "n_after_gate": len(entries), "excluded": excluded})
+    return entries, summary
 
 
-def _agreement_candidates(run_dir: Path, concepts_cfg) -> dict:
+def _agreement_candidates(run_dir: Path, concepts_cfg, sig: dict | None = None) -> dict:
     """Dev shared-input agreement tests with a DEFINITE verdict, ranked, and
     the registration cut: every `same causal effect` test, plus
     `concepts.n_registered_agreement_differs` (default 30, judgment) of the
     `acts differently` ones, round-robin across ordered model pairs and
     deepest-below-floor first within a pair. `not scorable`, `no specific
     agreement`, `level only` and `shape only` are not claims of agreement or
-    disagreement and are not registered."""
+    disagreement and are not registered.
+
+    With the per-target gate (`sig`), a test whose source OR destination
+    target is non-significant is removed before the cut (so the cut is
+    filled from eligible tests) and listed under `excluded`."""
     p = run_dir / "sae" / "shared_input_agreement.json"
     at_p = run_dir / "sae" / "atlas_transfer.json"
     n_diff = int(getattr(concepts_cfg, "n_registered_agreement_differs", 30) or 30)
@@ -718,7 +810,7 @@ def _agreement_candidates(run_dir: Path, concepts_cfg) -> dict:
         return {"candidates": [], "cut": [], "reason": "sae/shared_input_agreement.json not found"}
     doc = load_json(p)
     k_top = int(load_json(at_p).get("k_top_series", 20)) if at_p.exists() else 20
-    same, differs = [], []
+    same_all, differs_all = [], []
     for t in doc.get("tests") or []:
         v = t.get("verdict")
         if v not in ("same causal effect", "acts differently"):
@@ -730,26 +822,48 @@ def _agreement_candidates(run_dir: Path, concepts_cfg) -> dict:
                 depths.append(float(st["observed"]) - min(float(st["floor_p05_src"]),
                                                           float(st["floor_p05_dst"])))
         rec = dict(t, k_top_series=k_top, depth=min(depths) if depths else 0.0)
-        (same if v == "same causal effect" else differs).append(rec)
+        (same_all if v == "same causal effect" else differs_all).append(rec)
 
     def _ord(r):
         return (r["src_target"], r["dst_target"], int(r["concept"]), int(r["dst_feature"]))
 
-    same.sort(key=_ord)
-    by_pair: dict = {}
-    for r in sorted(differs, key=lambda r: (r["depth"],) + _ord(r)):
-        by_pair.setdefault((r["src_model"], r["dst_model"]), []).append(r)
-    picked = []
-    while len(picked) < n_diff and any(by_pair.values()):
-        for pair in sorted(by_pair):
-            if by_pair[pair] and len(picked) < n_diff:
-                picked.append(by_pair[pair].pop(0))
-    return {"candidates": same + differs, "cut": same + sorted(picked, key=_ord),
+    def _pick(same_in, differs_in):
+        same = sorted(same_in, key=_ord)
+        by_pair: dict = {}
+        for r in sorted(differs_in, key=lambda r: (r["depth"],) + _ord(r)):
+            by_pair.setdefault((r["src_model"], r["dst_model"]), []).append(r)
+        picked = []
+        while len(picked) < n_diff and any(by_pair.values()):
+            for pair in sorted(by_pair):
+                if by_pair[pair] and len(picked) < n_diff:
+                    picked.append(by_pair[pair].pop(0))
+        return same, picked
+
+    def _eligible(r):
+        return _target_ok(sig, r["src_target"]) and _target_ok(sig, r["dst_target"])
+
+    gate = {}
+    if sig is None:
+        same, differs = same_all, differs_all
+    else:
+        same = [r for r in same_all if _eligible(r)]
+        differs = [r for r in differs_all if _eligible(r)]
+        ungated_same, ungated_picked = _pick(same_all, differs_all)
+        gate = {"n_before_gate": len(ungated_same) + len(ungated_picked),
+                "excluded": [_exclusion(sig, _agreement_id(r), "shared_input_agreement",
+                                        [r["src_target"], r["dst_target"]])
+                             for r in sorted(same_all + differs_all, key=_ord)
+                             if not _eligible(r)]}
+    same, picked = _pick(same, differs)
+    cut = same + sorted(picked, key=_ord)
+    if sig is not None:
+        gate["n_after_gate"] = len(cut)
+    return {"candidates": same + differs, "cut": cut,
             "n_same": len(same), "n_differs_available": len(differs),
-            "n_differs_registered": len(picked), "n_registered_differs_cfg": n_diff}
+            "n_differs_registered": len(picked), "n_registered_differs_cfg": n_diff, **gate}
 
 
-def _agreement_entries(run_dir: Path, cfg: PipelineConfig) -> tuple:
+def _agreement_entries(run_dir: Path, cfg: PipelineConfig, sig: dict | None = None) -> tuple:
     """`shared_input_agreement::{src target}::{dst target}::c{concept}::
     f{dst feature}::{verdict}`. The spec's `{src}::{dst}::{verdict}` id
     under-specifies the claim (one target pair carries many concepts), so
@@ -757,7 +871,7 @@ def _agreement_entries(run_dir: Path, cfg: PipelineConfig) -> tuple:
     set and `k` are frozen here."""
     from ..sae.ablation_run import checkpoint_path
 
-    ranking = _agreement_candidates(run_dir, cfg.concepts)
+    ranking = _agreement_candidates(run_dir, cfg.concepts, sig)
     hasher = _Hasher(run_dir)
     entries = []
     for t in ranking["cut"]:
@@ -771,8 +885,7 @@ def _agreement_entries(run_dir: Path, cfg: PipelineConfig) -> tuple:
                       "floor_p05_dst", "clears", "below_floor")}
                  for k in ("statistic_i", "statistic_ii")}
         entries.append({
-            "id": (f"shared_input_agreement::{t['src_target']}::{t['dst_target']}::"
-                   f"c{t['concept']}::f{t['dst_feature']}::{t['verdict']}"),
+            "id": _agreement_id(t),
             "stage": "shared_input_agreement", "family": "shared_input_agreement",
             "statistic": "shared_input_causal_agreement",
             "dev_verdict": t["verdict"], "concept": int(t["concept"]),
@@ -796,7 +909,19 @@ def _agreement_entries(run_dir: Path, cfg: PipelineConfig) -> tuple:
     return entries, summary
 
 
-def _structure_candidates(run_dir: Path, cfg: PipelineConfig) -> tuple:
+_STRUCTURE_TARGET_GATE_REASON = (
+    "not applied: the structure claims are panel-level aggregates, not claims about "
+    "any one target's features. (b) is a rate over ALL scorable dev candidates at every "
+    "measured target, so restricting it to targets selected for having MORE clears than "
+    "chance would condition on the outcome and bias the causally-null rate downward; (a) "
+    "is a claim about the frozen pooled atlas as a whole, and dropping a target's features "
+    "from that pool would change the claim, not test it. Both stay as registered; the "
+    "per-target table is still computed (and a missing `empirical_chance` still refuses) "
+    "because the gate is a property of the whole registration.")
+
+
+def _structure_candidates(run_dir: Path, cfg: PipelineConfig,
+                          sig: dict | None = None) -> tuple:
     """The two registered directional aggregates (sec 38.2.2 item 4), each
     registered only when it HOLDS on dev (registering a claim dev already
     contradicts would spend the look on nothing):
@@ -813,6 +938,10 @@ def _structure_candidates(run_dir: Path, cfg: PipelineConfig) -> tuple:
         p-valued claim.
 
     (c) is exploratory and not registered (`_STRUCTURE_C_REASON`).
+
+    The per-target significance gate (`sig`) is deliberately NOT applied to
+    these claims; the reasoning is `_STRUCTURE_TARGET_GATE_REASON`, recorded
+    in the notes when the gate is on.
     """
     from ..sae.ablation_run import ablation_path, checkpoint_path
 
@@ -820,6 +949,8 @@ def _structure_candidates(run_dir: Path, cfg: PipelineConfig) -> tuple:
     targets = _dev_ablation_targets(run_dir)
     hasher = _Hasher(run_dir)
     entries, notes = [], {"exploratory_not_registered": _STRUCTURE_C_REASON}
+    if sig is not None:
+        notes["target_gate"] = _STRUCTURE_TARGET_GATE_REASON
 
     if atlas_p.exists():
         atlas = load_json(atlas_p)
@@ -890,16 +1021,26 @@ def _concept_claim_entries(run_dir: Path, cfg: PipelineConfig) -> tuple:
     """All K2 entries, or `([], {})` when `confirm.register_concept_claims` is
     off (the byte-identical default)."""
     if not bool(getattr(cfg.confirm, "register_concept_claims", False)):
+        if bool(getattr(cfg.confirm, "register_requires_target_significance", False)):
+            raise ValueError(
+                "confirm.register_requires_target_significance is on but "
+                "confirm.register_concept_claims is off, so no concept claim would be "
+                "registered and the gate would silently do nothing; turn on "
+                "register_concept_claims or turn the gate off")
         return [], {}
-    causal, causal_sum = _concept_causal_entries(run_dir, cfg)
-    atlas, atlas_sum = _atlas_candidates(run_dir, cfg)
-    agree, agree_sum = _agreement_entries(run_dir, cfg)
-    struct, struct_notes = _structure_candidates(run_dir, cfg)
-    return causal + atlas + agree + struct, {
+    sig = _target_gate_table(run_dir, cfg)
+    causal, causal_sum = _concept_causal_entries(run_dir, cfg, sig)
+    atlas, atlas_sum = _atlas_candidates(run_dir, cfg, sig)
+    agree, agree_sum = _agreement_entries(run_dir, cfg, sig)
+    struct, struct_notes = _structure_candidates(run_dir, cfg, sig)
+    summary = {
         "concept_causal": causal_sum, "concept_atlas": atlas_sum,
         "shared_input_agreement": agree_sum, "concept_structure": struct_notes,
         "not_registered": {"families_beat_shuffle_null": _NOT_REGISTERED_FAMILIES_REASON},
         "ablation_null": _ablation_null_mode(cfg)}
+    if sig is not None:
+        summary["target_significance"] = sig
+    return causal + atlas + agree + struct, summary
 
 
 # One Holm family per claim type. `n` is the size of the null each family's
