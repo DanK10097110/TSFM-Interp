@@ -82,6 +82,22 @@ never Python `hash()`):
   level and trend only, because a seasonal or dispersion effect has no sign),
   and `unique` (model A only).
 
+**The L5 vocabulary (opt-in, `vocabulary: l5`; ROADMAP.md sec 38.3.5).** The shared-input
+agreement rung (`sae/shared_input_agreement.py`) asks whether a concept that two
+DIFFERENT architectures both read and write is called "same causal effect". The default
+(K1) pair cannot answer that, because both members share width, depth and basis. The
+opt-in kwargs `width`, `depth`, `heads` and `rotate` build members with different
+hidden width, depth, head count and a random orthogonal rotation of the residual
+basis (so their dictionaries cannot coincide by construction), and
+`vocabulary: l5` plants the SAME concept in both: one input trigger and one effect on
+the forecast. A concept may be written into several residual directions per model
+(`n_dirs`), each component firing on a nested subset of the concept's series (a
+graded, feature-split representation), with the concept's total effect split evenly
+across components. Effects are `level_trend` (a signed level plus a signed trend, so a
+sign flip is a real opposite effect and the level channel carries per-series signal) or
+`dispersion` (unsigned, so it has no level signal). K1's vocabulary, defaults and
+construction draws are untouched.
+
 `MockPlantedAdapter.manifest()` is the ground truth: per planted object its id,
 class, kind, `d_k`, readout weights and threshold, effect channel, sign, beta,
 dose and the exact series-level activation `a_k(x)` on every corpus series. The
@@ -109,6 +125,7 @@ EMBED_SCALE = 0.03
 TOP_ROWS = 8
 COSINE_RANGE = (0.0, 0.3)
 FIRING_RANGE = (0.12, 0.28)
+L5_COMPONENT_QUANTILES = (1.0, 0.7, 0.5, 0.35)
 _MAX_CALIBRATION_ROWS = 2000
 _CALIBRATION_CACHE: dict = {}
 
@@ -263,6 +280,134 @@ def _draw_directions(ids: list, dim: int, construction_seed: int, role: str) -> 
     return full
 
 
+def concept_table_l5() -> list:
+    """The L5 vocabulary: one concept per case of the shared-input known-answer study.
+
+    Each row: `id`, `cls`, `kind`, `roles`, `sign` and `n_dirs` per role. `shared_single`
+    and `shared_dist` have the same trigger and the same signed `level_trend` effect in
+    both models, written into one direction (single) or 3 (A) and 4 (B) directions
+    (dist). `opposite` has the same trigger and a flipped sign in B. `inputonly` has the
+    same trigger and a real effect in A but none in B (sign 0). `pure_dispersion` is an
+    unsigned effect with no level component, a diagnostic for what the level statistic
+    can see. Three `filler` concepts per model (their own trigger, effect and roles,
+    present in ONE model only) give the stack a realistic total forecast displacement:
+    the cases alone move the forecast too little for the reach probe
+    (`concepts.min_relative_reach`) to admit the wider member's layer.
+    """
+    both = ("A", "B")
+    return [
+        {"id": "l5_shared_single", "cls": "l5_shared_single", "kind": "level_trend", "roles": both,
+         "sign": {"A": 1, "B": 1}, "n_dirs": {"A": 1, "B": 1}},
+        {"id": "l5_shared_dist", "cls": "l5_shared_dist", "kind": "level_trend", "roles": both,
+         "sign": {"A": 1, "B": 1}, "n_dirs": {"A": 3, "B": 4}},
+        {"id": "l5_opposite", "cls": "l5_opposite", "kind": "level_trend", "roles": both,
+         "sign": {"A": 1, "B": -1}, "n_dirs": {"A": 1, "B": 1}},
+        {"id": "l5_inputonly", "cls": "l5_inputonly", "kind": "level_trend", "roles": both,
+         "sign": {"A": 1, "B": 0}, "n_dirs": {"A": 1, "B": 1}},
+        {"id": "l5_pure_dispersion", "cls": "l5_pure_dispersion", "kind": "dispersion", "roles": both,
+         "sign": {"A": 1, "B": 1}, "n_dirs": {"A": 1, "B": 1}},
+        *[{"id": f"l5_filler_{role.lower()}{i}", "cls": "l5_filler", "kind": kind, "roles": (role,),
+           "sign": {role: 1}, "n_dirs": {role: 1}}
+          for role in both for i, kind in enumerate(("level", "trend", "seasonal"), start=1)],
+    ]
+
+
+def rotation_matrix(dim: int, seed: int) -> np.ndarray:
+    """A random orthogonal `[dim, dim]` matrix (float64), from a sha256-seeded QR with
+    the diagonal of R made positive so the draw is unique."""
+    rng = np.random.default_rng(_seed(seed, "rotation", dim))
+    q, r = np.linalg.qr(rng.normal(size=(dim, dim)))
+    return q * np.sign(np.diag(r))[None, :]
+
+
+def build_spec_l5(construction_seed: int, dose: float, plant_set: str, dim: int, patch: int,
+                  contexts: np.ndarray, series_ids: list, periods: tuple, planted_block: int,
+                  families: np.ndarray | None = None, rotation_seed: int | None = None) -> dict:
+    """The L5 counterpart of `build_spec`: one concept per case, possibly several
+    components per concept.
+
+    Every component is one entry of `concepts` with `id` `"<concept>#<j>"`, the
+    concept's `concept` id and `component` index. The trigger (readout weights and
+    firing fraction) belongs to the CONCEPT and is identical in both models, so the
+    two members' series-level activations of a shared concept coincide exactly.
+    Component `j` thresholds the readout at the quantile that makes it fire on
+    `L5_COMPONENT_QUANTILES[j]` of the concept's series, and each component's `beta`
+    is set so its RMS planted displacement on its own top-8 series is the concept's
+    `dose * DOSE_UNIT_EFFECT` divided by the number of components. A sign of 0 gives
+    `beta = 0`. `direction` is in the canonical basis the network is built in;
+    `direction_resid` is the direction in the residual stream the SAE sees
+    (`direction @ Q` when `rotation_seed` is set), which is what a decoder atom should
+    match.
+    """
+    from ..utils import sample_rows
+    if plant_set not in ("A", "B"):
+        raise ValueError(f"plant_set must be 'A' or 'B', got {plant_set!r}")
+    role = plant_set
+    all_rows = concept_table_l5()
+    rows = [r for r in all_rows if role in r["roles"]]
+    comp_ids = [f"{r['id']}#{j}" for r in rows for j in range(r["n_dirs"][role])]
+    directions = _draw_directions(comp_ids, dim, construction_seed, role)
+    Q = rotation_matrix(dim, rotation_seed) if rotation_seed is not None else None
+
+    raw = contexts_to_features(contexts, patch, periods)
+    n = raw.shape[0]
+    cal = (sample_rows(n, _MAX_CALIBRATION_ROWS, _seed(construction_seed, "cal") % (2 ** 31),
+                       strata=families) if n > _MAX_CALIBRATION_ROWS else np.arange(n))
+    flat = raw[cal].reshape(-1, N_FEATURES)
+    feat_mean, feat_std = flat.mean(dim=0), flat.std(dim=0) + 1e-9
+    f_z = (raw - feat_mean) / feat_std
+    rng_frac = np.random.default_rng(_seed(construction_seed, "l5_firing"))
+    targets = {r["id"]: float(rng_frac.uniform(*FIRING_RANGE)) for r in all_rows}
+
+    combos = [(i, j, si, sj) for i in range(N_FEATURES) for j in range(i + 1, N_FEATURES)
+              for si in (1, -1) for sj in (1, -1)]
+    picks = np.random.default_rng(_seed(construction_seed, "l5_readouts")).choice(
+        len(combos), size=len(all_rows), replace=False)
+    readouts = {}
+    for r, p in zip(all_rows, picks):
+        i, j, si, sj = combos[int(p)]
+        w = np.zeros(N_FEATURES)
+        w[i], w[j] = si, sj
+        readouts[r["id"]] = w / np.linalg.norm(w)
+
+    concepts = []
+    for r in rows:
+        m = r["n_dirs"][role]
+        w = torch.from_numpy(readouts[r["id"]]).double()
+        series_max = (f_z[cal] @ w).max(dim=1).values.numpy()
+        for j in range(m):
+            frac = targets[r["id"]] * L5_COMPONENT_QUANTILES[j]
+            tau = float(np.quantile(series_max, 1.0 - frac))
+            a_all = planted_activations(f_z, w[None, :], torch.tensor([tau], dtype=torch.float64),
+                                        AMPLITUDE)[..., 0]
+            a_series = a_all.mean(dim=1).numpy()
+            top_mean = float(np.sort(a_series)[::-1][:TOP_ROWS].mean())
+            unit = float(dose) * DOSE_UNIT_EFFECT / m
+            beta = (unit / top_mean if top_mean > 0 else 0.0) * r["sign"][role]
+            d = directions[f"{r['id']}#{j}"]
+            concepts.append({
+                "id": f"{r['id']}#{j}", "concept": r["id"], "component": j, "n_components": m,
+                "cls": r["cls"], "kind": r["kind"], "sign": int(r["sign"][role]),
+                "roles": list(r["roles"]), "target_fraction": frac,
+                "readout_weights": w.numpy().tolist(), "readout_threshold": tau,
+                "direction": d.tolist(),
+                "direction_resid": (d @ Q if Q is not None else d).tolist(),
+                "beta": float(beta), "rms_effect_on_top_series_ctx_sd": float(abs(beta) * top_mean),
+                "firing_fraction": float(np.mean(a_series > 0.0)),
+                "series_activation": a_series.tolist(),
+            })
+    return {
+        "construction_seed": int(construction_seed), "dose": float(dose), "role": role,
+        "plant_set": plant_set, "planted_block": int(planted_block), "dim": int(dim),
+        "patch": int(patch), "n_features": N_FEATURES, "feature_names": list(FEATURE_NAMES),
+        "periods": [float(p) for p in periods], "amplitude": AMPLITUDE,
+        "dose_unit_effect_ctx_sd": DOSE_UNIT_EFFECT, "vocabulary": "l5",
+        "rotation_seed": None if rotation_seed is None else int(rotation_seed),
+        "feature_mean": feat_mean.numpy().tolist(), "feature_std": feat_std.numpy().tolist(),
+        "series_ids": [str(s) for s in series_ids], "concepts": concepts,
+    }
+
+
 def patch_features(xn_patches: torch.Tensor, periods: tuple) -> torch.Tensor:
     """`[N, patch] -> [N, N_FEATURES]`: hand-set statistics of a normalised patch.
 
@@ -397,7 +542,8 @@ def _shapes(horizon: int) -> dict:
     ramp = centred / np.sqrt((centred ** 2).mean())
     cosine = np.sqrt(2.0) * np.cos(2.0 * np.pi * centred / horizon)
     alt = np.where(np.arange(horizon) % 2 == 0, 1.0, -1.0)
-    return {"level": np.ones(horizon), "trend": ramp, "seasonal": cosine, "dispersion": alt}
+    return {"level": np.ones(horizon), "trend": ramp, "seasonal": cosine, "dispersion": alt,
+            "level_trend": (np.ones(horizon) + ramp) / np.sqrt(2.0)}
 
 
 class _PlantedBlock(_MockBlock):
@@ -413,12 +559,20 @@ class _PlantedBlock(_MockBlock):
                         if p.dim() == 2 else torch.zeros_like(p))
         self.stash: dict | None = None
         self.write: nn.Module | None = None
+        self.register_buffer("rot", None)
 
     def forward(self, h: torch.Tensor) -> torch.Tensor:
+        """The block is built in the canonical basis. With `rot` set, the residual
+        stream between blocks lives in the rotated basis `h_c Q`, so the block rotates
+        back on entry and forward on exit; hooks on its output see the rotated stream."""
+        if self.rot is not None:
+            h = h @ self.rot.t()
         h = h + self.attn(h @ self.p_perp) @ self.p_perp
         h = h + self.mlp(h @ self.p_perp) @ self.p_perp
         if self.write is not None:
             h = h + self.write(self.stash)
+        if self.rot is not None:
+            h = h @ self.rot
         return h
 
 
@@ -466,6 +620,13 @@ class _PlantedNet(nn.Module):
         W = torch.tensor(np.stack([c["readout_weights"] for c in concepts]), dtype=torch.float64)
         tau = torch.tensor([c["readout_threshold"] for c in concepts], dtype=torch.float64)
         self.stash: dict = {}
+        rotation_seed = spec.get("rotation_seed")
+        self.rotated = rotation_seed is not None
+        if self.rotated:
+            rot = torch.tensor(rotation_matrix(dim, int(rotation_seed)), dtype=torch.float32)
+            self.register_buffer("rot32", rot)
+            for block in self.blocks:
+                block.rot = rot.clone()
         planted = self.blocks[spec["planted_block"]]
         planted.stash = self.stash
         planted.write = _PlantedWrite(W, tau, D)
@@ -496,8 +657,12 @@ class _PlantedNet(nn.Module):
     def forecast(self, x: torch.Tensor) -> tuple:
         """`[B, T] -> (point [B, H], quantile_scale [B])`, all blocks and the head."""
         h = self._embed(x)
+        if self.rotated:
+            h = h @ self.rot32
         for block in self.blocks:
             h = block(h)
+        if self.rotated:
+            h = h @ self.rot32.t()
         hbar = h.double().mean(dim=1)
         coef = hbar @ self.U.t()
         bg = (hbar @ self.p_perp64) @ self.W_bg.t()
@@ -519,7 +684,11 @@ class MockPlantedAdapter(_MockAdapterBase):
     `construction_seed` (int, default 0), `dose` (float, default 1.0),
     `periods` (two periods for the amplitude features, default [24, 50], the
     two most common periods of the synthetic known-answer corpus),
-    `planted_block` (default 2), `background_gain` (default 0.0, see below). The calibration corpus is the run's own data
+    `planted_block` (default 2), `background_gain` (default 0.0, see below).
+    Opt-in architecture kwargs (the L5 study, see the module docstring): `vocabulary`
+    ("k1" default, or "l5"), `width` (hidden size, default 64), `depth` (blocks,
+    default 5), `heads` (default 2) and `rotate` (a random orthogonal rotation of the
+    residual basis, default False). The calibration corpus is the run's own data
     (`data:`), so the firing thresholds are calibrated on exactly the series
     the pipeline will feed the model.
     """
@@ -536,14 +705,30 @@ class MockPlantedAdapter(_MockAdapterBase):
         dose = float(self._kwarg("dose", 1.0))
         periods = tuple(float(p) for p in self._kwarg("periods", (24, 50)))
         block = int(self._kwarg("planted_block", 2))
+        vocabulary = str(self._kwarg("vocabulary", "k1"))
+        if vocabulary not in ("k1", "l5"):
+            raise ValueError(f"vocabulary must be 'k1' or 'l5', got {vocabulary!r}")
+        self.dim = int(self._kwarg("width", type(self).dim))
+        self.n_layers = int(self._kwarg("depth", type(self).n_layers))
+        self.n_heads = int(self._kwarg("heads", type(self).n_heads))
+        rotation_seed = (_seed(cseed, "rotate", plant_set) % (2 ** 31)
+                         if bool(self._kwarg("rotate", False)) else None)
         d = self.data_cfg
         key = (plant_set, cseed, dose, periods, block, d.source, d.path, d.context_len,
                d.horizon, d.max_series, d.smoke_series_per_family, d.family_key)
+        if vocabulary == "l5":
+            key = key + (vocabulary, self.dim, rotation_seed)
         if key not in _CALIBRATION_CACHE:
             data = load_benchmark(d)
-            _CALIBRATION_CACHE[key] = build_spec(
-                cseed, dose, plant_set, self.dim, self.patch, data.contexts(),
-                data.meta["series_id"].tolist(), periods, block, families=data.families)
+            if vocabulary == "l5":
+                _CALIBRATION_CACHE[key] = build_spec_l5(
+                    cseed, dose, plant_set, self.dim, self.patch, data.contexts(),
+                    data.meta["series_id"].tolist(), periods, block, families=data.families,
+                    rotation_seed=rotation_seed)
+            else:
+                _CALIBRATION_CACHE[key] = build_spec(
+                    cseed, dose, plant_set, self.dim, self.patch, data.contexts(),
+                    data.meta["series_id"].tolist(), periods, block, families=data.families)
         self._spec = _CALIBRATION_CACHE[key]
         net_seed = _seed(cseed, "net", plant_set)
         if self.cfg.random_init:

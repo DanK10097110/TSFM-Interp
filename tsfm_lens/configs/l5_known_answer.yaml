@@ -1,0 +1,88 @@
+# L5 known-answer validation (ROADMAP.md sec 38.3.5): can the shared-input
+# causal agreement rung (sae/shared_input_agreement.py) call a concept that is
+# truly shared between two DIFFERENT architectures "same causal effect", and how
+# often does it call a decoy "same"?
+#
+# This file is the TEMPLATE for one cell (one construction seed). The driver
+# fills the construction seed, the run name and the paths:
+#
+#     python run_l5_known_answer.py --corpus <dir>/public_dev --out <scratch> \
+#         --seeds 0 1 2 3 4
+#
+# THE TWO ARCHITECTURES (both are `mock_planted` with the opt-in `l5`
+# vocabulary, so they carry the same planted concepts):
+#
+#     ArchA  width  64, 5 blocks, 2 heads, planted block 2, canonical basis
+#     ArchB  width  96, 7 blocks, 4 heads, planted block 4, random orthogonal
+#            rotation of the residual basis
+#
+# Different widths mean their dictionaries cannot coincide; the rotation means
+# even the planted directions are different vectors in unrelated bases. One SAE
+# target per model: the planted block's own layer (it is reachable, and it is
+# where every planted direction lives).
+#
+# CORPUS, OUT_DIR and the fingerprint rules are as in known_answer.yaml. The
+# stages run are `extract, sae` only; the rung is then driven on answer-key
+# units by the driver, so the atlas and transfer stages (which K1 scored)
+# cannot confound the question.
+
+run:
+  name: l5_known_answer
+  out_dir: runs
+  device: cpu
+  dtype: float32
+  seed: 0
+  keep_models_loaded: true
+
+data:
+  source: sealed
+  path: ../benchmark_known_answer/public_dev
+  context_len: 256
+  horizon: 32
+  family_key: auto
+
+alignment:
+  window: 32
+  sanity_check: true
+  on_failure: fail
+
+models:
+  - name: ArchA
+    adapter: mock_planted
+    batch_size: 256
+    kwargs: {plant_set: A, vocabulary: l5, construction_seed: 0, dose: 1.0,
+             width: 64, depth: 5, heads: 2, planted_block: 2, rotate: false}
+  - name: ArchB
+    adapter: mock_planted
+    batch_size: 256
+    kwargs: {plant_set: B, vocabulary: l5, construction_seed: 0, dose: 1.0,
+             width: 96, depth: 7, heads: 4, planted_block: 4, rotate: true}
+
+sae:
+  enabled: true
+  targets:
+    - {model: ArchA, layer: blocks.2}
+    - {model: ArchB, layer: blocks.4}
+  dict_size_mult: 4
+  k: 8
+  epochs: 300
+  batch_size: 256
+  lr: 0.001
+  resample_dead_every_epochs: 5
+  aux_k: 32
+  forecast_preservation_max_series: 64
+  persist_features: true
+  real_data_enabled: false
+  concept_min_members: 3
+  ablation_null: profile_matched
+  transfer_top_k: 20
+
+concepts:
+  enabled: true
+  top_k_series: 8
+  n_null_directions: 16
+  max_series: 64
+  n_features_per_rule: 384
+  describe: false
+  n_sae_seeds: 1
+  shared_input_n_null: 50

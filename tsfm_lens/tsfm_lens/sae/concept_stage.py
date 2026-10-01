@@ -115,6 +115,13 @@ def preflight_problem(cfg) -> str | None:
     if cap is not None and (isinstance(cap, bool) or not isinstance(cap, int) or cap < 1):
         return (f"`concepts.agreement_max_tests_per_pair` must be null or an integer >= 1, "
                 f"got {cap!r}")
+    from .shared_input_agreement import DST_SET_MODES
+    mode = getattr(cfg.concepts, "agreement_dst_set", "feature")
+    if mode not in DST_SET_MODES:
+        return (f"`concepts.agreement_dst_set` must be one of {list(DST_SET_MODES)}, got {mode!r}")
+    k_top = getattr(cfg.concepts, "agreement_k_top_series", None)
+    if k_top is not None and (isinstance(k_top, bool) or not isinstance(k_top, int) or k_top < 2):
+        return (f"`concepts.agreement_k_top_series` must be null or an integer >= 2, got {k_top!r}")
     return None
 
 

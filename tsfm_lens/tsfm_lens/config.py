@@ -1025,6 +1025,25 @@ class ConceptsConfig:
     # stale.
     agreement_max_tests_per_pair: Optional[int] = None
 
+    # ROADMAP.md sec 38.3.5 (L5 known-answer study) -- three opt-in variants of
+    # the shared-input agreement rung, each left out of the stage fingerprint
+    # at its default so every existing run and artifact is unchanged.
+    # `agreement_dst_set` chooses what is ablated on the DESTINATION side:
+    # "feature" (default) the transfer test's one best feature (or its atlas
+    # part when that feature is in one); "concept_part" the atlas part of the
+    # same concept at the destination target when it has one (else the default
+    # rule); "matched_set" the destination's top-N features by forward AUC on
+    # the source concept's top series, N the source set's size, which is
+    # defined for every test. `agreement_k_top_series` sets the size of each
+    # side's top-series set, hence of the shared series `U`; `None` keeps the
+    # atlas-transfer test's own k (`sae.transfer_top_k`). `agreement_partial_
+    # rung` adds a per-test `rung` and a `partial_agreement` summary that
+    # counts "level only" and "shape only" as `partial`, kept apart from
+    # "same".
+    agreement_dst_set: str = field(default="feature", metadata={"omit_at_default": True})
+    agreement_k_top_series: Optional[int] = field(default=None, metadata={"omit_at_default": True})
+    agreement_partial_rung: bool = field(default=False, metadata={"omit_at_default": True})
+
     # ROADMAP.md sec 37.9 P6a -- generator-side input counterfactuals
     # (`tsfm_benchmark/build_pipeline/counterfactual.py`'s draw-neutral knobs,
     # measured by `tsfm_lens/sae/counterfactual.py`): does an atlas concept's
