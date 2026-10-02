@@ -37980,6 +37980,109 @@ reverting the guard reproduces the KeyError. **Reading:** this is one test of th
 compute reasons. It is not a second look, because no outcome of the first run could have shaped anything in the
 second. It is disclosed here for that reason.
 
+**Findings — K2 CONFIRMED ONCE (2026-10-02 00:04, `runs/panel7_v2_dev/confirm/confirmation.json`).** Setup:
+- private corpus v2 epoch 3: 971 series, digest `6b4d17cc…`;
+- registry sha256 `ff6c4f9e…` (unchanged);
+- `repeated_look: false`; the exchangeability provenance is `verified`;
+- code k3wt 597848a.
+
+Every Holm family is per claim type, as registered. **43 of 82 replicable claims confirm. 6 are not testable. 33
+are not confirmed.**
+
+| Family | Confirmed / tested (registered) | Numbers |
+|---|---|---|
+| l0 (Chronos-2 vs TimesFM, `mixture`) | 1/1 | ΔMASE 0.2085168928421777 [0.11887494224027313, 0.3132564893531902], p_holm 0.0002, n 290 |
+| l1 peak-CKA pair (TimesFM xf.4 / Chronos-2 b.7) | replicates | dev 0.42565208673477173, private 0.41089847683906555 [0.4014463298022747, 0.4266209252178669] |
+| l3 fingerprint agreement | 6/9 replicate (dev ρ inside private CI) | overall 0.5238976010788092 [0.5039727150884871, 0.5442166083105682] |
+| concept_transfer (search mode) | **20/20** | Holm max 0.009995002498750623 (the floor); private AUC 0.9194269190325972–0.9696109358569927, reverse 0.8053101997896951–0.9981598317560463 |
+| concept_causal (single feature vs random-direction null) | **10/31** (32; 1 not testable) | each confirmed claim p 0.001 after the adaptive redraw to 1000, p_holm 0.031 (floor 31/1001) |
+| concept_atlas | 1/4 | the confirmed one is **single-model** |
+| shared_input_agreement | **0/6** (11; 5 not testable) | best: p 0.011, p_holm 0.0659 |
+| concept_structure | 2/2 | — |
+| reliability_u1 | **2/2** | — |
+
+- **L3.** The 3 non-replications are:
+  - `frequency_shift`: stronger on private, dev 0.21557486631016043 → 0.3813502673796792 [0.30580715240641715,
+    0.47769050802139046];
+  - `smooth`: stronger, −0.4184491978609626 → −0.581216577540107 [−0.670471256684492, −0.5070103609625669];
+  - `level_shift`: sign flips, −0.188168449197861 → 0.10862299465240642 [−0.02521724598930479,
+    0.15943348930481283].
+
+  Noise, detrend, deseasonalize, spike, warp and dropout replicate. The replication rule is "dev ρ inside the
+  private CI", so a stronger private effect also counts as a non-replication.
+- **Transfer.** The 20 claims come from two per-target concepts:
+  - TimesFM xf.18 concept 1, 14 claims;
+  - Sundial l.6 concept 3, 6 claims.
+
+  They reach destinations in every other family: Timer 6, TimesFM 5, Sundial 3, Chronos-2 2, Chronos-T5-Base 2,
+  Time-MoE 1, Chronos-Bolt 1. Search mode is used, and 8/20 private best features equal dev's. This is the
+  **third** independent private corpus on which 20 frozen transfer claims confirm (after v1 epochs 1–2 and the v2
+  test split). The class is correlational: the same series are grouped by both models.
+- **Causal.** Per model, confirmed/registered:
+  - TimesFM 3/4 (xf.0 f4305 mase, xf.4 f886 spectral_centroid, xf.6 f1568 mase);
+  - Time-MoE 2/7 (l.1 f4951 horizon_shape_near, l.4 f466 spectral_centroid);
+  - Sundial 2/4 (l.8 and l.9 f1935 horizon_shape_near);
+  - Chronos-Bolt 2/6 (b.4 f4679 dispersion, b.2 f3821 horizon_shape_near);
+  - Chronos-2 1/7 (b.8 f2801 mase);
+  - Chronos-T5-Base 0/4.
+
+  By channel, confirmed/registered: horizon_shape_near 4/8, mase 3/8, spectral_centroid 2/4, dispersion 1/3,
+  seasonal 0/4, level 0/4, horizon_shape_far 0/1.
+
+  Other details:
+  - 12 non-confirmed claims had raw p < 0.05; 6 still cleared the private null p95.
+  - 1 sign mismatch (Chronos-T5-Base b.10 f195).
+  - The not-testable claim is Sundial l.8 f1076, which fires on no private series.
+- **Atlas.** Concept 2 (Chronos-2 b.5 f1852, b.7 f4757, b.8 f4757) confirms: pair fraction 1.0, centroid cosine
+  0.9588, p_holm 0.008. **All three registered multi-model concepts fail the frozen rule** (concept 6
+  Chronos-2/Bolt/Sundial, 8 Bolt/TimesFM, 9 Bolt/Sundial). Their centroid cosines still beat the null (0.9808,
+  0.9883, 0.9554; p_centroid 0.0005–0.007), but only 1/3 member pairs reach cosine 0.9 (pair fraction 0.3333),
+  p_holm 0.1349.
+- **Agreement (L5).**
+  - Of the 4 'same causal effect' claims (all Chronos-2 ↔ Chronos-Bolt), 3 are not testable: one side's feature
+    does not clear its own null on the private shared series. The 4th, Bolt b.4 → Chronos-2 b.7, reproduces the
+    'same' verdict (25 shared series, p 0.011) but misses Holm at 0.0659.
+  - Of the 7 'acts differently' claims, 5 are tested. 2 reproduce the verdict (Chronos-2 b.7/b.8 → TimesFM xf.6 /
+    xf.4; p 0.032 / 0.048, Holm 0.1598 / 0.1918), 3 read 'no specific agreement', and 2 are not testable.
+  - So no L5 claim is held-out confirmed. That matches MN-30's sensitivity limit.
+- **Structure.**
+  - The private atlas has no concept in all models: 10 concepts, at most 3 of 7 models each.
+  - The causally null share of prominent features is 0.835 (927 features; one-sided lower bound 0.8166 > 0.5;
+    dev 0.8102; p_holm 0.0005).
+- **U1 (predictive, not causal).** The procedure is refit on private series with frozen features:
+  - Timer gain 0.0446 [0.0292, 0.0605], p_holm 0.002;
+  - Time-MoE 0.011 [0.0032, 0.0194], p_holm 0.012;
+  - n 935, 36 MASE-unreliable series excluded.
+
+  Time-MoE's private gain sits inside its dev range across 5 fold seeds (0.010632868442613463–0.015195058383651538).
+  Timer's is larger than any dev seed (0.030310590743556798–0.036080231129527296).
+- **Defect found in the artifact's text (verdicts unaffected).** 19 of the 21 non-confirmed causal claims (every one
+  tested at 200 draws) carry
+  `non_replication_reading` = "power not computable (unsatisfiable_correction): read this claim as untestable, not
+  absent". That is wrong. The MDE was computed from each claim's own 200 null draws (31/201 > 0.05), but the
+  adaptive procedure reaches 31/1001 = 0.031 for any claim that sits at the floor, so these claims were tested and
+  not detected, not untestable. (The other 2 non-confirmed claims were redrawn at 1000 and read 'below MDE:
+  underpowered', which is correct.) 7 of the 10 confirmed claims, below their MDE, also carry a non-confirmation
+  sentence. The report
+  and confirm code are being fixed: the reading is recomputed from stored fields, and `confirmation.json` is not
+  rewritten.
+
+**Reading.** On a fresh, sealed, 971-series private corpus, the claims that replicate are:
+- input-level concept sharing across families (transfer, 20/20, a third time);
+- a minority of the individual causal features (10/31; TimesFM and the decoder-only models hold up best,
+  Chronos-T5-Base not at all);
+- the structural negatives: no universal concept, and most prominent features are causally null;
+- the narrow U1 positive for the two weakest models.
+
+What does not replicate is every cross-model causal claim:
+- the multi-model atlas concepts (0/3);
+- L5 agreement (0/6 tested).
+
+The project's held-out picture is therefore that **models share what they select, not (demonstrably) what they do
+with it**. The single-feature causal claims are fragile: 21 of 31 drop out on new series, which is consistent with
+MN-29's matched null being needed and with dev effect sizes near threshold (19 of the 21 failures were not even at the p floor of
+200 draws).
+
 #### 38.2.1 Why, grounded
 
 **What is registered today** (`analysis/hypotheses.py`):
