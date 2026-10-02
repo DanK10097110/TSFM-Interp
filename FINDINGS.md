@@ -1580,6 +1580,19 @@ See SH-20. **4/5.**
 - **Ref.** ROADMAP §38.3.4 (L5 known-answer bullet).
 - **Score. 5/5.** Decides how to read every cross-model "same causal effect" claim: positives stand, negatives do not, and SH-22's "only the Chronos family" is a sensitivity limit, not a finding about lineage.
 
+#### MN-31 · Causal MASE blame separates "fires on bad series" from "causes bad forecasts", but single-feature *help* attribution fails its known-answer gate at k = 32
+- **Claim.** Forecast-repair R0 used a planted mock with harmful, helpful, decoy and side-effect concepts whose sign on MASE holds by construction. Dose 1, seeds 0–4, k = 32, BH over about 136 features.
+  - **Pass:** harmful blame 4/5; decoy 5/5 (corr_MASE +0.076 to +0.197, yet |causal ΔMASE| ≤ 0.0057, p_bh ≥ 0.97); held-out zero-edit of harmful 5/5 (firing test series −0.0274 to −0.0922, CIs exclude 0); side-effect harm on weak-firing test series 5/5 (+0.0047 to +0.0256).
+  - **Fail:** helpful blame 2/5 against 0.8 needed. The helpful atom ranks 2nd–6th by |effect| with the right sign and a CI excluding 0 (+0.0356 to +0.0779), but z ≈ 2.2–3.6 does not survive BH over the dictionary. One seed failed SAE recovery (cosine 0.798).
+  - The null is not biased positive: the median null mean over features is about 0.
+  - Unplanted split atoms carry large shares of the planted effects (e.g. −0.081 vs the planted −0.155), so real-data blame likely needs atom sets.
+  - All-ones edits change the forecast by exactly 0.0 in every cell.
+- **Models / layers.** `mock_planted` (`vocabulary: repair`), blocks.2.
+- **Evidence.** Known-answer validation (causal within-model on a planted model; held-out edits behavioral). **Status:** open; the gate failed and the R0b redesign was pre-registered (fresh seeds 5–9, n 1200, k 64, two-stage screen to a 16-feature BH family).
+- **Reproduce.** `python run_repair_known_answer.py --config configs/repair_known_answer.yaml` (commit 5a8077f); `analysis/repair_blame.py`, `analysis/repair_edit.py`.
+- **Ref.** ROADMAP §39.7.
+- **Score. 3/5.** Blaming a feature for errors needs causal ablation, not correlation: the decoy correlates with error in 5/5 seeds and has no effect. Crediting a single feature for *good* forecasts is underpowered at realistic sizes, and that bounds the "what causes good predictions" half of the question.
+
 ## H. Benchmark trust
 
 #### BM-01 · Near-duplicate matchers disagree ~70× on the same corpus
