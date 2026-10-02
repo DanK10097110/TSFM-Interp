@@ -132,14 +132,14 @@ def fig_heldout(run):
     ax.set_title("(c) accuracy and geometry")
 
     cr = conf["concept_replication"]
-    fams = [
-        ("single-feature causal", cr["causal"]),
-        ("multi-model atlas concepts", cr["atlas"]),
-        ("shared-input agreement (L5)", cr["agreement"]),
-        ("concept transfer", cr["transfer"]),
-        ("structure (no universal concept; null share)", cr["structure"]),
-        ("U1 reliability (predictive)", cr["reliability_u1"]),
-    ]
+    fams = [(lab, cr[key]) for lab, key in (
+        ("single-feature causal", "causal"),
+        ("multi-model atlas concepts", "atlas"),
+        ("shared-input agreement (L5)", "agreement"),
+        ("concept transfer", "transfer"),
+        ("structure (no universal concept; null share)", "structure"),
+        ("U1 reliability (predictive)", "reliability_u1"),
+    ) if isinstance(cr.get(key), dict) and "n_confirmed" in cr[key]]
     y = np.arange(len(fams))[::-1]
     for yi, (lab, f) in zip(y, fams):
         n_ok = f["n_confirmed"]
@@ -153,7 +153,8 @@ def fig_heldout(run):
     axd.set_yticks(y, [f[0] for f in fams])
     axd.set_xlim(0, max(f["n_registered"] for _, f in fams) * 1.45)
     axd.set_xlabel("registered claims")
-    axd.set_title(f"(d) claim ledger: {conf['n_registered']} registered, {conf['n_replicable']} replicable "
+    ledger = f"{conf['n_registered']} registered, {conf['n_replicable']} replicable" if "n_replicable" in conf else "concept claims"
+    axd.set_title(f"(d) claim ledger: {ledger} "
                   "(green confirmed, red tested and not confirmed, hatched not testable)", fontsize=7.5)
     fig.legend(handles=[
         plt.Line2D([], [], marker="x", ls="", color="#c0602a", label="dev (exploratory) estimate"),
