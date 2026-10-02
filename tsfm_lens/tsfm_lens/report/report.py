@@ -9148,6 +9148,32 @@ _K2_FAMILIES = ("concept_causal", "concept_atlas", "shared_input_agreement",
                 "concept_structure")
 
 
+def _causal_n_max(blk: dict, tests: list):
+    """The adaptive null ceiling of a causal confirm block: the canonical
+    `n_max_null` key, else parsed from the `p_method` string ("adaptive
+    redraw to N at the floor"), else the largest `n_null` among the tests."""
+    if blk.get("n_max_null") is not None:
+        return int(blk["n_max_null"])
+    found = re.search(r"redraw to (\d+)", str(blk.get("p_method") or ""))
+    if found:
+        return int(found.group(1))
+    ns = [int(t["n_null"]) for t in tests if t.get("n_null")]
+    return max(ns) if ns else None
+
+
+def _causal_reading_cell(t: dict, blk: dict, alpha, n_max) -> str:
+    """Reading for one causal confirm row, recomputed with
+    `analysis.confirm.causal_claim_reading` from stored fields, so an
+    artifact written before the adaptive-redraw fix (which stored a false
+    'untestable' label) renders the corrected text. A not-testable row shows
+    its reason."""
+    if t.get("status") != "tested" or n_max is None:
+        return t.get("non_replication_reading") or t.get("reason", "")
+    from ..analysis.confirm import causal_claim_reading
+    return causal_claim_reading(t, int(blk.get("n_tested") or 1),
+                                float(alpha or 0.05), n_max)
+
+
 def _sec_confirm_causal_concepts(concept_rep: dict, conf: dict, findings: list) -> str:
     """The four K2 confirmation sub-tables (ROADMAP.md sec 38.2): causal
     claims, atlas concepts, shared-input agreement and structure, plus their
@@ -9184,6 +9210,7 @@ def _sec_confirm_causal_concepts(concept_rep: dict, conf: dict, findings: list) 
         rows = []
         if key == "causal":
             title, cls = "Causal feature claims", "causal_within_model"
+            n_max = _causal_n_max(blk, tests)
             for t in tests:
                 rows.append({
                     "claim": f'{t["model"]} {_short(t["layer"])} f{t["feature"]}',
@@ -9192,8 +9219,8 @@ def _sec_confirm_causal_concepts(concept_rep: dict, conf: dict, findings: list) 
                     "private effect": _n(t.get("private_effect"), 4),
                     "p": _n(t.get("p"), 4), "p method": t.get("p_method"),
                     "p (Holm)": _n(t.get("p_holm"), 4),
-                    "MDE": _mde_cell(t), "reading": t.get("non_replication_reading") or
-                    t.get("reason", ""), "verdict": t.get("verdict", t["status"])})
+                    "MDE": _mde_cell(t),
+                    "reading": _causal_reading_cell(t, blk, alpha, n_max), "verdict": t.get("verdict", t["status"])})
             purpose = ("Held-out test of the causal ablation claims: does ablating the same "
                        "dev SAE feature on its private top-firing series still move the same "
                        "forecast channel in the same direction, beyond a random-direction null?")
