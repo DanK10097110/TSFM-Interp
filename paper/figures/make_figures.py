@@ -1,9 +1,11 @@
 """Regenerate every data figure in the paper from the published example run.
 
 The paper's quantitative figures are not drawn by hand: each one is a pure
-function of an artifact committed under ``examples/concept_atlas_v2/run``, so a
-reader can rerun this script (or point it at their own run with ``--run``) and
-obtain the same PDFs. Architecture diagrams are TikZ in ``main.tex``; report
+function of an artifact committed under ``examples/panel7_v2/run`` (the seven-model
+run with its one-shot held-out confirmation), so a reader can rerun this script (or
+point it at their own run with ``--run``, e.g. ``examples/concept_atlas_v2/run`` for
+the earlier four-model run) and obtain the same PDFs. No model name or model count
+is hardcoded: colors and abbreviations are looked up per model with a fallback. Architecture diagrams are TikZ in ``main.tex``; report
 screenshots are produced by ``screenshot_report.sh``.
 """
 
@@ -18,10 +20,18 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 REPO = Path(__file__).resolve().parents[2]
-DEFAULT_RUN = REPO / "examples" / "concept_atlas_v2" / "run"
+DEFAULT_RUN = REPO / "examples" / "panel7_v2" / "run"
 OUT = Path(__file__).resolve().parent
 
-MODEL_COLORS = {"TimesFM": "#2f6f8f", "Chronos-2": "#9b4f7f", "Sundial": "#3d7f5a", "Chronos-Bolt": "#8a6a3a"}
+MODEL_COLORS = {
+    "TimesFM": "#2f6f8f", "Chronos-2": "#9b4f7f", "Sundial": "#3d7f5a", "Chronos-Bolt": "#8a6a3a",
+    "Timer": "#d08a2e", "Time-MoE": "#b5473f", "Chronos-T5-Base": "#6a6fb0",
+}
+FALLBACK_COLORS = ["#7f7f7f", "#17becf", "#bcbd22", "#e377c2", "#8c564b"]
+ABBREVIATIONS = {
+    "TimesFM": "TFM", "Chronos-2": "C-2", "Sundial": "Sun", "Chronos-Bolt": "Bolt", "Timer": "Tim",
+    "Time-MoE": "MoE", "Chronos-T5-Base": "T5",
+}
 CHANNEL_LABELS = {
     "trend": "trend", "seasonal": "seasonal", "spectral_centroid": "spectral\ncentroid",
     "level": "level", "dispersion": "dispersion", "horizon_shape_near": "shape\n(near)",
@@ -32,6 +42,26 @@ CHANNEL_LABELS = {
 def _load(run, rel):
     """Read one JSON artifact of the run."""
     return json.loads((run / rel).read_text(encoding="utf-8"))
+
+
+def _models_in(names):
+    """Order model names canonically (known ones first, in palette order), unknown ones after, sorted."""
+    names = set(names)
+    known = [m for m in MODEL_COLORS if m in names]
+    return known + sorted(names - set(known))
+
+
+def _color(model, models):
+    """Palette color of a model, with a deterministic fallback for names outside the palette."""
+    if model in MODEL_COLORS:
+        return MODEL_COLORS[model]
+    extra = [m for m in models if m not in MODEL_COLORS]
+    return FALLBACK_COLORS[extra.index(model) % len(FALLBACK_COLORS)]
+
+
+def _abbr(model):
+    """Short model label for dense axes."""
+    return ABBREVIATIONS.get(model, model[:3])
 
 
 def _style():
@@ -45,22 +75,27 @@ def _style():
 
 
 def fig_heldout(run):
-    """Dev estimate vs held-out private interval for every replicated claim kind."""
+    """Dev estimate vs held-out private interval for every replicated claim kind, plus the K2 claim ledger."""
     conf = _load(run, "confirm/confirmation.json")
-    fig, axes = plt.subplots(1, 3, figsize=(7.2, 2.7), gridspec_kw={"width_ratios": [1.2, 1.0, 1.1]})
+    fig = plt.figure(figsize=(7.2, 4.5))
+    gs = fig.add_gridspec(2, 3, height_ratios=[2.5, 1.55], width_ratios=[1.2, 1.0, 1.1], hspace=0.62)
+    axes = [fig.add_subplot(gs[0, j]) for j in range(3)]
+    axd = fig.add_subplot(gs[1, :])
 
     ax = axes[0]
     tests = conf["l3_replication"]["tests"]
     y = np.arange(len(tests))[::-1]
     for yi, t in zip(y, tests):
         p = t["private"]
-        ax.plot([p["lo"], p["hi"]], [yi, yi], color="#444", lw=1.6)
-        ax.plot(p["value"], yi, "o", color="#444", ms=3.5)
+        col = "#444" if t["replicates"] else "#c62828"
+        ax.plot([p["lo"], p["hi"]], [yi, yi], color=col, lw=1.6)
+        ax.plot(p["value"], yi, "o", color=col, ms=3.5)
         ax.plot(t["dev_rho"], yi, "x", color="#c0602a", ms=5, mew=1.3)
     ax.set_yticks(y, [t["corruption"].replace("_", " ") for t in tests])
     ax.axvline(0, color="#bbb", lw=0.6)
     ax.set_xlabel("Spearman $\\rho$ of depth profiles")
-    ax.set_title("(a) L3: 9/9 replicate")
+    n_rep = sum(t["replicates"] for t in tests)
+    ax.set_title(f"(a) L3: {n_rep}/{len(tests)} replicate (red: not)")
 
     ax = axes[1]
     tr = conf["concept_replication"]["transfer"]["tests"]
@@ -74,7 +109,8 @@ def fig_heldout(run):
     ax.set_yticks([])
     ax.set_xlim(0.5, 1.005)
     ax.set_xlabel("top-$k$ input AUC")
-    ax.set_title("(b) transfer: 20/20")
+    n_conf = sum(bool(t["confirmed"]) for t in tr)
+    ax.set_title(f"(b) transfer: {n_conf}/{len(tr)}")
     ax.text(0.52, len(tr) - 1.2, "| = null p95", fontsize=6.5, color="#666")
 
     ax = axes[2]
@@ -94,11 +130,35 @@ def fig_heldout(run):
     ax.yaxis.tick_right()
     ax.set_xlabel("private estimate (95% CI)")
     ax.set_title("(c) accuracy and geometry")
+
+    cr = conf["concept_replication"]
+    fams = [
+        ("single-feature causal", cr["causal"]),
+        ("multi-model atlas concepts", cr["atlas"]),
+        ("shared-input agreement (L5)", cr["agreement"]),
+        ("concept transfer", cr["transfer"]),
+        ("structure (no universal concept; null share)", cr["structure"]),
+        ("U1 reliability (predictive)", cr["reliability_u1"]),
+    ]
+    y = np.arange(len(fams))[::-1]
+    for yi, (lab, f) in zip(y, fams):
+        n_ok = f["n_confirmed"]
+        n_bad = f["n_tested"] - f["n_confirmed"]
+        n_nt = f.get("n_not_testable", f["n_registered"] - f["n_tested"])
+        axd.barh(yi, n_ok, color="#2e7d32", height=0.62)
+        axd.barh(yi, n_bad, left=n_ok, color="#c62828", height=0.62)
+        axd.barh(yi, n_nt, left=n_ok + n_bad, color="#cfcfcf", height=0.62, hatch="///", ec="#999", lw=0.3)
+        axd.text(n_ok + n_bad + n_nt + 0.5, yi, f"{n_ok}/{f['n_tested']} confirmed" + (f", {n_nt} not testable" if n_nt else ""),
+                 va="center", fontsize=6.5)
+    axd.set_yticks(y, [f[0] for f in fams])
+    axd.set_xlim(0, max(f["n_registered"] for _, f in fams) * 1.45)
+    axd.set_xlabel("registered claims")
+    axd.set_title(f"(d) claim ledger: {conf['n_registered']} registered, {conf['n_replicable']} replicable "
+                  "(green confirmed, red tested and not confirmed, hatched not testable)", fontsize=7.5)
     fig.legend(handles=[
         plt.Line2D([], [], marker="x", ls="", color="#c0602a", label="dev (exploratory) estimate"),
         plt.Line2D([], [], marker="o", ls="-", color="#444", label="private (confirmatory) estimate and CI"),
-    ], loc="lower center", ncol=2, bbox_to_anchor=(0.5, -0.08), frameon=False)
-    fig.tight_layout()
+    ], loc="upper center", ncol=2, bbox_to_anchor=(0.5, 0.0), frameon=False)
     fig.savefig(OUT / "heldout.pdf")
     plt.close(fig)
 
@@ -127,17 +187,17 @@ def fig_families(run):
     cb = fig.colorbar(im, ax=ax, fraction=0.03, pad=0.01)
     cb.set_label("effect (null-p95 units)")
     ax.set_title("(a) what each family does (boxed: clears null)")
-    models = list(MODEL_COLORS)
+    models = _models_in({m for f in fam for m in f["models"]})
     left = np.zeros(len(fam))
     for m in models:
         v = np.array([f["models"].get(m, 0) / f["n_members"] for f in fam])
-        ax2.barh(range(len(fam)), v, left=left, color=MODEL_COLORS[m], label=m, height=0.7)
+        ax2.barh(range(len(fam)), v, left=left, color=_color(m, models), label=m, height=0.7)
         left += v
     ax2.set_ylim(len(fam) - 0.5, -0.5)
     ax2.set_yticks([])
     ax2.set_xlabel("share of members by model")
     ax2.set_title("(b) membership")
-    ax2.legend(loc="lower center", bbox_to_anchor=(0.5, -0.42), ncol=2, frameon=False)
+    ax2.legend(loc="upper center", bbox_to_anchor=(0.5, -0.2), ncol=2, frameon=False, fontsize=6.5)
     fig.tight_layout()
     fig.savefig(OUT / "families.pdf")
     plt.close(fig)
@@ -149,7 +209,7 @@ def fig_funnel(run):
     at, sb, pr, sia = st["atlas"], st["stability"], st["profiles"], st["shared_input_agreement"]
     fig, (ax, ax2) = plt.subplots(1, 2, figsize=(7.0, 2.4), gridspec_kw={"width_ratios": [1.2, 1.0]})
     stages = [
-        ("causal SAE features\n(clear random-direction null)", at["n_features"]),
+        ("causal SAE features\n(clear the profile-matched null)", at["n_features"]),
         ("assigned to an atlas concept", at["n_assigned"]),
         ("atlas concepts ($\\geq$3 members)", at["n_concepts"]),
         ("seed-stable concepts", sb["n_stable"]),
@@ -182,22 +242,23 @@ def fig_similarity(run):
     """Per-metric rank of every model pair: the metrics disagree, so they are never pooled."""
     sim = _load(run, "report/model_similarity.json")
     ranks = sim["consensus"]["rank_table"]
-    pairs = [p["key"] for p in sim["pairs"]]
+    per_pair = sim["consensus"]["per_pair"]
+    pairs = sorted((p["key"] for p in sim["pairs"]), key=lambda k: per_pair[k]["median_rank"])
     metrics = list(ranks)
     mat = np.array([[ranks[m][p] for p in pairs] for m in metrics])
-    fig, ax = plt.subplots(figsize=(4.6, 2.5))
+    fig, ax = plt.subplots(figsize=(7.2, 2.7))
     im = ax.imshow(mat, cmap="viridis_r", aspect="auto", vmin=1, vmax=len(pairs))
     for i in range(mat.shape[0]):
         for j in range(mat.shape[1]):
-            ax.text(j, i, f"{mat[i, j]:g}", ha="center", va="center", fontsize=7,
-                    color="w" if mat[i, j] < 3.5 else "k")
-    abbr = {"TimesFM": "TFM", "Chronos-2": "C-2", "Sundial": "Sun", "Chronos-Bolt": "Bolt"}
-    ax.set_xticks(range(len(pairs)), ["\n".join(abbr[m] for m in p.split("|")) for p in pairs])
+            ax.text(j, i, f"{mat[i, j]:g}", ha="center", va="center", fontsize=6,
+                    color="w" if mat[i, j] < len(pairs) / 3 else "k")
+    ax.set_xticks(range(len(pairs)), ["\n".join(_abbr(m) for m in p.split("|")) for p in pairs], fontsize=6)
     ax.set_yticks(range(len(metrics)), [sim["metrics"][m]["label"] for m in metrics])
-    cb = fig.colorbar(im, ax=ax, fraction=0.04, pad=0.02)
+    cb = fig.colorbar(im, ax=ax, fraction=0.025, pad=0.01)
     cb.set_label("rank (1 = most similar)")
     w = sim["consensus"]["kendall_w_all"]
-    ax.set_title(f"rank agreement across {w['n_metrics']} metrics: Kendall's W = {w['w']:.2f} (permutation p = {w['p']:.2f})")
+    ax.set_title(f"{len(pairs)} model pairs (sorted by median rank), {w['n_metrics']} metrics: "
+                 f"Kendall's W = {w['w']:.2f} (permutation p = {w['p']:.3f})")
     fig.tight_layout()
     fig.savefig(OUT / "similarity.pdf")
     plt.close(fig)
