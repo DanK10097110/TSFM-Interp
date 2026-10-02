@@ -1008,6 +1008,40 @@ def _holm_confirm(tests: list, pkey: str, alpha: float, extra_ok=lambda t: True)
     return len(pv), n_conf
 
 
+def causal_claim_reading(t: dict, m: int, alpha: float, n_max: int) -> str:
+    """Plain-language power reading of one tested causal-concept claim, from
+    fields stored in its test entry (`confirmed`, `n_null`, `dev_effect`,
+    `mde`) plus the family's Holm size `m`, `alpha` and the adaptive ceiling
+    `n_max`. The claim's own MDE is computed from its own null draws, so a
+    claim that was not at the p floor (never redrawn, `n_null < n_max`) sees
+    `m/(n_null+1) > alpha` and reports `unsatisfiable_correction` even though
+    the procedure can reach alpha at `n_max`; that case reads as "not
+    detected", and only `m/(n_max+1) > alpha` reads as untestable. A
+    confirmed claim never receives a non-confirmation sentence."""
+    mde = t.get("mde") or {}
+    mde_v = mde.get("mde")
+    dev = t.get("dev_effect")
+    if t.get("confirmed"):
+        if mde_v is not None and dev is not None and dev >= mde_v:
+            return "confirmed with power"
+        return "confirmed (dev-sized effect below this test's MDE)"
+    if mde_v is None:
+        reason = mde.get("reason")
+        n_used = int(t.get("n_null") or 0)
+        if (reason == "unsatisfiable_correction" and n_max > n_used
+                and m / (n_max + 1) <= alpha):
+            return (f"tested at {n_used} null draws and not at the p floor, so the adaptive "
+                    f"redraw to {n_max} could not rescue it: a non-confirmation reads as not "
+                    f"detected (power at this effect size not computed)")
+        return (f"power not computable ({reason}): read this claim as untestable, "
+                f"not absent")
+    if dev is not None and dev >= mde_v:
+        return ("a dev-sized effect was above this test's MDE: a non-confirmation reads as "
+                "absent")
+    return ("a dev-sized effect is BELOW this test's MDE: a non-confirmation reads as "
+            "underpowered, not absent")
+
+
 def _confirm_concept_causal(cfg, hub, private, run_dir, registry, feats: dict,
                             errors: dict, batteries: dict) -> dict:
     """Replicate every `concept_causal` claim: on the feature's PRIVATE
@@ -1081,21 +1115,11 @@ def _confirm_concept_causal(cfg, hub, private, run_dir, registry, feats: dict,
                                   null_p95=t["private_null_p95"],
                                   seed=cfg.run.seed + 810_000)
         t["mde"] = mde
-        if mde.get("mde") is None:
-            t["non_replication_reading"] = (
-                f"power not computable ({mde.get('reason')}): read this claim as untestable, "
-                f"not absent")
-        elif t["dev_effect"] >= mde["mde"]:
-            t["non_replication_reading"] = (
-                "a dev-sized effect was above this test's MDE: a non-confirmation reads as "
-                "absent" if not t["confirmed"] else "confirmed with power")
-        else:
-            t["non_replication_reading"] = (
-                "a dev-sized effect is BELOW this test's MDE: a non-confirmation reads as "
-                "underpowered, not absent")
+        t["non_replication_reading"] = causal_claim_reading(t, m, alpha, n_max)
     return {"status": "tested", "n_registered": len(claims), "n_tested": m,
             "n_confirmed": n_conf,
             "n_not_testable": sum(1 for t in tests if t["status"] != "tested"),
+            "n_max_null": n_max, "n_initial_null": n0,
             "p_method": "exact permutation p on mean |effect| vs random-direction null "
                         f"({n0} draws); adaptive redraw to {n_max} at the floor",
             "p_combination": "Holm across the tested claims of this family; sign must match dev",
