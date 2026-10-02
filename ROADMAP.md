@@ -38016,8 +38016,8 @@ are not confirmed.**
 
   They reach destinations in every other family: Timer 6, TimesFM 5, Sundial 3, Chronos-2 2, Chronos-T5-Base 2,
   Time-MoE 1, Chronos-Bolt 1. Search mode is used, and 8/20 private best features equal dev's. This is the
-  **third** independent private corpus on which 20 frozen transfer claims confirm (after v1 epochs 1–2 and the v2
-  test split). The class is correlational: the same series are grouped by both models.
+  **fourth** independent private draw for registered transfer claims: 19/20 on v1 epoch 1, 20/20 on v1 epoch 2,
+  20/20 on the v2 test split, and now 20/20 (a correction made the same day: this was first written as "third"). The class is correlational: the same series are grouped by both models.
 - **Causal.** Per model, confirmed/registered:
   - TimesFM 3/4 (xf.0 f4305 mase, xf.4 f886 spectral_centroid, xf.6 f1568 mase);
   - Time-MoE 2/7 (l.1 f4951 horizon_shape_near, l.4 f466 spectral_centroid);
@@ -38071,7 +38071,7 @@ are not confirmed.**
   (dev-sized effect below MDE)', 2 'underpowered', and 0 'untestable'.
 
 **Reading.** On a fresh, sealed, 971-series private corpus, the claims that replicate are:
-- input-level concept sharing across families (transfer, 20/20, a third time);
+- input-level concept sharing across families (transfer, 20/20, on a fourth private draw);
 - a minority of the individual causal features (10/31; TimesFM and the decoder-only models hold up best,
   Chronos-T5-Base not at all);
 - the structural negatives: no universal concept, and most prominent features are causally null;

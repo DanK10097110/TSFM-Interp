@@ -96,7 +96,7 @@ These instructions are binding for every future session, human or agent.
 | SH-16 | No concept is shared by all 4 models; the multi-model pattern is **convergent** effect from different inputs. **Under the matched null (MN-29) the convergent class vanishes (13 → 0 on v2); superseded pending the power check** | 5 |
 | MN-30 | The L5 'same causal effect' rung is specific (0/9 decoys) but insensitive on a known answer (0.4 / 0.0 on planted shared concepts across architectures); cross-architecture absences are uninformative |  5 |
 | SH-22 | At 7 models under the matched null, the atlas is **segregated by model** (cross-model mixing below chance, p 0.025). The full same-effect verdict (7/1290) is one Chronos-2 ↔ Chronos-Bolt concept, but 1053 tests are underpowered and partial agreement crosses families (level only 35, shape only 9); the strict rung's sensitivity is unmeasured | 5 |
-| SH-18 | Held-out: 19/20 searched and **20/20 frozen-feature** concept-transfer claims confirm on fresh sealed private epochs; **20/20 again at 7 models on a third private corpus** | 5 |
+| SH-18 | Held-out: 19/20 searched and **20/20 frozen-feature** concept-transfer claims confirm on fresh sealed private epochs; **20/20 again at 7 models on a fourth private draw** | 5 |
 | CA-11 | Held-out (K2, 7 models): 10/31 single-feature causal claims confirm; **0** cross-model causal claims do (atlas 0/3 multi-model, L5 0/6); models share what they select, not demonstrably what they do | 5 |
 | SH-19 | Unit-level correspondence (CCM) NO-GO: low-rank TSFM representations defeat the rotation control | 5 |
 | CA-06 | Measured on shared series with matched floors, cross-model causal "disagreement" shrinks from 18/19 to 12/288 (12 of 89 scorable) | 4 |
@@ -409,7 +409,7 @@ These instructions are binding for every future session, human or agent.
     - Concept 0, "strong raises seasonal": 4 claims. It is labelled
       convergent, yet features in other models select its series.
   - **Replication on a different corpus (2026-09-29).** `runs/concept_atlas_v2` (v2 corpus, fixed Sundial; ROADMAP §37.11c), P7 search mode on the unpeeked v2 private split (800 series, epoch 0, first look): **20/20 confirmed**, Holm max 0.009995, private AUC 0.9708–0.9951; 6/20 private best features equal dev's. Caveat: the 20 claims come from 2 concepts (16 from concept 0, Chronos-2 + TimesFM "strong lowers level"; 4 from concept 9, Chronos-2 + Sundial).
-  - **Third private corpus, 7 models (2026-10-02, K2, v2 epoch 3, 971 series, first look; CA-11).** **20/20 confirmed** in search mode, Holm max 0.009995002498750623. Private AUC 0.9194269190325972–0.9696109358569927, reverse 0.8053101997896951–0.9981598317560463; 8/20 private best features equal dev's. The claims come from TimesFM xf.18 concept 1 (14) and Sundial l.6 concept 3 (6), with destinations in every other family (Timer 6, TimesFM 5, Sundial 3, Chronos-2 2, Chronos-T5-Base 2, Time-MoE 1, Chronos-Bolt 1). Reproduce: `runs/panel7_v2_dev/confirm/confirmation.json` (`concept_replication`), private v2 epoch 3 (971 series), registry sha256 `ff6c4f9e…`, k3wt 597848a.
+  - **Fourth private draw, 7 models (2026-10-02, K2, v2 epoch 3, 971 series, first look; CA-11).** **20/20 confirmed** in search mode, Holm max 0.009995002498750623. Private AUC 0.9194269190325972–0.9696109358569927, reverse 0.8053101997896951–0.9981598317560463; 8/20 private best features equal dev's. The claims come from TimesFM xf.18 concept 1 (14) and Sundial l.6 concept 3 (6), with destinations in every other family (Timer 6, TimesFM 5, Sundial 3, Chronos-2 2, Chronos-T5-Base 2, Time-MoE 1, Chronos-Bolt 1). Reproduce: `runs/panel7_v2_dev/confirm/confirmation.json` (`concept_replication`), private v2 epoch 3 (971 series), registry sha256 `ff6c4f9e…`, k3wt 597848a.
   - **Other held-out results from the same epoch-1 confirmation.** Peak-CKA
     pair CKA 0.44 [0.43, 0.45]; 7/9 L3 fingerprint agreements (overall ρ
     0.50); Chronos-2 > others on `mixture` (ΔMASE 0.2222, p 0.0005).
@@ -662,7 +662,7 @@ These instructions are binding for every future session, human or agent.
 - **Evidence.** **Held-out confirmed** (causal within-model, for the 10 single-feature claims). Held-out *not* confirmed for every cross-model causal claim. **Status:** held-out confirmed / negative on private.
 - **Reproduce.** `runs/panel7_v2_dev/confirm/confirmation.json` (`concept_replication`), private v2 epoch 3 (971 series), registry sha256 `ff6c4f9e…`, k3wt 597848a.
 - **Ref.** ROADMAP §38.2 (Findings — K2 CONFIRMED ONCE).
-- **Score. 5/5.** This is the gold-standard answer to "do the causal concept claims hold up". The individual within-model causal features partly do (about 1 in 3). The cross-model causal sharing claims do not, while input-level sharing replicates for the third time: models share what they select, not demonstrably what they do with it.
+- **Score. 5/5.** This is the gold-standard answer to "do the causal concept claims hold up". The individual within-model causal features partly do (about 1 in 3). The cross-model causal sharing claims do not, while input-level sharing replicates on a fourth private draw: models share what they select, not demonstrably what they do with it.
 
 ---
 
