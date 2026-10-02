@@ -1,0 +1,805 @@
+{
+  "models": {
+    "TimesFM": {
+      "adapter": "timesfm",
+      "checkpoint": "google/timesfm-2.5-200m-pytorch",
+      "parameters": {
+        "total": 231289280,
+        "trainable": 231289280,
+        "body": 196715200,
+        "front_end": 1806080,
+        "head": 32768000,
+        "interleaved": 0,
+        "n_blocks": 20,
+        "per_block": {
+          "stacked_xf.0": 9835760,
+          "stacked_xf.1": 9835760,
+          "stacked_xf.2": 9835760,
+          "stacked_xf.3": 9835760,
+          "stacked_xf.4": 9835760,
+          "stacked_xf.5": 9835760,
+          "stacked_xf.6": 9835760,
+          "stacked_xf.7": 9835760,
+          "stacked_xf.8": 9835760,
+          "stacked_xf.9": 9835760,
+          "stacked_xf.10": 9835760,
+          "stacked_xf.11": 9835760,
+          "stacked_xf.12": 9835760,
+          "stacked_xf.13": 9835760,
+          "stacked_xf.14": 9835760,
+          "stacked_xf.15": 9835760,
+          "stacked_xf.16": 9835760,
+          "stacked_xf.17": 9835760,
+          "stacked_xf.18": 9835760,
+          "stacked_xf.19": 9835760
+        },
+        "role_split_is_heuristic": true
+      },
+      "forward": {
+        "batch": 8,
+        "context_len": 480,
+        "n_tokens": 15,
+        "timing": {
+          "median_s": 0.03885630890727043,
+          "min_s": 0.0387849397957325,
+          "max_s": 0.03901354968547821,
+          "n": 5
+        },
+        "peak_vram_bytes": 974956032,
+        "flops": 55667097600.0,
+        "flops_per_series": 6958387200.0,
+        "blocks": {
+          "per_block": {
+            "stacked_xf.0": 2368512000.0,
+            "stacked_xf.1": 2368512000.0,
+            "stacked_xf.2": 2368512000.0,
+            "stacked_xf.3": 2368512000.0,
+            "stacked_xf.4": 2368512000.0,
+            "stacked_xf.5": 2368512000.0,
+            "stacked_xf.6": 2368512000.0,
+            "stacked_xf.7": 2368512000.0,
+            "stacked_xf.8": 2368512000.0,
+            "stacked_xf.9": 2368512000.0,
+            "stacked_xf.10": 2368512000.0,
+            "stacked_xf.11": 2368512000.0,
+            "stacked_xf.12": 2368512000.0,
+            "stacked_xf.13": 2368512000.0,
+            "stacked_xf.14": 2368512000.0,
+            "stacked_xf.15": 2368512000.0,
+            "stacked_xf.16": 2368512000.0,
+            "stacked_xf.17": 2368512000.0,
+            "stacked_xf.18": 2368512000.0,
+            "stacked_xf.19": 2368512000.0
+          },
+          "cumulative": {
+            "stacked_xf.0": 2368512000.0,
+            "stacked_xf.1": 4737024000.0,
+            "stacked_xf.2": 7105536000.0,
+            "stacked_xf.3": 9474048000.0,
+            "stacked_xf.4": 11842560000.0,
+            "stacked_xf.5": 14211072000.0,
+            "stacked_xf.6": 16579584000.0,
+            "stacked_xf.7": 18948096000.0,
+            "stacked_xf.8": 21316608000.0,
+            "stacked_xf.9": 23685120000.0,
+            "stacked_xf.10": 26053632000.0,
+            "stacked_xf.11": 28422144000.0,
+            "stacked_xf.12": 30790656000.0,
+            "stacked_xf.13": 33159168000.0,
+            "stacked_xf.14": 35527680000.0,
+            "stacked_xf.15": 37896192000.0,
+            "stacked_xf.16": 40264704000.0,
+            "stacked_xf.17": 42633216000.0,
+            "stacked_xf.18": 45001728000.0,
+            "stacked_xf.19": 47370240000.0
+          },
+          "body_total": 47370240000.0,
+          "fraction_of_forward": 0.8509558076906096
+        }
+      },
+      "hidden_size": null,
+      "flops_sanity": {
+        "analytic_body_matmul_flops": 47211648000.0,
+        "measured_flops": 55667097600.0,
+        "measured_over_analytic": 1.179096683936981,
+        "verdict": "plausible"
+      },
+      "predict": {
+        "batch": 8,
+        "horizon": 64,
+        "timing": {
+          "median_s": 0.039028599858284,
+          "min_s": 0.03899985924363136,
+          "max_s": 0.0440349206328392,
+          "n": 3
+        },
+        "peak_vram_bytes": 974956032,
+        "flops": 55667097600.0,
+        "flops_per_series": 6958387200.0
+      },
+      "coverage": {
+        "captured_blocks": 10,
+        "regex_matched_blocks": 20,
+        "block_fraction": 0.5,
+        "captured_params": 98357600,
+        "total_params": 231289280,
+        "param_fraction": 0.4252579280803676,
+        "captured_flops": 23685120000.0,
+        "capture_pass_flops": 55667097600.0,
+        "forecast_flops": 55667097600.0,
+        "flops_fraction_of_capture_pass": 0.4254779038453048,
+        "flops_fraction_of_forecast": 0.4254779038453048,
+        "capture_pass_fraction_of_forecast": 1.0,
+        "uncaptured_surfaces": [
+          "34.6M parameters (15%) lie outside the 20 blocks this run's layer regex matched",
+          "10 of 20 matched blocks are skipped by capture_layer_stride=2"
+        ],
+        "headline_flops_fraction": 0.4254779038453048,
+        "headline_basis": "captured blocks over full-forecast FLOPs",
+        "headline_is_upper_bound": false,
+        "depth_claims_qualified": true
+      }
+    },
+    "Chronos-2": {
+      "adapter": "chronos2",
+      "checkpoint": "amazon/chronos-2",
+      "parameters": {
+        "total": 119477664,
+        "trainable": 119477664,
+        "body": 113273856,
+        "front_end": 2549760,
+        "head": 3654048,
+        "interleaved": 0,
+        "n_blocks": 12,
+        "per_block": {
+          "encoder.block.0": 9439488,
+          "encoder.block.1": 9439488,
+          "encoder.block.2": 9439488,
+          "encoder.block.3": 9439488,
+          "encoder.block.4": 9439488,
+          "encoder.block.5": 9439488,
+          "encoder.block.6": 9439488,
+          "encoder.block.7": 9439488,
+          "encoder.block.8": 9439488,
+          "encoder.block.9": 9439488,
+          "encoder.block.10": 9439488,
+          "encoder.block.11": 9439488
+        },
+        "role_split_is_heuristic": true
+      },
+      "forward": {
+        "batch": 8,
+        "context_len": 480,
+        "n_tokens": 30,
+        "timing": {
+          "median_s": 0.022112831473350525,
+          "min_s": 0.02196788787841797,
+          "max_s": 0.023302335292100906,
+          "n": 5
+        },
+        "peak_vram_bytes": 257396736,
+        "flops": 65479043328.0,
+        "flops_per_series": 8184880416.0,
+        "blocks": {
+          "per_block": {
+            "encoder.block.0": 5321812160.0,
+            "encoder.block.1": 5321812160.0,
+            "encoder.block.2": 5321812160.0,
+            "encoder.block.3": 5321812160.0,
+            "encoder.block.4": 5321812160.0,
+            "encoder.block.5": 5321812160.0,
+            "encoder.block.6": 5321812160.0,
+            "encoder.block.7": 5321812160.0,
+            "encoder.block.8": 5321812160.0,
+            "encoder.block.9": 5321812160.0,
+            "encoder.block.10": 5321812160.0,
+            "encoder.block.11": 5321812160.0
+          },
+          "cumulative": {
+            "encoder.block.0": 5321812160.0,
+            "encoder.block.1": 10643624320.0,
+            "encoder.block.2": 15965436480.0,
+            "encoder.block.3": 21287248640.0,
+            "encoder.block.4": 26609060800.0,
+            "encoder.block.5": 31930872960.0,
+            "encoder.block.6": 37252685120.0,
+            "encoder.block.7": 42574497280.0,
+            "encoder.block.8": 47896309440.0,
+            "encoder.block.9": 53218121600.0,
+            "encoder.block.10": 58539933760.0,
+            "encoder.block.11": 63861745920.0
+          },
+          "body_total": 63861745920.0,
+          "fraction_of_forward": 0.9753005339449055
+        }
+      },
+      "hidden_size": null,
+      "flops_sanity": {
+        "analytic_body_matmul_flops": 54371450880.0,
+        "measured_flops": 65479043328.0,
+        "measured_over_analytic": 1.2042908965684014,
+        "verdict": "plausible"
+      },
+      "predict": {
+        "batch": 8,
+        "horizon": 64,
+        "timing": {
+          "median_s": 0.023003775626420975,
+          "min_s": 0.02296900749206543,
+          "max_s": 0.02359919250011444,
+          "n": 3
+        },
+        "peak_vram_bytes": 257396736,
+        "flops": 65479043328.0,
+        "flops_per_series": 8184880416.0
+      },
+      "coverage": {
+        "captured_blocks": 12,
+        "regex_matched_blocks": 12,
+        "block_fraction": 1.0,
+        "captured_params": 113273856,
+        "total_params": 119477664,
+        "param_fraction": 0.948075583399421,
+        "captured_flops": 63861745920.0,
+        "capture_pass_flops": 65479043328.0,
+        "forecast_flops": 65479043328.0,
+        "flops_fraction_of_capture_pass": 0.9753005339449055,
+        "flops_fraction_of_forecast": 0.9753005339449055,
+        "capture_pass_fraction_of_forecast": 1.0,
+        "uncaptured_surfaces": [],
+        "headline_flops_fraction": 0.9753005339449055,
+        "headline_basis": "captured blocks over full-forecast FLOPs",
+        "headline_is_upper_bound": false,
+        "depth_claims_qualified": false
+      }
+    },
+    "Sundial": {
+      "adapter": "sundial",
+      "checkpoint": "thuml/sundial-base-128m",
+      "parameters": {
+        "total": 128329680,
+        "trainable": 128329680,
+        "body": 113310720,
+        "front_end": 2486784,
+        "head": 12532176,
+        "interleaved": 0,
+        "n_blocks": 12,
+        "per_block": {
+          "model.layers.0": 9442560,
+          "model.layers.1": 9442560,
+          "model.layers.2": 9442560,
+          "model.layers.3": 9442560,
+          "model.layers.4": 9442560,
+          "model.layers.5": 9442560,
+          "model.layers.6": 9442560,
+          "model.layers.7": 9442560,
+          "model.layers.8": 9442560,
+          "model.layers.9": 9442560,
+          "model.layers.10": 9442560,
+          "model.layers.11": 9442560
+        },
+        "role_split_is_heuristic": true
+      },
+      "forward": {
+        "batch": 8,
+        "context_len": 480,
+        "n_tokens": 30,
+        "timing": {
+          "median_s": 0.0075151436030864716,
+          "min_s": 0.00724661722779274,
+          "max_s": 0.007529351860284805,
+          "n": 5
+        },
+        "peak_vram_bytes": 595134976,
+        "flops": 55815045120.0,
+        "flops_per_series": 6976880640.0,
+        "blocks": {
+          "per_block": {
+            "model.layers.0": 4551966720.0,
+            "model.layers.1": 4551966720.0,
+            "model.layers.2": 4551966720.0,
+            "model.layers.3": 4551966720.0,
+            "model.layers.4": 4551966720.0,
+            "model.layers.5": 4551966720.0,
+            "model.layers.6": 4551966720.0,
+            "model.layers.7": 4551966720.0,
+            "model.layers.8": 4551966720.0,
+            "model.layers.9": 4551966720.0,
+            "model.layers.10": 4551966720.0,
+            "model.layers.11": 4551966720.0
+          },
+          "cumulative": {
+            "model.layers.0": 4551966720.0,
+            "model.layers.1": 9103933440.0,
+            "model.layers.2": 13655900160.0,
+            "model.layers.3": 18207866880.0,
+            "model.layers.4": 22759833600.0,
+            "model.layers.5": 27311800320.0,
+            "model.layers.6": 31863767040.0,
+            "model.layers.7": 36415733760.0,
+            "model.layers.8": 40967700480.0,
+            "model.layers.9": 45519667200.0,
+            "model.layers.10": 50071633920.0,
+            "model.layers.11": 54623600640.0
+          },
+          "body_total": 54623600640.0,
+          "fraction_of_forward": 0.9786537038993977
+        }
+      },
+      "hidden_size": null,
+      "flops_sanity": {
+        "analytic_body_matmul_flops": 54389145600.0,
+        "measured_flops": 55815045120.0,
+        "measured_over_analytic": 1.026216619221906,
+        "verdict": "plausible"
+      },
+      "predict": {
+        "batch": 8,
+        "horizon": 64,
+        "timing": {
+          "median_s": 0.061823904514312744,
+          "min_s": 0.06158161163330078,
+          "max_s": 0.06321728602051735,
+          "n": 3
+        },
+        "peak_vram_bytes": 595134976,
+        "flops": 255961989120.0,
+        "flops_per_series": 31995248640.0
+      },
+      "coverage": {
+        "captured_blocks": 12,
+        "regex_matched_blocks": 12,
+        "block_fraction": 1.0,
+        "captured_params": 113310720,
+        "total_params": 128329680,
+        "param_fraction": 0.8829658111825729,
+        "captured_flops": 54623600640.0,
+        "capture_pass_flops": 55815045120.0,
+        "forecast_flops": 255961989120.0,
+        "flops_fraction_of_capture_pass": 0.9786537038993977,
+        "flops_fraction_of_forecast": 0.21340512639316686,
+        "capture_pass_fraction_of_forecast": 0.2180598975335858,
+        "uncaptured_surfaces": [
+          "15.0M parameters (12%) lie outside the 12 blocks this run's layer regex matched",
+          "the captured forward pass performs only 22% of the FLOPs of a full forecast at this run's decode settings; the remainder (a decoder, or repeated sampled decode steps) runs unobserved"
+        ],
+        "headline_flops_fraction": 0.21340512639316686,
+        "headline_basis": "captured blocks over full-forecast FLOPs",
+        "headline_is_upper_bound": false,
+        "depth_claims_qualified": true
+      }
+    },
+    "Chronos-Bolt": {
+      "adapter": "chronos_bolt",
+      "checkpoint": "amazon/chronos-bolt-small",
+      "parameters": {
+        "total": 47718016,
+        "trainable": 47718016,
+        "body": 18880768,
+        "front_end": 1134592,
+        "head": 27702656,
+        "interleaved": 0,
+        "n_blocks": 6,
+        "per_block": {
+          "encoder.block.0": 3147008,
+          "encoder.block.1": 3146752,
+          "encoder.block.2": 3146752,
+          "encoder.block.3": 3146752,
+          "encoder.block.4": 3146752,
+          "encoder.block.5": 3146752
+        },
+        "role_split_is_heuristic": true
+      },
+      "forward": {
+        "batch": 8,
+        "context_len": 480,
+        "n_tokens": 30,
+        "timing": {
+          "median_s": 0.014492873102426529,
+          "min_s": 0.014382611960172653,
+          "max_s": 0.014519024640321732,
+          "n": 5
+        },
+        "peak_vram_bytes": 108184064,
+        "flops": 11954913280.0,
+        "flops_per_series": 1494364160.0,
+        "blocks": {
+          "per_block": {
+            "encoder.block.0": 1576026112.0,
+            "encoder.block.1": 1576026112.0,
+            "encoder.block.2": 1576026112.0,
+            "encoder.block.3": 1576026112.0,
+            "encoder.block.4": 1576026112.0,
+            "encoder.block.5": 1576026112.0
+          },
+          "cumulative": {
+            "encoder.block.0": 1576026112.0,
+            "encoder.block.1": 3152052224.0,
+            "encoder.block.2": 4728078336.0,
+            "encoder.block.3": 6304104448.0,
+            "encoder.block.4": 7880130560.0,
+            "encoder.block.5": 9456156672.0
+          },
+          "body_total": 9456156672.0,
+          "fraction_of_forward": 0.7909849658064605
+        }
+      },
+      "hidden_size": null,
+      "flops_sanity": {
+        "analytic_body_matmul_flops": 9062768640.0,
+        "measured_flops": 11954913280.0,
+        "measured_over_analytic": 1.3191237418590882,
+        "verdict": "plausible"
+      },
+      "predict": {
+        "batch": 8,
+        "horizon": 64,
+        "timing": {
+          "median_s": 0.014557689428329468,
+          "min_s": 0.014528822153806686,
+          "max_s": 0.014937598258256912,
+          "n": 3
+        },
+        "peak_vram_bytes": 108184064,
+        "flops": 11954913280.0,
+        "flops_per_series": 1494364160.0
+      },
+      "coverage": {
+        "captured_blocks": 6,
+        "regex_matched_blocks": 6,
+        "block_fraction": 1.0,
+        "captured_params": 18880768,
+        "total_params": 47718016,
+        "param_fraction": 0.3956737849285268,
+        "captured_flops": 9456156672.0,
+        "capture_pass_flops": 11954913280.0,
+        "forecast_flops": 11954913280.0,
+        "flops_fraction_of_capture_pass": 0.7909849658064605,
+        "flops_fraction_of_forecast": 0.7909849658064605,
+        "capture_pass_fraction_of_forecast": 1.0,
+        "uncaptured_surfaces": [
+          "28.8M parameters (60%) lie outside the 6 blocks this run's layer regex matched"
+        ],
+        "headline_flops_fraction": 0.7909849658064605,
+        "headline_basis": "captured blocks over full-forecast FLOPs",
+        "headline_is_upper_bound": false,
+        "depth_claims_qualified": true
+      }
+    },
+    "Timer": {
+      "adapter": "generic_hf",
+      "checkpoint": "thuml/timer-base-84m",
+      "parameters": {
+        "total": 84142080,
+        "trainable": 84142080,
+        "body": 83943424,
+        "front_end": 98304,
+        "head": 100352,
+        "interleaved": 0,
+        "n_blocks": 8,
+        "per_block": {
+          "model.layers.0": 10492928,
+          "model.layers.1": 10492928,
+          "model.layers.2": 10492928,
+          "model.layers.3": 10492928,
+          "model.layers.4": 10492928,
+          "model.layers.5": 10492928,
+          "model.layers.6": 10492928,
+          "model.layers.7": 10492928
+        },
+        "role_split_is_heuristic": true
+      },
+      "forward": {
+        "batch": 8,
+        "context_len": 480,
+        "n_tokens": 5,
+        "timing": {
+          "median_s": 0.005107950419187546,
+          "min_s": 0.00510416179895401,
+          "max_s": 0.0063584111630916595,
+          "n": 5
+        },
+        "peak_vram_bytes": 218525696,
+        "flops": 6733168640.0,
+        "flops_per_series": 841646080.0,
+        "blocks": {
+          "per_block": {
+            "model.layers.0": 839680000.0,
+            "model.layers.1": 839680000.0,
+            "model.layers.2": 839680000.0,
+            "model.layers.3": 839680000.0,
+            "model.layers.4": 839680000.0,
+            "model.layers.5": 839680000.0,
+            "model.layers.6": 839680000.0,
+            "model.layers.7": 839680000.0
+          },
+          "cumulative": {
+            "model.layers.0": 839680000.0,
+            "model.layers.1": 1679360000.0,
+            "model.layers.2": 2519040000.0,
+            "model.layers.3": 3358720000.0,
+            "model.layers.4": 4198400000.0,
+            "model.layers.5": 5038080000.0,
+            "model.layers.6": 5877760000.0,
+            "model.layers.7": 6717440000.0
+          },
+          "body_total": 6717440000.0,
+          "fraction_of_forward": 0.9976640062293167
+        }
+      },
+      "hidden_size": null,
+      "flops_sanity": {
+        "analytic_body_matmul_flops": 6715473920.0,
+        "measured_flops": 6733168640.0,
+        "measured_over_analytic": 1.00263491753684,
+        "verdict": "plausible"
+      },
+      "predict": {
+        "batch": 8,
+        "horizon": 64,
+        "timing": {
+          "median_s": 0.00533561035990715,
+          "min_s": 0.005334246903657913,
+          "max_s": 0.0053397901356220245,
+          "n": 3
+        },
+        "peak_vram_bytes": 218525696,
+        "flops": 6733168640.0,
+        "flops_per_series": 841646080.0
+      },
+      "coverage": {
+        "captured_blocks": 8,
+        "regex_matched_blocks": 8,
+        "block_fraction": 1.0,
+        "captured_params": 83943424,
+        "total_params": 84142080,
+        "param_fraction": 0.997639041012535,
+        "captured_flops": 6717440000.0,
+        "capture_pass_flops": 6733168640.0,
+        "forecast_flops": 6733168640.0,
+        "flops_fraction_of_capture_pass": 0.9976640062293167,
+        "flops_fraction_of_forecast": 0.9976640062293167,
+        "capture_pass_fraction_of_forecast": 1.0,
+        "uncaptured_surfaces": [],
+        "headline_flops_fraction": 0.9976640062293167,
+        "headline_basis": "captured blocks over full-forecast FLOPs",
+        "headline_is_upper_bound": false,
+        "depth_claims_qualified": false
+      }
+    },
+    "Time-MoE": {
+      "adapter": "generic_hf",
+      "checkpoint": "Maple728/TimeMoE-50M",
+      "parameters": {
+        "total": 113352192,
+        "trainable": 113352192,
+        "body": 113310720,
+        "front_end": 768,
+        "head": 40704,
+        "interleaved": 0,
+        "n_blocks": 12,
+        "per_block": {
+          "model.layers.0": 9442560,
+          "model.layers.1": 9442560,
+          "model.layers.2": 9442560,
+          "model.layers.3": 9442560,
+          "model.layers.4": 9442560,
+          "model.layers.5": 9442560,
+          "model.layers.6": 9442560,
+          "model.layers.7": 9442560,
+          "model.layers.8": 9442560,
+          "model.layers.9": 9442560,
+          "model.layers.10": 9442560,
+          "model.layers.11": 9442560
+        },
+        "role_split_is_heuristic": true
+      },
+      "forward": {
+        "batch": 8,
+        "context_len": 480,
+        "n_tokens": 480,
+        "timing": {
+          "median_s": 0.050787486135959625,
+          "min_s": 0.0507034994661808,
+          "max_s": 0.05137323588132858,
+          "n": 5
+        },
+        "peak_vram_bytes": 483620352,
+        "flops": 414808473600.0,
+        "flops_per_series": 51851059200.0,
+        "blocks": {
+          "per_block": {
+            "model.layers.0": 34566635520.0,
+            "model.layers.1": 34566635520.0,
+            "model.layers.2": 34566635520.0,
+            "model.layers.3": 34566635520.0,
+            "model.layers.4": 34566635520.0,
+            "model.layers.5": 34566635520.0,
+            "model.layers.6": 34566635520.0,
+            "model.layers.7": 34566635520.0,
+            "model.layers.8": 34566635520.0,
+            "model.layers.9": 34566635520.0,
+            "model.layers.10": 34566635520.0,
+            "model.layers.11": 34566635520.0
+          },
+          "cumulative": {
+            "model.layers.0": 34566635520.0,
+            "model.layers.1": 69133271040.0,
+            "model.layers.2": 103699906560.0,
+            "model.layers.3": 138266542080.0,
+            "model.layers.4": 172833177600.0,
+            "model.layers.5": 207399813120.0,
+            "model.layers.6": 241966448640.0,
+            "model.layers.7": 276533084160.0,
+            "model.layers.8": 311099719680.0,
+            "model.layers.9": 345666355200.0,
+            "model.layers.10": 380232990720.0,
+            "model.layers.11": 414799626240.0
+          },
+          "body_total": 414799626240.0,
+          "fraction_of_forward": 0.9999786712168071
+        }
+      },
+      "hidden_size": null,
+      "flops_sanity": {
+        "analytic_body_matmul_flops": 870226329600.0,
+        "measured_flops": 414808473600.0,
+        "measured_over_analytic": 0.47666734444896297,
+        "verdict": "suspicious_low"
+      },
+      "predict": {
+        "batch": 8,
+        "horizon": 64,
+        "timing": {
+          "median_s": 0.1032654345035553,
+          "min_s": 0.10270988941192627,
+          "max_s": 0.10550035908818245,
+          "n": 3
+        },
+        "peak_vram_bytes": 487153664,
+        "flops": 829616947200.0,
+        "flops_per_series": 103702118400.0
+      },
+      "coverage": {
+        "captured_blocks": 12,
+        "regex_matched_blocks": 12,
+        "block_fraction": 1.0,
+        "captured_params": 113310720,
+        "total_params": 113352192,
+        "param_fraction": 0.9996341314687589,
+        "captured_flops": 414799626240.0,
+        "capture_pass_flops": 414808473600.0,
+        "forecast_flops": 829616947200.0,
+        "flops_fraction_of_capture_pass": 0.9999786712168071,
+        "flops_fraction_of_forecast": 0.49998933560840353,
+        "capture_pass_fraction_of_forecast": 0.5,
+        "uncaptured_surfaces": [
+          "the captured forward pass performs only 50% of the FLOPs of a full forecast at this run's decode settings; the remainder (a decoder, or repeated sampled decode steps) runs unobserved"
+        ],
+        "headline_flops_fraction": 0.49998933560840353,
+        "headline_basis": "captured blocks over full-forecast FLOPs",
+        "headline_is_upper_bound": false,
+        "depth_claims_qualified": true
+      }
+    },
+    "Chronos-T5-Base": {
+      "adapter": "chronos",
+      "checkpoint": "amazon/chronos-t5-base",
+      "parameters": {
+        "total": 201374976,
+        "trainable": 201374976,
+        "body": 84953472,
+        "front_end": 3145728,
+        "head": 113275776,
+        "interleaved": 0,
+        "n_blocks": 12,
+        "per_block": {
+          "encoder.block.0": 7079808,
+          "encoder.block.1": 7079424,
+          "encoder.block.2": 7079424,
+          "encoder.block.3": 7079424,
+          "encoder.block.4": 7079424,
+          "encoder.block.5": 7079424,
+          "encoder.block.6": 7079424,
+          "encoder.block.7": 7079424,
+          "encoder.block.8": 7079424,
+          "encoder.block.9": 7079424,
+          "encoder.block.10": 7079424,
+          "encoder.block.11": 7079424
+        },
+        "role_split_is_heuristic": true
+      },
+      "forward": {
+        "batch": 8,
+        "context_len": 480,
+        "n_tokens": 480,
+        "timing": {
+          "median_s": 0.037106044590473175,
+          "min_s": 0.03705572336912155,
+          "max_s": 0.03806155547499657,
+          "n": 5
+        },
+        "peak_vram_bytes": 714726912,
+        "flops": 721888247808.0,
+        "flops_per_series": 90236030976.0,
+        "blocks": {
+          "per_block": {
+            "encoder.block.0": 60157353984.0,
+            "encoder.block.1": 60157353984.0,
+            "encoder.block.2": 60157353984.0,
+            "encoder.block.3": 60157353984.0,
+            "encoder.block.4": 60157353984.0,
+            "encoder.block.5": 60157353984.0,
+            "encoder.block.6": 60157353984.0,
+            "encoder.block.7": 60157353984.0,
+            "encoder.block.8": 60157353984.0,
+            "encoder.block.9": 60157353984.0,
+            "encoder.block.10": 60157353984.0,
+            "encoder.block.11": 60157353984.0
+          },
+          "cumulative": {
+            "encoder.block.0": 60157353984.0,
+            "encoder.block.1": 120314707968.0,
+            "encoder.block.2": 180472061952.0,
+            "encoder.block.3": 240629415936.0,
+            "encoder.block.4": 300786769920.0,
+            "encoder.block.5": 360944123904.0,
+            "encoder.block.6": 421101477888.0,
+            "encoder.block.7": 481258831872.0,
+            "encoder.block.8": 541416185856.0,
+            "encoder.block.9": 601573539840.0,
+            "encoder.block.10": 661730893824.0,
+            "encoder.block.11": 721888247808.0
+          },
+          "body_total": 721888247808.0,
+          "fraction_of_forward": 1.0
+        }
+      },
+      "hidden_size": null,
+      "flops_sanity": {
+        "analytic_body_matmul_flops": 652442664960.0,
+        "measured_flops": 721888247808.0,
+        "measured_over_analytic": 1.1064393648325521,
+        "verdict": "plausible"
+      },
+      "predict": {
+        "batch": 8,
+        "horizon": 64,
+        "timing": {
+          "median_s": 0.9754688031971455,
+          "min_s": 0.9740276075899601,
+          "max_s": 0.978557363152504,
+          "n": 3
+        },
+        "peak_vram_bytes": 3773833216,
+        "flops": 5188381605888.0,
+        "flops_per_series": 648547700736.0
+      },
+      "coverage": {
+        "captured_blocks": 12,
+        "regex_matched_blocks": 12,
+        "block_fraction": 1.0,
+        "captured_params": 84953472,
+        "total_params": 201374976,
+        "param_fraction": 0.42186707448695115,
+        "captured_flops": 721888247808.0,
+        "capture_pass_flops": 721888247808.0,
+        "forecast_flops": 5188381605888.0,
+        "flops_fraction_of_capture_pass": 1.0,
+        "flops_fraction_of_forecast": 0.13913553447741198,
+        "capture_pass_fraction_of_forecast": 0.13913553447741198,
+        "uncaptured_surfaces": [
+          "116.4M parameters (58%) lie outside the 12 blocks this run's layer regex matched",
+          "the captured forward pass performs only 14% of the FLOPs of a full forecast at this run's decode settings; the remainder (a decoder, or repeated sampled decode steps) runs unobserved"
+        ],
+        "headline_flops_fraction": 0.13913553447741198,
+        "headline_basis": "captured blocks over full-forecast FLOPs",
+        "headline_is_upper_bound": false,
+        "depth_claims_qualified": true
+      }
+    }
+  },
+  "batch": 8,
+  "context_len": 480,
+  "horizon": 64
+}

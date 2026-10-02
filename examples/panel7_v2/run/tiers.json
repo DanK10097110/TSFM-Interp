@@ -1,0 +1,64 @@
+{
+  "models": {
+    "TimesFM": {
+      "tier": 3,
+      "name": "decomposable",
+      "adapter": "TimesFMAdapter",
+      "missing": {}
+    },
+    "Chronos-2": {
+      "tier": 3,
+      "name": "decomposable",
+      "adapter": "Chronos2Adapter",
+      "missing": {}
+    },
+    "Sundial": {
+      "tier": 2,
+      "name": "steerable",
+      "adapter": "SundialAdapter",
+      "missing": {
+        "3": [
+          "attention_patterns"
+        ]
+      }
+    },
+    "Chronos-Bolt": {
+      "tier": 2,
+      "name": "steerable",
+      "adapter": "ChronosBoltAdapter",
+      "missing": {
+        "3": [
+          "attention_patterns"
+        ]
+      }
+    },
+    "Timer": {
+      "tier": 2,
+      "name": "steerable",
+      "adapter": "GenericHFAdapter",
+      "missing": {
+        "3": [
+          "attention_patterns"
+        ]
+      }
+    },
+    "Time-MoE": {
+      "tier": 2,
+      "name": "steerable",
+      "adapter": "GenericHFAdapter",
+      "missing": {
+        "3": [
+          "attention_patterns"
+        ]
+      }
+    },
+    "Chronos-T5-Base": {
+      "tier": 3,
+      "name": "decomposable",
+      "adapter": "ChronosAdapter",
+      "missing": {}
+    }
+  },
+  "run_tier": 2,
+  "dropped_stages": []
+}

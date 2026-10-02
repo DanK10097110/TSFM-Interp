@@ -1,0 +1,1674 @@
+{
+  "model_a": "TimesFM",
+  "model_b": "Chronos-2",
+  "rows": [
+    {
+      "Axis": "Analysis eligibility",
+      "TimesFM": "full (spans declared by adapter)",
+      "Chronos-2": "full (spans declared by adapter)",
+      "Asymmetry": "both fully eligible",
+      "Qualifies": "every non-L0 section (ROADMAP.md \u00a716 E3(c))"
+    },
+    {
+      "Axis": "Capability tier",
+      "TimesFM": "3 (decomposable)",
+      "Chronos-2": "3 (decomposable)",
+      "Asymmetry": "same tier",
+      "Qualifies": "no stage dropped"
+    },
+    {
+      "Axis": "Parameters",
+      "TimesFM": "231.3M",
+      "Chronos-2": "119.5M",
+      "Asymmetry": "1.94\u00d7",
+      "Qualifies": "all quality claims (ROADMAP.md \u00a718 F2)"
+    },
+    {
+      "Axis": "FLOPs per forward (per series)",
+      "TimesFM": "6.96 GFLOPs",
+      "Chronos-2": "8.18 GFLOPs",
+      "Asymmetry": "1.18\u00d7",
+      "Qualifies": "all quality claims (ROADMAP.md \u00a718 F2)"
+    },
+    {
+      "Axis": "Captured FLOP fraction",
+      "TimesFM": "42.5%",
+      "Chronos-2": "97.5%",
+      "Asymmetry": "55.0 pt gap",
+      "Qualifies": "all depth-located claims (ROADMAP.md \u00a718 F4)"
+    },
+    {
+      "Axis": "Depth axis ('block')",
+      "TimesFM": "caps at 0.947",
+      "Chronos-2": "caps at 1.000",
+      "Asymmetry": "94.7% overlap",
+      "Qualifies": "all cross-depth figures (ROADMAP.md \u00a718 F1)"
+    },
+    {
+      "Axis": "Forecast determinism / noise floor",
+      "TimesFM": "deterministic",
+      "Chronos-2": "deterministic",
+      "Asymmetry": "both same kind",
+      "Qualifies": "all delta claims (ROADMAP.md \u00a718 F6)"
+    },
+    {
+      "Axis": "Finest resolvable lag (token width)",
+      "TimesFM": "32 steps",
+      "Chronos-2": "16 steps",
+      "Asymmetry": "2.0\u00d7 \u2014 matched at 32 steps",
+      "Qualifies": "all cross-model attention-lag claims (ROADMAP.md \u00a718 F5)"
+    },
+    {
+      "Axis": "Declared training exposure",
+      "TimesFM": "not yet measured",
+      "Chronos-2": "not yet measured",
+      "Asymmetry": "n/a",
+      "Qualifies": "all behavioral claims (ROADMAP.md \u00a718 F7, parked -- see \u00a722.6)"
+    },
+    {
+      "Axis": "Capability intersection",
+      "TimesFM": "not yet measured",
+      "Chronos-2": "not yet measured",
+      "Asymmetry": "n/a",
+      "Qualifies": "the asymmetric analyses (ROADMAP.md \u00a718 F3, parked -- see \u00a722.6)"
+    }
+  ],
+  "pairs": [
+    {
+      "a": "TimesFM",
+      "b": "Chronos-2",
+      "rows": [
+        {
+          "Axis": "Analysis eligibility",
+          "TimesFM": "full (spans declared by adapter)",
+          "Chronos-2": "full (spans declared by adapter)",
+          "Asymmetry": "both fully eligible",
+          "Qualifies": "every non-L0 section (ROADMAP.md \u00a716 E3(c))"
+        },
+        {
+          "Axis": "Capability tier",
+          "TimesFM": "3 (decomposable)",
+          "Chronos-2": "3 (decomposable)",
+          "Asymmetry": "same tier",
+          "Qualifies": "no stage dropped"
+        },
+        {
+          "Axis": "Parameters",
+          "TimesFM": "231.3M",
+          "Chronos-2": "119.5M",
+          "Asymmetry": "1.94\u00d7",
+          "Qualifies": "all quality claims (ROADMAP.md \u00a718 F2)"
+        },
+        {
+          "Axis": "FLOPs per forward (per series)",
+          "TimesFM": "6.96 GFLOPs",
+          "Chronos-2": "8.18 GFLOPs",
+          "Asymmetry": "1.18\u00d7",
+          "Qualifies": "all quality claims (ROADMAP.md \u00a718 F2)"
+        },
+        {
+          "Axis": "Captured FLOP fraction",
+          "TimesFM": "42.5%",
+          "Chronos-2": "97.5%",
+          "Asymmetry": "55.0 pt gap",
+          "Qualifies": "all depth-located claims (ROADMAP.md \u00a718 F4)"
+        },
+        {
+          "Axis": "Depth axis ('block')",
+          "TimesFM": "caps at 0.947",
+          "Chronos-2": "caps at 1.000",
+          "Asymmetry": "94.7% overlap",
+          "Qualifies": "all cross-depth figures (ROADMAP.md \u00a718 F1)"
+        },
+        {
+          "Axis": "Forecast determinism / noise floor",
+          "TimesFM": "deterministic",
+          "Chronos-2": "deterministic",
+          "Asymmetry": "both same kind",
+          "Qualifies": "all delta claims (ROADMAP.md \u00a718 F6)"
+        },
+        {
+          "Axis": "Finest resolvable lag (token width)",
+          "TimesFM": "32 steps",
+          "Chronos-2": "16 steps",
+          "Asymmetry": "2.0\u00d7 \u2014 matched at 32 steps",
+          "Qualifies": "all cross-model attention-lag claims (ROADMAP.md \u00a718 F5)"
+        },
+        {
+          "Axis": "Declared training exposure",
+          "TimesFM": "not yet measured",
+          "Chronos-2": "not yet measured",
+          "Asymmetry": "n/a",
+          "Qualifies": "all behavioral claims (ROADMAP.md \u00a718 F7, parked -- see \u00a722.6)"
+        },
+        {
+          "Axis": "Capability intersection",
+          "TimesFM": "not yet measured",
+          "Chronos-2": "not yet measured",
+          "Asymmetry": "n/a",
+          "Qualifies": "the asymmetric analyses (ROADMAP.md \u00a718 F3, parked -- see \u00a722.6)"
+        }
+      ]
+    },
+    {
+      "a": "TimesFM",
+      "b": "Sundial",
+      "rows": [
+        {
+          "Axis": "Analysis eligibility",
+          "TimesFM": "full (spans declared by adapter)",
+          "Sundial": "full (spans declared by adapter)",
+          "Asymmetry": "both fully eligible",
+          "Qualifies": "every non-L0 section (ROADMAP.md \u00a716 E3(c))"
+        },
+        {
+          "Axis": "Capability tier",
+          "TimesFM": "3 (decomposable)",
+          "Sundial": "2 (steerable)",
+          "Asymmetry": "run capped at tier 2 by the lower model",
+          "Qualifies": "no stage dropped"
+        },
+        {
+          "Axis": "Parameters",
+          "TimesFM": "231.3M",
+          "Sundial": "128.3M",
+          "Asymmetry": "1.80\u00d7",
+          "Qualifies": "all quality claims (ROADMAP.md \u00a718 F2)"
+        },
+        {
+          "Axis": "FLOPs per forward (per series)",
+          "TimesFM": "6.96 GFLOPs",
+          "Sundial": "6.98 GFLOPs",
+          "Asymmetry": "1.00\u00d7",
+          "Qualifies": "all quality claims (ROADMAP.md \u00a718 F2)"
+        },
+        {
+          "Axis": "Captured FLOP fraction",
+          "TimesFM": "42.5%",
+          "Sundial": "21.3%",
+          "Asymmetry": "21.2 pt gap",
+          "Qualifies": "all depth-located claims (ROADMAP.md \u00a718 F4)"
+        },
+        {
+          "Axis": "Depth axis ('block')",
+          "TimesFM": "caps at 0.947",
+          "Sundial": "caps at 1.000",
+          "Asymmetry": "94.7% overlap",
+          "Qualifies": "all cross-depth figures (ROADMAP.md \u00a718 F1)"
+        },
+        {
+          "Axis": "Forecast determinism / noise floor",
+          "TimesFM": "deterministic",
+          "Sundial": "\u00b10.141 MASE",
+          "Asymmetry": "one deterministic, one sampled",
+          "Qualifies": "all delta claims (ROADMAP.md \u00a718 F6)"
+        },
+        {
+          "Axis": "Finest resolvable lag (token width)",
+          "TimesFM": "not yet measured",
+          "Sundial": "not yet measured",
+          "Asymmetry": "n/a",
+          "Qualifies": "all attention-lag claims (ROADMAP.md \u00a718 F5 -- needs the attention stage with pattern capture supported by both adapters)"
+        },
+        {
+          "Axis": "Declared training exposure",
+          "TimesFM": "not yet measured",
+          "Sundial": "not yet measured",
+          "Asymmetry": "n/a",
+          "Qualifies": "all behavioral claims (ROADMAP.md \u00a718 F7, parked -- see \u00a722.6)"
+        },
+        {
+          "Axis": "Capability intersection",
+          "TimesFM": "not yet measured",
+          "Sundial": "not yet measured",
+          "Asymmetry": "n/a",
+          "Qualifies": "the asymmetric analyses (ROADMAP.md \u00a718 F3, parked -- see \u00a722.6)"
+        }
+      ]
+    },
+    {
+      "a": "TimesFM",
+      "b": "Chronos-Bolt",
+      "rows": [
+        {
+          "Axis": "Analysis eligibility",
+          "TimesFM": "full (spans declared by adapter)",
+          "Chronos-Bolt": "full (spans declared by adapter)",
+          "Asymmetry": "both fully eligible",
+          "Qualifies": "every non-L0 section (ROADMAP.md \u00a716 E3(c))"
+        },
+        {
+          "Axis": "Capability tier",
+          "TimesFM": "3 (decomposable)",
+          "Chronos-Bolt": "2 (steerable)",
+          "Asymmetry": "run capped at tier 2 by the lower model",
+          "Qualifies": "no stage dropped"
+        },
+        {
+          "Axis": "Parameters",
+          "TimesFM": "231.3M",
+          "Chronos-Bolt": "47.7M",
+          "Asymmetry": "4.85\u00d7",
+          "Qualifies": "all quality claims (ROADMAP.md \u00a718 F2)"
+        },
+        {
+          "Axis": "FLOPs per forward (per series)",
+          "TimesFM": "6.96 GFLOPs",
+          "Chronos-Bolt": "1.49 GFLOPs",
+          "Asymmetry": "4.66\u00d7",
+          "Qualifies": "all quality claims (ROADMAP.md \u00a718 F2)"
+        },
+        {
+          "Axis": "Captured FLOP fraction",
+          "TimesFM": "42.5%",
+          "Chronos-Bolt": "79.1%",
+          "Asymmetry": "36.6 pt gap",
+          "Qualifies": "all depth-located claims (ROADMAP.md \u00a718 F4)"
+        },
+        {
+          "Axis": "Depth axis ('block')",
+          "TimesFM": "caps at 0.947",
+          "Chronos-Bolt": "caps at 0.455",
+          "Asymmetry": "94.7% overlap",
+          "Qualifies": "all cross-depth figures (ROADMAP.md \u00a718 F1)"
+        },
+        {
+          "Axis": "Forecast determinism / noise floor",
+          "TimesFM": "deterministic",
+          "Chronos-Bolt": "deterministic",
+          "Asymmetry": "both same kind",
+          "Qualifies": "all delta claims (ROADMAP.md \u00a718 F6)"
+        },
+        {
+          "Axis": "Finest resolvable lag (token width)",
+          "TimesFM": "not yet measured",
+          "Chronos-Bolt": "not yet measured",
+          "Asymmetry": "n/a",
+          "Qualifies": "all attention-lag claims (ROADMAP.md \u00a718 F5 -- needs the attention stage with pattern capture supported by both adapters)"
+        },
+        {
+          "Axis": "Declared training exposure",
+          "TimesFM": "not yet measured",
+          "Chronos-Bolt": "not yet measured",
+          "Asymmetry": "n/a",
+          "Qualifies": "all behavioral claims (ROADMAP.md \u00a718 F7, parked -- see \u00a722.6)"
+        },
+        {
+          "Axis": "Capability intersection",
+          "TimesFM": "not yet measured",
+          "Chronos-Bolt": "not yet measured",
+          "Asymmetry": "n/a",
+          "Qualifies": "the asymmetric analyses (ROADMAP.md \u00a718 F3, parked -- see \u00a722.6)"
+        }
+      ]
+    },
+    {
+      "a": "TimesFM",
+      "b": "Timer",
+      "rows": [
+        {
+          "Axis": "Analysis eligibility",
+          "TimesFM": "full (spans declared by adapter)",
+          "Timer": "full (spans declared by adapter)",
+          "Asymmetry": "both fully eligible",
+          "Qualifies": "every non-L0 section (ROADMAP.md \u00a716 E3(c))"
+        },
+        {
+          "Axis": "Capability tier",
+          "TimesFM": "3 (decomposable)",
+          "Timer": "2 (steerable)",
+          "Asymmetry": "run capped at tier 2 by the lower model",
+          "Qualifies": "no stage dropped"
+        },
+        {
+          "Axis": "Parameters",
+          "TimesFM": "231.3M",
+          "Timer": "84.1M",
+          "Asymmetry": "2.75\u00d7",
+          "Qualifies": "all quality claims (ROADMAP.md \u00a718 F2)"
+        },
+        {
+          "Axis": "FLOPs per forward (per series)",
+          "TimesFM": "6.96 GFLOPs",
+          "Timer": "841.65 MFLOPs",
+          "Asymmetry": "8.27\u00d7",
+          "Qualifies": "all quality claims (ROADMAP.md \u00a718 F2)"
+        },
+        {
+          "Axis": "Captured FLOP fraction",
+          "TimesFM": "42.5%",
+          "Timer": "99.8%",
+          "Asymmetry": "57.2 pt gap",
+          "Qualifies": "all depth-located claims (ROADMAP.md \u00a718 F4)"
+        },
+        {
+          "Axis": "Depth axis ('block')",
+          "TimesFM": "caps at 0.947",
+          "Timer": "caps at 1.000",
+          "Asymmetry": "94.7% overlap",
+          "Qualifies": "all cross-depth figures (ROADMAP.md \u00a718 F1)"
+        },
+        {
+          "Axis": "Forecast determinism / noise floor",
+          "TimesFM": "deterministic",
+          "Timer": "deterministic",
+          "Asymmetry": "both same kind",
+          "Qualifies": "all delta claims (ROADMAP.md \u00a718 F6)"
+        },
+        {
+          "Axis": "Finest resolvable lag (token width)",
+          "TimesFM": "not yet measured",
+          "Timer": "not yet measured",
+          "Asymmetry": "n/a",
+          "Qualifies": "all attention-lag claims (ROADMAP.md \u00a718 F5 -- needs the attention stage with pattern capture supported by both adapters)"
+        },
+        {
+          "Axis": "Declared training exposure",
+          "TimesFM": "not yet measured",
+          "Timer": "not yet measured",
+          "Asymmetry": "n/a",
+          "Qualifies": "all behavioral claims (ROADMAP.md \u00a718 F7, parked -- see \u00a722.6)"
+        },
+        {
+          "Axis": "Capability intersection",
+          "TimesFM": "not yet measured",
+          "Timer": "not yet measured",
+          "Asymmetry": "n/a",
+          "Qualifies": "the asymmetric analyses (ROADMAP.md \u00a718 F3, parked -- see \u00a722.6)"
+        }
+      ]
+    },
+    {
+      "a": "TimesFM",
+      "b": "Time-MoE",
+      "rows": [
+        {
+          "Axis": "Analysis eligibility",
+          "TimesFM": "full (spans declared by adapter)",
+          "Time-MoE": "full (spans declared by adapter)",
+          "Asymmetry": "both fully eligible",
+          "Qualifies": "every non-L0 section (ROADMAP.md \u00a716 E3(c))"
+        },
+        {
+          "Axis": "Capability tier",
+          "TimesFM": "3 (decomposable)",
+          "Time-MoE": "2 (steerable)",
+          "Asymmetry": "run capped at tier 2 by the lower model",
+          "Qualifies": "no stage dropped"
+        },
+        {
+          "Axis": "Parameters",
+          "TimesFM": "231.3M",
+          "Time-MoE": "113.4M",
+          "Asymmetry": "2.04\u00d7",
+          "Qualifies": "all quality claims (ROADMAP.md \u00a718 F2)"
+        },
+        {
+          "Axis": "FLOPs per forward (per series)",
+          "TimesFM": "6.96 GFLOPs",
+          "Time-MoE": "51.85 GFLOPs",
+          "Asymmetry": "7.45\u00d7",
+          "Qualifies": "all quality claims (ROADMAP.md \u00a718 F2)"
+        },
+        {
+          "Axis": "Captured FLOP fraction",
+          "TimesFM": "42.5%",
+          "Time-MoE": "50.0%",
+          "Asymmetry": "7.5 pt gap",
+          "Qualifies": "all depth-located claims (ROADMAP.md \u00a718 F4)"
+        },
+        {
+          "Axis": "Depth axis ('block')",
+          "TimesFM": "caps at 0.947",
+          "Time-MoE": "caps at 1.000",
+          "Asymmetry": "94.7% overlap",
+          "Qualifies": "all cross-depth figures (ROADMAP.md \u00a718 F1)"
+        },
+        {
+          "Axis": "Forecast determinism / noise floor",
+          "TimesFM": "deterministic",
+          "Time-MoE": "deterministic",
+          "Asymmetry": "both same kind",
+          "Qualifies": "all delta claims (ROADMAP.md \u00a718 F6)"
+        },
+        {
+          "Axis": "Finest resolvable lag (token width)",
+          "TimesFM": "not yet measured",
+          "Time-MoE": "not yet measured",
+          "Asymmetry": "n/a",
+          "Qualifies": "all attention-lag claims (ROADMAP.md \u00a718 F5 -- needs the attention stage with pattern capture supported by both adapters)"
+        },
+        {
+          "Axis": "Declared training exposure",
+          "TimesFM": "not yet measured",
+          "Time-MoE": "not yet measured",
+          "Asymmetry": "n/a",
+          "Qualifies": "all behavioral claims (ROADMAP.md \u00a718 F7, parked -- see \u00a722.6)"
+        },
+        {
+          "Axis": "Capability intersection",
+          "TimesFM": "not yet measured",
+          "Time-MoE": "not yet measured",
+          "Asymmetry": "n/a",
+          "Qualifies": "the asymmetric analyses (ROADMAP.md \u00a718 F3, parked -- see \u00a722.6)"
+        }
+      ]
+    },
+    {
+      "a": "TimesFM",
+      "b": "Chronos-T5-Base",
+      "rows": [
+        {
+          "Axis": "Analysis eligibility",
+          "TimesFM": "full (spans declared by adapter)",
+          "Chronos-T5-Base": "full (spans declared by adapter)",
+          "Asymmetry": "both fully eligible",
+          "Qualifies": "every non-L0 section (ROADMAP.md \u00a716 E3(c))"
+        },
+        {
+          "Axis": "Capability tier",
+          "TimesFM": "3 (decomposable)",
+          "Chronos-T5-Base": "3 (decomposable)",
+          "Asymmetry": "same tier",
+          "Qualifies": "no stage dropped"
+        },
+        {
+          "Axis": "Parameters",
+          "TimesFM": "231.3M",
+          "Chronos-T5-Base": "201.4M",
+          "Asymmetry": "1.15\u00d7",
+          "Qualifies": "all quality claims (ROADMAP.md \u00a718 F2)"
+        },
+        {
+          "Axis": "FLOPs per forward (per series)",
+          "TimesFM": "6.96 GFLOPs",
+          "Chronos-T5-Base": "90.24 GFLOPs",
+          "Asymmetry": "12.97\u00d7",
+          "Qualifies": "all quality claims (ROADMAP.md \u00a718 F2)"
+        },
+        {
+          "Axis": "Captured FLOP fraction",
+          "TimesFM": "42.5%",
+          "Chronos-T5-Base": "13.9%",
+          "Asymmetry": "28.6 pt gap",
+          "Qualifies": "all depth-located claims (ROADMAP.md \u00a718 F4)"
+        },
+        {
+          "Axis": "Depth axis ('block')",
+          "TimesFM": "caps at 0.947",
+          "Chronos-T5-Base": "caps at 0.478",
+          "Asymmetry": "94.7% overlap",
+          "Qualifies": "all cross-depth figures (ROADMAP.md \u00a718 F1)"
+        },
+        {
+          "Axis": "Forecast determinism / noise floor",
+          "TimesFM": "deterministic",
+          "Chronos-T5-Base": "\u00b10.238 MASE",
+          "Asymmetry": "one deterministic, one sampled",
+          "Qualifies": "all delta claims (ROADMAP.md \u00a718 F6)"
+        },
+        {
+          "Axis": "Finest resolvable lag (token width)",
+          "TimesFM": "32 steps",
+          "Chronos-T5-Base": "1 step",
+          "Asymmetry": "32.0\u00d7 \u2014 matched at 32 steps",
+          "Qualifies": "all cross-model attention-lag claims (ROADMAP.md \u00a718 F5)"
+        },
+        {
+          "Axis": "Declared training exposure",
+          "TimesFM": "not yet measured",
+          "Chronos-T5-Base": "not yet measured",
+          "Asymmetry": "n/a",
+          "Qualifies": "all behavioral claims (ROADMAP.md \u00a718 F7, parked -- see \u00a722.6)"
+        },
+        {
+          "Axis": "Capability intersection",
+          "TimesFM": "not yet measured",
+          "Chronos-T5-Base": "not yet measured",
+          "Asymmetry": "n/a",
+          "Qualifies": "the asymmetric analyses (ROADMAP.md \u00a718 F3, parked -- see \u00a722.6)"
+        }
+      ]
+    },
+    {
+      "a": "Chronos-2",
+      "b": "Sundial",
+      "rows": [
+        {
+          "Axis": "Analysis eligibility",
+          "Chronos-2": "full (spans declared by adapter)",
+          "Sundial": "full (spans declared by adapter)",
+          "Asymmetry": "both fully eligible",
+          "Qualifies": "every non-L0 section (ROADMAP.md \u00a716 E3(c))"
+        },
+        {
+          "Axis": "Capability tier",
+          "Chronos-2": "3 (decomposable)",
+          "Sundial": "2 (steerable)",
+          "Asymmetry": "run capped at tier 2 by the lower model",
+          "Qualifies": "no stage dropped"
+        },
+        {
+          "Axis": "Parameters",
+          "Chronos-2": "119.5M",
+          "Sundial": "128.3M",
+          "Asymmetry": "1.07\u00d7",
+          "Qualifies": "all quality claims (ROADMAP.md \u00a718 F2)"
+        },
+        {
+          "Axis": "FLOPs per forward (per series)",
+          "Chronos-2": "8.18 GFLOPs",
+          "Sundial": "6.98 GFLOPs",
+          "Asymmetry": "1.17\u00d7",
+          "Qualifies": "all quality claims (ROADMAP.md \u00a718 F2)"
+        },
+        {
+          "Axis": "Captured FLOP fraction",
+          "Chronos-2": "97.5%",
+          "Sundial": "21.3%",
+          "Asymmetry": "76.2 pt gap",
+          "Qualifies": "all depth-located claims (ROADMAP.md \u00a718 F4)"
+        },
+        {
+          "Axis": "Depth axis ('block')",
+          "Chronos-2": "caps at 1.000",
+          "Sundial": "caps at 1.000",
+          "Asymmetry": "94.7% overlap",
+          "Qualifies": "all cross-depth figures (ROADMAP.md \u00a718 F1)"
+        },
+        {
+          "Axis": "Forecast determinism / noise floor",
+          "Chronos-2": "deterministic",
+          "Sundial": "\u00b10.141 MASE",
+          "Asymmetry": "one deterministic, one sampled",
+          "Qualifies": "all delta claims (ROADMAP.md \u00a718 F6)"
+        },
+        {
+          "Axis": "Finest resolvable lag (token width)",
+          "Chronos-2": "not yet measured",
+          "Sundial": "not yet measured",
+          "Asymmetry": "n/a",
+          "Qualifies": "all attention-lag claims (ROADMAP.md \u00a718 F5 -- needs the attention stage with pattern capture supported by both adapters)"
+        },
+        {
+          "Axis": "Declared training exposure",
+          "Chronos-2": "not yet measured",
+          "Sundial": "not yet measured",
+          "Asymmetry": "n/a",
+          "Qualifies": "all behavioral claims (ROADMAP.md \u00a718 F7, parked -- see \u00a722.6)"
+        },
+        {
+          "Axis": "Capability intersection",
+          "Chronos-2": "not yet measured",
+          "Sundial": "not yet measured",
+          "Asymmetry": "n/a",
+          "Qualifies": "the asymmetric analyses (ROADMAP.md \u00a718 F3, parked -- see \u00a722.6)"
+        }
+      ]
+    },
+    {
+      "a": "Chronos-2",
+      "b": "Chronos-Bolt",
+      "rows": [
+        {
+          "Axis": "Analysis eligibility",
+          "Chronos-2": "full (spans declared by adapter)",
+          "Chronos-Bolt": "full (spans declared by adapter)",
+          "Asymmetry": "both fully eligible",
+          "Qualifies": "every non-L0 section (ROADMAP.md \u00a716 E3(c))"
+        },
+        {
+          "Axis": "Capability tier",
+          "Chronos-2": "3 (decomposable)",
+          "Chronos-Bolt": "2 (steerable)",
+          "Asymmetry": "run capped at tier 2 by the lower model",
+          "Qualifies": "no stage dropped"
+        },
+        {
+          "Axis": "Parameters",
+          "Chronos-2": "119.5M",
+          "Chronos-Bolt": "47.7M",
+          "Asymmetry": "2.50\u00d7",
+          "Qualifies": "all quality claims (ROADMAP.md \u00a718 F2)"
+        },
+        {
+          "Axis": "FLOPs per forward (per series)",
+          "Chronos-2": "8.18 GFLOPs",
+          "Chronos-Bolt": "1.49 GFLOPs",
+          "Asymmetry": "5.48\u00d7",
+          "Qualifies": "all quality claims (ROADMAP.md \u00a718 F2)"
+        },
+        {
+          "Axis": "Captured FLOP fraction",
+          "Chronos-2": "97.5%",
+          "Chronos-Bolt": "79.1%",
+          "Asymmetry": "18.4 pt gap",
+          "Qualifies": "all depth-located claims (ROADMAP.md \u00a718 F4)"
+        },
+        {
+          "Axis": "Depth axis ('block')",
+          "Chronos-2": "caps at 1.000",
+          "Chronos-Bolt": "caps at 0.455",
+          "Asymmetry": "94.7% overlap",
+          "Qualifies": "all cross-depth figures (ROADMAP.md \u00a718 F1)"
+        },
+        {
+          "Axis": "Forecast determinism / noise floor",
+          "Chronos-2": "deterministic",
+          "Chronos-Bolt": "deterministic",
+          "Asymmetry": "both same kind",
+          "Qualifies": "all delta claims (ROADMAP.md \u00a718 F6)"
+        },
+        {
+          "Axis": "Finest resolvable lag (token width)",
+          "Chronos-2": "not yet measured",
+          "Chronos-Bolt": "not yet measured",
+          "Asymmetry": "n/a",
+          "Qualifies": "all attention-lag claims (ROADMAP.md \u00a718 F5 -- needs the attention stage with pattern capture supported by both adapters)"
+        },
+        {
+          "Axis": "Declared training exposure",
+          "Chronos-2": "not yet measured",
+          "Chronos-Bolt": "not yet measured",
+          "Asymmetry": "n/a",
+          "Qualifies": "all behavioral claims (ROADMAP.md \u00a718 F7, parked -- see \u00a722.6)"
+        },
+        {
+          "Axis": "Capability intersection",
+          "Chronos-2": "not yet measured",
+          "Chronos-Bolt": "not yet measured",
+          "Asymmetry": "n/a",
+          "Qualifies": "the asymmetric analyses (ROADMAP.md \u00a718 F3, parked -- see \u00a722.6)"
+        }
+      ]
+    },
+    {
+      "a": "Chronos-2",
+      "b": "Timer",
+      "rows": [
+        {
+          "Axis": "Analysis eligibility",
+          "Chronos-2": "full (spans declared by adapter)",
+          "Timer": "full (spans declared by adapter)",
+          "Asymmetry": "both fully eligible",
+          "Qualifies": "every non-L0 section (ROADMAP.md \u00a716 E3(c))"
+        },
+        {
+          "Axis": "Capability tier",
+          "Chronos-2": "3 (decomposable)",
+          "Timer": "2 (steerable)",
+          "Asymmetry": "run capped at tier 2 by the lower model",
+          "Qualifies": "no stage dropped"
+        },
+        {
+          "Axis": "Parameters",
+          "Chronos-2": "119.5M",
+          "Timer": "84.1M",
+          "Asymmetry": "1.42\u00d7",
+          "Qualifies": "all quality claims (ROADMAP.md \u00a718 F2)"
+        },
+        {
+          "Axis": "FLOPs per forward (per series)",
+          "Chronos-2": "8.18 GFLOPs",
+          "Timer": "841.65 MFLOPs",
+          "Asymmetry": "9.72\u00d7",
+          "Qualifies": "all quality claims (ROADMAP.md \u00a718 F2)"
+        },
+        {
+          "Axis": "Captured FLOP fraction",
+          "Chronos-2": "97.5%",
+          "Timer": "99.8%",
+          "Asymmetry": "2.2 pt gap",
+          "Qualifies": "all depth-located claims (ROADMAP.md \u00a718 F4)"
+        },
+        {
+          "Axis": "Depth axis ('block')",
+          "Chronos-2": "caps at 1.000",
+          "Timer": "caps at 1.000",
+          "Asymmetry": "94.7% overlap",
+          "Qualifies": "all cross-depth figures (ROADMAP.md \u00a718 F1)"
+        },
+        {
+          "Axis": "Forecast determinism / noise floor",
+          "Chronos-2": "deterministic",
+          "Timer": "deterministic",
+          "Asymmetry": "both same kind",
+          "Qualifies": "all delta claims (ROADMAP.md \u00a718 F6)"
+        },
+        {
+          "Axis": "Finest resolvable lag (token width)",
+          "Chronos-2": "not yet measured",
+          "Timer": "not yet measured",
+          "Asymmetry": "n/a",
+          "Qualifies": "all attention-lag claims (ROADMAP.md \u00a718 F5 -- needs the attention stage with pattern capture supported by both adapters)"
+        },
+        {
+          "Axis": "Declared training exposure",
+          "Chronos-2": "not yet measured",
+          "Timer": "not yet measured",
+          "Asymmetry": "n/a",
+          "Qualifies": "all behavioral claims (ROADMAP.md \u00a718 F7, parked -- see \u00a722.6)"
+        },
+        {
+          "Axis": "Capability intersection",
+          "Chronos-2": "not yet measured",
+          "Timer": "not yet measured",
+          "Asymmetry": "n/a",
+          "Qualifies": "the asymmetric analyses (ROADMAP.md \u00a718 F3, parked -- see \u00a722.6)"
+        }
+      ]
+    },
+    {
+      "a": "Chronos-2",
+      "b": "Time-MoE",
+      "rows": [
+        {
+          "Axis": "Analysis eligibility",
+          "Chronos-2": "full (spans declared by adapter)",
+          "Time-MoE": "full (spans declared by adapter)",
+          "Asymmetry": "both fully eligible",
+          "Qualifies": "every non-L0 section (ROADMAP.md \u00a716 E3(c))"
+        },
+        {
+          "Axis": "Capability tier",
+          "Chronos-2": "3 (decomposable)",
+          "Time-MoE": "2 (steerable)",
+          "Asymmetry": "run capped at tier 2 by the lower model",
+          "Qualifies": "no stage dropped"
+        },
+        {
+          "Axis": "Parameters",
+          "Chronos-2": "119.5M",
+          "Time-MoE": "113.4M",
+          "Asymmetry": "1.05\u00d7",
+          "Qualifies": "all quality claims (ROADMAP.md \u00a718 F2)"
+        },
+        {
+          "Axis": "FLOPs per forward (per series)",
+          "Chronos-2": "8.18 GFLOPs",
+          "Time-MoE": "51.85 GFLOPs",
+          "Asymmetry": "6.33\u00d7",
+          "Qualifies": "all quality claims (ROADMAP.md \u00a718 F2)"
+        },
+        {
+          "Axis": "Captured FLOP fraction",
+          "Chronos-2": "97.5%",
+          "Time-MoE": "50.0%",
+          "Asymmetry": "47.5 pt gap",
+          "Qualifies": "all depth-located claims (ROADMAP.md \u00a718 F4)"
+        },
+        {
+          "Axis": "Depth axis ('block')",
+          "Chronos-2": "caps at 1.000",
+          "Time-MoE": "caps at 1.000",
+          "Asymmetry": "94.7% overlap",
+          "Qualifies": "all cross-depth figures (ROADMAP.md \u00a718 F1)"
+        },
+        {
+          "Axis": "Forecast determinism / noise floor",
+          "Chronos-2": "deterministic",
+          "Time-MoE": "deterministic",
+          "Asymmetry": "both same kind",
+          "Qualifies": "all delta claims (ROADMAP.md \u00a718 F6)"
+        },
+        {
+          "Axis": "Finest resolvable lag (token width)",
+          "Chronos-2": "not yet measured",
+          "Time-MoE": "not yet measured",
+          "Asymmetry": "n/a",
+          "Qualifies": "all attention-lag claims (ROADMAP.md \u00a718 F5 -- needs the attention stage with pattern capture supported by both adapters)"
+        },
+        {
+          "Axis": "Declared training exposure",
+          "Chronos-2": "not yet measured",
+          "Time-MoE": "not yet measured",
+          "Asymmetry": "n/a",
+          "Qualifies": "all behavioral claims (ROADMAP.md \u00a718 F7, parked -- see \u00a722.6)"
+        },
+        {
+          "Axis": "Capability intersection",
+          "Chronos-2": "not yet measured",
+          "Time-MoE": "not yet measured",
+          "Asymmetry": "n/a",
+          "Qualifies": "the asymmetric analyses (ROADMAP.md \u00a718 F3, parked -- see \u00a722.6)"
+        }
+      ]
+    },
+    {
+      "a": "Chronos-2",
+      "b": "Chronos-T5-Base",
+      "rows": [
+        {
+          "Axis": "Analysis eligibility",
+          "Chronos-2": "full (spans declared by adapter)",
+          "Chronos-T5-Base": "full (spans declared by adapter)",
+          "Asymmetry": "both fully eligible",
+          "Qualifies": "every non-L0 section (ROADMAP.md \u00a716 E3(c))"
+        },
+        {
+          "Axis": "Capability tier",
+          "Chronos-2": "3 (decomposable)",
+          "Chronos-T5-Base": "3 (decomposable)",
+          "Asymmetry": "same tier",
+          "Qualifies": "no stage dropped"
+        },
+        {
+          "Axis": "Parameters",
+          "Chronos-2": "119.5M",
+          "Chronos-T5-Base": "201.4M",
+          "Asymmetry": "1.69\u00d7",
+          "Qualifies": "all quality claims (ROADMAP.md \u00a718 F2)"
+        },
+        {
+          "Axis": "FLOPs per forward (per series)",
+          "Chronos-2": "8.18 GFLOPs",
+          "Chronos-T5-Base": "90.24 GFLOPs",
+          "Asymmetry": "11.02\u00d7",
+          "Qualifies": "all quality claims (ROADMAP.md \u00a718 F2)"
+        },
+        {
+          "Axis": "Captured FLOP fraction",
+          "Chronos-2": "97.5%",
+          "Chronos-T5-Base": "13.9%",
+          "Asymmetry": "83.6 pt gap",
+          "Qualifies": "all depth-located claims (ROADMAP.md \u00a718 F4)"
+        },
+        {
+          "Axis": "Depth axis ('block')",
+          "Chronos-2": "caps at 1.000",
+          "Chronos-T5-Base": "caps at 0.478",
+          "Asymmetry": "94.7% overlap",
+          "Qualifies": "all cross-depth figures (ROADMAP.md \u00a718 F1)"
+        },
+        {
+          "Axis": "Forecast determinism / noise floor",
+          "Chronos-2": "deterministic",
+          "Chronos-T5-Base": "\u00b10.238 MASE",
+          "Asymmetry": "one deterministic, one sampled",
+          "Qualifies": "all delta claims (ROADMAP.md \u00a718 F6)"
+        },
+        {
+          "Axis": "Finest resolvable lag (token width)",
+          "Chronos-2": "16 steps",
+          "Chronos-T5-Base": "1 step",
+          "Asymmetry": "16.0\u00d7 \u2014 matched at 16 steps",
+          "Qualifies": "all cross-model attention-lag claims (ROADMAP.md \u00a718 F5)"
+        },
+        {
+          "Axis": "Declared training exposure",
+          "Chronos-2": "not yet measured",
+          "Chronos-T5-Base": "not yet measured",
+          "Asymmetry": "n/a",
+          "Qualifies": "all behavioral claims (ROADMAP.md \u00a718 F7, parked -- see \u00a722.6)"
+        },
+        {
+          "Axis": "Capability intersection",
+          "Chronos-2": "not yet measured",
+          "Chronos-T5-Base": "not yet measured",
+          "Asymmetry": "n/a",
+          "Qualifies": "the asymmetric analyses (ROADMAP.md \u00a718 F3, parked -- see \u00a722.6)"
+        }
+      ]
+    },
+    {
+      "a": "Sundial",
+      "b": "Chronos-Bolt",
+      "rows": [
+        {
+          "Axis": "Analysis eligibility",
+          "Sundial": "full (spans declared by adapter)",
+          "Chronos-Bolt": "full (spans declared by adapter)",
+          "Asymmetry": "both fully eligible",
+          "Qualifies": "every non-L0 section (ROADMAP.md \u00a716 E3(c))"
+        },
+        {
+          "Axis": "Capability tier",
+          "Sundial": "2 (steerable)",
+          "Chronos-Bolt": "2 (steerable)",
+          "Asymmetry": "same tier",
+          "Qualifies": "no stage dropped"
+        },
+        {
+          "Axis": "Parameters",
+          "Sundial": "128.3M",
+          "Chronos-Bolt": "47.7M",
+          "Asymmetry": "2.69\u00d7",
+          "Qualifies": "all quality claims (ROADMAP.md \u00a718 F2)"
+        },
+        {
+          "Axis": "FLOPs per forward (per series)",
+          "Sundial": "6.98 GFLOPs",
+          "Chronos-Bolt": "1.49 GFLOPs",
+          "Asymmetry": "4.67\u00d7",
+          "Qualifies": "all quality claims (ROADMAP.md \u00a718 F2)"
+        },
+        {
+          "Axis": "Captured FLOP fraction",
+          "Sundial": "21.3%",
+          "Chronos-Bolt": "79.1%",
+          "Asymmetry": "57.8 pt gap",
+          "Qualifies": "all depth-located claims (ROADMAP.md \u00a718 F4)"
+        },
+        {
+          "Axis": "Depth axis ('block')",
+          "Sundial": "caps at 1.000",
+          "Chronos-Bolt": "caps at 0.455",
+          "Asymmetry": "94.7% overlap",
+          "Qualifies": "all cross-depth figures (ROADMAP.md \u00a718 F1)"
+        },
+        {
+          "Axis": "Forecast determinism / noise floor",
+          "Sundial": "\u00b10.141 MASE",
+          "Chronos-Bolt": "deterministic",
+          "Asymmetry": "one deterministic, one sampled",
+          "Qualifies": "all delta claims (ROADMAP.md \u00a718 F6)"
+        },
+        {
+          "Axis": "Finest resolvable lag (token width)",
+          "Sundial": "not yet measured",
+          "Chronos-Bolt": "not yet measured",
+          "Asymmetry": "n/a",
+          "Qualifies": "all attention-lag claims (ROADMAP.md \u00a718 F5 -- needs the attention stage with pattern capture supported by both adapters)"
+        },
+        {
+          "Axis": "Declared training exposure",
+          "Sundial": "not yet measured",
+          "Chronos-Bolt": "not yet measured",
+          "Asymmetry": "n/a",
+          "Qualifies": "all behavioral claims (ROADMAP.md \u00a718 F7, parked -- see \u00a722.6)"
+        },
+        {
+          "Axis": "Capability intersection",
+          "Sundial": "not yet measured",
+          "Chronos-Bolt": "not yet measured",
+          "Asymmetry": "n/a",
+          "Qualifies": "the asymmetric analyses (ROADMAP.md \u00a718 F3, parked -- see \u00a722.6)"
+        }
+      ]
+    },
+    {
+      "a": "Sundial",
+      "b": "Timer",
+      "rows": [
+        {
+          "Axis": "Analysis eligibility",
+          "Sundial": "full (spans declared by adapter)",
+          "Timer": "full (spans declared by adapter)",
+          "Asymmetry": "both fully eligible",
+          "Qualifies": "every non-L0 section (ROADMAP.md \u00a716 E3(c))"
+        },
+        {
+          "Axis": "Capability tier",
+          "Sundial": "2 (steerable)",
+          "Timer": "2 (steerable)",
+          "Asymmetry": "same tier",
+          "Qualifies": "no stage dropped"
+        },
+        {
+          "Axis": "Parameters",
+          "Sundial": "128.3M",
+          "Timer": "84.1M",
+          "Asymmetry": "1.53\u00d7",
+          "Qualifies": "all quality claims (ROADMAP.md \u00a718 F2)"
+        },
+        {
+          "Axis": "FLOPs per forward (per series)",
+          "Sundial": "6.98 GFLOPs",
+          "Timer": "841.65 MFLOPs",
+          "Asymmetry": "8.29\u00d7",
+          "Qualifies": "all quality claims (ROADMAP.md \u00a718 F2)"
+        },
+        {
+          "Axis": "Captured FLOP fraction",
+          "Sundial": "21.3%",
+          "Timer": "99.8%",
+          "Asymmetry": "78.4 pt gap",
+          "Qualifies": "all depth-located claims (ROADMAP.md \u00a718 F4)"
+        },
+        {
+          "Axis": "Depth axis ('block')",
+          "Sundial": "caps at 1.000",
+          "Timer": "caps at 1.000",
+          "Asymmetry": "94.7% overlap",
+          "Qualifies": "all cross-depth figures (ROADMAP.md \u00a718 F1)"
+        },
+        {
+          "Axis": "Forecast determinism / noise floor",
+          "Sundial": "\u00b10.141 MASE",
+          "Timer": "deterministic",
+          "Asymmetry": "one deterministic, one sampled",
+          "Qualifies": "all delta claims (ROADMAP.md \u00a718 F6)"
+        },
+        {
+          "Axis": "Finest resolvable lag (token width)",
+          "Sundial": "not yet measured",
+          "Timer": "not yet measured",
+          "Asymmetry": "n/a",
+          "Qualifies": "all attention-lag claims (ROADMAP.md \u00a718 F5 -- needs the attention stage with pattern capture supported by both adapters)"
+        },
+        {
+          "Axis": "Declared training exposure",
+          "Sundial": "not yet measured",
+          "Timer": "not yet measured",
+          "Asymmetry": "n/a",
+          "Qualifies": "all behavioral claims (ROADMAP.md \u00a718 F7, parked -- see \u00a722.6)"
+        },
+        {
+          "Axis": "Capability intersection",
+          "Sundial": "not yet measured",
+          "Timer": "not yet measured",
+          "Asymmetry": "n/a",
+          "Qualifies": "the asymmetric analyses (ROADMAP.md \u00a718 F3, parked -- see \u00a722.6)"
+        }
+      ]
+    },
+    {
+      "a": "Sundial",
+      "b": "Time-MoE",
+      "rows": [
+        {
+          "Axis": "Analysis eligibility",
+          "Sundial": "full (spans declared by adapter)",
+          "Time-MoE": "full (spans declared by adapter)",
+          "Asymmetry": "both fully eligible",
+          "Qualifies": "every non-L0 section (ROADMAP.md \u00a716 E3(c))"
+        },
+        {
+          "Axis": "Capability tier",
+          "Sundial": "2 (steerable)",
+          "Time-MoE": "2 (steerable)",
+          "Asymmetry": "same tier",
+          "Qualifies": "no stage dropped"
+        },
+        {
+          "Axis": "Parameters",
+          "Sundial": "128.3M",
+          "Time-MoE": "113.4M",
+          "Asymmetry": "1.13\u00d7",
+          "Qualifies": "all quality claims (ROADMAP.md \u00a718 F2)"
+        },
+        {
+          "Axis": "FLOPs per forward (per series)",
+          "Sundial": "6.98 GFLOPs",
+          "Time-MoE": "51.85 GFLOPs",
+          "Asymmetry": "7.43\u00d7",
+          "Qualifies": "all quality claims (ROADMAP.md \u00a718 F2)"
+        },
+        {
+          "Axis": "Captured FLOP fraction",
+          "Sundial": "21.3%",
+          "Time-MoE": "50.0%",
+          "Asymmetry": "28.7 pt gap",
+          "Qualifies": "all depth-located claims (ROADMAP.md \u00a718 F4)"
+        },
+        {
+          "Axis": "Depth axis ('block')",
+          "Sundial": "caps at 1.000",
+          "Time-MoE": "caps at 1.000",
+          "Asymmetry": "94.7% overlap",
+          "Qualifies": "all cross-depth figures (ROADMAP.md \u00a718 F1)"
+        },
+        {
+          "Axis": "Forecast determinism / noise floor",
+          "Sundial": "\u00b10.141 MASE",
+          "Time-MoE": "deterministic",
+          "Asymmetry": "one deterministic, one sampled",
+          "Qualifies": "all delta claims (ROADMAP.md \u00a718 F6)"
+        },
+        {
+          "Axis": "Finest resolvable lag (token width)",
+          "Sundial": "not yet measured",
+          "Time-MoE": "not yet measured",
+          "Asymmetry": "n/a",
+          "Qualifies": "all attention-lag claims (ROADMAP.md \u00a718 F5 -- needs the attention stage with pattern capture supported by both adapters)"
+        },
+        {
+          "Axis": "Declared training exposure",
+          "Sundial": "not yet measured",
+          "Time-MoE": "not yet measured",
+          "Asymmetry": "n/a",
+          "Qualifies": "all behavioral claims (ROADMAP.md \u00a718 F7, parked -- see \u00a722.6)"
+        },
+        {
+          "Axis": "Capability intersection",
+          "Sundial": "not yet measured",
+          "Time-MoE": "not yet measured",
+          "Asymmetry": "n/a",
+          "Qualifies": "the asymmetric analyses (ROADMAP.md \u00a718 F3, parked -- see \u00a722.6)"
+        }
+      ]
+    },
+    {
+      "a": "Sundial",
+      "b": "Chronos-T5-Base",
+      "rows": [
+        {
+          "Axis": "Analysis eligibility",
+          "Sundial": "full (spans declared by adapter)",
+          "Chronos-T5-Base": "full (spans declared by adapter)",
+          "Asymmetry": "both fully eligible",
+          "Qualifies": "every non-L0 section (ROADMAP.md \u00a716 E3(c))"
+        },
+        {
+          "Axis": "Capability tier",
+          "Sundial": "2 (steerable)",
+          "Chronos-T5-Base": "3 (decomposable)",
+          "Asymmetry": "run capped at tier 2 by the lower model",
+          "Qualifies": "no stage dropped"
+        },
+        {
+          "Axis": "Parameters",
+          "Sundial": "128.3M",
+          "Chronos-T5-Base": "201.4M",
+          "Asymmetry": "1.57\u00d7",
+          "Qualifies": "all quality claims (ROADMAP.md \u00a718 F2)"
+        },
+        {
+          "Axis": "FLOPs per forward (per series)",
+          "Sundial": "6.98 GFLOPs",
+          "Chronos-T5-Base": "90.24 GFLOPs",
+          "Asymmetry": "12.93\u00d7",
+          "Qualifies": "all quality claims (ROADMAP.md \u00a718 F2)"
+        },
+        {
+          "Axis": "Captured FLOP fraction",
+          "Sundial": "21.3%",
+          "Chronos-T5-Base": "13.9%",
+          "Asymmetry": "7.4 pt gap",
+          "Qualifies": "all depth-located claims (ROADMAP.md \u00a718 F4)"
+        },
+        {
+          "Axis": "Depth axis ('block')",
+          "Sundial": "caps at 1.000",
+          "Chronos-T5-Base": "caps at 0.478",
+          "Asymmetry": "94.7% overlap",
+          "Qualifies": "all cross-depth figures (ROADMAP.md \u00a718 F1)"
+        },
+        {
+          "Axis": "Forecast determinism / noise floor",
+          "Sundial": "\u00b10.141 MASE",
+          "Chronos-T5-Base": "\u00b10.238 MASE",
+          "Asymmetry": "both same kind",
+          "Qualifies": "all delta claims (ROADMAP.md \u00a718 F6)"
+        },
+        {
+          "Axis": "Finest resolvable lag (token width)",
+          "Sundial": "not yet measured",
+          "Chronos-T5-Base": "not yet measured",
+          "Asymmetry": "n/a",
+          "Qualifies": "all attention-lag claims (ROADMAP.md \u00a718 F5 -- needs the attention stage with pattern capture supported by both adapters)"
+        },
+        {
+          "Axis": "Declared training exposure",
+          "Sundial": "not yet measured",
+          "Chronos-T5-Base": "not yet measured",
+          "Asymmetry": "n/a",
+          "Qualifies": "all behavioral claims (ROADMAP.md \u00a718 F7, parked -- see \u00a722.6)"
+        },
+        {
+          "Axis": "Capability intersection",
+          "Sundial": "not yet measured",
+          "Chronos-T5-Base": "not yet measured",
+          "Asymmetry": "n/a",
+          "Qualifies": "the asymmetric analyses (ROADMAP.md \u00a718 F3, parked -- see \u00a722.6)"
+        }
+      ]
+    },
+    {
+      "a": "Chronos-Bolt",
+      "b": "Timer",
+      "rows": [
+        {
+          "Axis": "Analysis eligibility",
+          "Chronos-Bolt": "full (spans declared by adapter)",
+          "Timer": "full (spans declared by adapter)",
+          "Asymmetry": "both fully eligible",
+          "Qualifies": "every non-L0 section (ROADMAP.md \u00a716 E3(c))"
+        },
+        {
+          "Axis": "Capability tier",
+          "Chronos-Bolt": "2 (steerable)",
+          "Timer": "2 (steerable)",
+          "Asymmetry": "same tier",
+          "Qualifies": "no stage dropped"
+        },
+        {
+          "Axis": "Parameters",
+          "Chronos-Bolt": "47.7M",
+          "Timer": "84.1M",
+          "Asymmetry": "1.76\u00d7",
+          "Qualifies": "all quality claims (ROADMAP.md \u00a718 F2)"
+        },
+        {
+          "Axis": "FLOPs per forward (per series)",
+          "Chronos-Bolt": "1.49 GFLOPs",
+          "Timer": "841.65 MFLOPs",
+          "Asymmetry": "1.78\u00d7",
+          "Qualifies": "all quality claims (ROADMAP.md \u00a718 F2)"
+        },
+        {
+          "Axis": "Captured FLOP fraction",
+          "Chronos-Bolt": "79.1%",
+          "Timer": "99.8%",
+          "Asymmetry": "20.7 pt gap",
+          "Qualifies": "all depth-located claims (ROADMAP.md \u00a718 F4)"
+        },
+        {
+          "Axis": "Depth axis ('block')",
+          "Chronos-Bolt": "caps at 0.455",
+          "Timer": "caps at 1.000",
+          "Asymmetry": "94.7% overlap",
+          "Qualifies": "all cross-depth figures (ROADMAP.md \u00a718 F1)"
+        },
+        {
+          "Axis": "Forecast determinism / noise floor",
+          "Chronos-Bolt": "deterministic",
+          "Timer": "deterministic",
+          "Asymmetry": "both same kind",
+          "Qualifies": "all delta claims (ROADMAP.md \u00a718 F6)"
+        },
+        {
+          "Axis": "Finest resolvable lag (token width)",
+          "Chronos-Bolt": "not yet measured",
+          "Timer": "not yet measured",
+          "Asymmetry": "n/a",
+          "Qualifies": "all attention-lag claims (ROADMAP.md \u00a718 F5 -- needs the attention stage with pattern capture supported by both adapters)"
+        },
+        {
+          "Axis": "Declared training exposure",
+          "Chronos-Bolt": "not yet measured",
+          "Timer": "not yet measured",
+          "Asymmetry": "n/a",
+          "Qualifies": "all behavioral claims (ROADMAP.md \u00a718 F7, parked -- see \u00a722.6)"
+        },
+        {
+          "Axis": "Capability intersection",
+          "Chronos-Bolt": "not yet measured",
+          "Timer": "not yet measured",
+          "Asymmetry": "n/a",
+          "Qualifies": "the asymmetric analyses (ROADMAP.md \u00a718 F3, parked -- see \u00a722.6)"
+        }
+      ]
+    },
+    {
+      "a": "Chronos-Bolt",
+      "b": "Time-MoE",
+      "rows": [
+        {
+          "Axis": "Analysis eligibility",
+          "Chronos-Bolt": "full (spans declared by adapter)",
+          "Time-MoE": "full (spans declared by adapter)",
+          "Asymmetry": "both fully eligible",
+          "Qualifies": "every non-L0 section (ROADMAP.md \u00a716 E3(c))"
+        },
+        {
+          "Axis": "Capability tier",
+          "Chronos-Bolt": "2 (steerable)",
+          "Time-MoE": "2 (steerable)",
+          "Asymmetry": "same tier",
+          "Qualifies": "no stage dropped"
+        },
+        {
+          "Axis": "Parameters",
+          "Chronos-Bolt": "47.7M",
+          "Time-MoE": "113.4M",
+          "Asymmetry": "2.38\u00d7",
+          "Qualifies": "all quality claims (ROADMAP.md \u00a718 F2)"
+        },
+        {
+          "Axis": "FLOPs per forward (per series)",
+          "Chronos-Bolt": "1.49 GFLOPs",
+          "Time-MoE": "51.85 GFLOPs",
+          "Asymmetry": "34.70\u00d7",
+          "Qualifies": "all quality claims (ROADMAP.md \u00a718 F2)"
+        },
+        {
+          "Axis": "Captured FLOP fraction",
+          "Chronos-Bolt": "79.1%",
+          "Time-MoE": "50.0%",
+          "Asymmetry": "29.1 pt gap",
+          "Qualifies": "all depth-located claims (ROADMAP.md \u00a718 F4)"
+        },
+        {
+          "Axis": "Depth axis ('block')",
+          "Chronos-Bolt": "caps at 0.455",
+          "Time-MoE": "caps at 1.000",
+          "Asymmetry": "94.7% overlap",
+          "Qualifies": "all cross-depth figures (ROADMAP.md \u00a718 F1)"
+        },
+        {
+          "Axis": "Forecast determinism / noise floor",
+          "Chronos-Bolt": "deterministic",
+          "Time-MoE": "deterministic",
+          "Asymmetry": "both same kind",
+          "Qualifies": "all delta claims (ROADMAP.md \u00a718 F6)"
+        },
+        {
+          "Axis": "Finest resolvable lag (token width)",
+          "Chronos-Bolt": "not yet measured",
+          "Time-MoE": "not yet measured",
+          "Asymmetry": "n/a",
+          "Qualifies": "all attention-lag claims (ROADMAP.md \u00a718 F5 -- needs the attention stage with pattern capture supported by both adapters)"
+        },
+        {
+          "Axis": "Declared training exposure",
+          "Chronos-Bolt": "not yet measured",
+          "Time-MoE": "not yet measured",
+          "Asymmetry": "n/a",
+          "Qualifies": "all behavioral claims (ROADMAP.md \u00a718 F7, parked -- see \u00a722.6)"
+        },
+        {
+          "Axis": "Capability intersection",
+          "Chronos-Bolt": "not yet measured",
+          "Time-MoE": "not yet measured",
+          "Asymmetry": "n/a",
+          "Qualifies": "the asymmetric analyses (ROADMAP.md \u00a718 F3, parked -- see \u00a722.6)"
+        }
+      ]
+    },
+    {
+      "a": "Chronos-Bolt",
+      "b": "Chronos-T5-Base",
+      "rows": [
+        {
+          "Axis": "Analysis eligibility",
+          "Chronos-Bolt": "full (spans declared by adapter)",
+          "Chronos-T5-Base": "full (spans declared by adapter)",
+          "Asymmetry": "both fully eligible",
+          "Qualifies": "every non-L0 section (ROADMAP.md \u00a716 E3(c))"
+        },
+        {
+          "Axis": "Capability tier",
+          "Chronos-Bolt": "2 (steerable)",
+          "Chronos-T5-Base": "3 (decomposable)",
+          "Asymmetry": "run capped at tier 2 by the lower model",
+          "Qualifies": "no stage dropped"
+        },
+        {
+          "Axis": "Parameters",
+          "Chronos-Bolt": "47.7M",
+          "Chronos-T5-Base": "201.4M",
+          "Asymmetry": "4.22\u00d7",
+          "Qualifies": "all quality claims (ROADMAP.md \u00a718 F2)"
+        },
+        {
+          "Axis": "FLOPs per forward (per series)",
+          "Chronos-Bolt": "1.49 GFLOPs",
+          "Chronos-T5-Base": "90.24 GFLOPs",
+          "Asymmetry": "60.38\u00d7",
+          "Qualifies": "all quality claims (ROADMAP.md \u00a718 F2)"
+        },
+        {
+          "Axis": "Captured FLOP fraction",
+          "Chronos-Bolt": "79.1%",
+          "Chronos-T5-Base": "13.9%",
+          "Asymmetry": "65.2 pt gap",
+          "Qualifies": "all depth-located claims (ROADMAP.md \u00a718 F4)"
+        },
+        {
+          "Axis": "Depth axis ('block')",
+          "Chronos-Bolt": "caps at 0.455",
+          "Chronos-T5-Base": "caps at 0.478",
+          "Asymmetry": "94.7% overlap",
+          "Qualifies": "all cross-depth figures (ROADMAP.md \u00a718 F1)"
+        },
+        {
+          "Axis": "Forecast determinism / noise floor",
+          "Chronos-Bolt": "deterministic",
+          "Chronos-T5-Base": "\u00b10.238 MASE",
+          "Asymmetry": "one deterministic, one sampled",
+          "Qualifies": "all delta claims (ROADMAP.md \u00a718 F6)"
+        },
+        {
+          "Axis": "Finest resolvable lag (token width)",
+          "Chronos-Bolt": "not yet measured",
+          "Chronos-T5-Base": "not yet measured",
+          "Asymmetry": "n/a",
+          "Qualifies": "all attention-lag claims (ROADMAP.md \u00a718 F5 -- needs the attention stage with pattern capture supported by both adapters)"
+        },
+        {
+          "Axis": "Declared training exposure",
+          "Chronos-Bolt": "not yet measured",
+          "Chronos-T5-Base": "not yet measured",
+          "Asymmetry": "n/a",
+          "Qualifies": "all behavioral claims (ROADMAP.md \u00a718 F7, parked -- see \u00a722.6)"
+        },
+        {
+          "Axis": "Capability intersection",
+          "Chronos-Bolt": "not yet measured",
+          "Chronos-T5-Base": "not yet measured",
+          "Asymmetry": "n/a",
+          "Qualifies": "the asymmetric analyses (ROADMAP.md \u00a718 F3, parked -- see \u00a722.6)"
+        }
+      ]
+    },
+    {
+      "a": "Timer",
+      "b": "Time-MoE",
+      "rows": [
+        {
+          "Axis": "Analysis eligibility",
+          "Timer": "full (spans declared by adapter)",
+          "Time-MoE": "full (spans declared by adapter)",
+          "Asymmetry": "both fully eligible",
+          "Qualifies": "every non-L0 section (ROADMAP.md \u00a716 E3(c))"
+        },
+        {
+          "Axis": "Capability tier",
+          "Timer": "2 (steerable)",
+          "Time-MoE": "2 (steerable)",
+          "Asymmetry": "same tier",
+          "Qualifies": "no stage dropped"
+        },
+        {
+          "Axis": "Parameters",
+          "Timer": "84.1M",
+          "Time-MoE": "113.4M",
+          "Asymmetry": "1.35\u00d7",
+          "Qualifies": "all quality claims (ROADMAP.md \u00a718 F2)"
+        },
+        {
+          "Axis": "FLOPs per forward (per series)",
+          "Timer": "841.65 MFLOPs",
+          "Time-MoE": "51.85 GFLOPs",
+          "Asymmetry": "61.61\u00d7",
+          "Qualifies": "all quality claims (ROADMAP.md \u00a718 F2)"
+        },
+        {
+          "Axis": "Captured FLOP fraction",
+          "Timer": "99.8%",
+          "Time-MoE": "50.0%",
+          "Asymmetry": "49.8 pt gap",
+          "Qualifies": "all depth-located claims (ROADMAP.md \u00a718 F4)"
+        },
+        {
+          "Axis": "Depth axis ('block')",
+          "Timer": "caps at 1.000",
+          "Time-MoE": "caps at 1.000",
+          "Asymmetry": "94.7% overlap",
+          "Qualifies": "all cross-depth figures (ROADMAP.md \u00a718 F1)"
+        },
+        {
+          "Axis": "Forecast determinism / noise floor",
+          "Timer": "deterministic",
+          "Time-MoE": "deterministic",
+          "Asymmetry": "both same kind",
+          "Qualifies": "all delta claims (ROADMAP.md \u00a718 F6)"
+        },
+        {
+          "Axis": "Finest resolvable lag (token width)",
+          "Timer": "not yet measured",
+          "Time-MoE": "not yet measured",
+          "Asymmetry": "n/a",
+          "Qualifies": "all attention-lag claims (ROADMAP.md \u00a718 F5 -- needs the attention stage with pattern capture supported by both adapters)"
+        },
+        {
+          "Axis": "Declared training exposure",
+          "Timer": "not yet measured",
+          "Time-MoE": "not yet measured",
+          "Asymmetry": "n/a",
+          "Qualifies": "all behavioral claims (ROADMAP.md \u00a718 F7, parked -- see \u00a722.6)"
+        },
+        {
+          "Axis": "Capability intersection",
+          "Timer": "not yet measured",
+          "Time-MoE": "not yet measured",
+          "Asymmetry": "n/a",
+          "Qualifies": "the asymmetric analyses (ROADMAP.md \u00a718 F3, parked -- see \u00a722.6)"
+        }
+      ]
+    },
+    {
+      "a": "Timer",
+      "b": "Chronos-T5-Base",
+      "rows": [
+        {
+          "Axis": "Analysis eligibility",
+          "Timer": "full (spans declared by adapter)",
+          "Chronos-T5-Base": "full (spans declared by adapter)",
+          "Asymmetry": "both fully eligible",
+          "Qualifies": "every non-L0 section (ROADMAP.md \u00a716 E3(c))"
+        },
+        {
+          "Axis": "Capability tier",
+          "Timer": "2 (steerable)",
+          "Chronos-T5-Base": "3 (decomposable)",
+          "Asymmetry": "run capped at tier 2 by the lower model",
+          "Qualifies": "no stage dropped"
+        },
+        {
+          "Axis": "Parameters",
+          "Timer": "84.1M",
+          "Chronos-T5-Base": "201.4M",
+          "Asymmetry": "2.39\u00d7",
+          "Qualifies": "all quality claims (ROADMAP.md \u00a718 F2)"
+        },
+        {
+          "Axis": "FLOPs per forward (per series)",
+          "Timer": "841.65 MFLOPs",
+          "Chronos-T5-Base": "90.24 GFLOPs",
+          "Asymmetry": "107.21\u00d7",
+          "Qualifies": "all quality claims (ROADMAP.md \u00a718 F2)"
+        },
+        {
+          "Axis": "Captured FLOP fraction",
+          "Timer": "99.8%",
+          "Chronos-T5-Base": "13.9%",
+          "Asymmetry": "85.9 pt gap",
+          "Qualifies": "all depth-located claims (ROADMAP.md \u00a718 F4)"
+        },
+        {
+          "Axis": "Depth axis ('block')",
+          "Timer": "caps at 1.000",
+          "Chronos-T5-Base": "caps at 0.478",
+          "Asymmetry": "94.7% overlap",
+          "Qualifies": "all cross-depth figures (ROADMAP.md \u00a718 F1)"
+        },
+        {
+          "Axis": "Forecast determinism / noise floor",
+          "Timer": "deterministic",
+          "Chronos-T5-Base": "\u00b10.238 MASE",
+          "Asymmetry": "one deterministic, one sampled",
+          "Qualifies": "all delta claims (ROADMAP.md \u00a718 F6)"
+        },
+        {
+          "Axis": "Finest resolvable lag (token width)",
+          "Timer": "not yet measured",
+          "Chronos-T5-Base": "not yet measured",
+          "Asymmetry": "n/a",
+          "Qualifies": "all attention-lag claims (ROADMAP.md \u00a718 F5 -- needs the attention stage with pattern capture supported by both adapters)"
+        },
+        {
+          "Axis": "Declared training exposure",
+          "Timer": "not yet measured",
+          "Chronos-T5-Base": "not yet measured",
+          "Asymmetry": "n/a",
+          "Qualifies": "all behavioral claims (ROADMAP.md \u00a718 F7, parked -- see \u00a722.6)"
+        },
+        {
+          "Axis": "Capability intersection",
+          "Timer": "not yet measured",
+          "Chronos-T5-Base": "not yet measured",
+          "Asymmetry": "n/a",
+          "Qualifies": "the asymmetric analyses (ROADMAP.md \u00a718 F3, parked -- see \u00a722.6)"
+        }
+      ]
+    },
+    {
+      "a": "Time-MoE",
+      "b": "Chronos-T5-Base",
+      "rows": [
+        {
+          "Axis": "Analysis eligibility",
+          "Time-MoE": "full (spans declared by adapter)",
+          "Chronos-T5-Base": "full (spans declared by adapter)",
+          "Asymmetry": "both fully eligible",
+          "Qualifies": "every non-L0 section (ROADMAP.md \u00a716 E3(c))"
+        },
+        {
+          "Axis": "Capability tier",
+          "Time-MoE": "2 (steerable)",
+          "Chronos-T5-Base": "3 (decomposable)",
+          "Asymmetry": "run capped at tier 2 by the lower model",
+          "Qualifies": "no stage dropped"
+        },
+        {
+          "Axis": "Parameters",
+          "Time-MoE": "113.4M",
+          "Chronos-T5-Base": "201.4M",
+          "Asymmetry": "1.78\u00d7",
+          "Qualifies": "all quality claims (ROADMAP.md \u00a718 F2)"
+        },
+        {
+          "Axis": "FLOPs per forward (per series)",
+          "Time-MoE": "51.85 GFLOPs",
+          "Chronos-T5-Base": "90.24 GFLOPs",
+          "Asymmetry": "1.74\u00d7",
+          "Qualifies": "all quality claims (ROADMAP.md \u00a718 F2)"
+        },
+        {
+          "Axis": "Captured FLOP fraction",
+          "Time-MoE": "50.0%",
+          "Chronos-T5-Base": "13.9%",
+          "Asymmetry": "36.1 pt gap",
+          "Qualifies": "all depth-located claims (ROADMAP.md \u00a718 F4)"
+        },
+        {
+          "Axis": "Depth axis ('block')",
+          "Time-MoE": "caps at 1.000",
+          "Chronos-T5-Base": "caps at 0.478",
+          "Asymmetry": "94.7% overlap",
+          "Qualifies": "all cross-depth figures (ROADMAP.md \u00a718 F1)"
+        },
+        {
+          "Axis": "Forecast determinism / noise floor",
+          "Time-MoE": "deterministic",
+          "Chronos-T5-Base": "\u00b10.238 MASE",
+          "Asymmetry": "one deterministic, one sampled",
+          "Qualifies": "all delta claims (ROADMAP.md \u00a718 F6)"
+        },
+        {
+          "Axis": "Finest resolvable lag (token width)",
+          "Time-MoE": "not yet measured",
+          "Chronos-T5-Base": "not yet measured",
+          "Asymmetry": "n/a",
+          "Qualifies": "all attention-lag claims (ROADMAP.md \u00a718 F5 -- needs the attention stage with pattern capture supported by both adapters)"
+        },
+        {
+          "Axis": "Declared training exposure",
+          "Time-MoE": "not yet measured",
+          "Chronos-T5-Base": "not yet measured",
+          "Asymmetry": "n/a",
+          "Qualifies": "all behavioral claims (ROADMAP.md \u00a718 F7, parked -- see \u00a722.6)"
+        },
+        {
+          "Axis": "Capability intersection",
+          "Time-MoE": "not yet measured",
+          "Chronos-T5-Base": "not yet measured",
+          "Asymmetry": "n/a",
+          "Qualifies": "the asymmetric analyses (ROADMAP.md \u00a718 F3, parked -- see \u00a722.6)"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,212 @@
+{
+  "TimesFM": {
+    "repeats": 3,
+    "n_series": 16,
+    "deterministic": true,
+    "mase_abs_delta_mean": 0.0,
+    "mase_abs_delta_p95": 0.0,
+    "mase_abs_delta_max": 0.0,
+    "per_family": {
+      "block_bootstrap": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "mixture": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "parametric": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "random_parametric": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sequential_par": {
+        "mean": 0.0,
+        "p95": 0.0
+      }
+    }
+  },
+  "Chronos-2": {
+    "repeats": 3,
+    "n_series": 16,
+    "deterministic": true,
+    "mase_abs_delta_mean": 0.0,
+    "mase_abs_delta_p95": 0.0,
+    "mase_abs_delta_max": 0.0,
+    "per_family": {
+      "block_bootstrap": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "mixture": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "parametric": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "random_parametric": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sequential_par": {
+        "mean": 0.0,
+        "p95": 0.0
+      }
+    }
+  },
+  "Sundial": {
+    "repeats": 3,
+    "n_series": 16,
+    "deterministic": false,
+    "mase_abs_delta_mean": 0.1405494511127472,
+    "mase_abs_delta_p95": 0.48898446559906006,
+    "mase_abs_delta_max": 1.1167340278625488,
+    "per_family": {
+      "block_bootstrap": {
+        "mean": 0.006931900978088379,
+        "p95": 0.008128702640533447
+      },
+      "mixture": {
+        "mean": 0.019928112626075745,
+        "p95": 0.051628269255161285
+      },
+      "parametric": {
+        "mean": 0.22038495540618896,
+        "p95": 0.3467344343662262
+      },
+      "random_parametric": {
+        "mean": 0.2378266602754593,
+        "p95": 0.7218555212020874
+      },
+      "sequential_par": {
+        "mean": 0.028295114636421204,
+        "p95": 0.05155705288052559
+      }
+    }
+  },
+  "Chronos-Bolt": {
+    "repeats": 3,
+    "n_series": 16,
+    "deterministic": true,
+    "mase_abs_delta_mean": 0.0,
+    "mase_abs_delta_p95": 0.0,
+    "mase_abs_delta_max": 0.0,
+    "per_family": {
+      "block_bootstrap": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "mixture": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "parametric": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "random_parametric": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sequential_par": {
+        "mean": 0.0,
+        "p95": 0.0
+      }
+    }
+  },
+  "Timer": {
+    "repeats": 3,
+    "n_series": 16,
+    "deterministic": true,
+    "mase_abs_delta_mean": 0.0,
+    "mase_abs_delta_p95": 0.0,
+    "mase_abs_delta_max": 0.0,
+    "per_family": {
+      "block_bootstrap": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "mixture": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "parametric": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "random_parametric": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sequential_par": {
+        "mean": 0.0,
+        "p95": 0.0
+      }
+    }
+  },
+  "Time-MoE": {
+    "repeats": 3,
+    "n_series": 16,
+    "deterministic": true,
+    "mase_abs_delta_mean": 0.0,
+    "mase_abs_delta_p95": 0.0,
+    "mase_abs_delta_max": 0.0,
+    "per_family": {
+      "block_bootstrap": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "mixture": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "parametric": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "random_parametric": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sequential_par": {
+        "mean": 0.0,
+        "p95": 0.0
+      }
+    }
+  },
+  "Chronos-T5-Base": {
+    "repeats": 3,
+    "n_series": 16,
+    "deterministic": false,
+    "mase_abs_delta_mean": 0.23817968368530273,
+    "mase_abs_delta_p95": 0.9611843824386597,
+    "mase_abs_delta_max": 3.017822265625,
+    "per_family": {
+      "block_bootstrap": {
+        "mean": 0.011182129383087158,
+        "p95": 0.014024573378264904
+      },
+      "mixture": {
+        "mean": 0.015829011797904968,
+        "p95": 0.03829560428857803
+      },
+      "parametric": {
+        "mean": 0.2988709807395935,
+        "p95": 0.5483824610710144
+      },
+      "random_parametric": {
+        "mean": 0.4321361184120178,
+        "p95": 1.8607463836669922
+      },
+      "sequential_par": {
+        "mean": 0.056840598583221436,
+        "p95": 0.08919911831617355
+      }
+    }
+  }
+}

@@ -1,0 +1,352 @@
+{
+  "schema_version": 1,
+  "source": "sealed",
+  "path": "../benchmark_large_v2/public_dev",
+  "provenance": {
+    "kind": "sealed",
+    "visibility": "public",
+    "epoch": 0,
+    "n_samples": 965,
+    "global_digest": "65e020884dfdb9dfaf4dd004000238232ebc9cbdf3dd3a07d98edd73439896c7",
+    "determinism": {
+      "random_parametric": {
+        "bit_exact": true,
+        "count": 425
+      },
+      "parametric": {
+        "bit_exact": true,
+        "count": 130
+      },
+      "mixture": {
+        "bit_exact": true,
+        "count": 290
+      },
+      "block_bootstrap": {
+        "bit_exact": true,
+        "count": 70
+      },
+      "sequential_par": {
+        "bit_exact": false,
+        "count": 50
+      }
+    },
+    "corpus_digest": "65e020884dfdb9dfaf4dd004000238232ebc9cbdf3dd3a07d98edd73439896c7"
+  },
+  "composition": {
+    "n_series": 965,
+    "by_tier": {
+      "synthetic": 555,
+      "realism_stress": 410
+    },
+    "by_family": {
+      "random_parametric": 425,
+      "mixture": 290,
+      "parametric": 130,
+      "block_bootstrap": 70,
+      "sequential_par": 50
+    },
+    "by_generator": {
+      "random_parametric": 425,
+      "mixture": 290,
+      "parametric": 130,
+      "block_bootstrap": 70,
+      "sequential_par": 50
+    },
+    "by_archetype": {
+      "ar_colored_noise": 46,
+      "amplitude_modulated": 44,
+      "anomaly_heavy": 42,
+      "clean_low_noise": 40,
+      "nonsinusoidal_seasonal": 39,
+      "noisy_chaotic": 37,
+      "random_walk_drift": 37,
+      "multi_seasonal_complex": 35,
+      "intermittent_bursts": 33,
+      "regime_switching": 31,
+      "seasonal_dominant": 25,
+      "trend_dominant": 16
+    },
+    "family_resolution": {
+      "key_requested": "auto",
+      "key_used": "auto",
+      "resolution_rate": null,
+      "n_unknown": 0,
+      "n_families": 5,
+      "composition": {
+        "block_bootstrap": 70,
+        "mixture": 290,
+        "parametric": 130,
+        "random_parametric": 425,
+        "sequential_par": 50
+      }
+    }
+  },
+  "audit": {
+    "state": "measured",
+    "audit": {
+      "schema_version": 1,
+      "gate": {
+        "references": [
+          "hf/Monash-University/monash_tsf/covid_deaths/train",
+          "hf/Monash-University/monash_tsf/saugeenday/train",
+          "hf/Monash-University/monash_tsf/tourism_quarterly/train",
+          "hf/Monash-University/monash_tsf/traffic_weekly/train",
+          "hf/Monash-University/monash_tsf/us_births/train",
+          "hf/Monash-University/monash_tsf/vehicle_trips/train"
+        ],
+        "reference_licenses": {
+          "hf/Monash-University/monash_tsf/tourism_quarterly/train": "unknown",
+          "hf/Monash-University/monash_tsf/saugeenday/train": "unknown",
+          "hf/Monash-University/monash_tsf/traffic_weekly/train": "unknown",
+          "hf/Monash-University/monash_tsf/vehicle_trips/train": "unknown",
+          "hf/Monash-University/monash_tsf/covid_deaths/train": "unknown",
+          "hf/Monash-University/monash_tsf/us_births/train": "unknown"
+        },
+        "reference_n_series": 82,
+        "gate_effective": true,
+        "metric": "dtw",
+        "band": 25,
+        "normalization": "resample256+znorm",
+        "threshold": 0.35,
+        "n_candidates": 2000,
+        "n_rejected": 68,
+        "rejection_rate": 0.034,
+        "accepted_distance_quantiles": {
+          "min": 0.35173091829909253,
+          "p01": 0.3790535521358083,
+          "p05": 0.44749580415548,
+          "p50": 0.7072645456924898
+        },
+        "rejected_distance_quantiles": {
+          "min": 0.1329746181215205,
+          "p01": 0.13561292917759027,
+          "p05": 0.1531590029167594,
+          "p50": 0.28749788116982
+        }
+      },
+      "near_duplicates": {
+        "threshold": 0.05,
+        "target_len": 256,
+        "n_pairs_within_public": 4,
+        "n_pairs_within_private": 3,
+        "n_pairs_across_splits": 14,
+        "worst_pairs_cap": 50,
+        "worst_pairs": [
+          {
+            "a": "0704fcd2d1611e2d",
+            "b": "940ac32e599c9d73",
+            "distance": 0.0008800764002857434,
+            "relation": "across"
+          },
+          {
+            "a": "49051c1ee9ef3cdc",
+            "b": "81fe53770c8df057",
+            "distance": 0.00545943096271393,
+            "relation": "across"
+          },
+          {
+            "a": "aebc216d75f4b9cf",
+            "b": "3b6b596f49145643",
+            "distance": 0.006234785975757065,
+            "relation": "within_public"
+          },
+          {
+            "a": "d33c69294045887a",
+            "b": "c9e976152544a822",
+            "distance": 0.00899481348734668,
+            "relation": "within_public"
+          },
+          {
+            "a": "5a9d3f6afab4f47c",
+            "b": "51d64e0c6aa4e6ae",
+            "distance": 0.019532474621248616,
+            "relation": "across"
+          },
+          {
+            "a": "8a980ec3a0295838",
+            "b": "4b78d9948e8036c8",
+            "distance": 0.02281144066181515,
+            "relation": "across"
+          },
+          {
+            "a": "0a5ed637377ce927",
+            "b": "e6130608df71c296",
+            "distance": 0.03084586663367904,
+            "relation": "across"
+          },
+          {
+            "a": "0a5ed637377ce927",
+            "b": "51d64e0c6aa4e6ae",
+            "distance": 0.03204593077348296,
+            "relation": "across"
+          },
+          {
+            "a": "51d64e0c6aa4e6ae",
+            "b": "e6130608df71c296",
+            "distance": 0.033015444653079734,
+            "relation": "within_private"
+          },
+          {
+            "a": "0a5ed637377ce927",
+            "b": "5a9d3f6afab4f47c",
+            "distance": 0.03640905225611086,
+            "relation": "within_public"
+          },
+          {
+            "a": "2cf771ed199740c0",
+            "b": "57dc0c853192661f",
+            "distance": 0.03824515699342877,
+            "relation": "within_private"
+          },
+          {
+            "a": "aebc216d75f4b9cf",
+            "b": "74e487a128339dd3",
+            "distance": 0.04061948977683042,
+            "relation": "across"
+          },
+          {
+            "a": "41b810977e46fafa",
+            "b": "ea1017f8c11a8806",
+            "distance": 0.0408100232514865,
+            "relation": "across"
+          },
+          {
+            "a": "bd548218cfb25346",
+            "b": "045e6ec5ae760941",
+            "distance": 0.041231907869715256,
+            "relation": "across"
+          },
+          {
+            "a": "5a9d3f6afab4f47c",
+            "b": "e6130608df71c296",
+            "distance": 0.04335665229699879,
+            "relation": "across"
+          },
+          {
+            "a": "0fc797a60ce2f775",
+            "b": "977e9afb0e330bd1",
+            "distance": 0.04514008326005916,
+            "relation": "within_public"
+          },
+          {
+            "a": "ef9326c7b19aaa79",
+            "b": "84970552f70a30ac",
+            "distance": 0.046392305569113675,
+            "relation": "within_private"
+          },
+          {
+            "a": "3b6b596f49145643",
+            "b": "74e487a128339dd3",
+            "distance": 0.04685279236640861,
+            "relation": "across"
+          },
+          {
+            "a": "0ea252068f8e10ad",
+            "b": "6e4895185b8b7cf3",
+            "distance": 0.04687419539791788,
+            "relation": "across"
+          },
+          {
+            "a": "ce55bfddf03ff1f9",
+            "b": "44dcf3cbe72990b4",
+            "distance": 0.04743080432946295,
+            "relation": "across"
+          },
+          {
+            "a": "67fab51c30b778c2",
+            "b": "f1a97d4fc5f5f566",
+            "distance": 0.0475630597117108,
+            "relation": "across"
+          }
+        ]
+      },
+      "realism": {
+        "note": "gap between generated and real reference distributions on summary statistics; used only to tune realism, NEVER a leakage signal (CLAUDE.md sec 4.4) -- render under 'how realistic', never under 'how leak-free'.",
+        "combined": {
+          "mean": {
+            "generated": 41.62474416920975,
+            "reference": 28462.77944940623,
+            "gap": 28421.15470523702
+          },
+          "std": {
+            "generated": 22.942428534433116,
+            "reference": 12868.668547239175,
+            "gap": 12845.72611870474
+          },
+          "autocorr_lag1": {
+            "generated": 0.7133568475199026,
+            "reference": NaN,
+            "gap": NaN
+          },
+          "spectral_centroid": {
+            "generated": 0.15588787328097048,
+            "reference": 0.1776331659427814,
+            "gap": 0.02174529266181091
+          }
+        },
+        "by_tier": {
+          "synthetic": {
+            "mean": {
+              "generated": -0.04654429045678381,
+              "reference": 28462.77944940623,
+              "gap": 28462.825993696686
+            },
+            "std": {
+              "generated": 0.8591392322852615,
+              "reference": 12868.668547239175,
+              "gap": 12867.80940800689
+            },
+            "autocorr_lag1": {
+              "generated": 0.8293528525869132,
+              "reference": NaN,
+              "gap": NaN
+            },
+            "spectral_centroid": {
+              "generated": 0.13636500487499886,
+              "reference": 0.1776331659427814,
+              "gap": 0.04126816106778253
+            }
+          },
+          "realism_stress": {
+            "mean": {
+              "generated": 98.13507681207459,
+              "reference": 28462.77944940623,
+              "gap": 28364.644372594154
+            },
+            "std": {
+              "generated": 52.88952329539458,
+              "reference": 12868.668547239175,
+              "gap": 12815.77902394378
+            },
+            "autocorr_lag1": {
+              "generated": 0.556054947965618,
+              "reference": NaN,
+              "gap": NaN
+            },
+            "spectral_centroid": {
+              "generated": 0.18236278750955645,
+              "reference": 0.1776331659427814,
+              "gap": 0.004729621566775061
+            }
+          }
+        }
+      }
+    },
+    "reason": null
+  },
+  "validation": {
+    "available": false,
+    "reason": "configured validation_report '../validation_large/validation_report.json' does not exist"
+  },
+  "quality": {
+    "n_unreliable_context": 0,
+    "min_scale_frac": 0.001,
+    "context_std_quantiles": {
+      "min": 0.011362398974597454,
+      "p05": 0.14023719727993011,
+      "p50": 0.7555405497550964,
+      "max": 2719.658447265625
+    },
+    "largest_family_share": 0.44041450777202074
+  }
+}
