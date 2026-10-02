@@ -1530,20 +1530,31 @@ def _replicate_causal_concept_claims(cfg: PipelineConfig, hub, private: Benchmar
     if struct:
         out["structure"] = _confirm_structure(cfg, registry, feat_errors, atlas_batteries)
 
-    ledger = list(out.get("ledger") or [])
-    tested = {"concept_causal": "causal", "concept_atlas": "atlas",
-              "shared_input_agreement": "agreement", "concept_structure": "structure"}
-    for row in claim_family_budget(cfg, registry):
-        if not row["m"]:
-            continue
-        blk = out.get(tested[row["family"]]) or {}
-        ledger.append({**row, "n_tested": blk.get("n_tested"),
-                       "n_not_testable": blk.get("n_not_testable")})
-    out["ledger"] = ledger
-    if out.get("status") == "skipped" and any(k in out for k in tested.values()):
+    out["ledger"] = _k2_ledger(cfg, registry, out)
+    if out.get("status") == "skipped" and any(k in out for k in _K2_TESTED.values()):
         out["status"] = "tested"
         out.pop("reason", None)
     return out
+
+
+_K2_TESTED = {"concept_causal": "causal", "concept_atlas": "atlas",
+              "shared_input_agreement": "agreement", "concept_structure": "structure"}
+
+
+def _k2_ledger(cfg: PipelineConfig, registry: dict, out: dict) -> list:
+    """`out`'s ledger plus one row per non-empty K2 claim family. Families
+    `claim_family_budget` reports that this pass does not test (the
+    `reliability_u1` row) are left to their own replication step, which adds
+    its own row."""
+    from .hypotheses import claim_family_budget
+    ledger = list(out.get("ledger") or [])
+    for row in claim_family_budget(cfg, registry):
+        if not row["m"] or row["family"] not in _K2_TESTED:
+            continue
+        blk = out.get(_K2_TESTED[row["family"]]) or {}
+        ledger.append({**row, "n_tested": blk.get("n_tested"),
+                       "n_not_testable": blk.get("n_not_testable")})
+    return ledger
 
 
 # ---------------------------------------------------------------------------
