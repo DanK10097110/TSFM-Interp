@@ -8,7 +8,12 @@ TRAIN series (`analysis/repair_blame.py`), choose and score single-feature edits
 advance (`analysis/repair_known_answer.py`).
 
     python run_repair_known_answer.py --corpus <dir>/public_dev --out <scratch> \
-        --seeds 0 1 2 3 4 --dose 4
+        --seeds 0 1 2 3 4 --dose 1
+
+R0b (ROADMAP.md sec 39.7), a 1200-series corpus and the two-stage blame family:
+
+    python run_repair_known_answer.py --config configs/repair_known_answer_r0b.yaml \
+        --corpus <dir>/public_dev --out <scratch> --seeds 5 6 7 8 9 --dose 1 --k 64 --two-stage
 
 The corpus is the K1 synthetic-only corpus (header of `configs/known_answer.yaml`); its path
 is `--corpus`, else `KNOWN_ANSWER_CORPUS`, else the config's own `data.path`. Seeds 0-4 are
@@ -36,7 +41,7 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from tsfm_lens.analysis import repair_known_answer as rka  # noqa: E402
-from tsfm_lens.analysis.repair_blame import blame_features  # noqa: E402
+from tsfm_lens.analysis.repair_blame import SCREEN_M, blame_features, two_stage_blame  # noqa: E402
 from tsfm_lens.analysis.repair_edit import edit_feature_held_out, free_controls, split_series  # noqa: E402
 from tsfm_lens.config import load_config  # noqa: E402
 from tsfm_lens.pipeline import Context, run_pipeline  # noqa: E402
@@ -107,9 +112,15 @@ def score_cell(cfg, run_dir: Path, args) -> dict:
                                   horizon, quantiles, int(cfg.run.seed), require_reach=True)
 
     t0 = time.monotonic()
-    table = blame_features(adapter, layer, sae, data, ctx.device, pooled, train, candidates,
-                           horizon, quantiles, k=args.k, n_null=args.n_null, seed=int(cfg.run.seed),
-                           n_boot=args.n_boot, min_rows=MIN_ROWS)
+    if args.two_stage:
+        table = two_stage_blame(adapter, layer, sae, data, ctx.device, pooled, train, candidates,
+                                horizon, quantiles, split_seed=int(cfg.run.seed) * 7919 + 29,
+                                screen_m=args.screen_m, k=args.k, n_null=args.n_null,
+                                seed=int(cfg.run.seed), n_boot=args.n_boot, min_rows=MIN_ROWS)
+    else:
+        table = blame_features(adapter, layer, sae, data, ctx.device, pooled, train, candidates,
+                               horizon, quantiles, k=args.k, n_null=args.n_null, seed=int(cfg.run.seed),
+                               n_boot=args.n_boot, min_rows=MIN_ROWS)
     blame_seconds = time.monotonic() - t0
     blame_score = rka.score_blame(table, matches)
 
@@ -179,6 +190,14 @@ def aggregate(cells: list) -> dict:
                "harmful_correct": b["harmful_correct"], "helpful_correct": b["helpful_correct"],
                "decoy_clear": b["decoy_clear"], "decoy_no_blame": b["decoy_no_blame"],
                **c["score"]["edits"]}
+        if c["blame"].get("design") == "two_stage":
+            rank, zs = c["blame"]["stage1"]["rank"], c["blame"]["stage1"]["z"]
+            row["stage1"] = {cid: {"feature": c["matches"][cid]["feature"],
+                                   "rank": rank.get(str(c["matches"][cid]["feature"])),
+                                   "z": zs.get(str(c["matches"][cid]["feature"])),
+                                   "screened": c["matches"][cid]["feature"] in c["blame"]["stage1"]["screened"]}
+                             for cid in rka.CONCEPTS}
+            row["bh_family_size"] = c["blame"]["bh_family_size"]
         for cid in rka.CONCEPTS[:3]:
             rec = b[cid]
             row[cid] = {k: rec.get(k) for k in ("mean_delta_mase", "ci_lo", "ci_hi", "p_normal",
@@ -219,11 +238,16 @@ def main(argv: list | None = None) -> dict:
     ap.add_argument("--config", default=DEFAULT_CONFIG)
     ap.add_argument("--corpus", default=os.environ.get("KNOWN_ANSWER_CORPUS"))
     ap.add_argument("--out", default="runs/repair_known_answer")
-    ap.add_argument("--seeds", type=int, nargs="+", default=[0, 1, 2, 3, 4])
+    ap.add_argument("--seeds", type=int, nargs="+", default=[0, 1, 2, 3, 4],
+                    help="R0b scored seeds are 5 6 7 8 9")
     ap.add_argument("--dose", type=float, default=4.0,
                     help="planted effect size in units of a real feature's median causal effect")
     ap.add_argument("--k", type=int, default=32, help="top-firing series per feature (capped at batch_size)")
     ap.add_argument("--n-null", type=int, default=64)
+    ap.add_argument("--two-stage", action="store_true",
+                    help="R0b design: screen on one half of train, re-blame the top --screen-m on the other, "
+                         "BH over those (default: the R0 single-stage table)")
+    ap.add_argument("--screen-m", type=int, default=SCREEN_M)
     ap.add_argument("--n-boot", type=int, default=1000)
     ap.add_argument("--device", default=None)
     ap.add_argument("--force", action="store_true")
@@ -233,7 +257,8 @@ def main(argv: list | None = None) -> dict:
     setup_logging()
     cells = [run_cell(args, seed) for seed in args.seeds]
     out = aggregate(cells)
-    out["args"] = {"dose": args.dose, "k": args.k, "n_null": args.n_null, "n_boot": args.n_boot}
+    out["args"] = {"dose": args.dose, "k": args.k, "n_null": args.n_null, "n_boot": args.n_boot,
+                   "two_stage": bool(args.two_stage), "screen_m": args.screen_m}
     path = Path(args.out) / "repair_known_answer_aggregate.json"
     save_json(path, out)
     log.info("repair known answer: gate %s %s", out["gate"]["verdict"], out["gate"]["fractions"])

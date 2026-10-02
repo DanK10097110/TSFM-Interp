@@ -1,0 +1,80 @@
+# R0b (ROADMAP.md sec 39.7), pre-registered before any run: the R0 known answer with more power and
+# a two-stage blame family. Same model, SAE and planted vocabulary as repair_known_answer.yaml.
+#
+#   python run_repair_known_answer.py --config configs/repair_known_answer_r0b.yaml \
+#       --corpus <dir>/public_dev --out <scratch> --seeds 5 6 7 8 9 --dose 1 --k 64 --n-null 64 --two-stage
+#
+# Frozen design: scored seeds 5-9 only; the corpus holds 1200 series (build the K1 corpus with every task `count` raised to 400 and
+# `--max-count 400`, i.e. 3 x 400 = 1200), split train 600 / test 600 by sample_rows;
+# k = 64 per stage with batch_size 64 (the token_patch rule); n_null 64; dose 1; recovery cosine 0.8;
+# train is split into halves A and B, stage 1 on A keeps the top 16 by |z|, stage 2 re-blames them on B
+# with fresh nulls, BH q 0.05 over the 16. The gate is R0's, items (i)-(iv); edits choose the gain on
+# the whole train split and are scored on test. The fallback if only (i)-helpful fails is in sec 39.7.
+#
+# Forecast-repair known answer, phase R0 (ROADMAP.md sec 39.3): a causal per-feature MASE
+# blame table and a held-out, error-preserving feature edit, run on ONE planted mock
+# forecaster (`mock_planted`, vocabulary `repair`, tsfm_lens/models/mock_planted.py) whose
+# four concepts have a known effect on MASE, then scored against its answer key
+# (analysis/repair_known_answer.py).
+#
+# This file is the TEMPLATE for one seed. The standalone driver fills, per seed:
+#
+#     python run_repair_known_answer.py --corpus <dir>/public_dev --out <scratch> \
+#         --seeds 0 1 2 3 4 --dose 4
+#
+#   * models[0].kwargs.construction_seed   (the seed axis; also run.seed)
+#   * models[0].kwargs.dose                (effect size; 1 = a real feature's median causal
+#                                           effect, 0.0395 context sd, on the concept's
+#                                           reference series)
+#   * run.name / run.out_dir               (one run directory per seed)
+#
+# Pipeline stages run: `extract, sae`. The blame table and the edits are computed by the
+# driver from the trained SAE (no stage consumes them in R0).
+#
+# CORPUS. The K1 synthetic-only corpus (see the header of configs/known_answer.yaml;
+# `--references none` is acceptable there because the build touches no real data).
+#
+# THE MODEL. One 32-step patch model, 64 wide, 5 blocks; the planted block is blocks.2 and
+# the one SAE target is blocks.2. The head reads every layer from blocks.2 on, so an edit
+# at blocks.2 is reachable (the driver measures it).
+
+run:
+  name: repair_known_answer_r0b
+  out_dir: runs
+  device: cpu
+  dtype: float32
+  seed: 0
+  keep_models_loaded: true
+
+data:
+  source: sealed
+  path: ../benchmark_known_answer/public_dev
+  context_len: 256              # 8 tokens of 32
+  horizon: 32
+  family_key: auto
+
+alignment:
+  window: 32
+  sanity_check: true
+  on_failure: fail
+
+models:
+  - name: Planted
+    adapter: mock_planted
+    batch_size: 64              # >= every k the driver scores (token_patch must not chunk)
+    kwargs: {plant_set: A, vocabulary: repair, construction_seed: 0, dose: 1.0}
+
+sae:
+  enabled: true
+  targets:
+    - {model: Planted, layer: blocks.2}
+  dict_size_mult: 4
+  k: 8
+  epochs: 300
+  batch_size: 256
+  lr: 0.001
+  resample_dead_every_epochs: 5
+  aux_k: 32
+  forecast_preservation_max_series: 64
+  persist_features: true        # the blame table picks rows from the persisted series codes
+  real_data_enabled: false
