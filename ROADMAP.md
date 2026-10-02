@@ -38821,6 +38821,24 @@ Also:
   - a cover letter;
   - one track at a time: main track or MLOSS, not both concurrently.
 
+✅ **K5.3 done (2026-10-02, merged b596065).** Both papers now use the 7-model run and its one-shot confirm.
+- New example `examples/panel7_v2` (47 files, 19 MB, post-confirm report); `make_figures.py` defaults to it, and the
+  old `--run` still works. `fig:heldout` gains panel (d), a K2 claim ledger.
+- Text pass: every run number is re-sourced from the artifact or from a FINDINGS/ROADMAP block. Numbers the new run
+  does not contain carry an explicit "earlier four-model run" label (DE-01, CA-07, MN-15, MP-06, MN-17, PM-11, SH-01,
+  MN-01, SH-19, MN-18, CA-06).
+- New text: Methods 5.5 "Known-answer validation" (K1); a case-study K4 subsection (U1/U2, with held-out U1); a
+  held-out section (7.7) with both disclosures, the crash restart and the wrong stored readings.
+- Pages: main 29 including references, MLOSS 4. 0 undefined refs, 0 overfull boxes. Checked by me on the rendered PDF:
+  the held-out paragraph, `fig:heldout`, Kendall W 0.254 (p 0.0095), median MASE, and the multiplicity count 4238/123.
+- Dropped to fit the budget: the U1 table and the K1 table (their numbers moved into the text), and the scorecard
+  row count (not reproducible: `sc-row` counts 61 in the new report).
+- Still open: Figure 4, the report screenshot, still shows the four-model report (its caption says so; regenerating
+  it needs a headless browser). There is no K1 dose-sweep power curve, because no dose sweep was recorded. The
+  "2,112 tests passed" line is unverified.
+- The agent also fixed the `tab:character` units (the values were already in context s.d.) and relabelled controls
+  row 10's 17–25% as per-cell FPR (per-feature 34–47%).
+
 ### 38.6 Ordering, cost, and gates
 
 | # | Item | Cost | Blocked by | Gate |
