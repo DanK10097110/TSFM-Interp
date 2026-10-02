@@ -38907,7 +38907,7 @@ TTM, start K5 and K1."*
 
 ---
 
-## 39. Forecast repair — causal blame for good and bad forecasts, and interpretable feature-level edits (added 2026-10-01, user-proposed — DESIGN ONLY, NOT IMPLEMENTED; start after K2 confirm is done)
+## 39. Forecast repair — causal blame for good and bad forecasts, and interpretable feature-level edits (added 2026-10-01, user-proposed; R0 run 2026-10-02: gate FAILED on helpful-sign power, R0b pre-registered — see §39.7)
 
 ### 39.0 Status, provenance, and the one-paragraph version
 
@@ -39054,3 +39054,71 @@ novel element for TSFMs is an auditable, feature-level repair whose every edit i
 answer that separates "fires on bad series" from "causes bad forecasts". Comparable work exists for language
 models (representation fine-tuning, SAE feature steering); none is known for forecasting models. That should be
 checked with a literature search at R0.
+
+### 39.7 R0 — Findings (2026-10-02) and the R0b pre-registration
+
+**What was built** (commit 5a8077f, merged 8beed32; opt-in; K1/L5 defaults unchanged, 85 tests pass):
+- `mock_planted` `vocabulary: repair`: four planted concepts whose sign on MASE holds by construction (an oracle
+  direction from the naive forecast toward the true future, which only a mock can have). HARMFUL pushes away from the
+  truth, HELPFUL pushes toward it, DECOY has β = 0 and fires on high-MASE series, and SIDE-EFFECT pushes away above its
+  median activation and toward the truth below it.
+- `analysis/repair_blame.py`: per feature, the signed ΔMASE (ablated − baseline) on its top-k firing series. It
+  records the mean, s.d. and series-bootstrap CI, a profile-matched random-direction null on the same rows (null p95,
+  empirical p, normal p), BH within the target, and the correlational readout side by side.
+- `analysis/repair_edit.py`: the error-preserving edit h ← h + Σ(g−1)·z·w, with the gain chosen on train and scored
+  on test (firing / strong / weak / all series), and free controls. All-ones gives exactly 0.0 in every cell; a
+  reach control uses a relative threshold. `run_repair_known_answer.py`, `configs/repair_known_answer.yaml`.
+- Plants confirmed to fail tests: P1 edit-replaces-h, P2 head-slice split, P3 gain chosen on test, P4 no-op blame,
+  P5 correlation instead of ablation, P6 null omitted, P7 pool ignored, P8 k above batch_size, P9 g=1 treated as an
+  edit. I re-ran P1 myself and 7 of 8 edit tests fail.
+
+**Gate at dose 1, scored seeds 0–4** (pilots on seeds 100–101 set the dose; the recovery cosine was lowered from
+0.9 to 0.8 after a pilot, a disclosed post-hoc choice; k = 32, n_null 64, 136 candidates per target):
+
+| Item | Pass rate | Needed | Result |
+|---|---|---|---|
+| (i) harmful: correct sign, BH-significant | 4/5 | 0.8 | pass |
+| (i) helpful: correct sign, BH-significant | **2/5** | 0.8 | **FAIL** |
+| (ii) decoy: no causal blame, positive MASE correlation | 5/5 | 0.9 | pass |
+| (iii) held-out zero-edit of harmful lowers test MASE on its firing series | 5/5 | 0.8 | pass |
+| (iv) side-effect harm detected on weak-firing test series | 5/5 | 0.8 | pass |
+
+- **Harmful** ΔMASE ranges from −0.0431 (seed 1, p_bh 0.157, the one failure) to −0.1545 [−0.2648, −0.0692].
+  Its held-out zero-edit on firing test series ranges from −0.0274 [−0.0338, −0.0213] to −0.0922
+  [−0.1594, −0.0383].
+- **Decoy.** corr_MASE is +0.076 to +0.197 and positive in all 5 seeds, while |causal ΔMASE| ≤ 0.0057
+  (p_bh ≥ 0.97). The causal and correlational readouts separate exactly as rule 3 requires.
+- **Side-effect.** Its weak-series test harm is +0.0047 [0.0022, 0.0071] to +0.0256 [0.0186, 0.0311].
+- **Why helpful fails (measured, not assumed).**
+  - In every seed the helpful atom ranks 2nd–6th of 136 by |effect|, with the right sign and a CI excluding 0
+    (+0.0356 to +0.0779).
+  - Its z against its own null is about 2.2–3.6 (seed 0: p_normal 0.0114, p_bh 0.364; seed 2 null s.d. 0.0269
+    against an effect of 0.0559). BH over about 136 features needs more.
+  - Seed 1's helpful atom was not recovered (cosine 0.798).
+  - **I checked whether the null is biased positive** ("any perturbation hurts a good forecast"). It is not: the
+    median null mean over features is about 0, and 34–55% of features are positive.
+  - Unplanted atoms with large effects (e.g. seed 0 f164 and f179, both −0.081) share the top ranks. That is
+    feature splitting of the planted directions, so blame will need a concept-level (atom-set) variant on real
+    dictionaries.
+  - A post-hoc run on the seen seeds (k 64, n_null 128) gave helpful 0.6; it is not gate evidence.
+- The literature check (two searches) found no prior SAE-feature-level held-out accuracy repair for TSFMs. Closest:
+  TimeSAE (steering), "Dissecting Chronos" (single-feature ablations, no repair), ReFT/LoReFT (the design
+  precedent for R4), AxBench (simple baselines beat SAE steering in LLMs, which supports rule 7).
+
+**Reading.** The parts that repair depends on work on a known answer: harmful blame, decoy separation, held-out
+edits, side effects. Attributing *good* forecasts to single features ("what causes good predictions") is
+underpowered at k = 32 with a whole-dictionary BH family. Per the §39.3 rule, R1 does not start on this gate.
+
+**R0b, pre-registered here before any run (2026-10-02).** One redesign, then a fixed fallback:
+- **Fresh seeds 5–9.** Seeds 0–4 have been seen; 100–101 were pilots.
+- **Power.** `n_series` 1200 (train 600 / test 600, `sample_rows` stratified), k = 64 per stage with `batch_size` 64
+  (the token_patch rule), n_null 64, dose 1, recovery cosine 0.8 (now fixed in advance).
+- **Family.** Two stages inside train. Train is split into halves A and B (stratified). Screen on A by |z| (normal
+  p against the feature's own null) and keep the top M = 16. Re-measure those 16 on B with fresh nulls, and apply
+  BH q 0.05 over 16. "Significant" means stage-2 BH. A planted atom missing from the screen counts as a fail for
+  that seed. Normal p is primary, as in R0; the empirical p is reported.
+- **Gate.** Items (i)–(iv) with R0's thresholds. Edits (iii)/(iv) choose the gain on the whole train split and score
+  on test.
+- **Fallback, decided now.** If R0b passes everything except (i)-helpful, R1 proceeds **restricted to harmful
+  blame and edits**, and the blame table's helpful column is labelled "not validated on a known answer". If (i)-
+  harmful, (ii) or (iii) fails, §39 stops at R0 and the negative is recorded.
