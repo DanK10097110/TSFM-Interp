@@ -5,8 +5,8 @@
 \citep{ansari2024chronos} quantizes values and trains a T5 encoder--decoder \citep{raffel2020t5} with a
 sampled decoder; Chronos-Bolt uses a direct patch head, and Chronos-2 \citep{ansari2025chronos2} is an
 encoder with cross-series group attention; Sundial \citep{liu2025sundial} samples from a flow-matching head
-\citep{lipman2023flow}; Timer \citep{liu2024timer} uses 96-step tokens and Lag-Llama \citep{rasul2023lagllama}
-reads lagged values. Most normalize each series internally \citep{kim2022revin}, a detail that matters when an
+\citep{lipman2023flow}; Timer \citep{liu2024timer} uses 96-step tokens, Time-MoE \citep{shi2025timemoe} a sparse
+mixture of experts over per-step tokens, and Lag-Llama \citep{rasul2023lagllama} reads lagged values. Most normalize each series internally \citep{kim2022revin}, a detail that matters when an
 adapter calls a model below its public API (Section~\ref{sec:controls}). \citet{wan2026collapse} document
 flat ``collapsed'' forecasts on weakly predictable targets, which we also measure (\fid{PM-07}).
 
@@ -20,19 +20,17 @@ input agreement from effect agreement, or tests findings on held-out data.
 
 \paragraph{Methods, tooling and validity.} Probes need control tasks \citep{hewitt2019control,
 belinkov2022probing}; patching is sensitive to metrics and corruptions \citep{zhang2024patching,
-heimersheim2024patching} and can create illusions \citep{makelov2024illusion}; attention weights are not
-explanations \citep{jain2019attention}; saliency maps can fail sanity checks \citep{adebayo2018sanity}. SAE
-features vary across seeds \citep{paulo2025seeds}, and crosscoders learn features jointly across models
-\citep{lindsey2024crosscoders}. Representation similarity \citep{raghu2017svcca,kornblith2019cka,
+heimersheim2024patching}; attention weights are not explanations \citep{jain2019attention}; SAE features vary
+across seeds \citep{paulo2025seeds}. Representation similarity \citep{raghu2017svcca,kornblith2019cka,
 bansal2021stitching} underlies claims of convergence \citep{li2016convergent,huh2024platonic}. Libraries such
 as TransformerLens, nnsight \citep{fiottokaufman2025nnsight}, pyvene, SAELens \citep{bloom2024saelens} and
-Captum \citep{kokhlikyan2020captum} provide primitives for one model; they do not provide comparative
-designs, nulls, multiplicity control or confirmation (Table~\ref{tab:tools}). From empirical science we
-import pre-registration \citep{nosek2018preregistration}, protection against adaptive reuse of holdouts
-\citep{dwork2015reusable}, leakage auditing \citep{kapoor2023leakage} and resampling at the level of the
-independent unit \citep{efron1993bootstrap,cameron2008cluster}.
+Captum \citep{kokhlikyan2020captum} provide primitives for one model, not comparative designs, nulls,
+multiplicity control or confirmation (Table~\ref{tab:tools}). From empirical science we import
+pre-registration \citep{nosek2018preregistration}, protection against adaptive reuse of holdouts
+\citep{dwork2015reusable}, leakage auditing \citep{kapoor2023leakage} and series-level resampling
+\citep{efron1993bootstrap,cameron2008cluster}.
 
-\begin{table}[t]
+\begin{table}[tb]
 \centering
 \footnotesize
 \setlength{\tabcolsep}{3.2pt}

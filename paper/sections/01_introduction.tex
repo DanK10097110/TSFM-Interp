@@ -56,28 +56,31 @@ explains every figure in plain language.
     \emph{same inputs} and \emph{same effect on the same inputs} (Section~\ref{sec:concepts}).
   \item A statistical protocol with series-level resampling, a multiplicity ledger and one-shot
     confirmation (Section~\ref{sec:statistics}).
-  \item A four-model study answering RQ1--RQ4 with typed evidence and held-out replication
+  \item A seven-model study answering RQ1--RQ4 with typed evidence and held-out replication
     (Section~\ref{sec:casestudy}), and a catalogue of fifteen cases in which an uncontrolled analysis gave
     a plausible, wrong answer that a built-in control caught (Section~\ref{sec:controls}).
 \end{enumerate}
 
-\paragraph{Main findings.} On TimesFM~2.5, Chronos-2, Sundial and Chronos-Bolt: (RQ1) causal sparse
-features exist (293 across 29 layers clear a row-matched null) but act mostly on forecast \emph{level}
-and \emph{shape}, and tile a continuum rather than forming discrete concepts; (RQ2) models agree on
-\emph{which inputs} a concept groups (20 of 20 registered transfer claims confirmed on 800 sealed series)
-but rarely on \emph{what it does} to them (11 of 1{,}223 shared-input tests show the same causal effect),
-and no concept is shared by all four models; (RQ3) single features are causal but small, and 64\% of
-visually prominent features have no causal effect; (RQ4) depth-resolved reaction profiles replicate
-held-out (9 of 9 corruptions), but depth locations are comparable only after accounting for captured
-compute (14\% to 98\% of forecast FLOPs).
+\paragraph{Main findings.} On TimesFM~2.5, Chronos-2, Sundial, Chronos-Bolt, Chronos-T5-Base, Timer and
+Time-MoE: (RQ1) causal sparse features exist (194 across 55 measured layers clear a profile-matched null, 2.47 times
+the empirical chance rate, though Timer's do not exceed chance) but act mostly on forecast \emph{level} and
+\emph{seasonality}, and tile a continuum rather than forming discrete concepts; (RQ2) models agree on \emph{which
+inputs} a concept groups (20 of 20 registered transfer claims confirmed on 971 sealed series) but we cannot show that
+they agree on \emph{what it does} to them: no cross-model causal claim confirms held-out (multi-model atlas concepts 0
+of 3, shared-input agreement 0 of 6 tested with 5 not testable), the atlas is segregated by model, and no concept spans
+more than three of the seven models; (RQ3) single features are causal but small and fragile (10 of 31 registered claims
+confirm on private data), and 84\% of prominent features have no causal effect; (RQ4) depth-resolved reaction profiles largely replicate held-out (6 of 9 corruptions), but depth locations are
+comparable only after accounting for captured compute (14\% to 99.8\% of forecast FLOPs). Of 82 replicable registered
+claims, 43 confirm on the one-shot private split; the project's reading is that models share what they select, not
+(demonstrably) what they do with it.
 
 The full ledger of results, each with exact numbers, evidence class, status and a reproduction pointer,
 is \repo{FINDINGS.md} (indexed in Appendix~\ref{app:ledger}). The example run of
 Section~\ref{sec:casestudy}, with its report and every per-stage artifact, is
-\repodir{examples/concept_atlas_v2}; \repo{paper/figures/make_figures.py} regenerates every data figure
+\repodir{examples/panel7_v2}; \repo{paper/figures/make_figures.py} regenerates every data figure
 from it.
 
-\begin{figure}[t]
+\begin{figure}[tb]
 \centering
 \input{figures/overview.tex}
 \caption{System overview. \texttt{tsfm\_benchmark} produces leakage-audited, sealed corpora with exact

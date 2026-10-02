@@ -16,8 +16,8 @@ cd ../tsfm_lens && python run.py --config configs/examples/medium_2model.yaml
 The CLI adds a preflight check (\texttt{-{}-doctor}), partial reruns (\texttt{-{}-stages}, \texttt{-{}-force}),
 checks for new checkpoints or library upgrades (\texttt{-{}-check-alignment}, \texttt{-{}-check-adapter}) and an
 environment diff (\texttt{-{}-verify-provenance}). A CPU-only mock configuration runs every stage in minutes in continuous
-integration, and the worked example (\repo{tsfm_lens/docs/worked_example.md}) walks through a report. The four-model analysis takes
-6.4 GPU-hours, mostly SAE training and the concept battery; stages through L3 take about 16 minutes. Of eight
+integration, and the worked example (\repo{tsfm_lens/docs/worked_example.md}) walks through a report. The seven-model analysis records
+21.1 GPU-hours of stage time, mostly SAE training and the concept battery; stages through L3 take about 1.4 hours. Of eight
 TSFM checkpoints probed, two (Timer, Time-MoE) load through the zero-code path and five with standalone packages
 need a hand-written adapter (\fid{MN-25}), for which the template, checklist and guide exist
 (Appendix~\ref{app:adapters}). New report sections declare their artifact requirements, new claims must use the
@@ -26,15 +26,18 @@ typed \texttt{Finding} record, and new configuration fields declare which artifa
 \section{Limitations}
 \label{sec:limitations}
 
-\paragraph{Models.} Four transformer models with contiguous patch tokens; disjoint-lag tokens (Lag-Llama) get
-reduced scope. The analysis is univariate: Chronos-2's cross-series group attention is not measured
+\paragraph{Models.} Seven transformer models with contiguous tokens; disjoint-lag tokens (Lag-Llama) get
+reduced scope. Timer's features do not exceed chance, and with seven models, contrasts are confounded with architecture, size and
+training data. The analysis is univariate: Chronos-2's cross-series group attention is not measured
 (\fid{PM-13}), and Chronos-T5's decoder and Sundial's flow head are not captured.
 
 \paragraph{Ground truth and confirmation.} Ground truth is exact only for the synthetic tier and encodes our
-generators' assumptions; 27 of 76 concept parts are dominated by one real-derived generator, and pretraining
-overlap cannot be verified. Held-out confirmation covers accuracy, geometry, perturbation agreement and
-input-level transfer; the causal concept results replicate across two corpora but not yet on a sealed split, and
-the 20 confirmed transfers come from two concepts.
+generators' assumptions; 12 of 33 concept parts are dominated by one real-derived generator, and pretraining
+overlap cannot be verified. Held-out confirmation covers accuracy, geometry, perturbation agreement, transfer, single-feature causal effects,
+atlas structure and failure prediction, on one private split opened once (a second look needs a fresh epoch). Only 10 of
+31 testable single-feature claims and no cross-model causal claim confirm; the agreement rung is insensitive
+(\fid{MN-30}), so its failures are weak evidence of difference; 5 of 11 agreement claims and 1 of 32 causal claims could
+not be tested; and the 20 confirmed transfers come from two concepts.
 
 \paragraph{SAE dependence, usability and completeness.} Concept results depend on dictionary size, sparsity,
 revival and seed; the system measures this dependence but cannot remove it, and feature death tracks layer
@@ -48,9 +51,10 @@ for which a known-answer case exists.
 TSFM interpretability is harder than it looks: tokens mean different things in different models, there is no
 annotated ground truth, and causal effects are small enough that artifacts dominate unless controlled. \tool{}
 addresses this with a controlled benchmark, measured alignment, null- and reach-gated causal concepts and a
-register-then-confirm protocol, behind one command and a report designed to be understandable by newcomers. On four TSFMs, causal
-features act mainly on forecast level and shape and form a continuum; models detect the same things, replicably,
-but rarely use them the same way; and individual features account for little of the forecast. The fifteen
+register-then-confirm protocol, behind one command and a report designed to be understandable by newcomers. On seven TSFMs, causal
+features act mainly on forecast level and seasonality and form a continuum; models select the same series for a
+concept, replicably, but no claim that they use it the same way survives the held-out test; and individual features
+account for little of the forecast: 43 of 82 replicable registered claims confirm. The fifteen
 caught failures show why these conclusions needed their controls.
 
 \paragraph{Availability.} Code (MIT), configurations, the example run and the findings ledger are at

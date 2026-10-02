@@ -1,0 +1,645 @@
+{
+  "schema_version": 1,
+  "measured": true,
+  "n_sae_seeds": 3,
+  "replicates": 2,
+  "params": {
+    "k_top_series": 20,
+    "n_null_draws": 200,
+    "transfer_seed": 0
+  },
+  "concepts": [
+    {
+      "concept": 0,
+      "stability": {
+        "replicates": 2,
+        "parts": [
+          {
+            "target": "Chronos-Bolt/encoder.block.4",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          },
+          {
+            "target": "Chronos-T5-Base/encoder.block.11",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          },
+          {
+            "target": "Chronos-T5-Base/encoder.block.6",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          },
+          {
+            "target": "Time-MoE/model.layers.10",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          }
+        ],
+        "stable": true,
+        "frac_parts_stable": 1.0
+      }
+    },
+    {
+      "concept": 1,
+      "stability": {
+        "replicates": 2,
+        "parts": [
+          {
+            "target": "TimesFM/stacked_xf.10",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          },
+          {
+            "target": "TimesFM/stacked_xf.14",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          },
+          {
+            "target": "TimesFM/stacked_xf.18",
+            "n_features": 2,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          }
+        ],
+        "stable": true,
+        "frac_parts_stable": 1.0
+      }
+    },
+    {
+      "concept": 2,
+      "stability": {
+        "replicates": 2,
+        "parts": [
+          {
+            "target": "Chronos-2/encoder.block.5",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          },
+          {
+            "target": "Chronos-2/encoder.block.7",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          },
+          {
+            "target": "Chronos-2/encoder.block.8",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          }
+        ],
+        "stable": true,
+        "frac_parts_stable": 1.0
+      }
+    },
+    {
+      "concept": 3,
+      "stability": {
+        "replicates": 2,
+        "parts": [
+          {
+            "target": "Chronos-2/encoder.block.6",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          },
+          {
+            "target": "Sundial/model.layers.11",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          },
+          {
+            "target": "Sundial/model.layers.6",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          }
+        ],
+        "stable": true,
+        "frac_parts_stable": 1.0
+      }
+    },
+    {
+      "concept": 4,
+      "stability": {
+        "replicates": 2,
+        "parts": [
+          {
+            "target": "Chronos-2/encoder.block.8",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          },
+          {
+            "target": "Chronos-Bolt/encoder.block.4",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          },
+          {
+            "target": "Timer/model.layers.1",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          }
+        ],
+        "stable": true,
+        "frac_parts_stable": 1.0
+      }
+    },
+    {
+      "concept": 5,
+      "stability": {
+        "replicates": 2,
+        "parts": [
+          {
+            "target": "Chronos-2/encoder.block.8",
+            "n_features": 1,
+            "reciprocal_at": [
+              false,
+              true
+            ],
+            "stable": false
+          },
+          {
+            "target": "Sundial/model.layers.6",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          },
+          {
+            "target": "TimesFM/stacked_xf.0",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          }
+        ],
+        "stable": false,
+        "frac_parts_stable": 0.6666666666666666
+      }
+    },
+    {
+      "concept": 6,
+      "stability": {
+        "replicates": 2,
+        "parts": [
+          {
+            "target": "Chronos-2/encoder.block.9",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          },
+          {
+            "target": "Chronos-Bolt/encoder.block.2",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          },
+          {
+            "target": "Sundial/model.layers.5",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          }
+        ],
+        "stable": true,
+        "frac_parts_stable": 1.0
+      }
+    },
+    {
+      "concept": 7,
+      "stability": {
+        "replicates": 2,
+        "parts": [
+          {
+            "target": "Chronos-2/encoder.block.9",
+            "n_features": 1,
+            "reciprocal_at": [
+              false,
+              true
+            ],
+            "stable": false
+          },
+          {
+            "target": "Chronos-Bolt/encoder.block.4",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          },
+          {
+            "target": "Chronos-Bolt/encoder.block.5",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          }
+        ],
+        "stable": false,
+        "frac_parts_stable": 0.6666666666666666
+      }
+    },
+    {
+      "concept": 8,
+      "stability": {
+        "replicates": 2,
+        "parts": [
+          {
+            "target": "Chronos-Bolt/encoder.block.2",
+            "n_features": 2,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          },
+          {
+            "target": "TimesFM/stacked_xf.6",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          }
+        ],
+        "stable": true,
+        "frac_parts_stable": 1.0
+      }
+    },
+    {
+      "concept": 9,
+      "stability": {
+        "replicates": 2,
+        "parts": [
+          {
+            "target": "Chronos-Bolt/encoder.block.4",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          },
+          {
+            "target": "Sundial/model.layers.8",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          },
+          {
+            "target": "Sundial/model.layers.9",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          }
+        ],
+        "stable": true,
+        "frac_parts_stable": 1.0
+      }
+    },
+    {
+      "concept": 10,
+      "stability": {
+        "replicates": 2,
+        "parts": [
+          {
+            "target": "Chronos-T5-Base/encoder.block.10",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          },
+          {
+            "target": "Sundial/model.layers.3",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          },
+          {
+            "target": "Time-MoE/model.layers.4",
+            "n_features": 1,
+            "reciprocal_at": [
+              true,
+              true
+            ],
+            "stable": true
+          }
+        ],
+        "stable": true,
+        "frac_parts_stable": 1.0
+      }
+    }
+  ],
+  "n_concepts": 11,
+  "n_scored": 11,
+  "n_stable": 9,
+  "frac_stable": 0.8181818181818182,
+  "ceiling": {
+    "by_target": {
+      "Chronos-2/encoder.block.5": {
+        "rate": 1.0,
+        "n_parts": 1
+      },
+      "Chronos-2/encoder.block.6": {
+        "rate": 1.0,
+        "n_parts": 1
+      },
+      "Chronos-2/encoder.block.7": {
+        "rate": 1.0,
+        "n_parts": 1
+      },
+      "Chronos-2/encoder.block.8": {
+        "rate": 0.8333333333333334,
+        "n_parts": 3
+      },
+      "Chronos-2/encoder.block.9": {
+        "rate": 0.75,
+        "n_parts": 2
+      },
+      "Chronos-Bolt/encoder.block.2": {
+        "rate": 1.0,
+        "n_parts": 2
+      },
+      "Chronos-Bolt/encoder.block.4": {
+        "rate": 1.0,
+        "n_parts": 4
+      },
+      "Chronos-Bolt/encoder.block.5": {
+        "rate": 1.0,
+        "n_parts": 1
+      },
+      "Chronos-T5-Base/encoder.block.10": {
+        "rate": 1.0,
+        "n_parts": 1
+      },
+      "Chronos-T5-Base/encoder.block.11": {
+        "rate": 1.0,
+        "n_parts": 1
+      },
+      "Chronos-T5-Base/encoder.block.6": {
+        "rate": 1.0,
+        "n_parts": 1
+      },
+      "Sundial/model.layers.11": {
+        "rate": 1.0,
+        "n_parts": 1
+      },
+      "Sundial/model.layers.3": {
+        "rate": 1.0,
+        "n_parts": 1
+      },
+      "Sundial/model.layers.5": {
+        "rate": 1.0,
+        "n_parts": 1
+      },
+      "Sundial/model.layers.6": {
+        "rate": 1.0,
+        "n_parts": 2
+      },
+      "Sundial/model.layers.8": {
+        "rate": 1.0,
+        "n_parts": 1
+      },
+      "Sundial/model.layers.9": {
+        "rate": 1.0,
+        "n_parts": 1
+      },
+      "Time-MoE/model.layers.10": {
+        "rate": 1.0,
+        "n_parts": 1
+      },
+      "Time-MoE/model.layers.4": {
+        "rate": 1.0,
+        "n_parts": 1
+      },
+      "Timer/model.layers.1": {
+        "rate": 1.0,
+        "n_parts": 1
+      },
+      "TimesFM/stacked_xf.0": {
+        "rate": 1.0,
+        "n_parts": 1
+      },
+      "TimesFM/stacked_xf.10": {
+        "rate": 1.0,
+        "n_parts": 1
+      },
+      "TimesFM/stacked_xf.14": {
+        "rate": 1.0,
+        "n_parts": 1
+      },
+      "TimesFM/stacked_xf.18": {
+        "rate": 1.0,
+        "n_parts": 1
+      },
+      "TimesFM/stacked_xf.6": {
+        "rate": 1.0,
+        "n_parts": 1
+      }
+    },
+    "by_model": {
+      "Chronos-2": {
+        "rate": 0.875,
+        "ci": [
+          0.6875,
+          1.0
+        ],
+        "n_parts": 8
+      },
+      "Chronos-Bolt": {
+        "rate": 1.0,
+        "ci": [
+          1.0,
+          1.0
+        ],
+        "n_parts": 7
+      },
+      "Chronos-T5-Base": {
+        "rate": 1.0,
+        "ci": [
+          1.0,
+          1.0
+        ],
+        "n_parts": 3
+      },
+      "Sundial": {
+        "rate": 1.0,
+        "ci": [
+          1.0,
+          1.0
+        ],
+        "n_parts": 7
+      },
+      "Time-MoE": {
+        "rate": 1.0,
+        "ci": [
+          1.0,
+          1.0
+        ],
+        "n_parts": 2
+      },
+      "Timer": {
+        "rate": 1.0,
+        "ci": null,
+        "n_parts": 1
+      },
+      "TimesFM": {
+        "rate": 1.0,
+        "ci": [
+          1.0,
+          1.0
+        ],
+        "n_parts": 5
+      }
+    }
+  },
+  "old_ceiling": {
+    "by_target": {
+      "Chronos-2/encoder.block.9": {
+        "rate": 1.0,
+        "n_parts": 2
+      },
+      "Sundial/model.layers.5": {
+        "rate": 1.0,
+        "n_parts": 2
+      },
+      "Sundial/model.layers.8": {
+        "rate": 0.75,
+        "n_parts": 2
+      },
+      "Timer/model.layers.3": {
+        "rate": 1.0,
+        "n_parts": 2
+      },
+      "Timer/model.layers.7": {
+        "rate": 1.0,
+        "n_parts": 2
+      }
+    },
+    "by_model": {
+      "Chronos-2": {
+        "rate": 1.0,
+        "ci": [
+          1.0,
+          1.0
+        ],
+        "n_parts": 2
+      },
+      "Sundial": {
+        "rate": 0.875,
+        "ci": [
+          0.625,
+          1.0
+        ],
+        "n_parts": 4
+      },
+      "Timer": {
+        "rate": 1.0,
+        "ci": [
+          1.0,
+          1.0
+        ],
+        "n_parts": 4
+      }
+    }
+  },
+  "universality": {
+    "all": {
+      "3": 5,
+      "1": 2,
+      "2": 4
+    },
+    "stable": {
+      "3": 4,
+      "1": 2,
+      "2": 3
+    }
+  }
+}

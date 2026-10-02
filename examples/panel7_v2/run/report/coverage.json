@@ -1,0 +1,131 @@
+{
+  "summary": "19 rendered, 2 skipped",
+  "sections": [
+    {
+      "eyebrow": "At a glance",
+      "title": "Model comparison \u2014 at a glance",
+      "status": "rendered",
+      "detail": ""
+    },
+    {
+      "eyebrow": "Fairness",
+      "title": "The fairness card",
+      "status": "rendered",
+      "detail": ""
+    },
+    {
+      "eyebrow": "Corpus",
+      "title": "The corpus card",
+      "status": "rendered",
+      "detail": ""
+    },
+    {
+      "eyebrow": "L0",
+      "title": "Behavioral profile",
+      "status": "rendered",
+      "detail": ""
+    },
+    {
+      "eyebrow": "Cost",
+      "title": "Cost and capacity",
+      "status": "rendered",
+      "detail": ""
+    },
+    {
+      "eyebrow": "Frontend",
+      "title": "Input front-end diagnostics",
+      "status": "rendered",
+      "detail": ""
+    },
+    {
+      "eyebrow": "Screen",
+      "title": "Layer screening",
+      "status": "rendered",
+      "detail": ""
+    },
+    {
+      "eyebrow": "Profile",
+      "title": "Model internals",
+      "status": "rendered",
+      "detail": ""
+    },
+    {
+      "eyebrow": "Lens",
+      "title": "Forecast lens",
+      "status": "rendered",
+      "detail": ""
+    },
+    {
+      "eyebrow": "L1",
+      "title": "Representational geometry",
+      "status": "rendered",
+      "detail": ""
+    },
+    {
+      "eyebrow": "L2",
+      "title": "Stitching probes",
+      "status": "rendered",
+      "detail": ""
+    },
+    {
+      "eyebrow": "L4",
+      "title": "Activation clusters",
+      "status": "rendered",
+      "detail": ""
+    },
+    {
+      "eyebrow": "Similarity",
+      "title": "Pair similarity across metrics",
+      "status": "rendered",
+      "detail": ""
+    },
+    {
+      "eyebrow": "L3",
+      "title": "Perturbation & patching",
+      "status": "rendered",
+      "detail": ""
+    },
+    {
+      "eyebrow": "Attention",
+      "title": "Attention structure & head causality",
+      "status": "rendered",
+      "detail": ""
+    },
+    {
+      "eyebrow": "Circuit",
+      "title": "The seasonality circuit",
+      "status": "skipped",
+      "detail": "builder returned no content"
+    },
+    {
+      "eyebrow": "SAE",
+      "title": "Sparse feature dictionary",
+      "status": "rendered",
+      "detail": ""
+    },
+    {
+      "eyebrow": "Concepts",
+      "title": "Cross-model concepts",
+      "status": "rendered",
+      "detail": ""
+    },
+    {
+      "eyebrow": "Exemplars",
+      "title": "Exemplar case studies",
+      "status": "rendered",
+      "detail": ""
+    },
+    {
+      "eyebrow": "Spec curve",
+      "title": "Analysis-knob robustness",
+      "status": "skipped",
+      "detail": "builder returned no content"
+    },
+    {
+      "eyebrow": "Confirm",
+      "title": "Private benchmark confirmation",
+      "status": "rendered",
+      "detail": ""
+    }
+  ]
+}

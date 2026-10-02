@@ -1,0 +1,4026 @@
+{
+  "schema_version": 1,
+  "models": [
+    "TimesFM",
+    "Chronos-2",
+    "Sundial",
+    "Chronos-Bolt",
+    "Timer",
+    "Time-MoE",
+    "Chronos-T5-Base"
+  ],
+  "pairs": [
+    {
+      "model_a": "TimesFM",
+      "model_b": "Chronos-2",
+      "key": "TimesFM|Chronos-2"
+    },
+    {
+      "model_a": "TimesFM",
+      "model_b": "Sundial",
+      "key": "TimesFM|Sundial"
+    },
+    {
+      "model_a": "TimesFM",
+      "model_b": "Chronos-Bolt",
+      "key": "TimesFM|Chronos-Bolt"
+    },
+    {
+      "model_a": "TimesFM",
+      "model_b": "Timer",
+      "key": "TimesFM|Timer"
+    },
+    {
+      "model_a": "TimesFM",
+      "model_b": "Time-MoE",
+      "key": "TimesFM|Time-MoE"
+    },
+    {
+      "model_a": "TimesFM",
+      "model_b": "Chronos-T5-Base",
+      "key": "TimesFM|Chronos-T5-Base"
+    },
+    {
+      "model_a": "Chronos-2",
+      "model_b": "Sundial",
+      "key": "Chronos-2|Sundial"
+    },
+    {
+      "model_a": "Chronos-2",
+      "model_b": "Chronos-Bolt",
+      "key": "Chronos-2|Chronos-Bolt"
+    },
+    {
+      "model_a": "Chronos-2",
+      "model_b": "Timer",
+      "key": "Chronos-2|Timer"
+    },
+    {
+      "model_a": "Chronos-2",
+      "model_b": "Time-MoE",
+      "key": "Chronos-2|Time-MoE"
+    },
+    {
+      "model_a": "Chronos-2",
+      "model_b": "Chronos-T5-Base",
+      "key": "Chronos-2|Chronos-T5-Base"
+    },
+    {
+      "model_a": "Sundial",
+      "model_b": "Chronos-Bolt",
+      "key": "Sundial|Chronos-Bolt"
+    },
+    {
+      "model_a": "Sundial",
+      "model_b": "Timer",
+      "key": "Sundial|Timer"
+    },
+    {
+      "model_a": "Sundial",
+      "model_b": "Time-MoE",
+      "key": "Sundial|Time-MoE"
+    },
+    {
+      "model_a": "Sundial",
+      "model_b": "Chronos-T5-Base",
+      "key": "Sundial|Chronos-T5-Base"
+    },
+    {
+      "model_a": "Chronos-Bolt",
+      "model_b": "Timer",
+      "key": "Chronos-Bolt|Timer"
+    },
+    {
+      "model_a": "Chronos-Bolt",
+      "model_b": "Time-MoE",
+      "key": "Chronos-Bolt|Time-MoE"
+    },
+    {
+      "model_a": "Chronos-Bolt",
+      "model_b": "Chronos-T5-Base",
+      "key": "Chronos-Bolt|Chronos-T5-Base"
+    },
+    {
+      "model_a": "Timer",
+      "model_b": "Time-MoE",
+      "key": "Timer|Time-MoE"
+    },
+    {
+      "model_a": "Timer",
+      "model_b": "Chronos-T5-Base",
+      "key": "Timer|Chronos-T5-Base"
+    },
+    {
+      "model_a": "Time-MoE",
+      "model_b": "Chronos-T5-Base",
+      "key": "Time-MoE|Chronos-T5-Base"
+    }
+  ],
+  "metrics": {
+    "error_agreement": {
+      "label": "Error agreement",
+      "family": "behavioral",
+      "what_it_measures": "Whether the two models make similar per-series forecast errors (Spearman correlation of log MASE across series).",
+      "evidence_class": "behavioral",
+      "higher_means": "more similar",
+      "reference_text": "Every pair's raw agreement tends to run high because series difficulty dominates MASE for every model; read the DIFFERENCES between pairs, and the partial correlation controlling for a model-free difficulty covariate (detail.partial), rather than the raw value alone.",
+      "pairs": {
+        "TimesFM|Chronos-2": {
+          "value": 0.9480566314003364,
+          "ci": [
+            0.9314898246146395,
+            0.9611523245183166
+          ],
+          "reference": null,
+          "evidence_class": "behavioral",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "n_series": 941,
+            "partial": {
+              "status": "measured",
+              "value": 0.8936270721364326,
+              "ci": [
+                0.8624244117877571,
+                0.9199629101893644
+              ],
+              "n_series": 941
+            }
+          }
+        },
+        "TimesFM|Sundial": {
+          "value": 0.9005458521101113,
+          "ci": [
+            0.878035055466123,
+            0.9197989137765441
+          ],
+          "reference": null,
+          "evidence_class": "behavioral",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "n_series": 941,
+            "partial": {
+              "status": "measured",
+              "value": 0.7713706201211835,
+              "ci": [
+                0.7299629742319498,
+                0.8089071140147376
+              ],
+              "n_series": 941
+            }
+          }
+        },
+        "TimesFM|Chronos-Bolt": {
+          "value": 0.7592385923288928,
+          "ci": [
+            0.7125179448996006,
+            0.8032300645552735
+          ],
+          "reference": null,
+          "evidence_class": "behavioral",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "n_series": 941,
+            "partial": {
+              "status": "measured",
+              "value": 0.44058233720495527,
+              "ci": [
+                0.35601629768742915,
+                0.5223625261591452
+              ],
+              "n_series": 941
+            }
+          }
+        },
+        "TimesFM|Timer": {
+          "value": 0.7041709253606072,
+          "ci": [
+            0.6557804188870079,
+            0.7510761334779884
+          ],
+          "reference": null,
+          "evidence_class": "behavioral",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "n_series": 941,
+            "partial": {
+              "status": "measured",
+              "value": 0.3020301232679722,
+              "ci": [
+                0.220690772234877,
+                0.3840372370408368
+              ],
+              "n_series": 941
+            }
+          }
+        },
+        "TimesFM|Time-MoE": {
+          "value": 0.6263028651115072,
+          "ci": [
+            0.5797135373487993,
+            0.6707395215886109
+          ],
+          "reference": null,
+          "evidence_class": "behavioral",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "n_series": 941,
+            "partial": {
+              "status": "measured",
+              "value": 0.29185470238485517,
+              "ci": [
+                0.22208487985176126,
+                0.36175316783585804
+              ],
+              "n_series": 941
+            }
+          }
+        },
+        "TimesFM|Chronos-T5-Base": {
+          "value": 0.8961843206422454,
+          "ci": [
+            0.8706387384408514,
+            0.917658739285962
+          ],
+          "reference": null,
+          "evidence_class": "behavioral",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "n_series": 941,
+            "partial": {
+              "status": "measured",
+              "value": 0.7626532794461132,
+              "ci": [
+                0.714724524253632,
+                0.8076427512685236
+              ],
+              "n_series": 941
+            }
+          }
+        },
+        "Chronos-2|Sundial": {
+          "value": 0.8795123277578228,
+          "ci": [
+            0.8574738658049127,
+            0.8994923643185347
+          ],
+          "reference": null,
+          "evidence_class": "behavioral",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "n_series": 941,
+            "partial": {
+              "status": "measured",
+              "value": 0.739708984813381,
+              "ci": [
+                0.697244051859093,
+                0.7788878642716384
+              ],
+              "n_series": 941
+            }
+          }
+        },
+        "Chronos-2|Chronos-Bolt": {
+          "value": 0.7390685777299194,
+          "ci": [
+            0.6913102522566595,
+            0.7843250477809701
+          ],
+          "reference": null,
+          "evidence_class": "behavioral",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "n_series": 941,
+            "partial": {
+              "status": "measured",
+              "value": 0.4212936621238841,
+              "ci": [
+                0.3393550292833522,
+                0.5034925143784619
+              ],
+              "n_series": 941
+            }
+          }
+        },
+        "Chronos-2|Timer": {
+          "value": 0.6729271495825173,
+          "ci": [
+            0.622917029157044,
+            0.7199534178610231
+          ],
+          "reference": null,
+          "evidence_class": "behavioral",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "n_series": 941,
+            "partial": {
+              "status": "measured",
+              "value": 0.26222078167583046,
+              "ci": [
+                0.1840375711372442,
+                0.3416901432543707
+              ],
+              "n_series": 941
+            }
+          }
+        },
+        "Chronos-2|Time-MoE": {
+          "value": 0.5964130335692857,
+          "ci": [
+            0.5491965513036391,
+            0.6409359321895822
+          ],
+          "reference": null,
+          "evidence_class": "behavioral",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "n_series": 941,
+            "partial": {
+              "status": "measured",
+              "value": 0.25453185412083,
+              "ci": [
+                0.18827139021292222,
+                0.3216690157717835
+              ],
+              "n_series": 941
+            }
+          }
+        },
+        "Chronos-2|Chronos-T5-Base": {
+          "value": 0.8827041987637895,
+          "ci": [
+            0.8588462188275042,
+            0.9041523407884751
+          ],
+          "reference": null,
+          "evidence_class": "behavioral",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "n_series": 941,
+            "partial": {
+              "status": "measured",
+              "value": 0.7478296553179825,
+              "ci": [
+                0.7035972371696408,
+                0.7913581129158012
+              ],
+              "n_series": 941
+            }
+          }
+        },
+        "Sundial|Chronos-Bolt": {
+          "value": 0.8267885326411699,
+          "ci": [
+            0.7923459651852889,
+            0.8587744514282072
+          ],
+          "reference": null,
+          "evidence_class": "behavioral",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "n_series": 941,
+            "partial": {
+              "status": "measured",
+              "value": 0.5321884725793413,
+              "ci": [
+                0.45958385968904564,
+                0.6036397910689681
+              ],
+              "n_series": 941
+            }
+          }
+        },
+        "Sundial|Timer": {
+          "value": 0.8308545418331801,
+          "ci": [
+            0.7976283159555292,
+            0.861048026175784
+          ],
+          "reference": null,
+          "evidence_class": "behavioral",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "n_series": 941,
+            "partial": {
+              "status": "measured",
+              "value": 0.5345242144343944,
+              "ci": [
+                0.4671225895430283,
+                0.6025384906222814
+              ],
+              "n_series": 941
+            }
+          }
+        },
+        "Sundial|Time-MoE": {
+          "value": 0.7371423543188234,
+          "ci": [
+            0.7002605582524023,
+            0.7698566224832369
+          ],
+          "reference": null,
+          "evidence_class": "behavioral",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "n_series": 941,
+            "partial": {
+              "status": "measured",
+              "value": 0.47440385468707724,
+              "ci": [
+                0.41596197457743395,
+                0.532693754059124
+              ],
+              "n_series": 941
+            }
+          }
+        },
+        "Sundial|Chronos-T5-Base": {
+          "value": 0.9141092732499488,
+          "ci": [
+            0.8972632729449611,
+            0.9279344239239001
+          ],
+          "reference": null,
+          "evidence_class": "behavioral",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "n_series": 941,
+            "partial": {
+              "status": "measured",
+              "value": 0.7668370859530886,
+              "ci": [
+                0.7240707649396326,
+                0.8048390226579382
+              ],
+              "n_series": 941
+            }
+          }
+        },
+        "Chronos-Bolt|Timer": {
+          "value": 0.9067415803154515,
+          "ci": [
+            0.8868776641400389,
+            0.9228998877261886
+          ],
+          "reference": null,
+          "evidence_class": "behavioral",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "n_series": 941,
+            "partial": {
+              "status": "measured",
+              "value": 0.7547360012491562,
+              "ci": [
+                0.7001636822002473,
+                0.7987216887338717
+              ],
+              "n_series": 941
+            }
+          }
+        },
+        "Chronos-Bolt|Time-MoE": {
+          "value": 0.7542793771392783,
+          "ci": [
+            0.7201814674698884,
+            0.7858793893618715
+          ],
+          "reference": null,
+          "evidence_class": "behavioral",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "n_series": 941,
+            "partial": {
+              "status": "measured",
+              "value": 0.5187708526234338,
+              "ci": [
+                0.4556508999994864,
+                0.576245493506375
+              ],
+              "n_series": 941
+            }
+          }
+        },
+        "Chronos-Bolt|Chronos-T5-Base": {
+          "value": 0.8141611912716086,
+          "ci": [
+            0.7745251321485839,
+            0.8493992739892905
+          ],
+          "reference": null,
+          "evidence_class": "behavioral",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "n_series": 941,
+            "partial": {
+              "status": "measured",
+              "value": 0.5156686083689422,
+              "ci": [
+                0.43192989441590063,
+                0.5948148580542676
+              ],
+              "n_series": 941
+            }
+          }
+        },
+        "Timer|Time-MoE": {
+          "value": 0.815590888293588,
+          "ci": [
+            0.787476863618103,
+            0.8391410155053661
+          ],
+          "reference": null,
+          "evidence_class": "behavioral",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "n_series": 941,
+            "partial": {
+              "status": "measured",
+              "value": 0.6482452137412907,
+              "ci": [
+                0.5988727702052152,
+                0.6927840224876045
+              ],
+              "n_series": 941
+            }
+          }
+        },
+        "Timer|Chronos-T5-Base": {
+          "value": 0.7799232362166295,
+          "ci": [
+            0.7412380623059616,
+            0.8143771124889906
+          ],
+          "reference": null,
+          "evidence_class": "behavioral",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "n_series": 941,
+            "partial": {
+              "status": "measured",
+              "value": 0.41685459312661954,
+              "ci": [
+                0.3384903476593953,
+                0.4933741735205897
+              ],
+              "n_series": 941
+            }
+          }
+        },
+        "Time-MoE|Chronos-T5-Base": {
+          "value": 0.683796392640804,
+          "ci": [
+            0.6433037773284733,
+            0.7199511622236587
+          ],
+          "reference": null,
+          "evidence_class": "behavioral",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "n_series": 941,
+            "partial": {
+              "status": "measured",
+              "value": 0.3674604267322766,
+              "ci": [
+                0.3029291305211495,
+                0.4316327417673789
+              ],
+              "n_series": 941
+            }
+          }
+        }
+      }
+    },
+    "cka_best": {
+      "label": "Best-layer CKA",
+      "family": "geometric",
+      "what_it_measures": "The most similar pair of layers' linear representational geometry: the max linear CKA over every layer-pair between the two models.",
+      "evidence_class": "geometric",
+      "higher_means": "more similar",
+      "reference_text": "A max over many layer pairs is biased upward relative to any single pre-specified pair; read it against the shuffled-series null (reference) and the mean over the whole matrix (detail.mean_cka), never the max alone.",
+      "pairs": {
+        "TimesFM|Chronos-2": {
+          "value": 0.42565208673477173,
+          "ci": [
+            0.4163432061672211,
+            0.4414634689688683
+          ],
+          "reference": {
+            "kind": "null",
+            "value": 0.03831017836928367,
+            "text": "linear CKA at this same layer pair after breaking series correspondence (shuffled-series null)"
+          },
+          "evidence_class": "geometric",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "layer_a": "stacked_xf.4",
+            "layer_b": "encoder.block.7",
+            "rel_depth_a": 0.21052631578947367,
+            "rel_depth_b": 0.6363636363636364,
+            "rel_depth_basis": "l1_meta",
+            "mean_cka": 0.27691414952278137,
+            "matrix_shape": [
+              10,
+              12
+            ]
+          }
+        },
+        "TimesFM|Sundial": {
+          "value": 0.41223859786987305,
+          "ci": [
+            0.399778713285923,
+            0.4280583456158638
+          ],
+          "reference": {
+            "kind": "null",
+            "value": 0.05111987367272377,
+            "text": "linear CKA at this same layer pair after breaking series correspondence (shuffled-series null)"
+          },
+          "evidence_class": "geometric",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "layer_a": "stacked_xf.4",
+            "layer_b": "model.layers.2",
+            "rel_depth_a": 0.21052631578947367,
+            "rel_depth_b": 0.18181818181818182,
+            "rel_depth_basis": "l1_meta",
+            "mean_cka": 0.24903973937034607,
+            "matrix_shape": [
+              10,
+              12
+            ]
+          }
+        },
+        "TimesFM|Chronos-Bolt": {
+          "value": 0.38373851776123047,
+          "ci": [
+            0.37285134866833686,
+            0.3995162084698677
+          ],
+          "reference": {
+            "kind": "null",
+            "value": 0.010847427509725093,
+            "text": "linear CKA at this same layer pair after breaking series correspondence (shuffled-series null)"
+          },
+          "evidence_class": "geometric",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "layer_a": "stacked_xf.4",
+            "layer_b": "encoder.block.2",
+            "rel_depth_a": 0.21052631578947367,
+            "rel_depth_b": 0.18181818181818182,
+            "rel_depth_basis": "l1_meta",
+            "mean_cka": 0.2397911101579666,
+            "matrix_shape": [
+              10,
+              6
+            ]
+          }
+        },
+        "TimesFM|Timer": {
+          "value": 0.3528273403644562,
+          "ci": [
+            0.34559987783432006,
+            0.3678038984537125
+          ],
+          "reference": {
+            "kind": "null",
+            "value": 0.03613734766840935,
+            "text": "linear CKA at this same layer pair after breaking series correspondence (shuffled-series null)"
+          },
+          "evidence_class": "geometric",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "layer_a": "stacked_xf.4",
+            "layer_b": "model.layers.2",
+            "rel_depth_a": 0.21052631578947367,
+            "rel_depth_b": 0.2857142857142857,
+            "rel_depth_basis": "l1_meta",
+            "mean_cka": 0.19664819538593292,
+            "matrix_shape": [
+              10,
+              8
+            ]
+          }
+        },
+        "TimesFM|Time-MoE": {
+          "value": 0.36506661772727966,
+          "ci": [
+            0.3546586036682129,
+            0.38222098127007487
+          ],
+          "reference": {
+            "kind": "null",
+            "value": 0.04802970737218857,
+            "text": "linear CKA at this same layer pair after breaking series correspondence (shuffled-series null)"
+          },
+          "evidence_class": "geometric",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "layer_a": "stacked_xf.4",
+            "layer_b": "model.layers.9",
+            "rel_depth_a": 0.21052631578947367,
+            "rel_depth_b": 0.8181818181818182,
+            "rel_depth_basis": "l1_meta",
+            "mean_cka": 0.22055265307426453,
+            "matrix_shape": [
+              10,
+              12
+            ]
+          }
+        },
+        "TimesFM|Chronos-T5-Base": {
+          "value": 0.3417474031448364,
+          "ci": [
+            0.33302840739488604,
+            0.35696470364928246
+          ],
+          "reference": {
+            "kind": "null",
+            "value": 0.02584219500422478,
+            "text": "linear CKA at this same layer pair after breaking series correspondence (shuffled-series null)"
+          },
+          "evidence_class": "geometric",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "layer_a": "stacked_xf.4",
+            "layer_b": "encoder.block.10",
+            "rel_depth_a": 0.21052631578947367,
+            "rel_depth_b": 0.43478260869565216,
+            "rel_depth_basis": "l1_meta",
+            "mean_cka": 0.18555445969104767,
+            "matrix_shape": [
+              10,
+              12
+            ]
+          }
+        },
+        "Chronos-2|Sundial": {
+          "value": 0.9123280644416809,
+          "ci": [
+            0.9058943465352058,
+            0.9184227079153061
+          ],
+          "reference": {
+            "kind": "null",
+            "value": 0.0015175883658230306,
+            "text": "linear CKA at this same layer pair after breaking series correspondence (shuffled-series null)"
+          },
+          "evidence_class": "geometric",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "layer_a": "encoder.block.0",
+            "layer_b": "model.layers.0",
+            "rel_depth_a": 0.0,
+            "rel_depth_b": 0.0,
+            "rel_depth_basis": "l1_meta",
+            "mean_cka": 0.3998096287250519,
+            "matrix_shape": [
+              12,
+              12
+            ]
+          }
+        },
+        "Chronos-2|Chronos-Bolt": {
+          "value": 0.9073085188865662,
+          "ci": [
+            0.8988772198557854,
+            0.9140486687421798
+          ],
+          "reference": {
+            "kind": "null",
+            "value": 0.000961998593993485,
+            "text": "linear CKA at this same layer pair after breaking series correspondence (shuffled-series null)"
+          },
+          "evidence_class": "geometric",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "layer_a": "encoder.block.0",
+            "layer_b": "encoder.block.0",
+            "rel_depth_a": 0.0,
+            "rel_depth_b": 0.0,
+            "rel_depth_basis": "l1_meta",
+            "mean_cka": 0.652751088142395,
+            "matrix_shape": [
+              12,
+              6
+            ]
+          }
+        },
+        "Chronos-2|Timer": {
+          "value": 0.48699700832366943,
+          "ci": [
+            0.4746596857905388,
+            0.5033624678850174
+          ],
+          "reference": {
+            "kind": "null",
+            "value": 0.0752862423658371,
+            "text": "linear CKA at this same layer pair after breaking series correspondence (shuffled-series null)"
+          },
+          "evidence_class": "geometric",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "layer_a": "encoder.block.7",
+            "layer_b": "model.layers.2",
+            "rel_depth_a": 0.6363636363636364,
+            "rel_depth_b": 0.2857142857142857,
+            "rel_depth_basis": "l1_meta",
+            "mean_cka": 0.32332849502563477,
+            "matrix_shape": [
+              12,
+              8
+            ]
+          }
+        },
+        "Chronos-2|Time-MoE": {
+          "value": 0.6009723544120789,
+          "ci": [
+            0.588347464799881,
+            0.6146779879927635
+          ],
+          "reference": {
+            "kind": "null",
+            "value": 0.06412815451622009,
+            "text": "linear CKA at this same layer pair after breaking series correspondence (shuffled-series null)"
+          },
+          "evidence_class": "geometric",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "layer_a": "encoder.block.7",
+            "layer_b": "model.layers.10",
+            "rel_depth_a": 0.6363636363636364,
+            "rel_depth_b": 0.9090909090909091,
+            "rel_depth_basis": "l1_meta",
+            "mean_cka": 0.4046173393726349,
+            "matrix_shape": [
+              12,
+              12
+            ]
+          }
+        },
+        "Chronos-2|Chronos-T5-Base": {
+          "value": 0.6204500794410706,
+          "ci": [
+            0.6089480891823769,
+            0.6360950961709022
+          ],
+          "reference": {
+            "kind": "null",
+            "value": 0.07577048242092133,
+            "text": "linear CKA at this same layer pair after breaking series correspondence (shuffled-series null)"
+          },
+          "evidence_class": "geometric",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "layer_a": "encoder.block.6",
+            "layer_b": "encoder.block.10",
+            "rel_depth_a": 0.5454545454545454,
+            "rel_depth_b": 0.43478260869565216,
+            "rel_depth_basis": "l1_meta",
+            "mean_cka": 0.44345223903656006,
+            "matrix_shape": [
+              12,
+              12
+            ]
+          }
+        },
+        "Sundial|Chronos-Bolt": {
+          "value": 0.9268798828125,
+          "ci": [
+            0.9223347559571267,
+            0.9312100172042846
+          ],
+          "reference": {
+            "kind": "null",
+            "value": 0.0007859993609599769,
+            "text": "linear CKA at this same layer pair after breaking series correspondence (shuffled-series null)"
+          },
+          "evidence_class": "geometric",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "layer_a": "model.layers.0",
+            "layer_b": "encoder.block.0",
+            "rel_depth_a": 0.0,
+            "rel_depth_b": 0.0,
+            "rel_depth_basis": "l1_meta",
+            "mean_cka": 0.40978509187698364,
+            "matrix_shape": [
+              12,
+              6
+            ]
+          }
+        },
+        "Sundial|Timer": {
+          "value": 0.5258874297142029,
+          "ci": [
+            0.5132848799228669,
+            0.5439869448542595
+          ],
+          "reference": {
+            "kind": "null",
+            "value": 0.02530715726315975,
+            "text": "linear CKA at this same layer pair after breaking series correspondence (shuffled-series null)"
+          },
+          "evidence_class": "geometric",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "layer_a": "model.layers.11",
+            "layer_b": "model.layers.2",
+            "rel_depth_a": 1.0,
+            "rel_depth_b": 0.2857142857142857,
+            "rel_depth_basis": "l1_meta",
+            "mean_cka": 0.30570632219314575,
+            "matrix_shape": [
+              12,
+              8
+            ]
+          }
+        },
+        "Sundial|Time-MoE": {
+          "value": 0.7412908673286438,
+          "ci": [
+            0.7354152396321296,
+            0.7496097326278687
+          ],
+          "reference": {
+            "kind": "null",
+            "value": 0.2924500346183777,
+            "text": "linear CKA at this same layer pair after breaking series correspondence (shuffled-series null)"
+          },
+          "evidence_class": "geometric",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "layer_a": "model.layers.10",
+            "layer_b": "model.layers.8",
+            "rel_depth_a": 0.9090909090909091,
+            "rel_depth_b": 0.7272727272727273,
+            "rel_depth_basis": "l1_meta",
+            "mean_cka": 0.42866721749305725,
+            "matrix_shape": [
+              12,
+              12
+            ]
+          }
+        },
+        "Sundial|Chronos-T5-Base": {
+          "value": 0.5346400141716003,
+          "ci": [
+            0.5082325160503387,
+            0.5616697758436203
+          ],
+          "reference": {
+            "kind": "null",
+            "value": 0.01755310073494911,
+            "text": "linear CKA at this same layer pair after breaking series correspondence (shuffled-series null)"
+          },
+          "evidence_class": "geometric",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "layer_a": "model.layers.11",
+            "layer_b": "encoder.block.10",
+            "rel_depth_a": 1.0,
+            "rel_depth_b": 0.43478260869565216,
+            "rel_depth_basis": "l1_meta",
+            "mean_cka": 0.27211788296699524,
+            "matrix_shape": [
+              12,
+              12
+            ]
+          }
+        },
+        "Chronos-Bolt|Timer": {
+          "value": 0.4283866286277771,
+          "ci": [
+            0.40827987268567084,
+            0.44925082549452783
+          ],
+          "reference": {
+            "kind": "null",
+            "value": 0.010341731272637844,
+            "text": "linear CKA at this same layer pair after breaking series correspondence (shuffled-series null)"
+          },
+          "evidence_class": "geometric",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "layer_a": "encoder.block.2",
+            "layer_b": "model.layers.1",
+            "rel_depth_a": 0.18181818181818182,
+            "rel_depth_b": 0.14285714285714285,
+            "rel_depth_basis": "l1_meta",
+            "mean_cka": 0.3158758878707886,
+            "matrix_shape": [
+              6,
+              8
+            ]
+          }
+        },
+        "Chronos-Bolt|Time-MoE": {
+          "value": 0.47376689314842224,
+          "ci": [
+            0.4621343359351158,
+            0.48786457479000095
+          ],
+          "reference": {
+            "kind": "null",
+            "value": 0.05304212272167206,
+            "text": "linear CKA at this same layer pair after breaking series correspondence (shuffled-series null)"
+          },
+          "evidence_class": "geometric",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "layer_a": "encoder.block.4",
+            "layer_b": "model.layers.10",
+            "rel_depth_a": 0.36363636363636365,
+            "rel_depth_b": 0.9090909090909091,
+            "rel_depth_basis": "l1_meta",
+            "mean_cka": 0.33661651611328125,
+            "matrix_shape": [
+              6,
+              12
+            ]
+          }
+        },
+        "Chronos-Bolt|Chronos-T5-Base": {
+          "value": 0.55527263879776,
+          "ci": [
+            0.5429749593138695,
+            0.571214260160923
+          ],
+          "reference": {
+            "kind": "null",
+            "value": 0.08963459581136704,
+            "text": "linear CKA at this same layer pair after breaking series correspondence (shuffled-series null)"
+          },
+          "evidence_class": "geometric",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "layer_a": "encoder.block.4",
+            "layer_b": "encoder.block.10",
+            "rel_depth_a": 0.36363636363636365,
+            "rel_depth_b": 0.43478260869565216,
+            "rel_depth_basis": "l1_meta",
+            "mean_cka": 0.4382149279117584,
+            "matrix_shape": [
+              6,
+              12
+            ]
+          }
+        },
+        "Timer|Time-MoE": {
+          "value": 0.5964034199714661,
+          "ci": [
+            0.5853244066238403,
+            0.6126655012369155
+          ],
+          "reference": {
+            "kind": "null",
+            "value": 0.06309892982244492,
+            "text": "linear CKA at this same layer pair after breaking series correspondence (shuffled-series null)"
+          },
+          "evidence_class": "geometric",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "layer_a": "model.layers.2",
+            "layer_b": "model.layers.10",
+            "rel_depth_a": 0.2857142857142857,
+            "rel_depth_b": 0.9090909090909091,
+            "rel_depth_basis": "l1_meta",
+            "mean_cka": 0.3462427854537964,
+            "matrix_shape": [
+              8,
+              12
+            ]
+          }
+        },
+        "Timer|Chronos-T5-Base": {
+          "value": 0.3949553370475769,
+          "ci": [
+            0.37567937523126604,
+            0.4168429955840111
+          ],
+          "reference": {
+            "kind": "null",
+            "value": 0.05216547772288323,
+            "text": "linear CKA at this same layer pair after breaking series correspondence (shuffled-series null)"
+          },
+          "evidence_class": "geometric",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "layer_a": "model.layers.2",
+            "layer_b": "encoder.block.10",
+            "rel_depth_a": 0.2857142857142857,
+            "rel_depth_b": 0.43478260869565216,
+            "rel_depth_basis": "l1_meta",
+            "mean_cka": 0.23221002519130707,
+            "matrix_shape": [
+              8,
+              12
+            ]
+          }
+        },
+        "Time-MoE|Chronos-T5-Base": {
+          "value": 0.5271027684211731,
+          "ci": [
+            0.5096990570425988,
+            0.5477774843573571
+          ],
+          "reference": {
+            "kind": "null",
+            "value": 0.0439026266336441,
+            "text": "linear CKA at this same layer pair after breaking series correspondence (shuffled-series null)"
+          },
+          "evidence_class": "geometric",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "layer_a": "model.layers.10",
+            "layer_b": "encoder.block.10",
+            "rel_depth_a": 0.9090909090909091,
+            "rel_depth_b": 0.43478260869565216,
+            "rel_depth_basis": "l1_meta",
+            "mean_cka": 0.302176833152771,
+            "matrix_shape": [
+              12,
+              12
+            ]
+          }
+        }
+      }
+    },
+    "stitching_gain": {
+      "label": "Stitching gain",
+      "family": "linear",
+      "what_it_measures": "How much of one model's activations a linear probe trained on the other model's activations explains, beyond an input-feature baseline (both directions, averaged).",
+      "evidence_class": "linear-translatable",
+      "higher_means": "more similar",
+      "reference_text": "0 = no better than the input-feature baseline (CLAUDE.md invariant 3); a positive gain is linear-translatable structure, never causal evidence on its own.",
+      "pairs": {
+        "TimesFM|Chronos-2": {
+          "value": 0.6588830649852753,
+          "ci": null,
+          "reference": {
+            "kind": "baseline",
+            "value": 0.0,
+            "text": "0 = no better than the input-feature baseline (CLAUDE.md invariant 3)"
+          },
+          "evidence_class": "linear-translatable",
+          "status": "measured",
+          "reason": "CI is reported per direction in detail, not for the two-direction mean",
+          "detail": {
+            "TimesFM->Chronos-2": {
+              "best_gain": 0.708752453327179,
+              "gain_ci": [
+                0.6867218109605175,
+                0.7277748550210168
+              ],
+              "src_layer": "stacked_xf.2",
+              "dst_layer": "encoder.block.0"
+            },
+            "Chronos-2->TimesFM": {
+              "best_gain": 0.6090136766433716,
+              "gain_ci": [
+                0.5917296808644777,
+                0.6287633251618677
+              ],
+              "src_layer": "encoder.block.1",
+              "dst_layer": "stacked_xf.0"
+            }
+          }
+        },
+        "TimesFM|Sundial": {
+          "value": 0.6482577323913574,
+          "ci": null,
+          "reference": {
+            "kind": "baseline",
+            "value": 0.0,
+            "text": "0 = no better than the input-feature baseline (CLAUDE.md invariant 3)"
+          },
+          "evidence_class": "linear-translatable",
+          "status": "measured",
+          "reason": "CI is reported per direction in detail, not for the two-direction mean",
+          "detail": {
+            "TimesFM->Sundial": {
+              "best_gain": 0.6866456866264343,
+              "gain_ci": [
+                0.6731844043804546,
+                0.7000724552938843
+              ],
+              "src_layer": "stacked_xf.4",
+              "dst_layer": "model.layers.4"
+            },
+            "Sundial->TimesFM": {
+              "best_gain": 0.6098697781562805,
+              "gain_ci": [
+                0.5796814087550101,
+                0.6395519045014
+              ],
+              "src_layer": "model.layers.10",
+              "dst_layer": "stacked_xf.18"
+            }
+          }
+        },
+        "TimesFM|Chronos-Bolt": {
+          "value": 0.613459587097168,
+          "ci": null,
+          "reference": {
+            "kind": "baseline",
+            "value": 0.0,
+            "text": "0 = no better than the input-feature baseline (CLAUDE.md invariant 3)"
+          },
+          "evidence_class": "linear-translatable",
+          "status": "measured",
+          "reason": "CI is reported per direction in detail, not for the two-direction mean",
+          "detail": {
+            "TimesFM->Chronos-Bolt": {
+              "best_gain": 0.651486337184906,
+              "gain_ci": [
+                0.6272343293078582,
+                0.6745026686980988
+              ],
+              "src_layer": "stacked_xf.2",
+              "dst_layer": "encoder.block.0"
+            },
+            "Chronos-Bolt->TimesFM": {
+              "best_gain": 0.5754328370094299,
+              "gain_ci": [
+                0.5560827332205435,
+                0.5974587356891656
+              ],
+              "src_layer": "encoder.block.2",
+              "dst_layer": "stacked_xf.0"
+            }
+          }
+        },
+        "TimesFM|Timer": {
+          "value": 0.3281671106815338,
+          "ci": null,
+          "reference": {
+            "kind": "baseline",
+            "value": 0.0,
+            "text": "0 = no better than the input-feature baseline (CLAUDE.md invariant 3)"
+          },
+          "evidence_class": "linear-translatable",
+          "status": "measured",
+          "reason": "CI is reported per direction in detail, not for the two-direction mean",
+          "detail": {
+            "TimesFM->Timer": {
+              "best_gain": 0.3609883785247803,
+              "gain_ci": [
+                0.3439038277642513,
+                0.37861684150369995
+              ],
+              "src_layer": "stacked_xf.4",
+              "dst_layer": "model.layers.3"
+            },
+            "Timer->TimesFM": {
+              "best_gain": 0.29534584283828735,
+              "gain_ci": [
+                0.28166115462533736,
+                0.3104189951850596
+              ],
+              "src_layer": "model.layers.2",
+              "dst_layer": "stacked_xf.8"
+            }
+          }
+        },
+        "TimesFM|Time-MoE": {
+          "value": 0.5654771327972412,
+          "ci": null,
+          "reference": {
+            "kind": "baseline",
+            "value": 0.0,
+            "text": "0 = no better than the input-feature baseline (CLAUDE.md invariant 3)"
+          },
+          "evidence_class": "linear-translatable",
+          "status": "measured",
+          "reason": "CI is reported per direction in detail, not for the two-direction mean",
+          "detail": {
+            "TimesFM->Time-MoE": {
+              "best_gain": 0.5805267095565796,
+              "gain_ci": [
+                0.5628303104174114,
+                0.5986680809238644
+              ],
+              "src_layer": "stacked_xf.4",
+              "dst_layer": "model.layers.4"
+            },
+            "Time-MoE->TimesFM": {
+              "best_gain": 0.5504275560379028,
+              "gain_ci": [
+                0.519117491644392,
+                0.577564052894527
+              ],
+              "src_layer": "model.layers.10",
+              "dst_layer": "stacked_xf.18"
+            }
+          }
+        },
+        "TimesFM|Chronos-T5-Base": {
+          "value": 0.49249303340911865,
+          "ci": null,
+          "reference": {
+            "kind": "baseline",
+            "value": 0.0,
+            "text": "0 = no better than the input-feature baseline (CLAUDE.md invariant 3)"
+          },
+          "evidence_class": "linear-translatable",
+          "status": "measured",
+          "reason": "CI is reported per direction in detail, not for the two-direction mean",
+          "detail": {
+            "TimesFM->Chronos-T5-Base": {
+              "best_gain": 0.4655073881149292,
+              "gain_ci": [
+                0.4479121249509637,
+                0.48125392389466454
+              ],
+              "src_layer": "stacked_xf.6",
+              "dst_layer": "encoder.block.9"
+            },
+            "Chronos-T5-Base->TimesFM": {
+              "best_gain": 0.5194786787033081,
+              "gain_ci": [
+                0.4842500956360663,
+                0.5493170160546433
+              ],
+              "src_layer": "encoder.block.9",
+              "dst_layer": "stacked_xf.18"
+            }
+          }
+        },
+        "Chronos-2|Sundial": {
+          "value": 0.9011951386928558,
+          "ci": null,
+          "reference": {
+            "kind": "baseline",
+            "value": 0.0,
+            "text": "0 = no better than the input-feature baseline (CLAUDE.md invariant 3)"
+          },
+          "evidence_class": "linear-translatable",
+          "status": "measured",
+          "reason": "CI is reported per direction in detail, not for the two-direction mean",
+          "detail": {
+            "Chronos-2->Sundial": {
+              "best_gain": 0.8909866213798523,
+              "gain_ci": [
+                0.8800088649959247,
+                0.9038566713585731
+              ],
+              "src_layer": "encoder.block.0",
+              "dst_layer": "model.layers.0"
+            },
+            "Sundial->Chronos-2": {
+              "best_gain": 0.9114036560058594,
+              "gain_ci": [
+                0.9012906985492877,
+                0.9198531649068744
+              ],
+              "src_layer": "model.layers.1",
+              "dst_layer": "encoder.block.0"
+            }
+          }
+        },
+        "Chronos-2|Chronos-Bolt": {
+          "value": 0.8999874889850616,
+          "ci": null,
+          "reference": {
+            "kind": "baseline",
+            "value": 0.0,
+            "text": "0 = no better than the input-feature baseline (CLAUDE.md invariant 3)"
+          },
+          "evidence_class": "linear-translatable",
+          "status": "measured",
+          "reason": "CI is reported per direction in detail, not for the two-direction mean",
+          "detail": {
+            "Chronos-2->Chronos-Bolt": {
+              "best_gain": 0.8925878405570984,
+              "gain_ci": [
+                0.8783882996448357,
+                0.9067955234655815
+              ],
+              "src_layer": "encoder.block.0",
+              "dst_layer": "encoder.block.0"
+            },
+            "Chronos-Bolt->Chronos-2": {
+              "best_gain": 0.9073871374130249,
+              "gain_ci": [
+                0.8978096648588878,
+                0.915873619486442
+              ],
+              "src_layer": "encoder.block.1",
+              "dst_layer": "encoder.block.0"
+            }
+          }
+        },
+        "Chronos-2|Timer": {
+          "value": 0.39566680788993835,
+          "ci": null,
+          "reference": {
+            "kind": "baseline",
+            "value": 0.0,
+            "text": "0 = no better than the input-feature baseline (CLAUDE.md invariant 3)"
+          },
+          "evidence_class": "linear-translatable",
+          "status": "measured",
+          "reason": "CI is reported per direction in detail, not for the two-direction mean",
+          "detail": {
+            "Chronos-2->Timer": {
+              "best_gain": 0.3770519495010376,
+              "gain_ci": [
+                0.36245116517449233,
+                0.39266072011462766
+              ],
+              "src_layer": "encoder.block.3",
+              "dst_layer": "model.layers.2"
+            },
+            "Timer->Chronos-2": {
+              "best_gain": 0.4142816662788391,
+              "gain_ci": [
+                0.37680114565860096,
+                0.4543444788721632
+              ],
+              "src_layer": "model.layers.2",
+              "dst_layer": "encoder.block.11"
+            }
+          }
+        },
+        "Chronos-2|Time-MoE": {
+          "value": 0.6927341520786285,
+          "ci": null,
+          "reference": {
+            "kind": "baseline",
+            "value": 0.0,
+            "text": "0 = no better than the input-feature baseline (CLAUDE.md invariant 3)"
+          },
+          "evidence_class": "linear-translatable",
+          "status": "measured",
+          "reason": "CI is reported per direction in detail, not for the two-direction mean",
+          "detail": {
+            "Chronos-2->Time-MoE": {
+              "best_gain": 0.8289079070091248,
+              "gain_ci": [
+                0.8025018156939705,
+                0.8551107900013138
+              ],
+              "src_layer": "encoder.block.0",
+              "dst_layer": "model.layers.1"
+            },
+            "Time-MoE->Chronos-2": {
+              "best_gain": 0.5565603971481323,
+              "gain_ci": [
+                0.5304279458692389,
+                0.5867193312160169
+              ],
+              "src_layer": "model.layers.5",
+              "dst_layer": "encoder.block.0"
+            }
+          }
+        },
+        "Chronos-2|Chronos-T5-Base": {
+          "value": 0.5945084691047668,
+          "ci": null,
+          "reference": {
+            "kind": "baseline",
+            "value": 0.0,
+            "text": "0 = no better than the input-feature baseline (CLAUDE.md invariant 3)"
+          },
+          "evidence_class": "linear-translatable",
+          "status": "measured",
+          "reason": "CI is reported per direction in detail, not for the two-direction mean",
+          "detail": {
+            "Chronos-2->Chronos-T5-Base": {
+              "best_gain": 0.6085605621337891,
+              "gain_ci": [
+                0.5916727510395317,
+                0.6223272490084083
+              ],
+              "src_layer": "encoder.block.4",
+              "dst_layer": "encoder.block.9"
+            },
+            "Chronos-T5-Base->Chronos-2": {
+              "best_gain": 0.5804563760757446,
+              "gain_ci": [
+                0.5561797102157002,
+                0.6106778346601193
+              ],
+              "src_layer": "encoder.block.8",
+              "dst_layer": "encoder.block.0"
+            }
+          }
+        },
+        "Sundial|Chronos-Bolt": {
+          "value": 0.8687458038330078,
+          "ci": null,
+          "reference": {
+            "kind": "baseline",
+            "value": 0.0,
+            "text": "0 = no better than the input-feature baseline (CLAUDE.md invariant 3)"
+          },
+          "evidence_class": "linear-translatable",
+          "status": "measured",
+          "reason": "CI is reported per direction in detail, not for the two-direction mean",
+          "detail": {
+            "Sundial->Chronos-Bolt": {
+              "best_gain": 0.8773857951164246,
+              "gain_ci": [
+                0.862969823952445,
+                0.8922003536847113
+              ],
+              "src_layer": "model.layers.1",
+              "dst_layer": "encoder.block.0"
+            },
+            "Chronos-Bolt->Sundial": {
+              "best_gain": 0.8601058125495911,
+              "gain_ci": [
+                0.8481681985501114,
+                0.8736063327387817
+              ],
+              "src_layer": "encoder.block.0",
+              "dst_layer": "model.layers.0"
+            }
+          }
+        },
+        "Sundial|Timer": {
+          "value": 0.38668566942214966,
+          "ci": null,
+          "reference": {
+            "kind": "baseline",
+            "value": 0.0,
+            "text": "0 = no better than the input-feature baseline (CLAUDE.md invariant 3)"
+          },
+          "evidence_class": "linear-translatable",
+          "status": "measured",
+          "reason": "CI is reported per direction in detail, not for the two-direction mean",
+          "detail": {
+            "Sundial->Timer": {
+              "best_gain": 0.37732625007629395,
+              "gain_ci": [
+                0.360454200268801,
+                0.3961074968116326
+              ],
+              "src_layer": "model.layers.3",
+              "dst_layer": "model.layers.2"
+            },
+            "Timer->Sundial": {
+              "best_gain": 0.39604508876800537,
+              "gain_ci": [
+                0.37292262737656034,
+                0.42607295223418923
+              ],
+              "src_layer": "model.layers.0",
+              "dst_layer": "model.layers.0"
+            }
+          }
+        },
+        "Sundial|Time-MoE": {
+          "value": 0.752958357334137,
+          "ci": null,
+          "reference": {
+            "kind": "baseline",
+            "value": 0.0,
+            "text": "0 = no better than the input-feature baseline (CLAUDE.md invariant 3)"
+          },
+          "evidence_class": "linear-translatable",
+          "status": "measured",
+          "reason": "CI is reported per direction in detail, not for the two-direction mean",
+          "detail": {
+            "Sundial->Time-MoE": {
+              "best_gain": 0.8326790928840637,
+              "gain_ci": [
+                0.808017932152279,
+                0.8609226873837038
+              ],
+              "src_layer": "model.layers.2",
+              "dst_layer": "model.layers.1"
+            },
+            "Time-MoE->Sundial": {
+              "best_gain": 0.6732376217842102,
+              "gain_ci": [
+                0.6617505543590402,
+                0.6857819812971443
+              ],
+              "src_layer": "model.layers.4",
+              "dst_layer": "model.layers.4"
+            }
+          }
+        },
+        "Sundial|Chronos-T5-Base": {
+          "value": 0.561627209186554,
+          "ci": null,
+          "reference": {
+            "kind": "baseline",
+            "value": 0.0,
+            "text": "0 = no better than the input-feature baseline (CLAUDE.md invariant 3)"
+          },
+          "evidence_class": "linear-translatable",
+          "status": "measured",
+          "reason": "CI is reported per direction in detail, not for the two-direction mean",
+          "detail": {
+            "Sundial->Chronos-T5-Base": {
+              "best_gain": 0.5376235842704773,
+              "gain_ci": [
+                0.520332667069648,
+                0.5571222763125497
+              ],
+              "src_layer": "model.layers.4",
+              "dst_layer": "encoder.block.8"
+            },
+            "Chronos-T5-Base->Sundial": {
+              "best_gain": 0.5856308341026306,
+              "gain_ci": [
+                0.5604029900867703,
+                0.6142835146667749
+              ],
+              "src_layer": "encoder.block.8",
+              "dst_layer": "model.layers.0"
+            }
+          }
+        },
+        "Chronos-Bolt|Timer": {
+          "value": 0.38974565267562866,
+          "ci": null,
+          "reference": {
+            "kind": "baseline",
+            "value": 0.0,
+            "text": "0 = no better than the input-feature baseline (CLAUDE.md invariant 3)"
+          },
+          "evidence_class": "linear-translatable",
+          "status": "measured",
+          "reason": "CI is reported per direction in detail, not for the two-direction mean",
+          "detail": {
+            "Chronos-Bolt->Timer": {
+              "best_gain": 0.36742883920669556,
+              "gain_ci": [
+                0.3535551372194894,
+                0.3829501853480292
+              ],
+              "src_layer": "encoder.block.5",
+              "dst_layer": "model.layers.2"
+            },
+            "Timer->Chronos-Bolt": {
+              "best_gain": 0.41206246614456177,
+              "gain_ci": [
+                0.38781733800254986,
+                0.4425353054767516
+              ],
+              "src_layer": "model.layers.1",
+              "dst_layer": "encoder.block.0"
+            }
+          }
+        },
+        "Chronos-Bolt|Time-MoE": {
+          "value": 0.7120137214660645,
+          "ci": null,
+          "reference": {
+            "kind": "baseline",
+            "value": 0.0,
+            "text": "0 = no better than the input-feature baseline (CLAUDE.md invariant 3)"
+          },
+          "evidence_class": "linear-translatable",
+          "status": "measured",
+          "reason": "CI is reported per direction in detail, not for the two-direction mean",
+          "detail": {
+            "Chronos-Bolt->Time-MoE": {
+              "best_gain": 0.7780949473381042,
+              "gain_ci": [
+                0.7538720881227489,
+                0.8079867041763884
+              ],
+              "src_layer": "encoder.block.2",
+              "dst_layer": "model.layers.1"
+            },
+            "Time-MoE->Chronos-Bolt": {
+              "best_gain": 0.6459324955940247,
+              "gain_ci": [
+                0.6197135733477072,
+                0.6781806987344334
+              ],
+              "src_layer": "model.layers.2",
+              "dst_layer": "encoder.block.0"
+            }
+          }
+        },
+        "Chronos-Bolt|Chronos-T5-Base": {
+          "value": 0.6191778779029846,
+          "ci": null,
+          "reference": {
+            "kind": "baseline",
+            "value": 0.0,
+            "text": "0 = no better than the input-feature baseline (CLAUDE.md invariant 3)"
+          },
+          "evidence_class": "linear-translatable",
+          "status": "measured",
+          "reason": "CI is reported per direction in detail, not for the two-direction mean",
+          "detail": {
+            "Chronos-Bolt->Chronos-T5-Base": {
+              "best_gain": 0.5691573023796082,
+              "gain_ci": [
+                0.5495723256027757,
+                0.5874734728407852
+              ],
+              "src_layer": "encoder.block.4",
+              "dst_layer": "encoder.block.9"
+            },
+            "Chronos-T5-Base->Chronos-Bolt": {
+              "best_gain": 0.6691984534263611,
+              "gain_ci": [
+                0.6440287280500395,
+                0.6989837628952864
+              ],
+              "src_layer": "encoder.block.8",
+              "dst_layer": "encoder.block.0"
+            }
+          }
+        },
+        "Timer|Time-MoE": {
+          "value": 0.42480725049972534,
+          "ci": null,
+          "reference": {
+            "kind": "baseline",
+            "value": 0.0,
+            "text": "0 = no better than the input-feature baseline (CLAUDE.md invariant 3)"
+          },
+          "evidence_class": "linear-translatable",
+          "status": "measured",
+          "reason": "CI is reported per direction in detail, not for the two-direction mean",
+          "detail": {
+            "Timer->Time-MoE": {
+              "best_gain": 0.5006551742553711,
+              "gain_ci": [
+                0.4649072651859937,
+                0.5359626231202996
+              ],
+              "src_layer": "model.layers.2",
+              "dst_layer": "model.layers.1"
+            },
+            "Time-MoE->Timer": {
+              "best_gain": 0.3489593267440796,
+              "gain_ci": [
+                0.3328997548183251,
+                0.3661621460787827
+              ],
+              "src_layer": "model.layers.4",
+              "dst_layer": "model.layers.2"
+            }
+          }
+        },
+        "Timer|Chronos-T5-Base": {
+          "value": 0.32270586490631104,
+          "ci": null,
+          "reference": {
+            "kind": "baseline",
+            "value": 0.0,
+            "text": "0 = no better than the input-feature baseline (CLAUDE.md invariant 3)"
+          },
+          "evidence_class": "linear-translatable",
+          "status": "measured",
+          "reason": "CI is reported per direction in detail, not for the two-direction mean",
+          "detail": {
+            "Timer->Chronos-T5-Base": {
+              "best_gain": 0.33156365156173706,
+              "gain_ci": [
+                0.3046405621487322,
+                0.3559052321505162
+              ],
+              "src_layer": "model.layers.2",
+              "dst_layer": "encoder.block.7"
+            },
+            "Chronos-T5-Base->Timer": {
+              "best_gain": 0.313848078250885,
+              "gain_ci": [
+                0.298422071230961,
+                0.3328454732776781
+              ],
+              "src_layer": "encoder.block.9",
+              "dst_layer": "model.layers.6"
+            }
+          }
+        },
+        "Time-MoE|Chronos-T5-Base": {
+          "value": 0.6413238048553467,
+          "ci": null,
+          "reference": {
+            "kind": "baseline",
+            "value": 0.0,
+            "text": "0 = no better than the input-feature baseline (CLAUDE.md invariant 3)"
+          },
+          "evidence_class": "linear-translatable",
+          "status": "measured",
+          "reason": "CI is reported per direction in detail, not for the two-direction mean",
+          "detail": {
+            "Time-MoE->Chronos-T5-Base": {
+              "best_gain": 0.5452176928520203,
+              "gain_ci": [
+                0.5241842381423361,
+                0.5670886622878517
+              ],
+              "src_layer": "model.layers.3",
+              "dst_layer": "encoder.block.7"
+            },
+            "Chronos-T5-Base->Time-MoE": {
+              "best_gain": 0.7374299168586731,
+              "gain_ci": [
+                0.708345898456451,
+                0.7646151497744548
+              ],
+              "src_layer": "encoder.block.7",
+              "dst_layer": "model.layers.1"
+            }
+          }
+        }
+      }
+    },
+    "cluster_ami": {
+      "label": "Cluster agreement (AMI)",
+      "family": "clustering",
+      "what_it_measures": "Whether the two models' activation clusters group the same series together (adjusted mutual information).",
+      "evidence_class": "descriptive",
+      "higher_means": "more similar",
+      "reference_text": "0 = chance agreement (AMI is already chance-adjusted).",
+      "pairs": {
+        "TimesFM|Chronos-2": {
+          "value": 0.5959065134987976,
+          "ci": [
+            0.5596455870313188,
+            0.6345386362491874
+          ],
+          "reference": {
+            "kind": "chance",
+            "value": 0.0,
+            "text": "0 = chance agreement (AMI is already chance-adjusted)"
+          },
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "n_rows_a": 5,
+            "n_cols_b": 5
+          }
+        },
+        "TimesFM|Sundial": {
+          "value": 0.7173778553224761,
+          "ci": [
+            0.6854117708435576,
+            0.7558226129221984
+          ],
+          "reference": {
+            "kind": "chance",
+            "value": 0.0,
+            "text": "0 = chance agreement (AMI is already chance-adjusted)"
+          },
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "n_rows_a": 5,
+            "n_cols_b": 5
+          }
+        },
+        "TimesFM|Chronos-Bolt": {
+          "value": 0.5230688933658759,
+          "ci": [
+            0.4941641371943525,
+            0.5640747386440504
+          ],
+          "reference": {
+            "kind": "chance",
+            "value": 0.0,
+            "text": "0 = chance agreement (AMI is already chance-adjusted)"
+          },
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "n_rows_a": 5,
+            "n_cols_b": 5
+          }
+        },
+        "TimesFM|Timer": {
+          "value": 0.5400169234494483,
+          "ci": [
+            0.507640540084144,
+            0.5821002898453267
+          ],
+          "reference": {
+            "kind": "chance",
+            "value": 0.0,
+            "text": "0 = chance agreement (AMI is already chance-adjusted)"
+          },
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "n_rows_a": 5,
+            "n_cols_b": 5
+          }
+        },
+        "TimesFM|Time-MoE": {
+          "value": 0.6424718663849627,
+          "ci": [
+            0.6072816300557149,
+            0.6782239435636723
+          ],
+          "reference": {
+            "kind": "chance",
+            "value": 0.0,
+            "text": "0 = chance agreement (AMI is already chance-adjusted)"
+          },
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "n_rows_a": 5,
+            "n_cols_b": 5
+          }
+        },
+        "TimesFM|Chronos-T5-Base": {
+          "value": 0.3895637912229923,
+          "ci": [
+            0.3630061179415136,
+            0.4260928734167201
+          ],
+          "reference": {
+            "kind": "chance",
+            "value": 0.0,
+            "text": "0 = chance agreement (AMI is already chance-adjusted)"
+          },
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "n_rows_a": 5,
+            "n_cols_b": 5
+          }
+        },
+        "Chronos-2|Sundial": {
+          "value": 0.6108022947757973,
+          "ci": [
+            0.5794400201288896,
+            0.6484426315115472
+          ],
+          "reference": {
+            "kind": "chance",
+            "value": 0.0,
+            "text": "0 = chance agreement (AMI is already chance-adjusted)"
+          },
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "n_rows_a": 5,
+            "n_cols_b": 5
+          }
+        },
+        "Chronos-2|Chronos-Bolt": {
+          "value": 0.47971735828223194,
+          "ci": [
+            0.45264282039944687,
+            0.523060996713177
+          ],
+          "reference": {
+            "kind": "chance",
+            "value": 0.0,
+            "text": "0 = chance agreement (AMI is already chance-adjusted)"
+          },
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "n_rows_a": 5,
+            "n_cols_b": 5
+          }
+        },
+        "Chronos-2|Timer": {
+          "value": 0.6000594411062732,
+          "ci": [
+            0.5643021639853312,
+            0.6417507559546798
+          ],
+          "reference": {
+            "kind": "chance",
+            "value": 0.0,
+            "text": "0 = chance agreement (AMI is already chance-adjusted)"
+          },
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "n_rows_a": 5,
+            "n_cols_b": 5
+          }
+        },
+        "Chronos-2|Time-MoE": {
+          "value": 0.6519245184981783,
+          "ci": [
+            0.6206435259284951,
+            0.6922970311109069
+          ],
+          "reference": {
+            "kind": "chance",
+            "value": 0.0,
+            "text": "0 = chance agreement (AMI is already chance-adjusted)"
+          },
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "n_rows_a": 5,
+            "n_cols_b": 5
+          }
+        },
+        "Chronos-2|Chronos-T5-Base": {
+          "value": 0.34618020567976937,
+          "ci": [
+            0.32852852882345707,
+            0.375941818459698
+          ],
+          "reference": {
+            "kind": "chance",
+            "value": 0.0,
+            "text": "0 = chance agreement (AMI is already chance-adjusted)"
+          },
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "n_rows_a": 5,
+            "n_cols_b": 5
+          }
+        },
+        "Sundial|Chronos-Bolt": {
+          "value": 0.5802651132208576,
+          "ci": [
+            0.5518113250050286,
+            0.6206225519858836
+          ],
+          "reference": {
+            "kind": "chance",
+            "value": 0.0,
+            "text": "0 = chance agreement (AMI is already chance-adjusted)"
+          },
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "n_rows_a": 5,
+            "n_cols_b": 5
+          }
+        },
+        "Sundial|Timer": {
+          "value": 0.685395089818312,
+          "ci": [
+            0.6503120184265972,
+            0.7293036889965839
+          ],
+          "reference": {
+            "kind": "chance",
+            "value": 0.0,
+            "text": "0 = chance agreement (AMI is already chance-adjusted)"
+          },
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "n_rows_a": 5,
+            "n_cols_b": 5
+          }
+        },
+        "Sundial|Time-MoE": {
+          "value": 0.6412753476637412,
+          "ci": [
+            0.614048572037655,
+            0.6804314691440405
+          ],
+          "reference": {
+            "kind": "chance",
+            "value": 0.0,
+            "text": "0 = chance agreement (AMI is already chance-adjusted)"
+          },
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "n_rows_a": 5,
+            "n_cols_b": 5
+          }
+        },
+        "Sundial|Chronos-T5-Base": {
+          "value": 0.36209125733786945,
+          "ci": [
+            0.34135257019372556,
+            0.39193712769053574
+          ],
+          "reference": {
+            "kind": "chance",
+            "value": 0.0,
+            "text": "0 = chance agreement (AMI is already chance-adjusted)"
+          },
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "n_rows_a": 5,
+            "n_cols_b": 5
+          }
+        },
+        "Chronos-Bolt|Timer": {
+          "value": 0.49922606296138217,
+          "ci": [
+            0.469428550742391,
+            0.5426779173438611
+          ],
+          "reference": {
+            "kind": "chance",
+            "value": 0.0,
+            "text": "0 = chance agreement (AMI is already chance-adjusted)"
+          },
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "n_rows_a": 5,
+            "n_cols_b": 5
+          }
+        },
+        "Chronos-Bolt|Time-MoE": {
+          "value": 0.39599693132800523,
+          "ci": [
+            0.36839940346908107,
+            0.43850129928042414
+          ],
+          "reference": {
+            "kind": "chance",
+            "value": 0.0,
+            "text": "0 = chance agreement (AMI is already chance-adjusted)"
+          },
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "n_rows_a": 5,
+            "n_cols_b": 5
+          }
+        },
+        "Chronos-Bolt|Chronos-T5-Base": {
+          "value": 0.3121852160058078,
+          "ci": [
+            0.29168045616876426,
+            0.3437335211450566
+          ],
+          "reference": {
+            "kind": "chance",
+            "value": 0.0,
+            "text": "0 = chance agreement (AMI is already chance-adjusted)"
+          },
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "n_rows_a": 5,
+            "n_cols_b": 5
+          }
+        },
+        "Timer|Time-MoE": {
+          "value": 0.5205225074294153,
+          "ci": [
+            0.48525070520297103,
+            0.5648186092620732
+          ],
+          "reference": {
+            "kind": "chance",
+            "value": 0.0,
+            "text": "0 = chance agreement (AMI is already chance-adjusted)"
+          },
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "n_rows_a": 5,
+            "n_cols_b": 5
+          }
+        },
+        "Timer|Chronos-T5-Base": {
+          "value": 0.2626369034862218,
+          "ci": [
+            0.24143136390946515,
+            0.29621878083360537
+          ],
+          "reference": {
+            "kind": "chance",
+            "value": 0.0,
+            "text": "0 = chance agreement (AMI is already chance-adjusted)"
+          },
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "n_rows_a": 5,
+            "n_cols_b": 5
+          }
+        },
+        "Time-MoE|Chronos-T5-Base": {
+          "value": 0.4211175073145163,
+          "ci": [
+            0.4018327348467311,
+            0.4522968893618416
+          ],
+          "reference": {
+            "kind": "chance",
+            "value": 0.0,
+            "text": "0 = chance agreement (AMI is already chance-adjusted)"
+          },
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "n_rows_a": 5,
+            "n_cols_b": 5
+          }
+        }
+      }
+    },
+    "atlas_co_membership": {
+      "label": "Atlas co-membership",
+      "family": "sae_effect",
+      "what_it_measures": "How often the two models' causally-ablated SAE features land in the same cross-model concept (shared causal effect profile), versus a model-label permutation null.",
+      "evidence_class": "causal within-model",
+      "higher_means": "more similar",
+      "reference_text": "1 = exactly the co-membership rate expected under a model-label permutation that preserves each model's own row count; the two-tailed p-values in detail say whether the observed count is an outlier in either direction.",
+      "pairs": {
+        "TimesFM|Chronos-2": {
+          "value": 0.44822949350067237,
+          "ci": null,
+          "reference": {
+            "kind": "null",
+            "value": 2.231,
+            "text": "expected co-membership count under a model-label permutation preserving each model's own row count (matches sae/concept_atlas.py's cross-model null)"
+          },
+          "evidence_class": "causal within-model",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "observed": 1,
+            "expected": 2.231,
+            "p_above": 0.903096903096903,
+            "p_below": 0.3206793206793207,
+            "n_null": 1000,
+            "n_concepts": 11,
+            "value_basis": "ratio"
+          }
+        },
+        "TimesFM|Sundial": {
+          "value": 0.4703668861712136,
+          "ci": null,
+          "reference": {
+            "kind": "null",
+            "value": 2.126,
+            "text": "expected co-membership count under a model-label permutation preserving each model's own row count (matches sae/concept_atlas.py's cross-model null)"
+          },
+          "evidence_class": "causal within-model",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "observed": 1,
+            "expected": 2.126,
+            "p_above": 0.9040959040959041,
+            "p_below": 0.3356643356643357,
+            "n_null": 1000,
+            "n_concepts": 11,
+            "value_basis": "ratio"
+          }
+        },
+        "TimesFM|Chronos-Bolt": {
+          "value": 1.3192612137203166,
+          "ci": null,
+          "reference": {
+            "kind": "null",
+            "value": 0.758,
+            "text": "expected co-membership count under a model-label permutation preserving each model's own row count (matches sae/concept_atlas.py's cross-model null)"
+          },
+          "evidence_class": "causal within-model",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "observed": 1,
+            "expected": 0.758,
+            "p_above": 0.5554445554445554,
+            "p_below": 0.8371628371628371,
+            "n_null": 1000,
+            "n_concepts": 11,
+            "value_basis": "ratio"
+          }
+        },
+        "TimesFM|Timer": {
+          "value": 0.0,
+          "ci": null,
+          "reference": {
+            "kind": "null",
+            "value": 1.539,
+            "text": "expected co-membership count under a model-label permutation preserving each model's own row count (matches sae/concept_atlas.py's cross-model null)"
+          },
+          "evidence_class": "causal within-model",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "observed": 0,
+            "expected": 1.539,
+            "p_above": 1.0,
+            "p_below": 0.17082917082917082,
+            "n_null": 1000,
+            "n_concepts": 11,
+            "value_basis": "ratio"
+          }
+        },
+        "TimesFM|Time-MoE": {
+          "value": 0.0,
+          "ci": null,
+          "reference": {
+            "kind": "null",
+            "value": 1.548,
+            "text": "expected co-membership count under a model-label permutation preserving each model's own row count (matches sae/concept_atlas.py's cross-model null)"
+          },
+          "evidence_class": "causal within-model",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "observed": 0,
+            "expected": 1.548,
+            "p_above": 1.0,
+            "p_below": 0.14985014985014986,
+            "n_null": 1000,
+            "n_concepts": 11,
+            "value_basis": "ratio"
+          }
+        },
+        "TimesFM|Chronos-T5-Base": {
+          "value": 0.0,
+          "ci": null,
+          "reference": {
+            "kind": "null",
+            "value": 0.983,
+            "text": "expected co-membership count under a model-label permutation preserving each model's own row count (matches sae/concept_atlas.py's cross-model null)"
+          },
+          "evidence_class": "causal within-model",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "observed": 0,
+            "expected": 0.983,
+            "p_above": 1.0,
+            "p_below": 0.34965034965034963,
+            "n_null": 1000,
+            "n_concepts": 11,
+            "value_basis": "ratio"
+          }
+        },
+        "Chronos-2|Sundial": {
+          "value": 1.2077294685990339,
+          "ci": null,
+          "reference": {
+            "kind": "null",
+            "value": 2.484,
+            "text": "expected co-membership count under a model-label permutation preserving each model's own row count (matches sae/concept_atlas.py's cross-model null)"
+          },
+          "evidence_class": "causal within-model",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "observed": 3,
+            "expected": 2.484,
+            "p_above": 0.46153846153846156,
+            "p_below": 0.7802197802197802,
+            "n_null": 1000,
+            "n_concepts": 11,
+            "value_basis": "ratio"
+          }
+        },
+        "Chronos-2|Chronos-Bolt": {
+          "value": 3.5885167464114835,
+          "ci": null,
+          "reference": {
+            "kind": "null",
+            "value": 0.836,
+            "text": "expected co-membership count under a model-label permutation preserving each model's own row count (matches sae/concept_atlas.py's cross-model null)"
+          },
+          "evidence_class": "causal within-model",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "observed": 3,
+            "expected": 0.836,
+            "p_above": 0.04195804195804196,
+            "p_below": 0.995004995004995,
+            "n_null": 1000,
+            "n_concepts": 11,
+            "value_basis": "ratio"
+          }
+        },
+        "Chronos-2|Timer": {
+          "value": 0.5681818181818182,
+          "ci": null,
+          "reference": {
+            "kind": "null",
+            "value": 1.76,
+            "text": "expected co-membership count under a model-label permutation preserving each model's own row count (matches sae/concept_atlas.py's cross-model null)"
+          },
+          "evidence_class": "causal within-model",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "observed": 1,
+            "expected": 1.76,
+            "p_above": 0.8651348651348651,
+            "p_below": 0.4565434565434565,
+            "n_null": 1000,
+            "n_concepts": 11,
+            "value_basis": "ratio"
+          }
+        },
+        "Chronos-2|Time-MoE": {
+          "value": 0.0,
+          "ci": null,
+          "reference": {
+            "kind": "null",
+            "value": 1.823,
+            "text": "expected co-membership count under a model-label permutation preserving each model's own row count (matches sae/concept_atlas.py's cross-model null)"
+          },
+          "evidence_class": "causal within-model",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "observed": 0,
+            "expected": 1.823,
+            "p_above": 1.0,
+            "p_below": 0.13586413586413587,
+            "n_null": 1000,
+            "n_concepts": 11,
+            "value_basis": "ratio"
+          }
+        },
+        "Chronos-2|Chronos-T5-Base": {
+          "value": 0.0,
+          "ci": null,
+          "reference": {
+            "kind": "null",
+            "value": 1.139,
+            "text": "expected co-membership count under a model-label permutation preserving each model's own row count (matches sae/concept_atlas.py's cross-model null)"
+          },
+          "evidence_class": "causal within-model",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "observed": 0,
+            "expected": 1.139,
+            "p_above": 1.0,
+            "p_below": 0.2837162837162837,
+            "n_null": 1000,
+            "n_concepts": 11,
+            "value_basis": "ratio"
+          }
+        },
+        "Sundial|Chronos-Bolt": {
+          "value": 2.450980392156863,
+          "ci": null,
+          "reference": {
+            "kind": "null",
+            "value": 0.816,
+            "text": "expected co-membership count under a model-label permutation preserving each model's own row count (matches sae/concept_atlas.py's cross-model null)"
+          },
+          "evidence_class": "causal within-model",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "observed": 2,
+            "expected": 0.816,
+            "p_above": 0.1938061938061938,
+            "p_below": 0.964035964035964,
+            "n_null": 1000,
+            "n_concepts": 11,
+            "value_basis": "ratio"
+          }
+        },
+        "Sundial|Timer": {
+          "value": 0.0,
+          "ci": null,
+          "reference": {
+            "kind": "null",
+            "value": 1.624,
+            "text": "expected co-membership count under a model-label permutation preserving each model's own row count (matches sae/concept_atlas.py's cross-model null)"
+          },
+          "evidence_class": "causal within-model",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "observed": 0,
+            "expected": 1.624,
+            "p_above": 1.0,
+            "p_below": 0.16283716283716285,
+            "n_null": 1000,
+            "n_concepts": 11,
+            "value_basis": "ratio"
+          }
+        },
+        "Sundial|Time-MoE": {
+          "value": 0.607164541590771,
+          "ci": null,
+          "reference": {
+            "kind": "null",
+            "value": 1.647,
+            "text": "expected co-membership count under a model-label permutation preserving each model's own row count (matches sae/concept_atlas.py's cross-model null)"
+          },
+          "evidence_class": "causal within-model",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "observed": 1,
+            "expected": 1.647,
+            "p_above": 0.8461538461538461,
+            "p_below": 0.4785214785214785,
+            "n_null": 1000,
+            "n_concepts": 11,
+            "value_basis": "ratio"
+          }
+        },
+        "Sundial|Chronos-T5-Base": {
+          "value": 0.9671179883945841,
+          "ci": null,
+          "reference": {
+            "kind": "null",
+            "value": 1.034,
+            "text": "expected co-membership count under a model-label permutation preserving each model's own row count (matches sae/concept_atlas.py's cross-model null)"
+          },
+          "evidence_class": "causal within-model",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "observed": 1,
+            "expected": 1.034,
+            "p_above": 0.6803196803196803,
+            "p_below": 0.7352647352647352,
+            "n_null": 1000,
+            "n_concepts": 11,
+            "value_basis": "ratio"
+          }
+        },
+        "Chronos-Bolt|Timer": {
+          "value": 1.76678445229682,
+          "ci": null,
+          "reference": {
+            "kind": "null",
+            "value": 0.566,
+            "text": "expected co-membership count under a model-label permutation preserving each model's own row count (matches sae/concept_atlas.py's cross-model null)"
+          },
+          "evidence_class": "causal within-model",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "observed": 1,
+            "expected": 0.566,
+            "p_above": 0.45254745254745254,
+            "p_below": 0.9010989010989011,
+            "n_null": 1000,
+            "n_concepts": 11,
+            "value_basis": "ratio"
+          }
+        },
+        "Chronos-Bolt|Time-MoE": {
+          "value": 1.7889087656529514,
+          "ci": null,
+          "reference": {
+            "kind": "null",
+            "value": 0.559,
+            "text": "expected co-membership count under a model-label permutation preserving each model's own row count (matches sae/concept_atlas.py's cross-model null)"
+          },
+          "evidence_class": "causal within-model",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "observed": 1,
+            "expected": 0.559,
+            "p_above": 0.4435564435564436,
+            "p_below": 0.8921078921078921,
+            "n_null": 1000,
+            "n_concepts": 11,
+            "value_basis": "ratio"
+          }
+        },
+        "Chronos-Bolt|Chronos-T5-Base": {
+          "value": 3.095975232198142,
+          "ci": null,
+          "reference": {
+            "kind": "null",
+            "value": 0.323,
+            "text": "expected co-membership count under a model-label permutation preserving each model's own row count (matches sae/concept_atlas.py's cross-model null)"
+          },
+          "evidence_class": "causal within-model",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "observed": 1,
+            "expected": 0.323,
+            "p_above": 0.28471528471528473,
+            "p_below": 0.962037962037962,
+            "n_null": 1000,
+            "n_concepts": 11,
+            "value_basis": "ratio"
+          }
+        },
+        "Timer|Time-MoE": {
+          "value": 0.0,
+          "ci": null,
+          "reference": {
+            "kind": "null",
+            "value": 1.151,
+            "text": "expected co-membership count under a model-label permutation preserving each model's own row count (matches sae/concept_atlas.py's cross-model null)"
+          },
+          "evidence_class": "causal within-model",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "observed": 0,
+            "expected": 1.151,
+            "p_above": 1.0,
+            "p_below": 0.3006993006993007,
+            "n_null": 1000,
+            "n_concepts": 11,
+            "value_basis": "ratio"
+          }
+        },
+        "Timer|Chronos-T5-Base": {
+          "value": 0.0,
+          "ci": null,
+          "reference": {
+            "kind": "null",
+            "value": 0.694,
+            "text": "expected co-membership count under a model-label permutation preserving each model's own row count (matches sae/concept_atlas.py's cross-model null)"
+          },
+          "evidence_class": "causal within-model",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "observed": 0,
+            "expected": 0.694,
+            "p_above": 1.0,
+            "p_below": 0.4915084915084915,
+            "n_null": 1000,
+            "n_concepts": 11,
+            "value_basis": "ratio"
+          }
+        },
+        "Time-MoE|Chronos-T5-Base": {
+          "value": 2.6525198938992043,
+          "ci": null,
+          "reference": {
+            "kind": "null",
+            "value": 0.754,
+            "text": "expected co-membership count under a model-label permutation preserving each model's own row count (matches sae/concept_atlas.py's cross-model null)"
+          },
+          "evidence_class": "causal within-model",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "observed": 2,
+            "expected": 0.754,
+            "p_above": 0.17482517482517482,
+            "p_below": 0.97002997002997,
+            "n_null": 1000,
+            "n_concepts": 11,
+            "value_basis": "ratio"
+          }
+        }
+      }
+    },
+    "input_transfer": {
+      "label": "Input transfer",
+      "family": "sae_input",
+      "what_it_measures": "Whether an atlas concept's top-firing series in one model are also grouped by the OTHER model's own SAE dictionary (shared input selectivity, both directions).",
+      "evidence_class": "descriptive",
+      "higher_means": "more similar",
+      "reference_text": "R_rel = 1 means cross-model transfer matches each model's own within-model (replicate-SAE) reproducibility ceiling; below 1 means cross-model transfer is weaker than a model's own reproducibility already allows.",
+      "pairs": {
+        "TimesFM|Chronos-2": {
+          "value": 0.9331871696775484,
+          "ci": null,
+          "reference": {
+            "kind": "ceiling",
+            "value": 1.0,
+            "text": "R_rel = 1 means cross-model transfer matches the within-model replicate-SAE reproducibility ceiling"
+          },
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": "value = mean of R_rel across the direction(s) tested",
+          "detail": {
+            "TimesFM->Chronos-2": {
+              "n_tests": 45,
+              "R_unc": 0.9333333333333333,
+              "R_fdr": 0.9333333333333333,
+              "R_rel": 0.9977753031397177,
+              "ceiling_src": 1.0,
+              "ceiling_dst": 0.875
+            },
+            "Chronos-2->TimesFM": {
+              "n_tests": 80,
+              "R_unc": 0.8125,
+              "R_fdr": 0.8,
+              "R_rel": 0.8685990362153793,
+              "ceiling_src": 0.875,
+              "ceiling_dst": 1.0
+            },
+            "value_basis": "R_rel"
+          }
+        },
+        "TimesFM|Sundial": {
+          "value": 0.8158730158730159,
+          "ci": null,
+          "reference": {
+            "kind": "ceiling",
+            "value": 1.0,
+            "text": "R_rel = 1 means cross-model transfer matches the within-model replicate-SAE reproducibility ceiling"
+          },
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": "value = mean of R_rel across the direction(s) tested",
+          "detail": {
+            "TimesFM->Sundial": {
+              "n_tests": 45,
+              "R_unc": 0.8888888888888888,
+              "R_fdr": 0.8666666666666667,
+              "R_rel": 0.8888888888888888,
+              "ceiling_src": 1.0,
+              "ceiling_dst": 1.0
+            },
+            "Sundial->TimesFM": {
+              "n_tests": 70,
+              "R_unc": 0.7428571428571429,
+              "R_fdr": 0.7142857142857143,
+              "R_rel": 0.7428571428571429,
+              "ceiling_src": 1.0,
+              "ceiling_dst": 1.0
+            },
+            "value_basis": "R_rel"
+          }
+        },
+        "TimesFM|Chronos-Bolt": {
+          "value": 0.8500000000000001,
+          "ci": null,
+          "reference": {
+            "kind": "ceiling",
+            "value": 1.0,
+            "text": "R_rel = 1 means cross-model transfer matches the within-model replicate-SAE reproducibility ceiling"
+          },
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": "value = mean of R_rel across the direction(s) tested",
+          "detail": {
+            "TimesFM->Chronos-Bolt": {
+              "n_tests": 20,
+              "R_unc": 0.9,
+              "R_fdr": 0.85,
+              "R_rel": 0.9,
+              "ceiling_src": 1.0,
+              "ceiling_dst": 1.0
+            },
+            "Chronos-Bolt->TimesFM": {
+              "n_tests": 70,
+              "R_unc": 0.8,
+              "R_fdr": 0.7714285714285715,
+              "R_rel": 0.8,
+              "ceiling_src": 1.0,
+              "ceiling_dst": 1.0
+            },
+            "value_basis": "R_rel"
+          }
+        },
+        "TimesFM|Timer": {
+          "value": 0.8666666666666667,
+          "ci": null,
+          "reference": {
+            "kind": "ceiling",
+            "value": 1.0,
+            "text": "R_rel = 1 means cross-model transfer matches the within-model replicate-SAE reproducibility ceiling"
+          },
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": "value = mean of R_rel across the direction(s) tested",
+          "detail": {
+            "TimesFM->Timer": {
+              "n_tests": 30,
+              "R_unc": 0.7333333333333333,
+              "R_fdr": 0.7333333333333333,
+              "R_rel": 0.7333333333333333,
+              "ceiling_src": 1.0,
+              "ceiling_dst": 1.0
+            },
+            "Timer->TimesFM": {
+              "n_tests": 10,
+              "R_unc": 1.0,
+              "R_fdr": 1.0,
+              "R_rel": 1.0,
+              "ceiling_src": 1.0,
+              "ceiling_dst": 1.0
+            },
+            "value_basis": "R_rel"
+          }
+        },
+        "TimesFM|Time-MoE": {
+          "value": 0.7833333333333333,
+          "ci": null,
+          "reference": {
+            "kind": "ceiling",
+            "value": 1.0,
+            "text": "R_rel = 1 means cross-model transfer matches the within-model replicate-SAE reproducibility ceiling"
+          },
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": "value = mean of R_rel across the direction(s) tested",
+          "detail": {
+            "TimesFM->Time-MoE": {
+              "n_tests": 45,
+              "R_unc": 0.6666666666666666,
+              "R_fdr": 0.5777777777777777,
+              "R_rel": 0.6666666666666666,
+              "ceiling_src": 1.0,
+              "ceiling_dst": 1.0
+            },
+            "Time-MoE->TimesFM": {
+              "n_tests": 20,
+              "R_unc": 0.9,
+              "R_fdr": 0.9,
+              "R_rel": 0.9,
+              "ceiling_src": 1.0,
+              "ceiling_dst": 1.0
+            },
+            "value_basis": "R_rel"
+          }
+        },
+        "TimesFM|Chronos-T5-Base": {
+          "value": 0.9277777777777778,
+          "ci": null,
+          "reference": {
+            "kind": "ceiling",
+            "value": 1.0,
+            "text": "R_rel = 1 means cross-model transfer matches the within-model replicate-SAE reproducibility ceiling"
+          },
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": "value = mean of R_rel across the direction(s) tested",
+          "detail": {
+            "TimesFM->Chronos-T5-Base": {
+              "n_tests": 45,
+              "R_unc": 0.8888888888888888,
+              "R_fdr": 0.8888888888888888,
+              "R_rel": 0.8888888888888888,
+              "ceiling_src": 1.0,
+              "ceiling_dst": 1.0
+            },
+            "Chronos-T5-Base->TimesFM": {
+              "n_tests": 30,
+              "R_unc": 0.9666666666666667,
+              "R_fdr": 0.9666666666666667,
+              "R_rel": 0.9666666666666667,
+              "ceiling_src": 1.0,
+              "ceiling_dst": 1.0
+            },
+            "value_basis": "R_rel"
+          }
+        },
+        "Chronos-2|Sundial": {
+          "value": 0.8261766168642007,
+          "ci": null,
+          "reference": {
+            "kind": "ceiling",
+            "value": 1.0,
+            "text": "R_rel = 1 means cross-model transfer matches the within-model replicate-SAE reproducibility ceiling"
+          },
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": "value = mean of R_rel across the direction(s) tested",
+          "detail": {
+            "Chronos-2->Sundial": {
+              "n_tests": 72,
+              "R_unc": 0.8472222222222222,
+              "R_fdr": 0.8194444444444444,
+              "R_rel": 0.9057186531476604,
+              "ceiling_src": 0.875,
+              "ceiling_dst": 1.0
+            },
+            "Sundial->Chronos-2": {
+              "n_tests": 63,
+              "R_unc": 0.6984126984126984,
+              "R_fdr": 0.6825396825396826,
+              "R_rel": 0.7466345805807411,
+              "ceiling_src": 1.0,
+              "ceiling_dst": 0.875
+            },
+            "value_basis": "R_rel"
+          }
+        },
+        "Chronos-2|Chronos-Bolt": {
+          "value": 0.9513227539501773,
+          "ci": null,
+          "reference": {
+            "kind": "ceiling",
+            "value": 1.0,
+            "text": "R_rel = 1 means cross-model transfer matches the within-model replicate-SAE reproducibility ceiling"
+          },
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": "value = mean of R_rel across the direction(s) tested",
+          "detail": {
+            "Chronos-2->Chronos-Bolt": {
+              "n_tests": 32,
+              "R_unc": 0.875,
+              "R_fdr": 0.875,
+              "R_rel": 0.9354143466934853,
+              "ceiling_src": 0.875,
+              "ceiling_dst": 1.0
+            },
+            "Chronos-Bolt->Chronos-2": {
+              "n_tests": 63,
+              "R_unc": 0.9047619047619048,
+              "R_fdr": 0.9047619047619048,
+              "R_rel": 0.9672311612068692,
+              "ceiling_src": 1.0,
+              "ceiling_dst": 0.875
+            },
+            "value_basis": "R_rel"
+          }
+        },
+        "Chronos-2|Timer": {
+          "value": 0.9465502317731698,
+          "ci": null,
+          "reference": {
+            "kind": "ceiling",
+            "value": 1.0,
+            "text": "R_rel = 1 means cross-model transfer matches the within-model replicate-SAE reproducibility ceiling"
+          },
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": "value = mean of R_rel across the direction(s) tested",
+          "detail": {
+            "Chronos-2->Timer": {
+              "n_tests": 48,
+              "R_unc": 0.7708333333333334,
+              "R_fdr": 0.75,
+              "R_rel": 0.824055495896642,
+              "ceiling_src": 0.875,
+              "ceiling_dst": 1.0
+            },
+            "Timer->Chronos-2": {
+              "n_tests": 9,
+              "R_unc": 1.0,
+              "R_fdr": 1.0,
+              "R_rel": 1.0690449676496976,
+              "ceiling_src": 1.0,
+              "ceiling_dst": 0.875
+            },
+            "value_basis": "R_rel"
+          }
+        },
+        "Chronos-2|Time-MoE": {
+          "value": 0.9131425765341167,
+          "ci": null,
+          "reference": {
+            "kind": "ceiling",
+            "value": 1.0,
+            "text": "R_rel = 1 means cross-model transfer matches the within-model replicate-SAE reproducibility ceiling"
+          },
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": "value = mean of R_rel across the direction(s) tested",
+          "detail": {
+            "Chronos-2->Time-MoE": {
+              "n_tests": 72,
+              "R_unc": 0.7083333333333334,
+              "R_fdr": 0.7083333333333334,
+              "R_rel": 0.7572401854185358,
+              "ceiling_src": 0.875,
+              "ceiling_dst": 1.0
+            },
+            "Time-MoE->Chronos-2": {
+              "n_tests": 18,
+              "R_unc": 1.0,
+              "R_fdr": 1.0,
+              "R_rel": 1.0690449676496976,
+              "ceiling_src": 1.0,
+              "ceiling_dst": 0.875
+            },
+            "value_basis": "R_rel"
+          }
+        },
+        "Chronos-2|Chronos-T5-Base": {
+          "value": 0.9651100402393102,
+          "ci": null,
+          "reference": {
+            "kind": "ceiling",
+            "value": 1.0,
+            "text": "R_rel = 1 means cross-model transfer matches the within-model replicate-SAE reproducibility ceiling"
+          },
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": "value = mean of R_rel across the direction(s) tested",
+          "detail": {
+            "Chronos-2->Chronos-T5-Base": {
+              "n_tests": 72,
+              "R_unc": 0.8055555555555556,
+              "R_fdr": 0.8055555555555556,
+              "R_rel": 0.861175112828923,
+              "ceiling_src": 0.875,
+              "ceiling_dst": 1.0
+            },
+            "Chronos-T5-Base->Chronos-2": {
+              "n_tests": 27,
+              "R_unc": 1.0,
+              "R_fdr": 0.9629629629629629,
+              "R_rel": 1.0690449676496976,
+              "ceiling_src": 1.0,
+              "ceiling_dst": 0.875
+            },
+            "value_basis": "R_rel"
+          }
+        },
+        "Sundial|Chronos-Bolt": {
+          "value": 0.9206349206349206,
+          "ci": null,
+          "reference": {
+            "kind": "ceiling",
+            "value": 1.0,
+            "text": "R_rel = 1 means cross-model transfer matches the within-model replicate-SAE reproducibility ceiling"
+          },
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": "value = mean of R_rel across the direction(s) tested",
+          "detail": {
+            "Sundial->Chronos-Bolt": {
+              "n_tests": 28,
+              "R_unc": 0.8571428571428571,
+              "R_fdr": 0.7857142857142857,
+              "R_rel": 0.8571428571428571,
+              "ceiling_src": 1.0,
+              "ceiling_dst": 1.0
+            },
+            "Chronos-Bolt->Sundial": {
+              "n_tests": 63,
+              "R_unc": 0.9841269841269841,
+              "R_fdr": 0.9841269841269841,
+              "R_rel": 0.9841269841269841,
+              "ceiling_src": 1.0,
+              "ceiling_dst": 1.0
+            },
+            "value_basis": "R_rel"
+          }
+        },
+        "Sundial|Timer": {
+          "value": 0.8452380952380952,
+          "ci": null,
+          "reference": {
+            "kind": "ceiling",
+            "value": 1.0,
+            "text": "R_rel = 1 means cross-model transfer matches the within-model replicate-SAE reproducibility ceiling"
+          },
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": "value = mean of R_rel across the direction(s) tested",
+          "detail": {
+            "Sundial->Timer": {
+              "n_tests": 42,
+              "R_unc": 0.6904761904761905,
+              "R_fdr": 0.6428571428571429,
+              "R_rel": 0.6904761904761905,
+              "ceiling_src": 1.0,
+              "ceiling_dst": 1.0
+            },
+            "Timer->Sundial": {
+              "n_tests": 9,
+              "R_unc": 1.0,
+              "R_fdr": 1.0,
+              "R_rel": 1.0,
+              "ceiling_src": 1.0,
+              "ceiling_dst": 1.0
+            },
+            "value_basis": "R_rel"
+          }
+        },
+        "Sundial|Time-MoE": {
+          "value": 0.873015873015873,
+          "ci": null,
+          "reference": {
+            "kind": "ceiling",
+            "value": 1.0,
+            "text": "R_rel = 1 means cross-model transfer matches the within-model replicate-SAE reproducibility ceiling"
+          },
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": "value = mean of R_rel across the direction(s) tested",
+          "detail": {
+            "Sundial->Time-MoE": {
+              "n_tests": 63,
+              "R_unc": 0.746031746031746,
+              "R_fdr": 0.7142857142857143,
+              "R_rel": 0.746031746031746,
+              "ceiling_src": 1.0,
+              "ceiling_dst": 1.0
+            },
+            "Time-MoE->Sundial": {
+              "n_tests": 18,
+              "R_unc": 1.0,
+              "R_fdr": 1.0,
+              "R_rel": 1.0,
+              "ceiling_src": 1.0,
+              "ceiling_dst": 1.0
+            },
+            "value_basis": "R_rel"
+          }
+        },
+        "Sundial|Chronos-T5-Base": {
+          "value": 0.7698412698412698,
+          "ci": null,
+          "reference": {
+            "kind": "ceiling",
+            "value": 1.0,
+            "text": "R_rel = 1 means cross-model transfer matches the within-model replicate-SAE reproducibility ceiling"
+          },
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": "value = mean of R_rel across the direction(s) tested",
+          "detail": {
+            "Sundial->Chronos-T5-Base": {
+              "n_tests": 63,
+              "R_unc": 0.7619047619047619,
+              "R_fdr": 0.7142857142857143,
+              "R_rel": 0.7619047619047619,
+              "ceiling_src": 1.0,
+              "ceiling_dst": 1.0
+            },
+            "Chronos-T5-Base->Sundial": {
+              "n_tests": 27,
+              "R_unc": 0.7777777777777778,
+              "R_fdr": 0.7777777777777778,
+              "R_rel": 0.7777777777777778,
+              "ceiling_src": 1.0,
+              "ceiling_dst": 1.0
+            },
+            "value_basis": "R_rel"
+          }
+        },
+        "Chronos-Bolt|Timer": {
+          "value": 0.9285714285714286,
+          "ci": null,
+          "reference": {
+            "kind": "ceiling",
+            "value": 1.0,
+            "text": "R_rel = 1 means cross-model transfer matches the within-model replicate-SAE reproducibility ceiling"
+          },
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": "value = mean of R_rel across the direction(s) tested",
+          "detail": {
+            "Chronos-Bolt->Timer": {
+              "n_tests": 42,
+              "R_unc": 0.8571428571428571,
+              "R_fdr": 0.8571428571428571,
+              "R_rel": 0.8571428571428571,
+              "ceiling_src": 1.0,
+              "ceiling_dst": 1.0
+            },
+            "Timer->Chronos-Bolt": {
+              "n_tests": 4,
+              "R_unc": 1.0,
+              "R_fdr": 1.0,
+              "R_rel": 1.0,
+              "ceiling_src": 1.0,
+              "ceiling_dst": 1.0
+            },
+            "value_basis": "R_rel"
+          }
+        },
+        "Chronos-Bolt|Time-MoE": {
+          "value": 0.9444444444444444,
+          "ci": null,
+          "reference": {
+            "kind": "ceiling",
+            "value": 1.0,
+            "text": "R_rel = 1 means cross-model transfer matches the within-model replicate-SAE reproducibility ceiling"
+          },
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": "value = mean of R_rel across the direction(s) tested",
+          "detail": {
+            "Chronos-Bolt->Time-MoE": {
+              "n_tests": 63,
+              "R_unc": 0.8888888888888888,
+              "R_fdr": 0.8888888888888888,
+              "R_rel": 0.8888888888888888,
+              "ceiling_src": 1.0,
+              "ceiling_dst": 1.0
+            },
+            "Time-MoE->Chronos-Bolt": {
+              "n_tests": 8,
+              "R_unc": 1.0,
+              "R_fdr": 0.875,
+              "R_rel": 1.0,
+              "ceiling_src": 1.0,
+              "ceiling_dst": 1.0
+            },
+            "value_basis": "R_rel"
+          }
+        },
+        "Chronos-Bolt|Chronos-T5-Base": {
+          "value": 0.9206349206349207,
+          "ci": null,
+          "reference": {
+            "kind": "ceiling",
+            "value": 1.0,
+            "text": "R_rel = 1 means cross-model transfer matches the within-model replicate-SAE reproducibility ceiling"
+          },
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": "value = mean of R_rel across the direction(s) tested",
+          "detail": {
+            "Chronos-Bolt->Chronos-T5-Base": {
+              "n_tests": 63,
+              "R_unc": 0.8412698412698413,
+              "R_fdr": 0.8253968253968254,
+              "R_rel": 0.8412698412698413,
+              "ceiling_src": 1.0,
+              "ceiling_dst": 1.0
+            },
+            "Chronos-T5-Base->Chronos-Bolt": {
+              "n_tests": 12,
+              "R_unc": 1.0,
+              "R_fdr": 1.0,
+              "R_rel": 1.0,
+              "ceiling_src": 1.0,
+              "ceiling_dst": 1.0
+            },
+            "value_basis": "R_rel"
+          }
+        },
+        "Timer|Time-MoE": {
+          "value": 0.9583333333333333,
+          "ci": null,
+          "reference": {
+            "kind": "ceiling",
+            "value": 1.0,
+            "text": "R_rel = 1 means cross-model transfer matches the within-model replicate-SAE reproducibility ceiling"
+          },
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": "value = mean of R_rel across the direction(s) tested",
+          "detail": {
+            "Timer->Time-MoE": {
+              "n_tests": 9,
+              "R_unc": 1.0,
+              "R_fdr": 1.0,
+              "R_rel": 1.0,
+              "ceiling_src": 1.0,
+              "ceiling_dst": 1.0
+            },
+            "Time-MoE->Timer": {
+              "n_tests": 12,
+              "R_unc": 0.9166666666666666,
+              "R_fdr": 0.9166666666666666,
+              "R_rel": 0.9166666666666666,
+              "ceiling_src": 1.0,
+              "ceiling_dst": 1.0
+            },
+            "value_basis": "R_rel"
+          }
+        },
+        "Timer|Chronos-T5-Base": {
+          "value": 0.9166666666666667,
+          "ci": null,
+          "reference": {
+            "kind": "ceiling",
+            "value": 1.0,
+            "text": "R_rel = 1 means cross-model transfer matches the within-model replicate-SAE reproducibility ceiling"
+          },
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": "value = mean of R_rel across the direction(s) tested",
+          "detail": {
+            "Timer->Chronos-T5-Base": {
+              "n_tests": 9,
+              "R_unc": 1.0,
+              "R_fdr": 1.0,
+              "R_rel": 1.0,
+              "ceiling_src": 1.0,
+              "ceiling_dst": 1.0
+            },
+            "Chronos-T5-Base->Timer": {
+              "n_tests": 18,
+              "R_unc": 0.8333333333333334,
+              "R_fdr": 0.8333333333333334,
+              "R_rel": 0.8333333333333334,
+              "ceiling_src": 1.0,
+              "ceiling_dst": 1.0
+            },
+            "value_basis": "R_rel"
+          }
+        },
+        "Time-MoE|Chronos-T5-Base": {
+          "value": 0.9074074074074074,
+          "ci": null,
+          "reference": {
+            "kind": "ceiling",
+            "value": 1.0,
+            "text": "R_rel = 1 means cross-model transfer matches the within-model replicate-SAE reproducibility ceiling"
+          },
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": "value = mean of R_rel across the direction(s) tested",
+          "detail": {
+            "Time-MoE->Chronos-T5-Base": {
+              "n_tests": 18,
+              "R_unc": 1.0,
+              "R_fdr": 1.0,
+              "R_rel": 1.0,
+              "ceiling_src": 1.0,
+              "ceiling_dst": 1.0
+            },
+            "Chronos-T5-Base->Time-MoE": {
+              "n_tests": 27,
+              "R_unc": 0.8148148148148148,
+              "R_fdr": 0.8148148148148148,
+              "R_rel": 0.8148148148148148,
+              "ceiling_src": 1.0,
+              "ceiling_dst": 1.0
+            },
+            "value_basis": "R_rel"
+          }
+        }
+      }
+    },
+    "shared_concepts": {
+      "label": "Shared concepts",
+      "family": "sae_combined",
+      "what_it_measures": "Count of cross-model concepts classed as sharing BOTH causal effect and input selectivity between the two models.",
+      "evidence_class": "descriptive",
+      "higher_means": "more similar",
+      "reference_text": "A raw count, not a rate; read alongside the total number of atlas concepts available in this run.",
+      "pairs": {
+        "TimesFM|Chronos-2": {
+          "value": 1.0,
+          "ci": null,
+          "reference": null,
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "concepts": [
+              5
+            ],
+            "n_total_concepts": 11
+          }
+        },
+        "TimesFM|Sundial": {
+          "value": 0.0,
+          "ci": null,
+          "reference": null,
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "concepts": [],
+            "n_total_concepts": 11
+          }
+        },
+        "TimesFM|Chronos-Bolt": {
+          "value": 0.0,
+          "ci": null,
+          "reference": null,
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "concepts": [],
+            "n_total_concepts": 11
+          }
+        },
+        "TimesFM|Timer": {
+          "value": 0.0,
+          "ci": null,
+          "reference": null,
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "concepts": [],
+            "n_total_concepts": 11
+          }
+        },
+        "TimesFM|Time-MoE": {
+          "value": 0.0,
+          "ci": null,
+          "reference": null,
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "concepts": [],
+            "n_total_concepts": 11
+          }
+        },
+        "TimesFM|Chronos-T5-Base": {
+          "value": 0.0,
+          "ci": null,
+          "reference": null,
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "concepts": [],
+            "n_total_concepts": 11
+          }
+        },
+        "Chronos-2|Sundial": {
+          "value": 1.0,
+          "ci": null,
+          "reference": null,
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "concepts": [
+              6
+            ],
+            "n_total_concepts": 11
+          }
+        },
+        "Chronos-2|Chronos-Bolt": {
+          "value": 2.0,
+          "ci": null,
+          "reference": null,
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "concepts": [
+              4,
+              6
+            ],
+            "n_total_concepts": 11
+          }
+        },
+        "Chronos-2|Timer": {
+          "value": 1.0,
+          "ci": null,
+          "reference": null,
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "concepts": [
+              4
+            ],
+            "n_total_concepts": 11
+          }
+        },
+        "Chronos-2|Time-MoE": {
+          "value": 0.0,
+          "ci": null,
+          "reference": null,
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "concepts": [],
+            "n_total_concepts": 11
+          }
+        },
+        "Chronos-2|Chronos-T5-Base": {
+          "value": 0.0,
+          "ci": null,
+          "reference": null,
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "concepts": [],
+            "n_total_concepts": 11
+          }
+        },
+        "Sundial|Chronos-Bolt": {
+          "value": 1.0,
+          "ci": null,
+          "reference": null,
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "concepts": [
+              6
+            ],
+            "n_total_concepts": 11
+          }
+        },
+        "Sundial|Timer": {
+          "value": 0.0,
+          "ci": null,
+          "reference": null,
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "concepts": [],
+            "n_total_concepts": 11
+          }
+        },
+        "Sundial|Time-MoE": {
+          "value": 0.0,
+          "ci": null,
+          "reference": null,
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "concepts": [],
+            "n_total_concepts": 11
+          }
+        },
+        "Sundial|Chronos-T5-Base": {
+          "value": 0.0,
+          "ci": null,
+          "reference": null,
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "concepts": [],
+            "n_total_concepts": 11
+          }
+        },
+        "Chronos-Bolt|Timer": {
+          "value": 1.0,
+          "ci": null,
+          "reference": null,
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "concepts": [
+              4
+            ],
+            "n_total_concepts": 11
+          }
+        },
+        "Chronos-Bolt|Time-MoE": {
+          "value": 0.0,
+          "ci": null,
+          "reference": null,
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "concepts": [],
+            "n_total_concepts": 11
+          }
+        },
+        "Chronos-Bolt|Chronos-T5-Base": {
+          "value": 0.0,
+          "ci": null,
+          "reference": null,
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "concepts": [],
+            "n_total_concepts": 11
+          }
+        },
+        "Timer|Time-MoE": {
+          "value": 0.0,
+          "ci": null,
+          "reference": null,
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "concepts": [],
+            "n_total_concepts": 11
+          }
+        },
+        "Timer|Chronos-T5-Base": {
+          "value": 0.0,
+          "ci": null,
+          "reference": null,
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "concepts": [],
+            "n_total_concepts": 11
+          }
+        },
+        "Time-MoE|Chronos-T5-Base": {
+          "value": 1.0,
+          "ci": null,
+          "reference": null,
+          "evidence_class": "descriptive",
+          "status": "measured",
+          "reason": null,
+          "detail": {
+            "concepts": [
+              10
+            ],
+            "n_total_concepts": 11
+          }
+        }
+      }
+    }
+  },
+  "consensus": {
+    "rank_table": {
+      "error_agreement": {
+        "TimesFM|Chronos-2": 1.0,
+        "TimesFM|Sundial": 4.0,
+        "TimesFM|Chronos-Bolt": 13.0,
+        "TimesFM|Timer": 17.0,
+        "TimesFM|Time-MoE": 20.0,
+        "TimesFM|Chronos-T5-Base": 5.0,
+        "Chronos-2|Sundial": 7.0,
+        "Chronos-2|Chronos-Bolt": 15.0,
+        "Chronos-2|Timer": 19.0,
+        "Chronos-2|Time-MoE": 21.0,
+        "Chronos-2|Chronos-T5-Base": 6.0,
+        "Sundial|Chronos-Bolt": 9.0,
+        "Sundial|Timer": 8.0,
+        "Sundial|Time-MoE": 16.0,
+        "Sundial|Chronos-T5-Base": 2.0,
+        "Chronos-Bolt|Timer": 3.0,
+        "Chronos-Bolt|Time-MoE": 14.0,
+        "Chronos-Bolt|Chronos-T5-Base": 11.0,
+        "Timer|Time-MoE": 10.0,
+        "Timer|Chronos-T5-Base": 12.0,
+        "Time-MoE|Chronos-T5-Base": 18.0
+      },
+      "cka_best": {
+        "TimesFM|Chronos-2": 15.0,
+        "TimesFM|Sundial": 16.0,
+        "TimesFM|Chronos-Bolt": 18.0,
+        "TimesFM|Timer": 20.0,
+        "TimesFM|Time-MoE": 19.0,
+        "TimesFM|Chronos-T5-Base": 21.0,
+        "Chronos-2|Sundial": 2.0,
+        "Chronos-2|Chronos-Bolt": 3.0,
+        "Chronos-2|Timer": 12.0,
+        "Chronos-2|Time-MoE": 6.0,
+        "Chronos-2|Chronos-T5-Base": 5.0,
+        "Sundial|Chronos-Bolt": 1.0,
+        "Sundial|Timer": 11.0,
+        "Sundial|Time-MoE": 4.0,
+        "Sundial|Chronos-T5-Base": 9.0,
+        "Chronos-Bolt|Timer": 14.0,
+        "Chronos-Bolt|Time-MoE": 13.0,
+        "Chronos-Bolt|Chronos-T5-Base": 8.0,
+        "Timer|Time-MoE": 7.0,
+        "Timer|Chronos-T5-Base": 17.0,
+        "Time-MoE|Chronos-T5-Base": 10.0
+      },
+      "stitching_gain": {
+        "TimesFM|Chronos-2": 7.0,
+        "TimesFM|Sundial": 8.0,
+        "TimesFM|Chronos-Bolt": 11.0,
+        "TimesFM|Timer": 20.0,
+        "TimesFM|Time-MoE": 13.0,
+        "TimesFM|Chronos-T5-Base": 15.0,
+        "Chronos-2|Sundial": 1.0,
+        "Chronos-2|Chronos-Bolt": 2.0,
+        "Chronos-2|Timer": 17.0,
+        "Chronos-2|Time-MoE": 6.0,
+        "Chronos-2|Chronos-T5-Base": 12.0,
+        "Sundial|Chronos-Bolt": 3.0,
+        "Sundial|Timer": 19.0,
+        "Sundial|Time-MoE": 4.0,
+        "Sundial|Chronos-T5-Base": 14.0,
+        "Chronos-Bolt|Timer": 18.0,
+        "Chronos-Bolt|Time-MoE": 5.0,
+        "Chronos-Bolt|Chronos-T5-Base": 10.0,
+        "Timer|Time-MoE": 16.0,
+        "Timer|Chronos-T5-Base": 21.0,
+        "Time-MoE|Chronos-T5-Base": 9.0
+      },
+      "cluster_ami": {
+        "TimesFM|Chronos-2": 8.0,
+        "TimesFM|Sundial": 1.0,
+        "TimesFM|Chronos-Bolt": 11.0,
+        "TimesFM|Timer": 10.0,
+        "TimesFM|Time-MoE": 4.0,
+        "TimesFM|Chronos-T5-Base": 17.0,
+        "Chronos-2|Sundial": 6.0,
+        "Chronos-2|Chronos-Bolt": 14.0,
+        "Chronos-2|Timer": 7.0,
+        "Chronos-2|Time-MoE": 3.0,
+        "Chronos-2|Chronos-T5-Base": 19.0,
+        "Sundial|Chronos-Bolt": 9.0,
+        "Sundial|Timer": 2.0,
+        "Sundial|Time-MoE": 5.0,
+        "Sundial|Chronos-T5-Base": 18.0,
+        "Chronos-Bolt|Timer": 13.0,
+        "Chronos-Bolt|Time-MoE": 16.0,
+        "Chronos-Bolt|Chronos-T5-Base": 20.0,
+        "Timer|Time-MoE": 12.0,
+        "Timer|Chronos-T5-Base": 21.0,
+        "Time-MoE|Chronos-T5-Base": 15.0
+      },
+      "atlas_co_membership": {
+        "TimesFM|Chronos-2": 13.0,
+        "TimesFM|Sundial": 12.0,
+        "TimesFM|Chronos-Bolt": 7.0,
+        "TimesFM|Timer": 17.5,
+        "TimesFM|Time-MoE": 17.5,
+        "TimesFM|Chronos-T5-Base": 17.5,
+        "Chronos-2|Sundial": 8.0,
+        "Chronos-2|Chronos-Bolt": 1.0,
+        "Chronos-2|Timer": 11.0,
+        "Chronos-2|Time-MoE": 17.5,
+        "Chronos-2|Chronos-T5-Base": 17.5,
+        "Sundial|Chronos-Bolt": 4.0,
+        "Sundial|Timer": 17.5,
+        "Sundial|Time-MoE": 10.0,
+        "Sundial|Chronos-T5-Base": 9.0,
+        "Chronos-Bolt|Timer": 6.0,
+        "Chronos-Bolt|Time-MoE": 5.0,
+        "Chronos-Bolt|Chronos-T5-Base": 2.0,
+        "Timer|Time-MoE": 17.5,
+        "Timer|Chronos-T5-Base": 17.5,
+        "Time-MoE|Chronos-T5-Base": 3.0
+      },
+      "input_transfer": {
+        "TimesFM|Chronos-2": 6.0,
+        "TimesFM|Sundial": 19.0,
+        "TimesFM|Chronos-Bolt": 16.0,
+        "TimesFM|Timer": 15.0,
+        "TimesFM|Time-MoE": 20.0,
+        "TimesFM|Chronos-T5-Base": 8.0,
+        "Chronos-2|Sundial": 18.0,
+        "Chronos-2|Chronos-Bolt": 3.0,
+        "Chronos-2|Timer": 4.0,
+        "Chronos-2|Time-MoE": 12.0,
+        "Chronos-2|Chronos-T5-Base": 1.0,
+        "Sundial|Chronos-Bolt": 10.0,
+        "Sundial|Timer": 17.0,
+        "Sundial|Time-MoE": 14.0,
+        "Sundial|Chronos-T5-Base": 21.0,
+        "Chronos-Bolt|Timer": 7.0,
+        "Chronos-Bolt|Time-MoE": 5.0,
+        "Chronos-Bolt|Chronos-T5-Base": 9.0,
+        "Timer|Time-MoE": 2.0,
+        "Timer|Chronos-T5-Base": 11.0,
+        "Time-MoE|Chronos-T5-Base": 13.0
+      },
+      "shared_concepts": {
+        "TimesFM|Chronos-2": 4.5,
+        "TimesFM|Sundial": 14.5,
+        "TimesFM|Chronos-Bolt": 14.5,
+        "TimesFM|Timer": 14.5,
+        "TimesFM|Time-MoE": 14.5,
+        "TimesFM|Chronos-T5-Base": 14.5,
+        "Chronos-2|Sundial": 4.5,
+        "Chronos-2|Chronos-Bolt": 1.0,
+        "Chronos-2|Timer": 4.5,
+        "Chronos-2|Time-MoE": 14.5,
+        "Chronos-2|Chronos-T5-Base": 14.5,
+        "Sundial|Chronos-Bolt": 4.5,
+        "Sundial|Timer": 14.5,
+        "Sundial|Time-MoE": 14.5,
+        "Sundial|Chronos-T5-Base": 14.5,
+        "Chronos-Bolt|Timer": 4.5,
+        "Chronos-Bolt|Time-MoE": 14.5,
+        "Chronos-Bolt|Chronos-T5-Base": 14.5,
+        "Timer|Time-MoE": 14.5,
+        "Timer|Chronos-T5-Base": 14.5,
+        "Time-MoE|Chronos-T5-Base": 4.5
+      }
+    },
+    "extremes": {
+      "error_agreement": {
+        "most_similar": "TimesFM|Chronos-2",
+        "most_similar_value": 0.9480566314003364,
+        "least_similar": "Chronos-2|Time-MoE",
+        "least_similar_value": 0.5964130335692857
+      },
+      "cka_best": {
+        "most_similar": "Sundial|Chronos-Bolt",
+        "most_similar_value": 0.9268798828125,
+        "least_similar": "TimesFM|Chronos-T5-Base",
+        "least_similar_value": 0.3417474031448364
+      },
+      "stitching_gain": {
+        "most_similar": "Chronos-2|Sundial",
+        "most_similar_value": 0.9011951386928558,
+        "least_similar": "Timer|Chronos-T5-Base",
+        "least_similar_value": 0.32270586490631104
+      },
+      "cluster_ami": {
+        "most_similar": "TimesFM|Sundial",
+        "most_similar_value": 0.7173778553224761,
+        "least_similar": "Timer|Chronos-T5-Base",
+        "least_similar_value": 0.2626369034862218
+      },
+      "atlas_co_membership": {
+        "most_similar": "Chronos-2|Chronos-Bolt",
+        "most_similar_value": 3.5885167464114835,
+        "least_similar": "TimesFM|Timer",
+        "least_similar_value": 0.0
+      },
+      "input_transfer": {
+        "most_similar": "Chronos-2|Chronos-T5-Base",
+        "most_similar_value": 0.9651100402393102,
+        "least_similar": "Sundial|Chronos-T5-Base",
+        "least_similar_value": 0.7698412698412698
+      },
+      "shared_concepts": {
+        "most_similar": "Chronos-2|Chronos-Bolt",
+        "most_similar_value": 2.0,
+        "least_similar": "TimesFM|Sundial",
+        "least_similar_value": 0.0
+      }
+    },
+    "kendall_w_all": {
+      "w": 0.25441616976008513,
+      "p": 0.009495252373813094,
+      "n_metrics": 7,
+      "n_pairs": 21,
+      "metrics_used": [
+        "atlas_co_membership",
+        "cka_best",
+        "cluster_ami",
+        "error_agreement",
+        "input_transfer",
+        "shared_concepts",
+        "stitching_gain"
+      ],
+      "n_perm": 2000
+    },
+    "kendall_w_representation": {
+      "w": 0.5266955266955267,
+      "p": 0.02048975512243878,
+      "n_metrics": 3,
+      "n_pairs": 21,
+      "metrics_used": [
+        "cka_best",
+        "cluster_ami",
+        "stitching_gain"
+      ],
+      "n_perm": 2000
+    },
+    "per_pair": {
+      "TimesFM|Chronos-2": {
+        "median_rank": 7.0,
+        "rank_range": 14.0,
+        "n_metrics": 7
+      },
+      "TimesFM|Sundial": {
+        "median_rank": 12.0,
+        "rank_range": 18.0,
+        "n_metrics": 7
+      },
+      "TimesFM|Chronos-Bolt": {
+        "median_rank": 13.0,
+        "rank_range": 11.0,
+        "n_metrics": 7
+      },
+      "TimesFM|Timer": {
+        "median_rank": 17.0,
+        "rank_range": 10.0,
+        "n_metrics": 7
+      },
+      "TimesFM|Time-MoE": {
+        "median_rank": 17.5,
+        "rank_range": 16.0,
+        "n_metrics": 7
+      },
+      "TimesFM|Chronos-T5-Base": {
+        "median_rank": 15.0,
+        "rank_range": 16.0,
+        "n_metrics": 7
+      },
+      "Chronos-2|Sundial": {
+        "median_rank": 6.0,
+        "rank_range": 17.0,
+        "n_metrics": 7
+      },
+      "Chronos-2|Chronos-Bolt": {
+        "median_rank": 3.0,
+        "rank_range": 14.0,
+        "n_metrics": 7
+      },
+      "Chronos-2|Timer": {
+        "median_rank": 11.0,
+        "rank_range": 15.0,
+        "n_metrics": 7
+      },
+      "Chronos-2|Time-MoE": {
+        "median_rank": 12.0,
+        "rank_range": 18.0,
+        "n_metrics": 7
+      },
+      "Chronos-2|Chronos-T5-Base": {
+        "median_rank": 12.0,
+        "rank_range": 18.0,
+        "n_metrics": 7
+      },
+      "Sundial|Chronos-Bolt": {
+        "median_rank": 4.5,
+        "rank_range": 9.0,
+        "n_metrics": 7
+      },
+      "Sundial|Timer": {
+        "median_rank": 14.5,
+        "rank_range": 17.0,
+        "n_metrics": 7
+      },
+      "Sundial|Time-MoE": {
+        "median_rank": 10.0,
+        "rank_range": 12.0,
+        "n_metrics": 7
+      },
+      "Sundial|Chronos-T5-Base": {
+        "median_rank": 14.0,
+        "rank_range": 19.0,
+        "n_metrics": 7
+      },
+      "Chronos-Bolt|Timer": {
+        "median_rank": 7.0,
+        "rank_range": 15.0,
+        "n_metrics": 7
+      },
+      "Chronos-Bolt|Time-MoE": {
+        "median_rank": 13.0,
+        "rank_range": 11.0,
+        "n_metrics": 7
+      },
+      "Chronos-Bolt|Chronos-T5-Base": {
+        "median_rank": 10.0,
+        "rank_range": 18.0,
+        "n_metrics": 7
+      },
+      "Timer|Time-MoE": {
+        "median_rank": 12.0,
+        "rank_range": 15.5,
+        "n_metrics": 7
+      },
+      "Timer|Chronos-T5-Base": {
+        "median_rank": 17.0,
+        "rank_range": 10.0,
+        "n_metrics": 7
+      },
+      "Time-MoE|Chronos-T5-Base": {
+        "median_rank": 10.0,
+        "rank_range": 15.0,
+        "n_metrics": 7
+      }
+    },
+    "note": "With only a handful of model pairs, Kendall's W has low power: a non-significant p does NOT mean the metrics agree, and a significant one should still be read alongside the per-metric rank table above, not instead of it."
+  },
+  "contrasts": [
+    {
+      "pair": "Sundial|Chronos-T5-Base",
+      "metric_hi": "error_agreement",
+      "rank_hi": 2.0,
+      "metric_lo": "input_transfer",
+      "rank_lo": 21.0,
+      "gap": 19.0
+    }
+  ]
+}

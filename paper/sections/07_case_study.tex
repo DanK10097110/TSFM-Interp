@@ -1,65 +1,74 @@
-\section{Case Study: Four Time-Series Foundation Models}
+\section{Case Study: Seven Time-Series Foundation Models}
 \label{sec:casestudy}
 
 \subsection{Setup}
 \label{sec:setup}
 
-We analyze TimesFM~2.5, Chronos-2, Sundial and Chronos-Bolt with the preset
-\repo{tsfm_lens/configs/concept_atlas_v2.yaml}. The dev corpus has 965 series in five generator families; the
-real-derived ones draw on Monash weather, ETT \citep{zhou2021informer} and the Chronos electricity and traffic
-collections. Contexts are 512 steps, the horizon 64, the window 32. SAEs are trained on 29 target layers
-(TimesFM 10, Chronos-2 7, Sundial 9, Chronos-Bolt 3) with three replicate seeds each, and
-$n_{\text{boot}}=2000$. The private split is 800 sealed series, opened once. The run took 6.43 hours on one
-RTX A5000 (24~GB). Artifacts are in \repodir{examples/concept_atlas_v2/run}; results from other runs carry
-their \repo{FINDINGS.md} identifier.
+We analyze seven models with the preset \repo{tsfm_lens/configs/panel7_v2.yaml}: TimesFM~2.5 \citep{das2024timesfm},
+Chronos-2 \citep{ansari2025chronos2}, Sundial \citep{liu2025sundial}, Chronos-Bolt and Chronos-T5-Base
+\citep{ansari2024chronos}, Timer \citep{liu2024timer} and Time-MoE \citep{shi2025timemoe}; the last two load through the
+zero-code \texttt{generic\_hf} adapter. The dev corpus has 965 series in five generator families; the real-derived ones
+draw on Monash weather, ETT \citep{zhou2021informer} and the Chronos electricity and traffic collections. Contexts are
+480 steps (a multiple of Timer's 96-step token), the horizon 64, the window 32. SAEs are trained on 56 target layers
+(TimesFM 10, Chronos-2 9, Sundial 9, Chronos-Bolt 4, Timer 6, Time-MoE 9, Chronos-T5-Base 9) with three replicate seeds
+each, and $n_{\text{boot}}=5000$. The private split is 971 sealed series (v2 epoch 3), opened once; its provenance is in
+Appendix~\ref{app:repro}. The run recorded 21.1 hours of stage time on one RTX A5000 (24~GB). Artifacts are in
+\repodir{examples/panel7_v2/run}. Ledger-tagged numbers measured in another run say so (the earlier four-model run is
+\repodir{examples/concept_atlas_v2}); every other number is from this run or its confirmation.
 
-Table~\ref{tab:character} gives the models' behavior. Chronos-2 is most accurate on dev and held-out data;
-Sundial's nominal 80\% interval covers 37\% of outcomes; TimesFM and Sundial propagate an injected NaN
-silently. The Sundial row hides a bug found in this work: the first adapter bypassed the checkpoint's input
-normalization, and a scale-equivariance residual of 38.43 context standard deviations was at first read as
-a model property (\fid{PM-15}, Appendix~\ref{app:adapters}; after the fix, 0.033).
+Table~\ref{tab:character} gives the models' behavior. Chronos-2 is the most accurate; Time-MoE is less accurate than the
+naive forecast and Timer close to the seasonal naive; Sundial's and Chronos-T5-Base's nominal 80\% intervals cover 36\%
+and 44\% of outcomes; and TimesFM, Sundial, Timer and Time-MoE propagate an injected NaN silently. The Sundial row hides a
+bug found in this work: the first adapter bypassed the checkpoint's input normalization, and a scale-equivariance residual
+of 38.43 context standard deviations was read as a model property (\fid{PM-15}, Appendix~\ref{app:adapters}; after the
+fix, 0.031).
 
-\begin{table}[t]
+\begin{table}[tb]
 \centering
 \footnotesize
 \setlength{\tabcolsep}{4pt}
 \begin{tabular}{@{}lccccc@{}}
 \toprule
-Model & median MASE & 80\% coverage & scale resid.\ ($\times$0.001) & NaN input & latency \\
+Model & median MASE & 80\% coverage & scale resid.\ (s.d.) & NaN input & latency (ms) \\
 \midrule
-\textcolor{ctwo}{Chronos-2}    & \textbf{1.1251} & 0.772 & 0.0093 & handled & 21 ms \\
-\textcolor{tfm}{TimesFM}       & 1.1829 & \textbf{0.795} & $2.0\times10^{-6}$ & propagates & 38 ms \\
-\textcolor{sun}{Sundial}       & 1.3335 & 0.369 & 0.0332 & propagates & 7 ms \\
-\textcolor{bolt}{Chronos-Bolt} & 1.4913 & 0.749 & 0.0087 & handled & 14 ms \\
+\textcolor{ctwo}{Chronos-2}    & \textbf{1.2002} & 0.757 & 0.0102 & handled & 23 \\
+\textcolor{tfm}{TimesFM}       & 1.2560 & \textbf{0.779} & $1.6\times10^{-6}$ & propagates & 39 \\
+\textcolor{sun}{Sundial}       & 1.4131 & 0.360 & 0.0310 & propagates & 62 \\
+\textcolor{tt5}{Chronos-T5-Base} & 1.4231 & 0.436 & $2.7\times10^{-7}$ & handled & 975 \\
+\textcolor{bolt}{Chronos-Bolt} & 1.5487 & 0.732 & 0.0101 & handled & 15 \\
+\textcolor{timer}{Timer}       & 1.9306 & -- & 0.0262 & propagates & 5 \\
+\textcolor{tmoe}{Time-MoE}     & 2.8642 & -- & 0.0368 & propagates & 103 \\
 \midrule
-naive / seasonal naive & 2.6829 / 2.0280 & & & & \\
+naive / seasonal naive & 2.7593 / 1.9819 & & & & \\
 \bottomrule
 \end{tabular}
-\caption{Behavior on the v2 dev corpus (965 series). Scale residual: error of $f(c\,x)/c$ against $f(x)$ in
-context standard deviations. Held-out, Chronos-2 beats TimesFM overall (paired $\Delta$MASE $-0.148$
-[$-0.211$, $-0.088$], $p=0.0005$, $n=800$).}
+\caption{Behavior on the v2 dev corpus (965 series). Scale residual: error of $f(c\,x)/c$ against $f(x)$ in context
+standard deviations, $c=0.001$. Latency: median time of a forecast for a batch of 8 series. Timer and Time-MoE output
+point forecasts only. Held-out, Chronos-2 beats TimesFM on the registered \texttt{mixture} family (paired
+$\Delta$MASE 0.209 [0.119, 0.313], $p_{\text{Holm}}=0.0002$, $n=290$) and, with a smaller effect, overall ($-0.070$
+[$-0.129$, $-0.008$], $p=0.025$, $n=971$).}
 \label{tab:character}
 \end{table}
 
 \subsection{RQ1: What forecast-relevant concepts do TSFMs learn?}
 \label{sec:rq1}
 
-\paragraph{Causal features exist, and the battery discriminates.} 293 SAE features across 29 targets clear the
-row-matched null on at least one channel. Twenty-eight targets passed both reach controls (e.g.\ TimesFM
-\texttt{stacked\_xf.10}: self-patch 0.0, cross-patch reach 0.146). Chronos-2's final block was withheld:
-cross-patching moved the forecast by exactly 0, because its head reads placeholder tokens a context patch never
-reaches (\fid{DE-03}); without the probe it would have reported a table of zero effects. On the reference run,
-(feature, channel) cells clear the null at 2.49--6.61 times the chance rate, and randomly nominated features
-clear at about half the rate of activation-nominated ones (\fid{MP-07}).
+\paragraph{Causal features exist, but not equally in every model, and the battery discriminates.} 194 SAE features
+across 55 measured targets clear the profile-matched null on at least one channel. Fifty-five of 56 targets passed both
+reach controls (e.g.\ TimesFM \texttt{stacked\_xf.10}: self-patch 0.0, cross-patch relative reach 0.253); Chronos-2's
+final block was withheld because cross-patching moved the forecast by exactly 0 (its head reads placeholder tokens a
+context patch never reaches; \fid{DE-03}). Against the leave-one-draw-out chance rate, 442 (feature, channel) cells clear
+the null where 178.75 are expected (2.47 times chance), from 1.02 times (Timer) to 5.70 times (Chronos-Bolt); 22 of 55
+targets are individually significant (BH at 0.05) and Timer has none, although its layers reach the forecast (relative
+reach 0.066--0.261; \fid{PM-17}). (The nominal ``0.05 $\times$ cells'' line would have read it as 0.96 times chance; \fid{MN-29}.)
 
-\paragraph{The concepts are about level and shape.} Nine effect families tile the causal features
-(Figure~\ref{fig:families}). The largest act on level and volatility: \emph{Level lowerers} (80), \emph{Level
-raisers \& Accuracy improvers} (61), \emph{Volatility dampeners} (48). Trend and seasonality families are
-smaller (23, 18, 17 and 12 members), and nearly every family also moves the shape distances. Level is not
-everything: the median pure-level share of a causal effect is 0.535, and most features still clear a null
-after the level shift is removed from both feature and null (\fid{CA-07}).
+\paragraph{The concepts are about level and seasonality.} Nine effect families tile the causal features
+(Figure~\ref{fig:families}). The two largest act on level: \emph{Level raisers} (45) and \emph{Level lowerers} (44),
+89 of the 192 assigned features. Seasonality dampeners and amplifiers follow (25 and 19); three mixed-effect families
+(14, 13, 11), trend boosters (11) and volatility dampeners (10) are smaller. Level is not everything: on the earlier four-model run (original null, an upper bound) the median pure-level share of
+an effect was 0.535 (\fid{CA-07}).
 
-\begin{figure}[t]
+\begin{figure}[tb]
 \centering
 \includegraphics[width=\textwidth]{figures/families.pdf}
 \caption{The nine causal-effect families. (a) Family centroid in null units, signed as what the feature
@@ -68,147 +77,202 @@ Membership by model. Source: \texttt{sae/concept\_families.json}.}
 \label{fig:families}
 \end{figure}
 
-\paragraph{The concepts are graded, not discrete.} Within a layer, 24 of 29 targets are non-modular (9
-per-target concepts in total); the strict atlas assigns only 86 of 293 features to its 27 concepts; and the
-families cover 288 of 293 features but do \emph{not} beat a column-shuffle null ($p=1.0$ for their number,
-$0.985$ for coverage). On the reference run silhouette is 0.31--0.35 for every family count from 3 to 16
-(\fid{CA-10}) and the ablation fingerprints have participation ratio 2.09 (\fid{MN-07}). Families are thus a
-reading vocabulary, not discovered units.
+\paragraph{The concepts are graded, not discrete.} Within a layer, 50 of 56 targets are non-modular (10 per-target
+concepts in total, on 5 targets, 4 of them on Timer targets whose clears are not above chance); the strict atlas assigns
+only 35 of 194 features to its 11 concepts, more than a column-shuffle null produces (null 95th percentile 5.05 concepts,
+assigned fraction 0.088 against 0.180; $p=0.005$) but few; and the families cover 192 of 194 features but do \emph{not}
+beat the shuffle null ($p=0.68$ for their number, $0.23$ for coverage). Silhouette is 0.25--0.32 for every cut from 6 to
+16 families, and on the earlier run the ablation fingerprints had participation ratio 2.09 (\fid{CA-10}, \fid{MN-07}).
+Families are thus a reading vocabulary, not discovered units.
 
 \paragraph{Ground-truth concepts are rare and need a null.} After dead-feature revival, 154 of 10{,}240
 TimesFM and 115 of 6{,}144 Chronos-T5-Base features match a ground-truth field beyond a permutation null (best:
-intermittency, $\rho=0.881$; \fid{MP-06}); raw correlations do not separate trained from untrained weights
-(0.567 vs.\ 0.565). Validating concepts by moving a generator knob was a confirmed negative twice (0 of 98,
-then 0 of 151 pairs), because a knob moves any active feature about as much as the targeted one (\fid{MN-17}),
-and a vivid TimesFM ``random walk'' concept failed seed stability (\fid{PM-11}).
+intermittency, $\rho=0.881$; \fid{MP-06}). Moving a generator knob was a confirmed negative twice (0 of 98, then 0 of 151
+pairs; \fid{MN-17}), and a vivid TimesFM ``random walk'' concept failed seed stability (\fid{PM-11}).
 
-\paragraph{Answer to RQ1.} TSFMs contain sparse causal directions that mainly control forecast level,
-volatility and shape, with trend and seasonality in smaller groups. They form a continuum with a few dominant
-axes, not discrete concepts aligned with named generative factors.
+\paragraph{Answer to RQ1.} TSFMs contain sparse causal directions that mainly control forecast level and
+seasonality, in smaller groups trend, volatility and mixtures. They form a continuum with a few dominant axes, not
+discrete concepts aligned with named generative factors, and in one of seven models (Timer) the feature battery does not
+exceed chance on this corpus.
 
 \subsection{RQ2: Are concepts shared across architectures?}
 \label{sec:rq2}
 
-\paragraph{Geometry is shared above chance, but similarity has no single meaning.} Peak CKA between TimesFM and
-each other model is 0.38--0.43 (null 0.037); the TimesFM/Chronos-2 peak replicates held-out (dev 0.4262;
-private 0.4253 [0.4162, 0.4423]), and the band holds across five architectures including Timer and Lag-Llama
-(\fid{SH-01}). Yet seven pair metrics rank the six pairs inconsistently (Kendall's $W=0.28$, $p=0.07$;
-Figure~\ref{fig:similarity}): TimesFM/Chronos-2 is first by error agreement (0.947) and fourth by CKA, so the
-metrics are never pooled. An untrained same-architecture pair is more CKA-similar (0.878) than a related trained
-pair (0.734, $p=0.0005$; \fid{MN-01}), and a unit-correspondence measure \emph{rose} under random rotation (0.148
-to 0.331) because the layers are so low-rank (\fid{SH-19}).
+\paragraph{Geometry is shared above chance, but similarity has no single meaning.} Peak CKA between TimesFM and each
+other model is 0.342--0.426 (shuffled-series nulls 0.011--0.051); the TimesFM/Chronos-2 peak replicates held-out (dev
+0.4257; private 0.4109 [0.4014, 0.4266]), and the band holds across five architectures including Timer and Lag-Llama
+(\fid{SH-01}). Yet seven pair metrics rank the 21 pairs only weakly consistently (Kendall's $W=0.25$, $p=0.0095$;
+Figure~\ref{fig:similarity}): TimesFM/Chronos-2 is first by error agreement (0.948) and 15th of 21 by CKA, where
+Sundial/Chronos-Bolt is first (0.927), so the metrics are never pooled. Two other similarity measures fail their own controls (untrained pair more similar than a trained pair, \fid{MN-01};
+a unit-correspondence measure that rose under rotation, \fid{SH-19}; Table~\ref{tab:controls}, rows 11--12).
 
-\begin{figure}[t]
+\begin{figure}[tb]
 \centering
-\includegraphics[width=0.6\textwidth]{figures/similarity.pdf}
-\caption{Rank of each model pair (columns) under seven similarity metrics (rows); 1 is most similar. Source:
-\texttt{report/model\_similarity.json}.}
+\includegraphics[width=\textwidth]{figures/similarity.pdf}
+\caption{Rank of each model pair (columns, sorted by median rank; TFM TimesFM, C-2 Chronos-2, Sun Sundial, Bolt
+Chronos-Bolt, Tim Timer, MoE Time-MoE, T5 Chronos-T5-Base) under seven similarity metrics (rows); 1 is most similar.
+Source: \texttt{report/model\_similarity.json}.}
 \label{fig:similarity}
 \end{figure}
 
-\paragraph{Models agree on which inputs a concept groups.} 1{,}223 of 1{,}581 atlas transfer tests are
-reciprocal after BH correction. Twenty claims registered from dev alone were all confirmed on the 800 private
-series (Holm, maximum adjusted $p=0.0100$; AUC 0.971--0.995 against null 95th percentiles of 0.57--0.77;
-Figure~\ref{fig:heldout}b), replicating on three independent private draws (19/20, 20/20 and 20/20; \fid{SH-18}). This is an
-input-level claim, and the 20 claims come from two concepts with only 6 of 20 private best features identical
-to dev: the destination has \emph{some} feature selecting the same series.
+\paragraph{Models agree on which inputs a concept groups.} 1{,}296 of 1{,}584 atlas transfer tests are
+reciprocal after BH correction. Twenty claims registered from dev alone were all confirmed on the 971 private
+series (Holm, maximum adjusted $p=0.0100$, the floor for 20 claims at 2000 draws; AUC 0.919--0.970 against null 95th
+percentiles of 0.70--0.75; Figure~\ref{fig:heldout}b), replicating on four private draws (19/20, 20/20, 20/20 on
+earlier draws, and 20/20 here; \fid{SH-18}, \fid{CA-11}). This is an input-level claim. The 20 claims come from two
+concepts (TimesFM \texttt{xf.18}, 14 claims; Sundial \texttt{layers.6}, 6) and reach destinations in all seven models,
+with only 8 of 20 private best features identical to dev: the destination has \emph{some} feature selecting the same
+series.
 
-\paragraph{Models rarely agree on what a concept does.} Of 27 atlas concepts, 16 have causal members from
-$\ge$2 models, but only 2 are \emph{shared}, 1 partially shared, 13 \emph{convergent} (same effect, different
-series) and 11 single-model (Figure~\ref{fig:funnel}); among the 22 seed-stable concepts the counts are 2, 1, 9
-and 10. None spans all four models. Of the 1{,}223 reciprocal transfers, 420 are scorable, and only 11 (2.6\%)
-show the same causal effect; 81 agree on level or shape alone, 264 show no specific agreement and 64 act
-differently.
+\paragraph{Models rarely agree on what a concept does, and the atlas is segregated by model.} Of 11 atlas concepts, 9
+have causal members from $\ge$2 models, but only 2 are \emph{shared}, 2 partially shared, 5 \emph{convergent} (same
+effect, different series) and 2 single-model (Figure~\ref{fig:funnel}); among the 9 seed-stable concepts the counts are
+2, 1, 4 and 2. No concept spans more than 3 of the 7 models, and the clusters are \emph{purer} by model than random
+assignment: 9 multi-model concepts against a null mean of 10.8 ($p_{\text{below}}=0.025$) and mean model purity 0.591
+against 0.474 (\fid{SH-22}). Of 1{,}296 reciprocal transfers, 1{,}290 were tested for shared-input agreement (a cap of 60
+per ordered pair) and 216 are scorable; 7 (3.2\%) show the same causal effect, 54 agree on level or shape alone, 133 show
+no specific agreement and 22 act differently. All 7 ``same'' verdicts are Chronos-2/Chronos-Bolt, six of them through one
+Chronos-Bolt block-4 feature set, so they are one concept seen from several layers. This pattern must \emph{not} be read
+as sharing following lineage: 1{,}053 of the 1{,}074 unscorable tests fail because a side's own ablation does not clear
+its own null on the roughly 24 shared series, and on a planted pair of different architectures the rung finds a truly
+shared single-direction concept in 0.4 of seeds, a concept spread over 3--4 directions in 0.0, with 0 of 9 false ``same''
+verdicts (\fid{MN-30}). The rung is specific but insensitive, so an absence of ``same'' across architectures is
+uninformative.
 
-\begin{figure}[t]
+\begin{figure}[tb]
 \centering
 \includegraphics[width=\textwidth]{figures/funnel.pdf}
-\caption{(a) Concept candidates at each rung (first three bars in sequence; last three are properties of the 27
-atlas concepts). (b) Shared-input causal agreement over 1{,}223 reciprocal transfers. Source:
-\texttt{sae/concept\_stage.json}.}
+\caption{(a) Concept candidates at each rung (first three bars in sequence; last three are properties of the 11
+atlas concepts). (b) Shared-input causal agreement over 1{,}290 tests drawn from the 1{,}296 reciprocal transfers.
+Source: \texttt{sae/concept\_stage.json}.}
 \label{fig:funnel}
 \end{figure}
 
-\paragraph{Answer to RQ2.} Different TSFMs \emph{detect} the same things reliably enough to replicate on sealed
-data, but mostly do not \emph{use} them the same way: the typical multi-model concept is convergent, and none is
-common to all four models. Whole-layer similarity cannot reveal this and is internally inconsistent.
+\paragraph{Answer to RQ2.} Different TSFMs \emph{select} the same series for a concept reliably enough to replicate on
+sealed data (four private draws), but we cannot show that they \emph{use} them the same way: the atlas is segregated by
+model, no concept is common to the panel (a structural claim that confirms held-out), the one clear same-effect case is
+inside the Chronos family, and no cross-model causal claim confirmed on private data (Section~\ref{sec:heldout}). Whole-layer
+similarity cannot reveal this and is internally inconsistent.
 
 \subsection{RQ3: Do concepts causally affect the forecast, and how much?}
 \label{sec:rq3}
 
-Individually, little. The median single-feature effect is 0.0395 context standard deviations, 3.5 times below
-the 0.139 moved by merely substituting the SAE reconstruction (\fid{MN-15}). Of 565 strongly activating
-``interesting'' features, 364 (64.4\%) clear no causal channel (\fid{MN-14}), and \tool{} collapses them
-rather than rendering them. Dead-atom revival improved fidelity yet lowered ground-truth alignment at every
-TimesFM depth tested ($-0.030$ to $-0.132$; \fid{MN-21}). At the head level, attention mass on seasonal lags is
-uncorrelated with the seasonal power lost when the head is ablated ($\rho=0.026$ TimesFM, $-0.118$
-Chronos-T5-Base; \fid{CA-04}), consistent with \citet{jain2019attention}; a minimal seasonality circuit is one
-head in TimesFM but five non-additive heads in Chronos-T5-Base (\fid{CA-03}).
+Individually, little, and not reliably. Of the 32 single-feature causal claims registered from dev, 31 were testable on
+the private split and 10 confirm (TimesFM 3 of 4, Time-MoE 2 of 7, Sundial 2 of 4, Chronos-Bolt 2 of 6, Chronos-2 1 of 7,
+Chronos-T5-Base 0 of 4; by channel, near-horizon shape 4 of 8, MASE 3 of 8, spectral centroid 2 of 4, dispersion 1 of 3,
+seasonal 0 of 4, level 0 of 4); each confirmed claim has $p=0.001$ after an adaptive redraw to 1000 null draws and
+$p_{\text{Holm}}=0.031$, the floor for 31 tests. Twenty-one do not confirm (19 of them were not at the 200-draw $p$ floor),
+and one flips sign (Chronos-T5-Base block 10). Most prominent features carry nothing: 0.835 of the 927 prominent features
+of the private atlas are causally null (one-sided lower bound 0.817, dev 0.810, $p_{\text{Holm}}=0.0005$; \fid{MN-14}), and
+\tool{} collapses them rather than rendering them. On the earlier four-model run the median single-feature effect
+was 0.0395 context standard deviations, 3.5 times below the 0.139 moved by substituting the SAE reconstruction
+(\fid{MN-15}). Attention
+mass on seasonal lags is uncorrelated with the seasonal power lost when the head is ablated ($\rho=0.026$ TimesFM,
+$-0.118$ Chronos-T5-Base; \fid{CA-04}; cf.\ \citealt{jain2019attention})
+(a minimal seasonality circuit is one head in TimesFM, five non-additive heads in Chronos-T5-Base; \fid{CA-03}).
 
-\paragraph{Answer to RQ3.} Features and heads are causal in the controlled sense, but contributions are small
-and distributed, most prominent features carry nothing, and attention is an unreliable guide.
+\paragraph{Answer to RQ3.} Features and heads are causal in the controlled sense, but contributions are small and
+distributed, about one in three single-feature claims survives new series, most prominent features carry nothing, and
+attention is an unreliable guide.
 
 \subsection{RQ4: Where in depth, and how comparable is depth?}
 \label{sec:rq4}
 
-For TimesFM/Chronos-2 all nine per-corruption fingerprint agreements replicate held-out (overall
-$\rho=0.510$ [0.489, 0.527]; Figure~\ref{fig:heldout}a): the models react at matching depths to detrending,
-deseasonalizing, frequency shift and dropout, and at opposite depths to noise ($-0.742$), spikes ($-0.780$),
-warps ($-0.658$) and smoothing ($-0.466$). In TimesFM, whole-layer restoration is flat across depth but
-per-window restoration concentrates just before the horizon and grows with depth (\texttt{noise}: 0.068 at
-layer 0 to 0.412 at layer 16; exploratory, $n\approx300$; \fid{DE-01}). Depth \emph{locations} need two qualifications that every report
-renders: captured compute ranges from 14\% (Chronos-T5-Base) to 98\% (Chronos-2) of a forecast (\fid{DE-05}),
-and Chronos-T5's last encoder block sits at 0.478 on the whole-stack axis (\fid{DE-04}). No selected layer was
-robust across three layer selectors for any model (Jaccard overlap with the default selection as low as 0.0;
-\fid{DE-08}).
+For TimesFM/Chronos-2, 6 of the 9 per-corruption fingerprint agreements replicate held-out (overall $\rho=0.524$
+[0.504, 0.544]; Figure~\ref{fig:heldout}a): the models react at matching depths to detrending (private 0.368), dropout
+(0.510) and, more strongly than on dev, frequency shift (0.381 against 0.216), and at opposite depths to noise
+($-0.743$), spikes ($-0.785$), warps ($-0.651$) and smoothing ($-0.581$ against $-0.418$); deseasonalizing is near zero
+(0.086 [$-0.027$, 0.186]). The three non-replications are the two stronger-on-private effects (frequency shift,
+smoothing) and level shift, whose sign flips (dev $-0.188$, private 0.109 [$-0.025$, 0.159]); under the registered rule,
+dev $\rho$ inside the private interval, a stronger private effect also counts as a non-replication. In TimesFM,
+per-window restoration concentrates just before the horizon and grows with depth (earlier four-model run,
+\texttt{noise}: 0.068 at layer 0 to 0.412 at layer 16; exploratory, $n\approx300$; \fid{DE-01}). Depth \emph{locations} need two qualifications that every report renders: captured compute ranges from
+13.9\% (Chronos-T5-Base) to 99.8\% (Timer) of a forecast (\fid{DE-05}), and Chronos-T5's last encoder block sits at 0.478
+on the whole-stack axis (\fid{DE-04}). No selected layer was robust across three layer selectors for any model (\fid{DE-08}).
 
-\paragraph{Answer to RQ4.} Depth-resolved reaction profiles are reproducible; absolute depth locations are
-comparable only after accounting for captured compute and the depth convention.
+\paragraph{Answer to RQ4.} Depth-resolved reaction profiles are largely reproducible (6 of 9 corruptions); absolute depth
+locations are comparable only after accounting for captured compute and the depth convention.
+
+\subsection{Can looking inside predict forecast failure?}
+\label{sec:practical}
+
+If internal features are causal, do they tell a user when to distrust a forecast, or which model to use? For each model we
+predict a series' log MASE (Spearman) and failure flag (AUROC) from free output-only features (quantile width, flatness,
+catch22 of the context), then add the SAE-family activations at the last window (cross-fitted, series bootstrap, 941 dev
+series, $n_{\text{boot}}=1000$; evidence class \emph{predictive}, since a feature that predicts error is not a cause of
+it). The free baseline is strong (Spearman 0.76--0.85). For five of seven models (Chronos-2, TimesFM, Sundial,
+Chronos-T5-Base, Chronos-Bolt) the gain's CI includes zero for both tasks (log-MASE Spearman gains $-0.004$ to $+0.005$,
+AUROC $-0.010$ to $+0.008$). It is positive for the two weakest models, Timer (+0.030 [0.019, 0.043], baseline 0.787,
+failure rate 0.30) and Time-MoE (+0.012 [0.005, 0.019], baseline 0.853, failure rate 0.62), robust across five fold seeds,
+and no failure-AUROC gain excludes zero. Both gains were registered and confirm when the frozen procedure is refit on the
+private split ($n=935$): Timer 0.0446 [0.0292, 0.0605], $p_{\text{Holm}}=0.002$; Time-MoE 0.011 [0.0032, 0.0194],
+$p_{\text{Holm}}=0.012$ (14 dev comparisons were run and 2 selected, which is legitimate because the private split
+referees). Routing each series to the model with the lowest predicted MASE does not help: baseline routing reaches mean MASE
+1.948 [1.814, 2.070], baseline plus internals 1.964 [1.837, 2.093] (gap $-0.016$ [$-0.044$, 0.010], $p=0.258$), and both
+are worse than always using Chronos-2 (1.856; $p=0.001$; oracle 1.523). Internals add information where the free baseline
+is weakest and nowhere else.
 
 \subsection{What replicated on held-out data}
 \label{sec:heldout}
 
-\begin{figure}[t]
+\begin{figure}[tb]
 \centering
 \includegraphics[width=\textwidth]{figures/heldout.pdf}
-\caption{Claims re-tested on the 800 sealed series. (a) Per-corruption depth-profile agreement, TimesFM vs.\
-Chronos-2; (b) the 20 concept-transfer claims with private null 95th percentiles; (c) accuracy and peak CKA.
-Crosses: dev; dots and bars: private with 95\% series-bootstrap intervals. Source:
-\texttt{confirm/confirmation.json}.}
+\caption{Claims re-tested on the sealed private split (971 series; panel a uses 800 of them). (a) Per-corruption
+depth-profile agreement, TimesFM vs.\ Chronos-2 (red: the dev value is not inside the private interval); (b) the 20
+concept-transfer claims with private null 95th percentiles; (c) accuracy and peak CKA; crosses: dev, dots and bars:
+private with 95\% series-bootstrap intervals. (d) The ledger of registered concept claims by type: confirmed, tested and
+not confirmed, not testable (the one confirmed atlas claim is single-model). Source: \texttt{confirm/confirmation.json}.}
 \label{fig:heldout}
 \end{figure}
 
-Of 47 registered hypotheses, 31 are currently re-testable, and every one held (Figure~\ref{fig:heldout}): the
-accuracy claim (Chronos-2 better on \texttt{mixture}, $\Delta$MASE 0.307 [0.209, 0.413], $p_{\text{Holm}}=0.0005$,
-$n=240$; minimum detectable effect 0.155), the peak-CKA pair, all nine perturbation agreements and all 20
-transfer claims (Table~\ref{tab:results}). The causal concept results of RQ1--RQ3 are exploratory, but reproduce
-on a second corpus: on the v1 reference run no atlas concept spans four models, convergent is again modal, and
-12 of 89 scorable shared-input tests act differently (\fid{SH-16}, \fid{CA-06}).
+One look at a fresh private corpus (v2 epoch 3: 971 series, no sample shared with any other split, seal verified)
+tested a registry of 128 hypotheses, 82 of them replicable. \textbf{43 confirm, 6 cannot be tested and 33 are not
+confirmed} (Figure~\ref{fig:heldout}; every Holm family is per claim type, as registered). What confirms: the accuracy claim
+(Chronos-2 better on \texttt{mixture}, $\Delta$MASE 0.209 [0.119, 0.313], $p_{\text{Holm}}=0.0002$, $n=290$; minimum
+detectable effect 0.133), the peak-CKA pair, 6 of 9 perturbation agreements, all 20 transfer claims, 10 of 31 testable
+single-feature causal claims, the two structural negatives (no concept spans the panel: the private atlas has 10 concepts,
+at most 3 of 7 models each; most prominent features are causally null) and the two U1 claims. What does \emph{not}
+confirm is every cross-model causal claim: the multi-model atlas concepts (0 of 3: their centroid cosines still beat the
+null, $p\le0.007$, but only one third of member pairs reach cosine 0.9; the one atlas claim that confirms is single-model,
+Chronos-2) and shared-input agreement (0 of 6 tested; 5 of 11 are not testable because a side's feature does not clear its
+own null on the private shared series; the best, Chronos-Bolt block 4 to Chronos-2 block 7 ``same'', reproduces its verdict
+with $p=0.011$ but misses Holm at 0.066). Given the rung's measured insensitivity (Section~\ref{sec:rq2}), the agreement
+failures are weak evidence of difference. The project's held-out reading is that \textbf{models share what they select,
+not (demonstrably) what they do with it}. Two disclosures (the first is detailed in Appendix~\ref{app:repro}): the first confirm attempt crashed before any
+statistic was written and was restarted with only a bug fix; and 19 of the 21 non-confirmed single-feature claims carry a
+stored reading of ``untestable'' that is wrong (they were tested and not detected), recomputed at render time, no
+verdict affected.
 
-\begin{table}[t]
+\begin{table}[tb]
 \centering
 \footnotesize
 \setlength{\tabcolsep}{3pt}
+\scriptsize
 \begin{tabularx}{\textwidth}{@{}l>{\raggedright}Xllll@{}}
 \toprule
 RQ & Result (example run unless an ID is given) & Evidence class & Status & ID \\
 \midrule
-1 & 293 causal features; 9 families, largest act on level/volatility & causal within-model & exploratory, 2 corpora & CA-10 \\
-1 & Families cover 98\% but do not beat a shuffle null ($p=1.0$) & descriptive & exploratory, 2 corpora & CA-10 \\
+1 & 194 causal features in 55 targets; 442 cells $=$ 2.47$\times$ empirical chance; Timer 1.02$\times$ & causal within-model & exploratory & MP-07, PM-17 \\
+1 & 9 families cover 99\% of features but do not beat a shuffle null ($p=0.68$) & descriptive & exploratory, 2 corpora & CA-10 \\
 1 & Knob-specific concept mediation: 0/98, then 0/151 & correlational & confirmed negative & MN-17 \\
-2 & Peak CKA 0.425 vs null 0.037 & geometric & held-out confirmed & SH-01 \\
-2 & 7 similarity metrics disagree ($W=0.28$) & mixed & exploratory & SH-05/06 \\
+2 & Peak CKA 0.426 (private 0.411) vs null 0.038 & geometric & held-out confirmed & SH-01 \\
+2 & 7 similarity metrics agree only weakly ($W=0.25$) & mixed & exploratory & SH-05/06 \\
 2 & Untrained pair more similar than related trained pair & geometric & confirmed negative & MN-01 \\
-2 & Concept transfer on inputs: 20/20 & correlational & held-out confirmed (3 draws) & SH-18 \\
-2 & No 4-model concept; convergent is the modal class & causal, compared & exploratory, 2 corpora & SH-16 \\
-2 & Same effect on same inputs: 11/420 scorable & causal on shared inputs & exploratory, 2 corpora & CA-06 \\
-3 & Feature effect 3.5$\times$ below SAE reconstruction cost & causal within-model & exploratory & MN-15 \\
-3 & 64\% of prominent features causally null & causal within-model & exploratory & MN-14 \\
+2 & Concept transfer on inputs: 20/20 & correlational & held-out confirmed (4 draws) & SH-18 \\
+2 & No concept spans the panel (at most 3 of 7 models) & descriptive & held-out confirmed & SH-16 \\
+2 & Atlas segregated by model ($p_{\text{below}}=0.025$) & descriptive & exploratory & SH-22 \\
+2 & Multi-model atlas concepts: 0/3 & causal, compared & held-out not confirmed & CA-11 \\
+2 & Same effect on same inputs: 7/216 scorable; 0/6 held-out; rung finds planted 0.4/0.0 & causal on shared inputs & exploratory; not confirmed & SH-22, MN-30 \\
+3 & Single-feature causal effects: 10/31 & causal within-model & held-out partly confirmed & CA-11 \\
+3 & 84\% of prominent features causally null (927 held-out) & causal within-model & held-out confirmed & MN-14 \\
+3 & Feature effect 3.5$\times$ below SAE reconstruction cost (earlier run) & causal within-model & exploratory & MN-15 \\
 3 & Attention mass uncorrelated with head causality & causal vs.\ descriptive & exploratory & CA-04 \\
-4 & Depth-profile agreement, 9/9 corruptions & causal within-model & held-out confirmed & CA-01 \\
-4 & Captured compute 14\%--98\% qualifies depth claims & descriptive & confirmed & DE-05 \\
+3 & Internals predict failure for the two weakest models only & predictive & held-out confirmed & MN-28 \\
+4 & Depth-profile agreement, 6/9 corruptions & causal within-model & held-out partly confirmed & CA-01 \\
+4 & Captured compute 14\%--99.8\% qualifies depth claims & descriptive & confirmed & DE-05 \\
 \midrule
-L0 & Chronos-2 more accurate than TimesFM ($-0.148$) & behavioral & held-out confirmed & PM-05 \\
+L0 & Chronos-2 more accurate than TimesFM on \texttt{mixture} (0.209) & behavioral & held-out confirmed & PM-05 \\
 \bottomrule
 \end{tabularx}
 \caption{Headline results with evidence class and status. Each ID is an entry in \repo{FINDINGS.md} with exact

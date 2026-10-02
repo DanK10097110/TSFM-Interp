@@ -53,8 +53,8 @@ with different architectures on a measured common time axis, validates every pro
 benchmark with exact generative ground truth, defines concepts by their causal effect on the forecast
 against matched random nulls, and tests exploratory claims once on a sealed held-out split. Every
 reported number carries an evidence class and a plain-language explanation. The toolkit ships adapters
-for TimesFM, the Chronos family, Sundial, Timer and Lag-Llama, a zero-code adapter for Hugging Face
-checkpoints, a complete example run and a test suite of over two thousand tests. It is released under the
+for TimesFM, the Chronos family, Sundial, Timer, Time-MoE and Lag-Llama, a zero-code adapter for Hugging Face
+checkpoints, a complete seven-model example run with held-out confirmation and a test suite of over two thousand tests. It is released under the
 MIT license at \url{\repourl}.
 \end{abstract}
 
@@ -152,8 +152,9 @@ bloom2024saelens,kokhlikyan2020captum}; TSFM SAE studies judged from the papers.
 
 After \texttt{pip install -e . \&\& pip install -e tsfm\_lens}, one command runs a full analysis
 (\texttt{python run.py -{}-config configs/examples/large\_4model.yaml}); presets cover a CPU-only mock smoke test, a
-single model and a pair. The repository includes a complete four-model example run with its report and per-stage
-artifacts, and a ledger of every finding with its reproduction command. The code is MIT-licensed; over 2{,}300 tests
+single model and a pair. The repository includes a complete seven-model example run (\texttt{examples/panel7\_v2}) with its report,
+per-stage artifacts and one-shot held-out confirmation (43 of 82 replicable registered claims confirm), and a ledger of
+every finding with its reproduction command. The code is MIT-licensed; over 2{,}300 tests
 run in continuous integration against pinned and, weekly, latest dependencies, and each load-bearing assertion must
 be shown to fail against a planted regression. Code: \url{\repourl}.
 
@@ -161,6 +162,6 @@ be shown to fail against a planted regression. Code: \url{\repourl}.
 declare no competing interests.}
 
 \vskip 0.2in
-\bibliography{../references}
+{\setlength{\bibsep}{0pt}\bibliography{../references}}
 
 \end{document}

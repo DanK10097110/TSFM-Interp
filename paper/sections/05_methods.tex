@@ -1,7 +1,7 @@
 \section{Measurement Methods}
 \label{sec:methods}
 
-Throughout, $x\in\mathbb{R}^{T}$ is a context ($T=512$ in the case study), $y\in\mathbb{R}^{H}$ its
+Throughout, $x\in\mathbb{R}^{T}$ is a context ($T=480$ in the case study), $y\in\mathbb{R}^{H}$ its
 continuation ($H=64$), $\hat y$ a point forecast and $h^{(\ell)}$ the residual stream after block $\ell$.
 
 \subsection{Behavior, geometry and perturbation (L0--L3)}
@@ -62,13 +62,13 @@ decoded direction, so only the direction differs. A feature clears channel $c$ i
 exceeds the pooled null's 95th percentile $q_{95}^{(c)}$, and its channel vector is
 $v_i^{(c)}=\overline{\Delta_i^{(c)}}/q_{95}^{(c)}$. Shape channels are distances and are treated as undirected.
 Because a mean over rows is compared with a percentile of single rows, the chance rate is not 5\%; it is
-estimated per cell by scoring each null draw against the others (about 2\% on the case study). An earlier null
-removed one uniform, batch-averaged amount; the known-answer test of Section~\ref{sec:controls} showed it
+estimated per cell by scoring each null draw against the others (0.3--4\% per target on the case study). An earlier
+null removed one uniform, batch-averaged amount; the known-answer test of Section~\ref{sec:knownanswer} showed it
 lenient (\fid{MN-29}). A \emph{reach probe} first requires self-patching to change the
 forecast by exactly $0.0$ and cross-layer patching by a relative $>10^{-3}$; otherwise the target is withheld
 with its reason (Figure~\ref{fig:battery}).
 
-\begin{figure}[t]
+\begin{figure}[tb]
 \centering
 \begin{tikzpicture}[
   box/.style={draw, rounded corners=2pt, align=center, font=\scriptsize, minimum height=9mm, fill=white, text width=21mm},
@@ -102,7 +102,7 @@ channel by channel, with a random-direction null on exactly its own top-firing s
 \paragraph{From features to concepts.} Causal features are grouped at three granularities. \emph{Per-target
 concepts} cluster one layer's vectors with $k$-means, choosing $k$ by silhouette
 \citep{rousseeuw1987silhouette} among values whose smallest cluster has $\ge$3 members (without it, the four
-highest silhouettes on the reference run, 0.607--0.717, were all one-outlier splits; \fid{SH-20}); a target with no admissible $k$ is \emph{non-modular}. The
+highest silhouettes on the earlier four-model run, 0.607--0.717, were all one-outlier splits; \fid{SH-20}); a target with no admissible $k$ is \emph{non-modular}. The
 \emph{atlas} pools features from all models and layers and cuts a complete-linkage dendrogram at cosine 0.9,
 so an atlas concept is a shared causal-effect profile. \emph{Families} are a coarser readable tiling (average
 linkage, cosine 0.5), tested against a column-shuffle null and titled deterministically from their channels.
@@ -127,3 +127,30 @@ inputs, L5 same causal effect on the same inputs, L6 confirmed on private data. 
 \texttt{sharing\_class}: \emph{shared} (same effect and inputs), \emph{partially shared}, \emph{convergent}
 (same effect, different inputs) or \emph{single-model}; a part is provenance-driven when $\ge$80\% of its top
 series come from one real-derived generator.
+
+\subsection{Known-answer validation}
+\label{sec:knownanswer}
+
+Every causal count in Section~\ref{sec:casestudy} rests on a null, and a null can be wrong without any error being
+raised. \tool{} therefore ships a forecaster whose answer is known, \texttt{mock\_planted}. One planted block writes
+known unit directions into the residual stream on the series that have a property (thresholded readouts of the patch
+mean, slope, residual deviation, seasonal projections and a spike statistic, each firing on 10--30\% of the corpus),
+and the head applies a known effect (level, trend, seasonality or dispersion) to the forecast. It carries decoys
+written like concepts (\emph{input-only}, zero causal effect; \emph{sub-null}, weak effect), a control layer after the
+planted block with no planted effect, and, for the cross-model rungs, a pair of architectures (widths 64 and 96, depths
+5 and 7, rotated residual basis) sharing planted concepts plus an opposite-effect twin. A scorer reads only the planted manifest and the run's artifacts, against a gate fixed before any
+data was seen: per-cell false-positive rate on the control layer at most 0.10 and sensitivity at least 0.5, on five
+construction seeds, seed 0 used to tune the attribution rule and seeds 1--4 held out. The gate is evaluated at one effect
+size (dose 1).
+
+
+The legacy null fails the gate on all five seeds (per-cell false-positive rate 0.168--0.248): it is sized to a chunk-wide mean $|z|$, zeros included, and removed
+uniformly, whereas a feature's ablation removes its full activation where it fires hardest, so a strong or dense atom
+clears it on size alone (17--25\% of the cells and 34--47\% of the features of a layer with no planted effect cleared it). The profile-matched
+null passes on all five seeds (per-cell false-positive rate at most 0.003, sensitivity 0.70--1.00; a random decoded direction overlaps the planted span more than a decoy does, so this null may be over-strict in the planted world); on seed 0 it also stops the legacy null's 4 of 4 sub-null
+decoys from clearing, lifts the atlas adjusted Rand index from 0.336 to 0.469 and raises the sharing-class accuracy from 0.364 to 0.714. Re-scoring the four-model case study under it
+cut the causal features from 293 to 110 and the convergent concepts from 13 to 0, which is why the earlier numbers are
+upper bounds. The same device was applied to the cross-model agreement rung of Section~\ref{sec:sharing}: it never calls a
+decoy ``same'' (0 of 9), but finds a truly shared single-direction concept in only 0.4 of seeds and one spread over 3--4
+directions in 0.0 (\fid{MN-30}), and an opt-in rule that requires a statistic to be defined before it can fire removes its
+false disagreements on a shared concept (3 of 30 to 0 of 30). Known-answer tests establish what a method can detect, not that it is right on real models.
