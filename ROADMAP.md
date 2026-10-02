@@ -38907,7 +38907,7 @@ TTM, start K5 and K1."*
 
 ---
 
-## 39. Forecast repair — causal blame for good and bad forecasts, and interpretable feature-level edits (added 2026-10-01, user-proposed; R0 run 2026-10-02: gate FAILED on helpful-sign power, R0b pre-registered — see §39.7)
+## 39. Forecast repair — causal blame for good and bad forecasts, and interpretable feature-level edits (added 2026-10-01, user-proposed; R0 and R0b run 2026-10-02: both gates FAILED; STOPPED at R0 per the pre-registration — see §39.7–39.8; continuing needs a new design decision)
 
 ### 39.0 Status, provenance, and the one-paragraph version
 
@@ -39122,3 +39122,52 @@ underpowered at k = 32 with a whole-dictionary BH family. Per the §39.3 rule, R
 - **Fallback, decided now.** If R0b passes everything except (i)-helpful, R1 proceeds **restricted to harmful
   blame and edits**, and the blame table's helpful column is labelled "not validated on a known answer". If (i)-
   harmful, (ii) or (iii) fails, §39 stops at R0 and the negative is recorded.
+
+### 39.8 R0b — Findings (2026-10-02): the gate fails; §39 stops at R0
+
+Commit 6c94c66 (merged into dev). `two_stage_blame` / `split_pool` and `--two-stage` are opt-in, so R0 reproduces
+unchanged. Config `configs/repair_known_answer_r0b.yaml`; 7 new tests, with plants Q1–Q5 each confirmed to fail one.
+The run used the frozen spec with no changes: seeds 5–9, n 1200, k 64, n_null 64, dose 1, M 16. It took about 11
+CPU-minutes.
+
+| Item | R0 | R0b | Needed |
+|---|---|---|---|
+| (i) harmful: correct sign, BH-significant | 4/5 | **2/5** | 0.8 |
+| (i) helpful | 2/5 | **5/5** | 0.8 |
+| (ii) decoy (literal rule) | 5/5 | **0/5** | 0.9 |
+| (iii) held-out zero-edit of harmful | 5/5 | 5/5 | 0.8 |
+| (iv) side-effect harm on weak test series | 5/5 | 4/5 | 0.8 |
+
+- **Harmful.** The stage-1 rank / z by seed were 45 / 0.63 (not screened), 8 / 1.19, 1 / 13.31, 5 / 1.55 and
+  2 / 5.30. Stage-2 ΔMASE was always negative: −0.0404 [−0.0609, −0.0220] (p_bh 0.471), −0.0352 (p_bh 0.0),
+  −0.0207 [−0.0268, −0.0151] (p_bh 0.281) and −0.0815 [−0.1288, −0.0452] (p_bh 0.0).
+- **Helpful.** Ranked 1–2 in every seed, z 4.11–9.01; stage-2 ΔMASE +0.0327 to +0.0752, p_bh ≤ 0.0032.
+- **Decoy. My pre-registration error, not a result.** I wrote "a planted atom missing from the screen fails", which
+  was meant for harmful and helpful. A causal |z| screen drops a zero-effect decoy by construction (stage-1 rank
+  32–119, z 0.0–1.11), so the literal rule cannot pass. The decoy was never blamed in any seed. **Under the
+  intended reading (ii) passes, and the verdict is unchanged, because (i)-harmful fails on its own.** Lesson for any
+  future pre-registration: a "missing from the screen" rule must be written per concept, since for a null concept
+  absence is the correct outcome.
+- **Held-out edits.** The harmful zero-edit lowers test MASE on its firing series in **every** seed: −0.0111
+  [−0.0165, −0.0064], −0.0261 [−0.0330, −0.0205], −0.0355 [−0.0434, −0.0282], −0.0254 [−0.0312, −0.0204] and
+  −0.0904 [−0.1184, −0.0635]. The side effect is detected in 4/5; seed 6 gave +0.0021 [−0.0036, 0.0074].
+
+**Verdict per §39.7.** The fallback needs everything except helpful to pass, and (i)-harmful fails. **§39 stops at
+R0; R1 is not started.**
+
+**What the two runs show together (interpretation, not a gate result):**
+1. The fixed point across 10 seeds is that **held-out repair works on a known answer**. Zeroing the harmful atom
+   lowers test MASE in 10/10 seeds, with every CI excluding 0. Side effects are caught in 9/10, and all-ones edits
+   give exactly 0.0.
+2. What fails is **blame significance against the profile-matched random-direction null**. That null asks
+   whether removing this feature beats removing a random direction with the same activation profile. A large-
+   magnitude harmful atom has a wide null (random directions of that energy also move MASE), so its z can be
+   about 1 while the edit itself reliably helps. Which planted concept fails moves between designs (helpful in R0,
+   harmful in R0b), which points to a test near its power limit, not a broken one.
+3. For repair, "beats a random equal-energy perturbation" is a specificity question, and arguably the wrong primary
+   criterion. "Improves held-out MASE, with side effects measured" is the repair question. Switching to it would be
+   a **new design**, needing a fresh pre-registration and fresh seeds, and it needs the user's decision, because it
+   changes what the blame table claims (from "causes error more than a random direction" to "removing it helps
+   on new series").
+
+Not done, by rule: no R1, no real data.

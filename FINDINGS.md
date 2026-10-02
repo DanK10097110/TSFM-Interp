@@ -1587,10 +1587,11 @@ See SH-20. **4/5.**
   - The null is not biased positive: the median null mean over features is about 0.
   - Unplanted split atoms carry large shares of the planted effects (e.g. −0.081 vs the planted −0.155), so real-data blame likely needs atom sets.
   - All-ones edits change the forecast by exactly 0.0 in every cell.
+- **R0b (2026-10-02, pre-registered: fresh seeds 5–9, n 1200, k 64, a two-stage screen to a 16-feature BH family).** The gate fails again, with the failure moved to the other concept: helpful 5/5, **harmful 2/5** (stage-1 z 0.63–1.55 in 3 seeds; stage-2 ΔMASE always negative, e.g. −0.0404 [−0.0609, −0.0220] at p_bh 0.471). The decoy's literal 0/5 is a pre-registration error: a causal screen drops a zero-effect decoy by design, and the decoy was never blamed. **Held-out zero-edits of the harmful atom lower test MASE in 10/10 seeds across R0 and R0b** (R0b −0.0111 to −0.0904, all CIs exclude 0). Per the pre-registration, §39 stopped at R0. Reading: single-feature blame significance against an equal-energy random-direction null is at its power limit, while held-out repair itself works on the known answer. Re-basing the gate on held-out improvement is a new design that awaits a user decision.
 - **Models / layers.** `mock_planted` (`vocabulary: repair`), blocks.2.
-- **Evidence.** Known-answer validation (causal within-model on a planted model; held-out edits behavioral). **Status:** open; the gate failed and the R0b redesign was pre-registered (fresh seeds 5–9, n 1200, k 64, two-stage screen to a 16-feature BH family).
-- **Reproduce.** `python run_repair_known_answer.py --config configs/repair_known_answer.yaml` (commit 5a8077f); `analysis/repair_blame.py`, `analysis/repair_edit.py`.
-- **Ref.** ROADMAP §39.7.
+- **Evidence.** Known-answer validation (causal within-model on a planted model; held-out edits behavioral). **Status:** negative (closed at R0): R0 and R0b both fail their pre-registered gates; continuing needs a new design decision.
+- **Reproduce.** `python run_repair_known_answer.py --config configs/repair_known_answer.yaml` (commit 5a8077f); R0b: `--config configs/repair_known_answer_r0b.yaml --two-stage` (commit 6c94c66); `analysis/repair_blame.py`, `analysis/repair_edit.py`.
+- **Ref.** ROADMAP §39.7–39.8.
 - **Score. 3/5.** Blaming a feature for errors needs causal ablation, not correlation: the decoy correlates with error in 5/5 seeds and has no effect. Crediting a single feature for *good* forecasts is underpowered at realistic sizes, and that bounds the "what causes good predictions" half of the question.
 
 ## H. Benchmark trust
