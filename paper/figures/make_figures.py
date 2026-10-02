@@ -77,8 +77,8 @@ def _style():
 def fig_heldout(run):
     """Dev estimate vs held-out private interval for every replicated claim kind, plus the K2 claim ledger."""
     conf = _load(run, "confirm/confirmation.json")
-    fig = plt.figure(figsize=(7.2, 4.5))
-    gs = fig.add_gridspec(2, 3, height_ratios=[2.5, 1.55], width_ratios=[1.2, 1.0, 1.1], hspace=0.62)
+    fig = plt.figure(figsize=(7.2, 3.9))
+    gs = fig.add_gridspec(2, 3, height_ratios=[2.3, 1.45], width_ratios=[1.2, 1.0, 1.1], hspace=0.62)
     axes = [fig.add_subplot(gs[0, j]) for j in range(3)]
     axd = fig.add_subplot(gs[1, :])
 
@@ -170,7 +170,7 @@ def fig_families(run):
     fam = sorted(fam, key=lambda f: -f["n_members"])
     chans = list(CHANNEL_LABELS)
     mat = np.array([[f["directed_profile_null_units"][c] for c in chans] for f in fam])
-    fig, (ax, ax2) = plt.subplots(1, 2, figsize=(7.2, 3.3), gridspec_kw={"width_ratios": [2.6, 1.0]})
+    fig, (ax, ax2) = plt.subplots(1, 2, figsize=(7.2, 3.0), gridspec_kw={"width_ratios": [2.6, 1.0]})
     undirected = [j for j, c in enumerate(chans) if c.startswith("horizon_shape")]
     directed = mat.copy()
     directed[:, undirected] = np.nan
@@ -208,7 +208,7 @@ def fig_funnel(run):
     """How many candidate concepts survive each rung of the evidence ladder, and the L5 verdicts."""
     st = _load(run, "sae/concept_stage.json")
     at, sb, pr, sia = st["atlas"], st["stability"], st["profiles"], st["shared_input_agreement"]
-    fig, (ax, ax2) = plt.subplots(1, 2, figsize=(7.0, 2.4), gridspec_kw={"width_ratios": [1.2, 1.0]})
+    fig, (ax, ax2) = plt.subplots(1, 2, figsize=(7.0, 2.1), gridspec_kw={"width_ratios": [1.2, 1.0]})
     stages = [
         ("causal SAE features\n(clear the profile-matched null)", at["n_features"]),
         ("assigned to an atlas concept", at["n_assigned"]),
@@ -247,7 +247,7 @@ def fig_similarity(run):
     pairs = sorted((p["key"] for p in sim["pairs"]), key=lambda k: per_pair[k]["median_rank"])
     metrics = list(ranks)
     mat = np.array([[ranks[m][p] for p in pairs] for m in metrics])
-    fig, ax = plt.subplots(figsize=(7.2, 2.7))
+    fig, ax = plt.subplots(figsize=(7.2, 2.2))
     im = ax.imshow(mat, cmap="viridis_r", aspect="auto", vmin=1, vmax=len(pairs))
     for i in range(mat.shape[0]):
         for j in range(mat.shape[1]):

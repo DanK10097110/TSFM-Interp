@@ -12,26 +12,28 @@ patching. Splits are by series and stratified, never head slices of a task-group
 discovery-oriented atlas transfers). Resampled $p$-values are floored at $1/n_{\text{boot}}$
 \citep{phipson2010permutation}, so a Holm family of $m$ tests cannot go below $m/n_{\text{boot}}$; the ledger
 computes this minimum per family and flags families that can never be significant, a failure that grows
-quadratically with the number of models. The example has 45 families and 3{,}599 comparisons; its strictest L0
-family (30 tests) has a minimum Holm $p$ of 0.015 at $n_{\text{boot}}=2000$.
+quadratically with the number of models. The example has 123 families and 4{,}238 comparisons; its strictest L0
+family (105 tests over 21 pairs) has a minimum Holm $p$ of 0.021 at $n_{\text{boot}}=5000$.
 
 \paragraph{References from the run itself.} Effects are read against repeat-run noise floors, shuffled-series
 nulls, input-feature baselines, random-direction nulls, activation-matched floors and replicate-seed ceilings.
 Before the private split is opened, \texttt{confirm} simulates each claim's minimum detectable effect (e.g.\
-$\Delta$MASE 0.155 at $n=240$, 80\% power), so a non-replication reads as ``absent'' or ``underpowered''.
+$\Delta$MASE 0.133 at $n=290$, 80\% power), so a non-replication reads as ``absent'' or ``underpowered''.
 
 \paragraph{Register, then confirm once.} \texttt{register} freezes hypotheses from dev results together with the
 content hash of each source artifact, and hashes the registry. \texttt{confirm} refuses mismatched hashes,
 requires the private seal to verify, tests each claim once and refuses to overwrite its artifact; a forced rerun
-is recorded as \texttt{repeated\_look}, and a consumed split is replaced by a fresh epoch. This is
+is recorded as \texttt{repeated\_look}, and a consumed split is replaced by a fresh epoch, checked for sample-hash overlap
+with every earlier split of every corpus version (an epoch minted for the case study was rejected unopened because 716 of
+its 961 series regenerated a split an earlier confirmation had consumed). This is
 pre-registration \citep{nosek2018preregistration} in software, guarding against adaptive holdout reuse
 \citep{dwork2015reusable}; unregistered findings cannot be rescued.
 
-\begin{table}[t]
+\begin{table}[tb]
 \centering
-\footnotesize
-\setlength{\tabcolsep}{3pt}
-\begin{tabularx}{\textwidth}{@{}>{\raggedright}p{2.6cm}>{\raggedright}p{2.7cm}>{\raggedright}X>{\raggedright}p{1.9cm}l@{}}
+\scriptsize
+\setlength{\tabcolsep}{2.5pt}
+\begin{tabularx}{\textwidth}{@{}>{\raggedright}p{3.0cm}>{\raggedright}p{3.4cm}>{\raggedright}X>{\raggedright}p{2.6cm}l@{}}
 \toprule
 Claim type & Test statistic & Null / reference & Correction & Held-out \\
 \midrule
@@ -40,10 +42,12 @@ Layers share geometry & linear CKA, cluster bootstrap & shuffled-series null at 
 Layer linearly translatable & ridge stitching gain & input-feature baseline (gain $=0$) & per pair & -- \\
 Depth reaction agrees & Spearman $\rho$ of fingerprints on shared depth & bootstrap CI of $\rho$ & per corruption & \cmark \\
 Layer restores forecast & restoration fraction & self-patch $=0$, cross-patch $\neq 0$ & per model & -- \\
-Feature is causal & mean $|\Delta^{(c)}|$ on own rows & row-matched random-direction $q_{95}$ & per channel (count vs.\ chance) & -- \\
+Feature is causal & mean $|\Delta^{(c)}|$ on own rows & profile-matched random-direction $q_{95}$ & per channel (count vs.\ chance); Holm when registered & \cmark \\
 Concept reproducible & best-match cosine across seeds & within-model replicate ceiling & -- & -- \\
 Same inputs & top-$k$ AUC in other model & stratum-matched random subsets & BH per ordered pair and leg; Holm when registered & \cmark \\
-Same effect on same inputs & level concordance; shape cosine & activation-matched feature-set floors ($q_{95}$ agree, $q_{05}$ differ) & per test & -- \\
+Same effect on same inputs & level concordance; shape cosine & activation-matched feature-set floors ($q_{95}$ agree, $q_{05}$ differ) & per test; Holm when registered & \cmark \\
+Concepts are cross-model & atlas centroid cosine and member pairs & column-shuffle and model-label nulls & Holm when registered & \cmark \\
+Internals predict failure & gain in log-MASE Spearman over a free baseline & zero gain & Holm when registered & \cmark \\
 Families are real & number and coverage of families & column-shuffle null & -- & -- \\
 \bottomrule
 \end{tabularx}

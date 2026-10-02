@@ -26,7 +26,7 @@ and a specific control caught it. Table~\ref{tab:controls} lists fifteen; every 
 7 & Disagreement test & 109 of 288 tests ``act differently'' (failing a $q_{95}$ bar) & Lower-tail test: 9 act differently; 32 show no specific agreement & $q_{05}$ required for disagreement & MN-18 \\
 8 & Random-weight twins as causal floor & One floor per model & TimesFM's twin is an exact identity stack yet reaches the forecast (0.187); Chronos twins are numerically dead ($<10^{-7}$); floor exists for 1 of 6 pairs & within-run matched-feature floors; relative reach gate & PM-08 \\
 9 & SAE names from ground truth & 11 of 11 headline features named after corpus provenance & After residualizing, 82 of 88 cards (93\%) ranked float-rounding noise ($\rho$ 0.203 $\to$ 0.615) & residual-scale floor; control bounded from both sides & MN-05 \\
-10 & Ablation-battery null & Planted forecaster: 17--25\% of features on a layer with no planted effect clear the null (5 of 5 seeds); case study: 293 causal features, 13 convergent concepts & Null removes the feature's own per-token amount: false positives $\le$0.3\%, planted effects found at 0.70--1.00; case study: 110 features (3.1$\times$ empirical chance), 0 convergent & planted-concept forecaster with a fixed gate; profile-matched null & MN-29 \\
+10 & Ablation-battery null & Planted forecaster: 17--25\% of (feature, channel) cells on a layer with no planted effect clear the null (5 of 5 seeds); four-model case study: 293 causal features, 13 convergent concepts & Null removes the feature's own per-token amount: false positives $\le$0.3\%, planted effects found at 0.70--1.00; same case study re-scored: 110 features (3.1$\times$ empirical chance), 0 convergent & planted-concept forecaster with a fixed gate; profile-matched null & MN-29 \\
 \midrule
 \multicolumn{6}{@{}l}{\textit{Metrics that did not measure what they were named for}} \\
 11 & CKA and stitching for lineage & Related trained pair shows high similarity (CKA 0.734) & Untrained same-architecture pair is higher (0.878; $p=0.0005$) & random-init twin comparison & MN-01 \\
@@ -47,11 +47,10 @@ tables of zeros that read as strong negatives; the remedy (P3) is nearly free: s
 cross-patch nonzero, two unpatched predictions identical, front end consistent with peers. \emph{Nulls that were
 too weak} (rows 5--10) produce inflated positives that look like success (30 of 30 concepts transferring); the
 remedy is a null matched on the right confound, on the same rows, bounded from both sides, with the lower tail
-for claims of difference. Row 10 is caught by a known answer the system ships: a forecaster whose concepts, decoys and a non-planted control layer are planted analytically, scored against a gate fixed in advance (false-positive rate $\le$0.10, sensitivity $\ge$0.5) on seeds held out from any tuning. \emph{Metrics that did not measure what they were named for} (rows 11--15) are caught
+for claims of difference. Row 10 is caught by a known answer the system ships (Section~\ref{sec:knownanswer}): a forecaster whose concepts, decoys and a non-planted control layer are planted analytically, scored against a gate fixed in advance (false-positive rate $\le$0.10, sensitivity $\ge$0.5) on seeds held out from any tuning. The same device applied to the cross-model agreement rung shows it is specific but insensitive (\fid{MN-30}), which is why the case study does not read its absences as differences. \emph{Metrics that did not measure what they were named for} (rows 11--15) are caught
 only by validating on a known answer (P1): an untrained twin, a random rotation, known spans, a replicate seed.
-Smaller cases include a headline ``reconstruction improves the forecast'' result that replicated in 1 of 5 seeds
-(\fid{MN-16}), and a grounded language model narrating features that produced a new class of unsupported claim
-after each of four guard passes, while 6 of 6 deterministic sentences were correct (\fid{MN-06}); \tool{}
-therefore composes every report sentence deterministically. The table is a set of counterexamples rather than a
+A grounded language model narrating features produced a new class of unsupported claim after each of four guard
+passes, while 6 of 6 deterministic sentences were correct (\fid{MN-06}), so \tool{} composes every report sentence
+deterministically. The table is a set of counterexamples rather than a
 benchmark, and it lists only failures that were caught; the verification standard (\repo{CONTRIBUTING.md})
 requires each new test to be shown failing against a planted regression.

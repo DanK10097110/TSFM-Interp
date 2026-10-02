@@ -5,7 +5,7 @@
 The repository holds two separately installable packages: \texttt{tsfm\_benchmark} (one subpackage for
 generation, audit and sealing, another for diversity and exchangeability) and \texttt{tsfm\_lens} (subpackages for models, extraction, analysis, SAEs and the report, plus the stage
 orchestrator \texttt{pipeline.py}). The folder
-\repodir{examples/concept_atlas_v2} contains the report, configuration and every lightweight artifact of
+\repodir{examples/panel7_v2} contains the report, configuration and every lightweight artifact of
 the run analyzed in Section~\ref{sec:casestudy}, so the report and this paper's figures can be regenerated
 without GPUs. The \texttt{main} branch is the clean publishable surface; a \texttt{dev} branch keeps the
 research log, standalone study drivers and experiment configurations.
@@ -55,7 +55,7 @@ IoU 1.0, and recovers Timer's 96-step spans from measurement alone; \fid{MP-01})
 \texttt{run.py -{}-check-adapter} then runs patch-identity and reach conformance, the alignment gate, span
 discovery and capability checks. Table~\ref{tab:models} lists the models.
 
-\begin{table}[t]
+\begin{table}[tb]
 \centering
 \footnotesize
 \setlength{\tabcolsep}{4pt}
@@ -66,17 +66,18 @@ Model & Checkpoint & Architecture & Token & Head & Tier & Params & FLOPs obs. \\
 \midrule
 \textcolor{tfm}{TimesFM 2.5} & \texttt{google/timesfm-2.5-200m} & decoder-only & 32 & deterministic & 3 & 231M & 42.5\% \\
 \textcolor{ctwo}{Chronos-2} & \texttt{amazon/chronos-2} & encoder (+group attn.) & 16 & deterministic & 3 & 119M & 97.5\% \\
-\textcolor{sun}{Sundial} & \texttt{thuml/sundial-base-128m} & decoder + flow head & 16 & sampled & 2 & 128M & 22.4\% \\
-\textcolor{bolt}{Chronos-Bolt} & \texttt{amazon/chronos-bolt-small} & encoder + patch head & 16 & deterministic & 2 & 48M & 79.3\% \\
+\textcolor{sun}{Sundial} & \texttt{thuml/sundial-base-128m} & decoder + flow head & 16 & sampled & 2 & 128M & 21.3\% \\
+\textcolor{bolt}{Chronos-Bolt} & \texttt{amazon/chronos-bolt-small} & encoder + patch head & 16 & deterministic & 2 & 48M & 79.1\% \\
+\textcolor{tt5}{Chronos-T5-Base} & \texttt{amazon/chronos-t5-base} & encoder--decoder & 1 & sampled & 3 & 201M & 13.9\%$^{a}$ \\
+\textcolor{timer}{Timer} & \texttt{thuml/timer-base-84m} & decoder-only & 96 & deterministic & 2$^{b}$ & 84M & 99.8\% \\
+\textcolor{tmoe}{Time-MoE} & \texttt{Maple728/TimeMoE-50M} & decoder-only, MoE & 1 & deterministic & 2$^{b}$ & 113M & 50.0\% \\
 \midrule
-Chronos-T5 & \texttt{amazon/chronos-t5-*} & encoder--decoder & 1 & sampled & 3 & 8M--709M & 14.4\%$^{a}$ \\
-Timer & \texttt{thuml/timer-base-84m} & decoder-only & 96 & deterministic & 2$^{b}$ & 84M & -- \\
 Lag-Llama & \texttt{Lag-Llama} & decoder over lags & lags & sampled & 2 & -- & -- \\
 \bottomrule
 \end{tabular}}
-\caption{Models with adapters; the first four form the case study. ``Token'' is time steps per token;
-``FLOPs obs.''\ is the share of a forecast's FLOPs spent in captured blocks, measured with PyTorch's FLOP
-counter. $^{a}$Chronos-T5-Base, encoder only (\fid{DE-05}). $^{b}$Via \texttt{generic\_hf}.}
+\caption{Models with adapters; the first seven form the case study (Chronos-T5 also comes in other sizes, 8M--709M).
+``Token'' is time steps per token; ``FLOPs obs.''\ is the share of a forecast's FLOPs spent in captured blocks at
+context 480, measured with PyTorch's FLOP counter. $^{a}$Encoder only (\fid{DE-05}). $^{b}$Via \texttt{generic\_hf}.}
 \label{tab:models}
 \end{table}
 
@@ -97,7 +98,7 @@ window moves most, normalizing hits by their attainable ceiling (a 96-step token
 at most one third; \fid{MP-02}), with the impulse amplitude self-calibrated per checkpoint and context
 length.
 
-\begin{figure}[t]
+\begin{figure}[tb]
 \centering
 \begin{tikzpicture}[x=0.36mm,y=5.5mm,font=\scriptsize]
   \foreach \row/\name/\w/\col in {3/TimesFM (32)/32/tfm, 2/{Chronos-2, Sundial, Bolt (16)}/16/ctwo, 1/Chronos-T5 (1)/4/gray, 0/Timer (96)/96/sun}{
@@ -131,7 +132,7 @@ decisions to JSON and the report names them as skip reasons: the \emph{tier} gat
 stream into a float16 zarr store, and every intervention goes through one primitive
 (\texttt{hooks.token\_patch}), which raises if the model silently splits a batch.
 
-\begin{figure}[t]
+\begin{figure}[tb]
 \centering
 \begin{tikzpicture}[
   node distance=2.2mm and 2.2mm,
@@ -184,7 +185,7 @@ stream into a float16 zarr store, and every intervention goes through one primit
 \subsection{The report: designed to be readable by newcomers}
 \label{sec:report}
 
-The deliverable is one self-contained HTML file (\repo{examples/concept_atlas_v2/report.html}), designed
+The deliverable is one self-contained HTML file (\repo{examples/panel7_v2/report.html}), designed
 with the intention that a reader without interpretability training can follow it, while an expert can audit
 every number
 (Figure~\ref{fig:report}).
@@ -193,16 +194,16 @@ every number
     the forecast form?'', ``What causally drives the forecast?'', \dots); each stage opens with a card stating
     its question, method, what good and bad results look like, and what it cannot tell you.
   \item \textbf{Every figure explained.} A caption plus a collapsible ``What does this mean?'' note (purpose,
-    how to read, limitations): 361 notes in the example. A glossary and methods appendix are generated from
-    the code, and a toggle switches between headline, standard and methods views.
-  \item \textbf{Derived verdicts.} The scorecard (33 rows) is a pure reduction over artifacts with no model
+    how to read, limitations): 530 notes in the example. A glossary and methods appendix are generated from
+    the code.
+  \item \textbf{Derived verdicts.} The scorecard is a pure reduction over artifacts with no model
     names hard-coded; each row shows the value, its reference (null, floor, ceiling or baseline) and the rule
     that yields the verdict.
   \item \textbf{Typed findings.} Each claim is a \texttt{Finding} record with evidence class, plain-language
-    sentence and generated caveat: 126 in the example (58 descriptive, 29 behavioral, 21 causal, 12
+    sentence and generated caveat: 240 in the example (89 descriptive, 54 behavioral, 49 causal, 42
     linear-translatable, 4 geometric, 2 illustrative).
   \item \textbf{Nothing silently missing.} Skipped stages render their gate reason, failed sections render
-    visibly, and a multiplicity ledger (45 families, 3{,}599 comparisons) flags families that cannot reach
+    visibly, and a multiplicity ledger (123 families, 4{,}238 comparisons) flags families that cannot reach
     $\alpha$.
 \end{itemize}
 The complete analysis is one command,
@@ -210,10 +211,10 @@ The complete analysis is one command,
 and smaller presets cover a CPU-only mock
 smoke test, a single model and a pair.
 
-\begin{figure}[t]
+\begin{figure}[tb]
 \centering
-\includegraphics[width=0.72\textwidth]{figures/report_l3_crop.png}
-\caption{Excerpt of the generated report (L3 section of the example run): the stage card states the question,
+\includegraphics[width=0.42\textwidth]{figures/report_l3_crop.png}
+\caption{Excerpt of the generated report (L3 section of the earlier four-model run, \repodir{examples/concept_atlas_v2}): the stage card states the question,
 method, how to read good and bad results and the limitation, above the per-model corruption-sensitivity
 fingerprints. Every figure carries a caption and an expandable explanation.}
 \label{fig:report}

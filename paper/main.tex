@@ -31,6 +31,9 @@
 \definecolor{ctwo}{HTML}{9b4f7f}
 \definecolor{sun}{HTML}{3d7f5a}
 \definecolor{bolt}{HTML}{8a6a3a}
+\definecolor{timer}{HTML}{d08a2e}
+\definecolor{tmoe}{HTML}{b5473f}
+\definecolor{tt5}{HTML}{6a6fb0}
 \definecolor{accent}{HTML}{c0602a}
 \definecolor{ok}{HTML}{2e7d32}
 \definecolor{bad}{HTML}{c62828}
@@ -69,10 +72,13 @@ checkpoints into one self-contained interpretability report with one command. It
 leakage-audited synthetic benchmark with known generative components validates every probe. It is causal:
 concepts are defined by what removing them does to the forecast, against matched random-direction nulls and
 reach controls. It is confirmatory: exploratory claims are registered and tested once on a sealed split.
-Applied to TimesFM, Chronos-2, Sundial and Chronos-Bolt, it finds that causal features mainly change forecast
-level and shape; that models agree on which inputs a concept groups (20 of 20 registered claims confirmed on 800
-held-out series) but rarely on what it does to them (11 of 1{,}223 tests); and that no concept is shared by all
-four models. We also document fifteen plausible results that the system's own controls showed to be wrong.
+Applied to seven TSFMs (TimesFM, Chronos-2, Sundial, Chronos-Bolt, Chronos-T5, Timer and Time-MoE), it finds that
+causal features mainly change forecast level and seasonality; that models agree on which inputs a concept groups
+(20 of 20 registered claims confirmed on 971 held-out series) but that no cross-model claim about what a concept
+does confirms there (multi-model concepts 0 of 3, shared-input agreement 0 of 6 tested); and that no concept spans
+more than three of the seven models. In all, 43 of 82 replicable registered claims confirm: models share what they
+select, not demonstrably what they do with it. A planted-concept forecaster showed our first ablation null to be
+lenient, and we document fifteen plausible results that the system's own controls showed to be wrong.
 \end{abstract}
 
 \begin{keywords}
@@ -100,6 +106,6 @@ authors declare no competing interests.}
 \input{sections/appendix}
 
 \vskip 0.2in
-\bibliography{references}
+{\footnotesize\setlength{\bibsep}{0pt}\bibliography{references}}
 
 \end{document}
