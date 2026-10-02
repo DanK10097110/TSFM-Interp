@@ -37968,6 +37968,18 @@ corpus versions that reuse specs. **Replacement:** v2 epoch 3, an epoch number n
 
 `confirm.path` now points at it.
 
+**Confirm attempt 1 crashed before writing any statistic (2026-10-01, 14:21–17:18); restarted at 21:03 with only a
+crash fix.** Every private battery finished. Then `_replicate_causal_concept_claims` raised `KeyError:
+'reliability_u1'` while it assembled the family ledger: it indexed a fixed four-family map with every
+`claim_family_budget` row, and the budget also holds the U1 row once U1 claims are registered. No test had registered
+concept claims and U1 claims together. `confirmation.json` was never written (only `confirm/behavioral.parquet`), so
+the stage's own `repeated_look` check does not fire. No private number was read by a human or fed back: the
+registry, its sha256 and every frozen spec are unchanged, and the crashed log is kept unread as
+`k3out/confirm_attempt1_crash.log`. The fix is commit 597848a, `_k2_ledger` plus `tests/test_confirm_k2_ledger.py`;
+reverting the guard reproduces the KeyError. **Reading:** this is one test of the frozen registry, run twice for
+compute reasons. It is not a second look, because no outcome of the first run could have shaped anything in the
+second. It is disclosed here for that reason.
+
 #### 38.2.1 Why, grounded
 
 **What is registered today** (`analysis/hypotheses.py`):
