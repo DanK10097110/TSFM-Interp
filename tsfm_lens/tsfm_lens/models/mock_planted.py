@@ -98,6 +98,26 @@ sign flip is a real opposite effect and the level channel carries per-series sig
 `dispersion` (unsigned, so it has no level signal). K1's vocabulary, defaults and
 construction draws are untouched.
 
+**The repair vocabulary (opt-in, `vocabulary: repair`; ROADMAP.md sec 39, R0).** The
+forecast-repair study asks which SAE features CAUSE forecast error and whether editing
+them on training series improves held-out ones. The default and L5 vocabularies plant
+effects on fixed shapes, so their effect on the error depends on whatever the corpus
+future happens to be. This vocabulary plants effects whose sign on the ERROR is known by
+construction: the adapter keeps an oracle table `context row -> unit-RMS direction from
+the naive forecast to the true future` (a mock may hold its own corpus's answer key; no
+real model can), and a concept displaces the forecast by `+- beta c_k` times that
+direction. `repair_harmful` displaces away from the truth (its presence adds error),
+`repair_helpful` toward it, `repair_decoy` is written like a concept but has `beta = 0`
+and a readout chosen to correlate with the naive-forecast MASE (it fires on hard series
+and does nothing), and `repair_sideeffect` displaces away from the truth where its
+input-side activation is at least `split_value` (the median of its positive series
+activations) and toward it where weaker. The side-effect sign is read from the
+input-side stash, never from the residual stream, so an edit that rescales the
+feature cannot flip it. The effect unit is `dose * DOSE_UNIT_EFFECT` context sd on the
+concept's top-8 series, as in K1. A context row absent from the oracle table gets a
+zero displacement and is counted in `oracle_misses` (the alignment gate's synthetic
+probes are such rows). K1 and L5 behaviour, defaults and construction draws are untouched.
+
 `MockPlantedAdapter.manifest()` is the ground truth: per planted object its id,
 class, kind, `d_k`, readout weights and threshold, effect channel, sign, beta,
 dose and the exact series-level activation `a_k(x)` on every corpus series. The
@@ -126,8 +146,10 @@ TOP_ROWS = 8
 COSINE_RANGE = (0.0, 0.3)
 FIRING_RANGE = (0.12, 0.28)
 L5_COMPONENT_QUANTILES = (1.0, 0.7, 0.5, 0.35)
+REPAIR_SIDE_EFFECT_FRACTION = 0.45
 _MAX_CALIBRATION_ROWS = 2000
 _CALIBRATION_CACHE: dict = {}
+_ORACLE_CACHE: dict = {}
 
 
 def _seed(*parts: Any) -> int:
@@ -408,6 +430,146 @@ def build_spec_l5(construction_seed: int, dose: float, plant_set: str, dim: int,
     }
 
 
+def concept_table_repair() -> list:
+    """The repair vocabulary: one concept per case of the forecast-repair known answer.
+
+    Each row: `id`, `cls`, `kind` (`oracle`, `oracle_split`, or None for the decoy),
+    `sign` (the displacement's direction relative to the truth: +1 toward it, -1 away,
+    for `oracle_split` the sign where the input-side activation is at least the split),
+    `weak_sign` (below the split), `mase_effect_of_presence` (the sign of the concept's
+    effect on MASE where it is present: +1 adds error, -1 removes it, 0 none) and
+    `target_fraction` (None draws from `FIRING_RANGE`).
+    """
+    return [
+        {"id": "repair_harmful", "cls": "repair_harmful", "kind": "oracle", "sign": -1,
+         "weak_sign": -1, "mase_effect_of_presence": 1, "target_fraction": None},
+        {"id": "repair_helpful", "cls": "repair_helpful", "kind": "oracle", "sign": 1,
+         "weak_sign": 1, "mase_effect_of_presence": -1, "target_fraction": None},
+        {"id": "repair_decoy", "cls": "repair_decoy", "kind": None, "sign": 0,
+         "weak_sign": 0, "mase_effect_of_presence": 0, "target_fraction": FIRING_RANGE[1]},
+        {"id": "repair_sideeffect", "cls": "repair_sideeffect", "kind": "oracle_split", "sign": -1,
+         "weak_sign": 1, "mase_effect_of_presence": 1,
+         "target_fraction": REPAIR_SIDE_EFFECT_FRACTION},
+    ]
+
+
+def oracle_directions(contexts: np.ndarray, targets: np.ndarray) -> dict:
+    """`{float32 context-row bytes: unit-RMS direction [H]}` from the naive forecast
+    (last context value) to the true future, in context-sd units.
+
+    The key is the row as the network receives it (`prepare` casts to float32), so a
+    lookup inside `forecast` hits exactly the rows the corpus holds. A row whose naive
+    forecast is exact has a zero direction.
+    """
+    x = np.ascontiguousarray(contexts, dtype=np.float32)
+    y = np.asarray(targets, dtype=np.float64)
+    xd = x.astype(np.float64)
+    sd = xd.std(axis=1, keepdims=True) + 1e-6
+    err = (y - xd[:, -1:]) / sd
+    rms = np.sqrt((err ** 2).mean(axis=1, keepdims=True))
+    unit = np.where(rms > 0, err / np.maximum(rms, 1e-12), 0.0)
+    return {x[i].tobytes(): unit[i] for i in range(len(x))}
+
+
+def build_spec_repair(construction_seed: int, dose: float, plant_set: str, dim: int, patch: int,
+                      contexts: np.ndarray, targets: np.ndarray, series_ids: list, periods: tuple,
+                      planted_block: int, families: np.ndarray | None = None) -> dict:
+    """The repair counterpart of `build_spec`: four concepts with a known sign on MASE.
+
+    Readouts: the decoy's is the one among all two-feature readouts whose series-level
+    activation has the highest Spearman correlation with the naive-forecast MASE (a hard
+    series is one the naive forecast misses), so it fires preferentially on hard series;
+    the other three are drawn without replacement from the remaining readouts. Each
+    concept's threshold is calibrated so it fires on its `target_fraction` of series,
+    and `beta` makes its RMS planted displacement on its own top-8 series
+    `dose * DOSE_UNIT_EFFECT` context sd; for the side-effect concept the reference is
+    its mean activation on the strong series (those at or above `split_value`, the median
+    positive series-level activation), because its 45% firing fraction makes the top-8
+    mean an outlier of the distribution.
+    """
+    from scipy.stats import spearmanr
+    from ..utils import sample_rows
+    if plant_set not in ("A", "B"):
+        raise ValueError(f"plant_set must be 'A' or 'B', got {plant_set!r}")
+    role = plant_set
+    rows = concept_table_repair()
+    directions = _draw_directions([r["id"] for r in rows], dim, construction_seed, role)
+
+    raw = contexts_to_features(contexts, patch, periods)
+    n = raw.shape[0]
+    cal = (sample_rows(n, _MAX_CALIBRATION_ROWS, _seed(construction_seed, "cal") % (2 ** 31),
+                       strata=families) if n > _MAX_CALIBRATION_ROWS else np.arange(n))
+    flat = raw[cal].reshape(-1, N_FEATURES)
+    feat_mean, feat_std = flat.mean(dim=0), flat.std(dim=0) + 1e-9
+    f_z = (raw - feat_mean) / feat_std
+    rng_frac = np.random.default_rng(_seed(construction_seed, "repair_firing"))
+    drawn = {r["id"]: float(rng_frac.uniform(*FIRING_RANGE)) for r in rows}
+    fractions = {r["id"]: (drawn[r["id"]] if r["target_fraction"] is None else r["target_fraction"])
+                 for r in rows}
+
+    xd = np.asarray(contexts, dtype=np.float64)
+    hardness = (np.abs(np.asarray(targets, dtype=np.float64) - xd[:, -1:]).mean(axis=1)
+                / (np.abs(np.diff(xd, axis=1)).mean(axis=1) + 1e-8))
+
+    def series_activation(w: np.ndarray, frac: float) -> tuple:
+        wt = torch.from_numpy(w).double()
+        tau = float(np.quantile((f_z[cal] @ wt).max(dim=1).values.numpy(), 1.0 - frac))
+        a = planted_activations(f_z, wt[None, :], torch.tensor([tau], dtype=torch.float64), AMPLITUDE)
+        return tau, a[..., 0]
+
+    combos = [(i, j, si, sj) for i in range(N_FEATURES) for j in range(i + 1, N_FEATURES)
+              for si in (1, -1) for sj in (1, -1)]
+    pool = []
+    for i, j, si, sj in combos:
+        w = np.zeros(N_FEATURES)
+        w[i], w[j] = si, sj
+        pool.append(w / np.linalg.norm(w))
+    rho = []
+    for w in pool:
+        _, a = series_activation(w, fractions["repair_decoy"])
+        rho.append(float(spearmanr(a.mean(dim=1).numpy(), hardness).statistic))
+    decoy_index = int(np.nanargmax(rho))
+    rest = [k for k in range(len(pool)) if k != decoy_index]
+    picks = np.random.default_rng(_seed(construction_seed, "repair_readouts")).choice(
+        len(rest), size=len(rows) - 1, replace=False)
+    readout = {"repair_decoy": pool[decoy_index]}
+    for r, p in zip([r for r in rows if r["id"] != "repair_decoy"], picks):
+        readout[r["id"]] = pool[rest[int(p)]]
+
+    concepts = []
+    for r in rows:
+        w = torch.from_numpy(readout[r["id"]]).double()
+        tau, a_all = series_activation(readout[r["id"]], fractions[r["id"]])
+        a_series = a_all.mean(dim=1).numpy()
+        positive = a_series[a_series > 0]
+        split = float(np.median(positive)) if (r["kind"] == "oracle_split" and positive.size) else None
+        top_mean = (float(a_series[a_series >= split].mean()) if split is not None
+                    else float(np.sort(a_series)[::-1][:TOP_ROWS].mean()))
+        unit = 0.0 if r["kind"] is None else float(dose) * DOSE_UNIT_EFFECT
+        beta = unit / top_mean if top_mean > 0 else 0.0
+        concepts.append({
+            "id": r["id"], "cls": r["cls"], "kind": r["kind"], "sign": int(r["sign"]),
+            "weak_sign": int(r["weak_sign"]),
+            "mase_effect_of_presence": int(r["mase_effect_of_presence"]),
+            "split_value": split, "roles": [role], "target_fraction": fractions[r["id"]],
+            "readout_weights": w.numpy().tolist(), "readout_threshold": tau,
+            "direction": directions[r["id"]].tolist(), "beta": float(beta),
+            "rms_effect_on_top_series_ctx_sd": float(abs(beta) * top_mean),
+            "firing_fraction": float(np.mean(a_series > 0.0)),
+            "hardness_spearman": float(spearmanr(a_series, hardness).statistic),
+            "series_activation": a_series.tolist(),
+        })
+    return {
+        "construction_seed": int(construction_seed), "dose": float(dose), "role": role,
+        "plant_set": plant_set, "planted_block": int(planted_block), "dim": int(dim),
+        "patch": int(patch), "n_features": N_FEATURES, "feature_names": list(FEATURE_NAMES),
+        "periods": [float(p) for p in periods], "amplitude": AMPLITUDE,
+        "dose_unit_effect_ctx_sd": DOSE_UNIT_EFFECT, "vocabulary": "repair",
+        "feature_mean": feat_mean.numpy().tolist(), "feature_std": feat_std.numpy().tolist(),
+        "series_ids": [str(s) for s in series_ids], "concepts": concepts,
+    }
+
+
 def patch_features(xn_patches: torch.Tensor, periods: tuple) -> torch.Tensor:
     """`[N, patch] -> [N, N_FEATURES]`: hand-set statistics of a normalised patch.
 
@@ -595,7 +757,7 @@ class _PlantedNet(nn.Module):
     """Feature-carrying embedding, planted block, near-identity blocks, known head."""
 
     def __init__(self, spec: dict, n_layers: int, n_heads: int, horizon: int, seed: int,
-                 background_gain: float = 0.0):
+                 background_gain: float = 0.0, oracle: dict | None = None):
         super().__init__()
         dim, patch = spec["dim"], spec["patch"]
         self.patch, self.dim, self.horizon = patch, dim, horizon
@@ -635,11 +797,28 @@ class _PlantedNet(nn.Module):
         self.gamma = float(background_gain)
         shapes = _shapes(horizon)
         self.register_buffer("shape_mat", torch.tensor(
-            np.stack([shapes[c["kind"]] if c["kind"] else np.zeros(horizon) for c in concepts]),
+            np.stack([shapes[c["kind"]] if c["kind"] in shapes else np.zeros(horizon)
+                      for c in concepts]),
             dtype=torch.float64))
         self.register_buffer("beta", torch.tensor([c["beta"] for c in concepts], dtype=torch.float64))
         self.register_buffer("is_dispersion", torch.tensor(
             [1.0 if c["kind"] == "dispersion" else 0.0 for c in concepts], dtype=torch.float64))
+        self.oracle = oracle
+        self.oracle_misses = 0
+        self.has_oracle = any(c["kind"] in ("oracle", "oracle_split") for c in concepts)
+        if self.has_oracle:
+            self.register_buffer("is_oracle", torch.tensor(
+                [1.0 if c["kind"] in ("oracle", "oracle_split") else 0.0 for c in concepts],
+                dtype=torch.float64))
+            self.register_buffer("is_split", torch.tensor(
+                [1.0 if c["kind"] == "oracle_split" else 0.0 for c in concepts], dtype=torch.float64))
+            self.register_buffer("sign_strong", torch.tensor(
+                [float(c.get("sign", 0)) for c in concepts], dtype=torch.float64))
+            self.register_buffer("sign_weak", torch.tensor(
+                [float(c.get("weak_sign", c.get("sign", 0))) for c in concepts], dtype=torch.float64))
+            self.register_buffer("split_value", torch.tensor(
+                [float(c["split_value"]) if c.get("split_value") is not None else 0.0
+                 for c in concepts], dtype=torch.float64))
 
     def _embed(self, x: torch.Tensor) -> torch.Tensor:
         b, t = x.shape
@@ -654,6 +833,19 @@ class _PlantedNet(nn.Module):
         h[..., :N_FEATURES] = f_z.float()
         return h
 
+    def _oracle_rows(self, x: torch.Tensor) -> torch.Tensor:
+        """`[B, H]` unit-RMS direction toward the true future for each context row; rows
+        missing from the table get zeros and are counted in `oracle_misses`."""
+        rows = x.detach().cpu().numpy().astype(np.float32)
+        out = np.zeros((len(rows), self.horizon))
+        for i, row in enumerate(rows):
+            hit = self.oracle.get(row.tobytes()) if self.oracle is not None else None
+            if hit is None:
+                self.oracle_misses += 1
+            else:
+                out[i] = hit
+        return torch.from_numpy(out).to(device=x.device, dtype=torch.float64)
+
     def forecast(self, x: torch.Tensor) -> tuple:
         """`[B, T] -> (point [B, H], quantile_scale [B])`, all blocks and the head."""
         h = self._embed(x)
@@ -667,6 +859,14 @@ class _PlantedNet(nn.Module):
         coef = hbar @ self.U.t()
         bg = (hbar @ self.p_perp64) @ self.W_bg.t()
         contrib = (coef * self.beta) @ self.shape_mat
+        if self.has_oracle:
+            a_bar = self.stash["a"].mean(dim=1)
+            strong = a_bar >= self.split_value[None, :]
+            sign = torch.where(self.is_split[None, :] > 0,
+                               torch.where(strong, self.sign_strong[None, :], self.sign_weak[None, :]),
+                               self.sign_strong[None, :])
+            weight = (coef * self.beta * sign * self.is_oracle).sum(dim=1)
+            contrib = contrib + weight[:, None] * self._oracle_rows(x)
         xd = x.double()
         sd = xd.std(dim=1, unbiased=False, keepdim=True) + 1e-6
         point = xd[:, -1:] + sd * (self.gamma * bg + contrib)
@@ -686,7 +886,7 @@ class MockPlantedAdapter(_MockAdapterBase):
     two most common periods of the synthetic known-answer corpus),
     `planted_block` (default 2), `background_gain` (default 0.0, see below).
     Opt-in architecture kwargs (the L5 study, see the module docstring): `vocabulary`
-    ("k1" default, or "l5"), `width` (hidden size, default 64), `depth` (blocks,
+    ("k1" default, "l5", or "repair" for the forecast-repair study), `width` (hidden size, default 64), `depth` (blocks,
     default 5), `heads` (default 2) and `rotate` (a random orthogonal rotation of the
     residual basis, default False). The calibration corpus is the run's own data
     (`data:`), so the firing thresholds are calibrated on exactly the series
@@ -706,8 +906,8 @@ class MockPlantedAdapter(_MockAdapterBase):
         periods = tuple(float(p) for p in self._kwarg("periods", (24, 50)))
         block = int(self._kwarg("planted_block", 2))
         vocabulary = str(self._kwarg("vocabulary", "k1"))
-        if vocabulary not in ("k1", "l5"):
-            raise ValueError(f"vocabulary must be 'k1' or 'l5', got {vocabulary!r}")
+        if vocabulary not in ("k1", "l5", "repair"):
+            raise ValueError(f"vocabulary must be 'k1', 'l5' or 'repair', got {vocabulary!r}")
         self.dim = int(self._kwarg("width", type(self).dim))
         self.n_layers = int(self._kwarg("depth", type(self).n_layers))
         self.n_heads = int(self._kwarg("heads", type(self).n_heads))
@@ -718,9 +918,16 @@ class MockPlantedAdapter(_MockAdapterBase):
                d.horizon, d.max_series, d.smoke_series_per_family, d.family_key)
         if vocabulary == "l5":
             key = key + (vocabulary, self.dim, rotation_seed)
+        if vocabulary == "repair":
+            key = key + (vocabulary, self.dim)
         if key not in _CALIBRATION_CACHE:
             data = load_benchmark(d)
-            if vocabulary == "l5":
+            if vocabulary == "repair":
+                _CALIBRATION_CACHE[key] = build_spec_repair(
+                    cseed, dose, plant_set, self.dim, self.patch, data.contexts(), data.targets(),
+                    data.meta["series_id"].tolist(), periods, block, families=data.families)
+                _ORACLE_CACHE[key] = oracle_directions(data.contexts(), data.targets())
+            elif vocabulary == "l5":
                 _CALIBRATION_CACHE[key] = build_spec_l5(
                     cseed, dose, plant_set, self.dim, self.patch, data.contexts(),
                     data.meta["series_id"].tolist(), periods, block, families=data.families,
@@ -735,13 +942,16 @@ class MockPlantedAdapter(_MockAdapterBase):
             net_seed += self._RANDOM_INIT_SEED_OFFSET
         self._background_gain = float(self._kwarg("background_gain", 0.0))
         self._net = _PlantedNet(self._spec, self.n_layers, self.n_heads, self.data_cfg.horizon,
-                                net_seed % (2 ** 31), self._background_gain).to(self.device)
+                                net_seed % (2 ** 31), self._background_gain,
+                                oracle=_ORACLE_CACHE.get(key)).to(self.device)
 
     def manifest(self) -> dict:
         """The ground truth for this member of the pair (JSON-serialisable)."""
         self.ensure_loaded()
+        extra = ({"oracle_misses": int(self._net.oracle_misses)}
+                 if self._spec.get("vocabulary") == "repair" else {})
         return {**self._spec, "model": self.name, "background_gain": self._background_gain,
-                "planted_layer": f"blocks.{self._spec['planted_block']}"}
+                "planted_layer": f"blocks.{self._spec['planted_block']}", **extra}
 
     def predict(self, contexts: np.ndarray, horizon: int, quantiles: list) -> dict:
         """Deterministic point forecast; the quantile band is `sd_ctx * ppf(q)`
