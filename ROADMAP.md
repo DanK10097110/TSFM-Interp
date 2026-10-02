@@ -38064,8 +38064,11 @@ are not confirmed.**
   not detected, not untestable. (The other 2 non-confirmed claims were redrawn at 1000 and read 'below MDE:
   underpowered', which is correct.) 7 of the 10 confirmed claims, below their MDE, also carry a non-confirmation
   sentence. The report
-  and confirm code are being fixed: the reading is recomputed from stored fields, and `confirmation.json` is not
-  rewritten.
+  and confirm code were fixed the same night (commit 190f7f4, merged d8bb960): `causal_claim_reading` is recomputed
+  from stored fields at render time, and `confirmation.json` is not rewritten. The rendered report
+  (`runs/panel7_v2_dev/report.html`, rendered from an isolated copy; the pre-confirm render is kept as
+  `report_preconfirm.html`) shows 19 'not at the p floor … not detected', 3 'confirmed with power', 7 'confirmed
+  (dev-sized effect below MDE)', 2 'underpowered', and 0 'untestable'.
 
 **Reading.** On a fresh, sealed, 971-series private corpus, the claims that replicate are:
 - input-level concept sharing across families (transfer, 20/20, a third time);
