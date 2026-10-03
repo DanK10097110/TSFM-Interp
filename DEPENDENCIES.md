@@ -215,6 +215,21 @@ cd tsfm_lens && python tests/test_smoke.py
 
 ---
 
+### Packaging bounds added for the 1.0.0 release (2026-10-03)
+
+Found by installing the built `tsfm_benchmark` wheel into an empty venv:
+`tsfm_benchmark.benchmark_validation` imports `sklearn` at module import, which
+the 0.1.0 `dependencies` did not declare. `tsfm_benchmark/pyproject.toml` now
+lists `scikit-learn>=1.3` as a core dependency (the same floor as
+`tsfm_lens`; the verified version stays 1.7.2 in §3) and a new `validation`
+extra (`pycatch22>=0.4`, `umap-learn>=0.5`, `plotly>=5.0`, the floors of
+`benchmark_validation/requirements.txt`). `tsfm_lens/pyproject.toml` gains a
+`benchmark` extra (`tsfm-benchmark>=1.0.0`). No existing pin was changed. The
+fresh-venv check ran with CPU torch 2.14.1 and zarr 2.18.7 and completed
+`configs/smoke.yaml` end to end through the installed `tsfm-lens` script.
+
+---
+
 ## 5. Known fragile spots (see `CLAUDE.md` §11 for full detail)
 
 - **numpy 2.1.0 + MKL 2025+ = crash.** Pin `mkl==2024.2.2` alongside it (§3).

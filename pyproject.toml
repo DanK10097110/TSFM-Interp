@@ -4,18 +4,39 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tsfm-benchmark"
-version = "0.1.0"
+version = "1.0.0"
 description = "TSFM benchmark generation and validation pipeline"
 readme = "tsfm_benchmark/README.md"
 license = {text = "MIT"}
+authors = [{name = "Daniel Kushnir"}]
+keywords = ["interpretability", "mechanistic-interpretability", "time-series", "foundation-models", "transformers", "forecasting"]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
 requires-python = ">=3.10"
 dependencies = [
   "numpy",
   "scipy",
   "pyyaml",
+  "scikit-learn>=1.3",
 ]
 
 [project.optional-dependencies]
+# Feature-space diversity (catch22), the UMAP plot and the interactive figures
+# used by tsfm_benchmark.benchmark_validation (requirements.txt there).
+validation = [
+  "pycatch22>=0.4",
+  "umap-learn>=0.5",
+  "plotly>=5.0",
+]
 # Verified working 2026-08-03 in a dedicated conda-forge env (see
 # tsfm_benchmark/README.md / CLAUDE.md §12 for the full story of why these
 # exact bounds matter -- every one of them was discovered by a real breaking
@@ -45,6 +66,12 @@ real-data = [
   "tsbootstrap>=0.7",    # block bootstrap generator; generators.py targets the 0.7+ functional API
   "sdv>=1.9",            # PARSynthesizer for the sequential generator
 ]
+
+[project.urls]
+Homepage = "https://github.com/DanK10097110/TSFM-Interp"
+Repository = "https://github.com/DanK10097110/TSFM-Interp"
+Documentation = "https://dank10097110.github.io/TSFM-Interp/"
+Changelog = "https://github.com/DanK10097110/TSFM-Interp/blob/main/CHANGELOG.md"
 
 [tool.setuptools]
 packages = [
