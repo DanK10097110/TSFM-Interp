@@ -1,4 +1,4 @@
-# Quickstart: a first real run in about an hour
+# Quickstart: a first real run in about 25 minutes
 
 This takes you from a fresh clone to an interactive comparison report of two
 small time-series foundation models (Chronos-Bolt-small and Chronos-2) on a
@@ -31,7 +31,7 @@ PYTHONPATH=. python3 tsfm_benchmark/example_runs/run_full.py \
     --out ./benchmark_quickstart --references none
 ```
 
-This writes 120 synthetic series to `benchmark_quickstart/public_dev` (and a
+This writes 400 synthetic series (300 `random_parametric`, 100 `parametric`) to `benchmark_quickstart/public_dev` (and a
 second, unused split to `private_test`). `--references none` skips the
 Monash leakage gate, which is a no-op for purely synthetic data and would need
 a download; the build warns about that and records it in the manifest.
@@ -75,11 +75,11 @@ interchangeable:
 - No `confirm` stage. Held-out confirmation needs a sealed private corpus that
   has never been looked at; the quickstart has none, so every number is
   exploratory.
-- 120 series gives wide confidence intervals. Expect many "not significant"
+- 400 series gives wide confidence intervals. Expect many "not significant"
   verdicts and few concepts.
-- Synthetic data only. The full presets (`configs/concept_atlas.yaml`,
-  `configs/full_report_run_4model.yaml`) use a ~1000-series corpus, four
-  models and held-out confirmation. Every reduced knob in
+- Synthetic data only. The full preset (`configs/panel7_v2.yaml`, seven
+  models; its published run is `examples/panel7_v2`) uses a ~1000-series corpus
+  with real-derived generators and held-out confirmation. Every reduced knob in
   `tsfm_lens/configs/quickstart.yaml` states the full value in a comment.
 
 ## Where next
