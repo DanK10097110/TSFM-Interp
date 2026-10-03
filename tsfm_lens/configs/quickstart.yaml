@@ -1,0 +1,211 @@
+# QUICKSTART preset: a first real run in about an hour on one GPU, ending in
+# the full interactive HTML report.
+#
+#   1. build the small synthetic corpus (no downloads, ~1 minute, CPU), from
+#      the repository root:
+#        PYTHONPATH=. python3 tsfm_benchmark/example_runs/run_full.py \
+#            --config tsfm_benchmark/configs/quickstart.yaml \
+#            --out ./benchmark_quickstart --references none
+#   2. run this preset, from tsfm_lens/:
+#        python run.py --config configs/quickstart.yaml --doctor
+#        python run.py --config configs/quickstart.yaml
+#
+# Measured: ~25 min of pipeline wall time on one RTX A5000 (SAE ~14 min of it);
+# budget up to an hour for slower GPUs or a cold Hugging Face cache.
+#
+# What it is: the flagship `concept_atlas.yaml` pipeline, shrunk. Two small,
+# deterministic, encoder-only checkpoints (Chronos-Bolt-small, Chronos-2; both
+# load through the single `chronos-forecasting` package), ~400 synthetic
+# series, every analysis stage a pair supports (L0 behavioural, internals,
+# lens, L1 CKA/RSA, L2 stitching, L3 corruption + patching, attention, SAE,
+# the concepts chain with cross-model transfer, exemplars) and the report.
+# Each reduced knob below states what the full preset uses.
+#
+# What it is NOT:
+#   * No `confirm` / `register` stage. Held-out confirmation tests hypotheses
+#     registered on dev data ONCE against a sealed private split you must not
+#     have looked at; a quickstart has no such discipline, so everything here
+#     is EXPLORATORY (dev-corpus) evidence. Do not quote its p-values as
+#     confirmed findings.
+#   * Few series means wide CIs. Expect many "not significant" verdicts and
+#     few or no modular concepts; that is the sample size talking.
+#   * Synthetic data only: the real-data SAE probe is off (it downloads Monash).
+
+run:
+  name: quickstart
+  out_dir: runs
+  device: cuda                  # a CUDA GPU is assumed; `cpu` works but is far slower
+  dtype: bfloat16
+  seed: 0
+  keep_models_loaded: false     # both small models would fit; false keeps peak VRAM low
+
+data:
+  source: sealed
+  path: ../benchmark_quickstart/public_dev   # built by step 1 above; relative to tsfm_lens/
+  context_len: 512
+  horizon: 64
+  family_key: auto
+
+alignment:
+  window: 32
+  sanity_check: true
+
+models:
+  - name: Chronos-Bolt
+    adapter: chronos_bolt
+    checkpoint: amazon/chronos-bolt-small     # 48M params; chronos-bolt-tiny (9M) also works
+    batch_size: 32
+    capture_layer_stride: 1                   # 6 encoder blocks
+  - name: Chronos-2
+    adapter: chronos2
+    checkpoint: amazon/chronos-2              # 120M params, 12 encoder blocks
+    batch_size: 32
+    capture_layer_stride: 1                   # 12 encoder blocks
+
+l0:
+  enabled: true
+  quantiles: [0.1, 0.5, 0.9]
+  calibration: true
+
+l1:
+  enabled: true
+  layer_stride: 1
+  max_rows: 20000
+  family_conditioned: true
+  min_family_series: 15         # the corpus's smallest family has 40 series
+  rsa: true
+  rsa_max_series: 400           # whole corpus; full preset: 800
+
+l2:
+  enabled: true
+  layer_stride: 1
+  lambdas: [0.001, 0.01, 0.1, 1.0]
+  val_frac: 0.25
+  max_rows: 40000
+  input_baseline: true
+
+l3:
+  enabled: true
+  max_series: 400               # full preset: 800
+  corruptions:
+    noise: {snr_db: 0.0}
+    detrend: {}
+    deseasonalize: {top_k: 2}
+    frequency_shift: {factor: 2.0}
+    level_shift: {position_frac: 0.6, scale: 3.0}
+    spike: {count: 8, scale: 10.0}
+    smooth: {kernel: 9}
+    warp: {strength: 0.15}
+    dropout: {frac: 0.15, n_blocks: 3}
+  patching:
+    enabled: true
+    layer_stride: 2
+    corruptions: [deseasonalize, noise, level_shift, spike, warp, dropout]
+    max_series: 16              # must be <= every model's batch_size
+    per_window: true
+    window_stride: 1
+
+lens:
+  enabled: true
+  layer_stride: 1
+  max_series: 16                # must be <= every model's batch_size
+  tuned: true
+  tuned_max_series: 400         # full preset: 800
+  val_frac: 0.25
+  lambdas: [0.001, 0.01, 0.1, 1.0]
+  crystallization_tol: 0.1
+
+attention:
+  enabled: true
+  patterns: true
+  max_series: 200               # full preset: 400
+  batch_series: 16
+  max_lag_tokens: 128
+  ablation: true
+  ablation_max_series: 16       # must be <= every model's batch_size
+  head_layer_stride: 1
+  top_k: 5
+
+exemplars:
+  enabled: true
+  per_family: 3
+  max_families: 2               # this corpus has 2 families
+
+clustering:
+  enabled: true
+  layer: auto
+  k: auto
+  pca_dim: 50
+  max_series: 400
+  use_umap: false               # full preset: true (UMAP is for the plot only; needs umap-learn)
+
+layer_screen:
+  enabled: true
+  method: work_bend
+  budget_frac: 0.25
+  min_budget: 2
+
+sae:
+  enabled: true
+  targets: []                   # auto: layer_screen's picks, restricted to captured layers
+  dict_size_mult: 8
+  dict_size_policy: search      # the dead-feature revival recipe, as in the full preset
+  dict_size_ladder: [192, 384, 768, 1536]   # full preset adds 3072, 6144
+  max_dead_rate: 0.30
+  dict_size_search_margin: 0.03
+  dict_size_search_seeds: 1     # full preset: 2
+  min_fidelity: 0.5
+  k: 32
+  lr: 0.001
+  epochs: 60
+  min_train_steps: 720
+  aux_k: 64
+  aux_coef: 0.03125
+  aux_dead_steps_frac: 0.028
+  n_seeds: 3
+  batch_size: 4096
+  resample_dead_every_epochs: 5
+  forecast_preservation_max_series: 16   # must be <= every model's batch_size
+  ground_truth_max_series: 400   # full preset: 2000
+  persist_features: true        # required by the concepts stage
+  transfer_n_null: 1000         # cross-model transfer nulls; full preset: 2000. At 200 the BH floor (1/201) is above q/m, so nothing could survive
+  real_data_enabled: false      # the full preset probes Monash windows (needs network)
+
+concepts:
+  enabled: true
+  top_k_series: 8
+  n_null_directions: 16
+  max_series: 64
+  keep_forecasts: 3
+  n_features_per_rule: 12
+  describe: true
+  describe_top_features: 8
+  n_registered: 0               # no registered concept claims: nothing is confirmed here
+  n_sae_seeds: 3
+  atlas_n_null: 1000            # full preset: 2000; 1000 keeps the BH floor (1/1001) below q/m for this pair
+
+report:
+  enabled: true
+  verbose: true
+  verbose_series: 2
+  title: Quickstart · Chronos-Bolt vs Chronos-2 on a small synthetic corpus
+
+stats:
+  enabled: true
+  n_boot: 1000                  # 1 pair x 2 families = 2 tests; full preset 2000
+  n_boot_heavy: 200
+  ci: 0.95
+  alpha: 0.05
+  min_series: 8
+
+internals:
+  enabled: true
+  layer_stride: 1
+  max_rows: 40000
+  probe_pca_dim: 50
+  probe_max_iter: 2000
+
+# Held-out confirmation is deliberately off: it needs a sealed private split
+# that has never been looked at, and tests registered hypotheses exactly once.
+confirm:
+  enabled: false
