@@ -5,8 +5,8 @@ type: software
 authors:
   - family-names: Kushnir
     given-names: Daniel
-version: 0.1.0
-date-released: "2026-09-28"
+version: 1.0.0
+# date-released: set to the release date when tagging (YYYY-MM-DD); omitted until then so the file never carries a wrong date.
 license: MIT
 repository-code: "https://github.com/DanK10097110/TSFM-Interp"
 keywords:

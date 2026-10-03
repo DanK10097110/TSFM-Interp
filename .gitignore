@@ -6,6 +6,7 @@ __pycache__/
 # JSON files
 *.json
 *.jsonl
+!.zenodo.json
 
 # Virtual environments and package builds
 venv/
