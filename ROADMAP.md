@@ -38907,7 +38907,7 @@ TTM, start K5 and K1."*
 
 ---
 
-## 39. Forecast repair — causal blame for good and bad forecasts, and interpretable feature-level edits (added 2026-10-01, user-proposed; R0 and R0b run 2026-10-02: both gates FAILED; STOPPED at R0 per the pre-registration — see §39.7–39.8; continuing needs a new design decision)
+## 39. Forecast repair — causal blame for good and bad forecasts, and interpretable feature-level edits (added 2026-10-01, user-proposed; R0 and R0b run 2026-10-02: both gates FAILED; STOPPED at R0 per the pre-registration — see §39.7–39.8; CLOSED as a confirmed negative by the user on 2026-10-03)
 
 ### 39.0 Status, provenance, and the one-paragraph version
 
@@ -39171,3 +39171,8 @@ R0; R1 is not started.**
    on new series").
 
 Not done, by rule: no R1, no real data.
+
+**Closed (2026-10-03, user decision).** §39 is closed as a confirmed negative. The user's reasoning: *"removing
+features is useless as the transformer is built to handle those situations inherently. manually intervening would
+only decrease mase on average."* No re-based gate will be designed. The code stays (opt-in, tested) as the
+reproducer for MN-31.
