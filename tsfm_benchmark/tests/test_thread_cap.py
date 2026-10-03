@@ -31,7 +31,15 @@ def _code_half(text: str) -> str:
 
 
 def test_the_cap_is_actually_in_force_not_merely_recorded():
-    """A cap the header claims must be one the pools actually read."""
+    """A cap the header claims must be one the pools actually read.
+
+    The check is that no pool runs MORE threads than the cap. Requiring equality
+    failed on a 4-vCPU CI runner, where a second bundled libgomp (pip torch)
+    chose the 2 physical cores: a pool below the cap honours it. An uncapped
+    pool defaults to one thread per core, so on any box with more cores than
+    the cap this still fails when the cap is not read; on a box with no more
+    cores than the cap, capped and uncapped cannot be told apart, and the test
+    says so by skipping."""
     if not conftest._CAP:
         pytest.skip("capping not in force for this run (disabled, or deferring to the environment)")
 
@@ -43,7 +51,9 @@ def test_the_cap_is_actually_in_force_not_merely_recorded():
     pools = threadpoolctl.threadpool_info()
     if not pools:
         pytest.skip("no BLAS pool reported its thread count on this build")
-    assert all(p["num_threads"] == conftest._CAP for p in pools), pools
+    if (os.cpu_count() or 1) <= conftest._CAP:
+        pytest.skip(f"{os.cpu_count()} cores <= cap {conftest._CAP}: a capped and an uncapped pool look the same")
+    assert all(p["num_threads"] <= conftest._CAP for p in pools), pools
 
 
 def test_an_explicitly_set_thread_var_defers_wholesale(monkeypatch):
