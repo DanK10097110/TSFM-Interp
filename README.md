@@ -12,6 +12,19 @@ comparative by design: aligned representations across models, series-level
 bootstrap statistics, and a one-shot confirmation on a sealed held-out
 corpus, not a single-model microscope.
 
+**Try it:** [live example report](https://dank10097110.github.io/TSFM-Interp/) (seven models, with its held-out
+confirmation) · [Colab quickstart](https://colab.research.google.com/github/DanK10097110/TSFM-Interp/blob/main/examples/quickstart.ipynb)
+(two real models, about 25 minutes on one GPU) · [`docs/QUICKSTART.md`](docs/QUICKSTART.md)
+
+**Headline result, held out.** All claims were registered on a development corpus and tested once on a fresh sealed
+private corpus of 971 series:
+- concept-transfer claims confirm 20/20, now on four private draws;
+- single-feature causal claims confirm 10/31;
+- no cross-model *causal* claim confirms (multi-model concepts 0/3, shared-input agreement 0/6 tested).
+
+Models share what they select, not (demonstrably) what they do with it. See [`FINDINGS.md`](FINDINGS.md) (CA-11,
+SH-18) for the numbers and the confirmed negatives.
+
 ## What it answers
 
 - What interpretable concepts does a TSFM actually learn — as **causal**
@@ -21,8 +34,9 @@ corpus, not a single-model microscope.
 - Are those concepts **shared** across architecturally different models, or
   does each model learn something unique? The **concept atlas** clusters each
   model's causal features into concept families, then tests every family for
-  transfer to every other model — turning "these representations look
-  similar" into a causal, cross-model claim.
+  transfer to every other model. That turns "these representations look
+  similar" into a tested claim that two models select the same inputs. The
+  claim is correlational, and the held-out results above show where it stops.
 - Do the concepts **causally** affect the forecast, or are they merely
   correlated with it?
 - **Where in depth** does a model's forecast take shape?
@@ -87,8 +101,15 @@ families**, and test every family for **cross-model transfer** — the concept
 atlas described in [`tsfm_lens/README.md`](tsfm_lens/README.md#concepts)
 (see also [`#sae`](tsfm_lens/README.md#sae)).
 
+**A first run on real models:** [`docs/QUICKSTART.md`](docs/QUICKSTART.md) and
+[`examples/quickstart.ipynb`](examples/quickstart.ipynb) run Chronos-Bolt-small against Chronos-2 on a
+400-series synthetic corpus. That takes about 25 minutes on one GPU and ends in a full report, without held-out
+confirmation.
+
 **See a real run before running one:**
-[`examples/concept_atlas_v2/`](examples/concept_atlas_v2/) holds a complete
+[`examples/panel7_v2/`](examples/panel7_v2/) holds the seven-model run (TimesFM, Chronos-2, Sundial, Chronos-Bolt,
+Timer, Time-MoE, Chronos-T5-Base) and its one-shot held-out confirmation, and
+[`examples/concept_atlas_v2/`](examples/concept_atlas_v2/) holds the earlier
 four-model run (TimesFM, Chronos-2, Sundial, Chronos-Bolt). It contains the
 interactive `report.html`, the per-stage artifacts it was built from, the
 exact config, and a write-up of what the run found and which results held up
@@ -162,7 +183,10 @@ correlational number can never be misread as causal:
 
 | Doc | What's in it |
 |---|---|
-| [`examples/concept_atlas_v2/`](examples/concept_atlas_v2/) | A complete four-model run: report, per-stage artifacts, config and findings write-up |
+| [`docs/QUICKSTART.md`](docs/QUICKSTART.md), [`examples/quickstart.ipynb`](examples/quickstart.ipynb) | A first real two-model run in about 25 minutes on one GPU (Colab-ready) |
+| [`examples/panel7_v2/`](examples/panel7_v2/) | The seven-model run with its held-out confirmation: report, artifacts, config, write-up |
+| [`examples/concept_atlas_v2/`](examples/concept_atlas_v2/) | The earlier four-model run: report, per-stage artifacts, config and findings write-up |
+| [`docs/RELEASING.md`](docs/RELEASING.md) | How a release is cut (PyPI trusted publishing, Zenodo DOI) |
 | [`FINDINGS.md`](FINDINGS.md) | The curated results ledger: every result so far, with exact numbers, evidence class and a 1–5 score (its `ROADMAP.md` references live on `dev`) |
 | [`tsfm_benchmark/README.md`](tsfm_benchmark/README.md) | Leakage tiers, generators, archetypes, the audit, sealing/epochs, CLI |
 | [`tsfm_benchmark/configs/README.md`](tsfm_benchmark/configs/README.md) | Every config on `main`, what it builds, and how to add a real-data source |
@@ -191,7 +215,7 @@ See [`CITATION.cff`](CITATION.cff). In brief:
   author  = {Kushnir, Daniel},
   title   = {TSFM-Lens: comparative mechanistic interpretability for
              time-series foundation models},
-  version = {0.1.0},
+  version = {1.0.0},
   url     = {https://github.com/DanK10097110/TSFM-Interp}
 }
 ```
