@@ -130,8 +130,8 @@ frozen specification were unchanged, and the restart differed only by the crash 
 twice for compute reasons; the artifact records \texttt{repeated\_look: false}. Environment, as recorded in the run's
 \texttt{run\_manifest.json}: Python 3.12.13, numpy 2.1.0, PyTorch 2.12.0 (CUDA 12.9 build), transformers 4.57.6,
 timesfm 2.0.2, chronos-forecasting 2.3.1, zarr 2.18.7 (zarr~3 stores read back empty under the v2 API), pandas 2.3.3,
-scikit-learn 1.7.2; load-bearing pins and their reasons are in \repo{DEPENDENCIES.md}. Tests: 2{,}112 passed,
-27 skipped (\texttt{tsfm\_lens}); 124 passed, 1 skipped (\texttt{tsfm\_benchmark}). Recorded stage wall-clock time on one RTX
+scikit-learn 1.7.2; load-bearing pins and their reasons are in \repo{DEPENDENCIES.md}. Tests (collected; not re-run for this revision): 2{,}520 tests (\texttt{tsfm\_lens}) and 125 (\texttt{tsfm\_benchmark});.
+Recorded stage wall-clock time on one RTX
 A5000: 75{,}900 s in total, of which \texttt{sae} 14{,}614 s and \texttt{concepts} 55{,}608 s (shared-input
 agreement 45{,}189 s); every other stage under 33 minutes.
 
