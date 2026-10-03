@@ -111,12 +111,12 @@ jobs:
           fi
 
       - name: tsfm_benchmark test suite
-        run: python -m pytest tsfm_benchmark/tests -q
+        run: bash .github/scripts/pytest_annotate.sh tsfm_benchmark tsfm_benchmark/tests -q
 
       - name: tsfm_lens test suite (includes test_adapter_conformance.py against all mocks)
         run: |
           cd tsfm_lens
-          python -m pytest tests -q
+          bash ../.github/scripts/pytest_annotate.sh tsfm_lens tests -q
 
       - name: Smoke run end-to-end (configs/smoke.yaml, mock adapters, no downloads)
         run: |
@@ -188,13 +188,13 @@ jobs:
 
       - name: tsfm_benchmark test suite
         shell: bash -el {0}
-        run: python -m pytest tsfm_benchmark/tests -q
+        run: bash .github/scripts/pytest_annotate.sh tsfm_benchmark tsfm_benchmark/tests -q
 
       - name: tsfm_lens test suite
         shell: bash -el {0}
         run: |
           cd tsfm_lens
-          python -m pytest tests -q
+          bash ../.github/scripts/pytest_annotate.sh tsfm_lens tests -q
 
   bleeding:
     name: bleeding (latest of every load-bearing library)
@@ -230,12 +230,12 @@ jobs:
           pip install -e tsfm_lens
 
       - name: tsfm_benchmark test suite
-        run: python -m pytest tsfm_benchmark/tests -q
+        run: bash .github/scripts/pytest_annotate.sh tsfm_benchmark tsfm_benchmark/tests -q
 
       - name: tsfm_lens test suite
         run: |
           cd tsfm_lens
-          python -m pytest tests -q
+          bash ../.github/scripts/pytest_annotate.sh tsfm_lens tests -q
 
       - name: Smoke run end-to-end
         run: |
