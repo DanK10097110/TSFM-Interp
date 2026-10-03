@@ -1,0 +1,60 @@
+# ============================================================================
+# Quickstart benchmark: ~400 series per split, SYNTHETIC ONLY
+# ============================================================================
+# The corpus behind tsfm_lens/configs/quickstart.yaml. Every series comes from
+# a parametric generator, so building it touches no real data, needs no
+# network and no `--references`: it finishes in about a minute on CPU.
+# Read configs/example.yaml first for the field-by-field reference.
+#
+# Two families (tsfm_lens groups by generator name):
+#   - random_parametric (300): the diverse backbone, all 12 archetypes plus a
+#     random corruption subset per series.
+#   - parametric (100): one fixed seasonal+trend recipe, only the noise varies,
+#     a deliberately homogeneous second family so per-family contrasts exist.
+# 400 series keeps L1's family-conditioned CKA (needs >= 15
+# per family) and the paired bootstraps usable while a full run stays near an hour. The full presets
+# use configs/large_run.yaml (~1000 per split).
+#
+# Build, from the repository root (writes <out>/public_dev and <out>/private_test):
+#
+#   PYTHONPATH=. python3 tsfm_benchmark/example_runs/run_full.py \
+#       --config tsfm_benchmark/configs/quickstart.yaml \
+#       --out ./benchmark_quickstart --references none
+# ============================================================================
+
+tasks:
+  - name: diverse_synthetic_backbone
+    generator: random_parametric
+    count: 300
+    tier: synthetic
+    generator_params:
+      length: 576   # 512 context + 64 horizon, matching the tsfm_lens config
+      archetypes: [trend_dominant, seasonal_dominant, multi_seasonal_complex,
+                   regime_switching, ar_colored_noise, anomaly_heavy,
+                   clean_low_noise, noisy_chaotic, random_walk_drift,
+                   intermittent_bursts, amplitude_modulated,
+                   nonsinusoidal_seasonal]
+    corruption_pool:
+      - {op: jitter, sigma: [0.01, 0.08]}
+      - {op: scaling, sigma: [0.05, 0.2]}
+      - {op: time_warp, strength: [0.05, 0.25], n_knots: [3, 6]}
+      - {op: dropout, rate: [0.02, 0.1]}
+    n_corruptions: [0, 3]
+
+  - name: seasonal_trend_fixed
+    generator: parametric
+    count: 100
+    tier: synthetic
+    generator_params:
+      length: 576
+      trend: {order: 2, scale: 0.5}
+      seasonalities:
+        - {period: 24, amplitude: 1.0}
+        - {period: 168, amplitude: 0.4}
+      ar_coeffs: [0.6, -0.2]
+      noise_scale: 0.15
+      n_changepoints: 2
+      n_anomalies: 3
+    corruptions:
+      - {op: jitter, sigma: 0.03}
+      - {op: time_warp, strength: 0.1}

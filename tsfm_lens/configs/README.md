@@ -57,6 +57,7 @@ stay out of the listing, as before).
 | `smoke_blackbox.yaml` | Tier-0 (black-box) capability acceptance | mock | generated | CPU, ~30s |
 | `smoke_three_model.yaml` | Panel shape derived from model *count*, not filename | 3 mock | generated | CPU, ~30s |
 | `smoke_encdec.yaml` | Encoder-decoder `block` depth-axis behavior (mock) | 2 mock | generated | CPU, ~30s |
+| `quickstart.yaml` | First real run: the whole pair pipeline shrunk, no confirm stage; see `docs/QUICKSTART.md` | Chronos-Bolt-small + Chronos-2 | `benchmark_quickstart` (synthetic, built from `tsfm_benchmark/configs/quickstart.yaml`) | GPU, under an hour |
 | `default.yaml` | The general real-model template; every knob documented inline | TimesFM + Chronos-T5 | sealed, user-provided | GPU, minutes–hours depending on corpus |
 | `concept_atlas.yaml` | The Concept Atlas preset (`CLAUDE.md` §6.8) — the one-command flagship chain | 4 real models | `benchmark_large` | GPU, hours |
 | `concept_atlas_v2.yaml` | Same chain, rebalanced v2 corpus | 4 real models | `benchmark_large_v2` | GPU, hours |
