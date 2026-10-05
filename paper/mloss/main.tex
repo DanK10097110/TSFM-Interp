@@ -40,8 +40,9 @@
 
 \title{\tool: Controlled, Causal and Confirmatory\\ Interpretability of Time-Series Foundation Models}
 
-% Corresponding author: to be added.
-\author{\name Daniel Kushnir and Hao Wang \\ \addr Rutgers University}
+\author{\name Daniel Kushnir \email kushnir.daniel05@gmail.com \\
+       \name Hao Wang (corresponding author) \email hoguewang@gmail.com \\
+       \addr Rutgers University}
 
 \editor{}
 
@@ -55,7 +56,7 @@ benchmark with exact generative ground truth, defines concepts by their causal e
 against matched random nulls, and tests exploratory claims once on a sealed held-out split. Every
 reported number carries an evidence class and a plain-language explanation. The toolkit ships adapters
 for TimesFM, the Chronos family, Sundial, Timer, Time-MoE and Lag-Llama, a zero-code adapter for Hugging Face
-checkpoints, a complete seven-model example run with held-out confirmation and a test suite of over two thousand tests. It is released under the
+checkpoints, a complete seven-model example run with held-out confirmation and over two thousand tests. It is released under the
 MIT license at \url{\repourl}.
 \end{abstract}
 
@@ -72,13 +73,13 @@ TSFMs make a direct transfer unreliable: tokens cover 1 to 96 time steps dependi
 are not comparable across models; real series carry no labels for trend, seasonality or noise, so probes cannot be
 checked; and the causal effects of internal features are small enough that an uncontrolled measurement yields a
 confident false positive. \tool{} is a comparative tool built around these problems: its unit of analysis is a panel
-of models on a shared benchmark, and its output is a report designed so that a newcomer can read it and an expert can audit it.
+of models on a shared benchmark, and its report is written for newcomers and auditable by experts.
 
 \section{Architecture}
 
 The repository contains two separately installable packages (Figure~\ref{fig:arch}).
 \texttt{tsfm\_benchmark} builds and validates corpora; \texttt{tsfm\_lens} analyzes models and renders the
-report. Their dependencies overlap only in NumPy, SciPy and PyYAML, so the benchmark can be used on its own.
+report; the benchmark can be used on its own.
 
 \begin{figure}[t]
 \centering
@@ -160,9 +161,8 @@ run in continuous integration against pinned and, weekly, latest dependencies, a
 be shown to fail against a planted regression. Code: \url{\repourl}.
 
 \acks{Computational resources were provided by Hao Wang. This work received no external funding, and the authors
-declare no competing interests. Use of AI tools: Claude (Anthropic) was used to write and test the software in the accompanying repository. It was not used for planning, research design or new research ideas, which are the authors' own.}
+declare no competing interests. Use of AI tools: Claude (Anthropic) wrote most of the repository's code and tests, ran the experiments and helped draft and edit the manuscript, under the authors' direction. The research questions, ideas and general design choices are the authors', who reviewed the implementation details Claude proposed, checked every reported result and take full responsibility for the content.}
 
-\vskip 0.2in
 {\setlength{\bibsep}{0pt}\bibliography{../references}}
 
 \end{document}

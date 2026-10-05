@@ -1,0 +1,67 @@
+\documentclass[11pt]{letter}
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{hyperref}
+
+\signature{Daniel Kushnir and Hao Wang\\Rutgers University}
+\address{Daniel Kushnir \quad \href{mailto:kushnir.daniel05@gmail.com}{kushnir.daniel05@gmail.com}\\
+Hao Wang (corresponding author) \quad \href{mailto:hoguewang@gmail.com}{hoguewang@gmail.com}\\
+Rutgers University}
+\date{October 5, 2026}
+
+\begin{document}
+\begin{letter}{Editors-in-Chief\\Journal of Machine Learning Research}
+
+\opening{Dear Editors,}
+
+We submit our manuscript \emph{TSFM-Lens: Controlled, Causal and Confirmatory Interpretability for Time-Series
+Foundation Models} for consideration as a regular paper in the Journal of Machine Learning Research.
+
+Time-series foundation models are now used zero-shot for forecasting, but the interpretability methods developed for
+language models do not carry over directly. Tokens span different lengths of time in different architectures, real
+series carry no labels that could validate a probe, and the causal effects of internal features are small enough that
+uncontrolled measurements produce confident false positives. The manuscript presents an open-source system built
+around these three problems and the results of applying it to seven models.
+
+The main contributions are:
+\begin{enumerate}
+  \item \textbf{A controlled setting.} A leakage-audited synthetic benchmark with exact generative ground truth,
+  sealed dev and private splits, and a measured token-to-time alignment that puts architectures with tokens of 1 to
+  96 time steps on a common axis.
+  \item \textbf{Causal concept definitions with matched nulls.} A sparse-autoencoder feature counts as causal only if
+  removing it changes the forecast more than removing the same per-token amount along a random direction on the same
+  series, after reach controls confirm that the intervention lands. A planted-concept forecaster with known answers
+  and decoys holds this test to a fixed false-positive gate; it showed our first null to be lenient.
+  \item \textbf{One-shot confirmation.} Exploratory claims are frozen in a hash-pinned registry and tested once on the
+  sealed split, with multiplicity handled per claim family. Of 82 replicable registered claims, 43 confirm.
+  \item \textbf{Findings about seven models} (TimesFM, Chronos-2, Sundial, Chronos-Bolt, Chronos-T5, Timer and
+  Time-MoE). Models agree on which inputs a concept groups (20 of 20 registered claims confirmed on 971 held-out
+  series), but no cross-model claim about what a concept does to the forecast confirms, and no concept spans more than
+  three of the seven models: models share what they select, not demonstrably what they do with it.
+  \item \textbf{A record of corrected errors.} We document fifteen plausible results that the system's own controls
+  showed to be wrong, as a guide for others working in this area.
+\end{enumerate}
+
+We believe the paper suits JMLR because its contribution is methodological as much as empirical: it argues, with
+worked failures, that interpretability claims about forecasting models need known answers, matched nulls and held-out
+confirmation, and it supplies a tool that makes these the default. All code, the benchmark generators, a complete
+seven-model example run with its held-out confirmation, and a reproduction command for every reported number are
+public under the MIT license at \url{https://github.com/DanK10097110/TSFM-Interp}.
+
+The manuscript is not under review elsewhere. A preprint is available on arXiv at [arXiv identifier]. We plan to
+describe the software itself separately in a short paper for the JMLR Machine Learning Open Source Software track; that
+paper covers the toolkit's design and availability, not the scientific results reported here.
+
+Use of AI tools: Claude (Anthropic) wrote most of the repository's code and tests, ran the experiments and helped draft
+and edit the manuscript, under the authors' direction. The research questions, ideas and general design choices are
+the authors'. The authors reviewed the implementation details Claude proposed, checked every reported result and take
+full responsibility for the content.
+
+Suggested action editors: [names]. Suggested reviewers: [names, affiliations, emails]. We have no conflicts of
+interest to declare.
+
+\closing{Sincerely,}
+
+\end{letter}
+\end{document}
