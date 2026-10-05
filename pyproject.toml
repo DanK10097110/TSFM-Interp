@@ -8,7 +8,7 @@ version = "1.0.0"
 description = "TSFM benchmark generation and validation pipeline"
 readme = "tsfm_benchmark/README.md"
 license = {text = "MIT"}
-authors = [{name = "Daniel Kushnir"}]
+authors = [{name = "Daniel Kushnir", email = "kushnir.daniel05@gmail.com"}]
 keywords = ["interpretability", "mechanistic-interpretability", "time-series", "foundation-models", "transformers", "forecasting"]
 classifiers = [
   "Development Status :: 4 - Beta",

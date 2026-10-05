@@ -24,10 +24,15 @@
 
 name: CI
 
+# Runner time is the bottleneck (jobs queued 15 min and were cancelled on
+# 2026-10-05), so a push runs only `fast`; `pinned` also runs on main, and
+# `bleeding` runs weekly or on demand. Paper/docs-only pushes skip CI.
 on:
   push:
     branches: [main, dev]
+    paths-ignore: ["paper/**", "site/**", "docs/**", "**.md"]
   pull_request:
+    paths-ignore: ["paper/**", "site/**", "docs/**", "**.md"]
   schedule:
     # Weekly bleeding-edge check (fix item 3's "scheduled weekly").
     - cron: "0 6 * * 1"
@@ -43,12 +48,17 @@ jobs:
   fast:
     name: fast (CPU, pinned)
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            pyproject.toml
+            tsfm_lens/pyproject.toml
 
       - name: Install pinned dependencies (pip approximation of DEPENDENCIES.md sec 3)
         run: |
@@ -74,7 +84,7 @@ jobs:
           # (tests/test_hooks_modeloutput.py uses transformers' ModelOutput).
           # Neither was installed before, so every run since the workflow was
           # added failed at the first pytest step ("No module named pytest").
-          pip install pytest "transformers==4.57.6"
+          pip install pytest pytest-xdist "transformers==4.57.6"
           pip install -e .
           pip install -e tsfm_lens
 
@@ -116,7 +126,7 @@ jobs:
       - name: tsfm_lens test suite (includes test_adapter_conformance.py against all mocks)
         run: |
           cd tsfm_lens
-          bash ../.github/scripts/pytest_annotate.sh tsfm_lens tests -q
+          bash ../.github/scripts/pytest_annotate.sh tsfm_lens tests -q -n auto
 
       - name: Smoke run end-to-end (configs/smoke.yaml, mock adapters, no downloads)
         run: |
@@ -159,7 +169,9 @@ jobs:
 
   pinned:
     name: pinned (DEPENDENCIES.md recipe)
+    if: github.event_name != 'push' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
 
@@ -182,7 +194,7 @@ jobs:
             scikit-learn=1.7.2 pandas=2.3.3 pyyaml jinja2 tqdm zarr=2.18.7 \
             plotly=5.24.1 pycatch22 umap-learn dtaidistance datasets=2.19.2 \
             sdv=1.14.0 "pytorch=2.12.0=cpu*"
-          pip install tsbootstrap==0.7.1 transformers==4.57.6 pytest
+          pip install tsbootstrap==0.7.1 transformers==4.57.6 pytest pytest-xdist
           pip install -e .
           pip install -e tsfm_lens
 
@@ -194,11 +206,13 @@ jobs:
         shell: bash -el {0}
         run: |
           cd tsfm_lens
-          bash ../.github/scripts/pytest_annotate.sh tsfm_lens tests -q
+          bash ../.github/scripts/pytest_annotate.sh tsfm_lens tests -q -n auto
 
   bleeding:
     name: bleeding (latest of every load-bearing library)
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     continue-on-error: true
     steps:
       - uses: actions/checkout@v4
@@ -206,13 +220,17 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            pyproject.toml
+            tsfm_lens/pyproject.toml
 
       - name: Install the latest of every load-bearing dependency, unpinned
         run: |
           python -m pip install --upgrade pip
           # CPU torch first, for the same reason as the fast job.
           pip install torch --index-url https://download.pytorch.org/whl/cpu
-          pip install pytest
+          pip install pytest pytest-xdist
           pip install numpy scipy pandas scikit-learn pyyaml jinja2 tqdm plotly \
             pyarrow pycatch22 umap-learn dtaidistance sktime
           # zarr and datasets are deliberately NOT force-upgraded past this
@@ -235,7 +253,7 @@ jobs:
       - name: tsfm_lens test suite
         run: |
           cd tsfm_lens
-          bash ../.github/scripts/pytest_annotate.sh tsfm_lens tests -q
+          bash ../.github/scripts/pytest_annotate.sh tsfm_lens tests -q -n auto
 
       - name: Smoke run end-to-end
         run: |

@@ -4,7 +4,8 @@
   "description": "Mechanistic interpretability of time-series foundation models (TSFMs), comparing models with very different architectures on equal grounds. Two separately installable packages: tsfm-benchmark (leakage-audited, sealed, ground-truth-labeled synthetic benchmark corpora and their validation) and tsfm-lens (a layered analysis pipeline that produces one interactive HTML report, with held-out confirmation of registered hypotheses on a sealed private corpus).",
   "creators": [
     {
-      "name": "Kushnir, Daniel"
+      "name": "Kushnir, Daniel",
+      "affiliation": "Rutgers University"
     }
   ],
   "license": "MIT",
