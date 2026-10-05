@@ -76,15 +76,46 @@ def ablation_path(run_dir: Path, model: str, layer: str) -> Path:
     return Path(run_dir) / "sae" / sanitize(model) / f"{sanitize(layer)}_ablation.json"
 
 
+def checkpoint_path(run_dir: Path, model: str, layer: str) -> Path:
+    """The primary SAE checkpoint of one target. Built here, once, because
+    real layer names contain dots and are `sanitize()`d on disk -- a path
+    assembled by hand elsewhere finds nothing (`CLAUDE.md` sec 8, "Artifact
+    paths")."""
+    return Path(run_dir) / "sae" / sanitize(model) / f"{sanitize(layer)}.pt"
+
+
 def run_ablation_target(cfg, run_dir: Path, hub, data, store, device, model: str,
                         layer: str, *, top_k_series: int = 8,
                         n_null_directions: int = 16, max_series: int = 64,
-                        keep_forecasts: int = 3, n_features_per_rule: int = 12) -> dict:
+                        keep_forecasts: int = 3, n_features_per_rule: int = 12,
+                        ground_truth_path: str | None = None,
+                        candidates: list | None = None,
+                        activations: np.ndarray | None = None,
+                        keep_null_draws: bool = False,
+                        empirical_chance: bool = False) -> dict:
     """The ablation fingerprint for one target. Returns the artifact dict; a
     target with no checkpoint returns a `skipped` record rather than raising,
-    so one missing dictionary does not stop the other targets."""
+    so one missing dictionary does not stop the other targets.
+
+    ROADMAP.md sec 38.2 (K2) -- four optional arguments let `confirm` run the
+    SAME battery on a private corpus with frozen dev choices; every default
+    reproduces the dev behaviour exactly:
+
+    - `ground_truth_path`: the corpus whose sealed manifest supplies the
+      ground-truth seasonal periods for `data`'s series. `None` reads
+      `cfg.data.path` (the dev corpus), which is wrong for private series --
+      their ids are not in the dev table, so the seasonal channel would be
+      silently unavailable.
+    - `candidates`: the frozen candidate list (`[{"feature": int, "rules":
+      [...]}]`). `None` reuses Stage 2's list or `select_candidates`, both of
+      which read the dev store.
+    - `activations`: `[data.n, dict_size]` series-level SAE features of
+      `data`'s own series. `None` encodes the dev store's series rows, which
+      only lines up with `data` when `data` IS the dev corpus.
+    - `keep_null_draws`: forwarded to `feature_ablation_fingerprints`.
+    """
     run_dir = Path(run_dir)
-    ckpt_path = run_dir / "sae" / sanitize(model) / f"{sanitize(layer)}.pt"
+    ckpt_path = checkpoint_path(run_dir, model, layer)
     if not ckpt_path.exists():
         return {"model": model, "layer": layer, "skipped": True,
                 "reason": f"no trained SAE checkpoint at {ckpt_path}"}
@@ -93,10 +124,15 @@ def run_ablation_target(cfg, run_dir: Path, hub, data, store, device, model: str
 
     # SERIES-level pooled features, one row per series in `data`'s own order
     # -- window-level rows name windows and cannot select series.
-    activations = encode_series_level(sae, store, model, layer, np.arange(data.n), device)
+    if activations is None:
+        activations = encode_series_level(sae, store, model, layer, np.arange(data.n), device)
 
     stage2_path = run_dir / "sae" / sanitize(model) / f"{sanitize(layer)}_stage2_response.json"
-    if stage2_path.exists() and not load_json(stage2_path).get("withheld"):
+    if candidates is not None:
+        candidates = [{"feature": int(c["feature"]), "rules": c.get("rules", [])}
+                      for c in candidates]
+        source = "frozen (registered dev candidates)"
+    elif stage2_path.exists() and not load_json(stage2_path).get("withheld"):
         stage2 = load_json(stage2_path)
         candidates = [{"feature": int(c["feature"]), "rules": c.get("rules", [])}
                       for c in stage2["candidates"]]
@@ -117,7 +153,8 @@ def run_ablation_target(cfg, run_dir: Path, hub, data, store, device, model: str
 
     periods_full = None
     try:
-        gt = load_ground_truth_table(cfg.data.path)
+        gt = load_ground_truth_table(ground_truth_path if ground_truth_path is not None
+                                     else cfg.data.path)
         periods_full = gt.reindex(data.meta["series_id"].to_numpy())[
             "seasonal_period_dominant"].to_numpy(dtype=np.float64)
     except Exception as e:
@@ -128,17 +165,79 @@ def run_ablation_target(cfg, run_dir: Path, hub, data, store, device, model: str
         cfg, adapter, layer, sae, data, device, candidates, activations,
         top_k_series=top_k_series, n_null_directions=n_null_directions,
         max_series=max_series, floor=floor, periods_full=periods_full,
-        keep_forecasts=keep_forecasts)
+        keep_forecasts=keep_forecasts, keep_null_draws=keep_null_draws,
+        null_mode=cfg_null_mode(cfg),
+        empirical_chance=bool(empirical_chance or getattr(cfg.sae, "ablation_empirical_chance", False)))
 
     if result.get("withheld"):
         log.warning(f"ablation: {model}/{layer} WITHHELD -- "
                     f"{result.get('reason') or result['reach']['reason']}")
     else:
-        log.info(f"ablation: {model}/{layer}: {result['n_clearing_cells']} clearing "
-                 f"cells vs {result['chance_expected_cells']:.2f} expected by chance "
-                 f"({result['clearing_cells_over_chance_ratio']:.2f}x chance, "
-                 f"{result['excess_over_chance']:+.1f} cells)")
+        log.info(clearing_log_line(model, layer, result))
     return {"model": model, "layer": layer, "candidate_source": source, **result}
+
+
+def clearing_log_line(model: str, layer: str, result: dict) -> str:
+    """The one-line summary of clearing cells against chance for a scored target.
+
+    With `empirical_chance` in the result, the observed clears are read against
+    its leave-one-draw-out `expected_cells` and the ratio is the empirical one;
+    the nominal 5% expectation stays in the line under its own label. Without
+    it only the nominal expectation exists and the line says so. The recorded
+    artifact keys are not touched.
+    """
+    n_clear = result["n_clearing_cells"]
+    nominal = (f"nominal 5%: {result['chance_expected_cells']:.2f} expected, "
+               f"{result['clearing_cells_over_chance_ratio']:.2f}x, "
+               f"{result['excess_over_chance']:+.1f} cells")
+    emp = result.get("empirical_chance")
+    if emp and emp.get("expected_cells"):
+        return (f"ablation: {model}/{layer}: {n_clear} clearing cells vs "
+                f"{emp['expected_cells']:.2f} expected by empirical chance "
+                f"(leave-one-draw-out) ({n_clear / emp['expected_cells']:.2f}x "
+                f"empirical chance; {nominal})")
+    return (f"ablation: {model}/{layer}: {n_clear} clearing cells vs "
+            f"{result['chance_expected_cells']:.2f} expected by chance ({nominal})")
+
+
+LEGACY_NULL = "mean_magnitude"
+
+
+def cfg_null_mode(cfg) -> str:
+    """The ablation null the config asks for (`sae.ablation_null`). A config object
+    with no such attribute (an older checkout's) is the legacy null, the same
+    reading every other reader uses; a real `SAEConfig` always has the field."""
+    return str(getattr(getattr(cfg, "sae", None), "ablation_null", LEGACY_NULL) or LEGACY_NULL)
+
+
+def artifact_null_mode(art: dict) -> str:
+    """The null an ablation artifact was made with. A MISSING key means the
+    legacy null (older artifacts never recorded it), independent of the
+    config default."""
+    return str(art.get("ablation_null") or LEGACY_NULL)
+
+
+def check_ablation_null_modes(cfg, run_dir: Path) -> None:
+    """Refuse, loudly, to build on an on-disk `*_ablation.json` whose recorded
+    null differs from `sae.ablation_null`. Belt and braces beyond the stage
+    fingerprint (which already marks a legacy-null concepts artifact stale
+    under the new default): a stray or orphaned artifact from another mode
+    would otherwise be pooled into concepts/atlas/agreement. Skipped and
+    withheld artifacts record no battery and are not checked."""
+    want = cfg_null_mode(cfg)
+    bad = []
+    for p in sorted((Path(run_dir) / "sae").glob("*/*_ablation.json")):
+        art = load_json(p)
+        if art.get("skipped") or art.get("withheld"):
+            continue
+        got = artifact_null_mode(art)
+        if got != want:
+            bad.append(f"{p.relative_to(run_dir)} ({got})")
+    if bad:
+        raise RuntimeError(
+            f"sae.ablation_null is {want!r} but these ablation artifacts were made with "
+            f"a different null: {', '.join(bad)}. Delete them (or rerun with --stages concepts "
+            f"--force concepts, which rewrites the targets' artifacts) or set sae.ablation_null to match.")
 
 
 def run_ablation_all(cfg, run_dir: Path, hub, data, store, device, targets: list,

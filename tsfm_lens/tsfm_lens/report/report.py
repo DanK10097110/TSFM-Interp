@@ -1436,8 +1436,10 @@ def _ci_str(d: dict, key: str = "value") -> str:
     """Format 'value [lo, hi]' when CI keys are present."""
     if d is None:
         return "n/a"
+    if d.get(key) is None:
+        return "not defined"
     v = f'{d[key]:.2f}'
-    if "lo" in d and "hi" in d:
+    if d.get("lo") is not None and d.get("hi") is not None:
         return f'{v} [{d["lo"]:.2f}, {d["hi"]:.2f}]'
     return v
 
@@ -1468,6 +1470,9 @@ def _err_y(entries: list) -> dict | None:
     the CI bound in that direction) without fabricating a wider interval.
     """
     if not entries or "lo" not in entries[0] or entries[0]["lo"] is None:
+        return None
+    if any(e.get("value") is None or e.get("lo") is None or e.get("hi") is None
+           for e in entries):
         return None
     vals = np.array([e["value"] for e in entries])
     hi = np.array([e["hi"] for e in entries])
@@ -2593,7 +2598,26 @@ def _sec_l0(run_dir: Path, model_colors: dict, findings: list) -> str:
     # run produced a family-test table (ROADMAP.md sec 18 F8).
     inner += _other_pairs_block(summary, findings)
     inner += _multiplicity_block(run_dir, summary, findings)
-    return inner
+    return _nonfinite_forecast_banner(run_dir) + inner
+
+
+def _nonfinite_forecast_banner(run_dir: Path) -> str:
+    """Loud banner when any model returned non-finite forecasts in L0 (the
+    series were dropped from every model's comparison; see
+    `l0_behavioral.nonfinite_forecast_rows`). Empty string when the artifact is
+    absent, i.e. for every run that had no such series."""
+    path = run_dir / "l0" / "nonfinite_forecasts.json"
+    if not path.exists():
+        return ""
+    rec = load_json(path)
+    who = "; ".join(f"{m}: {d['n_series']} series" for m, d in rec["per_model"].items())
+    fams = ", ".join(f"{f} ({n})" for f, n in rec["dropped_by_family"].items())
+    return ('<p class="blurb">⚠ <b>Non-finite forecasts in L0</b> — '
+            f'{who}. These {rec["n_series_dropped_from_comparison"]} of '
+            f'{rec["n_series_total"]} series ({fams}) were removed from every model\'s '
+            'MASE/sMAPE/pinball comparison so all models are scored on one series set; '
+            'the model input was not altered. Listed in '
+            '<code>l0/nonfinite_forecasts.json</code>.</p>')
 
 
 def _all_pairs_block(pairs, primary: dict, row_fn, title: str,
@@ -3195,6 +3219,28 @@ def _sec_l2(run_dir: Path, findings: list) -> str:
     return inner
 
 
+def _undefined_agreement_note(pairwise: list) -> str:
+    """Caption sentence naming every fingerprint-agreement rho that is NOT
+    DEFINED (constant or non-finite depth profile) and why, per model pair.
+    Empty when every rho is defined, so such reports are unchanged. A missing
+    bar here means "undefined", never "zero agreement"."""
+    parts = []
+    for e in pairwise:
+        ag = e.get("agreement") or {}
+        und = ag.get("undefined") or {}
+        if not und:
+            continue
+        items = "; ".join(f"{c}: {r}" for c, r in und.items())
+        boots = ag.get("n_undefined_resamples") or {}
+        extra = (f" ({sum(boots.values())} undefined bootstrap draws were excluded "
+                 f"from the intervals)" if boots else "")
+        parts.append(f"{e.get('a')} vs {e.get('b')} -- {items}{extra}")
+    if not parts:
+        return ""
+    return (" Not defined (shown as a gap, never as zero agreement): "
+            + " | ".join(parts) + ".")
+
+
 def _corruption_breakdown_block(run_dir: Path, findings: list) -> str:
     """One row per (corruption, model): what the corruption touched, what it moved.
 
@@ -3443,6 +3489,14 @@ def _sec_l3(run_dir: Path, model_colors: dict, findings: list) -> str:
         "magnitudes are not directly comparable across models — only the "
         "column *shape* (where the peak is) should be compared.")
 
+    beh_dropped = meta.get("behavior_nonfinite_dropped") or {}
+    if beh_dropped:
+        inner += ('<p class="blurb" style="color:var(--bad,#b00020);font-weight:600">'
+                  'Non-finite forecasts: '
+                  + _esc("; ".join(f"{m}: {len(ids)} series" for m, ids in beh_dropped.items()))
+                  + ' gave a non-finite forecast (clean or corrupted) and were dropped from '
+                    'that model\'s behavioral-change statistics; the series ids are in '
+                    '<code>l3/meta.json</code> under <code>behavior_nonfinite_dropped</code>.</p>')
     agreement = meta.get("agreement") or {}
     # ROADMAP.md sec 24.3. Rendered as a NAMED absence, not omitted: a section
     # that simply vanishes reads as a stage that failed, and everything else
@@ -3489,11 +3543,12 @@ def _sec_l3(run_dir: Path, model_colors: dict, findings: list) -> str:
                             + "); agreement is computed over that overlap only (never "
                               "extrapolated across it), so the un-overlapped depth is "
                               "excluded rather than invented.")
+        undef_note = _undefined_agreement_note(pw)
         inner += ("<h4>Cross-model fingerprint agreement</h4>" + _frag(bar, 320)
                   + _figcap("One bar group per corruption, one bar per model pair — "
                             "every pair in the run is shown and named, so a bar is "
                             "never read as a statement about models it does not "
-                            "compare.")
+                            "compare." + undef_note)
                   + _note(
             "Each model's per-corruption fingerprint (the column above) is "
             "interpolated onto the depth range each pair of models actually shares "
@@ -3589,6 +3644,8 @@ def _sec_l3(run_dir: Path, model_colors: dict, findings: list) -> str:
         overall = _ag["overall"]
         worst = _ag["most_divergent"]
         agree = _ag["per_corruption"]
+        if overall.get("value") is None or worst is None:
+            continue
         a_name = _entry.get("a") or "model A"
         b_name = _entry.get("b") or "model B"
         findings.append(Finding(
@@ -4217,6 +4274,13 @@ def _sec_lens(run_dir: Path, model_colors: dict, findings: list) -> str:
               "separate mechanism (a probe fit on stored states, no patching) and "
               "does cover " + _join_and(sorted(no_skip)) + ".</p>",
             open_=True)
+    dropped = {k: v["n_series_nonfinite_dropped"] for k, v in skip_meta.items()
+               if v.get("n_series_nonfinite_dropped")}
+    if dropped:
+        inner += ('<p class="blurb">⚠ <b>Non-finite forecasts in the skip lens</b> — '
+                  + "; ".join(f"{k}: {n} series" for k, n in sorted(dropped.items()))
+                  + ' gave a non-finite forecast (final or patched) and were dropped from '
+                  'that model\'s skip-lens curves; the model input was not altered.</p>')
     fig = go.Figure()
     for model, m in skip_meta.items():
         color = model_colors.get(model)
@@ -5876,6 +5940,45 @@ def _sae_capability_block(run_dir: Path, findings: list) -> str:
         "complete either way.",
         "How to read this comparison")
 
+def _sae_training_incident_notes(run_dir: Path) -> str:
+    """Red lines for SAE training events that changed what was trained.
+
+    Two recorded events, both absent from `sae/meta.json` on a clean run (so
+    this returns `""` and old artifacts render unchanged): real-data rows the
+    model returned NaN/inf for and that were dropped from the training set
+    (`n_real_data_rows_dropped_nonfinite`), and ladder cells whose training
+    diverged and were excluded from the dict-size choice
+    (`dict_size_search.failed_cells`). Rendered in the body because a dictionary
+    chosen among fewer sizes, or trained on fewer rows, than configured is not
+    what the config says (`CLAUDE.md` sec 2.5).
+    """
+    meta = load_json(run_dir / "sae" / "meta.json") or {}
+    dropped = {k: e["n_real_data_rows_dropped_nonfinite"] for k, e in meta.items()
+               if isinstance(e, dict) and e.get("n_real_data_rows_dropped_nonfinite")}
+    failed = {k: (e.get("dict_size_search") or {}).get("failed_cells") for k, e in meta.items()
+              if isinstance(e, dict) and (e.get("dict_size_search") or {}).get("failed_cells")}
+    out = ""
+    if dropped:
+        out += (f"<p class='mockwarn'>\u26a0 {len(dropped)} dictionar"
+                f"{'y was' if len(dropped) == 1 else 'ies were'} trained without some "
+                f"real-data augmentation rows, because the model returned NaN/inf for "
+                f"those real contexts (for example a constant series) and a single "
+                f"non-finite row destroys every SAE weight: "
+                f"{', '.join(f'{k} ({n} rows dropped)' for k, n in dropped.items())}.</p>")
+    if failed:
+        parts = []
+        for k, cells in failed.items():
+            parts.append(f"{k} (dictionary size"
+                         f"{'s' if len(cells) > 1 else ''} "
+                         f"{', '.join(str(c['dict_size']) for c in cells)})")
+        out += (f"<p class='mockwarn'>\u26a0 Training diverged to NaN/inf for some "
+                f"candidate dictionary sizes, which were excluded from the dict-size "
+                f"search; the size was chosen among the remaining ones. Reasons are in "
+                f"<code>dict_size_search.failed_cells</code> in sae/meta.json: "
+                f"{'; '.join(parts)}.</p>")
+    return out
+
+
 def _sae_health_block(run_dir: Path, findings: list) -> str:
     """One row per SAE target: is this dictionary worth reading features off?
 
@@ -5958,6 +6061,8 @@ def _sae_health_block(run_dir: Path, findings: list) -> str:
                 f"label-permutation null, so their feature names carry no more "
                 f"signal than shuffled labels would: "
                 f"{', '.join(not_clearing)}.</p>")
+
+    out += _sae_training_incident_notes(run_dir)
 
     # Figure first, then the table. The figure answers the three questions
     # that are comparisons ACROSS targets, which is what a reader cannot do
@@ -8315,6 +8420,74 @@ def _sec_frontend(run_dir: Path, model_colors: dict, findings: list) -> str:
             "input; it only characterizes what happens at this one specific failure "
             "mode.")
 
+    def _yn(v) -> str:
+        return "—" if v is None else ("yes" if v else "NO")
+
+    const_rows, const_bad, const_missing = [], [], []
+    for name, rec in models.items():
+        cc = rec.get("constant_context")
+        if cc is None:
+            const_missing.append(name)
+            continue
+        if cc.get("status") != "measured":
+            const_rows.append({"model": name, "verdict": cc.get("status", "not_run"),
+                               "finite forecast": "—", "finite activations": "—",
+                               "max forecast deviation": "—"})
+            continue
+        dev = cc.get("max_deviation_units")
+        const_rows.append({"model": name, "verdict": cc["verdict"].upper()
+                           if cc["verdict"] != "finite" else "finite",
+                           "finite forecast": _yn(cc.get("finite_forecast")),
+                           "finite activations": _yn(cc.get("finite_activations")),
+                           "max forecast deviation": "—" if dev is None else f"{dev:.2e}"})
+        if cc["verdict"] != "finite":
+            const_bad.append((name, cc))
+        findings.append(Finding(
+            claim_id=_next_claim_id("frontend"), stage="frontend", evidence_class="behavioral",
+            text=f"Frontend — {name}'s constant-context verdict is '{cc['verdict']}' over "
+                f"{cc['n_cases']} constant inputs (0, 1, 1e3, 1 plus 1e-7 noise): "
+                f"{cc['n_raised']} raised, {cc['n_nonfinite_forecast']} gave a non-finite "
+                f"forecast, {cc['n_nonfinite_activations']} gave non-finite activations"
+                + ("" if dev is None else f"; worst forecast deviation from the constant "
+                   f"{dev:.2e} (units of |constant|+1)") + ".",
+            plain=(f"{name} handles a flat, constant input normally: its forecast and "
+                   f"internal activations stay finite." if cc["verdict"] == "finite" else
+                   f"{name} does not cope with a flat, constant input "
+                   f"({cc['verdict']}): any constant window in a real corpus will give it "
+                   f"a broken row."),
+            registered=False))
+    if const_rows or const_missing:
+        inner += "<h4>Constant-context handling</h4>"
+        for name, cc in const_bad:
+            inner += (f'<p class="blurb">⚠ <b>{name}: constant context gives a '
+                      f'{cc["verdict"]} result</b> — forecast finite: '
+                      f'{_yn(cc.get("finite_forecast"))}, activations finite: '
+                      f'{_yn(cc.get("finite_activations"))}. Every constant window (real '
+                      f'corpora contain them) yields a non-finite row for this model; '
+                      f'downstream consumers drop or flag such rows rather than use them. '
+                      f'The model input is not altered to hide this.</p>')
+        if const_missing:
+            inner += (f'<p class="blurb">Constant-context probe not measured for '
+                      f'{_name_phrase(sorted(const_missing))} (artifact predates the probe '
+                      f'or it was disabled via <code>frontend.constant_context</code>).</p>')
+        if const_rows:
+            inner += _table(pd.DataFrame(const_rows))
+        inner += _note(
+            "Whether each model still produces a finite forecast and finite internal "
+            "activations when its context is perfectly flat (0, 1, 1000, and 1 plus "
+            "1e-7 noise), and how far the forecast lands from that constant "
+            "(in units of |constant| + 1).",
+            "'finite' with a deviation near 0 means the model forecasts the flat line "
+            "back. A finite row with a large deviation means a finite but wrong level. "
+            "A non-finite forecast or activation (shown in capitals and flagged above) "
+            "is the dangerous case: no error is raised, the model simply emits NaN, and "
+            "any consumer that ingests the row inherits it.",
+            "Four hand-built inputs at the run's own context length and horizon, two "
+            "series each; behavioral, input/output only. It does not say how close to "
+            "constant a real window has to be to fail (a model's threshold is its own), "
+            "and it measures, never repairs: adapters do not silently perturb constant "
+            "inputs.")
+
     return inner
 
 
@@ -8850,12 +9023,17 @@ def _sec_confirm(run_dir: Path, findings: list, n_exploratory: int) -> str:
     l3rep = conf.get("l3_replication", {})
     if l3rep.get("status") == "tested" and l3rep.get("tests"):
         rows = [{"corruption": t["corruption"],
-                 "dev ρ": f'{t["dev_rho"]:+.3f}',
+                 "dev ρ": ("not defined" if t["dev_rho"] is None
+                           else f'{t["dev_rho"]:+.3f}'),
                  "private ρ (95% CI)": _ci_str(t["private"]),
-                 "verdict": "replicates" if t["replicates"] else "does NOT replicate"}
+                 "verdict": ("not defined (undefined private correlation)"
+                             if t["replicates"] is None else
+                             "replicates" if t["replicates"] else "does NOT replicate")}
                 for t in l3rep["tests"]]
         n_ok = sum(1 for t in l3rep["tests"] if t["replicates"])
-        inner += (f'<h4>Perturbation replication ({n_ok} of {len(rows)} replicate)</h4>'
+        n_undef = sum(1 for t in l3rep["tests"] if t["replicates"] is None)
+        inner += (f'<h4>Perturbation replication ({n_ok} of {len(rows)} replicate'
+                  f'{f"; {n_undef} not defined" if n_undef else ""})</h4>'
                   f'<p class="blurb">The whole corruption battery re-run on '
                   f'{l3rep["n_private_series"]} private series — same corruptions at the '
                   f'same strengths, same fingerprint, same paired cluster bootstrap — and '
@@ -8929,7 +9107,8 @@ def _sec_confirm(run_dir: Path, findings: list, n_exploratory: int) -> str:
                       f'hold), Holm-corrected across the {n_reg} registered claims '
                       f'(n_null={transfer.get("n_null")}).</p>'
                       + _table(pd.DataFrame(rows)))
-            ledger_rows = concept_rep.get("ledger", [])
+            ledger_rows = [r for r in concept_rep.get("ledger", [])
+                           if r.get("family") not in _K2_FAMILIES]
             if ledger_rows:
                 inner += '<h4>Concept multiplicity ledger</h4>' + _table(pd.DataFrame(ledger_rows))
             inner += _note(
@@ -8965,6 +9144,189 @@ def _sec_confirm(run_dir: Path, findings: list, n_exploratory: int) -> str:
                   f'{concept_rep.get("reason", "not measured")}.</p>')
     else:
         inner += '<p class="blurb">Concept replication: not measured.</p>'
+    inner += _sec_confirm_causal_concepts(concept_rep, conf, findings)
+    return inner
+
+
+_K2_FAMILIES = ("concept_causal", "concept_atlas", "shared_input_agreement",
+                "concept_structure")
+
+
+def _causal_n_max(blk: dict, tests: list):
+    """The adaptive null ceiling of a causal confirm block: the canonical
+    `n_max_null` key, else parsed from the `p_method` string ("adaptive
+    redraw to N at the floor"), else the largest `n_null` among the tests."""
+    if blk.get("n_max_null") is not None:
+        return int(blk["n_max_null"])
+    found = re.search(r"redraw to (\d+)", str(blk.get("p_method") or ""))
+    if found:
+        return int(found.group(1))
+    ns = [int(t["n_null"]) for t in tests if t.get("n_null")]
+    return max(ns) if ns else None
+
+
+def _causal_reading_cell(t: dict, blk: dict, alpha, n_max) -> str:
+    """Reading for one causal confirm row, recomputed with
+    `analysis.confirm.causal_claim_reading` from stored fields, so an
+    artifact written before the adaptive-redraw fix (which stored a false
+    'untestable' label) renders the corrected text. A not-testable row shows
+    its reason."""
+    if t.get("status") != "tested" or n_max is None:
+        return t.get("non_replication_reading") or t.get("reason", "")
+    from ..analysis.confirm import causal_claim_reading
+    return causal_claim_reading(t, int(blk.get("n_tested") or 1),
+                                float(alpha or 0.05), n_max)
+
+
+def _sec_confirm_causal_concepts(concept_rep: dict, conf: dict, findings: list) -> str:
+    """The four K2 confirmation sub-tables (ROADMAP.md sec 38.2): causal
+    claims, atlas concepts, shared-input agreement and structure, plus their
+    own multiplicity ledger. Rendered from whichever of the
+    `concept_replication` keys `causal` / `atlas` / `agreement` / `structure`
+    exist; a `confirmation.json` from before K2 has none and this returns an
+    empty string, so an older report is unchanged. A `not testable` claim
+    (reach withheld on private data, a side not scorable) is shown as its own
+    state with its reason and is never counted as `not confirmed`."""
+    blocks = [(k, concept_rep.get(k)) for k in ("causal", "atlas", "agreement", "structure")
+              if isinstance(concept_rep.get(k), dict)]
+    if not blocks:
+        return ""
+
+    def _n(v, nd=3):
+        return None if v is None else (round(float(v), nd) if isinstance(v, (int, float)) else v)
+
+    def _mde_cell(t: dict) -> str:
+        mde = t.get("mde") or {}
+        if mde.get("mde") is None:
+            return f"not computable ({mde.get('reason')})" if mde else ""
+        over = mde.get("mde_over_null_p95")
+        return (f"{mde['mde']:.4g}" + (f" ({over:.2f} x null p95)" if over is not None else "")
+                + (" at ceiling" if mde.get("mde_at_ceiling") else ""))
+
+    alpha = conf.get("alpha")
+    inner = ""
+    for key, blk in blocks:
+        tests = blk.get("tests", [])
+        n_conf, n_tested = blk.get("n_confirmed", 0), blk.get("n_tested", 0)
+        n_reg, n_nt = blk.get("n_registered", len(tests)), blk.get("n_not_testable", 0)
+        head = (f'{n_conf} of {n_tested} tested confirmed, {n_reg} registered'
+                + (f', {n_nt} not testable' if n_nt else ''))
+        rows = []
+        if key == "causal":
+            title, cls = "Causal feature claims", "causal_within_model"
+            n_max = _causal_n_max(blk, tests)
+            for t in tests:
+                rows.append({
+                    "claim": f'{t["model"]} {_short(t["layer"])} f{t["feature"]}',
+                    "channel": t["channel"], "sign": "+" if t["sign"] > 0 else "-",
+                    "dev effect / q95": _n(t.get("dev_effect_over_null_p95")),
+                    "private effect": _n(t.get("private_effect"), 4),
+                    "p": _n(t.get("p"), 4), "p method": t.get("p_method"),
+                    "p (Holm)": _n(t.get("p_holm"), 4),
+                    "MDE": _mde_cell(t),
+                    "reading": _causal_reading_cell(t, blk, alpha, n_max), "verdict": t.get("verdict", t["status"])})
+            purpose = ("Held-out test of the causal ablation claims: does ablating the same "
+                       "dev SAE feature on its private top-firing series still move the same "
+                       "forecast channel in the same direction, beyond a random-direction null?")
+            reading = ("'confirmed' = the exact/adaptive permutation p against the "
+                       "random-direction null, Holm-corrected over the tested causal claims, "
+                       "is below alpha AND the sign matches dev. 'MDE' is the smallest "
+                       "effect this test could detect at power 0.8: a non-confirmation with "
+                       "a dev effect below the MDE reads as underpowered, not absent.")
+            limits = ("Within-model causal evidence only. Features are the frozen dev SAE's; "
+                      "nothing was retrained or re-searched. A withheld target (its reach "
+                      "probe failed on private data) is 'not testable', never 'not "
+                      "confirmed'. The MDE resamples the private per-row effects (dev "
+                      "per-row effects are not stored).")
+            plain = (f"{n_conf} of {n_tested} tested feature-ablation claims held up on "
+                     f"fresh data: the same feature still moved the same forecast channel "
+                     f"the same way.")
+        elif key == "atlas":
+            title, cls = "Atlas concept claims", "causal_within_model"
+            for t in tests:
+                rows.append({
+                    "concept": t["concept"], "members (testable/all)":
+                    f'{t.get("n_testable_members")}/{t["n_members"]}',
+                    "models": ", ".join(t.get("models", [])),
+                    "pair fraction >= cos": _n(t.get("private_pair_fraction")),
+                    "centroid cos vs dev": _n(t.get("private_centroid_cosine")),
+                    "p": _n(t.get("p"), 4), "p (Holm)": _n(t.get("p_holm"), 4),
+                    "verdict": t.get("verdict", t["status"]),
+                    "reason": t.get("reason", "")})
+            purpose = ("Held-out test of the seed-stable atlas concepts: do the frozen member "
+                       "features still share a causal effect profile on private data?")
+            reading = ("Statistics are the fraction of member pairs with private cosine >= "
+                       "the atlas threshold and the cosine of the private centroid with the "
+                       "dev centroid, each against random same-composition member sets from "
+                       "the private causal pool. Confirmed needs both to beat that null "
+                       "(Holm), centroid cosine >= the threshold and >= half the pairs.")
+            limits = ("A shared causal effect PROFILE on the forecast, not shared inputs or "
+                      "shared learning. The private causal pool is the frozen dev candidates "
+                      "re-scored on private data, so the null is only as wide as that pool.")
+            plain = (f"{n_conf} of {n_tested} tested atlas concepts still hold together on "
+                     f"fresh data.")
+        elif key == "agreement":
+            title, cls = "Shared-input agreement claims", "causal_within_model"
+            for t in tests:
+                rows.append({
+                    "claim": f'c{t["concept"]} {t["src_target"].split("/", 1)[0]} '
+                             f'{_short(t["src_target"])} → {t["dst_target"].split("/", 1)[0]} '
+                             f'{_short(t["dst_target"])} f{t["dst_feature"]}',
+                    "dev verdict": t["dev_verdict"],
+                    "private verdict": t.get("private_verdict", ""),
+                    "p": _n(t.get("p"), 4), "p (Holm)": _n(t.get("p_holm"), 4),
+                    "verdict": t.get("verdict", t["status"]), "reason": t.get("reason", "")})
+            purpose = ("Held-out test of cross-model causal agreement on the same inputs: "
+                       "'same causal effect' must beat both matched-feature floors again; "
+                       "'acts differently' must fall below both floors' lower tail.")
+            reading = ("Floors are re-drawn on private data; the p is an empirical tail p "
+                       "from the raw floor draws, Holm-corrected. Not beating a p95 floor is "
+                       "never counted as disagreement.")
+            limits = ("Each side must clear its own random-direction null on the private "
+                      "shared series to be scorable; otherwise the claim is 'not testable'. "
+                      "Causal within each model, compared across models only on the same "
+                      "inputs.")
+            plain = (f"{n_conf} of {n_tested} tested cross-model agreement claims held up on "
+                     f"fresh data.")
+        else:
+            title, cls = "Structure claims", "descriptive"
+            for t in tests:
+                rows.append({
+                    "claim": t["id"].split("::", 1)[1],
+                    "private statistic": (
+                        f'{t.get("private_n_concepts")} concept(s), max '
+                        f'{t.get("private_max_models_per_concept")} model(s) per concept'
+                        if "private_n_concepts" in t else
+                        (f'null share {_n(t.get("private_rate"))} (lower 95%: '
+                         f'{_n(t.get("lower_95_one_sided"))}, n={t.get("private_n_features")})'
+                         if "private_rate" in t else "")),
+                    "p": _n(t.get("p"), 4), "p (Holm)": _n(t.get("p_holm"), 4),
+                    "verdict": t.get("verdict", t["status"]), "reason": t.get("reason", "")})
+            purpose = ("Held-out test of two directional aggregates: no atlas concept spans "
+                       "every model, and most activation-prominent features are causally null.")
+            reading = ("The first is rule-based (the atlas recomputed on private vectors of "
+                       "the same pool); the second is confirmed when the private null share's "
+                       "one-sided 95% lower bound exceeds 0.5.")
+            limits = ("The rate is resampled over features stratified by target, not series. "
+                      "'Convergent concepts outnumber shared ones' is exploratory and not "
+                      "registered; 'families do not beat the shuffle null' is a negative "
+                      "result that stays descriptive.")
+            plain = (f"{n_conf} of {n_tested} tested structure claims held up on fresh data.")
+        inner += (f'<h4>{title} ({head})</h4>' + _table(pd.DataFrame(rows))
+                  + _note(purpose, reading, limits))
+        findings.append(Finding(
+            claim_id=_next_claim_id("confirm"), stage="confirm", evidence_class=cls,
+            text=f'CONFIRM — {title.lower()}: {n_conf}/{n_tested} tested registered claims '
+                f'confirmed on private data (Holm alpha={alpha}; {n_nt} not testable).',
+            plain=plain, registered=True))
+    ledger = [r for r in concept_rep.get("ledger", []) if r.get("family") in _K2_FAMILIES]
+    if ledger:
+        inner += ('<h4>Causal-concept multiplicity ledger</h4>'
+                  '<p class="blurb">One Holm family per claim type. <code>m</code> is the '
+                  'registered count, <code>n_null</code> the null each family\'s p-values are '
+                  'resolved against, so the smallest attainable Holm-adjusted p is '
+                  '<code>m/(n_null+1)</code>; the split is refused before it opens if that '
+                  'exceeds alpha.</p>' + _table(pd.DataFrame(ledger)))
     return inner
 
 

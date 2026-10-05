@@ -93,8 +93,11 @@ These instructions are binding for every future session, human or agent.
 | SH-10 | Joint crosscoder loses to independent post-hoc-matched SAEs on its pre-registered rule (0.2787 vs 0.3204) | 5 |
 | SH-14 | Cross-model concept transfer works when matched on shared **inputs** (not causal fingerprints); ~46–56% of concepts transfer | 5 |
 | SH-15 | Sharing a causal-effect profile goes with *less* shared input selectivity (OR 0.345, p 0.027) | 5 |
-| SH-16 | No concept is shared by all 4 models; the multi-model pattern is **convergent** effect from different inputs | 5 |
-| SH-18 | Held-out: 19/20 searched and **20/20 frozen-feature** concept-transfer claims confirm on fresh sealed private epochs | 5 |
+| SH-16 | No concept is shared by all 4 models; the multi-model pattern is **convergent** effect from different inputs. **Under the matched null (MN-29) the convergent class vanishes (13 → 0 on v2); superseded pending the power check** | 5 |
+| MN-30 | The L5 'same causal effect' rung is specific (0/9 decoys) but insensitive on a known answer (0.4 / 0.0 on planted shared concepts across architectures); cross-architecture absences are uninformative |  5 |
+| SH-22 | At 7 models under the matched null, the atlas is **segregated by model** (cross-model mixing below chance, p 0.025). The full same-effect verdict (7/1290) is one Chronos-2 ↔ Chronos-Bolt concept, but 1053 tests are underpowered and partial agreement crosses families (level only 35, shape only 9); the strict rung's sensitivity is unmeasured | 5 |
+| SH-18 | Held-out: 19/20 searched and **20/20 frozen-feature** concept-transfer claims confirm on fresh sealed private epochs; **20/20 again at 7 models on a fourth private draw** | 5 |
+| CA-11 | Held-out (K2, 7 models): 10/31 single-feature causal claims confirm; **0** cross-model causal claims do (atlas 0/3 multi-model, L5 0/6); models share what they select, not demonstrably what they do | 5 |
 | SH-19 | Unit-level correspondence (CCM) NO-GO: low-rank TSFM representations defeat the rotation control | 5 |
 | CA-06 | Measured on shared series with matched floors, cross-model causal "disagreement" shrinks from 18/19 to 12/288 (12 of 89 scorable) | 4 |
 | CA-03 | Seasonality circuit: TimesFM uses 1 head, Chronos-T5-Base a non-additive 5-head circuit | 5 |
@@ -111,6 +114,7 @@ These instructions are binding for every future session, human or agent.
 | MP-04 | A single-seed SAE "gold ranking" flips a bake-off verdict; averaging 3 seeds fixes it | 5 |
 | MP-05 | SAE feature death is a property of the layer's geometry (alive atoms ∝ effective dim, exponent 1.02) | 5 |
 | MN-21 | Reviving dead SAE features *hurts* causal alignment at 5/5 TimesFM depths | 5 |
+| MN-29 | The battery's legacy null is lenient: known-answer gate fails on 5/5 seeds (FPR 0.17–0.25), passes on 5/5 with a profile-matched null; on v2, causal features 293 → 110 (13.0× → 3.06× empirical chance), per-target concepts 9 → 0, convergent atlas concepts 13 → 0 | 5 |
 
 ---
 
@@ -320,6 +324,7 @@ These instructions are binding for every future session, human or agent.
   - At atlas level with BH per ordered pair and leg: 511 tests, 316
     uncorrected reciprocal, **288 FDR-reciprocal** (float64 ranks).
 - **Evidence.** Correlational (input agreement). **Status:** exploratory; byte-reproducible at a fixed seed. Held-out confirmation is in SH-18.
+- **Re-measured under the profile-matched null (2026-09-30, MN-29; v2 copy, same features and seed).** Atlas-transfer tests fall from 1581 to 431, and reciprocal-FDR transfers from 1223 to 372 (86% of tests reciprocal in both runs). Input-level transfer of the surviving causal features holds at the same rate; the base is smaller.
 - **Reproduce.** `sae/transfer.py::run_transfer`; `runs/full_report_run_4model/sae/transfer.json`, `sae/atlas_transfer.json`.
 - **Ref.** ROADMAP §30.2 (~25702–25884), §37.6 (~36018–36025).
 - **Score. 5/5.** Establishes the method: match concepts on what features respond to, and treat the causal fingerprint only as a description (see MN-09).
@@ -333,6 +338,7 @@ These instructions are binding for every future session, human or agent.
   - Odds ratio 0.345, Fisher two-sided p **0.0275**. With float16 ranks it
     read OR 0.487, p 0.097.
 - **Evidence.** Correlational. **Status:** exploratory (dev).
+- **Re-measured under the profile-matched null (2026-09-30, MN-29; v2 copy, same features and seed).** Not recomputed directly. The profile null leaves 3 'shared' and 0 'convergent' atlas concepts, too few to repeat the OR test (legacy v2 base: 27 concepts).
 - **Reproduce.** `sae/atlas_transfer.json` × `sae/concept_atlas.json`, `runs/full_report_run_4model`.
 - **Ref.** ROADMAP §37.6 (~36026–36044).
 - **Score. 5/5.** "Same effect on the forecast" and "responds to the same inputs" are different claims and can anti-correlate. This drives the sharing taxonomy in SH-16.
@@ -350,6 +356,9 @@ These instructions are binding for every future session, human or agent.
     min_cosine 0.9, complete linkage, ≥3 members).
 - **Evidence.** Descriptive taxonomy over causal (ablation) and correlational (top-k overlap, hypergeometric + BH) parts. **Status:** exploratory (dev).
 - **Replication (2026-09-29).** `runs/concept_atlas_v2` (v2 corpus, fixed Sundial; ROADMAP §37.11c), 29 targets, 27 tight concepts: again no 4-model concept (n_models 1:11, 2:15, 3:1, 4:0); sharing classes convergent 13, single-model 11, shared 2, partially shared 1 (stable only: 9 / 10 / 2 / 1). Convergent stays the most common multi-model class. Still dev.
+- **Re-measured under the profile-matched null (2026-09-30, MN-29; v2 copy, same features and seed).** The v2 atlas shrinks from 27 concepts (16 multi-model, from 293 pooled causal features) to **7 (3 multi-model, from 110)**. Sharing classes: convergent 13 → **0**, single-model 11 → 4, shared 2 → 3, partially shared 1 → 0. **The 'mostly convergent' headline does not survive the matched null**: the convergent class was built from features the lenient null admitted. 'No concept spans all four models' still holds, but on a far smaller base. Status of this entry: superseded pending the power check and the 7-model run.
+- **7-model panel (2026-10-01, `runs/panel7_v2_dev`, 7 models, profile-matched null, ROADMAP §38.3.4).** 11 atlas concepts from 194 pooled causal features, 9 multi-model; **none spans more than 3 of the 7 models** (models per concept 1:2, 2:4, 3:5). Sharing classes convergent 5, shared 2, partially shared 2, single-model 2 (stable only 4 / 2 / 1 / 2). But cross-model mixing is *below* chance (SH-22), so 'convergent' is no more common than random assignment would produce. 'No concept spans the whole panel' holds; 'mostly convergent' is not restored.
+- **Held-out (2026-10-02, K2, CA-11).** Registered claim `no_concept_in_all_models` **confirmed** on private v2 epoch 3: the private atlas has 10 concepts, at most 3 of 7 models per concept. 'No concept spans the panel' is now held-out confirmed (structural). 'Mostly convergent' was deliberately not registered (low-powered, no private counterpart).
 - **Reproduce.** `runs/full_report_run_4model/sae/concept_profiles.json`, `sae/concept_atlas.json`; `report/findings.json` `compare.1`.
 - **Ref.** ROADMAP §37.3, §37.11 P8 (~36929–36941).
 - **Score. 5/5.** The headline answer to the founding question on this panel: TSFMs converge on shared *forecast adjustments* far more than on shared *feature detectors*.
@@ -365,6 +374,8 @@ These instructions are binding for every future session, human or agent.
   - **Sundial is the weakest source in all 3 of its outbound pairs**
     (0.439–0.698).
 - **Evidence.** Descriptive (reproducibility) + correlational. **Status:** exploratory. CPU-trained replicates flip 2 concepts' status (MN-27), so GPU replicates are canonical.
+- **Re-measured under the profile-matched null (2026-09-30, MN-29; v2 copy, same features and seed).** All 7 profile-null atlas concepts are seed-stable (7/7), against 22/27 under legacy. Stability rises as the set shrinks to its strongest members.
+- **7-model panel (2026-10-01, `runs/panel7_v2_dev`, 7 models, profile-matched null, ROADMAP §38.3.4).** 9/11 atlas concepts seed-stable (0.8181818181818182), 3 replicate SAEs per target.
 - **Reproduce.** `sae/concept_stability.json` (`concepts.n_sae_seeds: 3`), `runs/full_report_run_4model`.
 - **Ref.** ROADMAP §37.5 (~35788–35937).
 - **Score. 4/5.** Gives cross-model transfer the "two runs of the same model" denominator that convergent-learning claims need.
@@ -398,6 +409,7 @@ These instructions are binding for every future session, human or agent.
     - Concept 0, "strong raises seasonal": 4 claims. It is labelled
       convergent, yet features in other models select its series.
   - **Replication on a different corpus (2026-09-29).** `runs/concept_atlas_v2` (v2 corpus, fixed Sundial; ROADMAP §37.11c), P7 search mode on the unpeeked v2 private split (800 series, epoch 0, first look): **20/20 confirmed**, Holm max 0.009995, private AUC 0.9708–0.9951; 6/20 private best features equal dev's. Caveat: the 20 claims come from 2 concepts (16 from concept 0, Chronos-2 + TimesFM "strong lowers level"; 4 from concept 9, Chronos-2 + Sundial).
+  - **Fourth private draw, 7 models (2026-10-02, K2, v2 epoch 3, 971 series, first look; CA-11).** **20/20 confirmed** in search mode, Holm max 0.009995002498750623. Private AUC 0.9194269190325972–0.9696109358569927, reverse 0.8053101997896951–0.9981598317560463; 8/20 private best features equal dev's. The claims come from TimesFM xf.18 concept 1 (14) and Sundial l.6 concept 3 (6), with destinations in every other family (Timer 6, TimesFM 5, Sundial 3, Chronos-2 2, Chronos-T5-Base 2, Time-MoE 1, Chronos-Bolt 1). Reproduce: `runs/panel7_v2_dev/confirm/confirmation.json` (`concept_replication`), private v2 epoch 3 (971 series), registry sha256 `ff6c4f9e…`, k3wt 597848a.
   - **Other held-out results from the same epoch-1 confirmation.** Peak-CKA
     pair CKA 0.44 [0.43, 0.45]; 7/9 L3 fingerprint agreements (overall ρ
     0.50); Chronos-2 > others on `mixture` (ΔMASE 0.2222, p 0.0005).
@@ -439,6 +451,8 @@ These instructions are binding for every future session, human or agent.
   - The old unconstrained metric's top four silhouettes (0.717, 0.674,
     0.636, 0.607) were all `[big, 1]` splits.
 - **Evidence.** Descriptive (clustering over causal vectors). **Status:** confirmed; this motivated pooling features across models into the atlas.
+- **Re-measured under the profile-matched null (2026-09-30, MN-29; v2 copy, same features and seed).** v2 per-target concepts go from 9 to **0** (28/28 measured targets non-modular). Causal features per target are 0–8; 24/28 have fewer than 6, and the 5 with ≥6 have a min cluster < 3 at every admissible k. About 62% of profile clears are chance-level (110 clearing features vs a 67.88 chance expectation). This is a **low-power result, not a measured absence**: k = 8 rows × 16 null draws. Power check (ROADMAP §38.1.8, round 6): raising (k, n_null) to (16, 32) or (32, 32) does not help. It gives 3 targets with ≥6 causal features, and 0 or 1 targets admitting a k. The binding limit is feature sparsity: 178/672 candidates never fire and are unscorable at any setting.
+- **7-model panel (2026-10-01, `runs/panel7_v2_dev`, 7 models, profile-matched null, ROADMAP §38.3.4).** 10 per-target concepts on 5 of 56 targets (Chronos-2 block 9, Sundial layers 5 and 8, Timer layers 3 and 7; 2 each); 50 non-modular. **Timer's 4 concepts sit on targets whose clears are not above empirical chance** (BH q 0.272 and 0.163; Timer overall 1.0169× chance, PM-17), so the concepts step should condition on per-target significance. K2 registers only from the 22 BH-significant targets.
 - **Reproduce.** `sae/concepts.py::_sweep_k`; `runs/full_report_run_4model/sae/concepts.json` (`concept_min_members` 1 vs 3).
 - **Ref.** ROADMAP §32.1, §32.5 D, §32.13 (~29179–29247).
 - **Score. 4/5.** A real result about how modular TSFM causal features are (mostly not, at this dictionary size), plus a general silhouette trap.
@@ -464,6 +478,21 @@ These instructions are binding for every future session, human or agent.
 - **Score. 4/5.** Recasts "what is each model better at" as how strongly, not which, forecast properties its features control.
 
 ---
+
+#### SH-22 · At 7 models, the atlas is segregated by model, and the full same-effect verdict is reached only inside the Chronos family; the strict rung is underpowered
+- **Claim.**
+  - The pooled atlas has more structure than chance: 11 concepts vs a column-shuffle null p95 of 5.049999999999983 (p 0.004975124378109453).
+  - But its clusters are **purer by model than random assignment**: 9 multi-model concepts vs a null mean of 10.755 (p_below 0.024875621890547265); mean model purity 0.5909090909090909 vs 0.4741287878787878 (p_above 0.024875621890547265). Verdict `segregated by model`. The coarser families (9) are also segregated by model and no more numerous than null (p 0.6766169154228856).
+  - Shared-input causal agreement over 1290 tests: same causal effect 7, acts differently 22, shape only 9, level only 45, no specific agreement 133, not scorable 1074.
+  - **All 7 'same causal effect' verdicts are Chronos-2 ↔ Chronos-Bolt, in one atlas concept** ('mild raises dispersion'). Six of them share the Chronos-Bolt block-4 feature set, so this is one lineage-shared concept, not seven.
+- **Correction (2026-10-01, same day): the L5 result is mostly undecided, not a measured difference.** 1053 of the 1074 not-scorable tests fail because at least one side's single-feature ablation does not clear its own null on the ~24 shared series (526 neither side, 434 only the source clears, 93 only the destination clears; 21 have no side record). Across families, 172 tests are scorable: level only 35, shape only 9, acts differently 19, no specific agreement 109, same causal effect 0. Within the Chronos family, 44 of 233 are scorable: same causal effect 7, level only 10, acts differently 3, no specific agreement 24. Partial agreement does cross families. At the profile level, atlas concept 6 ('shifts the level', Chronos-2 / Chronos-Bolt / Sundial) and concept 4 (with Timer) are classed shared. The 'same causal effect' verdict requires level AND shape to beat both matched floors, with single-feature ablations, so its cross-architecture sensitivity is unmeasured. Next: a known-answer test of the rung across two different planted architectures, and whole-concept (feature-set) ablation, before K2 spends the private epoch (ROADMAP §38.3.4).
+- **Known-answer check (2026-10-01, MN-30).** On a planted pair of different architectures, the rung finds a truly shared concept in 0.4 (single direction) and 0.0 (distributed) of seeds, with 0/9 false 'same'. **The within-Chronos-only pattern is therefore a sensitivity limit of the rung, not evidence that sharing follows lineage.**
+- **Held-out (2026-10-02, K2, CA-11).** No L5 agreement claim confirms (0/6 tested, 5 not testable). The lone Chronos-2 ↔ Chronos-Bolt 'same' claim that was testable reproduces its verdict but misses Holm (p 0.011, p_holm 0.0659). No multi-model atlas concept confirms (0/3; only 1/3 member pairs keep cosine ≥ 0.9). 'No concept in all models' confirms: the private atlas has 10 concepts, at most 3 of 7 models each. Status: the segregation and 'no universal concept' readings are held-out consistent; every specific cross-model causal claim is not confirmed.
+- **Models / layers.** TimesFM, Chronos-2, Sundial, Chronos-Bolt, Timer, Time-MoE, Chronos-T5-Base (encoder); 56 targets, 55 measured.
+- **Evidence.** Descriptive (atlas structure vs nulls) + causal within-model on shared inputs (L5, each side against its own null and matched floors). **Status:** exploratory (dev); K2 held-out: no cross-model causal claim confirmed (CA-11).
+- **Reproduce.** `runs/panel7_v2_dev/sae/concept_atlas.json` (`null`), `sae/shared_input_agreement.json`, `sae/concept_stage.json`; `configs/panel7_v2.yaml` at dev 4ace6a4.
+- **Ref.** ROADMAP §38.3.4.
+- **Score. 5/5.** Answers the founding sharing question on the widest panel: causal forecast adjustments are mostly model-specific, and the one clear case of the same effect on the same inputs follows model lineage.
 
 ## C. Causal comparison (within-model causal evidence compared across models)
 
@@ -554,6 +583,7 @@ These instructions are binding for every future session, human or agent.
     differently. ROADMAP §37.8.
 - **Replication (2026-09-29).** `runs/concept_atlas_v2` (v2 corpus, fixed Sundial; ROADMAP §37.11c), 1223 reciprocal-FDR tests: same causal effect 11, level only 52, shape only 29, no specific agreement 264, acts differently 64, not scorable 803. Of 420 scorable, 64 (15.2%) act differently (reference 12/89 = 13.5%). Runtime 10854.9 s.
 - **Evidence.** Causal within-model, compared on shared inputs. **Status:** exploratory; corrected 2026-09-27; replicated on the v2 corpus 2026-09-29.
+- **Re-measured under the profile-matched null (2026-09-30, MN-29; v2 copy, same features and seed).** v2 agreement verdicts go from same 11 / level-only 52 / shape-only 29 / no specific agreement 264 / acts differently 64 / not scorable 803 (1223 tests) to **7 / 4 / 8 / 28 / 10 / 315 (372 tests)**, with the matched null now also at the agreement step's own-effect gate. 'Acts differently' stays rare (10). Not-scorable rises from 66% to 85%, because fewer sides clear their own matched null on U.
 - **Reproduce.** `runs/full_report_run_4model/sae/shared_input_agreement.json` (`sae/shared_input_agreement.py`, commit `fc37ec0`; the pre-fix artifact is `shared_input_agreement.pre_seed_fix.json`).
 - **Ref.** ROADMAP §27.3 (~23844–23866), §37.8 P5b (~36309–36447).
 - **Score. 4/5.** Most of the "models act differently" headline came from comparing effects on different inputs. Hold the input fixed before comparing causal effects across models.
@@ -582,6 +612,7 @@ These instructions are binding for every future session, human or agent.
     the lowest ablation count (47).
   - Ablation exceeds injection only at Chronos-2 blocks 6 and 8.
 - **Evidence.** Causal within-model (two interventions). **Status:** confirmed on run.
+- **Re-measured under the profile-matched null (2026-09-30, MN-29; v2 copy, same features and seed).** Not re-measured. Its own-site ablation arm used the legacy null, so the size of the injection-vs-ablation gap is uncertain. Read the ablation side as an upper bound.
 - **Reproduce.** `sae/response.py::feature_response_fingerprints` vs `feature_ablation_fingerprints`.
 - **Ref.** ROADMAP §27.3 (~23809–23823).
 - **Score. 4/5.** Steering a direction in and removing a feature where it fires are different questions with different answers.
@@ -612,9 +643,26 @@ These instructions are binding for every future session, human or agent.
 - **Correction (2026-09-29, titles only).** The horizon-distance channels clear in every family, so titles led by them named what families share. Titles now lead with directed channels (commit f2ed2a9); membership, sizes and nulls are unchanged (only `families[].title` differs in `concept_families.json`). Reference-run titles are now: Accuracy improvers (59), Level raisers (46), Seasonality dampeners (29), Volatility amplifiers & Seasonality amplifiers (28), Volatility dampeners (21), Volatility amplifiers & Trend dampeners (13).
 - **Evidence.** Descriptive. **Status:** exploratory; replicated on the v2 corpus.
 - **Replication (2026-09-29).** `runs/concept_atlas_v2` (v2 corpus, fixed Sundial; ROADMAP §37.11c): 293 causal features → 9 families, 288/293 (0.9829) assigned; null again not beaten (p_n_families 1.0, p_frac_assigned 0.9851); "segregated by model"; 3 tight concepts split. Two families' titles were near-identical ("Near-term steerers & Long-range steerers" / "Long-range steerers & Near-term steerers"); fixed the same day (titles lead with directed channels, commit f2ed2a9). v2 family titles are now: Level lowerers (80), Level raisers & Accuracy improvers (61), Volatility dampeners (48), Trend boosters & Accuracy improvers (23), Seasonality amplifiers (17), Trend boosters & Volatility amplifiers (12), Level raisers & Trend boosters (18), Trend dampeners (18), High-frequency shifters (11).
+- **Re-measured under the profile-matched null (2026-09-30, MN-29; v2 copy, same features and seed).** Families: 5 at threshold 0.85 (92/110 assigned), p_n_families 0.3781094527363184, p_frac_assigned 0.38308457711442784; still 'segregated by model', and still not beating the shuffle null. The continuum reading survives.
 - **Reproduce.** `sae/concept_families.py::run_concept_families` on `runs/full_report_run_4model` → `sae/concept_families.json`.
 - **Ref.** ROADMAP §37.11b (incl. R2).
 - **Score. 4/5.** It reframes "concepts" in effect space as a readable tiling rather than discovered units. It also explains why tight concepts are small and why near neighbours fall outside them.
+
+#### CA-11 · Held-out: 10 of 31 single-feature causal claims confirm; no cross-model causal claim does
+- **Claim.** K2, the first private-split test of causal concept claims, was run once on 7 models. Each Holm family is per claim type.
+  - **Single-feature causal effects: 10/31 tested confirm** (32 registered; 1 not testable because the feature fires on no private series). Each confirmed claim has p 0.001 after the adaptive redraw to 1000 draws, and p_holm 0.031 (the floor, 31/1001).
+  - By model, confirmed/registered: TimesFM 3/4, Time-MoE 2/7, Sundial 2/4, Chronos-Bolt 2/6, Chronos-2 1/7, Chronos-T5-Base 0/4.
+  - By channel: horizon_shape_near 4/8, mase 3/8, spectral_centroid 2/4, dispersion 1/3, seasonal 0/4, level 0/4.
+  - 19 of the 21 failures were not even at the 200-draw p floor. There is 1 sign flip (Chronos-T5-Base b.10 f195).
+  - **Multi-model atlas concepts: 0/3** (concepts 6, 8, 9). Centroid cosine still beats the null (p_centroid 0.0005–0.007), but only 1/3 member pairs reach cosine 0.9 (rule fails, p_holm 0.1349). The one atlas claim that confirms is single-model: Chronos-2 b.5/b.7/b.8 (pair fraction 1.0, centroid 0.9588, p_holm 0.008).
+  - **Shared-input causal agreement (L5): 0/6 tested** (11 registered; 5 not testable because one side does not clear its own null on the private shared series). The best case, Chronos-Bolt b.4 → Chronos-2 b.7 'same causal effect', reproduces the verdict (p 0.011) but misses Holm (0.0659). Two 'acts differently' verdicts reproduce (Holm 0.1598, 0.1918).
+  - Same look: concept transfer 20/20 (SH-18), structure 2/2 (SH-16, MN-14), U1 2/2 (MN-28), L0 1/1, L1 replicates, and L3 6/9 (`frequency_shift` and `smooth` are stronger on private; `level_shift` flips sign, −0.188168449197861 → 0.10862299465240642). In total, 43 of 82 replicable claims confirm and 6 are not testable.
+- **Caveat on the artifact's text.** 19 non-confirmed claims carry the reading "untestable", which is wrong. The MDE was computed from each claim's own 200 draws, but the adaptive procedure can reach the Holm floor, so these claims were tested and not detected. The verdicts are unaffected, and the reading is now recomputed at render time.
+- **Models / layers.** TimesFM, Chronos-2, Sundial, Chronos-Bolt, Timer, Time-MoE, Chronos-T5-Base (encoder); profile-matched null (MN-29).
+- **Evidence.** **Held-out confirmed** (causal within-model, for the 10 single-feature claims). Held-out *not* confirmed for every cross-model causal claim. **Status:** held-out confirmed / negative on private.
+- **Reproduce.** `runs/panel7_v2_dev/confirm/confirmation.json` (`concept_replication`), private v2 epoch 3 (971 series), registry sha256 `ff6c4f9e…`, k3wt 597848a.
+- **Ref.** ROADMAP §38.2 (Findings — K2 CONFIRMED ONCE).
+- **Score. 5/5.** This is the gold-standard answer to "do the causal concept claims hold up". The individual within-model causal features partly do (about 1 in 3). The cross-model causal sharing claims do not, while input-level sharing replicates on a fourth private draw: models share what they select, not demonstrably what they do with it.
 
 ---
 
@@ -740,6 +788,21 @@ These instructions are binding for every future session, human or agent.
 - **Reproduce.** `analysis/spec_curve.py`, `run_spec_curve.py`; `runs/full_report_run_large_revived/spec_curve/results.json`; `layer_screen.py::select_work_bend`.
 - **Ref.** ROADMAP §34 A2 (~30777–30817), §31.1 (~27104–27140).
 - **Score. 4/5.** Any claim keyed on "the important layers" must name its selector and check alternatives.
+
+#### DE-09 · Time-MoE's window alignment decays to chance past layer 4, with zero backward leakage (architectural, not bad spans)
+- **Claim.**
+  - Per-layer impulse checks in float32, normalization off, at 0.04/0.2/0.4/1.0× the calibrated 0.25 amplitude.
+    - Backward leakage is exactly 0.00e+00 in every layer and amplitude cell.
+    - Across all 48 cells the argmax never lands earlier; every miss lands in a later window.
+    - Spans have IoU 1.000 against the declared ones.
+  - Diagonal hit fraction at 0.01: layers 0–4 1.00; layers 5/6/7 0.60/0.60/0.40; layer 11 0.33. At 0.05 and above, layers 5–11 are 0.07–0.20, which is chance.
+  - Sundial reference at 0.25, layers 0–11: 1.00, 1.00, 1.00, 0.93, 0.53, 0.33, 0.27, 0.13, 0.27, 0.27, 0.27, 0.20. Its backward leakage of 3.5e-3 to 1.5e-2 comes entirely from its global z-score normalization.
+  - Time-MoE decays much sooner than Sundial: at 0.01 Sundial is 1.00 through layer 10.
+  - Method trap: with z-score normalization on, bf16 showed "backward leakage" of 0.06–0.6. Z-scoring rescales every position when one point changes, so leakage must be measured with normalization off.
+- **Evidence.** Descriptive (instrument validation). **Status:** measured, one checkpoint (Maple728/TimeMoE-50M) at context 480.
+- **Reproduce.** `scratchpad`-only diagnostic (`diag_align.py`, recorded in ROADMAP §38.3); the `panel7_v2` extract alignment table.
+- **Ref.** ROADMAP §38.3 (K3 onboarding review); CLAUDE_FULL §11.22.
+- **Score. 3/5.** The extract gate reads only the shallowest layer and passes. Window-level claims on Time-MoE layers ≥5 (per-window patching, window-resolved cross-model depth) are weak and must say so.
 
 ---
 
@@ -957,7 +1020,35 @@ These instructions are binding for every future session, human or agent.
 - **Ref.** ROADMAP §32.7b(2) (~28516–28535).
 - **Score. 3/5.**
 
+#### PM-16 · Timer returns all-NaN forecasts and activations on a constant context; the other six panel models do not
+- **Claim.**
+  - Setup: context 480, horizon 64, constants 0.0, 1.0, 1e3 and 1 + 1e-7 noise, with and without autocast.
+  - `thuml/timer-base-84m` (via `generic_hf`) gives 100% NaN forecasts and NaN activations in all 8/8 captured layers, in all four cases.
+  - Measured on 1 + N(0, sd): NaN for sd ≤ 1e-4, finite from sd = 1e-3.
+  - TimesFM, Chronos-2, Sundial, Chronos-Bolt and Time-MoE (with `input_normalization: zscore`) return the constant, within 2e-7 of it.
+  - Chronos-T5-Base is finite but off by 0.0015–0.0029 in units of |constant|+1.
+  - Consequence: 5 constant Monash windows in the SAE real-data augmentation poisoned the first optimizer step and crashed the 7-model run (ROADMAP §38.3).
+  - Consequence: before the fix, L0 silently averaged over a different series set per model when a model returned NaN (pandas skips NaN), with CI [nan, nan] and a finite p. The same happened in the skip lens (NaN curves read as "never converges").
+- **Evidence.** Behavioral. **Status:** measured.
+  - `frontend` now probes constant contexts and renders a loud row.
+  - `--doctor` warns.
+  - L0 and the lens drop non-finite series from every model and record them.
+  - SAE training drops non-finite real-data rows.
+  - Model inputs are never altered by default: an epsilon large enough to help (≥ 1e-3 at level 1) would materially rewrite the input.
+  - Still unguarded: predictions stored raw and read by L3/attention/agreement, where NaN is mostly skipped via nanmean. Relevant only if a constant series enters a sampled corpus.
+- **Reproduce.** `analysis/constant_context.py`, `frontend.constant_context`, `tests/test_constant_context.py`.
+- **Ref.** ROADMAP §38.3 (7-model run crash).
+- **Score. 3/5.** A zero-code adapter can pass the alignment gate and still fail on a trivial input. "Loads and aligns" is not "handles every input".
+
 ---
+
+#### PM-17 · Timer's SAE features do not clear the ablation null above chance
+- **Claim.** On the 7-model panel, Timer's 6 targets give 30 clearing cells against 29.5 expected by empirical chance (1.0169×), and 0 of 6 targets are BH-significant. Every other model is above chance (1.6429× Chronos-T5-Base to 5.6986× Chronos-Bolt). Timer's targets do reach the forecast (relative reach 0.0659104–0.260557), so this is not an unreachable layer: its features' ablations are not more forecast-specific than random directions of the same size.
+- **Models / layers.** Timer (`thuml/timer-base-84m`, `generic_hf`), model.layers 1, 2, 3, 4, 6, 7.
+- **Evidence.** Causal within-model (ablation vs profile-matched null), descriptive aggregate. **Status:** exploratory (dev).
+- **Reproduce.** `runs/panel7_v2_dev/sae/Timer/*_ablation.json` (`empirical_chance`); clears from the run log (to be rendered by `chance-render`).
+- **Ref.** ROADMAP §38.3.4.
+- **Score. 3/5.** A per-model fact that changes how Timer's concepts are read, and a reason to gate concepts on per-target significance.
 
 ## F. Method results — positives (what works, and was adopted)
 
@@ -1052,6 +1143,7 @@ These instructions are binding for every future session, human or agent.
     (4/12 vs 8–9/12).
   - Across the 4-model battery, clearing cells run 2.49×–6.61× chance.
 - **Evidence.** Causal within-model. **Status:** confirmed. The first pass applied to one model only, because of an autocast defect (MN-24).
+- **Re-measured under the profile-matched null (2026-09-30, MN-29; v2 copy, same features and seed).** The battery's `0.05 × cells` chance line is not a chance rate (effect is a mean over k rows vs the p95 of pooled per-row null values). The leave-one-draw-out empirical rate is 0.024605 (legacy) / 0.019711 (profile) per cell. Against it, legacy clears 1348 cells vs 103.6875 expected (13.0006×) and profile 254 vs 83.0625 (3.0579×), with 20/28 targets BH-significant under profile (27/28 legacy). The battery still discriminates, but the legacy null inflated clears about 5-fold (1348 → 254), because it removed a size-mismatched amount.
 - **Reproduce.** `run_stage2_response_fingerprint.py`; `sae/response.py::feature_ablation_fingerprints`.
 - **Ref.** ROADMAP §25.23 (~21263–21422), §27.3.
 - **Score. 4/5.** The foundation of every causal concept claim.
@@ -1234,7 +1326,9 @@ See SH-20. **4/5.**
   - Of 565 rendered SAE candidates, **364 (64.4%)** cleared 0 of 9 causal
     channels, covering 724/1297 panels.
   - The share clearing nothing is 54.5–71.1% per model.
-- **Evidence.** Causal within-model. **Status:** fixed (null panels collapsed).
+- **Evidence.** Causal within-model. **Status:** fixed (null panels collapsed); held-out confirmed (2026-10-02).
+- **Re-measured under the profile-matched null (2026-09-30, MN-29; v2 copy, same features and seed).** On v2 (672 candidates) the share clearing 0/9 channels is 0.5639880952380952 under the legacy null and **0.8363095238095238** under the profile-matched null (scorable only: 0.4068825910931174 → 0.7773279352226721). By model: Chronos-2 0.389 → 0.799, Chronos-Bolt 0.611 → 0.847, Sundial 0.454 → 0.843, TimesFM 0.754 → 0.850. The claim strengthens: most activation-prominent features are causally null.
+- **Held-out (2026-10-02, K2, CA-11).** Registered claim `majority_prominent_features_causally_null` **confirmed** on private v2 epoch 3, 7 models: private causally-null share 0.835 of 927 features (one-sided 95% lower bound 0.8166 > 0.5; dev 0.8102; p_holm 0.0005). Status: held-out confirmed.
 - **Reproduce.** `runs/full_report_run_4model/sae/*_ablation.json` (`n_channels_clearing`).
 - **Ref.** ROADMAP §32.7b (~28480–28675).
 - **Score. 4/5.** Detecting features by activation alone is not evidence that they matter: most high-activation features do nothing causally.
@@ -1285,6 +1379,7 @@ See SH-20. **4/5.**
 #### MN-18 · Absence of agreement is not disagreement
 - **Claim.** P5b's first pass called 109 of 288 tests "acts differently" because it failed an upper-tail (p95) floor. With a lower-tail (p05) test on both statistics, the count is **9**; 32 are "no specific agreement".
 - **Evidence.** Method. **Status:** fixed.
+- **Re-measured under the profile-matched null (2026-09-30, MN-29; v2 copy, same features and seed).** The lower-tail rule is unchanged. Under the profile null, 10 of 372 tests are 'acts differently' (legacy 64 of 1223).
 - **Reproduce.** `sae/shared_input_agreement.py`.
 - **Ref.** ROADMAP §37.8 (~36309–36447); CLAUDE.md §8.
 - **Score. 4/5.**
@@ -1398,7 +1493,106 @@ See SH-20. **4/5.**
 - **Ref.** ROADMAP §37.5 (~35883–35892).
 - **Score. 3/5.**
 
+#### MN-28 · Looking inside does not predict forecast failure beyond the model's own quantile width (dev, v2)
+- **Claim.**
+  - **Setup (U1).** Per model, a series' log MASE and its failure flag (MASE above the seasonal-naive MASE) are predicted from free output-only features: quantile width, flatness and catch22 of the context.
+  - **U1 result.** Adding internals (SAE concept-family activations at the last window, per-series lens convergence depth, residual norm at the crystallization layer) gives no gain for any model. Cross-fitted, 936 series (29 MASE-unreliable excluded), series bootstrap n_boot 1000.
+  - **U1 gain, log-MASE Spearman:**
+    - Chronos-2 −0.004538525487737699 [−0.011114460635546608, 0.001579303153024544];
+    - Chronos-Bolt 0.0015074468712488187 [−0.00431583261828489, 0.007117558727123265];
+    - Sundial 0.004392437244468139 [−0.002947812538624474, 0.011878917521050776];
+    - TimesFM −0.004004029536078035 [−0.01042833860707762, 0.001947542083900313].
+  - **U1 gain, failure AUROC:**
+    - Chronos-2 0.0009112349914237594 [−0.021583010754270764, 0.02161872865773572];
+    - Chronos-Bolt 0.017620172849398652 [−0.00303947104788612, 0.039507799948734226];
+    - Sundial 0.002595258692529301 [−0.01689299387157657, 0.022535002261753423];
+    - TimesFM 0.005844155844155874 [−0.008952987027037031, 0.018686576182679344].
+  - **Why there is no room.** The baseline alone reaches Spearman 0.8095725334786167–0.8390565740367988.
+  - **U2 (route each series to the model with the lowest predicted MASE).** Realized mean MASE:
+    - baseline routing 1.6841631168977191;
+    - baseline+internals routing 1.6973776593724759;
+    - best single model (Chronos-2, chosen on the same rows) 1.6908591055335143;
+    - oracle 1.470673442284903.
+  - **U2 gap (baseline − internals):** −0.013214542474756893 [−0.02965822172605901, 0.0026436959894803815], p 0.122. Internals routing is, if anything, worse.
+- **Evidence.** Predictive (behavioral), dev only. **Status:** confirmed negative on dev.
+  - Chronos-2 had only the SAE group (skip lens unavailable, DE-03). TimesFM lacked the crystallization norm (its mean lens never crystallizes).
+  - Lens depth is near-degenerate on several models: TimesFM 104/965 converge; Sundial 838/965 sit at depth 1.0.
+  - The failure task is imbalanced (rate 0.094–0.174).
+  - CIs hold the out-of-fold predictions fixed.
+  - One of 36 per-group CIs excludes 0 (the Chronos-Bolt crystallization-norm AUROC gain). Given the multiplicity, it is not claimed.
+- **7-model panel (2026-10-01, `runs/panel7_v2_dev`, ROADMAP §38.4.4).** Routing stays negative: internals routing 1.9638372652500882 vs baseline routing 1.947559678401894 (gap p 0.258), and both lose to always using Chronos-2 (1.8559481862647405; p 0.001). U1 is a **narrow partial positive**: SAE-family activations add to the free baseline's error ranking for the two weakest models only (Timer +0.030310590743556798 [+0.018647995847319663, +0.04301877629706014], Time-MoE +0.011873989992855383 [+0.004531001655895828, +0.01920766804668001]); no failure-AUROC gain excludes 0. Both are registered for the K2 private look; still dev. Robust to fold assignment: across 5 fold seeds the gains are 0.030310590743556798–0.036080231129527296 (Timer) and 0.010632868442613463–0.015195058383651538 (Time-MoE), with every CI excluding 0; no other model's CI excludes 0 at any seed.
+- **Held-out (2026-10-02, K2, CA-11).** Both registered U1 claims **confirm** when the frozen procedure (SAE checkpoints, families, baseline, folds, seed) is refit on private v2 epoch 3 (n 935, 36 MASE-unreliable excluded). Log-MASE Spearman gain: Timer 0.0446 [0.0292, 0.0605], p_holm 0.002 (baseline 0.7568 → 0.8013); Time-MoE 0.011 [0.0032, 0.0194], p_holm 0.012 (0.835 → 0.846). The Timer private gain exceeds every dev fold seed (0.0303–0.0361). Predictive, not causal. The entry's headline negative still holds for the four strongest models and for routing; the narrow positive for the two weakest models is held-out confirmed.
+- **Reproduce.** `python run_reliability_from_internals.py --run <copy of runs/concept_atlas_v2 with lens rerun at lens.depth_max_series=965> --out reliability_v2.json`; `analysis/reliability_from_internals.py`.
+- **Ref.** ROADMAP §38.4.4.
+- **Score. 4/5.** Same verdict as PM-12, now for internals: for "when should I distrust this forecast", the free quantile band already carries what the internals carry. A clean practitioner-facing negative, and it bounds claims of practical use from interpretability.
+
+
+#### MN-29 · The ablation battery's legacy null is lenient: a known-answer forecaster fails the gate with it and passes with a profile-matched null
+- **Claim.**
+  - **The flaw.** The legacy random-direction null (`sae/response.py`, `null_magnitude`) removes ONE uniform amount from every token: the chunk's mean |z| over all tokens and rows, zeros included, averaged over the chunk's features. The feature ablation removes z_f(t)·w_f, which is large exactly on the feature's own top-firing rows. A strong or dense atom therefore clears the null on size alone. The same sizing is used by the shared-input agreement step's `own_effect_null`.
+  - **Known-answer test.** The planted forecaster `mock_planted` was run at dose 1, seeds 0–4. Seed 0 tuned `entanglement_min`; seeds 1–4 are held out. The gate (fixed before any data) is control-layer FPR ≤ 0.10 and sensitivity ≥ 0.5.
+    - Legacy null: **stop on all 5 seeds**. Per-cell FPR 0.2483974358974359, 0.20353982300884957, 0.21862348178137653, 0.22468354430379747, 0.16818181818181818; per-feature FPR 0.338–0.465.
+    - Opt-in `sae.ablation_null: profile_matched` (each null draw removes, at every token, |z_f(t)|·‖w_f‖ along a random decoded direction; the removal profile is the feature's own and only the direction is random): **pass on all 5**. Per-cell FPR 0.0, 0.0, 0.002844950213371266, 0.0, 0.0. Sensitivity 1.0, 0.7, 0.8333333333333334, 0.8888888888888888, 0.9.
+  - **Seed 0 downstream, legacy vs profile:**
+    - sub-null decoys cleared 4/4 vs 0/4;
+    - input-only decoys cleared (raw) 2/4 vs 0/4;
+    - atlas ARI 0.3357664233576642 vs 0.46938775510204084;
+    - sharing-class accuracy 0.36363636363636365 vs 0.7142857142857143;
+    - transfer accuracy 0.6153846153846154 vs 0.4444444444444444;
+    - control-layer atlas rows 151 vs 28.
+  - **Real data, one target.** On `concept_atlas_v2` TimesFM `stacked_xf.12` (18 scorable candidates, same seed, on a copy):
+    - the legacy re-run reproduced the recorded artifact exactly: 29 clearing cells, 9 features;
+    - profile-matched: **9 cells, 4 features, against a chance level of 8.1 cells** (0.05 × 162).
+- **Evidence.** Known-answer instrument validation (planted ground truth), plus one real target.
+- **Status:** the flaw is confirmed. Its real-data extent is open: a full v2 re-score under the matched null is running.
+- **Real-data extent (2026-09-30, v2 copy; ROADMAP §38.1.8).**
+  - Clearing features 293 → 110, cells 1348 → 254.
+  - Against the leave-one-draw-out empirical chance rate (≈2% per cell, not the nominal 5%), that is 13.0006× → 3.0579× chance, with 20/28 targets BH-significant under the matched null.
+  - Per-target concepts 9 → 0 (low power at k = 8).
+  - Atlas 27 → 7, convergent 13 → 0.
+  - A covariance-shaped ('on-manifold') matched null clears even fewer (106 cells, 1.1277× chance), so the isotropic matched null is not over-strict.
+  - The affected entries (MP-07, MN-14, SH-14–17, SH-20, CA-06, CA-08, CA-10, MN-18) each carry a 're-measured' line. **Until it lands, every causal-feature count and every downstream concept number in B.2/C was measured with the lenient null and is an upper bound.** This includes MN-14's 64.4%, the per-target concept counts, the atlas, transfer, agreement (CA-06) and sharing classes.
+- **Caveat.** In the planted world, a random decoded direction overlaps the planted span more than a p_perp atom does, so the matched null may be over-strict there (sensitivity falls to 0.7–0.9, and weak true effects are never detected).
+- **A second mislabel (2026-10-01, `runs/panel7_v2_dev`, 7 models, profile-matched null, ROADMAP §38.3.4).** The battery's log line called `0.05 × cells` 'expected by chance'. The measured leave-one-draw-out rate is 0.003–0.04 per cell, so the 7-model run read as 442 / 459.9 = 0.96× chance in the log; against the empirical expectation it is 442 / 178.75 = **2.4727×**. The report never rendered the comparison. Fixed by labelling both numbers and rendering clears vs empirical chance per target (branch `chance-render`).
+- **Reproduce.** `python run_known_answer.py --config configs/known_answer.yaml --null mean_magnitude|profile_matched` (seeds 0–4, dose 1); `sae/response.py::_profile_matched_null_replacement`; `tests/test_*profile*`.
+- **Ref.** ROADMAP §38.1.7.
+- **Score. 5/5.** The known-answer test did its job: it caught a lenient statistic behind the project's causal claims, and the held-out seeds show the fix.
 ---
+
+#### MN-30 · The shared-input causal-agreement rung (L5) misses most truly shared concepts across architectures, and can call a shared concept "acts differently"
+- **Claim.**
+  - Known answer: two `mock_planted` architectures that differ in width (64 vs 96), depth (5 vs 7) and residual basis (random rotation), with planted shared and decoy concepts, 5 scored seeds.
+  - The current rung reads a shared single-direction concept "same causal effect" in 0.4 of seeds, and a shared concept spread over 3–4 directions in 0.0.
+  - No variant reaches the pre-fixed gate (sensitivity ≥ 0.5 on both): set ablation 0.2 / 0.0, a 2× larger U 0.6 / 0.0, a 4× larger U 0.4 / 0.0, partial agreement as its own rung 0.6 / 0.2.
+  - Decoys are never called "same" (0/9 under every variant). So "same" is specific but insensitive, and an absence of "same" across architectures is uninformative.
+  - A shared, same-sign pure-dispersion concept reads "acts differently" in 3/10 directed tests (diagnosis open).
+- **Diagnosis of the false disagreement (2026-10-01, branch `l5-known-answer` 0953ff3).**
+  - In every false call on the shared pure-dispersion concept, statistic (i) fires (level concordance, e.g. −0.999 against both floors' p05 of about −0.49 and −0.46), while `level` clears its own null on NEITHER side. Statistic (ii) stays high (0.887–1.0).
+  - Level concordance was compared on two sub-null residuals that happen to be deterministically opposite in sign. There is no sign inversion on the dispersion channel.
+  - The truly shared a and b cases never read "acts differently" (0/10 each).
+  - Fix (opt-in `concepts.agreement_require_defined_firing`): a below-p05 statistic counts only if it is defined, meaning (i) needs `level` to clear on both sides, and (ii) needs both sides to clear a shape-mask channel.
+  - With the fix, false disagreement goes 3/30 → 0/30 (dose 1) and 4/30 → 0/30 (dose 2). The opposite-effect decoy is still caught (2/10, unchanged), and the gate's sensitivity numbers are unchanged.
+  - **Real data:** 4 of `panel7_v2_dev`'s 22 'acts differently' tests have an undefined firing statistic. The other 18 are genuine: level clears on both sides with negative concordance (−0.347 to −0.727).
+- **Models / layers.** Mock pair (ArchA `blocks.2`, ArchB `blocks.4`).
+- **Evidence.** Known-answer validation of a method (planted ground truth, decoys, held-out seeds). **Status:** measured; diagnosis of the false disagreement open.
+- **Held-out (2026-10-02, K2, CA-11).** Consistent with the insensitivity: of 11 registered L5 claims, 5 are not testable on private data (one side does not clear its own null) and 0/6 confirm.
+- **Reproduce.** `run_l5_known_answer.py`, `configs/l5_known_answer.yaml` (branch `l5-known-answer`, f832798); `runs/l5ka/scored_dose{1,2}/l5_known_answer_aggregate.json`.
+- **Ref.** ROADMAP §38.3.4 (L5 known-answer bullet).
+- **Score. 5/5.** Decides how to read every cross-model "same causal effect" claim: positives stand, negatives do not, and SH-22's "only the Chronos family" is a sensitivity limit, not a finding about lineage.
+
+#### MN-31 · Causal MASE blame separates "fires on bad series" from "causes bad forecasts", but single-feature *help* attribution fails its known-answer gate at k = 32
+- **Claim.** Forecast-repair R0 used a planted mock with harmful, helpful, decoy and side-effect concepts whose sign on MASE holds by construction. Dose 1, seeds 0–4, k = 32, BH over about 136 features.
+  - **Pass:** harmful blame 4/5; decoy 5/5 (corr_MASE +0.076 to +0.197, yet |causal ΔMASE| ≤ 0.0057, p_bh ≥ 0.97); held-out zero-edit of harmful 5/5 (firing test series −0.0274 to −0.0922, CIs exclude 0); side-effect harm on weak-firing test series 5/5 (+0.0047 to +0.0256).
+  - **Fail:** helpful blame 2/5 against 0.8 needed. The helpful atom ranks 2nd–6th by |effect| with the right sign and a CI excluding 0 (+0.0356 to +0.0779), but z ≈ 2.2–3.6 does not survive BH over the dictionary. One seed failed SAE recovery (cosine 0.798).
+  - The null is not biased positive: the median null mean over features is about 0.
+  - Unplanted split atoms carry large shares of the planted effects (e.g. −0.081 vs the planted −0.155), so real-data blame likely needs atom sets.
+  - All-ones edits change the forecast by exactly 0.0 in every cell.
+- **R0b (2026-10-02, pre-registered: fresh seeds 5–9, n 1200, k 64, a two-stage screen to a 16-feature BH family).** The gate fails again, with the failure moved to the other concept: helpful 5/5, **harmful 2/5** (stage-1 z 0.63–1.55 in 3 seeds; stage-2 ΔMASE always negative, e.g. −0.0404 [−0.0609, −0.0220] at p_bh 0.471). The decoy's literal 0/5 is a pre-registration error: a causal screen drops a zero-effect decoy by design, and the decoy was never blamed. **Held-out zero-edits of the harmful atom lower test MASE in 10/10 seeds across R0 and R0b** (R0b −0.0111 to −0.0904, all CIs exclude 0). Per the pre-registration, §39 stopped at R0. Reading: single-feature blame significance against an equal-energy random-direction null is at its power limit, while held-out repair itself works on the known answer. Re-basing the gate on held-out improvement is a new design that awaits a user decision.
+- **Models / layers.** `mock_planted` (`vocabulary: repair`), blocks.2.
+- **Evidence.** Known-answer validation (causal within-model on a planted model; held-out edits behavioral). **Status:** negative (closed at R0; closed for good by the user 2026-10-03): R0 and R0b both fail their pre-registered gates.
+- **Reproduce.** `python run_repair_known_answer.py --config configs/repair_known_answer.yaml` (commit 5a8077f); R0b: `--config configs/repair_known_answer_r0b.yaml --two-stage` (commit 6c94c66); `analysis/repair_blame.py`, `analysis/repair_edit.py`.
+- **Ref.** ROADMAP §39.7–39.8.
+- **Score. 3/5.** Blaming a feature for errors needs causal ablation, not correlation: the decoy correlates with error in 5/5 seeds and has no effect. Crediting a single feature for *good* forecasts is underpowered at realistic sizes, and that bounds the "what causes good predictions" half of the question.
 
 ## H. Benchmark trust
 

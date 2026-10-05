@@ -250,6 +250,55 @@ def _check_multiplicity_budget(cfg: PipelineConfig) -> DoctorCheck:
     return DoctorCheck("multiplicity budget", "pass", detail)
 
 
+def check_concept_claim_budget(cfg: PipelineConfig) -> DoctorCheck:
+    """Whether each registered causal-concept claim family can reach alpha
+    after Holm at its own null size (`ROADMAP.md` sec 38.2.3).
+
+    Each of `concept_causal`, `concept_atlas`, `shared_input_agreement` and
+    `concept_structure` is one Holm family, and a permutation p is floored at
+    `1/(n_null+1)`, so the family's smallest attainable adjusted p is
+    `m/(n_null+1)`. `confirm` refuses to open the private split when that
+    exceeds alpha (`analysis/confirm.py::check_concept_claims_before_opening`);
+    this row says it beforehand, from the SAME function
+    (`analysis/hypotheses.py::claim_family_budget`). `m` comes from
+    `hypotheses.json` when it exists, otherwise from the config's own upper
+    bound, and a family whose count is only known after `register` is listed
+    as such rather than guessed (`CLAUDE.md` sec 11.34).
+    """
+    from .analysis.hypotheses import claim_family_budget
+    from .utils import load_json
+
+    name = "concept claim budget"
+    if not (cfg.confirm.enabled and (cfg.confirm.register_concept_claims
+                                     or cfg.confirm.register_reliability_claims)):
+        return DoctorCheck(name, "pass", "confirm.register_concept_claims is false; "
+                           "no causal-concept claims are registered")
+    reg_path = cfg.run_dir() / "hypotheses.json"
+    registry = load_json(reg_path) if reg_path.exists() else None
+    rows = claim_family_budget(cfg, registry)
+    parts, bad = [], []
+    for r in rows:
+        if r["m"] is None:
+            parts.append(f"{r['family']}: m unknown before register (n_null={r['n_null']})")
+            continue
+        if not r["m"]:
+            continue
+        parts.append(f"{r['family']}: m={r['m']}, n_null={r['n_null']}, min Holm p "
+                     f"{r['min_attainable_p_holm']:.4f}")
+        if not r["satisfiable"]:
+            bad.append(r["family"])
+    detail = (f"alpha={cfg.confirm.alpha}; " + "; ".join(parts)
+              + (" (m from hypotheses.json)" if registry is not None
+                 else " (m is a config upper bound)"))
+    if bad:
+        return DoctorCheck(name, "fail", detail + f" -- unsatisfiable: {', '.join(bad)}; "
+                           f"confirm will refuse before opening the private split",
+                           "raise confirm.causal_max_null / atlas_n_null / agreement_n_null / "
+                           "structure_n_boot, or lower concepts.n_registered_causal "
+                           "(m/(n_null+1) must be <= alpha)")
+    return DoctorCheck(name, "pass", detail)
+
+
 def check_transfer_fdr_budget(n_null: int, m: int, q: float, p_method: str) -> DoctorCheck:
     """Whether `sae/transfer.py`'s exact permutation p-floor lets one BH
     family of `m` tests declare an ISOLATED effect (`ROADMAP.md` sec 37 P3,
@@ -443,6 +492,33 @@ def _check_capped_stages(cfg: PipelineConfig) -> list:
     return checks
 
 
+def _check_constant_context(adapter, cfg: PipelineConfig, name: str) -> DoctorCheck:
+    """Warn when a model returns a non-finite forecast or activation (or raises)
+    on constant contexts -- the same probe the `frontend` stage runs. A warn,
+    never a fail: the model is usable, but constant windows in a real-data path
+    yield unusable rows (Timer via `generic_hf`: all-NaN, which crashed SAE
+    training before the consumer dropped non-finite rows)."""
+    from .analysis.frontend import _run_constant_context
+    try:
+        stats = _run_constant_context(adapter, int(cfg.data.context_len),
+                                      int(cfg.data.horizon), cfg.run.seed + 903)
+    except Exception as e:
+        return DoctorCheck(f"constant context: {name}", "warn",
+                           f"probe itself failed: {type(e).__name__}: {e}", "")
+    if stats["verdict"] == "finite":
+        return DoctorCheck(f"constant context: {name}", "pass",
+                           f"finite forecast and activations on {stats['n_cases']} constant "
+                           f"inputs (max deviation {stats['max_deviation_units']:.1e})")
+    return DoctorCheck(
+        f"constant context: {name}", "warn",
+        f"verdict '{stats['verdict']}': forecast finite={stats['finite_forecast']}, "
+        f"activations finite={stats['finite_activations']}, raised={stats['n_raised']}"
+        f"/{stats['n_cases']}",
+        "constant windows (real corpora contain some) give this model unusable rows; "
+        "consumers drop non-finite rows and the `frontend` report row flags it. Model "
+        "inputs are not altered by default")
+
+
 def _check_adapters_full(cfg: PipelineConfig) -> list:
     """Loads every configured model -- only run from `--doctor`, never the
     default preflight. Mirrors `run.py --check-alignment` plus
@@ -490,6 +566,7 @@ def _check_adapters_full(cfg: PipelineConfig) -> list:
         except Exception as e:
             checks.append(DoctorCheck(f"alignment: {m.name}", "fail", str(e), ""))
         finally:
+            checks.append(_check_constant_context(adapter, cfg, m.name))
             ctx.hub.release(m.name)
     return checks
 
@@ -506,6 +583,9 @@ def run_preflight(cfg: PipelineConfig, full: bool = False) -> list:
     ]
     checks.append(_check_store_format(cfg))
     checks.append(_check_multiplicity_budget(cfg))
+    if cfg.confirm.enabled and (cfg.confirm.register_concept_claims
+                                or cfg.confirm.register_reliability_claims):
+        checks.append(check_concept_claim_budget(cfg))
     checks.extend(_check_corpus_seal(cfg, full=full))
     checks.append(_check_context_alignment(cfg))
     checks.extend(_check_capped_stages(cfg))

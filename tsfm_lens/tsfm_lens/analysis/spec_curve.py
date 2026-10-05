@@ -94,7 +94,7 @@ import pandas as pd
 
 from ..config import PipelineConfig, load_config
 from ..data import BenchmarkData, load_benchmark
-from ..extraction.store import ActivationStore, load_meta
+from ..extraction.store import ActivationStore, load_meta, nonfinite_series_mask
 from ..utils import log, sample_rows, save_json
 from .depth_axis import AXES as DEPTH_AXES
 from .depth_axis import depth_axis_for_run
@@ -220,6 +220,15 @@ def _l0_recompute(cfg: PipelineConfig, store: ActivationStore, data: BenchmarkDa
         frames.append(_score(name, point, quants, contexts, targets, cfg.l0.quantiles,
                              meta, scale, cfg.l0.min_scale_frac))
     metrics = pd.concat(frames, ignore_index=True)
+    ids_full = data.meta["series_id"].to_numpy()
+    bad_ids = np.unique(np.concatenate([
+        ids_full[nonfinite_series_mask(d["point"], d["quantiles"])]
+        for d in (store.load_predictions(name) for name in models)]))
+    if bad_ids.size:
+        log.warning("spec_curve: dropping %d series with a non-finite stored forecast from "
+                    "every model's recomputed L0 (same rule as L0's "
+                    "l0/nonfinite_forecasts.json)", bad_ids.size)
+        metrics = metrics[~metrics["series_id"].isin(bad_ids)].reset_index(drop=True)
     cfg2 = copy.deepcopy(cfg)
     cfg2.l0.scale = scale
     cfg2.stats.n_boot = cfg.stats.n_boot * n_boot_mult

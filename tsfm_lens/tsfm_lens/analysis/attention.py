@@ -395,12 +395,17 @@ def _ablation_analysis(cfg: PipelineConfig, adapter, store: ActivationStore,
         f_clean = store.load_predictions(adapter.name)["point"][rows]
     else:
         f_clean = predict_rows(adapter, contexts, data.horizon, cfg.l0.quantiles, seed)
+    (f_clean, contexts, targets, scale, families, fam_list, n_dropped
+     ) = drop_nonfinite_clean(f_clean, contexts, targets, scale, families, fam_list)
+    take = len(contexts)
     mase_clean = np.abs(f_clean - targets).mean(axis=1) / scale
 
     def delta(forecast: np.ndarray) -> np.ndarray:
         return np.abs(forecast - targets).mean(axis=1) / scale - mase_clean
 
     out, meta = {}, {"n_series": int(take), "families": fam_list}
+    if n_dropped:
+        meta["n_series_nonfinite_dropped"] = n_dropped
     if info is not None:
         blocks = info[:: max(1, acfg.head_layer_stride)]
         head_d, head_f = _ablate_heads(cfg, adapter, blocks, contexts, data.horizon,
@@ -418,6 +423,27 @@ def _ablation_analysis(cfg: PipelineConfig, adapter, store: ActivationStore,
         out["mlp_delta"], out["mlp_delta_family"] = mlp_d, mlp_f
         meta["mlp_blocks"] = names
     return {"meta": meta, **out}
+
+
+def drop_nonfinite_clean(f_clean: np.ndarray, contexts: np.ndarray, targets: np.ndarray,
+                         scale: np.ndarray, families: np.ndarray, fam_list: list) -> tuple:
+    """Drop series whose CLEAN forecast is non-finite before any ablation delta.
+
+    A NaN clean forecast (e.g. a constant context a model cannot handle, read
+    back from the store's predictions) makes every ablated-minus-clean delta
+    NaN, so every head's mean delta becomes NaN: one series poisoning the
+    whole battery. They are dropped and counted, mirroring L0 and the skip
+    lens. Returns the filtered arrays, the families that still have a series,
+    and the number dropped (0 leaves every array untouched).
+    """
+    f = np.asarray(f_clean)
+    ok = np.isfinite(f).reshape(len(f), -1).all(axis=1)
+    if ok.all():
+        return f_clean, contexts, targets, scale, families, fam_list, 0
+    families = families[ok]
+    fam_list = [fam for fam in fam_list if (families == fam).any()]
+    return (f_clean[ok], contexts[ok], targets[ok], scale[ok], families, fam_list,
+            int((~ok).sum()))
 
 
 def _ablate_heads(cfg: PipelineConfig, adapter, blocks: list, contexts: np.ndarray,

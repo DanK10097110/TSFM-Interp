@@ -521,31 +521,38 @@ def _permute_within_stratum(vals: np.ndarray, strata: np.ndarray, by_stratum: di
 def _pair_agreement(s_a: np.ndarray, s_b: np.ndarray, S_a: np.ndarray, S_b: np.ndarray,
                     strata: np.ndarray, by_stratum: dict, seed: int, n_perm: int) -> dict:
     rho, _ = spearmanr(s_a, s_b)
-    rho = float(rho) if np.isfinite(rho) else 0.0
+    rho_undefined = not np.isfinite(rho)
+    rho = None if rho_undefined else float(rho)
     jaccard = _jaccard(S_a, S_b)
 
-    rng_uncond = np.random.default_rng(seed)
-    null_uncond = np.empty(n_perm, dtype=np.float64)
-    for p in range(n_perm):
-        perm_b = s_b[rng_uncond.permutation(s_b.size)]
-        r, _ = spearmanr(s_a, perm_b)
-        null_uncond[p] = abs(float(r)) if np.isfinite(r) else 0.0
-    p_uncond = _right_tail_p(abs(rho), null_uncond)
+    p_uncond = p_within_stratum = None
+    if not rho_undefined:
+        rng_uncond = np.random.default_rng(seed)
+        null_uncond = np.empty(n_perm, dtype=np.float64)
+        for p in range(n_perm):
+            perm_b = s_b[rng_uncond.permutation(s_b.size)]
+            r, _ = spearmanr(s_a, perm_b)
+            null_uncond[p] = abs(float(r)) if np.isfinite(r) else 0.0
+        p_uncond = _right_tail_p(abs(rho), null_uncond)
 
-    rng_within = np.random.default_rng(seed + 1)
-    null_within = np.empty(n_perm, dtype=np.float64)
-    for p in range(n_perm):
-        perm_b = _permute_within_stratum(s_b, strata, by_stratum, rng_within)
-        r, _ = spearmanr(s_a, perm_b)
-        null_within[p] = abs(float(r)) if np.isfinite(r) else 0.0
-    p_within_stratum = _right_tail_p(abs(rho), null_within)
+        rng_within = np.random.default_rng(seed + 1)
+        null_within = np.empty(n_perm, dtype=np.float64)
+        for p in range(n_perm):
+            perm_b = _permute_within_stratum(s_b, strata, by_stratum, rng_within)
+            r, _ = spearmanr(s_a, perm_b)
+            null_within[p] = abs(float(r)) if np.isfinite(r) else 0.0
+        p_within_stratum = _right_tail_p(abs(rho), null_within)
 
     overlap, expected, p_overlap, p_overlap_within = _top_k_overlap(
         S_a, S_b, s_a.size, strata, by_stratum, seed + 2, n_perm)
     return {"rho": rho, "jaccard_top_k": jaccard, "p_uncond": p_uncond,
            "p_within_stratum": p_within_stratum, "top_k_overlap": overlap,
            "top_k_overlap_expected": expected, "p_overlap": p_overlap,
-           "p_overlap_within_stratum": p_overlap_within}
+           "p_overlap_within_stratum": p_overlap_within,
+           **({"rho_undefined_reason": "a part's per-series score is constant or "
+                                       "non-finite, so the whole-series rank correlation "
+                                       "is not defined (top-k overlap is unaffected)"}
+              if rho_undefined else {})}
 
 
 def _top_k_overlap(S_a: np.ndarray, S_b: np.ndarray, n: int, strata: np.ndarray,

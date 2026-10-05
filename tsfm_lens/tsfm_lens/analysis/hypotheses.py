@@ -15,13 +15,47 @@ from. `confirm` requires this file, verifies every referenced hash still
 matches before running, and tests exactly the registered set — no more, no
 fewer.
 
-Not every stage's statistic is replicated by `confirm` yet (only `l0`
-family strengths and `l1`'s peak-CKA pair, matching the replication
-`confirm.py` already implemented before this module existed). L2's
-stitching gain, L3's fingerprint agreement, and L4's clustering AMI are
+Not every stage's statistic is replicated by `confirm` yet. `l0` family
+strengths, `l1`'s peak-CKA pair, `l3`'s per-corruption fingerprint agreement
+(`_replicate_registered_l3`) and the `concept_transfer` claims are replicated.
+L2's stitching gain, L4's clustering AMI and the per-archetype L0 strengths are
 still registered here (so they count in the multiplicity ledger and their
 own hash is pinned), but marked `replicable: False` with a stated reason —
 a real, stated gap, not a silent omission (`CLAUDE.md` §2.5).
+
+`ROADMAP.md` sec 38.2 (K2) adds four opt-in causal-concept claim types
+(`concept_causal`, `concept_atlas`, `shared_input_agreement`,
+`concept_structure`), enabled by `confirm.register_concept_claims`. With it
+off (the default) this module registers exactly what it registered before.
+Each such claim is frozen from dev artifacts (dev SAE checkpoints, dev
+feature ids, dev channel and sign) and pins the sha256 of every artifact it
+reads, `.pt` checkpoints included (`artifacts`).
+
+`confirm.register_requires_target_significance` (ROADMAP.md sec 38.3.4, also
+opt-in) additionally restricts those claims to targets whose battery clears
+are BH-significant against their own empirical chance
+(`analysis/target_significance.py`); every claim it removes is recorded in the
+registry's `concept_claim_candidates` with its target, p and q, and a target
+without `empirical_chance` makes registration refuse.
+
+`confirm.register_requires_defined_firing` (ROADMAP.md sec 38.3.4, opt-in) reads
+every dev agreement candidate with the verdict recomputed under the L5
+defined-firing rule (`sae/shared_input_agreement.py::recompute_verdict_defined`,
+the very `firing_defined` and `_verdict` the stage uses): an `acts differently`
+test whose firing statistic is undefined is not registered as `differs` and is
+listed under `excluded` with its reason. `same` tests are unaffected, and each
+registered agreement claim freezes the rule so `confirm` applies it too.
+
+`confirm.register_reliability_claims` (ROADMAP.md sec 38.4 / K4's U1, opt-in as
+well) registers one `reliability_u1` claim per (model, task) whose DEV gain CI
+lower bound over the free baseline is > 0, read from a dev K4 JSON
+(`confirm.reliability_dev_json`, written by `run_reliability_from_internals.py`).
+Each claim freezes the whole refit spec (feature groups, family definitions,
+baseline list, ridge grid, folds, repeats, seed, strata, n_boot) and the sha256
+of `concept_families.json`, the SAE checkpoints and the dev JSON, because
+`confirm` REFITS that procedure on private series (frozen SAEs, never
+retrained) rather than scoring a frozen dev model. The claim family is its own
+Holm family (`reliability_u1`) in `claim_family_budget`.
 """
 
 from __future__ import annotations
@@ -133,6 +167,8 @@ def _l3_entries(run_dir: Path) -> list:
     art_hash = _sha256_file(path)
     entries = []
     for corruption, val in (l3.get("agreement", {}).get("per_corruption") or {}).items():
+        if val.get("value") is None:
+            continue
         entries.append({
             "id": f"l3_agreement::{corruption}", "stage": "l3",
             "statistic": "fingerprint_agreement_rho", "corruption": corruption,
@@ -393,23 +429,990 @@ def _concept_transfer_entries(run_dir: Path, cfg: PipelineConfig) -> tuple:
     return entries, ranking
 
 
+# ---------------------------------------------------------------------------
+# ROADMAP.md sec 38.2 (K2) -- registration of the CAUSAL concept claims.
+#
+# Opt-in behind `confirm.register_concept_claims`: with it off, `build_registry`
+# returns exactly what it returned before this section existed (same entries,
+# same keys), so every existing registry and its `registry_sha256` stay
+# byte-identical (`CLAUDE.md` sec 2.1, invariant 13). Every claim below is
+# FROZEN from dev artifacts only -- dev SAE checkpoints, dev feature ids, dev
+# channel and sign -- and records the sha256 of EVERY dev artifact it reads
+# (`artifacts`, checked by `check_registry_freshness`), the `.pt` checkpoints
+# included, so a retrained dictionary refuses to be confirmed against.
+# ---------------------------------------------------------------------------
+
+CONCEPT_CLAIM_STAGES = ("concept_causal", "concept_atlas", "shared_input_agreement",
+                        "concept_structure")
+
+_NOT_REGISTERED_FAMILIES_REASON = (
+    "'families do not beat the shuffle null' is a NEGATIVE structure result: "
+    "confirming a null needs an equivalence margin that nobody has justified "
+    "(sec 38.2.2 item 5). It stays descriptive.")
+_STRUCTURE_C_REASON = (
+    "'convergent concepts outnumber shared ones among multi-model concepts' is "
+    "exploratory, not registered: it is low-powered at ~16 multi-model "
+    "concepts and its classes come from a union-find over input-agreement "
+    "pairs that has no private counterpart (sec 38.2.2 item 4c).")
+
+
+def _rel(run_dir: Path, path: Path) -> str:
+    return Path(path).relative_to(run_dir).as_posix()
+
+
+class _Hasher:
+    """`{run-relative path: sha256}` for the dev artifacts one registration
+    reads, hashed once per file however many claims cite it."""
+
+    def __init__(self, run_dir: Path):
+        self.run_dir, self._cache = run_dir, {}
+
+    def __call__(self, path: Path) -> tuple:
+        rel = _rel(self.run_dir, path)
+        if rel not in self._cache:
+            self._cache[rel] = _sha256_file(path)
+        return rel, self._cache[rel]
+
+    def many(self, paths) -> dict:
+        return dict(self(p) for p in paths if Path(p).exists())
+
+
+def _ablation_null_mode(cfg) -> str:
+    """The ablation null the dev battery used (`sae.ablation_null`; the field
+    may not exist on an older checkout, in which case it is the legacy
+    `mean_magnitude`). Recorded on every causal claim: `confirm` refuses to
+    test it against a different null."""
+    return str(getattr(cfg.sae, "ablation_null", "mean_magnitude") or "mean_magnitude")
+
+
+def _dev_ablation_targets(run_dir: Path) -> list:
+    """`[(model, layer, artifact dict, path)]` for every non-withheld,
+    non-skipped target. Paths come from `ablation_run.ablation_path`, never
+    by hand; a glob hit whose helper path does not exist is dropped rather
+    than guessed at."""
+    from ..sae.ablation_run import ablation_path
+
+    out = []
+    for f in sorted(run_dir.glob("sae/*/*_ablation.json")):
+        art = load_json(f)
+        if art.get("withheld") or art.get("skipped"):
+            continue
+        model = art.get("model", f.parent.name)
+        layer = art.get("layer", f.name[: -len("_ablation.json")])
+        path = ablation_path(run_dir, model, layer)
+        if path.exists():
+            out.append((str(model), str(layer), art, path))
+    return out
+
+
+def _stable_atlas_members(run_dir: Path) -> tuple:
+    """`(set of (model, layer, feature) in seed-stable concepts, {member:
+    concept id}, paths read)`. Empty when the atlas or the stability artifact
+    is absent -- the preference for stable members then simply does not
+    apply, and the ranking says so."""
+    atlas_p = run_dir / "sae" / "concept_atlas.json"
+    stab_p = run_dir / "sae" / "concept_stability.json"
+    if not atlas_p.exists() or not stab_p.exists():
+        return set(), {}, []
+    atlas, stab = load_json(atlas_p), load_json(stab_p)
+    stable_ids = {int(c["concept"]) for c in (stab.get("concepts") or [])
+                  if (c.get("stability") or {}).get("stable") is True}
+    members, concept_of = set(), {}
+    for r in atlas.get("rows") or []:
+        cid = r.get("concept")
+        if cid is not None and int(cid) in stable_ids:
+            key = (str(r["model"]), str(r["layer"]), int(r["feature"]))
+            members.add(key)
+            concept_of[key] = int(cid)
+    return members, concept_of, [atlas_p, stab_p]
+
+
+def _target_gate_table(run_dir: Path, cfg: PipelineConfig) -> dict | None:
+    """The per-target significance table when
+    `confirm.register_requires_target_significance` is on, else `None` (the
+    byte-identical default). Computed once per registration from every
+    measured target's own `empirical_chance`
+    (`analysis/target_significance.py::target_significance`), so all four
+    claim builders gate against the same BH family. Raises
+    `TargetChanceMissing` rather than falling back to the nominal 0.05."""
+    if not bool(getattr(cfg.confirm, "register_requires_target_significance", False)):
+        return None
+    from .target_significance import target_significance
+
+    return target_significance(
+        [(m, l, art) for m, l, art, _p in _dev_ablation_targets(run_dir)])
+
+
+def _target_ok(sig: dict | None, target: str) -> bool:
+    """`True` when no gate is on or `target` is BH-significant. A target the
+    table does not know (never measured) is not significant."""
+    return sig is None or bool((sig["targets"].get(target) or {}).get("significant"))
+
+
+def _target_record(sig: dict, target: str) -> dict:
+    """`{target, p, q_value}` of one target (nulls for an unmeasured one),
+    the reason fields every excluded claim carries."""
+    t = sig["targets"].get(target) or {}
+    return {"target": target, "clearing_cells": t.get("clearing_cells"),
+            "p": t.get("p"), "q_value": t.get("q_value"), "q": sig["q"]}
+
+
+def _exclusion(sig: dict, claim_id: str, claim_type: str, targets: list) -> dict:
+    """The ledger row for a candidate the gate removed: its id, type, the
+    offending target(s) with p and BH q, and a stated reason."""
+    recs = [_target_record(sig, t) for t in sorted(set(targets)) if not _target_ok(sig, t)]
+    return {"id": claim_id, "claim_type": claim_type, "targets": recs,
+            "reason": ("target's battery clears are not BH-significant against its own "
+                       f"empirical chance at q={sig['q']} (ROADMAP.md sec 38.3.4): "
+                       + "; ".join(f"{r['target']} p={r['p']!r} q={r['q_value']!r}"
+                                   for r in recs))}
+
+
+def _causal_id(c: dict) -> str:
+    return f"concept_causal::{c['model']}::{c['layer']}::f{c['feature']}::{c['channel']}"
+
+
+def _agreement_id(t: dict) -> str:
+    return (f"shared_input_agreement::{t['src_target']}::{t['dst_target']}::"
+            f"c{t['concept']}::f{t['dst_feature']}::{t['verdict']}")
+
+
+def _best_channel(candidate: dict) -> tuple | None:
+    """`(channel, effect / null_p95, signed_effect, rec)` for the channel a
+    dev candidate clears by the widest effect / q95 margin, or `None`. A
+    channel with a degenerate null, an unavailable value or an exactly-zero
+    signed effect (no sign to freeze) is never chosen."""
+    best = None
+    for ch, rec in (candidate.get("channels") or {}).items():
+        if not rec.get("available", True) or not rec.get("clears_null"):
+            continue
+        p95, eff, signed = rec.get("null_p95"), rec.get("effect"), rec.get("signed_effect")
+        if not p95 or eff is None or signed is None or float(signed) == 0.0:
+            continue
+        ratio = float(eff) / float(p95)
+        if best is None or ratio > best[1]:
+            best = (ch, ratio, float(signed), rec)
+    return best
+
+
+def _select_causal(cands: list, n_total: int, min_per_model: int = 4) -> list:
+    """The registration cut: >= `min_per_model` per model, then the best of
+    the rest, seed-stable atlas members first at both steps.
+
+    Ranking key is `(not stable, -effect/q95 ratio, model, layer, feature,
+    channel)` -- fully ordered, so the cut does not depend on dict or JSON
+    iteration order (`CLAUDE.md` sec 11.55). A model with fewer than
+    `min_per_model` candidates contributes what it has.
+    """
+    def _key(c):
+        return (not c["stable"], -c["ratio"], c["model"], c["layer"], c["feature"], c["channel"])
+
+    ranked = sorted(cands, key=_key)
+    chosen, seen = [], set()
+    for model in sorted({c["model"] for c in ranked}):
+        for c in [c for c in ranked if c["model"] == model][:min_per_model]:
+            chosen.append(c)
+            seen.add(id(c))
+    for c in ranked:
+        if len(chosen) >= n_total:
+            break
+        if id(c) not in seen:
+            chosen.append(c)
+            seen.add(id(c))
+    return sorted(chosen, key=_key)
+
+
+def _concept_causal_candidates(run_dir: Path, concepts_cfg, sig: dict | None = None) -> dict:
+    """Every dev feature that clears its random-direction null on some
+    channel, ranked, and the registration cut.
+
+    Reads each target's `sae/<model>/<layer>_ablation.json` (path from
+    `ablation_run.ablation_path`). One candidate per (target, feature): its
+    strongest channel by `effect / null_p95` and that channel's dev sign.
+    `concepts.n_registered_causal` (default 32, a judgment count, sec
+    38.2.2) is the cut, with at least 4 per model and a preference for
+    members of seed-stable atlas concepts. Degrades to an empty list with a
+    stated reason when no ablation artifact exists, so a confirm-only run
+    (e.g. `configs/smoke.yaml`) still registers its other claims.
+
+    `sig` (the per-target gate table, `None` = no gate) removes candidates on
+    non-significant targets BEFORE the cut, so the cut is filled from
+    significant targets; the claims the ungated cut would have registered on
+    a removed target come back under `excluded` with their reason, and
+    `n_pool_excluded_by_gate` counts the whole removed pool.
+    """
+    targets = _dev_ablation_targets(run_dir)
+    n_reg = int(getattr(concepts_cfg, "n_registered_causal", 32) or 32)
+    if not targets:
+        return {"candidates": [], "cut": 0, "n_registered_cfg": n_reg,
+                "reason": "no sae/<model>/<layer>_ablation.json artifact found"}
+    stable_members, concept_of, _paths = _stable_atlas_members(run_dir)
+    cands = []
+    for model, layer, art, path in targets:
+        for c in art.get("candidates") or []:
+            if not c.get("scorable") or not c.get("n_channels_clearing"):
+                continue
+            best = _best_channel(c)
+            if best is None:
+                continue
+            ch, ratio, signed, rec = best
+            key = (model, layer, int(c["feature"]))
+            cands.append({
+                "model": model, "layer": layer, "feature": int(c["feature"]),
+                "channel": ch, "ratio": ratio, "sign": 1 if signed > 0 else -1,
+                "effect": float(rec["effect"]), "signed_effect": signed,
+                "null_p95": float(rec["null_p95"]),
+                "n_top_series": int(c.get("n_top_series") or 0),
+                "top_k_series": art.get("top_k_series"),
+                "n_null_directions": art.get("n_null_directions"),
+                "stable": key in stable_members, "atlas_concept": concept_of.get(key),
+                "path": path})
+    cut = _select_causal(cands, n_reg)
+    gate = {}
+    if sig is not None:
+        kept = [c for c in cands if _target_ok(sig, f"{c['model']}/{c['layer']}")]
+        gated_cut = _select_causal(kept, n_reg)
+        gate = {"n_before_gate": len(cut), "n_after_gate": len(gated_cut),
+                "n_pool_excluded_by_gate": len(cands) - len(kept),
+                "excluded": [_exclusion(sig, _causal_id(c), "concept_causal",
+                                        [f"{c['model']}/{c['layer']}"])
+                             for c in cut if not _target_ok(sig, f"{c['model']}/{c['layer']}")]}
+        cands, cut = kept, gated_cut
+    return {"candidates": cands, "cut": cut, "n_registered_cfg": n_reg,
+            "n_stable_preferred": sum(1 for c in cands if c["stable"]),
+            "stable_preference_applied": bool(stable_members), **gate}
+
+
+def _concept_causal_entries(run_dir: Path, cfg: PipelineConfig,
+                            sig: dict | None = None) -> tuple:
+    """`-> (entries, ranking summary)`. Claim
+    `concept_causal::{model}::{layer}::f{feature}::{channel}`: "ablating this
+    feature on its private top-k firing series moves this channel with this
+    sign beyond the row-matched random-direction null". The id names model,
+    layer, feature AND channel: an id missing any of them silently merges
+    distinct claims and shrinks the Holm family (`CLAUDE.md` sec 8, "Keys
+    that collapse")."""
+    from ..sae.ablation_run import checkpoint_path
+
+    ranking = _concept_causal_candidates(run_dir, cfg.concepts, sig)
+    hasher = _Hasher(run_dir)
+    null_mode = _ablation_null_mode(cfg)
+    entries = []
+    for c in ranking["cut"] if ranking["cut"] else []:
+        art_rel, art_sha = hasher(c["path"])
+        arts = hasher.many([c["path"], checkpoint_path(run_dir, c["model"], c["layer"])])
+        entries.append({
+            "id": _causal_id(c),
+            "stage": "concept_causal", "family": "concept_causal",
+            "statistic": "ablation_channel_effect_vs_random_direction_null",
+            "model": c["model"], "layer": c["layer"], "target": f"{c['model']}/{c['layer']}",
+            "feature": c["feature"], "channel": c["channel"], "sign": c["sign"],
+            "dev_effect": c["effect"], "dev_signed_effect": c["signed_effect"],
+            "dev_null_p95": c["null_p95"], "dev_effect_over_null_p95": c["ratio"],
+            "dev_n_top_series": c["n_top_series"],
+            "k_top_series": c["top_k_series"] or 8,
+            "dev_n_null_directions": c["n_null_directions"],
+            "ablation_null": null_mode,
+            "seed_stable_atlas_member": c["stable"], "atlas_concept": c["atlas_concept"],
+            "artifact": art_rel, "artifact_sha256": art_sha, "artifacts": arts,
+            "statement": (f"Ablating feature {c['feature']} of {c['model']}/{c['layer']} "
+                         f"on its top-firing series moves the '{c['channel']}' channel "
+                         f"{'up' if c['sign'] > 0 else 'down'} beyond a random-direction "
+                         f"null (dev effect {c['effect']!r} vs null p95 {c['null_p95']!r})."),
+            "replicable": True,
+        })
+    summary = {k: v for k, v in ranking.items() if k not in ("candidates", "cut")}
+    summary.update({"n_candidates": len(ranking["candidates"]), "cut": len(entries),
+                    "cut_ids": [e["id"] for e in entries]})
+    return entries, summary
+
+
+def _dev_vectors(run_dir: Path) -> dict:
+    """`{(model, layer, feature): 9-vector}` of the dev ablation vectors
+    (`sae/concepts.py::ablation_vector`, never re-derived here)."""
+    from ..sae.concepts import ablation_vector
+
+    out = {}
+    for model, layer, art, _path in _dev_ablation_targets(run_dir):
+        for c in art.get("candidates") or []:
+            if c.get("scorable"):
+                vec = ablation_vector(c)
+                if vec is not None:
+                    out[(model, layer, int(c["feature"]))] = [float(v) for v in vec]
+    return out
+
+
+def _atlas_candidates(run_dir: Path, cfg: PipelineConfig, sig: dict | None = None) -> tuple:
+    """`concept_atlas::{concept}` -- "this seed-stable atlas concept's
+    members still form a concept on private data". One claim per stable
+    dev concept (an atlas concept id is global across models, so it is
+    unique by construction). Members, their dev 9-vectors, the dev centroid
+    and the clustering thresholds are all frozen here.
+
+    With the per-target gate (`sig`), a concept with ANY member on a
+    non-significant target is not registered and is listed under `excluded`:
+    the claim is that the whole member set re-forms, so one chance-level
+    member makes it a claim about possibly-chance features."""
+    from ..sae.ablation_run import ablation_path, checkpoint_path
+
+    atlas_p = run_dir / "sae" / "concept_atlas.json"
+    stab_p = run_dir / "sae" / "concept_stability.json"
+    if not atlas_p.exists() or not stab_p.exists():
+        return [], {"reason": "concept atlas artifacts not found"}
+    atlas, stab = load_json(atlas_p), load_json(stab_p)
+    stable_ids = sorted({int(c["concept"]) for c in (stab.get("concepts") or [])
+                        if (c.get("stability") or {}).get("stable") is True})
+    vectors = _dev_vectors(run_dir)
+    params = atlas.get("params") or {}
+    hasher = _Hasher(run_dir)
+    entries, excluded = [], []
+    for cid in stable_ids:
+        members = [{"model": str(r["model"]), "layer": str(r["layer"]),
+                    "feature": int(r["feature"])}
+                   for r in atlas.get("rows") or [] if r.get("concept") == cid]
+        members.sort(key=lambda m: (m["model"], m["layer"], m["feature"]))
+        for m in members:
+            m["dev_vector"] = vectors.get((m["model"], m["layer"], m["feature"]))
+        have = [np.asarray(m["dev_vector"], dtype=np.float64) for m in members
+                if m["dev_vector"] is not None]
+        if len(have) < 2:
+            continue
+        if sig is not None and not all(_target_ok(sig, f"{m['model']}/{m['layer']}")
+                                       for m in members):
+            excluded.append(_exclusion(sig, f"concept_atlas::{cid}", "concept_atlas",
+                                       [f"{m['model']}/{m['layer']}" for m in members]))
+            continue
+        unit = np.stack([v / np.linalg.norm(v) for v in have if np.linalg.norm(v) > 0])
+        centroid = unit.mean(axis=0)
+        centroid = centroid / (np.linalg.norm(centroid) or 1.0)
+        target_paths = []
+        for t in sorted({(m["model"], m["layer"]) for m in members}):
+            target_paths += [ablation_path(run_dir, *t), checkpoint_path(run_dir, *t)]
+        arts = hasher.many([atlas_p, stab_p] + target_paths)
+        models = sorted({m["model"] for m in members})
+        entries.append({
+            "id": f"concept_atlas::{cid}", "stage": "concept_atlas", "family": "concept_atlas",
+            "statistic": "member_pair_cosine_fraction_and_centroid_cosine",
+            "concept": cid, "members": members, "models": models,
+            "dev_centroid": [float(v) for v in centroid],
+            "min_cosine": float(params.get("min_cosine", 0.9)),
+            "min_members": int(params.get("min_members", 3)),
+            "artifact": "sae/concept_atlas.json", "artifact_sha256": arts["sae/concept_atlas.json"],
+            "artifacts": arts,
+            "statement": (f"Seed-stable atlas concept {cid} ({len(members)} member feature(s) "
+                         f"across {', '.join(models)}) still forms a concept on private data."),
+            "replicable": True,
+        })
+    summary = {"n_stable_concepts": len(stable_ids), "n_registered": len(entries)}
+    if sig is not None:
+        summary.update({"n_before_gate": len(entries) + len(excluded),
+                        "n_after_gate": len(entries), "excluded": excluded})
+    return entries, summary
+
+
+def _agreement_candidates(run_dir: Path, concepts_cfg, sig: dict | None = None,
+                          require_defined: bool = False) -> dict:
+    """Dev shared-input agreement tests with a DEFINITE verdict, ranked, and
+    the registration cut: every `same causal effect` test, plus
+    `concepts.n_registered_agreement_differs` (default 30, judgment) of the
+    `acts differently` ones, round-robin across ordered model pairs and
+    deepest-below-floor first within a pair. `not scorable`, `no specific
+    agreement`, `level only` and `shape only` are not claims of agreement or
+    disagreement and are not registered.
+
+    With the per-target gate (`sig`), a test whose source OR destination
+    target is non-significant is removed before the cut (so the cut is
+    filled from eligible tests) and listed under `excluded`.
+
+    With `require_defined` (`confirm.register_requires_defined_firing`), every
+    `acts differently` test is first re-read under the defined-firing rule; one
+    whose recomputed verdict is not `acts differently` is removed before the
+    gate and the cut, and listed under `excluded` with the recomputed verdict
+    and which statistic was undefined."""
+    p = run_dir / "sae" / "shared_input_agreement.json"
+    at_p = run_dir / "sae" / "atlas_transfer.json"
+    n_diff = int(getattr(concepts_cfg, "n_registered_agreement_differs", 30) or 30)
+    if not p.exists():
+        return {"candidates": [], "cut": [], "reason": "sae/shared_input_agreement.json not found"}
+    doc = load_json(p)
+    k_top = int(load_json(at_p).get("k_top_series", 20)) if at_p.exists() else 20
+    same_all, differs_all, undefined = [], [], []
+    for t in doc.get("tests") or []:
+        v = t.get("verdict")
+        if v not in ("same causal effect", "acts differently"):
+            continue
+        if require_defined and v == "acts differently":
+            from ..sae.shared_input_agreement import (
+                recompute_verdict_defined, record_firing_defined)
+
+            try:
+                recomputed = recompute_verdict_defined(t)
+            except KeyError as exc:
+                raise ValueError(
+                    f"confirm.register_requires_defined_firing is on but the dev agreement "
+                    f"record {_agreement_id(t)!r} lacks the field {exc} the defined-firing "
+                    f"rule needs; the rule is not guessed at") from exc
+            if recomputed != v:
+                defined = record_firing_defined(t)
+                undefined.append({
+                    "id": _agreement_id(t), "claim_type": "shared_input_agreement",
+                    "targets": [], "recomputed_verdict": recomputed,
+                    "firing_defined": defined,
+                    "reason": ("firing statistic undefined under the L5 defined-firing rule "
+                               f"(ROADMAP.md sec 38.3.4): (i) defined={defined['i']}, "
+                               f"(ii) defined={defined['ii']}; recomputed verdict "
+                               f"{recomputed!r}, so it is not registered as 'differs'")})
+                continue
+        depths = []
+        for key in ("statistic_i", "statistic_ii"):
+            st = t.get(key) or {}
+            if st.get("observed") is not None and st.get("floor_p05_src") is not None:
+                depths.append(float(st["observed"]) - min(float(st["floor_p05_src"]),
+                                                          float(st["floor_p05_dst"])))
+        rec = dict(t, k_top_series=k_top, depth=min(depths) if depths else 0.0)
+        (same_all if v == "same causal effect" else differs_all).append(rec)
+
+    def _ord(r):
+        return (r["src_target"], r["dst_target"], int(r["concept"]), int(r["dst_feature"]))
+
+    def _pick(same_in, differs_in):
+        same = sorted(same_in, key=_ord)
+        by_pair: dict = {}
+        for r in sorted(differs_in, key=lambda r: (r["depth"],) + _ord(r)):
+            by_pair.setdefault((r["src_model"], r["dst_model"]), []).append(r)
+        picked = []
+        while len(picked) < n_diff and any(by_pair.values()):
+            for pair in sorted(by_pair):
+                if by_pair[pair] and len(picked) < n_diff:
+                    picked.append(by_pair[pair].pop(0))
+        return same, picked
+
+    def _eligible(r):
+        return _target_ok(sig, r["src_target"]) and _target_ok(sig, r["dst_target"])
+
+    gate = {}
+    if sig is None:
+        same, differs = same_all, differs_all
+    else:
+        same = [r for r in same_all if _eligible(r)]
+        differs = [r for r in differs_all if _eligible(r)]
+        ungated_same, ungated_picked = _pick(same_all, differs_all)
+        gate = {"n_before_gate": len(ungated_same) + len(ungated_picked),
+                "excluded": [_exclusion(sig, _agreement_id(r), "shared_input_agreement",
+                                        [r["src_target"], r["dst_target"]])
+                             for r in sorted(same_all + differs_all, key=_ord)
+                             if not _eligible(r)]}
+    same, picked = _pick(same, differs)
+    cut = same + sorted(picked, key=_ord)
+    if sig is not None:
+        gate["n_after_gate"] = len(cut)
+    if require_defined:
+        gate["requires_defined_firing"] = True
+        gate["n_excluded_undefined_firing"] = len(undefined)
+        gate["excluded"] = sorted(undefined, key=lambda e: e["id"]) + gate.get("excluded", [])
+    return {"candidates": same + differs, "cut": cut,
+            "n_same": len(same), "n_differs_available": len(differs),
+            "n_differs_registered": len(picked), "n_registered_differs_cfg": n_diff, **gate}
+
+
+def _agreement_entries(run_dir: Path, cfg: PipelineConfig, sig: dict | None = None) -> tuple:
+    """`shared_input_agreement::{src target}::{dst target}::c{concept}::
+    f{dst feature}::{verdict}`. The spec's `{src}::{dst}::{verdict}` id
+    under-specifies the claim (one target pair carries many concepts), so
+    concept and destination feature are part of it. Source set, destination
+    set and `k` are frozen here."""
+    from ..sae.ablation_run import checkpoint_path
+
+    require_defined = bool(getattr(cfg.confirm, "register_requires_defined_firing", False))
+    ranking = _agreement_candidates(run_dir, cfg.concepts, sig, require_defined)
+    hasher = _Hasher(run_dir)
+    entries = []
+    for t in ranking["cut"]:
+        paths = [run_dir / "sae" / "shared_input_agreement.json",
+                 run_dir / "sae" / "atlas_transfer.json",
+                 checkpoint_path(run_dir, *t["src_target"].split("/", 1)),
+                 checkpoint_path(run_dir, *t["dst_target"].split("/", 1))]
+        arts = hasher.many(paths)
+        stats = {k: {f: (t.get(k) or {}).get(f) for f in
+                     ("observed", "floor_p95_src", "floor_p95_dst", "floor_p05_src",
+                      "floor_p05_dst", "clears", "below_floor")}
+                 for k in ("statistic_i", "statistic_ii")}
+        entries.append({
+            "id": _agreement_id(t),
+            "stage": "shared_input_agreement", "family": "shared_input_agreement",
+            "statistic": "shared_input_causal_agreement",
+            "dev_verdict": t["verdict"], "concept": int(t["concept"]),
+            "src_target": t["src_target"], "src_model": t["src_model"],
+            "src_features": [int(f) for f in t["src_features"]],
+            "dst_target": t["dst_target"], "dst_model": t["dst_model"],
+            "dst_feature": int(t["dst_feature"]),
+            "dst_features": [int(f) for f in t["dst_features"]],
+            "dst_set_kind": t.get("dst_set_kind"), "k_top_series": int(t["k_top_series"]),
+            "dev_statistics": stats,
+            "ablation_null": _ablation_null_mode(cfg),
+            "artifact": "sae/shared_input_agreement.json",
+            "artifact_sha256": arts["sae/shared_input_agreement.json"], "artifacts": arts,
+            "statement": (f"Concept {t['concept']}: {t['src_model']} ({t['src_target']}) and "
+                         f"{t['dst_model']} ({t['dst_target']}, feature {t['dst_feature']}) "
+                         f"'{t['verdict']}' on their shared top series."),
+            "replicable": True,
+        })
+        if require_defined:
+            from ..sae.shared_input_agreement import record_firing_defined
+
+            entries[-1]["requires_defined_firing"] = True
+            entries[-1]["dev_firing_defined"] = record_firing_defined(t)
+    summary = {k: v for k, v in ranking.items() if k not in ("candidates", "cut")}
+    summary.update({"n_candidates": len(ranking["candidates"]), "cut": len(entries)})
+    return entries, summary
+
+
+_STRUCTURE_TARGET_GATE_REASON = (
+    "not applied: the structure claims are panel-level aggregates, not claims about "
+    "any one target's features. (b) is a rate over ALL scorable dev candidates at every "
+    "measured target, so restricting it to targets selected for having MORE clears than "
+    "chance would condition on the outcome and bias the causally-null rate downward; (a) "
+    "is a claim about the frozen pooled atlas as a whole, and dropping a target's features "
+    "from that pool would change the claim, not test it. Both stay as registered; the "
+    "per-target table is still computed (and a missing `empirical_chance` still refuses) "
+    "because the gate is a property of the whole registration.")
+
+
+def _structure_candidates(run_dir: Path, cfg: PipelineConfig,
+                          sig: dict | None = None) -> tuple:
+    """The two registered directional aggregates (sec 38.2.2 item 4), each
+    registered only when it HOLDS on dev (registering a claim dev already
+    contradicts would spend the look on nothing):
+
+    (a) `concept_structure::no_concept_in_all_models` -- no atlas concept has
+        causal members in every model of the pooled panel. Rule-based (no
+        p-value): confirmed if the atlas recomputed on the private battery
+        vectors of the SAME dev causal pool also has none.
+    (b) `concept_structure::majority_prominent_features_causally_null` --
+        among the dev ablation candidates (activation-prominent by
+        construction), more than half clear no channel (dev 64.4%, FINDINGS
+        MN-14). Confirmed if the private rate's one-sided lower 95% bound is
+        above 0.5; carries a bootstrap p, so it is the family's only
+        p-valued claim.
+
+    (c) is exploratory and not registered (`_STRUCTURE_C_REASON`).
+
+    The per-target significance gate (`sig`) is deliberately NOT applied to
+    these claims; the reasoning is `_STRUCTURE_TARGET_GATE_REASON`, recorded
+    in the notes when the gate is on.
+    """
+    from ..sae.ablation_run import ablation_path, checkpoint_path
+
+    atlas_p = run_dir / "sae" / "concept_atlas.json"
+    targets = _dev_ablation_targets(run_dir)
+    hasher = _Hasher(run_dir)
+    entries, notes = [], {"exploratory_not_registered": _STRUCTURE_C_REASON}
+    if sig is not None:
+        notes["target_gate"] = _STRUCTURE_TARGET_GATE_REASON
+
+    if atlas_p.exists():
+        atlas = load_json(atlas_p)
+        rows = [{"model": str(r["model"]), "layer": str(r["layer"]),
+                 "feature": int(r["feature"])} for r in atlas.get("rows") or []]
+        models = sorted({r["model"] for r in rows})
+        max_models = max((int(c.get("n_models") or 0) for c in atlas.get("concepts") or []),
+                         default=0)
+        if len(models) >= 2 and max_models < len(models):
+            params = atlas.get("params") or {}
+            tpaths = []
+            for t in sorted({(r["model"], r["layer"]) for r in rows}):
+                tpaths += [ablation_path(run_dir, *t), checkpoint_path(run_dir, *t)]
+            arts = hasher.many([atlas_p] + tpaths)
+            entries.append({
+                "id": "concept_structure::no_concept_in_all_models", "stage": "concept_structure",
+                "family": "concept_structure", "statistic": "atlas_models_per_concept",
+                "p_valued": False, "dev_models": models, "dev_max_models_per_concept": max_models,
+                "pool": rows, "min_cosine": float(params.get("min_cosine", 0.9)),
+                "min_members": int(params.get("min_members", 3)),
+                "artifact": "sae/concept_atlas.json",
+                "artifact_sha256": arts["sae/concept_atlas.json"], "artifacts": arts,
+                "statement": (f"No atlas concept has causal members in all {len(models)} "
+                             f"models (dev maximum {max_models})."),
+                "replicable": True})
+        else:
+            notes["no_concept_in_all_models"] = (
+                f"not registered: it does not hold on dev (models in pool {len(models)}, "
+                f"maximum models per concept {max_models})")
+    else:
+        notes["no_concept_in_all_models"] = "not registered: sae/concept_atlas.json not found"
+
+    n_scorable = n_null = 0
+    per_target = {}
+    for model, layer, art, path in targets:
+        feats = [int(c["feature"]) for c in art.get("candidates") or [] if c.get("scorable")]
+        nulls = sum(1 for c in art.get("candidates") or []
+                    if c.get("scorable") and not c.get("n_channels_clearing"))
+        if feats:
+            per_target[f"{model}/{layer}"] = feats
+        n_scorable += len(feats)
+        n_null += nulls
+    if n_scorable and n_null / n_scorable > 0.5:
+        tpaths = []
+        for model, layer, _art, path in targets:
+            tpaths += [path, checkpoint_path(run_dir, model, layer)]
+        arts = hasher.many(tpaths)
+        entries.append({
+            "id": "concept_structure::majority_prominent_features_causally_null",
+            "stage": "concept_structure", "family": "concept_structure",
+            "statistic": "causally_null_rate", "p_valued": True,
+            "dev_n_features": n_scorable, "dev_n_null": n_null, "dev_rate": n_null / n_scorable,
+            "candidates": per_target,
+            "artifact": _rel(run_dir, targets[0][3]),
+            "artifact_sha256": arts[_rel(run_dir, targets[0][3])], "artifacts": arts,
+            "statement": (f"More than half of the activation-prominent dev features are "
+                         f"causally null (dev {n_null}/{n_scorable} = "
+                         f"{n_null / n_scorable:.3f})."),
+            "replicable": True})
+    else:
+        notes["majority_prominent_features_causally_null"] = (
+            "not registered: no scorable dev candidates" if not n_scorable else
+            f"not registered: the dev null rate {n_null / n_scorable:.3f} is not above 0.5")
+    return entries, notes
+
+
+def _concept_claim_entries(run_dir: Path, cfg: PipelineConfig) -> tuple:
+    """All K2 entries, or `([], {})` when `confirm.register_concept_claims` is
+    off (the byte-identical default)."""
+    if not bool(getattr(cfg.confirm, "register_concept_claims", False)):
+        if bool(getattr(cfg.confirm, "register_requires_target_significance", False)):
+            raise ValueError(
+                "confirm.register_requires_target_significance is on but "
+                "confirm.register_concept_claims is off, so no concept claim would be "
+                "registered and the gate would silently do nothing; turn on "
+                "register_concept_claims or turn the gate off")
+        if bool(getattr(cfg.confirm, "register_requires_defined_firing", False)):
+            raise ValueError(
+                "confirm.register_requires_defined_firing is on but "
+                "confirm.register_concept_claims is off, so no agreement claim would be "
+                "registered and the rule would silently do nothing; turn on "
+                "register_concept_claims or turn the rule off")
+        return [], {}
+    sig = _target_gate_table(run_dir, cfg)
+    causal, causal_sum = _concept_causal_entries(run_dir, cfg, sig)
+    atlas, atlas_sum = _atlas_candidates(run_dir, cfg, sig)
+    agree, agree_sum = _agreement_entries(run_dir, cfg, sig)
+    struct, struct_notes = _structure_candidates(run_dir, cfg, sig)
+    summary = {
+        "concept_causal": causal_sum, "concept_atlas": atlas_sum,
+        "shared_input_agreement": agree_sum, "concept_structure": struct_notes,
+        "not_registered": {"families_beat_shuffle_null": _NOT_REGISTERED_FAMILIES_REASON},
+        "ablation_null": _ablation_null_mode(cfg)}
+    if sig is not None:
+        summary["target_significance"] = sig
+    return causal + atlas + agree + struct, summary
+
+
+# ---------------------------------------------------------------------------
+# ROADMAP.md sec 38.4 (K4) -- U1 reliability claims. Opt-in:
+# `confirm.register_reliability_claims`. FROZEN from one dev K4 JSON plus the
+# artifacts its feature definitions come from.
+# ---------------------------------------------------------------------------
+
+RELIABILITY_STAGE = "reliability_u1"
+RELIABILITY_SUPPORTED_TASKS = ("log_mase_spearman",)
+_RELIABILITY_BASELINE_DEFINITION = (
+    "log1p of the model's own mean relative quantile width (MASE units), log10 of "
+    "forecast sd over context sd (+1e-3), then catch22 of the z-scored context "
+    "(analysis/reliability_from_internals.py::baseline_features)")
+_RELIABILITY_ROW_FILTER = (
+    "series with mase_reliable and a finite MASE for the claim's own model (dev scored the "
+    "series reliable and finite for every panel model; the private split has L0 only for "
+    "the registered models)")
+
+
+def _pin(run_dir: Path, path: Path) -> tuple:
+    """`(key, sha256)` of one pinned artifact: the run-relative posix path
+    when it lives inside the run directory, else the resolved absolute path
+    (a dev K4 JSON kept outside the run). `check_registry_freshness` joins
+    the key onto the run directory, which leaves an absolute key untouched."""
+    path = Path(path).resolve()
+    try:
+        key = path.relative_to(Path(run_dir).resolve()).as_posix()
+    except ValueError:
+        key = str(path)
+    return key, _sha256_file(path)
+
+
+def _reliability_dev_json_path(run_dir: Path, cfg: PipelineConfig) -> Path | None:
+    """The dev K4 JSON named by `confirm.reliability_dev_json` (absolute, or
+    relative to the run directory), `None` when the claims are off. Refuses
+    when exactly one of the two fields is set, or the file is missing: a flag
+    that registers nothing must say so."""
+    on = bool(getattr(cfg.confirm, "register_reliability_claims", False))
+    raw = str(getattr(cfg.confirm, "reliability_dev_json", "") or "")
+    if not on:
+        if raw:
+            raise ValueError(
+                "confirm.reliability_dev_json is set but confirm.register_reliability_claims "
+                "is off, so no reliability claim would be registered; turn the flag on or "
+                "clear the path")
+        return None
+    if not raw:
+        raise ValueError(
+            "confirm.register_reliability_claims is on but confirm.reliability_dev_json is "
+            "empty; point it at the dev K4 JSON from run_reliability_from_internals.py")
+    path = Path(raw)
+    path = path if path.is_absolute() else Path(run_dir) / path
+    if not path.exists():
+        raise ValueError(f"confirm.reliability_dev_json {str(path)!r} does not exist")
+    return path
+
+
+def _reliability_frozen_families(run_dir: Path, model: str, fam_rows: list) -> tuple:
+    """`(families, layers)` for one model: the concept-family membership
+    `load_run_inputs` summed at dev, restricted to the layers that had persisted
+    SAE features (the store's own `has_sae_features` when the activation store
+    exists, else the layers with a saved checkpoint) and a checkpoint to freeze.
+    `families` is `[{"family": int, "members": [{"layer", "feature"}]}]`."""
+    from ..sae.ablation_run import checkpoint_path
+
+    store = None
+    if (Path(run_dir) / "activations.zarr").exists():
+        from ..extraction.store import ActivationStore
+        store = ActivationStore(Path(run_dir) / "activations.zarr", mode="r")
+    members: dict = {}
+    layers = set()
+    for r in fam_rows:
+        if r["model"] != model:
+            continue
+        layer = r["layer"]
+        has_ckpt = checkpoint_path(run_dir, model, layer).exists()
+        persisted = store.has_sae_features(model, layer) if store is not None else has_ckpt
+        if not (has_ckpt and persisted):
+            continue
+        layers.add(layer)
+        members.setdefault(int(r["family"]), []).append(
+            {"layer": layer, "feature": int(r["feature"])})
+    fams = [{"family": f, "members": sorted(ms, key=lambda m: (m["layer"], m["feature"]))}
+            for f, ms in sorted(members.items())]
+    return fams, sorted(layers)
+
+
+def _reliability_u1_entries(run_dir: Path, cfg: PipelineConfig) -> tuple:
+    """`-> (entries, summary)` for the `reliability_u1` claims, or `([], {})`
+    when `confirm.register_reliability_claims` is off (the byte-identical
+    default).
+
+    Claim `reliability_u1::{model}::{task}`: "adding this model's internals to
+    its free baseline raises the out-of-fold Spearman with log MASE, with a
+    private series-bootstrap gain CI lower bound above 0". Registered per
+    (model, task) whose DEV gain CI lower bound is > 0 (never the point
+    estimate). The id names model AND task, so `build_registry`'s duplicate
+    refusal covers it. A dev positive that cannot be frozen (a lens-depth
+    group, no concept-family artifact, a task `confirm` does not refit, family
+    ids that do not reproduce dev's columns) is listed in the summary with the
+    reason instead of being registered, so the dev tests run and the claims
+    chosen are both on record."""
+    from ..sae.ablation_run import checkpoint_path
+    from . import reliability_from_internals as rfi
+
+    dev_path = _reliability_dev_json_path(run_dir, cfg)
+    if dev_path is None:
+        return [], {}
+    dev_key, dev_sha = _pin(run_dir, dev_path)
+    dev = load_json(dev_path)
+    settings = dev["settings"]
+    fam_rows = rfi._family_rows(run_dir)
+    fam_key, fam_sha = None, None
+    fam_path = Path(run_dir) / "sae" / "concept_families.json"
+    if fam_path.exists():
+        fam_key, fam_sha = _pin(run_dir, fam_path)
+    baseline_names = rfi.baseline_feature_names()
+    entries, tests = [], []
+    for model in sorted(dev["models"]):
+        rec = dev["models"][model]
+        for task, res in sorted((rec.get("u1") or {}).items()):
+            if not isinstance(res, dict) or not res.get("scorable"):
+                continue
+            gain = res["gain"]
+            row = {"model": model, "task": task, "gain": gain["gain"], "lo": gain["lo"],
+                   "hi": gain["hi"], "n": res["n"], "registered": False, "reason": ""}
+            tests.append(row)
+            if not gain["lo"] > 0:
+                row["reason"] = "dev gain CI lower bound is not > 0"
+                continue
+            if task not in RELIABILITY_SUPPORTED_TASKS:
+                row["reason"] = f"confirm does not refit task {task!r}"
+                continue
+            groups = rec.get("internal_groups") or {}
+            unsupported = sorted(set(groups) - {"sae_families", "crystallization_norm"})
+            if unsupported:
+                row["reason"] = (f"internal group(s) {unsupported} cannot be recomputed on "
+                                 f"private data")
+                continue
+            if "sae_families" in groups and (fam_rows is None or fam_key is None):
+                row["reason"] = "sae/concept_families.json is absent or not measured"
+                continue
+            spec_groups, arts = {}, {dev_key: dev_sha}
+            if fam_key:
+                arts[fam_key] = fam_sha
+            if "sae_families" in groups:
+                fams, layers = _reliability_frozen_families(run_dir, model, fam_rows)
+                cols = [str(f["family"]) for f in fams]
+                dev_cols = ((rec.get("notes") or {}).get("sae_choice") or {}).get("columns")
+                if dev_cols != cols:
+                    row["reason"] = (f"frozen family ids {cols} do not reproduce the dev "
+                                     f"columns {dev_cols}")
+                    continue
+                spec_groups["sae_families"] = {
+                    "families": fams, "layers": layers,
+                    "definition": "sum over the family's member SAE features of the frozen "
+                                  "SAE's last-window activation, added across layers"}
+                arts.update(dict(_pin(run_dir, checkpoint_path(run_dir, model, layer))
+                                 for layer in layers))
+            if "crystallization_norm" in groups:
+                layer = (rec.get("notes") or {}).get("crystallization_layer")
+                if not layer:
+                    row["reason"] = "dev record names no crystallization layer"
+                    continue
+                spec_groups["crystallization_norm"] = {
+                    "layer": layer,
+                    "definition": "log(L2 norm of the last-window residual state + 1e-12)"}
+            if len(baseline_names) != rec.get("baseline_features"):
+                row["reason"] = (f"baseline has {len(baseline_names)} columns now but "
+                                 f"{rec.get('baseline_features')} at dev")
+                continue
+            model_seed = rfi.model_seed_for(model, int(settings["seed"]))
+            row["registered"] = True
+            entries.append({
+                "id": f"{RELIABILITY_STAGE}::{model}::{task}",
+                "stage": RELIABILITY_STAGE, "family": RELIABILITY_STAGE,
+                "statistic": "gain_of_baseline_plus_internals_over_baseline_spearman_log_mase",
+                "model": model, "task": task,
+                "spec": {
+                    "task": task, "kind": "ridge", "metric": "spearman",
+                    "baseline_features": baseline_names,
+                    "baseline_definition": _RELIABILITY_BASELINE_DEFINITION,
+                    "groups": spec_groups,
+                    "ridge_alphas": [float(a) for a in settings["ridge_alphas"]],
+                    "n_folds": int(settings["n_folds"]), "n_repeats": int(settings["n_repeats"]),
+                    "seed": int(settings["seed"]), "model_seed": model_seed,
+                    "cv_strata": settings.get("cv_strata", "family"),
+                    "n_boot": int(settings["n_boot"]), "ci_level": 0.95,
+                    "row_filter": _RELIABILITY_ROW_FILTER},
+                "dev": {"gain": gain["gain"], "lo": gain["lo"], "hi": gain["hi"],
+                        "baseline": gain["baseline"],
+                        "baseline_plus_internals": gain["baseline_plus_internals"],
+                        "n": res["n"], "n_series_dev": dev.get("n_series")},
+                "artifact": dev_key, "artifact_sha256": dev_sha, "artifacts": arts,
+                "statement": (f"Adding {model}'s internals to its free baseline raises the "
+                              f"out-of-fold Spearman with log MASE (dev gain "
+                              f"{gain['gain']!r}, CI lower bound {gain['lo']!r}); a refit on "
+                              f"private series has a gain CI lower bound above 0. Predictive "
+                              f"(behavioral) evidence, not causal."),
+                "replicable": True})
+    summary = {"dev_json": dev_key, "dev_json_sha256": dev_sha,
+               "rule": "registered per (model, task) when the dev gain CI lower bound is > 0",
+               "n_dev_tests": len(tests), "n_registered": len(entries), "tests": tests}
+    return entries, summary
+
+
+def _reliability_n_boot(cfg: PipelineConfig, registry: dict | None) -> int | None:
+    """The bootstrap size the `reliability_u1` family's p-values are floored
+    at: the smallest frozen `n_boot` among the registered claims, else the dev
+    JSON's own, else unknown."""
+    if registry is not None:
+        hyps = [h for h in registry["hypotheses"] if h["stage"] == RELIABILITY_STAGE]
+        if hyps:
+            return min(int(h["spec"]["n_boot"]) for h in hyps)
+    raw = str(getattr(cfg.confirm, "reliability_dev_json", "") or "")
+    if not raw:
+        return None
+    path = Path(raw) if Path(raw).is_absolute() else cfg.run_dir() / raw
+    return int(load_json(path)["settings"]["n_boot"]) if path.exists() else None
+
+
+# One Holm family per claim type. `n` is the size of the null each family's
+# p-values are resolved against, so the smallest attainable Holm-adjusted p
+# is `m / (n + 1)`; a family is unsatisfiable once that exceeds alpha.
+_FAMILY_NULL_FIELD = {"concept_causal": "causal_max_null", "concept_atlas": "atlas_n_null",
+                      "shared_input_agreement": "agreement_n_null",
+                      "concept_structure": "structure_n_boot"}
+
+
+def claim_family_budget(cfg: PipelineConfig, registry: dict | None = None) -> list:
+    """`[{"family", "m", "n_null", "alpha", "min_attainable_p_holm",
+    "satisfiable", "basis"}]` for the four K2 claim families, plus a
+    `reliability_u1` row only when that claim type is registered (or, with no
+    registry, enabled), so every other configuration reads the same rows as
+    before. The `reliability_u1` family's `n_null` is the frozen bootstrap
+    size and its floor is `m / n_boot` (a bootstrap p is floored at 1/n_boot).
+
+    With a registry, `m` is the number of registered claims of that type
+    (only the p-valued ones for `concept_structure`). Without one (a
+    `--doctor` run before `register`), `m` is the config's own upper bound
+    where the config has one (`concepts.n_registered_causal`), and families
+    whose count is a property of the dev artifacts are reported as
+    `m: None` with `basis: "unknown before register"` rather than guessed
+    (`CLAUDE.md` sec 11.34). One function feeds both `confirm`'s refusal and
+    the doctor row, so the two cannot disagree.
+    """
+    alpha = float(cfg.confirm.alpha)
+    rows = []
+    for family, field_name in _FAMILY_NULL_FIELD.items():
+        n_null = int(getattr(cfg.confirm, field_name))
+        if registry is not None:
+            hyps = [h for h in registry["hypotheses"] if h["stage"] == family]
+            if family == "concept_structure":
+                hyps = [h for h in hyps if h.get("p_valued")]
+            m, basis = len(hyps), "registered claims"
+        elif family == "concept_causal":
+            m, basis = int(cfg.concepts.n_registered_causal), "upper bound: n_registered_causal"
+        elif family == "concept_structure":
+            m, basis = 1, "at most one p-valued structure claim"
+        else:
+            m, basis = None, "unknown before register"
+        floor = (m / (n_null + 1)) if m else None
+        rows.append({"family": family, "m": m, "n_null": n_null, "alpha": alpha,
+                     "min_attainable_p_holm": floor,
+                     "satisfiable": (floor <= alpha) if floor is not None else None,
+                     "basis": basis})
+    has_u1 = registry is not None and any(
+        h["stage"] == RELIABILITY_STAGE for h in registry["hypotheses"])
+    enabled = bool(getattr(cfg.confirm, "register_reliability_claims", False))
+    if has_u1 or (registry is None and enabled):
+        n_boot = _reliability_n_boot(cfg, registry)
+        m = (len([h for h in registry["hypotheses"] if h["stage"] == RELIABILITY_STAGE])
+             if registry is not None else None)
+        floor = (m / n_boot) if m and n_boot else None
+        rows.append({"family": RELIABILITY_STAGE, "m": m, "n_null": n_boot, "alpha": alpha,
+                     "min_attainable_p_holm": floor,
+                     "satisfiable": (floor <= alpha) if floor is not None else None,
+                     "basis": ("registered claims; p floored at 1/n_boot, so the Holm floor "
+                               "is m/n_boot" if registry is not None
+                               else "unknown before register")})
+    return rows
+
+
 def build_registry(cfg: PipelineConfig) -> dict:
     """Pure assembly (no I/O beyond reading already-written dev artifacts)."""
     run_dir = cfg.run_dir()
     concept_transfer_entries, ct_ranking = _concept_transfer_entries(run_dir, cfg)
+    causal_entries, causal_summary = _concept_claim_entries(run_dir, cfg)
+    reliability_entries, reliability_summary = _reliability_u1_entries(run_dir, cfg)
     hypotheses = (_l0_entries(run_dir) + _l1_entries(run_dir) + _l2_entries(run_dir)
                  + _l3_entries(run_dir) + _clustering_entries(run_dir)
-                 + concept_transfer_entries)
+                 + concept_transfer_entries + causal_entries + reliability_entries)
     ids = [h["id"] for h in hypotheses]
     dup = sorted({i for i in ids if ids.count(i) > 1})
     if dup:
         raise ValueError(f"hypothesis registry has duplicate ids {dup}; every claim "
                          f"must be individually addressable (Holm is keyed by id)")
-    return {"hypotheses": hypotheses,
-           "n_replicable": sum(1 for h in hypotheses if h["replicable"]),
-           "concept_transfer_candidates": ct_ranking,
-           "concept_knob_candidates": {"candidates": [], "cut": 0, "n_registered": 0,
-                                       "reason": _KNOB_FAMILY_EMPTY_REASON}}
+    registry = {"hypotheses": hypotheses,
+               "n_replicable": sum(1 for h in hypotheses if h["replicable"]),
+               "concept_transfer_candidates": ct_ranking,
+               "concept_knob_candidates": {"candidates": [], "cut": 0, "n_registered": 0,
+                                           "reason": _KNOB_FAMILY_EMPTY_REASON}}
+    if causal_summary:
+        registry["concept_claim_candidates"] = causal_summary
+    if reliability_summary:
+        registry["reliability_u1_candidates"] = reliability_summary
+    return registry
 
 
 def run_register(cfg: PipelineConfig) -> None:
@@ -432,14 +1435,17 @@ def check_registry_freshness(cfg: PipelineConfig, registry: dict) -> None:
     run_dir = cfg.run_dir()
     drifted = []
     for h in registry["hypotheses"]:
-        art_path = run_dir / h["artifact"]
-        if not art_path.exists():
-            drifted.append(f"{h['artifact']} (no longer exists)")
-            continue
-        current = _sha256_file(art_path)
-        if current != h["artifact_sha256"]:
-            drifted.append(f"{h['artifact']} (hash changed: registered "
-                           f"{h['artifact_sha256'][:12]}, now {current[:12]})")
+        pinned = {h["artifact"]: h["artifact_sha256"]}
+        pinned.update(h.get("artifacts") or {})
+        for rel, registered in pinned.items():
+            art_path = run_dir / rel
+            if not art_path.exists():
+                drifted.append(f"{rel} (no longer exists)")
+                continue
+            current = _sha256_file(art_path)
+            if current != registered:
+                drifted.append(f"{rel} (hash changed: registered "
+                               f"{registered[:12]}, now {current[:12]})")
     if drifted:
         raise RuntimeError(
             "confirm refuses to run: hypotheses.json was registered against artifacts that "

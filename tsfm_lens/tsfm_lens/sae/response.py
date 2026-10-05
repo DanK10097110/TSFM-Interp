@@ -90,10 +90,14 @@ def _horizon_shape(x: np.ndarray, baseline: np.ndarray) -> tuple:
 def _flatness(x: np.ndarray, rel_tol: float = 1e-3) -> np.ndarray:
     """Fraction of near-constant consecutive steps, per series -- the
     intermittency-sensitive channel. Scale-relative: a step is "flat" when
-    its first difference is small relative to the series' own amplitude."""
+    its first difference is small relative to the series' own amplitude.
+    A non-finite row is NaN, not 0.0: `NaN < tol` is False, so it would
+    otherwise score as "no flat steps", a finite and wrong value."""
     scale = (np.abs(x).max(axis=-1, keepdims=True) + 1e-8)
     d = np.abs(np.diff(x, axis=-1)) / scale
-    return (d < rel_tol).mean(axis=-1)
+    flat = (d < rel_tol).mean(axis=-1)
+    finite = np.isfinite(x).all(axis=-1)
+    return flat if finite.all() else np.where(finite, flat, np.nan)
 
 
 def _spectral_centroid(x: np.ndarray) -> np.ndarray:
@@ -247,6 +251,21 @@ def summarize_battery(per_series: dict, unit: str = "series", n_boot: int = 500,
     return out
 
 
+def count_nonfinite_skipped(delta: np.ndarray, channel: str, bad_forecast: np.ndarray) -> int:
+    """Rows of a candidate's per-series `delta` that the scoring's `nanmean` /
+    finite filter silently dropped, counted so the skip is recorded.
+
+    `seasonal` is NaN by design on a series with no ground-truth period, which
+    is not a forecast fault, so for that channel only rows whose own forecast
+    (steered or baseline) was non-finite are counted (`bad_forecast`). Every
+    other channel counts every non-finite row.
+    """
+    bad = ~np.isfinite(np.asarray(delta, dtype=np.float64))
+    if channel == "seasonal":
+        bad = bad & np.asarray(bad_forecast, dtype=bool)
+    return int(bad.sum())
+
+
 def level_share(steered: np.ndarray, baseline: np.ndarray) -> tuple[float | None, str]:
     """ROADMAP.md sec 37.3 P0's definition, restated as a function so P4
     (sec 37.7) scores it identically rather than re-deriving it:
@@ -266,6 +285,12 @@ def level_share(steered: np.ndarray, baseline: np.ndarray) -> tuple[float | None
     if steered.size == 0:
         return None, "no top-firing series to score"
     d = np.asarray(steered, dtype=np.float64) - np.asarray(baseline, dtype=np.float64)
+    finite_rows = np.isfinite(d).all(axis=-1)
+    if not finite_rows.all():
+        d = d[finite_rows]
+        if d.size == 0:
+            return None, ("every top-firing series has a non-finite forecast, so level "
+                          "share is undefined")
     a = d.mean(axis=-1)
     denom = float(np.mean(np.mean(d ** 2, axis=-1)))
     if not (denom > 0.0):
@@ -586,6 +611,9 @@ def feature_response_fingerprints(cfg, adapter, layer: str, sae, data, device,
                         "signed_mean": float(np.nanmean(rec["delta"])),
                         "null_p95": p95, "null_mean": null_mean.get(ch),
                         "clears_null": clears}
+                n_skipped = int((~np.isfinite(np.asarray(rec["delta"], dtype=np.float64))).sum())
+                if n_skipped:
+                    entry["n_nonfinite_rows_skipped"] = n_skipped
                 if ch == "mase":
                     entry["floor_units"] = in_floor_units(entry["signed_mean"], floor)
                 per_channel[ch] = entry
@@ -688,6 +716,90 @@ def _feature_ablated_replacement(clean_tokens: torch.Tensor, sae, device,
     return recon.reshape(b, t, d).cpu()
 
 
+ABLATION_NULL_MODES = ("mean_magnitude", "profile_matched", "profile_matched_cov")
+
+
+def _profile_matched_null_replacement(clean_tokens: torch.Tensor, sae, device, f_idx,
+                                      code: torch.Tensor,
+                                      direction: str = "decoder") -> torch.Tensor:
+    """Token-level reconstruction with a RANDOM direction removed, sized to one
+    atom's own per-token removal profile.
+
+    The atom's ablation removes `z_f(t) w_f` from token `t`: an amount that is
+    zero where the atom is silent and large on its top rows. The legacy null
+    removes ONE uniform amount everywhere (the chunk's mean |z| over all tokens,
+    zeros included), which is far below a dense or strong atom's removal on its
+    own rows, so such an atom clears it on size alone. Here the null removes, at
+    every token `t`, a vector of norm `|z_f(t)| ||w_f||` along a random unit
+    direction `u`. The removal profile is exactly the atom's, on the same rows;
+    only the direction is random. The baseline stays the full reconstruction.
+
+    `direction="decoder"` (mode `profile_matched`): `u = W_dec^T r / ||.||`, `r` a
+    random unit `code` in dictionary space. An isotropic code can point off the
+    activation manifold, where a removal may disrupt the model more than any real
+    direction would.
+
+    `direction="covariance"` (mode `profile_matched_cov`): `code` is a standard
+    normal vector with one entry per token of the chunk, and
+    `u = sum_i code_i (x_i - mean(x)) / ||.||`, a random signed combination of
+    the chunk's own centered clean token activations. That is a draw from a
+    Gaussian whose covariance is the chunk's sample covariance of the layer's
+    clean tokens (`u ~ Sigma^{1/2} g` up to scale), obtained without a `d x d`
+    factorization, so the direction lies in the span the model actually uses on
+    these rows. It is deterministic given the caller's seeded generator.
+
+    `f_idx` may also be a SET of atoms (the shared-input agreement step ablates
+    an atlas part): the removal at token `t` then has the norm of the set's own
+    removal, `|| sum_{f in set} z_f(t) w_f ||`.
+    """
+    b, t, d = clean_tokens.shape
+    flat = clean_tokens.reshape(-1, d).to(device)
+    features = sae.encode(flat)
+    recon = sae.decode(features)
+    W_dec = sae.W_dec.detach()
+    if direction == "covariance":
+        x = flat.to(W_dec.dtype)
+        u = code.to(device=x.device, dtype=x.dtype) @ (x - x.mean(dim=0, keepdim=True))
+    elif direction == "decoder":
+        u = code.to(device=W_dec.device, dtype=W_dec.dtype) @ W_dec
+    else:
+        raise ValueError(f"unknown null direction {direction!r}")
+    u = u / u.norm().clamp_min(1e-12)
+    if isinstance(f_idx, (int, np.integer)):
+        magnitude = features[:, f_idx].abs() * W_dec[f_idx].norm()
+    else:
+        idx = sorted(int(i) for i in f_idx)
+        magnitude = (features[:, idx] @ W_dec[idx]).norm(dim=1)
+    removal = magnitude[:, None] * u[None, :]
+    return (recon - removal).reshape(b, t, d).cpu()
+
+
+def _lodo_pseudo_clear_rate(draws: list) -> float | None:
+    """Leave-one-draw-out empirical clear rate of the battery's own rule.
+
+    `_score_channel_against_null` clears a cell when the MEAN over the
+    feature's k rows of |delta| exceeds the p95 of the POOLED row-level null
+    (`n_draws` x k values). A mean over k rows has much less spread than single
+    rows, so under exchangeability the clear rate is far below the nominal 5%
+    and `0.05 x cells` is not a chance line. Here each null draw in turn is a
+    pseudo-feature: its row mean against the p95 of the remaining draws pooled,
+    exactly the real rule (including the degenerate-null refusal). The return is
+    the fraction of draws that clear, `None` with fewer than two draws.
+    """
+    if len(draws) < 2:
+        return None
+    n_clear = 0
+    for j, dj in enumerate(draws):
+        rest = np.concatenate([d for i, d in enumerate(draws) if i != j])
+        rest = rest[np.isfinite(rest)]
+        if not rest.size:
+            continue
+        p95 = float(np.quantile(rest, 0.95))
+        if p95 > 0.0 and float(np.nanmean(dj)) > p95:
+            n_clear += 1
+    return n_clear / len(draws)
+
+
 def top_firing_rows(activations: np.ndarray, f_idx: int, k: int) -> np.ndarray:
     """The `k` series row indices this atom fires hardest on, strongest first.
 
@@ -752,15 +864,73 @@ def _pack_chunks(per_candidate_rows: dict, order: list, cap: int) -> list:
     return chunks
 
 
+def effective_k_summary(candidates: list, top_k_requested: int, cap: int) -> dict:
+    """How many rows each candidate was ACTUALLY scored on, against the k asked for.
+
+    `top_k_series` is a request, not a guarantee: a sparse atom fires on fewer
+    than k series (`top_firing_rows` never pads with silent rows), and the
+    per-chunk cap (`min(concepts.max_series, model batch_size)`) truncates an
+    atom's rows to its strongest `cap`. `effective_k_cap` is that binding
+    per-target maximum, `min(top_k_requested, cap)`; a candidate is `short`
+    when it was scored on fewer rows than that. Reads `n_rows_scored` and falls
+    back to the legacy `n_top_series`, so it also summarizes older artifacts.
+    """
+    k_eff = min(int(top_k_requested), int(cap))
+    counts = [int(c.get("n_rows_scored", c.get("n_top_series") or 0)) for c in candidates]
+    return {
+        "top_k_requested": int(top_k_requested),
+        "effective_k_cap": int(cap),
+        "effective_k": int(k_eff),
+        "cap_binds": bool(cap < top_k_requested),
+        "n_candidates": len(counts),
+        "n_candidates_zero_rows": sum(1 for n in counts if n == 0),
+        "n_candidates_short": sum(1 for n in counts if 0 < n < k_eff),
+        "n_candidates_full": sum(1 for n in counts if n == k_eff),
+    }
+
+
+def row_coverage_line(target: str, cov: dict) -> str:
+    """One-line text form of an artifact's `row_coverage`, for driver summaries.
+
+    Names the cap loudly when it is below the requested k.
+    """
+    warn = "  ** CAP BELOW REQUESTED K **" if cov.get("cap_binds") else ""
+    return (f"{target}: requested k={cov['top_k_requested']} cap={cov['effective_k_cap']} "
+            f"effective k={cov['effective_k']}; {cov['n_candidates']} candidates: "
+            f"{cov['n_candidates_full']} full, {cov['n_candidates_short']} short, "
+            f"{cov['n_candidates_zero_rows']} zero rows{warn}")
+
+
 def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
                                   candidates: list, activations: np.ndarray,
                                   top_k_series: int = 8, n_null_directions: int = 16,
                                   max_series: int = 64, seed_offset: int = 260,
                                   floor: dict | None = None,
                                   periods_full: np.ndarray | None = None,
-                                  keep_forecasts: int = 3) -> dict:
+                                  keep_forecasts: int = 3,
+                                  null_mode: str = "mean_magnitude",
+                                  keep_null_draws: bool = False,
+                                  empirical_chance: bool = False) -> dict:
     """Ablate each candidate on its OWN top-firing series; score the same
     9-channel battery against a ROW-MATCHED random-direction null.
+
+    `null_mode` (`sae.ablation_null`): `"mean_magnitude"` is the legacy null
+    (one uniform removal size for the whole chunk, `n_null_directions` forwards
+    per chunk), byte-identical to before. `"profile_matched"` draws
+    `n_null_directions` random directions PER FEATURE, each removed with that
+    feature's own per-token profile (`_profile_matched_null_replacement`), at
+    `n_null_directions` extra forwards per feature; the row matching and the
+    level-removed shape null are unchanged. `"profile_matched_cov"` is the same
+    per-feature profile with the direction drawn from the chunk's own token
+    covariance instead of the dictionary (`_profile_matched_null_replacement`).
+
+    `empirical_chance` (default off; every artifact is then byte-identical):
+    each scored raw channel also records `empirical_chance`, the
+    leave-one-draw-out pseudo-clear rate of the real rule
+    (`_lodo_pseudo_clear_rate`), and the artifact gets a top-level
+    `empirical_chance` block (cells, expected cells, per channel). Then
+    `chance_expected_cells` (`0.05 x cells`) keeps its historical value and is
+    not a chance line; this block is.
 
     Same reach gate, same baseline convention and same channels as
     `feature_response_fingerprints` -- the two differ only in intervention
@@ -792,6 +962,14 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
     Returns `{"reach": ..., "withheld": True}` and nothing else when the
     target is unreachable (sec 25.1 (7) -- a table of zeros from a patch that
     never lands reads as "these features don't matter").
+
+    `keep_null_draws` (ROADMAP.md sec 38.2, K2; default off, so every existing
+    artifact is byte-identical): each scored channel additionally records
+    `null_draw_means` (one mean-|delta| over the candidate's own rows per
+    null direction -- the null distribution of the SAME statistic as
+    `effect`, from which `confirm` forms a permutation p), and
+    `row_abs_effects` / `row_signed_effects` (the per-row deltas, for the
+    power calculation in `analysis/power.py::mde_ablation_effect`).
     """
     acts = np.asarray(activations, dtype=np.float64)
     if acts.ndim != 2 or acts.shape[0] != data.n:
@@ -833,6 +1011,10 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
     d_in, dict_size = sae.d_in, sae.dict_size
     seed = cfg.run.seed + seed_offset
     rng = np.random.default_rng(seed + 1)
+    if null_mode not in ABLATION_NULL_MODES:
+        raise ValueError(f"unknown ablation null mode {null_mode!r}: expected "
+                         f"one of {ABLATION_NULL_MODES}")
+    profile_rng = np.random.default_rng(seed + 2)
 
     results, n_clearing_cells, n_series_used = [], 0, set()
     n_shape_clearing_cells = 0
@@ -880,7 +1062,7 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
         # (`test_null_gets_same_transform` is the load-bearing regression for
         # this).
         null_rows_shape: dict = {ch: [] for ch in CHANNELS}
-        for _ in range(n_null_directions):
+        for _ in range(n_null_directions if null_mode == "mean_magnitude" else 0):
             direction = rng.normal(size=dict_size)
             direction = direction / (np.linalg.norm(direction) + 1e-12)
             rec_null = _forward(_direction_steered_replacement(
@@ -899,9 +1081,33 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
         for f_idx in chunk_feats:
             rows_f = [int(r) for r in per_candidate_rows[f_idx] if int(r) in row_pos]
             idx = np.array([row_pos[r] for r in rows_f], dtype=int)
+            bad_forecast = np.zeros(idx.size, dtype=bool)
+            if null_mode in ("profile_matched", "profile_matched_cov"):
+                null_rows = {ch: [] for ch in CHANNELS}
+                null_rows_shape = {ch: [] for ch in CHANNELS}
+                cov = null_mode == "profile_matched_cov"
+                for _ in range(n_null_directions):
+                    code = profile_rng.normal(size=(clean_tokens.shape[0] * clean_tokens.shape[1])
+                                              if cov else dict_size)
+                    code = code / (np.linalg.norm(code) + 1e-12)
+                    rec_null = _forward(_profile_matched_null_replacement(
+                        clean_tokens, sae, device, int(f_idx),
+                        torch.as_tensor(code, dtype=torch.float32),
+                        direction="covariance" if cov else "decoder"))
+                    stats = _stats(rec_null)
+                    stats_shape = _stats(rec_null, remove_level=True)
+                    for ch in CHANNELS:
+                        r = stats[ch]
+                        if r["available"] and r["delta"] is not None:
+                            null_rows[ch].append(np.abs(np.asarray(r["delta"], dtype=np.float64)))
+                        rs = stats_shape[ch]
+                        if rs["available"] and rs["delta"] is not None:
+                            null_rows_shape[ch].append(np.abs(np.asarray(rs["delta"], dtype=np.float64)))
             rec = _forward(_feature_ablated_replacement(clean_tokens, sae, device, f_idx))
             stats = _stats(rec)
             stats_shape = _stats(rec, remove_level=True)
+            bad_forecast = ~(np.isfinite(np.asarray(rec["point"], dtype=np.float64)[idx]).all(axis=-1)
+                             & np.isfinite(np.asarray(baseline_fc, dtype=np.float64)[idx]).all(axis=-1))
 
             per_channel = {}
             per_channel_shape = {}
@@ -926,6 +1132,9 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
                             "null_p95": None, "clears_null": False, "margin": None,
                             "reason": "no finite value on this feature's own "
                                       "top-firing series"}
+                        n_skipped = count_nonfinite_skipped(delta, ch, bad_forecast)
+                        if n_skipped:
+                            per_channel[ch]["n_nonfinite_rows_skipped"] = n_skipped
                     else:
                         # Signed too, and it is not redundant: `effect` is
                         # what the null p95 (itself unsigned) can legitimately
@@ -936,7 +1145,19 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
                         # fingerprint would call identical.
                         draws = [d[idx] for d in null_rows[ch] if d.size == len(rows)]
                         per_channel[ch] = _score_channel_against_null(delta, draws)
+                        n_skipped = count_nonfinite_skipped(delta, ch, bad_forecast)
+                        if n_skipped:
+                            per_channel[ch]["n_nonfinite_rows_skipped"] = n_skipped
                         n_clearing_cells += int(per_channel[ch]["clears_null"])
+                        if empirical_chance:
+                            per_channel[ch]["empirical_chance"] = _lodo_pseudo_clear_rate(draws)
+                        if keep_null_draws:
+                            per_channel[ch]["null_draw_means"] = [
+                                float(np.nanmean(d)) for d in draws]
+                            per_channel[ch]["row_abs_effects"] = [
+                                float(v) for v in np.abs(delta)]
+                            per_channel[ch]["row_signed_effects"] = [
+                                float(v) for v in delta]
 
                 s_shape = stats_shape[ch]
                 if ch == "level":
@@ -959,9 +1180,15 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
                             "null_p95": None, "clears_null": False, "margin": None,
                             "reason": "no finite value on this feature's own "
                                       "top-firing series (level-removed)"}
+                        n_skipped = count_nonfinite_skipped(delta_shape, ch, bad_forecast)
+                        if n_skipped:
+                            per_channel_shape[ch]["n_nonfinite_rows_skipped"] = n_skipped
                     else:
                         draws_shape = [d[idx] for d in null_rows_shape[ch] if d.size == len(rows)]
                         per_channel_shape[ch] = _score_channel_against_null(delta_shape, draws_shape)
+                        n_skipped = count_nonfinite_skipped(delta_shape, ch, bad_forecast)
+                        if n_skipped:
+                            per_channel_shape[ch]["n_nonfinite_rows_skipped"] = n_skipped
                         n_shape_clearing_cells += int(per_channel_shape[ch]["clears_null"])
 
             level_share_val, level_share_reason = level_share(
@@ -983,7 +1210,10 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
             mase_rec = per_channel.get("mase", {})
             results.append({
                 "feature": f_idx, "rules": rules[f_idx],
-                "n_top_series": int(idx.size), "scorable": True,
+                "n_top_series": int(idx.size), "n_rows_scored": int(idx.size),
+                **({"n_nonfinite_forecast_rows": int(bad_forecast.sum())}
+                   if bad_forecast.any() else {}),
+                "scorable": True,
                 "mean_activation_on_top": float(np.mean(acts[rows_f, f_idx])),
                 "channels": per_channel,
                 "n_channels_clearing": sum(1 for v in per_channel.values()
@@ -1008,19 +1238,43 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
     for f_idx in order:
         if not any(r["feature"] == f_idx for r in results):
             results.append({"feature": f_idx, "rules": rules[f_idx], "n_top_series": 0,
-                            "scorable": False,
+                            "n_rows_scored": 0, "scorable": False,
                             "reason": "this atom fires on no series, so there is "
                                       "no regime to ablate it in"})
     results.sort(key=lambda r: order.index(r["feature"]))
 
     scorable = [r for r in results if r.get("scorable")]
     n_cells = len(scorable) * len(CHANNELS)
+    row_coverage = effective_k_summary(results, top_k_series, cap)
+    n_nonfinite_rows = sum(int(r.get("n_nonfinite_forecast_rows", 0)) for r in scorable)
+    chance_block = {}
+    if empirical_chance:
+        per_ch = {}
+        for ch in CHANNELS:
+            rates = [r["channels"][ch].get("empirical_chance") for r in scorable
+                     if r["channels"][ch].get("available")
+                     and r["channels"][ch].get("empirical_chance") is not None]
+            per_ch[ch] = {"n_cells": len(rates), "expected_cells": float(np.sum(rates))}
+        tot_cells = sum(v["n_cells"] for v in per_ch.values())
+        tot_exp = sum(v["expected_cells"] for v in per_ch.values())
+        chance_block = {"empirical_chance": {
+            "rule": "leave-one-draw-out pseudo-clear rate of the real rule",
+            "n_cells": int(tot_cells), "expected_cells": float(tot_exp),
+            "rate": (tot_exp / tot_cells) if tot_cells else None,
+            "per_channel": per_ch}}
     return {
         "reach": reach, "withheld": False,
         "intervention": "ablate", "conditioning": "top_firing",
         "top_k_series": int(top_k_series), "n_series_union": len(n_series_used),
         "n_chunks": len(chunks), "series_per_chunk_cap": int(cap),
         "n_null_directions": int(n_null_directions),
+        **({"ablation_null": null_mode} if null_mode != "mean_magnitude" else {}),
+        **chance_block,
+        "row_coverage": row_coverage,
+        **({"n_nonfinite_forecast_rows_total": n_nonfinite_rows,
+            "n_candidates_with_nonfinite_rows": sum(
+                1 for r in scorable if r.get("n_nonfinite_forecast_rows"))}
+           if n_nonfinite_rows else {}),
         "candidates": results,
         "n_clearing_cells": int(n_clearing_cells),
         "chance_expected_cells": 0.05 * n_cells,

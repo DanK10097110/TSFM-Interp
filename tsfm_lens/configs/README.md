@@ -57,6 +57,7 @@ stay out of the listing, as before).
 | `smoke_blackbox.yaml` | Tier-0 (black-box) capability acceptance | mock | generated | CPU, ~30s |
 | `smoke_three_model.yaml` | Panel shape derived from model *count*, not filename | 3 mock | generated | CPU, ~30s |
 | `smoke_encdec.yaml` | Encoder-decoder `block` depth-axis behavior (mock) | 2 mock | generated | CPU, ~30s |
+| `quickstart.yaml` | First real run: the whole pair pipeline shrunk, no confirm stage; see `docs/QUICKSTART.md` | Chronos-Bolt-small + Chronos-2 | `benchmark_quickstart` (synthetic, built from `tsfm_benchmark/configs/quickstart.yaml`) | GPU, under an hour |
 | `default.yaml` | The general real-model template; every knob documented inline | TimesFM + Chronos-T5 | sealed, user-provided | GPU, minutes–hours depending on corpus |
 | `concept_atlas.yaml` | The Concept Atlas preset (`CLAUDE.md` §6.8) — the one-command flagship chain | 4 real models | `benchmark_large` | GPU, hours |
 | `concept_atlas_v2.yaml` | Same chain, rebalanced v2 corpus | 4 real models | `benchmark_large_v2` | GPU, hours |
@@ -102,6 +103,9 @@ the `dev` branch (grouped here by the `ROADMAP.md` item they belong to; grep
 | Null / random-weight floors | `null_chronos_random.yaml`, `null_chronos_small_random.yaml`, `null_timesfm_random.yaml` | `random_init` causal-floor measurements |
 | SAE revival / panel | `sae_revival.yaml`, `sae_revival_searchfix.yaml`, `sae_stage0_panel.yaml`, `sae_stage0_panel_revived.yaml` | The dead-feature-revival recipe search |
 | Distillation-lineage controls | `distill_negative_random_architecture.yaml`, `distill_positive_chronos_small_base.yaml`, `lineage_pair_l0.yaml` | A model-lineage detectability study |
+| Zero-code probe sweep | `generic_hf_{lagllama,moirai,moment,timemoe,toto,ttm}.yaml` | Throwaway `generic_hf` probes behind `docs/probe_sweep.md` (Timer and TimeMoE resolve; the rest crash upstream in `AutoConfig`) |
+| Adapter / report dev checks | `lag_llama_dev.yaml`, `smoke_demo_probe.yaml`, `smoke_mde_unsatisfiable_check.yaml` | Lag-Llama adapter development; a `--new-adapter` scaffold; the multiplicity p-floor warning |
+| Untrained-twin causal floor | `null_4model_causal_floor.yaml` | The causal-agreement rate's `random_init` floor |
 
 ## `tsfm_benchmark`'s own configs
 

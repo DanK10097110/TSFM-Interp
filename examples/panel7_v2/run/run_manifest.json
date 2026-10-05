@@ -1,0 +1,688 @@
+{
+  "version": 1,
+  "stages": {
+    "corpus": {
+      "fingerprint": "e33cb86049dfefd2",
+      "own_resolved": {
+        "data": {
+          "context_len": 480,
+          "family_key": "auto",
+          "horizon": 64,
+          "max_series": null,
+          "path": "../benchmark_large_v2/public_dev",
+          "smoke_series_per_family": 20,
+          "source": "sealed"
+        },
+        "corpus": {
+          "enabled": true,
+          "validation_report": "../validation_large/validation_report.json"
+        }
+      },
+      "dep_fingerprints": {},
+      "timestamp": "2026-09-29T17:13:15.756675",
+      "wall_clock_seconds": 1.53
+    },
+    "extract": {
+      "fingerprint": "dc75051a465b5e47",
+      "own_resolved": {
+        "data": {
+          "context_len": 480,
+          "family_key": "auto",
+          "horizon": 64,
+          "max_series": null,
+          "path": "../benchmark_large_v2/public_dev",
+          "smoke_series_per_family": 20,
+          "source": "sealed"
+        },
+        "alignment": {
+          "calibrate_amplitude": true,
+          "depth_axis": "block",
+          "min_diagonal_frac": 0.5,
+          "on_failure": "warn",
+          "sanity_check": true,
+          "window": 32
+        },
+        "extraction": {
+          "enabled": true,
+          "store_dtype": "float16"
+        },
+        "models[*].checkpoint": {
+          "TimesFM": "google/timesfm-2.5-200m-pytorch",
+          "Chronos-2": "amazon/chronos-2",
+          "Sundial": "thuml/sundial-base-128m",
+          "Chronos-Bolt": "amazon/chronos-bolt-small",
+          "Timer": "thuml/timer-base-84m",
+          "Time-MoE": "Maple728/TimeMoE-50M",
+          "Chronos-T5-Base": "amazon/chronos-t5-base"
+        },
+        "models[*].layer_regex": {
+          "TimesFM": "",
+          "Chronos-2": "",
+          "Sundial": "",
+          "Chronos-Bolt": "",
+          "Timer": "",
+          "Time-MoE": "",
+          "Chronos-T5-Base": ""
+        },
+        "models[*].capture_layer_stride": {
+          "TimesFM": 2,
+          "Chronos-2": 1,
+          "Sundial": 1,
+          "Chronos-Bolt": 1,
+          "Timer": 1,
+          "Time-MoE": 1,
+          "Chronos-T5-Base": 1
+        },
+        "models[*].batch_size": {
+          "TimesFM": 32,
+          "Chronos-2": 24,
+          "Sundial": 16,
+          "Chronos-Bolt": 32,
+          "Timer": 16,
+          "Time-MoE": 16,
+          "Chronos-T5-Base": 24
+        },
+        "models[*].kwargs": {
+          "TimesFM": {},
+          "Chronos-2": {},
+          "Sundial": {},
+          "Chronos-Bolt": {},
+          "Timer": {
+            "auto_class": "AutoModelForCausalLM"
+          },
+          "Time-MoE": {
+            "auto_class": "AutoModelForCausalLM",
+            "input_normalization": "zscore"
+          },
+          "Chronos-T5-Base": {}
+        },
+        "run.seed": 0,
+        "run.dtype": "bfloat16"
+      },
+      "dep_fingerprints": {},
+      "timestamp": "2026-09-29T17:14:22.351275",
+      "wall_clock_seconds": 66.59
+    },
+    "budget": {
+      "fingerprint": "16132a4c14a848de",
+      "own_resolved": {
+        "budget": {
+          "batch": 8,
+          "enabled": true,
+          "measure_predict": true,
+          "predict_repeats": 3,
+          "repeats": 5,
+          "warmup": 2
+        },
+        "data.context_len": 480,
+        "data.horizon": 64,
+        "models[*].checkpoint": {
+          "TimesFM": "google/timesfm-2.5-200m-pytorch",
+          "Chronos-2": "amazon/chronos-2",
+          "Sundial": "thuml/sundial-base-128m",
+          "Chronos-Bolt": "amazon/chronos-bolt-small",
+          "Timer": "thuml/timer-base-84m",
+          "Time-MoE": "Maple728/TimeMoE-50M",
+          "Chronos-T5-Base": "amazon/chronos-t5-base"
+        },
+        "models[*].layer_regex": {
+          "TimesFM": "",
+          "Chronos-2": "",
+          "Sundial": "",
+          "Chronos-Bolt": "",
+          "Timer": "",
+          "Time-MoE": "",
+          "Chronos-T5-Base": ""
+        },
+        "models[*].capture_layer_stride": {
+          "TimesFM": 2,
+          "Chronos-2": 1,
+          "Sundial": 1,
+          "Chronos-Bolt": 1,
+          "Timer": 1,
+          "Time-MoE": 1,
+          "Chronos-T5-Base": 1
+        }
+      },
+      "dep_fingerprints": {},
+      "timestamp": "2026-09-29T17:14:48.222005",
+      "wall_clock_seconds": 25.87
+    },
+    "frontend": {
+      "fingerprint": "bf9c5aadfda5ec84",
+      "own_resolved": {
+        "frontend": {
+          "context_truncation": true,
+          "context_truncation_min_frac": 0.125,
+          "context_truncation_n_points": 5,
+          "enabled": true,
+          "max_series": 64,
+          "nan_frac": 0.05,
+          "nan_handling": true,
+          "nan_series": 8,
+          "quantization_resolution": true,
+          "scale_equivariance": true,
+          "scale_factors": [
+            1000.0,
+            0.001
+          ]
+        },
+        "data.context_len": 480,
+        "data.horizon": 64,
+        "alignment.window": 32,
+        "models[*].checkpoint": {
+          "TimesFM": "google/timesfm-2.5-200m-pytorch",
+          "Chronos-2": "amazon/chronos-2",
+          "Sundial": "thuml/sundial-base-128m",
+          "Chronos-Bolt": "amazon/chronos-bolt-small",
+          "Timer": "thuml/timer-base-84m",
+          "Time-MoE": "Maple728/TimeMoE-50M",
+          "Chronos-T5-Base": "amazon/chronos-t5-base"
+        },
+        "models[*].layer_regex": {
+          "TimesFM": "",
+          "Chronos-2": "",
+          "Sundial": "",
+          "Chronos-Bolt": "",
+          "Timer": "",
+          "Time-MoE": "",
+          "Chronos-T5-Base": ""
+        },
+        "models[*].capture_layer_stride": {
+          "TimesFM": 2,
+          "Chronos-2": 1,
+          "Sundial": 1,
+          "Chronos-Bolt": 1,
+          "Timer": 1,
+          "Time-MoE": 1,
+          "Chronos-T5-Base": 1
+        }
+      },
+      "dep_fingerprints": {},
+      "timestamp": "2026-09-29T17:17:10.674336",
+      "wall_clock_seconds": 142.45
+    },
+    "layer_screen": {
+      "fingerprint": "31bd41422ee705b0",
+      "own_resolved": {
+        "layer_screen": {
+          "budget_frac": 0.25,
+          "enabled": true,
+          "keep_store": false,
+          "max_series": 100000,
+          "method": "work_bend",
+          "min_budget": 2,
+          "min_gap": 1,
+          "require_full_capture": true,
+          "seed": null,
+          "stride": 1,
+          "use_curvature": true
+        }
+      },
+      "dep_fingerprints": {
+        "extract": "dc75051a465b5e47"
+      },
+      "timestamp": "2026-09-29T17:19:13.627158",
+      "wall_clock_seconds": 122.95
+    },
+    "l0": {
+      "fingerprint": "57cef7a222a8cfec",
+      "own_resolved": {
+        "l0": {
+          "calibration": true,
+          "enabled": true,
+          "horizon_resolved": true,
+          "min_scale_frac": 0.05,
+          "noise_floor_repeats": 3,
+          "noise_floor_series": 16,
+          "quantiles": [
+            0.1,
+            0.5,
+            0.9
+          ],
+          "scale": "mean_abs_diff"
+        }
+      },
+      "dep_fingerprints": {
+        "extract": "dc75051a465b5e47"
+      },
+      "timestamp": "2026-09-29T17:51:56.916940",
+      "wall_clock_seconds": 1963.29
+    },
+    "internals": {
+      "fingerprint": "a0d41f69261ee04b",
+      "own_resolved": {
+        "internals": {
+          "enabled": true,
+          "layer_stride": 1,
+          "max_rows": 40000,
+          "probe_max_iter": 2000,
+          "probe_pca_dim": 50,
+          "probe_permutation_repeats": 5
+        }
+      },
+      "dep_fingerprints": {
+        "extract": "dc75051a465b5e47"
+      },
+      "timestamp": "2026-09-29T17:58:59.221234",
+      "wall_clock_seconds": 422.3
+    },
+    "lens": {
+      "fingerprint": "4b45a43ba097856e",
+      "own_resolved": {
+        "lens": {
+          "crystallization_tol": 0.1,
+          "enabled": true,
+          "horizon_resolved": true,
+          "lambdas": [
+            0.001,
+            0.01,
+            0.1,
+            1.0
+          ],
+          "layer_stride": 1,
+          "max_series": 16,
+          "tuned": true,
+          "tuned_max_series": 800,
+          "val_frac": 0.25
+        }
+      },
+      "dep_fingerprints": {
+        "extract": "dc75051a465b5e47"
+      },
+      "timestamp": "2026-09-29T17:59:49.420932",
+      "wall_clock_seconds": 50.2
+    },
+    "l1": {
+      "fingerprint": "504ab4652047cc4e",
+      "own_resolved": {
+        "l1": {
+          "enabled": true,
+          "family_conditioned": true,
+          "layer_stride": 1,
+          "max_rows": 20000,
+          "min_family_series": 15,
+          "rsa": true,
+          "rsa_max_series": 800
+        }
+      },
+      "dep_fingerprints": {
+        "extract": "dc75051a465b5e47"
+      },
+      "timestamp": "2026-09-29T18:01:24.648999",
+      "wall_clock_seconds": 95.23
+    },
+    "l2": {
+      "fingerprint": "fe069bb9f7c3dbf5",
+      "own_resolved": {
+        "l2": {
+          "enabled": true,
+          "input_baseline": true,
+          "lambdas": [
+            0.001,
+            0.01,
+            0.1,
+            1.0
+          ],
+          "layer_stride": 1,
+          "max_rows": 40000,
+          "val_frac": 0.25
+        }
+      },
+      "dep_fingerprints": {
+        "extract": "dc75051a465b5e47"
+      },
+      "timestamp": "2026-09-29T18:06:09.476563",
+      "wall_clock_seconds": 284.83
+    },
+    "l3": {
+      "fingerprint": "5d3c65ec75e87809",
+      "own_resolved": {
+        "l3": {
+          "calibrate": "none",
+          "corruptions": {
+            "deseasonalize": {
+              "top_k": 2
+            },
+            "detrend": {},
+            "dropout": {
+              "frac": 0.15,
+              "n_blocks": 3
+            },
+            "frequency_shift": {
+              "factor": 2.0
+            },
+            "level_shift": {
+              "position_frac": 0.6,
+              "scale": 3.0
+            },
+            "noise": {
+              "snr_db": 0.0
+            },
+            "smooth": {
+              "kernel": 9
+            },
+            "spike": {
+              "count": 8,
+              "scale": 10.0
+            },
+            "warp": {
+              "strength": 0.15
+            }
+          },
+          "enabled": true,
+          "max_series": 800,
+          "patching": {
+            "corruptions": [
+              "deseasonalize",
+              "noise",
+              "level_shift",
+              "spike",
+              "warp",
+              "dropout"
+            ],
+            "enabled": true,
+            "horizon_resolved": true,
+            "layer_stride": 2,
+            "max_series": 16,
+            "num_samples": 8,
+            "per_window": true,
+            "window_stride": 1
+          }
+        }
+      },
+      "dep_fingerprints": {
+        "extract": "dc75051a465b5e47"
+      },
+      "timestamp": "2026-09-29T18:36:23.712522",
+      "wall_clock_seconds": 1814.23
+    },
+    "attention": {
+      "fingerprint": "926cc9bbe6851b84",
+      "own_resolved": {
+        "attention": {
+          "ablation": true,
+          "ablation_max_series": 16,
+          "batch_series": 16,
+          "enabled": true,
+          "head_layer_stride": 1,
+          "max_lag_tokens": 128,
+          "max_series": 400,
+          "patterns": true,
+          "resolution_mode": "matched",
+          "top_k": 5
+        }
+      },
+      "dep_fingerprints": {
+        "extract": "dc75051a465b5e47"
+      },
+      "timestamp": "2026-09-29T18:42:26.291014",
+      "wall_clock_seconds": 362.58
+    },
+    "cluster": {
+      "fingerprint": "1a04db2174a273b0",
+      "own_resolved": {
+        "clustering": {
+          "enabled": true,
+          "k": "auto",
+          "layer": "auto",
+          "max_series": 800,
+          "pca_dim": 50,
+          "use_umap": true
+        }
+      },
+      "dep_fingerprints": {
+        "extract": "dc75051a465b5e47"
+      },
+      "timestamp": "2026-09-29T18:42:59.883115",
+      "wall_clock_seconds": 33.59
+    },
+    "sae": {
+      "fingerprint": "877229e5c3b0eea0",
+      "own_resolved": {
+        "sae": {
+          "aux_coef": 0.03125,
+          "aux_dead_steps": 20,
+          "aux_dead_steps_frac": 0.028,
+          "aux_k": 64,
+          "batch_size": 4096,
+          "checkpoints": {},
+          "concept_causal_only": true,
+          "concept_k": "auto",
+          "concept_min_members": 3,
+          "concept_min_silhouette": 0.1,
+          "concept_misfit_cosine_gap": 0.3,
+          "concepts_enabled": true,
+          "dict_size_ladder": [
+            192,
+            384,
+            768,
+            1536,
+            3072,
+            6144
+          ],
+          "dict_size_mult": 8,
+          "dict_size_policy": "search",
+          "dict_size_search_margin": 0.03,
+          "dict_size_search_seeds": 2,
+          "enabled": true,
+          "epochs": 60,
+          "feature_ablation_enabled": false,
+          "feature_ablation_max_series": 64,
+          "feature_ablation_top_k": 8,
+          "feature_steering_enabled": false,
+          "feature_steering_max_series": 64,
+          "feature_steering_strength_sigma": 2.0,
+          "feature_steering_top_k": 8,
+          "forecast_preservation_max_series": 16,
+          "ground_truth_max_series": 2000,
+          "ground_truth_permutation_max_features": 2000,
+          "ground_truth_permutation_repeats": 3,
+          "holdout_frac": 0.2,
+          "k": 32,
+          "layer_substitution_attempts": 2,
+          "lr": 0.001,
+          "max_abs_delta_mase": 0.25,
+          "max_dead_rate": 0.3,
+          "min_fidelity": 0.5,
+          "min_fidelity_gate": 0.85,
+          "min_train_steps": 720,
+          "n_seeds": 3,
+          "persist_features": true,
+          "real_data_enabled": true,
+          "real_data_n_windows": 4000,
+          "real_data_pool_limit": 500,
+          "real_data_source": "Monash-University/monash_tsf",
+          "resample_dead_every_epochs": 5,
+          "role_k": "auto",
+          "role_matching_cosine_threshold": 0.5,
+          "role_matching_depth_tolerance": 0.15,
+          "role_matching_untrained_twin_runs": {},
+          "role_min_silhouette": 0.1,
+          "targets": [],
+          "transfer_enabled": true,
+          "transfer_n_null": 200,
+          "transfer_seed": 0,
+          "transfer_top_k": 20
+        }
+      },
+      "dep_fingerprints": {
+        "extract": "dc75051a465b5e47"
+      },
+      "timestamp": "2026-09-30T16:33:47.505789",
+      "wall_clock_seconds": 14614.17
+    },
+    "concepts": {
+      "fingerprint": "e6e4250b3d11932b",
+      "own_resolved": {
+        "concepts": {
+          "agreement_max_tests_per_pair": 60,
+          "atlas_enabled": true,
+          "atlas_min_cosine": 0.9,
+          "atlas_min_members": 3,
+          "atlas_n_null": 200,
+          "cf_doses": [
+            0.0,
+            0.5,
+            1.0,
+            1.5,
+            2.0
+          ],
+          "cf_enabled": false,
+          "cf_encode_min_spearman": 0.98,
+          "cf_max_series": 64,
+          "cf_n_null": 2000,
+          "describe": true,
+          "describe_top_features": 8,
+          "enabled": true,
+          "keep_forecasts": 3,
+          "level_share_threshold": 0.9,
+          "max_series": 64,
+          "min_relative_reach": 0.001,
+          "n_features_per_rule": 12,
+          "n_null_directions": 16,
+          "n_sae_seeds": 3,
+          "profile_n_perm": 1000,
+          "profiles_enabled": true,
+          "shared_input_enabled": true,
+          "shared_input_n_null": 50,
+          "top_k_series": 8,
+          "transfer_fdr_q": 0.05,
+          "transfer_max_redraw": 5000,
+          "transfer_p_method": "exact"
+        },
+        "run.seed": 0,
+        "sae.concept_causal_only": true,
+        "sae.concept_k": "auto",
+        "sae.concept_min_silhouette": 0.1,
+        "sae.concept_min_members": 3,
+        "sae.transfer_enabled": true,
+        "sae.transfer_top_k": 20,
+        "sae.transfer_n_null": 200,
+        "sae.transfer_seed": 0,
+        "sae.describe_from_exemplars": true,
+        "sae.ablation_null": "profile_matched",
+        "sae.ablation_empirical_chance": true
+      },
+      "dep_fingerprints": {
+        "sae": "877229e5c3b0eea0"
+      },
+      "timestamp": "2026-10-01T08:22:58.494952",
+      "wall_clock_seconds": 55607.89
+    },
+    "exemplars": {
+      "fingerprint": "72eb5d5b78318a36",
+      "own_resolved": {
+        "exemplars": {
+          "enabled": true,
+          "max_families": 5,
+          "per_family": 3
+        }
+      },
+      "dep_fingerprints": {
+        "l0": "57cef7a222a8cfec"
+      },
+      "timestamp": "2026-10-01T08:23:20.590492",
+      "wall_clock_seconds": 22.09
+    },
+    "report": {
+      "fingerprint": "e54eb7355d5ba7b1",
+      "own_resolved": {
+        "report": {
+          "allow_partial": false,
+          "enabled": true,
+          "title": "Wide panel \u2014 TimesFM 2.5, Chronos-2, Sundial, Chronos-Bolt, Timer, Time-MoE, Chronos-T5-Base",
+          "verbose": true,
+          "verbose_series": 2
+        }
+      },
+      "dep_fingerprints": {},
+      "timestamp": "2026-10-01T08:27:50.422720",
+      "wall_clock_seconds": 269.83
+    }
+  },
+  "provenance": {
+    "tsfm_lens_version": "0.1.0",
+    "git_sha": "4ace6a48e6d9225a4fa1040e59369271ae8d3d3e",
+    "git_dirty": true,
+    "python_version": "3.12.13",
+    "packages": {
+      "torch": "2.12.0",
+      "numpy": "2.1.0",
+      "pandas": "2.3.3",
+      "zarr": "2.18.7",
+      "sklearn": "1.7.2",
+      "transformers": "4.57.6",
+      "timesfm": "2.0.2",
+      "chronos": "2.3.1"
+    },
+    "device": {
+      "cuda_available": true,
+      "device_names": [
+        "NVIDIA RTX A5000"
+      ],
+      "cuda_version": "12.9",
+      "driver_version": "535.216.03"
+    },
+    "models": [
+      {
+        "name": "TimesFM",
+        "adapter": "timesfm",
+        "checkpoint": "google/timesfm-2.5-200m-pytorch",
+        "hf_revision": "1d952420fba87f3c6dee4f240de0f1a0fbc790e3"
+      },
+      {
+        "name": "Chronos-2",
+        "adapter": "chronos2",
+        "checkpoint": "amazon/chronos-2",
+        "hf_revision": "29ec3766d36d6f73f0696f85560a422f50e8498c"
+      },
+      {
+        "name": "Sundial",
+        "adapter": "sundial",
+        "checkpoint": "thuml/sundial-base-128m",
+        "hf_revision": "3212e42564493f520593e5414af4367fc4b49226"
+      },
+      {
+        "name": "Chronos-Bolt",
+        "adapter": "chronos_bolt",
+        "checkpoint": "amazon/chronos-bolt-small",
+        "hf_revision": "772f3d25d38aec6d914c8949dab4462e2d46f5d8"
+      },
+      {
+        "name": "Timer",
+        "adapter": "generic_hf",
+        "checkpoint": "thuml/timer-base-84m",
+        "hf_revision": "70077a71acce1b4c00d98332fcaabc694255d8e5"
+      },
+      {
+        "name": "Time-MoE",
+        "adapter": "generic_hf",
+        "checkpoint": "Maple728/TimeMoE-50M",
+        "hf_revision": "446753ee48ff3726d0606a81d0092d54acee995e"
+      },
+      {
+        "name": "Chronos-T5-Base",
+        "adapter": "chronos",
+        "checkpoint": "amazon/chronos-t5-base",
+        "hf_revision": "ad294eaacead15db499b740ea4122266dd2a81a2"
+      }
+    ],
+    "corpus_digest": null,
+    "config_hash": "6b7143eab0de3c9d"
+  },
+  "family_resolution": {
+    "key_requested": "auto",
+    "key_used": "auto",
+    "resolution_rate": null,
+    "n_unknown": 0,
+    "n_families": 5,
+    "composition": {
+      "block_bootstrap": 70,
+      "mixture": 290,
+      "parametric": 130,
+      "random_parametric": 425,
+      "sequential_par": 50
+    }
+  }
+}

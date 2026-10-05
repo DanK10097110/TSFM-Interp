@@ -369,3 +369,84 @@ def test_skeleton_only_collapses_whole_numeric_segments():
     collapsing every digit anywhere would merge unrelated stacks."""
     assert _skeleton("model.layers.11.attn") == "model.layers.#.attn"
     assert _skeleton("model.layer2.attn") == "model.layer2.attn"
+
+
+def test_token_time_spans_on_an_unloaded_adapter_loads_it_first():
+    """`resolve_routing` asks a freshly built adapter for its spans before any
+    stage has loaded it. `_spans` only exists after `load`, so this used to
+    raise AttributeError and kill every fresh run containing a generic_hf model."""
+    a = _adapter(_PatchNet)
+    assert not a._loaded
+    spans = a.token_time_spans()
+    assert a._loaded
+    assert spans.shape[0] > 0
+
+
+class _ClampNet(_PatchNet):
+    """A net that is only scale-equivariant if its input is already in a
+    fixed range: the forecast is the last four context values clamped to
+    [-5, 5]. Raw scale therefore matters; z-scored input does not."""
+
+    def forward(self, past_values, **kw):
+        out = super().forward(past_values)
+        out["prediction_outputs"] = past_values[:, -4:].clamp(-5.0, 5.0)
+        return out
+
+
+def _ramp_contexts():
+    t = np.arange(_CONTEXT, dtype=np.float32)
+    return np.stack([np.sin(t / 5.0) + 0.01 * t, 3.0 + np.cos(t / 7.0)]).astype(np.float32)
+
+
+def _clamp_adapter(mode):
+    class _Probe(GenericHFAdapter):
+        def _instantiate(self):
+            return _ClampNet()
+
+    kwargs = {} if mode is None else {"input_normalization": mode}
+    return _Probe(ModelConfig(name="clamp", adapter="generic_hf", checkpoint="local/test",
+                              batch_size=16, kwargs=kwargs),
+                  DataConfig(context_len=_CONTEXT, horizon=4),
+                  torch.device("cpu"), torch.float32)
+
+
+def test_zscore_normalization_restores_scale_equivariance():
+    """Planted answer: without normalization a 1000x context is clamped to 5
+    and the forecast is nowhere near 1000x the base one; with `zscore` it is
+    1000x to float precision, and the strategy is recorded."""
+    base = _ramp_contexts()
+    plain = _clamp_adapter(None)
+    plain.ensure_loaded()
+    raw = plain.predict(base * 1000.0, 4, [0.5])["point"]
+    assert np.abs(raw).max() <= 5.0 + 1e-6
+
+    a = _clamp_adapter("zscore")
+    a.ensure_loaded()
+    assert a.describe_strategies()["input_normalization"] == "zscore"
+    small = a.predict(base, 4, [0.5])["point"]
+    big = a.predict(base * 1000.0, 4, [0.5])["point"]
+    np.testing.assert_allclose(big, small * 1000.0, rtol=1e-3)
+    np.testing.assert_allclose(small, base[:, -4:], rtol=1e-3, atol=1e-3)
+
+
+def test_zscore_capture_path_sees_normalized_input():
+    a = _clamp_adapter("zscore")
+    a.ensure_loaded()
+    prepared = a.prepare(_ramp_contexts() * 1000.0)
+    x = prepared["past_values"].numpy()
+    np.testing.assert_allclose(x.mean(axis=1), 0.0, atol=1e-3)
+    np.testing.assert_allclose(x.std(axis=1), 1.0, atol=1e-3)
+
+
+def test_default_normalization_is_none_and_unchanged():
+    a = _clamp_adapter(None)
+    a.ensure_loaded()
+    assert a.describe_strategies()["input_normalization"] == "none"
+    ctx = _ramp_contexts()
+    np.testing.assert_array_equal(a.prepare(ctx)["past_values"].numpy(), ctx)
+
+
+def test_unknown_normalization_mode_is_refused():
+    a = _clamp_adapter("minmax")
+    with pytest.raises(ValueError, match="input_normalization"):
+        a.ensure_loaded()

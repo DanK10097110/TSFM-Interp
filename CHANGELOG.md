@@ -6,6 +6,55 @@ project does not yet follow strict semantic versioning across the pre-1.0
 line, since the public interface (config schema, CLI flags, report contents)
 is still evolving.
 
+## [1.0.0]
+
+First tagged release published to PyPI as two packages, `tsfm-benchmark` and
+`tsfm-lens` (both 1.0.0). The pipeline content is that of 0.1.0 plus the
+additions listed here; the full list of what exists follows.
+
+### Packaging
+
+- Both packages carry full metadata (authors, license, URLs, classifiers,
+  keywords, readme). `tsfm-lens` exposes a `tsfm-lens` console script
+  (`tsfm_lens.run:main`); `python run.py` from `tsfm_lens/` is unchanged.
+- `tsfm-benchmark` now declares `scikit-learn>=1.3` as a core dependency
+  (`benchmark_validation` imports it at import time; an install into an empty
+  environment failed without it) and a `validation` extra (`pycatch22`,
+  `umap-learn`, `plotly`). `tsfm-lens` gains a `benchmark` extra
+  (`tsfm-benchmark>=1.0.0`). No existing pin changed (`DEPENDENCIES.md`).
+- Wheels contain only the importable packages. Tests, configs, run outputs and
+  examples stay in the repository; `tsfm-lens --list-configs` and the
+  `configs/*.yaml` presets are read from a repository checkout.
+- `.github/workflows/release.yml` builds both packages on a `v*` tag, publishes
+  through PyPI Trusted Publishing and creates a GitHub Release. `.zenodo.json`
+  carries the metadata for a Zenodo DOI. `docs/RELEASING.md` lists the owner
+  steps.
+
+### What the release contains
+
+- `tsfm_benchmark`: parametric, random-parametric, mixture, block-bootstrap
+  and sequential-PAR generators in two labeled leakage tiers; a banded-DTW
+  leakage audit; sealed dev and private splits with per-sample hashes and
+  epoch-based regeneration; shape-redundancy and catch22 feature-space
+  validation; dev-to-private exchangeability checks.
+- `tsfm_lens`: the 19 stages `corpus` through `report` (tier, run-shape and
+  routing gates; per-stage config fingerprints); adapters for TimesFM 2.5,
+  Chronos-T5, Chronos-Bolt, Chronos-2, Sundial and Lag-Llama, a zero-code
+  `generic_hf` adapter and mock adapters; impulse-gated cross-model time
+  alignment; behavioral comparison (L0), geometric (L1), linear-translatable
+  (L2) and within-model causal (L3) analyses, attention analysis, activation
+  clustering, TopK sparse autoencoders and the concept chain (ablation battery,
+  concepts, transfer, atlas, seed stability, shared-input causal agreement).
+- Held-out confirmation: `register` freezes dev hypotheses and `confirm` tests
+  them once on the sealed private corpus; it refuses to overwrite its own
+  artifact, requires seal verification, and records a forced rerun as
+  `repeated_look`. Concept claims replicate under `concept_replication`.
+- One self-contained interactive HTML report per run, with a derived scorecard
+  and a model-comparison section.
+- Examples: `examples/concept_atlas_v2/` and `examples/panel7_v2/` (config,
+  lightweight run artifacts, rendered report), and the example configs in
+  `tsfm_lens/configs/examples/`.
+
 ## [0.1.0] — first public release
 
 First publish of both packages as a stable, documented pair.

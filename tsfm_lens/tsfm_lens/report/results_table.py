@@ -222,7 +222,8 @@ def _extract_confirm_rows(run_dir: Path, finding: dict) -> Optional[List[dict]]:
                 "resample_unit": priv.get("resample_unit", np.nan),
                 "reference_value": _num(t, "dev_rho", context=ctx),
                 "reference_kind": "baseline",
-                "verdict": "replicates" if t.get("replicates") else "does not replicate",
+                "verdict": ("not defined" if t.get("replicates", True) is None else
+                            "replicates" if t.get("replicates") else "does not replicate"),
                 "replicated": bool(t.get("replicates")),
             })
             rows.append(row)

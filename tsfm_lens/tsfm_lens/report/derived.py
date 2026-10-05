@@ -1513,12 +1513,13 @@ def replication_summary(run_dir: Path) -> pd.DataFrame:
     l3_tests = l3.get("tests") or []
     if l3.get("status") == "tested" and l3_tests:
         held = sum(1 for t in l3_tests if t.get("replicates"))
+        n_undef = sum(1 for t in l3_tests if t.get("replicates", True) is None)
         rows.append({
             "what was re-tested": "Where in depth models react to corruption",
             "evidence class": "causal within model",
             "held up": held,
-            "did not": len(l3_tests) - held,
-            "not testable": 0,
+            "did not": len(l3_tests) - held - n_undef,
+            "not testable": n_undef,
             "what a failure would mean": (
                 "the depth agreement was a property of those particular series, "
                 "not of the models"),
@@ -3212,6 +3213,51 @@ def _l5_status(cid, shared_input: Optional[dict]) -> tuple:
     return "partial", f"neither same-effect nor acts-differently on shared inputs ({detail})"
 
 
+def _l6_causal_tests(cid, concept_replication: dict) -> dict:
+    """`{family label: [test rows for this concept]}` from the K2 causal
+    blocks (ROADMAP.md sec 38.2): `causal` rows whose feature is a member of
+    this atlas concept, the `atlas` claim of this concept, and the shared-
+    input `agreement` claims of this concept. Empty for a `confirmation.json`
+    written before K2, so the transfer-only L6 text is unchanged."""
+    out: dict = {}
+    for label, key, field in (("causal", "causal", "atlas_concept"),
+                              ("atlas", "atlas", "concept"),
+                              ("agreement", "agreement", "concept")):
+        rows = [t for t in ((concept_replication.get(key) or {}).get("tests") or [])
+                if t.get(field) == cid]
+        if rows:
+            out[label] = rows
+    return out
+
+
+def _l6_with_causal(transfer_tests: list, causal: dict) -> tuple:
+    """L6 for a concept that has at least one K2 claim. Reached when ANY
+    registered claim of this concept (transfer or causal type) was confirmed
+    on private data; `not measured` when none was testable (a withheld or
+    unscorable claim is a third state, not a failure); otherwise `not
+    reached`. The detail names each family's own confirmed/testable counts so
+    a transfer confirmation is never read as a causal one or vice versa
+    (`CLAUDE.md` sec 8, "adjacent fields")."""
+    parts, n_conf, n_tested = [], 0, 0
+    fams = dict(causal)
+    if transfer_tests:
+        fams = {"transfer": transfer_tests, **fams}
+    for label, rows in fams.items():
+        tested = [t for t in rows if t.get("verdict") in ("confirmed", "not confirmed")]
+        conf = [t for t in tested if t.get("verdict") == "confirmed"]
+        n_conf += len(conf)
+        n_tested += len(tested)
+        nt = len(rows) - len(tested)
+        parts.append(f"{label}: {len(conf)}/{len(tested)}"
+                     + (f" ({nt} not testable)" if nt else ""))
+    detail = "; ".join(parts)
+    if n_conf:
+        return "reached", f"confirmed on private data ({detail})"
+    if not n_tested:
+        return "not measured", f"not testable on private data ({detail})"
+    return "not reached", f"registered but not confirmed on private data ({detail})"
+
+
 def _l6_status(cid, concept_replication: Optional[dict]) -> tuple:
     """`-> (status, detail)` for L6 (ROADMAP.md sec 37.10 P7): confirmation
     of a registered `concept_transfer` claim on a fresh, sealed private
@@ -3228,6 +3274,9 @@ def _l6_status(cid, concept_replication: Optional[dict]) -> tuple:
         return "not measured", _L6_NOT_MEASURED
     transfer = concept_replication.get("transfer") or {}
     tests = [t for t in (transfer.get("tests") or []) if t.get("concept") == cid]
+    causal = _l6_causal_tests(cid, concept_replication)
+    if causal:
+        return _l6_with_causal(tests, causal)
     if not tests:
         return "not measured", "not measured: no registered concept_transfer claim for this concept"
     n_confirmed = sum(1 for t in tests if t.get("verdict") == "confirmed")

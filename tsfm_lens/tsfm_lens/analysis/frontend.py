@@ -3,7 +3,7 @@ sec 16 E17).
 
 Every later stage in this repo asks what a model does WITH its input once
 it's inside a layer. This stage asks the prior question: what does the
-model do TO its input before any layer runs at all? Four diagnostics, all
+model do TO its input before any layer runs at all? Five diagnostics, all
 cheap (tokenizer calls and a handful of `predict()` calls -- no activation
 store, no `extract` dependency, so `--stages frontend` is a valid
 standalone run against a checkpoint with nothing else built, exactly like
@@ -28,6 +28,14 @@ standalone run against a checkpoint with nothing else built, exactly like
    propagate NaN into the forecast, or genuinely handle a missing value in
    the context? Pure stats in `analysis/nan_handling.py`.
 
+5. **Constant context** -- does a zero-variance context (0, 1, 1e3, 1 plus
+   1e-7 noise) keep the forecast and every captured activation finite, and
+   where does the forecast land relative to the constant? Pure stats in
+   `analysis/constant_context.py`. Added after a `generic_hf` Timer returned
+   all-NaN activations on constant windows; opt-out via
+   `frontend.constant_context` (an `omit_at_default` field, so older runs'
+   fingerprints are unchanged and their artifact simply lacks the key).
+
 Each diagnostic degrades independently and loudly (`CLAUDE.md` sec 2.5): a
 model lacking the capability a diagnostic needs gets an explicit
 `not_applicable`/`unmeasurable` record with a stated reason, never a
@@ -46,6 +54,8 @@ import torch
 
 from ..models.base import CapabilityUnavailable
 from ..utils import batch_slices, log, sample_rows, save_json
+from .constant_context import (CONSTANT_CASES, constant_context_stats, constant_rows,
+                               deviation_units)
 from .context_truncation import context_truncation_stats
 from .context_scaling import context_length_values
 from .nan_handling import nan_handling_stats
@@ -276,6 +286,64 @@ def _run_nan_handling(adapter, contexts: np.ndarray, horizon: int, context_len: 
     return stats
 
 
+_CONSTANT_ROWS = 2
+
+
+def _activations_finite(adapter, rows: np.ndarray):
+    """`(finite, reason)` over every captured layer; `(None, reason)` when the
+    adapter cannot expose activations (black box) or the capture itself failed.
+    Runs under the extraction regime (bf16 autocast) so it tests what the store
+    would receive."""
+    from ..extraction.extract import capture_raw_tokens
+    try:
+        layers = adapter.layer_names()
+        raw = capture_raw_tokens(adapter, rows, layers, autocast=True)
+    except CapabilityUnavailable as exc:
+        return None, f"activations unavailable: {exc}"
+    except Exception as e:  # noqa: BLE001 -- a capture that raises on this input is
+        # itself a finding, recorded as unmeasured with its reason (CLAUDE.md sec 2.5).
+        _release_cuda_after_exception(e)
+        return None, f"activation capture raised {type(e).__name__}: {str(e)[:200]}"
+    n_bad = [name for name, t in raw.items() if not bool(torch.isfinite(t).all())]
+    return (len(n_bad) == 0), (f"{len(n_bad)}/{len(raw)} layers non-finite" if n_bad else None)
+
+
+def _run_constant_context(adapter, context_len: int, horizon: int, seed: int) -> dict:
+    """Feed constant contexts (0, 1, 1e3, 1 + 1e-7 noise) and record whether the
+    forecast and every captured activation stay finite, and how far the forecast
+    lands from the constant. Nothing is altered on the model's behalf: a NaN is
+    reported, not repaired."""
+    results = []
+    for i, (case, constant, noise_sd) in enumerate(CONSTANT_CASES):
+        rows = constant_rows(context_len, constant, noise_sd, _CONSTANT_ROWS, seed + i)
+        rec = {"case": case, "constant": constant, "noise_sd": noise_sd}
+        try:
+            point = _predict_batched(adapter, rows, horizon, [0.5])["point"]
+        except Exception as e:  # noqa: BLE001 -- raising on constant input is one of
+        # the probe's verdicts, not a bug to suppress (CLAUDE.md sec 2.5).
+            rec.update({"raised": True, "error_type": type(e).__name__,
+                        "error_msg": str(e)[:300], "forecast_finite": None,
+                        "activations_finite": None, "deviation_units": None})
+            _release_cuda_after_exception(e)
+            results.append(rec)
+            continue
+        acts_ok, acts_note = _activations_finite(adapter, rows)
+        rec.update({"raised": False,
+                    "forecast_finite": bool(np.all(np.isfinite(point))),
+                    "frac_nonfinite_forecast": float(np.mean(~np.isfinite(point))),
+                    "activations_finite": acts_ok, "activations_note": acts_note,
+                    "deviation_units": deviation_units(point, constant)})
+        results.append(rec)
+    stats = constant_context_stats(results)
+    stats["status"] = "measured"
+    if stats["verdict"] in ("nonfinite", "raised", "mixed"):
+        log.warning("frontend: '%s' constant-context verdict '%s' (forecast finite=%s, "
+                    "activations finite=%s) -- constant windows in a real corpus will "
+                    "yield non-finite rows for this model", adapter.name,
+                    stats["verdict"], stats["finite_forecast"], stats["finite_activations"])
+    return stats
+
+
 def run_frontend(cfg, hub, data, device) -> dict:
     """Pipeline stage: one front-end-diagnostics record per configured model.
 
@@ -349,6 +417,16 @@ def run_frontend(cfg, hub, data, device) -> dict:
                 record["nan_handling"] = {"status": "error", "error": str(e)}
                 _release_cuda_after_exception(e)
 
+        if fc.constant_context:
+            try:
+                record["constant_context"] = _run_constant_context(
+                    adapter, context_len, horizon, cfg.run.seed + 903)
+            except Exception as e:
+                log.warning("frontend: constant-context failed for '%s': %s",
+                           model_cfg.name, e)
+                record["constant_context"] = {"status": "error", "error": str(e)}
+                _release_cuda_after_exception(e)
+
         records[model_cfg.name] = record
         se_field = record.get("scale_equivariance")
         if isinstance(se_field, dict) and all(isinstance(v, dict) for v in se_field.values()):
@@ -364,11 +442,12 @@ def run_frontend(cfg, hub, data, device) -> dict:
         else:
             se_summary = None
         log.info("frontend: '%s' quantization_resolution=%s scale_equivariance=%s "
-                "context_truncation=%s nan_handling=%s", model_cfg.name,
+                "context_truncation=%s nan_handling=%s constant_context=%s", model_cfg.name,
                 record.get("quantization_resolution", {}).get("status"),
                 se_summary,
                 record.get("context_truncation", {}).get("status"),
-                record.get("nan_handling", {}).get("status"))
+                record.get("nan_handling", {}).get("status"),
+                (record.get("constant_context") or {}).get("verdict"))
         if not cfg.run.keep_models_loaded:
             hub.release(model_cfg.name)
 

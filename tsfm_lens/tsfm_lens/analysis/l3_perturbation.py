@@ -379,6 +379,17 @@ def run_l3(cfg: PipelineConfig, hub, store: ActivationStore, data: BenchmarkData
         if not cfg.run.keep_models_loaded:
             hub.release(mcfg.name)
 
+    beh_dropped = {}
+    for model, bs in list(beh_series.items()):
+        ok_rows = np.isfinite(bs).all(axis=1)
+        if not ok_rows.all():
+            beh_dropped[model] = [str(i) for i in
+                                  data.meta["series_id"].to_numpy()[rows][~ok_rows]]
+            beh_series[model] = bs[ok_rows]
+            log.warning("L3: '%s' gave a non-finite forecast on %d of %d series under "
+                        "corruption or clean -- those series are dropped from its "
+                        "behavioral-change statistics (listed in l3/meta.json "
+                        "`behavior_nonfinite_dropped`)", model, len(beh_dropped[model]), len(bs))
     fingerprints = {k: v.mean(axis=0) for k, v in per_series.items()}
     pairwise: list = []
     if b is None:
@@ -426,6 +437,7 @@ def run_l3(cfg: PipelineConfig, hub, store: ActivationStore, data: BenchmarkData
         "calibration": calibration_meta,
         "depth_axis": {k: v.axis for k, v in depth_axes.items()},
         "rel_depth": {k: v.coords.tolist() for k, v in depth_axes.items()},
+        **({"behavior_nonfinite_dropped": beh_dropped} if beh_dropped else {}),
     })
     if patching:
         win_arrays = {f"restoration_windows_{k}": v["restoration_windows"]
@@ -786,6 +798,8 @@ def _agreement_with_ci(cfg: PipelineConfig, psa: np.ndarray, psb: np.ndarray,
            "per_corruption": {c: {"value": v} for c, v in point["per_corruption"].items()},
            "most_divergent": point["most_divergent"],
            "overlap_fraction": point["overlap_fraction"], "unmatched": point["unmatched"]}
+    if point.get("undefined"):
+        out["undefined"] = point["undefined"]
     if not cfg.stats.enabled:
         return out
     n_boot = min(cfg.stats.n_boot, cfg.stats.n_boot_heavy)
@@ -796,15 +810,27 @@ def _agreement_with_ci(cfg: PipelineConfig, psa: np.ndarray, psb: np.ndarray,
         idx = rng.integers(0, psa.shape[0], psa.shape[0])
         agr = _fingerprint_agreement(psa[idx].mean(axis=0), psb[idx].mean(axis=0), names,
                                      depths_a, depths_b)
-        overall[i] = agr["overall"]
+        overall[i] = np.nan if agr["overall"] is None else agr["overall"]
         for c in names:
-            per[c][i] = agr["per_corruption"][c]
+            v = agr["per_corruption"][c]
+            per[c][i] = np.nan if v is None else v
     q = [(1 - cfg.stats.ci) / 2, 1 - (1 - cfg.stats.ci) / 2]
-    lo, hi = np.quantile(overall, q)
-    out["overall"].update({"lo": float(lo), "hi": float(hi)})
-    for c in names:
-        lo, hi = np.quantile(per[c], q)
-        out["per_corruption"][c].update({"lo": float(lo), "hi": float(hi)})
+    n_undef_boot = {}
+    for key, draws in [("overall", overall)] + [(c, per[c]) for c in names]:
+        n_bad = int(np.isnan(draws).sum())
+        if n_bad:
+            n_undef_boot[key] = n_bad
+    entries = [(out["overall"], overall)] + [(out["per_corruption"][c], per[c]) for c in names]
+    for entry, draws in entries:
+        good = draws[~np.isnan(draws)]
+        if good.size == 0:
+            entry.update({"lo": None, "hi": None})
+            continue
+        lo, hi = np.quantile(good, q)
+        entry.update({"lo": float(lo), "hi": float(hi)})
+    if n_undef_boot:
+        out["n_undefined_resamples"] = n_undef_boot
+        out["n_resamples"] = n_boot
     return out
 
 
@@ -821,6 +847,11 @@ def _fingerprint_agreement(fp_a: np.ndarray, fp_b: np.ndarray, names: list,
     `depths_b` are omitted, so existing callers/tests are unaffected. A
     disjoint depth range (n_grid=0) returns a neutral 0.0 agreement with the
     reason recorded, rather than crashing.
+
+    A rho that is non-finite (a constant or non-finite depth profile) is
+    recorded as `None` with a reason under `"undefined"`, never as 0.0, which
+    would read as "no agreement". The `"undefined"` key exists only when
+    something was undefined.
     """
     from scipy.stats import spearmanr
     if depths_a is None:
@@ -835,15 +866,38 @@ def _fingerprint_agreement(fp_a: np.ndarray, fp_b: np.ndarray, names: list,
                 "overlap_fraction": 0.0, "unmatched": aligned["unmatched"],
                 "note": aligned["note"]}
     ia, ib = aligned["a"], aligned["b"]
-    per = {}
+    per, undefined = {}, {}
     for ci, cname in enumerate(names):
         rho = spearmanr(ia[:, ci], ib[:, ci]).statistic
-        per[cname] = float(rho) if np.isfinite(rho) else 0.0
+        if np.isfinite(rho):
+            per[cname] = float(rho)
+        else:
+            per[cname] = None
+            undefined[cname] = _undefined_rho_reason(ia[:, ci], ib[:, ci])
     overall = spearmanr(ia.ravel(), ib.ravel()).statistic
-    return {"per_corruption": per,
-            "overall": float(overall) if np.isfinite(overall) else 0.0,
-            "most_divergent": min(per, key=per.get),
-            "overlap_fraction": aligned["overlap_fraction"], "unmatched": aligned["unmatched"]}
+    if np.isfinite(overall):
+        overall_v = float(overall)
+    else:
+        overall_v = None
+        undefined["overall"] = _undefined_rho_reason(ia.ravel(), ib.ravel())
+    defined = {c: v for c, v in per.items() if v is not None}
+    out = {"per_corruption": per, "overall": overall_v,
+           "most_divergent": min(defined, key=defined.get) if defined else None,
+           "overlap_fraction": aligned["overlap_fraction"], "unmatched": aligned["unmatched"]}
+    if undefined:
+        out["undefined"] = undefined
+    return out
+
+
+def _undefined_rho_reason(x: np.ndarray, y: np.ndarray) -> str:
+    """Why a Spearman rho came back non-finite: a constant profile has no rank
+    order to correlate, and non-finite entries poison the ranks."""
+    x, y = np.asarray(x, dtype=float), np.asarray(y, dtype=float)
+    if not (np.isfinite(x).all() and np.isfinite(y).all()):
+        return "a depth profile holds non-finite values (upstream non-finite forecast)"
+    if np.ptp(x) == 0 or np.ptp(y) == 0:
+        return "a depth profile is constant, so its rank correlation is undefined"
+    return "rank correlation is non-finite"
 
 
 def _predict_batched(adapter, contexts: np.ndarray, horizon: int, quantiles: list,

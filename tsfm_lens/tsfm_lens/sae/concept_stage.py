@@ -90,7 +90,7 @@ import time
 from pathlib import Path
 
 from ..utils import load_json, log, save_json, set_seed
-from .ablation_run import run_ablation_all
+from .ablation_run import check_ablation_null_modes, run_ablation_all
 from .concept_atlas import pooled_features, run_concept_atlas
 from .concepts import run_concepts
 from .shared_input_agreement import run_shared_input_agreement, shared_input_agreement_path
@@ -111,6 +111,17 @@ def preflight_problem(cfg) -> str | None:
         return ("the `concepts` stage needs `sae.persist_features: true` -- cross-model "
                 "transfer reads each target's persisted SAE features (space='sae'), "
                 "and a concept run without them cannot produce its central artifact")
+    cap = getattr(cfg.concepts, "agreement_max_tests_per_pair", None)
+    if cap is not None and (isinstance(cap, bool) or not isinstance(cap, int) or cap < 1):
+        return (f"`concepts.agreement_max_tests_per_pair` must be null or an integer >= 1, "
+                f"got {cap!r}")
+    from .shared_input_agreement import DST_SET_MODES
+    mode = getattr(cfg.concepts, "agreement_dst_set", "feature")
+    if mode not in DST_SET_MODES:
+        return (f"`concepts.agreement_dst_set` must be one of {list(DST_SET_MODES)}, got {mode!r}")
+    k_top = getattr(cfg.concepts, "agreement_k_top_series", None)
+    if k_top is not None and (isinstance(k_top, bool) or not isinstance(k_top, int) or k_top < 2):
+        return (f"`concepts.agreement_k_top_series` must be null or an integer >= 2, got {k_top!r}")
     return None
 
 
@@ -219,6 +230,7 @@ def run_concept_stage(cfg, hub, store, data, device) -> dict:
         if not cfg.run.keep_models_loaded:
             hub.release(model)
 
+    check_ablation_null_modes(cfg, run_dir)
     ablation = {}
     for path in written:
         art = load_json(path)
@@ -350,6 +362,8 @@ def run_concept_stage(cfg, hub, store, data, device) -> dict:
                               "dst_set_kind_counts": sia["dst_set_kind_counts"],
                               "n_short_matched_pool": sia["n_short_matched_pool"],
                               "runtime_seconds": sia["runtime_seconds"]}
+        if "agreement_cap" in sia:
+            shared_input_block["agreement_cap"] = sia["agreement_cap"]
 
     # ROADMAP.md sec 37 Spec A: per-concept profiles (`sae/concept_profiles.py`)
     # -- what a concept's parts fire on, whether models sharing its effect

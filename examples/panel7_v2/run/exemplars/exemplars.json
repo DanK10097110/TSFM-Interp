@@ -1,0 +1,477 @@
+{
+  "exemplars": [
+    {
+      "series_id": "0ec99c21297dbc2a",
+      "family": "parametric",
+      "TimesFM": 3.6364917755126953,
+      "Chronos-2": 2.9083855152130127,
+      "Sundial": 4.402438163757324,
+      "Chronos-Bolt": 3.625598669052124,
+      "Timer": 3.2702856063842773,
+      "Time-MoE": 24.078328749680555,
+      "Chronos-T5-Base": 5.427709102630615,
+      "spread": 21.169943234467542,
+      "archetype": null,
+      "row": 541
+    },
+    {
+      "series_id": "8cfdeb0847a5a8f4",
+      "family": "parametric",
+      "TimesFM": 3.013821840286255,
+      "Chronos-2": 2.9635355472564697,
+      "Sundial": 3.5138018131256104,
+      "Chronos-Bolt": 2.892559766769409,
+      "Timer": 3.370248794555664,
+      "Time-MoE": 6.84409082245067,
+      "Chronos-T5-Base": 2.8585939407348633,
+      "spread": 3.9854968817158065,
+      "archetype": null,
+      "row": 525
+    },
+    {
+      "series_id": "7930742ba6af53a8",
+      "family": "parametric",
+      "TimesFM": 4.095248699188232,
+      "Chronos-2": 3.4551305770874023,
+      "Sundial": 3.7623543739318848,
+      "Chronos-Bolt": 3.48042893409729,
+      "Timer": 3.952441453933716,
+      "Time-MoE": 6.016038246920498,
+      "Chronos-T5-Base": 3.469153642654419,
+      "spread": 2.560907669833096,
+      "archetype": null,
+      "row": 439
+    },
+    {
+      "series_id": "e0e62c64763accb6",
+      "family": "random_parametric",
+      "TimesFM": 8.33650016784668,
+      "Chronos-2": 2.1832337379455566,
+      "Sundial": 7.846743106842041,
+      "Chronos-Bolt": 18.3416805267334,
+      "Timer": 20.7125301361084,
+      "Time-MoE": 53.32278381563708,
+      "Chronos-T5-Base": 17.291841506958008,
+      "spread": 51.139550077691524,
+      "archetype": "clean_low_noise",
+      "row": 111
+    },
+    {
+      "series_id": "8618a145be2ad181",
+      "family": "random_parametric",
+      "TimesFM": 0.6112592816352844,
+      "Chronos-2": 0.6995763778686523,
+      "Sundial": 2.0064220428466797,
+      "Chronos-Bolt": 2.1809897422790527,
+      "Timer": 3.8022897243499756,
+      "Time-MoE": 2.552851299803494,
+      "Chronos-T5-Base": 0.6217412948608398,
+      "spread": 3.191030442714691,
+      "archetype": "seasonal_dominant",
+      "row": 406
+    },
+    {
+      "series_id": "eb98d36dce5082db",
+      "family": "random_parametric",
+      "TimesFM": 0.887872576713562,
+      "Chronos-2": 0.8458822965621948,
+      "Sundial": 0.9963465929031372,
+      "Chronos-Bolt": 0.8890368938446045,
+      "Timer": 0.9844683408737183,
+      "Time-MoE": 1.9928842211045232,
+      "Chronos-T5-Base": 0.9739449620246887,
+      "spread": 1.1470019245423284,
+      "archetype": "noisy_chaotic",
+      "row": 50
+    },
+    {
+      "series_id": "a9305abedf315600",
+      "family": "mixture",
+      "TimesFM": 9.835829734802246,
+      "Chronos-2": 3.322500467300415,
+      "Sundial": 0.866832435131073,
+      "Chronos-Bolt": 6.720738410949707,
+      "Timer": 3.241919994354248,
+      "Time-MoE": 27.294499344031017,
+      "Chronos-T5-Base": 0.4016130566596985,
+      "spread": 26.89288628737132,
+      "archetype": null,
+      "row": 725
+    },
+    {
+      "series_id": "6d0460fb73e25b4c",
+      "family": "mixture",
+      "TimesFM": 0.5962756276130676,
+      "Chronos-2": 0.4156802296638489,
+      "Sundial": 0.7605526447296143,
+      "Chronos-Bolt": 0.5370414853096008,
+      "Timer": 0.6390634179115295,
+      "Time-MoE": 0.9899763185319874,
+      "Chronos-T5-Base": 0.4688401222229004,
+      "spread": 0.5742960888681385,
+      "archetype": null,
+      "row": 764
+    },
+    {
+      "series_id": "84c677391c8c6fff",
+      "family": "mixture",
+      "TimesFM": 1.1313425302505493,
+      "Chronos-2": 1.1087287664413452,
+      "Sundial": 1.2215301990509033,
+      "Chronos-Bolt": 1.1685117483139038,
+      "Timer": 1.270263433456421,
+      "Time-MoE": 1.4261977920637514,
+      "Chronos-T5-Base": 1.1155354976654053,
+      "spread": 0.3174690256224062,
+      "archetype": null,
+      "row": 588
+    },
+    {
+      "series_id": "749150dd94c86d6a",
+      "family": "block_bootstrap",
+      "TimesFM": 1.6909838914871216,
+      "Chronos-2": 1.6656742095947266,
+      "Sundial": 1.6051101684570312,
+      "Chronos-Bolt": 2.298593521118164,
+      "Timer": 2.7004010677337646,
+      "Time-MoE": 2.734604782269063,
+      "Chronos-T5-Base": 11.352555274963379,
+      "spread": 9.747445106506348,
+      "archetype": null,
+      "row": 895
+    },
+    {
+      "series_id": "67008fc564d2e8c3",
+      "family": "block_bootstrap",
+      "TimesFM": 0.6061787009239197,
+      "Chronos-2": 0.6060418486595154,
+      "Sundial": 0.7645553350448608,
+      "Chronos-Bolt": 0.6073976755142212,
+      "Timer": 1.0114564895629883,
+      "Time-MoE": 1.2641755493374212,
+      "Chronos-T5-Base": 0.6021794080734253,
+      "spread": 0.6619961412639959,
+      "archetype": null,
+      "row": 850
+    },
+    {
+      "series_id": "2b238ea7946fe008",
+      "family": "block_bootstrap",
+      "TimesFM": 0.7038264870643616,
+      "Chronos-2": 0.797021210193634,
+      "Sundial": 0.8942174911499023,
+      "Chronos-Bolt": 0.7533145546913147,
+      "Timer": 1.0950257778167725,
+      "Time-MoE": 1.0983330648637486,
+      "Chronos-T5-Base": 0.6779137849807739,
+      "spread": 0.4204192798829747,
+      "archetype": null,
+      "row": 854
+    },
+    {
+      "series_id": "4ce25b081f3f861d",
+      "family": "sequential_par",
+      "TimesFM": 3.617901086807251,
+      "Chronos-2": 2.9386963844299316,
+      "Sundial": 3.8887314796447754,
+      "Chronos-Bolt": 3.234840154647827,
+      "Timer": 3.738720417022705,
+      "Time-MoE": 3.368646143195616,
+      "Chronos-T5-Base": 2.3672852516174316,
+      "spread": 1.5214462280273438,
+      "archetype": null,
+      "row": 956
+    },
+    {
+      "series_id": "e544dc462bc42c98",
+      "family": "sequential_par",
+      "TimesFM": 1.0006489753723145,
+      "Chronos-2": 1.000714898109436,
+      "Sundial": 1.0429763793945312,
+      "Chronos-Bolt": 1.0031415224075317,
+      "Timer": 1.0668624639511108,
+      "Time-MoE": 1.193806642130575,
+      "Chronos-T5-Base": 1.0594723224639893,
+      "spread": 0.19315766675826063,
+      "archetype": null,
+      "row": 938
+    },
+    {
+      "series_id": "b61aa267483fc8f0",
+      "family": "sequential_par",
+      "TimesFM": 0.7250290513038635,
+      "Chronos-2": 0.7446609139442444,
+      "Sundial": 0.7521294355392456,
+      "Chronos-Bolt": 0.7134239077568054,
+      "Timer": 0.7663722038269043,
+      "Time-MoE": 0.757384126588947,
+      "Chronos-T5-Base": 0.8407452702522278,
+      "spread": 0.12732136249542236,
+      "archetype": null,
+      "row": 920
+    }
+  ],
+  "models": {
+    "TimesFM": {
+      "layers": [
+        "stacked_xf.0",
+        "stacked_xf.2",
+        "stacked_xf.4",
+        "stacked_xf.6",
+        "stacked_xf.8",
+        "stacked_xf.10",
+        "stacked_xf.12",
+        "stacked_xf.14",
+        "stacked_xf.16",
+        "stacked_xf.18"
+      ],
+      "final_mase": [
+        3.6364922523498535,
+        3.0138227939605713,
+        4.095248222351074,
+        8.3364896774292,
+        0.6112591624259949,
+        0.887872576713562,
+        9.835831642150879,
+        0.5962755084037781,
+        1.1313426494598389,
+        1.6909843683242798,
+        0.6061786413192749,
+        0.7038265466690063,
+        3.617900848388672,
+        1.0006489753723145,
+        0.7250288724899292
+      ],
+      "attention": {
+        "layer": "stacked_xf.19",
+        "rows": [
+          0,
+          3,
+          6,
+          9,
+          12
+        ]
+      }
+    },
+    "Chronos-2": {
+      "layers": [
+        "encoder.block.0",
+        "encoder.block.1",
+        "encoder.block.2",
+        "encoder.block.3",
+        "encoder.block.4",
+        "encoder.block.5",
+        "encoder.block.6",
+        "encoder.block.7",
+        "encoder.block.8",
+        "encoder.block.9",
+        "encoder.block.10",
+        "encoder.block.11"
+      ],
+      "final_mase": [
+        2.9173858165740967,
+        2.961135149002075,
+        3.449740409851074,
+        2.1673452854156494,
+        0.6996544003486633,
+        0.8455002903938293,
+        3.24322772026062,
+        0.41753607988357544,
+        1.108263611793518,
+        1.6653088331222534,
+        0.6059613227844238,
+        0.7971608638763428,
+        2.940892219543457,
+        1.0005168914794922,
+        0.744911789894104
+      ],
+      "attention": {
+        "layer": "encoder.block.11",
+        "rows": [
+          0,
+          3,
+          6,
+          9,
+          12
+        ]
+      }
+    },
+    "Sundial": {
+      "layers": [
+        "model.layers.0",
+        "model.layers.1",
+        "model.layers.2",
+        "model.layers.3",
+        "model.layers.4",
+        "model.layers.5",
+        "model.layers.6",
+        "model.layers.7",
+        "model.layers.8",
+        "model.layers.9",
+        "model.layers.10",
+        "model.layers.11"
+      ],
+      "final_mase": [
+        3.958804130554199,
+        3.25093412399292,
+        3.803553819656372,
+        7.8504157066345215,
+        1.801347017288208,
+        1.0099934339523315,
+        1.0864938497543335,
+        0.7487448453903198,
+        1.2985626459121704,
+        1.7395882606506348,
+        0.7450910806655884,
+        0.8899577260017395,
+        4.042884349822998,
+        1.0161535739898682,
+        0.7285310626029968
+      ],
+      "attention": {
+        "status": "unsupported"
+      }
+    },
+    "Chronos-Bolt": {
+      "layers": [
+        "encoder.block.0",
+        "encoder.block.1",
+        "encoder.block.2",
+        "encoder.block.3",
+        "encoder.block.4",
+        "encoder.block.5"
+      ],
+      "final_mase": [
+        3.62363338470459,
+        2.9060616493225098,
+        3.4827775955200195,
+        18.335325241088867,
+        2.1855008602142334,
+        0.888435959815979,
+        6.707635879516602,
+        0.5369852781295776,
+        1.1686668395996094,
+        2.297375440597534,
+        0.6073976755142212,
+        0.7527390718460083,
+        3.2363040447235107,
+        1.0030975341796875,
+        0.7133235335350037
+      ],
+      "attention": {
+        "status": "unsupported"
+      }
+    },
+    "Timer": {
+      "layers": [
+        "model.layers.0",
+        "model.layers.1",
+        "model.layers.2",
+        "model.layers.3",
+        "model.layers.4",
+        "model.layers.5",
+        "model.layers.6",
+        "model.layers.7"
+      ],
+      "final_mase": [
+        3.2702856063842773,
+        3.370248794555664,
+        3.952441453933716,
+        20.7125301361084,
+        3.8022897243499756,
+        0.9844683408737183,
+        3.241919994354248,
+        0.6390634179115295,
+        1.270263433456421,
+        2.7004010677337646,
+        1.0114564895629883,
+        1.0950257778167725,
+        3.738720417022705,
+        1.0668624639511108,
+        0.7663722038269043
+      ],
+      "attention": {
+        "status": "unsupported"
+      }
+    },
+    "Time-MoE": {
+      "layers": [
+        "model.layers.0",
+        "model.layers.1",
+        "model.layers.2",
+        "model.layers.3",
+        "model.layers.4",
+        "model.layers.5",
+        "model.layers.6",
+        "model.layers.7",
+        "model.layers.8",
+        "model.layers.9",
+        "model.layers.10",
+        "model.layers.11"
+      ],
+      "final_mase": [
+        24.079362869262695,
+        6.8442583084106445,
+        6.016933917999268,
+        53.317935943603516,
+        2.5558247566223145,
+        1.9928139448165894,
+        27.30038070678711,
+        0.9885455369949341,
+        1.4269378185272217,
+        2.7339720726013184,
+        1.261230230331421,
+        1.0976611375808716,
+        3.3638863563537598,
+        1.194725513458252,
+        0.7574484348297119
+      ],
+      "attention": {
+        "status": "unsupported"
+      }
+    },
+    "Chronos-T5-Base": {
+      "layers": [
+        "encoder.block.0",
+        "encoder.block.1",
+        "encoder.block.2",
+        "encoder.block.3",
+        "encoder.block.4",
+        "encoder.block.5",
+        "encoder.block.6",
+        "encoder.block.7",
+        "encoder.block.8",
+        "encoder.block.9",
+        "encoder.block.10",
+        "encoder.block.11"
+      ],
+      "final_mase": [
+        5.5488715171813965,
+        2.55069637298584,
+        3.8459866046905518,
+        17.403268814086914,
+        0.5769286155700684,
+        1.100439429283142,
+        0.4043113589286804,
+        0.4759896695613861,
+        1.1122702360153198,
+        11.606756210327148,
+        0.6021794080734253,
+        0.6779137849807739,
+        3.976850748062134,
+        1.045819640159607,
+        0.8377484083175659
+      ],
+      "attention": {
+        "layer": "encoder.block.11",
+        "rows": [
+          0,
+          3,
+          6,
+          9,
+          12
+        ]
+      }
+    }
+  }
+}

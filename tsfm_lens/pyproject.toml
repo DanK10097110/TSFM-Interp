@@ -4,9 +4,23 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tsfm-lens"
-version = "0.1.0"
+version = "1.0.0"
 description = "Layered, architecture-agnostic interpretability comparison of time-series foundation models"
+readme = "README.md"
 license = {text = "MIT"}
+authors = [{name = "Daniel Kushnir"}]
+keywords = ["interpretability", "mechanistic-interpretability", "time-series", "foundation-models", "transformers", "forecasting"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
 requires-python = ">=3.10"
 dependencies = [
   "torch>=2.1", "numpy>=1.24", "pandas>=2.0", "pyarrow>=14", "scipy>=1.10",
@@ -15,6 +29,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# tsfm_benchmark generates and validates the corpora tsfm-lens consumes; a few
+# analyses (context/horizon scaling sweeps, corpus loading in --doctor) import it.
+benchmark = ["tsfm-benchmark>=1.0.0"]
 umap = ["umap-learn>=0.5"]
 chronos = ["chronos-forecasting>=1.2"]
 # >=2.0, not the old [torch] extra a pre-2.0 install used: >=2.0 removed
@@ -22,6 +39,12 @@ chronos = ["chronos-forecasting>=1.2"]
 # new class-based API with no such extra (CLAUDE.md sec 11.8); verified
 # working at timesfm==2.0.2, plain `pip install timesfm` (DEPENDENCIES.md).
 timesfm = ["timesfm>=2.0"]
+
+[project.urls]
+Homepage = "https://github.com/DanK10097110/TSFM-Interp"
+Repository = "https://github.com/DanK10097110/TSFM-Interp"
+Documentation = "https://dank10097110.github.io/TSFM-Interp/"
+Changelog = "https://github.com/DanK10097110/TSFM-Interp/blob/main/CHANGELOG.md"
 
 [project.scripts]
 tsfm-lens = "tsfm_lens.run:main"

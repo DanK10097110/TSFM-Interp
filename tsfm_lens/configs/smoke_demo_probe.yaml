@@ -1,0 +1,42 @@
+# Scaffolded by `run.py --new-adapter demo_probe --checkpoint org/demo-probe-ckpt`
+# (ROADMAP.md sec 34.6 Item E3). Pairs the new adapter against `mock_patch`
+# (tier 3) rather than another mock: as 'demo_probe' climbs tiers this SAME
+# config starts exercising l1/l2/attention/... with no edits needed, since
+# the comparison stages gate on min(tier_a, tier_b).
+#
+# As shipped ('demo_probe' is still a MockBlackBoxAdapter clone) this reaches
+# only a tier-0 report -- see the numbered commands `--new-adapter` printed.
+
+run:
+  name: smoke_demo_probe
+  out_dir: runs
+  device: cpu
+  dtype: float32
+  seed: 0
+
+data:
+  source: smoke
+  context_len: 128
+  horizon: 32
+  smoke_series_per_family: 20
+
+alignment:
+  window: 32
+
+models:
+  - name: patchy
+    adapter: mock_patch
+    batch_size: 64
+  - name: demo_probe
+    adapter: demo_probe
+    batch_size: 64
+    checkpoint: "org/demo-probe-ckpt"
+
+l0:
+  calibration: true
+
+budget:
+  measure_predict: true
+
+report:
+  verbose: false

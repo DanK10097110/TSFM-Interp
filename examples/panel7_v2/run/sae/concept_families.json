@@ -1,0 +1,2162 @@
+{
+  "schema_version": 1,
+  "measured": true,
+  "space": "ablation",
+  "params": {
+    "min_members": 5,
+    "assign_min": 0.5,
+    "grid": [
+      0.5,
+      0.55,
+      0.6,
+      0.65,
+      0.7,
+      0.75,
+      0.8,
+      0.85
+    ],
+    "linkage": "average",
+    "n_null": 200,
+    "sil_tol": 0.02,
+    "level_share_threshold": 0.9
+  },
+  "n_features": 194,
+  "n_assigned": 192,
+  "frac_assigned": 0.9896907216494846,
+  "threshold": 0.5,
+  "grid": [
+    {
+      "min_cosine": 0.5,
+      "n_families": 9,
+      "draft_silhouette": 0.31245930974344527,
+      "final_silhouette": 0.324287310387722,
+      "admissible": true,
+      "n_kept_members": 183,
+      "n_final_assigned": 192,
+      "selected": true
+    },
+    {
+      "min_cosine": 0.55,
+      "n_families": 10,
+      "draft_silhouette": 0.3003273761147023,
+      "final_silhouette": 0.317432044335147,
+      "admissible": true,
+      "n_kept_members": 182,
+      "n_final_assigned": 192,
+      "selected": false
+    },
+    {
+      "min_cosine": 0.6,
+      "n_families": 11,
+      "draft_silhouette": 0.31635267184552707,
+      "final_silhouette": 0.31648796128963225,
+      "admissible": true,
+      "n_kept_members": 173,
+      "n_final_assigned": 193,
+      "selected": false
+    },
+    {
+      "min_cosine": 0.65,
+      "n_families": 14,
+      "draft_silhouette": 0.3288240304619048,
+      "final_silhouette": 0.30614583602481477,
+      "admissible": true,
+      "n_kept_members": 167,
+      "n_final_assigned": 193,
+      "selected": false
+    },
+    {
+      "min_cosine": 0.7,
+      "n_families": 16,
+      "draft_silhouette": 0.36996960408205243,
+      "final_silhouette": 0.30451457061808324,
+      "admissible": true,
+      "n_kept_members": 153,
+      "n_final_assigned": 194,
+      "selected": false
+    },
+    {
+      "min_cosine": 0.75,
+      "n_families": 16,
+      "draft_silhouette": 0.3953374275092744,
+      "final_silhouette": 0.2765014350799567,
+      "admissible": true,
+      "n_kept_members": 132,
+      "n_final_assigned": 193,
+      "selected": false
+    },
+    {
+      "min_cosine": 0.8,
+      "n_families": 11,
+      "draft_silhouette": 0.5089903488089517,
+      "final_silhouette": 0.24676847447858025,
+      "admissible": true,
+      "n_kept_members": 81,
+      "n_final_assigned": 187,
+      "selected": false
+    },
+    {
+      "min_cosine": 0.85,
+      "n_families": 6,
+      "draft_silhouette": 0.6375331375241037,
+      "final_silhouette": 0.280969792271286,
+      "admissible": true,
+      "n_kept_members": 44,
+      "n_final_assigned": 166,
+      "selected": false
+    }
+  ],
+  "selection_rule": "fewest families whose FINAL-partition cosine silhouette is within 0.02 of the grid's best (0.324287); grid [0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85] (evidence class: descriptive -- see module docstring)",
+  "families": [
+    {
+      "family": 0,
+      "title": "Level lowerers",
+      "description": "These features steer the first third of the forecast (removing them moves it), and decrease the forecast's overall level. Found in 7 models (Chronos-2, Chronos-Bolt, Chronos-T5-Base, Sundial, Time-MoE, Timer, TimesFM). Its features fire most often on resampled real weather series.",
+      "n_members": 44,
+      "models": {
+        "Chronos-2": 9,
+        "Chronos-Bolt": 2,
+        "Chronos-T5-Base": 6,
+        "Sundial": 10,
+        "Time-MoE": 4,
+        "Timer": 6,
+        "TimesFM": 7
+      },
+      "n_models": 7,
+      "mean_profile_ablation_units": {
+        "trend": 0.039976618155540475,
+        "seasonal": 0.02848003490238332,
+        "spectral_centroid": 0.25100269235055167,
+        "level": 1.2471358036184748,
+        "dispersion": 0.38059288587933243,
+        "horizon_shape_near": 1.3464531287010273,
+        "horizon_shape_far": 1.2428068136425081,
+        "mase": 0.6483987675885463,
+        "flatness": 0.020306919922328595
+      },
+      "directed_profile_null_units": {
+        "trend": -0.039976618155540475,
+        "seasonal": -0.02848003490238332,
+        "spectral_centroid": -0.25100269235055167,
+        "level": -1.2471358036184748,
+        "dispersion": -0.38059288587933243,
+        "horizon_shape_near": -1.3464531287010273,
+        "horizon_shape_far": -1.2428068136425081,
+        "mase": -0.6483987675885463,
+        "flatness": -0.020306919922328595
+      },
+      "cleared_channels": [
+        "horizon_shape_near",
+        "level",
+        "horizon_shape_far"
+      ],
+      "causal_tag": "shape-causal",
+      "level_share_median": 0.7945552418654195,
+      "n_members_with_level_share": 44,
+      "n_members_shape_causal": 20,
+      "n_members_with_shape_record": 44,
+      "concept_ids": [
+        2,
+        5,
+        6,
+        9,
+        10
+      ],
+      "members": [
+        7,
+        8,
+        11,
+        21,
+        24,
+        28,
+        31,
+        36,
+        41,
+        43,
+        51,
+        54,
+        61,
+        63,
+        64,
+        66,
+        68,
+        70,
+        71,
+        76,
+        82,
+        86,
+        87,
+        93,
+        94,
+        98,
+        102,
+        108,
+        123,
+        128,
+        130,
+        134,
+        138,
+        140,
+        142,
+        143,
+        144,
+        160,
+        166,
+        170,
+        176,
+        178,
+        180,
+        185
+      ],
+      "fires_on": [
+        {
+          "label": "block_bootstrap",
+          "count": 4
+        },
+        {
+          "label": "sequential_par",
+          "count": 4
+        },
+        {
+          "label": "mixture",
+          "count": 2
+        }
+      ],
+      "cross_model_p": 0.9601990049751243,
+      "stability": {
+        "status": "ran (concept-level aggregate)",
+        "note": "aggregated from concept_stability.json's per-concept reciprocal-transfer stability; a replicate SAE's own dictionary is never re-ablated into the family space (that needs a full ablation battery per replicate, out of scope here) -- this is 'are this family's member concepts individually seed-stable', not 'does a replicate feature land in this family'",
+        "n_concepts_scored": 5,
+        "n_concepts_stable": 4,
+        "frac_concepts_stable": 0.8
+      }
+    },
+    {
+      "family": 1,
+      "title": "Level raisers",
+      "description": "These features steer the first third of the forecast (removing them moves it), and increase the forecast's overall level. Found in 7 models (Chronos-2, Chronos-Bolt, Chronos-T5-Base, Sundial, Time-MoE, Timer, TimesFM). Its features fire most often on real weather/ETT-derived mixtures.",
+      "n_members": 45,
+      "models": {
+        "Chronos-2": 10,
+        "Chronos-Bolt": 3,
+        "Chronos-T5-Base": 5,
+        "Sundial": 6,
+        "Time-MoE": 3,
+        "Timer": 4,
+        "TimesFM": 14
+      },
+      "n_models": 7,
+      "mean_profile_ablation_units": {
+        "trend": 0.291054655571689,
+        "seasonal": 0.021509887094703133,
+        "spectral_centroid": 0.13649023259309628,
+        "level": -1.0452574198267897,
+        "dispersion": -0.031804541961386865,
+        "horizon_shape_near": 7.258236803405126,
+        "horizon_shape_far": 0.9181469000514071,
+        "mase": 0.577867956575269,
+        "flatness": 0.020702488022483614
+      },
+      "directed_profile_null_units": {
+        "trend": -0.291054655571689,
+        "seasonal": -0.021509887094703133,
+        "spectral_centroid": -0.13649023259309628,
+        "level": 1.0452574198267897,
+        "dispersion": 0.031804541961386865,
+        "horizon_shape_near": -7.258236803405126,
+        "horizon_shape_far": -0.9181469000514071,
+        "mase": -0.577867956575269,
+        "flatness": -0.020702488022483614
+      },
+      "cleared_channels": [
+        "horizon_shape_near",
+        "level"
+      ],
+      "causal_tag": "shape-causal",
+      "level_share_median": 0.6603897994437729,
+      "n_members_with_level_share": 45,
+      "n_members_shape_causal": 21,
+      "n_members_with_shape_record": 45,
+      "concept_ids": [
+        1,
+        8
+      ],
+      "members": [
+        6,
+        12,
+        16,
+        19,
+        25,
+        26,
+        29,
+        30,
+        33,
+        34,
+        42,
+        44,
+        45,
+        58,
+        59,
+        60,
+        62,
+        69,
+        75,
+        77,
+        79,
+        81,
+        101,
+        107,
+        116,
+        117,
+        122,
+        141,
+        149,
+        151,
+        153,
+        161,
+        163,
+        164,
+        165,
+        167,
+        174,
+        175,
+        184,
+        186,
+        187,
+        188,
+        189,
+        191,
+        192
+      ],
+      "fires_on": [
+        {
+          "label": "mixture",
+          "count": 2
+        },
+        {
+          "label": "parametric",
+          "count": 2
+        },
+        {
+          "label": "block_bootstrap",
+          "count": 1
+        }
+      ],
+      "cross_model_p": 0.9303482587064676,
+      "stability": {
+        "status": "ran (concept-level aggregate)",
+        "note": "aggregated from concept_stability.json's per-concept reciprocal-transfer stability; a replicate SAE's own dictionary is never re-ablated into the family space (that needs a full ablation battery per replicate, out of scope here) -- this is 'are this family's member concepts individually seed-stable', not 'does a replicate feature land in this family'",
+        "n_concepts_scored": 2,
+        "n_concepts_stable": 2,
+        "frac_concepts_stable": 1.0
+      }
+    },
+    {
+      "family": 2,
+      "title": "Seasonality dampeners",
+      "description": "These features decrease the forecast's seasonal magnitude. Found in 7 models (Chronos-2, Chronos-Bolt, Chronos-T5-Base, Sundial, Time-MoE, Timer, TimesFM). Its features fire most often on noisy autocorrelated series.",
+      "n_members": 25,
+      "models": {
+        "Chronos-2": 5,
+        "Chronos-Bolt": 5,
+        "Chronos-T5-Base": 2,
+        "Sundial": 9,
+        "Time-MoE": 1,
+        "Timer": 2,
+        "TimesFM": 1
+      },
+      "n_models": 7,
+      "mean_profile_ablation_units": {
+        "trend": 0.08651063293556632,
+        "seasonal": 1.2780323074033857,
+        "spectral_centroid": 0.2869390563492075,
+        "level": -0.1802572438701472,
+        "dispersion": 0.6908282280714982,
+        "horizon_shape_near": 0.6697791037779876,
+        "horizon_shape_far": 0.6181177821108911,
+        "mase": -0.07039717864826088,
+        "flatness": -0.087721266677117
+      },
+      "directed_profile_null_units": {
+        "trend": -0.08651063293556632,
+        "seasonal": -1.2780323074033857,
+        "spectral_centroid": -0.2869390563492075,
+        "level": 0.1802572438701472,
+        "dispersion": -0.6908282280714982,
+        "horizon_shape_near": -0.6697791037779876,
+        "horizon_shape_far": -0.6181177821108911,
+        "mase": 0.07039717864826088,
+        "flatness": 0.087721266677117
+      },
+      "cleared_channels": [
+        "seasonal"
+      ],
+      "causal_tag": "shape-causal",
+      "level_share_median": 0.5525471187585278,
+      "n_members_with_level_share": 25,
+      "n_members_shape_causal": 24,
+      "n_members_with_shape_record": 25,
+      "concept_ids": [
+        0,
+        3,
+        7
+      ],
+      "members": [
+        0,
+        14,
+        17,
+        38,
+        40,
+        46,
+        48,
+        49,
+        50,
+        52,
+        57,
+        65,
+        73,
+        83,
+        88,
+        90,
+        92,
+        95,
+        96,
+        97,
+        104,
+        111,
+        145,
+        147,
+        168
+      ],
+      "fires_on": [
+        {
+          "label": "ar_colored_noise",
+          "count": 2
+        },
+        {
+          "label": "block_bootstrap",
+          "count": 2
+        },
+        {
+          "label": "mixture",
+          "count": 2
+        }
+      ],
+      "cross_model_p": 0.7064676616915423,
+      "stability": {
+        "status": "ran (concept-level aggregate)",
+        "note": "aggregated from concept_stability.json's per-concept reciprocal-transfer stability; a replicate SAE's own dictionary is never re-ablated into the family space (that needs a full ablation battery per replicate, out of scope here) -- this is 'are this family's member concepts individually seed-stable', not 'does a replicate feature land in this family'",
+        "n_concepts_scored": 3,
+        "n_concepts_stable": 2,
+        "frac_concepts_stable": 0.6666666666666666
+      }
+    },
+    {
+      "family": 3,
+      "title": "Seasonality amplifiers",
+      "description": "These features increase the forecast's seasonal magnitude. Found in 4 models (Sundial, Time-MoE, Timer, TimesFM).",
+      "n_members": 19,
+      "models": {
+        "Sundial": 4,
+        "Time-MoE": 9,
+        "Timer": 2,
+        "TimesFM": 4
+      },
+      "n_models": 4,
+      "mean_profile_ablation_units": {
+        "trend": -0.18169033888430336,
+        "seasonal": -1.1273974352059672,
+        "spectral_centroid": 0.26546034581130407,
+        "level": -0.5932455011699753,
+        "dispersion": -0.6694635808875347,
+        "horizon_shape_near": 0.73518829819726,
+        "horizon_shape_far": 0.7850798624079612,
+        "mase": -0.24899722729697488,
+        "flatness": -0.2261677792713262
+      },
+      "directed_profile_null_units": {
+        "trend": 0.18169033888430336,
+        "seasonal": 1.1273974352059672,
+        "spectral_centroid": -0.26546034581130407,
+        "level": 0.5932455011699753,
+        "dispersion": 0.6694635808875347,
+        "horizon_shape_near": -0.73518829819726,
+        "horizon_shape_far": -0.7850798624079612,
+        "mase": 0.24899722729697488,
+        "flatness": 0.2261677792713262
+      },
+      "cleared_channels": [
+        "seasonal"
+      ],
+      "causal_tag": "shape-causal",
+      "level_share_median": 0.2681526311968743,
+      "n_members_with_level_share": 19,
+      "n_members_shape_causal": 16,
+      "n_members_with_shape_record": 19,
+      "concept_ids": [],
+      "members": [
+        84,
+        91,
+        100,
+        103,
+        109,
+        110,
+        114,
+        119,
+        120,
+        121,
+        126,
+        132,
+        133,
+        150,
+        156,
+        159,
+        171,
+        179,
+        182
+      ],
+      "fires_on": [],
+      "cross_model_p": 1.0,
+      "stability": {
+        "status": "ran (concept-level aggregate)",
+        "note": "aggregated from concept_stability.json's per-concept reciprocal-transfer stability; a replicate SAE's own dictionary is never re-ablated into the family space (that needs a full ablation battery per replicate, out of scope here) -- this is 'are this family's member concepts individually seed-stable', not 'does a replicate feature land in this family'",
+        "n_concepts_scored": 0,
+        "n_concepts_stable": 0,
+        "frac_concepts_stable": null
+      }
+    },
+    {
+      "family": 4,
+      "title": "Mixed-effect features",
+      "description": "No channel in this family clears its own null on average. Found in 5 models (Chronos-2, Sundial, Time-MoE, Timer, TimesFM).",
+      "n_members": 14,
+      "models": {
+        "Chronos-2": 4,
+        "Sundial": 2,
+        "Time-MoE": 3,
+        "Timer": 4,
+        "TimesFM": 1
+      },
+      "n_models": 5,
+      "mean_profile_ablation_units": {
+        "trend": 0.7528554607490576,
+        "seasonal": -0.8326263765556103,
+        "spectral_centroid": 0.3548465396877565,
+        "level": 0.6443710367363735,
+        "dispersion": -0.725996341304862,
+        "horizon_shape_near": 0.7965911940426561,
+        "horizon_shape_far": 0.9881063464484353,
+        "mase": -0.8243141791733554,
+        "flatness": 0.11447480307912639
+      },
+      "directed_profile_null_units": {
+        "trend": -0.7528554607490576,
+        "seasonal": 0.8326263765556103,
+        "spectral_centroid": -0.3548465396877565,
+        "level": -0.6443710367363735,
+        "dispersion": 0.725996341304862,
+        "horizon_shape_near": -0.7965911940426561,
+        "horizon_shape_far": -0.9881063464484353,
+        "mase": 0.8243141791733554,
+        "flatness": -0.11447480307912639
+      },
+      "cleared_channels": [],
+      "causal_tag": "shape-causal",
+      "level_share_median": 0.20977283071693048,
+      "n_members_with_level_share": 14,
+      "n_members_shape_causal": 12,
+      "n_members_with_shape_record": 14,
+      "concept_ids": [],
+      "members": [
+        3,
+        4,
+        13,
+        37,
+        74,
+        85,
+        112,
+        118,
+        129,
+        139,
+        146,
+        155,
+        158,
+        172
+      ],
+      "fires_on": [],
+      "cross_model_p": 0.9701492537313433,
+      "stability": {
+        "status": "ran (concept-level aggregate)",
+        "note": "aggregated from concept_stability.json's per-concept reciprocal-transfer stability; a replicate SAE's own dictionary is never re-ablated into the family space (that needs a full ablation battery per replicate, out of scope here) -- this is 'are this family's member concepts individually seed-stable', not 'does a replicate feature land in this family'",
+        "n_concepts_scored": 0,
+        "n_concepts_stable": 0,
+        "frac_concepts_stable": null
+      }
+    },
+    {
+      "family": 5,
+      "title": "Mixed-effect features II",
+      "description": "No channel in this family clears its own null on average. Found in 6 models (Chronos-2, Chronos-Bolt, Chronos-T5-Base, Sundial, Time-MoE, TimesFM).",
+      "n_members": 13,
+      "models": {
+        "Chronos-2": 3,
+        "Chronos-Bolt": 1,
+        "Chronos-T5-Base": 1,
+        "Sundial": 2,
+        "Time-MoE": 3,
+        "TimesFM": 3
+      },
+      "n_models": 6,
+      "mean_profile_ablation_units": {
+        "trend": -0.6210298107275889,
+        "seasonal": -0.06854477811018117,
+        "spectral_centroid": -0.7306754288788385,
+        "level": -0.45615707688488827,
+        "dispersion": -0.1652388285211296,
+        "horizon_shape_near": 0.6960536523069701,
+        "horizon_shape_far": 0.787852812004546,
+        "mase": 0.2823674912522731,
+        "flatness": 0.08865485397315973
+      },
+      "directed_profile_null_units": {
+        "trend": 0.6210298107275889,
+        "seasonal": 0.06854477811018117,
+        "spectral_centroid": 0.7306754288788385,
+        "level": 0.45615707688488827,
+        "dispersion": 0.1652388285211296,
+        "horizon_shape_near": -0.6960536523069701,
+        "horizon_shape_far": -0.787852812004546,
+        "mase": -0.2823674912522731,
+        "flatness": -0.08865485397315973
+      },
+      "cleared_channels": [],
+      "causal_tag": "shape-causal",
+      "level_share_median": 0.08556437034134112,
+      "n_members_with_level_share": 13,
+      "n_members_shape_causal": 8,
+      "n_members_with_shape_record": 13,
+      "concept_ids": [],
+      "members": [
+        5,
+        10,
+        39,
+        53,
+        55,
+        72,
+        106,
+        115,
+        124,
+        131,
+        162,
+        181,
+        183
+      ],
+      "fires_on": [],
+      "cross_model_p": 0.6069651741293532,
+      "stability": {
+        "status": "ran (concept-level aggregate)",
+        "note": "aggregated from concept_stability.json's per-concept reciprocal-transfer stability; a replicate SAE's own dictionary is never re-ablated into the family space (that needs a full ablation battery per replicate, out of scope here) -- this is 'are this family's member concepts individually seed-stable', not 'does a replicate feature land in this family'",
+        "n_concepts_scored": 0,
+        "n_concepts_stable": 0,
+        "frac_concepts_stable": null
+      }
+    },
+    {
+      "family": 6,
+      "title": "Mixed-effect features III",
+      "description": "No channel in this family clears its own null on average. Found in 4 models (Chronos-2, Sundial, Timer, TimesFM).",
+      "n_members": 11,
+      "models": {
+        "Chronos-2": 4,
+        "Sundial": 3,
+        "Timer": 1,
+        "TimesFM": 3
+      },
+      "n_models": 4,
+      "mean_profile_ablation_units": {
+        "trend": 0.9155290078335333,
+        "seasonal": 0.06104642415721724,
+        "spectral_centroid": -0.9605585235724514,
+        "level": 0.08933270739219691,
+        "dispersion": -0.8059468092165457,
+        "horizon_shape_near": 0.7582738984776666,
+        "horizon_shape_far": 0.838551545404279,
+        "mase": -0.26221885397306754,
+        "flatness": 0.2076928053830228
+      },
+      "directed_profile_null_units": {
+        "trend": -0.9155290078335333,
+        "seasonal": -0.06104642415721724,
+        "spectral_centroid": 0.9605585235724514,
+        "level": -0.08933270739219691,
+        "dispersion": 0.8059468092165457,
+        "horizon_shape_near": -0.7582738984776666,
+        "horizon_shape_far": -0.838551545404279,
+        "mase": 0.26221885397306754,
+        "flatness": -0.2076928053830228
+      },
+      "cleared_channels": [],
+      "causal_tag": "shape-causal",
+      "level_share_median": 0.22329245192919903,
+      "n_members_with_level_share": 11,
+      "n_members_shape_causal": 8,
+      "n_members_with_shape_record": 11,
+      "concept_ids": [],
+      "members": [
+        1,
+        2,
+        23,
+        35,
+        78,
+        80,
+        99,
+        148,
+        169,
+        173,
+        190
+      ],
+      "fires_on": [],
+      "cross_model_p": 0.9900497512437811,
+      "stability": {
+        "status": "ran (concept-level aggregate)",
+        "note": "aggregated from concept_stability.json's per-concept reciprocal-transfer stability; a replicate SAE's own dictionary is never re-ablated into the family space (that needs a full ablation battery per replicate, out of scope here) -- this is 'are this family's member concepts individually seed-stable', not 'does a replicate feature land in this family'",
+        "n_concepts_scored": 0,
+        "n_concepts_stable": 0,
+        "frac_concepts_stable": null
+      }
+    },
+    {
+      "family": 7,
+      "title": "Volatility dampeners",
+      "description": "These features decrease the forecast's spread. Found in 6 models (Chronos-2, Chronos-Bolt, Chronos-T5-Base, Sundial, Time-MoE, Timer). Its features fire most often on resampled real weather series.",
+      "n_members": 10,
+      "models": {
+        "Chronos-2": 4,
+        "Chronos-Bolt": 1,
+        "Chronos-T5-Base": 1,
+        "Sundial": 1,
+        "Time-MoE": 2,
+        "Timer": 1
+      },
+      "n_models": 6,
+      "mean_profile_ablation_units": {
+        "trend": -0.12821335870302009,
+        "seasonal": 0.04325900290045651,
+        "spectral_centroid": 0.2645384748465083,
+        "level": -0.23660937486671868,
+        "dispersion": 1.4518050005253156,
+        "horizon_shape_near": 0.5111992251591897,
+        "horizon_shape_far": 0.497749909107209,
+        "mase": 0.4094564465231333,
+        "flatness": -0.3766729624542125
+      },
+      "directed_profile_null_units": {
+        "trend": 0.12821335870302009,
+        "seasonal": -0.04325900290045651,
+        "spectral_centroid": -0.2645384748465083,
+        "level": 0.23660937486671868,
+        "dispersion": -1.4518050005253156,
+        "horizon_shape_near": -0.5111992251591897,
+        "horizon_shape_far": -0.497749909107209,
+        "mase": -0.4094564465231333,
+        "flatness": 0.3766729624542125
+      },
+      "cleared_channels": [
+        "dispersion"
+      ],
+      "causal_tag": "shape-causal",
+      "level_share_median": 0.7937278038616902,
+      "n_members_with_level_share": 10,
+      "n_members_shape_causal": 10,
+      "n_members_with_shape_record": 10,
+      "concept_ids": [
+        4
+      ],
+      "members": [
+        15,
+        18,
+        22,
+        27,
+        47,
+        56,
+        89,
+        113,
+        127,
+        135
+      ],
+      "fires_on": [
+        {
+          "label": "block_bootstrap",
+          "count": 3
+        }
+      ],
+      "cross_model_p": 0.39303482587064675,
+      "stability": {
+        "status": "ran (concept-level aggregate)",
+        "note": "aggregated from concept_stability.json's per-concept reciprocal-transfer stability; a replicate SAE's own dictionary is never re-ablated into the family space (that needs a full ablation battery per replicate, out of scope here) -- this is 'are this family's member concepts individually seed-stable', not 'does a replicate feature land in this family'",
+        "n_concepts_scored": 1,
+        "n_concepts_stable": 1,
+        "frac_concepts_stable": 1.0
+      }
+    },
+    {
+      "family": 8,
+      "title": "Trend boosters",
+      "description": "These features increase the forecast's trend slope. Found in 5 models (Chronos-2, Sundial, Time-MoE, Timer, TimesFM).",
+      "n_members": 11,
+      "models": {
+        "Chronos-2": 3,
+        "Sundial": 1,
+        "Time-MoE": 1,
+        "Timer": 5,
+        "TimesFM": 1
+      },
+      "n_models": 5,
+      "mean_profile_ablation_units": {
+        "trend": -1.8169351076061346,
+        "seasonal": 0.0,
+        "spectral_centroid": 1.6426399001071132,
+        "level": -1.302277269860893,
+        "dispersion": -1.2168963836408488,
+        "horizon_shape_near": 0.7452196019592013,
+        "horizon_shape_far": 1.748681052634757,
+        "mase": -1.0127168239573063,
+        "flatness": -0.04077818042125536
+      },
+      "directed_profile_null_units": {
+        "trend": 1.8169351076061346,
+        "seasonal": -0.0,
+        "spectral_centroid": -1.6426399001071132,
+        "level": 1.302277269860893,
+        "dispersion": 1.2168963836408488,
+        "horizon_shape_near": -0.7452196019592013,
+        "horizon_shape_far": -1.748681052634757,
+        "mase": 1.0127168239573063,
+        "flatness": 0.04077818042125536
+      },
+      "cleared_channels": [
+        "trend",
+        "horizon_shape_far",
+        "spectral_centroid",
+        "level",
+        "dispersion",
+        "mase"
+      ],
+      "causal_tag": "shape-causal",
+      "level_share_median": 0.043134289537943515,
+      "n_members_with_level_share": 11,
+      "n_members_shape_causal": 11,
+      "n_members_with_shape_record": 11,
+      "concept_ids": [],
+      "members": [
+        9,
+        20,
+        32,
+        105,
+        125,
+        136,
+        137,
+        152,
+        154,
+        157,
+        177
+      ],
+      "fires_on": [],
+      "cross_model_p": 0.8756218905472637,
+      "stability": {
+        "status": "ran (concept-level aggregate)",
+        "note": "aggregated from concept_stability.json's per-concept reciprocal-transfer stability; a replicate SAE's own dictionary is never re-ablated into the family space (that needs a full ablation battery per replicate, out of scope here) -- this is 'are this family's member concepts individually seed-stable', not 'does a replicate feature land in this family'",
+        "n_concepts_scored": 0,
+        "n_concepts_stable": 0,
+        "frac_concepts_stable": null
+      }
+    }
+  ],
+  "rows": [
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.10",
+      "feature": 822,
+      "family": 2
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.10",
+      "feature": 2763,
+      "family": 6
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.10",
+      "feature": 1656,
+      "family": 6
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.10",
+      "feature": 3991,
+      "family": 4
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.10",
+      "feature": 460,
+      "family": 4
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.3",
+      "feature": 1700,
+      "family": 5
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.3",
+      "feature": 3849,
+      "family": 1
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.3",
+      "feature": 2273,
+      "family": 0
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.4",
+      "feature": 1852,
+      "family": 0
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.4",
+      "feature": 6066,
+      "family": 8
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.4",
+      "feature": 460,
+      "family": 5
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.5",
+      "feature": 1852,
+      "family": 0
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.5",
+      "feature": 6066,
+      "family": 1
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.5",
+      "feature": 416,
+      "family": 4
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.5",
+      "feature": 4596,
+      "family": 2
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.6",
+      "feature": 1714,
+      "family": 7
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.6",
+      "feature": 5231,
+      "family": 1
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.6",
+      "feature": 5709,
+      "family": 2
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.6",
+      "feature": 3200,
+      "family": 7
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.6",
+      "feature": 803,
+      "family": 1
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.6",
+      "feature": 1075,
+      "family": 8
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.6",
+      "feature": 251,
+      "family": 0
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.7",
+      "feature": 3327,
+      "family": 7
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.7",
+      "feature": 1887,
+      "family": 6
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.7",
+      "feature": 4757,
+      "family": 0
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.7",
+      "feature": 803,
+      "family": 1
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.7",
+      "feature": 1079,
+      "family": 1
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.8",
+      "feature": 3327,
+      "family": 7
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.8",
+      "feature": 4757,
+      "family": 0
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.8",
+      "feature": 2884,
+      "family": 1
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.8",
+      "feature": 2801,
+      "family": 1
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.8",
+      "feature": 3907,
+      "family": 0
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.8",
+      "feature": 3989,
+      "family": 8
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.9",
+      "feature": 803,
+      "family": 1
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.9",
+      "feature": 1785,
+      "family": 1
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.9",
+      "feature": 3742,
+      "family": 6
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.9",
+      "feature": 3851,
+      "family": 0
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.9",
+      "feature": 3907,
+      "family": 4
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.9",
+      "feature": 1889,
+      "family": 2
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.9",
+      "feature": 1075,
+      "family": 5
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.9",
+      "feature": 1656,
+      "family": 2
+    },
+    {
+      "model": "Chronos-2",
+      "layer": "encoder.block.9",
+      "feature": 4997,
+      "family": 0
+    },
+    {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.2",
+      "feature": 3510,
+      "family": 1
+    },
+    {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.2",
+      "feature": 3821,
+      "family": 0
+    },
+    {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.2",
+      "feature": 276,
+      "family": 1
+    },
+    {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.2",
+      "feature": 3556,
+      "family": 1
+    },
+    {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.3",
+      "feature": 1560,
+      "family": 2
+    },
+    {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.4",
+      "feature": 4679,
+      "family": 7
+    },
+    {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.4",
+      "feature": 5545,
+      "family": 2
+    },
+    {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.4",
+      "feature": 6080,
+      "family": 2
+    },
+    {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.4",
+      "feature": 2978,
+      "family": 2
+    },
+    {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.4",
+      "feature": 2261,
+      "family": 0
+    },
+    {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.5",
+      "feature": 5107,
+      "family": 2
+    },
+    {
+      "model": "Chronos-Bolt",
+      "layer": "encoder.block.5",
+      "feature": 5484,
+      "family": 5
+    },
+    {
+      "model": "Chronos-T5-Base",
+      "layer": "encoder.block.10",
+      "feature": 72,
+      "family": 0
+    },
+    {
+      "model": "Chronos-T5-Base",
+      "layer": "encoder.block.10",
+      "feature": 6,
+      "family": 5
+    },
+    {
+      "model": "Chronos-T5-Base",
+      "layer": "encoder.block.10",
+      "feature": 195,
+      "family": 7
+    },
+    {
+      "model": "Chronos-T5-Base",
+      "layer": "encoder.block.11",
+      "feature": 307,
+      "family": 2
+    },
+    {
+      "model": "Chronos-T5-Base",
+      "layer": "encoder.block.3",
+      "feature": 107,
+      "family": 1
+    },
+    {
+      "model": "Chronos-T5-Base",
+      "layer": "encoder.block.3",
+      "feature": 149,
+      "family": 1
+    },
+    {
+      "model": "Chronos-T5-Base",
+      "layer": "encoder.block.3",
+      "feature": 111,
+      "family": 1
+    },
+    {
+      "model": "Chronos-T5-Base",
+      "layer": "encoder.block.4",
+      "feature": 5,
+      "family": 0
+    },
+    {
+      "model": "Chronos-T5-Base",
+      "layer": "encoder.block.5",
+      "feature": 96,
+      "family": 1
+    },
+    {
+      "model": "Chronos-T5-Base",
+      "layer": "encoder.block.5",
+      "feature": 53,
+      "family": 0
+    },
+    {
+      "model": "Chronos-T5-Base",
+      "layer": "encoder.block.6",
+      "feature": 37,
+      "family": 0
+    },
+    {
+      "model": "Chronos-T5-Base",
+      "layer": "encoder.block.6",
+      "feature": 110,
+      "family": 2
+    },
+    {
+      "model": "Chronos-T5-Base",
+      "layer": "encoder.block.7",
+      "feature": 173,
+      "family": 0
+    },
+    {
+      "model": "Chronos-T5-Base",
+      "layer": "encoder.block.7",
+      "feature": 2,
+      "family": null
+    },
+    {
+      "model": "Chronos-T5-Base",
+      "layer": "encoder.block.9",
+      "feature": 125,
+      "family": 0
+    },
+    {
+      "model": "Chronos-T5-Base",
+      "layer": "encoder.block.9",
+      "feature": 307,
+      "family": 1
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.10",
+      "feature": 1935,
+      "family": 0
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.10",
+      "feature": 1999,
+      "family": 0
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.10",
+      "feature": 3992,
+      "family": 5
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.11",
+      "feature": 5918,
+      "family": 2
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.11",
+      "feature": 5217,
+      "family": 4
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.3",
+      "feature": 2033,
+      "family": 1
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.3",
+      "feature": 123,
+      "family": 0
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.3",
+      "feature": 3917,
+      "family": 1
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.3",
+      "feature": 463,
+      "family": 6
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.4",
+      "feature": 2033,
+      "family": 1
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.4",
+      "feature": 4996,
+      "family": 6
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.5",
+      "feature": 2033,
+      "family": 1
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.5",
+      "feature": 4164,
+      "family": 0
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.5",
+      "feature": 560,
+      "family": 2
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.5",
+      "feature": 3905,
+      "family": 3
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.5",
+      "feature": 1655,
+      "family": 4
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.5",
+      "feature": 250,
+      "family": 0
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.6",
+      "feature": 5918,
+      "family": 0
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.6",
+      "feature": 2506,
+      "family": 2
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.6",
+      "feature": 3988,
+      "family": 7
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.7",
+      "feature": 2033,
+      "family": 2
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.7",
+      "feature": 4645,
+      "family": 3
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.7",
+      "feature": 3136,
+      "family": 2
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.8",
+      "feature": 1935,
+      "family": 0
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.8",
+      "feature": 5918,
+      "family": 0
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.8",
+      "feature": 2854,
+      "family": 2
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.8",
+      "feature": 3355,
+      "family": 2
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.8",
+      "feature": 4509,
+      "family": 2
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.8",
+      "feature": 3901,
+      "family": 0
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.8",
+      "feature": 1886,
+      "family": 6
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.8",
+      "feature": 1076,
+      "family": 3
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.8",
+      "feature": 251,
+      "family": 1
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.9",
+      "feature": 1935,
+      "family": 0
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.9",
+      "feature": 2815,
+      "family": 3
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.9",
+      "feature": 2854,
+      "family": 2
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.9",
+      "feature": 3093,
+      "family": 8
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.9",
+      "feature": 1655,
+      "family": 5
+    },
+    {
+      "model": "Sundial",
+      "layer": "model.layers.9",
+      "feature": 4992,
+      "family": 1
+    },
+    {
+      "model": "Time-MoE",
+      "layer": "model.layers.0",
+      "feature": 1415,
+      "family": 0
+    },
+    {
+      "model": "Time-MoE",
+      "layer": "model.layers.0",
+      "feature": 1029,
+      "family": 3
+    },
+    {
+      "model": "Time-MoE",
+      "layer": "model.layers.10",
+      "feature": 2825,
+      "family": 3
+    },
+    {
+      "model": "Time-MoE",
+      "layer": "model.layers.10",
+      "feature": 3383,
+      "family": 2
+    },
+    {
+      "model": "Time-MoE",
+      "layer": "model.layers.10",
+      "feature": 5013,
+      "family": 4
+    },
+    {
+      "model": "Time-MoE",
+      "layer": "model.layers.10",
+      "feature": 4315,
+      "family": 7
+    },
+    {
+      "model": "Time-MoE",
+      "layer": "model.layers.10",
+      "feature": 1668,
+      "family": 3
+    },
+    {
+      "model": "Time-MoE",
+      "layer": "model.layers.1",
+      "feature": 3455,
+      "family": 5
+    },
+    {
+      "model": "Time-MoE",
+      "layer": "model.layers.1",
+      "feature": 4951,
+      "family": 1
+    },
+    {
+      "model": "Time-MoE",
+      "layer": "model.layers.1",
+      "feature": 710,
+      "family": 1
+    },
+    {
+      "model": "Time-MoE",
+      "layer": "model.layers.2",
+      "feature": 2281,
+      "family": 4
+    },
+    {
+      "model": "Time-MoE",
+      "layer": "model.layers.2",
+      "feature": 5721,
+      "family": 3
+    },
+    {
+      "model": "Time-MoE",
+      "layer": "model.layers.2",
+      "feature": 851,
+      "family": 3
+    },
+    {
+      "model": "Time-MoE",
+      "layer": "model.layers.2",
+      "feature": 1691,
+      "family": 3
+    },
+    {
+      "model": "Time-MoE",
+      "layer": "model.layers.2",
+      "feature": 3541,
+      "family": 1
+    },
+    {
+      "model": "Time-MoE",
+      "layer": "model.layers.2",
+      "feature": 2854,
+      "family": 0
+    },
+    {
+      "model": "Time-MoE",
+      "layer": "model.layers.2",
+      "feature": 4804,
+      "family": 5
+    },
+    {
+      "model": "Time-MoE",
+      "layer": "model.layers.2",
+      "feature": 3608,
+      "family": 8
+    },
+    {
+      "model": "Time-MoE",
+      "layer": "model.layers.3",
+      "feature": 189,
+      "family": 3
+    },
+    {
+      "model": "Time-MoE",
+      "layer": "model.layers.3",
+      "feature": 4,
+      "family": 7
+    },
+    {
+      "model": "Time-MoE",
+      "layer": "model.layers.4",
+      "feature": 344,
+      "family": 0
+    },
+    {
+      "model": "Time-MoE",
+      "layer": "model.layers.4",
+      "feature": 466,
+      "family": 4
+    },
+    {
+      "model": "Time-MoE",
+      "layer": "model.layers.4",
+      "feature": 95,
+      "family": 0
+    },
+    {
+      "model": "Time-MoE",
+      "layer": "model.layers.4",
+      "feature": 638,
+      "family": 5
+    },
+    {
+      "model": "Time-MoE",
+      "layer": "model.layers.4",
+      "feature": 623,
+      "family": 3
+    },
+    {
+      "model": "Time-MoE",
+      "layer": "model.layers.5",
+      "feature": 733,
+      "family": 3
+    },
+    {
+      "model": "Timer",
+      "layer": "model.layers.1",
+      "feature": 1709,
+      "family": 0
+    },
+    {
+      "model": "Timer",
+      "layer": "model.layers.1",
+      "feature": 4900,
+      "family": 7
+    },
+    {
+      "model": "Timer",
+      "layer": "model.layers.1",
+      "feature": 3991,
+      "family": 8
+    },
+    {
+      "model": "Timer",
+      "layer": "model.layers.2",
+      "feature": 1663,
+      "family": 8
+    },
+    {
+      "model": "Timer",
+      "layer": "model.layers.2",
+      "feature": 4998,
+      "family": 0
+    },
+    {
+      "model": "Timer",
+      "layer": "model.layers.2",
+      "feature": 5612,
+      "family": 4
+    },
+    {
+      "model": "Timer",
+      "layer": "model.layers.3",
+      "feature": 5400,
+      "family": 0
+    },
+    {
+      "model": "Timer",
+      "layer": "model.layers.3",
+      "feature": 5222,
+      "family": 1
+    },
+    {
+      "model": "Timer",
+      "layer": "model.layers.3",
+      "feature": 1028,
+      "family": 0
+    },
+    {
+      "model": "Timer",
+      "layer": "model.layers.3",
+      "feature": 4052,
+      "family": 0
+    },
+    {
+      "model": "Timer",
+      "layer": "model.layers.3",
+      "feature": 3904,
+      "family": 0
+    },
+    {
+      "model": "Timer",
+      "layer": "model.layers.3",
+      "feature": 1890,
+      "family": 2
+    },
+    {
+      "model": "Timer",
+      "layer": "model.layers.3",
+      "feature": 1077,
+      "family": 4
+    },
+    {
+      "model": "Timer",
+      "layer": "model.layers.3",
+      "feature": 5610,
+      "family": 2
+    },
+    {
+      "model": "Timer",
+      "layer": "model.layers.6",
+      "feature": 1889,
+      "family": 6
+    },
+    {
+      "model": "Timer",
+      "layer": "model.layers.6",
+      "feature": 250,
+      "family": 1
+    },
+    {
+      "model": "Timer",
+      "layer": "model.layers.6",
+      "feature": 5609,
+      "family": 3
+    },
+    {
+      "model": "Timer",
+      "layer": "model.layers.7",
+      "feature": 192,
+      "family": 1
+    },
+    {
+      "model": "Timer",
+      "layer": "model.layers.7",
+      "feature": 363,
+      "family": 8
+    },
+    {
+      "model": "Timer",
+      "layer": "model.layers.7",
+      "feature": 177,
+      "family": 1
+    },
+    {
+      "model": "Timer",
+      "layer": "model.layers.7",
+      "feature": 141,
+      "family": 8
+    },
+    {
+      "model": "Timer",
+      "layer": "model.layers.7",
+      "feature": 367,
+      "family": 4
+    },
+    {
+      "model": "Timer",
+      "layer": "model.layers.7",
+      "feature": 157,
+      "family": 3
+    },
+    {
+      "model": "Timer",
+      "layer": "model.layers.7",
+      "feature": 309,
+      "family": 8
+    },
+    {
+      "model": "Timer",
+      "layer": "model.layers.7",
+      "feature": 25,
+      "family": 4
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.0",
+      "feature": 5258,
+      "family": 3
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.0",
+      "feature": 4305,
+      "family": 0
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.0",
+      "feature": 944,
+      "family": 1
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.0",
+      "feature": 1061,
+      "family": 5
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.10",
+      "feature": 2106,
+      "family": 1
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.10",
+      "feature": 453,
+      "family": 1
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.14",
+      "feature": 1965,
+      "family": 1
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.14",
+      "feature": 2225,
+      "family": 0
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.14",
+      "feature": 1513,
+      "family": 1
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.14",
+      "feature": 1821,
+      "family": 2
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.14",
+      "feature": 1981,
+      "family": 6
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.16",
+      "feature": 712,
+      "family": 0
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.16",
+      "feature": 99,
+      "family": 3
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.16",
+      "feature": 5593,
+      "family": 4
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.16",
+      "feature": 460,
+      "family": 6
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.18",
+      "feature": 793,
+      "family": 1
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.18",
+      "feature": 200,
+      "family": 1
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.2",
+      "feature": 886,
+      "family": 0
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.2",
+      "feature": 5615,
+      "family": 8
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.4",
+      "feature": 886,
+      "family": 0
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.4",
+      "feature": 3751,
+      "family": 3
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.4",
+      "feature": 4395,
+      "family": 0
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.4",
+      "feature": 253,
+      "family": 5
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.4",
+      "feature": 4966,
+      "family": 3
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.6",
+      "feature": 2262,
+      "family": 5
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.6",
+      "feature": 3086,
+      "family": 1
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.6",
+      "feature": 712,
+      "family": 0
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.6",
+      "feature": 3751,
+      "family": 1
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.6",
+      "feature": 1568,
+      "family": 1
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.6",
+      "feature": 2106,
+      "family": 1
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.6",
+      "feature": 104,
+      "family": 1
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.6",
+      "feature": 452,
+      "family": 6
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.8",
+      "feature": 3534,
+      "family": 1
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.8",
+      "feature": 2106,
+      "family": 1
+    },
+    {
+      "model": "TimesFM",
+      "layer": "stacked_xf.8",
+      "feature": 445,
+      "family": null
+    }
+  ],
+  "concept_family": {
+    "0": {
+      "family": 2,
+      "split": false,
+      "member_family_counts": {
+        "2": 4
+      },
+      "n_distinct_families": 1
+    },
+    "1": {
+      "family": 1,
+      "split": false,
+      "member_family_counts": {
+        "1": 4
+      },
+      "n_distinct_families": 1
+    },
+    "2": {
+      "family": 0,
+      "split": false,
+      "member_family_counts": {
+        "0": 3
+      },
+      "n_distinct_families": 1
+    },
+    "3": {
+      "family": 2,
+      "split": false,
+      "member_family_counts": {
+        "2": 3
+      },
+      "n_distinct_families": 1
+    },
+    "4": {
+      "family": 7,
+      "split": false,
+      "member_family_counts": {
+        "7": 3
+      },
+      "n_distinct_families": 1
+    },
+    "5": {
+      "family": 0,
+      "split": false,
+      "member_family_counts": {
+        "0": 3
+      },
+      "n_distinct_families": 1
+    },
+    "6": {
+      "family": 0,
+      "split": false,
+      "member_family_counts": {
+        "0": 3
+      },
+      "n_distinct_families": 1
+    },
+    "7": {
+      "family": 2,
+      "split": false,
+      "member_family_counts": {
+        "2": 3
+      },
+      "n_distinct_families": 1
+    },
+    "8": {
+      "family": 1,
+      "split": false,
+      "member_family_counts": {
+        "1": 3
+      },
+      "n_distinct_families": 1
+    },
+    "9": {
+      "family": 0,
+      "split": false,
+      "member_family_counts": {
+        "0": 3
+      },
+      "n_distinct_families": 1
+    },
+    "10": {
+      "family": 0,
+      "split": false,
+      "member_family_counts": {
+        "0": 3
+      },
+      "n_distinct_families": 1
+    }
+  },
+  "n_concepts_split": 0,
+  "null": {
+    "structure": {
+      "n_null": 200,
+      "n_families_real": 9,
+      "n_families_null_mean": 10.305,
+      "n_families_null_p95": 18.0,
+      "p_n_families": 0.6766169154228856,
+      "frac_assigned_real": 0.9896907216494846,
+      "frac_assigned_null_mean": 0.8397422680412372,
+      "frac_assigned_null_p95": 0.9948453608247423,
+      "p_frac_assigned": 0.22885572139303484,
+      "silhouette_real": 0.324287310387722,
+      "n_null_with_admissible_threshold": 200,
+      "silhouette_null_mean": 0.2560909348827343,
+      "p_silhouette": 0.04477611940298507,
+      "p_silhouette_note": "descriptive, not a significance test of separation: the final-partition silhouette is flat across the whole grid on every run measured so far (~0.31-0.34), so a real silhouette near or below the null mean does not mean the families are arbitrary -- p_n_families/p_frac_assigned are the tests that carry the 'is there more structure than chance' claim; p_silhouette only says whether the CHOSEN (coarsest, tolerance-matched) cut happens to also be tighter than chance, which it need not be by construction"
+    },
+    "cross_model": {
+      "n_null": 200,
+      "n_multi_model_real": 9,
+      "n_multi_model_null_mean": 9.0,
+      "p_n_multi_model": 1.0,
+      "p_n_multi_model_below": 1.0,
+      "mean_purity_real": 0.3451925981750543,
+      "mean_purity_null_mean": 0.29892484695291716,
+      "p_purity_above": 0.004975124378109453,
+      "p_purity_below": 1.0,
+      "verdict": "segregated by model"
+    }
+  }
+}

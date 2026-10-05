@@ -187,6 +187,13 @@ class LensConfig:
     # (in addition to the whole-horizon-averaged number) from the same
     # already-computed skip-lens forecasts, no new forward passes.
     horizon_resolved: bool = True
+    # ROADMAP.md sec 38.4 K4: number of series whose per-series convergence
+    # depth is persisted to `lens/convergence.npz`. 0 keeps the legacy sample
+    # (no extra forward pass); a larger value forecasts a separate stratified
+    # sample in batch-sized chunks. `stage_input: False`: it only sizes that
+    # additive artifact, no legacy lens artifact reads it, and fingerprinting
+    # it would mark every older run stale. Change it with `--force lens`.
+    depth_max_series: int = field(default=0, metadata={"stage_input": False})
 
 
 @dataclass
@@ -313,6 +320,64 @@ class ConfirmConfig:
     # than assumed (`CLAUDE.md` sec 6.6).
     concept_transfer_n_null: int = 2000
 
+    # ROADMAP.md sec 38.2 (K2) -- registration and confirmation of the
+    # CAUSAL concept claims (`concept_causal`, `concept_atlas`,
+    # `shared_input_agreement`, `concept_structure`). Opt-in: with the
+    # default `False` the registry and `confirmation.json` are byte-identical
+    # to what they were before K2 existed (`CLAUDE.md` sec 2.1, invariant 13).
+    #
+    # Every field below carries `omit_at_default`: a default value is left out
+    # of the stage fingerprint (`manifest.py`), so adding these fields does
+    # not mark any older run stale (`CLAUDE.md` sec 11.51), while a
+    # NON-default value fingerprints `confirm` (whole-section key) and, for
+    # `register_concept_claims`, `register` (field-level key), so changing it
+    # on a finished run refuses the stale skip instead of silently keeping
+    # the old registry.
+    register_concept_claims: bool = field(default=False, metadata={"omit_at_default": True})
+    # ROADMAP.md sec 38.3.4 -- when on, claims are registered only from targets
+    # whose battery clears are BH-significant against their own empirical
+    # chance (`analysis/target_significance.py`); excluded claims are recorded
+    # with their reason, and a target without `empirical_chance` makes
+    # registration refuse. Fingerprints `register` (field-level key) and
+    # `confirm` (whole section) only when on.
+    register_requires_target_significance: bool = field(
+        default=False, metadata={"omit_at_default": True})
+    # ROADMAP.md sec 38.3.4 (L5 defined-firing rule) -- when on, an agreement
+    # claim whose dev verdict is `acts differently` is registered as `differs`
+    # only if the firing statistic is DEFINED (`firing_defined`: (i) needs
+    # `level` to clear on both sides, (ii) needs both sides to clear a shape
+    # channel); the rest are recorded under `excluded`. The rule is frozen in
+    # each agreement claim and `confirm` applies it to the private verdict.
+    # The dev verdicts are recomputed from `shared_input_agreement.json`, so
+    # the dev agreement step is not rerun. Fingerprints `register`
+    # (field-level key) and `confirm` (whole section) only when on.
+    register_requires_defined_firing: bool = field(
+        default=False, metadata={"omit_at_default": True})
+    # ROADMAP.md sec 38.4 (K4) -- register and confirm the U1 reliability
+    # claims ("do internals predict a model's per-series error beyond the free
+    # baseline?"): one `reliability_u1` claim per (model, task) whose DEV gain
+    # CI lower bound is > 0 in the dev K4 JSON at `reliability_dev_json`
+    # (absolute, or relative to the run directory; written by
+    # `run_reliability_from_internals.py`). `confirm` REFITS the frozen
+    # procedure on private series. Both fields fingerprint `register`
+    # (field-level key) and `confirm` only once set.
+    register_reliability_claims: bool = field(default=False, metadata={"omit_at_default": True})
+    reliability_dev_json: str = field(default="", metadata={"omit_at_default": True})
+    # Null directions per registered causal claim on the first private pass.
+    # A claim whose exact p sits on the floor 1/(n+1) is redrawn with
+    # `causal_max_null` directions (the adaptive tail p, sec 37.6/P3), so the
+    # ledger's attainable Holm floor is `m / (causal_max_null + 1)`.
+    causal_n_null: int = field(default=200, metadata={"omit_at_default": True})
+    causal_max_null: int = field(default=1000, metadata={"omit_at_default": True})
+    # Random same-composition member sets per atlas claim (no forward pass).
+    atlas_n_null: int = field(default=2000, metadata={"omit_at_default": True})
+    # Matched random-feature-set draws per side of a shared-input agreement
+    # claim. `shared_input_n_null` (50) cannot survive a Holm family of ~40
+    # (40/51 > alpha), so confirm re-draws the floors at this size.
+    agreement_n_null: int = field(default=1000, metadata={"omit_at_default": True})
+    # Bootstrap resamples for the structure claims' private rate CI.
+    structure_n_boot: int = field(default=2000, metadata={"omit_at_default": True})
+
 
 @dataclass
 class ClusteringConfig:
@@ -369,7 +434,7 @@ class FrontendConfig:
     standalone run against a checkpoint with nothing else built, same
     pattern as `budget`).
 
-    Each of the four diagnostics has its own enable flag: a model whose
+    Each diagnostic has its own enable flag: a model whose
     architecture makes one inapplicable (e.g. `quantization_resolution` on
     a continuous-embedding model with no re-quantizing tokenizer) degrades
     to an explicit `not_applicable` record rather than skipping the whole
@@ -400,6 +465,12 @@ class FrontendConfig:
     # handle), not an effect-size estimate needing a bootstrap CI.
     nan_frac: float = 0.05
     nan_series: int = 8
+
+    # Constant-context probe (0, 1, 1e3, 1 + 1e-7 noise): finite forecast and
+    # activations? `omit_at_default` so declaring it leaves every existing run's
+    # `frontend` fingerprint byte-identical; an older frontend.json simply
+    # lacks the `constant_context` key and the report says so.
+    constant_context: bool = field(default=True, metadata={"omit_at_default": True})
 
 
 @dataclass
@@ -702,6 +773,26 @@ class SAEConfig:
     transfer_seed: int = 0
     interest_weights: tuple = field(default=(0.5, 0.3, 0.2),
                                     metadata={"stage_input": False})
+    # The random-direction null of the ablation battery (`sae/response.py::
+    # feature_ablation_fingerprints`). `profile_matched` (DEFAULT since the
+    # legacy null failed the known-answer gate on 5/5 seeds, FINDINGS MN-29):
+    # per feature, random directions removed with that feature's own per-token
+    # profile (n_null extra forwards per feature). `mean_magnitude` (legacy,
+    # pin it to reproduce older runs): one uniform removal size per chunk.
+    # Declared field by field on the concepts stage (`sae.ablation_null`) and
+    # left out of the `sae` stage's inputs. `omit_at_value`, not
+    # `omit_at_default`: the key is omitted at the LEGACY value, so a pinned
+    # legacy run keeps its old fingerprint and a default run (key present)
+    # reads an old legacy concepts artifact as stale.
+    # `profile_matched_cov`: the same per-feature profile with the direction drawn
+    # from the chunk's own token covariance (on-manifold).
+    ablation_null: str = field(default="profile_matched",
+                               metadata={"stage_input": False,
+                                         "omit_at_value": "mean_magnitude"})
+    # Opt-in: also record the battery's leave-one-draw-out empirical chance clear
+    # rate (`empirical_chance` in `*_ablation.json`); default off, artifacts unchanged.
+    ablation_empirical_chance: bool = field(default=False, metadata={"stage_input": False,
+                                                                     "omit_at_default": True})
 
 
 @dataclass
@@ -945,6 +1036,44 @@ class ConceptsConfig:
     shared_input_enabled: bool = True
     shared_input_n_null: int = 50
 
+    # ROADMAP.md sec 38.3.2 (K3) -- opt-in cap on the shared-input agreement
+    # step's cost. It is the most expensive step of the concepts stage and
+    # its test count grows with the number of directed model pairs (1,223
+    # tests / 10,855 s on 4 models). `None` (default) scores every
+    # reciprocal-FDR transfer, byte-identical to earlier runs. An integer N
+    # keeps, per ordered (source model, destination model) pair, the N tests
+    # with the largest reciprocal transfer margin (the smaller of the
+    # forward and reverse `auc - null_p95`), ties broken by
+    # (concept, source target, destination target, feature); the rest are not
+    # scored, and `shared_input_agreement.json` records `agreement_cap` with
+    # the per-pair kept/dropped counts. The report names the cap wherever it
+    # shows agreement counts. A cap selects on transfer strength, so the
+    # scored tests over-represent strong input agreement; read the verdict
+    # shares as conditional on that selection. Part of the whole-section
+    # `concepts` fingerprint, so setting it marks an older concepts artifact
+    # stale.
+    agreement_max_tests_per_pair: Optional[int] = None
+
+    # ROADMAP.md sec 38.3.5 (L5 known-answer study) -- three opt-in variants of
+    # the shared-input agreement rung, each left out of the stage fingerprint
+    # at its default so every existing run and artifact is unchanged.
+    # `agreement_dst_set` chooses what is ablated on the DESTINATION side:
+    # "feature" (default) the transfer test's one best feature (or its atlas
+    # part when that feature is in one); "concept_part" the atlas part of the
+    # same concept at the destination target when it has one (else the default
+    # rule); "matched_set" the destination's top-N features by forward AUC on
+    # the source concept's top series, N the source set's size, which is
+    # defined for every test. `agreement_k_top_series` sets the size of each
+    # side's top-series set, hence of the shared series `U`; `None` keeps the
+    # atlas-transfer test's own k (`sae.transfer_top_k`). `agreement_partial_
+    # rung` adds a per-test `rung` and a `partial_agreement` summary that
+    # counts "level only" and "shape only" as `partial`, kept apart from
+    # "same".
+    agreement_dst_set: str = field(default="feature", metadata={"omit_at_default": True})
+    agreement_k_top_series: Optional[int] = field(default=None, metadata={"omit_at_default": True})
+    agreement_partial_rung: bool = field(default=False, metadata={"omit_at_default": True})
+    agreement_require_defined_firing: bool = field(default=False, metadata={"omit_at_default": True})
+
     # ROADMAP.md sec 37.9 P6a -- generator-side input counterfactuals
     # (`tsfm_benchmark/build_pipeline/counterfactual.py`'s draw-neutral knobs,
     # measured by `tsfm_lens/sae/counterfactual.py`): does an atlas concept's
@@ -1032,6 +1161,20 @@ class ConceptsConfig:
     # `n_registered` above) and field-level on `register`'s own
     # `Stage.config_keys` instead.
     transfer_claim_mode: str = field(default="search", metadata={"stage_input": False})
+
+    # ROADMAP.md sec 38.2 (K2) -- how many `concept_causal` claims `register`
+    # freezes from the dev `*_ablation.json` artifacts (>= 4 per model, seed-
+    # stable atlas members preferred), and how many of the dev "acts
+    # differently" shared-input agreement verdicts join the (all) "same
+    # causal effect" ones. Both are judgment counts (sec 38.2.2). Read only by
+    # `analysis/hypotheses.py`, hence `stage_input: False` here and
+    # field-level on `register`'s own `Stage.config_keys`; `omit_at_default`
+    # keeps older runs' `register` fingerprint unchanged (`CLAUDE.md` sec
+    # 11.51).
+    n_registered_causal: int = field(default=32, metadata={"stage_input": False,
+                                                          "omit_at_default": True})
+    n_registered_agreement_differs: int = field(default=30, metadata={"stage_input": False,
+                                                                      "omit_at_default": True})
 
 
 @dataclass

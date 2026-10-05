@@ -1,0 +1,55 @@
+# Dev/verification config for ROADMAP.md Item D2 -- the hand-written
+# `lag_llama` contrib adapter (models/contrib/lag_llama_adapter.py).
+# Single model, most analysis disabled: used for --discover-layers,
+# --check-alignment, --discover-spans and check_adapter_conformance during
+# adapter development, not a permanent comparison config.
+#
+# dtype: float32 (not the repo-usual bfloat16) is deliberate -- the adapter
+# forces its own weights to float32 regardless of this setting (see its
+# module docstring point 2), and keeping the run-level default at float32
+# too avoids reintroducing the CLAUDE.md sec 11.49 precision-mismatch class
+# (fp32 weights computed under an ambient bf16 autocast context) for a
+# freshly-added adapter with no track record against that trap yet.
+
+run:
+  name: lag_llama_dev
+  out_dir: runs
+  device: cuda
+  dtype: float32
+  seed: 0
+  keep_models_loaded: false
+
+data:
+  source: sealed
+  path: ../benchmark_medium/public_dev
+  context_len: 480
+  horizon: 64
+  family_key: auto
+  max_series: 120
+
+alignment:
+  window: 32
+  sanity_check: true
+
+models:
+  - name: LagLlama
+    adapter: lag_llama
+    checkpoint: time-series-foundation-models/Lag-Llama
+    batch_size: 8
+    capture_layer_stride: 1
+
+l0: {enabled: true, quantiles: [0.1, 0.5, 0.9]}
+budget: {enabled: false}
+layer_screen: {enabled: false}
+internals: {enabled: false}
+lens: {enabled: false}
+l1: {enabled: false}
+l2: {enabled: false}
+l3: {enabled: false}
+attention: {enabled: false}
+clustering: {enabled: false}
+exemplars: {enabled: false}
+sae: {enabled: false}
+confirm: {enabled: false}
+stats: {enabled: true, n_boot: 300, n_boot_heavy: 150, ci: 0.95, alpha: 0.05, min_series: 8}
+report: {enabled: false}

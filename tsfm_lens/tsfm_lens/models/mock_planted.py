@@ -1,0 +1,965 @@
+"""The planted forecaster: a mock whose internal concepts are known in advance.
+
+Why this module exists (`ROADMAP.md` sec 38.1, K1). Every other mock is a
+default-initialised network with no structure in its weights, so nothing in
+this repo could show that the SAE -> ablation battery -> concept atlas ->
+transfer -> shared-input-agreement chain *finds* a causal direction that is
+known to exist, or *rejects* one known not to. The paper's causal counts were
+validated only against the chain's own nulls. `mock_planted` is a network
+built by hand so that the answer key exists: a designated **planted block**
+writes known directions into the residual stream, and a head reads a known
+linear function of them.
+
+What it inherits. It is built from `mock._MockBlock`, so hooks, `token_patch`,
+spans, attention patterns and tier derivation behave exactly as for
+`mock_patch` (tier 3, by derivation: nothing here is declared). It is a NEW
+adapter; no existing mock, stage or default changes.
+
+The construction (all randomness is sha256-seeded from `construction_seed`,
+never Python `hash()`):
+
+* **Embedding.** Each 32-step patch of the per-series-normalised context is
+  mapped to `N_FEATURES` hand-set statistics (patch mean, least-squares slope,
+  residual sd, phase-free amplitude at the corpus's two most common periods,
+  spike statistic, range, curvature), standardised on the calibration corpus,
+  and written to the first `N_FEATURES` coordinates. The remaining coordinates
+  are a random projection of the patch, restricted to the complement of the
+  planted span.
+* **Planted block** (`blocks.P`). For each planted object `k` it adds
+  `amp * a_k(t) * d_k` to every token, where `a_k(t) = ReLU(w_k . f(t) - tau_k)`
+  is a thresholded readout of that token's own features (so a concept is
+  time-local and sparse), `tau_k` is calibrated on the corpus so that the
+  concept fires on `target_fraction` in [0.12, 0.28] of series, and the `d_k`
+  are unit vectors with pairwise cosine in [0, 0.3] (superposition, not an
+  orthogonal basis).
+* **Everything else is blind to the planted span.** The other blocks read and
+  write only the orthogonal complement of `span(D)` and are scaled by 0.05
+  (near identity). The planted coefficient of concept `k` at the head is
+  therefore exactly `c_k = mean_t (u_k . h_t)` with `u_k` the dual basis
+  (`u_j . d_k = delta_jk`), and removing `c_k d_k` from the residual at the
+  planted block changes the forecast by exactly the planted component of `k`.
+* **Head.** `forecast = last value + sd_ctx * (gamma * W_bg P_perp h_bar +
+  sum_k beta_k c_k shape_kind(k))`. The shapes have unit RMS and map one to one
+  onto battery channels: level (constant), trend (centred ramp), seasonal (a
+  cosine with one cycle over the horizon, symmetric about the horizon centre so
+  it is exactly orthogonal to the ramp in the FFT bin the battery reads),
+  dispersion (an alternating +-1 pattern, which moves the point forecast's sd
+  and scales the quantile band). The dose `s` multiplies every real concept's
+  `beta_k`. `gamma` is `background_gain`, default 0.0: the head reads nothing but
+  the planted coefficients, so an atom that carries no planted direction is
+  EXACTLY inert. A first version used `gamma = 0.05`; measured at seed 0, dose 1
+  it gave the atoms of the feature coordinates an effect of about half a real
+  concept's (a unit-scale removal moves the forecast by `0.05 * ||v|| / 8` context
+  sd), and the control layer's per-cell false-positive rate was 0.4176 because
+  those atoms were genuinely causal. The battery was right and the known
+  negative was not one. The gain stays available as a kwarg to reproduce that
+  stress condition.
+* **Effect size is defined, not tuned.** `beta_k` is set so the RMS planted
+  forecast displacement on the concept's own top-8 firing series is
+  `DOSE_UNIT_EFFECT * s` context standard deviations, with `DOSE_UNIT_EFFECT`
+  the real models' median causal effect (0.0395 context sd, FINDINGS MN-15).
+  Dose 1 therefore reads directly as "the size of a real feature's effect".
+* **Known negatives.** `input_only` decoys are written exactly like concepts but
+  `beta = 0`: correlated with the input, causally inert. `sub_null` decoys have
+  a fixed RMS effect of `SUB_NULL_FRACTION * DOSE_UNIT_EFFECT`, independent of
+  dose. They are WEAK true effects, not known negatives: measured at seed 0,
+  dose 1 (K1 fix round) the effect of their matched atoms sits near or above the
+  random-direction null's p95 on several channels (ratios 0.6 to 4.3), so a clear
+  is a detection of a genuine small effect, and `analysis/known_answer.py`
+  reports them as a weak-effect probe, not as a false-positive rate.
+* **Reachable control.** The planted block computes from a side-channel stash of
+  the input's features, not from the residual stream, so a layer BEFORE it cannot
+  change what it writes and its ablation battery is withheld by the reach probe.
+  The control layer is therefore a block AFTER the planted one (`blocks.3`):
+  patching blocks.0's clean tokens into it removes every planted write, so the
+  forecast moves (relative reach far above `min_relative_reach`) and a
+  self-patch is exactly 0.0. Its residual still carries the planted directions;
+  the scorer reads false positives only on atoms that carry no material planted
+  effect.
+* **The pair.** `plant_set` in {"A", "B"} gives the two members of a pair that
+  share a vocabulary: `shared` (same readout, same effect), `convergent`
+  (different readout, same effect), `opposite` (same readout, opposite sign;
+  level and trend only, because a seasonal or dispersion effect has no sign),
+  and `unique` (model A only).
+
+**The L5 vocabulary (opt-in, `vocabulary: l5`; ROADMAP.md sec 38.3.5).** The shared-input
+agreement rung (`sae/shared_input_agreement.py`) asks whether a concept that two
+DIFFERENT architectures both read and write is called "same causal effect". The default
+(K1) pair cannot answer that, because both members share width, depth and basis. The
+opt-in kwargs `width`, `depth`, `heads` and `rotate` build members with different
+hidden width, depth, head count and a random orthogonal rotation of the residual
+basis (so their dictionaries cannot coincide by construction), and
+`vocabulary: l5` plants the SAME concept in both: one input trigger and one effect on
+the forecast. A concept may be written into several residual directions per model
+(`n_dirs`), each component firing on a nested subset of the concept's series (a
+graded, feature-split representation), with the concept's total effect split evenly
+across components. Effects are `level_trend` (a signed level plus a signed trend, so a
+sign flip is a real opposite effect and the level channel carries per-series signal) or
+`dispersion` (unsigned, so it has no level signal). K1's vocabulary, defaults and
+construction draws are untouched.
+
+**The repair vocabulary (opt-in, `vocabulary: repair`; ROADMAP.md sec 39, R0).** The
+forecast-repair study asks which SAE features CAUSE forecast error and whether editing
+them on training series improves held-out ones. The default and L5 vocabularies plant
+effects on fixed shapes, so their effect on the error depends on whatever the corpus
+future happens to be. This vocabulary plants effects whose sign on the ERROR is known by
+construction: the adapter keeps an oracle table `context row -> unit-RMS direction from
+the naive forecast to the true future` (a mock may hold its own corpus's answer key; no
+real model can), and a concept displaces the forecast by `+- beta c_k` times that
+direction. `repair_harmful` displaces away from the truth (its presence adds error),
+`repair_helpful` toward it, `repair_decoy` is written like a concept but has `beta = 0`
+and a readout chosen to correlate with the naive-forecast MASE (it fires on hard series
+and does nothing), and `repair_sideeffect` displaces away from the truth where its
+input-side activation is at least `split_value` (the median of its positive series
+activations) and toward it where weaker. The side-effect sign is read from the
+input-side stash, never from the residual stream, so an edit that rescales the
+feature cannot flip it. The effect unit is `dose * DOSE_UNIT_EFFECT` context sd on the
+concept's top-8 series, as in K1. A context row absent from the oracle table gets a
+zero displacement and is counted in `oracle_misses` (the alignment gate's synthetic
+probes are such rows). K1 and L5 behaviour, defaults and construction draws are untouched.
+
+`MockPlantedAdapter.manifest()` is the ground truth: per planted object its id,
+class, kind, `d_k`, readout weights and threshold, effect channel, sign, beta,
+dose and the exact series-level activation `a_k(x)` on every corpus series. The
+scorer (`analysis/known_answer.py`) reads only that and the run's artifacts.
+"""
+
+from __future__ import annotations
+
+import hashlib
+from typing import Any
+
+import numpy as np
+import torch
+from torch import nn
+
+from .mock import _MockAdapterBase, _MockBlock, _normal_ppf
+
+KINDS = ("level", "trend", "seasonal", "dispersion")
+FEATURE_NAMES = ("mean", "slope", "resid_sd", "amp_p1", "amp_p2", "spike", "range", "curvature")
+N_FEATURES = len(FEATURE_NAMES)
+DOSE_UNIT_EFFECT = 0.0395
+SUB_NULL_FRACTION = 0.1
+AMPLITUDE = 10.0
+EMBED_SCALE = 0.03
+TOP_ROWS = 8
+COSINE_RANGE = (0.0, 0.3)
+FIRING_RANGE = (0.12, 0.28)
+L5_COMPONENT_QUANTILES = (1.0, 0.7, 0.5, 0.35)
+REPAIR_SIDE_EFFECT_FRACTION = 0.45
+_MAX_CALIBRATION_ROWS = 2000
+_CALIBRATION_CACHE: dict = {}
+_ORACLE_CACHE: dict = {}
+
+
+def _seed(*parts: Any) -> int:
+    """A stable 63-bit seed from `parts` (sha256, never Python `hash()`)."""
+    digest = hashlib.sha256("|".join(str(p) for p in parts).encode("utf-8")).digest()
+    return int.from_bytes(digest[:8], "big") >> 1
+
+
+def concept_table() -> list:
+    """Every planted object the pair vocabulary defines, model-independent.
+
+    Each row: `id`, `cls` (shared, convergent, opposite, unique, decoy_input_only,
+    decoy_sub_null), `kind` (an effect channel, or None for an input-only
+    decoy), `roles` (which models carry it), and `sign` per role.
+
+    The vocabulary is SIGNATURE-MAJOR: every effect signature (kind and sign)
+    belongs to exactly one class, with three items each. The atlas clusters
+    causal features by their effect vector, so an effect signature is what an
+    atlas concept is; giving one signature to two classes (a shared and a
+    unique level-down concept, say) would make the class of the atlas concept
+    it lands in undefined. Signatures: `shared` trend-down; `convergent`
+    dispersion-up and trend-up; `opposite` level-up in A and level-down in B
+    (so each is a single-model atlas concept whose INPUTS coincide); `unique`
+    seasonal-up in A only. Seasonal and dispersion effects are magnitudes, so
+    their sign is always +1 and neither has an opposite-effect twin.
+    """
+    rows = []
+    for i in (1, 2, 3):
+        rows.append({"id": f"shared_trend_{i}", "cls": "shared", "kind": "trend",
+                     "roles": ("A", "B"), "sign": {"A": -1, "B": -1}})
+    for i in (1, 2, 3):
+        rows.append({"id": f"convergent_dispersion_{i}", "cls": "convergent", "kind": "dispersion",
+                     "roles": ("A", "B"), "sign": {"A": 1, "B": 1}})
+    for i in (1, 2, 3):
+        rows.append({"id": f"convergent_trend_{i}", "cls": "convergent", "kind": "trend",
+                     "roles": ("A", "B"), "sign": {"A": 1, "B": 1}})
+    for i in (1, 2, 3):
+        rows.append({"id": f"opposite_level_{i}", "cls": "opposite", "kind": "level",
+                     "roles": ("A", "B"), "sign": {"A": 1, "B": -1}})
+    for i in (1, 2, 3):
+        rows.append({"id": f"unique_seasonal_{i}", "cls": "unique", "kind": "seasonal",
+                     "roles": ("A",), "sign": {"A": 1}})
+    for i in (1, 2, 3):
+        rows.append({"id": f"inert_{i}", "cls": "decoy_input_only", "kind": None,
+                     "roles": ("A", "B"), "sign": {"A": 0, "B": 0}})
+    for i, kind in ((1, "level"), (2, "trend"), (3, "seasonal")):
+        rows.append({"id": f"subnull_{i}", "cls": "decoy_sub_null", "kind": kind,
+                     "roles": ("A", "B"), "sign": {"A": 1, "B": 1}})
+    return rows
+
+
+_INERT_READOUTS = {"inert_1": {"slope": 1.0}, "inert_2": {"amp_p1": 1.0}, "inert_3": {"resid_sd": 1.0}}
+
+
+def _readout_key(row: dict, role: str) -> str:
+    """Shared, opposite and decoy objects read the same input in both models;
+    a convergent object reads a different input in each."""
+    return f"{row['id']}@{role}" if row["cls"] == "convergent" else row["id"]
+
+
+def _draw_readouts(rows: list, construction_seed: int, series_score=None) -> tuple:
+    """`({readout_key: weight vector [N_FEATURES]}, {convergent id: |rho|})`, distinct
+    across keys.
+
+    With `series_score(w, id) -> [n_series]` (the object's series-level activation `a_k(x)`
+    under readout `w`, threshold calibrated as the object's own would be),
+    each convergent object's model-B readout is re-picked among the unused
+    readouts to be the one whose score is LEAST rank-correlated with its model-A
+    partner's. Convergent means "same effect, different inputs"; without this the
+    eight corpus features are so correlated across series that two random
+    readouts pick overlapping series and an atlas transfer test cannot tell a
+    convergent pair from a shared one. The achieved `|rho|` is returned and
+    recorded in the manifest.
+
+    A random readout reads two features with random signs, unit norm. The
+    input-only decoys read a single feature chosen to correlate with a
+    ground-truth field (slope -> trend, amplitude -> seasonality, residual sd
+    -> noise), so a correlational probe has something to find.
+    """
+    combos = [(i, j, si, sj) for i in range(N_FEATURES) for j in range(i + 1, N_FEATURES)
+              for si in (1, -1) for sj in (1, -1)]
+    rng = np.random.default_rng(_seed(construction_seed, "readouts"))
+    keys = sorted({_readout_key(r, role) for r in rows for role in r["roles"]
+                   if r["cls"] != "decoy_input_only"})
+    picks = rng.choice(len(combos), size=len(keys), replace=False)
+    out = {}
+    for key, p in zip(keys, picks):
+        i, j, si, sj = combos[int(p)]
+        w = np.zeros(N_FEATURES)
+        w[i], w[j] = si, sj
+        out[key] = w / np.linalg.norm(w)
+    independence: dict = {}
+    if series_score is not None:
+        from scipy.stats import spearmanr
+        used = {tuple(np.nonzero(w)[0]) + tuple(w[np.nonzero(w)[0]]) for w in out.values()}
+        pool = []
+        for i, j, si, sj in combos:
+            w = np.zeros(N_FEATURES)
+            w[i], w[j] = si, sj
+            pool.append(w / np.linalg.norm(w))
+        sig = lambda w: tuple(np.nonzero(w)[0]) + tuple(w[np.nonzero(w)[0]])
+        for cid in sorted({r["id"] for r in rows if r["cls"] == "convergent"}):
+            a_key, b_key = f"{cid}@A", f"{cid}@B"
+            used.discard(sig(out[b_key]))
+            score_a = series_score(out[a_key], cid)
+            best = None
+            for w in pool:
+                if sig(w) in used:
+                    continue
+                rho = abs(float(spearmanr(score_a, series_score(w, cid)).statistic))
+                if best is None or rho < best[0]:
+                    best = (rho, w)
+            out[b_key] = best[1]
+            used.add(sig(best[1]))
+            independence[cid] = best[0]
+    for key, spec in _INERT_READOUTS.items():
+        w = np.zeros(N_FEATURES)
+        for name, val in spec.items():
+            w[FEATURE_NAMES.index(name)] = val
+        out[key] = w
+    return out, independence
+
+
+def _draw_directions(ids: list, dim: int, construction_seed: int, role: str) -> dict:
+    """Unit directions in the non-feature coordinates with pairwise cosine in
+    `COSINE_RANGE`, by sequential rejection sampling around a common axis."""
+    n_free = dim - N_FEATURES
+    rng = np.random.default_rng(_seed(construction_seed, "directions", role))
+    common = rng.normal(size=n_free)
+    common /= np.linalg.norm(common)
+    chosen: dict = {}
+    for cid in ids:
+        for _attempt in range(200000):
+            rho = rng.uniform(0.08, 0.2)
+            e = rng.normal(size=n_free)
+            e -= (e @ common) * common
+            e /= np.linalg.norm(e)
+            v = np.sqrt(rho) * common + np.sqrt(1.0 - rho) * e
+            v /= np.linalg.norm(v)
+            if all(COSINE_RANGE[0] <= float(v @ u) <= COSINE_RANGE[1] for u in chosen.values()):
+                chosen[cid] = v
+                break
+        else:
+            raise RuntimeError(f"could not place direction '{cid}' with cosine in {COSINE_RANGE}")
+    full = {}
+    for cid, v in chosen.items():
+        d = np.zeros(dim)
+        d[N_FEATURES:] = v
+        full[cid] = d
+    return full
+
+
+def concept_table_l5() -> list:
+    """The L5 vocabulary: one concept per case of the shared-input known-answer study.
+
+    Each row: `id`, `cls`, `kind`, `roles`, `sign` and `n_dirs` per role. `shared_single`
+    and `shared_dist` have the same trigger and the same signed `level_trend` effect in
+    both models, written into one direction (single) or 3 (A) and 4 (B) directions
+    (dist). `opposite` has the same trigger and a flipped sign in B. `inputonly` has the
+    same trigger and a real effect in A but none in B (sign 0). `pure_dispersion` is an
+    unsigned effect with no level component, a diagnostic for what the level statistic
+    can see. Three `filler` concepts per model (their own trigger, effect and roles,
+    present in ONE model only) give the stack a realistic total forecast displacement:
+    the cases alone move the forecast too little for the reach probe
+    (`concepts.min_relative_reach`) to admit the wider member's layer.
+    """
+    both = ("A", "B")
+    return [
+        {"id": "l5_shared_single", "cls": "l5_shared_single", "kind": "level_trend", "roles": both,
+         "sign": {"A": 1, "B": 1}, "n_dirs": {"A": 1, "B": 1}},
+        {"id": "l5_shared_dist", "cls": "l5_shared_dist", "kind": "level_trend", "roles": both,
+         "sign": {"A": 1, "B": 1}, "n_dirs": {"A": 3, "B": 4}},
+        {"id": "l5_opposite", "cls": "l5_opposite", "kind": "level_trend", "roles": both,
+         "sign": {"A": 1, "B": -1}, "n_dirs": {"A": 1, "B": 1}},
+        {"id": "l5_inputonly", "cls": "l5_inputonly", "kind": "level_trend", "roles": both,
+         "sign": {"A": 1, "B": 0}, "n_dirs": {"A": 1, "B": 1}},
+        {"id": "l5_pure_dispersion", "cls": "l5_pure_dispersion", "kind": "dispersion", "roles": both,
+         "sign": {"A": 1, "B": 1}, "n_dirs": {"A": 1, "B": 1}},
+        *[{"id": f"l5_filler_{role.lower()}{i}", "cls": "l5_filler", "kind": kind, "roles": (role,),
+           "sign": {role: 1}, "n_dirs": {role: 1}}
+          for role in both for i, kind in enumerate(("level", "trend", "seasonal"), start=1)],
+    ]
+
+
+def rotation_matrix(dim: int, seed: int) -> np.ndarray:
+    """A random orthogonal `[dim, dim]` matrix (float64), from a sha256-seeded QR with
+    the diagonal of R made positive so the draw is unique."""
+    rng = np.random.default_rng(_seed(seed, "rotation", dim))
+    q, r = np.linalg.qr(rng.normal(size=(dim, dim)))
+    return q * np.sign(np.diag(r))[None, :]
+
+
+def build_spec_l5(construction_seed: int, dose: float, plant_set: str, dim: int, patch: int,
+                  contexts: np.ndarray, series_ids: list, periods: tuple, planted_block: int,
+                  families: np.ndarray | None = None, rotation_seed: int | None = None) -> dict:
+    """The L5 counterpart of `build_spec`: one concept per case, possibly several
+    components per concept.
+
+    Every component is one entry of `concepts` with `id` `"<concept>#<j>"`, the
+    concept's `concept` id and `component` index. The trigger (readout weights and
+    firing fraction) belongs to the CONCEPT and is identical in both models, so the
+    two members' series-level activations of a shared concept coincide exactly.
+    Component `j` thresholds the readout at the quantile that makes it fire on
+    `L5_COMPONENT_QUANTILES[j]` of the concept's series, and each component's `beta`
+    is set so its RMS planted displacement on its own top-8 series is the concept's
+    `dose * DOSE_UNIT_EFFECT` divided by the number of components. A sign of 0 gives
+    `beta = 0`. `direction` is in the canonical basis the network is built in;
+    `direction_resid` is the direction in the residual stream the SAE sees
+    (`direction @ Q` when `rotation_seed` is set), which is what a decoder atom should
+    match.
+    """
+    from ..utils import sample_rows
+    if plant_set not in ("A", "B"):
+        raise ValueError(f"plant_set must be 'A' or 'B', got {plant_set!r}")
+    role = plant_set
+    all_rows = concept_table_l5()
+    rows = [r for r in all_rows if role in r["roles"]]
+    comp_ids = [f"{r['id']}#{j}" for r in rows for j in range(r["n_dirs"][role])]
+    directions = _draw_directions(comp_ids, dim, construction_seed, role)
+    Q = rotation_matrix(dim, rotation_seed) if rotation_seed is not None else None
+
+    raw = contexts_to_features(contexts, patch, periods)
+    n = raw.shape[0]
+    cal = (sample_rows(n, _MAX_CALIBRATION_ROWS, _seed(construction_seed, "cal") % (2 ** 31),
+                       strata=families) if n > _MAX_CALIBRATION_ROWS else np.arange(n))
+    flat = raw[cal].reshape(-1, N_FEATURES)
+    feat_mean, feat_std = flat.mean(dim=0), flat.std(dim=0) + 1e-9
+    f_z = (raw - feat_mean) / feat_std
+    rng_frac = np.random.default_rng(_seed(construction_seed, "l5_firing"))
+    targets = {r["id"]: float(rng_frac.uniform(*FIRING_RANGE)) for r in all_rows}
+
+    combos = [(i, j, si, sj) for i in range(N_FEATURES) for j in range(i + 1, N_FEATURES)
+              for si in (1, -1) for sj in (1, -1)]
+    picks = np.random.default_rng(_seed(construction_seed, "l5_readouts")).choice(
+        len(combos), size=len(all_rows), replace=False)
+    readouts = {}
+    for r, p in zip(all_rows, picks):
+        i, j, si, sj = combos[int(p)]
+        w = np.zeros(N_FEATURES)
+        w[i], w[j] = si, sj
+        readouts[r["id"]] = w / np.linalg.norm(w)
+
+    concepts = []
+    for r in rows:
+        m = r["n_dirs"][role]
+        w = torch.from_numpy(readouts[r["id"]]).double()
+        series_max = (f_z[cal] @ w).max(dim=1).values.numpy()
+        for j in range(m):
+            frac = targets[r["id"]] * L5_COMPONENT_QUANTILES[j]
+            tau = float(np.quantile(series_max, 1.0 - frac))
+            a_all = planted_activations(f_z, w[None, :], torch.tensor([tau], dtype=torch.float64),
+                                        AMPLITUDE)[..., 0]
+            a_series = a_all.mean(dim=1).numpy()
+            top_mean = float(np.sort(a_series)[::-1][:TOP_ROWS].mean())
+            unit = float(dose) * DOSE_UNIT_EFFECT / m
+            beta = (unit / top_mean if top_mean > 0 else 0.0) * r["sign"][role]
+            d = directions[f"{r['id']}#{j}"]
+            concepts.append({
+                "id": f"{r['id']}#{j}", "concept": r["id"], "component": j, "n_components": m,
+                "cls": r["cls"], "kind": r["kind"], "sign": int(r["sign"][role]),
+                "roles": list(r["roles"]), "target_fraction": frac,
+                "readout_weights": w.numpy().tolist(), "readout_threshold": tau,
+                "direction": d.tolist(),
+                "direction_resid": (d @ Q if Q is not None else d).tolist(),
+                "beta": float(beta), "rms_effect_on_top_series_ctx_sd": float(abs(beta) * top_mean),
+                "firing_fraction": float(np.mean(a_series > 0.0)),
+                "series_activation": a_series.tolist(),
+            })
+    return {
+        "construction_seed": int(construction_seed), "dose": float(dose), "role": role,
+        "plant_set": plant_set, "planted_block": int(planted_block), "dim": int(dim),
+        "patch": int(patch), "n_features": N_FEATURES, "feature_names": list(FEATURE_NAMES),
+        "periods": [float(p) for p in periods], "amplitude": AMPLITUDE,
+        "dose_unit_effect_ctx_sd": DOSE_UNIT_EFFECT, "vocabulary": "l5",
+        "rotation_seed": None if rotation_seed is None else int(rotation_seed),
+        "feature_mean": feat_mean.numpy().tolist(), "feature_std": feat_std.numpy().tolist(),
+        "series_ids": [str(s) for s in series_ids], "concepts": concepts,
+    }
+
+
+def concept_table_repair() -> list:
+    """The repair vocabulary: one concept per case of the forecast-repair known answer.
+
+    Each row: `id`, `cls`, `kind` (`oracle`, `oracle_split`, or None for the decoy),
+    `sign` (the displacement's direction relative to the truth: +1 toward it, -1 away,
+    for `oracle_split` the sign where the input-side activation is at least the split),
+    `weak_sign` (below the split), `mase_effect_of_presence` (the sign of the concept's
+    effect on MASE where it is present: +1 adds error, -1 removes it, 0 none) and
+    `target_fraction` (None draws from `FIRING_RANGE`).
+    """
+    return [
+        {"id": "repair_harmful", "cls": "repair_harmful", "kind": "oracle", "sign": -1,
+         "weak_sign": -1, "mase_effect_of_presence": 1, "target_fraction": None},
+        {"id": "repair_helpful", "cls": "repair_helpful", "kind": "oracle", "sign": 1,
+         "weak_sign": 1, "mase_effect_of_presence": -1, "target_fraction": None},
+        {"id": "repair_decoy", "cls": "repair_decoy", "kind": None, "sign": 0,
+         "weak_sign": 0, "mase_effect_of_presence": 0, "target_fraction": FIRING_RANGE[1]},
+        {"id": "repair_sideeffect", "cls": "repair_sideeffect", "kind": "oracle_split", "sign": -1,
+         "weak_sign": 1, "mase_effect_of_presence": 1,
+         "target_fraction": REPAIR_SIDE_EFFECT_FRACTION},
+    ]
+
+
+def oracle_directions(contexts: np.ndarray, targets: np.ndarray) -> dict:
+    """`{float32 context-row bytes: unit-RMS direction [H]}` from the naive forecast
+    (last context value) to the true future, in context-sd units.
+
+    The key is the row as the network receives it (`prepare` casts to float32), so a
+    lookup inside `forecast` hits exactly the rows the corpus holds. A row whose naive
+    forecast is exact has a zero direction.
+    """
+    x = np.ascontiguousarray(contexts, dtype=np.float32)
+    y = np.asarray(targets, dtype=np.float64)
+    xd = x.astype(np.float64)
+    sd = xd.std(axis=1, keepdims=True) + 1e-6
+    err = (y - xd[:, -1:]) / sd
+    rms = np.sqrt((err ** 2).mean(axis=1, keepdims=True))
+    unit = np.where(rms > 0, err / np.maximum(rms, 1e-12), 0.0)
+    return {x[i].tobytes(): unit[i] for i in range(len(x))}
+
+
+def build_spec_repair(construction_seed: int, dose: float, plant_set: str, dim: int, patch: int,
+                      contexts: np.ndarray, targets: np.ndarray, series_ids: list, periods: tuple,
+                      planted_block: int, families: np.ndarray | None = None) -> dict:
+    """The repair counterpart of `build_spec`: four concepts with a known sign on MASE.
+
+    Readouts: the decoy's is the one among all two-feature readouts whose series-level
+    activation has the highest Spearman correlation with the naive-forecast MASE (a hard
+    series is one the naive forecast misses), so it fires preferentially on hard series;
+    the other three are drawn without replacement from the remaining readouts. Each
+    concept's threshold is calibrated so it fires on its `target_fraction` of series,
+    and `beta` makes its RMS planted displacement on its own top-8 series
+    `dose * DOSE_UNIT_EFFECT` context sd; for the side-effect concept the reference is
+    its mean activation on the strong series (those at or above `split_value`, the median
+    positive series-level activation), because its 45% firing fraction makes the top-8
+    mean an outlier of the distribution.
+    """
+    from scipy.stats import spearmanr
+    from ..utils import sample_rows
+    if plant_set not in ("A", "B"):
+        raise ValueError(f"plant_set must be 'A' or 'B', got {plant_set!r}")
+    role = plant_set
+    rows = concept_table_repair()
+    directions = _draw_directions([r["id"] for r in rows], dim, construction_seed, role)
+
+    raw = contexts_to_features(contexts, patch, periods)
+    n = raw.shape[0]
+    cal = (sample_rows(n, _MAX_CALIBRATION_ROWS, _seed(construction_seed, "cal") % (2 ** 31),
+                       strata=families) if n > _MAX_CALIBRATION_ROWS else np.arange(n))
+    flat = raw[cal].reshape(-1, N_FEATURES)
+    feat_mean, feat_std = flat.mean(dim=0), flat.std(dim=0) + 1e-9
+    f_z = (raw - feat_mean) / feat_std
+    rng_frac = np.random.default_rng(_seed(construction_seed, "repair_firing"))
+    drawn = {r["id"]: float(rng_frac.uniform(*FIRING_RANGE)) for r in rows}
+    fractions = {r["id"]: (drawn[r["id"]] if r["target_fraction"] is None else r["target_fraction"])
+                 for r in rows}
+
+    xd = np.asarray(contexts, dtype=np.float64)
+    hardness = (np.abs(np.asarray(targets, dtype=np.float64) - xd[:, -1:]).mean(axis=1)
+                / (np.abs(np.diff(xd, axis=1)).mean(axis=1) + 1e-8))
+
+    def series_activation(w: np.ndarray, frac: float) -> tuple:
+        wt = torch.from_numpy(w).double()
+        tau = float(np.quantile((f_z[cal] @ wt).max(dim=1).values.numpy(), 1.0 - frac))
+        a = planted_activations(f_z, wt[None, :], torch.tensor([tau], dtype=torch.float64), AMPLITUDE)
+        return tau, a[..., 0]
+
+    combos = [(i, j, si, sj) for i in range(N_FEATURES) for j in range(i + 1, N_FEATURES)
+              for si in (1, -1) for sj in (1, -1)]
+    pool = []
+    for i, j, si, sj in combos:
+        w = np.zeros(N_FEATURES)
+        w[i], w[j] = si, sj
+        pool.append(w / np.linalg.norm(w))
+    rho = []
+    for w in pool:
+        _, a = series_activation(w, fractions["repair_decoy"])
+        rho.append(float(spearmanr(a.mean(dim=1).numpy(), hardness).statistic))
+    decoy_index = int(np.nanargmax(rho))
+    rest = [k for k in range(len(pool)) if k != decoy_index]
+    picks = np.random.default_rng(_seed(construction_seed, "repair_readouts")).choice(
+        len(rest), size=len(rows) - 1, replace=False)
+    readout = {"repair_decoy": pool[decoy_index]}
+    for r, p in zip([r for r in rows if r["id"] != "repair_decoy"], picks):
+        readout[r["id"]] = pool[rest[int(p)]]
+
+    concepts = []
+    for r in rows:
+        w = torch.from_numpy(readout[r["id"]]).double()
+        tau, a_all = series_activation(readout[r["id"]], fractions[r["id"]])
+        a_series = a_all.mean(dim=1).numpy()
+        positive = a_series[a_series > 0]
+        split = float(np.median(positive)) if (r["kind"] == "oracle_split" and positive.size) else None
+        top_mean = (float(a_series[a_series >= split].mean()) if split is not None
+                    else float(np.sort(a_series)[::-1][:TOP_ROWS].mean()))
+        unit = 0.0 if r["kind"] is None else float(dose) * DOSE_UNIT_EFFECT
+        beta = unit / top_mean if top_mean > 0 else 0.0
+        concepts.append({
+            "id": r["id"], "cls": r["cls"], "kind": r["kind"], "sign": int(r["sign"]),
+            "weak_sign": int(r["weak_sign"]),
+            "mase_effect_of_presence": int(r["mase_effect_of_presence"]),
+            "split_value": split, "roles": [role], "target_fraction": fractions[r["id"]],
+            "readout_weights": w.numpy().tolist(), "readout_threshold": tau,
+            "direction": directions[r["id"]].tolist(), "beta": float(beta),
+            "rms_effect_on_top_series_ctx_sd": float(abs(beta) * top_mean),
+            "firing_fraction": float(np.mean(a_series > 0.0)),
+            "hardness_spearman": float(spearmanr(a_series, hardness).statistic),
+            "series_activation": a_series.tolist(),
+        })
+    return {
+        "construction_seed": int(construction_seed), "dose": float(dose), "role": role,
+        "plant_set": plant_set, "planted_block": int(planted_block), "dim": int(dim),
+        "patch": int(patch), "n_features": N_FEATURES, "feature_names": list(FEATURE_NAMES),
+        "periods": [float(p) for p in periods], "amplitude": AMPLITUDE,
+        "dose_unit_effect_ctx_sd": DOSE_UNIT_EFFECT, "vocabulary": "repair",
+        "feature_mean": feat_mean.numpy().tolist(), "feature_std": feat_std.numpy().tolist(),
+        "series_ids": [str(s) for s in series_ids], "concepts": concepts,
+    }
+
+
+def patch_features(xn_patches: torch.Tensor, periods: tuple) -> torch.Tensor:
+    """`[N, patch] -> [N, N_FEATURES]`: hand-set statistics of a normalised patch.
+
+    Deterministic, differentiable-free and shared by the network, the
+    calibration and the manifest, so all three compute one function.
+    """
+    n, p = xn_patches.shape
+    x = xn_patches.double()
+    t = torch.arange(p, dtype=torch.float64) - (p - 1) / 2.0
+    mean = x.mean(dim=1)
+    slope = (x * t).sum(dim=1) / (t ** 2).sum()
+    resid = x - mean[:, None] - slope[:, None] * t
+    resid_sd = resid.pow(2).mean(dim=1).sqrt()
+    idx = torch.arange(p, dtype=torch.float64)
+    amps = []
+    for period in periods:
+        ph = 2.0 * np.pi * idx / float(period)
+        c = (resid * torch.cos(ph)).mean(dim=1) * 2.0
+        s = (resid * torch.sin(ph)).mean(dim=1) * 2.0
+        amps.append((c ** 2 + s ** 2).sqrt())
+    med = x.median(dim=1).values
+    mad = (x - med[:, None]).abs().median(dim=1).values
+    spike = (x - med[:, None]).abs().max(dim=1).values / (mad + 1e-6)
+    rng_ = x.max(dim=1).values - x.min(dim=1).values
+    q = t ** 2 - (t ** 2).mean()
+    curv = (resid * q).sum(dim=1) / (q ** 2).sum()
+    return torch.stack([mean, slope, resid_sd, amps[0], amps[1], spike, rng_, curv], dim=1)
+
+
+def normalise_contexts(x: torch.Tensor) -> tuple:
+    """Per-series normalisation: `(xn, mean, sd)`, `sd` floored by 1e-6."""
+    mu = x.mean(dim=1, keepdim=True)
+    sd = x.std(dim=1, unbiased=False, keepdim=True) + 1e-6
+    return (x - mu) / sd, mu, sd
+
+
+def contexts_to_features(contexts: np.ndarray, patch: int, periods: tuple) -> torch.Tensor:
+    """`[B, T] -> [B, T // patch, N_FEATURES]` raw (unstandardised) features."""
+    x = torch.from_numpy(np.ascontiguousarray(contexts)).double()
+    xn, _, _ = normalise_contexts(x)
+    b, t = xn.shape
+    feats = patch_features(xn.reshape(b * (t // patch), patch), periods)
+    return feats.reshape(b, t // patch, N_FEATURES)
+
+
+def planted_activations(f_z: torch.Tensor, W: torch.Tensor, tau: torch.Tensor,
+                        amp: float) -> torch.Tensor:
+    """`amp * ReLU(f_z W^T - tau)`, `[B, n_tokens, K]`: the one definition of a
+    planted coefficient, used by the network and by the manifest alike."""
+    return amp * torch.relu(f_z @ W.t() - tau)
+
+
+def build_spec(construction_seed: int, dose: float, plant_set: str, dim: int, patch: int,
+               contexts: np.ndarray, series_ids: list, periods: tuple, planted_block: int,
+               families: np.ndarray | None = None) -> dict:
+    """Everything that defines one member of the pair, calibrated on `contexts`.
+
+    Calibration (feature standardisation, per-concept threshold, per-concept
+    beta) uses at most `_MAX_CALIBRATION_ROWS` rows, chosen with a stratified
+    `sample_rows` when the corpus is larger; the series-level activations in
+    the manifest are computed on every row.
+    """
+    from ..utils import sample_rows
+    if plant_set not in ("A", "B"):
+        raise ValueError(f"plant_set must be 'A' or 'B', got {plant_set!r}")
+    role = plant_set
+    rows = [r for r in concept_table() if role in r["roles"]]
+    all_rows = concept_table()
+    directions = _draw_directions([r["id"] for r in rows], dim, construction_seed, role)
+
+    raw = contexts_to_features(contexts, patch, periods)
+    n = raw.shape[0]
+    cal = (sample_rows(n, _MAX_CALIBRATION_ROWS, _seed(construction_seed, "cal") % (2 ** 31),
+                       strata=families) if n > _MAX_CALIBRATION_ROWS else np.arange(n))
+    flat = raw[cal].reshape(-1, N_FEATURES)
+    feat_mean, feat_std = flat.mean(dim=0), flat.std(dim=0) + 1e-9
+    f_z = (raw - feat_mean) / feat_std
+    rng_frac = np.random.default_rng(_seed(construction_seed, "firing"))
+    targets = {r["id"]: float(rng_frac.uniform(*FIRING_RANGE)) for r in all_rows}
+
+    def series_activation(w: np.ndarray, cid: str) -> np.ndarray:
+        wt = torch.from_numpy(w).double()
+        tau = float(np.quantile((f_z[cal] @ wt).max(dim=1).values.numpy(), 1.0 - targets[cid]))
+        a = planted_activations(f_z, wt[None, :], torch.tensor([tau], dtype=torch.float64), AMPLITUDE)
+        return a[..., 0].mean(dim=1).numpy()
+
+    readouts, independence = _draw_readouts(all_rows, construction_seed, series_activation)
+
+    concepts = []
+    for r in rows:
+        w = torch.from_numpy(readouts[_readout_key(r, role)]).double()
+        z = f_z[cal] @ w
+        series_max = z.max(dim=1).values.numpy()
+        tau = float(np.quantile(series_max, 1.0 - targets[r["id"]]))
+        a_all = planted_activations(f_z, w[None, :], torch.tensor([tau], dtype=torch.float64),
+                                    AMPLITUDE)[..., 0]
+        a_series = a_all.mean(dim=1).numpy()
+        top = np.sort(a_series)[::-1][:TOP_ROWS]
+        top_mean = float(top.mean())
+        if r["cls"] == "decoy_input_only":
+            unit = 0.0
+        elif r["cls"] == "decoy_sub_null":
+            unit = SUB_NULL_FRACTION * DOSE_UNIT_EFFECT
+        else:
+            unit = float(dose) * DOSE_UNIT_EFFECT
+        beta = (unit / top_mean if top_mean > 0 else 0.0) * r["sign"][role]
+        concepts.append({
+            "id": r["id"], "cls": r["cls"], "kind": r["kind"], "sign": int(r["sign"][role]),
+            "roles": list(r["roles"]), "target_fraction": targets[r["id"]],
+            "readout_weights": w.numpy().tolist(), "readout_threshold": tau,
+            "direction": directions[r["id"]].tolist(), "beta": float(beta),
+            "rms_effect_on_top_series_ctx_sd": float(abs(beta) * top_mean),
+            "partner_input_abs_spearman": independence.get(r["id"]),
+            "firing_fraction": float(np.mean(a_series > 0.0)),
+            "series_activation": a_series.tolist(),
+        })
+    return {
+        "construction_seed": int(construction_seed), "dose": float(dose), "role": role,
+        "plant_set": plant_set, "planted_block": int(planted_block), "dim": int(dim),
+        "patch": int(patch), "n_features": N_FEATURES, "feature_names": list(FEATURE_NAMES),
+        "periods": [float(p) for p in periods], "amplitude": AMPLITUDE,
+        "dose_unit_effect_ctx_sd": DOSE_UNIT_EFFECT, "sub_null_fraction": SUB_NULL_FRACTION,
+        "feature_mean": feat_mean.numpy().tolist(), "feature_std": feat_std.numpy().tolist(),
+        "series_ids": [str(s) for s in series_ids], "concepts": concepts,
+    }
+
+
+def _shapes(horizon: int) -> dict:
+    """Unit-RMS forecast shapes, one per effect channel."""
+    t = np.arange(horizon, dtype=np.float64)
+    centred = t - (horizon - 1) / 2.0
+    ramp = centred / np.sqrt((centred ** 2).mean())
+    cosine = np.sqrt(2.0) * np.cos(2.0 * np.pi * centred / horizon)
+    alt = np.where(np.arange(horizon) % 2 == 0, 1.0, -1.0)
+    return {"level": np.ones(horizon), "trend": ramp, "seasonal": cosine, "dispersion": alt,
+            "level_trend": (np.ones(horizon) + ramp) / np.sqrt(2.0)}
+
+
+class _PlantedBlock(_MockBlock):
+    """A near-identity residual block that only reads and writes the
+    complement of the planted span; the planted block additionally writes."""
+
+    def __init__(self, dim: int, n_heads: int, p_perp: torch.Tensor, gen: torch.Generator):
+        super().__init__(dim, n_heads)
+        self.register_buffer("p_perp", p_perp.clone())
+        with torch.no_grad():
+            for p in self.parameters():
+                p.copy_(0.05 * torch.randn(p.shape, generator=gen) / np.sqrt(p.shape[-1])
+                        if p.dim() == 2 else torch.zeros_like(p))
+        self.stash: dict | None = None
+        self.write: nn.Module | None = None
+        self.register_buffer("rot", None)
+
+    def forward(self, h: torch.Tensor) -> torch.Tensor:
+        """The block is built in the canonical basis. With `rot` set, the residual
+        stream between blocks lives in the rotated basis `h_c Q`, so the block rotates
+        back on entry and forward on exit; hooks on its output see the rotated stream."""
+        if self.rot is not None:
+            h = h @ self.rot.t()
+        h = h + self.attn(h @ self.p_perp) @ self.p_perp
+        h = h + self.mlp(h @ self.p_perp) @ self.p_perp
+        if self.write is not None:
+            h = h + self.write(self.stash)
+        if self.rot is not None:
+            h = h @ self.rot
+        return h
+
+
+class _PlantedWrite(nn.Module):
+    """Adds `sum_k amp a_k(t) d_k` to every token, from the input's own features."""
+
+    def __init__(self, W: torch.Tensor, tau: torch.Tensor, D: torch.Tensor):
+        super().__init__()
+        self.register_buffer("W", W)
+        self.register_buffer("tau", tau)
+        self.register_buffer("D", D)
+
+    def forward(self, stash: dict) -> torch.Tensor:
+        a = planted_activations(stash["f_z"], self.W, self.tau, AMPLITUDE)
+        stash["a"] = a
+        return (a @ self.D.t()).float()
+
+
+class _PlantedNet(nn.Module):
+    """Feature-carrying embedding, planted block, near-identity blocks, known head."""
+
+    def __init__(self, spec: dict, n_layers: int, n_heads: int, horizon: int, seed: int,
+                 background_gain: float = 0.0, oracle: dict | None = None):
+        super().__init__()
+        dim, patch = spec["dim"], spec["patch"]
+        self.patch, self.dim, self.horizon = patch, dim, horizon
+        self.periods = tuple(spec["periods"])
+        concepts = spec["concepts"]
+        self.concepts = concepts
+        D = torch.tensor(np.stack([c["direction"] for c in concepts], axis=1), dtype=torch.float64)
+        G = D.t() @ D
+        U = torch.linalg.solve(G, D.t())
+        p_perp = torch.eye(dim, dtype=torch.float64) - D @ U
+        self.register_buffer("feat_mean", torch.tensor(spec["feature_mean"], dtype=torch.float64))
+        self.register_buffer("feat_std", torch.tensor(spec["feature_std"], dtype=torch.float64))
+        self.register_buffer("U", U)
+        self.register_buffer("p_perp64", p_perp)
+        gen = torch.Generator().manual_seed(seed)
+        R = torch.randn(patch, dim, generator=gen) * EMBED_SCALE
+        R[:, :N_FEATURES] = 0.0
+        R = R @ p_perp.float()
+        self.register_buffer("embed_R", R)
+        self.blocks = nn.ModuleList(
+            _PlantedBlock(dim, n_heads, p_perp.float(), gen) for _ in range(n_layers))
+        W = torch.tensor(np.stack([c["readout_weights"] for c in concepts]), dtype=torch.float64)
+        tau = torch.tensor([c["readout_threshold"] for c in concepts], dtype=torch.float64)
+        self.stash: dict = {}
+        rotation_seed = spec.get("rotation_seed")
+        self.rotated = rotation_seed is not None
+        if self.rotated:
+            rot = torch.tensor(rotation_matrix(dim, int(rotation_seed)), dtype=torch.float32)
+            self.register_buffer("rot32", rot)
+            for block in self.blocks:
+                block.rot = rot.clone()
+        planted = self.blocks[spec["planted_block"]]
+        planted.stash = self.stash
+        planted.write = _PlantedWrite(W, tau, D)
+        self.register_buffer("W_bg", torch.randn(horizon, dim, generator=gen, dtype=torch.float64)
+                             / np.sqrt(dim))
+        self.gamma = float(background_gain)
+        shapes = _shapes(horizon)
+        self.register_buffer("shape_mat", torch.tensor(
+            np.stack([shapes[c["kind"]] if c["kind"] in shapes else np.zeros(horizon)
+                      for c in concepts]),
+            dtype=torch.float64))
+        self.register_buffer("beta", torch.tensor([c["beta"] for c in concepts], dtype=torch.float64))
+        self.register_buffer("is_dispersion", torch.tensor(
+            [1.0 if c["kind"] == "dispersion" else 0.0 for c in concepts], dtype=torch.float64))
+        self.oracle = oracle
+        self.oracle_misses = 0
+        self.has_oracle = any(c["kind"] in ("oracle", "oracle_split") for c in concepts)
+        if self.has_oracle:
+            self.register_buffer("is_oracle", torch.tensor(
+                [1.0 if c["kind"] in ("oracle", "oracle_split") else 0.0 for c in concepts],
+                dtype=torch.float64))
+            self.register_buffer("is_split", torch.tensor(
+                [1.0 if c["kind"] == "oracle_split" else 0.0 for c in concepts], dtype=torch.float64))
+            self.register_buffer("sign_strong", torch.tensor(
+                [float(c.get("sign", 0)) for c in concepts], dtype=torch.float64))
+            self.register_buffer("sign_weak", torch.tensor(
+                [float(c.get("weak_sign", c.get("sign", 0))) for c in concepts], dtype=torch.float64))
+            self.register_buffer("split_value", torch.tensor(
+                [float(c["split_value"]) if c.get("split_value") is not None else 0.0
+                 for c in concepts], dtype=torch.float64))
+
+    def _embed(self, x: torch.Tensor) -> torch.Tensor:
+        b, t = x.shape
+        xn, _, _ = normalise_contexts(x.double())
+        n_tok = t // self.patch
+        patches = xn.reshape(b * n_tok, self.patch)
+        f = patch_features(patches, self.periods)
+        f_z = ((f - self.feat_mean) / self.feat_std).reshape(b, n_tok, N_FEATURES)
+        self.stash["f_z"] = f_z
+        h = patches.float() @ self.embed_R
+        h = h.reshape(b, n_tok, self.dim)
+        h[..., :N_FEATURES] = f_z.float()
+        return h
+
+    def _oracle_rows(self, x: torch.Tensor) -> torch.Tensor:
+        """`[B, H]` unit-RMS direction toward the true future for each context row; rows
+        missing from the table get zeros and are counted in `oracle_misses`."""
+        rows = x.detach().cpu().numpy().astype(np.float32)
+        out = np.zeros((len(rows), self.horizon))
+        for i, row in enumerate(rows):
+            hit = self.oracle.get(row.tobytes()) if self.oracle is not None else None
+            if hit is None:
+                self.oracle_misses += 1
+            else:
+                out[i] = hit
+        return torch.from_numpy(out).to(device=x.device, dtype=torch.float64)
+
+    def forecast(self, x: torch.Tensor) -> tuple:
+        """`[B, T] -> (point [B, H], quantile_scale [B])`, all blocks and the head."""
+        h = self._embed(x)
+        if self.rotated:
+            h = h @ self.rot32
+        for block in self.blocks:
+            h = block(h)
+        if self.rotated:
+            h = h @ self.rot32.t()
+        hbar = h.double().mean(dim=1)
+        coef = hbar @ self.U.t()
+        bg = (hbar @ self.p_perp64) @ self.W_bg.t()
+        contrib = (coef * self.beta) @ self.shape_mat
+        if self.has_oracle:
+            a_bar = self.stash["a"].mean(dim=1)
+            strong = a_bar >= self.split_value[None, :]
+            sign = torch.where(self.is_split[None, :] > 0,
+                               torch.where(strong, self.sign_strong[None, :], self.sign_weak[None, :]),
+                               self.sign_strong[None, :])
+            weight = (coef * self.beta * sign * self.is_oracle).sum(dim=1)
+            contrib = contrib + weight[:, None] * self._oracle_rows(x)
+        xd = x.double()
+        sd = xd.std(dim=1, unbiased=False, keepdim=True) + 1e-6
+        point = xd[:, -1:] + sd * (self.gamma * bg + contrib)
+        qscale = torch.exp((coef * self.beta * self.is_dispersion).sum(dim=1))
+        return point.float(), qscale.float()
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.forecast(x)[0]
+
+
+class MockPlantedAdapter(_MockAdapterBase):
+    """Tier-3 patch-tokenizing mock with planted, ground-truth-labelled concepts.
+
+    Config kwargs (all optional): `plant_set` ("A" or "B", default "A"),
+    `construction_seed` (int, default 0), `dose` (float, default 1.0),
+    `periods` (two periods for the amplitude features, default [24, 50], the
+    two most common periods of the synthetic known-answer corpus),
+    `planted_block` (default 2), `background_gain` (default 0.0, see below).
+    Opt-in architecture kwargs (the L5 study, see the module docstring): `vocabulary`
+    ("k1" default, "l5", or "repair" for the forecast-repair study), `width` (hidden size, default 64), `depth` (blocks,
+    default 5), `heads` (default 2) and `rotate` (a random orthogonal rotation of the
+    residual basis, default False). The calibration corpus is the run's own data
+    (`data:`), so the firing thresholds are calibrated on exactly the series
+    the pipeline will feed the model.
+    """
+
+    patch, dim, n_layers, n_heads, seed = 32, 64, 5, 2, 11
+
+    def _kwarg(self, name: str, default: Any) -> Any:
+        return self.cfg.kwargs.get(name, default)
+
+    def load(self) -> None:
+        from ..data import load_benchmark
+        plant_set = str(self._kwarg("plant_set", "A"))
+        cseed = int(self._kwarg("construction_seed", 0))
+        dose = float(self._kwarg("dose", 1.0))
+        periods = tuple(float(p) for p in self._kwarg("periods", (24, 50)))
+        block = int(self._kwarg("planted_block", 2))
+        vocabulary = str(self._kwarg("vocabulary", "k1"))
+        if vocabulary not in ("k1", "l5", "repair"):
+            raise ValueError(f"vocabulary must be 'k1', 'l5' or 'repair', got {vocabulary!r}")
+        self.dim = int(self._kwarg("width", type(self).dim))
+        self.n_layers = int(self._kwarg("depth", type(self).n_layers))
+        self.n_heads = int(self._kwarg("heads", type(self).n_heads))
+        rotation_seed = (_seed(cseed, "rotate", plant_set) % (2 ** 31)
+                         if bool(self._kwarg("rotate", False)) else None)
+        d = self.data_cfg
+        key = (plant_set, cseed, dose, periods, block, d.source, d.path, d.context_len,
+               d.horizon, d.max_series, d.smoke_series_per_family, d.family_key)
+        if vocabulary == "l5":
+            key = key + (vocabulary, self.dim, rotation_seed)
+        if vocabulary == "repair":
+            key = key + (vocabulary, self.dim)
+        if key not in _CALIBRATION_CACHE:
+            data = load_benchmark(d)
+            if vocabulary == "repair":
+                _CALIBRATION_CACHE[key] = build_spec_repair(
+                    cseed, dose, plant_set, self.dim, self.patch, data.contexts(), data.targets(),
+                    data.meta["series_id"].tolist(), periods, block, families=data.families)
+                _ORACLE_CACHE[key] = oracle_directions(data.contexts(), data.targets())
+            elif vocabulary == "l5":
+                _CALIBRATION_CACHE[key] = build_spec_l5(
+                    cseed, dose, plant_set, self.dim, self.patch, data.contexts(),
+                    data.meta["series_id"].tolist(), periods, block, families=data.families,
+                    rotation_seed=rotation_seed)
+            else:
+                _CALIBRATION_CACHE[key] = build_spec(
+                    cseed, dose, plant_set, self.dim, self.patch, data.contexts(),
+                    data.meta["series_id"].tolist(), periods, block, families=data.families)
+        self._spec = _CALIBRATION_CACHE[key]
+        net_seed = _seed(cseed, "net", plant_set)
+        if self.cfg.random_init:
+            net_seed += self._RANDOM_INIT_SEED_OFFSET
+        self._background_gain = float(self._kwarg("background_gain", 0.0))
+        self._net = _PlantedNet(self._spec, self.n_layers, self.n_heads, self.data_cfg.horizon,
+                                net_seed % (2 ** 31), self._background_gain,
+                                oracle=_ORACLE_CACHE.get(key)).to(self.device)
+
+    def manifest(self) -> dict:
+        """The ground truth for this member of the pair (JSON-serialisable)."""
+        self.ensure_loaded()
+        extra = ({"oracle_misses": int(self._net.oracle_misses)}
+                 if self._spec.get("vocabulary") == "repair" else {})
+        return {**self._spec, "model": self.name, "background_gain": self._background_gain,
+                "planted_layer": f"blocks.{self._spec['planted_block']}", **extra}
+
+    def predict(self, contexts: np.ndarray, horizon: int, quantiles: list) -> dict:
+        """Deterministic point forecast; the quantile band is `sd_ctx * ppf(q)`
+        scaled by the planted dispersion concepts' `exp(sum beta c)`."""
+        with torch.no_grad():
+            point, qscale = self._net.forecast(self.prepare(contexts))
+        point = point.cpu().numpy()[:, :horizon]
+        scale = contexts.std(axis=1, keepdims=True) * qscale.cpu().numpy()[:, None] + 1e-6
+        offsets = np.array([_normal_ppf(q) for q in quantiles], dtype=np.float32)
+        q = point[:, :, None] + offsets[None, None, :] * scale[:, :, None]
+        return {"point": point, "quantiles": q.astype(np.float32)}

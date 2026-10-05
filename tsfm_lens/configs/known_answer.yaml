@@ -1,0 +1,118 @@
+# K1 known-answer validation (ROADMAP.md sec 38.1): the SAE -> ablation
+# battery -> concept atlas -> transfer -> shared-input-agreement chain, run on
+# a PAIR of hand-built forecasters (`mock_planted`, tsfm_lens/models/
+# mock_planted.py) whose internal concepts are known in advance, then scored
+# against the answer key they write (analysis/known_answer.py).
+#
+# This file is the TEMPLATE for one cell of the grid. The standalone driver
+# fills three things per cell and writes the result under its own --out:
+#
+#     python run_known_answer.py --corpus <dir>/public_dev --out <scratch> \
+#         --seeds 0 --doses 1
+#
+#   * models[*].kwargs.construction_seed  (the construction-seed axis)
+#   * models[*].kwargs.dose               (the dose axis; 1 = a real feature's
+#                                          median effect, 0.0395 context sd)
+#   * run.name / run.out_dir              (one run directory per cell)
+#
+# The pipeline stages it runs are `extract, sae, concepts` only; every other
+# stage is left at its default and never selected.
+#
+# CORPUS. data.source is `sealed` on purpose: the seasonal channel and the
+# correlational probe need sae/ground_truth.py::load_ground_truth_table, which
+# only a sealed corpus provides (sae/ablation_run.py:118 degrades the seasonal
+# channel without it). Build the synthetic-only corpus with
+#
+#     cd tsfm_benchmark && PYTHONPATH=. python3 example_runs/run_full.py \
+#         --config configs/known_answer_corpus.yaml --out <corpus_dir> \
+#         --references none --max-count 200
+#
+# (600 public_dev series: parametric x2 + random_parametric, no real data, so
+# `--references none` is acceptable here and only here). `data.path` below is
+# relative to tsfm_lens/ and is the default; `run_known_answer.py --corpus`
+# overrides it, and so does the KNOWN_ANSWER_CORPUS environment variable.
+#
+# OUT_DIR. `runs/` is on the 51 GB home quota; pass `--out` to put cells
+# elsewhere. The default here is the repo-relative `runs`.
+#
+# THE TWO MODELS. `PlantedA` and `PlantedB` share one vocabulary of planted
+# concepts (shared, convergent, same-input-opposite-effect; unique to A) and
+# decoys (input-only, sub-null). Both are 32-step patch models, 64 wide, 5
+# blocks; the planted block is blocks.2. Two SAE targets per model:
+# blocks.2 (the planted layer) and blocks.3 (the CONTROL layer, a block AFTER
+# the planted one). It is reachable: patching blocks.0's clean tokens into it
+# removes the planted writes and moves the forecast, so the reach probe passes
+# (a control BEFORE the planted block is not, because the planted block
+# computes from a side-channel stash of the input, so nothing patched at an
+# earlier layer can change what it writes). Its residual still carries the
+# planted directions, so the scorer excludes atoms that carry a material
+# planted effect and reads per-cell false positives on the rest.
+
+run:
+  name: known_answer
+  out_dir: runs
+  device: cpu
+  dtype: float32
+  seed: 0
+  keep_models_loaded: true
+
+data:
+  source: sealed
+  path: ../benchmark_known_answer/public_dev
+  context_len: 256              # 8 tokens of 32
+  horizon: 32
+  family_key: auto
+
+alignment:
+  window: 32                    # = the patch, so one window per token
+  sanity_check: true
+  on_failure: fail
+
+models:
+  - name: PlantedA
+    adapter: mock_planted
+    batch_size: 64
+    kwargs: {plant_set: A, construction_seed: 0, dose: 1.0}
+  - name: PlantedB
+    adapter: mock_planted
+    batch_size: 64
+    kwargs: {plant_set: B, construction_seed: 0, dose: 1.0}
+
+sae:
+  enabled: true
+  targets:
+    - {model: PlantedA, layer: blocks.2}
+    - {model: PlantedA, layer: blocks.3}
+    - {model: PlantedB, layer: blocks.2}
+    - {model: PlantedB, layer: blocks.3}
+  dict_size_mult: 4             # 256 atoms over 64 dims, 21 planted directions
+  k: 8
+  epochs: 300                   # 15 optimizer steps per epoch at batch_size 256;
+                                # measured on this corpus: k=8, 256 atoms, 300
+                                # epochs at batch 128 recovers ~16 of 21 planted
+                                # directions at cosine >= 0.9 (60 epochs at
+                                # batch 512 recovered ~7 of 20)
+  batch_size: 256
+  lr: 0.001
+  resample_dead_every_epochs: 5
+  aux_k: 32
+  forecast_preservation_max_series: 64   # <= every model's batch_size
+  persist_features: true        # required by the concepts stage
+  real_data_enabled: false      # no network, no real data in this validation
+  concept_min_members: 3        # the default; the atlas needs >= 3 members
+
+concepts:
+  enabled: true
+  top_k_series: 8
+  n_null_directions: 16
+  max_series: 64                # <= every model's batch_size
+  n_features_per_rule: 256      # >= dict size: EVERY alive atom is a candidate,
+                                # so no planted atom is missed by the nomination
+                                # rules (variance / random) rather than by the
+                                # battery. The scorer needs the best-matching
+                                # feature of every planted direction to be
+                                # scored.
+  describe: false
+  n_sae_seeds: 1                # stability replicates are not scored here and would
+                                # triple the (dominant) SAE training cost
+  transfer_p_method: exact

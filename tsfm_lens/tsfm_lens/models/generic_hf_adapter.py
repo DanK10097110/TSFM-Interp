@@ -23,6 +23,18 @@ because both are places a generic path can quietly produce a wrong result:
   means nothing. This is logged as a warning and recorded in
   `describe_strategies()["quantiles"]`.
 
+- **Input normalization is opt-in and recorded.** Some checkpoints ship no
+  normalizer at all and expect the caller to z-score each series and
+  de-normalize the forecast (Time-MoE's README does exactly this). Called
+  through `forward()`, they see raw scale and are not scale-equivariant: the
+  `frontend` stage measured a 0.001x rescale moving Time-MoE's forecast by 105.7
+  context-sd units, the Sundial normalization bug (`docs/ADDING_A_MODEL.md`
+  sec 4) again. `kwargs: {input_normalization: zscore}` reproduces Sundial's
+  documented rule (`mu = mean`, `sd = std(ddof=0) + 1e-5`) in `_zscore_stats`,
+  computed once per `predict()` and used both to normalize the input every path
+  (capture, patching, forecasting) sees and to de-normalize the forecast. The
+  default (`none`) changes nothing, and `describe_strategies()` records it.
+
 Span discovery is `extraction/span_discovery.py` (E3(a)), run lazily on first
 use and cached; a checkpoint whose impulse response is not time-localized gets
 `time_localization()["localized"] = False` and a `token_time_spans()` that
@@ -205,6 +217,7 @@ class GenericHFAdapter(ModelAdapter):
             "input_rank": getattr(self, "_input_rank", None),
             "aux_kwargs": list(getattr(self, "_aux_kwargs", ())),
             "revin_enabled": getattr(self, "_revin_enabled", None),
+            "input_normalization": self._input_normalization,
             "layer_regex": self.cfg.layer_regex or self.default_layer_regex,
             "n_capture_layers": len(self.layer_names()) if self._loaded else None,
             "forecast": self._forecast_strategy,
@@ -375,8 +388,35 @@ class GenericHFAdapter(ModelAdapter):
                  self.name, regex, best[0], groups[best_key][0][1][2])
         return regex
 
-    def prepare(self, contexts: np.ndarray) -> Any:
-        """Model-ready kwargs: the resolved float input plus any all-ones masks."""
+    @property
+    def _input_normalization(self) -> str:
+        """`none` (default) or `zscore`, from `kwargs.input_normalization`;
+        anything else is refused rather than silently ignored."""
+        mode = str(self.cfg.kwargs.get("input_normalization", "none")).lower()
+        if mode not in ("none", "zscore"):
+            raise ValueError(
+                f"generic_hf '{self.name}': kwargs.input_normalization must be 'none' or "
+                f"'zscore', got {mode!r}")
+        return mode
+
+    @staticmethod
+    def _zscore_stats(contexts: np.ndarray) -> tuple:
+        """Per-row `(mu, sd)` with Sundial's documented rule: `sd = std(ddof=0)
+        + 1e-5`. The one place these are computed."""
+        x = np.asarray(contexts, dtype=np.float64)
+        return x.mean(axis=1, keepdims=True), x.std(axis=1, keepdims=True) + 1e-5
+
+    def prepare(self, contexts: np.ndarray, stats: Optional[tuple] = None) -> Any:
+        """Model-ready kwargs: the resolved float input plus any all-ones masks.
+
+        Under `input_normalization: zscore` the input is `(x - mu) / sd`, with
+        `stats` supplied by `predict()` so the de-normalization uses the very
+        same numbers; a bare call (capture, patching) computes them here.
+        """
+        contexts = np.ascontiguousarray(contexts)
+        if self._input_normalization == "zscore":
+            mu, sd = stats if stats is not None else self._zscore_stats(contexts)
+            contexts = ((contexts.astype(np.float64) - mu) / sd).astype(np.float32)
         x = torch.from_numpy(np.ascontiguousarray(contexts)).to(
             self.device, dtype=self.dtype)
         if getattr(self, "_input_rank", 2) == 3:
@@ -440,7 +480,13 @@ class GenericHFAdapter(ModelAdapter):
         response is diffuse has no contiguous token->time map, and handing the
         pooling matrix an invented one would put every cross-model number on a
         fiction (`CLAUDE.md` sec 6.3).
+
+        Loads first: `pipeline.resolve_routing` calls this on a freshly built,
+        still-unloaded adapter, and `_spans` only exists once `load` has run,
+        so a fresh 2-model run with any `generic_hf` model died with an
+        AttributeError before extraction (found onboarding Timer, K3).
         """
+        self.ensure_loaded()
         if self._spans is None:
             from ..extraction.span_discovery import discover_spans
             self._discovery = discover_spans(self, context_len=self.data_cfg.context_len)
@@ -501,14 +547,20 @@ class GenericHFAdapter(ModelAdapter):
         prediction field (a point forecast only). Neither resolving is an
         error, not an empty forecast.
         """
-        prepared = self.prepare(contexts)
+        stats = (self._zscore_stats(contexts)
+                 if self._input_normalization == "zscore" else None)
+        prepared = self.prepare(contexts, stats)
         samples = self._try_generate(prepared, horizon)
         if samples is not None:
             self._forecast_strategy = "generate"
+            if stats is not None:
+                samples = samples * stats[1][:, :, None] + stats[0][:, :, None]
             point = np.median(samples, axis=1)
             q = np.stack([np.quantile(samples, lv, axis=1) for lv in quantiles], axis=-1)
             return {"point": point, "quantiles": q}
         point = self._try_forward_field(prepared, horizon)
+        if point is not None and stats is not None:
+            point = point * stats[1] + stats[0]
         if point is None:
             raise ValueError(
                 f"model '{self.name}' ({self.cfg.checkpoint}): no forecast path resolved -- "

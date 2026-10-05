@@ -33,6 +33,12 @@ on:
     - cron: "0 6 * * 1"
   workflow_dispatch: {}
 
+# A newer push to the same branch cancels the older, still-running run, so a
+# burst of pushes yields one result (and one notification), not one per push.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   fast:
     name: fast (CPU, pinned)
@@ -47,6 +53,11 @@ jobs:
       - name: Install pinned dependencies (pip approximation of DEPENDENCIES.md sec 3)
         run: |
           python -m pip install --upgrade pip
+          # CPU-only torch FIRST: sdv depends on torch, and installing it
+          # before torch pulls the multi-GB CUDA wheel from PyPI, after which
+          # the CPU index install below is a silent no-op (measured
+          # 2026-09-30: torch 2.14.1 with CUDA libs landed in a CPU job).
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
           # Core numeric/report stack -- exact versions from DEPENDENCIES.md
           # sec 3 where a pip (PyPI) wheel exists for them. `mkl` itself is
           # intentionally omitted: that pin only matters for conda-forge's
@@ -54,13 +65,16 @@ jobs:
           # links OpenBLAS instead, so the ABI crash this pin guards against
           # does not apply to a pip-based environment like this job's.
           pip install \
-            "numpy==2.1.0" "scipy==1.18.0" "pandas==2.3.3" "scikit-learn==1.9.0" \
-            "pyyaml==6.0.3" "jinja2==3.1.6" "tqdm==4.70.0" "plotly==5.24.1" \
+            "numpy==2.1.0" "scipy==1.18.0" "pandas==2.3.3" "scikit-learn==1.7.2" \
+            "pyyaml==6.0.3" "jinja2==3.1.6" "tqdm==4.68.3" "plotly==5.24.1" \
             "zarr>=2.16,<3" "pyarrow>=14" \
             "pycatch22" "umap-learn" "dtaidistance" \
             "datasets>=2.18,<3" "tsbootstrap>=0.7" "sdv>=1.9"
-          # CPU-only torch -- the fast job never touches a GPU (mocks only).
-          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          # Test runner and the one model library the mock suite imports
+          # (tests/test_hooks_modeloutput.py uses transformers' ModelOutput).
+          # Neither was installed before, so every run since the workflow was
+          # added failed at the first pytest step ("No module named pytest").
+          pip install pytest "transformers==4.57.6"
           pip install -e .
           pip install -e tsfm_lens
 
@@ -97,12 +111,12 @@ jobs:
           fi
 
       - name: tsfm_benchmark test suite
-        run: python -m pytest tsfm_benchmark/tests -q
+        run: bash .github/scripts/pytest_annotate.sh tsfm_benchmark tsfm_benchmark/tests -q
 
       - name: tsfm_lens test suite (includes test_adapter_conformance.py against all mocks)
         run: |
           cd tsfm_lens
-          python -m pytest tests -q
+          bash ../.github/scripts/pytest_annotate.sh tsfm_lens tests -q
 
       - name: Smoke run end-to-end (configs/smoke.yaml, mock adapters, no downloads)
         run: |
@@ -155,31 +169,32 @@ jobs:
           channels: conda-forge
           channel-priority: strict
 
-      - name: Recreate the exact DEPENDENCIES.md sec 2 environment
+      - name: Recreate the DEPENDENCIES.md sec 2 environment (CPU build)
         shell: bash -el {0}
         run: |
-          conda install -y -c conda-forge numpy=2.1.0 mkl=2024.2.2 scipy pandas \
-            scikit-learn pyyaml jinja2 tqdm zarr=2.18.7 plotly=5.24.1 \
-            pycatch22 umap-learn dtaidistance datasets=2.21.0 tsbootstrap=0.7.1 \
-            sdv=1.14.0
-          # CPU-only torch (this job has no GPU runner either -- "pinned"
-          # verifies the *recipe* resolves and the suite passes, not that a
-          # GPU is present; real-checkpoint verification is a separate,
-          # manual, per-session step per this repo's own established
-          # practice, ROADMAP.md's own Findings blocks).
-          pip install torch==2.9.1
+          # DEPENDENCIES.md sec 2's recipe, with the GPU pytorch build swapped
+          # for the same version's CPU build (no GPU runner; "pinned" verifies
+          # the recipe resolves and the suite passes). Kept in step with sec 2:
+          # nomkl + openblas like the reference env (conda-forge pytorch 2.12.0
+          # needs mkl >= 2026 or nomkl, so the old mkl=2024.2.2 pin was
+          # unsatisfiable), and tsbootstrap from pip (it is not on conda-forge).
+          conda install -y -c conda-forge nomkl numpy=2.1.0 scipy \
+            scikit-learn=1.7.2 pandas=2.3.3 pyyaml jinja2 tqdm zarr=2.18.7 \
+            plotly=5.24.1 pycatch22 umap-learn dtaidistance datasets=2.19.2 \
+            sdv=1.14.0 "pytorch=2.12.0=cpu*"
+          pip install tsbootstrap==0.7.1 transformers==4.57.6 pytest
           pip install -e .
           pip install -e tsfm_lens
 
       - name: tsfm_benchmark test suite
         shell: bash -el {0}
-        run: python -m pytest tsfm_benchmark/tests -q
+        run: bash .github/scripts/pytest_annotate.sh tsfm_benchmark tsfm_benchmark/tests -q
 
       - name: tsfm_lens test suite
         shell: bash -el {0}
         run: |
           cd tsfm_lens
-          python -m pytest tests -q
+          bash ../.github/scripts/pytest_annotate.sh tsfm_lens tests -q
 
   bleeding:
     name: bleeding (latest of every load-bearing library)
@@ -195,6 +210,9 @@ jobs:
       - name: Install the latest of every load-bearing dependency, unpinned
         run: |
           python -m pip install --upgrade pip
+          # CPU torch first, for the same reason as the fast job.
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install pytest
           pip install numpy scipy pandas scikit-learn pyyaml jinja2 tqdm plotly \
             pyarrow pycatch22 umap-learn dtaidistance sktime
           # zarr and datasets are deliberately NOT force-upgraded past this
@@ -206,18 +224,18 @@ jobs:
           # surface that broke this repo before (CLAUDE.md sec 11.8) with no
           # warning.
           pip install "zarr>=2.16,<3" "datasets>=2.18,<3" tsbootstrap sdv
-          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install --upgrade torch --index-url https://download.pytorch.org/whl/cpu
           pip install transformers timesfm chronos-forecasting
           pip install -e .
           pip install -e tsfm_lens
 
       - name: tsfm_benchmark test suite
-        run: python -m pytest tsfm_benchmark/tests -q
+        run: bash .github/scripts/pytest_annotate.sh tsfm_benchmark tsfm_benchmark/tests -q
 
       - name: tsfm_lens test suite
         run: |
           cd tsfm_lens
-          python -m pytest tests -q
+          bash ../.github/scripts/pytest_annotate.sh tsfm_lens tests -q
 
       - name: Smoke run end-to-end
         run: |

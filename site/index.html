@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TSFM-Lens</title>
+<style>
+:root{--bg:#fafaf7;--fg:#1d1f23;--mut:#5b616b;--card:#fff;--line:#dcdcd4;--acc:#1f5fbf}
+@media (prefers-color-scheme:dark){:root{--bg:#14161a;--fg:#e8e9ec;--mut:#a0a6b0;--card:#1c1f25;--line:#2d313a;--acc:#7db2ff}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:17px/1.55 system-ui,-apple-system,Segoe UI,sans-serif}
+main{max-width:46rem;margin:0 auto;padding:2rem 16px 4rem}
+h1{font-size:2rem;margin:.2em 0}
+h2{font-size:1.15rem;margin:2rem 0 .6rem}
+a{color:var(--acc)}
+.lead{color:var(--mut)}
+.headline{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--acc);border-radius:6px;padding:.9rem 1rem;margin:1.5rem 0}
+.headline p{margin:.3rem 0}
+ul{list-style:none;padding:0;margin:0}
+li{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:.7rem 1rem;margin:.6rem 0}
+li a{font-weight:600}
+li span{display:block;color:var(--mut);font-size:.93rem;margin-top:.2rem}
+footer{margin-top:2.5rem;color:var(--mut);font-size:.9rem}
+</style>
+</head>
+<body>
+<main>
+<h1>TSFM-Lens</h1>
+<p class="lead">TSFM-Lens is a pipeline for comparative mechanistic interpretability of time-series foundation models: it puts models with very different architectures on equal grounds. It asks which concepts they learn, whether those concepts are shared across models, whether they causally affect the forecast, and where in depth the forecast forms. Every claim is registered on a development corpus and tested once on a fresh sealed private corpus (held-out confirmation).</p>
+
+<div class="headline">
+<p><strong>Headline result.</strong> On a fresh sealed private corpus, concept transfer 20/20, single-feature causal claims 10/31, no cross-model causal claim confirms; "models share what they select, not (demonstrably) what they do with it".</p>
+</div>
+
+<h2>Example reports (interactive, self-contained HTML)</h2>
+<ul>
+<li data-requires="examples/panel7_v2/report.html"><a href="examples/panel7_v2/report.html">Seven-model report, with held-out confirmation</a>
+<span>TimesFM 2.5, Chronos-2, Sundial, Chronos-Bolt, Timer, Time-MoE and Chronos-T5-Base on the 965-series v2 dev corpus, all 19 stages, then confirmed once on a 971-series sealed private split. The report is large; allow it a moment to load.</span></li>
+<li data-requires="examples/concept_atlas_v2/report.html"><a href="examples/concept_atlas_v2/report.html">Four-model concept atlas (earlier run)</a>
+<span>TimesFM, Chronos-2, Sundial and Chronos-Bolt on the v2 corpus (29 SAE targets), confirmed once on the v2 private split. Superseded by the seven-model run, kept unchanged.</span></li>
+</ul>
+
+<h2>Papers</h2>
+<ul>
+<li data-requires="TSFM-Lens_JMLR.pdf"><a href="TSFM-Lens_JMLR.pdf">TSFM-Lens (JMLR version, PDF)</a></li>
+<li data-requires="TSFM-Lens_MLOSS.pdf"><a href="TSFM-Lens_MLOSS.pdf">TSFM-Lens (MLOSS version, PDF)</a></li>
+</ul>
+
+<h2>Code and quickstart</h2>
+<ul>
+<li><a href="https://github.com/DanK10097110/TSFM-Interp">GitHub repository</a></li>
+<li><a href="https://github.com/DanK10097110/TSFM-Interp/blob/main/docs/QUICKSTART.md">Install and quickstart</a><span>Run the whole pipeline on mock models on CPU in minutes.</span></li>
+</ul>
+
+<footer>Each reported claim states its evidence class (geometric, linear-translatable, causal within-model, behavioral, held-out).</footer>
+</main>
+</body>
+</html>

@@ -114,15 +114,17 @@ STAGE_DOCS: dict = {
                    "coarsely does it quantize the series, does scaling the input scale "
                    "the forecast back out cleanly, how does accuracy degrade as recent "
                    "context goes missing, and what happens when a context value is "
-                   "NaN?"),
+                   "NaN or the whole context is constant?"),
         how=("Reads each re-quantizing tokenizer's own bin geometry to score how coarse "
              "one quantization step is relative to a series' own amplitude; calls "
              "`predict()` on the input scaled up/down by large factors and compares the "
              "rescaled-back forecast to the original; calls `predict()` with the most "
              "recent context progressively withheld (a staleness scenario, not a front-"
-             "trim) to trace a degradation curve; and injects NaN at the front, middle, "
+             "trim) to trace a degradation curve; injects NaN at the front, middle, "
              "and back of the context to see whether `predict()` errors, silently "
-             "produces a non-finite forecast, or genuinely handles it."),
+             "produces a non-finite forecast, or genuinely handles it; and feeds "
+             "constant contexts (0, 1, 1e3, 1 plus 1e-7 noise) to check that the forecast "
+             "and every captured activation stay finite."),
         good_bad=("Good: a re-quantizing tokenizer's bin width is a small fraction of "
                    "the series' own amplitude with little saturating clipping, near-zero "
                    "scale-equivariance residual, graceful (not cliff-shaped) accuracy "
@@ -132,7 +134,9 @@ STAGE_DOCS: dict = {
                    "step relative to signal amplitude, a scale-equivariance residual "
                    "that grows with the scale factor, a sharp cliff at a specific "
                    "context length, or a 'propagates' NaN verdict -- a non-finite input "
-                   "silently becomes a non-finite forecast with no error to flag it."),
+                   "silently becomes a non-finite forecast with no error to flag it -- "
+                   "or a constant context that yields NaN activations or forecasts "
+                   "(real corpora contain constant windows)."),
         cannot_tell=("Every diagnostic here is about the FRONT DOOR only -- what happens "
                       "before or around a forward pass, never what happens inside one "
                       "(that's every other stage's job). Quantization resolution is "
@@ -140,7 +144,7 @@ STAGE_DOCS: dict = {
                       "'not applicable', never a fabricated zero, for a continuous-"
                       "embedding architecture. NaN handling is checked at only a "
                       "handful of hand-placed positions and one missing-fraction, not "
-                      "exhaustively; and none of these four probes says anything about "
+                      "exhaustively; and none of these probes says anything about "
                       "forecast quality on ordinary, well-formed input -- L0 is what "
                       "answers that.")),
     "layer_screen": StageDoc(
