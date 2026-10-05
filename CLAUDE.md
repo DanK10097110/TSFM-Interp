@@ -133,6 +133,12 @@ python render_stage_docs.py --check && python render_glossary.py --check   # aft
   with numpy 2.1.0.
 - Never write into an existing `runs/<name>` to test something. Copy it to a
   scratch directory first; the recorded numbers depend on those directories.
+- **Local runs are pruned** (2026-10-05, `run.py --prune`, at the user's
+  request): every JSON artifact and report remains, but activation stores and
+  SAE checkpoints are gone (`pruned.json` lists them), and the pipeline runs
+  only `--stages report` there. Recompute into a *new* run directory. Share a
+  run with `run.py --bundle` (panel7_v2_dev: 21.5 MB zip). Never park runs,
+  corpora or worktrees in `/tmp` or the scratchpad: both are RAM (tmpfs).
 - Benchmark CLI (run from `tsfm_benchmark/`):
   `PYTHONPATH=. python3 example_runs/run_full.py --config configs/example.yaml --out ./benchmark_out --references monash`.
   Validation: `example_runs/run_validation.py --corpus <dir>`.

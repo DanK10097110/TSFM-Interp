@@ -6,6 +6,18 @@ project does not yet follow strict semantic versioning across the pre-1.0
 line, since the public interface (config schema, CLI flags, report contents)
 is still evolving.
 
+## [Unreleased]
+
+### Added
+
+- `--bundle RUN_DIR` zips `report.html` and every small readable artifact with a
+  `SHARE_MANIFEST.json` listing what was left out and why; `--prune RUN_DIR
+  [--yes]` deletes the regenerable caches (SAE `*.pt`, `*.zarr` stores) of a run
+  (a real 7-model run: 7.3 GB, of which about 110 MB is needed to read it). A
+  pruned run keeps `pruned.json`; the pipeline then refuses every stage except
+  `report`, and the report renders the same sections. A successful run logs its
+  size and both commands. New module `tsfm_lens/share.py`.
+
 ## [1.0.0]
 
 First tagged release published to PyPI as two packages, `tsfm-benchmark` and
