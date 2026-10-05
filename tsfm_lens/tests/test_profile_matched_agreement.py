@@ -134,11 +134,11 @@ def test_default_own_effect_null_is_the_legacy_output_unchanged(world):
     sia.reset_caches()
     explicit = _side(ctx, data, {0}, "mean_magnitude")
     assert default["level"] == explicit["level"]
-    assert default["level"]["null_p95"] == GOLDEN["own0_level_p95"]
+    assert default["level"]["null_p95"] == pytest.approx(GOLDEN["own0_level_p95"], rel=P.GOLDEN_REL)
     sia.reset_caches()
     d1 = _side(ctx, data, DECOY_SET, None)
-    assert d1["level"]["null_p95"] == GOLDEN["own_decoy_level_p95"]
-    assert d1["level"]["effect"] == GOLDEN["decoy_level_effect"]
+    assert d1["level"]["null_p95"] == pytest.approx(GOLDEN["own_decoy_level_p95"], rel=P.GOLDEN_REL)
+    assert d1["level"]["effect"] == pytest.approx(GOLDEN["decoy_level_effect"], rel=P.GOLDEN_REL)
 
 
 def test_the_null_mode_is_part_of_the_cache_key(world):

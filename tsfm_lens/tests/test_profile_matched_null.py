@@ -48,6 +48,8 @@ def _world():
 
 
 W_DEC, Z_ALL = _world()
+# Recorded under the conda MKL build; other BLAS builds differ at ~1e-7 relative.
+GOLDEN_REL = 1e-5
 GOLDEN = {"effect0": 39.99998474121094, "null0": 2.5362611770629884, "null1": 2.536278820037842}
 
 
@@ -157,9 +159,9 @@ def test_default_null_mode_is_the_legacy_output_unchanged(wired):
     explicit = _run(wired, null_mode="mean_magnitude")
     assert json.dumps(default, sort_keys=True, default=float) == json.dumps(explicit, sort_keys=True, default=float)
     assert "ablation_null" not in default
-    assert _level(default, 0)["effect"] == GOLDEN["effect0"]
-    assert _level(default, 0)["null_p95"] == GOLDEN["null0"]
-    assert _level(default, 1)["null_p95"] == GOLDEN["null1"]
+    assert _level(default, 0)["effect"] == pytest.approx(GOLDEN["effect0"], rel=GOLDEN_REL)
+    assert _level(default, 0)["null_p95"] == pytest.approx(GOLDEN["null0"], rel=GOLDEN_REL)
+    assert _level(default, 1)["null_p95"] == pytest.approx(GOLDEN["null1"], rel=GOLDEN_REL)
 
 
 def test_profile_matched_removal_has_the_atoms_own_per_token_profile():
