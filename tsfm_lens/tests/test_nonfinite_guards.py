@@ -373,6 +373,8 @@ def test_shared_input_section_totals_the_nonfinite_rows_only_when_present():
 
 
 def test_error_fingerprint_excludes_and_counts_series_with_a_nonfinite_stored_forecast():
+    """`analysis/error_fingerprint.py` lives on `dev` only; on `main` this test skips."""
+    pytest.importorskip("tsfm_lens.analysis.error_fingerprint")
     from tests.test_error_fingerprint import _FakeStore as _EStore
     from tests.test_error_fingerprint import _corpus as _ecorpus
     from tsfm_lens.analysis.error_fingerprint import error_fingerprint
