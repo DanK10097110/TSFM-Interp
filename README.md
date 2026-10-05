@@ -187,6 +187,7 @@ correlational number can never be misread as causal:
 | [`examples/panel7_v2/`](examples/panel7_v2/) | The seven-model run with its held-out confirmation: report, artifacts, config, write-up |
 | [`examples/concept_atlas_v2/`](examples/concept_atlas_v2/) | The earlier four-model run: report, per-stage artifacts, config and findings write-up |
 | [`docs/RELEASING.md`](docs/RELEASING.md) | How a release is cut (PyPI trusted publishing, Zenodo DOI) |
+| [`tsfm_lens/README.md`](tsfm_lens/README.md#sharing-and-disk-usage) | Sharing a run without multi-GB transfers (`--bundle`) and reclaiming disk (`--prune`) |
 | [`FINDINGS.md`](FINDINGS.md) | The curated results ledger: every result so far, with exact numbers, evidence class and a 1–5 score (its `ROADMAP.md` references live on `dev`) |
 | [`tsfm_benchmark/README.md`](tsfm_benchmark/README.md) | Leakage tiers, generators, archetypes, the audit, sealing/epochs, CLI |
 | [`tsfm_benchmark/configs/README.md`](tsfm_benchmark/configs/README.md) | Every config on `main`, what it builds, and how to add a real-data source |

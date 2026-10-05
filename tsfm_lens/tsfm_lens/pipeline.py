@@ -462,6 +462,25 @@ def stage_names() -> list:
     return [s.name for s in _stages()]
 
 
+def _refuse_on_pruned_run(cfg: PipelineConfig, stages: Optional[list]) -> None:
+    """Refuse any stage other than `report` on a directory `--prune` emptied.
+
+    Checked before anything is written to the run directory. Every other
+    stage reads the activation store or an SAE checkpoint; rerunning it on a
+    pruned directory would rebuild a partial store beside artifacts computed
+    from the original one. `--stages report` is the supported path: the
+    report reads artifacts, and the few sections that read a cache degrade
+    with a rendered reason (`share.py`).
+    """
+    from .share import pruned_refusal
+    msg = pruned_refusal(cfg.run_dir())
+    if msg is None:
+        return
+    others = sorted(set(stages) - {"report"}) if stages else ["(all enabled stages)"]
+    if others:
+        raise ValueError(f"refusing to run stage(s) {', '.join(others)}: {msg}")
+
+
 def run_pipeline(cfg: PipelineConfig, stages: Optional[list] = None,
                  force: Optional[set] = None, allow_stale: bool = False) -> None:
     """Execute the selected (or all enabled) stages in canonical order.
@@ -478,6 +497,7 @@ def run_pipeline(cfg: PipelineConfig, stages: Optional[list] = None,
     (CLI `--allow-stale`) downgrades this to a loud warning and proceeds.
     """
     setup_logging()
+    _refuse_on_pruned_run(cfg, stages)
     set_seed(cfg.run.seed)
     cfg.run_dir().mkdir(parents=True, exist_ok=True)
     dump_config(cfg, cfg.run_dir() / "config_resolved.yaml")
@@ -597,3 +617,16 @@ def run_pipeline(cfg: PipelineConfig, stages: Optional[list] = None,
                 if k not in ("version", "stages")}
         save_manifest(cfg.run_dir(), {"version": 1, "stages": prev_stages, **extra})
     log.info("pipeline finished: %s", cfg.run_dir())
+    if "report" in selected and (cfg.run_dir() / "report.html").exists():
+        _log_share_hint(cfg.run_dir())
+
+
+def _log_share_hint(run_dir) -> None:
+    """One log line: run size and the two commands that share or shrink it."""
+    from .share import format_bytes, read_pruned, run_dir_bytes
+    if read_pruned(run_dir) is not None:
+        return
+    log.info("run directory %s is %s. Share the report without the multi-GB caches: "
+             "`python run.py --bundle %s`. Reclaim disk (keeps the report, only "
+             "`--stages report` can run afterwards): `python run.py --prune %s --yes`.",
+             run_dir, format_bytes(run_dir_bytes(run_dir)), run_dir, run_dir)

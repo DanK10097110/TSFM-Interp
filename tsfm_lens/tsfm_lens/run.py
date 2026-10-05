@@ -46,6 +46,47 @@ def _export_results(run_dir: Path) -> None:
     print(f"wrote {paths['parquet']}")
 
 
+def _prune(run_dir: Path, yes: bool) -> None:
+    """`--prune` entry point: table of regenerable caches, deleted only with `--yes`."""
+    from tsfm_lens.share import format_bytes, prune_run
+    summary = prune_run(run_dir, dry_run=not yes)
+    by_kind: dict = {}
+    for r in summary["removed"]:
+        k = by_kind.setdefault(r["kind"], [0, 0])
+        k[0] += 1
+        k[1] += r["bytes"]
+    print(f"{'would remove' if not yes else 'removed'} from {run_dir}:")
+    for kind, (n, b) in sorted(by_kind.items()):
+        print(f"  {kind:<20} {n:>5} item(s)  {format_bytes(b):>10}")
+    print(f"  {'total':<20} {len(summary['removed']):>5} item(s)  "
+          f"{format_bytes(summary['freed_bytes']):>10}")
+    if summary["symlink_target_bytes_kept"]:
+        print(f"  (symlinked stores: only the links are removed; "
+              f"{format_bytes(summary['symlink_target_bytes_kept'])} at their targets kept)")
+    if summary.get("store_attrs_error"):
+        print(f"  WARNING: {summary['store_attrs_error']}")
+    if yes:
+        print(f"freed {format_bytes(summary['freed_bytes'])}; wrote {run_dir / 'pruned.json'}. "
+              f"Only `--stages report` can run on this directory now.")
+    else:
+        print("dry run: nothing deleted. Add --yes to delete. Every JSON artifact and "
+              "report.html are kept.")
+
+
+def _bundle(run_dir: Path, out: str, max_file_mb: float) -> None:
+    """`--bundle` entry point: zip the report and small artifacts, with a manifest."""
+    from tsfm_lens.share import bundle_run, bundle_summary, format_bytes
+    path = bundle_run(run_dir, out=out or None, max_file_mb=max_file_mb)
+    info = bundle_summary(run_dir, path)
+    print(f"wrote {path}")
+    print(f"  zip size        {format_bytes(info['zip_bytes'])}")
+    print(f"  files included  {info['n_included']}")
+    for reason, v in sorted(info["excluded_by_reason"].items()):
+        print(f"  excluded        {reason:<14} {v['count']:>5} file(s)  "
+              f"{format_bytes(v['bytes']):>10}")
+    print("  full list: SHARE_MANIFEST.json inside the zip")
+
+
 def _print_provenance_diff(run_dir: Path) -> None:
     """`--verify-provenance` entry point (ROADMAP.md sec 20 H12)."""
     result = verify_provenance(run_dir)
@@ -192,6 +233,22 @@ def main() -> None:
                              "needed (ROADMAP.md sec 34.2 Item A4). The report "
                              "stage already does this automatically -- use "
                              "this to re-export without re-rendering HTML")
+    parser.add_argument("--prune", default="", metavar="RUN_DIR",
+                        help="delete a run's regenerable caches (SAE *.pt checkpoints, "
+                             "*.zarr activation stores) and exit; dry run unless --yes. "
+                             "Keeps every JSON artifact and report.html; afterwards only "
+                             "--stages report can run on that directory. No --config needed")
+    parser.add_argument("--yes", action="store_true",
+                        help="actually delete with --prune (default: dry run)")
+    parser.add_argument("--bundle", default="", metavar="RUN_DIR",
+                        help="zip report.html plus every small readable artifact "
+                             "(no caches) with a SHARE_MANIFEST.json, and exit. "
+                             "No --config needed")
+    parser.add_argument("--bundle-out", default="", metavar="PATH",
+                        help="zip path for --bundle (default: <RUN_DIR>/../<name>_share.zip)")
+    parser.add_argument("--bundle-max-file-mb", type=float, default=5.0,
+                        help="--bundle leaves out any file larger than this (default 5; "
+                             "report.html is always kept)")
     parser.add_argument("--stages", default="",
                         help=f"comma-separated subset of {stage_names()}; default: all enabled")
     parser.add_argument("--force", default="",
@@ -269,6 +326,14 @@ def main() -> None:
         _export_results(Path(args.export_results))
         return
 
+    if args.prune:
+        _prune(Path(args.prune), args.yes)
+        return
+
+    if args.bundle:
+        _bundle(Path(args.bundle), args.bundle_out, args.bundle_max_file_mb)
+        return
+
     if args.new_adapter:
         if not args.checkpoint:
             parser.error("--checkpoint is required with --new-adapter")
@@ -293,8 +358,8 @@ def main() -> None:
         return
 
     if not args.config:
-        parser.error("--config is required (unless using --verify-provenance or "
-                     "--export-results)")
+        parser.error("--config is required (unless using --verify-provenance, "
+                     "--export-results, --prune or --bundle)")
     cfg = load_config(args.config)
     if args.verbose is not None:
         cfg.report.verbose = args.verbose

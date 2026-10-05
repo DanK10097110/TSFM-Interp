@@ -673,7 +673,42 @@ used day to day (see `configs/README.md` for `--list-configs`):
 | `--no-preflight` / `--allow-preflight-fail` | Skip, or run despite failing, the fast static preflight that otherwise runs automatically. |
 | `--verify-provenance RUN_DIR` | Diff a finished run's recorded git SHA/library versions/device/config hash against the current environment. |
 | `--export-results RUN_DIR` | Re-export `report/results.csv`/`.parquet` from an existing run's findings, without re-rendering HTML. |
+| `--prune RUN_DIR [--yes]` | Delete a run's regenerable caches (SAE `*.pt`, `*.zarr` stores). Dry run unless `--yes`; afterwards only `--stages report` runs there. |
+| `--bundle RUN_DIR [--bundle-out P] [--bundle-max-file-mb N]` | Zip `report.html` plus every small readable artifact, with a `SHARE_MANIFEST.json`. |
 | `--verbose` / `--no-verbose` | Force `report.verbose` regardless of the config. |
+
+## Sharing and disk usage
+
+A run directory is mostly regenerable tensors. Measured on a real 7-model run
+(7.3 GB): SAE checkpoints (`sae/<model>/*.pt`, including the `@r1`/`@r2` seed
+replicates) about 5.0 GB, `activations.zarr` about 2.5 GB, and every JSON
+artifact plus `report.html` about 110 MB. On the mock smoke run with SAE,
+concepts and confirm enabled (`tests/test_share.py`'s fixture) the run is
+3.85 MB, 1.2 MB of it caches; pruning leaves 2.56 MB, and the bundle zip is
+0.53 MB.
+
+```bash
+python run.py --bundle runs/<name>            # share: <name>_share.zip next to the run
+python run.py --prune runs/<name>             # dry run: what would be removed, by kind
+python run.py --prune runs/<name> --yes       # reclaim disk
+```
+
+`--bundle` includes `report.html` (always) and every non-cache file with a
+data extension up to `--bundle-max-file-mb` (default 5); backup renders
+(`report_*.html`, `*.pre_*`) are left out. `SHARE_MANIFEST.json` inside the zip
+lists every included and excluded file with its reason (`heavy cache`, `over
+size cap`, `backup render`, `extension`).
+
+`--prune` writes `pruned.json` and keeps `activations_attrs.json` (the store's
+layer names and stack layout, so depth figures stay on the same axis).
+Afterwards only `--stages report` can run in that directory: any other stage is
+refused with the prune date, because it would read deleted caches. The report
+re-renders the same sections with the same text; a section that needs a
+deleted checkpoint (the SAE feature exemplar panel) says
+`cache pruned: ... (see pruned.json)` instead of drawing. To recompute, run the
+config into a new run directory (change `run.name`). A `.zarr` symlink is
+unlinked, never followed. The end of a successful run logs the run size and
+these two commands.
 
 ## Confirmation discipline
 

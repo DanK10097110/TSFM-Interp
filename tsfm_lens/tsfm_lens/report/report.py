@@ -1095,11 +1095,12 @@ def _nonfinite_summary(run_dir: Path) -> dict:
     store at all -- the coverage panel already renders fine either way.
     """
     zarr_path = run_dir / "activations.zarr"
-    if not zarr_path.exists():
-        return {}
     try:
-        from ..extraction.store import ActivationStore
-        return dict(ActivationStore(zarr_path, mode="r").root.attrs.get("nonfinite", {}))
+        from ..share import open_store_or_stub
+        store = open_store_or_stub(run_dir)
+        if store is None:
+            return {}
+        return dict(store.root.attrs.get("nonfinite", {}))
     except Exception as e:
         log.info(f"report: could not read non-finite summary from {zarr_path}: {e}")
         return {}
@@ -4838,8 +4839,8 @@ def _sec_exemplars(run_dir: Path, model_colors: dict, findings: list,
     meta = load_json(run_dir / "exemplars" / "exemplars.json")
     records = meta["exemplars"]
     models = list(meta["models"])
-    store_path = run_dir / "activations.zarr"
-    store = ActivationStore(store_path, mode="r") if store_path.exists() else None
+    from ..share import open_store_or_stub
+    store = open_store_or_stub(run_dir)
     depth_axes = {m: depth_axis_for_run(depth_axis_name, store, m, meta["models"][m]["layers"])
                   for m in models}
     axis_names = {da.axis for da in depth_axes.values()}
@@ -5289,6 +5290,11 @@ def _feature_cards_for(cfg, store, model: str, layer: str, entry: dict,
                            cfg.run.seed + 12, strata=run_meta["family"].to_numpy())
     rows = np.asarray(rows, dtype=int)
     ckpt = cfg.run_dir() / "sae" / sanitize(model) / f"{sanitize(layer)}.pt"
+    if not ckpt.exists():
+        from ..share import cache_pruned_reason
+        reason = cache_pruned_reason(cfg.run_dir(), f"the SAE checkpoint for {model}/{layer}")
+        if reason:
+            raise RuntimeError(reason)
     sae = load_sae_checkpoint(str(ckpt))
     features = encode_series_level(sae, store, model, layer, rows, "cpu")
     series_ids = run_meta["series_id"].to_numpy()[rows]
@@ -6566,7 +6572,9 @@ def _sec_sae(cfg: PipelineConfig, run_dir: Path, findings: list) -> str:
     meta_sae = load_json(run_dir / "sae" / "meta.json")
     if not meta_sae:
         return ""
-    store = ActivationStore(run_dir / "activations.zarr")
+    from ..share import open_store_or_stub, read_pruned
+    store = open_store_or_stub(run_dir) if read_pruned(run_dir) is not None \
+        else ActivationStore(run_dir / "activations.zarr")
     run_meta = load_meta(run_dir)
     # The exemplar sparklines need the raw series, which no artifact in the
     # run directory carries -- the store holds activations, `meta` holds ids
@@ -7045,13 +7053,13 @@ def _sec_budget(run_dir: Path, model_colors: dict, findings: list,
     """
     from ..analysis.depth_axis import depth_axis_for_run
     from ..extraction.store import ActivationStore
-    store_path = run_dir / "activations.zarr"
+    from ..share import open_store_or_stub
     # `budget` has no pipeline dependencies (`--stages budget` runs standalone
     # against a checkpoint with nothing else built), so unlike every other
     # depth figure in this file this one may run before the store exists at
     # all -- `depth_axis_for_run(..., store=None, ...)` degrades to `index`
     # in that case rather than crashing.
-    store = ActivationStore(store_path, mode="r") if store_path.exists() else None
+    store = open_store_or_stub(run_dir)
     budget = load_json(run_dir / "budget" / "model_budget.json")
     models = budget.get("models", {})
     rows, warn = [], []
