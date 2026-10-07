@@ -161,8 +161,8 @@ four sealed private draws and in all seven models. The basic effect types (raisi
 seasonality) are present in every model, and the centroid effect profiles of multi-model concepts replicate held-out
 (Section~\ref{sec:heldout}). At the fine grain, concepts are organized by model: no strict concept is common to the panel
 (confirmed held-out), several converge on the same effect from different series, and the clearest
-same-effect-on-same-inputs case is within the Chronos family. Whether architectures from different families also share
-effects on the same inputs is open; Section~\ref{sec:limitations} outlines the test that would settle it. Whole-layer
+same-effect-on-same-inputs case is within the Chronos family. Whether architectures from different families share effects series by series is not measurable by
+ablation at these effect sizes (Section~\ref{sec:limitations}). Whole-layer
 similarity cannot reveal any of this, since its metrics disagree with one another.
 
 \subsection{RQ3: Do concepts causally affect the forecast, and how much?}
@@ -250,8 +250,8 @@ beat the null's 95th percentile of 0.854--0.907 with $p\le0.007$, but the rule a
 reach cosine 0.9, and with three members only one pair did; the centroid component alone is a post hoc reading) and shared-input agreement (0 of 6 tested, 5 of 11 not testable; the best, Chronos-Bolt block 4
 to Chronos-2 block 7 ``same'', reproduces its verdict with $p=0.011$ but misses Holm at 0.066). In all, 43 claims
 confirm, 33 do not and 6 cannot be tested. Held out, models share what they select, the average effect of a multi-model concept
-reproduces, and fine-grained concepts stay model-specific; whether effects are shared across families on the same inputs is the open question that the test of
-Section~\ref{sec:limitations} is designed to answer. One procedural event, a crash before any statistic was written,
+reproduces, and fine-grained concepts stay model-specific; series-by-series effect agreement across families is beyond what ablation can measure at these effect sizes
+(Section~\ref{sec:limitations}). One procedural event, a crash before any statistic was written,
 is disclosed in Appendix~\ref{app:repro}.
 
 \begin{table}[tb]

@@ -44,17 +44,16 @@ on any sealed corpus. Held-out confirmation covers accuracy, geometry,
 perturbation agreement, transfer, single-feature causal effects, atlas structure and failure prediction, on one private
 split opened once (a second look needs a fresh epoch), and the 20 confirmed transfers come from two source concepts.
 
-\paragraph{Toward a test of shared effects.} The cross-model causal claims are the ones that did not confirm, and the
-known-answer test shows why their absence is uninformative: the shared-input rung is specific but detects a planted
-shared concept across architectures in at most 0.4 of seeds, and more shared series alone do not help
-(\fid{MN-30}). Settling whether architectures share effects therefore needs a better instrument, not a second look
-with the same one. Three changes follow from the diagnosis: (i) score agreement on concept \emph{subspaces} (the atlas
-concept's member directions ablated together) rather than single features, since a concept spread over 3--4 directions
-is never detected one direction at a time; (ii) report an estimated effect similarity with a series-bootstrap interval
-instead of a thresholded verdict, so that agreement and equivalence (TOST against a stated margin) are both testable;
-and (iii) admit the redesigned test only once it reaches sensitivity $\ge 0.8$ at false-positive rate $\le 0.05$ on the
-planted architecture pair, then register its claims and confirm them on a fresh private epoch. The planted forecaster,
-the registry and epoch minting already exist, so this is a contained extension.
+\paragraph{Effect sharing on the same series.} The cross-model causal claims are the ones that did not confirm, and the
+known-answer test explains why: the shared-input rung is specific but detects a planted shared concept across
+architectures in at most 0.4 of seeds, and more shared series do not help (\fid{MN-30}). We therefore built the redesign
+this diagnosis suggested (ablating a concept's member subspace on each side, an equal-rank size-matched null, and
+interval estimates against matched floors) and fixed its pass criterion in advance: sensitivity $\ge0.8$ on both planted
+shared concepts, false agreement $\le0.05$, on held-out seeds. It also fails (sensitivity 0.5 and 0.375, with 0 of 14
+false agreements), and the reason is a ceiling rather than a design detail: even the planted distributed subspace itself
+does not move the forecast more than an equal-sized random removal (\fid{MN-32}). Per-series agreement of causal
+effects across architectures is therefore not measurable by ablation at the effect sizes these models have, and
+\tool{} compares effects across models at the level of concept profiles instead (Section~\ref{sec:rq2}).
 
 \paragraph{SAE dependence, usability and completeness.} Concept results depend on dictionary size, sparsity,
 revival and seed; the system measures this dependence but cannot remove it, and feature death tracks layer
