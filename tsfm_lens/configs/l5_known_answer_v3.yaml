@@ -1,0 +1,85 @@
+# V3-C subspace agreement known-answer validation (ROADMAP.md sec 40, sec 41): the same
+# planted architecture pair as l5_known_answer.yaml, scored with the redesigned subspace
+# agreement test (sae/subspace_agreement.py) instead of the single-feature rung.
+#
+# THE GATE, fixed before any subspace-agreement number was computed
+# (analysis/l5_subspace_gate.py::GATE_V3 is the authority; this is its documentation and
+# tests/test_l5_subspace_gate.py pins the two together):
+#
+#     tuning seed          0           (design iteration allowed here only)
+#     held-out seeds       1 2 3 4     (never used for a design decision)
+#     sensitivity          >= 0.8 for EACH of the single-direction and the 3-4-direction
+#                          shared concept: share of (seed, direction) cells read `agree`;
+#                          a missing unit or `not scorable` is a non-detection
+#     false agree          <= 0.05 pooled over the opposite-effect twin and the input-only
+#                          decoy
+#     doses                dose 1 is primary; dose 2 is reported against the same
+#                          thresholds and stated separately
+#
+# Run:  python run_l5_subspace_known_answer.py --corpus <dir>/public_dev --out <scratch> \
+#           --seeds 0 1 2 3 4 --dose 1
+#
+run:
+  name: l5_known_answer_v3
+  out_dir: runs
+  device: cpu
+  dtype: float32
+  seed: 0
+  keep_models_loaded: true
+
+data:
+  source: sealed
+  path: ../benchmark_known_answer/public_dev
+  context_len: 256
+  horizon: 32
+  family_key: auto
+
+alignment:
+  window: 32
+  sanity_check: true
+  on_failure: fail
+
+models:
+  - name: ArchA
+    adapter: mock_planted
+    batch_size: 256
+    kwargs: {plant_set: A, vocabulary: l5, construction_seed: 0, dose: 1.0,
+             width: 64, depth: 5, heads: 2, planted_block: 2, rotate: false}
+  - name: ArchB
+    adapter: mock_planted
+    batch_size: 256
+    kwargs: {plant_set: B, vocabulary: l5, construction_seed: 0, dose: 1.0,
+             width: 96, depth: 7, heads: 4, planted_block: 4, rotate: true}
+
+sae:
+  enabled: true
+  targets:
+    - {model: ArchA, layer: blocks.2}
+    - {model: ArchB, layer: blocks.4}
+  dict_size_mult: 4
+  k: 8
+  epochs: 300
+  batch_size: 256
+  lr: 0.001
+  resample_dead_every_epochs: 5
+  aux_k: 32
+  forecast_preservation_max_series: 64
+  persist_features: true
+  real_data_enabled: false
+  concept_min_members: 3
+  ablation_null: profile_matched
+  transfer_top_k: 20
+
+concepts:
+  enabled: true
+  top_k_series: 8
+  n_null_directions: 16
+  max_series: 64
+  n_features_per_rule: 384
+  describe: false
+  n_sae_seeds: 1
+  shared_input_n_null: 50
+  subspace_agreement_n_null: 50
+  subspace_agreement_n_boot: 1000
+  subspace_agreement_ci_level: 0.95
+  subspace_agreement_margin: 1.0
