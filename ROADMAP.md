@@ -39268,3 +39268,16 @@ just disclose:
   peak CKA is a maximum over 120 layer pairs; multiplicity ledger excludes the 8,705 battery cells and L5 tests;
   crosscoder comparison (SH-10/11) explains the TopK SAE choice; registered claims are cuts of candidate pools
   (transfer 20/1124, causal 32/113, agreement 11/25, atlas 4/9).
+
+### 41.2 Findings — V3-C (2026-10-07, merged e72e93e)
+
+Subspace agreement test: pre-fixed gate (0b0d723) FAILS on all variants (main 0.5/0.375, k=100 0.5/0.375, contrast
+0.0/0.0 at dose 1; 0/14 false agree everywhere). Even the answer-key distributed subspace does not clear a size-matched
+null (rank-p 0.467 / 0.267). Per §40's stop rule: confirmed method negative (FINDINGS MN-32); nothing registered from it.
+Cross-model effect sharing in V3 is tested only at the concept-profile level (V3-B (a), (b)). Code stays as the
+reproducer.
+
+V3-A (corpus) delivered on branch v3-corpus: 2876 dev (synthetic 2091, real_derived 785 = 27.3%, 10 real sources),
+external_real 800 GIFT-Eval windows (5 domains), 0 hash overlap with every earlier split; follow-up in progress: the
+external gate's DTW references restricted to real_derived dev + Monash (gating on synthetic biased the slice toward
+non-smooth series), exact-hash and near-duplicate checks kept against all dev; `role` carried into tsfm_lens rows.
