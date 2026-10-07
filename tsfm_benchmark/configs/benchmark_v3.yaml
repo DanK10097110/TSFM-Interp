@@ -1,0 +1,338 @@
+# ============================================================================
+# Benchmark v3 (ROADMAP sec 41, V3-A): ~3x the v2 dev corpus, more real sources, data roles
+# ============================================================================
+# `large_run_v2.yaml` is untouched (invariant 1: sealed-corpus regeneration and its golden
+# hashes stay reproducible; every option below is opt-in). This is a separate config.
+#
+# What is new relative to v2
+#   1. SIZE. 3,000+ dev series (v2: 965). Synthetic backbone x4 (460 -> 1840), the fixed
+#      seasonal+trend recipe x3 (130 -> 400), real-derived x2 (410 -> 785, ~26% of dev).
+#   2. MORE REAL SOURCES, measured first (`example_runs/measure_sources.py`, 576-step windows,
+#      "periodic" = dominant-period autocorrelation >= 0.3, flat proxy = lag-1 < 0.2 and not
+#      periodic, the BM-06 proxy):
+#        source                       rows(>=576)  zero_frac  lag1    flat_proxy  decision
+#        monash_electricity_hourly     321/321     0.0000     0.8961  0.0093      keep (v2)
+#        monash_traffic                862/862     0.0000     0.8511  0.0000      keep (v2)
+#        taxi_30min                   2428/2428    0.0990     0.6982  0.0000      keep
+#        m4_hourly                     414/414     0.0000     0.9572  0.0000      keep
+#        monash_pedestrian_counts       66/66      0.0000     0.8936  0.0000      keep
+#        ercot (4 windows/row)           8/8       0.0000     0.9611  0.0000      keep (few rows)
+#        monash_kdd_cup_2018 (windows) 270/270     0.0000     0.9032  0.0000      keep (NaN-windowed)
+#        solar_1h (field power_mw)    5166/5166    0.5087     0.9183  0.0000      keep (night zeros)
+#        mexico_city_bikes             494/494     0.4887     0.4658  0.1367      dropped: flat proxy 13.7%,
+#                                                                                  7.3% constant windows
+#        uber_tlc_hourly               262/262     0.1927     0.3106  0.3359      dropped (BM-06 profile)
+#        wind_farms_hourly              15/337     0.9965     0.0746  0.5333      dropped: 97% of rows have NaN,
+#                                                                                  survivors 47% constant
+#        exchange_rate                    8/8      0.0000     0.9885  0.0000      dropped: 8 random-walk series,
+#                                                                                  naive-optimal, no diversity
+#      `ercot` and `monash_kdd_cup_2018` hold few, very long rows with scattered NaN, which the
+#      loader used to reject whole (0 series loaded). The opt-in source keys `windows_per_row`
+#      and `finite_windows` cut non-overlapping windows and keep the NaN-free ones.
+#      Real-derived tasks stay on tier `realism_stress`; their role is derived as `real_derived`.
+#   3. DATA ROLES. `assign_roles: true` stamps every sample with exactly one of `synthetic`,
+#      `real_derived`, `external_real` (derived from tier + generator; contradictions raise).
+#      `example_runs/build_data_roles_card.py` writes data_roles.json / data_roles.md next to
+#      the splits from the sealed corpora themselves.
+#   4. EXTERNAL SLICE. The `external_real:` section below is read by
+#      `example_runs/build_external_real.py`, not by run_full.py: raw GIFT-Eval windows, sealed as
+#      their own split and leakage-audited against the dev split.
+#   5. SEEDS. v1 and v2 used seed 0 (epochs 0-3: sample seeds 0..~1.02e6, 1e8.., 2e8.., 3e8..).
+#      v3 uses seed 7000003: dev samples take seeds 7000003 + (task offset < 9973) + k, and an
+#      epoch-e private split starts at 7000003 + e*100000000 + 1000000, so no v3 split can share
+#      a seed with a v1/v2 split. `example_runs/mint_private.py` additionally refuses to seal when
+#      any sample hash equals one in an existing split (v2 epoch 1 was rejected on exactly that).
+#
+# Build the dev split only (the private split is minted after hypothesis registration):
+#   cd "TSFM Interp"
+#   PYTHONPATH=. python3 tsfm_benchmark/example_runs/run_full.py \
+#       --config tsfm_benchmark/configs/benchmark_v3.yaml --out benchmark_v3 \
+#       --seed 7000003 --epoch 0 --splits public --references monash --reference-limit 120
+# Build the external split (needs benchmark_v3/public_dev):
+#   PYTHONPATH=. python3 tsfm_benchmark/example_runs/build_external_real.py \
+#       --config tsfm_benchmark/configs/benchmark_v3.yaml --dev benchmark_v3/public_dev \
+#       --out benchmark_v3/external_real --references monash --reference-limit 120
+# Mint the private split later (after registration), exact command in mint_private.py's docstring.
+#
+# Leakage audit caveat (as for v2): `--references monash` audits against a generic Monash
+# bootstrap reference, not against the chronos_datasets / ETT domains the real-derived tasks
+# are built from; real-derived samples inherit their source distribution by design.
+# ============================================================================
+
+assign_roles: true
+
+tasks:
+  # ---------------------------------------------------------------- synthetic
+  - name: diverse_synthetic_backbone
+    generator: random_parametric
+    count: 1840
+    tier: synthetic
+    generator_params:
+      length: 576
+      archetypes: [trend_dominant, seasonal_dominant, multi_seasonal_complex,
+                   regime_switching, ar_colored_noise, anomaly_heavy,
+                   clean_low_noise, noisy_chaotic, random_walk_drift,
+                   intermittent_bursts, amplitude_modulated,
+                   nonsinusoidal_seasonal]
+    corruption_pool:
+      - {op: jitter, sigma: [0.01, 0.08]}
+      - {op: scaling, sigma: [0.05, 0.2]}
+      - {op: time_warp, strength: [0.05, 0.25], n_knots: [3, 6]}
+      - {op: dropout, rate: [0.02, 0.1]}
+    n_corruptions: [0, 3]
+
+  - name: seasonal_trend_fixed
+    generator: parametric
+    count: 400
+    tier: synthetic
+    generator_params:
+      length: 576
+      trend: {order: 2, scale: 0.5}
+      seasonalities:
+        - {period: 24, amplitude: 1.0}
+        - {period: 168, amplitude: 0.4}
+      ar_coeffs: [0.6, -0.2]
+      noise_scale: 0.15
+      n_changepoints: 2
+      n_anomalies: 3
+    corruptions:
+      - {op: jitter, sigma: 0.03}
+      - {op: time_warp, strength: 0.1}
+
+  # ------------------------------------------------------------ real-derived
+  # mixture / weighted_sum (250)
+  - name: real_weather_weighted_sum
+    generator: mixture
+    count: 40
+    tier: realism_stress
+    generator_params: {mode: weighted_sum, weight_concentration: 0.7}
+    source_sample_size: [3, 8]
+    source_config: {kind: monash, subset: weather, limit: 600, seed: 1, min_length: 576}
+
+  - name: real_electricity_weighted_sum
+    generator: mixture
+    count: 40
+    tier: realism_stress
+    generator_params: {mode: weighted_sum, weight_concentration: 0.7}
+    source_sample_size: [3, 8]
+    source_config: {kind: chronos_datasets, subset: monash_electricity_hourly, limit: 300, seed: 11, min_length: 576, max_length: 4000}
+
+  - name: real_taxi_weighted_sum
+    generator: mixture
+    count: 50
+    tier: realism_stress
+    generator_params: {mode: weighted_sum, weight_concentration: 0.7}
+    source_sample_size: [3, 8]
+    source_config: {kind: chronos_datasets, subset: taxi_30min, limit: 600, seed: 21, min_length: 576, max_length: 4000}
+
+  - name: real_m4hourly_weighted_sum
+    generator: mixture
+    count: 45
+    tier: realism_stress
+    generator_params: {mode: weighted_sum, weight_concentration: 0.7}
+    source_sample_size: [3, 8]
+    source_config: {kind: chronos_datasets, subset: m4_hourly, limit: 414, seed: 22, min_length: 576, max_length: 4000}
+
+  - name: real_solar_weighted_sum
+    generator: mixture
+    count: 40
+    tier: realism_stress
+    generator_params: {mode: weighted_sum, weight_concentration: 0.7}
+    source_sample_size: [3, 8]
+    source_config: {kind: chronos_datasets, subset: solar_1h, field_name: power_mw, limit: 400, seed: 23, min_length: 576, max_length: 4000}
+
+  - name: real_ercot_weighted_sum
+    generator: mixture
+    count: 35
+    tier: realism_stress
+    generator_params: {mode: weighted_sum, weight_concentration: 0.7}
+    source_sample_size: [3, 8]
+    source_config: {kind: chronos_datasets, subset: ercot, limit: 8, seed: 24, min_length: 576, max_length: 2000, windows_per_row: 4, finite_windows: true}
+
+  # mixture / multiplicative (165)
+  - name: real_weather_multiplicative
+    generator: mixture
+    count: 30
+    tier: realism_stress
+    generator_params: {mode: multiplicative, weight_concentration: 0.5}
+    source_sample_size: [2, 6]
+    source_config: {kind: monash, subset: weather, limit: 600, seed: 2, min_length: 576}
+
+  - name: real_traffic_multiplicative
+    generator: mixture
+    count: 40
+    tier: realism_stress
+    generator_params: {mode: multiplicative, weight_concentration: 0.5}
+    source_sample_size: [2, 6]
+    source_config: {kind: chronos_datasets, subset: monash_traffic, limit: 600, seed: 12, min_length: 576, max_length: 4000}
+
+  - name: real_kdd_multiplicative
+    generator: mixture
+    count: 35
+    tier: realism_stress
+    generator_params: {mode: multiplicative, weight_concentration: 0.5}
+    source_sample_size: [2, 6]
+    source_config: {kind: chronos_datasets, subset: monash_kdd_cup_2018, limit: 270, seed: 25, min_length: 576, max_length: 2000, windows_per_row: 4, finite_windows: true}
+
+  - name: real_pedestrian_multiplicative
+    generator: mixture
+    count: 30
+    tier: realism_stress
+    generator_params: {mode: multiplicative, weight_concentration: 0.5}
+    source_sample_size: [2, 6]
+    source_config: {kind: chronos_datasets, subset: monash_pedestrian_counts, limit: 66, seed: 26, min_length: 576, max_length: 4000}
+
+  - name: real_m4hourly_multiplicative
+    generator: mixture
+    count: 30
+    tier: realism_stress
+    generator_params: {mode: multiplicative, weight_concentration: 0.5}
+    source_sample_size: [2, 6]
+    source_config: {kind: chronos_datasets, subset: m4_hourly, limit: 414, seed: 27, min_length: 576, max_length: 4000}
+
+  # Second independent non-Monash real corpus. Unchanged recipe from v2 (40 -> 50).
+  - name: real_ett_mixture
+    generator: mixture
+    count: 50
+    tier: realism_stress
+    generator_params: {mode: weighted_sum, weight_concentration: 0.8}
+    source_sample_size: [2, 4]
+    source_config: {kind: huggingface, dataset: ETDataset/ett, limit: 200, seed: 3, min_length: 576}
+
+  # block_bootstrap (210)
+  - name: real_weather_block_bootstrap
+    generator: block_bootstrap
+    count: 25
+    tier: realism_stress
+    generator_params: {block_length: 24}
+    source_sample_size: [1, 1]
+    source_config: {kind: monash, subset: weather, limit: 600, seed: 4, min_length: 576}
+
+  - name: real_traffic_block_bootstrap
+    generator: block_bootstrap
+    count: 30
+    tier: realism_stress
+    generator_params: {block_length: 24}
+    source_sample_size: [1, 1]
+    source_config: {kind: chronos_datasets, subset: monash_traffic, limit: 600, seed: 13, min_length: 576, max_length: 4000}
+
+  - name: real_taxi_block_bootstrap
+    generator: block_bootstrap
+    count: 30
+    tier: realism_stress
+    generator_params: {block_length: 24}
+    source_sample_size: [1, 1]
+    source_config: {kind: chronos_datasets, subset: taxi_30min, limit: 600, seed: 31, min_length: 576, max_length: 4000}
+
+  - name: real_m4hourly_block_bootstrap
+    generator: block_bootstrap
+    count: 30
+    tier: realism_stress
+    generator_params: {block_length: 24}
+    source_sample_size: [1, 1]
+    source_config: {kind: chronos_datasets, subset: m4_hourly, limit: 414, seed: 32, min_length: 576, max_length: 4000}
+
+  - name: real_ercot_block_bootstrap
+    generator: block_bootstrap
+    count: 25
+    tier: realism_stress
+    generator_params: {block_length: 24}
+    source_sample_size: [1, 1]
+    source_config: {kind: chronos_datasets, subset: ercot, limit: 8, seed: 33, min_length: 576, max_length: 2000, windows_per_row: 4, finite_windows: true}
+
+  - name: real_kdd_block_bootstrap
+    generator: block_bootstrap
+    count: 25
+    tier: realism_stress
+    generator_params: {block_length: 24}
+    source_sample_size: [1, 1]
+    source_config: {kind: chronos_datasets, subset: monash_kdd_cup_2018, limit: 270, seed: 34, min_length: 576, max_length: 2000, windows_per_row: 4, finite_windows: true}
+
+  - name: real_solar_block_bootstrap
+    generator: block_bootstrap
+    count: 25
+    tier: realism_stress
+    generator_params: {block_length: 24}
+    source_sample_size: [1, 1]
+    source_config: {kind: chronos_datasets, subset: solar_1h, field_name: power_mw, limit: 400, seed: 35, min_length: 576, max_length: 4000}
+
+  - name: real_pedestrian_block_bootstrap
+    generator: block_bootstrap
+    count: 20
+    tier: realism_stress
+    generator_params: {block_length: 24}
+    source_sample_size: [1, 1]
+    source_config: {kind: chronos_datasets, subset: monash_pedestrian_counts, limit: 66, seed: 36, min_length: 576, max_length: 4000}
+
+  # sequential_par (110; not bit-exact, BIT_EXACT["sequential_par"] is False, so kept small)
+  - name: real_weather_sequential_par
+    generator: sequential_par
+    count: 20
+    tier: realism_stress
+    generator_params: {epochs: 64, max_train_length: 512, length: 576}
+    source_sample_size: [4, 8]
+    source_config: {kind: monash, subset: weather, limit: 600, seed: 5, min_length: 576}
+
+  - name: real_electricity_sequential_par
+    generator: sequential_par
+    count: 25
+    tier: realism_stress
+    generator_params: {epochs: 64, max_train_length: 512, length: 576}
+    source_sample_size: [4, 8]
+    source_config: {kind: chronos_datasets, subset: monash_electricity_hourly, limit: 300, seed: 14, min_length: 576, max_length: 4000}
+
+  - name: real_m4hourly_sequential_par
+    generator: sequential_par
+    count: 25
+    tier: realism_stress
+    generator_params: {epochs: 64, max_train_length: 512, length: 576}
+    source_sample_size: [4, 8]
+    source_config: {kind: chronos_datasets, subset: m4_hourly, limit: 414, seed: 37, min_length: 576, max_length: 4000}
+
+  - name: real_ercot_sequential_par
+    generator: sequential_par
+    count: 20
+    tier: realism_stress
+    generator_params: {epochs: 64, max_train_length: 512, length: 576}
+    source_sample_size: [4, 8]
+    source_config: {kind: chronos_datasets, subset: ercot, limit: 8, seed: 38, min_length: 576, max_length: 2000, windows_per_row: 4, finite_windows: true}
+
+  - name: real_kdd_sequential_par
+    generator: sequential_par
+    count: 20
+    tier: realism_stress
+    generator_params: {epochs: 64, max_train_length: 512, length: 576}
+    source_sample_size: [4, 8]
+    source_config: {kind: chronos_datasets, subset: monash_kdd_cup_2018, limit: 270, seed: 39, min_length: 576, max_length: 2000, windows_per_row: 4, finite_windows: true}
+
+# ----------------------------------------------------------- external_real
+# Raw GIFT-Eval windows (Salesforce/GiftEval, Apache-2.0), no generator, values untouched.
+# `window_length` 576 matches the corpus length (512 context + 64 horizon). A window is the final
+# 576 points of a series or variate; `max_windows_per_series` > 1 takes further non-overlapping
+# windows backwards for the few datasets with only a handful of (very long) series. One
+# frequency is listed per dataset so no underlying recording enters twice. NOT listed, because
+# the dev real-derived sources already use the same underlying data: electricity, ett1/ett2,
+# solar, kdd_cup_2018_with_missing, m4_hourly. The Energy domain is therefore absent from the
+# external slice by design, and the card says so. `hierarchical_sales` (the only Sales set with
+# series >= 576) was measured and dropped: all 118 series contain NaN, so Sales is absent too, and
+# Healthcare is a single series (us_births, 12 windows). `n_total` is allocated evenly across domains
+# by water-filling (a thin domain's unused share goes to the others), then evenly across the
+# datasets in each domain.
+external_real:
+  repo: Salesforce/GiftEval
+  seed: 7000003
+  n_total: 800
+  window_length: 576
+  datasets:
+    - {name: LOOP_SEATTLE, freq: H, domain: Transport}
+    - {name: M_DENSE, freq: H, domain: Transport}
+    - {name: SZ_TAXI, freq: 15T, domain: Transport}
+    - {name: bitbrains_rnd, freq: H, domain: Web/CloudOps}
+    - {name: bitbrains_fast_storage, freq: H, domain: Web/CloudOps}
+    - {name: bizitobs_application, domain: Web/CloudOps, max_windows_per_series: 8}
+    - {name: bizitobs_service, domain: Web/CloudOps, max_windows_per_series: 8}
+    - {name: jena_weather, freq: 10T, domain: Nature, max_windows_per_series: 4}
+    - {name: saugeenday, freq: D, domain: Nature, max_windows_per_series: 20}
+    - {name: m4_daily, domain: Econ/Fin}
+    - {name: m4_weekly, domain: Econ/Fin}
+    - {name: us_births, freq: D, domain: Healthcare, max_windows_per_series: 12}

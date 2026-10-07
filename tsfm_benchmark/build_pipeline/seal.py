@@ -47,10 +47,19 @@ def _determinism_summary(samples: list[TimeSeriesSample]) -> dict[str, Any]:
     return by_gen
 
 
+def _role_counts(samples: list[TimeSeriesSample]) -> dict[str, int]:
+    """Count of samples per data role, empty when no sample carries one (the legacy case)."""
+    counts: dict[str, int] = {}
+    for s in samples:
+        if s.role is not None:
+            counts[s.role] = counts.get(s.role, 0) + 1
+    return counts
+
+
 def seal_corpus(samples: list[TimeSeriesSample], directory: str, epoch: int, visibility: str, extra: dict[str, Any] | None = None) -> str:
     """Write a corpus plus an integrity manifest and return the manifest path.
 
-    ``visibility`` is 'public' or 'private'; a private corpus is the held-out
+    ``visibility`` is 'public', 'private' or 'external_real'; a private corpus is the held-out
     test set and the directory it lands in must not be published.
     """
     os.makedirs(directory, exist_ok=True)
@@ -69,6 +78,9 @@ def seal_corpus(samples: list[TimeSeriesSample], directory: str, epoch: int, vis
         "determinism": _determinism_summary(samples),
         "extra": extra or {},
     }
+    roles = _role_counts(samples)
+    if roles:
+        manifest["roles"] = roles
     manifest_path = os.path.join(directory, "manifest.json")
     with open(manifest_path, "w") as fh:
         json.dump(manifest, fh, indent=2)
@@ -88,6 +100,7 @@ def _sample_from_dict(d: dict[str, Any]) -> TimeSeriesSample:
         sample_id=d["sample_id"],
         timestamps=d.get("timestamps"),
         leakage_report=d.get("leakage_report"),
+        role=d.get("role"),
     )
 
 

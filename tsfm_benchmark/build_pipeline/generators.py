@@ -637,4 +637,5 @@ BIT_EXACT = {
     "mixture": True,
     "block_bootstrap": True,
     "sequential_par": False,
+    "gifteval_window": True,
 }

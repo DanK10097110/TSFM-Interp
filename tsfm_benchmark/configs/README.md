@@ -30,6 +30,7 @@ flag reference and what each run produces.
 | `full_multidomain.yaml` | The full multi-domain benchmark | Large | Real build; read `example.yaml` first |
 | `large_run.yaml` | ~1000 series/split, fixes a real-derived weakness in `medium_run.yaml` | ~1000/split | Builds `benchmark_large` |
 | `large_run_v2.yaml` | Same corpus, rebalanced real-derived tier via `chronos_datasets` (ROADMAP D1) | ~1000/split | Builds `benchmark_large_v2`; `large_run.yaml` is untouched (opt-in, invariant 1) |
+| `benchmark_v3.yaml` | ~3x v2 dev, six more real sources, per-sample data roles, plus the `external_real` GIFT-Eval section (ROADMAP sec 41) | ~2900 dev (private minted later) | Dev via `run_full.py --splits public`, external via `build_external_real.py`, private via `mint_private.py`; opt-in, `large_run*.yaml` untouched |
 
 `large_run.yaml`/`large_run_v2.yaml` are what `tsfm_lens`'s flagship
 multi-model configs (e.g. `full_report_run_4model.yaml`,
