@@ -39176,3 +39176,24 @@ Not done, by rule: no R1, no real data.
 features is useless as the transformer is built to handle those situations inherently. manually intervening would
 only decrease mase on average."* No re-based gate will be designed. The code stays (opt-in, tested) as the
 reproducer for MN-31.
+
+## 40. A powered test of shared causal effects across model families (added 2026-10-07, user-directed — DESIGN ONLY, NOT IMPLEMENTED)
+
+**Why.** Every cross-model causal claim failed held-out confirmation (CA-11: atlas 0/3, L5 0/6), but the L5 rung detects a
+planted shared concept across architectures in only 0.4 (single direction) / 0.0 (3–4 directions) of seeds, and 2× / 4×
+larger U do not fix it (MN-30). The user (2026-10-07): a claim caveated by low power is not useful; either make the
+conclusions supportable or do not headline them. The paper now headlines the confirmed results and states this test as
+the open question (paper §Limitations, "Toward a test of shared effects").
+
+**Design.**
+1. **Subspace agreement.** Ablate an atlas concept's member directions together on each side (set ablation already
+   exists as an MN-30 variant; extend it to the concept's full member set and its seed-replicate matches).
+2. **Estimate, not verdict.** Report effect similarity (level concordance, shape cosine) with a series-bootstrap CI,
+   plus TOST equivalence against a stated margin, so both "agree" and "differ" are testable claims.
+3. **Gate before use.** Pre-fix: sensitivity ≥ 0.8 and FPR ≤ 0.05 on the planted architecture pair (`mock_planted`,
+   widths 64/96, depths 5/7, rotated basis), seeds 1–4 held out, single-direction and distributed concepts both.
+4. **Then** register the claims from `panel7_v2_dev` and confirm once on a fresh v2 epoch (check sample-hash overlap
+   with every consumed split first).
+
+**Stop rule.** If step 3 fails at every variant, record the rung as a confirmed method negative and drop
+cross-family effect sharing from the claims the system makes.
