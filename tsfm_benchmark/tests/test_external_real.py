@@ -131,43 +131,83 @@ def _dev_sample(values, seed):
                             role="synthetic")
 
 
-def test_gate_rejects_an_exact_copy_of_a_dev_series_before_selection_and_keeps_the_rest():
-    cfg = {"seed": 1, "n_total": 4, "window_length": 128, "datasets": [{"name": "d", "domain": "A"}]}
-    rows = [{"item_id": f"r{i}", "target": _noise(128, 50 + i)} for i in range(5)]
-    leaked_values = np.asarray(rows[0]["target"])
-    dev = [_dev_sample(leaked_values.copy(), 1), _dev_sample(np.random.default_rng(77).normal(size=128), 2)]
-    gate = ReferenceGate(dev, LeakageAuditor(metric="dtw", threshold=0.35))
+def _dev_real(values, seed):
+    return TimeSeriesSample(values=values, ground_truth=GroundTruth(),
+                            provenance=Provenance(generator="mixture", seed=seed, generator_params={"tier": "realism_stress"}),
+                            role="real_derived")
+
+
+CFG = {"seed": 1, "n_total": 5, "window_length": 128, "datasets": [{"name": "d", "domain": "A"}]}
+
+
+def _gate_rows(n=5):
+    return [{"item_id": f"r{i}", "target": _noise(128, 50 + i)} for i in range(n)]
+
+
+def _run(dev, rows, cfg=CFG, **gate_kw):
+    gate = ReferenceGate(dev, LeakageAuditor(metric="dtw", threshold=0.35), **gate_kw)
     kept, sel = build_external_samples(cfg, opener=lambda r, n, f: rows, gate=gate)
+    return gate, kept, sel
+
+
+def _loose_copy(values):
+    """Same shape, 30% noise: DTW-close (< 0.35) but nowhere near an exact or near-duplicate copy."""
+    return values + np.random.default_rng(5).normal(scale=0.3 * values.std(), size=len(values))
+
+
+def test_gate_rejects_an_exact_copy_of_a_synthetic_dev_series_by_value_hash():
+    rows = _gate_rows()
+    leaked = np.asarray(rows[0]["target"])
+    gate, kept, sel = _run([_dev_sample(leaked.copy(), 1)], rows, {**CFG, "n_total": 4})
     block = gate.block(kept)
-    assert block["n_candidates_scored"] == 5 and block["n_rejected"] == 1 and block["gate_effective"] is True
+    assert block["n_candidates_scored"] == 5 and block["n_rejected"] == 1
+    assert block["n_rejected_exact_hash"] == 1 and block["n_rejected_near_duplicate"] == 0
     assert block["rejected_by_dataset"] == {"d": 1}
     assert sel["per_dataset"]["d"]["gate_rejected"] == 1 and sel["per_dataset"]["d"]["windows_before_gate"] == 5
-    assert len(kept) == 4, "the four clean windows fill n_total because the gate ran before selection"
-    assert not any(np.array_equal(s.values, leaked_values) for s in kept)
+    assert len(kept) == 4, "the clean windows fill n_total because the gate ran before selection"
+    assert not any(np.array_equal(s.values, leaked) for s in kept)
     assert all(s.leakage_report is not None and s.leakage_report["passed"] for s in kept)
+
+
+def test_gate_rejects_a_near_duplicate_of_a_synthetic_dev_series():
+    rows = _gate_rows()
+    base = np.asarray(rows[0]["target"])
+    near = base + np.random.default_rng(3).normal(scale=1e-4, size=128)
+    gate, kept, _ = _run([_dev_sample(near, 1)], rows)
+    block = gate.block(kept)
+    assert block["n_rejected_near_duplicate"] == 1 and block["n_rejected_exact_hash"] == 0 and len(kept) == 4
     assert block["n_near_duplicate_pairs_vs_reference"] == 0
 
 
+def test_gate_dtw_rejects_a_shape_match_to_real_derived_dev_but_not_to_synthetic_dev():
+    rows = _gate_rows()
+    loose = _loose_copy(np.asarray(rows[0]["target"]))
+    gate_real, kept_real, _ = _run([_dev_real(loose, 1)], rows)
+    b = gate_real.block(kept_real)
+    assert len(kept_real) == 4 and b["n_rejected"] == 1
+    assert b["n_rejected_exact_hash"] == 0 and b["n_rejected_near_duplicate"] == 0, "must be the DTW gate that fired"
+    gate_syn, kept_syn, _ = _run([_dev_sample(loose, 1)], rows)
+    assert len(kept_syn) == 5, "a DTW-close synthetic series is not a leak and must not remove a real window"
+    assert gate_syn.block(kept_syn)["n_rejected"] == 0
+
+
+def test_gate_block_records_both_reference_sets():
+    dev = [_dev_real(np.random.default_rng(1).normal(size=128), 1), _dev_sample(np.random.default_rng(2).normal(size=128), 2),
+           _dev_sample(np.random.default_rng(3).normal(size=128), 3)]
+    gate, kept, _ = _run(dev, _gate_rows())
+    b = gate.block(kept)
+    assert b["dtw_reference_sets"] == {"dev_roles": ["real_derived"], "n_dev_series": 1, "n_leakage_reference_series": 0}
+    assert b["exact_and_near_duplicate_reference_set"] == {"scope": "all dev samples, every role", "n_series": 3}
+    assert b["reference_n_series"] == 1
+
+
 def test_the_same_candidates_without_a_gate_select_the_copy_too():
-    cfg = {"seed": 1, "n_total": 5, "window_length": 128, "datasets": [{"name": "d", "domain": "A"}]}
-    rows = [{"item_id": f"r{i}", "target": _noise(128, 50 + i)} for i in range(5)]
-    dev = [_dev_sample(np.asarray(rows[0]["target"]), 1)]
-    gate = ReferenceGate(dev, LeakageAuditor(metric="dtw", threshold=0.35))
-    kept, _ = build_external_samples(cfg, opener=lambda r, n, f: rows, gate=gate)
-    assert len(kept) == 4
-    kept_all, _ = build_external_samples(cfg, opener=lambda r, n, f: rows)
+    rows = _gate_rows()
+    loose = _loose_copy(np.asarray(rows[0]["target"]))
+    kept_all, _ = build_external_samples(CFG, opener=lambda r, n, f: rows)
     assert len(kept_all) == 5
-
-
-def test_near_duplicate_pass_counts_a_planted_cross_pair():
-    cfg = {"seed": 1, "n_total": 3, "window_length": 128, "datasets": [{"name": "d", "domain": "A"}]}
-    rows = [{"item_id": f"r{i}", "target": _noise(128, 60 + i)} for i in range(3)]
-    base = np.asarray(rows[0]["target"])
-    near_copy = base + np.random.default_rng(3).normal(scale=1e-4, size=128)
-    gate = ReferenceGate([_dev_sample(near_copy, 1)], LeakageAuditor(metric="dtw", threshold=0.0))
-    kept, _ = build_external_samples(cfg, opener=lambda r, n, f: rows, gate=gate)
-    assert len(kept) == 3
-    assert gate.block(kept)["n_near_duplicate_pairs_vs_reference"] == 1
+    _, kept, _ = _run([_dev_real(loose, 1)], rows)
+    assert len(kept) == 4
 
 
 def test_external_split_seals_under_its_own_visibility_and_verifies(tmp_path):

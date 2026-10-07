@@ -32,7 +32,7 @@ from typing import Any, Callable, Iterable
 
 import numpy as np
 
-from .audit import LeakageAuditor, find_near_duplicates
+from .audit import LeakageAuditor, _normalize, find_near_duplicates
 from .schema import GroundTruth, Provenance, SourceRef, TimeSeriesSample
 from .sources import _hash
 
@@ -181,14 +181,31 @@ class ReferenceGate:
     selection effect that is recorded rather than hidden: ``rejected_by_dataset`` is the per-dataset
     count the gate removed, and the card should be read with that in mind.
 
-    Every ``reference_samples`` series is registered on ``auditor`` next to whatever it already
-    holds (e.g. Monash). Calling the gate scores one sample and returns whether it passed.
+    The gate tests for leakage, not for resemblance to our own generators. The DTW reference set
+    is only the ``gate_roles`` dev samples (default ``real_derived``: the series that can contain
+    the same recordings) plus whatever ``auditor`` already holds (the Monash leakage references).
+    Synthetic dev series are excluded from the DTW gate because a smooth real window sitting
+    near a synthetic trend is not a leak, and gating on them biased the slice toward non-smooth
+    series (136 of 232 rejections in the first version). Against ALL reference samples,
+    synthetic included, the gate still rejects an exact value-hash match and any near-duplicate
+    (normalized distance below ``near_dup_threshold``).
     """
 
     def __init__(self, reference_samples: list[TimeSeriesSample], auditor: LeakageAuditor,
-                 reference_corpus: str = "benchmark_v3/public_dev", near_dup_threshold: float = 0.05) -> None:
+                 reference_corpus: str = "benchmark_v3/public_dev", near_dup_threshold: float = 0.05,
+                 gate_roles: tuple[str, ...] = ("real_derived",)) -> None:
+        self.gate_roles = tuple(gate_roles)
+        self.n_dtw_references = 0
         for r in reference_samples:
-            auditor.add_reference(reference_corpus, r.sample_id, r.values)
+            if r.role in self.gate_roles:
+                auditor.add_reference(reference_corpus, r.sample_id, r.values)
+                self.n_dtw_references += 1
+        self.n_monash_references = len(auditor._refs) - self.n_dtw_references
+        self._value_hashes = {_hash(r.values) for r in reference_samples}
+        self._near_matrix = (np.stack([_normalize(r.values, 256) for r in reference_samples])
+                             if reference_samples else None)
+        self.n_exact_rejected = 0
+        self.n_near_dup_rejected = 0
         self.auditor = auditor
         self.reference_samples = reference_samples
         self.near_dup_threshold = near_dup_threshold
@@ -200,13 +217,24 @@ class ReferenceGate:
     def __call__(self, sample: TimeSeriesSample) -> bool:
         report = self.auditor.audit(sample)
         self.n_scored += 1
-        if not report.passed:
+        passed = bool(report.passed)
+        reason_dist = float(report.nearest_distance)
+        if passed and _hash(sample.values) in self._value_hashes:
+            passed, reason_dist = False, 0.0
+            self.n_exact_rejected += 1
+        if passed and self._near_matrix is not None:
+            q = _normalize(sample.values, 256)
+            d = float(np.min(np.linalg.norm(self._near_matrix - q, axis=1)) / np.sqrt(256))
+            if d < self.near_dup_threshold:
+                passed, reason_dist = False, d
+                self.n_near_dup_rejected += 1
+        if not passed:
             ds = sample.provenance.generator_params.get("dataset", "unknown")
             self.rejected_by_dataset[ds] = self.rejected_by_dataset.get(ds, 0) + 1
-            self.rejected_distances.append(float(report.nearest_distance))
+            self.rejected_distances.append(reason_dist)
         else:
             self.reports[sample.sample_id] = sample.leakage_report
-        return bool(report.passed)
+        return passed
 
     def block(self, kept: list[TimeSeriesSample]) -> dict[str, Any]:
         """Audit block for the manifest, including the near-duplicate pass over the selected windows.
@@ -223,6 +251,11 @@ class ReferenceGate:
         dists = [s.leakage_report["nearest_distance"] for s in kept if s.leakage_report]
         return {
             "references": sorted({c for c, _, _ in self.auditor._refs}), "reference_n_series": len(self.auditor._refs),
+            "dtw_reference_sets": {"dev_roles": list(self.gate_roles), "n_dev_series": self.n_dtw_references,
+                                   "n_leakage_reference_series": self.n_monash_references},
+            "exact_and_near_duplicate_reference_set": {"scope": "all dev samples, every role",
+                                                       "n_series": len(self.reference_samples)},
+            "n_rejected_exact_hash": self.n_exact_rejected, "n_rejected_near_duplicate": self.n_near_dup_rejected,
             "gate_effective": len(self.auditor._refs) > 0, "metric": self.auditor.metric,
             "threshold": self.auditor.threshold,
             "stage": "every candidate window audited before stratified selection",
