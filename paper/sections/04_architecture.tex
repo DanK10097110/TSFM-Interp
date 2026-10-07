@@ -30,7 +30,8 @@ the seed space. A separate validation package measures redundancy by shape match
 catch22 feature space \citep{lubba2019catch22} (participation-ratio dimension, \citealp{gao2017pr};
 nearest-neighbor tails), never on a 2-D embedding, and tests dev/private exchangeability with an energy
 distance \citep{szekely2013energy} plus TOST equivalence \citep{schuirmann1987tost} (v1 benchmark: energy
-$p=0.51$, 21 of 22 features equivalent; \fid{MP-09}).
+$p=0.51$, 21 of 22 features equivalent, \fid{MP-09}; the case study's v2 dev split against its private epoch: energy
+$p=0.951$, 20 of 22 features equivalent, 6 near-duplicate pairs among 937{,}015).
 
 Two perturbation families are built in: nine structured \emph{corruptions} (noise, detrend, deseasonalize,
 frequency shift, level shift, spike, smooth, warp, dropout), which drive L3, and \emph{generator

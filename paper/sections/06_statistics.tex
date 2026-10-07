@@ -12,7 +12,9 @@ patching. Splits are by series and stratified, never head slices of a task-group
 discovery-oriented atlas transfers). Resampled $p$-values are floored at $1/n_{\text{boot}}$
 \citep{phipson2010permutation}, so a Holm family of $m$ tests cannot go below $m/n_{\text{boot}}$; the ledger
 computes this minimum per family and flags families that can never be significant, a failure that grows
-quadratically with the number of models. The example has 123 families and 4{,}238 comparisons; its strictest L0
+quadratically with the number of models. The example has 123 families and 4{,}238 comparisons in the ledger (the
+8{,}705 feature-channel cells of the ablation battery are judged instead by their count against the empirical chance
+rate, and shared-input tests by per-test floors); its strictest L0
 family (105 tests over 21 pairs) has a minimum Holm $p$ of 0.021 at $n_{\text{boot}}=5000$.
 
 \paragraph{References from the run itself.} Effects are read against repeat-run noise floors, shuffled-series

@@ -64,8 +64,8 @@ explains every figure in plain language.
 \paragraph{Main findings.} On TimesFM~2.5, Chronos-2, Sundial, Chronos-Bolt, Chronos-T5-Base, Timer and
 Time-MoE:
 \begin{itemize}
-  \item \textbf{RQ1: TSFMs learn a compact vocabulary of causal effects.} 194 sparse features across 55 measured layers
-    clear a profile-matched null (2.47 times the empirical chance rate, up to 5.70 times in Chronos-Bolt), and they act
+  \item \textbf{RQ1: TSFMs learn a compact vocabulary of causal effects.} 442 feature-channel effects across 55 measured
+    layers clear a profile-matched null (2.47 times the empirical chance rate, up to 5.70 times in Chronos-Bolt), and they act
     mostly on forecast \emph{level} and \emph{seasonality}, with smaller groups for trend and volatility. They form a
     graded continuum rather than discrete units.
   \item \textbf{RQ2: Architectures share inputs and basic effect types; fine-grained concepts are model-specific.}
@@ -84,6 +84,8 @@ Time-MoE:
 Internal features also predict forecast failure beyond a strong output-only baseline for the two weakest models, a
 gain that confirms held-out (Section~\ref{sec:practical}).
 
+Appendix~\ref{app:faq} answers the questions a careful reader is likely to ask (is the data good and sufficient,
+is the ablation fair and statistically supported, how are token time frames aligned) with the evidence for each.
 The full ledger of results, each with exact numbers, evidence class, status and a reproduction pointer,
 is \repo{FINDINGS.md} (indexed in Appendix~\ref{app:ledger}). The example run of
 Section~\ref{sec:casestudy}, with its report and every per-stage artifact, is

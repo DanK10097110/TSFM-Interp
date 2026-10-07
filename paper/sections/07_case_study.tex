@@ -51,7 +51,8 @@ $\Delta$MASE 0.209 [0.119, 0.313], $p_{\text{Holm}}=0.0002$, $n=290$) and, with 
 \label{sec:rq1}
 
 \paragraph{Causal features exist, and the battery tells models apart.} 194 SAE features
-across 55 measured targets clear the profile-matched null on at least one channel. Fifty-five of 56 targets passed both
+across 55 measured targets clear the profile-matched null on at least one channel (against at most 144.95 expected
+by chance at the feature level, an upper bound that treats channels as independent). Fifty-five of 56 targets passed both
 reach controls (e.g.\ TimesFM \texttt{stacked\_xf.10}: self-patch 0.0, cross-patch relative reach 0.253); Chronos-2's
 final block was withheld because cross-patching moved the forecast by exactly 0 (its head reads placeholder tokens a
 context patch never reaches; \fid{DE-03}). Against the leave-one-draw-out chance rate, 442 (feature, channel) cells clear
@@ -96,8 +97,8 @@ discriminates between models, from 5.70 times chance in Chronos-Bolt to chance l
 \subsection{RQ2: Are concepts shared across architectures?}
 \label{sec:rq2}
 
-\paragraph{Geometry is shared above chance, but similarity has no single meaning.} Peak CKA between TimesFM and each
-other model is 0.342--0.426 (shuffled-series nulls 0.011--0.051); the TimesFM/Chronos-2 peak replicates held-out (dev
+\paragraph{Geometry is shared above chance, but similarity has no single meaning.} Peak CKA (the maximum over all layer pairs) between
+TimesFM and each other model is 0.342--0.426 (shuffled-series nulls 0.011--0.051); the TimesFM/Chronos-2 peak replicates held-out (dev
 0.4257; private 0.4109 [0.4014, 0.4266]), and the band holds across five architectures including Timer and Lag-Llama
 (\fid{SH-01}). Yet seven pair metrics rank the 21 pairs only weakly consistently (Kendall's $W=0.25$, $p=0.0095$;
 Figure~\ref{fig:similarity}): TimesFM/Chronos-2 is first by error agreement (0.948) and 15th of 21 by CKA, where
@@ -143,7 +144,7 @@ Of 1{,}290 tests (a cap of 60 per ordered pair), 216 are scorable: 7 show the sa
 shape alone, 133 show no specific agreement and 22 act differently. All 7 ``same'' verdicts are Chronos-2/Chronos-Bolt,
 six through one Chronos-Bolt block-4 feature set. The test is specific (it never calls a planted decoy ``same''), so these
 detections stand; it is also insensitive across architectures (\fid{MN-30}), and 1{,}053 of the 1{,}074 unscorable
-tests fail because a side's own ablation does not clear its null on the roughly 24 shared series, so we do not read the
+tests fail because a side's own ablation does not clear its null on its 21--40 shared series (median 32), so we do not read the
 absence of ``same'' elsewhere as a difference.
 
 \begin{figure}[tb]

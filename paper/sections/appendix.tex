@@ -1,3 +1,131 @@
+\section{Questions a Reader May Ask}
+\label{app:faq}
+
+Each answer gives the evidence, its source, and what remains unmeasured. Numbers are from the seven-model run unless an
+identifier says otherwise.
+
+\paragraph{Is the benchmark trustworthy?} Every sample passed a banded-DTW leakage gate (threshold 0.35) against Monash
+reference series: 68 of 2{,}000 candidates were rejected, and the closest accepted sample sits at distance 0.352. The dev
+split and the private epoch used for confirmation are exchangeable: energy-distance $p=0.951$, 20 of 22 catch22 features
+equivalent by TOST (the other two inconclusive at this $n$), tier and family composition indistinguishable ($p=0.94$ and
+$p=0.9999$), and 6 near-duplicate pairs among 937{,}015 cross-split pairs. Diversity is measured in catch22 space: the dev
+split has effective dimension 5.37 of 22 features (private 5.57) and a near-collision fraction of 0.052. Each sample is
+labeled with its tier, so every result can be split by tier. The realism report compares raw moments and is not
+informative across scales; its only usable statistic, spectral centroid, differs from the reference by 0.022.
+
+\paragraph{Why a synthetic benchmark rather than raw real data?} Four reasons, each measured. Ground truth: only
+generated series record their components, so only they can validate a probe (P1). Representation: on real Monash rows
+TimesFM's representations have lower effective dimension than on the synthetic corpus (1.76 against 2.66) and more dead
+dictionary atoms (\fid{MN-20}). Measurability: weakly predictable real-derived series receive flat forecasts in 67--100\%
+of cases (\fid{BM-06}); across ablation panels, noise-like contexts are flat 82.3\% of the time against 8.5\% for smooth
+ones, and a flat forecast gives an ablation nothing to move. Contamination: public archives may be in the models'
+pretraining data. Real data are still used, each for a stated purpose: real-derived series (410 of 965) for realism and
+per-tier checks, about 4{,}000 raw Monash windows per target only as extra dictionary-training rows, and the Monash
+archive only as the leakage reference.
+
+\paragraph{Is there enough data?} It depends on the claim, and each claim's power is stated. Not power-limited: the 20
+transfer claims all reach the Holm floor (AUC 0.919--0.970 against null 95th percentiles of 0.70--0.75); the accuracy
+claim's minimum detectable $\Delta$MASE is 0.133 against an observed 0.209; the CKA interval is $[0.401, 0.427]$ against a
+null of 0.038. Power-limited: single-feature causal claims (each feature is tested on its 8 strongest-firing series, and
+19 of the 21 that did not confirm never reached the dev $p$ floor), per-target concepts (178 of 672 candidates never fire
+on any series, so more rows do not help; \fid{SH-20}), and the shared-input agreement rung, which more shared series do
+not rescue (\fid{MN-30}).
+
+\paragraph{Do the models forecast sensibly on this corpus?} Five of seven beat the seasonal naive forecast on 77--85\% of
+series (Chronos-2 0.845, TimesFM 0.823, Sundial 0.798, Chronos-Bolt 0.784, Chronos-T5-Base 0.765); Timer does on 0.695 and
+Time-MoE on 0.378 (Table~\ref{tab:character}). The models are therefore analyzed while doing the task they were trained
+for, except Time-MoE, whose results the paper reads with its accuracy in mind.
+
+\paragraph{Why define concepts by causal effect rather than by activation or correlation?} Because correlation misleads
+here, measurably. 83.5\% of the most prominent features have no causal effect on held-out data (\fid{MN-14}); attention
+mass on seasonal lags is uncorrelated with the seasonal power lost when the head is ablated (\fid{CA-04}); two sparse
+features can correlate at $\rho=0.80$ with no shared top series (\fid{MN-19}); features aligned with a ground-truth field do
+not mediate that field's effect (\fid{MN-17}); and on a planted forecaster a decoy concept correlates with forecast error
+in five of five seeds while its causal effect is null (\fid{MN-31}). An activation-based concept can be real and still
+irrelevant to the forecast; the causal definition asks the question that matters for forecasting.
+
+\paragraph{Is zeroing a feature a fair intervention?} For a TopK dictionary, zero is a feature's resting value: at most 32
+of 192--6{,}144 atoms are nonzero on any token, so the ablated state lies inside the dictionary's normal range, unlike
+zeroing a dense neuron. The comparison is between two passes through the same reconstruction, so the dictionary's error
+is in both arms. The null removes exactly the feature's per-token amount along another direction, on the same series,
+with the same seed for sampled models, after a reach probe has shown that patching this layer can move the forecast. Two
+alternatives were not run: mean ablation, and ablating against the clean activation; the latter differs only through the
+model's nonlinear response to the reconstruction error.
+
+\paragraph{How do you know a causal feature is not chance?} Four checks. (i) Calibration on a known answer: on the planted
+forecaster's control layer, which has no planted effect, the per-cell false-positive rate is at most 0.003 while planted
+effects are found with sensitivity 0.70--1.00 (\fid{MN-29}). (ii) Counting against an empirical chance rate, estimated
+per cell by scoring each null draw against the others (median 0.018): 442 feature-channel cells clear against 178.75
+expected (2.47 times chance), and 22 of 55 targets are individually significant (BH). At the level of whole features the
+excess is smaller: 194 of 1{,}022 scorable candidates clear at least one channel against at most 144.95 expected if
+channels were independent. (iii) Held-out replication: 10 registered single-feature claims confirm on new series at the
+attainable $p$ floor after adaptive redraws to 1{,}000 null draws. (iv) Null strictness: a stricter null that draws the
+random direction from the layer's own activation covariance also passes the planted test (sensitivity 0.916), but on the
+earlier four-model run it leaves only 1.13 times chance. Causal effects therefore exceed random directions clearly and
+typical on-manifold directions only slightly; the planned confirmatory run registers its claims against the stricter
+null.
+
+\paragraph{How large are the effects?} Small relative to the forecast and to the dictionary's own error. On the earlier
+four-model run the median single-feature effect was 0.0395 context standard deviations, 3.5 times below the change from
+substituting the reconstruction (\fid{MN-15}); among the cells that clear in the seven-model run, the median effect is
+1.24 times the null's 95th percentile. The paper therefore makes no claim that single features explain forecasts; it
+claims that specific, replicable directions exist and characterizes what they do.
+
+\paragraph{How robust are the sparse dictionaries?} Each target has three replicate dictionaries, and 9 of 11 atlas
+concepts are stable across them. Held-out fraction of variance explained has medians of 0.647 (TimesFM) to 0.878
+(Chronos-T5-Base) across models, and only 5 of 56 targets pass the strict admission gate (held-out fidelity $\ge0.85$,
+forecast change under substitution $\le0.25$ MASE, dead-rate bound); results restricted to admitted targets are part of
+the planned confirmatory run. Joint crosscoders were tested as the alternative and lost to independent dictionaries
+matched afterwards (0.2787 against 0.3204, $p=0.002$; \fid{SH-10}), which is why \tool{} uses one TopK dictionary per
+layer.
+
+\paragraph{How are token time frames aligned across models?} In three steps, all measured rather than declared. (1) Each
+token's span is measured by injecting an impulse at every time step and recording which token responds most, gated on
+peak-to-pedestal contrast ($\ge4$) and contiguity ($\ge0.95$); measured spans equal the hand-written adapters' on six
+checkpoints (IoU 1.0) and recover Timer's 96-step tokens (\fid{MP-01}). (2) Tokens are overlap-pooled onto common 32-step
+windows (Equation~\ref{eq:pooling}): Chronos-T5's one-step tokens are averaged 32 to a window, TimesFM's 32-step tokens
+map one to one, and each Timer token covers three windows, which then share one value (the alignment gate's ceiling
+for Timer is therefore one third). The context of 480 steps is a multiple of 96 so that Timer's tokens tile it exactly
+(at 512 its span discovery refuses). (3) An alignment gate injects an impulse into each window and checks per layer that
+the matching window moves most; all models pass at their shallowest layer, and the gate's per-layer record shows that
+deep layers of Sundial, Time-MoE and Timer lose time localization (diagonal hit 0.07--0.27 against chance 0.067), which
+the report renders and which qualifies window-level claims there. Values are normalized by each model's own input
+scaling, verified by a scale-equivariance test (residuals $2.7\times10^{-7}$ to 0.037 context standard deviations);
+effects are compared across models in units of each feature's own null 95th percentile; depth is the fraction of the
+whole stack. Window sizes other than 32 have not yet been compared.
+
+\paragraph{Do sampled models make the causal comparison noisy?} Every compared pair of calls to Sundial or Chronos-T5 uses
+the same seed. Unseeded, back-to-back Sundial calls differ by up to 0.50, and a null seeded differently from its baseline
+once made Sundial look causally inert (\fid{PM-09}); repeat-run noise floors are reported per model (Sundial 0.14,
+Chronos-T5-Base 0.24 mean $|\Delta$MASE$|$, the deterministic models 0).
+
+\paragraph{Could the private split have influenced the claims?} The registry (128 hypotheses, sha256 recorded) was
+frozen before the private epoch was generated; the epoch shares no sample hash with any of seven earlier splits (one
+candidate epoch was discarded unopened for overlapping an old split); \texttt{confirm} ran once, and a crash before any
+statistic was written is disclosed in Appendix~\ref{app:repro}. Registered claims are cuts from larger dev pools (transfer
+20 of 1{,}124 candidates, causal 32 of 113, agreement 11 of 25, atlas 4 of the 9 stable concepts), which is legitimate
+because the private split referees them, and is why only registered claims are called confirmed.
+
+\paragraph{How are multiple comparisons handled?} Dev results are exploratory and labeled so. The ledger groups 4{,}238
+tests into 123 named families with Holm or BH and flags families that cannot reach significance; the battery's 8{,}705
+cells are judged by their count against the empirical chance rate. Held-out claims use Holm per registered claim type.
+
+\paragraph{Why CKA, given its known problems?} It is used only against a shuffled-series null at the same layer pair with
+a series-level bootstrap, reported as one of seven pair metrics that are never pooled, and never read as lineage, since an
+untrained pair can score higher than a trained one (\fid{MN-01}). The reported peak is a maximum over layer pairs; its
+held-out replication (0.411) is measured at the pair selected on dev.
+
+\paragraph{Were settings chosen after seeing results?} Battery settings ($k=8$ rows, 16 null draws) were fixed on the
+four-model run before the seven-model concept stage ran, after larger settings did not recover power (\fid{SH-20}); at the
+atlas threshold of 0.9 the real concept count was about twice its shuffle-null mean on that earlier run (19 against
+9.62); family silhouettes
+are flat (0.25--0.32) across cuts from 6 to 16, which is why families are reported as a reading vocabulary.
+
+\paragraph{Does this generalize to other models?} The pipeline is model-agnostic behind the adapter interface, and two of
+the seven models load through the zero-code path. Of eight checkpoints probed, five crashed in their configuration loader
+and need hand-written adapters (\fid{MN-25}); models whose tokens read disjoint lags (Lag-Llama) receive behavioral
+analysis only.
+
 \section{Findings Ledger Index}
 \label{app:ledger}
 
@@ -24,6 +152,7 @@ ID & Claim (abridged) & In paper$^{*}$ & Score \\
 SH-01 & Peak CKA 0.38--0.47 above shuffled-series nulls (0.02--0.16) across five architectures & \S\ref{sec:casestudy}, T\ref{tab:results} & 5 \\
 SH-05 & CKA and clustering AMI rank model pairs differently on three panels & T\ref{tab:results} & 5 \\
 SH-06 & Pair similarity splits into a geometric camp and a behavioral/causal camp; 7 metrics never pooled & T\ref{tab:results} & 5 \\
+SH-10 & Joint crosscoder loses to independent SAEs matched post hoc (0.2787 vs 0.3204, $p=0.002$) & App.~\ref{app:faq} & 4 \\
 SH-16 & No atlas concept spans the panel (at most 3 of 7 models; held out) & \S\ref{sec:casestudy}, T\ref{tab:results} & 5 \\
 SH-18 & Registered concept-transfer claims confirmed on private data: 19/20, 20/20 frozen, 20/20 on v2, 20/20 on the 7-model epoch 3 & \S\ref{sec:casestudy}, T\ref{tab:results} & 5 \\
 SH-19 & Unit-level correspondence fails rotation controls (0.148 $\to$ 0.331); participation ratio as low as 1.54 & \S\ref{sec:casestudy} & 5 \\
@@ -42,6 +171,7 @@ DE-05 & Captured share of forecast FLOPs: 13.9\% (Chronos-T5-Base) to 99.8\% (Ti
 DE-08 & Layer selection depends almost entirely on the selector (0/3 robust layers) & \S\ref{sec:casestudy} & 4 \\
 PM-05 & Chronos-2 most accurate and best observed; winners vary by family; held-out on v2 and on 7-model epoch 3 & T\ref{tab:results} & 4 \\
 PM-07 & Models differ ${\sim}5.4\times$ in reversion to the mean; flat forecasts driven by weakly predictable data & \S\ref{sec:related} & 4 \\
+PM-09 & Sampled models need identical seeds in compared calls; a mis-seeded null made Sundial look inert (1/71 $\to$ 12/71) & App.~\ref{app:faq} & 3 \\
 PM-11 & Causally load-bearing TimesFM random-walk concept fails seed stability & \S\ref{sec:casestudy} & 3 \\
 PM-13 & Chronos-2 group attention unmeasured by design & \S\ref{sec:usage} & 3 \\
 PM-17 & Timer's SAE features do not clear the ablation null above chance (1.017$\times$; 0 of 6 targets) & \S\ref{sec:casestudy} & 3 \\
@@ -66,6 +196,7 @@ MN-25 & Zero-code adapter resolves 2 of 8 probed TSFM checkpoints & \S\ref{sec:u
 MN-28 & Internals beat a free failure-prediction baseline only for the two weakest models; routing does not help & \S\ref{sec:practical} & 4 \\
 MN-29 & Legacy ablation null fails a planted-concept gate (FPR 0.168--0.248); profile-matched null passes ($\le$0.003) & \S\ref{sec:knownanswer} & 5 \\
 MN-30 & Agreement rung is specific (0/9 false ``same'') but insensitive (0.4 and 0.0 of seeds) & \S\ref{sec:knownanswer}, \S\ref{sec:casestudy} & 5 \\
+MN-31 & A planted decoy correlates with forecast error in 5/5 seeds but has no causal effect & App.~\ref{app:faq} & 3 \\
 BM-05 & Counterfactual identity check caught a corruption-replay bug (244/298 $\to$ 0/1113) & \S\ref{sec:architecture} & 2 \\
 BM-06 & 42\% of the dev corpus is weakly predictable real-derived data, driving the flat-forecast share & \S\ref{sec:limitations} & 4 \\
 \end{longtable}
