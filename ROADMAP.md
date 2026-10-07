@@ -39237,3 +39237,34 @@ each data type is used for; after the code is written, tag v1.0.0 and check the 
   the planted pair (sensitivity ≥ 0.8, FPR ≤ 0.05, seeds 1–4 held out). Fails gate → method negative, not registered.
 - **V3-D run**: `configs/panel7_v3.yaml`, disk budget measured first (≈24 GB free quota; nothing in tmpfs), dev run →
   register → mint private epoch → confirm once → external leg.
+
+### 41.1 Design additions after the reviewer-question audit (2026-10-07, decided BEFORE any V3 data exists)
+
+The read-only evidence audit for the paper's reader-questions appendix found weaknesses that V3 must address, not
+just disclose:
+- **Null choice (decided now).** `profile_matched_cov` passes K1 (sensitivity 0.9162, FPR 5/2948) as well as the
+  isotropic `profile_matched`, but on real v2 data leaves 106 vs 94.0 expected clears (1.1277×, 5/28 BH targets)
+  against 254 vs 83.0625 (3.0579×, 20/28). §38's choice of isotropic "because it clears more real cells" selects the
+  null by its result. **V3: both nulls are computed in one battery pass; `profile_matched_cov` is PRIMARY for every
+  registered causal/atlas/family claim; isotropic is reported as secondary.** If the stricter null leaves few causal
+  features, that is the V3 result.
+- **Feature-level chance.** 194 of 1022 scorable candidates cleared ≥1 of 9 channels vs an upper-bound expectation of
+  144.95 from per-channel empirical chance; the paper's "194 causal features" must carry a feature-level chance
+  comparison. V3 reports feature-level expected counts and gates atlas/family membership on per-target significance
+  (as registration already was).
+- **Transfer negative control.** 1296/1584 (82%) dev tests reciprocal; no negative-control destination was ever run.
+  V3 adds a `random_init` twin destination (extract + sae + transfer only) and a per-tier (synthetic vs real-derived)
+  breakdown of transfer and causal features.
+- **Window sensitivity.** Never measured. V3 recomputes L1/transfer at window 64 and 96 by exact averaging of stored
+  32-step windows (overlap pooling with full windows averages exactly).
+- **Alignment decay.** Sundial layers 4–11, Time-MoE 5/6/10/11 and Timer 7 sit at 0.07–0.27 diagonal hit (chance
+  0.067) yet carry SAE targets; V3 marks window-level claims on targets below the alignment bar and reports results
+  with and without them.
+- **SAE admission.** Only 5/56 targets pass the admission gate (held-out fidelity ≥ 0.85, |token ΔMASE| ≤ 0.25, dead
+  rate); held-out fidelity medians 0.647–0.878. V3 (≈3× training series) reports admission per target and results
+  restricted to admitted targets.
+- Paper fixes regardless of V3: L5 shared series median 32 (21–40), not "roughly 24"; cite v2 corpus trust numbers
+  (epoch 3 energy p 0.951024, TOST 20/22, 6/937,015 cross-split near-duplicates; dev eff dim 5.367, private 5.57);
+  peak CKA is a maximum over 120 layer pairs; multiplicity ledger excludes the 8,705 battery cells and L5 tests;
+  crosscoder comparison (SH-10/11) explains the TopK SAE choice; registered claims are cuts of candidate pools
+  (transfer 20/1124, causal 32/113, agreement 11/25, atlas 4/9).
