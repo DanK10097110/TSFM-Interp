@@ -39197,3 +39197,14 @@ the open question (paper §Limitations, "Toward a test of shared effects").
 
 **Stop rule.** If step 3 fails at every variant, record the rung as a confirmed method negative and drop
 cross-family effect sharing from the claims the system makes.
+
+### 40.1 Findings (2026-10-07, read from existing panel7_v2_dev artifacts; no new compute)
+
+- **Universal effect types.** Level raisers, Level lowerers and Seasonality dampeners each have causal members in all 7
+  models (FINDINGS CA-10 addendum, exact per-model counts there). Descriptive, exploratory.
+- **Atlas held-out failures are a rule artifact of 3-member concepts.** Centroid cosines 0.955–0.988 beat null p95
+  0.854–0.907 (p ≤ 0.007) for all 3 multi-model concepts; only the member-pair leg failed (1/3 pairs vs ≥ 1/2 needed).
+  Registered verdict 0/3 unchanged (FINDINGS CA-11 reading).
+- **Next registration (proposed, user decision pending).** Register on a fresh epoch: (a) per-model presence of each
+  universal family against a per-model sign-flip/direction null; (b) centroid-level effect agreement for multi-model
+  concepts with ≥ 5 members; (c) the §40 redesigned shared-input test once it passes its planted gate.

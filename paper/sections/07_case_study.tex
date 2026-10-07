@@ -123,13 +123,19 @@ concepts (TimesFM \texttt{xf.18}, 14 claims; Sundial \texttt{layers.6}, 6) and r
 with only 8 of 20 private best features identical to dev: the destination has \emph{some} feature selecting the same
 series.
 
-\paragraph{Causal effects are organized by model.} Of 11 atlas concepts, 9 have causal members from $\ge$2 models,
+\paragraph{The basic effect types are universal.} The three largest families are found in every model: \emph{Level
+raisers} (45 features), \emph{Level lowerers} (44) and \emph{Seasonality dampeners} (25) each have causal members in all
+seven models, and \emph{Volatility dampeners} in six (Figure~\ref{fig:families}b). Membership is a property of each
+feature's own measured effect, so it does not depend on whether the family partition beats its shuffle null; it is
+descriptive and exploratory, and Timer's members should be read with its chance-level clear rate in mind.
+
+\paragraph{Fine-grained concepts are organized by model.} Of 11 atlas concepts, 9 have causal members from $\ge$2 models,
 but no concept spans more than 3 of the 7 models, and the clusters are \emph{purer} by model than random assignment: 9
 multi-model concepts against a null mean of 10.8 ($p_{\text{below}}=0.025$) and mean model purity 0.591 against 0.474
 (\fid{SH-22}). By sharing class, 2 concepts are \emph{shared} (same effect and inputs), 2 partially shared, 5
 \emph{convergent} (same effect reached on different series) and 2 single-model (Figure~\ref{fig:funnel}); among the 9
-seed-stable concepts the counts are 2, 1, 4 and 2. Each architecture thus builds its own causal machinery, and several
-arrive at the same effect independently.
+seed-stable concepts the counts are 2, 1, 4 and 2. At this grain (cosine 0.9 between null-normalized effect
+vectors) each architecture builds its own variants, and several arrive at the same effect independently.
 
 \paragraph{Where the same effect is measured on the same series, it is detected within the Chronos family.} The
 shared-input test ablates both sides of a reciprocal transfer on the same series and requires each to clear its own null.
@@ -150,8 +156,10 @@ Source: \texttt{sae/concept\_stage.json}.}
 \end{figure}
 
 \paragraph{Answer to RQ2.} Different TSFMs \emph{select} the same series for a concept, reliably enough to replicate on
-four sealed private draws and in all seven models. Their causal machinery is organized by model: no concept is common to
-the panel (confirmed held-out), several concepts converge on the same effect from different series, and the clearest
+four sealed private draws and in all seven models. The basic effect types (raising or lowering the level, damping
+seasonality) are present in every model, and the centroid effect profiles of multi-model concepts replicate held-out
+(Section~\ref{sec:heldout}). At the fine grain, concepts are organized by model: no strict concept is common to the panel
+(confirmed held-out), several converge on the same effect from different series, and the clearest
 same-effect-on-same-inputs case is within the Chronos family. Whether architectures from different families also share
 effects on the same inputs is open; Section~\ref{sec:limitations} outlines the test that would settle it. Whole-layer
 similarity cannot reveal any of this, since its metrics disagree with one another.
@@ -236,11 +244,12 @@ tested a registry of 128 hypotheses, 82 of them replicable, each Holm family per
 perturbation agreements, all 20 transfer claims, 10 of 31 testable single-feature causal claims, both structural claims
 (no concept spans the panel: the private atlas has 10 concepts, at most 3 of 7 models each; most prominent features are
 causally null) and both failure-prediction claims. \textbf{Not confirmed:} the cross-model causal claims, namely the
-multi-model atlas concepts (0 of 3; their centroid cosines still beat the null, $p\le0.007$, but only one third of member
-pairs reach cosine 0.9) and shared-input agreement (0 of 6 tested, 5 of 11 not testable; the best, Chronos-Bolt block 4
+multi-model atlas concepts under the registered conjunctive rule (0 of 3: their private centroid cosines, 0.955--0.988,
+beat the null's 95th percentile of 0.854--0.907 with $p\le0.007$, but the rule also required half of the member pairs to
+reach cosine 0.9, and with three members only one pair did; the centroid component alone is a post hoc reading) and shared-input agreement (0 of 6 tested, 5 of 11 not testable; the best, Chronos-Bolt block 4
 to Chronos-2 block 7 ``same'', reproduces its verdict with $p=0.011$ but misses Holm at 0.066). In all, 43 claims
-confirm, 33 do not and 6 cannot be tested. Held out, models share what they select and keep model-specific causal
-machinery; whether effects are shared across families on the same inputs is the open question that the test of
+confirm, 33 do not and 6 cannot be tested. Held out, models share what they select, the average effect of a multi-model concept
+reproduces, and fine-grained concepts stay model-specific; whether effects are shared across families on the same inputs is the open question that the test of
 Section~\ref{sec:limitations} is designed to answer. One procedural event, a crash before any statistic was written,
 is disclosed in Appendix~\ref{app:repro}.
 
@@ -255,6 +264,7 @@ RQ & Result (example run unless an ID is given) & Evidence class & Status & ID \
 \midrule
 1 & 194 causal features in 55 targets; 442 cells $=$ 2.47$\times$ empirical chance; Timer 1.02$\times$ & causal within-model & exploratory & MP-07, PM-17 \\
 1 & 9 families cover 99\% of features but do not beat a shuffle null ($p=0.68$) & descriptive & exploratory, 2 corpora & CA-10 \\
+2 & Level raise/lower and seasonality-damping causal features in all 7 models & causal within-model, descriptive & exploratory & CA-10 \\
 2 & Peak CKA 0.426 (private 0.411) vs null 0.038 & geometric & held-out confirmed & SH-01 \\
 2 & 7 similarity metrics agree only weakly ($W=0.25$) & mixed & exploratory & SH-05/06 \\
 2 & Untrained pair more similar than related trained pair & geometric & confirmed negative & MN-01 \\

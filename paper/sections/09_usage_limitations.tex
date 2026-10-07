@@ -33,9 +33,14 @@ training data. The analysis is univariate: Chronos-2's cross-series group attent
 
 \paragraph{Ground truth, external validity and confirmation.} Ground truth is exact only for the synthetic tier and
 encodes our generators' assumptions; 12 of 33 concept parts are dominated by one real-derived generator, and pretraining
-overlap cannot be verified. The corpus (965 dev and 971 private series) is controlled by design, and whether the concept
-inventory carries over to large real benchmarks such as GIFT-Eval or the full Monash archive is untested; the pipeline
-runs on any sealed corpus, so this is a matter of compute, not code. Held-out confirmation covers accuracy, geometry,
+overlap cannot be verified. Real data are part of the analysis, not absent from it: 410 of the 965 dev series are real-derived
+(Monash weather, ETT, and Chronos electricity and traffic) and the dictionaries are trained with 4{,}000 additional real
+Monash windows. Raw real benchmarks are nonetheless a weaker bed for the causal questions: real rows give TimesFM
+representations of lower effective dimension than the synthetic corpus (1.76 against 2.66) and more dead dictionary
+atoms (\fid{MN-20}); weakly predictable real-derived series receive flat forecasts in 67--100\% of cases, where an
+ablation has nothing to move (\fid{BM-06}); real series carry no generative ground truth; and public archives may be in
+the models' pretraining data. A full run on a large raw benchmark such as GIFT-Eval remains to be done; the pipeline runs
+on any sealed corpus. Held-out confirmation covers accuracy, geometry,
 perturbation agreement, transfer, single-feature causal effects, atlas structure and failure prediction, on one private
 split opened once (a second look needs a fresh epoch), and the 20 confirmed transfers come from two source concepts.
 
