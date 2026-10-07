@@ -71,7 +71,7 @@ def score_seed(args, seed: int) -> dict:
         units = build_units(atlas, at, dst_set="concept_part", k_top_series=args.k_top_series)
         t0 = time.monotonic()
         out = run_subspace_agreement(cfg, run_dir, ctx.hub, ctx.store, ctx.data, ctx.device, units,
-                                     clearing=args.clearing, write=False)
+                                     clearing=args.clearing, subspace=args.subspace, write=False)
         timing[f"{direction[0]}->{direction[1]}"] = time.monotonic() - t0
         for t in out["tests"]:
             case, src, dst = index[int(t["concept"])]
@@ -115,6 +115,7 @@ def main(argv: list | None = None) -> dict:
     ap.add_argument("--k-top-series", type=int, default=None,
                     help="size of each side's top-series set (hence of U); default the transfer k")
     ap.add_argument("--clearing", default="draw_level", choices=("draw_level", "row_pooled"))
+    ap.add_argument("--subspace", default="members", choices=("members", "contrast"))
     ap.add_argument("--tag", default="subspace", help="subdirectory of --out for this variant")
     ap.add_argument("--device", default=None)
     args = ap.parse_args(argv)

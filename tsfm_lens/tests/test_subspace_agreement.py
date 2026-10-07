@@ -168,6 +168,13 @@ def test_a_same_sign_effect_no_larger_than_the_floor_is_inconclusive():
     assert est["level_effect"]["observed"] > 0
 
 
+def test_an_opposite_effect_inside_the_floor_is_inconclusive_not_differ():
+    est = _estimate(1.0 * PROFILE + _noise(1, 0.05), -1.0 * PROFILE + _noise(2, 0.05))
+    lv = est["level_effect"]
+    assert lv["observed"] < 0 and lv["ci"][1] >= lv["differ_threshold"]
+    assert est["verdict"] == "inconclusive"
+
+
 def test_an_effect_carried_by_one_series_does_not_agree_because_the_series_is_the_unit():
     a, b = np.zeros(N), np.zeros(N)
     a[0], b[0] = 30.0, 30.0
@@ -301,9 +308,10 @@ class _StubSAE:
 class _StubAdapter:
     """forecast = (sum over tokens of the residual . readout) x a per-step weight."""
 
-    def __init__(self, name, readout):
+    def __init__(self, name, readout, noise: float = 0.0):
         self.name, self.readout, self.module = name, readout, object()
         self.weight = np.array([1.0, 1.5, 0.5, 2.0])
+        self.noise = noise
 
     def ensure_loaded(self):
         pass
@@ -316,7 +324,10 @@ class _StubAdapter:
         rows = np.asarray(contexts)[:, 0].round().astype(int)
         vals = np.zeros(len(rows)) if repl is None else \
             (np.asarray(repl).reshape(len(rows), -1, D) @ self.readout).sum(axis=1)
-        return {"point": (vals[:, None] * self.weight[None, :horizon]).astype(np.float32)}
+        point = vals[:, None] * self.weight[None, :horizon]
+        if self.noise:
+            point = point + self.noise * torch.randn(point.shape).numpy()
+        return {"point": point.astype(np.float32)}
 
 
 class _StubData:
@@ -372,14 +383,14 @@ def _side(readout_sign: float, ortho: bool, seed: int):
 
 
 def _run(monkeypatch, tmp_path, sign_b: float = 1.0, ortho_b: bool = False, write: bool = False,
-         clearing: str = "draw_level", n_null: int = 40):
+         clearing: str = "draw_level", n_null: int = 40, noise: float = 0.0):
     _STATE.clear()
     sia.reset_caches()
     sub.reset_caches()
     pa, wa, ra = _side(1.0, False, 11)
     pb, wb, rb = _side(sign_b, ortho_b, 12)
     saes = {"A": _StubSAE(pa, wa), "B": _StubSAE(pb, wb)}
-    hub = _StubHub({"A": _StubAdapter("A", ra), "B": _StubAdapter("B", rb)})
+    hub = _StubHub({"A": _StubAdapter("A", ra, noise), "B": _StubAdapter("B", rb, noise)})
     data = _StubData()
     cfg = SimpleNamespace(
         run=SimpleNamespace(seed=0), data=SimpleNamespace(horizon=HORIZON, path="/nonexistent/x"),
@@ -406,6 +417,11 @@ def test_driver_same_sign_agrees(monkeypatch, tmp_path):
     assert t["verdict"] == "agree", t["level_effect"]
     assert t["level_effect"]["ci"][0] > t["level_effect"]["agree_threshold"]
     assert t["dimension"] == {"src": 2, "dst": 2}
+
+
+def test_driver_sampled_model_agrees_because_the_null_is_reseeded_with_the_baseline_seed(monkeypatch, tmp_path):
+    t = _run(monkeypatch, tmp_path, noise=50.0)["tests"][0]
+    assert t["verdict"] == "agree", (t["verdict"], t["side_src"]["level"], t["side_dst"]["level"])
 
 
 def test_driver_flipped_sign_differs(monkeypatch, tmp_path):

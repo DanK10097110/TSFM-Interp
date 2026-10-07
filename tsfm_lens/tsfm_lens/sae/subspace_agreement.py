@@ -53,6 +53,16 @@ What is new.
    happened). `equivalence` (TOST on the per-series difference of the two null-unit level
    effects, margin `delta`, 90% CI) is reported beside and does not gate `agree`.
 
+Known-answer variants (`run_l5_subspace_known_answer.py`; the gate is `analysis/l5_subspace_gate.py`).
+Main: the member set's decoder-span removal, `U` from the transfer test's top-20 series, draw-level
+clearing. V2 (`--k-top-series 100`): the same with `U` from the top-100 series, declared before any
+held-out seed was scored, because a larger `U` shrinks the spread of a null draw's mean. V3
+(`subspace="contrast"`, declared after V2's held-out result and before V3's): the subspace is
+the contrast between the series where the member set fires (fit on series OUTSIDE `U`) and the
+series where it is silent, mean-ablated toward the silent mean, because main's failures were
+seeds whose member atoms mix the concept with large benign mass, which inflates the matched null;
+a contrast direction was expected to have no such mass.
+
 Evidence class: causal WITHIN each model (an ablation against that model's own null), compared
 across models only on the same corpus inputs, never a transplant (invariant 5). The test is
 opt-in, wired into no stage, and written to its own artifact `sae/subspace_agreement.json`. A
@@ -75,7 +85,7 @@ from .shared_input_agreement import (SHAPE_CHANNELS, TargetContext, _baseline_fo
                                      _channel_deltas, _side_channel_scores,
                                      _target_key, battery_for_set, matched_dst_set, series_sets,
                                      verify_auc_reproduces)
-from .transfer import _seed
+from .transfer import _seed, concept_scores
 
 __all__ = ["subspace_agreement_path", "run_subspace_agreement", "agreement_estimate",
            "decoder_subspace", "SCHEMA_VERSION", "STATUSES"]
@@ -236,6 +246,93 @@ def subspace_null(ctx: TargetContext, features, U_key: tuple, contexts_u: np.nda
                                        remove_level=True, **kw)))
     _null_cache[key] = out
     return out
+
+
+# ---------------------------------------------------------------------------
+# 1b. Variant V3: the concept's own subspace from an activation contrast (no SAE members).
+# ---------------------------------------------------------------------------
+
+SUBSPACE_KINDS = ("members", "contrast")
+CONTRAST_DEFAULTS = {"k_fit": 40, "n_silent": 100, "energy": 0.9, "max_rank": 4}
+
+
+def contrast_subspace(series_acts: np.ndarray, concept_score: np.ndarray, exclude, *,
+                      k_fit: int = 40, n_silent: int = 100, energy: float = 0.9,
+                      max_rank: int = 4) -> tuple:
+    """`(Q [d, r], center [d], info)`: the concept's subspace as the contrast between the series
+    where it fires and the series where it is silent, in the model's OWN residual space.
+
+    `series_acts` `[n, d]` the layer's series-level mean activations, `concept_score` `[n]` the
+    member set's score on each series (`transfer.concept_scores`), `exclude` the shared series
+    `U` (the effect is measured there, so the subspace is fit on OTHER series: no series the
+    effect is read on has helped choose the direction). The `k_fit` highest-scoring series outside
+    `U` are the active group, the `n_silent` lowest-scoring the silent group, `center` the silent
+    group's mean. `Q` is the top singular subspace of the active group's offsets from `center`,
+    of the smallest rank holding `energy` of their squared singular values and at most
+    `max_rank`. Why this exists: an SAE atom that mixes the concept with a large benign component
+    has a removal whose matched null is large, so its real effect cannot clear it even when the
+    concept's effect is full-sized; the contrast direction has no such mass.
+    """
+    X = np.asarray(series_acts, dtype=np.float64)
+    order = np.argsort(-np.asarray(concept_score, dtype=np.float64), kind="stable")
+    excl = set(int(i) for i in exclude)
+    active = [int(i) for i in order if int(i) not in excl][:int(k_fit)]
+    silent = [int(i) for i in order[::-1] if int(i) not in excl][:int(n_silent)]
+    center = X[silent].mean(axis=0)
+    _u, sv, vh = np.linalg.svd(X[active] - center, full_matrices=False)
+    cum = np.cumsum(sv ** 2) / max(float((sv ** 2).sum()), 1e-300)
+    r = int(min(max_rank, int(np.searchsorted(cum, energy)) + 1, vh.shape[0]))
+    info = {"rank": r, "n_active": len(active), "n_silent": len(silent),
+            "energy_kept": float(cum[r - 1]), "singular_values": [float(v) for v in sv[:max_rank + 2]]}
+    return vh[:r].T.copy(), center, info
+
+
+@torch.no_grad()
+def _contrast_replacement(clean_tokens: torch.Tensor, sae, device, Q: torch.Tensor,
+                          center: torch.Tensor, Q_use: torch.Tensor) -> torch.Tensor:
+    """Token-level reconstruction with `Q_use c_t` removed, `c_t = Q^T (recon_t - center)` the
+    token's coordinates in the contrast subspace: `Q_use = Q` is the real mean-ablation of the
+    subspace toward the silent mean, any other orthonormal frame the matched null (the same
+    coordinates, hence the same removed amount and angles, through a random subspace)."""
+    b, t, d = clean_tokens.shape
+    recon = sae.decode(sae.encode(clean_tokens.reshape(-1, d).to(device)))
+    Qd = Q.to(device=recon.device, dtype=recon.dtype)
+    coords = (recon - center.to(device=recon.device, dtype=recon.dtype)) @ Qd
+    return (recon - coords @ Q_use.to(device=recon.device, dtype=recon.dtype).T).reshape(b, t, d).cpu()
+
+
+def _stats_for_replacement(ctx: TargetContext, replacement, contexts_u, targets_u, periods_u,
+                           baseline_fc, baseline_q, seed: int) -> tuple:
+    with token_patch(ctx.adapter.module, ctx.layer, ctx.adapter.token_slice, replacement):
+        torch.manual_seed(seed)
+        rec = ctx.adapter.predict(contexts_u, ctx.cfg.data.horizon, ctx.cfg.l0.quantiles)
+    kw = dict(steered_quantiles=rec.get("quantiles"), baseline_quantiles=baseline_q)
+    return (battery_statistics(rec["point"], baseline_fc, targets_u, contexts_u, periods_u,
+                               remove_level=False, **kw),
+            battery_statistics(rec["point"], baseline_fc, targets_u, contexts_u, periods_u,
+                               remove_level=True, **kw))
+
+
+def contrast_batteries(ctx: TargetContext, Q: np.ndarray, center: np.ndarray, U_key: tuple,
+                       contexts_u: np.ndarray, targets_u: np.ndarray, periods_u: np.ndarray,
+                       baseline_seed: int, direction_seed: int, n_null: int) -> tuple:
+    """`((raw, shape), [null (raw, shape) ...])` for the contrast subspace on `U`: the real
+    mean-ablation and `n_null` random-subspace nulls of the same rank, all against the
+    full-reconstruction baseline and reseeded with `baseline_seed`."""
+    clean, baseline_fc, baseline_q = _baseline_for_rows(ctx, contexts_u, U_key, baseline_seed)
+    Qt = torch.as_tensor(Q, dtype=torch.float32)
+    ct = torch.as_tensor(center, dtype=torch.float32)
+    real = _stats_for_replacement(
+        ctx, _contrast_replacement(clean, ctx.sae, ctx.device, Qt, ct, Qt), contexts_u, targets_u,
+        periods_u, baseline_fc, baseline_q, baseline_seed)
+    rng = np.random.default_rng(direction_seed)
+    nulls = []
+    for _ in range(int(n_null)):
+        frame = _random_frame(ctx.sae, int(Qt.shape[1]), rng).cpu()
+        nulls.append(_stats_for_replacement(
+            ctx, _contrast_replacement(clean, ctx.sae, ctx.device, Qt, ct, frame), contexts_u,
+            targets_u, periods_u, baseline_fc, baseline_q, baseline_seed))
+    return real, nulls
 
 
 # ---------------------------------------------------------------------------
@@ -429,7 +526,8 @@ def run_subspace_agreement(cfg, run_dir, hub, store, data, device, units: list, 
                            ground_truth_path: str | None = None, n_null: int | None = None,
                            n_boot: int | None = None, ci_level: float | None = None,
                            margin: float | None = None, base_seed: int | None = None,
-                           clearing: str = "draw_level", write: bool = True) -> dict:
+                           clearing: str = "draw_level", subspace: str = "members",
+                           contrast: dict | None = None, write: bool = True) -> dict:
     """Score every `unit` (the dict `shared_input_agreement.build_units` returns, with
     `src_features` / `dst_features` the two sides' member sets; a unit with
     `dst_set_request == "matched_set"` has its destination set resolved as the rung does) and
@@ -452,6 +550,9 @@ def run_subspace_agreement(cfg, run_dir, hub, store, data, device, units: list, 
     ci_level = float(ci_level if ci_level is not None else getattr(c, "subspace_agreement_ci_level", 0.95))
     margin = float(margin if margin is not None else getattr(c, "subspace_agreement_margin", 1.0))
     base_seed = int(base_seed if base_seed is not None else cfg.run.seed)
+    if subspace not in SUBSPACE_KINDS:
+        raise ValueError(f"unknown subspace kind {subspace!r}: expected one of {SUBSPACE_KINDS}")
+    contrast = {**CONTRAST_DEFAULTS, **(contrast or {})}
 
     periods_full = None
     try:
@@ -511,18 +612,45 @@ def run_subspace_agreement(cfg, run_dir, hub, store, data, device, units: list, 
 
         seed_src = _seed("shared_input_baseline", unit["src_target"], U_key, base=base_seed)
         seed_dst = _seed("shared_input_baseline", unit["dst_target"], U_key, base=base_seed)
-        raw_a, shape_a = battery_for_set(ctx_src, unit["src_features"], U_key, contexts_u,
-                                         targets_u, periods_u, seed_src)
-        raw_b, shape_b = battery_for_set(ctx_dst, unit["dst_features"], U_key, contexts_u,
-                                         targets_u, periods_u, seed_dst)
         dseed_a = _seed("subspace_null", unit["src_target"], tuple(sorted(unit["src_features"])),
                         U_key, base=base_seed)
         dseed_b = _seed("subspace_null", unit["dst_target"], tuple(sorted(unit["dst_features"])),
                         U_key, base=base_seed)
-        null_a = subspace_null(ctx_src, unit["src_features"], U_key, contexts_u, targets_u, periods_u,
-                               seed_src, dseed_a, n_null)
-        null_b = subspace_null(ctx_dst, unit["dst_features"], U_key, contexts_u, targets_u, periods_u,
-                               seed_dst, dseed_b, n_null)
+        if subspace == "members":
+            (raw_a, shape_a) = battery_for_set(ctx_src, unit["src_features"], U_key, contexts_u,
+                                               targets_u, periods_u, seed_src)
+            (raw_b, shape_b) = battery_for_set(ctx_dst, unit["dst_features"], U_key, contexts_u,
+                                               targets_u, periods_u, seed_dst)
+            null_a = subspace_null(ctx_src, unit["src_features"], U_key, contexts_u, targets_u,
+                                   periods_u, seed_src, dseed_a, n_null)
+            null_b = subspace_null(ctx_dst, unit["dst_features"], U_key, contexts_u, targets_u,
+                                   periods_u, seed_dst, dseed_b, n_null)
+            dim_a = int(decoder_subspace(ctx_src.sae.W_dec.detach(), unit["src_features"]).shape[1])
+            dim_b = int(decoder_subspace(ctx_dst.sae.W_dec.detach(), unit["dst_features"]).shape[1])
+            sub_info = {"kind": "members"}
+        else:
+            fits = {}
+            for side, ctx, feats in (("src", ctx_src, unit["src_features"]),
+                                     ("dst", ctx_dst, unit["dst_features"])):
+                frozen = unit.get(side + "_contrast")
+                if frozen is not None:
+                    Qs = np.asarray(frozen["Q"], dtype=np.float64)
+                    fits[side] = (Qs, np.asarray(frozen["center"], dtype=np.float64),
+                                  {"frozen": True, "rank": int(Qs.shape[1])})
+                else:
+                    acts = store.load(ctx.model, ctx.layer, level="series", space="act")
+                    fits[side] = contrast_subspace(acts, concept_scores(ctx.pooled, feats), U_key,
+                                                   **contrast)
+            (real_a, null_a) = contrast_batteries(ctx_src, fits["src"][0], fits["src"][1], U_key,
+                                                  contexts_u, targets_u, periods_u, seed_src,
+                                                  dseed_a, n_null)
+            (real_b, null_b) = contrast_batteries(ctx_dst, fits["dst"][0], fits["dst"][1], U_key,
+                                                  contexts_u, targets_u, periods_u, seed_dst,
+                                                  dseed_b, n_null)
+            (raw_a, shape_a), (raw_b, shape_b) = real_a, real_b
+            dim_a, dim_b = fits["src"][0].shape[1], fits["dst"][0].shape[1]
+            sub_info = {"kind": "contrast", "src": fits["src"][2], "dst": fits["dst"][2],
+                        "params": dict(contrast)}
         side_a = _side_scores(raw_a, shape_a, null_a, clearing)
         side_b = _side_scores(raw_b, shape_b, null_b, clearing)
         clear_a, clear_b = _clearing(side_a), _clearing(side_b)
@@ -531,10 +659,7 @@ def run_subspace_agreement(cfg, run_dir, hub, store, data, device, units: list, 
                 and (side_a["shape"][ch]["clears_null"] or side_b["shape"][ch]["clears_null"])]
         record.update({
             "U": list(U_key), "n_shared_series": int(U.size),
-            "dimension": {"src": int(decoder_subspace(ctx_src.sae.W_dec.detach(),
-                                                      unit["src_features"]).shape[1]),
-                          "dst": int(decoder_subspace(ctx_dst.sae.W_dec.detach(),
-                                                      unit["dst_features"]).shape[1])},
+            "dimension": {"src": dim_a, "dst": dim_b}, "subspace": sub_info,
             "null": {"kind": "subspace_matched", "n": n_null},
             "side_src": {"clearing_channels": clear_a, "level": side_a["level"], "shape": side_a["shape"]},
             "side_dst": {"clearing_channels": clear_b, "level": side_b["level"], "shape": side_b["shape"]},
@@ -568,7 +693,7 @@ def run_subspace_agreement(cfg, run_dir, hub, store, data, device, units: list, 
         counts[r["verdict"]] = counts.get(r["verdict"], 0) + 1
     out = {"schema_version": SCHEMA_VERSION,
            "params": {"n_null": n_null, "n_boot": n_boot, "ci_level": ci_level, "margin": margin,
-                      "tost_alpha": TOST_ALPHA, "clearing": clearing, "shape_channels": list(SHAPE_CHANNELS),
+                      "tost_alpha": TOST_ALPHA, "clearing": clearing, "subspace": subspace, "shape_channels": list(SHAPE_CHANNELS),
                       "statuses": list(STATUSES), "null": "subspace_matched",
                       "evidence_class": "causal within model; compared across models on shared inputs"},
            "n_tests": len(tests), "tests": tests, "verdict_counts": counts, "reach": reach_records,
