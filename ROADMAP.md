@@ -39281,3 +39281,17 @@ V3-A (corpus) delivered on branch v3-corpus: 2876 dev (synthetic 2091, real_deri
 external_real 800 GIFT-Eval windows (5 domains), 0 hash overlap with every earlier split; follow-up in progress: the
 external gate's DTW references restricted to real_derived dev + Monash (gating on synthetic biased the slice toward
 non-smooth series), exact-hash and near-duplicate checks kept against all dev; `role` carried into tsfm_lens rows.
+
+### 41.3 V3-B merged (77105f1, 2026-10-07) and decisions taken before V3 data
+
+- Claim types merged: `family_presence` (per-model, each feature's own signed null draws, plus-one p, Holm),
+  `concept_atlas_centroid` (centroid-only), external-real leg (reported apart from the verdict); null-mode aware via
+  `confirm.primary_null` + `by_null[<mode>]` reader contract.
+- **Family presence has no demonstrated sensitivity yet** (mock_planted at smoke scale: 0/7 true pairs confirmed,
+  0/3 absent pairs falsely claimed). It is NOT registered in V3 unless it passes a pre-fixed known-answer gate
+  (sensitivity ≥ 0.8 over truly planted (family, model) pairs, false-claim ≤ 0.05, seeds 1–4 held out) — in progress.
+- **`atlas_centroid_min_members = 3`** for V3 (decided now): at 5, the panel7 atlas registers 0 claims; the centroid-only
+  statistic is the registered test, ≥2 models still required.
+- In progress in parallel: V3-E1 (dual-null battery `by_null`, feature-level chance, admitted/aligned-restricted
+  results) and V3-E2 (random-init twin + input-feature transfer controls, window 64/96 sensitivity, per-role breakdown,
+  `configs/panel7_v3.yaml`, disk plan).
