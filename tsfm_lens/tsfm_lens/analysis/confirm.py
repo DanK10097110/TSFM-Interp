@@ -59,7 +59,11 @@ from .l0_behavioral import _predict_all, _score
 from .l1_geometry import linear_cka
 from .power import mde_paired_bootstrap
 from .stats import bootstrap_ci, holm, paired_bootstrap
-from .hypotheses import CONCEPT_CLAIM_STAGES, RELIABILITY_STAGE
+from .hypotheses import CONCEPT_CLAIM_STAGES, RELIABILITY_STAGE, V3_CLAIM_STAGES
+
+# Every claim stage that needs the shared private capture and the K2 pass:
+# the four K2 types plus the two V3-B types (ROADMAP.md sec 41).
+_PRIVATE_PASS_STAGES = CONCEPT_CLAIM_STAGES + V3_CLAIM_STAGES
 
 # Corpus identity (ROADMAP.md sec 34 item B5): a manifest-derived field
 # degrades to this reason, never a bare `None`, when the confirm.source is
@@ -69,6 +73,20 @@ from .hypotheses import CONCEPT_CLAIM_STAGES, RELIABILITY_STAGE
 # dev" warning, which this is what makes visible per-run rather than only
 # documented).
 _NO_MANIFEST_REASON = "no sealed manifest (smoke source, or an unverified jsonl load)"
+
+
+def confirmation_complete(cfg: PipelineConfig) -> bool:
+    """The `confirm` stage's skip predicate: `confirmation.json` exists AND, when
+    `confirm.external_path` is set, it already holds `external_replication`.
+    A confirmation made before an external corpus was configured is therefore
+    not complete, and re-running the stage adds ONLY the external leg (the
+    private split is not looked at again: `run_confirm`'s `external_only`)."""
+    path = cfg.run_dir() / "confirm" / "confirmation.json"
+    if not path.exists():
+        return False
+    if not getattr(cfg.confirm, "external_path", ""):
+        return True
+    return "external_replication" in load_json(path)
 
 
 def run_confirm(cfg: PipelineConfig, hub, forced: bool = False) -> None:
@@ -90,7 +108,11 @@ def run_confirm(cfg: PipelineConfig, hub, forced: bool = False) -> None:
     """
     out_dir = cfg.run_dir() / "confirm"
     repeated = (out_dir / "confirmation.json").exists()
-    if repeated:
+    external_wanted = bool(getattr(cfg.confirm, "external_path", ""))
+    prior = load_json(out_dir / "confirmation.json") if repeated else {}
+    external_done = "external_replication" in prior
+    external_only = bool(repeated and not forced and external_wanted and not external_done)
+    if repeated and not external_only:
         if not forced:
             raise RuntimeError(
                 "confirmation artifacts already exist; the private benchmark is meant to be "
@@ -117,7 +139,7 @@ def run_confirm(cfg: PipelineConfig, hub, forced: bool = False) -> None:
     # ROADMAP.md sec 38.2: refuse an unsatisfiable Holm family (or a null-mode
     # mismatch) BEFORE the private split is opened. A no-op when no K2 claim
     # was registered.
-    if any(h["stage"] in CONCEPT_CLAIM_STAGES or h["stage"] == RELIABILITY_STAGE
+    if any(h["stage"] in _PRIVATE_PASS_STAGES or h["stage"] == RELIABILITY_STAGE
            for h in registry["hypotheses"]):
         check_concept_claims_before_opening(cfg, registry)
 
@@ -132,12 +154,20 @@ def run_confirm(cfg: PipelineConfig, hub, forced: bool = False) -> None:
     # on the very evidence its own discipline would then be invalidating.
     _check_private_provenance(private_manifest, dev_manifest)
     provenance = _private_provenance(private, cfg.confirm.path, dev_manifest, private_manifest)
+    external = (_prepare_external(cfg, private, dev_manifest, private_manifest)
+                if external_wanted else None)
+    if external_only:
+        block = _external_leg(cfg, hub, registry, external, repeated_look=False)
+        save_json(out_dir / "confirmation.json", {**prior, "external_replication": block})
+        log.info("confirm: external_real leg added to the existing confirmation "
+                 "(not counted in the confirm verdict)")
+        return
     a, b = cfg.comparison_pair()
     metrics = _private_behavioral(cfg, hub, private, out_dir)
     hypotheses = _test_registered_hypotheses(cfg, metrics, registry, a.name, b.name)
     replication = _replicate_registered_cka(cfg, hub, private, registry)
     l3_replication = _replicate_registered_l3(cfg, hub, private, registry)
-    k2_claims = any(h["stage"] in CONCEPT_CLAIM_STAGES for h in registry["hypotheses"])
+    k2_claims = any(h["stage"] in _PRIVATE_PASS_STAGES for h in registry["hypotheses"])
     acts_cache, capture_errors = ({}, {})
     if k2_claims:
         acts_cache, capture_errors = _capture_private_targets(
@@ -153,6 +183,9 @@ def run_confirm(cfg: PipelineConfig, hub, forced: bool = False) -> None:
 
     confirmed = sum(1 for h in hypotheses["tests"] if h["confirmed"])
     n_replicable = sum(1 for h in registry["hypotheses"] if h["replicable"])
+    external_block = ({"external_replication": _external_leg(
+        cfg, hub, registry, external, repeated_look=bool(forced and external_done))}
+        if external is not None else {})
     save_json(out_dir / "confirmation.json", {
         "model_a": a.name, "model_b": b.name,
         "n_private_series": private.n,
@@ -170,6 +203,7 @@ def run_confirm(cfg: PipelineConfig, hub, forced: bool = False) -> None:
         "cka_replication": replication,
         "l3_replication": l3_replication,
         "concept_replication": concept_replication,
+        **external_block,
     })
     log.info("confirm complete: %d/%d dev hypotheses confirmed on private data "
             "(%d registered, %d replicable)", confirmed, len(hypotheses["tests"]),
@@ -194,6 +228,129 @@ def _load_private(cfg: PipelineConfig) -> BenchmarkData:
     log.info("confirm: private corpus loaded (%d series, %d families)",
              private.n, private.meta["family"].nunique())
     return private
+
+
+_EXTERNAL_ROLE = "external_real"
+_EXTERNAL_EVIDENCE = ("external validity of the registered transfer and family-presence claims "
+                      "on raw real windows, reported apart from the confirm verdict: it is not "
+                      "registered-hypothesis confirmation and is never counted in its totals")
+
+
+def _uncapped_hashes(cfg: PipelineConfig, source: str, path: str, seed: int) -> set:
+    """Value hashes of EVERY series in one corpus (no `max_series` cap), the
+    fallback identity when a sealed manifest lists no sample hashes."""
+    from .family_claims import series_value_hashes
+
+    data = load_benchmark(dataclasses.replace(cfg.data, source=source, path=path,
+                                              max_series=None), seed)
+    return series_value_hashes(data.contexts(), data.targets())
+
+
+def _prepare_external(cfg: PipelineConfig, private: BenchmarkData, dev_manifest,
+                      private_manifest) -> dict:
+    """Load the `external_real` corpus and prove it is disjoint from dev and
+    private BEFORE any analysis runs (ROADMAP.md sec 41, V3-B item c).
+
+    Refuses (raises) when the external path is the dev or private path, when
+    its manifest declares a role other than `external_real`, or when it shares
+    a sample hash with either consumed corpus. Hashes are the sealed
+    manifests' per-sample content hashes when all three corpora list them,
+    otherwise a sha256 of every series' values (exact match only: a re-cropped
+    copy of a series is not caught, and the artifact records which method was
+    used). The external corpus is loaded with seal verification under the same
+    rule as the private one."""
+    from .family_claims import check_external_disjoint, corpus_hashes
+
+    c = cfg.confirm
+    ext_path = str(c.external_path)
+    for name, other in (("confirm.path", c.path), ("data.path", cfg.data.path)):
+        if other and Path(other).resolve() == Path(ext_path).resolve():
+            raise RuntimeError(f"confirm.external_path is the same corpus as {name} "
+                               f"({other}); the external leg needs a corpus no other stage "
+                               f"has read")
+    if c.external_source == "sealed" and c.require_seal:
+        try:
+            import tsfm_benchmark  # noqa: F401
+        except ImportError as e:
+            raise RuntimeError(
+                "confirm.require_seal is true but tsfm_benchmark is not installed; an "
+                "external corpus without seal verification is not trustworthy.") from e
+    ext_manifest = read_manifest(ext_path) if c.external_source != "smoke" else None
+    declared = ((ext_manifest or {}).get("role")
+                or ((ext_manifest or {}).get("extra") or {}).get("role"))
+    if declared is not None and declared != _EXTERNAL_ROLE:
+        raise RuntimeError(f"confirm.external_path's manifest declares role {declared!r}, not "
+                           f"{_EXTERNAL_ROLE!r}")
+    seed = cfg.run.seed + 2000 if c.external_source == "smoke" else cfg.run.seed
+    ext = load_benchmark(dataclasses.replace(cfg.data, source=c.external_source, path=ext_path,
+                                             max_series=int(c.external_max_series)), seed)
+    manifests = {"dev": dev_manifest, "private": private_manifest, "external": ext_manifest}
+    if all((m or {}).get("sample_hashes") for m in manifests.values()):
+        hashed = {k: corpus_hashes(m, None) for k, m in manifests.items()}
+    else:
+        priv_seed = cfg.run.seed + 1000 if c.source == "smoke" else cfg.run.seed
+        hashed = {
+            "dev": (_uncapped_hashes(cfg, cfg.data.source, cfg.data.path, cfg.run.seed),
+                    "series value sha256"),
+            "private": (_uncapped_hashes(cfg, c.source, c.path, priv_seed),
+                        "series value sha256"),
+            "external": (_uncapped_hashes(cfg, c.external_source, ext_path, seed),
+                         "series value sha256")}
+    overlap = check_external_disjoint(hashed["external"],
+                                      {"dev": hashed["dev"], "private": hashed["private"]})
+    log.info("confirm: external_real corpus loaded (%d series), disjoint from dev and private "
+             "by %s", ext.n, overlap["method"])
+    return {"data": ext, "manifest": ext_manifest, "overlap": overlap,
+            "role_declared": declared}
+
+
+def _external_leg(cfg: PipelineConfig, hub, registry: dict, external: dict,
+                  repeated_look: bool) -> dict:
+    """The `external_replication` block: the registered `concept_transfer` and
+    `family_presence` claims re-run on the external corpus, each with its own
+    Holm family over ITS tests, none of it entering the confirm verdict, the
+    registered-claim totals or the ledger (ROADMAP.md sec 41, V3-B item c).
+
+    Everything is the private pass's own machinery on a different `data`:
+    frozen SAE checkpoints, frozen claims, the claim's registered null. The
+    ground-truth table is `""` (raw real windows have no recipe), so the
+    seasonal channel is unavailable here for every feature, which the vector
+    convention already treats as an unscored channel. A claim type with no
+    registered claim is recorded `skipped`, not absent."""
+    ext: BenchmarkData = external["data"]
+    run_dir = cfg.run_dir()
+    transfer_hyps = [h for h in registry["hypotheses"] if h["stage"] == "concept_transfer"]
+    family_hyps = _concept_claims(registry, "family_presence")
+    targets = sorted(_transfer_targets(registry)
+                     | {t for h in family_hyps for t in h["targets"]})
+    acts, errors = ({}, {})
+    if targets:
+        acts, errors = _capture_private_targets(cfg, hub, ext, targets)
+    if transfer_hyps:
+        transfer = _replicate_registered_concepts(cfg, hub, ext, registry,
+                                                  acts_cache=acts or None)["transfer"]
+    else:
+        transfer = {"status": "skipped", "tests": [],
+                    "reason": "no registered concept_transfer hypotheses"}
+    if family_hyps:
+        feats, ferrors = _encode_frozen_targets(run_dir, acts, errors, _device_for(cfg))
+        family = _confirm_family_presence(
+            cfg, registry, ferrors,
+            _family_presence_batteries(cfg, hub, ext, run_dir, family_hyps, feats, gt_path=""),
+            tag="external")
+    else:
+        family = {"status": "skipped", "tests": [],
+                  "reason": "no registered family_presence claims"}
+    return {
+        "status": "tested" if (transfer_hyps or family_hyps) else "skipped",
+        "role": _EXTERNAL_ROLE, "counted_in_confirm_verdict": False,
+        "evidence_class": _EXTERNAL_EVIDENCE, "repeated_look": bool(repeated_look),
+        "corpus_path": str(cfg.confirm.external_path),
+        "corpus_digest": getattr(ext, "corpus_digest", None), "n_series": int(ext.n),
+        "manifest_role_declared": external["role_declared"],
+        "overlap_check": external["overlap"],
+        "transfer": transfer, "family_presence": family,
+    }
 
 
 def _read_provenance_manifests(cfg: PipelineConfig) -> tuple:
@@ -845,6 +1002,10 @@ def _needed_targets(registry: dict) -> list:
     for h in _concept_claims(registry, "concept_structure"):
         out |= {f"{r['model']}/{r['layer']}" for r in h.get("pool", [])}
         out |= set(h.get("candidates", {}))
+    for h in _concept_claims(registry, "concept_atlas_centroid"):
+        out |= {f"{m['model']}/{m['layer']}" for m in h["members"]}
+    for h in _concept_claims(registry, "family_presence"):
+        out |= set(h["targets"])
     return sorted(out)
 
 
@@ -969,19 +1130,42 @@ def _tail_p(obs: float, null_vals, tail: str = "right") -> float:
     return (1 + hits) / (v.size + 1)
 
 
+def _cfg_with_null(cfg, null_mode: str | None):
+    """`cfg` with `sae.ablation_null` set to `null_mode` (a shallow copy; the
+    run's own config is never mutated), or `cfg` itself when it already is."""
+    from ..sae.ablation_run import cfg_null_mode
+
+    if not null_mode or null_mode == cfg_null_mode(cfg):
+        return cfg
+    import copy
+    out = copy.copy(cfg)
+    out.sae = dataclasses.replace(cfg.sae, ablation_null=null_mode)
+    return out
+
+
 def _private_battery(cfg, hub, private, run_dir, model: str, layer: str, feats: dict,
-                     candidates: list, k: int, n_null: int, keep_null_draws: bool) -> dict:
+                     candidates: list, k: int, n_null: int, keep_null_draws: bool,
+                     signed_null: bool = False, gt_path: str | None = None,
+                     null_mode: str | None = None) -> dict:
     """One private battery run at one target with frozen candidates.
-    Returns `{"withheld": bool, "reason": str, "by_feature": {f: record}}`."""
+    Returns `{"withheld": bool, "reason": str, "by_feature": {f: record}}`.
+
+    ROADMAP.md sec 41 (V3-B) -- three optional arguments, every default the
+    legacy behaviour: `signed_null` keeps the signed null draws, `gt_path`
+    overrides the ground-truth table's corpus (`""` for a corpus with none, so
+    the seasonal channel is unavailable rather than read from dev's table), and
+    `null_mode` runs the battery under that ablation null instead of the
+    config's."""
     from ..sae.ablation_run import run_ablation_target
 
     res = run_ablation_target(
-        cfg, run_dir, hub, private, None, _device_for(cfg), model, layer,
-        top_k_series=int(k), n_null_directions=int(n_null),
+        _cfg_with_null(cfg, null_mode), run_dir, hub, private, None, _device_for(cfg), model,
+        layer, top_k_series=int(k), n_null_directions=int(n_null),
         max_series=int(cfg.concepts.max_series), keep_forecasts=0,
-        ground_truth_path=_private_ground_truth_path(cfg),
+        ground_truth_path=(_private_ground_truth_path(cfg) if gt_path is None else gt_path),
         candidates=[{"feature": int(f)} for f in candidates],
-        activations=feats["series"], keep_null_draws=keep_null_draws)
+        activations=feats["series"], keep_null_draws=keep_null_draws,
+        keep_signed_null_draws=signed_null)
     if res.get("skipped") or res.get("withheld"):
         reason = res.get("reason") or (res.get("reach") or {}).get("reason") or "withheld"
         return {"withheld": True, "reason": str(reason), "by_feature": {}}
@@ -1137,20 +1321,11 @@ def _unit_rows(X: np.ndarray) -> np.ndarray:
     return X / np.where(n == 0, 1.0, n)[:, None]
 
 
-def _confirm_atlas(cfg, registry: dict, errors: dict, batteries: dict) -> dict:
-    """Replicate every `concept_atlas` claim from the private battery vectors
-    of the FROZEN member features (`sae/concepts.py::ablation_vector`, the
-    dev vector). Statistics: the fraction of member pairs whose private
-    cosine is >= the dev `min_cosine`, and the cosine of the private member
-    centroid with the DEV centroid. Confirmed if the centroid cosine >=
-    `min_cosine`, at least half of the pairs hold, and both statistics beat
-    their null (random same-composition member sets drawn from the private
-    causal pool, row-matched per model) at Holm alpha (combined p = the max
-    of the two, an intersection-union rule)."""
+def _atlas_member_vector(batteries: dict):
+    """`f(model, layer, feature) -> private dev-convention 9-vector or None`
+    over one `{target: battery}` dict (a withheld target, an unfired feature
+    and an unscorable one are all `None`)."""
     from ..sae.concepts import ablation_vector
-
-    claims = _concept_claims(registry, "concept_atlas")
-    alpha, n_null = float(cfg.confirm.alpha), int(cfg.confirm.atlas_n_null)
 
     def _vec(model, layer, feature):
         b = batteries.get(f"{model}/{layer}")
@@ -1158,6 +1333,14 @@ def _confirm_atlas(cfg, registry: dict, errors: dict, batteries: dict) -> dict:
             return None
         rec = b["by_feature"].get(int(feature))
         return ablation_vector(dict(rec)) if rec and rec.get("scorable") else None
+    return _vec
+
+
+def _private_causal_pool(batteries: dict) -> dict:
+    """`{model: unit rows}` of the private causal pool: every scorable frozen
+    feature that clears >= 1 channel on private data, the population the atlas
+    claims' random member sets are drawn from (row-matched per model)."""
+    from ..sae.concepts import ablation_vector
 
     pool: dict = {}
     for tgt, b in batteries.items():
@@ -1169,7 +1352,23 @@ def _confirm_atlas(cfg, registry: dict, errors: dict, batteries: dict) -> dict:
                 v = ablation_vector(dict(rec))
                 if v is not None and np.linalg.norm(v) > 0:
                     pool.setdefault(model, []).append(v)
-    pool = {m: _unit_rows(np.asarray(v)) for m, v in pool.items()}
+    return {m: _unit_rows(np.asarray(v)) for m, v in pool.items()}
+
+
+def _confirm_atlas(cfg, registry: dict, errors: dict, batteries: dict) -> dict:
+    """Replicate every `concept_atlas` claim from the private battery vectors
+    of the FROZEN member features (`sae/concepts.py::ablation_vector`, the
+    dev vector). Statistics: the fraction of member pairs whose private
+    cosine is >= the dev `min_cosine`, and the cosine of the private member
+    centroid with the DEV centroid. Confirmed if the centroid cosine >=
+    `min_cosine`, at least half of the pairs hold, and both statistics beat
+    their null (random same-composition member sets drawn from the private
+    causal pool, row-matched per model) at Holm alpha (combined p = the max
+    of the two, an intersection-union rule)."""
+    claims = _concept_claims(registry, "concept_atlas")
+    alpha, n_null = float(cfg.confirm.alpha), int(cfg.confirm.atlas_n_null)
+    _vec = _atlas_member_vector(batteries)
+    pool = _private_causal_pool(batteries)
 
     tests = []
     for h in claims:
@@ -1229,6 +1428,163 @@ def _confirm_atlas(cfg, registry: dict, errors: dict, batteries: dict) -> dict:
                             "confirmed also needs centroid cosine >= min_cosine and >= half "
                             "of member pairs >= min_cosine",
             "n_null": n_null, "tests": tests}
+
+
+def _confirm_atlas_centroid(cfg, registry: dict, errors: dict, batteries_by_null: dict) -> dict:
+    """Replicate every `concept_atlas_centroid` claim (ROADMAP.md sec 41, V3-B):
+    the cosine of the private member centroid to the DEV centroid, with NO
+    pair-fraction leg. The null is `_confirm_atlas`'s own, unchanged: random
+    same-composition member sets drawn from the private causal pool (per-model
+    row-matched), seeded identically, so a concept's `p_centroid` here equals
+    its legacy `p_centroid`. Confirmed if the centroid cosine >= the frozen
+    `min_cosine` and the null p is below alpha at Holm across THIS family.
+
+    `batteries_by_null` is `{null_mode: {target: battery}}`: each claim is
+    scored on the battery run under its own registered `null_mode`. A claim
+    whose null has no battery here is `not testable` with that stated, never
+    scored against another null's vectors. A concept needs at least
+    `min_members` (frozen, default 5) testable members, so the claim stays a
+    claim about a centroid of that many features."""
+    claims = _concept_claims(registry, "concept_atlas_centroid")
+    alpha, n_null = float(cfg.confirm.alpha), int(cfg.confirm.atlas_n_null)
+    tests = []
+    for h in claims:
+        entry = {"id": h["id"], "concept": h["concept"], "n_members": len(h["members"]),
+                 "models": h["models"], "min_cosine": h["min_cosine"],
+                 "null_mode": h["null_mode"], "legacy_claim_id": h.get("legacy_claim_id")}
+        batteries = batteries_by_null.get(h["null_mode"])
+        if batteries is None:
+            entry.update({"status": _NOT_TESTABLE, "reason": (
+                f"no private battery was run under the registered null {h['null_mode']!r}")})
+            tests.append(entry)
+            continue
+        _vec, pool = _atlas_member_vector(batteries), _private_causal_pool(batteries)
+        vecs, kept = [], []
+        for m in h["members"]:
+            v = _vec(m["model"], m["layer"], m["feature"])
+            if v is not None and np.linalg.norm(v) > 0:
+                vecs.append(v)
+                kept.append(m)
+        entry["n_testable_members"] = len(vecs)
+        if len(vecs) < max(2, int(h["min_members"])):
+            entry.update({"status": _NOT_TESTABLE, "reason": (
+                f"only {len(vecs)} of {len(h['members'])} members are testable on private "
+                f"data (reach withheld, unfired, or unscorable); the claim needs "
+                f"{h['min_members']}")})
+            tests.append(entry)
+            continue
+        comp: dict = {}
+        for m in kept:
+            comp[m["model"]] = comp.get(m["model"], 0) + 1
+        if any(pool.get(mo) is None or len(pool[mo]) < c for mo, c in comp.items()):
+            entry.update({"status": _NOT_TESTABLE, "reason": (
+                "the private causal pool of a member's model is smaller than the member "
+                "count, so no row-matched null can be drawn")})
+            tests.append(entry)
+            continue
+        dev_centroid = np.asarray(h["dev_centroid"], dtype=np.float64)
+        unit = _unit_rows(np.asarray(vecs))
+        cen = unit.mean(axis=0)
+        cen_cos = float(cen @ dev_centroid / (np.linalg.norm(cen) or 1.0))
+        rng = np.random.default_rng(cfg.run.seed + 820_000 + int(h["concept"]))
+        null_cen = []
+        for _ in range(n_null):
+            u = np.concatenate([pool[mo][rng.choice(len(pool[mo]), size=c, replace=False)]
+                                for mo, c in sorted(comp.items())])
+            c_ = u.mean(axis=0)
+            null_cen.append(float(c_ @ dev_centroid / (np.linalg.norm(c_) or 1.0)))
+        entry.update({
+            "status": "tested", "private_centroid_cosine": cen_cos, "n_null": n_null,
+            "null_centroid_cosine_p95": float(np.quantile(null_cen, 0.95)),
+            "p": _tail_p(cen_cos, null_cen), "rule_holds": bool(cen_cos >= h["min_cosine"])})
+        tests.append(entry)
+    m, n_conf = _holm_confirm(tests, "p", alpha, extra_ok=lambda t: t["rule_holds"])
+    return {"status": "tested", "n_registered": len(claims), "n_tested": m,
+            "n_confirmed": n_conf,
+            "n_not_testable": sum(1 for t in tests if t["status"] != "tested"),
+            "p_combination": "p_centroid per claim vs the same-composition random-member-set "
+                            "null, then Holm across this family; confirmed also needs the "
+                            "centroid cosine >= min_cosine (no pair-fraction leg)",
+            "n_null": n_null, "tests": tests}
+
+
+def _confirm_family_presence(cfg, registry: dict, errors: dict, batteries_by_group: dict,
+                             tag: str = "private") -> dict:
+    """Replicate every `family_presence` claim (ROADMAP.md sec 41, V3-B).
+
+    A claim's frozen features are re-measured by the private battery under the
+    claim's own null (`batteries_by_group[(null_mode, k, n_null_directions)]`);
+    each scorable feature contributes its observed vector and its own signed
+    random-direction draws (`family_claims.observed_and_null_vectors`). The
+    statistic is how many features have cosine >= the family threshold to the
+    FROZEN dev centroid; the null count is drawn from each feature's own
+    random-direction hit probability (`family_claims.presence_statistic`; the
+    module docstring has the reasoning). Three states: a target whose capture
+    failed or whose reach probe was withheld, and a claim with no scorable
+    feature, are `not testable`, never `not confirmed`. Confirmed at Holm
+    `alpha` across the tested claims of this family."""
+    from .family_claims import observed_and_null_vectors, presence_statistic
+    from ..sae.transfer import _seed
+
+    claims = _concept_claims(registry, "family_presence")
+    alpha = float(cfg.confirm.alpha)
+    n_null = int(cfg.confirm.family_presence_n_null)
+    tests = []
+    for h in claims:
+        entry = {"id": h["id"], "family_id": h["family_id"], "family_title": h["family_title"],
+                 "model": h["model"], "null_mode": h["null_mode"], "min_cosine": h["min_cosine"],
+                 "dev_count": h["dev_count"], "dev_basis": h["dev_basis"],
+                 "n_features_frozen": h["n_features"]}
+        group = batteries_by_group.get((h["null_mode"], int(h["k_top_series"]),
+                                        int(h["n_null_directions"])))
+        centroid = np.asarray(h["dev_centroid"], dtype=np.float64)
+        obs_cos, null_cos, reasons = [], [], []
+        for tgt, feats_ in h["targets"].items():
+            b = (group or {}).get(tgt)
+            if tgt in errors:
+                reasons.append(f"{tgt}: private capture failed ({errors[tgt]})")
+            elif group is None or b is None:
+                reasons.append(f"{tgt}: no battery was run under null {h['null_mode']!r}")
+            elif b["withheld"]:
+                reasons.append(f"{tgt}: reach probe withheld ({b['reason']})")
+            else:
+                for f in feats_:
+                    vn = observed_and_null_vectors(b["by_feature"].get(int(f)))
+                    if vn is None:
+                        continue
+                    obs_cos.append(float(vn["obs"] @ centroid))
+                    null_cos.append(vn["null"] @ centroid)
+        entry["n_features_testable"] = len(obs_cos)
+        if reasons:
+            entry["unavailable_targets"] = reasons
+        if not obs_cos:
+            entry.update({"status": _NOT_TESTABLE, "reason": (
+                "no frozen feature of this model is scorable on the held-out corpus "
+                + ("(" + "; ".join(reasons) + ")" if reasons else
+                   "(none fires there, or none has signed null draws)"))})
+            tests.append(entry)
+            continue
+        rng = np.random.default_rng(_seed("family_presence", h["id"], tag,
+                                          base=cfg.run.seed + 830_000))
+        stat = presence_statistic(np.asarray(obs_cos), null_cos, h["min_cosine"], n_null, rng)
+        entry.update({
+            "status": "tested", "observed_count": stat["observed_count"],
+            "expected_null_count": stat["expected_null_count"],
+            "null_count_mean": stat["null_count_mean"], "null_count_p95": stat["null_count_p95"],
+            "n_null": stat["n_null"], "n_null_directions": int(h["n_null_directions"]),
+            "p": stat["p"], "observed_cosines": [float(c) for c in obs_cos]})
+        tests.append(entry)
+    m, n_conf = _holm_confirm(tests, "p", alpha,
+                              extra_ok=lambda t: t["observed_count"] >= 1)
+    return {"status": "tested", "n_registered": len(claims), "n_tested": m,
+            "n_confirmed": n_conf,
+            "n_not_testable": sum(1 for t in tests if t["status"] != "tested"),
+            "n_null": n_null,
+            "p_method": ("plus-one p of the count of features with cosine >= threshold to the "
+                         "frozen family centroid, against each feature's own signed "
+                         f"random-direction null ({n_null} Monte-Carlo replicates)"),
+            "p_combination": "Holm across the tested claims of this family",
+            "tests": tests}
 
 
 def _agreement_key(t: dict) -> tuple:
@@ -1459,6 +1815,72 @@ def _confirm_structure(cfg, registry: dict, errors: dict, batteries: dict) -> di
             "tests": tests}
 
 
+def _encode_frozen_targets(run_dir, acts: dict, errors: dict, device) -> tuple:
+    """`(feats, errors)`: each captured target encoded with its FROZEN dev
+    checkpoint (`_frozen_features`); a target whose encode raises joins
+    `errors` (a copy of the capture errors) and every claim touching it is
+    not testable."""
+    feats, feat_errors = {}, dict(errors)
+    for tgt, a in acts.items():
+        model, layer = tgt.split("/", 1)
+        try:
+            feats[tgt] = _frozen_features(run_dir, model, layer, a, device)
+        except Exception as exc:  # noqa: BLE001
+            feat_errors[tgt] = f"{type(exc).__name__}: {exc}"
+            log.warning("confirm concept claims: encoding held-out activations at %s with the "
+                        "frozen checkpoint failed (%s); dependent claims are not testable",
+                        tgt, exc)
+    return feats, feat_errors
+
+
+def _atlas_centroid_batteries(cfg, hub, data, run_dir, claims: list, feats: dict,
+                              gt_path: str | None = None) -> dict:
+    """`{null_mode: {target: battery}}` for the `concept_atlas_centroid`
+    claims: every frozen member re-measured at dev's own `n_null_directions`
+    under the claim's registered null."""
+    by_mode: dict = {}
+    for h in claims:
+        for m in h["members"]:
+            by_mode.setdefault(h["null_mode"], {}).setdefault(
+                f"{m['model']}/{m['layer']}", set()).add(int(m["feature"]))
+    out: dict = {}
+    for mode, targets in sorted(by_mode.items()):
+        out[mode] = {}
+        for tgt, fs in sorted(targets.items()):
+            if tgt not in feats:
+                continue
+            model, layer = tgt.split("/", 1)
+            out[mode][tgt] = _private_battery(
+                cfg, hub, data, run_dir, model, layer, feats[tgt], sorted(fs),
+                int(cfg.concepts.top_k_series), int(cfg.concepts.n_null_directions), False,
+                gt_path=gt_path, null_mode=mode)
+    return out
+
+
+def _family_presence_batteries(cfg, hub, data, run_dir, claims: list, feats: dict,
+                               gt_path: str | None = None) -> dict:
+    """`{(null_mode, k, n_null_directions): {target: battery}}` for the
+    `family_presence` claims: the union of the claims' frozen features per
+    target, with the signed null draws kept."""
+    groups: dict = {}
+    for h in claims:
+        key = (h["null_mode"], int(h["k_top_series"]), int(h["n_null_directions"]))
+        for tgt, fs in h["targets"].items():
+            groups.setdefault(key, {}).setdefault(tgt, set()).update(int(f) for f in fs)
+    out: dict = {}
+    for key, targets in sorted(groups.items()):
+        mode, k, nd = key
+        out[key] = {}
+        for tgt, fs in sorted(targets.items()):
+            if tgt not in feats:
+                continue
+            model, layer = tgt.split("/", 1)
+            out[key][tgt] = _private_battery(
+                cfg, hub, data, run_dir, model, layer, feats[tgt], sorted(fs), k, nd, True,
+                signed_null=True, gt_path=gt_path, null_mode=mode)
+    return out
+
+
 def _replicate_causal_concept_claims(cfg: PipelineConfig, hub, private: BenchmarkData,
                                      registry: dict, replication: dict,
                                      acts: dict, errors: dict) -> dict:
@@ -1475,16 +1897,7 @@ def _replicate_causal_concept_claims(cfg: PipelineConfig, hub, private: Benchmar
     struct = _concept_claims(registry, "concept_structure")
     k_default = int(cfg.concepts.top_k_series)
 
-    feats, feat_errors = {}, dict(errors)
-    for tgt, a in acts.items():
-        model, layer = tgt.split("/", 1)
-        try:
-            feats[tgt] = _frozen_features(run_dir, model, layer, a, device)
-        except Exception as exc:  # noqa: BLE001
-            feat_errors[tgt] = f"{type(exc).__name__}: {exc}"
-            log.warning("confirm concept claims: encoding private activations at %s with the "
-                        "frozen checkpoint failed (%s); dependent claims are not testable",
-                        tgt, exc)
+    feats, feat_errors = _encode_frozen_targets(run_dir, acts, errors, device)
 
     # Pass 1: every frozen dev candidate an atlas / structure claim needs, at
     # dev's own `n_null_directions`, so each private vector is on dev's scale.
@@ -1553,6 +1966,16 @@ def _replicate_causal_concept_claims(cfg: PipelineConfig, hub, private: Benchmar
                                               feat_errors)
     if struct:
         out["structure"] = _confirm_structure(cfg, registry, feat_errors, atlas_batteries)
+    centroid = _concept_claims(registry, "concept_atlas_centroid")
+    if centroid:
+        out["atlas_centroid"] = _confirm_atlas_centroid(
+            cfg, registry, feat_errors,
+            _atlas_centroid_batteries(cfg, hub, private, run_dir, centroid, feats))
+    family = _concept_claims(registry, "family_presence")
+    if family:
+        out["family_presence"] = _confirm_family_presence(
+            cfg, registry, feat_errors,
+            _family_presence_batteries(cfg, hub, private, run_dir, family, feats))
 
     out["ledger"] = _k2_ledger(cfg, registry, out)
     if out.get("status") == "skipped" and any(k in out for k in _K2_TESTED.values()):
@@ -1562,7 +1985,8 @@ def _replicate_causal_concept_claims(cfg: PipelineConfig, hub, private: Benchmar
 
 
 _K2_TESTED = {"concept_causal": "causal", "concept_atlas": "atlas",
-              "shared_input_agreement": "agreement", "concept_structure": "structure"}
+              "shared_input_agreement": "agreement", "concept_structure": "structure",
+              "concept_atlas_centroid": "atlas_centroid", "family_presence": "family_presence"}
 
 
 def _k2_ledger(cfg: PipelineConfig, registry: dict, out: dict) -> list:

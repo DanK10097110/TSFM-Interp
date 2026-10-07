@@ -910,7 +910,8 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
                                   keep_forecasts: int = 3,
                                   null_mode: str = "mean_magnitude",
                                   keep_null_draws: bool = False,
-                                  empirical_chance: bool = False) -> dict:
+                                  empirical_chance: bool = False,
+                                  keep_signed_null_draws: bool = False) -> dict:
     """Ablate each candidate on its OWN top-firing series; score the same
     9-channel battery against a ROW-MATCHED random-direction null.
 
@@ -970,6 +971,15 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
     `effect`, from which `confirm` forms a permutation p), and
     `row_abs_effects` / `row_signed_effects` (the per-row deltas, for the
     power calculation in `analysis/power.py::mde_ablation_effect`).
+
+    `keep_signed_null_draws` (ROADMAP.md sec 41, V3-B; default off, so every
+    existing artifact is byte-identical; needs `keep_null_draws`): each scored
+    channel additionally records `null_draw_signed_means`, the SIGNED mean
+    delta over the candidate's own rows for the same null directions, in the
+    same order as `null_draw_means`. `null_draw_means` is unsigned, so it
+    cannot say what a random direction's 9-channel effect VECTOR looks like;
+    the signed draws can, and `analysis/family_claims.py` scores a family's
+    cosine against them.
     """
     acts = np.asarray(activations, dtype=np.float64)
     if acts.ndim != 2 or acts.shape[0] != data.n:
@@ -1054,6 +1064,7 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
         null_magnitude = -float(np.mean(nonzero) if nonzero else 1.0)
 
         null_rows: dict = {ch: [] for ch in CHANNELS}
+        null_signed: dict = {ch: [] for ch in CHANNELS}
         # ROADMAP.md sec 37.7 P4: the level-removed null, computed from the
         # SAME null forward passes above (no extra forward pass) so a shape
         # channel is never scored against a level-carrying null -- exactly
@@ -1074,6 +1085,7 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
                 r = stats[ch]
                 if r["available"] and r["delta"] is not None:
                     null_rows[ch].append(np.abs(np.asarray(r["delta"], dtype=np.float64)))
+                    null_signed[ch].append(np.asarray(r["delta"], dtype=np.float64))
                 rs = stats_shape[ch]
                 if rs["available"] and rs["delta"] is not None:
                     null_rows_shape[ch].append(np.abs(np.asarray(rs["delta"], dtype=np.float64)))
@@ -1084,6 +1096,7 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
             bad_forecast = np.zeros(idx.size, dtype=bool)
             if null_mode in ("profile_matched", "profile_matched_cov"):
                 null_rows = {ch: [] for ch in CHANNELS}
+                null_signed = {ch: [] for ch in CHANNELS}
                 null_rows_shape = {ch: [] for ch in CHANNELS}
                 cov = null_mode == "profile_matched_cov"
                 for _ in range(n_null_directions):
@@ -1100,6 +1113,7 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
                         r = stats[ch]
                         if r["available"] and r["delta"] is not None:
                             null_rows[ch].append(np.abs(np.asarray(r["delta"], dtype=np.float64)))
+                            null_signed[ch].append(np.asarray(r["delta"], dtype=np.float64))
                         rs = stats_shape[ch]
                         if rs["available"] and rs["delta"] is not None:
                             null_rows_shape[ch].append(np.abs(np.asarray(rs["delta"], dtype=np.float64)))
@@ -1156,6 +1170,10 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
                                 float(np.nanmean(d)) for d in draws]
                             per_channel[ch]["row_abs_effects"] = [
                                 float(v) for v in np.abs(delta)]
+                            if keep_signed_null_draws:
+                                per_channel[ch]["null_draw_signed_means"] = [
+                                    float(np.nanmean(d[idx])) for d in null_signed[ch]
+                                    if d.size == len(rows)]
                             per_channel[ch]["row_signed_effects"] = [
                                 float(v) for v in delta]
 
