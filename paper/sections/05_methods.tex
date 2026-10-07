@@ -56,15 +56,17 @@ the forecast under the reconstruction with $z_i=0$ against the full reconstructi
 \end{equation}
 where $g_c$ is one of nine forecast channels (trend, seasonal strength, spectral centroid, level, dispersion,
 near/far-horizon shape distance, MASE, flatness). Using the reconstruction as baseline keeps the SAE's error
-from being charged to the feature. The null is \emph{profile-matched}: on the \emph{same} rows, each of 16
+out of both arms; this matters because that error moves the forecast several times more than a typical feature
+(Section~\ref{sec:rq3}). Subtracting the feature's contribution from the clean activation instead would differ only
+through the model's nonlinear response to the error. The null is \emph{profile-matched}: on the \emph{same} rows, each of 16
 draws removes, at every token $t$, exactly the amount the feature removes, $|z_i(t)|\,\|w_i\|$, along a random
 decoded direction, so only the direction differs. A feature clears channel $c$ if mean $|\Delta_i^{(c)}|$
 exceeds the pooled null's 95th percentile $q_{95}^{(c)}$, and its channel vector is
 $v_i^{(c)}=\overline{\Delta_i^{(c)}}/q_{95}^{(c)}$. Shape channels are distances and are treated as undirected.
 Because a mean over rows is compared with a percentile of single rows, the chance rate is not 5\%; it is
-estimated per cell by scoring each null draw against the others (0.3--4\% per target on the case study). An earlier
-null removed one uniform, batch-averaged amount; the known-answer test of Section~\ref{sec:knownanswer} showed it
-lenient (\fid{MN-29}). A \emph{reach probe} first requires self-patching to change the
+estimated per cell by scoring each null draw against the others (0.3--4\% per target on the case study). Matching the
+profile is what lets the null pass the known-answer test of Section~\ref{sec:knownanswer}, where a null that removes one
+uniform, batch-averaged amount does not (\fid{MN-29}). A \emph{reach probe} first requires self-patching to change the
 forecast by exactly $0.0$ and cross-layer patching by a relative $>10^{-3}$; otherwise the target is withheld
 with its reason (Figure~\ref{fig:battery}).
 
@@ -144,13 +146,16 @@ construction seeds, seed 0 used to tune the attribution rule and seeds 1--4 held
 size (dose 1).
 
 
-The legacy null fails the gate on all five seeds (per-cell false-positive rate 0.168--0.248): it is sized to a chunk-wide mean $|z|$, zeros included, and removed
-uniformly, whereas a feature's ablation removes its full activation where it fires hardest, so a strong or dense atom
-clears it on size alone (17--25\% of the cells and 34--47\% of the features of a layer with no planted effect cleared it). The profile-matched
-null passes on all five seeds (per-cell false-positive rate at most 0.003, sensitivity 0.70--1.00; a random decoded direction overlaps the planted span more than a decoy does, so this null may be over-strict in the planted world); on seed 0 it also stops the legacy null's 4 of 4 sub-null
-decoys from clearing, lifts the atlas adjusted Rand index from 0.336 to 0.469 and raises the sharing-class accuracy from 0.364 to 0.714. Re-scoring the four-model case study under it
-cut the causal features from 293 to 110 and the convergent concepts from 13 to 0, which is why the earlier numbers are
-upper bounds. The same device was applied to the cross-model agreement rung of Section~\ref{sec:sharing}: it never calls a
-decoy ``same'' (0 of 9), but finds a truly shared single-direction concept in only 0.4 of seeds and one spread over 3--4
-directions in 0.0 (\fid{MN-30}), and an opt-in rule that requires a statistic to be defined before it can fire removes its
-false disagreements on a shared concept (3 of 30 to 0 of 30). Known-answer tests establish what a method can detect, not that it is right on real models.
+The shipped profile-matched null passes the gate on all five seeds: per-cell false-positive rate at most 0.003 and
+sensitivity 0.70--1.00 (a random decoded direction overlaps the planted span more than a decoy does, so the null may be
+conservative in the planted world). The test has teeth: a simpler null that removes one uniform, batch-averaged amount
+fails it on every seed (false-positive rate 0.168--0.248), because a strong or dense atom clears it on size alone. On
+seed 0 the profile-matched null also keeps all sub-null decoys from clearing, lifts the atlas adjusted Rand index from
+0.336 to 0.469 and raises sharing-class accuracy from 0.364 to 0.714. Numbers cited from the earlier four-model run
+used the simpler null and are upper bounds (re-scoring that run cut its causal features from 293 to 110;
+\fid{MN-29}). For the cross-model agreement rung of Section~\ref{sec:sharing}, the same device measures both error
+rates: the rung never calls a decoy ``same'' (0 of 9), so its positive verdicts are specific, and it detects a shared
+single-direction concept in 0.4 of seeds and one spread over 3--4 directions in 0.0, and quadrupling the shared series does not change this
+(\fid{MN-30}). Absent ``same'' verdicts are therefore not read as differences; Section~\ref{sec:limitations} outlines a
+redesigned test. Known-answer tests establish
+what a method can detect, not that it is right on real models.

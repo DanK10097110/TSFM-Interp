@@ -1,5 +1,10 @@
 # TSFM-Lens
 
+[![CI](https://github.com/DanK10097110/TSFM-Interp/actions/workflows/ci.yml/badge.svg)](https://github.com/DanK10097110/TSFM-Interp/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Example report](https://img.shields.io/badge/example-live%20report-c0602a)](https://dank10097110.github.io/TSFM-Interp/)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DanK10097110/TSFM-Interp/blob/main/examples/quickstart.ipynb)
+
 **TSFM-Lens** is a mechanistic-interpretability toolkit for time-series
 foundation models (TSFMs). It compares architecturally different models —
 TimesFM (decoder-only), the Chronos family (encoder-decoder and
@@ -16,14 +21,20 @@ corpus, not a single-model microscope.
 confirmation) · [Colab quickstart](https://colab.research.google.com/github/DanK10097110/TSFM-Interp/blob/main/examples/quickstart.ipynb)
 (two real models, about 25 minutes on one GPU) · [`docs/QUICKSTART.md`](docs/QUICKSTART.md)
 
-**Headline result, held out.** All claims were registered on a development corpus and tested once on a fresh sealed
-private corpus of 971 series:
-- concept-transfer claims confirm 20/20, now on four private draws;
-- single-feature causal claims confirm 10/31;
-- no cross-model *causal* claim confirms (multi-model concepts 0/3, shared-input agreement 0/6 tested).
+**What it found on seven TSFMs** (TimesFM, Chronos-2, Sundial, Chronos-Bolt, Chronos-T5, Timer, Time-MoE). Every
+claim below was registered on a development corpus and tested once on a fresh sealed private corpus of 971 series:
+- **Shared inputs.** Different architectures select the same series for a concept: 20/20 concept-transfer claims
+  confirm, on four independent private draws, reaching all seven models.
+- **Model-specific machinery.** No causal concept spans more than three of the seven models, and the concept atlas is
+  organized by model.
+- **A compact causal vocabulary.** Causal features act mainly on forecast level and seasonality; 10 single-feature
+  causal claims confirm at the attainable significance floor.
+- **Prominence is not importance.** 83.5% of the most prominent SAE features have no causal effect on the forecast.
 
-Models share what they select, not (demonstrably) what they do with it. See [`FINDINGS.md`](FINDINGS.md) (CA-11,
-SH-18) for the numbers and the confirmed negatives.
+![The nine causal-effect families across seven TSFMs](docs/img/concept_families.png)
+
+See [`FINDINGS.md`](FINDINGS.md) (SH-18, SH-16, CA-11, MN-14) for exact numbers, including the claims that did not
+confirm.
 
 ## What it answers
 

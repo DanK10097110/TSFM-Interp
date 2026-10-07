@@ -19,8 +19,8 @@ environment diff (\texttt{-{}-verify-provenance}). A CPU-only mock configuration
 integration, and the worked example (\repo{tsfm_lens/docs/worked_example.md}) walks through a report. The seven-model analysis records
 21.1 GPU-hours of stage time, mostly SAE training and the concept battery; stages through L3 take about 1.4 hours. Of eight
 TSFM checkpoints probed, two (Timer, Time-MoE) load through the zero-code path and five with standalone packages
-need a hand-written adapter (\fid{MN-25}), for which the template, checklist and guide exist
-(Appendix~\ref{app:adapters}). New report sections declare their artifact requirements, new claims must use the
+need a hand-written adapter (\fid{MN-25}), for which a template, a conformance check
+(\texttt{-{}-check-adapter}) and a guide with a pitfall checklist (\repo{tsfm_lens/docs/ADDING_A_MODEL.md}) exist. New report sections declare their artifact requirements, new claims must use the
 typed \texttt{Finding} record, and new configuration fields declare which artifacts they affect.
 
 \section{Limitations}
@@ -31,13 +31,25 @@ reduced scope. Timer's features do not exceed chance, and with seven models, con
 training data. The analysis is univariate: Chronos-2's cross-series group attention is not measured
 (\fid{PM-13}), and Chronos-T5's decoder and Sundial's flow head are not captured.
 
-\paragraph{Ground truth and confirmation.} Ground truth is exact only for the synthetic tier and encodes our
-generators' assumptions; 12 of 33 concept parts are dominated by one real-derived generator, and pretraining
-overlap cannot be verified. Held-out confirmation covers accuracy, geometry, perturbation agreement, transfer, single-feature causal effects,
-atlas structure and failure prediction, on one private split opened once (a second look needs a fresh epoch). Only 10 of
-31 testable single-feature claims and no cross-model causal claim confirm; the agreement rung is insensitive
-(\fid{MN-30}), so its failures are weak evidence of difference; 5 of 11 agreement claims and 1 of 32 causal claims could
-not be tested; and the 20 confirmed transfers come from two concepts.
+\paragraph{Ground truth, external validity and confirmation.} Ground truth is exact only for the synthetic tier and
+encodes our generators' assumptions; 12 of 33 concept parts are dominated by one real-derived generator, and pretraining
+overlap cannot be verified. The corpus (965 dev and 971 private series) is controlled by design, and whether the concept
+inventory carries over to large real benchmarks such as GIFT-Eval or the full Monash archive is untested; the pipeline
+runs on any sealed corpus, so this is a matter of compute, not code. Held-out confirmation covers accuracy, geometry,
+perturbation agreement, transfer, single-feature causal effects, atlas structure and failure prediction, on one private
+split opened once (a second look needs a fresh epoch), and the 20 confirmed transfers come from two source concepts.
+
+\paragraph{Toward a test of shared effects.} The cross-model causal claims are the ones that did not confirm, and the
+known-answer test shows why their absence is uninformative: the shared-input rung is specific but detects a planted
+shared concept across architectures in at most 0.4 of seeds, and more shared series alone do not help
+(\fid{MN-30}). Settling whether architectures share effects therefore needs a better instrument, not a second look
+with the same one. Three changes follow from the diagnosis: (i) score agreement on concept \emph{subspaces} (the atlas
+concept's member directions ablated together) rather than single features, since a concept spread over 3--4 directions
+is never detected one direction at a time; (ii) report an estimated effect similarity with a series-bootstrap interval
+instead of a thresholded verdict, so that agreement and equivalence (TOST against a stated margin) are both testable;
+and (iii) admit the redesigned test only once it reaches sensitivity $\ge 0.8$ at false-positive rate $\le 0.05$ on the
+planted architecture pair, then register its claims and confirm them on a fresh private epoch. The planted forecaster,
+the registry and epoch minting already exist, so this is a contained extension.
 
 \paragraph{SAE dependence, usability and completeness.} Concept results depend on dictionary size, sparsity,
 revival and seed; the system measures this dependence but cannot remove it, and feature death tracks layer
@@ -49,13 +61,14 @@ for which a known-answer case exists.
 \label{sec:conclusion}
 
 TSFM interpretability is harder than it looks: tokens mean different things in different models, there is no
-annotated ground truth, and causal effects are small enough that artifacts dominate unless controlled. \tool{}
-addresses this with a controlled benchmark, measured alignment, null- and reach-gated causal concepts and a
-register-then-confirm protocol, behind one command and a report designed to be understandable by newcomers. On seven TSFMs, causal
-features act mainly on forecast level and seasonality and form a continuum; models select the same series for a
-concept, replicably, but no claim that they use it the same way survives the held-out test; and individual features
-account for little of the forecast: 43 of 82 replicable registered claims confirm. The fifteen
-caught failures show why these conclusions needed their controls.
+annotated ground truth, and causal effects are small enough that measurement artifacts dominate unless controlled.
+\tool{} addresses this with a controlled benchmark, measured alignment, null- and reach-gated causal concepts and a
+register-then-confirm protocol, behind one command and a report designed to be understandable by newcomers. On seven
+TSFMs, causal features form a compact vocabulary centered on forecast level and seasonality; different architectures
+select the same inputs for a concept, replicably across four sealed draws, while organizing their causal machinery by
+model; causal importance sits in a minority of features that activation prominence does not reveal; and depth
+signatures replicate held-out. Each of these conclusions is stated with its evidence class, and each held-out claim
+was registered before the private data were opened.
 
 \paragraph{Availability.} Code (MIT), configurations, the example run and the findings ledger are at
 \url{\repourl}; the \texttt{dev} branch holds the full research log and study drivers.

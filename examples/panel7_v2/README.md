@@ -156,8 +156,9 @@ Everything else is exploratory, on the dev split.
   quantile-width baseline, refit on private data (n 935): Timer 0.0446
   [0.0292, 0.0605], Time-MoE 0.011 [0.0032, 0.0194]. Routing (U2) is negative
   on dev and was not registered.
-- **Reading:** models share what they select, not (demonstrably) what they do
-  with it.
+- **Reading:** models share what they select and keep model-specific causal
+  machinery; whether effects on the same inputs are shared across model families
+  is open (the agreement test is specific but insensitive, MN-30).
 
 ### Known caveats in this run
 

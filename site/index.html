@@ -29,7 +29,7 @@ footer{margin-top:2.5rem;color:var(--mut);font-size:.9rem}
 <p class="lead">TSFM-Lens is a pipeline for comparative mechanistic interpretability of time-series foundation models: it puts models with very different architectures on equal grounds. It asks which concepts they learn, whether those concepts are shared across models, whether they causally affect the forecast, and where in depth the forecast forms. Every claim is registered on a development corpus and tested once on a fresh sealed private corpus (held-out confirmation).</p>
 
 <div class="headline">
-<p><strong>Headline result.</strong> On a fresh sealed private corpus, concept transfer 20/20, single-feature causal claims 10/31, no cross-model causal claim confirms; "models share what they select, not (demonstrably) what they do with it".</p>
+<p><strong>Headline result.</strong> On a fresh sealed private corpus, different architectures select the same inputs for a concept (concept transfer 20/20, on four private draws), while their causal machinery is model-specific (no concept spans more than three of seven models); 10 single-feature causal claims confirm.</p>
 </div>
 
 <h2>Example reports (interactive, self-contained HTML)</h2>

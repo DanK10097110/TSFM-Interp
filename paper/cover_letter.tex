@@ -21,7 +21,7 @@ Foundation Models} for consideration as a regular paper in the Journal of Machin
 Time-series foundation models are now used zero-shot for forecasting, but the interpretability methods developed for
 language models do not carry over directly. Tokens span different lengths of time in different architectures, real
 series carry no labels that could validate a probe, and the causal effects of internal features are small enough that
-uncontrolled measurements produce confident false positives. The manuscript presents an open-source system built
+uncontrolled measurements mislead. The manuscript presents an open-source system built
 around these three problems and the results of applying it to seven models.
 
 The main contributions are:
@@ -32,19 +32,20 @@ The main contributions are:
   \item \textbf{Causal concept definitions with matched nulls.} A sparse-autoencoder feature counts as causal only if
   removing it changes the forecast more than removing the same per-token amount along a random direction on the same
   series, after reach controls confirm that the intervention lands. A planted-concept forecaster with known answers
-  and decoys holds this test to a fixed false-positive gate; it showed our first null to be lenient.
+  and decoys holds this test to a fixed
+  false-positive gate (false-positive rate at most 0.003, sensitivity 0.70--1.00).
   \item \textbf{One-shot confirmation.} Exploratory claims are frozen in a hash-pinned registry and tested once on the
-  sealed split, with multiplicity handled per claim family. Of 82 replicable registered claims, 43 confirm.
+  sealed split, with multiplicity handled per claim family.
   \item \textbf{Findings about seven models} (TimesFM, Chronos-2, Sundial, Chronos-Bolt, Chronos-T5, Timer and
-  Time-MoE). Models agree on which inputs a concept groups (20 of 20 registered claims confirmed on 971 held-out
-  series), but no cross-model claim about what a concept does to the forecast confirms, and no concept spans more than
-  three of the seven models: models share what they select, not demonstrably what they do with it.
-  \item \textbf{A record of corrected errors.} We document fifteen plausible results that the system's own controls
-  showed to be wrong, as a guide for others working in this area.
+  Time-MoE). Causal features act mainly on forecast level and seasonality. Different architectures select the same
+  inputs for a concept (20 of 20 registered claims confirmed on 971 held-out series, replicated on four private
+  draws), while their causal machinery is organized by model: no concept spans more than three of the seven models.
+  Activation prominence is a poor guide to causal importance (83.5\% of prominent features have no causal effect,
+  held out), and depth-resolved reaction profiles replicate for six of nine corruptions.
 \end{enumerate}
 
-We believe the paper suits JMLR because its contribution is methodological as much as empirical: it argues, with
-worked failures, that interpretability claims about forecasting models need known answers, matched nulls and held-out
+We believe the paper suits JMLR because its contribution is methodological as much as empirical: it shows that
+interpretability claims about forecasting models need known answers, matched nulls and held-out
 confirmation, and it supplies a tool that makes these the default. All code, the benchmark generators, a complete
 seven-model example run with its held-out confirmation, and a reproduction command for every reported number are
 public under the MIT license at \url{https://github.com/DanK10097110/TSFM-Interp}.

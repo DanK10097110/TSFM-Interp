@@ -67,20 +67,21 @@
 
 \begin{abstract}%
 Time-series foundation models (TSFMs) are deployed zero-shot, yet the tools that made language models
-inspectable do not transfer: tokens span different lengths of time across architectures, no ground truth
-defines a forecasting ``concept'', and causal effects of internal features are small enough that uncontrolled
-measurements produce confident false positives. We present \tool{}, an open-source system that turns a list of
-checkpoints into one self-contained interpretability report with one command. It is controlled: a
-leakage-audited synthetic benchmark with known generative components validates every probe. It is causal:
-concepts are defined by what removing them does to the forecast, against matched random-direction nulls and
-reach controls. It is confirmatory: exploratory claims are registered and tested once on a sealed split.
-Applied to seven TSFMs (TimesFM, Chronos-2, Sundial, Chronos-Bolt, Chronos-T5, Timer and Time-MoE), it finds that
-causal features mainly change forecast level and seasonality; that models agree on which inputs a concept groups
-(20 of 20 registered claims confirmed on 971 held-out series) but that no cross-model claim about what a concept
-does confirms there (multi-model concepts 0 of 3, shared-input agreement 0 of 6 tested); and that no concept spans
-more than three of the seven models. In all, 43 of 82 replicable registered claims confirm: models share what they
-select, not demonstrably what they do with it. A planted-concept forecaster showed our first ablation null to be
-lenient, and we document fifteen plausible results that the system's own controls showed to be wrong.
+inspectable do not transfer directly: tokens span different lengths of time across architectures, no ground truth
+defines a forecasting ``concept'', and the causal effects of internal features are small enough that uncontrolled
+measurements mislead. We present \tool{}, an open-source system that turns a list of checkpoints into one
+self-contained interpretability report with one command. It is controlled: a leakage-audited synthetic benchmark with
+known generative components, and a forecaster with planted concepts, validate every probe. It is causal: concepts are
+defined by what removing them does to the forecast, against random-direction nulls matched to each feature's own
+activation profile. It is confirmatory: exploratory claims are registered and tested once on a sealed split. Applied to
+seven TSFMs (TimesFM, Chronos-2, Sundial, Chronos-Bolt, Chronos-T5, Timer and Time-MoE), it finds that causal features
+act mainly on forecast level and seasonality; that different architectures select the same inputs for a concept (20 of
+20 registered claims, from two source concepts, confirmed on 971 held-out series and on four independent private
+draws); that the causal machinery is nonetheless organized by model, with no concept spanning more than three of the
+seven models (confirmed held-out); that activation prominence is a poor guide to causal importance (83.5\% of prominent
+features have no causal effect on held-out data); and that depth-resolved reaction profiles replicate for six of nine
+corruptions. Every claim carries its evidence class, and a public ledger gives each result with its reproduction
+command.
 \end{abstract}
 
 \begin{keywords}
@@ -95,11 +96,10 @@ lenient, and we document fifteen plausible results that the system's own control
 \input{sections/05_methods}
 \input{sections/06_statistics}
 \input{sections/07_case_study}
-\input{sections/08_controls}
 \FloatBarrier
 \input{sections/09_usage_limitations}
 
-\acks{Computational resources were provided by Hao Wang. This work received no external funding, and the
+\acks{Computational resources were provided by the second author's lab at Rutgers University. This work received no external funding, and the
 authors declare no competing interests. Use of AI tools: Claude (Anthropic) wrote most of the repository's code and tests, ran the experiments and helped draft and edit the manuscript, under the authors' direction. The research questions, ideas and general design choices are the authors', who reviewed the implementation details Claude proposed, checked every reported result and take full responsibility for the content.}
 
 \appendix

@@ -1,8 +1,8 @@
 \section{Design Principles}
 \label{sec:principles}
 
-Each principle corresponds to a failure that actually happened (Section~\ref{sec:controls}) and is enforced
-in code as a gate, refusal or test.
+Each principle is enforced in code as a gate, refusal or test, so that a measurement that cannot be trusted
+is withheld with a stated reason rather than reported.
 \begin{description}[leftmargin=1.2em,font=\normalfont\bfseries,itemsep=1pt]
 \item[P1. Ground truth by construction.] Every probe is first validated on a case whose answer is known: the
   benchmark records every generative component of every synthetic series, and every perturbation is applied

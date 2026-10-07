@@ -6,8 +6,8 @@
 sampled decoder; Chronos-Bolt uses a direct patch head, and Chronos-2 \citep{ansari2025chronos2} is an
 encoder with cross-series group attention; Sundial \citep{liu2025sundial} samples from a flow-matching head
 \citep{lipman2023flow}; Timer \citep{liu2024timer} uses 96-step tokens, Time-MoE \citep{shi2025timemoe} a sparse
-mixture of experts over per-step tokens, and Lag-Llama \citep{rasul2023lagllama} reads lagged values. Most normalize each series internally \citep{kim2022revin}, a detail that matters when an
-adapter calls a model below its public API (Section~\ref{sec:controls}). \citet{wan2026collapse} document
+mixture of experts over per-step tokens, and Lag-Llama \citep{rasul2023lagllama} reads lagged values. Most normalize each series internally \citep{kim2022revin}, a detail an adapter must
+reproduce when it calls a model below its public API. \citet{wan2026collapse} document
 flat ``collapsed'' forecasts on weakly predictable targets, which we also measure (\fid{PM-07}).
 
 \paragraph{Interpreting time-series models.} Saliency methods for time-series classifiers are unreliable
