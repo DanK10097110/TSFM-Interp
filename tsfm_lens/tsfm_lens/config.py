@@ -378,6 +378,47 @@ class ConfirmConfig:
     # Bootstrap resamples for the structure claims' private rate CI.
     structure_n_boot: int = field(default=2000, metadata={"omit_at_default": True})
 
+    # ROADMAP.md sec 41 (V3-B) -- three opt-in claim types, each off by default
+    # and left out of the stage fingerprint at its default (older runs stay
+    # fresh). A non-default value fingerprints `confirm` (whole section) and,
+    # for the two `register_*` flags and their thresholds, `register`.
+    #
+    # `register_family_presence_claims`: one `family_presence` claim per
+    # (effect family, model) whose DEV count of the model's causal features
+    # assigned to that family is >= `family_presence_min_dev` ("model m has
+    # causal features whose effect vector lies in family F beyond chance").
+    # Confirmed per claim against the model's own signed random-direction null
+    # (`analysis/family_claims.py`), Holm across the registered claims, with
+    # `family_presence_n_null` Monte-Carlo replicates of the null count.
+    register_family_presence_claims: bool = field(default=False, metadata={"omit_at_default": True})
+    family_presence_min_dev: int = field(default=3, metadata={"omit_at_default": True})
+    family_presence_n_null: int = field(default=2000, metadata={"omit_at_default": True})
+    # Random directions per feature in the private family-presence battery
+    # (0 = `concepts.n_null_directions`). The per-feature null probability is
+    # resolved at 1/(n+1), so a larger value sharpens the null.
+    family_presence_n_null_directions: int = field(default=0, metadata={"omit_at_default": True})
+    # ROADMAP.md sec 41.1: the ablation null a V3-B claim is registered and scored
+    # against ("" = the run's own `sae.ablation_null`, today's behaviour; or one of
+    # `mean_magnitude`, `profile_matched`, `profile_matched_cov`). Each claim records
+    # it as `null_mode`; `confirm` runs the private battery under it and refuses when
+    # the dev artifact holds no result under that null.
+    primary_null: str = field(default="", metadata={"omit_at_default": True})
+    # `register_atlas_centroid_claims`: one `concept_atlas_centroid` claim per
+    # seed-stable multi-model atlas concept with >= `atlas_centroid_min_members`
+    # members: the private centroid cosine against the dev centroid, vs the
+    # same-composition random-member-set null, with no pair-fraction leg. The
+    # legacy `concept_atlas` rule is untouched and registered beside it.
+    register_atlas_centroid_claims: bool = field(default=False, metadata={"omit_at_default": True})
+    atlas_centroid_min_members: int = field(default=5, metadata={"omit_at_default": True})
+    # `external_path`: a second sealed corpus (role `external_real`) on which
+    # `confirm` re-runs the registered transfer and family-presence claims,
+    # written under `external_replication`, never counted in the confirm
+    # verdict or ledger. Refused if it overlaps the dev or private corpus by
+    # sample hash; one-shot like the private confirmation.
+    external_path: str = field(default="", metadata={"omit_at_default": True})
+    external_source: str = field(default="sealed", metadata={"omit_at_default": True})
+    external_max_series: int = field(default=1024, metadata={"omit_at_default": True})
+
 
 @dataclass
 class ClusteringConfig:

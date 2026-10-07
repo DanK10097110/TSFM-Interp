@@ -3216,12 +3216,16 @@ def _l6_causal_tests(cid, concept_replication: dict) -> dict:
     """`{family label: [test rows for this concept]}` from the K2 causal
     blocks (ROADMAP.md sec 38.2): `causal` rows whose feature is a member of
     this atlas concept, the `atlas` claim of this concept, and the shared-
-    input `agreement` claims of this concept. Empty for a `confirmation.json`
-    written before K2, so the transfer-only L6 text is unchanged."""
+    input `agreement` claims of this concept, plus (ROADMAP.md sec 41, V3-B)
+    the `atlas_centroid` claim of this concept. Empty for a `confirmation.json`
+    written before K2, so the transfer-only L6 text is unchanged. The
+    per-(family, model) `family_presence` claims belong to no single atlas
+    concept and are not part of any concept's ladder."""
     out: dict = {}
     for label, key, field in (("causal", "causal", "atlas_concept"),
                               ("atlas", "atlas", "concept"),
-                              ("agreement", "agreement", "concept")):
+                              ("agreement", "agreement", "concept"),
+                              ("atlas centroid", "atlas_centroid", "concept")):
         rows = [t for t in ((concept_replication.get(key) or {}).get("tests") or [])
                 if t.get(field) == cid]
         if rows:
