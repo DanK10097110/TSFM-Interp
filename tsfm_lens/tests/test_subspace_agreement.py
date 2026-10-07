@@ -357,6 +357,9 @@ class _StubStore:
         self._p = pooled
 
     def load(self, model, layer, level="series", space="sae", **kw):
+        if space == "act":
+            rng = np.random.default_rng(len(model))
+            return rng.normal(size=(N_SER, D)) + np.linspace(3, 0, N_SER)[:, None] * np.arange(D)[None, :] / D
         return self._p[model]
 
 
@@ -383,7 +386,8 @@ def _side(readout_sign: float, ortho: bool, seed: int):
 
 
 def _run(monkeypatch, tmp_path, sign_b: float = 1.0, ortho_b: bool = False, write: bool = False,
-         clearing: str = "draw_level", n_null: int = 40, noise: float = 0.0):
+         clearing: str = "draw_level", n_null: int = 40, noise: float = 0.0,
+         subspace: str = "members", frozen: bool = False):
     _STATE.clear()
     sia.reset_caches()
     sub.reset_caches()
@@ -408,8 +412,11 @@ def _run(monkeypatch, tmp_path, sign_b: float = 1.0, ortho_b: bool = False, writ
     unit = {"concept": 1, "src_target": "A/blocks.0", "src_model": "A", "src_features": [0, 1],
             "dst_target": "B/blocks.0", "dst_model": "B", "dst_feature": 0, "dst_features": [0, 1],
             "dst_set_kind": "concept_part", "k_top_series": K, "test_auc": None}
+    if frozen:
+        for side, readout in (("src", ra), ("dst", rb)):
+            unit[side + "_contrast"] = {"Q": readout[:, None].tolist(), "center": np.zeros(D).tolist()}
     return sub.run_subspace_agreement(cfg, tmp_path, hub, _StubStore({"A": pa, "B": pb}), data, "cpu",
-                                      [unit], clearing=clearing, write=write)
+                                      [unit], clearing=clearing, subspace=subspace, write=write)
 
 
 def test_driver_same_sign_agrees(monkeypatch, tmp_path):
@@ -465,3 +472,78 @@ def test_config_knobs_are_left_out_of_the_concepts_fingerprint_at_their_defaults
     cfg.concepts.subspace_agreement_n_null = 99
     assert resolve_config_keys(cfg, ("concepts",))["concepts"]["subspace_agreement_n_null"] == 99
     assert ConceptsConfig().subspace_agreement_ci_level == 0.95
+
+
+# ---------------------------------------------------------------------------
+# 6. Variant V3: the contrast subspace.
+# ---------------------------------------------------------------------------
+
+def _contrast_fixture(seed: int = 0):
+    """60 series in 10 dims, ranked by concept score: series 0-9 (the shared series `U`) carry a
+    huge DECOY spike on one axis, 10-49 carry the planted concept direction at a falling
+    amplitude, 50-59 are silent."""
+    rng = np.random.default_rng(seed)
+    d0 = np.zeros(10)
+    d0[3] = 1.0
+    decoy = np.zeros(10)
+    decoy[7] = 1.0
+    X = rng.normal(scale=0.05, size=(60, 10))
+    X[:10] += 40.0 * decoy[None, :]
+    X[10:50] += np.linspace(6.0, 2.0, 40)[:, None] * d0[None, :]
+    score = np.linspace(10.0, 0.0, 60)
+    return X, score, d0, decoy
+
+
+def test_contrast_subspace_finds_the_concept_direction_and_is_fit_outside_the_shared_series():
+    X, score, d0, decoy = _contrast_fixture()
+    Q, center, info = sub.contrast_subspace(X, score, range(10), k_fit=40, n_silent=10)
+    assert Q.shape == (10, 1) and info["rank"] == 1
+    assert abs(float(Q[:, 0] @ d0)) > 0.95
+    assert np.linalg.norm(center) < 0.5
+    Q_in, _c, _i = sub.contrast_subspace(X, score, [], k_fit=40, n_silent=10)
+    assert abs(float(Q_in[:, 0] @ decoy)) > 0.95
+
+
+def test_contrast_subspace_rank_follows_the_energy_rule_and_is_capped():
+    rng = np.random.default_rng(1)
+    X = rng.normal(scale=0.01, size=(50, 8))
+    X[:30, 0] += np.linspace(5, 3, 30)
+    X[:30, 1] += np.linspace(4, 2, 30) * rng.choice([-1, 1], size=30)
+    X[:30, 2] += np.linspace(3, 1, 30) * rng.choice([-1, 1], size=30)
+    score = np.linspace(10, 0, 50)
+    ranks = [sub.contrast_subspace(X, score, [], k_fit=30, n_silent=15, energy=e, max_rank=m)[2]["rank"]
+             for e, m in ((0.5, 4), (0.99, 4), (0.99, 2))]
+    assert ranks[0] < ranks[1] <= 3 and ranks[2] == 2
+
+
+def test_contrast_replacement_is_a_mean_ablation_and_the_null_is_an_isometry():
+    sae, tokens = _sae_and_tokens(d=12, seed=5)
+    flat = tokens.reshape(-1, 12)
+    recon = sae.decode(sae.encode(flat))
+    g = torch.Generator().manual_seed(2)
+    Q, _ = torch.linalg.qr(torch.randn(12, 2, generator=g))
+    center = recon.mean(dim=0)
+    real = sub._contrast_replacement(tokens, sae, "cpu", Q, center, Q).reshape(-1, 12)
+    removed = recon - real
+    expected = (recon - center) @ Q @ Q.T
+    assert torch.allclose(removed, expected, atol=1e-4)
+    assert torch.allclose(removed.mean(dim=0), torch.zeros(12), atol=1e-4)
+    Qn, _ = torch.linalg.qr(torch.randn(12, 2, generator=g))
+    null = recon - sub._contrast_replacement(tokens, sae, "cpu", Q, center, Qn).reshape(-1, 12)
+    assert torch.allclose(null @ null.T, removed @ removed.T, atol=1e-3)
+    assert float((null - removed).norm()) > 0.1 * float(removed.norm())
+
+
+def test_driver_contrast_mode_runs_and_a_frozen_subspace_overrides_the_fit(monkeypatch, tmp_path):
+    base = _run(monkeypatch, tmp_path, subspace="contrast", n_null=10)
+    t = base["tests"][0]
+    assert base["params"]["subspace"] == "contrast" and t["subspace"]["kind"] == "contrast"
+    assert t["subspace"]["src"]["rank"] >= 1 and t["dimension"]["src"] == t["subspace"]["src"]["rank"]
+    frozen = _run(monkeypatch, tmp_path, subspace="contrast", n_null=10, frozen=True)["tests"][0]
+    assert frozen["subspace"]["src"] == {"frozen": True, "rank": 1}
+    assert frozen["dimension"] == {"src": 1, "dst": 1}
+
+
+def test_unknown_subspace_kind_is_refused(monkeypatch, tmp_path):
+    with pytest.raises(ValueError, match="subspace kind"):
+        _run(monkeypatch, tmp_path, subspace="bogus")
