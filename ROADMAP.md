@@ -39208,3 +39208,32 @@ cross-family effect sharing from the claims the system makes.
 - **Next registration (proposed, user decision pending).** Register on a fresh epoch: (a) per-model presence of each
   universal family against a per-model sign-flip/direction null; (b) centroid-level effect agreement for multi-model
   concepts with ≥ 5 members; (c) the §40 redesigned shared-input test once it passes its planted gate.
+
+## 41. V3 confirmatory run — larger corpus, more real sources with explicit data roles, three new registrable claim types (added 2026-10-07, user-directed — IN PROGRESS)
+
+**Why.** §40.1: the shared-concept story (shared inputs, universal effect types, reproducible concept centroids) is
+supported on dev and partly post hoc on private; single-feature and cross-model effect claims are power-limited
+(19/21 non-confirmed features never reached the dev p floor; 3-member atlas concepts make the pair rule near
+impossible). The user (2026-10-07): run V3 with more data and sources beyond Monash, with clear distinctions of what
+each data type is used for; after the code is written, tag v1.0.0 and check the PyPI install.
+
+**Data roles (every series carries exactly one `role`, rendered on the corpus card and in the paper):**
+| Role | Source | Used for | Never used for |
+|---|---|---|---|
+| `synthetic` | parametric / random_parametric generators | causal discovery, ground-truth naming, every registered claim | — |
+| `real_derived` | mixture / block_bootstrap / sequential_par over chronos_datasets subsets beyond Monash (ercot, solar_1h, taxi_30min, electricity_15min, m4_hourly, kdd_cup_2018, pedestrian_counts, mexico_city_bikes, exchange_rate) plus ETT, Monash weather/electricity/traffic | realism, per-tier replication of claims | ground-truth naming |
+| `external_real` | raw GIFT-Eval test windows (no generator; held out from every dev stage) | one external-validity leg of confirm, reported separately | discovery, registration, SAE training |
+| `sae_augment` | raw Monash windows (`sae.real_data_*`) | SAE training rows only | any statistic |
+| `leakage_reference` | Monash archive | leakage audit only | anything else |
+
+**Work items.**
+- **V3-A corpus** (`tsfm_benchmark`, opt-in): new real sources, a GIFT-Eval loader for the `external_real` slice, a
+  per-sample `role` field, a corpus data-roles card, `configs/benchmark_v3.yaml` sized ~3× v2 (target ~3000 dev),
+  real-derived share ~25–30% from predictable sources (BM-06). Golden hashes untouched.
+- **V3-B claim types** (`tsfm_lens` register/confirm): (a) per-model universal-family presence against a per-model
+  null; (b) centroid-level effect agreement for atlas concepts with ≥5 members; (c) an `external_real` replication leg
+  for transfer + universal-family claims, reported apart from the confirm verdict.
+- **V3-C agreement redesign** (§40): subspace ablation, estimated similarity with series-bootstrap CI + TOST, gated on
+  the planted pair (sensitivity ≥ 0.8, FPR ≤ 0.05, seeds 1–4 held out). Fails gate → method negative, not registered.
+- **V3-D run**: `configs/panel7_v3.yaml`, disk budget measured first (≈24 GB free quota; nothing in tmpfs), dev run →
+  register → mint private epoch → confirm once → external leg.
