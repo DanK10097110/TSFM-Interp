@@ -127,6 +127,9 @@ def test_presence_statistic_null_probability_is_smoothed_and_floored():
     assert out["null_probability"][0] == pytest.approx(1 / 21)
     assert out["null_probability"][1] == 1.0
     assert 0 < out["p"] <= 1
+    floor = fc.presence_statistic(np.array([1.0]), [np.full(100000, -1.0)], 0.5, 100,
+                                  np.random.default_rng(0))
+    assert floor["p"] == pytest.approx(1 / 101), "plus-one p is floored at 1/(n_null+1), never 0"
 
 
 def test_candidate_for_null_contract():
@@ -562,6 +565,29 @@ def test_atlas_centroid_needs_enough_testable_members_and_its_own_null():
         cfg, {"hypotheses": [dict(claim, null_mode="profile_matched_cov")]}, {},
         {"profile_matched": {"M/L.0": _battery(by_m)}})
     assert "profile_matched_cov" in out["tests"][0]["reason"]
+
+
+def test_atlas_centroid_needs_the_threshold_as_well_as_the_null():
+    """Members whose centroid cosine to the dev centroid is ~0.7 beat a random
+    member-set null easily (p tiny) but sit below `min_cosine` 0.9: a weak match
+    that is more than chance is not a replication of the frozen direction.
+    Planted regression: dropping the threshold confirms it."""
+    rng = np.random.default_rng(7)
+    by_m = {f: _vec_rec(f, v) for f, v in enumerate(_scattered_members(rng, 6, x=0.4))}
+    by_m.update({f: _vec_rec(f, rng.normal(size=9)) for f in range(100, 160)})
+    members = [{"model": "M", "layer": "L.0", "feature": f} for f in range(6)]
+    members[3:] = [{"model": "N", "layer": "L.1", "feature": f} for f in range(3, 6)]
+    by_n = {f: by_m.pop(f) for f in range(3, 6)}
+    by_n.update({f + 100: _vec_rec(f + 100, rng.normal(size=9)) for f in range(100, 160)})
+    cfg = SimpleNamespace(confirm=SimpleNamespace(alpha=0.05, atlas_n_null=2000),
+                          run=SimpleNamespace(seed=0))
+    out = confirm_mod._confirm_atlas_centroid(
+        cfg, {"hypotheses": [_centroid_claim(0, members, _e(0).tolist(), min_members=5)]}, {},
+        {"profile_matched": {"M/L.0": _battery(by_m), "N/L.1": _battery(by_n)}})
+    t = out["tests"][0]
+    assert t["status"] == "tested" and t["p"] < 0.05
+    assert t["private_centroid_cosine"] < 0.9 and t["rule_holds"] is False
+    assert t["verdict"] == "not confirmed" and out["n_confirmed"] == 0
 
 
 # ---------------------------------------------------------------------------
