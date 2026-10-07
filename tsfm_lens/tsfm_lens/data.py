@@ -256,11 +256,18 @@ def _load_corpus_rows(path: Path, verify: bool) -> tuple:
 
 
 def _sample_to_row(sample: object) -> dict:
-    """Normalize a tsfm_benchmark sample object into the plain-dict row schema."""
+    """Normalize a tsfm_benchmark sample object into the plain-dict row schema.
+
+    ``role`` (ROADMAP sec 41: synthetic / real_derived / external_real) is copied only when the
+    sample carries one, so rows from corpora built without roles are unchanged.
+    """
     row = {"values": np.asarray(sample.values, dtype=np.float32)}
     for key in ("sample_id", "tier", *_FAMILY_CANDIDATES):
         if hasattr(sample, key):
             row[key] = getattr(sample, key)
+    role = getattr(sample, "role", None)
+    if role is not None:
+        row["role"] = role
     prov = getattr(sample, "provenance", None)
     if prov is not None:
         row["provenance"] = {"generator": getattr(prov, "generator", "unknown"),

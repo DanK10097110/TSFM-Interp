@@ -197,6 +197,8 @@ def load_sources(source_config: dict[str, Any], limit: int | None = None, licens
                 seed=int(source_config.get("seed", 0)),
                 max_length=source_config.get("max_length"),
                 license=license,
+                windows_per_row=int(source_config.get("windows_per_row", 1)),
+                finite_windows=bool(source_config.get("finite_windows", False)),
             ),
             source_config,
         )
@@ -323,6 +325,8 @@ def _load_chronos_datasets_config(
     seed: int,
     max_length: int | None,
     license: str,
+    windows_per_row: int = 1,
+    finite_windows: bool = False,
 ) -> list[tuple[SourceRef, np.ndarray]]:
     """Load a deterministic, seeded sample from one ``chronos_datasets`` config.
 
@@ -336,6 +340,17 @@ def _load_chronos_datasets_config(
     than ``max_length`` is windowed to exactly that length at an
     independently seeded per-row offset, so a task built from several rows
     doesn't sample the same calendar slice out of every one of them.
+
+    Two opt-in options (ROADMAP sec 41, V3-A; both off by default, which leaves
+    the pool byte-identical to every earlier config) serve subsets that have
+    few, very long rows with scattered missing values (``ercot``,
+    ``monash_kdd_cup_2018``): ``windows_per_row`` cuts up to that many
+    *non-overlapping* ``max_length`` windows from each row (one per equal
+    segment of the row, each at a seeded offset inside its segment), and
+    ``finite_windows`` accepts a row containing NaN as long as a window free of
+    them can be found (up to 20 seeded draws per segment) instead of rejecting
+    the whole row. A segment with no finite window is skipped and the skip is
+    visible as fewer pool items, never filled in. Both require ``max_length``.
     """
     try:
         from datasets import load_dataset
@@ -360,11 +375,18 @@ def _load_chronos_datasets_config(
         row_idx = np.arange(n_total)
 
     max_length = int(max_length) if max_length else None
+    multi_window = windows_per_row > 1 or finite_windows
+    if multi_window and not max_length:
+        raise ValueError("windows_per_row / finite_windows require max_length")
 
     out: list[tuple[SourceRef, np.ndarray]] = []
     for i in row_idx:
         row = ds[int(i)]
         if not isinstance(row, dict) or field_name not in row:
+            continue
+        if multi_window:
+            out.extend(_row_windows(row[field_name], int(i), field_name, corpus, dataset_name, subset, seed,
+                                    max_length, windows_per_row, finite_windows, license))
             continue
         values = _to_series(row[field_name])
         if values is None:
@@ -379,6 +401,42 @@ def _load_chronos_datasets_config(
         ref = SourceRef(corpus=corpus, item_id=item_id, sha256=_hash(values), license=license)
         out.append((ref, values))
 
+    return out
+
+
+def _row_windows(raw: Any, row_index: int, field_name: str, corpus: str, dataset_name: str, subset: str,
+                 seed: int, max_length: int, windows_per_row: int, finite_windows: bool,
+                 license: str) -> list[tuple[SourceRef, np.ndarray]]:
+    """Cut up to ``windows_per_row`` non-overlapping ``max_length`` windows from one row.
+
+    The row is split into ``n = min(windows_per_row, len // max_length)`` equal
+    segments; window ``w`` starts at a sha256-seeded offset inside segment ``w``
+    so windows never overlap. A row shorter than ``max_length`` yields nothing.
+    With ``finite_windows`` a window containing NaN/inf is redrawn (20 tries)
+    and then skipped; without it a row with any non-finite value is rejected,
+    as in the single-window path.
+    """
+    if not isinstance(raw, (list, tuple, np.ndarray)) or len(raw) == 0:
+        return []
+    arr = np.asarray(raw, dtype=float)
+    if arr.ndim != 1 or len(arr) < max_length:
+        return []
+    if not finite_windows and not np.isfinite(arr).all():
+        return []
+    n = max(1, min(windows_per_row, len(arr) // max_length))
+    seg = len(arr) // n
+    out: list[tuple[SourceRef, np.ndarray]] = []
+    for w in range(n):
+        lo, hi = w * seg, w * seg + seg - max_length
+        rng = np.random.default_rng(_mix_seed(seed, dataset_name, subset, "window", str(row_index), str(w)))
+        for _ in range(20 if finite_windows else 1):
+            offset = lo + int(rng.integers(0, hi - lo + 1))
+            values = arr[offset:offset + max_length]
+            if np.isfinite(values).all():
+                ref = SourceRef(corpus=corpus, item_id=f"{row_index}:{field_name}:w{offset}",
+                                sha256=_hash(values), license=license)
+                out.append((ref, values))
+                break
     return out
 
 

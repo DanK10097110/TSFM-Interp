@@ -25,7 +25,7 @@ import numpy as np
 
 from .audit import LeakageAuditor, compose_audit_block, find_near_duplicates
 from .registry import CORRUPTIONS, GENERATORS
-from .schema import TimeSeriesSample
+from .schema import ROLES, TimeSeriesSample, derive_role
 from . import seal as seal_mod
 from .sources import load_sources
 
@@ -111,6 +111,12 @@ class TaskSpec:
     bootstraps across many domains (see ``sources.bootstrap_catalog``): each
     repeat then combines a different random handful of domains rather than
     the same fixed blend reweighted.
+
+    ``role`` (ROADMAP sec 41) names the data role every sample of this task
+    carries when the builder runs with ``assign_roles=True``; left ``None`` it
+    is derived from ``tier`` and ``generator`` (``schema.derive_role``).
+    ``external_real`` cannot be set here: those samples have no generator and
+    come from ``external.build_external_samples``.
     """
 
     name: str
@@ -123,6 +129,7 @@ class TaskSpec:
     tier: str = "synthetic"
     source_config: dict[str, Any] = field(default_factory=dict)
     source_sample_size: tuple[int, int] | list[int] | None = None
+    role: str | None = None
 
 
 @dataclass
@@ -138,9 +145,12 @@ class BuildResult:
 class BenchmarkBuilder:
     """Builds, audits, splits, and seals a benchmark from a list of task specs."""
 
-    def __init__(self, auditor: LeakageAuditor | None = None, private_seed_offset: int = 1_000_000) -> None:
+    def __init__(self, auditor: LeakageAuditor | None = None, private_seed_offset: int = 1_000_000,
+                 assign_roles: bool = False) -> None:
+        """``assign_roles`` is opt-in: off, samples carry no role and every sealed byte and hash is as before."""
         self.auditor = auditor or LeakageAuditor()
         self.private_seed_offset = private_seed_offset
+        self.assign_roles = assign_roles
         self._source_pool_cache: dict[str, list[Any]] = {}
 
     def _load_cached_sources(self, source_config: dict[str, Any]) -> list[Any]:
@@ -190,6 +200,10 @@ class BenchmarkBuilder:
         sample.provenance.generator_params["task_name"] = spec.name
         sample.provenance.generator_params["tier"] = spec.tier
         sample.provenance.library_versions = _library_versions()
+        if self.assign_roles:
+            if spec.role is not None and (spec.role not in ROLES or spec.role == "external_real"):
+                raise ValueError(f"task '{spec.name}': role '{spec.role}' cannot be set on a generated task")
+            sample.role = spec.role or derive_role(spec.tier, spec.generator)
         sample.sample_id = sample.content_hash()[:16]
         return sample
 
@@ -244,6 +258,22 @@ class BenchmarkBuilder:
             result.private_test, private_dir, epoch, "private",
             extra={"audit": result.audit, "note": "held-out; do not publish"})
         return result
+
+    def build_dev_and_seal(self, specs: list[TaskSpec], public_dir: str, seed: int = 0, epoch: int = 0) -> BuildResult:
+        """Build and seal ONLY the public dev split; no private split is generated.
+
+        For corpora whose private split is minted later, after hypothesis
+        registration (ROADMAP sec 41). Seeds are the same ones ``build`` would
+        give the public split for this (seed, epoch), and the audit block covers
+        the dev split alone.
+        """
+        public_base, _ = self._epoch_seeds(seed, epoch)
+        public, rejected = self._build_split(specs, public_base, epoch)
+        dups = find_near_duplicates(public)
+        split_of = {s.sample_id: "public" for s in public}
+        audit_block = compose_audit_block(self.auditor, public, rejected, dups, split_of)
+        seal_mod.seal_corpus(public, public_dir, epoch, "public", extra={"audit": audit_block})
+        return BuildResult(public_dev=public, private_test=[], epoch=epoch, rejected=rejected, duplicates=dups, audit=audit_block)
 
     def regenerate_private(self, specs: list[TaskSpec], private_dir: str, seed: int = 0, epoch: int = 1) -> list[TimeSeriesSample]:
         """Generate and seal a fresh held-out corpus for a new epoch.
