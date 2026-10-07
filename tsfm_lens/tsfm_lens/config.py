@@ -1074,6 +1074,21 @@ class ConceptsConfig:
     agreement_partial_rung: bool = field(default=False, metadata={"omit_at_default": True})
     agreement_require_defined_firing: bool = field(default=False, metadata={"omit_at_default": True})
 
+    # ROADMAP.md sec 40 / 41 V3-C -- the subspace agreement test
+    # (`sae/subspace_agreement.py`), an opt-in redesign of the shared-input rung:
+    # the whole concept is ablated as a subspace on each side, and the result is an
+    # ESTIMATE (effect concordance and level-removed shape cosine with a series-bootstrap
+    # CI, TOST equivalence), not a verdict from point statistics. It is not run by any
+    # stage; the keys below parameterize its function and, left at their defaults, are
+    # omitted from every fingerprint. `subspace_agreement_n_null` random equal-dimension
+    # subspaces per side form the matched floor; `_n_boot` series-bootstrap resamples;
+    # `_ci_level` the two-sided CI level (agree needs the lower bound above the floor q95,
+    # differ the upper bound below the floor q05); `_margin` the TOST margin in null units.
+    subspace_agreement_n_null: int = field(default=50, metadata={"omit_at_default": True})
+    subspace_agreement_n_boot: int = field(default=1000, metadata={"omit_at_default": True})
+    subspace_agreement_ci_level: float = field(default=0.95, metadata={"omit_at_default": True})
+    subspace_agreement_margin: float = field(default=1.0, metadata={"omit_at_default": True})
+
     # ROADMAP.md sec 37.9 P6a -- generator-side input counterfactuals
     # (`tsfm_benchmark/build_pipeline/counterfactual.py`'s draw-neutral knobs,
     # measured by `tsfm_lens/sae/counterfactual.py`): does an atlas concept's
