@@ -250,6 +250,35 @@ def test_family_presence_partition_fallback_is_stated(tmp_path):
         "family_presence::0::A": 5, "family_presence::1::B": 5}
 
 
+def test_family_presence_partial_dev_vectors_keep_the_cosine_basis(tmp_path):
+    """One of A's five causal features has no dev vector (e.g. unscorable in the artifact):
+    the dev support is still the cosine count over the four that have one, not the
+    partition's count of five, so dev and confirm share one statistic. Planted regression:
+    the old all-or-nothing rule falls back to `partition` and reports 5."""
+    run_dir = _families_run(tmp_path)
+    p = ablation_path(run_dir, "A", "blocks.0.mlp")
+    art = load_json(p)
+    art["candidates"] = [c for c in art["candidates"] if c["feature"] != 4]
+    save_json(p, art)
+    entries, _ = hyp._family_presence_entries(run_dir, _v3_cfg())
+    e = {x["id"]: x for x in entries}["family_presence::0::A"]
+    assert e["dev_basis"] == "cosine" and e["dev_count"] == 4 and e["dev_n_with_vector"] == 4
+    assert e["n_features"] == 5 and e["dev_partition_count"] == 5
+
+
+def test_atlas_centroid_min_members_default_is_three():
+    """Fixed to 3 before the V3 data (the centroid-only statistic is the registered test;
+    the >= 2 models requirement stays). Planted regression: the earlier default of 5."""
+    from tsfm_lens.config import ConfirmConfig
+    assert ConfirmConfig().atlas_centroid_min_members == 3
+    entries, summary = hyp._atlas_centroid_entries(
+        [{"concept": 0, "members": [{"model": "A"}, {"model": "A"}, {"model": "B"}],
+          "models": ["A", "B"], "dev_centroid": [1.0] + [0.0] * 8, "min_cosine": 0.9,
+          "min_members": 3, "statement": "s", "id": "concept_atlas::0"}],
+        ConfirmConfig().atlas_centroid_min_members, "profile_matched")
+    assert len(entries) == 1
+
+
 def test_primary_null_is_recorded_and_a_mismatching_family_space_refuses(tmp_path):
     run_dir = _families_run(tmp_path)
     entries, _ = hyp._family_presence_entries(run_dir, _v3_cfg(primary_null="profile_matched"))
@@ -937,3 +966,29 @@ def test_end_to_end_defaults_add_nothing(dev_run):
     assert not {"family_presence", "atlas_centroid"} & set(cr)
     assert not {"family_presence", "concept_atlas_centroid"} & {
         r["family"] for r in cr.get("ledger", [])}
+
+
+def test_unmeasured_stability_is_skipped_with_a_reason_not_a_crash(tmp_path):
+    """`concept_stability.json` holds a "not measured" string where the replicate SAEs did
+    not run. That concept is not seed-stable, is left out, and the registration summary says
+    how many were skipped; a measured concept in the same file still counts as stable.
+    Planted regression: the old `(c.get("stability") or {}).get(...)` raises
+    AttributeError on the string."""
+    sae = tmp_path / "sae"
+    sae.mkdir()
+    save_json(sae / "concept_atlas.json", {"rows": [], "params": {}})
+    save_json(sae / "atlas_transfer.json", {"tests": []})
+    save_json(sae / "concept_stability.json", {"concepts": [
+        {"concept": 0, "stability": "not measured: no replicate SAEs"},
+        {"concept": 1, "stability": {"stable": True}},
+        {"concept": 2, "stability": {"stable": False}},
+        {"concept": 3}]})
+    stable, unmeasured = hyp._stable_concept_ids(load_json(sae / "concept_stability.json"))
+    assert stable == {1} and unmeasured == [0]
+    ranking = hyp._concept_transfer_candidates(tmp_path, SimpleNamespace(n_registered=5))
+    assert ranking["stability_not_measured"] == [0]
+    assert "no measured seed stability" in ranking["reason"]
+    assert hyp._stable_atlas_members(tmp_path)[0] == set()
+    entries, summary = hyp._atlas_candidates(tmp_path, _v3_cfg())
+    assert entries == [] and summary["n_stability_not_measured"] == 1
+    assert summary["n_stable_concepts"] == 1

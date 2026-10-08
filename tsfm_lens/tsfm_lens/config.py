@@ -405,11 +405,12 @@ class ConfirmConfig:
     primary_null: str = field(default="", metadata={"omit_at_default": True})
     # `register_atlas_centroid_claims`: one `concept_atlas_centroid` claim per
     # seed-stable multi-model atlas concept with >= `atlas_centroid_min_members`
+    # (default 3, fixed before the V3 data; the >= 2 models requirement stays)
     # members: the private centroid cosine against the dev centroid, vs the
     # same-composition random-member-set null, with no pair-fraction leg. The
     # legacy `concept_atlas` rule is untouched and registered beside it.
     register_atlas_centroid_claims: bool = field(default=False, metadata={"omit_at_default": True})
-    atlas_centroid_min_members: int = field(default=5, metadata={"omit_at_default": True})
+    atlas_centroid_min_members: int = field(default=3, metadata={"omit_at_default": True})
     # `external_path`: a second sealed corpus (role `external_real`) on which
     # `confirm` re-runs the registered transfer and family-presence claims,
     # written under `external_replication`, never counted in the confirm
