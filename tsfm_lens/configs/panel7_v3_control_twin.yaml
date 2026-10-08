@@ -90,3 +90,13 @@ sae:
   real_data_n_windows: 4000
   real_data_pool_limit: 500
 
+
+# Stages below never run in this solo control run (only extract, layer_screen, sae), but the
+# preflight checks every stage's batch cap against Sundial's batch_size (16), so they are capped.
+lens:
+  max_series: 16
+l3:
+  patching:
+    max_series: 16
+attention:
+  ablation_max_series: 16
