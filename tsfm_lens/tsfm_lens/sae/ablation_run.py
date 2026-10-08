@@ -164,6 +164,9 @@ def run_ablation_target(cfg, run_dir: Path, hub, data, store, device, model: str
         log.warning(f"ablation: no ground-truth periods ({e}); seasonal channel "
                     f"unavailable for every candidate")
 
+    if getattr(cfg.sae, "keep_signed_null_draws", False):
+        keep_null_draws = keep_signed_null_draws = True
+
     result = feature_ablation_fingerprints(
         cfg, adapter, layer, sae, data, device, candidates, activations,
         top_k_series=top_k_series, n_null_directions=n_null_directions,

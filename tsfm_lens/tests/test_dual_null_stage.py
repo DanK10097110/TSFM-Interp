@@ -52,6 +52,7 @@ def stage_runs():
             if (rd / rel).exists()}
     single_art = {p.name: load_json(p) for p in (rd / "sae").glob("*/*_ablation.json")}
     cfg.sae.ablation_nulls = (PRIMARY, SECOND)
+    cfg.sae.keep_signed_null_draws = True
     t0 = time.monotonic()
     run_pipeline(cfg, stages=["concepts"], force={"concepts"}, allow_stale=True)
     t_dual = time.monotonic() - t0
@@ -75,6 +76,26 @@ def test_dual_artifact_primary_keys_equal_single_run_and_carry_by_null(stage_run
             assert json.dumps(dual[k], sort_keys=True) == json.dumps(one[k], sort_keys=True)
         assert all(SECOND in c["by_null"] for c in dual["candidates"])
     assert stage_runs["t_dual"] > 0
+
+
+def test_keep_signed_null_draws_config_reaches_the_battery(stage_runs):
+    """`sae.keep_signed_null_draws` is a real config field: the dual run's artifacts carry
+    the signed draws for BOTH nulls, the single run's (flag off) carry none. Planted
+    regression: not forwarding the field leaves the draws out."""
+    rd = stage_runs["rd"]
+    n = 0
+    for p in (rd / "sae").glob("*/*_ablation.json"):
+        for c in load_json(p)["candidates"]:
+            if not c.get("scorable"):
+                continue
+            for blk in (c, c["by_null"][SECOND]):
+                for v in blk["channels"].values():
+                    if v.get("available"):
+                        assert v["null_draw_signed_means"] and v["null_draw_means"]
+                        n += 1
+        assert all("null_draw_signed_means" not in v for c in stage_runs["single_art"][p.name]["candidates"]
+                   if c.get("scorable") for v in c["channels"].values())
+    assert n > 0
 
 
 def test_robustness_artifact_shows_both_nulls_and_feature_chance(stage_runs):

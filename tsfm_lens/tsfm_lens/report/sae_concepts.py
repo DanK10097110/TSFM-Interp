@@ -324,6 +324,9 @@ def battery_robustness_block(run_dir: Path) -> str:
     primary = doc["primary_null"]
 
     def row(label, mode, h):
+        if not h["n_targets"]:
+            return (f"<tr><td>{html.escape(label)}</td><td>{html.escape(mode)}</td><td>0</td>"
+                    "<td colspan='4'>no target kept: nothing to count</td></tr>")
         sig = h.get("target_significance") or {}
         sig_txt = (f"{sig['n_significant']} of {sig['n_targets']}" if "n_significant" in sig
                    else "not measured")

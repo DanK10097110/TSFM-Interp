@@ -844,6 +844,11 @@ class SAEConfig:
     # (default) = a single-null run, artifacts unchanged.
     ablation_nulls: tuple = field(default=(), metadata={"stage_input": False,
                                                         "omit_at_default": True})
+    # Opt-in (ROADMAP.md sec 41, V3-B): keep every null draw's SIGNED per-channel mean delta
+    # (`null_draw_signed_means`, which implies `keep_null_draws`) in `*_ablation.json`; the
+    # family-presence claim scores a family's cosine against these. Default off, artifacts unchanged.
+    keep_signed_null_draws: bool = field(default=False, metadata={"stage_input": False,
+                                                                  "omit_at_default": True})
 
 
 @dataclass
