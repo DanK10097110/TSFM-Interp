@@ -701,6 +701,51 @@ def _atlas_concept_summary(atlas: dict, tests: list) -> tuple:
     return concept_summary, cross_check
 
 
+def atlas_transfer_tests(atlas: dict, live: dict, strata: np.ndarray, by_stratum: dict,
+                         pooled_fn, ranks_fn, k_top: int, n_null: int, base_seed: int,
+                         p_method: str, max_redraw: int,
+                         extra_destinations: dict | None = None,
+                         only_extra: bool = False) -> list:
+    """The uncorrected test list of `run_atlas_transfer`: every atlas concept
+    part (source = concept x one live target) against every live target of
+    another model.
+
+    Factored out so a caller with a DIFFERENT set of pooled features (the
+    window-sensitivity recomputation, `analysis/window_sensitivity.py`) or an
+    extra destination (`sae/control_transfer.py`) runs the identical test with
+    the identical seeds. `pooled_fn(key)` and `ranks_fn(key)` give a target's
+    series-level features and their column ranks. `extra_destinations` is
+    `{dst_key: (dst_model, dst_ranks)}`, tested in addition to `live` (a
+    destination there is skipped for a source of the same model); `only_extra` tests
+    the extra destinations alone, `live` then supplying sources only.
+    """
+    by_concept_src = _concept_source_parts(atlas.get("rows") or [], live)
+    tests: list = []
+    for (cid, src_key), rec in sorted(by_concept_src.items()):
+        src_model = rec["model"]
+        feature_ids = sorted(rec["features"])
+        score = concept_scores(pooled_fn(src_key), feature_ids)
+        S = top_series(score, k_top)
+        fwd_seed = _seed("atlas", src_key, cid, base=base_seed)
+        fwd_rng = np.random.default_rng(fwd_seed)
+        fwd_draws = matched_draws(S, strata, by_stratum, n_null, fwd_rng)
+
+        dests = [] if only_extra else [(k, m, None) for k, m in sorted(live.items())]
+        dests += [(k, m, r) for k, (m, r) in sorted((extra_destinations or {}).items())]
+        for dst_key, dst_model, dst_ranks in dests:
+            if dst_model == src_model:
+                continue
+            if dst_ranks is None:
+                dst_ranks = ranks_fn(dst_key)
+            rev_seed = _seed("atlas", src_key, cid, dst_key, base=base_seed)
+            result = transfer_one(score, dst_ranks, S, fwd_draws, strata, by_stratum,
+                                  k=k_top, n_draws=n_null, seed=rev_seed, p_method=p_method,
+                                  max_redraw=max_redraw, fwd_seed=fwd_seed)
+            tests.append({"concept": cid, "src_target": src_key, "src_model": src_model,
+                          "dst_target": dst_key, "dst_model": dst_model, **result})
+    return tests
+
+
 def run_atlas_transfer(run_dir: Path, atlas: dict, cfg) -> dict:
     """Every cross-model ATLAS concept's per-model PART, tested against
     every OTHER model's targets, reusing `transfer_one`/`matched_draws`/
@@ -737,29 +782,9 @@ def run_atlas_transfer(run_dir: Path, atlas: dict, cfg) -> dict:
     strata, by_stratum, store = _store_context(run_dir)
     _pooled, _ranks = _pooled_ranks_fns(store)
 
-    by_concept_src = _concept_source_parts(atlas.get("rows") or [], live)
-
-    tests: list = []
-    for (cid, src_key), rec in sorted(by_concept_src.items()):
-        src_model = rec["model"]
-        feature_ids = sorted(rec["features"])
-        src_pooled = _pooled(src_key)
-        score = concept_scores(src_pooled, feature_ids)
-        S = top_series(score, k_top)
-        fwd_seed = _seed("atlas", src_key, cid, base=base_seed)
-        fwd_rng = np.random.default_rng(fwd_seed)
-        fwd_draws = matched_draws(S, strata, by_stratum, n_null, fwd_rng)
-
-        for dst_key, dst_model in sorted(live.items()):
-            if dst_model == src_model:
-                continue
-            dst_ranks = _ranks(dst_key)
-            rev_seed = _seed("atlas", src_key, cid, dst_key, base=base_seed)
-            result = transfer_one(score, dst_ranks, S, fwd_draws, strata, by_stratum,
-                                  k=k_top, n_draws=n_null, seed=rev_seed, p_method=p_method,
-                                  max_redraw=max_redraw, fwd_seed=fwd_seed)
-            tests.append({"concept": cid, "src_target": src_key, "src_model": src_model,
-                         "dst_target": dst_key, "dst_model": dst_model, **result})
+    tests = atlas_transfer_tests(atlas, live, strata, by_stratum, _pooled, _ranks,
+                                 k_top=k_top, n_null=n_null, base_seed=base_seed,
+                                 p_method=p_method, max_redraw=max_redraw)
 
     tests = _apply_pairwise_fdr(tests, "src_model", "dst_model", fdr_q)
     concept_summary, cross_check = _atlas_concept_summary(atlas, tests)

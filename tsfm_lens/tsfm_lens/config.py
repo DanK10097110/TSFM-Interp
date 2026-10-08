@@ -1232,6 +1232,20 @@ class ConceptsConfig:
     n_registered_agreement_differs: int = field(default=30, metadata={"stage_input": False,
                                                                       "omit_at_default": True})
 
+    # ROADMAP.md sec 41.1 (V3 controls), all opt-in and `omit_at_default`.
+    # `negative_control_runs`: `{name: run_dir}` of SOLO runs (extract + sae only) of a
+    # `random_init: true` twin on this run's corpus; `sae/control_transfer.py` tests every atlas
+    # concept part against the twin's dictionaries as a negative-control destination. The twin
+    # lives in its own run directory so it is excluded from every other stage, routing table and
+    # scorecard by construction. `input_feature_control`: also test against a destination made of
+    # raw context statistics. `window_sensitivity`: coarser windows (multiples of
+    # `alignment.window`) at which L1 peak CKA and the atlas-transfer pass rate are recomputed.
+    # `tier_breakdown`: write and render the per-data-role breakdown.
+    negative_control_runs: Optional[dict] = field(default=None, metadata={"omit_at_default": True})
+    input_feature_control: bool = field(default=False, metadata={"omit_at_default": True})
+    window_sensitivity: Optional[list] = field(default=None, metadata={"omit_at_default": True})
+    tier_breakdown: bool = field(default=False, metadata={"stage_input": False})
+
 
 @dataclass
 class PipelineConfig:

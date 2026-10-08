@@ -105,12 +105,16 @@ def _assemble(rows: list, cfg: DataConfig, seed: int = 0,
     families_all = np.array([_family_of(r, cfg.family_key) for _, r in kept])
     archetypes_all = np.array([_archetype_of(r) for _, r in kept], dtype=object)
     generators_all = np.array([_generator_of(r) for _, r in kept], dtype=object)
+    roles_all = (np.array([r.get("role") or "unknown" for _, r in kept], dtype=object)
+                 if any(r.get("role") for _, r in kept) else None)
     if cfg.max_series is not None and cfg.max_series < len(kept):
         idx = sample_rows(len(kept), cfg.max_series, seed, strata=families_all)
         kept = [kept[i] for i in idx]
         families_all = families_all[idx]
         archetypes_all = archetypes_all[idx]
         generators_all = generators_all[idx]
+        if roles_all is not None:
+            roles_all = roles_all[idx]
     values = np.stack([v for v, _ in kept])
     meta = pd.DataFrame({
         "series_id": [r.get("sample_id", f"s{i}") for i, (_, r) in enumerate(kept)],
@@ -125,6 +129,8 @@ def _assemble(rows: list, cfg: DataConfig, seed: int = 0,
         "archetype": archetypes_all.tolist(),
         "generator": generators_all.tolist(),
     })
+    if roles_all is not None:
+        meta["role"] = roles_all.tolist()
     n_families = int(meta["family"].nunique())
     log.info("data: %d series, %d families, len=%d (%d context + %d horizon)",
              len(values), n_families, need, cfg.context_len, cfg.horizon)
