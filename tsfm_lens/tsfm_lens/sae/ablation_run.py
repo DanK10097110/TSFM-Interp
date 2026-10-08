@@ -171,6 +171,8 @@ def run_ablation_target(cfg, run_dir: Path, hub, data, store, device, model: str
         keep_forecasts=keep_forecasts, keep_null_draws=keep_null_draws,
         **({"keep_signed_null_draws": True} if keep_signed_null_draws else {}),
         null_mode=cfg_null_mode(cfg),
+        **({"extra_null_modes": tuple(cfg_extra_null_modes(cfg))}
+           if cfg_extra_null_modes(cfg) else {}),
         empirical_chance=bool(empirical_chance or getattr(cfg.sae, "ablation_empirical_chance", False)))
 
     if result.get("withheld"):
@@ -212,6 +214,14 @@ def cfg_null_mode(cfg) -> str:
     with no such attribute (an older checkout's) is the legacy null, the same
     reading every other reader uses; a real `SAEConfig` always has the field."""
     return str(getattr(getattr(cfg, "sae", None), "ablation_null", LEGACY_NULL) or LEGACY_NULL)
+
+
+def cfg_extra_null_modes(cfg) -> list:
+    """The secondary nulls of a dual-null battery (`sae.ablation_nulls`, ROADMAP.md
+    sec 41.1): every listed mode except the primary. `[]` for a single-null run."""
+    nulls = getattr(getattr(cfg, "sae", None), "ablation_nulls", ()) or ()
+    primary = cfg_null_mode(cfg)
+    return [m for m in nulls if m != primary]
 
 
 def artifact_null_mode(art: dict) -> str:

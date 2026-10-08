@@ -204,7 +204,7 @@ def _stages() -> list:
                "sae.concept_min_silhouette", "sae.concept_min_members",
                "sae.transfer_enabled", "sae.transfer_top_k", "sae.transfer_n_null",
                "sae.transfer_seed", "sae.describe_from_exemplars", "sae.ablation_null",
-               "sae.ablation_empirical_chance")),
+               "sae.ablation_empirical_chance", "sae.ablation_nulls")),
         Stage("exemplars", ["l0"],
               lambda c: c.exemplars.enabled,
               lambda c: (c.run_dir() / "exemplars" / "exemplars.json").exists(),

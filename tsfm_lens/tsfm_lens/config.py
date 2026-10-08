@@ -834,6 +834,16 @@ class SAEConfig:
     # rate (`empirical_chance` in `*_ablation.json`); default off, artifacts unchanged.
     ablation_empirical_chance: bool = field(default=False, metadata={"stage_input": False,
                                                                      "omit_at_default": True})
+    # Opt-in dual-null battery (ROADMAP.md sec 41.1): every null named here is scored in
+    # ONE battery pass (the real ablation forward runs once), the first is PRIMARY and
+    # must equal `ablation_null` (a config that leaves `ablation_null` out gets it set
+    # to the first; naming both and disagreeing is an error). The others are written
+    # per candidate under `by_null[<mode>]` and as `by_null_summary`; everything
+    # downstream (concepts, atlas, families, profiles, transfer) reads the primary's
+    # legacy keys. Cost: n_null extra forwards per feature per extra mode. Empty
+    # (default) = a single-null run, artifacts unchanged.
+    ablation_nulls: tuple = field(default=(), metadata={"stage_input": False,
+                                                        "omit_at_default": True})
 
 
 @dataclass
@@ -1314,6 +1324,19 @@ class PipelineConfig:
         """Fail fast on structurally invalid configurations."""
         if self.data.context_len % self.alignment.window != 0:
             raise ValueError("data.context_len must be a multiple of alignment.window")
+        nulls = tuple(self.sae.ablation_nulls or ())
+        if nulls:
+            if len(set(nulls)) != len(nulls):
+                raise ValueError(f"sae.ablation_nulls has duplicates: {list(nulls)}")
+            if nulls[0] != self.sae.ablation_null:
+                raise ValueError(
+                    f"sae.ablation_nulls[0] ({nulls[0]!r}) is the primary null and must equal "
+                    f"sae.ablation_null ({self.sae.ablation_null!r}); drop one of the two")
+            from .sae.response import ABLATION_NULL_MODES
+            bad = [m for m in nulls if m not in ABLATION_NULL_MODES]
+            if bad:
+                raise ValueError(f"sae.ablation_nulls: unknown null mode(s) {bad}; "
+                                 f"expected from {list(ABLATION_NULL_MODES)}")
         names = [m.name for m in self.models]
         if len(set(names)) != len(names):
             raise ValueError("model names must be unique")
@@ -1419,6 +1442,10 @@ def config_from_dict(raw: dict) -> PipelineConfig:
     if "models" in raw:
         cfg.models = [_build(ModelConfig, m, section=f"models[{i}]")
                      for i, m in enumerate(raw["models"])]
+    cfg.sae.ablation_nulls = tuple(cfg.sae.ablation_nulls or ())
+    nulls = cfg.sae.ablation_nulls
+    if nulls and "ablation_null" not in (raw.get("sae") or {}):
+        cfg.sae.ablation_null = nulls[0]
     cfg.validate()
     return cfg
 
