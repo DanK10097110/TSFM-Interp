@@ -1,0 +1,345 @@
+# The V3 confirmatory dev run (ROADMAP.md sec 41, 41.1): the seven-model
+# `panel7_v2.yaml` body on the V3 corpus (`benchmark_v3/`: 2876 dev series with explicit
+# data roles, a separate 800-series GIFT-Eval `external_real` slice), with the V3 design
+# additions switched on. Everything not listed below is `panel7_v2.yaml` unchanged.
+#
+#     python run.py --config configs/panel7_v3.yaml --doctor
+#     # 1. the negative-control twin FIRST (its own solo run, see
+#     #    configs/panel7_v3_control_twin.yaml), after this run's `layer_screen` exists:
+#     python run.py --config configs/panel7_v3.yaml --stages extract,budget,frontend,layer_screen,l0,internals,lens,l1,l2,l3,attention,cluster,sae
+#     python run.py --config configs/panel7_v3_control_twin.yaml --stages extract,layer_screen,sae
+#     # 2. the concepts stage, which also runs the controls and window sensitivity
+#     python run.py --config configs/panel7_v3.yaml --stages concepts
+#     python run.py --config configs/panel7_v3.yaml --stages exemplars,report
+#
+# What differs from `panel7_v2.yaml`, and only this:
+#   * run.name and the corpus paths (data.path, corpus.validation_report, confirm.external_path);
+#   * `concepts.negative_control_runs` / `input_feature_control` (ROADMAP 41.1, transfer
+#     negative control): the `random_init` twin and a raw-context-statistics destination
+#     are tested with the SAME atlas-transfer test and written to
+#     `sae/control_transfer.json`; the report prints their pass rate next to every real
+#     destination's. What each means is in `sae/control_transfer.py`'s docstring.
+#     The twin is a separate run directory, so it is in no routing table, comparison,
+#     scorecard or other stage's input;
+#   * `concepts.window_sensitivity: [64, 96]`: L1 peak CKA and the transfer pass rate at
+#     coarser windows, by exact averaging of adjacent stored 32-step windows
+#     (`sae/window_sensitivity.json`). 96 is a multiple of every token width in the panel
+#     (Timer 96, TimesFM 32, the 16-wide models);
+#   * `concepts.tier_breakdown: true`: L0 accuracy, causal-feature counts and transfer pass
+#     rates split by data role (`report/tier_breakdown.json`);
+#   * the V3-B claim types and the primary null (`confirm.register_family_presence_claims`,
+#     `register_atlas_centroid_claims`, `primary_null: profile_matched_cov`), per the
+#     null-choice decision in ROADMAP 41.1 (the stricter, on-manifold null is primary for
+#     every registered causal/atlas/family claim; the isotropic null is reported as
+#     secondary, see the TODO under `sae:`);
+#   * confirm.path is EMPTY: V3's private split is minted only after registration
+#     (below).
+#
+# Battery settings stay at k=8 rows / 16 null draws (panel7_v2's; no recorded reason to
+# change them).
+
+run:
+  name: panel7_v3_dev
+  out_dir: runs
+  device: cuda
+  dtype: bfloat16
+  seed: 0
+  keep_models_loaded: false
+
+data:
+  source: sealed
+  path: ../benchmark_v3/public_dev  # relative to tsfm_lens/ (where run.py is invoked from)
+  context_len: 480   # NOT 512: Timer's 96-step tokens need a multiple of 96 (panel7_v2.yaml header); the V3 series are 576 long, so 480 + 64 fits
+  horizon: 64
+  family_key: auto
+  # Every V3 row carries a `role` (synthetic / real_derived); `data.py` copies it into
+  # meta.parquet, which `concepts.tier_breakdown` reads.
+
+alignment:
+  window: 32
+  sanity_check: true
+  on_failure: warn   # Sundial's diagnosed, benign mid-depth decay -- see header
+
+models:
+  - name: TimesFM
+    adapter: timesfm
+    checkpoint: google/timesfm-2.5-200m-pytorch
+    batch_size: 32
+    capture_layer_stride: 2      # 20 layers -> 10 capture points
+  - name: Chronos-2
+    adapter: chronos2
+    checkpoint: amazon/chronos-2
+    batch_size: 24
+    capture_layer_stride: 1      # 12 encoder blocks, no decoder to capture
+  - name: Sundial
+    adapter: sundial
+    checkpoint: thuml/sundial-base-128m
+    batch_size: 16               # binds every
+                                 # "<= every model's batch_size" cap below
+    capture_layer_stride: 1      # 12 decoder blocks
+  - name: Chronos-Bolt
+    adapter: chronos_bolt
+    checkpoint: amazon/chronos-bolt-small
+    batch_size: 32
+    capture_layer_stride: 1      # encoder blocks, deterministic quantile head
+  - name: Timer
+    adapter: generic_hf          # no adapter file; every seam is probed and logged
+    checkpoint: thuml/timer-base-84m
+    batch_size: 16
+    capture_layer_stride: 1      # 8 decoder blocks; point-only head
+    kwargs:
+      auto_class: AutoModelForCausalLM   # AutoModel alone is the headless backbone
+  - name: Time-MoE
+    adapter: generic_hf
+    checkpoint: Maple728/TimeMoE-50M
+    batch_size: 16               # same as Sundial and Timer -- binds every cap below
+    capture_layer_stride: 1      # 12 decoder blocks, 384 wide, per-timestep tokens
+    kwargs:
+      auto_class: AutoModelForCausalLM
+      # The checkpoint ships no normalizer and its README z-scores each series
+      # and de-normalizes the forecast. Without this, `frontend` measured a
+      # 0.001x rescale moving Time-MoE's forecast 105.7 context-sd units (the
+      # Sundial normalization bug again, docs/ADDING_A_MODEL.md sec 4).
+      input_normalization: zscore
+  - name: Chronos-T5-Base
+    adapter: chronos
+    checkpoint: amazon/chronos-t5-base
+    batch_size: 24               # base is 2x chronos-t5-small; same as every earlier config
+    capture_layer_stride: 1      # 12 encoder blocks; 1 step per token; sampled decoder
+                                 # (not captured). Compared predict() calls are seeded by
+                                 # the calling stages, not by a config knob (CLAUDE.md 11.50).
+  # TTM (ibm-granite/granite-timeseries-ttm-r1) was dropped from the panel:
+  # `granite-tsfm==0.2.28` fails to import under transformers 4.57.6, and
+  # 0.3.x downgrades torch and scikit-learn.
+
+l0:
+  enabled: true
+  quantiles: [0.1, 0.5, 0.9]
+  calibration: true
+
+l1:
+  enabled: true
+  layer_stride: 1
+  max_rows: 20000
+  family_conditioned: true
+  min_family_series: 15
+  rsa: true
+  rsa_max_series: 800
+
+l2:
+  enabled: true
+  layer_stride: 1
+  lambdas: [0.001, 0.01, 0.1, 1.0]
+  val_frac: 0.25
+  max_rows: 40000
+  input_baseline: true
+
+l3:
+  enabled: true
+  max_series: 800
+  corruptions:
+    # Same measured, non-default strengths as full_report_run_large*.yaml
+    # (measured over 200 series of this repo's own corpus -- see that
+    # file's header for the energy numbers). Restated here because this
+    # file overrides the whole corruptions block.
+    noise: {snr_db: 0.0}
+    detrend: {}
+    deseasonalize: {top_k: 2}
+    frequency_shift: {factor: 2.0}
+    level_shift: {position_frac: 0.6, scale: 3.0}
+    spike: {count: 8, scale: 10.0}
+    smooth: {kernel: 9}
+    warp: {strength: 0.15}
+    dropout: {frac: 0.15, n_blocks: 3}
+  patching:
+    enabled: true
+    layer_stride: 2
+    corruptions: [deseasonalize, noise, level_shift, spike, warp, dropout]
+    max_series: 16                # must be <= every model's batch_size (Sundial, Timer, Time-MoE: 16)
+    per_window: true
+    window_stride: 1
+
+lens:
+  enabled: true
+  layer_stride: 1
+  max_series: 16                  # must be <= every model's batch_size (Sundial, Timer, Time-MoE: 16)
+  tuned: true
+  tuned_max_series: 800
+  val_frac: 0.25
+  lambdas: [0.001, 0.01, 0.1, 1.0]
+  crystallization_tol: 0.1
+
+attention:
+  enabled: true
+  patterns: true                  # TimesFM/Chronos-2 real patterns; Sundial/
+                                  # Chronos-Bolt degrade to "unsupported" and
+                                  # skip, per invariant 8 -- both adapters'
+                                  # docstrings declare attention_patterns
+                                  # unsupported deliberately
+  max_series: 400
+  batch_series: 16
+  max_lag_tokens: 128
+  ablation: true
+  ablation_max_series: 16         # must be <= every model's batch_size (Sundial, Timer, Time-MoE: 16)
+  head_layer_stride: 1
+  top_k: 5
+
+exemplars:
+  enabled: true
+  per_family: 3
+  max_families: 5                 # this corpus has 5 families -- see header
+
+clustering:
+  enabled: true
+  layer: auto
+  k: auto
+  pca_dim: 50
+  max_series: 800
+  use_umap: true
+
+layer_screen:
+  enabled: true
+  method: work_bend
+  budget_frac: 0.25
+  min_budget: 2
+
+sae:
+  enabled: true
+  # Profile-matched battery null (FINDINGS MN-29, ROADMAP sec 38.1.7): each
+  # null draw removes the feature's own per-token amount along a random
+  # decoded direction. The legacy `mean_magnitude` null failed the
+  # known-answer gate on 5/5 seeds; this one passed on 5/5. Field-level on the
+  # concepts stage only, so sae training and every earlier stage stay current.
+  ablation_null: profile_matched
+  # TODO(V3, ROADMAP 41.1): the dual-null battery (both nulls in ONE pass, `profile_matched_cov`
+  # primary, `profile_matched` secondary). The field is being added by another change and is
+  # not on this branch yet (the loader rejects unknown keys), so it stays commented. Uncomment
+  # when it lands:
+  # ablation_nulls: [profile_matched_cov, profile_matched]
+  # TODO(V3): `keep_signed_null_draws` (signed 9-channel per-draw deltas, needed by the
+  # family-presence claim's dev side). `sae/ablation_run.py` accepts it as an argument, but there
+  # is no config field yet; enable it with the same change:
+  # keep_signed_null_draws: true
+  # Leave-one-draw-out empirical chance rate per cell (ROADMAP sec 38.1.8):
+  # the battery's nominal 0.05 x cells is not a chance line (effect is a mean
+  # over k rows vs the p95 of pooled per-row null draws; measured ~2%).
+  ablation_empirical_chance: true
+  targets: []                     # "auto" -- layer_screen's own selection, every model
+  dict_size_mult: 8
+  dict_size_policy: search
+  dict_size_ladder: [192, 384, 768, 1536, 3072, 6144]
+  max_dead_rate: 0.30
+  dict_size_search_margin: 0.03
+  dict_size_search_seeds: 2
+  min_fidelity: 0.5
+  k: 32
+  lr: 0.001
+  epochs: 60
+  min_train_steps: 720
+  aux_k: 64
+  aux_coef: 0.03125
+  aux_dead_steps_frac: 0.028
+  n_seeds: 3
+  batch_size: 4096
+  resample_dead_every_epochs: 5
+  forecast_preservation_max_series: 16   # must be <= every model's batch_size (Sundial, Timer, Time-MoE: 16)
+  ground_truth_max_series: 2000
+  persist_features: true
+  real_data_enabled: true
+  real_data_source: "Monash-University/monash_tsf"
+  real_data_n_windows: 4000
+  real_data_pool_limit: 500
+
+report:
+  enabled: true
+  verbose: true
+  verbose_series: 2
+  title: V3 wide panel — TimesFM 2.5, Chronos-2, Sundial, Chronos-Bolt, Timer, Time-MoE, Chronos-T5-Base
+
+stats:
+  enabled: true
+  n_boot: 5000              # 21 pairs x 5 families = 105 tests: Holm floor 0.021 -- see header
+  n_boot_heavy: 200
+  ci: 0.95
+  alpha: 0.05
+  min_series: 8
+
+internals:
+  enabled: true
+  layer_stride: 1
+  max_rows: 40000
+  probe_pca_dim: 50
+  probe_max_iter: 2000        # CLAUDE.md sec 11.47: the historical 300 does
+                              # not converge at this corpus size
+
+confirm:
+  enabled: true    # registration from THIS run's dev artifacts happens FIRST, with `path` empty;
+                   # the V3 private epoch is minted only after the registry hash is recorded.
+  path: ""         # EMPTY ON PURPOSE. Mint after registration (from the repo root):
+                   #   python tsfm_benchmark/example_runs/mint_private.py \
+                   #       --config tsfm_benchmark/configs/benchmark_v3.yaml --seed 7000003 --epoch 1
+                   # then set this to the minted directory and run `--stages confirm` ONCE.
+  external_path: ../benchmark_v3/external_real   # 800 raw GIFT-Eval windows (role external_real):
+                   # one extra look at the registered transfer / family-presence claims, reported
+                   # apart from the confirm verdict and refused on overlap with dev or private.
+  # Claim registration (ROADMAP 41, 41.1). Reads this run's dev artifacts only.
+  register_concept_claims: true
+  register_requires_target_significance: true
+  register_requires_defined_firing: true
+  register_reliability_claims: true
+  reliability_dev_json: reliability_panel7_v3.json  # dev K4 JSON from run_reliability_from_internals.py,
+                                                    # copied into the run directory; sha256 pinned at registration
+  register_family_presence_claims: true     # V3-B: "model m has causal features in effect family F beyond chance"
+  register_atlas_centroid_claims: true      # V3-B: seed-stable multi-model atlas concepts, centroid cosine test
+  atlas_centroid_min_members: 3
+  primary_null: profile_matched_cov         # ROADMAP 41.1: the stricter on-manifold null is primary for
+                                            # every registered claim; isotropic is secondary
+
+# ROADMAP.md sec 34 item C1/C2 (2026-09-17): the corpus card and report
+# section, added after this run's own config was first written -- this
+# points it at the already-computed benchmark_validation report for
+# benchmark_large's public_dev split. That report predates item C1.3's
+# writer change (no corpus_digest field), so the card must render it under
+# the explicit "provenance unverified" transitional label rather than
+# either trusting it silently or refusing it -- a real exercise of that
+# specific code path, not just the smoke config's synthetic-corpus one.
+corpus:
+  enabled: true
+  validation_report: ../benchmark_v3/validation_dev/validation_report.json  # relative to tsfm_lens/
+concepts:
+  enabled: true
+  top_k_series: 8          # each feature's own strongest-firing series ablated on
+  n_null_directions: 16    # random-direction null draws per candidate
+  max_series: 64
+  keep_forecasts: 3        # with/without forecast pairs kept for the report overlay
+  n_features_per_rule: 12  # used only for a target with no Stage 2 artifact
+  describe: true           # deterministic sentences into sae/descriptions.json
+  describe_top_features: 8
+  n_registered: 20         # unused while confirm is disabled (kept for the K2 re-enable)
+  agreement_max_tests_per_pair: 60   # opt-in cap on the shared-input agreement step (K3);
+                                     # ranked by reciprocal transfer margin, recorded in
+                                     # sae/shared_input_agreement.json and named in the report
+  # ROADMAP.md sec 37 (concept FAMILIES, sae/concept_families.py): a general,
+  # human-readable layer above the tight atlas concepts (atlas_min_cosine
+  # above). atlas_family_min_members is this layer's own size floor for a
+  # DRAFT family (looser than atlas_min_members since a family is meant to
+  # be coarser than a concept); atlas_family_assign_min is the cosine every
+  # pooled feature must clear against its NEAREST family centroid to be
+  # assigned rather than "idiosyncratic". Both default to the values below;
+  # written explicitly so a reader does not have to know the dataclass
+  # default to see what this preset runs with.
+  atlas_family_min_members: 5
+  atlas_family_assign_min: 0.5
+  # Fewest families whose FINAL-PARTITION silhouette (every assigned row,
+  # cosine) is within this much of the grid's best -- the family space is a
+  # continuum (flat ~0.31-0.34 silhouette across the whole grid), so this is
+  # slack for picking the coarsest defensible cut, not a significance test.
+  atlas_family_sil_tol: 0.02
+
+  # ROADMAP 41.1 controls (all opt-in). The twin run must exist before this stage:
+  # `preflight` refuses a missing control run before the battery starts.
+  negative_control_runs:
+    sundial_random_init: runs/panel7_v3_control_twin   # relative to tsfm_lens/; configs/panel7_v3_control_twin.yaml
+  input_feature_control: true      # destination = raw-context statistics (control_transfer.input_feature_matrix)
+  window_sensitivity: [64, 96]     # multiples of alignment.window (32)
+  tier_breakdown: true

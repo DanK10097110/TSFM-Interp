@@ -104,6 +104,17 @@ def test_corpus_seal_check_fails_on_a_missing_sealed_path():
     print("corpus seal check correctly fails on a missing sealed path")
 
 
+def test_corpus_seal_check_warns_not_fails_on_an_unminted_confirm_path():
+    cfg = _cpu_cfg()
+    cfg.confirm.enabled = True
+    cfg.confirm.source = "sealed"
+    cfg.confirm.path = ""
+    checks = [c for c in _check_corpus_seal(cfg, full=False) if c.name == "confirm corpus"]
+    assert len(checks) == 1
+    assert checks[0].status == "warn"
+    assert "not been minted" in checks[0].detail
+
+
 def test_corpus_seal_check_fails_on_a_directory_missing_manifest_or_corpus(tmp_path):
     cfg = _cpu_cfg()
     cfg.data.source = "sealed"

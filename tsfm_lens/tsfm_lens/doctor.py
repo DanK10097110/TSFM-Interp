@@ -353,6 +353,13 @@ def _check_corpus_seal(cfg: PipelineConfig, full: bool = False) -> list:
             checks.append(DoctorCheck(f"{label} corpus", "pass",
                                       f"source={source!r}; seal verification not applicable"))
             continue
+        if label == "confirm" and not str(path or "").strip():
+            checks.append(DoctorCheck(
+                "confirm corpus", "warn",
+                "confirm.path is empty: the private split has not been minted yet",
+                "mint it only after `register` has recorded the registry hash, then set "
+                "confirm.path and run confirm once"))
+            continue
         p = Path(path)
         if not p.exists():
             checks.append(DoctorCheck(

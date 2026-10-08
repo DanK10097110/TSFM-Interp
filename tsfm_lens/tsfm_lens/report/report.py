@@ -23,7 +23,7 @@ from jinja2 import Template
 from plotly.subplots import make_subplots
 
 from .. import failure_gallery, glossary, methods_appendix, stage_docs
-from . import derived, model_comparison, results_table
+from . import derived, model_comparison, results_table, v3_controls
 from .sanitize import strip_internal_refs, strip_refs_in_place
 from ..config import PipelineConfig
 from ..utils import load_json, log, save_json
@@ -154,9 +154,9 @@ REPORT_PARTS = [
      "models, and concrete per-family case studies.",
      ["SAE", "Concepts", "Exemplars"]),
     ("Part 7 — Robustness and held-out confirmation",
-     "How much of the above depends on one analysis-knob choice, and the "
+     "Negative controls, window-size sensitivity and the per-data-role split, how much of the above depends on one analysis-knob choice, and the "
      "one-shot confirmatory test on the sealed private corpus.",
-     ["Spec curve", "Confirm"]),
+     ["Controls", "Spec curve", "Confirm"]),
 ]
 
 
@@ -282,6 +282,10 @@ def run_report(cfg: PipelineConfig) -> Path:
          "Which of each model's causal features cluster into named concepts, whether another model groups the same series the same way, and how similar every model pair is overall (ROADMAP.md §37 Spec C) -- the evidence behind the compact answer boxes in “At a glance”.",
          [], "concepts",
          lambda: _sec_concepts(cfg, run_dir, findings)),
+        ("Controls", "Controls, robustness and data roles",
+         "Transfer negative controls, window-size sensitivity and the per-data-role breakdown (ROADMAP.md sec 41.1). Opt-in: rendered only when the run produced the artifacts.",
+         [], "concepts",
+         lambda: v3_controls.controls_section_block(cfg, run_dir, findings)),
         ("Exemplars", "Exemplar case studies",
          "A few concrete series per family, told end to end: both forecasts, where each model's answer forms in depth, and where it looks in the context.",
          ["exemplars/exemplars.npz", "exemplars/exemplars.json"], "exemplars",

@@ -89,10 +89,13 @@ from __future__ import annotations
 import time
 from pathlib import Path
 
+from ..analysis.window_sensitivity import run_window_sensitivity, window_sensitivity_path
 from ..utils import load_json, log, save_json, set_seed
 from .ablation_run import check_ablation_null_modes, run_ablation_all
 from .concept_atlas import pooled_features, run_concept_atlas
 from .concepts import run_concepts
+from .control_transfer import (control_transfer_path, controls_configured,
+                               run_control_transfer)
 from .shared_input_agreement import run_shared_input_agreement, shared_input_agreement_path
 from .stability import concept_stability
 from .transfer import run_atlas_transfer, run_transfer
@@ -122,7 +125,9 @@ def preflight_problem(cfg) -> str | None:
     k_top = getattr(cfg.concepts, "agreement_k_top_series", None)
     if k_top is not None and (isinstance(k_top, bool) or not isinstance(k_top, int) or k_top < 2):
         return (f"`concepts.agreement_k_top_series` must be null or an integer >= 2, got {k_top!r}")
-    return None
+    from ..analysis.window_sensitivity import preflight_problem as _window_problem
+    from .control_transfer import preflight_problem as _control_problem
+    return _control_problem(cfg) or _window_problem(cfg)
 
 
 def _trained_targets(run_dir: Path) -> tuple[list, dict]:
@@ -344,6 +349,33 @@ def run_concept_stage(cfg, hub, store, data, device) -> dict:
                            rec["src_model"], rec["dst_model"], fdr_check.status,
                            fdr_check.detail)
 
+    # ROADMAP.md sec 41.1 (opt-in): negative-control destinations and window
+    # sensitivity, both built on the atlas and its transfer test. A block is
+    # recorded only when configured; an unconfigured one removes a stale artifact.
+    extra_blocks: dict = {}
+    if controls_configured(cfg):
+        if atlas_transfer_skip:
+            reason = f"atlas transfer did not run -- {atlas_transfer_skip}"
+            log.warning("concepts: control transfer skipped -- %s", reason)
+            extra_blocks["control_transfer"] = {
+                "status": "skipped", "reason": reason,
+                "removed_stale": _drop_stale(control_transfer_path(run_dir))}
+        else:
+            ct = run_control_transfer(run_dir, atlas, cfg, data)
+            extra_blocks["control_transfer"] = {
+                "status": "ran", "controls": {
+                    n: {k: r[k] for k in ("n_tests", "n_reciprocal", "n_reciprocal_fdr")}
+                    for n, r in ct["controls"].items()}}
+    else:
+        _drop_stale(control_transfer_path(run_dir))
+    if getattr(c, "window_sensitivity", None):
+        ws = run_window_sensitivity(cfg, store, run_dir, atlas, device)
+        extra_blocks["window_sensitivity"] = {
+            "status": "ran", "windows": ws["windows"], "l1": ws["l1"]["status"],
+            "transfer": ws["transfer"]["status"]}
+    else:
+        _drop_stale(window_sensitivity_path(run_dir))
+
     # ROADMAP.md sec 37.8 P5b: cross-model causal agreement, measured on the
     # SAME shared series, for every FDR-surviving reciprocal atlas-transfer
     # test above. Runs after atlas transfer, since its whole unit of work is
@@ -430,7 +462,7 @@ def run_concept_stage(cfg, hub, store, data, device) -> dict:
               "transfer": transfer_block, "describe": describe_block, "atlas": atlas_block,
               "stability": stability_block, "atlas_transfer": atlas_transfer_block,
               "shared_input_agreement": shared_input_block,
-              "profiles": profiles_block, "families": families_block}
+              "profiles": profiles_block, "families": families_block, **extra_blocks}
     save_json(concept_stage_path(cfg), record)
     from ..analysis.battery_robustness import write_battery_robustness
     robustness = write_battery_robustness(run_dir, cfg)
