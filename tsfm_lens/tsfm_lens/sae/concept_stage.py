@@ -464,6 +464,12 @@ def run_concept_stage(cfg, hub, store, data, device) -> dict:
               "shared_input_agreement": shared_input_block,
               "profiles": profiles_block, "families": families_block, **extra_blocks}
     save_json(concept_stage_path(cfg), record)
+    from ..analysis.battery_robustness import write_battery_robustness
+    robustness = write_battery_robustness(run_dir, cfg)
+    if robustness.get("measured"):
+        log.info("concepts: battery robustness written (primary null %s; nulls %s; %d of %d targets "
+                 "admitted and aligned)", robustness["primary_null"], robustness["nulls"],
+                 robustness["restriction"]["n_kept"], robustness["restriction"]["n_targets"])
     log.info("concepts: %d concept(s) across %d target(s) (%d non-modular); transfer %s; "
              "atlas %s; stability %s; atlas transfer %s; shared-input agreement %s; profiles %s; "
              "families %s",

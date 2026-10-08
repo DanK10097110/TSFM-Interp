@@ -205,21 +205,17 @@ layer_screen:
 
 sae:
   enabled: true
-  # Profile-matched battery null (FINDINGS MN-29, ROADMAP sec 38.1.7): each
-  # null draw removes the feature's own per-token amount along a random
-  # decoded direction. The legacy `mean_magnitude` null failed the
-  # known-answer gate on 5/5 seeds; this one passed on 5/5. Field-level on the
-  # concepts stage only, so sae training and every earlier stage stay current.
-  ablation_null: profile_matched
-  # TODO(V3, ROADMAP 41.1): the dual-null battery (both nulls in ONE pass, `profile_matched_cov`
-  # primary, `profile_matched` secondary). The field is being added by another change and is
-  # not on this branch yet (the loader rejects unknown keys), so it stays commented. Uncomment
-  # when it lands:
-  # ablation_nulls: [profile_matched_cov, profile_matched]
-  # TODO(V3): `keep_signed_null_draws` (signed 9-channel per-draw deltas, needed by the
-  # family-presence claim's dev side). `sae/ablation_run.py` accepts it as an argument, but there
-  # is no config field yet; enable it with the same change:
-  # keep_signed_null_draws: true
+  # Dual-null battery (ROADMAP sec 41.1): both nulls in ONE pass, the first is PRIMARY.
+  # `profile_matched_cov` (direction drawn from the chunk's own token covariance) is PRIMARY
+  # for every registered causal / atlas / family claim, decided before V3 data existed;
+  # isotropic `profile_matched` is the secondary, reported beside it. The legacy
+  # `mean_magnitude` null failed the known-answer gate on 5/5 seeds (FINDINGS MN-29).
+  # `ablation_null` must equal the first entry. Field-level on the concepts stage only.
+  ablation_null: profile_matched_cov
+  ablation_nulls: [profile_matched_cov, profile_matched]
+  # Signed 9-channel per-draw deltas (`null_draw_signed_means`), needed by the family-presence
+  # claim's dev side; implies the unsigned per-draw record too.
+  keep_signed_null_draws: true
   # Leave-one-draw-out empirical chance rate per cell (ROADMAP sec 38.1.8):
   # the battery's nominal 0.05 x cells is not a chance line (effect is a mean
   # over k rows vs the p95 of pooled per-row null draws; measured ~2%).

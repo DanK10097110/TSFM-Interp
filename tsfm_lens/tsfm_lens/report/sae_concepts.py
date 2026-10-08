@@ -299,6 +299,101 @@ def empirical_chance_rows(run_dir: Path) -> list:
     return rows
 
 
+def _fc_cell(fc) -> str:
+    """Observed vs the three feature-level chance expectations, one table cell."""
+    if not fc or not fc.get("measured", True) or "observed_clearing_ge1" not in fc:
+        return "not measured"
+    return (f"{fc['observed_clearing_ge1']} observed vs {fc['expected_union_bound']:.2f} "
+            f"union bound / {fc['expected_independent']:.2f} independent / "
+            f"{fc['expected_draw_level']:.2f} draw-level")
+
+
+def battery_robustness_block(run_dir: Path) -> str:
+    """The primary null, the secondary null's headline counts beside it, feature-level
+    chance and the admitted-and-aligned restriction (`sae/battery_robustness.json`,
+    `analysis/battery_robustness.py`). Absent artifact: stated reason, no numbers.
+    The unrestricted rows are always shown; the restricted rows are an extra."""
+    from .report import _note
+
+    doc = _load_json_or_none(Path(run_dir) / "sae" / "battery_robustness.json")
+    out = "<h5>Battery nulls, feature-level chance and restricted targets</h5>"
+    if not isinstance(doc, dict) or not doc.get("measured"):
+        return out + ("<p class='blurb'>Not computed: "
+                      + html.escape(str((doc or {}).get("reason") or "no sae/battery_robustness.json "
+                                        "(the concepts stage writes it)")) + "</p>")
+    primary = doc["primary_null"]
+
+    def row(label, mode, h):
+        if not h["n_targets"]:
+            return (f"<tr><td>{html.escape(label)}</td><td>{html.escape(mode)}</td><td>0</td>"
+                    "<td colspan='4'>no target kept: nothing to count</td></tr>")
+        sig = h.get("target_significance") or {}
+        sig_txt = (f"{sig['n_significant']} of {sig['n_targets']}" if "n_significant" in sig
+                   else "not measured")
+        ratio = h.get("clearing_over_empirical_chance")
+        exp = h.get("expected_cells_empirical")
+        cells = (f"{h['n_clearing_cells']} vs {exp:.2f}" + (f" ({ratio:.2f}x)" if ratio else "")
+                 if exp is not None else f"{h['n_clearing_cells']} (chance not measured)")
+        return ("<tr>" + "".join(f"<td>{c}</td>" for c in [
+            html.escape(label), html.escape(mode), str(h["n_targets"]), cells,
+            str(h["n_causal_features"]), sig_txt, html.escape(_fc_cell(h.get("feature_chance")))])
+            + "</tr>")
+
+    body = ""
+    for mode in doc["nulls"]:
+        role = "primary" if mode == primary else "secondary"
+        body += row(role, mode, doc["by_null"][mode]["headline"])
+    for mode, why in (doc.get("incomplete_nulls") or {}).items():
+        body += (f"<tr><td>secondary</td><td>{html.escape(mode)}</td>"
+                 f"<td colspan='5'>not reported: {html.escape(why)}</td></tr>")
+    res = doc["restriction"]
+    for mode in doc["nulls"]:
+        body += row("restricted: admitted + aligned", mode,
+                    doc["restricted"]["headline_by_null"][mode])
+    out += _note(
+        "Shows the battery headline under the PRIMARY null (every concept, atlas, family and "
+        "transfer result is built on it) and under the secondary null beside it, and the same "
+        "counts over only the targets whose SAE passed the admission gate and whose alignment-gate "
+        "diagonal hit at that layer is at the gate bar.",
+        "Clearing cells are read against the leave-one-draw-out empirical expectation. A feature "
+        "has up to 9 chances to clear a channel, so the feature-level cell gives the observed "
+        "number of features clearing at least one channel against three expectations: the union "
+        "bound (sum of per-channel rates, an upper bound under any channel dependence), the "
+        "independent-channel product, and a draw-level estimate where each null draw is scored "
+        "as a pseudo-feature on all channels jointly.",
+        "Descriptive. The restricted rows drop whole targets; unrestricted rows are never "
+        "removed. A target with an unmeasured admission or alignment verdict is not kept.")
+    out += ("<table class='tbl'><thead><tr><th>set</th><th>null</th><th>targets</th>"
+            "<th>clearing cells vs empirical chance</th><th>causal features</th>"
+            "<th>BH-significant targets</th><th>features clearing &ge;1 channel vs chance</th>"
+            f"</tr></thead><tbody>{body}</tbody></table>")
+    out += (f"<p class='blurb'>Primary null: <code>{html.escape(primary)}</code>. Restriction: "
+            f"{res['n_kept']} of {res['n_targets']} targets kept ({res['n_admitted']} admitted, "
+            f"{res['n_aligned']} aligned; {res['n_admission_undecided']} admission undecided, "
+            f"{res['n_alignment_unmeasured']} alignment unmeasured).</p>")
+    mem = doc["restricted"]["membership"]
+    if mem.get("atlas"):
+        a = mem["atlas"]
+        out += (f"<p class='blurb'>Atlas restricted to kept targets (membership restriction, not a "
+                f"re-clustering): {a['n_concepts_surviving']} of {a['n_concepts']} concepts keep "
+                f"&ge;{a['min_members']} members ({a['n_multi_model_surviving']} of "
+                f"{a['n_multi_model']} multi-model concepts keep &ge;2 models); "
+                f"{a['n_features_kept']} of {a['n_features']} features kept.</p>")
+    if mem.get("families"):
+        f = mem["families"]
+        out += (f"<p class='blurb'>Families restricted to kept targets: "
+                f"{f['n_families_surviving']} of {f['n_families']} keep &ge;{f['min_members']} "
+                f"members; {f['n_features_kept']} of {f['n_features']} features kept.</p>")
+    rows = "".join(
+        f"<tr><td>{html.escape(k)}</td><td>{v['admitted']}</td><td>{v['aligned']}</td>"
+        f"<td>{html.escape(str(v['alignment'].get('reason')))}</td><td>{v['kept']}</td></tr>"
+        for k, v in res["targets"].items())
+    out += ("<details><summary>Per-target admission and alignment</summary><table class='tbl'>"
+            "<thead><tr><th>target</th><th>admitted</th><th>aligned</th><th>alignment</th>"
+            f"<th>kept</th></tr></thead><tbody>{rows}</tbody></table></details>")
+    return out
+
+
 def empirical_chance_block(run_dir: Path) -> str:
     """Per-target table of clearing cells against the empirical chance expectation.
 
@@ -766,6 +861,7 @@ def sae_concepts_block(cfg, run_dir: Path, findings: list, model_names: list,
 
     inner += row_coverage_block(run_dir)
     inner += empirical_chance_block(run_dir)
+    inner += battery_robustness_block(run_dir)
 
     # -------- block 1: universality + transfer heatmap --------
     # ROADMAP.md sec 37 Spec C item F: this per-TARGET unit (a concept lives
