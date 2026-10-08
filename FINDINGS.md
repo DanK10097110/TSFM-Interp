@@ -96,6 +96,7 @@ These instructions are binding for every future session, human or agent.
 | SH-16 | No concept is shared by all 4 models; the multi-model pattern is **convergent** effect from different inputs. **Under the matched null (MN-29) the convergent class vanishes (13 → 0 on v2); superseded pending the power check** | 5 |
 | MN-30 | The L5 'same causal effect' rung is specific (0/9 decoys) but insensitive on a known answer (0.4 / 0.0 on planted shared concepts across architectures); cross-architecture absences are uninformative |  5 |
 | MN-32 | A subspace redesign of the shared-input agreement test fails its pre-fixed gate (sens 0.5 / 0.375, 0/14 false agree); even the planted distributed subspace does not clear a size-matched null, so per-series cross-architecture effect agreement is not measurable at these effect sizes |  4 |
+| MN-33 | Family-presence claim fails its pre-fixed known-answer gate (best held-out sensitivity 0.42, 0 false claims); universal effect families stay descriptive, not registered |  3 |
 | SH-22 | At 7 models under the matched null, the atlas is **segregated by model** (cross-model mixing below chance, p 0.025). The full same-effect verdict (7/1290) is one Chronos-2 ↔ Chronos-Bolt concept, but 1053 tests are underpowered and partial agreement crosses families (level only 35, shape only 9); the strict rung's sensitivity is unmeasured | 5 |
 | SH-18 | Held-out: 19/20 searched and **20/20 frozen-feature** concept-transfer claims confirm on fresh sealed private epochs; **20/20 again at 7 models on a fourth private draw** | 5 |
 | CA-11 | Held-out (K2, 7 models): 10/31 single-feature causal claims confirm; **0** cross-model causal claims do (atlas 0/3 multi-model, L5 0/6); models share what they select, not demonstrably what they do | 5 |
@@ -1606,6 +1607,16 @@ See SH-20. **4/5.**
 - **Reproduce.** `run_l5_known_answer.py` then `run_l5_subspace_known_answer.py` with `configs/l5_known_answer_v3.yaml` (merge e72e93e); gate in `analysis/l5_subspace_gate.py`.
 - **Ref.** ROADMAP §41.2.
 - **Score. 4/5.** Closes the question MN-30 left open: the instrument, not the data size, is the limit.
+
+#### MN-33 · "Model m has causal features of effect family F beyond chance" fails its pre-fixed known-answer gate under both nulls
+- **Claim.** V3-B family-presence claim, gate committed before any result (27e8e8b): K1-scale `mock_planted` (600 series, dose 1), family centroids from recovered planted atoms, held-out seeds 1–4, one-shot confirm on the sealed private_test split; sensitivity ≥ 0.8 over planted (family, model) pairs, false-claim ≤ 0.05 over absent pairs plus a loud same-shaped decoy null.
+  - `profile_matched`, count statistic: sensitivity 0.1667 (6/36), false 1/45. `profile_matched_cov`: 0.0556 (2/36), false 0/54. V1 (min_cosine 0.7): 0.0278, false 0/28. V2 (at-least-one statistic): 0.4167 (15/36), false 0/45. **All FAIL.**
+  - Diagnosis: about 10 testable features per pair on a 64-series private sample, and random directions already put 16–40% of features at cosine ≥ 0.5 to a family centroid; 11/33 pairs had raw p < 0.05 but only 6 survived Holm.
+- **Reading.** Specific but underpowered. "Every model has level-raising, level-lowering and seasonality-damping causal features" (CA-10 addendum) stays a descriptive, exploratory statement; it is not registered in V3 (`panel7_v3.yaml` has `register_family_presence_claims: false`).
+- **Evidence.** Known-answer validation of a method. **Status:** negative (closed: two declared variants tried).
+- **Reproduce.** `run_family_presence_known_answer.py`, `configs/family_presence_known_answer.yaml`, gate `analysis/family_presence_gate.py` (merge 729b739).
+- **Ref.** ROADMAP §41.4.
+- **Score. 3/5.**
 
 ## H. Benchmark trust
 

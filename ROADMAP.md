@@ -39295,3 +39295,13 @@ non-smooth series), exact-hash and near-duplicate checks kept against all dev; `
 - In progress in parallel: V3-E1 (dual-null battery `by_null`, feature-level chance, admitted/aligned-restricted
   results) and V3-E2 (random-init twin + input-feature transfer controls, window 64/96 sensitivity, per-role breakdown,
   `configs/panel7_v3.yaml`, disk plan).
+
+### 41.4 Findings — family-presence gate (2026-10-07, merged 729b739) and V3 run start
+
+- Family presence FAILS its pre-fixed gate on held-out seeds (primary 0.1667, cov 0.0556, V1 0.0278, V2 0.4167; ≤ 1/45
+  false claims). Not registered in V3 (FINDINGS MN-33). V3's registered claim types: the panel7_v2 set + concept
+  atlas centroid (min_members 3) under `profile_matched_cov` primary, + the external-real leg.
+- Dev/confirm statistic inconsistency (partition vs cosine dev basis) fixed; unmeasured-stability crash fixed.
+- **V3 run started 2026-10-07 ~21:35 EDT:** `panel7_v3_dev` stages corpus→sae on GPU 0, twin control
+  `panel7_v3_control_twin` (extract, layer_screen, sae) on GPU 1, detached (`runs/_logs/launch_v3.sh`, logs in
+  `runs/_logs/`). Doctor 30 pass / 5 warn / 0 fail.

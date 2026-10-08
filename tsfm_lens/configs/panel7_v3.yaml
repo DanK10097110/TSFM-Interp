@@ -285,7 +285,9 @@ confirm:
   register_reliability_claims: true
   reliability_dev_json: reliability_panel7_v3.json  # dev K4 JSON from run_reliability_from_internals.py,
                                                     # copied into the run directory; sha256 pinned at registration
-  register_family_presence_claims: true     # V3-B: "model m has causal features in effect family F beyond chance"
+  register_family_presence_claims: false    # V3-B family presence FAILED its pre-fixed known-answer gate
+                                            # (FINDINGS MN-33: best held-out sensitivity 0.42 < 0.8), so it
+                                            # backs no registered claim; universal families stay descriptive
   register_atlas_centroid_claims: true      # V3-B: seed-stable multi-model atlas concepts, centroid cosine test
   atlas_centroid_min_members: 3
   primary_null: profile_matched_cov         # ROADMAP 41.1: the stricter on-manifold null is primary for
