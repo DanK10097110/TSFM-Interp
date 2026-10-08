@@ -194,3 +194,21 @@ def test_config_ablation_nulls():
     with pytest.raises(ValueError, match="unknown null"):
         config_from_dict({"sae": {"ablation_nulls": ["bogus"], "ablation_null": "bogus"}})
     assert cfg_null_mode(c) == PRIMARY and cfg_extra_null_modes(c) == [SECOND]
+
+
+def test_a_silent_atom_still_carries_a_by_null_block(wired):
+    """Decoy: atom 5 is silent on every series, so it is unscorable. A reader asking
+    for the secondary null must still find a block (`scorable: False`) instead of
+    `NullModeUnavailable`. Planted regression: dropping the block for unscorable
+    candidates makes the contract reader raise on them."""
+    from tests.test_profile_matched_null import Z_ALL, _Cfg, _Data, _SAE
+    acts = Z_ALL.max(axis=1).astype(np.float64)
+    acts[:, 5] = 0.0
+    out = R.feature_ablation_fingerprints(
+        _Cfg, wired, "blocks.0", _SAE(), _Data(), "cpu",
+        candidates=[{"feature": f, "rules": []} for f in range(DICT)], activations=acts,
+        top_k_series=3, n_null_directions=4, null_mode=PRIMARY, extra_null_modes=(SECOND,))
+    silent = out["candidates"][5]
+    assert silent["scorable"] is False
+    assert fc.candidate_for_null(silent, SECOND, PRIMARY)["scorable"] is False
+    assert out["candidates"][6]["by_null"][SECOND]["scorable"] is True
