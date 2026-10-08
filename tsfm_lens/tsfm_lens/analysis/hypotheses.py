@@ -216,6 +216,25 @@ _KNOB_FAMILY_EMPTY_REASON = (
     "by omission: no private counterfactual path is built.")
 
 
+def _stable_concept_ids(stab: dict) -> tuple:
+    """`(set of seed-stable concept ids, sorted ids whose stability was not measured)`.
+
+    `concept_stability.json` holds a dict `stability` per concept when the
+    replicate SAEs ran, and a "not measured" string when they did not. A concept
+    without a measured stability is not seed-stable (nothing says it is), so it
+    is left out of every stable-concept set, and the caller states how many
+    were skipped for that reason instead of crashing on the string."""
+    stable, unmeasured = set(), []
+    for c in stab.get("concepts") or []:
+        st = c.get("stability")
+        if isinstance(st, dict):
+            if st.get("stable") is True:
+                stable.add(int(c["concept"]))
+        elif st is not None:
+            unmeasured.append(int(c["concept"]))
+    return stable, sorted(unmeasured)
+
+
 def _concept_transfer_candidates(run_dir: Path, concepts_cfg) -> dict:
     """Rank every reciprocal-FDR, seed-stable atlas-transfer test by its dev
     AUC margin, and record the full ranking plus the registration cut.
@@ -248,8 +267,7 @@ def _concept_transfer_candidates(run_dir: Path, concepts_cfg) -> dict:
     at = load_json(at_path)
     atlas = load_json(atlas_path)
     stability = load_json(stab_path)
-    stable_ids = {int(c["concept"]) for c in (stability.get("concepts") or [])
-                 if (c.get("stability") or {}).get("stable") is True}
+    stable_ids, unmeasured = _stable_concept_ids(stability)
 
     parts: dict = {}
     for r in atlas.get("rows") or []:
@@ -286,7 +304,13 @@ def _concept_transfer_candidates(run_dir: Path, concepts_cfg) -> dict:
     candidates.sort(key=lambda c: (-c["dev_auc_margin"], c["concept"],
                                    c["src_target"], c["dst_target"]))
     cut = min(n_reg, len(candidates))
-    return {"candidates": candidates, "cut": cut, "n_registered_cfg": n_reg}
+    out = {"candidates": candidates, "cut": cut, "n_registered_cfg": n_reg}
+    if unmeasured:
+        out["stability_not_measured"] = unmeasured
+        out["reason"] = (f"{len(unmeasured)} atlas concept(s) have no measured seed stability "
+                         f"(concept_stability.json holds a non-dict `stability`) and are not "
+                         f"seed-stable, so none of their transfers is a candidate")
+    return out
 
 
 def _concept_transfer_frozen_entries(run_dir: Path, cfg: PipelineConfig, ranking: dict) -> list:
@@ -515,8 +539,7 @@ def _stable_atlas_members(run_dir: Path) -> tuple:
     if not atlas_p.exists() or not stab_p.exists():
         return set(), {}, []
     atlas, stab = load_json(atlas_p), load_json(stab_p)
-    stable_ids = {int(c["concept"]) for c in (stab.get("concepts") or [])
-                  if (c.get("stability") or {}).get("stable") is True}
+    stable_ids, _unmeasured = _stable_concept_ids(stab)
     members, concept_of = set(), {}
     for r in atlas.get("rows") or []:
         cid = r.get("concept")
@@ -771,8 +794,8 @@ def _atlas_candidates(run_dir: Path, cfg: PipelineConfig, sig: dict | None = Non
     if not atlas_p.exists() or not stab_p.exists():
         return [], {"reason": "concept atlas artifacts not found"}
     atlas, stab = load_json(atlas_p), load_json(stab_p)
-    stable_ids = sorted({int(c["concept"]) for c in (stab.get("concepts") or [])
-                        if (c.get("stability") or {}).get("stable") is True})
+    stable_set, unmeasured = _stable_concept_ids(stab)
+    stable_ids = sorted(stable_set)
     vectors = _dev_vectors(run_dir, null_mode)
     params = atlas.get("params") or {}
     hasher = _Hasher(run_dir)
@@ -815,6 +838,10 @@ def _atlas_candidates(run_dir: Path, cfg: PipelineConfig, sig: dict | None = Non
             "replicable": True,
         })
     summary = {"n_stable_concepts": len(stable_ids), "n_registered": len(entries)}
+    if unmeasured:
+        summary["n_stability_not_measured"] = len(unmeasured)
+        summary["reason"] = (f"{len(unmeasured)} atlas concept(s) have no measured seed stability "
+                             f"and are not registered")
     if sig is not None:
         summary.update({"n_before_gate": len(entries) + len(excluded),
                         "n_after_gate": len(entries), "excluded": excluded})
@@ -1163,11 +1190,13 @@ def _family_presence_entries(run_dir: Path, cfg: PipelineConfig,
     very set the families were cut from); a target the significance gate
     removes drops out of the claim's feature list, and a model left with none
     is not registered. Dev support is the number of those features whose dev
-    vector has cosine >= the family threshold to the family centroid when the
-    dev ablation artifacts are present (`dev_basis: "cosine"`), else the
-    family partition's own per-model member count (`dev_basis: "partition"`):
-    the claim's statistic is the first, so the second is a stated fallback
-    for a run whose heavy artifacts were pruned.
+    vector has cosine >= the family threshold to the family centroid, over the
+    features that have a dev vector (`dev_basis: "cosine"`, `dev_n_with_vector`
+    of them; the statistic confirm recomputes is this very cosine count, so dev
+    and confirm share one basis), else, only when NO feature of the model has a
+    dev vector (a run whose ablation artifacts were pruned), the family
+    partition's own per-model member count (`dev_basis: "partition"`, a stated
+    fallback).
 
     The family centroids live in the space of the null the families were cut
     under (the run's `sae.ablation_null`); a `confirm.primary_null` that names
@@ -1218,7 +1247,7 @@ def _family_presence_entries(run_dir: Path, cfg: PipelineConfig,
                 continue
             have = [(l, f) for l, fs in kept.items() for f in fs
                     if (model, l, f) in vectors]
-            if have and len(have) == sum(len(v) for v in kept.values()):
+            if have:
                 cosines = [float(unit(np.asarray(vectors[(model, l, f)])) @ c) for l, f in have]
                 dev_count, basis = int(sum(x >= thr for x in cosines)), "cosine"
             else:
@@ -1241,6 +1270,7 @@ def _family_presence_entries(run_dir: Path, cfg: PipelineConfig,
                 "dev_centroid": [float(v) for v in c], "min_cosine": thr,
                 "dev_count": dev_count, "dev_basis": basis,
                 "dev_partition_count": int(partition.get(fid, {}).get(model, 0)),
+                "dev_n_with_vector": len(have),
                 "k_top_series": int(cfg.concepts.top_k_series),
                 "n_null_directions": int(
                     cfg.confirm.family_presence_n_null_directions
