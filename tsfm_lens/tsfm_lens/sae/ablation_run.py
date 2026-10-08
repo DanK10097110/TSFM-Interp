@@ -92,7 +92,8 @@ def run_ablation_target(cfg, run_dir: Path, hub, data, store, device, model: str
                         candidates: list | None = None,
                         activations: np.ndarray | None = None,
                         keep_null_draws: bool = False,
-                        empirical_chance: bool = False) -> dict:
+                        empirical_chance: bool = False,
+                        keep_signed_null_draws: bool = False) -> dict:
     """The ablation fingerprint for one target. Returns the artifact dict; a
     target with no checkpoint returns a `skipped` record rather than raising,
     so one missing dictionary does not stop the other targets.
@@ -113,6 +114,8 @@ def run_ablation_target(cfg, run_dir: Path, hub, data, store, device, model: str
       `data`'s own series. `None` encodes the dev store's series rows, which
       only lines up with `data` when `data` IS the dev corpus.
     - `keep_null_draws`: forwarded to `feature_ablation_fingerprints`.
+    - `keep_signed_null_draws` (ROADMAP.md sec 41, V3-B): also forwarded; the
+      signed null draws the family-presence claims score against.
     """
     run_dir = Path(run_dir)
     ckpt_path = checkpoint_path(run_dir, model, layer)
@@ -161,12 +164,18 @@ def run_ablation_target(cfg, run_dir: Path, hub, data, store, device, model: str
         log.warning(f"ablation: no ground-truth periods ({e}); seasonal channel "
                     f"unavailable for every candidate")
 
+    if getattr(cfg.sae, "keep_signed_null_draws", False):
+        keep_null_draws = keep_signed_null_draws = True
+
     result = feature_ablation_fingerprints(
         cfg, adapter, layer, sae, data, device, candidates, activations,
         top_k_series=top_k_series, n_null_directions=n_null_directions,
         max_series=max_series, floor=floor, periods_full=periods_full,
         keep_forecasts=keep_forecasts, keep_null_draws=keep_null_draws,
+        **({"keep_signed_null_draws": True} if keep_signed_null_draws else {}),
         null_mode=cfg_null_mode(cfg),
+        **({"extra_null_modes": tuple(cfg_extra_null_modes(cfg))}
+           if cfg_extra_null_modes(cfg) else {}),
         empirical_chance=bool(empirical_chance or getattr(cfg.sae, "ablation_empirical_chance", False)))
 
     if result.get("withheld"):
@@ -208,6 +217,14 @@ def cfg_null_mode(cfg) -> str:
     with no such attribute (an older checkout's) is the legacy null, the same
     reading every other reader uses; a real `SAEConfig` always has the field."""
     return str(getattr(getattr(cfg, "sae", None), "ablation_null", LEGACY_NULL) or LEGACY_NULL)
+
+
+def cfg_extra_null_modes(cfg) -> list:
+    """The secondary nulls of a dual-null battery (`sae.ablation_nulls`, ROADMAP.md
+    sec 41.1): every listed mode except the primary. `[]` for a single-null run."""
+    nulls = getattr(getattr(cfg, "sae", None), "ablation_nulls", ()) or ()
+    primary = cfg_null_mode(cfg)
+    return [m for m in nulls if m != primary]
 
 
 def artifact_null_mode(art: dict) -> str:

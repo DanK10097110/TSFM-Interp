@@ -216,6 +216,25 @@ _KNOB_FAMILY_EMPTY_REASON = (
     "by omission: no private counterfactual path is built.")
 
 
+def _stable_concept_ids(stab: dict) -> tuple:
+    """`(set of seed-stable concept ids, sorted ids whose stability was not measured)`.
+
+    `concept_stability.json` holds a dict `stability` per concept when the
+    replicate SAEs ran, and a "not measured" string when they did not. A concept
+    without a measured stability is not seed-stable (nothing says it is), so it
+    is left out of every stable-concept set, and the caller states how many
+    were skipped for that reason instead of crashing on the string."""
+    stable, unmeasured = set(), []
+    for c in stab.get("concepts") or []:
+        st = c.get("stability")
+        if isinstance(st, dict):
+            if st.get("stable") is True:
+                stable.add(int(c["concept"]))
+        elif st is not None:
+            unmeasured.append(int(c["concept"]))
+    return stable, sorted(unmeasured)
+
+
 def _concept_transfer_candidates(run_dir: Path, concepts_cfg) -> dict:
     """Rank every reciprocal-FDR, seed-stable atlas-transfer test by its dev
     AUC margin, and record the full ranking plus the registration cut.
@@ -248,8 +267,7 @@ def _concept_transfer_candidates(run_dir: Path, concepts_cfg) -> dict:
     at = load_json(at_path)
     atlas = load_json(atlas_path)
     stability = load_json(stab_path)
-    stable_ids = {int(c["concept"]) for c in (stability.get("concepts") or [])
-                 if (c.get("stability") or {}).get("stable") is True}
+    stable_ids, unmeasured = _stable_concept_ids(stability)
 
     parts: dict = {}
     for r in atlas.get("rows") or []:
@@ -286,7 +304,13 @@ def _concept_transfer_candidates(run_dir: Path, concepts_cfg) -> dict:
     candidates.sort(key=lambda c: (-c["dev_auc_margin"], c["concept"],
                                    c["src_target"], c["dst_target"]))
     cut = min(n_reg, len(candidates))
-    return {"candidates": candidates, "cut": cut, "n_registered_cfg": n_reg}
+    out = {"candidates": candidates, "cut": cut, "n_registered_cfg": n_reg}
+    if unmeasured:
+        out["stability_not_measured"] = unmeasured
+        out["reason"] = (f"{len(unmeasured)} atlas concept(s) have no measured seed stability "
+                         f"(concept_stability.json holds a non-dict `stability`) and are not "
+                         f"seed-stable, so none of their transfers is a candidate")
+    return out
 
 
 def _concept_transfer_frozen_entries(run_dir: Path, cfg: PipelineConfig, ranking: dict) -> list:
@@ -515,8 +539,7 @@ def _stable_atlas_members(run_dir: Path) -> tuple:
     if not atlas_p.exists() or not stab_p.exists():
         return set(), {}, []
     atlas, stab = load_json(atlas_p), load_json(stab_p)
-    stable_ids = {int(c["concept"]) for c in (stab.get("concepts") or [])
-                  if (c.get("stability") or {}).get("stable") is True}
+    stable_ids, _unmeasured = _stable_concept_ids(stab)
     members, concept_of = set(), {}
     for r in atlas.get("rows") or []:
         cid = r.get("concept")
@@ -727,14 +750,24 @@ def _concept_causal_entries(run_dir: Path, cfg: PipelineConfig,
     return entries, summary
 
 
-def _dev_vectors(run_dir: Path) -> dict:
+def _dev_vectors(run_dir: Path, null_mode: str | None = None) -> dict:
     """`{(model, layer, feature): 9-vector}` of the dev ablation vectors
-    (`sae/concepts.py::ablation_vector`, never re-derived here)."""
+    (`sae/concepts.py::ablation_vector`, never re-derived here).
+
+    `null_mode` (ROADMAP.md sec 41.1; default `None` = the artifact's own null,
+    byte-identical to before) reads each candidate under that null through
+    `family_claims.candidate_for_null`, which raises `NullModeUnavailable`
+    rather than substituting another null's vectors."""
+    from ..sae.ablation_run import artifact_null_mode
     from ..sae.concepts import ablation_vector
+    from .family_claims import candidate_for_null
 
     out = {}
     for model, layer, art, _path in _dev_ablation_targets(run_dir):
+        own = artifact_null_mode(art)
         for c in art.get("candidates") or []:
+            if null_mode:
+                c = candidate_for_null(c, null_mode, own)
             if c.get("scorable"):
                 vec = ablation_vector(c)
                 if vec is not None:
@@ -742,7 +775,8 @@ def _dev_vectors(run_dir: Path) -> dict:
     return out
 
 
-def _atlas_candidates(run_dir: Path, cfg: PipelineConfig, sig: dict | None = None) -> tuple:
+def _atlas_candidates(run_dir: Path, cfg: PipelineConfig, sig: dict | None = None,
+                      null_mode: str | None = None) -> tuple:
     """`concept_atlas::{concept}` -- "this seed-stable atlas concept's
     members still form a concept on private data". One claim per stable
     dev concept (an atlas concept id is global across models, so it is
@@ -760,9 +794,9 @@ def _atlas_candidates(run_dir: Path, cfg: PipelineConfig, sig: dict | None = Non
     if not atlas_p.exists() or not stab_p.exists():
         return [], {"reason": "concept atlas artifacts not found"}
     atlas, stab = load_json(atlas_p), load_json(stab_p)
-    stable_ids = sorted({int(c["concept"]) for c in (stab.get("concepts") or [])
-                        if (c.get("stability") or {}).get("stable") is True})
-    vectors = _dev_vectors(run_dir)
+    stable_set, unmeasured = _stable_concept_ids(stab)
+    stable_ids = sorted(stable_set)
+    vectors = _dev_vectors(run_dir, null_mode)
     params = atlas.get("params") or {}
     hasher = _Hasher(run_dir)
     entries, excluded = [], []
@@ -804,6 +838,10 @@ def _atlas_candidates(run_dir: Path, cfg: PipelineConfig, sig: dict | None = Non
             "replicable": True,
         })
     summary = {"n_stable_concepts": len(stable_ids), "n_registered": len(entries)}
+    if unmeasured:
+        summary["n_stability_not_measured"] = len(unmeasured)
+        summary["reason"] = (f"{len(unmeasured)} atlas concept(s) have no measured seed stability "
+                             f"and are not registered")
     if sig is not None:
         summary.update({"n_before_gate": len(entries) + len(excluded),
                         "n_after_gate": len(entries), "excluded": excluded})
@@ -1108,6 +1146,214 @@ def _concept_claim_entries(run_dir: Path, cfg: PipelineConfig) -> tuple:
 
 
 # ---------------------------------------------------------------------------
+# ROADMAP.md sec 41 (V3-B) -- two further opt-in claim types, each its own Holm
+# family and each registered independently of `register_concept_claims`.
+#
+#   `family_presence::{family}::{model}` -- "model m has causal features whose
+#       effect vector lies in effect family F beyond chance"; frozen from
+#       `sae/concept_families.json` (centroids, threshold, membership rows).
+#   `concept_atlas_centroid::{concept}` -- the legacy atlas claim without its
+#       member-pair leg, for multi-model concepts with >= N members.
+#
+# Both record the ablation null they are scored against (`null_mode`,
+# ROADMAP.md sec 41.1), read from `confirm.primary_null` (default: the run's
+# own null).
+# ---------------------------------------------------------------------------
+
+FAMILY_PRESENCE_STAGE = "family_presence"
+ATLAS_CENTROID_STAGE = "concept_atlas_centroid"
+V3_CLAIM_STAGES = (FAMILY_PRESENCE_STAGE, ATLAS_CENTROID_STAGE)
+
+
+def _family_presence_id(family: int, model: str) -> str:
+    return f"{FAMILY_PRESENCE_STAGE}::{int(family)}::{model}"
+
+
+def v3_null_mode(cfg: PipelineConfig) -> str:
+    """The ablation null the V3-B claims are scored against: `confirm.
+    primary_null` when set, else the run's own `sae.ablation_null`. An unknown
+    name raises."""
+    from ..sae.ablation_run import cfg_null_mode
+    from ..sae.response import ABLATION_NULL_MODES
+
+    mode = str(getattr(cfg.confirm, "primary_null", "") or "") or cfg_null_mode(cfg)
+    if mode not in ABLATION_NULL_MODES:
+        raise ValueError(f"confirm.primary_null {mode!r} is not one of {ABLATION_NULL_MODES}")
+    return mode
+
+
+def _family_presence_entries(run_dir: Path, cfg: PipelineConfig,
+                             sig: dict | None = None) -> tuple:
+    """`-> (entries, summary)`. One claim per (family, model) with at least
+    `confirm.family_presence_min_dev` dev support. The model's causal features
+    are the rows of `concept_families.json` (the pooled causal features, the
+    very set the families were cut from); a target the significance gate
+    removes drops out of the claim's feature list, and a model left with none
+    is not registered. Dev support is the number of those features whose dev
+    vector has cosine >= the family threshold to the family centroid, over the
+    features that have a dev vector (`dev_basis: "cosine"`, `dev_n_with_vector`
+    of them; the statistic confirm recomputes is this very cosine count, so dev
+    and confirm share one basis), else, only when NO feature of the model has a
+    dev vector (a run whose ablation artifacts were pruned), the family
+    partition's own per-model member count (`dev_basis: "partition"`, a stated
+    fallback).
+
+    The family centroids live in the space of the null the families were cut
+    under (the run's `sae.ablation_null`); a `confirm.primary_null` that names
+    another null cannot reuse them, so registration refuses rather than mixing
+    spaces."""
+    from ..sae.ablation_run import ablation_path, cfg_null_mode, checkpoint_path
+    from .family_claims import family_centroids, unit
+
+    path = run_dir / "sae" / "concept_families.json"
+    if not path.exists():
+        return [], {"reason": "sae/concept_families.json not found"}
+    doc = load_json(path)
+    if not doc.get("measured"):
+        return [], {"reason": "concept families were not measured on this run"}
+    null_mode = v3_null_mode(cfg)
+    if null_mode != cfg_null_mode(cfg):
+        raise ValueError(
+            f"family_presence claims are scored against {null_mode!r} but "
+            f"sae/concept_families.json was cut under the run's sae.ablation_null "
+            f"{cfg_null_mode(cfg)!r}; its centroids are in that null's space. Re-run "
+            f"the concepts stage with sae.ablation_null: {null_mode} (the families are "
+            f"then rebuilt in the right space) before registering")
+    min_dev = int(cfg.confirm.family_presence_min_dev)
+    thr = float((doc.get("params") or {}).get("assign_min", 0.5))
+    centroids = family_centroids(doc)
+    vectors = _dev_vectors(run_dir)
+    titles = {int(f["family"]): f.get("title") for f in doc.get("families") or []}
+    partition = {int(f["family"]): {str(m): int(n) for m, n in (f.get("models") or {}).items()}
+                 for f in doc.get("families") or []}
+
+    by_model: dict = {}
+    for r in doc.get("rows") or []:
+        by_model.setdefault(str(r["model"]), {}).setdefault(str(r["layer"]), []).append(
+            int(r["feature"]))
+    hasher = _Hasher(run_dir)
+    entries, excluded, below = [], [], []
+    for fid in sorted(centroids):
+        c = centroids[fid]
+        for model in sorted(by_model):
+            layers = by_model[model]
+            kept = {l: sorted(fs) for l, fs in layers.items()
+                    if _target_ok(sig, f"{model}/{l}")}
+            if len(kept) < len(layers) and sig is not None:
+                excluded.append(_exclusion(sig, _family_presence_id(fid, model),
+                                           FAMILY_PRESENCE_STAGE,
+                                           [f"{model}/{l}" for l in layers if l not in kept]))
+            if not kept:
+                continue
+            have = [(l, f) for l, fs in kept.items() for f in fs
+                    if (model, l, f) in vectors]
+            if have:
+                cosines = [float(unit(np.asarray(vectors[(model, l, f)])) @ c) for l, f in have]
+                dev_count, basis = int(sum(x >= thr for x in cosines)), "cosine"
+            else:
+                dev_count, basis = int(partition.get(fid, {}).get(model, 0)), "partition"
+            if dev_count < min_dev:
+                below.append({"id": _family_presence_id(fid, model), "dev_count": dev_count})
+                continue
+            targets = {f"{model}/{l}": fs for l, fs in sorted(kept.items())}
+            arts = hasher.many(
+                [path] + [p for l in kept
+                          for p in (ablation_path(run_dir, model, l),
+                                    checkpoint_path(run_dir, model, l))])
+            n_feat = sum(len(v) for v in targets.values())
+            entries.append({
+                "id": _family_presence_id(fid, model),
+                "stage": FAMILY_PRESENCE_STAGE, "family": FAMILY_PRESENCE_STAGE,
+                "statistic": "count_of_features_with_cosine_to_family_centroid_ge_threshold",
+                "family_id": int(fid), "family_title": titles.get(fid), "model": model,
+                "targets": targets, "n_features": n_feat,
+                "dev_centroid": [float(v) for v in c], "min_cosine": thr,
+                "dev_count": dev_count, "dev_basis": basis,
+                "dev_partition_count": int(partition.get(fid, {}).get(model, 0)),
+                "dev_n_with_vector": len(have),
+                "k_top_series": int(cfg.concepts.top_k_series),
+                "n_null_directions": int(
+                    cfg.confirm.family_presence_n_null_directions
+                    or cfg.concepts.n_null_directions),
+                "null_mode": null_mode,
+                "artifact": "sae/concept_families.json",
+                "artifact_sha256": arts["sae/concept_families.json"], "artifacts": arts,
+                "statement": (f"{model} has causal features whose effect vector lies in effect "
+                              f"family {fid} ({titles.get(fid)!r}) -- cosine to the family's dev "
+                              f"centroid >= {thr} -- more often than random-direction ablations "
+                              f"of the same size on the same series (null {null_mode}; dev count "
+                              f"{dev_count} of {n_feat} causal features)."),
+                "replicable": True,
+            })
+    summary = {"n_registered": len(entries), "min_dev": min_dev, "min_cosine": thr,
+               "null_mode": null_mode, "n_families": len(centroids), "n_models": len(by_model),
+               "n_below_min_dev": len(below), "ids": [e["id"] for e in entries]}
+    if sig is not None:
+        summary.update({"n_excluded_by_gate": len(excluded), "excluded": excluded})
+    return entries, summary
+
+
+def _atlas_centroid_entries(atlas_entries: list, min_members: int, null_mode: str) -> tuple:
+    """`-> (entries, summary)` from the legacy `concept_atlas` entries
+    (`_atlas_candidates`): the seed-stable concepts with >= `min_members`
+    members spanning >= 2 models, re-registered as
+    `concept_atlas_centroid::{concept}` with the SAME frozen members and
+    `min_cosine`, the dev centroid (and member vectors) read under `null_mode`,
+    and no pair-fraction leg. The legacy claim stays registered beside it,
+    unchanged."""
+    entries, below = [], []
+    for e in atlas_entries:
+        n, n_models = len(e["members"]), len(e["models"])
+        if n < min_members or n_models < 2:
+            below.append({"concept": e["concept"], "n_members": n, "n_models": n_models})
+            continue
+        entries.append({
+            **{k: v for k, v in e.items() if k not in ("id", "stage", "family", "statistic",
+                                                       "statement", "min_members")},
+            "id": f"{ATLAS_CENTROID_STAGE}::{e['concept']}",
+            "stage": ATLAS_CENTROID_STAGE, "family": ATLAS_CENTROID_STAGE,
+            "statistic": "private_centroid_cosine_to_dev_centroid",
+            "min_members": int(min_members), "null_mode": null_mode,
+            "legacy_claim_id": e["id"],
+            "statement": (f"Seed-stable atlas concept {e['concept']} ({n} member feature(s) "
+                         f"across {', '.join(e['models'])}) keeps its effect direction on "
+                         f"private data: the centroid of its members' private effect vectors "
+                         f"has cosine >= {e['min_cosine']} to the dev centroid and beats a "
+                         f"same-composition random-member-set null (ablation null "
+                         f"{null_mode})."),
+        })
+    return entries, {"min_members": int(min_members), "null_mode": null_mode,
+                     "n_registered": len(entries), "n_below_threshold": len(below),
+                     "below": below, "ids": [e["id"] for e in entries]}
+
+
+def _v3_claim_entries(run_dir: Path, cfg: PipelineConfig) -> tuple:
+    """`(entries, summary)` for the two V3-B claim types; `([], {})` when both
+    flags are off (the byte-identical default)."""
+    fam_on = bool(getattr(cfg.confirm, "register_family_presence_claims", False))
+    cen_on = bool(getattr(cfg.confirm, "register_atlas_centroid_claims", False))
+    if not (fam_on or cen_on):
+        if getattr(cfg.confirm, "primary_null", ""):
+            raise ValueError("confirm.primary_null is set but neither "
+                             "register_family_presence_claims nor "
+                             "register_atlas_centroid_claims is on, so it would silently do "
+                             "nothing; turn one on or clear it")
+        return [], {}
+    sig = _target_gate_table(run_dir, cfg)
+    entries, summary = [], {}
+    if fam_on:
+        fam, summary[FAMILY_PRESENCE_STAGE] = _family_presence_entries(run_dir, cfg, sig)
+        entries += fam
+    if cen_on:
+        mode = v3_null_mode(cfg)
+        atlas, _ = _atlas_candidates(run_dir, cfg, sig, null_mode=mode)
+        cen, summary[ATLAS_CENTROID_STAGE] = _atlas_centroid_entries(
+            atlas, int(cfg.confirm.atlas_centroid_min_members), mode)
+        entries += cen
+    return entries, summary
+
+
+# ---------------------------------------------------------------------------
 # ROADMAP.md sec 38.4 (K4) -- U1 reliability claims. Opt-in:
 # `confirm.register_reliability_claims`. FROZEN from one dev K4 JSON plus the
 # artifacts its feature definitions come from.
@@ -1335,6 +1581,12 @@ _FAMILY_NULL_FIELD = {"concept_causal": "causal_max_null", "concept_atlas": "atl
                       "concept_structure": "structure_n_boot"}
 
 
+# The V3-B families' null sizes. A row appears only for a registered family, so
+# every registry without them reads the same rows as before.
+_V3_NULL_FIELD = {"family_presence": "family_presence_n_null",
+                  "concept_atlas_centroid": "atlas_n_null"}
+
+
 def claim_family_budget(cfg: PipelineConfig, registry: dict | None = None) -> list:
     """`[{"family", "m", "n_null", "alpha", "min_attainable_p_holm",
     "satisfiable", "basis"}]` for the four K2 claim families, plus a
@@ -1372,6 +1624,17 @@ def claim_family_budget(cfg: PipelineConfig, registry: dict | None = None) -> li
                      "min_attainable_p_holm": floor,
                      "satisfiable": (floor <= alpha) if floor is not None else None,
                      "basis": basis})
+    for stage, field_name in _V3_NULL_FIELD.items():
+        if registry is None:
+            continue
+        hyps = [h for h in registry["hypotheses"] if h["stage"] == stage]
+        if not hyps:
+            continue
+        n_null = int(getattr(cfg.confirm, field_name))
+        floor = len(hyps) / (n_null + 1)
+        rows.append({"family": stage, "m": len(hyps), "n_null": n_null, "alpha": alpha,
+                     "min_attainable_p_holm": floor, "satisfiable": floor <= alpha,
+                     "basis": "registered claims"})
     has_u1 = registry is not None and any(
         h["stage"] == RELIABILITY_STAGE for h in registry["hypotheses"])
     enabled = bool(getattr(cfg.confirm, "register_reliability_claims", False))
@@ -1395,9 +1658,11 @@ def build_registry(cfg: PipelineConfig) -> dict:
     concept_transfer_entries, ct_ranking = _concept_transfer_entries(run_dir, cfg)
     causal_entries, causal_summary = _concept_claim_entries(run_dir, cfg)
     reliability_entries, reliability_summary = _reliability_u1_entries(run_dir, cfg)
+    v3_entries, v3_summary = _v3_claim_entries(run_dir, cfg)
     hypotheses = (_l0_entries(run_dir) + _l1_entries(run_dir) + _l2_entries(run_dir)
                  + _l3_entries(run_dir) + _clustering_entries(run_dir)
-                 + concept_transfer_entries + causal_entries + reliability_entries)
+                 + concept_transfer_entries + causal_entries + reliability_entries
+                 + v3_entries)
     ids = [h["id"] for h in hypotheses]
     dup = sorted({i for i in ids if ids.count(i) > 1})
     if dup:
@@ -1412,6 +1677,8 @@ def build_registry(cfg: PipelineConfig) -> dict:
         registry["concept_claim_candidates"] = causal_summary
     if reliability_summary:
         registry["reliability_u1_candidates"] = reliability_summary
+    if v3_summary:
+        registry["v3_claim_candidates"] = v3_summary
     return registry
 
 

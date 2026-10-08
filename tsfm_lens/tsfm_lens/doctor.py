@@ -270,7 +270,9 @@ def check_concept_claim_budget(cfg: PipelineConfig) -> DoctorCheck:
 
     name = "concept claim budget"
     if not (cfg.confirm.enabled and (cfg.confirm.register_concept_claims
-                                     or cfg.confirm.register_reliability_claims)):
+                                     or cfg.confirm.register_reliability_claims
+                                     or cfg.confirm.register_family_presence_claims
+                                     or cfg.confirm.register_atlas_centroid_claims)):
         return DoctorCheck(name, "pass", "confirm.register_concept_claims is false; "
                            "no causal-concept claims are registered")
     reg_path = cfg.run_dir() / "hypotheses.json"
@@ -350,6 +352,13 @@ def _check_corpus_seal(cfg: PipelineConfig, full: bool = False) -> list:
         if source != "sealed":
             checks.append(DoctorCheck(f"{label} corpus", "pass",
                                       f"source={source!r}; seal verification not applicable"))
+            continue
+        if label == "confirm" and not str(path or "").strip():
+            checks.append(DoctorCheck(
+                "confirm corpus", "warn",
+                "confirm.path is empty: the private split has not been minted yet",
+                "mint it only after `register` has recorded the registry hash, then set "
+                "confirm.path and run confirm once"))
             continue
         p = Path(path)
         if not p.exists():
@@ -584,7 +593,9 @@ def run_preflight(cfg: PipelineConfig, full: bool = False) -> list:
     checks.append(_check_store_format(cfg))
     checks.append(_check_multiplicity_budget(cfg))
     if cfg.confirm.enabled and (cfg.confirm.register_concept_claims
-                                or cfg.confirm.register_reliability_claims):
+                                or cfg.confirm.register_reliability_claims
+                                or cfg.confirm.register_family_presence_claims
+                                or cfg.confirm.register_atlas_centroid_claims):
         checks.append(check_concept_claim_budget(cfg))
     checks.extend(_check_corpus_seal(cfg, full=full))
     checks.append(_check_context_alignment(cfg))

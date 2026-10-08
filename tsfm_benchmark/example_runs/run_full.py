@@ -138,6 +138,9 @@ def main():
     ap.add_argument("--source-n-domains", type=int, default=6, help="number of Monash domains to bootstrap across when --source-subset is not set")
     ap.add_argument("--threshold", type=float, default=0.35)
     ap.add_argument("--max-count", type=int, default=None, help="cap per-task count for a quick run")
+    ap.add_argument("--splits", choices=["both", "public"], default="both",
+                    help="'public' builds and seals only the dev split (the private split is minted later, "
+                         "after hypothesis registration; see example_runs/mint_private.py)")
     args = ap.parse_args()
 
     source_kind = None if args.sources == "none" else args.sources
@@ -156,15 +159,21 @@ def main():
     auditor = LeakageAuditor(metric="dtw", threshold=args.threshold)
     load_references(auditor, args.references, args.reference_limit, subset=args.source_subset, n_domains=args.source_n_domains)
 
-    builder = BenchmarkBuilder(auditor=auditor)
+    with open(args.config, encoding="utf-8") as fh:
+        assign_roles = bool(yaml.safe_load(fh).get("assign_roles", False))
+    builder = BenchmarkBuilder(auditor=auditor, assign_roles=assign_roles)
     pub = os.path.join(args.out, "public_dev")
     priv = os.path.join(args.out, "private_test")
-    result = builder.build_and_seal(specs, public_dir=pub, private_dir=priv, seed=args.seed, epoch=args.epoch)
+    if args.splits == "public":
+        result = builder.build_dev_and_seal(specs, public_dir=pub, seed=args.seed, epoch=args.epoch)
+    else:
+        result = builder.build_and_seal(specs, public_dir=pub, private_dir=priv, seed=args.seed, epoch=args.epoch)
 
     gate = result.audit.get("gate", {})
     print(f"\nepoch {result.epoch}")
     print(f"public_dev   : {len(result.public_dev)} sequences -> {pub}")
-    print(f"private_test : {len(result.private_test)} sequences -> {priv}")
+    if args.splits == "both":
+        print(f"private_test : {len(result.private_test)} sequences -> {priv}")
     print(f"rejected gate: {len(result.rejected)}")
     print(f"near-dupes   : {len(result.duplicates)}")
     print(f"gate_effective: {gate.get('gate_effective')} (persisted in manifest['extra']['audit'])")

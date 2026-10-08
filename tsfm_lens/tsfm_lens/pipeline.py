@@ -18,7 +18,7 @@ import torch
 from .analysis.attention import run_attention
 from .analysis.clustering import run_clustering
 from .analysis.exemplars import run_exemplars
-from .analysis.confirm import run_confirm
+from .analysis.confirm import confirmation_complete, run_confirm
 from .analysis.corpus_card import run_corpus_card
 from .analysis.hypotheses import run_register
 from .analysis.internals import run_internals
@@ -204,7 +204,8 @@ def _stages() -> list:
                "sae.concept_min_silhouette", "sae.concept_min_members",
                "sae.transfer_enabled", "sae.transfer_top_k", "sae.transfer_n_null",
                "sae.transfer_seed", "sae.describe_from_exemplars", "sae.ablation_null",
-               "sae.ablation_empirical_chance")),
+               "sae.ablation_empirical_chance", "sae.ablation_nulls",
+               "sae.keep_signed_null_draws")),
         Stage("exemplars", ["l0"],
               lambda c: c.exemplars.enabled,
               lambda c: (c.run_dir() / "exemplars" / "exemplars.json").exists(),
@@ -229,10 +230,13 @@ def _stages() -> list:
                "confirm.register_requires_target_significance",
                "confirm.register_requires_defined_firing",
                "confirm.register_reliability_claims", "confirm.reliability_dev_json",
-               "concepts.n_registered_agreement_differs")),
+               "concepts.n_registered_agreement_differs",
+               "confirm.register_family_presence_claims", "confirm.family_presence_min_dev",
+               "confirm.register_atlas_centroid_claims", "confirm.atlas_centroid_min_members",
+               "confirm.primary_null", "confirm.family_presence_n_null_directions")),
         Stage("confirm", ["register"],
               lambda c: c.confirm.enabled,
-              lambda c: (c.run_dir() / "confirm" / "confirmation.json").exists(),
+              confirmation_complete,
               lambda ctx: run_confirm(ctx.cfg, ctx.hub, forced=(
                   "confirm" in ctx.forced or "all" in ctx.forced)),
               ("confirm",)),

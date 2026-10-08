@@ -23,7 +23,7 @@ from jinja2 import Template
 from plotly.subplots import make_subplots
 
 from .. import failure_gallery, glossary, methods_appendix, stage_docs
-from . import derived, model_comparison, results_table
+from . import derived, model_comparison, results_table, v3_controls
 from .sanitize import strip_internal_refs, strip_refs_in_place
 from ..config import PipelineConfig
 from ..utils import load_json, log, save_json
@@ -154,9 +154,9 @@ REPORT_PARTS = [
      "models, and concrete per-family case studies.",
      ["SAE", "Concepts", "Exemplars"]),
     ("Part 7 — Robustness and held-out confirmation",
-     "How much of the above depends on one analysis-knob choice, and the "
+     "Negative controls, window-size sensitivity and the per-data-role split, how much of the above depends on one analysis-knob choice, and the "
      "one-shot confirmatory test on the sealed private corpus.",
-     ["Spec curve", "Confirm"]),
+     ["Controls", "Spec curve", "Confirm"]),
 ]
 
 
@@ -282,6 +282,10 @@ def run_report(cfg: PipelineConfig) -> Path:
          "Which of each model's causal features cluster into named concepts, whether another model groups the same series the same way, and how similar every model pair is overall (ROADMAP.md §37 Spec C) -- the evidence behind the compact answer boxes in “At a glance”.",
          [], "concepts",
          lambda: _sec_concepts(cfg, run_dir, findings)),
+        ("Controls", "Controls, robustness and data roles",
+         "Transfer negative controls, window-size sensitivity and the per-data-role breakdown (ROADMAP.md sec 41.1). Opt-in: rendered only when the run produced the artifacts.",
+         [], "concepts",
+         lambda: v3_controls.controls_section_block(cfg, run_dir, findings)),
         ("Exemplars", "Exemplar case studies",
          "A few concrete series per family, told end to end: both forecasts, where each model's answer forms in depth, and where it looks in the context.",
          ["exemplars/exemplars.npz", "exemplars/exemplars.json"], "exemplars",
@@ -9153,11 +9157,92 @@ def _sec_confirm(run_dir: Path, findings: list, n_exploratory: int) -> str:
     else:
         inner += '<p class="blurb">Concept replication: not measured.</p>'
     inner += _sec_confirm_causal_concepts(concept_rep, conf, findings)
+    inner += _sec_confirm_external(conf, findings)
     return inner
 
 
 _K2_FAMILIES = ("concept_causal", "concept_atlas", "shared_input_agreement",
-                "concept_structure")
+                "concept_structure", "concept_atlas_centroid", "family_presence")
+
+
+def _sec_confirm_external(conf: dict, findings: list) -> str:
+    """The `external_real` leg (ROADMAP.md sec 41, V3-B item c): the transfer
+    and family-presence claims re-run on a second sealed corpus of raw real
+    windows. Rendered from `confirmation.json`'s own `external_replication`
+    key, apart from every confirm total (its own heading, its own findings,
+    `registered=False`); a confirmation without the key renders nothing."""
+    ext = conf.get("external_replication")
+    if not isinstance(ext, dict):
+        return ""
+    if ext.get("status") != "tested":
+        return ('<h4>External-real replication</h4><p class="blurb">Not run: '
+                f'{ext.get("reason", "no registered transfer or family-presence claims")}.</p>')
+
+    def _n(v, nd=3):
+        return None if v is None else (round(float(v), nd) if isinstance(v, (int, float)) else v)
+
+    overlap = ext.get("overlap_check") or {}
+    inner = ('<h4>External-real replication (reported apart from the confirm verdict)</h4>'
+             f'<p class="blurb">{ext.get("n_series")} raw real series from a second sealed '
+             f'corpus (declared role: {ext.get("manifest_role_declared") or "none in manifest"}), '
+             f'checked disjoint from the dev and private corpora by {overlap.get("method")} '
+             f'(overlaps: {overlap.get("overlap")}). '
+             + ('<b>Repeated look: this leg was forced a second time.</b> '
+                if ext.get("repeated_look") else '')
+             + 'Nothing here enters the confirm verdict, the registered-claim totals or the '
+               'multiplicity ledger.</p>')
+    parts = []
+    transfer = ext.get("transfer") or {}
+    t_tests = transfer.get("tests") or []
+    if t_tests:
+        rows = [{"concept": t["concept"],
+                 "src to dst": f'{t["src_target"].split("/", 1)[0]} {_short(t["src_target"])} '
+                               f'to {t["dst_model"]} {_short(t["dst_target"])}',
+                 "external AUC": _n(t.get("private_auc")), "p (Holm)": _n(t.get("p_holm"), 4),
+                 "verdict": t.get("verdict", t["status"]), "reason": t.get("reason", "")}
+                for t in t_tests]
+        inner += (f'<h5>Concept transfer, external corpus ({transfer.get("n_confirmed", 0)} of '
+                  f'{transfer.get("n_tested", 0)} tested confirmed)</h5>'
+                  + _table(pd.DataFrame(rows)))
+        parts.append(f'transfer {transfer.get("n_confirmed", 0)}/{transfer.get("n_tested", 0)}')
+    family = ext.get("family_presence") or {}
+    f_tests = family.get("tests") or []
+    if f_tests:
+        rows = [{"family": f'{t["family_id"]} {t.get("family_title") or ""}'.strip(),
+                 "model": t["model"], "null": t.get("null_mode"),
+                 "count (testable/frozen)": (
+                     f'{t.get("observed_count")} ({t.get("n_features_testable")}/'
+                     f'{t.get("n_features_frozen")})' if t["status"] == "tested" else "-"),
+                 "expected by chance": _n(t.get("expected_null_count"), 2),
+                 "p (Holm)": _n(t.get("p_holm"), 4),
+                 "verdict": t.get("verdict", t["status"]), "reason": t.get("reason", "")}
+                for t in f_tests]
+        inner += (f'<h5>Effect-family presence, external corpus ({family.get("n_confirmed", 0)} '
+                  f'of {family.get("n_tested", 0)} tested confirmed)</h5>'
+                  + _table(pd.DataFrame(rows)))
+        parts.append(f'family presence {family.get("n_confirmed", 0)}/{family.get("n_tested", 0)}')
+    inner += _note(
+        "External validity: do the registered transfer and family-presence claims also hold "
+        "on raw real windows no stage of the pipeline ever read, instead of the synthetic and "
+        "real-derived series the claims were discovered and confirmed on?",
+        "Each family is Holm-corrected over ITS OWN tests on this corpus, with the frozen "
+        "dev SAEs and claims and the claim's registered null; the seasonal channel is "
+        "unavailable here (raw windows carry no ground-truth period), which the effect "
+        "vectors treat as an unscored channel.",
+        "Not registered-hypothesis confirmation: it is a separate look, never counted with "
+        "the private-split totals. Disjointness is by exact content hash, so a re-cropped "
+        "or re-scaled copy of a dev or private series would not be caught. A claim that does "
+        "not replicate here is a statement about this corpus's domain as much as about the "
+        "claim.")
+    findings.append(Finding(
+        claim_id=_next_claim_id("confirm"), stage="confirm", evidence_class="descriptive",
+        text=('EXTERNAL-REAL (not in the confirm verdict) - ' + "; ".join(parts)
+              + f' tested claims confirmed on {ext.get("n_series")} raw real series.'),
+        plain=("Separately from the main confirmation, the same claims were re-run on real "
+               "series nothing else in the pipeline had seen: "
+               + ("; ".join(parts) or "none tested") + " held up."),
+        registered=False))
+    return inner
 
 
 def _causal_n_max(blk: dict, tests: list):
@@ -9195,7 +9280,8 @@ def _sec_confirm_causal_concepts(concept_rep: dict, conf: dict, findings: list) 
     empty string, so an older report is unchanged. A `not testable` claim
     (reach withheld on private data, a side not scorable) is shown as its own
     state with its reason and is never counted as `not confirmed`."""
-    blocks = [(k, concept_rep.get(k)) for k in ("causal", "atlas", "agreement", "structure")
+    blocks = [(k, concept_rep.get(k)) for k in ("causal", "atlas", "agreement", "structure",
+                                                "atlas_centroid", "family_presence")
               if isinstance(concept_rep.get(k), dict)]
     if not blocks:
         return ""
@@ -9296,6 +9382,74 @@ def _sec_confirm_causal_concepts(concept_rep: dict, conf: dict, findings: list) 
                       "inputs.")
             plain = (f"{n_conf} of {n_tested} tested cross-model agreement claims held up on "
                      f"fresh data.")
+        elif key == "atlas_centroid":
+            title, cls = "Atlas centroid claims", "causal_within_model"
+            for t in tests:
+                rows.append({
+                    "concept": t["concept"], "members (testable/all)":
+                    f'{t.get("n_testable_members")}/{t["n_members"]}',
+                    "models": ", ".join(t.get("models", [])), "null": t.get("null_mode"),
+                    "centroid cos vs dev": _n(t.get("private_centroid_cosine")),
+                    "null p95": _n(t.get("null_centroid_cosine_p95")),
+                    "p": _n(t.get("p"), 4), "p (Holm)": _n(t.get("p_holm"), 4),
+                    "verdict": t.get("verdict", t["status"]), "reason": t.get("reason", "")})
+            nulls = sorted({t.get("null_mode") for t in tests if t.get("null_mode")})
+            purpose = ("Held-out test of the effect DIRECTION of multi-model atlas concepts "
+                       "with enough members for a centroid to mean something: does the "
+                       "centroid of the members' private effect vectors still point where "
+                       "the dev centroid did?")
+            reading = ("The statistic is the cosine of the private member centroid with the "
+                       "frozen dev centroid, against random same-composition member sets "
+                       "from the private causal pool (the legacy atlas claim's own null, "
+                       "same seed), Holm-corrected over THIS family; confirmed also needs "
+                       "the cosine >= the atlas threshold. There is no member-pair leg: the "
+                       "legacy atlas claim, which has one, is reported above, unchanged.")
+            limits = (f"Scored against the ablation null(s) {', '.join(nulls) or 'not recorded'}; "
+                      "a claim whose null has no private battery is 'not testable', never "
+                      "scored against another null. A centroid cosine says the members' "
+                      "AVERAGE effect direction replicated, not that every member did. The "
+                      f"null pool is the frozen dev candidates re-scored on private data. "
+                      f"{n_nt} claim(s) not testable.")
+            plain = (f"{n_conf} of {n_tested} tested multi-model atlas concepts kept their "
+                     f"average effect direction on fresh data.")
+        elif key == "family_presence":
+            title, cls = "Effect-family presence claims", "causal_within_model"
+            for t in tests:
+                rows.append({
+                    "family": f'{t["family_id"]} {t.get("family_title") or ""}'.strip(),
+                    "model": t["model"], "null": t.get("null_mode"),
+                    "dev count": t.get("dev_count"),
+                    "private count (testable/frozen)": (
+                        f'{t.get("observed_count")} ({t.get("n_features_testable")}/'
+                        f'{t.get("n_features_frozen")})' if t["status"] == "tested"
+                        else f'- ({t.get("n_features_testable")}/{t.get("n_features_frozen")})'),
+                    "expected by chance": _n(t.get("expected_null_count"), 2),
+                    "null p95": _n(t.get("null_count_p95"), 1),
+                    "p": _n(t.get("p"), 4), "p (Holm)": _n(t.get("p_holm"), 4),
+                    "verdict": t.get("verdict", t["status"]), "reason": t.get("reason", "")})
+            nulls = sorted({t.get("null_mode") for t in tests if t.get("null_mode")})
+            purpose = ("Held-out test of per-model presence of each effect family: does the "
+                       "model still have frozen dev causal features whose ablation-effect "
+                       "vector points into the family (cosine to the dev centroid at or "
+                       "above the family threshold) more often than random directions "
+                       "ablated on the same series would?")
+            reading = ("The count is the number of the model's frozen causal features whose "
+                       "private effect vector clears the family cosine threshold; the null "
+                       "count comes from each feature's OWN signed random-direction ablations "
+                       "(the same rows, the same size), so a feature whose effect is noise "
+                       "contributes its chance of landing in the family. Holm-corrected over "
+                       "the tested (family, model) claims.")
+            limits = (f"Scored against the ablation null(s) {', '.join(nulls) or 'not recorded'}; "
+                      f"{blk.get('n_null')} Monte-Carlo null replicates, so the smallest p is "
+                      f"1/{(blk.get('n_null') or 0) + 1}. Families are a descriptive tiling of a "
+                      "continuum (their own structure null is reported with the concept "
+                      "families), so a count in a family says the model has features in that "
+                      "region of effect space, not that the family is a natural kind. A "
+                      "target whose capture failed or whose reach probe was withheld is 'not "
+                      f"testable', never 'not confirmed' ({n_nt} not testable). Within-model "
+                      "causal evidence; it does not say two models share a feature.")
+            plain = (f"{n_conf} of {n_tested} tested (effect family, model) presence claims "
+                     f"held up on fresh data.")
         else:
             title, cls = "Structure claims", "descriptive"
             for t in tests:

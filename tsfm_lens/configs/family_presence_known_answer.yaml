@@ -1,0 +1,100 @@
+# V3-B family-presence known-answer validation (ROADMAP.md sec 40, sec 41): the K1 scale of
+# MN-29 (configs/known_answer.yaml, dose 1) on the planted pair, scored with the production
+# register and confirm stages for the `family_presence` claim.
+#
+# THE GATE, fixed before any redesigned-validation number was computed
+# (analysis/family_presence_gate.py::GATE_FP is the authority; this is its documentation and
+# tests/test_family_presence_gate.py pins the two together):
+#
+#     tuning seed          0           (design iteration allowed here only)
+#     held-out seeds       1 2 3 4     (never used for a design decision)
+#     sensitivity          >= 0.8 over truly planted (family, model) pairs: share CLAIMED
+#                          (confirmed after Holm); not registered / not testable / no family
+#                          is a non-detection
+#     false-claim rate     <= 0.05 pooled over tested ABSENT pairs and the biased-null decoy
+#                          (each pair re-scored against a null as loud as its observed effect)
+#     null modes           profile_matched (primary) and profile_matched_cov, each judged
+#                          apart; PASS is never merged across modes
+#     families             the planted effect signatures (kind, sign); centroid = unit mean of
+#                          the dev ablation vectors of atoms that recovered a planted concept
+#                          of that signature; nothing hand-built
+#
+# Variants allowed after a FAIL, declared before any result: V1 min_cosine 0.7; V2 the
+# at-least-one (best-cosine) statistic. Then stop and report.
+#
+# Run:  python run_family_presence_known_answer.py --corpus <dir> --out <scratch> \
+#           --seeds 0 1 2 3 4 --null profile_matched
+# where <dir> holds public_dev (dev) and private_test (the one-shot confirm split), built by
+#     cd tsfm_benchmark && PYTHONPATH=. python3 example_runs/run_full.py \
+#         --config configs/known_answer_corpus.yaml --out <dir> --references none --max-count 200
+#
+# This template is configs/known_answer.yaml with the planted layer as the only SAE target per
+# model (the control layer is not read here) and the V3-B claim fields on.
+run:
+  name: family_presence_known_answer
+  out_dir: runs
+  device: cpu
+  dtype: float32
+  seed: 0
+  keep_models_loaded: true
+
+data:
+  source: sealed
+  path: ../benchmark_known_answer/public_dev
+  context_len: 256
+  horizon: 32
+  family_key: auto
+
+alignment:
+  window: 32
+  sanity_check: true
+  on_failure: fail
+
+models:
+  - name: PlantedA
+    adapter: mock_planted
+    batch_size: 64
+    kwargs: {plant_set: A, construction_seed: 0, dose: 1.0}
+  - name: PlantedB
+    adapter: mock_planted
+    batch_size: 64
+    kwargs: {plant_set: B, construction_seed: 0, dose: 1.0}
+
+sae:
+  enabled: true
+  targets:
+    - {model: PlantedA, layer: blocks.2}
+    - {model: PlantedB, layer: blocks.2}
+  dict_size_mult: 4
+  k: 8
+  epochs: 300
+  batch_size: 256
+  lr: 0.001
+  resample_dead_every_epochs: 5
+  aux_k: 32
+  forecast_preservation_max_series: 64
+  persist_features: true
+  real_data_enabled: false
+  concept_min_members: 3
+  ablation_null: profile_matched
+
+concepts:
+  enabled: true
+  top_k_series: 8
+  n_null_directions: 16
+  max_series: 64
+  n_features_per_rule: 256
+  describe: false
+  n_sae_seeds: 1
+  transfer_p_method: exact
+
+confirm:
+  enabled: true
+  source: sealed
+  path: ../benchmark_known_answer/private_test
+  max_series: 64
+  require_seal: true
+  register_family_presence_claims: true
+  family_presence_min_dev: 3
+  family_presence_n_null: 2000
+  family_presence_n_null_directions: 32

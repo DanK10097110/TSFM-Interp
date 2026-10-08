@@ -60,6 +60,7 @@ benchmark_run*_validation/
 
 # Sealed benchmark corpora (untracked; build with example_runs/run_full.py)
 benchmark_large*/
+benchmark_v3/
 benchmark_medium/
 benchmark_out/
 

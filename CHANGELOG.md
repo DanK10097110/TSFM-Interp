@@ -8,7 +8,13 @@ is still evolving.
 
 ## [Unreleased]
 
-### Added
+## [1.0.0] - 2026-10-07
+
+First tagged release published to PyPI as two packages, `tsfm-benchmark` and
+`tsfm-lens` (both 1.0.0). The pipeline content is that of 0.1.0 plus the
+additions listed here; the full list of what exists follows.
+
+### Added before tagging
 
 - `--bundle RUN_DIR` zips `report.html` and every small readable artifact with a
   `SHARE_MANIFEST.json` listing what was left out and why; `--prune RUN_DIR
@@ -17,12 +23,27 @@ is still evolving.
   pruned run keeps `pruned.json`; the pipeline then refuses every stage except
   `report`, and the report renders the same sections. A successful run logs its
   size and both commands. New module `tsfm_lens/share.py`.
-
-## [1.0.0]
-
-First tagged release published to PyPI as two packages, `tsfm-benchmark` and
-`tsfm-lens` (both 1.0.0). The pipeline content is that of 0.1.0 plus the
-additions listed here; the full list of what exists follows.
+- Data roles: every benchmark sample can carry one `role` (`synthetic`,
+  `real_derived`, `external_real`), bound into its content hash and summarized
+  by a data-roles card; a raw GIFT-Eval `external_real` slice loader; windowed
+  `chronos_datasets` sources (ERCOT, KDD Cup, solar, taxi, M4 hourly and more);
+  `mint_private.py` refuses any hash shared with an existing sealed split.
+  Opt-in; role-free corpora hash exactly as before.
+- Ablation battery: `sae.ablation_nulls` computes several nulls in one pass
+  (`by_null` blocks; the first is primary), with feature-level chance estimates
+  and results restricted to dictionaries that pass the admission gate and
+  layers that pass the alignment gate.
+- Claim types: `concept_atlas_centroid` (centroid-only, `min_members` 3), an
+  external-real replication leg reported apart from the confirm verdict, and
+  `family_presence` (implemented but not recommended: it fails its known-answer
+  gate, FINDINGS MN-33). Claims record the null they are scored against.
+- Controls: a `random_init` twin and a raw-input-statistics destination as
+  negative controls for concept transfer; window-size sensitivity (64, 96) by
+  exact averaging of stored windows; per-role breakdowns of accuracy, causal
+  features and transfer.
+- A subspace shared-input agreement test with its known-answer gate (opt-in; it
+  fails the gate, FINDINGS MN-32, and is kept as the reproducer).
+- `--doctor` warns instead of failing on an intentionally empty `confirm.path`.
 
 ### Packaging
 

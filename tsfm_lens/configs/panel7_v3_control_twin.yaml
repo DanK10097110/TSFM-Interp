@@ -1,0 +1,102 @@
+# The negative-control destination for `panel7_v3.yaml` (ROADMAP.md sec 41.1): a
+# `random_init: true` twin of ONE real model, run SOLO through extract + layer_screen + sae
+# only, on the same V3 corpus and context length, so `concepts` can test every atlas concept
+# part against its dictionaries (`sae/control_transfer.py`). It is a separate run directory,
+# hence excluded from every comparison, routing table and scorecard of the main run.
+#
+#     python run.py --config configs/panel7_v3_control_twin.yaml --stages extract,layer_screen,sae
+#
+# Why Sundial: CLAUDE.md 6.2 -- TimesFM's twin is an exact identity stack (zero-initialised
+# RMSNorm scale), and the Chronos-2 / Chronos-Bolt twins give numerically dead forecasts (only
+# geometry matters here, but a dead stack is the worst case for a control that must have
+# non-trivial activations); Sundial's random twin has no such documented failure. UNVERIFIED on
+# a real checkpoint (developed on mocks): check the alignment gate result below before trusting
+# the control, and swap the model if it routes the twin out.
+#
+# `alignment.on_failure: warn` because a random network's impulse response need not be
+# time-localised at depth; the alignment record is still written and must be read.
+# `sae.targets: auto` resolves through this run's own layer_screen. Everything that must match
+# the main run (corpus, context_len, window, SAE hyper-parameters, seeds) is copied from it.
+
+run:
+  name: panel7_v3_control_twin
+  out_dir: runs
+  device: cuda
+  dtype: bfloat16
+  seed: 0
+  keep_models_loaded: false
+
+data:
+  source: sealed
+  path: ../benchmark_v3/public_dev
+  context_len: 480
+  horizon: 64
+  family_key: auto
+
+alignment:
+  window: 32
+  sanity_check: true
+  on_failure: warn
+
+models:
+  - name: sundial_random_init
+    adapter: sundial
+    checkpoint: thuml/sundial-base-128m
+    batch_size: 16
+    capture_layer_stride: 1
+    random_init: true
+
+layer_screen:
+  enabled: true
+  method: work_bend
+  budget_frac: 0.25
+  min_budget: 2
+
+sae:
+  enabled: true
+  # Profile-matched battery null (FINDINGS MN-29, ROADMAP sec 38.1.7): each
+  # null draw removes the feature's own per-token amount along a random
+  # decoded direction. The legacy `mean_magnitude` null failed the
+  # known-answer gate on 5/5 seeds; this one passed on 5/5. Field-level on the
+  # concepts stage only, so sae training and every earlier stage stay current.
+  ablation_null: profile_matched
+  # Leave-one-draw-out empirical chance rate per cell (ROADMAP sec 38.1.8):
+  # the battery's nominal 0.05 x cells is not a chance line (effect is a mean
+  # over k rows vs the p95 of pooled per-row null draws; measured ~2%).
+  ablation_empirical_chance: true
+  targets: []                     # "auto" -- layer_screen's own selection, every model
+  dict_size_mult: 8
+  dict_size_policy: search
+  dict_size_ladder: [192, 384, 768, 1536, 3072, 6144]
+  max_dead_rate: 0.30
+  dict_size_search_margin: 0.03
+  dict_size_search_seeds: 2
+  min_fidelity: 0.5
+  k: 32
+  lr: 0.001
+  epochs: 60
+  min_train_steps: 720
+  aux_k: 64
+  aux_coef: 0.03125
+  aux_dead_steps_frac: 0.028
+  n_seeds: 3
+  batch_size: 4096
+  resample_dead_every_epochs: 5
+  forecast_preservation_max_series: 16   # must be <= every model's batch_size (Sundial, Timer, Time-MoE: 16)
+  ground_truth_max_series: 2000
+  persist_features: true
+  real_data_enabled: true
+  real_data_source: "Monash-University/monash_tsf"
+  real_data_n_windows: 4000
+  real_data_pool_limit: 500
+
+
+# Stages below never run in this solo control run (only extract, layer_screen, sae), but the
+# preflight checks every stage's batch cap against Sundial's batch_size (16), so they are capped.
+lens:
+  max_series: 16
+l3:
+  patching:
+    max_series: 16
+attention:
+  ablation_max_series: 16

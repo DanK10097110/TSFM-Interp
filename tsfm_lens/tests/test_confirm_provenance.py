@@ -314,7 +314,8 @@ def test_confirm_config_keys_unchanged_by_this_item():
     `omit_at_default` so an older run's fingerprint is unchanged
     (`tests/test_concept_causal_confirm.py::test_new_fields_do_not_move_
     older_fingerprints`). Sec 38.4 (K4's U1 claims) added two more, the same
-    way: `register_reliability_claims` and `reliability_dev_json`."""
+    way: `register_reliability_claims` and `reliability_dev_json`. Sec 41 (V3-B) adds ten, all
+    `omit_at_default` (`tests/test_v3b_claims.py`)."""
     from tsfm_lens.config import ConfirmConfig
     import dataclasses
     names = {f.name for f in dataclasses.fields(ConfirmConfig)}
@@ -324,7 +325,12 @@ def test_confirm_config_keys_unchanged_by_this_item():
                      "register_requires_defined_firing", "causal_n_null",
                      "causal_max_null", "atlas_n_null", "agreement_n_null",
                      "structure_n_boot", "register_reliability_claims",
-                     "reliability_dev_json"}
+                     "reliability_dev_json",
+                     "register_family_presence_claims", "family_presence_min_dev",
+                     "family_presence_n_null", "family_presence_n_null_directions",
+                     "primary_null", "register_atlas_centroid_claims",
+                     "atlas_centroid_min_members", "external_path", "external_source",
+                     "external_max_series"}
 
 
 # --- consumer audit (sec 11.40): confirmation.json's four named consumers --

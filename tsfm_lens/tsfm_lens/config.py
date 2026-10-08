@@ -378,6 +378,48 @@ class ConfirmConfig:
     # Bootstrap resamples for the structure claims' private rate CI.
     structure_n_boot: int = field(default=2000, metadata={"omit_at_default": True})
 
+    # ROADMAP.md sec 41 (V3-B) -- three opt-in claim types, each off by default
+    # and left out of the stage fingerprint at its default (older runs stay
+    # fresh). A non-default value fingerprints `confirm` (whole section) and,
+    # for the two `register_*` flags and their thresholds, `register`.
+    #
+    # `register_family_presence_claims`: one `family_presence` claim per
+    # (effect family, model) whose DEV count of the model's causal features
+    # assigned to that family is >= `family_presence_min_dev` ("model m has
+    # causal features whose effect vector lies in family F beyond chance").
+    # Confirmed per claim against the model's own signed random-direction null
+    # (`analysis/family_claims.py`), Holm across the registered claims, with
+    # `family_presence_n_null` Monte-Carlo replicates of the null count.
+    register_family_presence_claims: bool = field(default=False, metadata={"omit_at_default": True})
+    family_presence_min_dev: int = field(default=3, metadata={"omit_at_default": True})
+    family_presence_n_null: int = field(default=2000, metadata={"omit_at_default": True})
+    # Random directions per feature in the private family-presence battery
+    # (0 = `concepts.n_null_directions`). The per-feature null probability is
+    # resolved at 1/(n+1), so a larger value sharpens the null.
+    family_presence_n_null_directions: int = field(default=0, metadata={"omit_at_default": True})
+    # ROADMAP.md sec 41.1: the ablation null a V3-B claim is registered and scored
+    # against ("" = the run's own `sae.ablation_null`, today's behaviour; or one of
+    # `mean_magnitude`, `profile_matched`, `profile_matched_cov`). Each claim records
+    # it as `null_mode`; `confirm` runs the private battery under it and refuses when
+    # the dev artifact holds no result under that null.
+    primary_null: str = field(default="", metadata={"omit_at_default": True})
+    # `register_atlas_centroid_claims`: one `concept_atlas_centroid` claim per
+    # seed-stable multi-model atlas concept with >= `atlas_centroid_min_members`
+    # (default 3, fixed before the V3 data; the >= 2 models requirement stays)
+    # members: the private centroid cosine against the dev centroid, vs the
+    # same-composition random-member-set null, with no pair-fraction leg. The
+    # legacy `concept_atlas` rule is untouched and registered beside it.
+    register_atlas_centroid_claims: bool = field(default=False, metadata={"omit_at_default": True})
+    atlas_centroid_min_members: int = field(default=3, metadata={"omit_at_default": True})
+    # `external_path`: a second sealed corpus (role `external_real`) on which
+    # `confirm` re-runs the registered transfer and family-presence claims,
+    # written under `external_replication`, never counted in the confirm
+    # verdict or ledger. Refused if it overlaps the dev or private corpus by
+    # sample hash; one-shot like the private confirmation.
+    external_path: str = field(default="", metadata={"omit_at_default": True})
+    external_source: str = field(default="sealed", metadata={"omit_at_default": True})
+    external_max_series: int = field(default=1024, metadata={"omit_at_default": True})
+
 
 @dataclass
 class ClusteringConfig:
@@ -793,6 +835,21 @@ class SAEConfig:
     # rate (`empirical_chance` in `*_ablation.json`); default off, artifacts unchanged.
     ablation_empirical_chance: bool = field(default=False, metadata={"stage_input": False,
                                                                      "omit_at_default": True})
+    # Opt-in dual-null battery (ROADMAP.md sec 41.1): every null named here is scored in
+    # ONE battery pass (the real ablation forward runs once), the first is PRIMARY and
+    # must equal `ablation_null` (a config that leaves `ablation_null` out gets it set
+    # to the first; naming both and disagreeing is an error). The others are written
+    # per candidate under `by_null[<mode>]` and as `by_null_summary`; everything
+    # downstream (concepts, atlas, families, profiles, transfer) reads the primary's
+    # legacy keys. Cost: n_null extra forwards per feature per extra mode. Empty
+    # (default) = a single-null run, artifacts unchanged.
+    ablation_nulls: tuple = field(default=(), metadata={"stage_input": False,
+                                                        "omit_at_default": True})
+    # Opt-in (ROADMAP.md sec 41, V3-B): keep every null draw's SIGNED per-channel mean delta
+    # (`null_draw_signed_means`, which implies `keep_null_draws`) in `*_ablation.json`; the
+    # family-presence claim scores a family's cosine against these. Default off, artifacts unchanged.
+    keep_signed_null_draws: bool = field(default=False, metadata={"stage_input": False,
+                                                                  "omit_at_default": True})
 
 
 @dataclass
@@ -1074,6 +1131,21 @@ class ConceptsConfig:
     agreement_partial_rung: bool = field(default=False, metadata={"omit_at_default": True})
     agreement_require_defined_firing: bool = field(default=False, metadata={"omit_at_default": True})
 
+    # ROADMAP.md sec 40 / 41 V3-C -- the subspace agreement test
+    # (`sae/subspace_agreement.py`), an opt-in redesign of the shared-input rung:
+    # the whole concept is ablated as a subspace on each side, and the result is an
+    # ESTIMATE (effect concordance and level-removed shape cosine with a series-bootstrap
+    # CI, TOST equivalence), not a verdict from point statistics. It is not run by any
+    # stage; the keys below parameterize its function and, left at their defaults, are
+    # omitted from every fingerprint. `subspace_agreement_n_null` random equal-dimension
+    # subspaces per side form the matched floor; `_n_boot` series-bootstrap resamples;
+    # `_ci_level` the two-sided CI level (agree needs the lower bound above the floor q95,
+    # differ the upper bound below the floor q05); `_margin` the TOST margin in null units.
+    subspace_agreement_n_null: int = field(default=50, metadata={"omit_at_default": True})
+    subspace_agreement_n_boot: int = field(default=1000, metadata={"omit_at_default": True})
+    subspace_agreement_ci_level: float = field(default=0.95, metadata={"omit_at_default": True})
+    subspace_agreement_margin: float = field(default=1.0, metadata={"omit_at_default": True})
+
     # ROADMAP.md sec 37.9 P6a -- generator-side input counterfactuals
     # (`tsfm_benchmark/build_pipeline/counterfactual.py`'s draw-neutral knobs,
     # measured by `tsfm_lens/sae/counterfactual.py`): does an atlas concept's
@@ -1176,6 +1248,20 @@ class ConceptsConfig:
     n_registered_agreement_differs: int = field(default=30, metadata={"stage_input": False,
                                                                       "omit_at_default": True})
 
+    # ROADMAP.md sec 41.1 (V3 controls), all opt-in and `omit_at_default`.
+    # `negative_control_runs`: `{name: run_dir}` of SOLO runs (extract + sae only) of a
+    # `random_init: true` twin on this run's corpus; `sae/control_transfer.py` tests every atlas
+    # concept part against the twin's dictionaries as a negative-control destination. The twin
+    # lives in its own run directory so it is excluded from every other stage, routing table and
+    # scorecard by construction. `input_feature_control`: also test against a destination made of
+    # raw context statistics. `window_sensitivity`: coarser windows (multiples of
+    # `alignment.window`) at which L1 peak CKA and the atlas-transfer pass rate are recomputed.
+    # `tier_breakdown`: write and render the per-data-role breakdown.
+    negative_control_runs: Optional[dict] = field(default=None, metadata={"omit_at_default": True})
+    input_feature_control: bool = field(default=False, metadata={"omit_at_default": True})
+    window_sensitivity: Optional[list] = field(default=None, metadata={"omit_at_default": True})
+    tier_breakdown: bool = field(default=False, metadata={"stage_input": False})
+
 
 @dataclass
 class PipelineConfig:
@@ -1258,6 +1344,19 @@ class PipelineConfig:
         """Fail fast on structurally invalid configurations."""
         if self.data.context_len % self.alignment.window != 0:
             raise ValueError("data.context_len must be a multiple of alignment.window")
+        nulls = tuple(self.sae.ablation_nulls or ())
+        if nulls:
+            if len(set(nulls)) != len(nulls):
+                raise ValueError(f"sae.ablation_nulls has duplicates: {list(nulls)}")
+            if nulls[0] != self.sae.ablation_null:
+                raise ValueError(
+                    f"sae.ablation_nulls[0] ({nulls[0]!r}) is the primary null and must equal "
+                    f"sae.ablation_null ({self.sae.ablation_null!r}); drop one of the two")
+            from .sae.response import ABLATION_NULL_MODES
+            bad = [m for m in nulls if m not in ABLATION_NULL_MODES]
+            if bad:
+                raise ValueError(f"sae.ablation_nulls: unknown null mode(s) {bad}; "
+                                 f"expected from {list(ABLATION_NULL_MODES)}")
         names = [m.name for m in self.models]
         if len(set(names)) != len(names):
             raise ValueError("model names must be unique")
@@ -1363,6 +1462,10 @@ def config_from_dict(raw: dict) -> PipelineConfig:
     if "models" in raw:
         cfg.models = [_build(ModelConfig, m, section=f"models[{i}]")
                      for i, m in enumerate(raw["models"])]
+    cfg.sae.ablation_nulls = tuple(cfg.sae.ablation_nulls or ())
+    nulls = cfg.sae.ablation_nulls
+    if nulls and "ablation_null" not in (raw.get("sae") or {}):
+        cfg.sae.ablation_null = nulls[0]
     cfg.validate()
     return cfg
 
