@@ -368,27 +368,19 @@ def test_transfer_by_role_uses_source_top_series_not_corpus_majority(tmp_path):
 # ---------------------------------------------------------------------------
 
 def test_new_fields_leave_every_fingerprint_unchanged():
-    from tests.test_ablation_null_default import OLD_FINGERPRINTS  # noqa: F401
-    from tsfm_lens.manifest import fingerprint_stage, resolve_config_keys
-    from tsfm_lens.pipeline import _stages
-    from tests.test_smoke import build_config
-    base = config_from_dict(build_config("x"))
-    new = config_from_dict(build_config("x"))
-    new.concepts.negative_control_runs = {"t": "d"}
-    new.concepts.window_sensitivity = [64]
-    new.concepts.input_feature_control = True
-    fp = {s.name: fingerprint_stage(resolve_config_keys(c, s.config_keys), {})
-          for s in _stages() for c in (base,)}
-    fp2 = {s.name: fingerprint_stage(resolve_config_keys(new, s.config_keys), {})
-           for s in _stages()}
-    changed = sorted(k for k in fp if fp[k] != fp2[k])
-    assert changed == ["concepts"]
-    new.concepts.negative_control_runs = None
-    new.concepts.window_sensitivity = None
-    new.concepts.input_feature_control = False
-    new.concepts.tier_breakdown = True
-    assert {s.name: fingerprint_stage(resolve_config_keys(new, s.config_keys), {})
-            for s in _stages()} == fp
+    """Pinned against the recorded pre-V3 fingerprints: with the new knobs at their
+    defaults (and `tier_breakdown`, a report-side flag, set) every stage is
+    byte-identical; setting a stage-input knob moves `concepts` and nothing else."""
+    from tests.test_ablation_null_default import OLD_FINGERPRINTS, _cfg, _fingerprints
+    cfg = _cfg("mean_magnitude")
+    cfg.concepts.tier_breakdown = True
+    assert _fingerprints(cfg) == OLD_FINGERPRINTS
+    for field, value in (("negative_control_runs", {"t": "d"}), ("window_sensitivity", [64]),
+                         ("input_feature_control", True)):
+        cfg = _cfg("mean_magnitude")
+        setattr(cfg.concepts, field, value)
+        new = _fingerprints(cfg)
+        assert sorted(k for k in new if new[k] != OLD_FINGERPRINTS[k]) == ["concepts"], field
 
 
 @pytest.fixture(scope="module")
