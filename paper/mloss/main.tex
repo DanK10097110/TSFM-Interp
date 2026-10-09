@@ -57,7 +57,7 @@ against matched random nulls, and tests exploratory claims once on a sealed held
 reported number carries an evidence class and a plain-language explanation. The toolkit ships adapters
 for TimesFM, the Chronos family, Sundial, Timer, Time-MoE and Lag-Llama, a zero-code adapter for Hugging Face
 checkpoints, a complete seven-model example run with held-out confirmation and over two thousand tests. It is released under the
-MIT license at \url{\repourl}.
+MIT license at \url{\repourl} (archived as \href{https://doi.org/10.5281/zenodo.23267463}{doi:10.5281/zenodo.23267463}).
 \end{abstract}
 
 \begin{keywords}
@@ -152,7 +152,8 @@ bloom2024saelens,kokhlikyan2020captum}; TSFM SAE studies judged from the papers.
 
 \section{Usage, Quality and Availability}
 
-After \texttt{pip install -e . \&\& pip install -e tsfm\_lens}, one command runs a full analysis
+The packages install from PyPI (\texttt{pip install tsfm-lens tsfm-benchmark}). From a clone,
+after \texttt{pip install -e . \&\& pip install -e tsfm\_lens}, one command runs a full analysis
 (\texttt{python run.py -{}-config configs/examples/large\_4model.yaml}); presets cover a CPU-only mock smoke test, a
 single model and a pair. The repository includes a complete seven-model example run (\texttt{examples/panel7\_v2}) with its report,
 per-stage artifacts and one-shot held-out confirmation (including 20 of 20 registered concept-transfer claims confirmed on 971 sealed series), and a ledger of
