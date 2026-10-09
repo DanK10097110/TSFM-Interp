@@ -1,6 +1,8 @@
 # TSFM-Lens
 
 [![CI](https://github.com/DanK10097110/TSFM-Interp/actions/workflows/ci.yml/badge.svg)](https://github.com/DanK10097110/TSFM-Interp/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/tsfm-lens.svg)](https://pypi.org/project/tsfm-lens/)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23267462.svg)](https://doi.org/10.5281/zenodo.23267462)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Example report](https://img.shields.io/badge/example-live%20report-c0602a)](https://dank10097110.github.io/TSFM-Interp/)
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DanK10097110/TSFM-Interp/blob/main/examples/quickstart.ipynb)
@@ -130,7 +132,15 @@ see [`tsfm_lens/docs/worked_example.md`](tsfm_lens/docs/worked_example.md).
 ## Install
 
 Two separate installable packages, not an in-progress merge — install
-whichever half you need, or both, into one shared environment:
+whichever half you need, or both, into one shared environment.
+
+From PyPI:
+
+```bash
+pip install tsfm-lens tsfm-benchmark
+```
+
+From a clone (needed for the configs, example runs and benchmark scripts):
 
 ```bash
 # tsfm_benchmark + benchmark_validation + example_runs (root pyproject.toml)
@@ -228,6 +238,7 @@ See [`CITATION.cff`](CITATION.cff). In brief:
   title   = {TSFM-Lens: comparative mechanistic interpretability for
              time-series foundation models},
   version = {1.0.0},
+  doi     = {10.5281/zenodo.23267463},
   url     = {https://github.com/DanK10097110/TSFM-Interp}
 }
 ```
