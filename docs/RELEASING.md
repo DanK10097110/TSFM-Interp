@@ -24,6 +24,16 @@ at <https://pypi.org/manage/account/publishing/>. Add one for each:
 
 Names can be claimed by anyone before the first upload, so register soon.
 
+A pending publisher can create only one project per upload: the token PyPI
+mints from it covers a single new project. v1.0.0 hit this. The workflow
+uploaded the `tsfm-benchmark` wheel, which created that project, and then the
+`tsfm-lens` upload was refused. The missing files went up by hand with
+`twine`. Both projects now exist, so register each one's publisher as a
+normal (non-pending) trusted publisher under its project's
+*Settings -> Publishing*. With both registered, one token covers both. The
+publish step sets `skip-existing: true`, so a re-run after a partial upload
+does not fail on files already on PyPI.
+
 ### 2. GitHub environment
 
 Repository Settings -> Environments -> New environment named `pypi`. Optionally
