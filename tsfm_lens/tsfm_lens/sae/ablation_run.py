@@ -93,7 +93,8 @@ def run_ablation_target(cfg, run_dir: Path, hub, data, store, device, model: str
                         activations: np.ndarray | None = None,
                         keep_null_draws: bool = False,
                         empirical_chance: bool = False,
-                        keep_signed_null_draws: bool = False) -> dict:
+                        keep_signed_null_draws: bool = False,
+                        powered_test: bool | None = None) -> dict:
     """The ablation fingerprint for one target. Returns the artifact dict; a
     target with no checkpoint returns a `skipped` record rather than raising,
     so one missing dictionary does not stop the other targets.
@@ -116,6 +117,8 @@ def run_ablation_target(cfg, run_dir: Path, hub, data, store, device, model: str
     - `keep_null_draws`: forwarded to `feature_ablation_fingerprints`.
     - `keep_signed_null_draws` (ROADMAP.md sec 41, V3-B): also forwarded; the
       signed null draws the family-presence claims score against.
+    - `powered_test` (ROADMAP.md sec 42 task B): also write the powered per-feature verdict
+      (`sae/powered.py`). `None` reads `sae.ablation_powered`; an explicit value overrides it.
     """
     run_dir = Path(run_dir)
     ckpt_path = checkpoint_path(run_dir, model, layer)
@@ -167,12 +170,16 @@ def run_ablation_target(cfg, run_dir: Path, hub, data, store, device, model: str
     if getattr(cfg.sae, "keep_signed_null_draws", False):
         keep_null_draws = keep_signed_null_draws = True
 
+    if powered_test is None:
+        powered_test = bool(getattr(cfg.sae, "ablation_powered", False))
+
     result = feature_ablation_fingerprints(
         cfg, adapter, layer, sae, data, device, candidates, activations,
         top_k_series=top_k_series, n_null_directions=n_null_directions,
         max_series=max_series, floor=floor, periods_full=periods_full,
         keep_forecasts=keep_forecasts, keep_null_draws=keep_null_draws,
         **({"keep_signed_null_draws": True} if keep_signed_null_draws else {}),
+        **({"powered_test": True} if powered_test else {}),
         null_mode=cfg_null_mode(cfg),
         **({"extra_null_modes": tuple(cfg_extra_null_modes(cfg))}
            if cfg_extra_null_modes(cfg) else {}),

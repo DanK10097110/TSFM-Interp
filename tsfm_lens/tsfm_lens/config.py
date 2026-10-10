@@ -850,6 +850,26 @@ class SAEConfig:
     # family-presence claim scores a family's cosine against these. Default off, artifacts unchanged.
     keep_signed_null_draws: bool = field(default=False, metadata={"stage_input": False,
                                                                   "omit_at_default": True})
+    # Opt-in (ROADMAP.md sec 42 task B): the powered per-feature causal test. Each feature's
+    # signed effect per series is scored against the null draws on the same series, per channel
+    # (rank p over the null series-means, floor 1/(n_null+1)), the min over channels corrected
+    # within the feature, BH across features within the target; effect size signed_effect /
+    # null_sd with a series-bootstrap CI. Written beside the legacy p95 count under `powered` in
+    # `*_ablation.json`, never replacing it. Needs `concepts.n_null_directions` >= 19 to be able
+    # to reach q 0.05 at all. Default off, artifacts unchanged.
+    ablation_powered: bool = field(default=False, metadata={"stage_input": False,
+                                                            "omit_at_default": True})
+    # Which verdict the `concepts` stage reads as "this feature is causal": `p95_count` (the
+    # legacy rule: >= 1 channel's effect above the null's pooled p95) or `powered` (the BH
+    # verdict of `ablation_powered`; refused at validate() unless that is on). Default is the
+    # legacy rule, so every existing config reads exactly what it read.
+    causal_verdict: str = field(default="p95_count", metadata={"stage_input": False,
+                                                               "omit_at_default": True})
+    # Opt-in (ROADMAP.md sec 42 decision 4): let `forecast_preservation_max_series` exceed the
+    # model's batch size by scoring the sample in explicit batch-size chunks (one forward per
+    # chunk, so `token_patch` never sees a chunked batch). Off, the request is clamped to
+    # batch_size (recorded as `limited_by` in the artifact), which is the legacy behaviour.
+    forecast_preservation_chunked: bool = field(default=False, metadata={"omit_at_default": True})
 
 
 @dataclass
@@ -1357,6 +1377,12 @@ class PipelineConfig:
             if bad:
                 raise ValueError(f"sae.ablation_nulls: unknown null mode(s) {bad}; "
                                  f"expected from {list(ABLATION_NULL_MODES)}")
+        if self.sae.causal_verdict not in ("p95_count", "powered"):
+            raise ValueError(f"sae.causal_verdict must be 'p95_count' or 'powered', "
+                             f"got {self.sae.causal_verdict!r}")
+        if self.sae.causal_verdict == "powered" and not self.sae.ablation_powered:
+            raise ValueError("sae.causal_verdict: powered needs sae.ablation_powered: true "
+                             "(the ablation battery must write the powered verdict)")
         names = [m.name for m in self.models]
         if len(set(names)) != len(names):
             raise ValueError("model names must be unique")
