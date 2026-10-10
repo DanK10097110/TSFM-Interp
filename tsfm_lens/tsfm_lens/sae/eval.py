@@ -463,3 +463,46 @@ def feature_steering_effects(cfg: PipelineConfig, adapter, layer: str, sae,
         "mase_full_reconstruction": float(np.mean(mase_full)),
         "features": feature_results,
     }
+
+
+def reevaluate_admission(cfg: PipelineConfig, adapter, layer: str, sae, store: ActivationStore,
+                         data: BenchmarkData, device, entry: dict) -> dict:
+    """Recompute one trained target's admission verdict under `cfg`'s gate, without retraining
+    (ROADMAP.md sec 42 decision 4 / step 6).
+
+    `entry` is the target's `sae/meta.json` record. Its stored held-out (else train)
+    reconstruction fidelity and its dead-rate gate are read back unchanged; the held-out TOKEN
+    forecast preservation is measured again under `cfg.sae.forecast_preservation_max_series`
+    (and `forecast_preservation_chunked`), on the same held-out series split training used
+    (`train.py::split_series`, same seed and families), so only the gate's thresholds and the
+    sample size differ from the training-time verdict. The result is the
+    `train.py::admission_verdict` dict plus the new forecast-preservation record, the rule the
+    verdict was computed under, and the legacy verdict it sits beside; the caller writes it under
+    a NEW key, never over `admission`.
+
+    A target without a held-out split cannot be re-measured on unseen series: its forecast bar is
+    left unmeasured and the verdict is `None`, as at training.
+    """
+    from .train import admission_verdict, split_series
+    split = split_series(int(store.root.attrs["n_series"]), cfg.sae.holdout_frac,
+                         cfg.run.seed + 23, families=data.meta["family"].to_numpy())
+    fp = None
+    if split["n_heldout"]:
+        fp = forecast_preservation(cfg, adapter, layer, sae, store, data, device,
+                                   granularity="token", allowed_series=split["heldout"],
+                                   split="heldout")
+    verdict = admission_verdict(
+        fidelity_train=entry["reconstruction_fidelity"],
+        fidelity_heldout=entry.get("reconstruction_fidelity_heldout"),
+        delta_mase_token=None if fp is None else fp["mase_delta"],
+        min_fidelity=cfg.sae.min_fidelity_gate, max_abs_delta_mase=cfg.sae.max_abs_delta_mase,
+        dead_rate_passed=(entry.get("dead_rate_gate") or {}).get("passed"))
+    legacy = entry.get("admission") or {}
+    return {**verdict,
+            "rule": {"min_fidelity_gate": float(cfg.sae.min_fidelity_gate),
+                     "max_abs_delta_mase": float(cfg.sae.max_abs_delta_mase),
+                     "forecast_preservation_max_series": int(cfg.sae.forecast_preservation_max_series),
+                     "forecast_preservation_chunked": bool(cfg.sae.forecast_preservation_chunked)},
+            "forecast_preservation_token_heldout": fp,
+            "legacy_passed": legacy.get("passed"), "legacy_reason": legacy.get("reason"),
+            "evidence": "re-evaluated from the stored checkpoint and stored fidelity; no retraining"}

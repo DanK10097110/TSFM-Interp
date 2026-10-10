@@ -370,7 +370,7 @@ def alive_feature_mask(sae, activations: np.ndarray, device, batch_size: int = 8
 # ---------------------------------------------------------------------------
 
 CANDIDATE_RULES = ("structural", "variance", "provenance", "random", "attribution",
-                   "attribution_mase")
+                   "attribution_mase", "attribution_horizon_l1")
 LEGACY_CANDIDATE_RULES = ("structural", "variance", "provenance", "random")
 
 
@@ -381,6 +381,7 @@ def select_candidates(alive_mask: np.ndarray, n_per_rule: int,
                       seed: int = 0, rules: tuple | None = None,
                       attribution_ranked: list | None = None,
                       attribution_mase_ranked: list | None = None,
+                      attribution_horizon_l1_ranked: list | None = None,
                       n_attribution: int = 20) -> list:
     """Nominate candidate feature indices, restricted to `alive_mask`, in
     ROADMAP.md §25.4's stated priority order. Every candidate records EVERY
@@ -405,10 +406,11 @@ def select_candidates(alive_mask: np.ndarray, n_per_rule: int,
 
     `rules` (ROADMAP.md sec 42, `sae.candidate_rules`; `None` = the four legacy
     rules, so the output is byte-identical) selects which rules run.
-    `attribution_ranked` / `attribution_mase_ranked` are `[{"feature", "score"}]`
-    lists from `sae/attribution.py::rank_atoms`; the top `n_attribution` alive
-    atoms of each are nominated under `attribution` / `attribution_mase`, and only
-    when that rule is named in `rules`. They are appended after the legacy
+    `attribution_ranked` / `attribution_mase_ranked` / `attribution_horizon_l1_ranked`
+    are `[{"feature", "score"}]` lists from `sae/attribution.py::rank_atoms`; the top
+    `n_attribution` alive atoms of each are nominated under `attribution` /
+    `attribution_mase` / `attribution_horizon_l1`, and only when that rule is named in
+    `rules`. They are appended after the legacy
     rules, so every legacy candidate keeps its position.
     """
     use = set(rules) if rules is not None else set(LEGACY_CANDIDATE_RULES)
@@ -465,7 +467,8 @@ def select_candidates(alive_mask: np.ndarray, n_per_rule: int,
                 order.append(f)
 
     for rule, ranked in (("attribution", attribution_ranked),
-                         ("attribution_mase", attribution_mase_ranked)):
+                         ("attribution_mase", attribution_mase_ranked),
+                         ("attribution_horizon_l1", attribution_horizon_l1_ranked)):
         if rule in use and ranked:
             for entry in [e for e in ranked if alive_mask[e["feature"]]][:n_attribution]:
                 _nominate(int(entry["feature"]), rule)

@@ -865,6 +865,13 @@ class SAEConfig:
                                                      "omit_at_default": True})
     attribution_max_series: int = field(default=128, metadata={"stage_input": False,
                                                                "omit_at_default": True})
+    # Horizon steps of the `attribution_horizon_l1` ranking (ROADMAP.md sec 42.3): the forecast
+    # summary is the sum over this many evenly spaced horizon steps of |sum_t a * dF_h/da|, so an
+    # atom whose per-step effects cancel in the horizon mean (trend, seasonal) still scores. 8 is
+    # the value the unseen-seed re-gate passed with. The rule needs it > 0 (refused at validate()
+    # otherwise); 0 leaves the ranking uncomputed and every default artifact unchanged.
+    attribution_vector_steps: int = field(default=0, metadata={"stage_input": False,
+                                                               "omit_at_default": True})
     # Opt-in (ROADMAP.md sec 42 task B): the powered per-feature causal test. Each feature's
     # signed effect per series is scored against the null draws on the same series, per channel
     # (rank p over the null series-means, floor 1/(n_null+1)), the min over channels corrected
@@ -1410,6 +1417,11 @@ class PipelineConfig:
         if bad_rules:
             raise ValueError(f"sae.candidate_rules: unknown rule(s) {bad_rules}; "
                              f"expected from {list(CANDIDATE_RULES)}")
+        if ("attribution_horizon_l1" in self.sae.candidate_rules
+                and int(self.sae.attribution_vector_steps) <= 0):
+            raise ValueError("sae.candidate_rules names 'attribution_horizon_l1', which ranks over "
+                             "`sae.attribution_vector_steps` horizon steps; set it to a positive "
+                             "integer (8 is the value the re-gate passed with)")
         if self.sae.causal_verdict not in ("p95_count", "powered"):
             raise ValueError(f"sae.causal_verdict must be 'p95_count' or 'powered', "
                              f"got {self.sae.causal_verdict!r}")

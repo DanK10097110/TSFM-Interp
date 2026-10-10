@@ -65,8 +65,30 @@ from .shared_input_agreement import matched_null_sets
 
 DEFAULT_SET_SIZES = (1, 5, 20)
 FALLBACK_RANKING = "fallback_mean_activation_x_decoder_norm"
+ATTRIBUTION_RANKING = "attribution_horizon_l1"
 DELTA_DEFINITION = ("mean over the horizon of |forecast difference| divided by the series' "
                     "context standard deviation")
+
+
+def battery_ranking(run_dir, model: str, layer: str) -> dict | None:
+    """The attribution ranking the ablation battery recorded for one target, or `None`.
+
+    Reads `top_forecast_horizon_l1` (the ranking that passed its known-answer re-gate,
+    ROADMAP.md sec 42.3) from the target's `*_ablation.json` `attribution` block, in score
+    order. `None` when the artifact is absent, withheld, has no attribution block (a
+    default config, or a model whose forecast is not differentiable and whose block says
+    `unavailable`), or an empty ranking; the caller then uses the named fallback, and the
+    completeness artifact names it as such.
+    """
+    from .ablation_run import ablation_path
+    path = ablation_path(run_dir, model, layer)
+    if not path.exists():
+        return None
+    block = load_json(path).get("attribution") or {}
+    ranked = block.get("top_forecast_horizon_l1") if block.get("status") == "ok" else None
+    if not ranked:
+        return None
+    return {"source": ATTRIBUTION_RANKING, "features": [int(e["feature"]) for e in ranked]}
 
 
 def completeness_path(run_dir) -> Path:
@@ -291,7 +313,8 @@ def run_completeness(cfg, run_dir, hub, store, data, device, targets: list | Non
     `out_path`, which a read-only study of a finished run must pass).
 
     `rankings` maps `"model/layer"` to `{"source": str, "features": [atom, ...]}`;
-    a target without an entry uses the named fallback. Reads the persisted
+    a target without an entry uses the battery's recorded attribution ranking
+    (`battery_ranking`) and, failing that, the named fallback. Reads the persisted
     series-level features when present, else encodes them from the store.
     """
     from .ablation_run import checkpoint_path
@@ -320,7 +343,7 @@ def run_completeness(cfg, run_dir, hub, store, data, device, targets: list | Non
         else:
             pooled = encode_series_level(sae, store, model, layer, np.arange(data.n), device)
         alive = alive_feature_mask(sae, load_all_windows(store, model, layer), device)
-        given = (rankings or {}).get(key)
+        given = (rankings or {}).get(key) or battery_ranking(run_dir, model, layer)
         out["targets"][key] = {"model": model, "layer": layer, **completeness_target(
             cfg, hub.get(model), layer, sae, data, device, pooled=pooled, alive_mask=alive,
             ranking=given["features"] if given else None,
