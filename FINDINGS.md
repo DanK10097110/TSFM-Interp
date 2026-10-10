@@ -1642,6 +1642,14 @@ See SH-20. **4/5.**
 - **Ref.** ROADMAP §42.1.
 - **Score. 3/5.**
 
+#### MN-36 · A powered per-feature test (more series, more null draws, multiplicity control) fails its gate; the simple p95 rule at 8 series is the better-calibrated design
+- **Claim.** On K1 (`mock_planted`, cov null, held-out seeds 1–4) a per-feature test with 32 series, 64 null draws, a predictive-t p per channel, Holm within feature and BH within target reaches sensitivity 27/45 = 0.6 (FPR 7/264): **FAIL** against 0.8. The legacy rule (≥ 1 channel above the null's pooled p95) scores 41/45 = 0.9111 at 8 series × 16 draws (FPR 5/2299 cells) and 34/45 = 0.7556 at 32 × 64. The literal rank-p version cannot reject at all (Holm floor 9/65 = 0.1385).
+- **Reading.** Planted effects sit at ~2–6 null sd and the null is common-mode across series, so more rows barely tighten it while channel and feature multiplicity raise the bar. V3's scarcity of causal features is not a per-feature sample-size problem; candidate choice and on-manifold effect size are the levers. Corrects the premise of ROADMAP §42.
+- **Evidence.** Known-answer validation of a method. **Status:** negative (closed).
+- **Reproduce.** `run_powered_known_answer.py`, `configs/known_answer_powered.yaml`, `sae/powered.py` (merge d85f590); JSONs in `tsfm_lens/runs/sec42_results/`.
+- **Ref.** ROADMAP §42.4.
+- **Score. 4/5.**
+
 ## H. Benchmark trust
 
 #### BM-01 · Near-duplicate matchers disagree ~70× on the same corpus

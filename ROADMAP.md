@@ -39450,3 +39450,35 @@ to V3's registered rules.
   legacy rules only, which the battery artifact records.
 - **Decision.** §42 step 6 uses `candidate_rules` = legacy four + `attribution_horizon_l1` (top 20) for every
   differentiable model. Pending: task B's powered test and its gate.
+
+### 42.4 Findings — task B (powered per-feature test), merged d85f590, 2026-10-10
+
+- **The literal spec cannot pass by arithmetic.** A rank p has floor 1/(D+1); Holm over 9 channels at D = 64 gives
+  ≥ 9/65 = 0.1385, and BH across ~250 candidates needs ~31% at the floor. Kept as `causal_rank` (sensitivity 0, FPR 0
+  everywhere). The shipped statistic uses a floorless predictive-t p per channel on the null series-means (distance
+  channels log-scale, one-tailed), Holm within feature, BH q 0.05 within target. Calibration of the t model:
+  leave-one-draw-out p ≤ 0.05 rate 0.0502 (cov), 0.0515 (iso) on real Chronos-Bolt encoder.block.4 at 32/64; 0.0441 on
+  K1 seed 4.
+- **Gate FAILS** (K1, cov primary, 32 series × 64 draws, held-out seeds 1–4): sensitivity 5/11, 12/13, 6/9, 4/12,
+  pooled **27/45 = 0.6**; FPR 7/264 = 0.0265 (seed 2 alone 4/79 = 0.0506). Seed 4 was looked at during diagnosis;
+  nothing was changed afterwards, and the verdict is a failure either way.
+- **The legacy rule passes the same gate and loses sensitivity with more rows.** Sanity reproduction cov 8/16:
+  0.9162004662004662, 5/2948 control cells (matches the prior record exactly). Pooled held-out: legacy p95 8/16
+  41/45 = 0.9111, FPR 5/2299 cells; legacy p95 32/64 34/45 = 0.7556, 2/2319 cells; powered cov 8/16 0.6222, powered
+  iso 32/64 0.7333 (FPR 0.0341). Seed-0 diagnosis: planted effects sit at ~2–6 null sd and the null series-means
+  barely tighten with more rows (the null is common-mode across series), so Bonferroni over 9 channels (z ≳ 3.9)
+  plus BH costs more than the extra rows buy.
+- **Timing** (real Chronos-Bolt encoder.block.4, loaded box): 2.582 s/feature at 8/16, 6.048 at 32/64 (≈ 2.5×);
+  the powered statistic adds no measurable time. The "sample cap reduced 64 → 32" log line is the per-chunk series
+  cap (`capped_take`, response.py:1106); it does not shrink the k = 8 design.
+- **Correction to the §42 premise.** §42 assumed the per-feature battery (8 series, 16 draws) limited V3's causal
+  evidence. On the planted model that design is well calibrated and sensitive (0.9111 / FPR ≈ 0.2%), and more rows
+  lower its sensitivity. The binding factors on real data are which features are tested and the effect size relative
+  to the on-manifold null, not the per-feature sample size (FINDINGS MN-36).
+- **Decision (step 6, revised before any step-6 data).** Keep the legacy rule at 8/16 (the gate-validated design) and
+  change only the candidates: legacy four rules + `attribution_horizon_l1` top 20 for the differentiable models
+  (§42.3). Admission: `sae.min_fidelity_gate` 0.5, forecast preservation on 128 series with
+  `forecast_preservation_chunked`. `causal_verdict` stays `p95_count`; the powered test is not used for claims.
+- Note: the raw JSONs of the task A, A-follow-up and C runs were inside their agent worktrees and were removed with
+  them; the numbers above are as reported and the drivers reproduce them. Task B's JSONs are kept in
+  `tsfm_lens/runs/sec42_results/`.
