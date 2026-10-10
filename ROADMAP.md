@@ -39305,3 +39305,82 @@ non-smooth series), exact-hash and near-duplicate checks kept against all dev; `
 - **V3 run started 2026-10-07 ~21:35 EDT:** `panel7_v3_dev` stages corpus→sae on GPU 0, twin control
   `panel7_v3_control_twin` (extract, layer_screen, sae) on GPU 1, detached (`runs/_logs/launch_v3.sh`, logs in
   `runs/_logs/`). Doctor 30 pass / 5 warn / 0 fail.
+
+### 41.5 Findings — V3 dev stages (2026-10-09/10; corpus→sae done 2026-10-08 04:39, concepts 2026-10-09 19:59, exemplars/report/register 2026-10-10 12:27)
+
+- **Run.** `panel7_v3_dev`: 7 models, 2876 dev series (synthetic 2091, real-derived 785), 50 SAE targets, 35.8 GB home
+  quota after sae. Twin control `panel7_v3_control_twin` (random-init Sundial) passed alignment (layer 0 1.0, layers
+  1–11 0.8667). The K4 reliability JSON (`run_reliability_from_internals.py`) is a manual prerequisite of `register`
+  and was missing at first; the register stage failed loudly on it and was rerun after the driver ran.
+- **Per-target concepts: 0 of 50** (49 non-modular, 1 without a scorable battery). On the 6 targets that pass SAE
+  admission and the alignment bar: `profile_matched_cov` (primary) 10 causal features, 1.5543× empirical chance;
+  `profile_matched` 23 causal features, 5.5467×. Same 100 scorable features under both nulls.
+- **SAE admission 8 of 49** (reconstruction fidelity 28, forecast preservation 8, both 2, dead rate 2, all three 1).
+  Median held-out fidelity 0.82 (v2: 0.749 with 2.5× fewer rows; v2 admission 5/56). About 38,500 training rows per
+  target for dictionaries up to 6,144 atoms.
+- **Fidelity does not predict causal clarity.** Across targets, held-out fidelity vs fraction of scorable candidates
+  with ≥ 1 clearing channel: V3 ρ = −0.326 (p = 0.022, n = 49); v2 ρ = −0.219 (p = 0.108, n = 55). |ΔMASE| forecast
+  preservation vs the same: V3 ρ = −0.237 (p = 0.102), v2 ρ = −0.091 (p = 0.508). Descriptive; depth and
+  dictionary size are uncontrolled confounds. Reading: no evidence that better reconstruction yields more causal
+  features (FINDINGS MN-34).
+- **Atlas transfer with negative controls** (`control_transfer.json`, k_top_series 20, 200 null draws, exact p,
+  reciprocal + BH): real destinations 0.6727 (Timer) – 0.9375 (Chronos-T5-Base) reciprocal-FDR rate; input-feature
+  destination (70 context statistics) 0.5455 (6/11); random-init Sundial twin 0.3864 (17/44), 0.1429 (4/28) when its
+  own trained parent is not the source. Real models exceed both controls; part of the shared-input signal is
+  reachable from input statistics alone. Exploratory (dev).
+- **L5 shared-input causal agreement:** 386 tests; not scorable 277, no specific agreement 71, level only 23, shape
+  only 4, acts differently 9, same causal effect 2. Bottleneck: one side does not clear its own random-direction null
+  on the shared series (median |U| 33).
+- **Atlas:** 4 concepts (2 multi-model), all 4 seed-stable (3 SAE seeds). Families: cross-model structure consistent
+  with chance (p_n_families 0.6169).
+- **Registry:** 111 hypotheses (l2 42, concept_causal 27, concept_transfer 20, l3 9, l0_archetype 5,
+  reliability_u1 3, concept_structure 2, l0 1, l1 1, clustering 1), 63 replicable. **`concept_atlas_centroid`
+  registered 0 with 0 below threshold** although 2 seed-stable multi-model concepts exist: the candidate list reached
+  `_atlas_centroid_entries` empty. Suspected silent failure; mint/confirm held until it is explained (§42 task D).
+
+## 42. Causal power, attribution-ranked candidates and forecast completeness (added 2026-10-10, user-directed — DESIGN FIXED BEFORE ANY RESULT; IN PROGRESS)
+
+**Why.** V3 (§41.5) shows the per-feature battery, not the corpus or the SAE, limits causal evidence: each feature is
+ablated on its top 8 series against 16 random directions, a fixed design that tripling the corpus never touched.
+Candidates (about 20 of up to 6,144 atoms per target) are chosen by ground-truth correlation, activation variance,
+provenance and a random control, never by effect on the forecast, although prominence ≠ importance (83.5%, paper).
+Reconstruction fidelity is the most common admission failure but does not predict causal clarity (MN-34), and the
+ablation keeps the SAE error term in both arms, so a measured feature effect is a real intervention whatever the
+fidelity. The user (2026-10-10): the question is the main cause of a prediction, not reconstruction loss; do not
+spend compute on a hunch.
+
+**Decisions (fixed now, before any §42 result).**
+1. **Attribution-ranked candidates (task A).** New candidate rule `attribution`: per target, rank alive atoms by mean
+   over series of |activation × ∂(forecast summary)/∂activation| (gradient through the SAE decoder into the model's
+   forward; the forecast summary is the mean point forecast over the horizon, and a second ranking by the MASE
+   channel is reported beside it). Top `n_attribution` (20) atoms are nominated; the existing rules and the random
+   control stay, each candidate records every rule that nominated it. Opt-in (`sae.candidate_rules`), the default
+   stays byte-identical.
+2. **Powered per-feature test (task B).** Opt-in knobs `sae.top_k_series` 32 and `sae.n_null_directions` 64 for the
+   new config, plus a per-feature statistic: for each channel, the feature's signed effect per series against the
+   null draws on the same series; p per channel from the rank of the observed series-mean effect among null
+   series-means (floor 1/(n_null+1)), min-over-channels with Holm within feature, BH across features within target;
+   effect size `signed_effect / null_sd` reported with a series-bootstrap CI. The legacy p95 count stays computed
+   and keyed as before (invariant 13); the new verdict is a new key.
+3. **Forecast completeness (task C).** Per series, ablate together the top-N attribution-ranked features (N ∈ {1, 5,
+   20}) and, separately, replace the activation by the SAE reconstruction (error-term ablation). Report the share of
+   the forecast change |Δ point forecast| explained by the feature set vs by the error term, per target, with a
+   series-bootstrap CI. Descriptive; it is the coverage measure for "main cause", replacing fidelity as the reading
+   of how much of the computation lives in features.
+4. **Admission gate.** Reconstruction fidelity becomes a loose sanity floor `sae.admission_min_fidelity` (0.5, catches
+   a broken SAE); forecast preservation stays the gate, measured on `forecast_preservation_max_series` 128 series
+   (chunked) instead of 16. Defaults unchanged for older configs; V3's registered claims keep the rule they were
+   registered with, and the report shows the ungated view as a sensitivity.
+5. **Known-answer gate before real data (task A/B validation).** On the K1 planted model (`mock_planted`, seeds 1–4
+   held out, seed 0 for tuning): (a) attribution ranking puts planted atoms in its top 20 with recall ≥ 0.8;
+   (b) the powered test under `profile_matched_cov` has sensitivity ≥ 0.8 and FPR ≤ 0.05. Failing either stops that
+   piece; it is recorded as a method negative.
+6. **Then** rerun the battery on the existing `panel7_v3_dev` SAEs and activations (no new extraction or SAE training)
+   on the 8 admitted targets plus up to 2 layer-screen picks per model, into a NEW run directory copied from
+   `panel7_v3_dev`; L5 reruns on the result. Exploratory; confirmation on a fresh private epoch after registration.
+
+**Task D (blocking V3 confirm).** Explain why `concept_atlas_centroid` registered 0 claims with 0 below threshold;
+fix if it is a bug, with a test that fails on the planted regression.
+
+**Not done, by decision.** No SAE data scaling (MN-34 gives no reason to expect clearer causality from it); no change
+to V3's registered rules.

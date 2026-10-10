@@ -1618,6 +1618,14 @@ See SH-20. **4/5.**
 - **Ref.** ROADMAP §41.4.
 - **Score. 3/5.**
 
+#### MN-34 · Better SAE reconstruction does not go with clearer feature causality
+- **Claim.** Across targets, held-out reconstruction fidelity vs the fraction of scorable candidate features with at least one channel clearing the ablation null: V3 (`panel7_v3_dev`, primary null `profile_matched_cov`) ρ = −0.326 (p = 0.022, n = 49); v2 (`panel7_v2_dev`) ρ = −0.219 (p = 0.108, n = 55). Forecast-preservation |ΔMASE| vs the same fraction: V3 ρ = −0.237 (p = 0.102), v2 ρ = −0.091 (p = 0.508). V3 trained on 2.5× the rows of v2 and raised median held-out fidelity from 0.749 to 0.82; SAE admission went from 5/56 to 8/49.
+- **Reading.** No evidence that scaling SAE training data would make feature causality clearer; the binding limit is the per-feature battery (8 series, 16 null directions) and candidate selection. Depth and dictionary size are uncontrolled confounds, so the negative sign is not interpreted. Basis for dropping reconstruction fidelity to a loose sanity floor (ROADMAP §42).
+- **Evidence.** Descriptive, exploratory (dev artifacts, no new compute). **Status:** open.
+- **Reproduce.** Spearman over `runs/<run>/sae/meta.json` (`reconstruction_fidelity_heldout`, admission checks) and `sae/<model>/<layer>_ablation.json` (`candidates[*].n_channels_clearing`, `scorable`).
+- **Ref.** ROADMAP §41.5, §42.
+- **Score. 3/5.**
+
 ## H. Benchmark trust
 
 #### BM-01 · Near-duplicate matchers disagree ~70× on the same corpus
