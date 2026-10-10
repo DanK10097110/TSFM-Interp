@@ -17,7 +17,9 @@ in the SAE.
 Layout under `--out`:
     cells/seed<S>_dose1/...                       the pipeline run (extract + sae)
     battery/seed<S>/<design>/<model>__<layer>.json  one ablation artifact per target and design
-    powered_known_answer.json                     per-seed scores, pooled scores, gate verdicts
+    per_seed/seed<S>.json                         one seed's legacy and powered scores (each seed can
+                                                  run in its own process)
+    powered_known_answer.json                     every per_seed file, pooled held-out scores, gates
 
 The gate is applied by `analysis/powered_known_answer.py::gate_verdict`; this driver never
 decides anything itself. Wall-clock per target is recorded per design.

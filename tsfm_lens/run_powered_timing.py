@@ -80,7 +80,14 @@ def main(argv: list | None = None) -> dict:
                          "rows_scored_median": sorted(c["n_rows_scored"] for c in scorable)[len(scorable) // 2]
                          if scorable else None,
                          "ablation_nulls": art.get("ablation_nulls"),
-                         "batch_size": hub.get(args.model).cfg.batch_size})
+                         "batch_size": hub.get(args.model).cfg.batch_size,
+                         **({"powered_summary": art["powered"],
+                             "candidates_powered": [
+                                 {"feature": c["feature"], "legacy_n_channels_clearing": c["n_channels_clearing"],
+                                  "p_holm_t": c["powered"]["p_holm_t"] if c["powered"]["scored"] else None,
+                                  "p_holm_rank": c["powered"]["p_holm_rank"] if c["powered"]["scored"] else None,
+                                  "causal": c["powered"]["causal"]} for c in scorable]}
+                            if powered and scorable else {})})
             log.info("timing: %s powered=%s: %.2fs (%.3fs/feature)", design, powered, secs,
                      secs / len(cands))
     out = {"run": str(run_dir), "model": args.model, "layer": args.layer, "device": str(device),
