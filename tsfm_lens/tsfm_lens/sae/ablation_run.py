@@ -22,8 +22,10 @@ from pathlib import Path
 import numpy as np
 
 from ..utils import load_json, log, save_json
+from .attribution import attribution_candidates
 from .ground_truth import encode_series_level, load_ground_truth_table
-from .response import alive_feature_mask, feature_ablation_fingerprints, select_candidates
+from .response import (LEGACY_CANDIDATE_RULES, alive_feature_mask, feature_ablation_fingerprints,
+                       select_candidates)
 from .train import load_all_windows, load_sae_checkpoint, sanitize
 
 
@@ -131,21 +133,46 @@ def run_ablation_target(cfg, run_dir: Path, hub, data, store, device, model: str
         activations = encode_series_level(sae, store, model, layer, np.arange(data.n), device)
 
     stage2_path = run_dir / "sae" / sanitize(model) / f"{sanitize(layer)}_stage2_response.json"
+    rules = tuple(getattr(cfg.sae, "candidate_rules", LEGACY_CANDIDATE_RULES))
+    use_attribution = candidates is None and any(r.startswith("attribution") for r in rules)
+    attribution, alive, bench = None, None, None
+    if use_attribution:
+        bench = load_all_windows(store, model, layer)
+        alive = alive_feature_mask(sae, bench, device)
+        attribution = attribution_candidates(
+            cfg, adapter, layer, sae, data, device, alive,
+            n_attribution=int(cfg.sae.n_attribution),
+            max_series=int(cfg.sae.attribution_max_series), seed=cfg.run.seed)
+        if attribution["status"] != "ok":
+            log.warning(f"ablation: {model}/{layer}: attribution rule unavailable -- "
+                        f"{attribution['reason']}")
+    attr_top = ({"attribution": attribution["top_forecast_mean"],
+                 "attribution_mase": attribution["top_mase"]}
+                if attribution and attribution["status"] == "ok" else {})
     if candidates is not None:
         candidates = [{"feature": int(c["feature"]), "rules": c.get("rules", [])}
                       for c in candidates]
         source = "frozen (registered dev candidates)"
     elif stage2_path.exists() and not load_json(stage2_path).get("withheld"):
         stage2 = load_json(stage2_path)
-        candidates = [{"feature": int(c["feature"]), "rules": c.get("rules", [])}
+        candidates = [{"feature": int(c["feature"]), "rules": list(c.get("rules", []))}
                       for c in stage2["candidates"]]
         source = "stage2"
+        if attr_top:
+            candidates = _add_attribution(candidates, attr_top, alive, rules,
+                                          int(cfg.sae.n_attribution))
+            source = "stage2 + attribution"
     else:
-        bench = load_all_windows(store, model, layer)
-        alive = alive_feature_mask(sae, bench, device)
+        if bench is None:
+            bench = load_all_windows(store, model, layer)
+            alive = alive_feature_mask(sae, bench, device)
+        extra = ({"rules": rules, "n_attribution": int(cfg.sae.n_attribution),
+                  "attribution_ranked": attr_top.get("attribution"),
+                  "attribution_mase_ranked": attr_top.get("attribution_mase")}
+                 if use_attribution else {})
         candidates = select_candidates(alive, n_features_per_rule,
                                        activation_variance=activations.var(axis=0),
-                                       seed=cfg.run.seed)
+                                       seed=cfg.run.seed, **extra)
         source = "select_candidates (no Stage 2 artifact for this target)"
     log.info(f"ablation: {model}/{layer}: {len(candidates)} candidates from {source}")
 
@@ -183,7 +210,30 @@ def run_ablation_target(cfg, run_dir: Path, hub, data, store, device, model: str
                     f"{result.get('reason') or result['reach']['reason']}")
     else:
         log.info(clearing_log_line(model, layer, result))
-    return {"model": model, "layer": layer, "candidate_source": source, **result}
+    extra = ({"candidate_rules": list(rules), "attribution": attribution}
+             if attribution is not None else {})
+    return {"model": model, "layer": layer, "candidate_source": source, **result, **extra}
+
+
+def _add_attribution(candidates: list, attr_top: dict, alive: np.ndarray, rules: tuple,
+                     n: int) -> list:
+    """Append the attribution nominations to a frozen Stage 2 list.
+
+    An atom already on the list gains the rule; a new atom is appended after every
+    existing candidate, so the Stage 2 atoms keep their position and their rules.
+    """
+    by_feature = {c["feature"]: c for c in candidates}
+    for rule in ("attribution", "attribution_mase"):
+        if rule not in rules:
+            continue
+        for entry in [e for e in attr_top[rule] if alive[e["feature"]]][:n]:
+            f = int(entry["feature"])
+            if f not in by_feature:
+                by_feature[f] = {"feature": f, "rules": []}
+                candidates.append(by_feature[f])
+            if rule not in by_feature[f]["rules"]:
+                by_feature[f]["rules"].append(rule)
+    return candidates
 
 
 def clearing_log_line(model: str, layer: str, result: dict) -> str:

@@ -1,0 +1,72 @@
+# Known-answer gate for the attribution candidate rule (ROADMAP.md sec 42,
+# decision 5a). The K1 template (`configs/known_answer.yaml`: same corpus, same
+# planted pair, same SAE recipe) with two changes: only the planted layer
+# (blocks.2) is an SAE target, since the gate needs no control layer, and the
+# attribution rule is configured. Driven by `run_attribution_known_answer.py`,
+# which fills the construction seed per cell and runs the `extract` and `sae`
+# stages only (the ablation battery is not needed to rank atoms).
+#
+#     python run_attribution_known_answer.py \
+#         --corpus ../benchmark_known_answer/public_dev --out <scratch> --seeds 0 1 2 3 4
+#
+# Corpus: see the header of `configs/known_answer.yaml`.
+#
+# Pre-fixed bar: mean over held-out seeds 1-4 of the pooled recall of recovered
+# planted real concepts in attribution's top 20 >= 0.8; seed 0 is the tuning seed.
+
+run:
+  name: attribution_known_answer
+  out_dir: runs
+  device: cpu
+  dtype: float32
+  seed: 0
+  keep_models_loaded: true
+
+data:
+  source: sealed
+  path: ../benchmark_known_answer/public_dev
+  context_len: 256              # 8 tokens of 32
+  horizon: 32
+  family_key: auto
+
+alignment:
+  window: 32                    # = the patch, so one window per token
+  sanity_check: true
+  on_failure: fail
+
+models:
+  - name: PlantedA
+    adapter: mock_planted
+    batch_size: 64
+    kwargs: {plant_set: A, construction_seed: 0, dose: 1.0}
+  - name: PlantedB
+    adapter: mock_planted
+    batch_size: 64
+    kwargs: {plant_set: B, construction_seed: 0, dose: 1.0}
+
+sae:
+  enabled: true
+  targets:
+    - {model: PlantedA, layer: blocks.2}
+    - {model: PlantedB, layer: blocks.2}
+  dict_size_mult: 4             # 256 atoms over 64 dims, 21 planted directions
+  k: 8
+  epochs: 300                   # 15 optimizer steps per epoch at batch_size 256;
+                                # measured on this corpus: k=8, 256 atoms, 300
+                                # epochs at batch 128 recovers ~16 of 21 planted
+                                # directions at cosine >= 0.9 (60 epochs at
+                                # batch 512 recovered ~7 of 20)
+  batch_size: 256
+  lr: 0.001
+  resample_dead_every_epochs: 5
+  aux_k: 32
+  forecast_preservation_max_series: 64   # <= every model's batch_size
+  persist_features: true        # required by the concepts stage
+  real_data_enabled: false      # no network, no real data in this validation
+  concept_min_members: 3
+  candidate_rules: [attribution, attribution_mase]   # opt-in; the legacy four are off here
+  n_attribution: 20
+  attribution_max_series: 128   # two chunks of the models' batch_size 64
+
+concepts:
+  enabled: false

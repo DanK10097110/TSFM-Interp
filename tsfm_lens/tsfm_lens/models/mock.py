@@ -164,6 +164,9 @@ class _MockAdapterBase(ModelAdapter):
         return {f"blocks.{i}": block.attn.last_pattern
                 for i, block in enumerate(self._net.blocks)}
 
+    def predict_differentiable(self, contexts: np.ndarray, horizon: int):
+        return self._net(self.prepare(contexts))[:, :horizon]
+
     def predict(self, contexts: np.ndarray, horizon: int, quantiles: list) -> dict:
         """Deterministic point forecast through the net, quantiles as scaled offsets."""
         with torch.no_grad():

@@ -953,6 +953,9 @@ class MockPlantedAdapter(_MockAdapterBase):
         return {**self._spec, "model": self.name, "background_gain": self._background_gain,
                 "planted_layer": f"blocks.{self._spec['planted_block']}", **extra}
 
+    def predict_differentiable(self, contexts: np.ndarray, horizon: int):
+        return self._net.forecast(self.prepare(contexts))[0][:, :horizon]
+
     def predict(self, contexts: np.ndarray, horizon: int, quantiles: list) -> dict:
         """Deterministic point forecast; the quantile band is `sd_ctx * ppf(q)`
         scaled by the planted dispersion concepts' `exp(sum beta c)`."""
