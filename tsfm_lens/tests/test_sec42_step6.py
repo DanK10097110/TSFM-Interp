@@ -313,3 +313,38 @@ def test_select_writes_the_narrowed_meta_beside_the_full_one(tmp_path):
     assert rec["not_selected"] == ["A/l1"] and rec["n_trained"] == 2 and rec["n_selected"] == 1
     with pytest.raises(SystemExit):
         B.select(run)
+
+
+def test_run_completeness_uses_the_battery_ranking_and_names_the_fallback_elsewhere(tmp_path, monkeypatch):
+    from tsfm_lens.sae import completeness as C
+    from tsfm_lens.sae import ground_truth as G
+    from tsfm_lens.sae import response as RS
+    from tsfm_lens.sae import train as T
+    run = tmp_path / "run"
+    (run / "sae").mkdir(parents=True)
+    (run / "sae" / "meta.json").write_text(json.dumps({"M/blocks.1": {}, "M/blocks.2": {}}), encoding="utf-8")
+    for layer in ("blocks.1", "blocks.2"):
+        ckpt = run / "sae" / "M" / f"{layer.replace('.', '_')}.pt"
+        ckpt.parent.mkdir(parents=True, exist_ok=True)
+        ckpt.write_bytes(b"x")
+    _write_artifact(run, "M", "blocks.1", {"attribution": {
+        "status": "ok", "top_forecast_mean": [{"feature": 9, "score": 1.0}],
+        "top_forecast_horizon_l1": [{"feature": 4, "score": 2.0}, {"feature": 6, "score": 1.0}]}})
+    seen = {}
+    monkeypatch.setattr(T, "load_sae_checkpoint", lambda path: SimpleNamespace(to=lambda d: "sae"))
+    monkeypatch.setattr(T, "load_all_windows", lambda *a, **k: None)
+    monkeypatch.setattr(RS, "alive_feature_mask", lambda *a, **k: np.ones(12, dtype=bool))
+    monkeypatch.setattr(G, "encode_series_level", lambda *a, **k: np.zeros((3, 12)))
+
+    def fake_target(cfg, adapter, layer, sae, data, device, **kw):
+        seen[layer] = (kw["ranking"], kw["ranking_source"])
+        return {"withheld": False}
+
+    monkeypatch.setattr(C, "completeness_target", fake_target)
+    hub = SimpleNamespace(get=lambda m: None, release=lambda m: None)
+    cfg = SimpleNamespace(run=SimpleNamespace(keep_models_loaded=True), run_dir=lambda: run,
+                          concepts=SimpleNamespace(completeness_set_sizes=None, completeness_n_random=2,
+                                                   completeness_max_series=4, completeness_n_boot=10))
+    C.run_completeness(cfg, run, hub, SimpleNamespace(), SimpleNamespace(n=3), "cpu")
+    assert seen["blocks.1"] == ([4, 6], "attribution_horizon_l1")
+    assert seen["blocks.2"] == (None, None)
