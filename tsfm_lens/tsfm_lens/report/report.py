@@ -23,7 +23,7 @@ from jinja2 import Template
 from plotly.subplots import make_subplots
 
 from .. import failure_gallery, glossary, methods_appendix, stage_docs
-from . import derived, model_comparison, results_table, v3_controls
+from . import completeness_panel, derived, model_comparison, results_table, v3_controls
 from .sanitize import strip_internal_refs, strip_refs_in_place
 from ..config import PipelineConfig
 from ..utils import load_json, log, save_json
@@ -152,7 +152,7 @@ REPORT_PARTS = [
      "The sparse feature dictionaries trained per model and per layer, the "
      "concepts they cluster into, whether those concepts are shared across "
      "models, and concrete per-family case studies.",
-     ["SAE", "Concepts", "Exemplars"]),
+     ["SAE", "Concepts", "Completeness", "Exemplars"]),
     ("Part 7 — Robustness and held-out confirmation",
      "Negative controls, window-size sensitivity and the per-data-role split, how much of the above depends on one analysis-knob choice, and the "
      "one-shot confirmatory test on the sealed private corpus.",
@@ -286,6 +286,10 @@ def run_report(cfg: PipelineConfig) -> Path:
          "Transfer negative controls, window-size sensitivity and the per-data-role breakdown (ROADMAP.md sec 41.1). Opt-in: rendered only when the run produced the artifacts.",
          [], "concepts",
          lambda: v3_controls.controls_section_block(cfg, run_dir, findings)),
+        ("Completeness", "Forecast completeness",
+         "How much of the forecast change the top-ranked SAE features carry versus the SAE's error term and versus random features of matched activation (ROADMAP.md sec 42 task C). Opt-in: rendered only when the run produced sae/completeness.json.",
+         [], "concepts",
+         lambda: completeness_panel.completeness_section_block(cfg, run_dir, findings)),
         ("Exemplars", "Exemplar case studies",
          "A few concrete series per family, told end to end: both forecasts, where each model's answer forms in depth, and where it looks in the context.",
          ["exemplars/exemplars.npz", "exemplars/exemplars.json"], "exemplars",
