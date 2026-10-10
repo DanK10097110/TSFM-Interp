@@ -46,7 +46,11 @@ def _fingerprints(cfg) -> dict:
 
 @pytest.mark.parametrize("name", sorted(PRE_CHANGE_FINGERPRINTS))
 def test_every_new_field_at_its_default_leaves_every_stage_fingerprint_unchanged(name):
+    """`confirm.path` is cleared first: panel7_v3's pins were taken while its private split
+    was still unminted (path ""), and setting the path after `register` is the documented
+    workflow, not a change this test is about."""
     cfg = load_config(str(ROOT / "configs" / f"{name}.yaml"))
+    cfg.confirm.path = ""
     assert _fingerprints(cfg) == PRE_CHANGE_FINGERPRINTS[name]
 
 
