@@ -39398,7 +39398,7 @@ to V3's registered rules.
 - **Task A (merged 26588d5): the pre-fixed attribution gate FAILS.** K1, held-out seeds 1–4, recall of recovered
   planted concepts in the top 20 (bar 0.8): 0.25, 0.3077, 0.2222, 0.25, mean **0.2575**. Gradients are exact
   (first-order vs real ablation Pearson ≥ 0.99999 on the mock). Cause, a spec flaw: the horizon-mean point forecast
-  cancels trend and seasonal effects and dispersion does not move the point forecast; level concepts are recovered
+  cancels trend and seasonal effects and the K1 dispersion shape (an alternating ±1 pattern over the horizon in `mock_planted`, so it moves per-step point forecasts with a zero horizon mean — corrected 2026-10-10, §42.3; the earlier wording "dispersion does not move the point forecast" was wrong for this mock); level concepts are recovered
   (3/3, 4/4, 1/1, 3/3 on seeds 1–4), trend/seasonal/dispersion almost never (seed 1 trend 0/6, dispersion 0/2).
   Held-out means of the other rankings, scored on the same seeds: `attribution_mase` 0.7511, `forecast_horizon_l1`
   (Σ over 8 horizon steps of |Σ_t a·∂F_h/∂a|, added after the tuning seed 0 only) 0.8990, legacy union 0.4850,
@@ -39431,3 +39431,22 @@ to V3's registered rules.
 - Reading: a handful of features move the forecast at least as much as the whole SAE error term on these targets,
   and far more than equally active random features. Hand-picked targets and a prominence ranking: illustrative
   only; the attribution-ranked version waits on the §42.1 re-gate.
+
+### 42.3 Findings — attribution re-gate on unseen seeds and differentiable adapters (merged 2026-10-10)
+
+- **Fresh gate, seeds 5–8, nothing tuned (`vector_steps` 8), bar mean recall ≥ 0.8.** `attribution_horizon_l1`
+  0.9, 0.625, 0.8, 1.0, mean **0.83125: PASS**. `attribution_mase` 0.8, 0.75, 0.7, 0.7, mean **0.7375: FAIL** (misses
+  dispersion: 0/2, 1/2, 1/2, 1/4). Same seeds: legacy union 0.625, variance 0.39375, provenance 0.3375, structural
+  0.18125, mean-forecast attribution 0.2125, random 0.15. Thin margin: seed 6 at 0.625, 8–10 recovered concepts per seed.
+- **Dispersion recovery is real but mock-specific.** In `mock_planted` the dispersion shape row is an alternating ±1
+  vector, so it moves per-step point forecasts (seed 0: mean over horizon −3.1e-9, mean |Δ| per step 3.448e-3) and also
+  scales the quantile band. Matching is unambiguous (distinct atoms, cosines 0.916–0.954). A real model whose dispersion
+  effect lives only in the quantile band is invisible to a point-forecast gradient: horizon_l1 is not evidence about
+  real dispersion concepts, and the legacy rules and random control stay in the candidate set.
+- **`predict_differentiable`:** Chronos-2, Chronos-Bolt, Timer equal `predict()` exactly (max |Δ| 0.0); Time-MoE max
+  |Δ| 0.000292 (1.33e-6 context sd). First-order vs real ablation Pearson on 2 real targets each, top 3 atoms:
+  0.8347–1.0 except Time-MoE model.layers.2 (0.9956, 0.5174, 0.8235; 292 alive atoms). Sundial and Chronos-T5 have no
+  differentiable path (sampled heads) and stay unavailable with a stated reason; their candidates come from the
+  legacy rules only, which the battery artifact records.
+- **Decision.** §42 step 6 uses `candidate_rules` = legacy four + `attribution_horizon_l1` (top 20) for every
+  differentiable model. Pending: task B's powered test and its gate.
