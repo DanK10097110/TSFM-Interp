@@ -1293,19 +1293,35 @@ def _family_presence_entries(run_dir: Path, cfg: PipelineConfig,
     return entries, summary
 
 
-def _atlas_centroid_entries(atlas_entries: list, min_members: int, null_mode: str) -> tuple:
+def _atlas_centroid_entries(atlas_entries: list, min_members: int, null_mode: str,
+                            gate_excluded: list | None = None,
+                            n_stable: int | None = None) -> tuple:
     """`-> (entries, summary)` from the legacy `concept_atlas` entries
     (`_atlas_candidates`): the seed-stable concepts with >= `min_members`
     members spanning >= 2 models, re-registered as
     `concept_atlas_centroid::{concept}` with the SAME frozen members and
     `min_cosine`, the dev centroid (and member vectors) read under `null_mode`,
     and no pair-fraction leg. The legacy claim stays registered beside it,
-    unchanged."""
-    entries, below = [], []
+    unchanged.
+
+    `atlas_entries` must be the UNGATED pool, so a concept's size verdict
+    (`below`) is decided before the per-target gate. `gate_excluded` is the
+    legacy builder's gate ledger (`None` when the gate is off): a concept that
+    meets the size rule but sits on a non-significant target is listed under
+    `excluded_by_gate` with its reason instead of vanishing, and a concept
+    with fewer than two dev vectors (never in the pool) is counted in
+    `n_dropped_no_dev_vectors` from `n_stable`. A zero registration thus
+    always carries its reason (`reason`)."""
+    excluded = {x["id"]: x for x in gate_excluded or []}
+    entries, below, gated = [], [], []
     for e in atlas_entries:
         n, n_models = len(e["members"]), len(e["models"])
         if n < min_members or n_models < 2:
             below.append({"concept": e["concept"], "n_members": n, "n_models": n_models})
+            continue
+        if e["id"] in excluded:
+            gated.append({"concept": e["concept"], "n_members": n, "n_models": n_models,
+                          **excluded[e["id"]]})
             continue
         entries.append({
             **{k: v for k, v in e.items() if k not in ("id", "stage", "family", "statistic",
@@ -1322,9 +1338,27 @@ def _atlas_centroid_entries(atlas_entries: list, min_members: int, null_mode: st
                          f"same-composition random-member-set null (ablation null "
                          f"{null_mode})."),
         })
-    return entries, {"min_members": int(min_members), "null_mode": null_mode,
-                     "n_registered": len(entries), "n_below_threshold": len(below),
-                     "below": below, "ids": [e["id"] for e in entries]}
+    summary = {"min_members": int(min_members), "null_mode": null_mode,
+               "n_registered": len(entries), "n_below_threshold": len(below),
+               "below": below, "ids": [e["id"] for e in entries]}
+    if n_stable is not None:
+        summary["n_stable_concepts"] = int(n_stable)
+        summary["n_dropped_no_dev_vectors"] = int(n_stable) - len(atlas_entries)
+    if gate_excluded is not None:
+        summary.update({"n_excluded_by_gate": len(gated), "excluded_by_gate": gated})
+    if not entries:
+        parts = []
+        if n_stable is not None:
+            parts.append(f"{int(n_stable)} seed-stable concept(s)")
+        if below:
+            parts.append(f"{len(below)} below the size rule (>= {int(min_members)} members "
+                         f"spanning >= 2 models)")
+        if gated:
+            parts.append(f"{len(gated)} excluded by the per-target significance gate")
+        if n_stable is not None and summary["n_dropped_no_dev_vectors"]:
+            parts.append(f"{summary['n_dropped_no_dev_vectors']} with fewer than 2 dev vectors")
+        summary["reason"] = "no claim registered: " + "; ".join(parts or ["no stable concepts"])
+    return entries, summary
 
 
 def _v3_claim_entries(run_dir: Path, cfg: PipelineConfig) -> tuple:
@@ -1346,9 +1380,16 @@ def _v3_claim_entries(run_dir: Path, cfg: PipelineConfig) -> tuple:
         entries += fam
     if cen_on:
         mode = v3_null_mode(cfg)
-        atlas, _ = _atlas_candidates(run_dir, cfg, sig, null_mode=mode)
+        atlas, pool_sum = _atlas_candidates(run_dir, cfg, None, null_mode=mode)
+        gate_excluded = None
+        if sig is not None:
+            _, gate_sum = _atlas_candidates(run_dir, cfg, sig, null_mode=mode)
+            gate_excluded = gate_sum.get("excluded", [])
         cen, summary[ATLAS_CENTROID_STAGE] = _atlas_centroid_entries(
-            atlas, int(cfg.confirm.atlas_centroid_min_members), mode)
+            atlas, int(cfg.confirm.atlas_centroid_min_members), mode,
+            gate_excluded=gate_excluded, n_stable=pool_sum.get("n_stable_concepts"))
+        if "n_stable_concepts" not in pool_sum:
+            summary[ATLAS_CENTROID_STAGE]["reason"] = pool_sum.get("reason", "no atlas candidates")
         entries += cen
     return entries, summary
 
@@ -1682,12 +1723,36 @@ def build_registry(cfg: PipelineConfig) -> dict:
     return registry
 
 
+def zero_claim_reasons(registry: dict) -> list:
+    """`[(family, reason)]` for every opt-in claim family whose registry summary
+    reports `n_registered == 0`, so the report can say why a family is empty
+    instead of leaving a silent zero. The reason is the summary's own `reason`,
+    else a count of its gate exclusions."""
+    out = []
+    summaries = dict(registry.get("v3_claim_candidates") or {})
+    atlas = (registry.get("concept_claim_candidates") or {}).get("concept_atlas")
+    if atlas:
+        summaries["concept_atlas"] = atlas
+    for name, summ in sorted(summaries.items()):
+        if not isinstance(summ, dict) or summ.get("n_registered") != 0:
+            continue
+        why = summ.get("reason")
+        if not why:
+            n_gate = summ.get("n_excluded_by_gate", len(summ.get("excluded") or []))
+            why = (f"{n_gate} candidate(s) excluded by the per-target significance gate"
+                   if n_gate else "no candidate met the registration rule")
+        out.append((name, str(why)))
+    return out
+
+
 def run_register(cfg: PipelineConfig) -> None:
     """Write `hypotheses.json` at the run root (sibling to `config_resolved.yaml`)."""
     registry = build_registry(cfg)
     save_json(cfg.run_dir() / "hypotheses.json", registry)
     log.info("register: %d hypotheses registered (%d replicable) from dev artifacts",
              len(registry["hypotheses"]), registry["n_replicable"])
+    for name, why in zero_claim_reasons(registry):
+        log.warning("register: claim family %s registered 0 claims: %s", name, why)
 
 
 def check_registry_freshness(cfg: PipelineConfig, registry: dict) -> None:

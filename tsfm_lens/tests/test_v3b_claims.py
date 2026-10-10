@@ -992,3 +992,93 @@ def test_unmeasured_stability_is_skipped_with_a_reason_not_a_crash(tmp_path):
     entries, summary = hyp._atlas_candidates(tmp_path, _v3_cfg())
     assert entries == [] and summary["n_stability_not_measured"] == 1
     assert summary["n_stable_concepts"] == 1
+
+
+def _atlas_run(tmp_path):
+    """`_families_run` plus a concept atlas and its stability file: concept 0 spans A and B
+    (3 members, the multi-model one), concepts 1 and 2 are single-model decoys."""
+    run_dir = _families_run(tmp_path)
+    members = {0: [("A", "blocks.0.mlp", 0), ("A", "blocks.0.mlp", 1), ("B", "blocks.1.mlp", 20)],
+               1: [("A", "blocks.0.mlp", f) for f in (2, 3, 4)],
+               2: [("B", "blocks.1.mlp", f) for f in (10, 11, 12)]}
+    save_json(run_dir / "sae" / "concept_atlas.json", {
+        "params": {"min_cosine": 0.9, "min_members": 3},
+        "rows": [{"model": m, "layer": l, "feature": f, "concept": c}
+                 for c, ms in members.items() for m, l, f in ms]})
+    save_json(run_dir / "sae" / "concept_stability.json", {
+        "concepts": [{"concept": c, "stability": {"stable": True}} for c in members]})
+    return run_dir
+
+
+def _gate(significant):
+    return {"q": 0.05, "method": "bh", "n_targets": 2, "n_significant": sum(significant.values()),
+            "targets": {t: {"significant": s, "p": 0.4, "q_value": 0.4, "clearing_cells": 1}
+                        for t, s in significant.items()}}
+
+
+def _centroid_cfg(**over):
+    return _v3_cfg(register_family_presence_claims=False, register_atlas_centroid_claims=True,
+                   atlas_centroid_min_members=3, **over)
+
+
+def test_atlas_centroid_gate_exclusion_is_recorded_not_a_silent_zero(tmp_path, monkeypatch):
+    """The V3 run registered 0 `concept_atlas_centroid` claims with 0 below threshold: the
+    per-target gate removed every concept before the size rule saw it and the summary threw
+    the ledger away. The multi-model concept 0 sits on a non-significant target, so it is not
+    registered, but it must be listed under `excluded_by_gate` with the reason, and the two
+    single-model concepts are `below`. Planted regression: gate applied before the size rule
+    and the ledger dropped (old `_v3_claim_entries`)."""
+    run_dir = _atlas_run(tmp_path)
+    monkeypatch.setattr(hyp, "_target_gate_table", lambda *a, **k: _gate(
+        {"A/blocks.0.mlp": True, "B/blocks.1.mlp": False}))
+    entries, summary = hyp._v3_claim_entries(
+        run_dir, _centroid_cfg(register_requires_target_significance=True))
+    s = summary["concept_atlas_centroid"]
+    assert entries == [] and s["n_registered"] == 0
+    assert [b["concept"] for b in s["below"]] == [1, 2] and s["n_below_threshold"] == 2
+    assert s["n_excluded_by_gate"] == 1
+    ex = s["excluded_by_gate"][0]
+    assert ex["concept"] == 0 and ex["n_members"] == 3 and ex["n_models"] == 2
+    assert "B/blocks.1.mlp" in ex["reason"] and ex["targets"][0]["target"] == "B/blocks.1.mlp"
+    assert s["n_stable_concepts"] == 3 and s["n_dropped_no_dev_vectors"] == 0
+    assert "excluded by the per-target significance gate" in s["reason"]
+    assert hyp.zero_claim_reasons({"v3_claim_candidates": summary}) == [
+        ("concept_atlas_centroid", s["reason"])]
+
+
+def test_atlas_centroid_registers_the_gated_concept_once_its_targets_pass(tmp_path, monkeypatch):
+    """Same atlas, both targets significant, and with the gate off: concept 0 (3 members, 2
+    models) registers and the decoys do not. Planted regression: dropping the size rule
+    registers concepts 1 and 2 as well."""
+    run_dir = _atlas_run(tmp_path)
+    monkeypatch.setattr(hyp, "_target_gate_table", lambda *a, **k: _gate(
+        {"A/blocks.0.mlp": True, "B/blocks.1.mlp": True}))
+    entries, summary = hyp._v3_claim_entries(
+        run_dir, _centroid_cfg(register_requires_target_significance=True))
+    assert [e["id"] for e in entries] == ["concept_atlas_centroid::0"]
+    s = summary["concept_atlas_centroid"]
+    assert s["n_excluded_by_gate"] == 0 and "reason" not in s
+    assert hyp.zero_claim_reasons({"v3_claim_candidates": summary}) == []
+    monkeypatch.setattr(hyp, "_target_gate_table", lambda *a, **k: None)
+    entries, summary = hyp._v3_claim_entries(run_dir, _centroid_cfg())
+    assert [e["id"] for e in entries] == ["concept_atlas_centroid::0"]
+    assert "excluded_by_gate" not in summary["concept_atlas_centroid"]
+
+
+def test_confirm_section_renders_why_a_claim_family_registered_nothing(tmp_path):
+    """A zero registration carries its reason into the rendered report. Planted regression:
+    removing the `zero_claim_reasons` block from `_sec_confirm`."""
+    from tsfm_lens.report.report import _sec_confirm
+    run_dir = tmp_path / "run"
+    (run_dir / "confirm").mkdir(parents=True)
+    save_json(run_dir / "confirm" / "confirmation.json", {
+        "n_private_series": 40, "alpha": 0.05, "tests": [], "n_registered": 0,
+        "n_replicable": 0, "registry_sha256": "abc"})
+    save_json(run_dir / "hypotheses.json", {
+        "hypotheses": [], "n_replicable": 0,
+        "v3_claim_candidates": {"concept_atlas_centroid": {
+            "n_registered": 0, "reason": "no claim registered: 2 excluded by the per-target "
+                                         "significance gate"}}})
+    html = _sec_confirm(run_dir, [], 0)
+    assert "Claim families that registered nothing" in html
+    assert "concept_atlas_centroid" in html and "excluded by the per-target" in html

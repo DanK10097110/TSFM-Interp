@@ -8927,6 +8927,15 @@ def _sec_confirm(run_dir: Path, findings: list, n_exploratory: int) -> str:
                   f'"Exploratory findings examined" is every finding text this report generated '
                   f'before this section ran — a real but approximate multiplicity count, not a '
                   f'formal comparison tally.</p>')
+        from html import escape as _esc
+
+        from ..analysis.hypotheses import zero_claim_reasons
+
+        zero = zero_claim_reasons(registry)
+        if zero:
+            inner += ('<h4>Claim families that registered nothing</h4><ul>'
+                      + "".join(f"<li><code>{_esc(n)}</code>: {_esc(w)}</li>"
+                                for n, w in zero) + '</ul>')
         not_replicable = [h for h in registry["hypotheses"] if not h["replicable"]]
         if not_replicable:
             # Grouped by reason: the reason is a property of the STAGE, so a
