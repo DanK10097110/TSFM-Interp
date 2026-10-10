@@ -78,7 +78,7 @@ from ..extraction.store import ActivationStore, load_meta
 from ..utils import load_json, log, save_json
 from .ablation_run import ablation_path
 from .concept_atlas import _right_tail_p, pooled_features
-from .concepts import CHANNELS
+from .concepts import CHANNELS, causal_verdict_of
 from .ground_truth import (is_provenance_field, load_ground_truth_table,
                            residualize_against_provenance)
 from .transfer import (_by_stratum, _seed, benjamini_hochberg, concept_scores, matched_draws,
@@ -648,7 +648,8 @@ def run_concept_profiles(run_dir, cfg) -> dict:
     atlas = load_json(atlas_path)
 
     causal_only = bool(getattr(sae_cfg, "concept_causal_only", True))
-    X, pooled_rows = pooled_features(run_dir, causal_only=causal_only)
+    X, pooled_rows = pooled_features(run_dir, causal_only=causal_only,
+                                     verdict=causal_verdict_of(cfg))
     atlas_rows = atlas.get("rows") or []
     if len(pooled_rows) != len(atlas_rows) or any(
             pooled_rows[i]["model"] != atlas_rows[i]["model"]

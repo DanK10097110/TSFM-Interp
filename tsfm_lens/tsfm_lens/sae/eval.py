@@ -180,7 +180,10 @@ def forecast_preservation(cfg: PipelineConfig, adapter, layer: str, sae,
     # sample of what it does contain instead of a skewed remainder.
     pool = (np.arange(data.n) if allowed_series is None
             else np.asarray(allowed_series, dtype=int))
-    cap = capped_take(requested, n_available=int(pool.size), batch_size=adapter.cfg.batch_size)
+    chunked = bool(getattr(cfg.sae, "forecast_preservation_chunked", False))
+    cap = (capped_take(requested, n_available=int(pool.size)) if chunked
+           else capped_take(requested, n_available=int(pool.size),
+                            batch_size=adapter.cfg.batch_size))
     take = cap["n_realized"]
     # A head slice here silently scored both models on whichever series happen
     # to sit first in a corpus written grouped by task -- stratified instead
@@ -192,19 +195,23 @@ def forecast_preservation(cfg: PipelineConfig, adapter, layer: str, sae,
     targets = data.targets()[rows]
     seed = cfg.run.seed + 11
 
-    torch.manual_seed(seed)
-    f_clean = adapter.predict(contexts, cfg.data.horizon, cfg.l0.quantiles)["point"]
-    mase_clean = mase(f_clean, targets, contexts)
-
-    clean_tokens = capture_raw_tokens(adapter, contexts, [layer])[layer]  # [B, n_tokens, D] fp32
-    if granularity == "window":
-        replacement = _window_broadcast_replacement(clean_tokens, sae, adapter, cfg, device)
-    else:
-        replacement = _token_level_replacement(clean_tokens, sae, device)
-
-    with token_patch(adapter.module, layer, adapter.token_slice, replacement):
+    f_clean_parts, f_patch_parts = [], []
+    for s, e in batch_slices(len(rows), adapter.cfg.batch_size):
         torch.manual_seed(seed)
-        f_patch = adapter.predict(contexts, cfg.data.horizon, cfg.l0.quantiles)["point"]
+        f_clean_parts.append(adapter.predict(contexts[s:e], cfg.data.horizon,
+                                             cfg.l0.quantiles)["point"])
+        clean_tokens = capture_raw_tokens(adapter, contexts[s:e], [layer])[layer]  # [B, n_tokens, D] fp32
+        if granularity == "window":
+            replacement = _window_broadcast_replacement(clean_tokens, sae, adapter, cfg, device)
+        else:
+            replacement = _token_level_replacement(clean_tokens, sae, device)
+        with token_patch(adapter.module, layer, adapter.token_slice, replacement):
+            torch.manual_seed(seed)
+            f_patch_parts.append(adapter.predict(contexts[s:e], cfg.data.horizon,
+                                                 cfg.l0.quantiles)["point"])
+    f_clean = np.concatenate(f_clean_parts, axis=0)
+    f_patch = np.concatenate(f_patch_parts, axis=0)
+    mase_clean = mase(f_clean, targets, contexts)
     mase_patch = mase(f_patch, targets, contexts)
 
     return {

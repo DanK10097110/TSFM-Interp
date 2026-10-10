@@ -34,6 +34,7 @@ from ..extraction.extract import capture_raw_tokens
 from ..extraction.hooks import token_patch
 from ..utils import capped_take, log, sample_rows
 from .eval import _token_level_replacement
+from .powered import DEFAULT_N_BOOT, DEFAULT_Q, annotate_target, powered_feature
 from ..analysis.response_reach import reach_probe  # re-exported for convenience
 from ..analysis.spectral_lens import _magnitude_spectrum
 from ..analysis.stats import in_floor_units, mase, mean_ci
@@ -1010,7 +1011,10 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
                                   keep_null_draws: bool = False,
                                   empirical_chance: bool = False,
                                   keep_signed_null_draws: bool = False,
-                                  extra_null_modes: tuple = ()) -> dict:
+                                  extra_null_modes: tuple = (),
+                                  powered_test: bool = False,
+                                  powered_n_boot: int = DEFAULT_N_BOOT,
+                                  powered_q: float = DEFAULT_Q) -> dict:
     """Ablate each candidate on its OWN top-firing series; score the same
     9-channel battery against a ROW-MATCHED random-direction null.
 
@@ -1099,6 +1103,14 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
     cannot say what a random direction's 9-channel effect VECTOR looks like;
     the signed draws can, and `analysis/family_claims.py` scores a family's
     cosine against them.
+
+    `powered_test` (ROADMAP.md sec 42 task B; default off, so every artifact is then
+    byte-identical): each scorable candidate also gets `powered` (and, for every extra null,
+    `by_null[<mode>]["powered"]`), the per-channel series-mean rank test against the null
+    draws on the same series, with the Holm feature-level p-values (rank and predictive-t) and the BH
+    verdict across the target's features (`sae/powered.py`, which states the statistic and
+    why the rank form cannot be reached at the planned design). The artifact gains `powered`
+    (per-null summary). The legacy keys are untouched.
     """
     acts = np.asarray(activations, dtype=np.float64)
     if acts.ndim != 2 or acts.shape[0] != data.n:
@@ -1151,6 +1163,7 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
     profile_rngs = {m: np.random.default_rng(seed + 2) for m in modes if m != "mean_magnitude"}
 
     results, n_series_used = [], set()
+    powered_blocks = {m: [] for m in modes}
     n_clearing = {m: 0 for m in modes}
     n_shape_clearing = {m: 0 for m in modes}
     for chunk_feats, rows in chunks:
@@ -1351,6 +1364,21 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
             fchance = {mode: feature_chance_record(scored[mode][0], scored[mode][4])
                        for mode in modes} if empirical_chance else {}
 
+            powered = {}
+            if powered_test:
+                for mode in modes:
+                    delta_ch, draws_ch = {}, {}
+                    for ch in CHANNELS:
+                        s_ch = stats[ch]
+                        if not s_ch["available"] or s_ch["delta"] is None:
+                            continue
+                        delta_ch[ch] = np.asarray(s_ch["delta"], dtype=np.float64)[idx]
+                        draws_ch[ch] = [d[idx] for d in nulls[mode][1][ch] if d.size == len(rows)]
+                    powered[mode] = powered_feature(
+                        delta_ch, draws_ch, CHANNELS, n_boot=powered_n_boot,
+                        seed=int(seed) * 1000003 + int(f_idx))
+                    powered_blocks[mode].append(powered[mode])
+
             level_share_val, level_share_reason = level_share(
                 np.asarray(rec["point"], dtype=np.float64)[idx],
                 np.asarray(baseline_fc, dtype=np.float64)[idx])
@@ -1394,6 +1422,7 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
                 "n_shape_channels_clearing": sum(1 for v in per_channel_shape.values()
                                                  if v["clears_null"]),
                 **({"feature_chance": fchance[null_mode]} if fchance else {}),
+                **({"powered": powered[null_mode]} if powered else {}),
                 **({"by_null": {mode: {
                     "scorable": True,
                     "channels": scored[mode][0],
@@ -1407,6 +1436,7 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
                     "n_shape_channels_clearing": sum(1 for v in scored[mode][1].values()
                                                      if v["clears_null"]),
                     **({"feature_chance": fchance[mode]} if fchance else {}),
+                    **({"powered": powered[mode]} if powered else {}),
                 } for mode in modes if mode != null_mode}} if len(modes) > 1 else {}),
             })
 
@@ -1423,6 +1453,8 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
                                 for mode in modes if mode != null_mode}}
                                if len(modes) > 1 else {})})
     results.sort(key=lambda r: order.index(r["feature"]))
+    powered_summary = ({mode: annotate_target(powered_blocks[mode], q=powered_q)
+                        for mode in modes} if powered_test else {})
 
     scorable = [r for r in results if r.get("scorable")]
     n_cells = len(scorable) * len(CHANNELS)
@@ -1450,6 +1482,9 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
         "top_k_series": int(top_k_series), "n_series_union": len(n_series_used),
         "n_chunks": len(chunks), "series_per_chunk_cap": int(cap),
         "n_null_directions": int(n_null_directions),
+        **({"powered": {"q": float(powered_q), "n_boot": int(powered_n_boot),
+                        "primary_null": null_mode, "by_null": powered_summary}}
+           if powered_test else {}),
         **({"ablation_null": null_mode} if null_mode != "mean_magnitude" else {}),
         **chance_block,
         **({"ablation_nulls": modes, "by_null_summary": by_null_summary}

@@ -42,10 +42,12 @@ from ..utils import load_json, log, save_json
 from .plain_text import cleared_ranked as _plain_cleared_ranked
 from .plain_text import compose_title as _plain_compose_title
 from .plain_text import directed_profile as _plain_directed_profile
+from .powered import powered_causal
 from .response import CHANNELS
 from .roles import cluster_roles
 
-__all__ = ["CHANNELS", "ablation_vector", "build_concept_matrix",
+__all__ = ["CHANNELS", "ablation_vector", "build_concept_matrix", "causal_verdict_of",
+           "is_causal",
           "cluster_concepts", "concept_table", "compose_name",
           "assign_concept_names", "run_concepts", "supersede_roles_artifact",
           "SUPERSEDED_REASON"]
@@ -103,7 +105,30 @@ def ablation_vector(candidate: dict) -> np.ndarray | None:
     return row
 
 
-def build_concept_matrix(candidates: list, causal_only: bool = True
+CAUSAL_VERDICTS = ("p95_count", "powered")
+
+
+def causal_verdict_of(cfg) -> str:
+    """The causal verdict the config asks the concept chain to read (`sae.causal_verdict`);
+    a config object without the field (an older checkout's) is the legacy rule."""
+    return str(getattr(getattr(cfg, "sae", None), "causal_verdict", "p95_count") or "p95_count")
+
+
+def is_causal(candidate: dict, verdict: str = "p95_count") -> bool:
+    """Whether a scorable candidate counts as causal under `verdict`: `p95_count` is the
+    legacy rule (>= 1 channel above the null p95); `powered` is the BH verdict of
+    `sae/powered.py`. An artifact made without `sae.ablation_powered` carries no such block
+    and would read as False for every candidate, so `build_concept_matrix` refuses that
+    case rather than return an empty concept set that looks like a finding."""
+    if verdict == "powered":
+        return powered_causal(candidate)
+    if verdict != "p95_count":
+        raise ValueError(f"unknown causal verdict {verdict!r}: expected one of {CAUSAL_VERDICTS}")
+    return bool(candidate.get("n_channels_clearing"))
+
+
+def build_concept_matrix(candidates: list, causal_only: bool = True,
+                         verdict: str = "p95_count"
                         ) -> tuple[np.ndarray, list[int], dict]:
     """`-> (X [n, 9], feature_ids, diagnostics)`.
 
@@ -116,6 +141,11 @@ def build_concept_matrix(candidates: list, causal_only: bool = True
     counted separately as `n_dropped_not_scorable`, and an all-unscored
     candidate (`ablation_vector` returning `None`) as
     `n_dropped_all_unscored`.
+
+    `verdict` (`sae.causal_verdict`, ROADMAP.md sec 42): which rule defines "causal" for
+    `causal_only`. `powered` needs the candidates to carry the powered block and raises if
+    a scorable candidate has none, so a battery run without `sae.ablation_powered` cannot
+    silently yield zero causal features.
     """
     diagnostics = {
         "n_candidates": len(candidates),
@@ -129,7 +159,11 @@ def build_concept_matrix(candidates: list, causal_only: bool = True
         if not c.get("scorable"):
             diagnostics["n_dropped_not_scorable"] += 1
             continue
-        if causal_only and not c.get("n_channels_clearing"):
+        if verdict == "powered" and "powered" not in c:
+            raise ValueError(
+                "sae.causal_verdict is 'powered' but a scorable ablation candidate carries no "
+                "`powered` block; rerun the battery with sae.ablation_powered: true")
+        if causal_only and not is_causal(c, verdict):
             diagnostics["n_dropped_no_cleared_channel"] += 1
             continue
         vec = ablation_vector(c)
@@ -789,7 +823,8 @@ def run_concepts(run_dir: Path, cfg) -> dict:
             continue
 
         candidates = art.get("candidates", [])
-        X, feature_ids, diagnostics = build_concept_matrix(candidates, causal_only=causal_only)
+        X, feature_ids, diagnostics = build_concept_matrix(
+            candidates, causal_only=causal_only, verdict=causal_verdict_of(cfg))
         cluster_result = cluster_concepts(X, k=k, min_silhouette=min_silhouette,
                                           min_members=min_members, seed=seed)
         concepts = concept_table(candidates, X, feature_ids, cluster_result, art)

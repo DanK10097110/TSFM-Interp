@@ -116,6 +116,7 @@ import numpy as np
 from ..utils import load_json, log, save_json
 from .concept_atlas import (_candidate_lookup, _cross_model_null, _left_tail_p,
                             _mean_purity, _right_tail_p, cross_model_verdict, pooled_features)
+from .concepts import causal_verdict_of
 from .describe import CHANNEL_GLOSS, CHANNEL_VERB, _DEFAULT_VERB
 from .plain_text import FALLBACK_TITLE, LEVEL_CARRIER_TITLE, TITLE_NOUN, TITLE_SUFFIXES
 from .plain_text import cleared_ranked as _cleared_ranked
@@ -818,7 +819,8 @@ def run_concept_families(run_dir, atlas: dict, cfg, profiles: dict | None = None
              "linkage": _FAMILY_LINKAGE_METHOD, "n_null": n_null, "sil_tol": sil_tol,
              "level_share_threshold": level_share_threshold}
 
-    X, rows = pooled_features(run_dir, causal_only=causal_only)
+    X, rows = pooled_features(run_dir, causal_only=causal_only,
+                              verdict=causal_verdict_of(cfg))
     n_features = int(X.shape[0])
     atlas_concepts = atlas.get("concepts") or []
 
