@@ -48,6 +48,23 @@ def test_pooled_recall_weights_models_by_their_recovered_concepts():
     assert p["by_kind"]["seasonal"] == {"n_hit": 0, "n": 1}
 
 
+def _two_rule_rows(recalls: dict) -> dict:
+    return {s: {"pooled": {"a": {"recall": ra}, "b": {"recall": rb}}} for s, (ra, rb) in recalls.items()}
+
+
+def test_regate_reads_each_rule_on_its_own_unseen_seeds_only():
+    rows = _two_rule_rows({1: (0.0, 0.0), 5: (0.9, 0.5), 6: (0.8, 0.5), 7: (0.8, 0.5), 8: (0.8, 0.5)})
+    a = gate_verdict(rows, "a", (5, 6, 7, 8))
+    b = gate_verdict(rows, "b", (5, 6, 7, 8))
+    assert (a["verdict"], a["rule"], a["mean_recall"]) == ("pass", "a", pytest.approx(0.825))
+    assert (b["verdict"], b["mean_recall"]) == ("fail", pytest.approx(0.5))
+
+
+def test_a_rule_without_a_recall_on_a_held_out_seed_is_not_scorable():
+    rows = _two_rule_rows({5: (0.9, 0.5), 6: (0.8, 0.5), 7: (0.8, 0.5), 8: (0.8, 0.5)})
+    assert gate_verdict(rows, "missing", (5, 6, 7, 8))["verdict"] == "not scorable"
+
+
 def test_kind_is_read_from_the_planted_id():
     assert _kind("convergent_dispersion_1") == "dispersion"
     assert _kind("shared_trend_0") == "trend"

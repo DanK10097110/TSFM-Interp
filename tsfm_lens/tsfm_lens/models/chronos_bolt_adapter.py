@@ -124,6 +124,29 @@ class ChronosBoltAdapter(ModelAdapter):
         return {"point": mean.float().cpu().numpy(),
                 "quantiles": q.float().cpu().numpy()}
 
+    def predict_differentiable(self, contexts: np.ndarray, horizon: int):
+        """The median quantile channel of one Bolt head pass, with autograd enabled.
+
+        The library `predict` runs its forward under `no_grad` and `predict_quantiles`
+        detaches, so the model is called directly, as `predict` does for the first
+        block. A horizon beyond the head's own prediction length needs the library's
+        autoregressive quantile-averaging loop, which is not reproduced here, so it
+        raises rather than returning a different forecast.
+        """
+        from .base import CapabilityUnavailable
+        if horizon > self.pipeline.model_prediction_length:
+            raise CapabilityUnavailable(
+                f"model '{self.name}': horizon {horizon} exceeds the Bolt head's "
+                f"{self.pipeline.model_prediction_length} steps, whose autoregressive "
+                f"extension is not differentiable here",
+                model=self.name, capability="predict_differentiable",
+                tier_actual=self.capability_tier(), tier_required=self.capability_tier())
+        context = self.prepare(contexts)
+        context = context[..., -self.pipeline.model_context_length:].to(
+            device=self.pipeline.model.device, dtype=torch.float32)
+        preds = self.pipeline.model(context=context).quantile_preds.float()
+        return preds[:, self.pipeline.quantiles.index(0.5), :horizon]
+
     def attention_info(self) -> list:
         """Best-effort head map via the shared block scan, None if any block fails."""
         self.ensure_loaded()
