@@ -850,6 +850,21 @@ class SAEConfig:
     # family-presence claim scores a family's cosine against these. Default off, artifacts unchanged.
     keep_signed_null_draws: bool = field(default=False, metadata={"stage_input": False,
                                                                   "omit_at_default": True})
+    # Opt-in candidate rules of the ablation battery (ROADMAP.md sec 42, decision 1). The
+    # default names the four legacy rules, so outputs are byte-identical. Adding
+    # `attribution` also nominates the top `n_attribution` alive atoms by mean |activation x
+    # d(mean point forecast)/d activation| (`sae/attribution.py`); `attribution_mase` also
+    # nominates the top atoms of the MASE-against-truth ranking (reported either way). Every
+    # candidate records each rule that nominated it. A model whose forecast is not
+    # differentiable gets a stated `unavailable` reason in the artifact and no nomination.
+    # Declared field by field on the concepts stage and left out of the `sae` stage's inputs
+    # (`omit_at_default`), so a default config keeps every older fingerprint.
+    candidate_rules: tuple = field(default=("structural", "variance", "provenance", "random"),
+                                   metadata={"stage_input": False, "omit_at_default": True})
+    n_attribution: int = field(default=20, metadata={"stage_input": False,
+                                                     "omit_at_default": True})
+    attribution_max_series: int = field(default=128, metadata={"stage_input": False,
+                                                               "omit_at_default": True})
 
 
 @dataclass
@@ -1357,6 +1372,11 @@ class PipelineConfig:
             if bad:
                 raise ValueError(f"sae.ablation_nulls: unknown null mode(s) {bad}; "
                                  f"expected from {list(ABLATION_NULL_MODES)}")
+        from .sae.response import CANDIDATE_RULES
+        bad_rules = [r for r in self.sae.candidate_rules if r not in CANDIDATE_RULES]
+        if bad_rules:
+            raise ValueError(f"sae.candidate_rules: unknown rule(s) {bad_rules}; "
+                             f"expected from {list(CANDIDATE_RULES)}")
         names = [m.name for m in self.models]
         if len(set(names)) != len(names):
             raise ValueError("model names must be unique")
@@ -1462,6 +1482,7 @@ def config_from_dict(raw: dict) -> PipelineConfig:
     if "models" in raw:
         cfg.models = [_build(ModelConfig, m, section=f"models[{i}]")
                      for i, m in enumerate(raw["models"])]
+    cfg.sae.candidate_rules = tuple(cfg.sae.candidate_rules)
     cfg.sae.ablation_nulls = tuple(cfg.sae.ablation_nulls or ())
     nulls = cfg.sae.ablation_nulls
     if nulls and "ablation_null" not in (raw.get("sae") or {}):

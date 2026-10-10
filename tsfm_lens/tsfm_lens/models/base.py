@@ -166,6 +166,24 @@ class ModelAdapter(ABC):
     def predict(self, contexts: np.ndarray, horizon: int, quantiles: list) -> dict:
         """Forecast, returning {'point': [B, H], 'quantiles': [B, H, Q]}."""
 
+    def predict_differentiable(self, contexts: np.ndarray, horizon: int):
+        """Point forecast `[B, horizon]` as a torch tensor with autograd ENABLED.
+
+        Optional, and deliberately not part of the tier derivation: `predict`
+        runs under `no_grad` and returns numpy, so a gradient taken through a
+        `hooks.token_patch` needs its own entry point. The attribution
+        candidate rule (`sae/attribution.py`) is the only caller. An adapter
+        whose forecast is sampled or runs outside torch autograd leaves this
+        unimplemented, and the rule then records why it was unavailable.
+        """
+        raise CapabilityUnavailable(
+            f"model '{self.name}' has no differentiable point forecast "
+            f"(`predict_differentiable` is not implemented for adapter "
+            f"'{self.cfg.adapter}'): `predict` runs under no_grad, so a gradient from "
+            f"the forecast to the patched layer cannot be taken",
+            model=self.name, capability="predict_differentiable",
+            tier_actual=self.capability_tier(), tier_required=self.capability_tier())
+
     # Tier 2 ("steerable") means the whole context is processed in ONE forward
     # pass, so a cached clean state can be written back into a corrupted run at
     # a fixed token position (`CLAUDE.md` sec 12's envelope edge, and what

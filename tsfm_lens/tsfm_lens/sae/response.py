@@ -368,11 +368,19 @@ def alive_feature_mask(sae, activations: np.ndarray, device, batch_size: int = 8
 # Candidate selection (ROADMAP.md §25.4's new priority order).
 # ---------------------------------------------------------------------------
 
+CANDIDATE_RULES = ("structural", "variance", "provenance", "random", "attribution",
+                   "attribution_mase")
+LEGACY_CANDIDATE_RULES = ("structural", "variance", "provenance", "random")
+
+
 def select_candidates(alive_mask: np.ndarray, n_per_rule: int,
                       residualized_structural: dict | None = None,
                       activation_variance: np.ndarray | None = None,
                       provenance_matches: dict | None = None,
-                      seed: int = 0) -> list:
+                      seed: int = 0, rules: tuple | None = None,
+                      attribution_ranked: list | None = None,
+                      attribution_mase_ranked: list | None = None,
+                      n_attribution: int = 20) -> list:
     """Nominate candidate feature indices, restricted to `alive_mask`, in
     ROADMAP.md §25.4's stated priority order. Every candidate records EVERY
     rule that nominated it (not just the first) -- `CLAUDE.md` sec 11.34:
@@ -393,7 +401,16 @@ def select_candidates(alive_mask: np.ndarray, n_per_rule: int,
     whether the other three inputs are given, since it is "the only way to
     say whether the selected features are unusual" (§25.4) and costs
     nothing to include.
+
+    `rules` (ROADMAP.md sec 42, `sae.candidate_rules`; `None` = the four legacy
+    rules, so the output is byte-identical) selects which rules run.
+    `attribution_ranked` / `attribution_mase_ranked` are `[{"feature", "score"}]`
+    lists from `sae/attribution.py::rank_atoms`; the top `n_attribution` alive
+    atoms of each are nominated under `attribution` / `attribution_mase`, and only
+    when that rule is named in `rules`. They are appended after the legacy
+    rules, so every legacy candidate keeps its position.
     """
+    use = set(rules) if rules is not None else set(LEGACY_CANDIDATE_RULES)
     alive_idx = np.flatnonzero(alive_mask)
     nominations: dict[int, list] = {}
 
@@ -406,7 +423,7 @@ def select_candidates(alive_mask: np.ndarray, n_per_rule: int,
     order: list = []
 
     # (1) top-n by residualized structural rho, restricted to alive atoms.
-    if residualized_structural:
+    if residualized_structural and "structural" in use:
         ranked = sorted(
             ((f, abs(r)) for f, r in residualized_structural.items() if alive_mask[f]),
             key=lambda kv: -kv[1])
@@ -416,7 +433,7 @@ def select_candidates(alive_mask: np.ndarray, n_per_rule: int,
                 order.append(f)
 
     # (2) top-n by activation variance among alive atoms.
-    if activation_variance is not None:
+    if activation_variance is not None and "variance" in use:
         var = np.asarray(activation_variance, dtype=np.float64)
         alive_var = [(int(i), float(var[i])) for i in alive_idx]
         alive_var.sort(key=lambda kv: -kv[1])
@@ -426,7 +443,7 @@ def select_candidates(alive_mask: np.ndarray, n_per_rule: int,
                 order.append(f)
 
     # (3) top-n by raw provenance rho, kept and labelled deliberately.
-    if provenance_matches:
+    if provenance_matches and "provenance" in use:
         ranked = sorted(
             ((f, abs(r)) for f, r in provenance_matches.items() if alive_mask[f]),
             key=lambda kv: -kv[1])
@@ -438,13 +455,21 @@ def select_candidates(alive_mask: np.ndarray, n_per_rule: int,
     # (4) random sample of alive atoms, the within-dictionary control.
     rng = np.random.default_rng(seed)
     n_random = min(n_per_rule, alive_idx.size)
-    if n_random > 0:
+    if n_random > 0 and "random" in use:
         random_pick = rng.choice(alive_idx, size=n_random, replace=False)
         for f in random_pick:
             f = int(f)
             _nominate(f, "random")
             if f not in order:
                 order.append(f)
+
+    for rule, ranked in (("attribution", attribution_ranked),
+                         ("attribution_mase", attribution_mase_ranked)):
+        if rule in use and ranked:
+            for entry in [e for e in ranked if alive_mask[e["feature"]]][:n_attribution]:
+                _nominate(int(entry["feature"]), rule)
+                if int(entry["feature"]) not in order:
+                    order.append(int(entry["feature"]))
 
     if not order:
         log.info("sae response fingerprint: no alive atoms available for any "
