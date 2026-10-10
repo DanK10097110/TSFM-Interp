@@ -271,7 +271,7 @@ internals:
 confirm:
   enabled: true    # registration from THIS run's dev artifacts happens FIRST, with `path` empty;
                    # the V3 private epoch is minted only after the registry hash is recorded.
-  path: ""         # EMPTY ON PURPOSE. Mint after registration (from the repo root):
+  path: ../benchmark_v3/private_epoch1   # minted 2026-10-10 after register (was EMPTY ON PURPOSE). Mint after registration (from the repo root):
                    #   python tsfm_benchmark/example_runs/mint_private.py \
                    #       --config tsfm_benchmark/configs/benchmark_v3.yaml --seed 7000003 --epoch 1
                    # then set this to the minted directory and run `--stages confirm` ONCE.

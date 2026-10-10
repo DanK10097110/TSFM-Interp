@@ -39384,3 +39384,32 @@ fix if it is a bug, with a test that fails on the planted regression.
 
 **Not done, by decision.** No SAE data scaling (MN-34 gives no reason to expect clearer causality from it); no change
 to V3's registered rules.
+
+### 42.1 Findings — task A (attribution) and task D (atlas-centroid zero), 2026-10-10
+
+- **Task D (merged 147437e).** Not a registration bug: `confirm.register_requires_target_significance: true` (the
+  §38.3.4 per-target BH gate, set before V3 data) excluded all 4 atlas concepts, and the centroid builder received the
+  gated (empty) list, so its size rule never ran and `n_registered 0` carried no reason. Concept 0 (Chronos-2 +
+  Chronos-Bolt) sits on Chronos-2/encoder.block.5, target p 0.0588, q 0.2431; concept 2 (Chronos-T5-Base + Sundial +
+  Time-MoE) on targets with q 1.0; concepts 1 and 3 are single-model. Fix: size rule first on the ungated pool, gate
+  exclusions listed per concept, a `reason` on every zero, report lists empty claim families. `register` rerun on
+  `panel7_v3_dev`: the 111 hypotheses are byte-identical; V3 confirms 0 atlas-centroid claims under its registered
+  rule (not changed). Private epoch 1 minted 2026-10-10 13:24 (`benchmark_v3/private_epoch1`), confirm started.
+- **Task A (merged 26588d5): the pre-fixed attribution gate FAILS.** K1, held-out seeds 1–4, recall of recovered
+  planted concepts in the top 20 (bar 0.8): 0.25, 0.3077, 0.2222, 0.25, mean **0.2575**. Gradients are exact
+  (first-order vs real ablation Pearson ≥ 0.99999 on the mock). Cause, a spec flaw: the horizon-mean point forecast
+  cancels trend and seasonal effects and dispersion does not move the point forecast; level concepts are recovered
+  (3/3, 4/4, 1/1, 3/3 on seeds 1–4), trend/seasonal/dispersion almost never (seed 1 trend 0/6, dispersion 0/2).
+  Held-out means of the other rankings, scored on the same seeds: `attribution_mase` 0.7511, `forecast_horizon_l1`
+  (Σ over 8 horizon steps of |Σ_t a·∂F_h/∂a|, added after the tuning seed 0 only) 0.8990, legacy union 0.4850,
+  provenance 0.2885, variance 0.2676, structural 0.1287, random 0.1026. Real TimesFM (read-only, 3 targets):
+  attribution top-20 overlaps 9–11 of the 24 V3-tested candidates (all from the variance rule); first-order vs real
+  ablation Pearson is lower than on the mock (0.336–0.985 over the top 3 atoms per target). `predict_differentiable`
+  exists for `mock`, `mock_planted`, `timesfm`; other adapters raise `CapabilityUnavailable` loudly.
+- **Decision (taken now, before any further result).** The mean-summary rule is a confirmed method negative
+  (FINDINGS MN-35). `forecast_horizon_l1` becomes the primary attribution rule and `attribution_mase` the secondary,
+  both gated afresh on **unseen seeds 5–8** at the same bar (recall ≥ 0.8), because seeds 1–4 have been seen for them.
+  In parallel `predict_differentiable` is extended to the deterministic adapters (Chronos-2, Chronos-Bolt, Timer,
+  Time-MoE); sampled heads (Sundial, Chronos-T5) stay unavailable with a stated reason unless a seeded differentiable
+  path exists. The unexplained horizon_l1 recovery of dispersion concepts (4/4 on seeds 0 and 2) is investigated
+  before the gate is read.

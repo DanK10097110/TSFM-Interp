@@ -1626,6 +1626,14 @@ See SH-20. **4/5.**
 - **Ref.** ROADMAP §41.5, §42.
 - **Score. 3/5.**
 
+#### MN-35 · Attribution to the horizon-mean point forecast cannot rank shape concepts and fails its pre-fixed gate
+- **Claim.** Ranking SAE atoms by |activation × ∂(mean point forecast over the horizon)/∂activation| recovers planted K1 concepts in its top 20 at 0.25, 0.3077, 0.2222, 0.25 on held-out seeds 1–4 (mean 0.2575, bar 0.8): **FAIL**. Level concepts are recovered (3/3, 4/4, 1/1, 3/3); trend, seasonal and dispersion almost never (seed 1: trend 0/6, dispersion 0/2). The gradient is exact (first-order vs real ablation Pearson ≥ 0.99999). On the same seeds, after the fact: per-horizon-step attribution 0.8990, MASE attribution 0.7511, the legacy candidate union 0.4850, random 0.1026.
+- **Reading.** A scalar that averages the horizon cancels shape effects; the summary, not the gradient, is the problem. The per-step and MASE variants are re-gated on unseen seeds 5–8 before use (ROADMAP §42.1).
+- **Evidence.** Known-answer validation of a method. **Status:** negative (primary rule); variants pending.
+- **Reproduce.** `run_attribution_known_answer.py`, `configs/attribution_known_answer.yaml`, `sae/attribution.py` (merge 26588d5).
+- **Ref.** ROADMAP §42.1.
+- **Score. 3/5.**
+
 ## H. Benchmark trust
 
 #### BM-01 · Near-duplicate matchers disagree ~70× on the same corpus
