@@ -810,6 +810,13 @@ These instructions are binding for every future session, human or agent.
 
 ---
 
+#### D-42C · A handful of SAE features move the forecast as much as the SAE error term (3 targets, illustrative)
+- **Claim.** On 3 hand-picked `panel7_v3_dev` targets, zeroing the 5 most prominent features changes the forecast by a share 0.6649 (TimesFM stacked_xf.6), 0.5933 (Chronos-Bolt encoder.block.3) and 0.4068 (Sundial model.layers.11) of feature-plus-error-term change, and by 0.2187 / 0.2594 / 0.0862 context sd more than activation-matched random 5-feature sets. TimesFM top-20 removal moves the forecast 10.14 sd (off-manifold; its 0.9864 share is not a coverage claim).
+- **Evidence.** Illustrative (hand-picked targets, prominence ranking, 64 series, descriptive). **Status:** open; attribution-ranked rerun pending ROADMAP §42.1.
+- **Reproduce.** `run_completeness.py` (merge of §42 C), `sae/completeness.py`.
+- **Ref.** ROADMAP §42.2.
+- **Score. 2/5.**
+
 ## E. Per-model character
 
 #### PM-01 · Scale equivariance: TimesFM is exact; Chronos-T5 is off by four orders of magnitude; Sundial is far worse

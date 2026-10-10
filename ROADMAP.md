@@ -39413,3 +39413,21 @@ to V3's registered rules.
   Time-MoE); sampled heads (Sundial, Chronos-T5) stay unavailable with a stated reason unless a seeded differentiable
   path exists. The unexplained horizon_l1 recovery of dispersion concepts (4/4 on seeds 0 and 2) is investigated
   before the gate is read.
+
+### 42.2 Findings — task C (forecast completeness), merged 2026-10-10
+
+- `sae/completeness.py`, opt-in `concepts.completeness` (default off, fingerprints unchanged), report section
+  "Completeness" (descriptive). Δ = horizon-mean |patched − baseline| / context sd; feature arm zeroes the top-N atoms
+  from the reconstruction (baseline: reconstruction), error arm patches the reconstruction in (baseline: clean);
+  share = mean Δf / (mean Δf + mean Δe), series-bootstrap CI; matched-random sets from the same activation decile.
+  The two arms have different baselines, so the share is a coverage ratio, not a decomposition. Controls (self-patch
+  0.0, seeded repeat 0.0) passed on all targets.
+- **Read-only on 3 hand-picked V3 targets with the fallback prominence ranking (illustrative, 64 series, 16 random
+  draws):** top-5 share 0.6649 (TimesFM stacked_xf.6), 0.5933 (Chronos-Bolt encoder.block.3), 0.4068 (Sundial
+  model.layers.11); the top-5 feature set moves the forecast 0.2187, 0.2594, 0.0862 context sd more than matched
+  random sets (no random draw reached it on Bolt and Sundial, 1 of 16 on TimesFM). TimesFM top-20 removal moves the
+  forecast by 10.14 context sd (median 9.54 per series): removing the 20 most prominent atoms wrecks the forecast,
+  an off-manifold intervention, so its share 0.9864 is not "20 features explain 98.6%".
+- Reading: a handful of features move the forecast at least as much as the whole SAE error term on these targets,
+  and far more than equally active random features. Hand-picked targets and a prominence ranking: illustrative
+  only; the attribution-ranked version waits on the §42.1 re-gate.
