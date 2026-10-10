@@ -154,9 +154,9 @@ def _kind(concept_id: str) -> str:
     return concept_id.rsplit("_", 1)[0].split("_", 1)[1]
 
 
-def secondary_summary(seed_rows: dict) -> dict:
-    """Mean held-out recall of the non-gating rankings, for reading beside the gate. Post hoc."""
-    held = [s for s in GATE["held_out_seeds"] if s in seed_rows]
+def secondary_summary(seed_rows: dict, held_out: tuple = GATE["held_out_seeds"]) -> dict:
+    """Mean held-out recall of every ranking, for reading beside the gate."""
+    held = [s for s in held_out if s in seed_rows]
     out = {}
     for rule in sorted({r for s in held for r in seed_rows[s]["pooled"]}):
         vals = [seed_rows[s]["pooled"][rule]["recall"] for s in held
@@ -165,16 +165,22 @@ def secondary_summary(seed_rows: dict) -> dict:
     return out
 
 
-def gate_verdict(seed_rows: dict) -> dict:
-    """The pre-fixed gate from per-seed pooled attribution recall; seed 0 never enters it."""
-    held = [s for s in GATE["held_out_seeds"] if s in seed_rows]
-    vals = [seed_rows[s]["pooled"]["attribution"]["recall"] for s in held]
+def gate_verdict(seed_rows: dict, rule: str = "attribution",
+                 held_out: tuple = GATE["held_out_seeds"]) -> dict:
+    """The pre-fixed gate from per-seed pooled recall of `rule`; seed 0 never enters it.
+
+    `held_out` is the seed set the bar is read on (default 1-4, the spec's gate; 5-8 for
+    the re-gate of `attribution_horizon_l1` and `attribution_mase`, ROADMAP sec 42.1).
+    """
+    gate = {**GATE, "held_out_seeds": tuple(held_out), "rule": rule}
+    held = [s for s in held_out if s in seed_rows]
+    vals = [seed_rows[s]["pooled"].get(rule, {}).get("recall") for s in held]
     missing = [s for s, v in zip(held, vals) if v is None]
-    if len(held) != len(GATE["held_out_seeds"]) or missing:
-        return {**GATE, "verdict": "not scorable",
+    if len(held) != len(held_out) or missing:
+        return {**gate, "verdict": "not scorable",
                 "reason": f"held-out seeds present {held}, without a scorable recall: {missing}"}
     mean = float(np.mean(vals))
-    return {**GATE, "mean_recall": mean, "per_seed": dict(zip(held, vals)),
+    return {**gate, "mean_recall": mean, "per_seed": dict(zip(held, vals)),
             "verdict": "pass" if mean >= GATE["recall_min"] else "fail"}
 
 
@@ -185,6 +191,10 @@ def main(argv: list | None = None) -> dict:
     ap.add_argument("--out", default="runs/attribution_known_answer")
     ap.add_argument("--seeds", type=int, nargs="+", default=[0, 1, 2, 3, 4])
     ap.add_argument("--device", default=None)
+    ap.add_argument("--held-out", type=int, nargs="+", default=list(GATE["held_out_seeds"]),
+                    help="seeds the bar is read on")
+    ap.add_argument("--gate-rules", nargs="+", default=["attribution"],
+                    help="rankings gated at the bar, e.g. attribution_horizon_l1 attribution_mase")
     args = ap.parse_args(argv)
     setup_logging()
 
@@ -211,11 +221,12 @@ def main(argv: list | None = None) -> dict:
                  {r: seed_rows[seed]["pooled"][r]["recall"] for r in rules})
     result = {"schema_version": 1, "thresholds": THRESHOLDS["recovery_cosine"],
               "evidence_class": "method validation on a constructed model",
-              "gate": gate_verdict(seed_rows),
-              "held_out_mean_recall_by_rule": secondary_summary(seed_rows),
-              "secondary_note": "attribution_mase and attribution_horizon_l1 are diagnostics added "
-                                "after seed 0 showed the horizon-mean summary cannot see trend, "
-                                "seasonal or dispersion concepts; they are not the gate.",
+              "gate": gate_verdict(seed_rows, args.gate_rules[0], tuple(args.held_out)),
+              "gates": {r: gate_verdict(seed_rows, r, tuple(args.held_out)) for r in args.gate_rules},
+              "held_out_mean_recall_by_rule": secondary_summary(seed_rows, tuple(args.held_out)),
+              "vector_steps": VECTOR_STEPS,
+              "note": "`gates` holds one pre-fixed verdict per --gate-rules entry on --held-out; "
+                      "a ranking that was not named in --gate-rules is a diagnostic only.",
               "seeds": seed_rows}
     out = Path(args.out) / "attribution_known_answer.json"
     save_json(out, result)

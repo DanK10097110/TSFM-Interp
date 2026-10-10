@@ -113,6 +113,19 @@ class ChronosAdapter(ModelAdapter):
         return super().postprocess_tokens(layer_name, hidden[:, :kept]
                                           if hidden.shape[1] > kept else hidden)
 
+    def predict_differentiable(self, contexts: np.ndarray, horizon: int):
+        """Unavailable: the forecast is a sample from a sampled T5 decoder, not a function of the patched layer.
+
+        A seeded `predict` is reproducible but its sample is drawn outside autograd, so no
+        gradient reaches the patched layer. No seeded differentiable path exists here.
+        """
+        from .base import CapabilityUnavailable
+        raise CapabilityUnavailable(
+            f"model '{self.name}': the point forecast is the median of sampled decoder token paths; a gradient from it to the patched "
+            f"layer does not exist (a seeded `predict` is reproducible but not differentiable)",
+            model=self.name, capability="predict_differentiable",
+            tier_actual=self.capability_tier(), tier_required=self.capability_tier())
+
     def predict(self, contexts: np.ndarray, horizon: int, quantiles: list) -> dict:
         """Sample forecast trajectories and reduce to point (median) and quantiles."""
         num_samples = int(self.cfg.kwargs.get("num_samples", 20))

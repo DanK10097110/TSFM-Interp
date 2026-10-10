@@ -134,6 +134,19 @@ class Chronos2Adapter(ModelAdapter):
         point = interpolate_quantiles([0.5], self._levels, preds_hq)[..., 0]
         return {"point": point.numpy(), "quantiles": q_out.numpy()}
 
+    def predict_differentiable(self, contexts: np.ndarray, horizon: int):
+        """The median of `predict`'s quantile head, with autograd enabled.
+
+        `predict` wraps only its own forward in `no_grad`, so the identical call
+        without it is differentiable; the median goes through the same
+        `interpolate_quantiles` as `predict`'s point.
+        """
+        from chronos.utils import interpolate_quantiles
+        tensor = self.prepare(contexts)
+        out = self._inner(context=tensor, num_output_patches=self._num_output_patches(horizon))
+        preds_hq = out.quantile_preds[..., :horizon].float().permute(0, 2, 1)
+        return interpolate_quantiles([0.5], self._levels, preds_hq)[..., 0]
+
     def forecast_reads_patched_positions(self) -> bool:
         """False -- but for a narrower reason than "the head ignores context".
 
