@@ -1277,6 +1277,19 @@ class ConceptsConfig:
     window_sensitivity: Optional[list] = field(default=None, metadata={"omit_at_default": True})
     tier_breakdown: bool = field(default=False, metadata={"stage_input": False})
 
+    # ROADMAP.md sec 42 task C: forecast COMPLETENESS (`sae/completeness.py`, writes
+    # `sae/completeness.json`), opt-in and descriptive. Per target, how much of the
+    # forecast change is carried by the top-N ranked SAE features (N in
+    # `completeness_set_sizes`, default 1/5/20) versus by the SAE error term, with an
+    # activation-matched random-feature-set baseline of `completeness_n_random` draws.
+    # Every field is `omit_at_default`, so a run that leaves it off keeps its
+    # `concepts` fingerprint and every artifact byte-identical.
+    completeness: bool = field(default=False, metadata={"omit_at_default": True})
+    completeness_max_series: int = field(default=64, metadata={"omit_at_default": True})
+    completeness_n_random: int = field(default=16, metadata={"omit_at_default": True})
+    completeness_n_boot: int = field(default=1000, metadata={"omit_at_default": True})
+    completeness_set_sizes: Optional[list] = field(default=None, metadata={"omit_at_default": True})
+
 
 @dataclass
 class PipelineConfig:
