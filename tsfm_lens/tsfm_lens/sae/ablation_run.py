@@ -145,13 +145,12 @@ def run_ablation_target(cfg, run_dir: Path, hub, data, store, device, model: str
         attribution = attribution_candidates(
             cfg, adapter, layer, sae, data, device, alive,
             n_attribution=int(cfg.sae.n_attribution),
-            max_series=int(cfg.sae.attribution_max_series), seed=cfg.run.seed)
+            max_series=int(cfg.sae.attribution_max_series), seed=cfg.run.seed,
+            vector_steps=int(getattr(cfg.sae, "attribution_vector_steps", 0)))
         if attribution["status"] != "ok":
             log.warning(f"ablation: {model}/{layer}: attribution rule unavailable -- "
                         f"{attribution['reason']}")
-    attr_top = ({"attribution": attribution["top_forecast_mean"],
-                 "attribution_mase": attribution["top_mase"]}
-                if attribution and attribution["status"] == "ok" else {})
+    attr_top = attribution_rankings(attribution)
     if candidates is not None:
         candidates = [{"feature": int(c["feature"]), "rules": c.get("rules", [])}
                       for c in candidates]
@@ -171,7 +170,8 @@ def run_ablation_target(cfg, run_dir: Path, hub, data, store, device, model: str
             alive = alive_feature_mask(sae, bench, device)
         extra = ({"rules": rules, "n_attribution": int(cfg.sae.n_attribution),
                   "attribution_ranked": attr_top.get("attribution"),
-                  "attribution_mase_ranked": attr_top.get("attribution_mase")}
+                  "attribution_mase_ranked": attr_top.get("attribution_mase"),
+                  "attribution_horizon_l1_ranked": attr_top.get("attribution_horizon_l1")}
                  if use_attribution else {})
         candidates = select_candidates(alive, n_features_per_rule,
                                        activation_variance=activations.var(axis=0),
@@ -222,6 +222,20 @@ def run_ablation_target(cfg, run_dir: Path, hub, data, store, device, model: str
     return {"model": model, "layer": layer, "candidate_source": source, **result, **extra}
 
 
+def attribution_rankings(attribution: dict | None) -> dict:
+    """`{rule: ranked list}` of the rankings an `attribution_candidates` block carries, by candidate
+    rule name; empty when the block is absent or not `ok` (a stated `unavailable` reason, no
+    nomination). `attribution_horizon_l1` is present only when the block was computed with
+    `vector_steps > 0`."""
+    if not attribution or attribution.get("status") != "ok":
+        return {}
+    out = {"attribution": attribution["top_forecast_mean"],
+           "attribution_mase": attribution["top_mase"]}
+    if "top_forecast_horizon_l1" in attribution:
+        out["attribution_horizon_l1"] = attribution["top_forecast_horizon_l1"]
+    return out
+
+
 def _add_attribution(candidates: list, attr_top: dict, alive: np.ndarray, rules: tuple,
                      n: int) -> list:
     """Append the attribution nominations to a frozen Stage 2 list.
@@ -230,8 +244,8 @@ def _add_attribution(candidates: list, attr_top: dict, alive: np.ndarray, rules:
     existing candidate, so the Stage 2 atoms keep their position and their rules.
     """
     by_feature = {c["feature"]: c for c in candidates}
-    for rule in ("attribution", "attribution_mase"):
-        if rule not in rules:
+    for rule in ("attribution", "attribution_mase", "attribution_horizon_l1"):
+        if rule not in rules or rule not in attr_top:
             continue
         for entry in [e for e in attr_top[rule] if alive[e["feature"]]][:n]:
             f = int(entry["feature"])

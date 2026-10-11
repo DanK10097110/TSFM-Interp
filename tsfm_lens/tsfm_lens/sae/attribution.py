@@ -190,9 +190,12 @@ def attribution_candidates(cfg, adapter, layer: str, sae, data, device, alive_ma
 
     `{"status": "ok", "top_forecast_mean": [...], "top_mase": [...], ...}`, or
     `{"status": "unavailable", "reason": str}` when the adapter has no
-    differentiable forecast or the gradient is identically zero on every alive atom.
-    `vector_steps > 0` adds a diagnostic third ranking (`top_forecast_horizon_l1`) that
-    never nominates.
+    differentiable forecast or the gradient is identically zero on every alive atom
+    (for the horizon-mean summary and, with `vector_steps > 0`, for the horizon-L1 one:
+    an effect the horizon mean cancels must not make the whole block unavailable).
+    `vector_steps > 0` adds a third ranking (`top_forecast_horizon_l1`); it nominates only
+    when `attribution_horizon_l1` is a configured candidate rule. The linearization check
+    reads the horizon-mean ranking, else the horizon-L1 one when that is all there is.
     """
     adapter.ensure_loaded()
     try:
@@ -204,7 +207,9 @@ def attribution_candidates(cfg, adapter, layer: str, sae, data, device, alive_ma
     except FloatingPointError as e:
         return {"status": "unavailable", "reason": f"{e} -- the attribution ranking is withheld"}
     top = {name: rank_atoms(scores[name], alive_mask, n_attribution) for name in SUMMARIES}
-    if not top["forecast_mean"]:
+    top_l1 = (rank_atoms(scores[VECTOR_SUMMARY], alive_mask, n_attribution)
+              if vector_steps > 0 else [])
+    if not top["forecast_mean"] and not top_l1:
         return {"status": "unavailable",
                 "reason": "the forecast's gradient with respect to every alive atom is exactly 0 "
                           "(the forecast does not read the patched positions, or the head is "
@@ -216,10 +221,11 @@ def attribution_candidates(cfg, adapter, layer: str, sae, data, device, alive_ma
            "autocast": "off", "top_forecast_mean": top["forecast_mean"], "top_mase": top["mase"],
            "overlap_forecast_mean_vs_mase": len(shared)}
     if vector_steps > 0:
-        out["top_forecast_horizon_l1"] = rank_atoms(scores[VECTOR_SUMMARY], alive_mask, n_attribution)
+        out["top_forecast_horizon_l1"] = top_l1
+    checked = top["forecast_mean"] or top_l1
     out["linearization_check"] = linearization_check(
         cfg, adapter, layer, sae, data, device, rows,
-        [x["feature"] for x in top["forecast_mean"][:check_top]], seed)
+        [x["feature"] for x in checked[:check_top]], seed)
     log.info("attribution: %s: top-%d by forecast mean, %d shared with the MASE ranking",
              layer, n_attribution, len(shared))
     return out
