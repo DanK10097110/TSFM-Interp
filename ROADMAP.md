@@ -39209,7 +39209,7 @@ cross-family effect sharing from the claims the system makes.
   universal family against a per-model sign-flip/direction null; (b) centroid-level effect agreement for multi-model
   concepts with ≥ 5 members; (c) the §40 redesigned shared-input test once it passes its planted gate.
 
-## 41. V3 confirmatory run — larger corpus, more real sources with explicit data roles, three new registrable claim types (added 2026-10-07, user-directed — IN PROGRESS)
+## 41. V3 confirmatory run — larger corpus, more real sources with explicit data roles, three new registrable claim types (added 2026-10-07, user-directed — CONFIRMED ONCE 2026-10-10, §41.6)
 
 **Why.** §40.1: the shared-concept story (shared inputs, universal effect types, reproducible concept centroids) is
 supported on dev and partly post hoc on private; single-feature and cross-model effect claims are power-limited
@@ -39338,7 +39338,42 @@ non-smooth series), exact-hash and near-duplicate checks kept against all dev; `
   registered 0 with 0 below threshold** although 2 seed-stable multi-model concepts exist: the candidate list reached
   `_atlas_centroid_entries` empty. Suspected silent failure; mint/confirm held until it is explained (§42 task D).
 
-## 42. Causal power, attribution-ranked candidates and forecast completeness (added 2026-10-10, user-directed — DESIGN FIXED BEFORE ANY RESULT; IN PROGRESS)
+### 41.6 Findings — V3 CONFIRMED ONCE (private epoch 1, 1024 series, first look; confirm exit 0 2026-10-10 17:11)
+
+- **Look.** `runs/panel7_v3_dev/confirm/confirmation.json`, private `benchmark_v3/private_epoch1` (digest 3943f392…,
+  epoch 1, `repeated_look` false), registry sha256 67b91269…, 111 registered / 63 replicable. Caveats: the private
+  split's `cross_split.json` was never computed (exchangeability not available) and its audit state is
+  `not_recorded`.
+- **Totals: 41 of 63 replicable claims confirm, 3 not testable.** By family:
+  - **L0 1/1.** Chronos-2 better than TimesFM on `mixture`: 0.30262611941041717 [0.17646094397473408,
+    0.4447032489712877], p_holm 0.0002, n 166 (signed so positive = dev-favored). Overall TimesFM-vs-Chronos-2
+    −0.10614172501664143 [−0.16009173955717415, −0.052383563679904925] (positive favors TimesFM), p 0.0002, n 1024.
+  - **L1 replicates.** TimesFM stacked_xf.2 / Chronos-2 encoder.block.5 dev CKA 0.44350665807724, private
+    0.4490935206413269 [0.43532795533537866, 0.4640893429517746].
+  - **L3 4/9** by the strict rule (dev ρ inside the private CI); overall private ρ 0.5338401244441514 [0.516, 0.555].
+    8/9 keep their sign; `level_shift` flips again (−0.164 → 0.252), as in K2 (−0.188 → 0.109): the TimesFM/Chronos-2
+    agreement on level-shift sensitivity is not stable across splits.
+  - **Concept transfer 20/20** (Holm max 0.009995002498750623; private AUC 0.843–0.99, reverse 0.539–0.989). Sources:
+    Sundial 14, Chronos-2 5, Time-MoE 1.
+  - **Single-feature causal 11/24 tested** (27 registered, 3 not testable: the feature fires on no private series).
+    By model, confirmed/tested: Chronos-2 4/6, Chronos-Bolt 5/13, Sundial 1/1 (3 registered), Timer 1/4 (5 registered).
+    Confirmed p_holm 0.023976 (floor) to 0.044955. K2 was 10/31.
+  - **Structure 2/2.** No concept in all models (private max 2 of 7 models per concept); causally-null share of
+    prominent features 0.9186991869918699 (dev 0.905894519131334, one-sided lower bound 0.9047619047619048).
+  - **Reliability U1 2/3** (predictive, not causal): Time-MoE gain 0.007834639533364718 [0.000594, 0.014758] p_holm
+    0.048; Timer 0.00984746885291199 [0.002092, 0.016808] p_holm 0.024; Chronos-T5-Base 0.003067960764278621
+    [−0.002158, 0.008348], not confirmed.
+  - **Atlas centroid 0** registered (per-target BH gate, §42.1); concept knob empty by design.
+- **External real leg (new; not counted in the verdict).** `benchmark_v3/external_real`, 800 raw real windows,
+  sealed-hash overlap with dev and private 0/0. The 20 registered transfer claims: **20/20 confirmed**, private AUC
+  0.757–0.991, reverse 0.626–0.991. Family-presence: skipped (no registered claims, by the §41.4 gate failure).
+- **Reading.** Input-level sharing (which series a feature selects) replicates on synthetic private data and on raw
+  real windows; within-model single-feature causal effects replicate for about half of the testable claims (11/24,
+  K2 10/31); no cross-model causal claim was registrable under the pre-set gates. Same pattern as K2 on a 3× larger
+  corpus with two more real sources: models share what they select, not demonstrably what they do with it (FINDINGS
+  CA-12, SH-18).
+
+## 42. Causal power, attribution-ranked candidates and forecast completeness (added 2026-10-10, user-directed — DESIGN FIXED BEFORE ANY RESULT; CLOSED 2026-10-10, §42.5)
 
 **Why.** V3 (§41.5) shows the per-feature battery, not the corpus or the SAE, limits causal evidence: each feature is
 ablated on its top 8 series against 16 random directions, a fixed design that tripling the corpus never touched.
@@ -39474,7 +39509,8 @@ to V3's registered rules.
 - **Correction to the §42 premise.** §42 assumed the per-feature battery (8 series, 16 draws) limited V3's causal
   evidence. On the planted model that design is well calibrated and sensitive (0.9111 / FPR ≈ 0.2%), and more rows
   lower its sensitivity. The binding factors on real data are which features are tested and the effect size relative
-  to the on-manifold null, not the per-feature sample size (FINDINGS MN-36).
+  to the on-manifold null, not the per-feature sample size (FINDINGS MN-36). Correction (2026-10-10, §42.5): changing which features are tested did
+  not raise the per-feature causal rate under the on-manifold null; on-manifold effect size remains the binding factor.
 - **Decision (step 6, revised before any step-6 data).** Keep the legacy rule at 8/16 (the gate-validated design) and
   change only the candidates: legacy four rules + `attribution_horizon_l1` top 20 for the differentiable models
   (§42.3). Admission: `sae.min_fidelity_gate` 0.5, forecast preservation on 128 series with
@@ -39482,3 +39518,48 @@ to V3's registered rules.
 - Note: the raw JSONs of the task A, A-follow-up and C runs were inside their agent worktrees and were removed with
   them; the numbers above are as reported and the drivers reproduce them. Task B's JSONs are kept in
   `tsfm_lens/runs/sec42_results/`.
+
+### 42.5 Findings — step 6: attribution candidates on the V3 SAEs (merged 2026-10-10; `runs/panel7_v3_sec42`)
+
+- **What ran.** `configs/panel7_v3_sec42.yaml` on `panel7_v3_dev`'s activations and primary SAEs (hardlinked; zarr
+  writes via temp + `os.replace`; `@r*.pt` replicates retrained fresh because `torch.save` truncates in place; all
+  104 dev JSON/parquet/yaml checksums and 3657 zarr/`.pt` inodes unchanged afterwards). Admission re-evaluated without
+  retraining (`run_admission_reeval.py`, new key `admission_sec42`; legacy keys byte-identical): 35 of 50 admitted
+  (legacy 8; flips False→True 28, True→False 1: Chronos-T5-Base encoder.block.5, ΔMASE 0.3474 at 128 series).
+  Targets: admitted ∪ top-2 work_bend layer-screen picks per model = 39 (38 measured; Chronos-2 encoder.block.11
+  withheld at the reach probe). Battery rule unchanged (p95_count, 8 series, 16 draws, cov primary). Concepts stage
+  11691 s on one GPU.
+- **Code (merge of 4c50518, 9941543, 015e062).** Rule `attribution_horizon_l1` in `CANDIDATE_RULES`, config
+  `sae.attribution_vector_steps` (0 default, refused at validate() with the rule); the attribution block is
+  `unavailable` only when both rankings are empty; completeness reads the battery's ranking
+  (`completeness.battery_ranking`); `eval.reevaluate_admission`; `build_sec42_run_dir.py`; doctor exempts chunked
+  forecast preservation from the batch cap. 18 new tests, each load-bearing assertion plant-verified.
+- **More causal features, from testing more features, not from better selection.** Same 38 targets: candidates 909 →
+  1337 (attribution nominated 620, 428 of them attribution-only); cov-causal features 78 → 112 (32 attribution-only),
+  iso 207 → 304. Per scorable candidate on the 31 differentiable targets: **cov** attribution-nominated 48/562 =
+  0.0854 vs random-rule-only 24/219 = 0.1096 (Fisher OR 0.759, p 0.335); **iso** 168/562 = 0.2989 vs 42/219 = 0.1918
+  (OR 1.797, p 0.0022). Feature-level cov count vs independent chance 0.898 (dev 0.818): still below chance under the
+  primary null; iso 2.664 (dev 2.342). Significant targets (BH) cov 9/38, iso 35/38. The legacy 909 candidates score
+  80 cov-causal here vs 78 in dev (two flips from changed forward chunking; not bit-identical).
+  Reading: the gradient ranking finds atoms whose removal moves the forecast more than a random *isotropic*
+  direction, but not more than an on-manifold (covariance-matched) direction of the same size. Why the K1 gate
+  (§42.3) did not predict this is not measured. Candidate selection is not the lever either, under the primary
+  null (FINDINGS MN-37).
+- **Downstream.** Per-target concepts 0/39 (dev 0/50). Atlas 3 concepts (2 multi-model, 3/3 seed-stable; dev 4, 2,
+  4/4); Sundial/Chronos-T5 atoms are gone with their targets. Atlas transfer 208/280 reciprocal-FDR (0.7429; dev
+  0.8266); controls: random-init Sundial twin 9/36 = 0.25 (dev 0.3864), input features 2/9 (dev 6/11). L5: 208
+  tests, not scorable 177, no specific agreement 6, level only 21, acts differently 1, same causal effect 2, shape
+  only 1.
+- **Forecast completeness, attribution-ranked (31 targets, descriptive).** Share of feature-set vs error-term
+  forecast change, median [min, max]: N=1 0.5669 [0.0020, 0.7826], **N=5 0.7392 [0.0926, 0.9044]**, N=20 0.7545
+  [0.1498, 0.9894]. The top-N set moves the forecast more than activation-matched random N-sets on 30/31 targets at
+  N=1 and N=5, 31/31 at N=20 (median excess 0.1332, 0.1661, 0.3182 context sd); per target the 16-draw p cannot go
+  below 1/17. Exceptions: Chronos-2 (N=5 shares 0.09–0.33, N=1 ≈ 0 in blocks 8–10) and Time-MoE layers.11 at N=5
+  (excess −0.1903). Prominence fallback on the 7 non-differentiable targets (Sundial 5, Chronos-T5 2): N=5 median
+  0.4958, 7/7 positive excess (model-confounded; not a ranking comparison). N=20 removal is off-manifold.
+  Reading: on most targets a handful of attribution-ranked atoms carry most of the forecast change the SAE can
+  express, so "the main cause of a prediction" is concentrated; whether those atoms are *specifically* causal
+  beyond an on-manifold perturbation is what the battery says they mostly are not.
+- **Decision.** No registration or private confirmation of `panel7_v3_sec42`: under the primary null it adds no
+  per-feature specificity, and the V3 confirm (§41.6) already answers the claim question on this corpus. §42 is
+  closed. The attribution rule, completeness and the loosened admission stay as opt-in tools.
