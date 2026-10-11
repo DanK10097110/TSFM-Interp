@@ -8904,9 +8904,11 @@ def _sec_confirm(run_dir: Path, findings: list, n_exploratory: int) -> str:
                   'checked against these same held-out series more than once. Read '
                   'them as exploratory until a fresh private epoch is generated.</p>')
     rep_summary = derived.replication_summary(run_dir)
+    held_total = None
     if not rep_summary.empty:
         held = int(rep_summary["held up"].sum())
         total = held + int(rep_summary["did not"].sum())
+        held_total = held
         inner += (f'<h4>What held up ({held} of {total})</h4>'
                   f'<p class="blurb">Every re-test this stage ran, by kind. Each row '
                   f'is an independent replication on the same held-out series, so a '
@@ -8918,7 +8920,8 @@ def _sec_confirm(run_dir: Path, findings: list, n_exploratory: int) -> str:
     if registry_path.exists():
         registry = load_json(registry_path)
         n_registered, n_replicable = conf.get("n_registered", 0), conf.get("n_replicable", 0)
-        confirmed_n = sum(1 for t in conf.get("tests", []) if t["confirmed"])
+        confirmed_n = (held_total if held_total is not None
+                       else sum(1 for t in conf.get("tests", []) if t["confirmed"]))
         inner += (f'<h4>Multiplicity ledger</h4>'
                   f'<p class="blurb"><b>{n_exploratory} exploratory finding(s) examined → '
                   f'{n_registered} hypotheses registered ({n_replicable} replicable by this '
