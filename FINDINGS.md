@@ -482,6 +482,14 @@ These instructions are binding for every future session, human or agent.
 
 ---
 
+#### SH-23 · Cross-model results barely move with the alignment window (32, 64, 96 steps)
+- **Claim.** `panel7_v3_dev`, re-pooling the stored 32-step windows exactly into 64 and 96 steps (same SAEs, no retraining). Atlas transfer reciprocal-FDR rate 0.8266 / 0.8009 / 0.7987 (467 tests); per-test verdict agreement with the 32-step run 0.9272 (64) and 0.9165 (96). Peak CKA over 21 model pairs changes by a median +0.0127 (64) and +0.0175 (96), range −0.0566 to +0.2247; the peak layer pair is the same at all three windows for 9 of 21 pairs.
+- **Reading.** Shared-input transfer and the size of geometric similarity do not depend on the 32-step convention; *which* layer pair peaks often does, so peak-location claims are window-dependent.
+- **Evidence.** Descriptive, exploratory (dev). **Status:** open.
+- **Reproduce.** `runs/panel7_v3_dev/sae/window_sensitivity.json` (V3-E2, ROADMAP §41.1 "Window sensitivity").
+- **Ref.** ROADMAP §41.6.
+- **Score. 3/5.** Answers the obvious reviewer question about the window choice.
+
 #### SH-22 · At 7 models, the atlas is segregated by model, and the full same-effect verdict is reached only inside the Chronos family; the strict rung is underpowered
 - **Claim.**
   - The pooled atlas has more structure than chance: 11 concepts vs a column-shuffle null p95 of 5.049999999999983 (p 0.004975124378109453).
@@ -1643,6 +1651,7 @@ See SH-20. **4/5.**
 #### MN-34 · Better SAE reconstruction does not go with clearer feature causality
 - **Claim.** Across targets, held-out reconstruction fidelity vs the fraction of scorable candidate features with at least one channel clearing the ablation null: V3 (`panel7_v3_dev`, primary null `profile_matched_cov`) ρ = −0.326 (p = 0.022, n = 49); v2 (`panel7_v2_dev`) ρ = −0.219 (p = 0.108, n = 55). Forecast-preservation |ΔMASE| vs the same fraction: V3 ρ = −0.237 (p = 0.102), v2 ρ = −0.091 (p = 0.508). V3 trained on 2.5× the rows of v2 and raised median held-out fidelity from 0.749 to 0.82; SAE admission went from 5/56 to 8/49.
 - **Reading.** No evidence that scaling SAE training data would make feature causality clearer; the binding limit is the per-feature battery (8 series, 16 null directions) and candidate selection. Depth and dictionary size are uncontrolled confounds, so the negative sign is not interpreted. Basis for dropping reconstruction fidelity to a loose sanity floor (ROADMAP §42).
+- **Admission consequence (2026-10-10, ROADMAP §42.5).** Re-evaluated without retraining under a 0.5 fidelity floor with forecast preservation on 128 held-out series (`admission_sec42`): 35 of 50 V3 targets admitted (legacy 8); flips False→True 28, True→False 1 (Chronos-T5-Base encoder.block.5, ΔMASE 0.3474 at 128 series).
 - **Evidence.** Descriptive, exploratory (dev artifacts, no new compute). **Status:** open.
 - **Reproduce.** Spearman over `runs/<run>/sae/meta.json` (`reconstruction_fidelity_heldout`, admission checks) and `sae/<model>/<layer>_ablation.json` (`candidates[*].n_channels_clearing`, `scorable`).
 - **Ref.** ROADMAP §41.5, §42.

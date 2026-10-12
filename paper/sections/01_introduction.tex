@@ -57,8 +57,8 @@ explains every figure in plain language.
     concepts and decoys (Sections~\ref{sec:concepts} and~\ref{sec:knownanswer}).
   \item A statistical protocol with series-level resampling, a multiplicity ledger and one-shot
     confirmation (Section~\ref{sec:statistics}).
-  \item A seven-model study answering RQ1--RQ4 with typed evidence and held-out replication
-    (Section~\ref{sec:casestudy}).
+  \item A seven-model study answering RQ1--RQ4 with typed evidence and held-out replication on two independent
+    corpora (Section~\ref{sec:casestudy}).
 \end{enumerate}
 
 \paragraph{Main findings.} On TimesFM~2.5, Chronos-2, Sundial, Chronos-Bolt, Chronos-T5-Base, Timer and
@@ -75,14 +75,19 @@ Time-MoE:
     every one of the seven models. At the fine grain of the strict atlas, concepts are purer by model than chance and
     none spans more than three models, a structural claim that confirms held-out.
   \item \textbf{RQ3: Causal importance is concentrated and not visible from activations.} Ten single-feature causal
-    claims confirm on private data, each at the attainable $p$ floor, while 83.5\% of prominent features have no causal
+    claims confirm on private data, each at the attainable $p$ floor (11 on the second corpus), while 83.5\% of prominent features have no causal
     effect; prominence does not identify what matters, and the battery does.
   \item \textbf{RQ4: Depth signatures are reproducible.} The agreement between TimesFM's and Chronos-2's per-corruption
     depth profiles replicates on held-out data for six of nine corruptions; absolute depth locations are comparable once
     read against captured compute (14\% to 99.8\% of forecast FLOPs).
 \end{itemize}
 Internal features also predict forecast failure beyond a strong output-only baseline for the two weakest models, a
-gain that confirms held-out (Section~\ref{sec:practical}).
+gain that confirms held-out (Section~\ref{sec:practical}). A second run on a three times larger corpus, with more real
+sources and claims registered against a stricter null, reproduces the held-out pattern: 41 of 63 claims confirm, and the
+20 transfer claims confirm on the new private split and on 800 raw real GIFT-Eval windows. The same run shows what limits
+the causal evidence: more dictionary training data, a more powerful per-feature test and gradient-selected candidates
+all fail to make single features more specific than on-manifold random directions (Sections~\ref{sec:v3}
+and~\ref{sec:limits}).
 
 Appendix~\ref{app:faq} answers the questions a careful reader is likely to ask (is the data good and sufficient,
 is the ablation fair and statistically supported, how are token time frames aligned) with the evidence for each.

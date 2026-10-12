@@ -39373,6 +39373,11 @@ non-smooth series), exact-hash and near-duplicate checks kept against all dev; `
   corpus with two more real sources: models share what they select, not demonstrably what they do with it (FINDINGS
   CA-12, SH-18).
 
+- **Window sensitivity (V3-E2, recorded 2026-10-12 from `sae/window_sensitivity.json`, descriptive).** Transfer
+  reciprocal-FDR 0.8266 / 0.8009 / 0.7987 at windows 32 / 64 / 96 (467 tests; verdict agreement with 32: 0.9272,
+  0.9165); peak CKA median change +0.0127 (64), +0.0175 (96), range −0.0566 to +0.2247 over 21 pairs; same peak layer
+  pair at all windows for 9/21 (FINDINGS SH-23).
+
 ## 42. Causal power, attribution-ranked candidates and forecast completeness (added 2026-10-10, user-directed — DESIGN FIXED BEFORE ANY RESULT; CLOSED 2026-10-10, §42.5)
 
 **Why.** V3 (§41.5) shows the per-feature battery, not the corpus or the SAE, limits causal evidence: each feature is

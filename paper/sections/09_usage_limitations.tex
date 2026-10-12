@@ -39,10 +39,12 @@ Monash windows. Raw real benchmarks are nonetheless a weaker bed for the causal 
 representations of lower effective dimension than the synthetic corpus (1.76 against 2.66) and more dead dictionary
 atoms (\fid{MN-20}); weakly predictable real-derived series receive flat forecasts in 67--100\% of cases, where an
 ablation has nothing to move (\fid{BM-06}); real series carry no generative ground truth; and public archives may be in
-the models' pretraining data. A full run on a large raw benchmark such as GIFT-Eval remains to be done; the pipeline runs
-on any sealed corpus. Held-out confirmation covers accuracy, geometry,
-perturbation agreement, transfer, single-feature causal effects, atlas structure and failure prediction, on one private
-split opened once (a second look needs a fresh epoch), and the 20 confirmed transfers come from two source concepts.
+the models' pretraining data. Raw real data enter as an external check: the V3 transfer claims confirm on 800 raw
+GIFT-Eval windows (Section~\ref{sec:v3}), but no concept was discovered on raw real data, and a full discovery run on a
+large raw benchmark remains to be done. Held-out confirmation covers accuracy, geometry, perturbation agreement,
+transfer, single-feature causal effects, atlas structure and failure prediction, on two corpora, each with one private
+split opened once (a second look needs a fresh epoch). The 20 confirmed v2 transfers come from two source concepts; the
+V3 transfers come from three source models (Sundial 14, Chronos-2 5, Time-MoE 1).
 
 \paragraph{Effect sharing on the same series.} The cross-model causal claims are the ones that did not confirm, and the
 known-answer test explains why: the shared-input rung is specific but detects a planted shared concept across

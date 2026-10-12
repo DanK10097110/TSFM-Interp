@@ -21,7 +21,9 @@ of cases (\fid{BM-06}); across ablation panels, noise-like contexts are flat 82.
 ones, and a flat forecast gives an ablation nothing to move. Contamination: public archives may be in the models'
 pretraining data. Real data are still used, each for a stated purpose: real-derived series (410 of 965) for realism and
 per-tier checks, about 4{,}000 raw Monash windows per target only as extra dictionary-training rows, and the Monash
-archive only as the leakage reference.
+archive only as the leakage reference. The V3 corpus labels each series with one of these roles and adds a fifth: 800 raw
+GIFT-Eval windows held out from every dev stage, used only to re-test the registered transfer claims (20 of 20
+confirm).
 
 \paragraph{Is there enough data?} It depends on the claim, and each claim's power is stated. Not power-limited: the 20
 transfer claims all reach the Holm floor (AUC 0.919--0.970 against null 95th percentiles of 0.70--0.75); the accuracy
@@ -29,7 +31,10 @@ claim's minimum detectable $\Delta$MASE is 0.133 against an observed 0.209; the 
 null of 0.038. Power-limited: single-feature causal claims (each feature is tested on its 8 strongest-firing series, and
 19 of the 21 that did not confirm never reached the dev $p$ floor), per-target concepts (178 of 672 candidates never fire
 on any series, so more rows do not help; \fid{SH-20}), and the shared-input agreement rung, which more shared series do
-not rescue (\fid{MN-30}).
+not rescue (\fid{MN-30}). More data was then tested directly. A three times larger corpus (V3, 2{,}876 dev series)
+reproduces the held-out pattern (41 of 63 claims) but does not make features more causal. Neither does a per-feature test
+with four times the series and null draws, which is less sensitive on the planted forecaster (Section~\ref{sec:limits};
+\fid{MN-34}, \fid{MN-36}).
 
 \paragraph{Do the models forecast sensibly on this corpus?} Five of seven beat the seasonal naive forecast on 77--85\% of
 series (Chronos-2 0.845, TimesFM 0.823, Sundial 0.798, Chronos-Bolt 0.784, Chronos-T5-Base 0.765); Timer does on 0.695 and
@@ -62,8 +67,9 @@ channels were independent. (iii) Held-out replication: 10 registered single-feat
 attainable $p$ floor after adaptive redraws to 1{,}000 null draws. (iv) Null strictness: a stricter null that draws the
 random direction from the layer's own activation covariance also passes the planted test (sensitivity 0.916), but on the
 earlier four-model run it leaves only 1.13 times chance. Causal effects therefore exceed random directions clearly and
-typical on-manifold directions only slightly; the planned confirmatory run registers its claims against the stricter
-null.
+typical on-manifold directions only slightly. The V3 run registered every causal claim against the stricter null. There,
+feature-level clears fall below the independent-channel expectation (91 against 111.2), yet 11 of 24 registered claims
+replicate on new series (\fid{CA-12}). The stricter null leaves few causal features, and about half of the registered ones replicate.
 
 \paragraph{How large are the effects?} Small relative to the forecast and to the dictionary's own error. On the earlier
 four-model run the median single-feature effect was 0.0395 context standard deviations, 3.5 times below the change from
@@ -74,8 +80,11 @@ claims that specific, replicable directions exist and characterizes what they do
 \paragraph{How robust are the sparse dictionaries?} Each target has three replicate dictionaries, and 9 of 11 atlas
 concepts are stable across them. Held-out fraction of variance explained has medians of 0.647 (TimesFM) to 0.878
 (Chronos-T5-Base) across models, and only 5 of 56 targets pass the strict admission gate (held-out fidelity $\ge0.85$,
-forecast change under substitution $\le0.25$ MASE, dead-rate bound); results restricted to admitted targets are part of
-the planned confirmatory run. Joint crosscoders were tested as the alternative and lost to independent dictionaries
+forecast change under substitution $\le0.25$ MASE, dead-rate bound). With three times the training rows (V3), the median
+held-out fidelity rises to 0.82, but fidelity does not predict causal clarity ($\rho=-0.326$ across 49 targets;
+\fid{MN-34}). The ablation keeps the dictionary's error in both arms, so a measured effect is a real intervention whatever
+the fidelity. Fidelity is therefore now only a 0.5 sanity floor, and forecast preservation is measured on 128 series;
+under this gate 35 of 50 V3 dictionaries are admitted. Joint crosscoders were tested as the alternative and lost to independent dictionaries
 matched afterwards (0.2787 against 0.3204, $p=0.002$; \fid{SH-10}), which is why \tool{} uses one TopK dictionary per
 layer.
 
@@ -92,7 +101,9 @@ deep layers of Sundial, Time-MoE and Timer lose time localization (diagonal hit 
 the report renders and which qualifies window-level claims there. Values are normalized by each model's own input
 scaling, verified by a scale-equivariance test (residuals $2.7\times10^{-7}$ to 0.037 context standard deviations);
 effects are compared across models in units of each feature's own null 95th percentile; depth is the fraction of the
-whole stack. Window sizes other than 32 have not yet been compared.
+whole stack. Re-pooled at 64 and 96 steps (V3), the transfer rate moves from 0.827 to 0.801 and 0.799, with 92\% of
+verdicts unchanged, and peak CKA by a median of 0.013 and 0.018. The peak \emph{layer pair} is the same at all three
+windows for only 9 of 21 model pairs, so peak locations are window-dependent (\fid{SH-23}).
 
 \paragraph{Do sampled models make the causal comparison noisy?} Every compared pair of calls to Sundial or Chronos-T5 uses
 the same seed. Unseeded, back-to-back Sundial calls differ by up to 0.50, and a null seeded differently from its baseline
@@ -104,7 +115,9 @@ frozen before the private epoch was generated; the epoch shares no sample hash w
 candidate epoch was discarded unopened for overlapping an old split); \texttt{confirm} ran once, and a crash before any
 statistic was written is disclosed in Appendix~\ref{app:repro}. Registered claims are cuts from larger dev pools (transfer
 20 of 1{,}124 candidates, causal 32 of 113, agreement 11 of 25, atlas 4 of the 9 stable concepts), which is legitimate
-because the private split referees them, and is why only registered claims are called confirmed.
+because the private split referees them, and is why only registered claims are called confirmed. The V3 registry
+(111 hypotheses, sha256 \texttt{67b91269\ldots}) was frozen in the same way before its private epoch was minted; its
+external windows share no sample hash with the dev or private split.
 
 \paragraph{How are multiple comparisons handled?} Dev results are exploratory and labeled so. The ledger groups 4{,}238
 tests into 123 named families with Holm or BH and flags families that cannot reach significance; the battery's 8{,}705
@@ -154,9 +167,10 @@ SH-05 & CKA and clustering AMI rank model pairs differently on three panels & T\
 SH-06 & Pair similarity splits into a geometric camp and a behavioral/causal camp; 7 metrics never pooled & T\ref{tab:results} & 5 \\
 SH-10 & Joint crosscoder loses to independent SAEs matched post hoc (0.2787 vs 0.3204, $p=0.002$) & App.~\ref{app:faq} & 4 \\
 SH-16 & No atlas concept spans the panel (at most 3 of 7 models; held out) & \S\ref{sec:casestudy}, T\ref{tab:results} & 5 \\
-SH-18 & Registered concept-transfer claims confirmed on private data: 19/20, 20/20 frozen, 20/20 on v2, 20/20 on the 7-model epoch 3 & \S\ref{sec:casestudy}, T\ref{tab:results} & 5 \\
+SH-18 & Registered concept-transfer claims confirmed on private data: 19/20, 20/20 frozen, 20/20 on v2, 20/20 on the 7-model epoch 3, 20/20 on V3 and on 800 raw real windows & \S\ref{sec:casestudy}, T\ref{tab:results} & 5 \\
 SH-19 & Unit-level correspondence fails rotation controls (0.148 $\to$ 0.331); participation ratio as low as 1.54 & \S\ref{sec:casestudy} & 5 \\
 SH-20 & Per-target concepts mostly non-modular: 50 of 56 targets at 7 models & \S\ref{sec:methods}, \S\ref{sec:casestudy} & 4 \\
+SH-23 & Transfer and peak CKA barely change at windows 64 and 96; peak layer pair stable for 9 of 21 pairs & \S\ref{sec:v3}, App.~\ref{app:faq} & 3 \\
 SH-22 & Atlas segregated by model; all 7 ``same causal effect'' verdicts are Chronos-2/Bolt; rung insensitive & \S\ref{sec:casestudy}, T\ref{tab:results} & 5 \\
 CA-01 & Perturbation-fingerprint agreement is pair-specific; TimesFM/Chronos-2 replicates on private data & T\ref{tab:results} & 4 \\
 CA-03 & Seasonality circuit: 1 head (TimesFM) vs.\ 5 non-additive heads (Chronos-T5-Base) & \S\ref{sec:casestudy} & 4 \\
@@ -164,6 +178,8 @@ CA-04 & Attention mass at seasonal lags uncorrelated with causal importance ($\r
 CA-07 & Median level share of a causal feature's effect 0.535; most features shape-causal beyond a level-removed null & \S\ref{sec:casestudy} & 4 \\
 CA-10 & Causal effect space is a continuum; families tile it but do not beat a shuffle null & \S\ref{sec:casestudy}, T\ref{tab:results} & 4 \\
 CA-11 & Held-out: 10/31 single-feature causal claims confirm; no cross-model one does (atlas 0/3, agreement 0/6); 43/82 in all & \S\ref{sec:casestudy}, T\ref{tab:results} & 5 \\
+CA-12 & V3 held-out: 41/63 claims; single-feature causal 11/24; transfer 20/20 private and 20/20 raw real & \S\ref{sec:v3}, T\ref{tab:v3} & 4 \\
+D-42C & Five attribution-ranked atoms carry a median 0.74 share of expressible forecast change; beat matched random sets on 30/31 targets & \S\ref{sec:limits} & 3 \\
 DE-01 & Whole-layer patching hides a depth-intensifying recency effect in the last pre-horizon window & \S\ref{sec:casestudy} & 4 \\
 DE-03 & Chronos-2 skip lens was a silent no-op (identical MASE at 12 layers); corrected reach 0.737 $\to$ 0.000 & \S\ref{sec:methods}, \S\ref{sec:casestudy} & 5 \\
 DE-04 & Chronos-T5 encoder ends at depth 0.478 on a whole-stack axis; 50\% comparable overlap with TimesFM & \S\ref{sec:methods}, \S\ref{sec:casestudy} & 5 \\
@@ -198,6 +214,9 @@ MN-29 & Legacy ablation null fails a planted-concept gate (FPR 0.168--0.248); pr
 MN-30 & Agreement rung is specific (0/9 false ``same'') but insensitive (0.4 and 0.0 of seeds) & \S\ref{sec:knownanswer}, \S\ref{sec:casestudy} & 5 \\
 MN-31 & A planted decoy correlates with forecast error in 5/5 seeds but has no causal effect & App.~\ref{app:faq} & 3 \\
 MN-32 & Subspace redesign of the agreement test fails its pre-fixed gate; planted distributed subspace does not clear a size-matched null & \S\ref{sec:limitations} & 4 \\
+MN-34 & SAE fidelity does not predict causal clarity ($\rho=-0.326$, V3); 3$\times$ rows raise fidelity 0.749 $\to$ 0.82 & \S\ref{sec:limits}, App.~\ref{app:faq} & 3 \\
+MN-36 & Powered per-feature test (32 series, 64 draws) fails the planted gate (0.6); 8-series p95 rule passes (0.911) & \S\ref{sec:limits} & 4 \\
+MN-37 & Gradient-attribution candidates: no higher causal rate than random under the covariance null (0.085 vs 0.110) & \S\ref{sec:limits} & 4 \\
 BM-05 & Counterfactual identity check caught a corruption-replay bug (244/298 $\to$ 0/1113) & \S\ref{sec:architecture} & 2 \\
 BM-06 & 42\% of the dev corpus is weakly predictable real-derived data, driving the flat-forecast share & \S\ref{sec:limitations} & 4 \\
 \end{longtable}
@@ -251,7 +270,10 @@ earlier confirmation had consumed (epoch seeds depend only on the seed and epoch
 finished, while assembling the claim ledger (a fixed family map lacked the failure-prediction family), before any
 statistic was written: \texttt{confirmation.json} did not exist, no private number was read, the registry hash and every
 frozen specification were unchanged, and the restart differed only by the crash fix. It is one test of the registry run
-twice for compute reasons; the artifact records \texttt{repeated\_look: false}. Separately, 19 of the 21 non-confirmed single-feature claims
+twice for compute reasons; the artifact records \texttt{repeated\_look: false}. The V3 run (\repo{tsfm_lens/configs/panel7_v3.yaml}; dev 2{,}876 series, private epoch 1 of 1{,}024 series opened once on
+2026-10-10, external 800 GIFT-Eval windows) records its confirmation in \texttt{runs/panel7\_v3\_dev/confirm/confirmation.json}
+(\texttt{repeated\_look: false}); the step that re-ranks candidates by attribution is the separate, exploratory
+\texttt{configs/panel7\_v3\_sec42.yaml}, built on the same activations and dictionaries. In the v2 confirmation, 19 of the 21 non-confirmed single-feature claims
 carry a stored reading of ``untestable'' in \texttt{confirmation.json}; they were tested and not detected, the report
 recomputes the reading at render time, and no verdict is affected. Environment, as recorded in the run's
 \texttt{run\_manifest.json}: Python 3.12.13, numpy 2.1.0, PyTorch 2.12.0 (CUDA 12.9 build), transformers 4.57.6,

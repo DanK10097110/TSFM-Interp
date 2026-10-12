@@ -254,6 +254,93 @@ reproduces, and fine-grained concepts stay model-specific; series-by-series effe
 (Section~\ref{sec:limitations}). One procedural event, a crash before any statistic was written,
 is disclosed in Appendix~\ref{app:repro}.
 
+
+\subsection{Replication on a three times larger corpus}
+\label{sec:v3}
+
+To test whether these conclusions depend on the corpus, the whole pipeline was run again on a new benchmark, with every
+decision fixed before its data existed (preset \repo{tsfm_lens/configs/panel7_v3.yaml}). The dev split has 2{,}876
+series: 2{,}091 synthetic and 785 real-derived from 15 real sources, adding ERCOT load, M4 hourly, solar, taxi, KDD Cup
+air quality and pedestrian counts to the v2 sources. SAEs are trained on 50 targets, and every causal claim is registered
+against the stricter covariance-matched null (Appendix~\ref{app:faq}). The private split is a fresh sealed epoch of
+1{,}024 series, opened once. A new external leg re-tests the registered transfer claims on 800 raw windows from 12
+GIFT-Eval datasets \citep{aksu2024gifteval}. These windows are cut unchanged, with no generator, and share no sample
+with either split; the leg is reported apart from the confirmation verdict.
+
+Of 63 replicable claims, 41 confirm and 3 cannot be tested (Table~\ref{tab:v3}). The pattern of Section~\ref{sec:heldout}
+repeats:
+\begin{itemize}
+  \item All 20 transfer claims confirm on the private split, and all 20 again on the raw real windows (AUC 0.757--0.991).
+  \item 11 of 24 testable single-feature causal claims confirm (v2: 10 of 31).
+  \item Both structural claims confirm: no private atlas concept spans more than 2 of 7 models, and 0.919 of 861
+    prominent features are causally null.
+  \item Failure prediction confirms again for Timer and Time-MoE; Chronos-T5-Base, newly registered, does not.
+  \item Chronos-2 is again better than TimesFM on \texttt{mixture} (0.303 [0.176, 0.445], $p_{\text{Holm}}=0.0002$).
+  \item The peak-CKA pair replicates (private 0.449 [0.435, 0.464], dev 0.444).
+\end{itemize}
+Perturbation agreement replicates for 4 of 9 corruptions under the strict rule, and 8 of 9 keep their dev sign. Level shift
+flips sign again (dev $-0.164$, private 0.252), so it is the one depth agreement that is not stable across corpora. No
+cross-model causal claim was registrable: all four atlas concepts sat on targets that failed the per-target significance
+gate set before the data ($q\ge0.243$). Cross-model results barely depend on the alignment window: re-pooled at 64 and 96
+steps, the transfer rate moves from 0.827 to 0.801 and 0.799, and 92\% of test verdicts are unchanged (\fid{SH-23}).
+
+\begin{table}[tb]
+\centering
+\footnotesize
+\begin{tabular}{@{}lcc@{}}
+\toprule
+Registered claim type & v2 (971 private series) & V3 (1{,}024 private series) \\
+\midrule
+Accuracy (Chronos-2 better on \texttt{mixture}) & 1/1 & 1/1 \\
+Peak-CKA pair & 1/1 & 1/1 \\
+Perturbation-profile agreement & 6/9 & 4/9 \\
+Concept transfer (shared inputs) & 20/20 & 20/20 \\
+\quad same claims on 800 raw real windows & -- & 20/20 \\
+Single-feature causal effect & 10/31 & 11/24 \\
+Atlas structure & 2/2 & 2/2 \\
+Failure prediction from internals & 2/2 & 2/3 \\
+Cross-model causal (atlas, agreement) & 0/3, 0/6 & none registrable \\
+\midrule
+Confirmed / replicable (not testable) & 43/82 (6) & 41/63 (3) \\
+\bottomrule
+\end{tabular}
+\caption{Held-out confirmation on two independent corpora. Each cell is confirmed / tested; each claim type is one Holm
+family. The external raw-real leg (800 GIFT-Eval windows) is not counted in the totals. Sources:
+\texttt{confirm/confirmation.json} of \texttt{panel7\_v2} and \texttt{panel7\_v3} (\fid{CA-11}, \fid{CA-12}).}
+\label{tab:v3}
+\end{table}
+
+\subsection{What limits the causal evidence}
+\label{sec:limits}
+
+Fewer than half of the single-feature claims replicate on either corpus, and under the stricter null the number of V3
+features that clear at least one channel is below what independent channels would give by chance (91 against 111.2).
+V3 tested three ways of strengthening this evidence. Each was judged by a criterion set in advance, and none raised
+per-feature specificity.
+\begin{itemize}
+  \item \textbf{More training data for the dictionaries.} Three times the rows raised the median held-out fidelity from
+    0.749 to 0.82. Across targets, however, fidelity is if anything negatively correlated with the share of tested
+    features that clear the null ($\rho=-0.326$, $p=0.022$, $n=49$; \fid{MN-34}).
+  \item \textbf{A powered per-feature test.} Using 32 series and 64 null draws per feature, with multiplicity control,
+    fails the planted-concept gate that the 8-series rule passes (sensitivity 0.6 against 0.911; \fid{MN-36}). The null
+    is common-mode across series, so extra rows barely tighten it.
+  \item \textbf{Choosing candidates by gradient attribution.} The ranking ($|$activation $\times$ gradient of each horizon
+    step$|$) first passed its own planted gate on unseen seeds (recall 0.831). It nominated 620 more features and found
+    more causal ones (78 to 112 on 38 targets), but at no higher rate than random candidates (0.085 against 0.110,
+    $p=0.335$). Against the isotropic null it does beat random candidates (0.299 against 0.192, $p=0.002$; \fid{MN-37}).
+\end{itemize}
+The binding limit is therefore the size of a feature's effect relative to on-manifold directions, not the amount of
+data, dictionary quality or which features are tested. Since fidelity does not predict causal clarity, the dictionary
+admission gate now uses fidelity only as a 0.5 sanity floor, with forecast preservation measured on 128 series; under
+that gate 35 of 50 V3 dictionaries are admitted instead of 8, without retraining (\fid{MN-34}).
+
+A separate question is how much of the forecast change the
+dictionary can express is carried by a few atoms. On 31 targets, zeroing the five attribution-ranked atoms of a layer
+produces a median 0.74 share of the combined feature-plus-dictionary-error change. On 30 of the 31 targets this exceeds
+activation-matched random five-atom sets (descriptive; \fid{D-42C}). The forecast change a dictionary can express is
+concentrated in a few atoms, but those atoms mostly do not act more specifically than a typical on-manifold direction of
+the same size.
+
 \begin{table}[tb]
 \centering
 \footnotesize
@@ -266,23 +353,24 @@ RQ & Result (example run unless an ID is given) & Evidence class & Status & ID \
 1 & 194 causal features in 55 targets; 442 cells $=$ 2.47$\times$ empirical chance; Timer 1.02$\times$ & causal within-model & exploratory & MP-07, PM-17 \\
 1 & 9 families cover 99\% of features but do not beat a shuffle null ($p=0.68$) & descriptive & exploratory, 2 corpora & CA-10 \\
 2 & Level raise/lower and seasonality-damping causal features in all 7 models & causal within-model, descriptive & exploratory & CA-10 \\
-2 & Peak CKA 0.426 (private 0.411) vs null 0.038 & geometric & held-out confirmed & SH-01 \\
+2 & Peak CKA 0.426 (private 0.411) vs null 0.038 & geometric & held-out confirmed (2 corpora) & SH-01 \\
 2 & 7 similarity metrics agree only weakly ($W=0.25$) & mixed & exploratory & SH-05/06 \\
 2 & Untrained pair more similar than related trained pair & geometric & confirmed negative & MN-01 \\
-2 & Concept transfer on inputs: 20/20 & correlational & held-out confirmed (4 draws) & SH-18 \\
-2 & No concept spans the panel (at most 3 of 7 models) & descriptive & held-out confirmed & SH-16 \\
+2 & Concept transfer on inputs: 20/20; V3 20/20, raw real windows 20/20 & correlational & held-out confirmed (5 draws) & SH-18 \\
+2 & No concept spans the panel (at most 3 of 7 models) & descriptive & held-out confirmed (2 corpora) & SH-16 \\
 2 & Causal atlas organized by model ($p_{\text{below}}=0.025$) & descriptive & exploratory & SH-22 \\
 2 & Multi-model atlas concepts: 0/3 & causal, compared & held-out not confirmed & CA-11 \\
 2 & Same effect on same inputs: 7/216 scorable, all Chronos-2/Bolt (test specific: 0/9 decoys) & causal on shared inputs & exploratory & SH-22, MN-30 \\
-3 & Single-feature causal effects: 10/31 & causal within-model & held-out partly confirmed & CA-11 \\
+3 & Single-feature causal effects: 10/31; V3 11/24 & causal within-model & held-out partly confirmed & CA-11/12 \\
 3 & Prominence $\neq$ importance: 84\% of prominent features causally null (927 held-out) & causal within-model & held-out confirmed & MN-14 \\
 3 & Feature effect 3.5$\times$ below SAE reconstruction cost (earlier run) & causal within-model & exploratory & MN-15 \\
 3 & Attention mass uncorrelated with head causality & causal vs.\ descriptive & exploratory & CA-04 \\
-3 & Internals predict failure for the two weakest models only & predictive & held-out confirmed & MN-28 \\
-4 & Depth-profile agreement, 6/9 corruptions & causal within-model & held-out partly confirmed & CA-01 \\
+3 & Internals predict failure for the two weakest models only & predictive & held-out confirmed (2 corpora) & MN-28 \\
+3 & More data, a powered test or attribution candidates do not raise specificity & causal within-model & negative & MN-34/36/37 \\
+4 & Depth-profile agreement, 6/9 corruptions; V3 4/9, level shift flips on both & causal within-model & held-out partly confirmed & CA-01 \\
 4 & Captured compute 14\%--99.8\% qualifies depth claims & descriptive & confirmed & DE-05 \\
 \midrule
-L0 & Chronos-2 more accurate than TimesFM on \texttt{mixture} (0.209) & behavioral & held-out confirmed & PM-05 \\
+L0 & Chronos-2 more accurate than TimesFM on \texttt{mixture} (0.209; V3 0.303) & behavioral & held-out confirmed (2 corpora) & PM-05 \\
 \bottomrule
 \end{tabularx}
 \caption{Headline results with evidence class and status. Each ID is an entry in \repo{FINDINGS.md} with exact
