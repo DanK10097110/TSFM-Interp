@@ -10,7 +10,10 @@ split and the private epoch used for confirmation are exchangeable: energy-dista
 equivalent by TOST (the other two inconclusive at this $n$), tier and family composition indistinguishable ($p=0.94$ and
 $p=0.9999$), and 6 near-duplicate pairs among 937{,}015 cross-split pairs. Diversity is measured in catch22 space: the dev
 split has effective dimension 5.37 of 22 features (private 5.57) and a near-collision fraction of 0.052. Each sample is
-labeled with its tier, so every result can be split by tier. The realism report compares raw moments and is not
+labeled with its tier, so every result can be split by tier. The V3 corpus passes the same checks: its dev split
+(2{,}876 series) and private epoch (2{,}868 sealed series, of which \texttt{confirm} draws 1{,}024) give energy-distance
+$p=0.995$, all 22 catch22 features equivalent by TOST, tier composition $p=0.97$, and 9 near-duplicate pairs among
+8{,}248{,}368 cross-split pairs. This check is model-free and was computed after the confirmation look. The realism report compares raw moments and is not
 informative across scales; its only usable statistic, spectral centroid, differs from the reference by 0.022.
 
 \paragraph{Why a synthetic benchmark rather than raw real data?} Four reasons, each measured. Ground truth: only

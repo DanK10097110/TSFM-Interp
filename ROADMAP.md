@@ -39343,7 +39343,8 @@ non-smooth series), exact-hash and near-duplicate checks kept against all dev; `
 - **Look.** `runs/panel7_v3_dev/confirm/confirmation.json`, private `benchmark_v3/private_epoch1` (digest 3943f392…,
   epoch 1, `repeated_look` false), registry sha256 67b91269…, 111 registered / 63 replicable. Caveats: the private
   split's `cross_split.json` was never computed (exchangeability not available) and its audit state is
-  `not_recorded`.
+  `not_recorded`. Correction 2026-10-12: exchangeability computed after the look (model-free, written beside the
+  split, not into it) (computed 2026-10-12, after the confirm look, model-free; `benchmark_v3/cross_split_epoch1/cross_split.json`): dev 2876 vs private epoch 1 2868 sealed series (confirm draws 1024 of them via `confirm.max_series`); energy distance p 0.994503 (2000 permutations); TOST 22/22 catch22 features equivalent at 0.2 sd (Holm); tier composition p 0.971975; 9 cross-split DTW near-duplicate pairs of 8,248,368 (threshold 0.97); centroid distance 0.0705.
 - **Totals: 41 of 63 replicable claims confirm, 3 not testable.** By family:
   - **L0 1/1.** Chronos-2 better than TimesFM on `mixture`: 0.30262611941041717 [0.17646094397473408,
     0.4447032489712877], p_holm 0.0002, n 166 (signed so positive = dev-favored). Overall TimesFM-vs-Chronos-2
