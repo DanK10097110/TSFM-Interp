@@ -1476,9 +1476,9 @@ def patching_case_summary(run_dir: Path) -> pd.DataFrame:
 def replication_summary(run_dir: Path) -> pd.DataFrame:
     """One row per KIND of replication the confirm stage performed.
 
-    The confirm section reports three independent replications -- accuracy
-    claims, per-corruption depth agreement, and the peak-CKA layer pair --
-    each in its own block with its own table. That is the right level of
+    The confirm section reports independent replications -- accuracy
+    claims, per-corruption depth agreement, the peak-CKA layer pair, and each
+    non-empty `concept_replication` claim family -- each in its own block with its own table. That is the right level of
     detail for someone auditing a particular claim, and the wrong level for
     the question the section actually exists to answer: *what held up?* A
     reader had to assemble that from three places and could not see, for
@@ -1538,7 +1538,39 @@ def replication_summary(run_dir: Path) -> pd.DataFrame:
                 "the peak similarity was a coincidence of the exploratory sample"),
         })
 
+    concept = conf.get("concept_replication") or {}
+    for key, (label, evidence, failure) in _CONCEPT_REPLICATION_ROWS.items():
+        fam_tests = (concept.get(key) or {}).get("tests") or []
+        if not fam_tests:
+            continue
+        tested = [t for t in fam_tests if t.get("status") == "tested"]
+        held = sum(1 for t in tested if t.get("confirmed"))
+        rows.append({"what was re-tested": label, "evidence class": evidence,
+                     "held up": held, "did not": len(tested) - held,
+                     "not testable": len(fam_tests) - len(tested),
+                     "what a failure would mean": failure})
+
     return pd.DataFrame(rows)
+
+
+_CONCEPT_REPLICATION_ROWS = {
+    "transfer": ("Concept transfer (another model selects the same series)", "correlational",
+                 "the shared selectivity was a property of the exploratory series"),
+    "causal": ("Single-feature causal effects", "causal within model",
+               "the feature's effect on that forecast channel was specific to the exploratory data"),
+    "atlas": ("Multi-model atlas concepts", "causal within model, compared across models",
+              "the members' shared effect profile did not reproduce"),
+    "atlas_centroid": ("Atlas concept centroids", "causal within model, compared across models",
+                       "the concept's average effect profile did not reproduce"),
+    "agreement": ("Shared-input causal agreement", "causal within model, compared across models",
+                  "the two models' agreement on the same series did not reproduce"),
+    "structure": ("Atlas structure rules", "descriptive",
+                  "the structural regularity was a coincidence of the exploratory atlas"),
+    "family_presence": ("Effect-family presence per model", "causal within model",
+                        "the model's effect family was specific to the exploratory data"),
+    "reliability_u1": ("Internals predict forecast error", "predictive (behavioral); not causal",
+                       "the internal signal's predictive gain was specific to the exploratory data"),
+}
 
 
 

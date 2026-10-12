@@ -93,7 +93,8 @@ from ..analysis.window_sensitivity import run_window_sensitivity, window_sensiti
 from ..utils import load_json, log, save_json, set_seed
 from .ablation_run import check_ablation_null_modes, run_ablation_all
 from .concept_atlas import pooled_features, run_concept_atlas
-from .concepts import run_concepts
+from .completeness import completeness_path, run_completeness
+from .concepts import causal_verdict_of, run_concepts
 from .control_transfer import (control_transfer_path, controls_configured,
                                run_control_transfer)
 from .shared_input_agreement import run_shared_input_agreement, shared_input_agreement_path
@@ -275,7 +276,8 @@ def run_concept_stage(cfg, hub, store, data, device) -> dict:
     # itself; no clustering/nulls yet) decides skip vs. run, exactly
     # `_transfer_skip_reason`'s own precomputed-then-decide shape.
     causal_only = bool(getattr(cfg.sae, "concept_causal_only", True))
-    n_pooled = len(pooled_features(run_dir, causal_only=causal_only)[0])
+    n_pooled = len(pooled_features(run_dir, causal_only=causal_only,
+                                   verdict=causal_verdict_of(cfg))[0])
     atlas_skip = _atlas_skip_reason(cfg, n_pooled)
     atlas = None
     stability = None
@@ -375,6 +377,17 @@ def run_concept_stage(cfg, hub, store, data, device) -> dict:
             "transfer": ws["transfer"]["status"]}
     else:
         _drop_stale(window_sensitivity_path(run_dir))
+
+    # ROADMAP.md sec 42 task C (opt-in): forecast completeness, top-N features vs the
+    # SAE error term. Independent of the atlas, so it runs whatever the atlas did.
+    if getattr(c, "completeness", False):
+        comp = run_completeness(cfg, run_dir, hub, store, data, device)
+        live = [t for t in comp["targets"].values() if not t.get("skipped") and not t.get("withheld")]
+        extra_blocks["completeness"] = {
+            "status": "ran", "n_targets": len(comp["targets"]), "n_measured": len(live),
+            "ranking_sources": sorted({t["ranking_source"] for t in live})}
+    else:
+        _drop_stale(completeness_path(run_dir))
 
     # ROADMAP.md sec 37.8 P5b: cross-model causal agreement, measured on the
     # SAME shared series, for every FDR-surviving reciprocal atlas-transfer

@@ -609,6 +609,52 @@ class GenericHFAdapter(ModelAdapter):
             return _fit_horizon(arr, horizon, self.name, axis=1)
         return None
 
+    def predict_differentiable(self, contexts: np.ndarray, horizon: int):
+        """The forward-field point forecast of `predict`, with autograd enabled.
+
+        Only a head whose `predict` resolved to `forward_field` is a deterministic,
+        differentiable function of the patched layer. One that resolved to `generate`
+        returns sampled sequences, which no gradient flows through, so it raises. The
+        strategy is resolved by one `predict` on the same batch when it has not run
+        yet (the full batch, so a `token_patch` active around this call sees the batch
+        size it was built for). The input z-scoring, when configured, is the same constants
+        `predict` uses.
+        """
+        from .base import CapabilityUnavailable
+        self.ensure_loaded()
+        if self._forecast_strategy is None:
+            self.predict(contexts, horizon, [0.5])
+        if self._forecast_strategy != "forward_field":
+            raise CapabilityUnavailable(
+                f"model '{self.name}': forecast strategy is '{self._forecast_strategy}' "
+                f"(sampled `generate()` sequences), which has no differentiable path",
+                model=self.name, capability="predict_differentiable",
+                tier_actual=self.capability_tier(), tier_required=self.capability_tier())
+        stats = (self._zscore_stats(contexts)
+                 if self._input_normalization == "zscore" else None)
+        out = self._model(**self.prepare(contexts, stats))
+        for field in _FORECAST_FIELDS:
+            val = out.get(field) if hasattr(out, "get") else getattr(out, field, None)
+            if not isinstance(val, torch.Tensor) or val.ndim < 2:
+                continue
+            if val.ndim == 3 and val.shape[2] == 1:
+                val = val[:, :, 0]
+            if val.ndim != 2:
+                continue
+            if val.shape[1] < horizon:
+                raise ValueError(f"model '{self.name}': forecast head produces {val.shape[1]} "
+                                 f"steps but {horizon} were asked for")
+            point = val[:, :horizon].float()
+            if stats is not None:
+                mu, sd = (torch.as_tensor(a, dtype=torch.float32, device=point.device)
+                          for a in stats)
+                point = point * sd + mu
+            return point
+        raise CapabilityUnavailable(
+            f"model '{self.name}': no forward field in {list(_FORECAST_FIELDS)} shaped to the "
+            f"horizon", model=self.name, capability="predict_differentiable",
+            tier_actual=self.capability_tier(), tier_required=self.capability_tier())
+
     def attention_info(self) -> Optional[list]:
         """Best-effort head map via the shared block scan, None if any block fails."""
         self.ensure_loaded()

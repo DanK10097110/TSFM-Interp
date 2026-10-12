@@ -24,18 +24,22 @@ confirmation) · [Colab quickstart](https://colab.research.google.com/github/Dan
 (two real models, about 25 minutes on one GPU) · [`docs/QUICKSTART.md`](docs/QUICKSTART.md)
 
 **What it found on seven TSFMs** (TimesFM, Chronos-2, Sundial, Chronos-Bolt, Chronos-T5, Timer, Time-MoE). Every
-claim below was registered on a development corpus and tested once on a fresh sealed private corpus of 971 series:
+claim below was registered on a development corpus and tested once on a fresh sealed private corpus (971 series; then
+again on a second, three times larger corpus with 1,024 private series):
 - **Shared inputs.** Different architectures select the same series for a concept: 20/20 concept-transfer claims
-  confirm, on four independent private draws, reaching all seven models.
+  confirm, on four independent private draws, reaching all seven models; 20/20 again on the second corpus and on 800 raw
+  real GIFT-Eval windows.
 - **Model-specific machinery.** No causal concept spans more than three of the seven models, and the concept atlas is
   organized by model.
 - **A compact causal vocabulary.** Causal features act mainly on forecast level and seasonality; 10 single-feature
-  causal claims confirm at the attainable significance floor.
+  causal claims confirm at the attainable significance floor (11 of 24 on the second corpus).
+- **What limits it.** More data, a more powerful per-feature test and gradient-selected candidates do not make single
+  features more specifically causal than on-manifold random directions.
 - **Prominence is not importance.** 83.5% of the most prominent SAE features have no causal effect on the forecast.
 
 ![The nine causal-effect families across seven TSFMs](docs/img/concept_families.png)
 
-See [`FINDINGS.md`](FINDINGS.md) (SH-18, SH-16, CA-11, MN-14) for exact numbers, including the claims that did not
+See [`FINDINGS.md`](FINDINGS.md) (SH-18, SH-16, CA-11, CA-12, MN-14, MN-37) for exact numbers, including the claims that did not
 confirm.
 
 ## What it answers

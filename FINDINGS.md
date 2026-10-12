@@ -98,7 +98,7 @@ These instructions are binding for every future session, human or agent.
 | MN-32 | A subspace redesign of the shared-input agreement test fails its pre-fixed gate (sens 0.5 / 0.375, 0/14 false agree); even the planted distributed subspace does not clear a size-matched null, so per-series cross-architecture effect agreement is not measurable at these effect sizes |  4 |
 | MN-33 | Family-presence claim fails its pre-fixed known-answer gate (best held-out sensitivity 0.42, 0 false claims); universal effect families stay descriptive, not registered |  3 |
 | SH-22 | At 7 models under the matched null, the atlas is **segregated by model** (cross-model mixing below chance, p 0.025). The full same-effect verdict (7/1290) is one Chronos-2 ↔ Chronos-Bolt concept, but 1053 tests are underpowered and partial agreement crosses families (level only 35, shape only 9); the strict rung's sensitivity is unmeasured | 5 |
-| SH-18 | Held-out: 19/20 searched and **20/20 frozen-feature** concept-transfer claims confirm on fresh sealed private epochs; **20/20 again at 7 models on a fourth private draw** | 5 |
+| SH-18 | Held-out: 19/20 searched and **20/20 frozen-feature** concept-transfer claims confirm on fresh sealed private epochs; **20/20 again at 7 models on a fourth private draw, and on V3 private + 800 raw real windows (20/20 each)** | 5 |
 | CA-11 | Held-out (K2, 7 models): 10/31 single-feature causal claims confirm; **0** cross-model causal claims do (atlas 0/3 multi-model, L5 0/6); models share what they select, not demonstrably what they do | 5 |
 | SH-19 | Unit-level correspondence (CCM) NO-GO: low-rank TSFM representations defeat the rotation control | 5 |
 | CA-06 | Measured on shared series with matched floors, cross-model causal "disagreement" shrinks from 18/19 to 12/288 (12 of 89 scorable) | 4 |
@@ -412,6 +412,7 @@ These instructions are binding for every future session, human or agent.
       convergent, yet features in other models select its series.
   - **Replication on a different corpus (2026-09-29).** `runs/concept_atlas_v2` (v2 corpus, fixed Sundial; ROADMAP §37.11c), P7 search mode on the unpeeked v2 private split (800 series, epoch 0, first look): **20/20 confirmed**, Holm max 0.009995, private AUC 0.9708–0.9951; 6/20 private best features equal dev's. Caveat: the 20 claims come from 2 concepts (16 from concept 0, Chronos-2 + TimesFM "strong lowers level"; 4 from concept 9, Chronos-2 + Sundial).
   - **Fourth private draw, 7 models (2026-10-02, K2, v2 epoch 3, 971 series, first look; CA-11).** **20/20 confirmed** in search mode, Holm max 0.009995002498750623. Private AUC 0.9194269190325972–0.9696109358569927, reverse 0.8053101997896951–0.9981598317560463; 8/20 private best features equal dev's. The claims come from TimesFM xf.18 concept 1 (14) and Sundial l.6 concept 3 (6), with destinations in every other family (Timer 6, TimesFM 5, Sundial 3, Chronos-2 2, Chronos-T5-Base 2, Time-MoE 1, Chronos-Bolt 1). Reproduce: `runs/panel7_v2_dev/confirm/confirmation.json` (`concept_replication`), private v2 epoch 3 (971 series), registry sha256 `ff6c4f9e…`, k3wt 597848a.
+  - **V3 (2026-10-10, CA-12).** `panel7_v3_dev` on `benchmark_v3/private_epoch1` (1024 series, first look): **20/20 confirmed** (Holm max 0.009995002498750623; private AUC 0.843–0.99); on 800 raw real windows (external leg, overlap 0/0, not counted in the verdict) **20/20**, AUC 0.757–0.991. Sources: Sundial 14, Chronos-2 5, Time-MoE 1.
   - **Other held-out results from the same epoch-1 confirmation.** Peak-CKA
     pair CKA 0.44 [0.43, 0.45]; 7/9 L3 fingerprint agreements (overall ρ
     0.50); Chronos-2 > others on `mixture` (ΔMASE 0.2222, p 0.0005).
@@ -480,6 +481,14 @@ These instructions are binding for every future session, human or agent.
 - **Score. 4/5.** Recasts "what is each model better at" as how strongly, not which, forecast properties its features control.
 
 ---
+
+#### SH-23 · Cross-model results barely move with the alignment window (32, 64, 96 steps)
+- **Claim.** `panel7_v3_dev`, re-pooling the stored 32-step windows exactly into 64 and 96 steps (same SAEs, no retraining). Atlas transfer reciprocal-FDR rate 0.8266 / 0.8009 / 0.7987 (467 tests); per-test verdict agreement with the 32-step run 0.9272 (64) and 0.9165 (96). Peak CKA over 21 model pairs changes by a median +0.0127 (64) and +0.0175 (96), range −0.0566 to +0.2247; the peak layer pair is the same at all three windows for 9 of 21 pairs.
+- **Reading.** Shared-input transfer and the size of geometric similarity do not depend on the 32-step convention; *which* layer pair peaks often does, so peak-location claims are window-dependent.
+- **Evidence.** Descriptive, exploratory (dev). **Status:** open.
+- **Reproduce.** `runs/panel7_v3_dev/sae/window_sensitivity.json` (V3-E2, ROADMAP §41.1 "Window sensitivity").
+- **Ref.** ROADMAP §41.6.
+- **Score. 3/5.** Answers the obvious reviewer question about the window choice.
 
 #### SH-22 · At 7 models, the atlas is segregated by model, and the full same-effect verdict is reached only inside the Chronos family; the strict rung is underpowered
 - **Claim.**
@@ -668,6 +677,19 @@ These instructions are binding for every future session, human or agent.
 - **Ref.** ROADMAP §38.2 (Findings — K2 CONFIRMED ONCE).
 - **Score. 5/5.** This is the gold-standard answer to "do the causal concept claims hold up". The individual within-model causal features partly do (about 1 in 3). The cross-model causal sharing claims do not, while input-level sharing replicates on a fourth private draw: models share what they select, not demonstrably what they do with it.
 
+#### CA-12 · Held-out V3 (3× corpus, 7 models): 11 of 24 single-feature causal claims confirm; transfer 20/20 on private and 20/20 on raw real windows
+- **Claim.** `panel7_v3_dev`, confirmed once on `benchmark_v3/private_epoch1` (1024 series, first look; 111 registered, 63 replicable): **41 of 63 confirm, 3 not testable.**
+  - **Single-feature causal: 11/24 tested** (27 registered; 3 fire on no private series). Confirmed/tested by model: Chronos-2 4/6, Chronos-Bolt 5/13, Sundial 1/1, Timer 1/4. Confirmed p_holm 0.023976–0.044955. K2 (CA-11) was 10/31.
+  - **Concept transfer 20/20** (Holm max 0.009995002498750623); **external raw real windows (800, overlap 0/0 with dev and private, not counted in the verdict) 20/20**, AUC 0.757–0.991.
+  - Structure 2/2 (no concept spans all 7 models; causally-null share of prominent features 0.9186991869918699); U1 reliability 2/3 (Time-MoE, Timer); L0 1/1 (Chronos-2 better on `mixture`, 0.30262611941041717 [0.17646094397473408, 0.4447032489712877]); L1 replicates (CKA 0.4435 dev, 0.4491 [0.4353, 0.4641] private); L3 4/9 by the strict CI rule, 8/9 same sign, `level_shift` flips sign again (−0.164 → 0.252; K2 −0.188 → 0.109).
+  - No cross-model causal claim was registrable: atlas-centroid 0 (all 4 atlas concepts excluded by the pre-set per-target BH gate, ROADMAP §42.1).
+- **Reading.** The K2 pattern holds on a 3× larger corpus with more real sources: what models *select* is shared and replicates on synthetic and raw real data; within-model single-feature effects replicate about half the time; shared causal *effects* remain undemonstrated.
+- **Models / layers.** All 7 (Chronos-T5-Base encoder only); profile-matched cov null.
+- **Evidence.** **Held-out confirmed** (causal within-model for the 11; correlational for transfer; external real leg is external validity, not confirmation). Caveat: private exchangeability (`cross_split.json`) not computed; private audit `not_recorded`. **Status:** held-out confirmed.
+- **Reproduce.** `runs/panel7_v3_dev/confirm/confirmation.json`, registry sha256 `67b91269…`, config `configs/panel7_v3.yaml` (commit 877ca70).
+- **Ref.** ROADMAP §41.6.
+- **Score. 4/5.** Independent replication of CA-11's answer on a new corpus and on raw real windows.
+
 ---
 
 ## D. Where and when: depth, crystallization, coverage
@@ -809,6 +831,14 @@ These instructions are binding for every future session, human or agent.
 - **Score. 3/5.** The extract gate reads only the shallowest layer and passes. Window-level claims on Time-MoE layers ≥5 (per-window patching, window-resolved cross-model depth) are weak and must say so.
 
 ---
+
+#### D-42C · A handful of SAE features move the forecast as much as the SAE error term (31 targets, descriptive)
+- **Claim.** On 3 hand-picked `panel7_v3_dev` targets, zeroing the 5 most prominent features changes the forecast by a share 0.6649 (TimesFM stacked_xf.6), 0.5933 (Chronos-Bolt encoder.block.3) and 0.4068 (Sundial model.layers.11) of feature-plus-error-term change, and by 0.2187 / 0.2594 / 0.0862 context sd more than activation-matched random 5-feature sets. TimesFM top-20 removal moves the forecast 10.14 sd (off-manifold; its 0.9864 share is not a coverage claim).
+- **Attribution-ranked, 31 targets (2026-10-10, ROADMAP §42.5, `runs/panel7_v3_sec42/sae/completeness.json`).** Median share N=1 0.5669, **N=5 0.7392** [0.0926, 0.9044], N=20 0.7545; the set beats activation-matched random sets on 30/31 targets at N=1 and N=5 (median excess 0.1332, 0.1661 context sd), 31/31 at N=20. Exceptions: Chronos-2 (N=5 0.09–0.33) and Time-MoE layers.11 at N=5. Per-target p is floored at 1/17 (16 draws).
+- **Evidence.** Descriptive (31 targets, attribution ranking); the 3-target original is illustrative. **Status:** open (exploratory, dev).
+- **Reproduce.** `run_completeness.py` (merge of §42 C), `sae/completeness.py`.
+- **Ref.** ROADMAP §42.2, §42.5.
+- **Score. 3/5.** Bears on "what is the main cause of a prediction": on most targets the forecast change is concentrated in about 5 atoms.
 
 ## E. Per-model character
 
@@ -1617,6 +1647,41 @@ See SH-20. **4/5.**
 - **Reproduce.** `run_family_presence_known_answer.py`, `configs/family_presence_known_answer.yaml`, gate `analysis/family_presence_gate.py` (merge 729b739).
 - **Ref.** ROADMAP §41.4.
 - **Score. 3/5.**
+
+#### MN-34 · Better SAE reconstruction does not go with clearer feature causality
+- **Claim.** Across targets, held-out reconstruction fidelity vs the fraction of scorable candidate features with at least one channel clearing the ablation null: V3 (`panel7_v3_dev`, primary null `profile_matched_cov`) ρ = −0.326 (p = 0.022, n = 49); v2 (`panel7_v2_dev`) ρ = −0.219 (p = 0.108, n = 55). Forecast-preservation |ΔMASE| vs the same fraction: V3 ρ = −0.237 (p = 0.102), v2 ρ = −0.091 (p = 0.508). V3 trained on 2.5× the rows of v2 and raised median held-out fidelity from 0.749 to 0.82; SAE admission went from 5/56 to 8/49.
+- **Reading.** No evidence that scaling SAE training data would make feature causality clearer; the binding limit is the per-feature battery (8 series, 16 null directions) and candidate selection. Depth and dictionary size are uncontrolled confounds, so the negative sign is not interpreted. Basis for dropping reconstruction fidelity to a loose sanity floor (ROADMAP §42).
+- **Admission consequence (2026-10-10, ROADMAP §42.5).** Re-evaluated without retraining under a 0.5 fidelity floor with forecast preservation on 128 held-out series (`admission_sec42`): 35 of 50 V3 targets admitted (legacy 8); flips False→True 28, True→False 1 (Chronos-T5-Base encoder.block.5, ΔMASE 0.3474 at 128 series).
+- **Evidence.** Descriptive, exploratory (dev artifacts, no new compute). **Status:** open.
+- **Reproduce.** Spearman over `runs/<run>/sae/meta.json` (`reconstruction_fidelity_heldout`, admission checks) and `sae/<model>/<layer>_ablation.json` (`candidates[*].n_channels_clearing`, `scorable`).
+- **Ref.** ROADMAP §41.5, §42.
+- **Score. 3/5.**
+
+#### MN-35 · Attribution to the horizon-mean point forecast cannot rank shape concepts and fails its pre-fixed gate
+- **Claim.** Ranking SAE atoms by |activation × ∂(mean point forecast over the horizon)/∂activation| recovers planted K1 concepts in its top 20 at 0.25, 0.3077, 0.2222, 0.25 on held-out seeds 1–4 (mean 0.2575, bar 0.8): **FAIL**. Level concepts are recovered (3/3, 4/4, 1/1, 3/3); trend, seasonal and dispersion almost never (seed 1: trend 0/6, dispersion 0/2). The gradient is exact (first-order vs real ablation Pearson ≥ 0.99999). On the same seeds, after the fact: per-horizon-step attribution 0.8990, MASE attribution 0.7511, the legacy candidate union 0.4850, random 0.1026.
+- **Reading.** A scalar that averages the horizon cancels shape effects; the summary, not the gradient, is the problem. The per-step and MASE variants are re-gated on unseen seeds 5–8 before use (ROADMAP §42.1).
+- **Re-gate (unseen seeds 5–8, ROADMAP §42.3).** Per-step attribution (`attribution_horizon_l1`) 0.9, 0.625, 0.8, 1.0, mean 0.83125: **PASS**; MASE attribution mean 0.7375: FAIL; legacy union 0.625; random 0.15. Its dispersion recovery relies on the mock's point-visible dispersion shape and says nothing about quantile-only dispersion in real models.
+- **Evidence.** Known-answer validation of a method. **Status:** negative (mean-summary rule); per-step variant adopted after passing on unseen seeds.
+- **Reproduce.** `run_attribution_known_answer.py`, `configs/attribution_known_answer.yaml`, `sae/attribution.py` (merge 26588d5).
+- **Ref.** ROADMAP §42.1.
+- **Score. 3/5.**
+
+#### MN-36 · A powered per-feature test (more series, more null draws, multiplicity control) fails its gate; the simple p95 rule at 8 series is the better-calibrated design
+- **Claim.** On K1 (`mock_planted`, cov null, held-out seeds 1–4) a per-feature test with 32 series, 64 null draws, a predictive-t p per channel, Holm within feature and BH within target reaches sensitivity 27/45 = 0.6 (FPR 7/264): **FAIL** against 0.8. The legacy rule (≥ 1 channel above the null's pooled p95) scores 41/45 = 0.9111 at 8 series × 16 draws (FPR 5/2299 cells) and 34/45 = 0.7556 at 32 × 64. The literal rank-p version cannot reject at all (Holm floor 9/65 = 0.1385).
+- **Reading.** Planted effects sit at ~2–6 null sd and the null is common-mode across series, so more rows barely tighten it while channel and feature multiplicity raise the bar. V3's scarcity of causal features is not a per-feature sample-size problem; candidate choice and on-manifold effect size are the levers. Corrects the premise of ROADMAP §42.
+- **Correction (2026-10-10, MN-37).** Candidate choice turned out not to be a lever under the on-manifold null either; on-manifold effect size is.
+- **Evidence.** Known-answer validation of a method. **Status:** negative (closed).
+- **Reproduce.** `run_powered_known_answer.py`, `configs/known_answer_powered.yaml`, `sae/powered.py` (merge d85f590); JSONs in `tsfm_lens/runs/sec42_results/`.
+- **Ref.** ROADMAP §42.4.
+- **Score. 4/5.**
+
+#### MN-37 · Gradient-attribution candidates do not raise the per-feature causal rate under the on-manifold null
+- **Claim.** `panel7_v3_sec42` (V3 SAEs, 38 targets, legacy p95 rule at 8 series × 16 draws): adding the top-20 `attribution_horizon_l1` atoms per target raises cov-causal features 78 → 112 by testing 620 more candidates. Per scorable candidate on the 31 differentiable targets: cov null attribution-nominated 48/562 = 0.0854 vs random-rule 24/219 = 0.1096 (Fisher OR 0.759, p 0.335); isotropic null 168/562 = 0.2989 vs 42/219 = 0.1918 (OR 1.797, p 0.0022). Feature-level cov count stays below independent chance (0.898; dev 0.818).
+- **Reading.** Atoms with large forecast gradients move the forecast more than a random isotropic direction but not more than a covariance-matched one. Neither per-feature sample size (MN-36) nor candidate choice is the lever; on-manifold effect size is. The rule passed its K1 gate (MN-35), so the gate did not predict real-model behavior; why is not measured.
+- **Evidence.** Causal within-model (battery), exploratory (dev). **Status:** negative (closed).
+- **Reproduce.** `configs/panel7_v3_sec42.yaml`, `build_sec42_run_dir.py`, `run_admission_reeval.py` (merge of 4c50518); `runs/panel7_v3_sec42/sae/*/*_ablation.json` (`candidates[*].rules`, `n_channels_clearing`, `by_null.profile_matched`).
+- **Ref.** ROADMAP §42.5.
+- **Score. 4/5.** Closes the "test better features" route with a measurement.
 
 ## H. Benchmark trust
 

@@ -464,8 +464,9 @@ def _check_capped_stages(cfg: PipelineConfig) -> list:
     if cfg.attention.enabled and cfg.attention.ablation and runs("attention"):
         candidates.append(("attention.ablation_max_series", cfg.attention.ablation_max_series))
     if cfg.sae.enabled and runs("sae"):
-        candidates.append(("sae.forecast_preservation_max_series",
-                           cfg.sae.forecast_preservation_max_series))
+        if not getattr(cfg.sae, "forecast_preservation_chunked", False):
+            candidates.append(("sae.forecast_preservation_max_series",
+                               cfg.sae.forecast_preservation_max_series))
         if cfg.sae.feature_ablation_enabled:
             candidates.append(("sae.feature_ablation_max_series",
                                cfg.sae.feature_ablation_max_series))

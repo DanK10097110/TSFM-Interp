@@ -140,8 +140,9 @@ def test_section_order_follows_the_parts_list(monkeypatch):
     assert idx["SAE"] < idx["Concepts"] < idx["Exemplars"], (
         "Concepts must render after SAE and before Exemplars (report structure spec R1)")
 
-    bad_parts = [(title, intro, (["Concepts", "SAE", "Exemplars"]
-                                 if eyebrows == ["SAE", "Concepts", "Exemplars"] else eyebrows))
+    bad_parts = [(title, intro, (["Concepts", "SAE", "Completeness", "Exemplars"]
+                                 if eyebrows == ["SAE", "Concepts", "Completeness", "Exemplars"]
+                                 else eyebrows))
                 for (title, intro, eyebrows) in report_mod.REPORT_PARTS]
     monkeypatch.setattr(report_mod, "REPORT_PARTS", bad_parts)
     html_bad = _render(coverage, sections)

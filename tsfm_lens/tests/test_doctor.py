@@ -408,3 +408,16 @@ def test_multiplicity_budget_is_wired_into_preflight():
     store-format test above pins its wiring."""
     names = [c.name for c in run_preflight(_cpu_cfg())]
     assert "multiplicity budget" in names
+
+
+def test_chunked_forecast_preservation_is_exempt_from_the_batch_cap_check():
+    cfg = _cpu_cfg()
+    cfg.models[0].batch_size = 16
+    cfg.sae.enabled = True
+    cfg.sae.forecast_preservation_max_series = 128
+    cfg.sae.forecast_preservation_chunked = False
+    name = "batch cap: sae.forecast_preservation_max_series"
+    off = {c.name: c for c in _check_capped_stages(cfg)}
+    assert off[name].status == "fail"
+    cfg.sae.forecast_preservation_chunked = True
+    assert name not in {c.name for c in _check_capped_stages(cfg)}

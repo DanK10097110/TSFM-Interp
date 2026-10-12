@@ -23,7 +23,7 @@ from jinja2 import Template
 from plotly.subplots import make_subplots
 
 from .. import failure_gallery, glossary, methods_appendix, stage_docs
-from . import derived, model_comparison, results_table, v3_controls
+from . import completeness_panel, derived, model_comparison, results_table, v3_controls
 from .sanitize import strip_internal_refs, strip_refs_in_place
 from ..config import PipelineConfig
 from ..utils import load_json, log, save_json
@@ -152,7 +152,7 @@ REPORT_PARTS = [
      "The sparse feature dictionaries trained per model and per layer, the "
      "concepts they cluster into, whether those concepts are shared across "
      "models, and concrete per-family case studies.",
-     ["SAE", "Concepts", "Exemplars"]),
+     ["SAE", "Concepts", "Completeness", "Exemplars"]),
     ("Part 7 — Robustness and held-out confirmation",
      "Negative controls, window-size sensitivity and the per-data-role split, how much of the above depends on one analysis-knob choice, and the "
      "one-shot confirmatory test on the sealed private corpus.",
@@ -286,6 +286,10 @@ def run_report(cfg: PipelineConfig) -> Path:
          "Transfer negative controls, window-size sensitivity and the per-data-role breakdown (ROADMAP.md sec 41.1). Opt-in: rendered only when the run produced the artifacts.",
          [], "concepts",
          lambda: v3_controls.controls_section_block(cfg, run_dir, findings)),
+        ("Completeness", "Forecast completeness",
+         "How much of the forecast change the top-ranked SAE features carry versus the SAE's error term and versus random features of matched activation (ROADMAP.md sec 42 task C). Opt-in: rendered only when the run produced sae/completeness.json.",
+         [], "concepts",
+         lambda: completeness_panel.completeness_section_block(cfg, run_dir, findings)),
         ("Exemplars", "Exemplar case studies",
          "A few concrete series per family, told end to end: both forecasts, where each model's answer forms in depth, and where it looks in the context.",
          ["exemplars/exemplars.npz", "exemplars/exemplars.json"], "exemplars",
@@ -8904,9 +8908,11 @@ def _sec_confirm(run_dir: Path, findings: list, n_exploratory: int) -> str:
                   'checked against these same held-out series more than once. Read '
                   'them as exploratory until a fresh private epoch is generated.</p>')
     rep_summary = derived.replication_summary(run_dir)
+    held_total = None
     if not rep_summary.empty:
         held = int(rep_summary["held up"].sum())
         total = held + int(rep_summary["did not"].sum())
+        held_total = held
         inner += (f'<h4>What held up ({held} of {total})</h4>'
                   f'<p class="blurb">Every re-test this stage ran, by kind. Each row '
                   f'is an independent replication on the same held-out series, so a '
@@ -8918,7 +8924,8 @@ def _sec_confirm(run_dir: Path, findings: list, n_exploratory: int) -> str:
     if registry_path.exists():
         registry = load_json(registry_path)
         n_registered, n_replicable = conf.get("n_registered", 0), conf.get("n_replicable", 0)
-        confirmed_n = sum(1 for t in conf.get("tests", []) if t["confirmed"])
+        confirmed_n = (held_total if held_total is not None
+                       else sum(1 for t in conf.get("tests", []) if t["confirmed"]))
         inner += (f'<h4>Multiplicity ledger</h4>'
                   f'<p class="blurb"><b>{n_exploratory} exploratory finding(s) examined → '
                   f'{n_registered} hypotheses registered ({n_replicable} replicable by this '
@@ -8931,6 +8938,15 @@ def _sec_confirm(run_dir: Path, findings: list, n_exploratory: int) -> str:
                   f'"Exploratory findings examined" is every finding text this report generated '
                   f'before this section ran — a real but approximate multiplicity count, not a '
                   f'formal comparison tally.</p>')
+        from html import escape as _esc
+
+        from ..analysis.hypotheses import zero_claim_reasons
+
+        zero = zero_claim_reasons(registry)
+        if zero:
+            inner += ('<h4>Claim families that registered nothing</h4><ul>'
+                      + "".join(f"<li><code>{_esc(n)}</code>: {_esc(w)}</li>"
+                                for n, w in zero) + '</ul>')
         not_replicable = [h for h in registry["hypotheses"] if not h["replicable"]]
         if not_replicable:
             # Grouped by reason: the reason is a property of the STAGE, so a

@@ -440,3 +440,30 @@ def test_replication_summary_survives_extra_confirm_keys(tmp_path):
     })
     df = replication_summary(run_dir)
     assert len(df) == 1
+
+
+def test_replication_summary_counts_every_concept_claim_family(tmp_path):
+    """V3's report said 6 of 11 held up (L0, L3, L1 only) while 41 of 63 did: the concept
+    families under `concept_replication` were never counted. Decoys: an empty family (no row)
+    and a not-testable claim (counted apart, not as a failure)."""
+    from tsfm_lens.report.derived import replication_summary
+    run_dir = tmp_path / "run"
+    (run_dir / "confirm").mkdir(parents=True)
+    ok = {"status": "tested", "confirmed": True}
+    bad = {"status": "tested", "confirmed": False}
+    save_json(run_dir / "confirm" / "confirmation.json", {
+        "tests": [ok],
+        "concept_replication": {
+            "status": "tested", "knob": {"status": "empty", "tests": []},
+            "transfer": {"tests": [ok, ok, bad]},
+            "causal": {"tests": [ok, bad, {"status": "not testable", "confirmed": False}]},
+            "ledger": [{"family": "concept_transfer"}],
+        },
+    })
+    df = replication_summary(run_dir).set_index("what was re-tested")
+    assert len(df) == 3
+    transfer = df.loc["Concept transfer (another model selects the same series)"]
+    assert (transfer["held up"], transfer["did not"], transfer["not testable"]) == (2, 1, 0)
+    causal = df.loc["Single-feature causal effects"]
+    assert (causal["held up"], causal["did not"], causal["not testable"]) == (1, 1, 1)
+    assert int(df["held up"].sum()) == 4

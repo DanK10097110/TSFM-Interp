@@ -117,7 +117,7 @@ from pathlib import Path
 import numpy as np
 
 from ..utils import load_json, log, save_json
-from .concepts import CHANNELS, _compose_batch, build_concept_matrix
+from .concepts import CHANNELS, _compose_batch, build_concept_matrix, causal_verdict_of
 
 __all__ = ["pooled_features", "cluster_atlas", "run_concept_atlas"]
 
@@ -129,7 +129,7 @@ _LINKAGE_METRIC = "cosine"
 # Pooling.
 # ---------------------------------------------------------------------------
 
-def pooled_features(run_dir, causal_only: bool = True) -> tuple:
+def pooled_features(run_dir, causal_only: bool = True, verdict: str = "p95_count") -> tuple:
     """`-> (X [n, 9], rows)`, `rows[i] = {"model", "layer", "feature"}`.
 
     Reads every `sae/<model>/<layer>_ablation.json` under `run_dir`,
@@ -152,7 +152,8 @@ def pooled_features(run_dir, causal_only: bool = True) -> tuple:
         model = art.get("model", ablation_file.parent.name)
         layer = art.get("layer", ablation_file.name[: -len("_ablation.json")])
         candidates = art.get("candidates", [])
-        X, feature_ids, _diag = build_concept_matrix(candidates, causal_only=causal_only)
+        X, feature_ids, _diag = build_concept_matrix(candidates, causal_only=causal_only,
+                                                     verdict=verdict)
         for vec, fid in zip(X, feature_ids):
             X_rows.append(vec)
             meta_rows.append({"model": str(model), "layer": str(layer), "feature": int(fid)})
@@ -559,7 +560,8 @@ def run_concept_atlas(run_dir, cfg) -> dict:
              # ROADMAP.md sec 37.7 P4 -- additive.
              "level_share_threshold": level_share_threshold}
 
-    X, rows = pooled_features(run_dir, causal_only=causal_only)
+    X, rows = pooled_features(run_dir, causal_only=causal_only,
+                              verdict=causal_verdict_of(cfg))
     n_features = int(X.shape[0])
 
     if n_features == 0:

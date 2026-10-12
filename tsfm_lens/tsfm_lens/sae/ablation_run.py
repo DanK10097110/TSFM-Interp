@@ -22,8 +22,10 @@ from pathlib import Path
 import numpy as np
 
 from ..utils import load_json, log, save_json
+from .attribution import attribution_candidates
 from .ground_truth import encode_series_level, load_ground_truth_table
-from .response import alive_feature_mask, feature_ablation_fingerprints, select_candidates
+from .response import (LEGACY_CANDIDATE_RULES, alive_feature_mask, feature_ablation_fingerprints,
+                       select_candidates)
 from .train import load_all_windows, load_sae_checkpoint, sanitize
 
 
@@ -93,7 +95,8 @@ def run_ablation_target(cfg, run_dir: Path, hub, data, store, device, model: str
                         activations: np.ndarray | None = None,
                         keep_null_draws: bool = False,
                         empirical_chance: bool = False,
-                        keep_signed_null_draws: bool = False) -> dict:
+                        keep_signed_null_draws: bool = False,
+                        powered_test: bool | None = None) -> dict:
     """The ablation fingerprint for one target. Returns the artifact dict; a
     target with no checkpoint returns a `skipped` record rather than raising,
     so one missing dictionary does not stop the other targets.
@@ -116,6 +119,8 @@ def run_ablation_target(cfg, run_dir: Path, hub, data, store, device, model: str
     - `keep_null_draws`: forwarded to `feature_ablation_fingerprints`.
     - `keep_signed_null_draws` (ROADMAP.md sec 41, V3-B): also forwarded; the
       signed null draws the family-presence claims score against.
+    - `powered_test` (ROADMAP.md sec 42 task B): also write the powered per-feature verdict
+      (`sae/powered.py`). `None` reads `sae.ablation_powered`; an explicit value overrides it.
     """
     run_dir = Path(run_dir)
     ckpt_path = checkpoint_path(run_dir, model, layer)
@@ -131,21 +136,46 @@ def run_ablation_target(cfg, run_dir: Path, hub, data, store, device, model: str
         activations = encode_series_level(sae, store, model, layer, np.arange(data.n), device)
 
     stage2_path = run_dir / "sae" / sanitize(model) / f"{sanitize(layer)}_stage2_response.json"
+    rules = tuple(getattr(cfg.sae, "candidate_rules", LEGACY_CANDIDATE_RULES))
+    use_attribution = candidates is None and any(r.startswith("attribution") for r in rules)
+    attribution, alive, bench = None, None, None
+    if use_attribution:
+        bench = load_all_windows(store, model, layer)
+        alive = alive_feature_mask(sae, bench, device)
+        attribution = attribution_candidates(
+            cfg, adapter, layer, sae, data, device, alive,
+            n_attribution=int(cfg.sae.n_attribution),
+            max_series=int(cfg.sae.attribution_max_series), seed=cfg.run.seed,
+            vector_steps=int(getattr(cfg.sae, "attribution_vector_steps", 0)))
+        if attribution["status"] != "ok":
+            log.warning(f"ablation: {model}/{layer}: attribution rule unavailable -- "
+                        f"{attribution['reason']}")
+    attr_top = attribution_rankings(attribution)
     if candidates is not None:
         candidates = [{"feature": int(c["feature"]), "rules": c.get("rules", [])}
                       for c in candidates]
         source = "frozen (registered dev candidates)"
     elif stage2_path.exists() and not load_json(stage2_path).get("withheld"):
         stage2 = load_json(stage2_path)
-        candidates = [{"feature": int(c["feature"]), "rules": c.get("rules", [])}
+        candidates = [{"feature": int(c["feature"]), "rules": list(c.get("rules", []))}
                       for c in stage2["candidates"]]
         source = "stage2"
+        if attr_top:
+            candidates = _add_attribution(candidates, attr_top, alive, rules,
+                                          int(cfg.sae.n_attribution))
+            source = "stage2 + attribution"
     else:
-        bench = load_all_windows(store, model, layer)
-        alive = alive_feature_mask(sae, bench, device)
+        if bench is None:
+            bench = load_all_windows(store, model, layer)
+            alive = alive_feature_mask(sae, bench, device)
+        extra = ({"rules": rules, "n_attribution": int(cfg.sae.n_attribution),
+                  "attribution_ranked": attr_top.get("attribution"),
+                  "attribution_mase_ranked": attr_top.get("attribution_mase"),
+                  "attribution_horizon_l1_ranked": attr_top.get("attribution_horizon_l1")}
+                 if use_attribution else {})
         candidates = select_candidates(alive, n_features_per_rule,
                                        activation_variance=activations.var(axis=0),
-                                       seed=cfg.run.seed)
+                                       seed=cfg.run.seed, **extra)
         source = "select_candidates (no Stage 2 artifact for this target)"
     log.info(f"ablation: {model}/{layer}: {len(candidates)} candidates from {source}")
 
@@ -167,12 +197,16 @@ def run_ablation_target(cfg, run_dir: Path, hub, data, store, device, model: str
     if getattr(cfg.sae, "keep_signed_null_draws", False):
         keep_null_draws = keep_signed_null_draws = True
 
+    if powered_test is None:
+        powered_test = bool(getattr(cfg.sae, "ablation_powered", False))
+
     result = feature_ablation_fingerprints(
         cfg, adapter, layer, sae, data, device, candidates, activations,
         top_k_series=top_k_series, n_null_directions=n_null_directions,
         max_series=max_series, floor=floor, periods_full=periods_full,
         keep_forecasts=keep_forecasts, keep_null_draws=keep_null_draws,
         **({"keep_signed_null_draws": True} if keep_signed_null_draws else {}),
+        **({"powered_test": True} if powered_test else {}),
         null_mode=cfg_null_mode(cfg),
         **({"extra_null_modes": tuple(cfg_extra_null_modes(cfg))}
            if cfg_extra_null_modes(cfg) else {}),
@@ -183,7 +217,44 @@ def run_ablation_target(cfg, run_dir: Path, hub, data, store, device, model: str
                     f"{result.get('reason') or result['reach']['reason']}")
     else:
         log.info(clearing_log_line(model, layer, result))
-    return {"model": model, "layer": layer, "candidate_source": source, **result}
+    extra = ({"candidate_rules": list(rules), "attribution": attribution}
+             if attribution is not None else {})
+    return {"model": model, "layer": layer, "candidate_source": source, **result, **extra}
+
+
+def attribution_rankings(attribution: dict | None) -> dict:
+    """`{rule: ranked list}` of the rankings an `attribution_candidates` block carries, by candidate
+    rule name; empty when the block is absent or not `ok` (a stated `unavailable` reason, no
+    nomination). `attribution_horizon_l1` is present only when the block was computed with
+    `vector_steps > 0`."""
+    if not attribution or attribution.get("status") != "ok":
+        return {}
+    out = {"attribution": attribution["top_forecast_mean"],
+           "attribution_mase": attribution["top_mase"]}
+    if "top_forecast_horizon_l1" in attribution:
+        out["attribution_horizon_l1"] = attribution["top_forecast_horizon_l1"]
+    return out
+
+
+def _add_attribution(candidates: list, attr_top: dict, alive: np.ndarray, rules: tuple,
+                     n: int) -> list:
+    """Append the attribution nominations to a frozen Stage 2 list.
+
+    An atom already on the list gains the rule; a new atom is appended after every
+    existing candidate, so the Stage 2 atoms keep their position and their rules.
+    """
+    by_feature = {c["feature"]: c for c in candidates}
+    for rule in ("attribution", "attribution_mase", "attribution_horizon_l1"):
+        if rule not in rules or rule not in attr_top:
+            continue
+        for entry in [e for e in attr_top[rule] if alive[e["feature"]]][:n]:
+            f = int(entry["feature"])
+            if f not in by_feature:
+                by_feature[f] = {"feature": f, "rules": []}
+                candidates.append(by_feature[f])
+            if rule not in by_feature[f]["rules"]:
+                by_feature[f]["rules"].append(rule)
+    return candidates
 
 
 def clearing_log_line(model: str, layer: str, result: dict) -> str:

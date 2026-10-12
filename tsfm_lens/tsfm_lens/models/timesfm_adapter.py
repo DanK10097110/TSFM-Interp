@@ -27,6 +27,8 @@ attention output projection (`attn.out`) is a plain hookable Linear.
 
 from __future__ import annotations
 
+import contextlib
+import sys
 from typing import Any
 
 import numpy as np
@@ -97,6 +99,36 @@ class TimesFMAdapter(ModelAdapter):
         n_tokens = self.data_cfg.context_len // self._patch_len
         starts = np.arange(n_tokens) * self._patch_len
         return np.stack([starts, starts + self._patch_len], axis=1).astype(np.float64)
+
+    def predict_differentiable(self, contexts: np.ndarray, horizon: int):
+        """The point channel of `predict`'s decode, with autograd enabled.
+
+        The library's `decode` wraps its whole body in `torch.no_grad()`, which
+        overrides an outer `enable_grad`. For this one call the name `torch` inside
+        the library module is swapped for a proxy whose `no_grad` does nothing, so
+        the very same decode path (prefill, running statistics, autoregressive
+        steps) runs with autograd on; the module attribute is restored afterwards.
+        """
+        inputs, masks = self.prepare(contexts)
+        module = sys.modules[type(self.tfm.model).__module__]
+        original = module.torch
+
+        class _GradEnabledTorch:
+            no_grad = staticmethod(contextlib.nullcontext)
+
+            def __getattr__(self, name):
+                return getattr(original, name)
+
+        module.torch = _GradEnabledTorch()
+        try:
+            renormed_outputs, _, ar_outputs = self.tfm.model.decode(horizon, inputs, masks)
+        finally:
+            module.torch = original
+        full = renormed_outputs[:, -1, ...]
+        if ar_outputs is not None:
+            extra = ar_outputs.reshape(inputs.shape[0], -1, self.tfm.model.q)
+            full = torch.cat([full, extra], dim=1)
+        return full[:, :horizon, self._point_idx].float()
 
     def predict(self, contexts: np.ndarray, horizon: int, quantiles: list) -> dict:
         """Decode and map requested quantiles onto the checkpoint's native quantile head."""

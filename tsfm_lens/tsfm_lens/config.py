@@ -850,6 +850,48 @@ class SAEConfig:
     # family-presence claim scores a family's cosine against these. Default off, artifacts unchanged.
     keep_signed_null_draws: bool = field(default=False, metadata={"stage_input": False,
                                                                   "omit_at_default": True})
+    # Opt-in candidate rules of the ablation battery (ROADMAP.md sec 42, decision 1). The
+    # default names the four legacy rules, so outputs are byte-identical. Adding
+    # `attribution` also nominates the top `n_attribution` alive atoms by mean |activation x
+    # d(mean point forecast)/d activation| (`sae/attribution.py`); `attribution_mase` also
+    # nominates the top atoms of the MASE-against-truth ranking (reported either way). Every
+    # candidate records each rule that nominated it. A model whose forecast is not
+    # differentiable gets a stated `unavailable` reason in the artifact and no nomination.
+    # Declared field by field on the concepts stage and left out of the `sae` stage's inputs
+    # (`omit_at_default`), so a default config keeps every older fingerprint.
+    candidate_rules: tuple = field(default=("structural", "variance", "provenance", "random"),
+                                   metadata={"stage_input": False, "omit_at_default": True})
+    n_attribution: int = field(default=20, metadata={"stage_input": False,
+                                                     "omit_at_default": True})
+    attribution_max_series: int = field(default=128, metadata={"stage_input": False,
+                                                               "omit_at_default": True})
+    # Horizon steps of the `attribution_horizon_l1` ranking (ROADMAP.md sec 42.3): the forecast
+    # summary is the sum over this many evenly spaced horizon steps of |sum_t a * dF_h/da|, so an
+    # atom whose per-step effects cancel in the horizon mean (trend, seasonal) still scores. 8 is
+    # the value the unseen-seed re-gate passed with. The rule needs it > 0 (refused at validate()
+    # otherwise); 0 leaves the ranking uncomputed and every default artifact unchanged.
+    attribution_vector_steps: int = field(default=0, metadata={"stage_input": False,
+                                                               "omit_at_default": True})
+    # Opt-in (ROADMAP.md sec 42 task B): the powered per-feature causal test. Each feature's
+    # signed effect per series is scored against the null draws on the same series, per channel
+    # (rank p over the null series-means, floor 1/(n_null+1)), the min over channels corrected
+    # within the feature, BH across features within the target; effect size signed_effect /
+    # null_sd with a series-bootstrap CI. Written beside the legacy p95 count under `powered` in
+    # `*_ablation.json`, never replacing it. Needs `concepts.n_null_directions` >= 19 to be able
+    # to reach q 0.05 at all. Default off, artifacts unchanged.
+    ablation_powered: bool = field(default=False, metadata={"stage_input": False,
+                                                            "omit_at_default": True})
+    # Which verdict the `concepts` stage reads as "this feature is causal": `p95_count` (the
+    # legacy rule: >= 1 channel's effect above the null's pooled p95) or `powered` (the BH
+    # verdict of `ablation_powered`; refused at validate() unless that is on). Default is the
+    # legacy rule, so every existing config reads exactly what it read.
+    causal_verdict: str = field(default="p95_count", metadata={"stage_input": False,
+                                                               "omit_at_default": True})
+    # Opt-in (ROADMAP.md sec 42 decision 4): let `forecast_preservation_max_series` exceed the
+    # model's batch size by scoring the sample in explicit batch-size chunks (one forward per
+    # chunk, so `token_patch` never sees a chunked batch). Off, the request is clamped to
+    # batch_size (recorded as `limited_by` in the artifact), which is the legacy behaviour.
+    forecast_preservation_chunked: bool = field(default=False, metadata={"omit_at_default": True})
 
 
 @dataclass
@@ -1262,6 +1304,19 @@ class ConceptsConfig:
     window_sensitivity: Optional[list] = field(default=None, metadata={"omit_at_default": True})
     tier_breakdown: bool = field(default=False, metadata={"stage_input": False})
 
+    # ROADMAP.md sec 42 task C: forecast COMPLETENESS (`sae/completeness.py`, writes
+    # `sae/completeness.json`), opt-in and descriptive. Per target, how much of the
+    # forecast change is carried by the top-N ranked SAE features (N in
+    # `completeness_set_sizes`, default 1/5/20) versus by the SAE error term, with an
+    # activation-matched random-feature-set baseline of `completeness_n_random` draws.
+    # Every field is `omit_at_default`, so a run that leaves it off keeps its
+    # `concepts` fingerprint and every artifact byte-identical.
+    completeness: bool = field(default=False, metadata={"omit_at_default": True})
+    completeness_max_series: int = field(default=64, metadata={"omit_at_default": True})
+    completeness_n_random: int = field(default=16, metadata={"omit_at_default": True})
+    completeness_n_boot: int = field(default=1000, metadata={"omit_at_default": True})
+    completeness_set_sizes: Optional[list] = field(default=None, metadata={"omit_at_default": True})
+
 
 @dataclass
 class PipelineConfig:
@@ -1357,6 +1412,22 @@ class PipelineConfig:
             if bad:
                 raise ValueError(f"sae.ablation_nulls: unknown null mode(s) {bad}; "
                                  f"expected from {list(ABLATION_NULL_MODES)}")
+        from .sae.response import CANDIDATE_RULES
+        bad_rules = [r for r in self.sae.candidate_rules if r not in CANDIDATE_RULES]
+        if bad_rules:
+            raise ValueError(f"sae.candidate_rules: unknown rule(s) {bad_rules}; "
+                             f"expected from {list(CANDIDATE_RULES)}")
+        if ("attribution_horizon_l1" in self.sae.candidate_rules
+                and int(self.sae.attribution_vector_steps) <= 0):
+            raise ValueError("sae.candidate_rules names 'attribution_horizon_l1', which ranks over "
+                             "`sae.attribution_vector_steps` horizon steps; set it to a positive "
+                             "integer (8 is the value the re-gate passed with)")
+        if self.sae.causal_verdict not in ("p95_count", "powered"):
+            raise ValueError(f"sae.causal_verdict must be 'p95_count' or 'powered', "
+                             f"got {self.sae.causal_verdict!r}")
+        if self.sae.causal_verdict == "powered" and not self.sae.ablation_powered:
+            raise ValueError("sae.causal_verdict: powered needs sae.ablation_powered: true "
+                             "(the ablation battery must write the powered verdict)")
         names = [m.name for m in self.models]
         if len(set(names)) != len(names):
             raise ValueError("model names must be unique")
@@ -1462,6 +1533,7 @@ def config_from_dict(raw: dict) -> PipelineConfig:
     if "models" in raw:
         cfg.models = [_build(ModelConfig, m, section=f"models[{i}]")
                      for i, m in enumerate(raw["models"])]
+    cfg.sae.candidate_rules = tuple(cfg.sae.candidate_rules)
     cfg.sae.ablation_nulls = tuple(cfg.sae.ablation_nulls or ())
     nulls = cfg.sae.ablation_nulls
     if nulls and "ablation_null" not in (raw.get("sae") or {}):
