@@ -685,7 +685,7 @@ These instructions are binding for every future session, human or agent.
   - No cross-model causal claim was registrable: atlas-centroid 0 (all 4 atlas concepts excluded by the pre-set per-target BH gate, ROADMAP §42.1).
 - **Reading.** The K2 pattern holds on a 3× larger corpus with more real sources: what models *select* is shared and replicates on synthetic and raw real data; within-model single-feature effects replicate about half the time; shared causal *effects* remain undemonstrated.
 - **Models / layers.** All 7 (Chronos-T5-Base encoder only); profile-matched cov null.
-- **Evidence.** **Held-out confirmed** (causal within-model for the 11; correlational for transfer; external real leg is external validity, not confirmation). Caveat: private exchangeability (`cross_split.json`) not computed; private audit `not_recorded`. **Status:** held-out confirmed.
+- **Evidence.** **Held-out confirmed** (causal within-model for the 11; correlational for transfer; external real leg is external validity, not confirmation). Private exchangeability was computed after the look (model-free): energy p 0.994503, TOST 22/22 (MP-09); private audit `not_recorded`. **Status:** held-out confirmed.
 - **Reproduce.** `runs/panel7_v3_dev/confirm/confirmation.json`, registry sha256 `67b91269…`, config `configs/panel7_v3.yaml` (commit 877ca70).
 - **Ref.** ROADMAP §41.6.
 - **Score. 4/5.** Independent replication of CA-11's answer on a new corpus and on raw real windows.
@@ -1196,6 +1196,7 @@ These instructions are binding for every future session, human or agent.
     inconclusive), 5 near-duplicates out of 933,155, and Cramér's V ≤ 0.092.
   - Fresh epochs pass the same checks. Epoch 1: energy p 0.908046, 5/927365
     near-duplicates. Epoch 2: energy p 0.922539, 5/929295.
+- **V3 exchangeability (computed 2026-10-12, after the confirm look, model-free; `benchmark_v3/cross_split_epoch1/cross_split.json`): dev 2876 vs private epoch 1 2868 sealed series (confirm draws 1024 of them via `confirm.max_series`); energy distance p 0.994503 (2000 permutations); TOST 22/22 catch22 features equivalent at 0.2 sd (Holm); tier composition p 0.971975; 9 cross-split DTW near-duplicate pairs of 8,248,368 (threshold 0.97); centroid distance 0.0705.
 - **Evidence.** Held-out validation. **Status:** confirmed.
 - **Reproduce.** `benchmark_validation/cross_split.py`; `run_validation.py --compare-splits`.
 - **Ref.** ROADMAP §34 B2/B3 (~31618–31810), §37.10.
