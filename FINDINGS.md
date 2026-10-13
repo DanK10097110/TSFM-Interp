@@ -1178,8 +1178,9 @@ These instructions are binding for every future session, human or agent.
   - Across the 4-model battery, clearing cells run 2.49×–6.61× chance.
 - **Evidence.** Causal within-model. **Status:** confirmed. The first pass applied to one model only, because of an autocast defect (MN-24).
 - **Re-measured under the profile-matched null (2026-09-30, MN-29; v2 copy, same features and seed).** The battery's `0.05 × cells` chance line is not a chance rate (effect is a mean over k rows vs the p95 of pooled per-row null values). The leave-one-draw-out empirical rate is 0.024605 (legacy) / 0.019711 (profile) per cell. Against it, legacy clears 1348 cells vs 103.6875 expected (13.0006×) and profile 254 vs 83.0625 (3.0579×), with 20/28 targets BH-significant under profile (27/28 legacy). The battery still discriminates, but the legacy null inflated clears about 5-fold (1348 → 254), because it removed a size-mismatched amount.
+- **Feature-level chance on V3 (2026-10-13, ROADMAP §43.1).** Counting features (>= 1 of 9 channels) against the draw-level chance rate, which keeps the channels' dependence: `panel7_v3_dev` cov 91/967 vs 70.4375 expected (1.2919×, Poisson-binomial p 0.004505097802029455), iso 238 vs 67.0 (3.5522×); `panel7_v3_sec42` cov 112/1118 vs 80.25 (1.3956×, p 8.720751822035558e-05). The independent-channel product (111.19 for v3 cov) overstates chance; reading it as chance ("below chance") is wrong. `run_feature_chance_test.py`.
 - **Reproduce.** `run_stage2_response_fingerprint.py`; `sae/response.py::feature_ablation_fingerprints`.
-- **Ref.** ROADMAP §25.23 (~21263–21422), §27.3.
+- **Ref.** ROADMAP §25.23 (~21263–21422), §27.3, §43.1.
 - **Score. 4/5.** The foundation of every causal concept claim.
 
 #### MP-08 · Reach gates need a relative threshold
@@ -1201,6 +1202,19 @@ These instructions are binding for every future session, human or agent.
 - **Reproduce.** `benchmark_validation/cross_split.py`; `run_validation.py --compare-splits`.
 - **Ref.** ROADMAP §34 B2/B3 (~31618–31810), §37.10.
 - **Score. 3/5.**
+
+---
+
+#### MP-10 · Causal features survive mean ablation when they are sparse; the verdict is intervention-dependent only for dense features
+- **Claim.** `panel7_v3_dev`, the 91 features clearing >= 1 channel under the on-manifold (cov) null with zero ablation, re-run with the atom set to its token-level corpus mean (null matched to the mean removal, same rows/seeds/draws; zero rerun reproduced 182/182 features exactly):
+  - **69/91 still clear** under cov (70/91 iso); clearing cells 170 → 137.
+  - Effect direction is preserved: zero-vs-mean cosine median 0.9968869277075498 (IQR 0.9765–0.9998).
+  - Survival depends on density: token mu/top < 0.1, 56/62; >= 0.1, 13/29 (Spearman rho −0.4348, p 1.66e-05). Losses by model: Chronos-T5-Base 2/7 and Time-MoE 0/3 survive.
+  - Mean ablation creates almost no new clears: 1 of 91 sampled non-clearing features.
+- **Evidence.** Causal within-model (dev, exploratory). **Status:** measured once.
+- **Reproduce.** `tsfm_lens/run_ablation_mode_check.py plan|launch|aggregate` → `runs/ablation_mode_check/ablation_mode_check.json`; `feature_ablation_fingerprints(intervention="mean")` (commit 67685d7).
+- **Ref.** ROADMAP §43.2.
+- **Score. 3/5.** Answers the standard "zero ablation is off-manifold" objection for most features.
 
 ---
 

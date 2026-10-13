@@ -52,9 +52,10 @@ irrelevant to the forecast; the causal definition asks the question that matters
 of 192--6{,}144 atoms are nonzero on any token, so the ablated state lies inside the dictionary's normal range, unlike
 zeroing a dense neuron. The comparison is between two passes through the same reconstruction, so the dictionary's error
 is in both arms. The null removes exactly the feature's per-token amount along another direction, on the same series,
-with the same seed for sampled models, after a reach probe has shown that patching this layer can move the forecast. Two
-alternatives were not run: mean ablation, and ablating against the clean activation; the latter differs only through the
-model's nonlinear response to the reconstruction error.
+with the same seed for sampled models, after a reach probe has shown that patching this layer can move the forecast. Mean
+ablation, with the null matched to its removal, keeps 69 of the 91 v3 features that clear the on-manifold null, with a
+median effect-vector cosine of 0.997 to zero ablation (Section~\ref{sec:rq1}). Ablating against the clean activation
+was not run; it differs only through the model's nonlinear response to the reconstruction error.
 
 \paragraph{Distinguishing causal features from chance.} Four checks address this. (i) Calibration on a known answer: on the planted
 forecaster's control layer, which has no planted effect, the per-cell false-positive rate is at most 0.003 while planted
@@ -67,8 +68,8 @@ attainable $p$ floor after adaptive redraws to 1{,}000 null draws. (iv) Null str
 random direction from the layer's own activation covariance also passes the planted test (sensitivity 0.916), but on the
 earlier four-model run it leaves only 1.13 times chance. Causal effects therefore exceed random directions clearly and
 typical on-manifold directions only slightly. The v3 run registered every causal claim against the stricter null. There,
-feature-level clears fall below the independent-channel expectation (91 against 111.2), yet 11 of 24 registered claims
-replicate on new series (\fid{CA-12}). The stricter null leaves few causal features, and about half of the registered ones replicate.
+91 of 967 features clear at least one channel against 70.4 expected when channel dependence is kept (1.29 times,
+$p=0.0045$; Table~\ref{tab:chance}), and 11 of 24 registered claims replicate on new series (\fid{CA-12}). The stricter null leaves few causal features, and about half of the registered ones replicate.
 
 \paragraph{Effect sizes.} Effects are small relative to the forecast and to the dictionary's own error. On the earlier
 four-model run the median single-feature effect was 0.0395 context standard deviations, 3.5 times below the change from
@@ -261,6 +262,7 @@ MP-05 & SAE feature death set by layer geometry (exponent 1.02), not recipe & \S
 MP-06 & Ground-truth alignment of SAE features is real only over a permutation null & \S\ref{sec:casestudy} & 3 \\
 MP-07 & Ablation battery discriminates: 2.47$\times$ empirical chance at 7 models (Timer 1.02$\times$, Bolt 5.70$\times$) & \S\ref{sec:casestudy} & 4 \\
 MP-09 & Dev and private splits exchangeable (energy $p=0.51$; TOST 21/22) & \S\ref{sec:setup} & 3 \\
+MP-10 & Causal features survive mean ablation (69/91), except many dense ones & \S\ref{sec:rq1} & 3 \\
 MN-01 & Similarity cannot detect lineage: untrained pair 0.878 $>$ trained related pair 0.734 & \S\ref{sec:casestudy}, T\ref{tab:results} & 5 \\
 MN-07 & Causal fingerprints are nearly one-dimensional (PR 2.09) & \S\ref{sec:casestudy} & 4 \\
 MN-14 & 0.835 of 927 prominent SAE features are causally null on private data (dev 0.810; 64.4\% under the legacy null) & \S\ref{sec:casestudy}, T\ref{tab:results} & 4 \\

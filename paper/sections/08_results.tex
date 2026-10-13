@@ -98,12 +98,47 @@ features. Third, the families cover 192 of 194 features but do \emph{not} beat t
 effect vectors of the earlier four-model run had a participation ratio of only 2.09$^{\dagger}$ (\fid{MN-07}). The
 families are therefore a vocabulary for reading the effects, not discovered units.
 
-\paragraph{Against on-manifold directions, few features stand out.} The v3 run scored every feature against the
-covariance-matched null, whose random directions follow the activation distribution of the same rows. There, the number of
-features that clear at least one channel falls \emph{below} the independent-channel expectation (91 against 111.2), yet
-11 of the 24 registered single-feature claims still replicate on new series (Section~\ref{sec:rq3}). The effects found
-on v2 thus clearly exceed isotropic random directions but barely, if at all, exceed typical on-manifold directions, a
-distinction we return to in Section~\ref{sec:limits}.
+\paragraph{Against on-manifold directions, few features stand out.} The v3 run scored every feature against both
+nulls. Under the isotropic null, 238 of 967 scorable features clear at least one channel. Under the covariance-matched
+null, whose random directions follow the activation distribution of the same rows, 91 do. The chance count must keep
+the dependence between the nine channels, because one random direction moves level and near-horizon shape together.
+We therefore score each null draw as a pseudo-feature on all channels at once, leaving that draw out of its own
+threshold. The expected counts are then 67.0 under the isotropic null and 70.4 under the covariance-matched null, so
+features exceed chance 3.55-fold against isotropic directions but only 1.29-fold against on-manifold ones
+(Poisson-binomial $p=0.0045$; Table~\ref{tab:chance}). Treating the channels as independent would put the
+on-manifold expectation at 111.2, above the observed count, which overstates chance. Even so, 11 of the 24 registered single-feature claims
+replicate on new series (Section~\ref{sec:rq3}). The effects clearly exceed isotropic random directions but only
+modestly exceed typical on-manifold directions, a distinction we return to in Section~\ref{sec:limits}.
+
+\begin{table}[tb]
+\centering
+\small
+\begin{tabular}{@{}llrrrr@{}}
+\toprule
+Run & Null & Scorable & Clear $\geq 1$ & Expected & Ratio ($p$) \\
+\midrule
+v3 & isotropic           & 967   & 238 & 67.0 & 3.55 ($4\times10^{-86}$) \\
+v3 & covariance-matched  & 967   & 91  & 70.4 & 1.29 (0.0045) \\
+v3, +gradient candidates & isotropic          & 1{,}118 & 304 & 75.9 & 4.01 ($1\times10^{-128}$) \\
+v3, +gradient candidates & covariance-matched & 1{,}118 & 112 & 80.3 & 1.40 ($9\times10^{-5}$) \\
+\bottomrule
+\end{tabular}
+\caption{Features clearing at least one of nine channels against the chance count when channel dependence is kept
+(each null draw scored as a pseudo-feature on all channels, leave-one-draw-out). $p$ is the Poisson-binomial upper tail
+over the per-feature chance rates. The second pair of rows adds gradient-nominated candidates on 38 targets
+(Section~\ref{sec:limits}).}
+\label{tab:chance}
+\end{table}
+
+\paragraph{The effects do not depend on ablating to zero.} Zero ablation could move activations off the data manifold.
+We therefore re-ran the 91 v3 features that clear the on-manifold null, setting each feature to its corpus mean
+activation over all tokens instead of to zero, with the null matched to the removal this makes. Rerunning zero ablation
+in the same setup reproduced the stored results exactly. Under mean ablation, 69 of the 91 still clear the
+on-manifold null, and the effect vectors keep their direction (median cosine between the two interventions 0.997).
+Survival depends on how densely a feature fires: 56 of 62 features whose mean is below a tenth of their activation on
+their top series survive, but only 13 of 29 denser ones. For those dense features, mean ablation is a broader
+intervention that also adds the feature on tokens where it is silent. Mean ablation hardly creates effects where zero
+ablation found none: 1 of 91 sampled non-clearing features clears (\fid{MP-10}).
 
 \paragraph{Alignment with generative factors is correlational.} After dead-feature revival, 154 of 10{,}240 TimesFM
 features and 115 of 6{,}144 Chronos-T5-Base features correlate with a ground-truth generative field beyond a permutation
@@ -314,7 +349,7 @@ add information exactly where the free baseline is weakest.
 RQ & Result (v2 unless stated) & Evidence class & Status & ID \\
 \midrule
 1 & 442 feature-channel cells clear an isotropic null, 2.47$\times$ empirical chance; Timer 1.02$\times$ & causal within-model & exploratory & MP-07, PM-17 \\
-1 & Against an on-manifold null, feature-level clears fall below chance (v3: 91 vs.\ 111.2) & causal within-model & exploratory & CA-12 \\
+1 & Against an on-manifold null, features exceed chance only modestly (v3: 91 vs.\ 70.4, 1.29$\times$) & causal within-model & exploratory & CA-12 \\
 1 & 9 families cover 99\% of features but do not beat a shuffle null ($p=0.68$) & descriptive & exploratory & CA-10 \\
 2 & Peak CKA 0.426 (private 0.411) vs.\ null 0.038 & geometric & held-out confirmed (2 corpora) & SH-01 \\
 2 & 7 similarity metrics agree only weakly ($W=0.25$) & mixed & exploratory & SH-05/06 \\

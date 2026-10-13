@@ -39569,3 +39569,50 @@ to V3's registered rules.
 - **Decision.** No registration or private confirmation of `panel7_v3_sec42`: under the primary null it adds no
   per-feature specificity, and the V3 confirm (§41.6) already answers the claim question on this corpus. §42 is
   closed. The attribution rule, completeness and the loosened admission stay as opt-in tools.
+
+## 43. Paper-review checks on stored V3 checkpoints — feature-level chance and mean ablation (added 2026-10-13, user-directed: "small experimental changes that strengthen the paper, on the stored checkpoints"; run before the V3 runs were pruned)
+
+### 43.1 Findings — feature-level chance keeps channel dependence (2026-10-13, CPU, artifacts only)
+
+- **What ran.** `tsfm_lens/run_feature_chance_test.py runs/panel7_v3_dev runs/panel7_v3_sec42`: per null mode, the
+  observed count of scorable features clearing >= 1 of 9 channels against the sum of each feature's recorded
+  `feature_chance` rates (`sae/response.py::feature_chance_record`), with a Poisson-binomial tail.
+- **Result.** `panel7_v3_dev`, 967 scorable: `profile_matched_cov` 91 observed vs draw-level 70.4375 (ratio
+  1.2919254658385093, P(X>=91) = 0.004505097802029455); independent-channel product 111.19065681227949 (P(X<=91) =
+  0.009556634000492802); union bound 133.1875. `profile_matched` 238 vs 67.0 (3.5522388059701493, P = 4.18651046386893e-86).
+  `panel7_v3_sec42`, 1118 scorable: cov 112 vs 80.25 (1.395638629283489, P = 8.720751822035558e-05; independent 124.7374,
+  P(X<=112) = 0.08990309847872531); iso 304 vs 75.875 (4.00658978583196, P = 1.0883980615739518e-128).
+- **Reading.** The independent product sits ABOVE the draw-level rate because a random direction moves the channels
+  together (positive dependence lowers P(any clear)). The draw-level rate is the right chance count. The paper draft's
+  "feature-level clears fall below chance (91 vs 111.2)" read the independent product as chance and was wrong: under the
+  on-manifold null, causal features exceed chance modestly (1.29x), not below it. Paper corrected (Table `tab:chance`).
+  v2 artifacts carry no `feature_chance` (it was added for V3), so no v2 row.
+
+### 43.2 Findings — mean ablation (2026-10-13, commit 67685d7, `runs/ablation_mode_check/ablation_mode_check.json`)
+
+- **What ran.** Opt-in `intervention="mean"` in `feature_ablation_fingerprints` (default zero, byte-identical): the atom
+  is set to its corpus mean token-level activation mu_f (`token_feature_means`, `sae.encode` of every captured token of
+  all 2876 dev series), and both profile-matched nulls are matched to the removal actually made, |z_f(t) - mu_f| ||w_f||,
+  including silent tokens. Candidates: the 91 features clearing >= 1 channel under cov in `panel7_v3_dev`, plus 91
+  scorable non-clearing features sampled per target (seed 0). Same rows, chunks, 16 null draws, seeds. 49 targets,
+  7 models, 2313 s wall on 8 GPUs (3178.987 s summed).
+- **Control.** The zero-ablation rerun reproduced the stored artifact exactly for 182/182 features (max rel diff 0.0,
+  0 clearing flags moved, sampled models included).
+- **Result.** Clearing set: mean ablation clears >= 1 channel under cov for **69/91** (iso 70/91; both 62); cells (cov)
+  170 -> 137. By model (n; mean cov): Chronos-2 23; 18, Chronos-Bolt 14; 12, Chronos-T5-Base 7; 2, Sundial 15; 13,
+  Time-MoE 3; 0, Timer 14; 12, TimesFM 15; 12. Non-clearing sample: cov 0 -> 1/91 (Chronos-Bolt encoder.block.4
+  feature 2071, 1 channel; it cleared 2 channels under zero iso); iso 19 -> 19 (18 the same). Effect-vector cosine zero vs
+  mean (cov null units, 91 features): median 0.9968869277075498, IQR 0.9765180236447393–0.9997652830130305, min
+  -0.5698724018071003. Survival depends on density: token mu/top < 0.1: 56/62 survive (cov); >= 0.1: 13/29; Spearman
+  ratio vs survival rho -0.4348100562262938 (p 1.656556457822039e-05).
+- **Reading.** For sparse features zero ablation and mean ablation are nearly the same intervention, and their effects
+  agree in direction (median cosine 0.997) and in verdict (56/62). The losses concentrate in dense features, where mean
+  ablation is a different, broader intervention (it adds mu_f w_f on silent tokens) and removes less on the top rows.
+  Mean ablation creates essentially no new clears (1/91). The causal-feature set is therefore not an artifact of the
+  zero-ablation intervention for sparse features; for dense ones the verdict depends on the intervention.
+- **Correction.** The orchestrator's pre-run ratio (series-level mu/top, median 0.0242) used the persisted series-level
+  SAE features, which are `sae.encode` of the window-pooled activation, not the token-level code; the token-level
+  mean is the one the intervention uses (token mu/top median 0.030968857639238914, q75 0.14125665743253762).
+- **After.** `panel7_v3_dev`, `panel7_v3_sec42` and `panel7_v3_control_twin` pruned (`run.py --prune --yes`) at the
+  user's request; every JSON artifact and report is kept.
+
