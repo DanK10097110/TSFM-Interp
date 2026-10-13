@@ -1,0 +1,100 @@
+\section{Experimental Setup}
+\label{sec:setup}
+
+\paragraph{Models.} We analyze seven TSFMs (Table~\ref{tab:models}): TimesFM~2.5 \citep{das2024timesfm}, Chronos-2
+\citep{ansari2025chronos2}, Sundial \citep{liu2025sundial}, Chronos-Bolt and Chronos-T5-Base \citep{ansari2024chronos},
+Timer \citep{liu2024timer} and Time-MoE \citep{shi2025timemoe}. Timer and Time-MoE are loaded through the zero-code
+adapter. Together the panel covers decoder-only, encoder-only and encoder--decoder stacks, token widths from 1 to 96
+steps, a mixture-of-experts model and deterministic and sampled forecast heads.
+
+\begin{table}[tb]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{@{}lllcccrr@{}}
+\toprule
+Model & Checkpoint & Architecture & Token & Head & Tier & Params & FLOPs obs. \\
+\midrule
+\textcolor{tfm}{TimesFM 2.5} & \texttt{google/timesfm-2.5-200m} & decoder-only & 32 & deterministic & 3 & 231M & 42.5\% \\
+\textcolor{ctwo}{Chronos-2} & \texttt{amazon/chronos-2} & encoder (+group attn.) & 16 & deterministic & 3 & 119M & 97.5\% \\
+\textcolor{sun}{Sundial} & \texttt{thuml/sundial-base-128m} & decoder + flow head & 16 & sampled & 2 & 128M & 21.3\% \\
+\textcolor{bolt}{Chronos-Bolt} & \texttt{amazon/chronos-bolt-small} & encoder + patch head & 16 & deterministic & 2 & 48M & 79.1\% \\
+\textcolor{tt5}{Chronos-T5-Base} & \texttt{amazon/chronos-t5-base} & encoder--decoder & 1 & sampled & 3 & 201M & 13.9\%$^{a}$ \\
+\textcolor{timer}{Timer} & \texttt{thuml/timer-base-84m} & decoder-only & 96 & deterministic & 2$^{b}$ & 84M & 99.8\% \\
+\textcolor{tmoe}{Time-MoE} & \texttt{Maple728/TimeMoE-50M} & decoder-only, MoE & 1 & deterministic & 2$^{b}$ & 113M & 50.0\% \\
+\bottomrule
+\end{tabular}}
+\caption{The seven models. ``Token'' is time steps per token; ``Tier'' is the derived capability tier
+(Section~\ref{sec:adapters}); ``FLOPs obs.''\ is the share of a forecast's FLOPs spent in captured blocks at context
+480, measured with PyTorch's FLOP counter. $^{a}$Encoder only (\fid{DE-05}). $^{b}$Via the zero-code adapter. Adapters
+also exist for Lag-Llama, whose tokens read disjoint lags and therefore receive behavioral analysis only, and for other
+Chronos-T5 sizes (8M--709M).}
+\label{tab:models}
+\end{table}
+
+\paragraph{Corpora.} All claims are tested on two independently generated corpora, each with its own dev split, sealed
+private split and registry.
+\begin{itemize}
+  \item \textbf{v2} (primary). The dev split has 965 series in five generator families; 410 of them are real-derived,
+    built from Monash weather, ETT \citep{zhou2021informer} and the Chronos electricity and traffic collections. The
+    private split is a sealed epoch of 971 series that shares no sample with any earlier split. Dev and private splits
+    are exchangeable: an energy-distance test gives $p=0.951$, 20 of 22 catch22 features are equivalent by TOST and the
+    other two are inconclusive, and 6 of 937{,}015 cross-split pairs are near-duplicates.
+  \item \textbf{v3} (replication, three times larger). The dev split has 2{,}876 series, 2{,}091 synthetic and 785
+    real-derived from 15 real sources, adding ERCOT load, M4 hourly, solar, taxi, KDD Cup air quality and pedestrian
+    counts to the v2 sources. The private split is 1{,}024 series drawn from a sealed epoch of 2{,}868. An
+    \emph{external} set of 800 raw windows from 12 GIFT-Eval datasets \citep{aksu2024gifteval}, cut without any
+    generator and sharing no sample with either split, re-tests the registered transfer claims and is reported separately
+    from the confirmation verdict. Exchangeability, computed after the confirmation look and without any model, gives
+    energy-distance $p=0.995$ and 22 of 22 features equivalent.
+\end{itemize}
+Contexts have 480 steps, a multiple of Timer's 96-step token, the horizon is 64 steps and the alignment window 32 steps.
+
+\paragraph{Protocol.} On v2, SAEs are trained on 56 target layers (TimesFM 10, Chronos-2 9, Sundial 9, Time-MoE 9,
+Chronos-T5-Base 9, Timer 6 and Chronos-Bolt 4), each with three replicate seeds, and causal features are scored against
+the profile-matched null. On v3, SAEs are trained on 50 targets and every causal claim is scored and registered against
+the stricter covariance-matched null; every setting of the v3 run was fixed before its data existed. Bootstrap
+intervals use $n_{\text{boot}}=5000$. The v2 registry holds 128 hypotheses, 82 of them replicable on the private split;
+the v3 registry holds 111, of which 63 are replicable. Each private split was opened once.
+
+\paragraph{Sources of numbers.} Unless stated otherwise, numbers are from the v2 dev run or its confirmation. Numbers
+from v3 are labeled as such. A few numbers come from an earlier four-model run (\repodir{examples/concept_atlas_v2})
+that used the uniform null later shown to be too lenient (Section~\ref{sec:knownanswer}); they are marked $^{\dagger}$
+and should be read as upper bounds. The v2 run used 21.1 hours of stage time on one RTX A5000 (24~GB); its artifacts
+are in \repodir{examples/panel7_v2/run}, and Appendix~\ref{app:repro} gives the full provenance.
+
+\paragraph{How the models behave on this corpus.} Interpretability results are only meaningful if the models do the
+task they were trained for. Table~\ref{tab:character} summarizes their behavior on the v2 dev split. Chronos-2 is the most
+accurate. Five models beat the seasonal-naive forecast on 76.5--84.5\% of series, Timer on 69.5\% and Time-MoE on only
+37.8\%; Time-MoE is less accurate than the naive forecast overall, and its results should be read with this in mind.
+The nominal 80\% intervals of Sundial and Chronos-T5-Base cover only 36\% and 44\% of outcomes, and four models propagate
+an injected missing value silently. On the private split, Chronos-2 is more accurate than TimesFM on the registered
+\texttt{mixture} family ($\Delta$MASE 0.209 [0.119, 0.313], $p_{\text{Holm}}=0.0002$, $n=290$) and, with a smaller effect,
+overall ($-0.070$ [$-0.129$, $-0.008$], $p=0.025$, $n=971$). On v3 the \texttt{mixture} result replicates (0.303 [0.176,
+0.445], $p_{\text{Holm}}=0.0002$).
+
+\begin{table}[tb]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}lccccc@{}}
+\toprule
+Model & median MASE & 80\% coverage & scale resid.\ (s.d.) & missing value & latency (ms) \\
+\midrule
+\textcolor{ctwo}{Chronos-2}    & \textbf{1.2002} & 0.757 & 0.0102 & handled & 23 \\
+\textcolor{tfm}{TimesFM}       & 1.2560 & \textbf{0.779} & $1.6\times10^{-6}$ & propagates & 39 \\
+\textcolor{sun}{Sundial}       & 1.4131 & 0.360 & 0.0310 & propagates & 62 \\
+\textcolor{tt5}{Chronos-T5-Base} & 1.4231 & 0.436 & $2.7\times10^{-7}$ & handled & 975 \\
+\textcolor{bolt}{Chronos-Bolt} & 1.5487 & 0.732 & 0.0101 & handled & 15 \\
+\textcolor{timer}{Timer}       & 1.9306 & -- & 0.0262 & propagates & 5 \\
+\textcolor{tmoe}{Time-MoE}     & 2.8642 & -- & 0.0368 & propagates & 103 \\
+\midrule
+naive / seasonal naive & 2.7593 / 1.9819 & & & & \\
+\bottomrule
+\end{tabular}
+\caption{Behavior on the v2 dev split (965 series). Scale residual: error of $f(c\,x)/c$ against $f(x)$ in context
+standard deviations, $c=0.001$. Missing value: whether an injected NaN is handled or propagates silently. Latency: median
+time to forecast a batch of 8 series. Timer and Time-MoE output point forecasts only.}
+\label{tab:character}
+\end{table}

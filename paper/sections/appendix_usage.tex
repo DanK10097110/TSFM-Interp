@@ -1,0 +1,45 @@
+\section{Implementation and Usage}
+\label{sec:usage}
+
+\paragraph{Repository layout.} \texttt{tsfm\_benchmark} has one subpackage for generation, audit and sealing and another
+for diversity and exchangeability validation. \texttt{tsfm\_lens} has subpackages for models, extraction, analysis,
+sparse autoencoders and the report, plus the stage orchestrator \texttt{pipeline.py}. The folder
+\repodir{examples/panel7_v2} contains the report, configuration and every lightweight artifact of the v2 run, so the
+report and this paper's figures can be regenerated without a GPU.
+
+\paragraph{A typical session.} One installs the two packages, builds a benchmark and runs a configuration:
+\begin{center}
+\begin{minipage}{0.95\textwidth}
+\footnotesize
+\begin{verbatim}
+pip install -e . && pip install -e tsfm_lens
+cd tsfm_benchmark && PYTHONPATH=. python3 example_runs/run_full.py \
+       --config configs/example.yaml --out ./benchmark_out --references monash
+cd ../tsfm_lens && python run.py --config configs/examples/medium_2model.yaml
+\end{verbatim}
+\end{minipage}
+\end{center}
+The command-line interface adds a preflight check (\texttt{-{}-doctor}), partial reruns (\texttt{-{}-stages},
+\texttt{-{}-force}), checks for new checkpoints or library upgrades (\texttt{-{}-check-alignment},
+\texttt{-{}-check-adapter}) and an environment diff (\texttt{-{}-verify-provenance}). A CPU-only mock configuration
+runs every stage in minutes in continuous integration, and a worked example (\repo{tsfm_lens/docs/worked_example.md})
+walks through a report. In the v2 run, stages up to and including L3 take about 1.4 hours; most of the 21.1 hours are
+spent on SAE training and the concept battery.
+
+\paragraph{Adding a model.} A new checkpoint first tries the zero-code adapter. Of eight TSFM checkpoints probed, two
+(Timer and Time-MoE) load this way, and five that ship as standalone packages need a hand-written adapter
+(\fid{MN-25}). For these, the repository provides a template (\repo{tsfm_lens/tsfm_lens/models/TEMPLATE_adapter.py}),
+a conformance check (\texttt{-{}-check-adapter}, which runs patch-identity and reach checks, the alignment gate, span
+discovery and capability checks) and a guide with a checklist of pitfalls (\repo{tsfm_lens/docs/ADDING_A_MODEL.md}).
+
+\paragraph{Extending the analysis.} New report sections declare the artifacts they require, new claims must use the
+typed \texttt{Finding} record, and new configuration fields declare which stage artifacts they affect, so that the
+fingerprints mark exactly those as stale. New generator options are opt-in, so that sealed corpora still regenerate
+bit-exactly.
+
+\paragraph{The example report.} The seven-model report (\repo{examples/panel7_v2/report.html}) contains 530
+``What does this mean?'' notes, one for every figure, and 240 typed findings (89 descriptive, 54 behavioral, 49 causal,
+42 linear-translatable, 4 geometric and 2 illustrative). A glossary and a methods appendix are generated from the code.
+The complete analysis of the four-model preset is one command,
+\texttt{python run.py -{}-config configs/examples/large\_4model.yaml}, and smaller presets cover a CPU-only smoke test, a
+single model and a pair.

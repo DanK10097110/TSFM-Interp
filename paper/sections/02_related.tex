@@ -1,34 +1,52 @@
 \section{Related Work}
 \label{sec:related}
 
-\paragraph{TSFMs.} TimesFM \citep{das2024timesfm} is decoder-only over 32-step patches; Chronos
-\citep{ansari2024chronos} quantizes values and trains a T5 encoder--decoder \citep{raffel2020t5} with a
-sampled decoder; Chronos-Bolt uses a direct patch head, and Chronos-2 \citep{ansari2025chronos2} is an
-encoder with cross-series group attention; Sundial \citep{liu2025sundial} samples from a flow-matching head
-\citep{lipman2023flow}; Timer \citep{liu2024timer} uses 96-step tokens, Time-MoE \citep{shi2025timemoe} a sparse
-mixture of experts over per-step tokens, and Lag-Llama \citep{rasul2023lagllama} reads lagged values. Most normalize each series internally \citep{kim2022revin}, a detail an adapter must
-reproduce when it calls a model below its public API. \citet{wan2026collapse} document
-flat ``collapsed'' forecasts on weakly predictable targets, which we also measure (\fid{PM-07}).
+\paragraph{Time-series foundation models.} TimesFM \citep{das2024timesfm} is a decoder-only model over 32-step patches.
+Chronos \citep{ansari2024chronos} quantizes values and trains a T5 encoder--decoder \citep{raffel2020t5} with a
+sampled decoder; Chronos-Bolt replaces the decoder with a direct patch head, and Chronos-2 \citep{ansari2025chronos2} is
+an encoder with cross-series group attention. Sundial \citep{liu2025sundial} samples from a flow-matching head
+\citep{lipman2023flow}, Timer \citep{liu2024timer} uses 96-step tokens, Time-MoE \citep{shi2025timemoe} is a sparse
+mixture of experts over per-step tokens, and Lag-Llama \citep{rasul2023lagllama} reads lagged values. Most of these
+models normalize each series internally \citep{kim2022revin}, a detail an adapter must reproduce when it calls a model
+below its public API. Synthetic pretraining and evaluation data are common in this literature
+\citep{kang2020gratis,dooley2023forecastpfn}; we use synthetic data instead to obtain ground truth for interpretation.
+\citet{wan2026collapse} document flat, ``collapsed'' forecasts on weakly predictable targets, which we also observe
+(\fid{PM-07}).
 
-\paragraph{Interpreting time-series models.} Saliency methods for time-series classifiers are unreliable
-across architectures \citep{ismail2020benchmarking}; \citet{kalnare2025mechts} apply patching and SAEs to
-time-series classifiers. For TSFMs, \citet{wilinski2025exploring} study representational redundancy and
-concept steering, and four recent studies train SAEs on one TSFM \citep{mishra2026dissecting,
-oublal2026timesae,divo2026zeitgeist,yildirim2026superposition}. Each examines one model or one method. None
-compares architectures on a common time axis, validates probes against generative ground truth, separates
-input agreement from effect agreement, or tests findings on held-out data.
+\paragraph{Interpreting time-series models.} Saliency methods for time-series classifiers are unreliable across
+architectures \citep{ismail2020benchmarking}, and \citet{kalnare2025mechts} apply patching and SAEs to time-series
+classifiers. For TSFMs, \citet{wilinski2025exploring} study representational redundancy and concept steering, and four
+recent studies train SAEs on a single TSFM \citep{mishra2026dissecting,oublal2026timesae,divo2026zeitgeist,
+yildirim2026superposition}. Each examines one model or one method. None compares architectures on a common time axis,
+validates its probes against generative ground truth, separates input agreement from effect agreement, or tests its
+findings on held-out data.
 
-\paragraph{Methods, tooling and validity.} Probes need control tasks \citep{hewitt2019control,
-belinkov2022probing}; patching is sensitive to metrics and corruptions \citep{zhang2024patching,
-heimersheim2024patching}; attention weights are not explanations \citep{jain2019attention}; SAE features vary
-across seeds \citep{paulo2025seeds}. Representation similarity \citep{raghu2017svcca,kornblith2019cka,
-bansal2021stitching} underlies claims of convergence \citep{li2016convergent,huh2024platonic}. Libraries such
-as TransformerLens, nnsight \citep{fiottokaufman2025nnsight}, pyvene, SAELens \citep{bloom2024saelens} and
-Captum \citep{kokhlikyan2020captum} provide primitives for one model, not comparative designs, nulls,
-multiplicity control or confirmation (Table~\ref{tab:tools}). From empirical science we import
-pre-registration \citep{nosek2018preregistration}, protection against adaptive reuse of holdouts
-\citep{dwork2015reusable}, leakage auditing \citep{kapoor2023leakage} and series-level resampling
-\citep{efron1993bootstrap,cameron2008cluster}.
+\paragraph{Validity of interpretability methods.} Probes need control tasks to separate what a representation encodes
+from what the probe learns \citep{hewitt2019control,belinkov2022probing}. Activation patching is sensitive to the choice
+of metric and corruption \citep{zhang2024patching,heimersheim2024patching}, subspace interventions can create illusory
+mechanisms \citep{makelov2024illusion}, and the apparent meaning of a direction can depend on the data used to inspect
+it \citep{bolukbasi2021illusion}. Sanity checks show that
+attributions can be insensitive to the model they explain \citep{adebayo2018sanity}. Attention weights are not
+explanations \citep{jain2019attention}. Sparse autoencoders are motivated by superposition
+\citep{elhage2022superposition,cunningham2024sae,templeton2024scaling}, but their features vary across seeds
+\citep{paulo2025seeds}, and crosscoders have been proposed to share one dictionary across models
+\citep{lindsey2024crosscoders}. Causal abstraction \citep{geiger2021causal} formalizes when an intervention supports a
+mechanistic claim. Our known-answer tests address the same concern empirically: each instrument must recover a planted
+answer before it is applied to a real model.
+
+\paragraph{Comparing representations.} Representational similarity
+\citep{raghu2017svcca,morcos2018pwcca,kornblith2019cka,kriegeskorte2008rsa} and model stitching
+\citep{lenc2015equivariance,bansal2021stitching} underlie claims that different networks converge on similar
+representations \citep{li2016convergent,huh2024platonic}. We use these measures only against shuffled-series nulls and
+show that, for TSFMs, they disagree with one another and with causal measures.
+
+\paragraph{Tooling and research practice.} Libraries such as TransformerLens, nnsight
+\citep{fiottokaufman2025nnsight}, pyvene, SAELens \citep{bloom2024saelens} and Captum \citep{kokhlikyan2020captum}
+provide primitives for one model, but not comparative designs, nulls, multiplicity control or confirmation
+(Table~\ref{tab:tools}). From empirical science we adopt pre-registration \citep{nosek2018preregistration}, protection
+against adaptive reuse of holdouts \citep{dwork2015reusable} and against analytic flexibility
+\citep{gelman2014garden,simonsohn2020specification}, leakage auditing \citep{kapoor2023leakage} and series-level
+resampling \citep{efron1993bootstrap,cameron2008cluster}.
 
 \begin{table}[tb]
 \centering
@@ -52,8 +70,8 @@ One-command report designed for non-experts                  & \xmark & \xmark &
 \bottomrule
 \end{tabularx}
 \caption{Capabilities for comparative TSFM interpretability. \cmark{} provided; \pmark{} possible with user
-code or partial; \xmark{} not provided. General libraries are single-model microscopes and complementary
-to \tool{}, which uses the same primitives. $^{\dagger}$\citet{mishra2026dissecting,oublal2026timesae,
-divo2026zeitgeist,yildirim2026superposition}, judged from the papers.}
+code or partial; \xmark{} not provided. General libraries are single-model tools, complementary to \tool{}, which uses
+the same primitives. $^{\dagger}$\citet{mishra2026dissecting,oublal2026timesae,divo2026zeitgeist,yildirim2026superposition},
+judged from the papers.}
 \label{tab:tools}
 \end{table}

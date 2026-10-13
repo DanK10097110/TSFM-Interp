@@ -1,0 +1,67 @@
+\section{Known-Answer Validation of the Causal Instruments}
+\label{sec:knownanswer}
+
+Every causal count in Section~\ref{sec:casestudy} rests on a null, and a null can be wrong without raising any error.
+Before using an instrument on real models we therefore test it on a forecaster whose answer is known.
+
+\paragraph{The planted forecaster.} \tool{} ships a mock forecaster, \texttt{mock\_planted}. One block of it writes known
+unit directions into the residual stream on the series that have a given property. The properties are thresholded
+readouts of the patch mean, slope, residual deviation, seasonal projections and a spike statistic, each firing on 10--30\%
+of the corpus. The forecast head then applies a known effect (on level, trend, seasonality or dispersion). The model
+also carries decoys that look like concepts: \emph{input-only} directions with zero causal effect and \emph{sub-null}
+directions with a weak effect. A control layer placed after the planted block has no planted effect. For the
+cross-model tests there is a pair of architectures (widths 64 and 96, depths 5 and 7, rotated residual bases) that share
+planted concepts, plus a twin with the opposite effect.
+
+\paragraph{Protocol.} A scorer reads only the planted manifest and the run's artifacts. The pass criterion was fixed
+before any data were seen: a per-cell false-positive rate of at most 0.10 on the control layer and a sensitivity of at
+least 0.5, on five construction seeds. Seed 0 was used to tune the attribution rule and seeds 1--4 were held out. The
+criterion is evaluated at one effect size (dose 1).
+
+\begin{table}[tb]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabularx}{\textwidth}{@{}>{\raggedright}p{4.6cm}>{\raggedright}X>{\raggedright}p{3.2cm}c@{}}
+\toprule
+Instrument & Result on the planted forecaster & Pass criterion & Verdict \\
+\midrule
+Profile-matched null (v2) & false-positive rate $\le$0.003, sensitivity 0.70--1.00, all 5 seeds & FPR $\le$0.10, sens.\ $\ge$0.5 & pass \\
+Uniform batch-averaged null & false-positive rate 0.168--0.248 on every seed & FPR $\le$0.10, sens.\ $\ge$0.5 & fail \\
+Covariance-matched null (v3) & sensitivity 0.916, false positives in 5 of 2{,}948 control cells & FPR $\le$0.10, sens.\ $\ge$0.5 & pass \\
+Gradient-attribution candidate ranking & mean top-20 recall 0.831 on unseen seeds & recall $\ge$0.8 & pass \\
+Powered per-feature test (32 series, 64 null draws) & sensitivity 0.6, against 0.911 for the 8-series rule & sens.\ $\ge$0.8 & fail \\
+Shared-input agreement (R5) & false ``same'' 0 of 9 decoys; detects a shared one-direction concept in 0.4 of seeds, a 3--4-direction one in 0.0 & -- & specific, insensitive \\
+Subspace redesign of R5 & sensitivity 0.5 and 0.375; false agreement 0 of 14 & sens.\ $\ge$0.8, false $\le$0.05 & fail \\
+\bottomrule
+\end{tabularx}
+\caption{Known-answer tests of the causal instruments on the planted forecaster. Each criterion was fixed before the
+test was run. Ledger entries: \fid{MN-29} (nulls), \fid{MN-30} and \fid{MN-32} (agreement), \fid{MN-36} (powered test),
+\fid{MN-37} (attribution).}
+\label{tab:knownanswer}
+\end{table}
+
+\paragraph{Results.} Table~\ref{tab:knownanswer} lists every instrument that was held to such a test. Three results
+shape the rest of the paper.
+
+First, the test has teeth. The profile-matched null passes on all five seeds, while a simpler null that removes one
+uniform, batch-averaged amount fails on every seed, because a strong or dense atom clears it on size alone. On seed 0 the
+profile-matched null also keeps every sub-null decoy from clearing, raises the adjusted Rand index of the atlas against
+the planted concepts from 0.336 to 0.469, and raises sharing-class accuracy from 0.364 to 0.714. Re-scoring the earlier
+four-model run under the profile-matched null reduced its causal features from 293 to 110 (\fid{MN-29}). The
+profile-matched null may be conservative in the planted world, since a random direction overlaps the planted span more
+than a decoy does.
+
+Second, the agreement rung R5 is specific but insensitive. It never calls a decoy ``same'', so its positive verdicts
+can be trusted, but it rarely detects a concept that two planted architectures truly share, and quadrupling the number
+of shared series does not change this (\fid{MN-30}). An absent ``same'' verdict on real models is therefore not
+evidence of a difference. A redesign that ablates a concept's member subspace on each side also fails its pre-fixed
+criterion. Its failure is a ceiling rather than a design detail: even the planted distributed subspace does not move
+the forecast more than an equal-sized random removal (\fid{MN-32}).
+
+Third, more statistical power per feature does not help. A test using four times as many series and null draws is
+\emph{less} sensitive than the eight-series rule, because the null is common-mode across series and extra rows barely
+tighten it (\fid{MN-36}).
+
+Known-answer tests establish what an instrument can detect and how often it is fooled in a world whose answer is known.
+They do not establish that its verdicts on real models are correct.

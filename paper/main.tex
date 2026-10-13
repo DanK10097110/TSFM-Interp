@@ -66,25 +66,21 @@
 \maketitle
 
 \begin{abstract}%
-Time-series foundation models (TSFMs) are deployed zero-shot, yet the tools that made language models
-inspectable do not transfer directly: tokens span different lengths of time across architectures, no ground truth
-defines a forecasting ``concept'', and the causal effects of internal features are small enough that uncontrolled
-measurements mislead. We present \tool{}, an open-source system that turns a list of checkpoints into one
-self-contained interpretability report with one command. It is controlled: a leakage-audited synthetic benchmark with
-known generative components, and a forecaster with planted concepts, validate every probe. It is causal: concepts are
-defined by what removing them does to the forecast, against random-direction nulls matched to each feature's own
-activation profile. It is confirmatory: exploratory claims are registered and tested once on a sealed split. Applied to
-seven TSFMs (TimesFM, Chronos-2, Sundial, Chronos-Bolt, Chronos-T5, Timer and Time-MoE), it finds that causal features
-act mainly on forecast level and seasonality; that different architectures select the same inputs for a concept (20 of
-20 registered claims, from two source concepts, confirmed on 971 held-out series and on four independent private
-draws); that the basic effect types are universal, with causal features that raise the level, lower it or damp
-seasonality found in every one of the seven models; that fine-grained concepts are nonetheless organized by model, with
-no strict concept spanning more than three models (confirmed held-out); that activation prominence is a poor guide to causal importance (83.5\% of prominent
-features have no causal effect on held-out data); and that depth-resolved reaction profiles replicate for six of nine
-corruptions. A second, three times larger corpus confirms the same pattern (41 of 63 claims, transfer 20 of 20 again
-and 20 of 20 on raw real GIFT-Eval windows), and shows that neither more data, a more powerful per-feature test nor
-gradient-selected candidates make single features more specifically causal. Every claim carries its evidence class, and a public ledger gives each result with its reproduction
-command.
+Time-series foundation models (TSFMs) are used zero-shot, but the interpretability methods developed for language
+models do not transfer to them directly. Tokens cover different spans of time in different architectures, real series
+offer no ground truth for the concepts a probe might find, and the effects of single internal features on a forecast are
+small enough that uncontrolled measurements yield confident false positives. We present \tool{}, an open-source system
+that compares TSFMs on a measured common time axis, validates its instruments on a benchmark with known generative
+components and on a forecaster with planted concepts, defines concepts by their effect on the forecast relative to
+matched random interventions, and tests exploratory claims once on a sealed held-out split. We apply it to seven TSFMs
+and confirm the results on two independent corpora. Different architectures select the same input series for a
+concept: all registered transfer claims confirm on both private splits and on 800 raw real-world windows. Causal
+features act mainly on forecast level and seasonality, but fine-grained concepts are organized by model, and no concept
+spans more than three of the seven models. Activation prominence is a poor guide to causal importance, since 83.5\% of
+prominent features have no held-out effect, and fewer than half of single-feature causal claims replicate. Against
+random directions drawn from the activation distribution, single features are at most weakly specific, and neither
+more data, a more powerful test nor gradient-selected candidates changes this. Every claim is reported with its
+evidence class and a reproduction pointer.
 \end{abstract}
 
 \begin{keywords}
@@ -94,18 +90,20 @@ command.
 
 \input{sections/01_introduction}
 \input{sections/02_related}
-\input{sections/03_principles}
-\input{sections/04_architecture}
-\input{sections/05_methods}
-\input{sections/06_statistics}
-\input{sections/07_case_study}
+\input{sections/03_framework}
+\input{sections/04_methods}
+\input{sections/05_statistics}
+\input{sections/06_validation}
+\input{sections/07_setup}
+\input{sections/08_results}
 \FloatBarrier
-\input{sections/09_usage_limitations}
+\input{sections/09_discussion}
 
 \acks{Computational resources were provided by the second author's lab at Rutgers University. This work received no external funding, and the
 authors declare no competing interests. Use of AI tools: Claude (Anthropic) wrote most of the repository's code and tests, ran the experiments and helped draft and edit the manuscript, under the authors' direction. The research questions, ideas and general design choices are the authors', who reviewed the implementation details Claude proposed, checked every reported result and take full responsibility for the content.}
 
 \appendix
+\input{sections/appendix_usage}
 \input{sections/appendix}
 
 {\footnotesize\setlength{\bibsep}{0pt}\bibliography{references}}

@@ -6,30 +6,30 @@ Four mechanisms control how often a report with thousands of comparisons is fool
 \paragraph{The series is the resampling unit.} Windows of a series share its trend, noise and scale, so every
 interval and $p$-value resamples whole series \citep{efron1993bootstrap,cameron2008cluster}: paired bootstrap
 for accuracy, cluster bootstrap for CKA, validation-series intervals for stitching, paired cluster bootstrap for
-patching. Splits are by series and stratified, never head slices of a task-grouped corpus.
+patching. Splits are by series and stratified, never the first rows of a corpus that is stored grouped by task.
 
-\paragraph{A multiplicity ledger.} Every test belongs to a named family (Holm for confirmatory families, BH for
-discovery-oriented atlas transfers). Resampled $p$-values are floored at $1/n_{\text{boot}}$
-\citep{phipson2010permutation}, so a Holm family of $m$ tests cannot go below $m/n_{\text{boot}}$; the ledger
-computes this minimum per family and flags families that can never be significant, a failure that grows
-quadratically with the number of models. The example has 123 families and 4{,}238 comparisons in the ledger (the
-8{,}705 feature-channel cells of the ablation battery are judged instead by their count against the empirical chance
-rate, and shared-input tests by per-test floors); its strictest L0
-family (105 tests over 21 pairs) has a minimum Holm $p$ of 0.021 at $n_{\text{boot}}=5000$.
+\paragraph{A multiplicity ledger.} Every test belongs to a named family, corrected by Holm for confirmatory families and
+by Benjamini--Hochberg for discovery-oriented atlas transfers. Resampled $p$-values are floored at $1/n_{\text{boot}}$
+\citep{phipson2010permutation}, so a Holm family of $m$ tests cannot go below $m/n_{\text{boot}}$. The ledger computes
+this minimum for each family and flags families that can never reach significance, a problem that grows quadratically
+with the number of models compared. The seven-model run has 123 families with 4{,}238 comparisons; its strictest
+accuracy family (105 tests over 21 model pairs) has a minimum Holm $p$ of 0.021 at $n_{\text{boot}}=5000$. Two kinds of
+test are judged outside the ledger: the 8{,}705 feature-channel cells of the ablation battery are judged by their count
+against the empirical chance rate, and shared-input agreement tests by their own per-test floors.
 
-\paragraph{References from the run itself.} Effects are read against repeat-run noise floors, shuffled-series
-nulls, input-feature baselines, random-direction nulls, activation-matched floors and replicate-seed ceilings.
-Before the private split is opened, \texttt{confirm} simulates each claim's minimum detectable effect (e.g.\
-$\Delta$MASE 0.133 at $n=290$, 80\% power), so a non-replication reads as ``absent'' or ``underpowered''.
+\paragraph{References measured in the run itself.} Every effect is read against a reference measured in the same run:
+repeat-run noise floors, shuffled-series nulls, input-feature baselines, random-direction nulls, activation-matched
+floors or replicate-seed ceilings. Before the private split is opened, \texttt{confirm} also simulates each claim's
+minimum detectable effect, for example a $\Delta$MASE of 0.133 at $n=290$ with 80\% power, so that a non-replication can be
+read as either an absent effect or an underpowered test.
 
-\paragraph{Register, then confirm once.} \texttt{register} freezes hypotheses from dev results together with the
-content hash of each source artifact, and hashes the registry. \texttt{confirm} refuses mismatched hashes,
-requires the private seal to verify, tests each claim once and refuses to overwrite its artifact; a forced rerun
-is recorded as \texttt{repeated\_look}, and a consumed split is replaced by a fresh epoch, checked for sample-hash overlap
-with every earlier split of every corpus version (an epoch minted for the case study was rejected unopened because 716 of
-its 961 series regenerated a split an earlier confirmation had consumed). This is
-pre-registration \citep{nosek2018preregistration} in software, guarding against adaptive holdout reuse
-\citep{dwork2015reusable}; unregistered findings cannot be rescued.
+\paragraph{Register, then confirm once.} The \texttt{register} stage freezes hypotheses from dev results together with
+the content hash of each source artifact, and hashes the registry. \texttt{confirm} refuses mismatched hashes, requires
+the private seal to verify, tests each claim once and refuses to overwrite its own artifact; a forced rerun is recorded as
+a \texttt{repeated\_look}. A consumed split is replaced by a fresh epoch, which is checked for sample-hash overlap with
+every earlier split of every corpus version. This is pre-registration \citep{nosek2018preregistration} implemented in
+software, and it guards against adaptive reuse of the holdout \citep{dwork2015reusable,gelman2014garden}. Findings that
+were not registered cannot be confirmed after the fact.
 
 \begin{table}[tb]
 \centering
@@ -44,7 +44,7 @@ Layers share geometry & linear CKA, cluster bootstrap & shuffled-series null at 
 Layer linearly translatable & ridge stitching gain & input-feature baseline (gain $=0$) & per pair & -- \\
 Depth reaction agrees & Spearman $\rho$ of fingerprints on shared depth & bootstrap CI of $\rho$ & per corruption & \cmark \\
 Layer restores forecast & restoration fraction & self-patch $=0$, cross-patch $\neq 0$ & per model & -- \\
-Feature is causal & mean $|\Delta^{(c)}|$ on own rows & profile-matched random-direction $q_{95}$ & per channel (count vs.\ chance); Holm when registered & \cmark \\
+Feature is causal & mean $|\Delta^{(c)}|$ on own rows & matched random-direction null, $q_{95}$ & per channel (count vs.\ chance); Holm when registered & \cmark \\
 Concept reproducible & best-match cosine across seeds & within-model replicate ceiling & -- & -- \\
 Same inputs & top-$k$ AUC in other model & stratum-matched random subsets & BH per ordered pair and leg; Holm when registered & \cmark \\
 Same effect on same inputs & level concordance; shape cosine & activation-matched feature-set floors ($q_{95}$ agree, $q_{05}$ differ) & per test; Holm when registered & \cmark \\

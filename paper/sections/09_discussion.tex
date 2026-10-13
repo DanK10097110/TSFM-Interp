@@ -1,0 +1,91 @@
+\section{Discussion}
+\label{sec:discussion}
+
+\paragraph{Shared inputs, model-specific mechanisms.} The most robust cross-model result is about inputs: models with
+different tokenizations, depths and training objectives single out the same series for a concept, on two corpora and on
+raw real windows. Whole-layer geometry is also shared above chance. Yet at the grain of individual causal effects,
+concepts are organized by model, and agreement on the same series is detected only between two closely related Chronos
+models. One consistent reading is that the panel converges on \emph{what} in a series matters (its level, its
+seasonality) while implementing the response differently. This is a weaker form of convergence than the representational
+convergence argued for in vision and language \citep{li2016convergent,huh2024platonic}, and our instruments locate the
+boundary: input agreement is measurable and replicates, whereas effect agreement across architecture families is below
+what ablation can resolve at these effect sizes (Section~\ref{sec:knownanswer}).
+
+\paragraph{What the causal evidence supports.} Single SAE features clearly beat isotropic random directions of the same
+size but barely beat directions drawn from the activation distribution. More dictionary data, a more powerful test and
+gradient-selected candidates do not change this (Section~\ref{sec:limits}). We read this as a property of the models at
+this level of description: the forecast-relevant information in a layer is spread over many directions, and removing
+any one typical direction moves the forecast by a comparable amount. Claims that a single feature ``is'' a forecasting
+concept should therefore be stated relative to an on-manifold null, since against an off-manifold null a typical direction
+already looks special; this is the time-series counterpart of the illusions documented for subspace interventions
+\citep{makelov2024illusion}.
+
+\paragraph{Implications for method.} Three lessons generalize beyond this study. First, activation-based selection is
+not a substitute for intervention: most prominent features have no causal effect, and attention mass does not predict
+head importance. Second, nulls must be validated on a known answer before they are trusted; the plausible uniform null
+inflated the count of causal features 2.7-fold (293 against 110) and failed the planted test on every seed. Third, a negative verdict needs a
+test of sensitivity: our agreement rung never produces a false ``same'', but it also rarely detects a planted shared
+concept, so its silence carries no information. Exploratory pipelines with thousands of comparisons \citep{gelman2014garden}
+benefit from the same register-then-confirm discipline used here, which in our study confirmed between half and two thirds
+of the registered claims (43 of 82 and 41 of 63).
+
+\paragraph{Practical use.} The internal features add information about forecast failure only for the two weakest
+models, where the output-only baseline is weakest, and do not improve model selection. For practitioners, the more
+immediate value of the system is diagnostic: behavioral checks such as calibration and missing-value handling, and the
+documented failures of instruments that would otherwise produce confident, wrong results.
+
+\section{Limitations}
+\label{sec:limitations}
+
+\paragraph{Models.} The study covers seven transformer models with contiguous tokens; models whose tokens read
+disjoint lags, such as Lag-Llama, receive reduced scope. With seven models, contrasts between models are confounded with
+architecture, size and training data. Timer's features do not exceed chance, so its results are uninformative about
+causal concepts. The analysis is univariate: Chronos-2's cross-series group attention is not measured (\fid{PM-13}), and
+Chronos-T5's decoder and Sundial's flow head are not captured.
+
+\paragraph{Ground truth and external validity.} Ground truth is exact only for the synthetic tier and encodes the
+generators' assumptions; 12 of 33 concept parts are dominated by one real-derived generator, and overlap with the models'
+pretraining data cannot be verified. Real data are part of the analysis: 410 of the 965 v2 dev series are real-derived,
+and the dictionaries are trained with about 4{,}000 additional real Monash windows per target. Raw real benchmarks are
+nonetheless a weaker basis for the causal questions. Real rows give TimesFM representations of lower effective dimension
+than the synthetic corpus (1.76 against 2.66) and more dead dictionary atoms (\fid{MN-20}); weakly predictable
+real-derived series receive flat forecasts in 67--100\% of cases, leaving an ablation nothing to move (\fid{BM-06}); and
+public archives may be in the models' pretraining data. Raw real data therefore enter as an external check, on which the
+v3 transfer claims confirm, but no concept was discovered on raw real data, and a full discovery run on a large raw
+benchmark remains to be done.
+
+\paragraph{Scope of the confirmation.} Held-out confirmation covers accuracy, geometry, perturbation agreement, transfer,
+single-feature causal effects, atlas structure and failure prediction, on two corpora with one private split each. The
+20 confirmed v2 transfers derive from two source concepts and the v3 transfers from three source models, so the transfer
+result rests on a small number of concepts. Registered claims are selected from larger dev pools; this is legitimate
+because the private split referees them, but it means that unregistered dev results remain exploratory.
+
+\paragraph{Effect sharing on the same series.} Per-series agreement of causal effects across architectures is not
+measurable by ablation at the effect sizes these models have. Both the shared-input rung and its subspace redesign fail
+the sensitivity requirement of the known-answer test (Section~\ref{sec:knownanswer}), and \tool{} therefore compares
+effects across models at the level of concept profiles.
+
+\paragraph{Dictionaries, interventions and usability.} Concept results depend on dictionary size, sparsity, revival and
+seed; the system measures this dependence but cannot remove it, and feature death tracks layer geometry (alive atoms
+scale with effective dimension with a log-log exponent of 1.02, $\rho=0.58$ over 45 cells; \fid{MP-05}). Only zero
+ablation within the reconstruction was run; mean or resample ablation might yield different effect sizes. The controls
+catch only failures for which a known-answer case exists. Readability for newcomers is a design goal; no user study has
+measured comprehension.
+
+\section{Conclusion}
+\label{sec:conclusion}
+
+Interpreting TSFMs is harder than it looks: tokens mean different things in different models, real series have no
+annotated ground truth, and causal effects are small enough that measurement artifacts dominate unless they are
+controlled. \tool{} addresses these problems with a controlled benchmark, measured time alignment, null- and reach-gated
+causal concepts validated on a planted forecaster, and a register-then-confirm protocol, behind one command and a report
+written for newcomers. Across seven TSFMs and two corpora, different architectures select the same inputs for a concept,
+while their causal machinery is organized by model; causal features act mainly on level and seasonality but are only
+weakly specific against on-manifold directions; activation prominence does not reveal causal importance; and
+depth-resolved reaction profiles largely replicate. Each conclusion is stated with its evidence class, and each held-out
+claim was registered before the private data were opened.
+
+\paragraph{Availability.} Code (MIT license), configurations, the example run and the findings ledger are at
+\url{\repourl}. Version 1.0.0 is archived at
+\href{https://doi.org/10.5281/zenodo.23267463}{doi:10.5281/zenodo.23267463}, and both packages install from PyPI
+(\texttt{pip install tsfm-lens tsfm-benchmark}).
