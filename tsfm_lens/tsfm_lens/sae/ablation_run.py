@@ -96,7 +96,10 @@ def run_ablation_target(cfg, run_dir: Path, hub, data, store, device, model: str
                         keep_null_draws: bool = False,
                         empirical_chance: bool = False,
                         keep_signed_null_draws: bool = False,
-                        powered_test: bool | None = None) -> dict:
+                        powered_test: bool | None = None,
+                        intervention: str = "zero",
+                        feature_means: np.ndarray | None = None,
+                        score_features: list | None = None) -> dict:
     """The ablation fingerprint for one target. Returns the artifact dict; a
     target with no checkpoint returns a `skipped` record rather than raising,
     so one missing dictionary does not stop the other targets.
@@ -121,6 +124,9 @@ def run_ablation_target(cfg, run_dir: Path, hub, data, store, device, model: str
       signed null draws the family-presence claims score against.
     - `powered_test` (ROADMAP.md sec 42 task B): also write the powered per-feature verdict
       (`sae/powered.py`). `None` reads `sae.ablation_powered`; an explicit value overrides it.
+    - `intervention`, `feature_means`, `score_features`: opt-in mean ablation and a restricted
+      candidate set (`response.feature_ablation_fingerprints`); the defaults are the legacy zero
+      ablation over every candidate.
     """
     run_dir = Path(run_dir)
     ckpt_path = checkpoint_path(run_dir, model, layer)
@@ -208,6 +214,9 @@ def run_ablation_target(cfg, run_dir: Path, hub, data, store, device, model: str
         **({"keep_signed_null_draws": True} if keep_signed_null_draws else {}),
         **({"powered_test": True} if powered_test else {}),
         null_mode=cfg_null_mode(cfg),
+        **({"intervention": intervention, "feature_means": feature_means}
+           if intervention != "zero" else {}),
+        **({"score_features": score_features} if score_features is not None else {}),
         **({"extra_null_modes": tuple(cfg_extra_null_modes(cfg))}
            if cfg_extra_null_modes(cfg) else {}),
         empirical_chance=bool(empirical_chance or getattr(cfg.sae, "ablation_empirical_chance", False)))
