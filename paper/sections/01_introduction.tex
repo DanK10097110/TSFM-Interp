@@ -70,7 +70,8 @@ Time-MoE, and re-test every registered claim on a second, three times larger cor
   \item \textbf{RQ1.} Sparse-dictionary features whose removal moves the forecast more than a random direction of
     the same size exist in six of the seven models. They act mostly on forecast level and seasonality and form a
     graded continuum rather than discrete units. Against random directions drawn from the layer's own activation
-    distribution, however, few single features stand out.
+    distribution, however, they exceed chance only 1.29-fold. The effects are not an artifact of ablating to zero:
+    most survive mean ablation.
   \item \textbf{RQ2.} Different architectures \emph{select the same series} for a concept: all registered transfer
     claims confirm held-out on both corpora and on raw real-world windows. The same broad effect types (raising or
     lowering the level, damping seasonality) recur across models, but fine-grained concepts are organized by model:
