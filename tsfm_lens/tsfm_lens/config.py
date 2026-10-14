@@ -78,6 +78,15 @@ class AlignmentConfig:
     #   functional -- align by a measured property rather than position;
     #               needs a caller-supplied value per layer.
     depth_axis: str = "block"
+    # ROADMAP.md sec 44.4 (E3): how L1 represents a window for window-level CKA. "mean" (default) is
+    # the overlap-weighted token mean, byte-identical to every earlier run; "concat" uses the
+    # window's tokens concatenated in time order, through Gram sums (analysis/window_concat.py).
+    # "concat" makes extraction persist a position-resolved `fine` group in the store (disk
+    # grows with tokens per window: 32x for a 1-step model) and L1 cap its rows at
+    # `concat_max_rows`. Both fields are omitted from fingerprints at their defaults, so older runs
+    # are not marked stale.
+    window_rep: str = field(default="mean", metadata={"omit_at_default": True})
+    concat_max_rows: int = field(default=7680, metadata={"omit_at_default": True})
 
 
 @dataclass
@@ -1399,6 +1408,9 @@ class PipelineConfig:
         """Fail fast on structurally invalid configurations."""
         if self.data.context_len % self.alignment.window != 0:
             raise ValueError("data.context_len must be a multiple of alignment.window")
+        if self.alignment.window_rep not in ("mean", "concat"):
+            raise ValueError(f"alignment.window_rep must be 'mean' or 'concat', "
+                             f"got {self.alignment.window_rep!r}")
         nulls = tuple(self.sae.ablation_nulls or ())
         if nulls:
             if len(set(nulls)) != len(nulls):

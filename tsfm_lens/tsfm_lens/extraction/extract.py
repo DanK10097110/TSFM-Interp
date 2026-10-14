@@ -55,7 +55,8 @@ def run_extraction(cfg: PipelineConfig, hub, data: BenchmarkData) -> ActivationS
                 adapter, cfg.alignment.window, layers,
                 cfg.alignment.min_diagonal_frac, cfg.alignment.on_failure,
                 calibrate=cfg.alignment.calibrate_amplitude)
-        layer_map[mcfg.name] = _extract_model(adapter, data, store, cfg, layers)
+        layer_map[mcfg.name] = _extract_model(adapter, data, store, cfg, layers,
+                                              fine=cfg.alignment.window_rep == "concat")
         # Captured once, here, while the adapter is still loaded -- the
         # `block` depth axis (analysis/depth_axis.py, ROADMAP.md sec 18 F1)
         # needs a model's full layer list and uncaptured surfaces to place
@@ -85,7 +86,8 @@ def run_extraction(cfg: PipelineConfig, hub, data: BenchmarkData) -> ActivationS
 
 
 def _extract_model(adapter, data: BenchmarkData, store: ActivationStore,
-                   cfg: PipelineConfig, layers: list, rows: np.ndarray | None = None) -> list:
+                   cfg: PipelineConfig, layers: list, rows: np.ndarray | None = None,
+                   fine: bool = False) -> list:
     """Run one model over all (or a row subset of) contexts and persist aligned activations.
 
     `layers` and `rows` are explicit rather than derived from `adapter`/`data`
@@ -97,6 +99,10 @@ def _extract_model(adapter, data: BenchmarkData, store: ActivationStore,
     """
     adapter.ensure_loaded()
     pool = pooling_matrix(adapter.token_time_spans(), cfg.data.context_len, cfg.alignment.window)
+    if fine:
+        from ..analysis.window_concat import concat_grid, position_features
+        fine_grid = concat_grid(adapter.token_time_spans(), cfg.data.context_len, cfg.alignment.window)
+        fine_spans = adapter.token_time_spans()
     contexts = data.contexts()
     if rows is not None:
         contexts = contexts[rows]
@@ -127,8 +133,16 @@ def _extract_model(adapter, data: BenchmarkData, store: ActivationStore,
                 if name not in initialized:
                     store.init_layer(adapter.name, name, aligned.shape[-1],
                                      cfg.extraction.store_dtype)
+                    if fine:
+                        store.init_fine_layer(adapter.name, name, cfg.alignment.window // fine_grid,
+                                              aligned.shape[-1], cfg.extraction.store_dtype)
                     initialized.add(name)
                 store.write_batch(adapter.name, name, start, aligned)
+                if fine:
+                    pos = position_features(hidden, fine_spans, cfg.data.context_len,
+                                            cfg.alignment.window, fine_grid)
+                    store.write_fine_batch(adapter.name, name, start,
+                                           pos.cpu().numpy().astype(np.dtype(cfg.extraction.store_dtype)))
     for name in layers:
         store.finalize_layer(adapter.name, name)
     return layers

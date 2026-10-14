@@ -3,6 +3,7 @@
 Layout (zarr group):
     act/{model}/{layer}        float16 [N, n_windows, D]   window-level states
     pooled/{model}/{layer}     float16 [N, D]              window-mean per series
+    fine/{model}/{layer}       float16 [P, N, n_windows, D] opt-in (alignment.window_rep: concat)
     sae/{model}/{layer}        float16 [N, n_windows, F]   window-level SAE features
     sae_pooled/{model}/{layer} float16 [N, F]              window-mean SAE features per series
     pred/{model}/point         float32 [N, H]
@@ -123,6 +124,30 @@ class ActivationStore:
                                   chunks=(chunk, w, dim), dtype=dtype, overwrite=True)
         self.root.create_dataset(f"pooled/{model}/{layer}", shape=(n, dim),
                                   chunks=(min(4096, n), dim), dtype=dtype, overwrite=True)
+
+    def init_fine_layer(self, model: str, layer: str, n_pos: int, dim: int,
+                        dtype: str = "float16") -> None:
+        """Opt-in `fine/{model}/{layer}` [P, N, W, D]: per-position window vectors for CONCAT CKA
+        (`alignment.window_rep: concat`, ROADMAP.md sec 44.4). Chunked one position at a time so
+        a position can be streamed without reading the others."""
+        n, w = self.root.attrs["n_series"], self.root.attrs["n_windows"]
+        self.root.create_dataset(f"fine/{model}/{layer}", shape=(n_pos, n, w, dim),
+                                 chunks=(1, min(256, n), w, dim), dtype=dtype, overwrite=True)
+
+    def write_fine_batch(self, model: str, layer: str, start: int, positions: np.ndarray) -> None:
+        """Write [B, W, P, D] position vectors for series start..start+B."""
+        end = start + positions.shape[0]
+        self.root[f"fine/{model}/{layer}"][:, start:end] = np.moveaxis(positions, 2, 0)
+
+    def has_fine(self, model: str, layer: str) -> bool:
+        return f"fine/{model}/{layer}" in self.root
+
+    def load_fine_position(self, model: str, layer: str, p: int, rows: np.ndarray) -> np.ndarray:
+        """[len(rows), W, D] vectors of position `p`."""
+        return self.root[f"fine/{model}/{layer}"].oindex[p, np.asarray(rows)]
+
+    def n_fine_positions(self, model: str, layer: str) -> int:
+        return int(self.root[f"fine/{model}/{layer}"].shape[0])
 
     def write_batch(self, model: str, layer: str, start: int, aligned: np.ndarray) -> None:
         """Write one batch of aligned window states and their series-level pooling.
