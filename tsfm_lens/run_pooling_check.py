@@ -346,6 +346,74 @@ def split_pilot_main(data, n_main: int = 512, n_pilot: int = 128, seed: int = 0)
     return np.sort(pilot), np.sort(main)
 
 
+
+D_WEIGHTS = (0.5, 1.0, 2.0)
+D_PASS_DELTA = 0.05
+D_PASS_RHO = 0.9
+D_PASS_SPREAD = 0.05
+
+
+def balance_blocks(mean: np.ndarray, trend: np.ndarray, train_mask: np.ndarray) -> tuple:
+    """Scale the MEAN and TREND blocks of mean_trend to equal total variance, fitted on training series only.
+
+    Total variance of a block = sum over dimensions of the training-row variance; each block is divided
+    by its square root, so both have total variance 1 on the training series. A block with no variance
+    (TimesFM's and Timer's trend is identically zero) is returned unchanged rather than divided by zero.
+    """
+    def scale(block):
+        rows = block[train_mask].reshape(-1, block.shape[-1]).astype(np.float64)
+        tv = float(rows.var(axis=0).sum())
+        return block if tv < 1e-18 else block / np.sqrt(tv)
+    return scale(mean), scale(trend)
+
+
+def cka_matrix(a_reps: list, b_reps: list, device: str = "cpu") -> np.ndarray:
+    """3x3 (or n x m) linear-CKA matrix between two models' per-layer [S, W, D] representations on the same rows."""
+    m = np.zeros((len(a_reps), len(b_reps)))
+    for i, xa in enumerate(a_reps):
+        for j, xb in enumerate(b_reps):
+            m[i, j] = cka_cov(torch.as_tensor(xa).reshape(-1, xa.shape[-1]),
+                              torch.as_tensor(xb).reshape(-1, xb.shape[-1]), device)
+    return m
+
+
+def fixed_row_fairness(mat_mean: np.ndarray, mat_fine: np.ndarray) -> dict:
+    """sec 44.3 D1 rule on two CKA matrices computed on the SAME rows: |peak(FINE) - peak(MEAN)| < 0.05, rho >= 0.9."""
+    delta = float(mat_fine.max() - mat_mean.max())
+    rho = spearman(mat_fine.ravel(), mat_mean.ravel())
+    return {"peak_mean": float(mat_mean.max()), "peak_fine": float(mat_fine.max()), "delta": delta,
+            "spearman": rho, "fair": bool(abs(delta) < D_PASS_DELTA and rho >= D_PASS_RHO)}
+
+
+def d2_verdict(peak_w: dict, peak_fine: float, peak_unbalanced: float) -> dict:
+    """sec 44.3 D2 rule for one pair: spread across w < 0.05 and |peak(balanced w=1) - peak(FINE)| < 0.05."""
+    vals = list(peak_w.values())
+    spread = float(max(vals) - min(vals))
+    gap = float(peak_w[1.0] - peak_fine)
+    return {"peak_by_w": {str(k): float(v) for k, v in peak_w.items()}, "spread": spread,
+            "peak_balanced_w1_minus_fine": gap, "peak_unbalanced_x32": float(peak_unbalanced),
+            "peak_fine": float(peak_fine), "pass": bool(spread < D_PASS_SPREAD and abs(gap) < D_PASS_DELTA)}
+
+
+def input_representations(contexts: np.ndarray) -> dict:
+    """The z-scored input as a model with 1-step, 1-dim tokens: MEAN [S,W,1], FINE [S,W,4], RAW [S,W,32]."""
+    x = np.asarray(contexts, dtype=np.float64)
+    z = (x - x.mean(1, keepdims=True)) / np.maximum(x.std(1, keepdims=True), 1e-12)
+    w = z.reshape(len(z), -1, WINDOW)
+    return {"MEAN": w.mean(2, keepdims=True), "FINE": w.reshape(len(z), w.shape[1], 4, WINDOW // 4).mean(3),
+            "RAW": w}
+
+
+def confirm_split(data, pilot: np.ndarray, main: np.ndarray, n: int = 512, seed: int = 0) -> np.ndarray:
+    """CONFIRM: a third family-stratified draw from the rows used by neither PILOT nor MAIN (asserted disjoint)."""
+    from tsfm_lens.utils import sample_rows
+    fam = np.asarray(data.families)
+    rest = np.setdiff1d(np.arange(len(fam)), np.concatenate([pilot, main]))
+    conf = np.sort(rest[sample_rows(len(rest), n, seed, strata=fam[rest])])
+    assert not set(conf.tolist()) & (set(pilot.tolist()) | set(main.tolist()))
+    return conf
+
+
 def frozen_rule_path(out_dir: Path) -> Path:
     return Path(out_dir) / "frozen_rule.json"
 
@@ -358,15 +426,18 @@ def run_study(args) -> dict:
     cfg.data.max_series = None
     data_all = load_benchmark(cfg.data, seed=0)
     pilot_idx, main_idx = split_pilot_main(data_all, args.n_main, args.n_pilot)
-    idx = pilot_idx if args.set == "pilot" else main_idx
+    conf_idx = confirm_split(data_all, pilot_idx, main_idx)
+    idx = {"pilot": pilot_idx, "main": main_idx, "confirm": conf_idx}[args.set]
+    if args.set == "confirm" and (out_dir / "pooling_check_confirm.json").exists() and not args.force_confirm:
+        raise SystemExit("CONFIRM has already been run once (sec 44.3); refusing to overwrite without --force-confirm")
     contexts = data_all.contexts()[idx].astype(np.float32)
     fams = np.asarray(data_all.families)[idx]
     ids = data_all.meta["series_id"].to_numpy()[idx].tolist()
     ctx = cfg.data.context_len
-    if args.set == "main":
+    if args.set in ("main", "confirm"):
         fp = frozen_rule_path(out_dir)
         if not fp.exists():
-            raise SystemExit(f"{fp} missing: freeze the repair rule on PILOT (--freeze) before touching MAIN")
+            raise SystemExit(f"{fp} missing: freeze the repair rule on PILOT (--freeze) before touching MAIN or CONFIRM")
         from tsfm_lens.utils import load_json
         frozen = load_json(fp)
         rules = ["mean"] + ([frozen["rule"]] if frozen["rule"] != "mean" else [])
@@ -446,6 +517,8 @@ def run_study(args) -> dict:
                     wr = window_rep(h, spans, ctx, rule).float().cpu()
                     r2p = ridge_cv_r2(wr.numpy(), y_all, folds)
                 rep[l][("rule", rule)] = wr
+                if rule == "mean_trend":
+                    rep[l]["trend"] = wr[..., h.shape[-1]:]
                 if rule == "mean":
                     rep[l][32] = wr
                 row = {"model": name, "layer": l, "depth_index": li, "rule": rule, "dim": int(wr.shape[-1]),
@@ -505,6 +578,9 @@ def run_study(args) -> dict:
     result["C_cells"] = c_cells
     result["C_verdict"] = {r: evaluate_c([x for x in c_rows if x["rule"] == r]) for r in rules}
 
+
+    if args.do_d and "mean_trend" in rules:
+        result.update(run_d(reps, models, sel_by, folds, contexts, dev))
     tf = "TimesFM" if "TimesFM" in reps else None
     ceil = []
     for n in fine_models:
@@ -531,6 +607,50 @@ def run_study(args) -> dict:
     return result
 
 
+
+def run_d(reps: dict, models: dict, sel_by: dict, folds: np.ndarray, contexts: np.ndarray, dev: str) -> dict:
+    """sec 44.3 D1 (fixed-row MEAN vs FINE for all pairs), D2 (balanced mean_trend) and D3 (input control)."""
+    train = folds != 0
+    names = list(reps)
+    mean_l, fine_l, bal, unbal = {}, {}, {w: {} for w in D_WEIGHTS}, {}
+    for n in names:
+        mean_l[n], fine_l[n], unbal[n] = [], [], []
+        for w in D_WEIGHTS:
+            bal[w][n] = []
+        for l in sel_by[n]:
+            r = reps[n][l]
+            m = r[("rule", "mean")].numpy()
+            mean_l[n].append(m)
+            fine_l[n].append(r["fineconcat"].reshape(m.shape[0], m.shape[1], -1).numpy() if "fineconcat" in r else m)
+            trend = r["trend"].numpy()
+            ms, ts = balance_blocks(m, trend, train)
+            for w in D_WEIGHTS:
+                bal[w][n].append(np.concatenate([ms, w * ts], axis=-1))
+            unbal[n].append(r[("rule", "mean_trend")].numpy())
+    d1, d2 = [], []
+    for a, b in itertools.combinations(names, 2):
+        mm = cka_matrix(mean_l[a], mean_l[b], dev)
+        ff = cka_matrix(fine_l[a], fine_l[b], dev)
+        d1.append({"pair": f"{a} vs {b}", **fixed_row_fairness(mm, ff),
+                   "cka_mean": mm.tolist(), "cka_fine": ff.tolist()})
+        peaks = {w: float(cka_matrix(bal[w][a], bal[w][b], dev).max()) for w in D_WEIGHTS}
+        un = float(cka_matrix(unbal[a], unbal[b], dev).max())
+        d2.append({"pair": f"{a} vs {b}", **d2_verdict(peaks, ff.max(), un)})
+        log.info("D %s: delta %.4f rho %.3f fair %s | D2 spread %.4f gap %.4f", d1[-1]["pair"], d1[-1]["delta"],
+                 d1[-1]["spearman"], d1[-1]["fair"], d2[-1]["spread"], d2[-1]["peak_balanced_w1_minus_fine"])
+    d3 = {}
+    inputs = input_representations(contexts)
+    for n in names:
+        d3[n] = {k: cka_matrix(mean_l[n], [v], dev)[:, 0].tolist() for k, v in inputs.items()}
+    d3_tf = None
+    if "TimesFM" in d3:
+        d3_tf = {k: {"per_layer": d3["TimesFM"][k], "peak": float(max(d3["TimesFM"][k]))} for k in inputs}
+    return {"D1": d1, "D1_n_fair": int(sum(r["fair"] for r in d1)), "D1_n_pairs": len(d1),
+            "D2": d2, "D2_n_pass": int(sum(r["pass"] for r in d2)), "D2_n_pairs": len(d2),
+            "D2_pass": bool(all(r["pass"] for r in d2)),
+            "D3_timesfm": d3_tf, "D3_input_vs_all_models_mean_rep": d3}
+
+
 def freeze(args) -> None:
     """Write the repair rule chosen on PILOT before MAIN may run (sec 44.1 step 3)."""
     from tsfm_lens.utils import load_json
@@ -553,12 +673,14 @@ def main():
     p = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     p.add_argument("--config", default=DEFAULT_CONFIG)
     p.add_argument("--out", default="runs/pooling_check")
-    p.add_argument("--set", choices=["pilot", "main"], default="pilot")
+    p.add_argument("--set", choices=["pilot", "main", "confirm"], default="pilot")
     p.add_argument("--rules", default="", help="pilot only: extra window rules to evaluate beside mean")
     p.add_argument("--freeze", default="", help="record this rule as the frozen repair rule (needs a pilot result)")
     p.add_argument("--reason", default="")
     p.add_argument("--candidates", default="")
     p.add_argument("--models", default="")
+    p.add_argument("--no-d", dest="do_d", action="store_false", help="skip the sec 44.3 D1-D3 fixed-row analyses")
+    p.add_argument("--force-confirm", action="store_true", help="recorded re-run of CONFIRM")
     p.add_argument("--n-main", type=int, default=512)
     p.add_argument("--n-pilot", type=int, default=128)
     p.add_argument("--no-l1", dest="keep_l1", action="store_false",

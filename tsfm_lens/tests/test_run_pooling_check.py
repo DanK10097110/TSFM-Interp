@@ -165,3 +165,64 @@ def test_pilot_and_main_are_disjoint_and_stratified():
     pilot, main = rpc.split_pilot_main(D, n_main=200, n_pilot=60)
     assert not set(pilot) & set(main) and len(pilot) == 60 and len(main) == 200
     assert (fam[main] == "a").sum() > (fam[main] == "c").sum() * 3
+
+
+def test_balance_blocks_equalizes_variance_ignores_scale_and_keeps_zero_block():
+    rng = np.random.default_rng(5)
+    mean = rng.normal(size=(40, 6, 5)) * 3.0
+    trend = rng.normal(size=(40, 6, 7)) * 0.2
+    train = np.arange(40) < 32
+    ms, ts = rpc.balance_blocks(mean, trend, train)
+    tv = lambda b: b[train].reshape(-1, b.shape[-1]).var(0).sum()
+    assert tv(ms) == pytest.approx(1.0) and tv(ts) == pytest.approx(1.0)
+    ms2, ts2 = rpc.balance_blocks(mean, trend * 1000.0, train)
+    assert np.allclose(ts, ts2) and np.allclose(ms, ms2)
+    z_m, z_t = rpc.balance_blocks(mean, np.zeros_like(trend), train)
+    assert np.all(z_t == 0) and np.isfinite(z_m).all()
+    shifted_test_rows = mean.copy()
+    shifted_test_rows[~train] += 50.0
+    assert not np.allclose(rpc.balance_blocks(shifted_test_rows, trend, train)[0], ms)
+
+
+def test_unbalanced_block_scale_moves_cka_but_balanced_does_not():
+    rng = np.random.default_rng(6)
+    base = rng.normal(size=(60, 15, 8))
+    other = base[..., :4] + 0.5 * rng.normal(size=(60, 15, 4))
+    trend = rng.normal(size=(60, 15, 8))
+    train = np.arange(60) < 48
+    def cka_with(scale, balanced):
+        m, t = (rpc.balance_blocks(base, trend, train) if balanced else (base, trend))
+        rep = np.concatenate([m, scale * t], axis=-1)
+        return rpc.cka_matrix([rep], [other])[0, 0]
+    assert abs(cka_with(1.0, False) - cka_with(32.0, False)) > 0.05
+    a = rpc.cka_matrix([np.concatenate(rpc.balance_blocks(base, trend * 7, train), -1)], [other])[0, 0]
+    b = rpc.cka_matrix([np.concatenate(rpc.balance_blocks(base, trend * 700, train), -1)], [other])[0, 0]
+    assert a == pytest.approx(b, abs=1e-9)
+
+
+def test_fixed_row_fairness_and_d2_rule_boundaries():
+    m = np.array([[0.2, 0.4, 0.1], [0.3, 0.5, 0.2], [0.1, 0.2, 0.05]])
+    same = rpc.fixed_row_fairness(m, m * 1.0)
+    assert same["fair"] and same["delta"] == 0 and same["spearman"] == pytest.approx(1.0)
+    shifted = rpc.fixed_row_fairness(m, m + 0.06)
+    assert shifted["delta"] == pytest.approx(0.06) and not shifted["fair"]
+    scrambled = rpc.fixed_row_fairness(m, m[::-1, ::-1].copy())
+    assert scrambled["delta"] == 0 and not scrambled["fair"]
+    ok = rpc.d2_verdict({0.5: 0.30, 1.0: 0.32, 2.0: 0.34}, 0.35, 0.7)
+    assert ok["pass"] and ok["spread"] == pytest.approx(0.04)
+    assert not rpc.d2_verdict({0.5: 0.30, 1.0: 0.32, 2.0: 0.36}, 0.35, 0.7)["pass"]
+    assert not rpc.d2_verdict({0.5: 0.30, 1.0: 0.30, 2.0: 0.30}, 0.36, 0.7)["pass"]
+
+
+def test_input_representations_and_confirm_split_disjoint():
+    x = np.tile(np.arange(480, dtype=np.float64), (3, 1))
+    r = rpc.input_representations(x)
+    assert r["MEAN"].shape == (3, 15, 1) and r["FINE"].shape == (3, 15, 4) and r["RAW"].shape == (3, 15, 32)
+    assert np.allclose(r["FINE"].mean(-1), r["MEAN"][..., 0])
+    fam = np.repeat(["a", "b", "c"], [600, 300, 100])
+
+    class D:
+        families = fam
+    pilot, main = rpc.split_pilot_main(D, n_main=200, n_pilot=60)
+    conf = rpc.confirm_split(D, pilot, main, n=200)
+    assert len(conf) == 200 and not set(conf) & (set(pilot) | set(main))
