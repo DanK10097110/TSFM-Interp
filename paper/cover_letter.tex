@@ -8,7 +8,7 @@
 \address{Daniel Kushnir \quad \href{mailto:kushnir.daniel05@gmail.com}{kushnir.daniel05@gmail.com}\\
 Hao Wang (corresponding author) \quad \href{mailto:hoguewang@gmail.com}{hoguewang@gmail.com}\\
 Rutgers University}
-\date{October 5, 2026}
+\date{October 14, 2026}
 
 \begin{document}
 \begin{letter}{Editors-in-Chief\\Journal of Machine Learning Research}
@@ -26,23 +26,32 @@ around these three problems and the results of applying it to seven models.
 
 The main contributions are:
 \begin{enumerate}
-  \item \textbf{A controlled setting.} A leakage-audited synthetic benchmark with exact generative ground truth,
-  sealed dev and private splits, and a measured token-to-time alignment that puts architectures with tokens of 1 to
-  96 time steps on a common axis.
-  \item \textbf{Causal concept definitions with matched nulls.} A sparse-autoencoder feature counts as causal only if
-  removing it changes the forecast more than removing the same per-token amount along a random direction on the same
-  series, after reach controls confirm that the intervention lands. A planted-concept forecaster with known answers
-  and decoys holds this test to a fixed
-  false-positive gate (false-positive rate at most 0.003, sensitivity 0.70--1.00).
-  \item \textbf{One-shot confirmation.} Exploratory claims are frozen in a hash-pinned registry and tested once on the
-  sealed split, with multiplicity handled per claim family.
-  \item \textbf{Findings about seven models} (TimesFM, Chronos-2, Sundial, Chronos-Bolt, Chronos-T5, Timer and
-  Time-MoE). Causal features act mainly on forecast level and seasonality. Different architectures select the same
-  inputs for a concept (20 of 20 registered claims confirmed on 971 held-out series, replicated on four private
-  draws), while their causal machinery is organized by model: no concept spans more than three of the seven models.
-  Activation prominence is a poor guide to causal importance (83.5\% of prominent features have no causal effect,
-  held out), and depth-resolved reaction profiles replicate for six of nine corruptions.
+  \item \textbf{A comparative interpretability system.} A measured token-to-time alignment puts architectures with
+  tokens of 1 to 96 time steps on a common axis, and a leakage-audited synthetic benchmark with exact generative ground
+  truth and sealed development and private splits supplies the data. A 19-stage pipeline produces one report in which
+  every claim carries its evidence class.
+  \item \textbf{A causal concept methodology.} A sparse-autoencoder feature counts as causal only if removing it changes
+  the forecast more than removing the same per-token amount along a matched random direction on the same series, after
+  reach controls confirm that the intervention lands. Concepts are then compared across models in two separate senses:
+  whether models respond to the same inputs, and whether the effects on the forecast agree.
+  \item \textbf{Known-answer validation.} Each null and test is first run on a forecaster with planted concepts and
+  decoys, against a pass criterion fixed in advance. The profile-matched null passes (false-positive rate at most
+  0.003, sensitivity 0.70--1.00); a uniform null, a more powerful per-feature test and a subspace redesign fail and are
+  reported as such.
+  \item \textbf{A seven-model study confirmed once on two corpora} (TimesFM, Chronos-2, Sundial, Chronos-Bolt,
+  Chronos-T5, Timer and Time-MoE). Claims were registered on development data and tested once on sealed private data:
+  43 of 82 replicable claims confirm on the first corpus and 41 of 63 on a second, three times larger corpus.
+  Different architectures select the same input series for a concept: all 20 registered transfer claims confirm on
+  both private splits and on 800 raw real-world windows. Their causal machinery, however, is organized by model, and no
+  concept spans more than three of the seven models. Activation prominence is a poor guide to causal importance:
+  83.5\% of prominent features have no held-out effect. Single causal features survive mean ablation (69 of 91) but
+  exceed random directions drawn from the activation distribution only 1.29-fold, and neither more data, a more
+  powerful test nor gradient-selected candidates changes this. Depth-resolved reaction profiles replicate for most
+  corruptions, with one that changes sign across corpora.
 \end{enumerate}
+
+We report negative results with the same weight as positive ones, since several of the instruments we first used
+would have produced confident false positives.
 
 We believe the paper suits JMLR because its contribution is methodological as much as empirical: it shows that
 interpretability claims about forecasting models need known answers, matched nulls and held-out

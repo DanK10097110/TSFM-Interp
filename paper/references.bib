@@ -1,8 +1,9 @@
 % ---------------------------------------------------------------------------
-% Bibliography for "TSFM-Lens". Every entry is a real publication. Entries
-% marked "verified 2026-09-29" were checked against arXiv / the venue page
-% while drafting; the rest are standard references whose metadata should
-% still be spot-checked (page numbers, volume) before camera-ready.
+% Bibliography for "TSFM-Lens". Every entry cited in main.tex or mloss/main.tex
+% was checked on 2026-10-14 against arXiv, the venue's proceedings page, DBLP or
+% the publisher (title, full author list, year, venue, volume and pages where
+% available); entries marked "verified 2026-09-29" were checked earlier.
+% Uncited entries are kept for the reader's convenience and were not re-checked.
 % ---------------------------------------------------------------------------
 
 % ---------------- Time-series foundation models ----------------
@@ -12,7 +13,8 @@
   booktitle = {Proceedings of the 41st International Conference on Machine Learning},
   series    = {Proceedings of Machine Learning Research},
   volume    = {235},
-  year      = {2024}
+  year      = {2024},
+  pages     = {10148--10167}
 }
 
 @article{ansari2024chronos,
@@ -25,7 +27,7 @@
 % verified 2026-09-29
 @article{ansari2025chronos2,
   title   = {{Chronos-2}: From Univariate to Universal Forecasting},
-  author  = {Ansari, Abdul Fatir and Shchur, Oleksandr and others},
+  author  = {Ansari, Abdul Fatir and Shchur, Oleksandr and K{\"u}ken, Jaris and Auer, Andreas and Han, Boran and Mercado, Pedro and Rangapuram, Syama Sundar and Shen, Huibin and Stella, Lorenzo and Zhang, Xiyuan and Goswami, Mononito and Kapoor, Shubham and Maddix, Danielle C. and Guerron, Pablo and Hu, Tony and Yin, Junming and Erickson, Nick and Desai, Prateek Mutalik and Wang, Hao and Rangwala, Huzefa and Karypis, George and Wang, Yuyang and Bohlke-Schneider, Michael},
   journal = {arXiv preprint arXiv:2510.15821},
   year    = {2025}
 }
@@ -43,7 +45,10 @@
   title     = {{Timer}: Generative Pre-trained Transformers Are Large Time Series Models},
   author    = {Liu, Yong and Zhang, Haoran and Li, Chenyu and Huang, Xiangdong and Wang, Jianmin and Long, Mingsheng},
   booktitle = {Proceedings of the 41st International Conference on Machine Learning},
-  year      = {2024}
+  year      = {2024},
+  series    = {Proceedings of Machine Learning Research},
+  volume    = {235},
+  pages     = {32369--32399}
 }
 
 @article{rasul2023lagllama,
@@ -57,13 +62,19 @@
   title     = {Unified Training of Universal Time Series Forecasting Transformers},
   author    = {Woo, Gerald and Liu, Chenghao and Kumar, Akshat and Xiong, Caiming and Savarese, Silvio and Sahoo, Doyen},
   booktitle = {Proceedings of the 41st International Conference on Machine Learning},
-  year      = {2024}
+  year      = {2024},
+  series    = {Proceedings of Machine Learning Research},
+  volume    = {235},
+  pages     = {53140--53164}
 }
 
 @inproceedings{goswami2024moment,
   title     = {{MOMENT}: A Family of Open Time-series Foundation Models},
   author    = {Goswami, Mononito and Szafer, Konrad and Choudhry, Arjun and Cai, Yifu and Li, Shuo and Dubrawski, Artur},
   booktitle = {Proceedings of the 41st International Conference on Machine Learning},
+  series    = {Proceedings of Machine Learning Research},
+  volume    = {235},
+  pages     = {16115--16152},
   year      = {2024}
 }
 
@@ -216,7 +227,10 @@
   title     = {Similarity of Neural Network Representations Revisited},
   author    = {Kornblith, Simon and Norouzi, Mohammad and Lee, Honglak and Hinton, Geoffrey},
   booktitle = {Proceedings of the 36th International Conference on Machine Learning},
-  year      = {2019}
+  year      = {2019},
+  series    = {Proceedings of Machine Learning Research},
+  volume    = {97},
+  pages     = {3519--3529}
 }
 
 @inproceedings{raghu2017svcca,
@@ -246,7 +260,8 @@
   title     = {Understanding image representations by measuring their equivariance and equivalence},
   author    = {Lenc, Karel and Vedaldi, Andrea},
   booktitle = {Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition},
-  year      = {2015}
+  year      = {2015},
+  pages     = {991--999}
 }
 
 @inproceedings{bansal2021stitching,
@@ -328,11 +343,13 @@
   year      = {2024}
 }
 
-@article{belrose2023tuned,
-  title   = {Eliciting Latent Predictions from Transformers with the Tuned Lens},
-  author  = {Belrose, Nora and Furman, Zach and Smith, Logan and Halawi, Danny and Ostrovsky, Igor and McKinney, Lev and Biderman, Stella and Steinhardt, Jacob},
-  journal = {arXiv preprint arXiv:2303.08112},
-  year    = {2023}
+@misc{belrose2023tuned,
+  title         = {Eliciting Latent Predictions from Transformers with the Tuned Lens},
+  author        = {Belrose, Nora and Ostrovsky, Igor and McKinney, Lev and Furman, Zach and Smith, Logan and Halawi, Danny and Biderman, Stella and Steinhardt, Jacob},
+  year          = {2023},
+  eprint        = {2303.08112},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.LG}
 }
 
 @misc{nostalgebraist2020logitlens,
@@ -353,7 +370,8 @@
   title     = {Designing and Interpreting Probes with Control Tasks},
   author    = {Hewitt, John and Liang, Percy},
   booktitle = {Proceedings of the 2019 Conference on Empirical Methods in Natural Language Processing},
-  year      = {2019}
+  year      = {2019},
+  pages     = {2733--2743}
 }
 
 @article{belinkov2022probing,
@@ -373,18 +391,21 @@
   year      = {2018}
 }
 
-@article{bolukbasi2021illusion,
-  title   = {An Interpretability Illusion for {BERT}},
-  author  = {Bolukbasi, Tolga and Pearce, Adam and Yuan, Ann and Coenen, Andy and Reif, Emily and Vi{\'e}gas, Fernanda and Wattenberg, Martin},
-  journal = {arXiv preprint arXiv:2104.07143},
-  year    = {2021}
+@misc{bolukbasi2021illusion,
+  title         = {An Interpretability Illusion for {BERT}},
+  author        = {Bolukbasi, Tolga and Pearce, Adam and Yuan, Ann and Coenen, Andy and Reif, Emily and Vi{\'e}gas, Fernanda and Wattenberg, Martin},
+  year          = {2021},
+  eprint        = {2104.07143},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.CL}
 }
 
 @inproceedings{jain2019attention,
   title     = {Attention is not Explanation},
   author    = {Jain, Sarthak and Wallace, Byron C.},
   booktitle = {Proceedings of NAACL-HLT},
-  year      = {2019}
+  year      = {2019},
+  pages     = {3543--3556}
 }
 
 @article{zhou2018revisiting,
@@ -404,23 +425,24 @@
 
 @article{bricken2023monosemanticity,
   title   = {Towards Monosemanticity: Decomposing Language Models With Dictionary Learning},
-  author  = {Bricken, Trenton and Templeton, Adly and Batson, Joshua and Chen, Brian and Jermyn, Adam and Conerly, Tom and Turner, Nick and Anil, Cem and Denison, Carson and Askell, Amanda and others},
+  author  = {Bricken, Trenton and Templeton, Adly and Batson, Joshua and Chen, Brian and Jermyn, Adam and Conerly, Tom and Turner, Nicholas L. and Anil, Cem and Denison, Carson and Askell, Amanda and Lasenby, Robert and Wu, Yifan and Kravec, Shauna and Schiefer, Nicholas and Maxwell, Tim and Joseph, Nicholas and Tamkin, Alex and Nguyen, Karina and McLean, Brayden and Burke, Josiah E. and Hume, Tristan and Carter, Shan and Henighan, Tom and Olah, Chris},
   journal = {Transformer Circuits Thread},
   year    = {2023}
 }
 
 @inproceedings{cunningham2024sae,
   title     = {Sparse Autoencoders Find Highly Interpretable Features in Language Models},
-  author    = {Cunningham, Hoagy and Ewart, Aidan and Riggs, Logan and Huben, Robert and Sharkey, Lee},
+  author    = {Huben, Robert and Cunningham, Hoagy and Smith, Logan Riggs and Ewart, Aidan and Sharkey, Lee},
   booktitle = {International Conference on Learning Representations},
   year      = {2024}
 }
 
 @article{templeton2024scaling,
   title   = {Scaling Monosemanticity: Extracting Interpretable Features from {{Claude 3 Sonnet}}},
-  author  = {Templeton, Adly and Conerly, Tom and Marcus, Jonathan and Lindsey, Jack and Bricken, Trenton and Chen, Brian and Pearce, Adam and Citro, Craig and Ameisen, Emmanuel and Jones, Andy and others},
+  author  = {Templeton, Adly and Conerly, Tom and Marcus, Jonathan and Lindsey, Jack and Bricken, Trenton and Chen, Brian and Pearce, Adam and Citro, Craig and Ameisen, Emmanuel and Jones, Andy and Cunningham, Hoagy and Turner, Nicholas L. and McDougall, Callum and MacDiarmid, Monte and Tamkin, Alex and Durmus, Esin and Hume, Tristan and Mosconi, Francesco and Freeman, C. Daniel and Sumers, Theodore R. and Rees, Edward and Batson, Joshua and Jermyn, Adam and Carter, Shan and Olah, Chris and Henighan, Tom},
   journal = {Transformer Circuits Thread},
-  year    = {2024}
+  year    = {2024},
+  url     = {https://transformer-circuits.pub/2024/scaling-monosemanticity/}
 }
 
 @inproceedings{gao2025topk,
@@ -441,7 +463,9 @@
   title   = {Sparse Crosscoders for Cross-Layer Features and Model Diffing},
   author  = {Lindsey, Jack and Templeton, Adly and Marcus, Jonathan and Conerly, Thomas and Batson, Joshua and Olah, Christopher},
   journal = {Transformer Circuits Thread},
-  year    = {2024}
+  year    = {2024},
+  month   = oct,
+  url     = {https://transformer-circuits.pub/2024/crosscoders/index.html}
 }
 
 @article{paulo2025seeds,
@@ -468,7 +492,7 @@
 
 @inproceedings{fiottokaufman2025nnsight,
   title     = {{NNsight} and {NDIF}: Democratizing Access to Open-Weight Foundation Model Internals},
-  author    = {Fiotto-Kaufman, Jaden and Loftus, Alexander R. and Todd, Eric and Brinkmann, Jannik and Pal, Koyena and Troitskii, Dmitrii and Ripa, Michael and Belfki, Adam and Rager, Can and Juang, Caden and others},
+  author    = {Fiotto-Kaufman, Jaden and Loftus, Alexander R. and Todd, Eric and Brinkmann, Jannik and Pal, Koyena and Troitskii, Dmitrii and Ripa, Michael and Belfki, Adam and Rager, Can and Juang, Caden and Mueller, Aaron and Marks, Samuel and Sharma, Arnab Sen and Lucchetti, Francesca and Prakash, Nikhil and Brodley, Carla and Guha, Arjun and Bell, Jonathan and Wallace, Byron C. and Bau, David},
   booktitle = {International Conference on Learning Representations},
   year      = {2025}
 }
@@ -476,8 +500,10 @@
 @inproceedings{wu2024pyvene,
   title     = {{pyvene}: A Library for Understanding and Improving {PyTorch} Models via Interventions},
   author    = {Wu, Zhengxuan and Geiger, Atticus and Arora, Aryaman and Huang, Jing and Wang, Zheng and Goodman, Noah D. and Manning, Christopher D. and Potts, Christopher},
-  booktitle = {Proceedings of NAACL-HLT (System Demonstrations)},
-  year      = {2024}
+  booktitle = {Proceedings of the 2024 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies (Volume 3: System Demonstrations)},
+  pages     = {158--165},
+  year      = {2024},
+  address   = {Mexico City, Mexico}
 }
 
 @misc{bloom2024saelens,
@@ -495,7 +521,7 @@
 }
 
 @article{lubba2019catch22,
-  title   = {{catch22}: {CAnonical} Time-series CHaracteristics},
+  title   = {{catch22}: {CAnonical} Time-series {CHaracteristics}: Selected through highly comparative time-series analysis},
   author  = {Lubba, Carl H. and Sethi, Sarab S. and Knaute, Philip and Schultz, Simon R. and Fulcher, Ben D. and Jones, Nick S.},
   journal = {Data Mining and Knowledge Discovery},
   volume  = {33},
