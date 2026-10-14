@@ -92,9 +92,7 @@ layer.
 token's span is measured by injecting an impulse at every time step and recording which token responds most, gated on
 peak-to-pedestal contrast ($\ge4$) and contiguity ($\ge0.95$); measured spans equal the hand-written adapters' on six
 checkpoints (IoU 1.0) and recover Timer's 96-step tokens (\fid{MP-01}). (2) Tokens are overlap-pooled onto common 32-step
-windows (Equation~\ref{eq:pooling}): Chronos-T5's one-step tokens are averaged 32 to a window, TimesFM's 32-step tokens
-map one to one, and each Timer token covers three windows, which then share one value (the alignment gate's ceiling
-for Timer is therefore one third). The context of 480 steps is a multiple of 96 so that Timer's tokens tile it exactly
+windows as described in Section~\ref{sec:alignment}. The context of 480 steps is a multiple of 96 so that Timer's tokens tile it exactly
 (at 512 its span discovery refuses). (3) An alignment gate injects an impulse into each window and checks per layer that
 the matching window moves most; all models pass at their shallowest layer, and the gate's per-layer record shows that
 deep layers of Sundial, Time-MoE and Timer lose time localization (diagonal hit 0.07--0.27 against chance 0.067), which

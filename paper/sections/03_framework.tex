@@ -74,17 +74,59 @@ recovers Timer's 96-step tokens from measurement alone (\fid{MP-01}). Two of the
 \subsection{Time alignment across architectures}
 \label{sec:alignment}
 
-Each token's time span is measured from its impulse response, gated on peak-to-pedestal contrast and contiguity. Given
-spans $I_j$ and windows $W_w=[wL,(w+1)L)$, with $L=32$ by default, tokens are overlap-pooled:
+A token index means a different stretch of time in each model. A 480-step context is 480 tokens in Chronos-T5 and Time-MoE, 30 in
+Chronos-2, Sundial and Chronos-Bolt, 15 in TimesFM and 5 in Timer, so ``token 7'' of two models covers different
+inputs. Raw token positions therefore cannot be compared across models. We first measure each token's time span
+$I_j$: an impulse is injected at every time step, and a token's span is the contiguous set of steps it responds to most,
+accepted only if it passes a peak-to-pedestal contrast gate and a contiguity gate (Appendix~\ref{app:faq}). We then
+place every model's tokens on one shared grid of windows $W_w=[wL,(w+1)L)$, with $L=32$ steps by default, by
+overlap-weighted averaging:
 \begin{equation}
   P_{wj} = \frac{|I_j \cap W_w|}{\sum_{j'} |I_{j'} \cap W_w|}, \qquad \tilde h_w = \sum_j P_{wj}\, h_j .
   \label{eq:pooling}
 \end{equation}
-Every cross-model analysis runs on the resulting $[\text{series},\text{window},\text{dim}]$ tensors
-(Figure~\ref{fig:alignment}), and an empty window raises an error rather than yielding a zero row. During extraction an
-\emph{alignment gate} injects an impulse into each window and checks, layer by layer, that the matching pooled window
-responds most. Hits are normalized by their attainable ceiling, because a 96-step token pooled onto 32-step windows can
-reach at most one third (\fid{MP-02}), and the impulse amplitude is calibrated per checkpoint and context length.
+Here $h_j$ is the activation vector of token $j$ in one layer, and $P_{wj}$ is the share of window $w$ that token $j$
+covers. Each window's vector is a weighted average of the tokens that overlap it, in the model's own activation space.
+Three cases cover all seven models (Figure~\ref{fig:alignment}):
+\begin{itemize}[itemsep=1pt]
+  \item \textbf{Tokens shorter than a window are averaged.} The 32 one-step tokens of Chronos-T5 inside a window receive
+    weight $1/32$ each, and the two 16-step tokens of Chronos-2, Sundial and Chronos-Bolt receive $1/2$ each.
+  \item \textbf{Tokens as long as a window map one to one.} Each 32-step TimesFM token becomes one window unchanged.
+  \item \textbf{Tokens longer than a window are copied, not split.} A 96-step Timer token is the only token overlapping
+    each of the three windows it spans, so all three windows receive the token's full vector with weight 1.
+\end{itemize}
+A token that straddles a window boundary contributes to both windows in proportion to its overlap with each. No token
+is ever cut into parts, because an activation vector has no internal time axis to cut along. A window that no token
+covers raises an error rather than becoming a zero row. A series-level vector is the mean of its window vectors.
+
+\paragraph{What is compared across models.} Pooling aligns the \emph{rows} of two models' activations, not their
+\emph{coordinates}. After pooling, row $(s,w)$ of every model describes the same series $s$ over the same time steps $W_w$,
+but the vectors still live in each model's own space: widths differ, from 384 in Time-MoE to 1{,}280 in TimesFM, and
+no axis of one model corresponds to an axis of another. No analysis therefore compares a vector of one model with a
+vector of another directly. Every cross-model measure compares something defined on the shared rows:
+\begin{itemize}[itemsep=1pt]
+  \item \textbf{Geometry} (CKA and RSA) compares how the rows relate to \emph{one another} within each model. Two models
+    score high when the series and windows that look similar to one model also look similar to the other.
+  \item \textbf{Stitching} fits a linear map from one model's rows to the other's on training series and scores it on
+    held-out series. It reports only the gain over a map from simple input features.
+  \item \textbf{Concept transfer} compares which \emph{series} a feature fires on, a set of series identities that means
+    the same thing in every model.
+  \item \textbf{Causal effects} are measured on the forecast, which is in the time domain for every model. Interventions
+    act on each model's own tokens, and patching never moves activations between models.
+\end{itemize}
+
+Pooling has two costs. First, the common grid is no finer than the coarsest token. Within a 96-step span Timer has one
+vector, so the three windows it covers are identical, and an alignment check can attribute an impulse to the right
+window at most one time in three; we therefore normalize alignment hits by this attainable ceiling (\fid{MP-02}).
+Analyses of lag structure use each model's matched resolution instead of the shared grid. Second, $L=32$ is a
+convention. Re-pooling the stored windows to 64 and 96 steps leaves concept transfer and the size of geometric
+similarity almost unchanged, but moves the location of the peak layer pair for 12 of 21 model pairs (\fid{SH-23}), so we
+report peak locations as window-dependent.
+
+During extraction an \emph{alignment gate} checks the pooling empirically. It injects an impulse into each window and
+checks, layer by layer, that the matching pooled window responds most, with the impulse amplitude calibrated per
+checkpoint and context length. Hits are compared with the attainable ceiling above. Deep layers of some models lose
+time localization, which the report shows and which qualifies window-level claims about those layers.
 
 \begin{figure}[tb]
 \centering
@@ -105,7 +147,8 @@ reach at most one third (\fid{MP-02}), and the impulse amplitude is calibrated p
   \draw[decorate,decoration={brace,amplitude=3pt,mirror}] (0,-1.15) -- (288,-1.15) node[midway,below=3pt] {time (first 288 context steps)};
 \end{tikzpicture}
 \caption{Time alignment. Tokens cover measured spans of different widths (Chronos-T5's one-step tokens are drawn
-in groups of four); Equation~\eqref{eq:pooling} pools them onto common windows.}
+in groups of four). Equation~\eqref{eq:pooling} pools them onto common 32-step windows: shorter tokens are averaged
+within a window, TimesFM's tokens map one to one, and each Timer token is copied to the three windows it spans.}
 \label{fig:alignment}
 \end{figure}
 
