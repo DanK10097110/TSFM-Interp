@@ -205,6 +205,11 @@ class RepBank:
         return unpack_triu(np.load(self.d / f"L{li:02d}_concat_gram.npy"), self.n, self.device)
 
 
+def series_perm_rows(perm: np.ndarray, n_windows: int) -> np.ndarray:
+    """Row order after permuting series: each series' windows stay together, in order."""
+    return (np.asarray(perm)[:, None] * n_windows + np.arange(n_windows)[None]).reshape(-1)
+
+
 def cka_with_null(grams_a: list, grams_b: list, n_series: int, n_windows: int, device, seed: int = 0) -> dict:
     """Peak CKA over all layer pairs and the shuffled-series null (windows of a series move together) there."""
     mat = np.zeros((len(grams_a), len(grams_b)))
@@ -216,7 +221,7 @@ def cka_with_null(grams_a: list, grams_b: list, n_series: int, n_windows: int, d
     nulls = []
     for _ in range(N_PERM):
         perm = rng.permutation(n_series)
-        rows = torch.from_numpy((perm[:, None] * n_windows + np.arange(n_windows)[None]).reshape(-1)).to(device)
+        rows = torch.from_numpy(series_perm_rows(perm, n_windows)).to(device)
         nulls.append(cka_from_grams(grams_a[i], grams_b[j][rows][:, rows]))
     return {"peak": float(mat.max()), "peak_layer_pair": [int(i), int(j)], "matrix": mat.tolist(),
             "null_mean": float(np.mean(nulls)), "null_p95": float(np.percentile(nulls, 95)),
