@@ -39616,3 +39616,45 @@ to V3's registered rules.
 - **After.** `panel7_v3_dev`, `panel7_v3_sec42` and `panel7_v3_control_twin` pruned (`run.py --prune --yes`) at the
   user's request; every JSON artifact and report is kept.
 
+## 44. Does window pooling flatten fine-token models? (added 2026-10-14, user-directed after the paper's §3.4 rewrite — DESIGN AND CRITERIA FIXED BEFORE ANY DATA)
+
+**Question (user).** Pooling averages 32 one-step Chronos-T5 (and Time-MoE) tokens, or two 16-step Chronos-2 /
+Sundial / Chronos-Bolt tokens, into one 32-step window, while TimesFM's 32-step token maps one to one. Does that
+averaging discard information the fine-token model has, so that cross-model comparisons at L=32 are unfair to it?
+SH-23 only re-pooled to COARSER windows (64, 96) and cannot answer this; the 2026-08 note that pooling "folds in
+information loss" was never measured.
+
+**Data.** `benchmark_v3/public_dev` only (never private), 512 series drawn with `utils.sample_rows(strata=families)`,
+seed 0, context 480, the v3 adapters and settings from `configs/panel7_v3.yaml`. Activations are re-captured at token
+level (the v3 stores are pruned) at three depths per model: the first, middle and last captured layer. Nothing is
+written into an existing run.
+
+**A. Within-window share of token variance (descriptive).** For each model with tokens shorter than 32 steps and each
+of the three layers: share = sum over tokens of ||h_t - mean of its window||^2 / sum over tokens of ||h_t - grand
+mean||^2. This is the fraction of token-level variation that pooling averages away. TimesFM is 0 by construction;
+Timer's cost is resolution (copies), reported separately.
+
+**B. Decodability retained by pooling (criterion fixed now).** Window-level targets from the context the model reads
+(per-series z-scored): window mean, OLS slope, std, lag-1 autocorrelation, max |deviation from window mean|; and
+FINE targets, the four 8-step sub-window means minus the window mean. Ridge (alpha by inner CV), 5-fold series-split
+CV, R^2 on held-out series. Representations per window: (i) POOLED, the L=32 vector of Eq. (1); (ii) FINE, the
+concatenation of the model's finer pooled vectors inside the window (four 8-step vectors for 1-step-token models, the
+two 16-step tokens for 16-step-token models); (iii) for TimesFM and Timer the pooled vector is the finest available.
+Reference: ridge on the raw 32 input values. **Pass:** for every model with tokens shorter than 32 steps, at every
+tested layer, mean R^2 over the five summary targets from POOLED >= 0.9 x from FINE. The fine targets are reported
+whatever they show (they measure exactly the sub-window structure averaging can remove); a loss there is a stated
+limitation, not a failure of the criterion. Also reported: POOLED summary-target R^2 of each model next to TimesFM's,
+so the paper can say whether pooled fine-token models look impoverished relative to a model that is not pooled.
+
+**C. Does the grid change cross-model similarity? (criterion fixed now).** Pairs that can also be compared on a finer
+common grid: Chronos-T5-Base vs Time-MoE at L=1 and L=8 (both 1-step tokens); every pair among Chronos-T5-Base,
+Time-MoE, Chronos-2, Sundial, Chronos-Bolt at L=16. Linear CKA over (series, window) rows for all 3x3 layer pairs at
+the finer grid and at L=32. **Pass:** for every such pair, |peak CKA(fine grid) - peak CKA(L=32)| < 0.05 and Spearman
+rho of the 9 layer-pair CKAs between grids >= 0.9. Also reported, descriptive: each fine-token model's self-ceiling,
+CKA between its own L=32 pooled vectors and its own FINE concatenation, next to its peak CKA with TimesFM at L=32, to
+show whether pooling or the models limit cross-model similarity.
+
+**Outcome handling.** Pass or fail, the numbers go into FINDINGS (new entry) and the paper's §3.4. A failure of B or C
+means the paper must state which comparisons the pooling makes unfair, and window-level claims involving those models
+are qualified.
+
