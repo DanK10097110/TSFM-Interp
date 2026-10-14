@@ -719,7 +719,7 @@ def feature_response_fingerprints(cfg, adapter, layer: str, sae, data, device,
 # ---------------------------------------------------------------------------
 
 def _feature_ablated_replacement(clean_tokens: torch.Tensor, sae, device,
-                                 f_idx) -> torch.Tensor:
+                                 f_idx, fill=None) -> torch.Tensor:
     """Token-level SAE reconstruction with one atom, or a SET of atoms
     (ROADMAP.md sec 37.8 P5b), zeroed together.
 
@@ -735,12 +735,26 @@ def _feature_ablated_replacement(clean_tokens: torch.Tensor, sae, device,
     way for a bare int) or an iterable of ints (an atlas concept part's full
     membership, sec 37.8 P5b item 3), converted to a sorted list so fancy
     indexing zeros every member at once.
+
+    `fill` (default `None` = zero ablation, byte-identical to before) is the
+    value each ablated atom is set to instead: a scalar for an int `f_idx`, or
+    a mapping/array indexable by feature id for a set. `fill = mu_f` is MEAN
+    ablation, the corpus mean of the atom's token-level activation, which keeps
+    the intervention nearer the activation manifold than an exact zero. It
+    removes `(z_f(t) - mu_f) w_f` from token `t`, which is NEGATIVE (a
+    addition of `mu_f w_f`) on tokens where the atom is silent.
     """
     b, t, d = clean_tokens.shape
     features = sae.encode(clean_tokens.reshape(-1, d).to(device))
     if not isinstance(f_idx, (int, np.integer)):
         f_idx = sorted(int(i) for i in f_idx)
-    features[:, f_idx] = 0.0
+    if fill is None:
+        features[:, f_idx] = 0.0
+    elif isinstance(f_idx, list):
+        features[:, f_idx] = torch.as_tensor(
+            [float(fill[i]) for i in f_idx], dtype=features.dtype, device=features.device)
+    else:
+        features[:, f_idx] = float(fill)
     recon = sae.decode(features)
     return recon.reshape(b, t, d).cpu()
 
@@ -750,7 +764,7 @@ ABLATION_NULL_MODES = ("mean_magnitude", "profile_matched", "profile_matched_cov
 
 def _profile_matched_null_replacement(clean_tokens: torch.Tensor, sae, device, f_idx,
                                       code: torch.Tensor,
-                                      direction: str = "decoder") -> torch.Tensor:
+                                      direction: str = "decoder", fill=None) -> torch.Tensor:
     """Token-level reconstruction with a RANDOM direction removed, sized to one
     atom's own per-token removal profile.
 
@@ -780,6 +794,12 @@ def _profile_matched_null_replacement(clean_tokens: torch.Tensor, sae, device, f
     `f_idx` may also be a SET of atoms (the shared-input agreement step ablates
     an atlas part): the removal at token `t` then has the norm of the set's own
     removal, `|| sum_{f in set} z_f(t) w_f ||`.
+
+    `fill` (default `None`, byte-identical) is the value the atom's own ablation
+    sets it to (`_feature_ablated_replacement`). The null is matched to the
+    removal that ablation actually makes, `(z_f(t) - fill_f) w_f`, so under mean
+    ablation the profile is `|z_f(t) - mu_f| ||w_f||` (non-zero on silent tokens),
+    not the zero-ablation profile.
     """
     b, t, d = clean_tokens.shape
     flat = clean_tokens.reshape(-1, d).to(device)
@@ -794,11 +814,19 @@ def _profile_matched_null_replacement(clean_tokens: torch.Tensor, sae, device, f
     else:
         raise ValueError(f"unknown null direction {direction!r}")
     u = u / u.norm().clamp_min(1e-12)
-    if isinstance(f_idx, (int, np.integer)):
-        magnitude = features[:, f_idx].abs() * W_dec[f_idx].norm()
+    if fill is None:
+        if isinstance(f_idx, (int, np.integer)):
+            magnitude = features[:, f_idx].abs() * W_dec[f_idx].norm()
+        else:
+            idx = sorted(int(i) for i in f_idx)
+            magnitude = (features[:, idx] @ W_dec[idx]).norm(dim=1)
+    elif isinstance(f_idx, (int, np.integer)):
+        magnitude = (features[:, f_idx] - float(fill)).abs() * W_dec[f_idx].norm()
     else:
         idx = sorted(int(i) for i in f_idx)
-        magnitude = (features[:, idx] @ W_dec[idx]).norm(dim=1)
+        mu = torch.as_tensor([float(fill[i]) for i in idx], dtype=features.dtype,
+                             device=features.device)
+        magnitude = ((features[:, idx] - mu) @ W_dec[idx]).norm(dim=1)
     removal = magnitude[:, None] * u[None, :]
     return (recon - removal).reshape(b, t, d).cpu()
 
@@ -900,6 +928,37 @@ def _chance_blocks(views: list) -> dict:
             "expected_independent": float(sum(x["p_independent"] for x in recs)),
             "expected_draw_level": float(sum(drawn)),
             "n_features_draw_level": len(drawn)}}
+
+
+def token_feature_means(adapter, saes: dict, contexts: np.ndarray, device,
+                        batch_size: int | None = None) -> dict:
+    """Corpus mean of every SAE feature over every TOKEN, per layer: the `mu_f`
+    of mean ablation (`feature_ablation_fingerprints(intervention="mean")`).
+
+    `saes` is `{layer: sae}`. Tokens are captured exactly as the ablation
+    captures them (`capture_raw_tokens`, autocast off, postprocessed) and
+    encoded token by token, so `mu_f` is the same quantity the ablation
+    subtracts from. It is NOT the mean of the persisted series-level features:
+    those are `sae.encode` of the window-pooled activation (a nonlinear TopK
+    of an average), which has neither the scale nor the sparsity of the
+    token-level code. Returns `{layer: {"means": [dict_size], "n_tokens": int,
+    "tokens_per_series": sorted list of distinct per-series token counts}}`.
+    """
+    layers = list(saes)
+    bs = int(batch_size or adapter.cfg.batch_size)
+    sums = {l: None for l in layers}
+    n_tok, per_series = {l: 0 for l in layers}, set()
+    for lo in range(0, len(contexts), bs):
+        clean = capture_raw_tokens(adapter, contexts[lo:lo + bs], layers)
+        for l in layers:
+            b, t, d = clean[l].shape
+            per_series.add(int(t))
+            n_tok[l] += b * t
+            with torch.no_grad():
+                z = saes[l].encode(clean[l].reshape(-1, d).to(device)).double().sum(dim=0).cpu().numpy()
+            sums[l] = z if sums[l] is None else sums[l] + z
+    return {l: {"means": sums[l] / n_tok[l], "n_tokens": int(n_tok[l]),
+                "tokens_per_series": sorted(per_series)} for l in layers}
 
 
 def top_firing_rows(activations: np.ndarray, f_idx: int, k: int) -> np.ndarray:
@@ -1017,7 +1076,10 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
                                   extra_null_modes: tuple = (),
                                   powered_test: bool = False,
                                   powered_n_boot: int = DEFAULT_N_BOOT,
-                                  powered_q: float = DEFAULT_Q) -> dict:
+                                  powered_q: float = DEFAULT_Q,
+                                  intervention: str = "zero",
+                                  feature_means=None,
+                                  score_features=None) -> dict:
     """Ablate each candidate on its OWN top-firing series; score the same
     9-channel battery against a ROW-MATCHED random-direction null.
 
@@ -1058,6 +1120,21 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
     rows -- a window-level matrix has more rows than there are series and
     would index `data` as a different population, so the shape is checked
     rather than assumed.
+
+    `intervention` (opt-in; default `"zero"`, every artifact byte-identical):
+    `"mean"` sets each ablated atom to `feature_means[f]` (its corpus mean of
+    the TOKEN-level activation, `token_feature_means`) instead of 0, and every
+    profile-matched null is sized to that removal, `|z_f(t) - mu_f| ||w_f||`
+    (`_profile_matched_null_replacement`); the legacy `mean_magnitude` null's
+    size is the chunk mean of the same `|z - mu|`. The artifact then also
+    records `ablation_intervention` and `ablation_fill_means` (absent = zero).
+
+    `score_features` (default `None` = score every candidate): restrict the work
+    to these feature ids while keeping the chunk packing and every null
+    generator's stream exactly as for the full candidate list, so a restricted
+    zero-ablation rerun reproduces the full run's numbers for those features
+    (`run_ablation_mode_check.py`). Unlisted candidates are not scored and are
+    returned as `scorable: False` with a stated reason.
 
     `keep_forecasts` per-series with/without pairs are returned per candidate
     for the report's exemplar overlays. The "with" arm is the FULL
@@ -1164,6 +1241,16 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
             raise ValueError(f"unknown ablation null mode {m!r}: expected "
                              f"one of {ABLATION_NULL_MODES}")
     profile_rngs = {m: np.random.default_rng(seed + 2) for m in modes if m != "mean_magnitude"}
+    if intervention not in ("zero", "mean"):
+        raise ValueError(f"unknown ablation intervention {intervention!r}: expected 'zero' or 'mean'")
+    fill = None
+    if intervention == "mean":
+        if feature_means is None:
+            raise ValueError("intervention='mean' needs `feature_means` (token_feature_means)")
+        fill = np.asarray(feature_means, dtype=np.float64)
+        if fill.shape != (dict_size,):
+            raise ValueError(f"`feature_means` must be [dict_size={dict_size}], got {fill.shape}")
+    score_set = None if score_features is None else {int(f) for f in score_features}
 
     results, n_series_used = [], set()
     powered_blocks = {m: [] for m in modes}
@@ -1200,7 +1287,8 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
         # much of something arbitrary does".
         with torch.no_grad():
             enc_all = sae.encode(clean_tokens.reshape(-1, d_in).to(device))
-            removed = [float(enc_all[:, f].abs().mean().cpu()) for f in chunk_feats]
+            removed = [float((enc_all[:, f] - (0.0 if fill is None else float(fill[f]))).abs()
+                             .mean().cpu()) for f in chunk_feats]
         nonzero = [m for m in removed if m > 0]
         null_magnitude = -float(np.mean(nonzero) if nonzero else 1.0)
 
@@ -1233,6 +1321,15 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
 
         chunk_null = (null_rows, null_signed, null_rows_shape)
         for f_idx in chunk_feats:
+            if score_set is not None and int(f_idx) not in score_set:
+                for mode in modes:
+                    if mode == "mean_magnitude":
+                        continue
+                    for _ in range(n_null_directions):
+                        profile_rngs[mode].normal(
+                            size=(clean_tokens.shape[0] * clean_tokens.shape[1])
+                            if mode == "profile_matched_cov" else dict_size)
+                continue
             rows_f = [int(r) for r in per_candidate_rows[f_idx] if int(r) in row_pos]
             idx = np.array([row_pos[r] for r in rows_f], dtype=int)
             bad_forecast = np.zeros(idx.size, dtype=bool)
@@ -1252,7 +1349,8 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
                     rec_null = _forward(_profile_matched_null_replacement(
                         clean_tokens, sae, device, int(f_idx),
                         torch.as_tensor(code, dtype=torch.float32),
-                        direction="covariance" if cov else "decoder"))
+                        direction="covariance" if cov else "decoder",
+                        **({} if fill is None else {"fill": float(fill[int(f_idx)])})))
                     stats = _stats(rec_null)
                     stats_shape = _stats(rec_null, remove_level=True)
                     for ch in CHANNELS:
@@ -1264,7 +1362,9 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
                         if rs["available"] and rs["delta"] is not None:
                             pm_rows_shape[ch].append(np.abs(np.asarray(rs["delta"], dtype=np.float64)))
                 nulls[mode] = (pm_rows, pm_signed, pm_rows_shape)
-            rec = _forward(_feature_ablated_replacement(clean_tokens, sae, device, f_idx))
+            rec = _forward(_feature_ablated_replacement(
+                clean_tokens, sae, device, f_idx,
+                **({} if fill is None else {"fill": float(fill[int(f_idx)])})))
             stats = _stats(rec)
             stats_shape = _stats(rec, remove_level=True)
             bad_forecast = ~(np.isfinite(np.asarray(rec["point"], dtype=np.float64)[idx]).all(axis=-1)
@@ -1445,14 +1545,14 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
 
     for f_idx in order:
         if not any(r["feature"] == f_idx for r in results):
+            why = ("this atom fires on no series, so there is no regime to ablate it in"
+                   if score_set is None or int(f_idx) in score_set else
+                   "not in `score_features`: skipped by request")
             results.append({"feature": f_idx, "rules": rules[f_idx], "n_top_series": 0,
                             "n_rows_scored": 0, "scorable": False,
-                            "reason": "this atom fires on no series, so there is "
-                                      "no regime to ablate it in",
+                            "reason": why,
                             **({"by_null": {mode: {
-                                "scorable": False,
-                                "reason": "this atom fires on no series, so there is "
-                                          "no regime to ablate it in"}
+                                "scorable": False, "reason": why}
                                 for mode in modes if mode != null_mode}}
                                if len(modes) > 1 else {})})
     results.sort(key=lambda r: order.index(r["feature"]))
@@ -1489,6 +1589,9 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
                         "primary_null": null_mode, "by_null": powered_summary}}
            if powered_test else {}),
         **({"ablation_null": null_mode} if null_mode != "mean_magnitude" else {}),
+        **({"ablation_intervention": "mean",
+            "ablation_fill_means": {str(f): float(fill[f]) for f in order}}
+           if fill is not None else {}),
         **chance_block,
         **({"ablation_nulls": modes, "by_null_summary": by_null_summary}
            if len(modes) > 1 else {}),

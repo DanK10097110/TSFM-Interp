@@ -27,19 +27,20 @@ confirmation) · [Colab quickstart](https://colab.research.google.com/github/Dan
 claim below was registered on a development corpus and tested once on a fresh sealed private corpus (971 series; then
 again on a second, three times larger corpus with 1,024 private series):
 - **Shared inputs.** Different architectures select the same series for a concept: 20/20 concept-transfer claims
-  confirm, on four independent private draws, reaching all seven models; 20/20 again on the second corpus and on 800 raw
-  real GIFT-Eval windows.
+  confirm on the private corpus, reaching all seven models (earlier one-shot looks with their own claim sets gave 19/20,
+  20/20 and 20/20); 20/20 again on the second corpus and on 800 raw real GIFT-Eval windows.
 - **Model-specific machinery.** No causal concept spans more than three of the seven models, and the concept atlas is
   organized by model.
-- **A compact causal vocabulary.** Causal features act mainly on forecast level and seasonality; 10 single-feature
-  causal claims confirm at the attainable significance floor (11 of 24 on the second corpus).
+- **Causal features, modestly specific.** Causal features act mainly on forecast level and seasonality and survive mean
+  ablation (69 of 91). Against random directions drawn from the activation distribution they exceed chance only
+  1.29-fold, and 11 of 24 single-feature causal claims confirm on the second corpus.
 - **What limits it.** More data, a more powerful per-feature test and gradient-selected candidates do not make single
   features more specifically causal than on-manifold random directions.
-- **Prominence is not importance.** 83.5% of the most prominent SAE features have no causal effect on the forecast.
+- **Prominence is not importance.** 83.5% of the most prominent SAE features have no held-out causal effect on the forecast.
 
 ![The nine causal-effect families across seven TSFMs](docs/img/concept_families.png)
 
-See [`FINDINGS.md`](FINDINGS.md) (SH-18, SH-16, CA-11, CA-12, MN-14, MN-37) for exact numbers, including the claims that did not
+See [`FINDINGS.md`](FINDINGS.md) (SH-18, SH-16, CA-11, CA-12, MP-07, MP-10, MN-14, MN-37) for exact numbers, including the claims that did not
 confirm.
 
 ## What it answers
