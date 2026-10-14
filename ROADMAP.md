@@ -39682,3 +39682,66 @@ with seed 0: a PILOT set of 128 series and a MAIN set of 512 different series.
 5. **If the frozen rule also fails on MAIN**, report it. Do not repair on MAIN. The paper then states the limitation,
    with the measured loss.
 
+### 44.2 Findings — pilot, repair, main run (2026-10-14, commit 4a616eb, `tsfm_lens/runs/pooling_check/`)
+
+- **What ran.** `run_pooling_check.py`: PILOT 128 series, MAIN 512 different series (asserted disjoint), 7 models x
+  3 layers, token widths measured (IoU 1.0 for all): TimesFM 32, Chronos-2 / Sundial / Chronos-Bolt 16, Timer 96,
+  Time-MoE and Chronos-T5-Base 1. Controls pass: a linear function of the raw window gives R^2 1.0 on the linear
+  targets, Gaussian gives about 0, CKA of self and of a rotation is 1.0, double capture is bit-identical for all 7 models.
+  Runtime: pilot 182 s (mean) + 572 s (all rules), MAIN 1204 s.
+- **A (MAIN), within-window share of token variance.** Chronos-2 0.457/0.3851/0.2477, Sundial 0.4203/0.3369/0.1948,
+  Chronos-Bolt 0.4147/0.3635/0.3337, Time-MoE 0.7132/0.5594/0.1428, Chronos-T5-Base 0.7008/0.7628/0.7601 (first, middle,
+  last layer). Pooling averages away a large share of token variation, most of all in Chronos-T5-Base at every depth.
+- **B fails for mean pooling (MAIN 5/15 tests fail, PILOT 7/15).** Lowest pooled/fine ratios: Time-MoE layer 0 0.721,
+  Chronos-T5-Base block 0 0.777, Sundial layer 0 0.879, Time-MoE 6 0.895 and 11 0.879. The loss is within-window ORDER:
+  pooled keeps level, std, lag-1 and max|dev| (Chronos-2 block 0: 1.00/0.92/0.91/0.77 vs fine 1.00/0.96/0.92/0.76) but
+  loses slope (0.74 vs 1.00) and sub-window shape (0.70-0.75 vs 1.00); Time-MoE layer 0 slope 0.10 vs 0.99, Chronos-T5
+  block 0 slope 0.13 vs 0.96. TimesFM, whose token is not pooled, keeps sub-window shape (0.87-0.97).
+- **Repair on PILOT.** Candidates (B failures / C failures of 15 / 12): mean 7/6, last 8/10, mean_last 2/6, mean_std 3/7,
+  mean_trend 0/8, pca_fine 2/11. Frozen before MAIN: `mean_trend` (mean plus the per-dimension least-squares trend
+  across the window, times the window width).
+- **MAIN, frozen rule.** B PASSES 15/15 (ratios 0.995-1.006). C still fails, 8/12 (mean 6/12).
+- **C failures (mean, MAIN).** Chronos-2 vs Time-MoE at L=16 -0.0879, Sundial vs Time-MoE -0.0799; rho < 0.9 for
+  Chronos-2/Sundial (0.85), Chronos-Bolt/Chronos-T5 (0.85) and Time-MoE/Chronos-T5 (0.717 at L=8, 0.583 at L=1), whose
+  peaks move only 0.2126 -> 0.2281 / 0.2375.
+- **Self-ceiling vs TimesFM (MAIN, mean).** Chronos-2 0.9505 vs 0.3780 with TimesFM, Sundial 0.9859 vs 0.5014,
+  Chronos-Bolt 0.895 vs 0.3258, Time-MoE 0.999 vs 0.3883, Chronos-T5-Base 0.95 vs 0.1801.
+- **A warning sign, from the TimesFM column under mean_trend.** Peak CKA with TimesFM rises to 0.7033 (Chronos-2, from
+  0.3780), 0.6886 (Sundial, from 0.5014), 0.7040 (Chronos-Bolt, from 0.3258) and 0.3522 (Chronos-T5, from 0.1801),
+  all at the first layers.
+- **Orchestrator reading — two problems before any conclusion.**
+  1. **The C criterion confounds two things.** It compares CKA computed on DIFFERENT row sets (L=1, 8 or 16 rows vs
+     L=32 rows). A finer grid adds token-to-token variation as new rows, so CKA can change even when pooling loses
+     nothing. C cannot isolate pooling loss. Its pre-registered failure is reported, with this caveat.
+  2. **The mean_trend CKA level depends on an arbitrary weight.** Its trend block is scaled x32, and TimesFM's trend
+     block is identically zero. Linear CKA is not invariant to the relative scale of concatenated blocks, so the
+     0.70 values cannot be read as a measured similarity until scale robustness is shown.
+  The B result itself stands. Mean pooling discards within-window order in fine-token models that TimesFM's
+  unpooled token keeps. Window-level geometric comparisons between TimesFM (or Timer) and fine-token models may
+  therefore be biased downward. §44.3 measures that bias directly.
+
+### 44.3 Follow-up design — isolate the pooling loss on fixed rows (2026-10-14, fixed before the CONFIRM data)
+
+**Data.** CONFIRM, a third set of 512 dev series disjoint from PILOT and MAIN (family-stratified, seed 0). PILOT and
+MAIN may be used to develop the code. CONFIRM is run once.
+
+- **D1 (fixed rows).** For all 21 model pairs and all 3x3 layer pairs, linear CKA on the SAME L=32 rows. Each model is
+  represented either by MEAN (Eq. 1) or by FINE, the concatenation of its finest valid sub-window vectors (four 8-step
+  means for 1-step models, two 16-step tokens for 16-step models; TimesFM and Timer FINE = MEAN). Delta = peak(FINE) -
+  peak(MEAN). Mean pooling is **fair for a pair** if |Delta| < 0.05 and the Spearman rho of the 9 layer-pair CKAs
+  (FINE vs MEAN) is >= 0.9. Report every pair. Pairs where it is not fair are stated in the paper, and their
+  window-level CKA is reported as a lower bound with the FINE value.
+- **D2 (scale robustness of the repair).** mean_trend with the two blocks first scaled to equal total variance on
+  training series, then the trend block weighted by w in {0.5, 1, 2}; also the unbalanced x32 version. **Pass:** for
+  every pair, the spread of peak CKA across w is < 0.05, AND |peak(balanced w=1) - peak(FINE)| < 0.05. If D2 fails,
+  mean_trend is not reported as a similarity-measuring representation. Its B result is still reported.
+- **D3 (positive control from the input).** The z-scored input treated as a model with 1-step, 1-dimensional tokens.
+  CKA of each TimesFM layer with the input's MEAN (the window mean), FINE (4 sub-window means) and RAW (32 values).
+  If TimesFM's CKA with the input rises from MEAN to FINE, pooling demonstrably hides within-window shape that
+  TimesFM's token encodes.
+- **D4.** Re-run §44 A, B and C on CONFIRM for mean and mean_trend (a third replication of the pre-registered tests).
+- **Decision rule for the paper.** §3.4 reports A, B and D1, plus D2/D3. Every window-level cross-model CKA in the
+  paper involving a pair that D1 calls unfair is qualified. Series-level, transfer and causal comparisons are not
+  window-pooled in time order (transfer uses top-k series identities; causal effects are forecast-domain), and the
+  paper says so explicitly.
+
