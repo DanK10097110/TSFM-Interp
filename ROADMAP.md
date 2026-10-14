@@ -39658,3 +39658,27 @@ show whether pooling or the models limit cross-model similarity.
 means the paper must state which comparisons the pooling makes unfair, and window-level claims involving those models
 are qualified.
 
+### 44.1 Protocol addendum — pilot, repair, then main run (2026-10-14, user-directed, before any data)
+
+The user asked for a rigorous, in-depth test in which a failing pooling rule is repaired rather than written off.
+To keep repair honest, the series are split in two disjoint, family-stratified sets drawn from `benchmark_v3/public_dev`
+with seed 0: a PILOT set of 128 series and a MAIN set of 512 different series.
+
+1. **Pilot.** Run A, B and C end to end on PILOT (all seven models, the three layers) with every control. Fix plumbing
+   errors here. Record the pilot numbers in the report as pilot numbers.
+2. **Repair, on PILOT only.** If mean pooling at L=32 fails B or C for any model, diagnose which targets, layers or pairs
+   fail, then develop alternative window summaries on PILOT. Candidates, all window-local and model-agnostic:
+   (a) the last token of the window (natural for causal decoders); (b) mean plus the last token, concatenated;
+   (c) concatenated sub-window means at the model's finest grid (the FINE representation, made fixed-width by projecting
+   with PCA fitted on training series only); (d) mean plus within-window standard deviation per dimension;
+   (e) any other rule the diagnosis motivates. The CKA and decoding comparisons stay unchanged. Each candidate must keep
+   one vector per (series, window) with a dimension that does not depend on the token count, and must be justified by
+   the diagnosis, not chosen from a sweep of results.
+3. **Freeze.** Before touching MAIN, write the chosen rule, or "mean pooling" if nothing failed, plus every candidate
+   tried, into the report.
+4. **Main run.** Run A, B and C on MAIN for mean pooling AND for the frozen rule. Apply the §44 criteria unchanged to
+   both. MAIN numbers are the ones that go into FINDINGS and the paper; pilot numbers and the repair history are
+   reported alongside.
+5. **If the frozen rule also fails on MAIN**, report it. Do not repair on MAIN. The paper then states the limitation,
+   with the measured loss.
+
