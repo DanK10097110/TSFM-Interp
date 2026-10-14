@@ -39795,3 +39795,37 @@ equals CONCAT exactly. Assert this in code.
 the Gram-sum route. It is a field-level config key, so older runs are not marked stale. Tests use a planted known
 answer: a fine-token copy of a coarse-token model has CKA 1 under CONCAT and less than 1 under MEAN, with a decoy.
 
+### 44.5 Findings — CONCAT convergence, all-layer re-measurement, library option (2026-10-14; commits c16ecbc, 2cc4e49, 1245bcc; `tsfm_lens/runs/concat_check/`)
+
+- **E1 (MAIN) fails its criterion, so CONCAT is required for 1-step models.** Peak CKA with TimesFM by sub-window width
+  16/8/4/2/1: Chronos-T5-Base 0.3525 / 0.5321 / 0.5935 / 0.6117 / 0.6216; Time-MoE 0.4039 / 0.4226 / 0.4380 / 0.4446 /
+  0.4497. Worst |FINE(8) - CONCAT| per TimesFM layer: 0.0895 for Chronos-T5-Base, 0.0411 for Time-MoE. The curve is
+  monotone and flattening, still rising 0.6117 -> 0.6216 from width 2 to 1. For the 16-step models FINE equals CONCAT
+  exactly (`torch.equal`; Gram-sum CKA vs feature-Gram 0.99999999999963 / ...925 / ...891).
+- **E2 (VALIDATE, 512 series, run once, all captured layers, 7680 rows).** CONCAT minus MEAN peak window-level CKA:
+  - TimesFM vs Chronos-2 0.4522 -> 0.7348; vs Chronos-Bolt 0.3877 -> 0.6543; vs Chronos-T5-Base 0.3137 -> 0.6428; vs
+    Sundial 0.4967 -> 0.6363; vs Time-MoE 0.4152 -> 0.4799; vs Timer 0.3866 (identical).
+  - Chronos-T5-Base vs Chronos-2 0.5925 -> 0.7950, vs Chronos-Bolt 0.5771 -> 0.7358, vs Sundial 0.5258 -> 0.6928.
+  - Pairs with Timer FALL (Timer vs Chronos-T5-Base 0.2886 -> 0.1851, Chronos-2 vs Timer 0.4102 -> 0.3506). The other
+    side gains within-window order that Timer's copied 96-step token cannot match.
+  - The 16-step trio barely moves (Sundial vs Chronos-Bolt 0.9369 -> 0.9438, the most similar pair under both).
+  - Spearman of the 21 peaks, MEAN vs CONCAT: 0.8025974025974025. TimesFM range: MEAN 0.3137-0.4967, CONCAT
+    0.3866-0.7348.
+  - Rank of TimesFM/Chronos-2 among the 21 pairs: 12th under MEAN, 7th under CONCAT.
+  - CONCAT peaks with TimesFM sit at TimesFM layer index 0-1, vs 2-9 under MEAN: the recovered similarity is mostly
+    early-layer, input-shape encoding (cf. D3).
+  - Shuffled-series null p95 at the peak (40 permutations, window positions kept aligned): mostly < 0.11, but high
+    for TimesFM vs Sundial MEAN (0.4527 against 0.4967), Sundial vs Time-MoE (MEAN 0.3689, CONCAT 0.5209 against 0.7562)
+    and TimesFM vs Time-MoE (0.2931 / 0.1872). This null keeps each window at its position, so it also measures shared
+    positional structure. Those peaks are weakly informative.
+- **E3 library.** Opt-in `alignment.window_rep: mean|concat` (+ `alignment.concat_max_rows`, default 7680), field-level
+  `l1` keys with `omit_at_default`, so default fingerprints are byte-identical. `concat` writes a `fine/` store group
+  and computes window-level CKA by Gram sums (`analysis/window_concat.py`); the best-pair bootstrap CI is not computed
+  in concat mode (recorded). Tests: a fine-token copy of a coarse model gives CKA 1 under concat and < 0.6 under mean;
+  decoy: shuffling token order inside windows changes concat and not mean; 9 planted regressions each caught.
+- **Reading.** Window-mean pooling, the convention behind every window-level CKA in the paper, understates the
+  similarity of TimesFM to 16-step and 1-step encoder models by 0.14-0.33 and reorders pairs (rank rho 0.80 across 21
+  pairs). The shared-geometry conclusion survives and strengthens; the "0.342-0.426" band and pair rankings are
+  properties of the mean statistic. Transfer (series identities) and causal effects (forecast domain) are not affected.
+  Series-level CKA averages every model over the whole context and is symmetric across tokenizations.
+

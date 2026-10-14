@@ -155,12 +155,15 @@ organized by model, and agreement of causal effects on the same series is detect
 models.
 
 \paragraph{Geometry is shared above chance but has no single meaning.} Peak CKA, the maximum over all layer pairs, is
-0.342--0.426 between TimesFM and each other model, against shuffled-series nulls of 0.011--0.051. The TimesFM/Chronos-2
+0.342--0.426 between TimesFM and each other model, against shuffled-series nulls of 0.011--0.051. These values use
+window-mean pooling and are lower bounds for the 16-step and 1-step models: with the window's tokens concatenated, the
+TimesFM peaks are 0.39--0.73 on 512 v3 series (Section~\ref{sec:alignment}). The TimesFM/Chronos-2
 peak replicates on the private split (dev 0.4257; private 0.4109 [0.4014, 0.4266]) and on v3 (dev 0.444; private 0.449
 [0.435, 0.464]), and the band holds across five architectures including Timer and Lag-Llama (\fid{SH-01}). Different
 similarity metrics, however, rank the 21 model pairs inconsistently (Kendall's $W=0.25$, $p=0.0095$;
 Figure~\ref{fig:similarity}). TimesFM/Chronos-2 is the most similar pair by error agreement (0.948) but only 15th of 21 by
-CKA, where Sundial/Chronos-Bolt ranks first (0.927). The report therefore never pools similarity metrics into one score.
+CKA, where Sundial/Chronos-Bolt ranks first (0.927). Part of this gap comes from pooling: on 512 v3 series
+TimesFM/Chronos-2 ranks 12th by mean-pooled CKA but 7th with concatenated windows, while Sundial/Chronos-Bolt stays first. The report therefore never pools similarity metrics into one score.
 Two finer-grained measures fail their controls on real activations: an untrained pair scores higher than a trained,
 related pair (\fid{MN-01}), and a measure of unit-level correspondence rises when both bases are rotated (\fid{SH-19}).
 CKA is accordingly read only against shuffled-series nulls and never as evidence of lineage.
@@ -351,7 +354,7 @@ RQ & Result (v2 unless stated) & Evidence class & Status & ID \\
 1 & 442 feature-channel cells clear an isotropic null, 2.47$\times$ empirical chance; Timer 1.02$\times$ & causal within-model & exploratory & MP-07, PM-17 \\
 1 & Against an on-manifold null, features exceed chance only modestly (v3: 91 vs.\ 70.4, 1.29$\times$) & causal within-model & exploratory & CA-12 \\
 1 & 9 families cover 99\% of features but do not beat a shuffle null ($p=0.68$) & descriptive & exploratory & CA-10 \\
-2 & Peak CKA 0.426 (private 0.411) vs.\ null 0.038 & geometric & held-out confirmed (2 corpora) & SH-01 \\
+2 & Peak CKA 0.426 (private 0.411) vs.\ null 0.038; window mean, a lower bound (\S\ref{sec:alignment}) & geometric & held-out confirmed (2 corpora) & SH-01 \\
 2 & 7 similarity metrics agree only weakly ($W=0.25$) & mixed & exploratory & SH-05/06 \\
 2 & Untrained pair more similar than related trained pair & geometric & confirmed negative & MN-01 \\
 2 & Concept transfer on inputs: 20/20 on v2 and v3, 20/20 on raw real windows & correlational & held-out confirmed (2 corpora) & SH-18 \\

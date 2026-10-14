@@ -106,7 +106,8 @@ no axis of one model corresponds to an axis of another. No analysis therefore co
 vector of another directly. Every cross-model measure compares something defined on the shared rows:
 \begin{itemize}[itemsep=1pt]
   \item \textbf{Geometry} (CKA and RSA) compares how the rows relate to \emph{one another} within each model. Two models
-    score high when the series and windows that look similar to one model also look similar to the other.
+    score high when the series and windows that look similar to one model also look similar to the other. This
+    depends on what a window's vector keeps, which we test below.
   \item \textbf{Stitching} fits a linear map from one model's rows to the other's on training series and scores it on
     held-out series. It reports only the gain over a map from simple input features.
   \item \textbf{Concept transfer} compares which \emph{series} a feature fires on, a set of series identities that means
@@ -115,13 +116,45 @@ vector of another directly. Every cross-model measure compares something defined
     act on each model's own tokens, and patching never moves activations between models.
 \end{itemize}
 
-Pooling has two costs. First, the common grid is no finer than the coarsest token. Within a 96-step span Timer has one
-vector, so the three windows it covers are identical, and an alignment check can attribute an impulse to the right
-window at most one time in three; we therefore normalize alignment hits by this attainable ceiling (\fid{MP-02}).
-Analyses of lag structure use each model's matched resolution instead of the shared grid. Second, $L=32$ is a
-convention. Re-pooling the stored windows to 64 and 96 steps leaves concept transfer and the size of geometric
-similarity almost unchanged, but moves the location of the peak layer pair for 12 of 21 model pairs (\fid{SH-23}), so we
-report peak locations as window-dependent.
+\paragraph{Is averaging fair? A test.} Averaging can discard what distinguishes the tokens inside a window, and
+only models with tokens shorter than a window are averaged. We tested this directly on four disjoint sets of
+v3 development series: a 128-series pilot for development, then three sets of 512 for the main run, confirmation and
+validation. All criteria were fixed before each set was used (\fid{MN-38}).
+\begin{itemize}[itemsep=1pt]
+  \item \textbf{Averaging removes within-window order.} At the first captured layer, 40--71\% of token-level
+    variance in the 16-step and 1-step models lies within windows. Deeper layers fall to 14--33\%, except
+    Chronos-T5-Base, which stays at 70--76\% at every depth. Pooled vectors
+    still decode a window's level and spread, but not its slope or shape. In the first block of Chronos-T5-Base the
+    slope decodes with $R^2=0.13$ from the window mean and 0.96 from finer sub-windows. TimesFM's unpooled token keeps
+    this shape.
+  \item \textbf{This biases cross-model geometry.} On identical rows, averaging leaves window-level CKA unchanged
+    (within 0.05, layer ranking $\rho\ge0.9$) for only 10 of 21 model pairs. The input itself shows the mechanism: its
+    CKA with TimesFM's first layer is 0.15 when windows are averaged, 0.43 with four 8-step means and 0.54 with all 32
+    values.
+  \item \textbf{Concatenation is lossless.} The fix is to concatenate a window's tokens in time order instead of
+    averaging them, $\tilde h^{\mathrm{cat}}_w=[h_j]_{I_j\subseteq W_w}$. This has no free weights. Linear CKA needs
+    only the row Gram matrix, and the Gram matrix of a concatenation is the sum of the per-position Gram matrices,
+    so the long vector is never formed. Concatenating 8-step means is not enough for 1-step models: Chronos-T5-Base's
+    peak CKA with TimesFM keeps rising from 0.53 to 0.62 as the sub-windows shrink to single steps. A rule that adds a
+    within-window trend to the mean restores decoding, but its CKA depends on how the two parts are weighted, so it
+    is not used.
+\end{itemize}
+On a fresh set of 512 series with all captured layers, concatenation raises TimesFM's peak CKA with Chronos-2 from 0.45
+to 0.73, with Chronos-Bolt from 0.39 to 0.65, with Chronos-T5-Base from 0.31 to 0.64 and with Sundial from 0.50 to
+0.64, mostly at TimesFM's first layers. Pairs with Timer fall, by up to 0.10, because the other model's added order has no
+counterpart in Timer's copied token. Across the 21 pairs the two rankings correlate at $\rho=0.80$. The window-level
+CKA values reported from the full runs in Section~\ref{sec:rq2} use the mean and therefore understate the similarity of
+TimesFM to the fine-token models. Concatenation is available as an option (\texttt{alignment.window\_rep: concat}).
+Concept transfer and causal comparisons are unaffected, since they compare series identities and forecasts rather than
+window vectors.
+
+Two further costs of the shared grid are not repaired by any window rule. First, the grid is no finer than the
+coarsest token. Within a 96-step span Timer has one vector, so the three windows it covers are identical, and an
+alignment check can attribute an impulse to the right window at most one time in three; alignment hits are therefore
+normalized by this attainable ceiling (\fid{MP-02}). Analyses of lag structure use each model's matched resolution
+instead of the shared grid. Second, $L=32$ is a convention. Re-pooling the stored windows to 64 and 96 steps leaves
+concept transfer and the size of geometric similarity almost unchanged, but moves the location of the peak layer pair
+for 12 of 21 model pairs (\fid{SH-23}), so we report peak locations as window-dependent.
 
 During extraction an \emph{alignment gate} checks the pooling empirically. It injects an impulse into each window and
 checks, layer by layer, that the matching pooled window responds most, with the impulse amplitude calibrated per
