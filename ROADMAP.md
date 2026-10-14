@@ -39745,3 +39745,53 @@ MAIN may be used to develop the code. CONFIRM is run once.
   window-pooled in time order (transfer uses top-k series identities; causal effects are forecast-domain), and the
   paper says so explicitly.
 
+### 44.3a Findings — CONFIRM (512 series, run once; commit 20175ed, `runs/pooling_check/pooling_check_confirm.json`, 1834.5 s)
+
+- **D1 fails: mean pooling is fair for 10 of 21 pairs.** Peak CKA on identical L=32 rows, MEAN vs FINE: TimesFM vs
+  Chronos-2 0.3574 vs 0.6937 (+0.3363), vs Chronos-Bolt 0.3057 vs 0.6106 (+0.3050), vs Chronos-T5-Base 0.1872 vs 0.5067
+  (+0.3195, rho 0.683), vs Sundial 0.4649 vs 0.6073 (+0.1425). Chronos-T5-Base is also understated against Chronos-2
+  (+0.1606), Sundial (+0.1191) and Chronos-Bolt (+0.1319). Chronos-2 vs Timer goes the other way (0.3711 vs 0.2846). Fair:
+  TimesFM/Timer (identical by construction), TimesFM/Time-MoE (+0.0211), Chronos-2/Bolt, Chronos-2/Time-MoE, Sundial/Bolt,
+  Sundial/Timer, Sundial/Time-MoE, Bolt/Timer, Bolt/Time-MoE and Timer/Time-MoE. Chronos-2/Sundial (+0.0005, rho 0.85),
+  Timer/T5 and Time-MoE/T5 fail on rho only.
+- **D2 fails: the mean_trend CKA level depends on the trend weight** (spread across w up to 0.2630; 6/21 pairs pass).
+  mean_trend is not used as a similarity representation. Its B result stands (15/15 again on CONFIRM, ratios
+  0.993-1.005).
+- **D3, positive control.** CKA of the z-scored input with TimesFM layer 0: MEAN 0.1497, FINE 0.4322, RAW 0.5372
+  (layer 10: 0.1012 / 0.1634 / 0.1774). Averaging a window demonstrably hides within-window shape that TimesFM's token
+  encodes.
+- **D4 replicates.** B for mean fails 5/15 (Time-MoE layer 0 0.699, Chronos-T5 block 0 0.773). C fails 6/12 for mean and
+  8/12 for mean_trend. A agrees with MAIN within about 0.01.
+- **Reading.** The user's concern is confirmed. Window-mean pooling makes 16-step and 1-step encoder models look
+  substantially LESS similar to TimesFM than they are, by up to 0.34 CKA. The paper's window-level CKA numbers involving
+  those pairs are biased downward.
+
+### 44.4 Design — a lossless window representation and re-measured CKA (2026-10-14, fixed before the data)
+
+**The fix.** CONCAT: represent a window by its tokens concatenated in time order instead of averaged. This is
+lossless for every model: 16-step models give 2 tokens, 1-step models 32 tokens, TimesFM 1 token, and a Timer token is
+copied as before (Timer's limit is resolution, which no window rule can recover). It has no free weights.
+Linear CKA needs only the row Gram matrix, and the Gram of a concatenation is the sum of the per-position Grams
+(K = sum_t H_t H_t^T). The 32 x d dimensional concatenation therefore never has to be materialized.
+
+**E1, convergence (development data: MAIN).** For Chronos-T5-Base and Time-MoE at their three layers, peak CKA with
+each TimesFM layer under concatenated sub-window means of width 16, 8, 4, 2 and 1 (1 = CONCAT). Report the curve.
+**Criterion:** FINE(8) within 0.03 of CONCAT; otherwise only CONCAT is used for 1-step models. For 16-step models FINE
+equals CONCAT exactly. Assert this in code.
+
+**E2, re-measurement (VALIDATE: a fourth set of 512 dev series, disjoint from PILOT, MAIN and CONFIRM, run once).**
+- All captured layers of all 7 models, from the `panel7_v3.yaml` layer lists.
+- Window-level linear CKA for all 21 pairs and all layer pairs, under MEAN and under CONCAT.
+- Per pair: the peak, its layer pair, and a shuffled-series null (40 permutations of series on one side, a series'
+  windows moving together) with its p95.
+- Across pairs: Spearman between the MEAN and CONCAT peaks, the most and least similar pair under each, and the
+  TimesFM range (the paper's "0.342-0.426").
+- Series-level CKA (mean over windows) is reported unchanged as a reference. It averages every model, TimesFM included,
+  over the whole context, so it is symmetric across architectures.
+- **Use in the paper:** window-level CKA is reported under CONCAT as the fair representation, with MEAN alongside. The
+  registered and held-out peak-CKA claim stays as measured, a statement about the mean-pooled statistic, now qualified.
+
+**E3, library (opt-in, default byte-identical).** `alignment.window_rep: mean|concat`, read by L1 window-level CKA via
+the Gram-sum route. It is a field-level config key, so older runs are not marked stale. Tests use a planted known
+answer: a fine-token copy of a coarse-token model has CKA 1 under CONCAT and less than 1 under MEAN, with a decoy.
+
