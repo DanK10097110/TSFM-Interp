@@ -3,6 +3,7 @@
 Layout (zarr group):
     act/{model}/{layer}        float16 [N, n_windows, D]   window-level states
     pooled/{model}/{layer}     float16 [N, D]              window-mean per series
+    fine/{model}/{layer}       float16 [P, R, n_windows, D] CONCAT rows (alignment.window_rep: concat)
     sae/{model}/{layer}        float16 [N, n_windows, F]   window-level SAE features
     sae_pooled/{model}/{layer} float16 [N, F]              window-mean SAE features per series
     pred/{model}/point         float32 [N, H]
@@ -123,6 +124,51 @@ class ActivationStore:
                                   chunks=(chunk, w, dim), dtype=dtype, overwrite=True)
         self.root.create_dataset(f"pooled/{model}/{layer}", shape=(n, dim),
                                   chunks=(min(4096, n), dim), dtype=dtype, overwrite=True)
+
+    def init_fine_layer(self, model: str, layer: str, n_pos: int, dim: int,
+                        dtype: str = "float16", rows: np.ndarray | None = None) -> None:
+        """`fine/{model}/{layer}` [P, R, W, D]: per-position window vectors for CONCAT CKA
+        (`alignment.window_rep: concat`, ROADMAP.md sec 44.4) of the series `rows` (all series when
+        None), recorded in the array's `rows` attribute. Chunked one position at a time so a
+        position can be streamed without reading the others."""
+        n, w = self.root.attrs["n_series"], self.root.attrs["n_windows"]
+        r = n if rows is None else len(rows)
+        arr = self.root.create_dataset(f"fine/{model}/{layer}", shape=(n_pos, r, w, dim),
+                                       chunks=(1, min(256, r), w, dim), dtype=dtype, overwrite=True)
+        if rows is not None:
+            arr.attrs["rows"] = [int(i) for i in rows]
+
+    def write_fine_batch(self, model: str, layer: str, start: int, positions: np.ndarray) -> None:
+        """Write [B, W, P, D] position vectors of series start..start+B (those the group holds)."""
+        arr = self.root[f"fine/{model}/{layer}"]
+        if "rows" not in arr.attrs:
+            arr[:, start:start + positions.shape[0]] = np.moveaxis(positions, 2, 0)
+            return
+        held = np.asarray(arr.attrs["rows"])
+        dest = np.flatnonzero((held >= start) & (held < start + positions.shape[0]))
+        if len(dest):
+            arr.oindex[:, dest] = np.moveaxis(positions[held[dest] - start], 2, 0)
+
+    def has_fine(self, model: str, layer: str) -> bool:
+        return f"fine/{model}/{layer}" in self.root
+
+    def load_fine_position(self, model: str, layer: str, p: int, rows: np.ndarray) -> np.ndarray:
+        """[len(rows), W, D] vectors of position `p`; raises if the group does not hold a row."""
+        arr = self.root[f"fine/{model}/{layer}"]
+        rows = np.asarray(rows)
+        if "rows" in arr.attrs:
+            index = {r: i for i, r in enumerate(arr.attrs["rows"])}
+            missing = [int(r) for r in rows if int(r) not in index]
+            if missing:
+                raise KeyError(f"fine/{model}/{layer} holds no series {missing[:5]}"
+                               f"{'...' if len(missing) > 5 else ''}: it was extracted for other "
+                               f"rows (l1.max_rows, alignment.concat_max_rows or run.seed changed "
+                               f"since extraction); re-extract with `--stages extract,l1 --force extract,l1`")
+            rows = np.array([index[int(r)] for r in rows])
+        return arr.oindex[p, rows]
+
+    def n_fine_positions(self, model: str, layer: str) -> int:
+        return int(self.root[f"fine/{model}/{layer}"].shape[0])
 
     def write_batch(self, model: str, layer: str, start: int, aligned: np.ndarray) -> None:
         """Write one batch of aligned window states and their series-level pooling.

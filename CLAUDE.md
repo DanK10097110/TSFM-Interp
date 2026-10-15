@@ -280,6 +280,9 @@ Check reach against a twin before running a battery on it.
 - Raw token positions are not comparable across models.
   `extraction/alignment.py::pooling_matrix` overlap-pools tokens into windows
   (default `alignment.window: 32`).
+- L1's window-level CKA concatenates a window's tokens in time order by default
+  (`alignment.window_rep: concat`, Gram sums, `analysis/window_concat.py`); the mean pool understated
+  TimesFM-vs-fine-token CKA by up to 0.33 (FINDINGS MN-38). Configs of recorded runs pin `mean`.
 - **Everything cross-model runs on `[series, window, dim]`.** Attention lag
   axes are multiplied by `token_width` before plotting.
 - `run_alignment_gate` runs inside extraction. It probes every layer,

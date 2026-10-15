@@ -83,6 +83,7 @@ data:
   # meta.parquet, which `concepts.tier_breakdown` reads.
 
 alignment:
+  window_rep: mean   # legacy window mean, pinned so this run's recorded numbers reproduce (ROADMAP 44.6)
   window: 32
   sanity_check: true
   on_failure: warn   # Sundial's diagnosed, benign mid-depth decay -- see header

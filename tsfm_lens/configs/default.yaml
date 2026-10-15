@@ -25,6 +25,7 @@ data:
 alignment:
   window: 32                    # = TimesFM input_patch_len so patches map 1:1 to windows
   sanity_check: true            # impulse check at extraction; cheap, catches span drift
+  window_rep: concat            # L1 window = its tokens in time order (lossless); `mean` = legacy average
 
 models:
   - name: timesfm

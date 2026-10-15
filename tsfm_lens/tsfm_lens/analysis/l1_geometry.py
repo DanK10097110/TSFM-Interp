@@ -25,6 +25,7 @@ from ..extraction.store import ActivationStore, load_meta
 from ..utils import log, sample_rows, save_json
 from .depth_axis import depth_axis_for_run
 from .stats import bootstrap_ci
+from .window_concat import centered_gram, cka_from_grams, concat_rows, l1_window_rows
 
 
 def linear_cka(x: torch.Tensor, y: torch.Tensor) -> float:
@@ -82,8 +83,8 @@ def run_l1(cfg: PipelineConfig, store: ActivationStore, device: torch.device) ->
     n = len(meta)
     n_windows = store.root.attrs["n_windows"]
 
-    n_series = min(n, max(1, cfg.l1.max_rows // n_windows))
-    rows = sample_rows(n, n_series, cfg.run.seed, strata=meta["family"].to_numpy())
+    rows = l1_window_rows(cfg, meta["family"].to_numpy(), n_windows)
+    n_series = len(rows)
     n_families = int(meta["family"].nunique())
 
     layers_of = {m.name: store.layers(m.name)[:: cfg.l1.layer_stride] for m in cfg.models}
@@ -96,11 +97,18 @@ def run_l1(cfg: PipelineConfig, store: ActivationStore, device: torch.device) ->
                                     rows if level == "window" else None, device)
         return banks[key]
 
+    gram_bank = None
+    if cfg.alignment.window_rep == "concat":
+        gram_bank = _GramBank(cfg, store, layers_of,
+                              concat_rows(cfg, meta["family"].to_numpy(), n_windows), n_windows, device)
+        n_series = gram_bank.n_series
+        log.info("L1 window_rep=concat: Gram-sum CKA over %d series x %d windows", n_series, n_windows)
+
     arrays, records = {}, []
     for a, b in pairs:
         rec, cka_window, cka_family = _one_pair(
             cfg, store, meta, a.name, b.name, layers_of, bank, rows,
-            n_series, n_windows, n_families, device)
+            n_series, n_windows, n_families, device, gram_bank)
         records.append(rec)
         suffix = f"__{a.name}__{b.name}"
         arrays["cka_window" + suffix] = cka_window
@@ -117,17 +125,56 @@ def run_l1(cfg: PipelineConfig, store: ActivationStore, device: torch.device) ->
     save_json(out_dir / "meta.json", payload)
 
 
+class _GramBank:
+    """Centered CONCAT Gram matrices per (model, layer), built from the store's `fine` group.
+
+    Rows are `window_concat.concat_rows`: a stratified draw of `alignment.concat_max_rows //
+    n_windows` of L1's own row sample, the same rows extraction wrote the `fine` group for. Grams are kept on the cpu in
+    float32 and served to `device` per pair.
+    """
+
+    def __init__(self, cfg, store, layers_of, rows, n_windows, device):
+        self.cfg, self.store, self.layers_of = cfg, store, layers_of
+        self.n_windows, self.device = n_windows, device
+        self.rows = np.asarray(rows)
+        self.n_series = len(self.rows)
+        self._cache: dict = {}
+
+    def get(self, model: str, layer: str) -> torch.Tensor:
+        key = (model, layer)
+        if key not in self._cache:
+            if not self.store.has_fine(model, layer):
+                raise KeyError(
+                    f"l1 alignment.window_rep=concat needs the store's `fine` group for "
+                    f"{model}/{layer}; it is written only by an extraction run with "
+                    f"alignment.window_rep: concat (re-extract: `--stages extract,l1 --force extract,l1`)")
+            n_pos = self.store.n_fine_positions(model, layer)
+
+            def blocks():
+                for p in range(n_pos):
+                    x = self.store.load_fine_position(model, layer, p, self.rows)
+                    yield torch.from_numpy(np.ascontiguousarray(x.reshape(-1, x.shape[-1])))
+            self._cache[key] = centered_gram(blocks(), self.device).cpu()
+        return self._cache[key]
+
+
 def _one_pair(cfg: PipelineConfig, store: ActivationStore, meta, name_a: str, name_b: str,
               layers_of: dict, bank, rows: np.ndarray, n_series: int, n_windows: int,
-              n_families: int, device: torch.device) -> tuple:
+              n_families: int, device: torch.device, gram_bank=None) -> tuple:
     """Every L1 quantity for one ordered model pair; returns (record, window, family)."""
     layers_a, layers_b = layers_of[name_a], layers_of[name_b]
     bank_a, bank_b = bank(name_a, "window"), bank(name_b, "window")
     cka_window = np.zeros((len(layers_a), len(layers_b)), dtype=np.float32)
-    for i, la in enumerate(layers_a):
-        xa = bank_a.get(la)
-        for j, lb in enumerate(layers_b):
-            cka_window[i, j] = linear_cka(xa, bank_b.get(lb))
+    if gram_bank is not None:
+        for i, la in enumerate(layers_a):
+            ka = gram_bank.get(name_a, la).to(device)
+            for j, lb in enumerate(layers_b):
+                cka_window[i, j] = cka_from_grams(ka, gram_bank.get(name_b, lb).to(device))
+    else:
+        for i, la in enumerate(layers_a):
+            xa = bank_a.get(la)
+            for j, lb in enumerate(layers_b):
+                cka_window[i, j] = linear_cka(xa, bank_b.get(lb))
     log.info("L1 %s vs %s: window-level CKA over %d rows, peak=%.3f", name_a, name_b,
              n_series * n_windows, cka_window.max())
 
@@ -164,7 +211,10 @@ def _one_pair(cfg: PipelineConfig, store: ActivationStore, meta, name_a: str, na
                     "cka": float(cka_window[i].max())} for i in range(len(layers_a))]
 
     best_ci, families_ci, null_ci = None, {}, None
-    if cfg.stats.enabled:
+    if cfg.stats.enabled and gram_bank is not None:
+        null_ci = _shuffled_null_gram(cfg, gram_bank, name_a, name_b, layers_a[best[0]],
+                                      layers_b[best[1]], n_series, n_windows, device)
+    elif cfg.stats.enabled:
         best_ci = _best_pair_ci(cfg, bank_a, bank_b, layers_a[best[0]], layers_b[best[1]],
                                 n_series, n_windows)
         null_ci = _shuffled_null_cka(cfg, bank_a, bank_b, layers_a[best[0]], layers_b[best[1]],
@@ -200,9 +250,30 @@ def _one_pair(cfg: PipelineConfig, store: ActivationStore, meta, name_a: str, na
         "depth_axis_a": da.axis, "depth_axis_b": db.axis,
         "rel_depth_a": da.coords.tolist(), "rel_depth_b": db.coords.tolist(),
     }
+    if gram_bank is not None:
+        record["window_rep"] = "concat"
+        record["window_rep_note"] = ("window-level CKA is Gram-sum CKA of time-ordered concatenated "
+                                     "tokens; the best-pair bootstrap CI is not computed in this mode "
+                                     "(best_pair.ci is None), the shuffled null is")
     stacked = np.stack(cka_family) if cka_family else np.zeros((0,) + cka_window.shape,
                                                               dtype=np.float32)
     return record, cka_window, stacked
+
+
+def _shuffled_null_gram(cfg, gram_bank, name_a, name_b, layer_a, layer_b, n_series, n_windows,
+                        device) -> dict:
+    """The shuffled-series null of `_shuffled_null_cka` on Gram matrices: a series' windows move together."""
+    ka = gram_bank.get(name_a, layer_a).to(device)
+    kb = gram_bank.get(name_b, layer_b).to(device)
+    rng = np.random.default_rng(cfg.run.seed + 13)
+    vals = []
+    for _ in range(5):
+        perm = rng.permutation(n_series)
+        rows = torch.from_numpy((perm[:, None] * n_windows + np.arange(n_windows)[None]).reshape(-1)).to(device)
+        kp = kb[rows][:, rows]
+        kp = kp - kp.mean(0, keepdim=True) - kp.mean(1, keepdim=True) + kp.mean()
+        vals.append(cka_from_grams(ka, kp))
+    return {"value": float(np.mean(vals)), "lo": float(np.min(vals)), "hi": float(np.max(vals))}
 
 
 def _best_pair_ci(cfg: PipelineConfig, bank_a: _LayerBank, bank_b: _LayerBank,

@@ -117,6 +117,7 @@ These instructions are binding for every future session, human or agent.
 | MP-05 | SAE feature death is a property of the layer's geometry (alive atoms ∝ effective dim, exponent 1.02) | 5 |
 | MN-21 | Reviving dead SAE features *hurts* causal alignment at 5/5 TimesFM depths | 5 |
 | MN-29 | The battery's legacy null is lenient: known-answer gate fails on 5/5 seeds (FPR 0.17–0.25), passes on 5/5 with a profile-matched null; on v2, causal features 293 → 110 (13.0× → 3.06× empirical chance), per-target concepts 9 → 0, convergent atlas concepts 13 → 0 | 5 |
+| MN-38 | Window-mean pooling hides within-window order and understates TimesFM-vs-fine-token CKA by up to 0.33; concatenating tokens fixes it | 5 |
 
 ---
 
@@ -141,7 +142,8 @@ These instructions are binding for every future session, human or agent.
 - **Models.** TimesFM, Chronos-T5-Base/Small, Chronos-2, Sundial, Timer, Lag-Llama.
 - **Evidence.** Geometric (L1). **Status:** exploratory (dev); each result is a single corpus and checkpoint pair.
 - **Reproduce.** `configs/{chronos2_phase4_check,sundial_phase4_check,generic_hf_timer,lag_llama_vs_chronos}.yaml` → `runs/*/l1/meta.json`.
-- **Ref.** ROADMAP §9 (~7500–7650), §16 E3(d) (~11160), §34 D2 (~33030).
+- **Pooling caveat (2026-10-14, MN-38).** These peaks use window-mean pooling, which understates TimesFM's similarity to 16-step and 1-step models. On 512 v3 dev series with lossless window concatenation, TimesFM's peaks are 0.3866–0.7348 (vs 0.3137–0.4967 under the mean on the same series): Chronos-2 0.7348, Chronos-Bolt 0.6543, Chronos-T5-Base 0.6428, Sundial 0.6363. Above-null sharing holds and is stronger; the levels and pair ranking above are properties of the mean statistic.
+- **Ref.** ROADMAP §9 (~7500–7650), §16 E3(d) (~11160), §34 D2 (~33030). §44.5.
 - **Score. 5/5.** This is the central evidence that TSFMs converge on a common representational geometry, and it generalizes to a model integrated with zero adapter code. Read it with SH-05, SH-06 and MN-01: geometry alone is not evidence of shared *function* or lineage.
 
 #### SH-02 · Above-null shared structure holds at matched depth, not in "best pair vs best pair" comparisons
@@ -1697,6 +1699,34 @@ See SH-20. **4/5.**
 - **Reproduce.** `configs/panel7_v3_sec42.yaml`, `build_sec42_run_dir.py`, `run_admission_reeval.py` (merge of 4c50518); `runs/panel7_v3_sec42/sae/*/*_ablation.json` (`candidates[*].rules`, `n_channels_clearing`, `by_null.profile_matched`).
 - **Ref.** ROADMAP §42.5.
 - **Score. 4/5.** Closes the "test better features" route with a measurement.
+
+#### MN-38 · Window-mean pooling hides within-window order and understates cross-model similarity by up to 0.33 CKA; concatenating a window's tokens fixes it
+- **Claim.** On v3 dev series (four disjoint sets: PILOT 128, MAIN 512, CONFIRM 512, VALIDATE 512):
+  - Averaging a window's tokens discards a large share of token variation (within-window share 0.40-0.76 for the
+    16-step and 1-step models; Chronos-T5-Base 0.70-0.76 at every depth) and, with it, within-window ORDER. On
+    CONFIRM, pooled/fine decodability of window summaries falls to 0.699 (Time-MoE layer 0) and 0.773 (Chronos-T5-Base
+    block 0); slope decodes at 0.13 pooled vs 0.96 fine (Chronos-T5-Base block 0). Level and spread are kept.
+  - On identical rows, mean pooling is fair (|Δ peak CKA| < 0.05, rho ≥ 0.9) for only 10 of 21 pairs (CONFIRM).
+    Input control: CKA of the input with TimesFM layer 0 is 0.1497 (window mean), 0.4322 (4 sub-means), 0.5372
+    (32 values).
+  - Lossless CONCAT (tokens concatenated in time order; Gram sums) on VALIDATE, all layers: TimesFM vs Chronos-2
+    0.4522 → 0.7348, vs Chronos-Bolt 0.3877 → 0.6543, vs Chronos-T5-Base 0.3137 → 0.6428, vs Sundial 0.4967 → 0.6363;
+    pairs with Timer fall (Timer vs Chronos-T5-Base 0.2886 → 0.1851); rank rho over 21 pairs 0.8026. Sub-window
+    means at 8 steps do not converge for Chronos-T5-Base (0.5321 vs CONCAT 0.6216), so 1-step models need full CONCAT.
+  - A mean-plus-trend rule repairs decodability (15/15 ratios ≥ 0.993) but its CKA depends on the block weight
+    (spread up to 0.2630), so it is not a similarity representation.
+- **Reading.** Window-level CKA under mean pooling is biased toward dissimilarity between coarse-token (TimesFM) and
+  fine-token models. Shared geometry is stronger than reported, and mostly at early, input-encoding layers. Pair
+  rankings by CKA partly reflect tokenization.
+- **Evidence.** Descriptive / geometric, exploratory (dev), pre-registered criteria (ROADMAP §44–44.4). **Status:**
+  confirmed on a fresh set; the fix is in the library as `alignment.window_rep: concat`, the default
+  since ROADMAP §44.6 (recorded runs pin `mean`).
+- **Reproduce.** `tsfm_lens/run_pooling_check.py` (pilot/main/confirm JSONs in `runs/pooling_check/`),
+  `tsfm_lens/run_concat_check.py` (`runs/concat_check/`), `analysis/window_concat.py`.
+- **Ref.** ROADMAP §44.2, §44.3a, §44.5.
+- **Score. 5/5.** A methodological bias in every window-level cross-architecture comparison, measured and fixed.
+
+---
 
 ## H. Benchmark trust
 
