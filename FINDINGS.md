@@ -1719,7 +1719,8 @@ See SH-20. **4/5.**
   fine-token models. Shared geometry is stronger than reported, and mostly at early, input-encoding layers. Pair
   rankings by CKA partly reflect tokenization.
 - **Evidence.** Descriptive / geometric, exploratory (dev), pre-registered criteria (ROADMAP §44–44.4). **Status:**
-  confirmed on a fresh set; the fix is in the library as opt-in `alignment.window_rep: concat`.
+  confirmed on a fresh set; the fix is in the library as `alignment.window_rep: concat`, the default
+  since ROADMAP §44.6 (recorded runs pin `mean`).
 - **Reproduce.** `tsfm_lens/run_pooling_check.py` (pilot/main/confirm JSONs in `runs/pooling_check/`),
   `tsfm_lens/run_concat_check.py` (`runs/concat_check/`), `analysis/window_concat.py`.
 - **Ref.** ROADMAP §44.2, §44.3a, §44.5.

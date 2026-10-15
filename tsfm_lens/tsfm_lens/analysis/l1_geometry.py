@@ -25,7 +25,7 @@ from ..extraction.store import ActivationStore, load_meta
 from ..utils import log, sample_rows, save_json
 from .depth_axis import depth_axis_for_run
 from .stats import bootstrap_ci
-from .window_concat import centered_gram, cka_from_grams
+from .window_concat import centered_gram, cka_from_grams, concat_rows, l1_window_rows
 
 
 def linear_cka(x: torch.Tensor, y: torch.Tensor) -> float:
@@ -83,8 +83,8 @@ def run_l1(cfg: PipelineConfig, store: ActivationStore, device: torch.device) ->
     n = len(meta)
     n_windows = store.root.attrs["n_windows"]
 
-    n_series = min(n, max(1, cfg.l1.max_rows // n_windows))
-    rows = sample_rows(n, n_series, cfg.run.seed, strata=meta["family"].to_numpy())
+    rows = l1_window_rows(cfg, meta["family"].to_numpy(), n_windows)
+    n_series = len(rows)
     n_families = int(meta["family"].nunique())
 
     layers_of = {m.name: store.layers(m.name)[:: cfg.l1.layer_stride] for m in cfg.models}
@@ -99,7 +99,8 @@ def run_l1(cfg: PipelineConfig, store: ActivationStore, device: torch.device) ->
 
     gram_bank = None
     if cfg.alignment.window_rep == "concat":
-        gram_bank = _GramBank(cfg, store, layers_of, rows, n_windows, device)
+        gram_bank = _GramBank(cfg, store, layers_of,
+                              concat_rows(cfg, meta["family"].to_numpy(), n_windows), n_windows, device)
         n_series = gram_bank.n_series
         log.info("L1 window_rep=concat: Gram-sum CKA over %d series x %d windows", n_series, n_windows)
 
@@ -127,16 +128,16 @@ def run_l1(cfg: PipelineConfig, store: ActivationStore, device: torch.device) ->
 class _GramBank:
     """Centered CONCAT Gram matrices per (model, layer), built from the store's `fine` group.
 
-    Rows are the first `alignment.concat_max_rows // n_windows` series of L1's own stratified
-    row sample (so the cap never changes which series are drawn). Grams are kept on the cpu in
+    Rows are `window_concat.concat_rows`: a stratified draw of `alignment.concat_max_rows //
+    n_windows` of L1's own row sample, the same rows extraction wrote the `fine` group for. Grams are kept on the cpu in
     float32 and served to `device` per pair.
     """
 
     def __init__(self, cfg, store, layers_of, rows, n_windows, device):
         self.cfg, self.store, self.layers_of = cfg, store, layers_of
         self.n_windows, self.device = n_windows, device
-        self.n_series = max(1, min(len(rows), cfg.alignment.concat_max_rows // n_windows))
-        self.rows = np.asarray(rows)[: self.n_series]
+        self.rows = np.asarray(rows)
+        self.n_series = len(self.rows)
         self._cache: dict = {}
 
     def get(self, model: str, layer: str) -> torch.Tensor:
@@ -146,7 +147,7 @@ class _GramBank:
                 raise KeyError(
                     f"l1 alignment.window_rep=concat needs the store's `fine` group for "
                     f"{model}/{layer}; it is written only by an extraction run with "
-                    f"alignment.window_rep: concat (re-extract, --force extract)")
+                    f"alignment.window_rep: concat (re-extract: `--stages extract,l1 --force extract,l1`)")
             n_pos = self.store.n_fine_positions(model, layer)
 
             def blocks():

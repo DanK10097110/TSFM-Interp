@@ -91,3 +91,6 @@ expected:
     dead_feature_rate_max: 0.1845703125     # seed 1
     n_alive_min: 835                        # seed 1
     fidelity_min: 0.7242834675826152        # seed 1, Chronos-T5-Base
+
+alignment:
+  window_rep: mean   # legacy window mean, pinned so this run's recorded numbers reproduce (ROADMAP 44.6)

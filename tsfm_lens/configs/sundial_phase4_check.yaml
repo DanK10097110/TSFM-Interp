@@ -25,6 +25,7 @@ data:
   family_key: auto
 
 alignment:
+  window_rep: mean   # legacy window mean, pinned so this run's recorded numbers reproduce (ROADMAP 44.6)
   window: 32
   sanity_check: true
   # Sundial's own default-amplitude --check-alignment reads low at mid-depth

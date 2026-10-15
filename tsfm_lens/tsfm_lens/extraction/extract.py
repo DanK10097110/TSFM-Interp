@@ -43,6 +43,10 @@ def run_extraction(cfg: PipelineConfig, hub, data: BenchmarkData) -> ActivationS
         provenance["corpus_digest"] = data.corpus_digest
         record_extra(run_dir, "provenance", provenance)
 
+    fine_rows = None
+    if cfg.alignment.window_rep == "concat" and cfg.l1.enabled and cfg.comparison_pairs():
+        from ..analysis.window_concat import concat_rows
+        fine_rows = concat_rows(cfg, data.families, n_windows)
     layer_map = {}
     stack_meta = {}
     alignment_records = {}
@@ -56,7 +60,7 @@ def run_extraction(cfg: PipelineConfig, hub, data: BenchmarkData) -> ActivationS
                 cfg.alignment.min_diagonal_frac, cfg.alignment.on_failure,
                 calibrate=cfg.alignment.calibrate_amplitude)
         layer_map[mcfg.name] = _extract_model(adapter, data, store, cfg, layers,
-                                              fine=cfg.alignment.window_rep == "concat")
+                                              fine_rows=fine_rows)
         # Captured once, here, while the adapter is still loaded -- the
         # `block` depth axis (analysis/depth_axis.py, ROADMAP.md sec 18 F1)
         # needs a model's full layer list and uncaptured surfaces to place
@@ -87,7 +91,7 @@ def run_extraction(cfg: PipelineConfig, hub, data: BenchmarkData) -> ActivationS
 
 def _extract_model(adapter, data: BenchmarkData, store: ActivationStore,
                    cfg: PipelineConfig, layers: list, rows: np.ndarray | None = None,
-                   fine: bool = False) -> list:
+                   fine_rows: np.ndarray | None = None) -> list:
     """Run one model over all (or a row subset of) contexts and persist aligned activations.
 
     `layers` and `rows` are explicit rather than derived from `adapter`/`data`
@@ -95,9 +99,11 @@ def _extract_model(adapter, data: BenchmarkData, store: ActivationStore,
     (`ROADMAP.md` sec 15 A1) can reuse this exact extraction path -- same
     batching, alignment, and store-write logic -- against a different layer
     set and a different (smaller) row subset than the main run, instead of
-    duplicating it.
+    duplicating it. `fine_rows` (series indices, CONCAT only) also writes the position-resolved
+    `fine` group for those series.
     """
     adapter.ensure_loaded()
+    fine = fine_rows is not None
     pool = pooling_matrix(adapter.token_time_spans(), cfg.data.context_len, cfg.alignment.window)
     if fine:
         from ..analysis.window_concat import concat_grid, position_features
@@ -135,7 +141,8 @@ def _extract_model(adapter, data: BenchmarkData, store: ActivationStore,
                                      cfg.extraction.store_dtype)
                     if fine:
                         store.init_fine_layer(adapter.name, name, cfg.alignment.window // fine_grid,
-                                              aligned.shape[-1], cfg.extraction.store_dtype)
+                                              aligned.shape[-1], cfg.extraction.store_dtype,
+                                              rows=fine_rows)
                     initialized.add(name)
                 store.write_batch(adapter.name, name, start, aligned)
                 if fine:

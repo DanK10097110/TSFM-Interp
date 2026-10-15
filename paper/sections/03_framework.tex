@@ -144,9 +144,32 @@ to 0.73, with Chronos-Bolt from 0.39 to 0.65, with Chronos-T5-Base from 0.31 to 
 0.64, mostly at TimesFM's first layers. Pairs with Timer fall, by up to 0.10, because the other model's added order has no
 counterpart in Timer's copied token. Across the 21 pairs the two rankings correlate at $\rho=0.80$. The window-level
 CKA values reported from the full runs in Section~\ref{sec:rq2} use the mean and therefore understate the similarity of
-TimesFM to the fine-token models. Concatenation is available as an option (\texttt{alignment.window\_rep: concat}).
-Concept transfer and causal comparisons are unaffected, since they compare series identities and forecasts rather than
-window vectors.
+TimesFM to the fine-token models. Concatenation is the tool's default (\texttt{alignment.window\_rep: concat}); the mean remains available, and the
+runs reported here use it unless stated.
+
+\paragraph{What the window rule affects.} The window rule matters only where window vectors of two models are compared
+with each other: the similarity measures, namely window-level CKA, RSA and stitching. We re-measured CKA; stitching maps
+the same window vectors and is subject to the same loss, but was not re-measured. The sparse-dictionary results
+(Section~\ref{sec:methods}) do not depend on the rule, for three reasons.
+\begin{itemize}[itemsep=1pt]
+  \item \textbf{No cross-model vector comparison.} An SAE is fit to one model's activations, and its features are
+    compared across models only through quantities defined outside activation space: \emph{which series} a feature fires
+    on, and \emph{how the forecast changes} when it is removed. A series is the same series for every model, and a
+    forecast is a time series in every model's output, so neither quantity depends on how a window is summarized.
+  \item \textbf{Series-level codes are symmetric.} The series a feature fires on are ranked by its series-level code, the
+    mean over all 15 windows. This averages the whole context for every model alike, so it carries none of the
+    within-window asymmetry that biases window-level CKA.
+  \item \textbf{Interventions act on tokens.} Ablations encode and decode each token separately, and the forecast is
+    measured on the model's own tokens, never on windows. An SAE is admitted only if its token-level reconstruction
+    preserves the forecast. This check is needed because a window-level check is unreliable for fine-token models
+    (Chronos-T5-Base $\Delta$MASE $+3.8972$ at window level against $+0.2457$ at token level; \fid{MN-16}).
+\end{itemize}
+Pooling does enter one step of the SAE pipeline: dictionaries are trained on window vectors, so a 1-step model's
+dictionary is learned from averages of 32 tokens and cannot represent within-window shape as a separate feature. This
+limits what a fine-token model's dictionary can express, not how dictionaries are compared, and the token-level admission
+check bounds its cost to the forecast. CONCAT cannot replace it, because a concatenated window of a 1-step model is a
+$32\times768$ vector with position-specific coordinates. Training on individual tokens is the alternative; we did not
+run it.
 
 Two further costs of the shared grid are not repaired by any window rule. First, the grid is no finer than the
 coarsest token. Within a 96-step span Timer has one vector, so the three windows it covers are identical, and an

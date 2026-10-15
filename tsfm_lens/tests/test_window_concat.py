@@ -1,4 +1,4 @@
-"""CONCAT window representation and `alignment.window_rep` (ROADMAP.md sec 44.4, E3)."""
+"""CONCAT window representation and `alignment.window_rep` (ROADMAP.md sec 44.4, E3; default since 44.6)."""
 
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ sys.path.insert(0, str(ROOT / "tests"))
 
 from tsfm_lens.analysis.l1_geometry import linear_cka  # noqa: E402
 from tsfm_lens.analysis.window_concat import (  # noqa: E402
-    centered_gram, cka_from_grams, concat_grid, position_features)
+    centered_gram, cka_from_grams, concat_grid, concat_rows, l1_window_rows, position_features)
 from tsfm_lens.config import PipelineConfig, config_from_dict  # noqa: E402
 from tsfm_lens.manifest import resolve_config_keys  # noqa: E402
 
@@ -97,16 +97,50 @@ def test_concat_grid_and_position_order():
     assert pos[0, 1, :, 0].tolist() == [2.0, 3.0] and pos.shape == (1, 3, 2, 1)
 
 
-def test_new_config_fields_are_invisible_to_default_fingerprints():
-    cfg = config_from_dict({"alignment": {"window": 32}})
-    resolved = resolve_config_keys(cfg, ("alignment", "alignment.window_rep", "alignment.concat_max_rows"))
+def test_concat_is_default_and_pinned_mean_keeps_legacy_fingerprints():
+    legacy = config_from_dict({"alignment": {"window": 32, "window_rep": "mean"}})
+    resolved = resolve_config_keys(legacy, ("alignment", "alignment.window_rep", "alignment.concat_max_rows"))
     assert "window_rep" not in resolved["alignment"] and "concat_max_rows" not in resolved["alignment"]
     assert "alignment.window_rep" not in resolved and "alignment.concat_max_rows" not in resolved
-    on = config_from_dict({"alignment": {"window": 32, "window_rep": "concat"}})
-    r2 = resolve_config_keys(on, ("alignment", "alignment.window_rep"))
+    default = config_from_dict({"alignment": {"window": 32}})
+    assert default.alignment.window_rep == "concat"
+    r2 = resolve_config_keys(default, ("alignment", "alignment.window_rep"))
     assert r2["alignment"]["window_rep"] == "concat" and r2["alignment.window_rep"] == "concat"
     with pytest.raises(ValueError):
         config_from_dict({"alignment": {"window_rep": "median"}})
+
+
+def test_concat_rows_are_a_stratified_subsample_not_a_prefix():
+    fam = np.repeat(np.array(["a", "b", "c", "d"]), 300)
+    cfg = config_from_dict({"alignment": {"window": 32, "concat_max_rows": 15 * 40},
+                            "l1": {"max_rows": 15 * 800}})
+    l1_rows = l1_window_rows(cfg, fam, 15)
+    rows = concat_rows(cfg, fam, 15)
+    assert len(l1_rows) == 800 and len(rows) == 40
+    assert set(rows) <= set(l1_rows) and len(set(rows)) == 40
+    counts = {f: int((fam[rows] == f).sum()) for f in "abcd"}
+    assert all(c == 10 for c in counts.values()), counts
+    assert np.array_equal(rows, concat_rows(cfg, fam, 15))
+    small = config_from_dict({"alignment": {"window": 32}, "l1": {"max_rows": 15 * 100}})
+    assert np.array_equal(concat_rows(small, fam, 15), l1_window_rows(small, fam, 15))
+
+
+def test_fine_group_holds_only_its_rows_and_maps_them_across_batches(tmp_path):
+    from tsfm_lens.extraction.store import ActivationStore
+    store = ActivationStore.create(tmp_path / "a.zarr", 10, 3, 32, 96)
+    held = np.array([1, 4, 5, 9])
+    store.init_fine_layer("m", "l.0", 2, 1, rows=held)
+    for start in (0, 3, 6, 9):
+        b = min(3, 10 - start)
+        pos = np.broadcast_to(np.arange(start, start + b, dtype=np.float16)[:, None, None, None],
+                              (b, 3, 2, 1)).copy()
+        pos[:, :, 1] += 100
+        store.write_fine_batch("m", "l.0", start, pos)
+    assert store.root["fine/m/l.0"].shape == (2, 4, 3, 1)
+    assert store.load_fine_position("m", "l.0", 0, np.array([9, 4]))[:, 0, 0].tolist() == [9.0, 4.0]
+    assert store.load_fine_position("m", "l.0", 1, held)[:, 2, 0].tolist() == [101.0, 104.0, 105.0, 109.0]
+    with pytest.raises(KeyError, match="--stages extract,l1 --force extract,l1"):
+        store.load_fine_position("m", "l.0", 0, np.array([1, 2]))
 
 
 def test_l1_concat_end_to_end_matches_materialized_concat_and_default_has_no_fine(tmp_path):
@@ -115,14 +149,18 @@ def test_l1_concat_end_to_end_matches_materialized_concat_and_default_has_no_fin
     from tsfm_lens.pipeline import run_pipeline
     import json
 
-    def run(rep, sub):
+    def run(rep, sub, l1=True):
         raw = build_config(str(tmp_path / sub))
         raw["alignment"]["window_rep"] = rep
         raw["models"][0]["name"] = "patchy"
+        raw["l1"]["enabled"] = l1
         cfg = config_from_dict(raw)
-        run_pipeline(cfg, stages=["extract", "l1"])
+        run_pipeline(cfg, stages=["extract", "l1"] if l1 else ["extract"])
         return cfg
 
+    no_l1 = run("concat", "no_l1", l1=False)
+    store_no_l1 = ActivationStore(no_l1.run_dir() / "activations.zarr")
+    assert not store_no_l1.has_fine("patchy", store_no_l1.layers("patchy")[0])
     base = run("mean", "mean")
     store_mean = ActivationStore(base.run_dir() / "activations.zarr")
     assert not store_mean.has_fine("patchy", store_mean.layers("patchy")[0])
@@ -138,8 +176,9 @@ def test_l1_concat_end_to_end_matches_materialized_concat_and_default_has_no_fin
 
     def mat(model, layer):
         n_pos = store.n_fine_positions(model, layer)
-        xs = [store.load_fine_position(model, layer, p, np.arange(meta["n_rows_window"] // store.root.attrs["n_windows"]))
-              for p in range(n_pos)]
+        held = np.asarray(store.root[f"fine/{model}/{layer}"].attrs["rows"])
+        assert len(held) == meta["n_rows_window"] // store.root.attrs["n_windows"]
+        xs = [store.load_fine_position(model, layer, p, held) for p in range(n_pos)]
         return torch.from_numpy(np.stack([x.reshape(-1, x.shape[-1]) for x in xs], 1)
                                 .reshape(-1, n_pos * xs[0].shape[-1]).astype(np.float64))
     ref = linear_cka(mat(ma, la), mat(mb, lb))

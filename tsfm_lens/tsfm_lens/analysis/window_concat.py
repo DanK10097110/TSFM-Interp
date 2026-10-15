@@ -24,6 +24,29 @@ import numpy as np
 import torch
 
 from ..extraction.alignment import pooling_matrix
+from ..utils import sample_rows
+
+
+def l1_window_rows(cfg, families: np.ndarray, n_windows: int) -> np.ndarray:
+    """L1's stratified window-level row sample (sorted), shared by L1 and the CONCAT rows below."""
+    n = len(families)
+    k = min(n, max(1, cfg.l1.max_rows // n_windows))
+    return sample_rows(n, k, cfg.run.seed, strata=np.asarray(families))
+
+
+def concat_rows(cfg, families: np.ndarray, n_windows: int) -> np.ndarray:
+    """The series CONCAT CKA uses: a stratified draw of `concat_max_rows // n_windows` of L1's rows.
+
+    Extraction writes the `fine` group only for these rows (the Gram is n_rows x n_rows, so more
+    rows cannot be used anyway), and L1 reads exactly these. A stratified subsample, not a prefix:
+    `sample_rows` returns sorted indices and corpora are written grouped by family.
+    """
+    families = np.asarray(families)
+    rows = l1_window_rows(cfg, families, n_windows)
+    k = max(1, min(len(rows), cfg.alignment.concat_max_rows // n_windows))
+    if k == len(rows):
+        return rows
+    return rows[sample_rows(len(rows), k, cfg.run.seed, strata=families[rows])]
 
 
 def concat_grid(spans: np.ndarray, context_len: int, window: int) -> int:

@@ -85,3 +85,6 @@ expected:
   # superseded result — `--baseline-dict-sizes` unset still reproduces it.
   baseline_a_passes: true
   baseline_b_passes: false
+
+alignment:
+  window_rep: mean   # legacy window mean, pinned so this run's recorded numbers reproduce (ROADMAP 44.6)

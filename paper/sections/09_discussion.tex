@@ -46,7 +46,9 @@ Chronos-T5's decoder and Sundial's flow head are not captured.
 \paragraph{Time alignment.} The full runs pool windows by averaging, which understates window-level similarity between
 TimesFM and the fine-token models by up to 0.33 CKA (Section~\ref{sec:alignment}). The concatenated re-measurement covers
 512 v3 series, not the full runs or the private splits. No window rule recovers resolution finer than Timer's 96-step
-token, and peak layer locations depend on the window size.
+token, and peak layer locations depend on the window size. Stitching uses the same window vectors and was not
+re-measured. SAE comparisons do not depend on the window rule, but a 1-step model's dictionary is trained on window
+averages and cannot represent within-window shape as a feature.
 
 \paragraph{Ground truth and external validity.} Ground truth is exact only for the synthetic tier and encodes the
 generators' assumptions; 12 of 33 concept parts are dominated by one real-derived generator, and overlap with the models'

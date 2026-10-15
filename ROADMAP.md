@@ -39829,3 +39829,40 @@ answer: a fine-token copy of a coarse-token model has CKA 1 under CONCAT and les
   properties of the mean statistic. Transfer (series identities) and causal effects (forecast domain) are not affected.
   Series-level CKA averages every model over the whole context and is symmetric across tokenizations.
 
+
+### 44.6 Decision — CONCAT becomes the default window representation (2026-10-15, user-directed)
+
+- **Change.** `alignment.window_rep` defaults to `concat`. The field now carries `omit_at_value: "mean"` instead of
+  `omit_at_default`, the precedent of `sae.ablation_null`: a config that pins `mean` keeps every older fingerprint, and
+  an older run read under the new default is reported stale rather than silently relabelled.
+- **Pins.** 72 configs behind recorded runs pin `window_rep: mean` (everything under `configs/` except `examples/`,
+  `smoke*`, `default`, `quickstart` and the `concept_atlas` preset), so every number in ROADMAP/FINDINGS/the paper
+  still reproduces from its config. New runs from the presets get CONCAT.
+- **Disk bound.** Extraction now writes the `fine/` group only for the series L1 reads (`window_concat.concat_rows`,
+  recorded in the array's `rows` attribute), and only when L1 runs on at least one model pair. Before, it wrote every
+  series: for a 1-step model 32x the window store. A row the group does not hold raises with the `--force extract`
+  remedy (l1.max_rows, concat_max_rows or seed changed since extraction). Legacy fine groups without `rows` still read.
+- **Bug fixed.** `_GramBank` took the first `concat_max_rows // n_windows` of L1's sorted, stratified rows: a prefix,
+  and corpora are written grouped by family (CLAUDE.md sec 8, sampling). Whenever `l1.max_rows` exceeded
+  `concat_max_rows` this skewed the CONCAT sample's family mix. `concat_rows` now draws a stratified subsample. The
+  44.5 numbers are unaffected: `run_concat_check.py` draws its own stratified sets and never used this path.
+- **Tests.** `tests/test_window_concat.py`: default and legacy-pin fingerprints; stratified subsample against a
+  family-grouped decoy (10 per family out of 4x300 grouped rows); fine group row mapping across batches and the
+  loud miss; end to end, no fine group when L1 does not run. Plants, each caught: prefix slice (stratified test),
+  unmapped batch rows (row-mapping and end-to-end tests), no L1 gate (end-to-end), legacy default (fingerprint test).
+- **No v3 re-run (decision and reason).** The window representation enters only window-level CKA in L1. The feature
+  comparison does not pass through it: concept transfer and input agreement compare which *series* a feature fires
+  on (series-level codes, the mean over the whole context, the same for every tokenization); the atlas and
+  shared-input agreement compare *causal effect vectors* in the forecast's 9 channels, measured by token-level
+  ablation. CONCAT cannot be an SAE input either (a 1-step window would be a 32 x 768 vector with position-specific
+  features). The open analogue for features is that SAEs are trained on window-mean vectors (`sae/train.py::
+  load_all_windows`), so a 1-step model's dictionary is learned on averages of 32 tokens. Whether token-level
+  training changes its features is a separate experiment (token-level SAE), not a window re-run; not run.
+- **Paper (user-directed, same day).** §3.4 gains "What the window rule affects": the rule matters only for
+  cross-model comparisons of window vectors (window-level CKA, RSA, stitching; only CKA re-measured). SAE results do
+  not depend on it: features are compared across models only through the series they fire on (series-level codes,
+  symmetric across tokenizations) and the forecast effect of token-level ablation, and dictionaries are admitted by a
+  token-level forecast check (MN-16). The one place pooling enters is SAE training on window vectors (1-step
+  dictionaries learn from 32-token averages); stated there and in Limitations, with token-level training named as
+  the unrun alternative. L2 stitching reads `level="window"` (`analysis/l2_stitching.py`), so it is exposed and was
+  not re-measured.

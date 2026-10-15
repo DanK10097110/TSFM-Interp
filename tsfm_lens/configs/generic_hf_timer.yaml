@@ -38,6 +38,7 @@ data:
   max_series: 120                 # deliberately small: this run is a path test
 
 alignment:
+  window_rep: mean   # legacy window mean, pinned so this run's recorded numbers reproduce (ROADMAP 44.6)
   # 96, not the usual 32, because Timer's tokens are 96 timesteps wide.
   #
   # HISTORY, because it matters for how to read this: at window 32 this run
