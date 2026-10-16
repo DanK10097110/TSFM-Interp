@@ -39962,3 +39962,60 @@ A failed gate is repaired on PILOT only (fix the driver, re-run the gate), then 
   CONCAT null to `stats.n_null`-sized permutations with a p95, matching the mean path.
 - **Reading.** The pipeline itself, on the full v3 dev run, reproduces §44.5: mean pooling understates TimesFM vs the
   16-step and 1-step encoders by 0.13-0.31 CKA. Paper Results now quote these run values (v3, same 512 series).
+
+### 46.1 Findings — token-level vs window-mean SAE training (2026-10-16; `tsfm_lens/run_token_sae_check.py`, commit f9f3f11; `tsfm_lens/runs/token_sae_check/`)
+
+- **Run.** PILOT 128 / MAIN 512 v3 dev series (disjoint, family-stratified; MAIN 410 train / 102 held-out series).
+  Targets: TimesFM stacked_xf.0 (dict 6144) and .18 (1536); Chronos-T5-Base encoder.block.3 (192) and .11 (384);
+  Chronos-Bolt encoder.block.2 (6144) and .5 (6144). 3 seeds per arm (W seed s, T seed 100+s); matched optimizer
+  steps (720; Chronos-T5-Base 784); M6 reference TimesFM stacked_xf.14 (dict 3072, seed 7; 99 scorable features).
+  Frozen recipe written 2026-10-16T17:57:31Z before MAIN (`frozen_recipe.json`). 36 cell JSONs; ~15.48 GPU-h summed.
+  Numbers below recomputed by the orchestrator from the cell JSONs and identical to `main/decisions.json`.
+- **Gates.** G1: TimesFM W and T training matrices byte-identical (PILOT 1530 rows, MAIN 6150 rows, every cell).
+  G2 (mock 1-step model, planted within-window slope direction with window-mean projection max |.|
+  5.066394805908203e-07): T max |cos| 0.9881351590156555 (2 atoms >= 0.9), W 0.44555026292800903 (0). G3: self-patch
+  exactly 0.0 and cross-layer patch nonzero in all first-seed cells.
+- **PILOT repairs (before freeze).** G2 toy budget raised (300 -> 1200 steps, k 4 -> 2; T cos was 0.721). M4 ridge alpha
+  was chosen leave-one-window-out, which leaks within a series (raw baseline held-out R2 -0.56 on Chronos-T5-Base
+  block 3); now chosen on validation series. The first pilot was moved to `pilot_v0_discarded/`.
+- **D1 HOLDS** (Chronos-T5-Base token FVU, T - W vs noise): block 3 W 0.2835459862397514, T 0.04417716197644572
+  (diff -0.2393688242633057, noise 0.019284019597174983); block 11 W 0.5469249152105949, T 0.11733299141061297 (diff
+  -0.42959192379998196, noise 0.05942832328811091). Chronos-Bolt also: block 2 0.4093 -> 0.1466, block 5 0.8422 -> 0.2349.
+- **D2 HOLDS** (token |dMASE|, T <= W + noise). Chronos-T5-Base block 3 W 0.30693666140238446, T 0.04895734786987305;
+  block 11 W 1.0201536019643147, T 0.11304529507954915. Chronos-Bolt block 2 W 0.04726282755533854, T 0.0645136038462321
+  (diff +0.01725077629089356, noise 0.10500192704666347); block 5 W 0.05185310045878092, T 0.08826963106791179 (diff
+  +0.036416530609130866, noise 0.05834526418586544). Bolt's D2 is weakly powered (seed SD 0.02-0.07 on 102 series).
+- **D3 HOLDS.** TimesFM control: no metric (M1-M6, ground-truth alignment) differs by more than noise at either
+  target. Noise thresholds are wide with 3 seeds, so this is a mild test.
+- **D4 DOES NOT HOLD.** Chronos-T5-Base input-slope R2 from window-pooled codes: block 3 W 0.2546269088868454, T
+  0.2944049866869174 (diff +0.039778077800071976, noise 0.05677055407107734); block 11 W 0.46148925658154555, T
+  0.4702750567471889 (noise 0.17374244543097692). PC1-slope: block 3 +0.0484077577773224 (noise 0.03654309106235804,
+  exceeds); block 11 -0.06915964150465498 (noise 0.13554564769633295). Both arms decode slope worse than the raw window
+  mean of the activations (Chronos-T5-Base block 3 0.4711, block 11 0.6709). Token training does not make within-window
+  shape more decodable from pooled codes on real data, although it recovers a planted shape direction W cannot (G2).
+- **Verdict (pre-registered rule): recommend token training as the default** (D1, D2, D3 hold).
+- **What T changes about the features (T - W, noise).**
+  - Fewer dead features: Chronos-T5-Base block 3 0.328125 -> 0.04513888888888889 (noise 0.0237), block 11 0.1276 ->
+    0.0677; Chronos-Bolt block 2 0.2842339409722222 -> 0.10020616319444443 (noise 0.0519).
+  - More causal features (M5, of 64): Chronos-T5-Base block 3 2.67 -> 5.67 (noise 1.15), block 11 2.0 -> 6.0 (noise
+    2.83); Chronos-Bolt block 5 0.33 -> 5.33 (noise 3.65), median ratio 0.3777 -> 0.5019 (noise 0.0539); Bolt block 2
+    within noise.
+  - Overlap with the (arm-invariant) TimesFM reference falls (M6 BH fraction): Chronos-Bolt block 2 0.3044093113906048
+    -> 0.24164541774501724 (noise 0.018545472483144396), block 5 0.3614 -> 0.3084 (noise 0.0413); Chronos-T5-Base
+    -0.0755 and -0.0501, both inside noise. Ground-truth alignment unchanged except Bolt block 5 (+0.0127, noise 0.0067).
+  - Chronos-Bolt M4 input slope falls under T beyond noise: block 2 0.7071 -> 0.6169 (noise 0.0246), block 5 0.6503 ->
+    0.6217 (noise 0.0210). (The agent's report quoted noise 0.037 for block 2; the cell JSONs give 0.0246.)
+  - **Window FVU reverses**: a T dictionary applied to window means is off-distribution. Chronos-T5-Base block 3 W
+    0.1069 vs T 0.6133, block 11 0.1444 vs 0.4869. Chronos-Bolt similar in both arms.
+- **Reading.** The user's intuition holds for the space SAEs are used in: trained on its own tokens, a fine-token
+  model's dictionary fits the tokens interventions act on (Chronos-T5-Base token FVU 0.28 -> 0.04), preserves the
+  forecast far better (|dMASE| 1.02 -> 0.11 at block 11), has fewer dead features and yields more causal features.
+  Comparison stays defined identically (series identities and forecast effects), and the TimesFM control shows no
+  arm effect. It is not free: features from T dictionaries share fewer top series with TimesFM's (Bolt beyond noise),
+  and T does not add decodable within-window slope.
+- **Library implications (not done; user decision).** `sae/train.py::load_all_windows` and
+  `encode_and_persist_features` (train.py:558) both read `level="window"`. A token-training option must (a) train on
+  stored tokens, which the store keeps only in the row-limited `fine/` group, and (b) persist series/window codes as
+  the pooled token codes, never by encoding window means (window FVU 0.61 for a T dictionary). Opt-in first per
+  doctrine 1; recorded runs keep W. Caveat: MAIN has 6150 W rows for 6144-atom dictionaries (TimesFM xf.0, Bolt), so
+  W may be handicapped by scale; the TimesFM control is not.

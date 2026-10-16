@@ -1218,6 +1218,33 @@ These instructions are binding for every future session, human or agent.
 - **Ref.** ROADMAP §43.2.
 - **Score. 3/5.** Answers the standard "zero ablation is off-manifold" objection for most features.
 
+#### MP-11 · Training a fine-token model's SAE on its own tokens instead of window means fits the intervention space and preserves the forecast far better; comparison stays defined
+- **Claim.** 512 v3 dev series (410 train / 102 held-out), 3 seeds per arm, matched optimizer steps, pre-registered
+  rules; W = window-mean training (current library), T = the model's own tokens. TimesFM (tokens = windows) is the
+  control: training matrices byte-identical, no metric differs beyond noise (D3).
+  - Token FVU (held-out): Chronos-T5-Base block 3 0.2835459862397514 -> 0.04417716197644572 (noise
+    0.019284019597174983), block 11 0.5469249152105949 -> 0.11733299141061297 (noise 0.05942832328811091);
+    Chronos-Bolt block 2 0.4093 -> 0.1466, block 5 0.8422 -> 0.2349.
+  - Token-level forecast preservation |dMASE|: Chronos-T5-Base block 3 0.30693666140238446 -> 0.04895734786987305,
+    block 11 1.0201536019643147 -> 0.11304529507954915; Chronos-Bolt within noise (weakly powered).
+  - Dead features fall (Chronos-T5-Base block 3 0.328125 -> 0.04513888888888889); features clearing the causal null
+    rise (of 64: Chronos-T5-Base 2.67 -> 5.67 and 2.0 -> 6.0; Chronos-Bolt block 5 0.33 -> 5.33).
+  - Costs: top-series overlap with a fixed TimesFM dictionary falls (Chronos-Bolt block 2 BH fraction
+    0.3044093113906048 -> 0.24164541774501724, noise 0.018545472483144396; Chronos-T5-Base within noise); within-window
+    slope is NOT more decodable from pooled T codes (D4 fails; Chronos-T5-Base block 3 R2 0.2546269088868454 vs
+    0.2944049866869174, noise 0.05677055407107734), although T recovers a planted within-window direction W cannot
+    (mock: |cos| 0.9881351590156555 vs 0.44555026292800903); a T dictionary applied to window means is off-distribution
+    (Chronos-T5-Base window FVU 0.6133 vs 0.1069).
+- **Models / layers.** Chronos-T5-Base encoder.block.3/.11, Chronos-Bolt encoder.block.2/.5, TimesFM stacked_xf.0/.18.
+- **Evidence.** Descriptive (fit) and causal within-model (forecast preservation, ablation yield); dev, exploratory.
+  **Status:** measured once; pre-registered verdict "recommend token training as the default"; not yet in the library
+  (`sae/train.py` trains and persists codes from window means).
+- **Reproduce.** `tsfm_lens/run_token_sae_check.py` -> `runs/token_sae_check/main/{cells,table.json,decisions.json}`
+  (commit f9f3f11).
+- **Ref.** ROADMAP §46, §46.1.
+- **Score. 4/5.** Window-mean SAE training is a hidden handicap for 1-step models; fixing it changes fit, dead rate and
+  causal yield, while cross-model comparison stays defined.
+
 ---
 
 ## G. Method results — confirmed negatives (what does not work, and why)

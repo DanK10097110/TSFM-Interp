@@ -48,8 +48,10 @@ TimesFM and the fine-token models by up to 0.33 CKA (Section~\ref{sec:alignment}
 the v3 dev run (512 series, the cap of the Gram-matrix computation), not v2 or the private splits, and its shuffled-series
 null uses only 5 permutations. No window rule recovers resolution finer than Timer's 96-step
 token, and peak layer locations depend on the window size. Stitching uses the same window vectors and was not
-re-measured. SAE comparisons do not depend on the window rule, but a 1-step model's dictionary is trained on window
-averages and cannot represent within-window shape as a feature.
+re-measured. SAE comparisons do not depend on the window rule, but the reported dictionaries are trained on window
+averages. For Chronos-T5-Base, training on its own tokens fits the space interventions act in far better
+(\fid{MP-11}); the reported SAE results for 1-step models may understate their fidelity and causal yield, and may overstate how many
+top series their features share with TimesFM's.
 
 \paragraph{Ground truth and external validity.} Ground truth is exact only for the synthetic tier and encodes the
 generators' assumptions; 12 of 33 concept parts are dominated by one real-derived generator, and overlap with the models'

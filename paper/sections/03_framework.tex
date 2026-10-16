@@ -168,8 +168,14 @@ Pooling does enter one step of the SAE pipeline: dictionaries are trained on win
 dictionary is learned from averages of 32 tokens and cannot represent within-window shape as a separate feature. This
 limits what a fine-token model's dictionary can express, not how dictionaries are compared, and the token-level admission
 check bounds its cost to the forecast. CONCAT cannot replace it, because a concatenated window of a 1-step model is a
-$32\times768$ vector with position-specific coordinates. Training on individual tokens is the alternative; we did not
-run it.
+$32\times768$ vector with position-specific coordinates. Training on individual tokens is the alternative, and we
+tested it on 512 v3 series (3 seeds per arm, matched training steps, held-out series; \fid{MP-11}). For TimesFM, whose
+tokens are windows, the two training sets are identical and no metric changed beyond seed noise. For Chronos-T5-Base,
+token training lowered token-level unexplained variance from 0.2835 to 0.0442 (block 3) and from 0.5469 to 0.1173
+(block 11), cut the forecast change of the patched reconstruction from 1.020 to 0.113 MASE at block 11, and reduced
+dead features. Comparison remained defined in the same way, but the token-trained features of Chronos-Bolt shared
+fewer top series with TimesFM's, and within-window slope was not more decodable from their series codes. The reported
+runs use window training.
 
 Two further costs of the shared grid are not repaired by any window rule. First, the grid is no finer than the
 coarsest token. Within a 96-step span Timer has one vector, so the three windows it covers are identical, and an
