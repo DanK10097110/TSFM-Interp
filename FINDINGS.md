@@ -1218,6 +1218,33 @@ These instructions are binding for every future session, human or agent.
 - **Ref.** ROADMAP §43.2.
 - **Score. 3/5.** Answers the standard "zero ablation is off-manifold" objection for most features.
 
+#### MP-11 · Training a fine-token model's SAE on its own tokens instead of window means fits the intervention space and preserves the forecast far better; comparison stays defined
+- **Claim.** 512 v3 dev series (410 train / 102 held-out), 3 seeds per arm, matched optimizer steps, pre-registered
+  rules; W = window-mean training (current library), T = the model's own tokens. TimesFM (tokens = windows) is the
+  control: training matrices byte-identical, no metric differs beyond noise (D3).
+  - Token FVU (held-out): Chronos-T5-Base block 3 0.2835459862397514 -> 0.04417716197644572 (noise
+    0.019284019597174983), block 11 0.5469249152105949 -> 0.11733299141061297 (noise 0.05942832328811091);
+    Chronos-Bolt block 2 0.4093 -> 0.1466, block 5 0.8422 -> 0.2349.
+  - Token-level forecast preservation |dMASE|: Chronos-T5-Base block 3 0.30693666140238446 -> 0.04895734786987305,
+    block 11 1.0201536019643147 -> 0.11304529507954915; Chronos-Bolt within noise (weakly powered).
+  - Dead features fall (Chronos-T5-Base block 3 0.328125 -> 0.04513888888888889); features clearing the causal null
+    rise (of 64: Chronos-T5-Base 2.67 -> 5.67 and 2.0 -> 6.0; Chronos-Bolt block 5 0.33 -> 5.33).
+  - Costs: top-series overlap with a fixed TimesFM dictionary falls (Chronos-Bolt block 2 BH fraction
+    0.3044093113906048 -> 0.24164541774501724, noise 0.018545472483144396; Chronos-T5-Base within noise); within-window
+    slope is NOT more decodable from pooled T codes (D4 fails; Chronos-T5-Base block 3 R2 0.2546269088868454 vs
+    0.2944049866869174, noise 0.05677055407107734), although T recovers a planted within-window direction W cannot
+    (mock: |cos| 0.9881351590156555 vs 0.44555026292800903); a T dictionary applied to window means is off-distribution
+    (Chronos-T5-Base window FVU 0.6133 vs 0.1069).
+- **Models / layers.** Chronos-T5-Base encoder.block.3/.11, Chronos-Bolt encoder.block.2/.5, TimesFM stacked_xf.0/.18.
+- **Evidence.** Descriptive (fit) and causal within-model (forecast preservation, ablation yield); dev, exploratory.
+  **Status:** measured once; pre-registered verdict "recommend token training as the default"; not yet in the library
+  (`sae/train.py` trains and persists codes from window means).
+- **Reproduce.** `tsfm_lens/run_token_sae_check.py` -> `runs/token_sae_check/main/{cells,table.json,decisions.json}`
+  (commit f9f3f11).
+- **Ref.** ROADMAP §46, §46.1.
+- **Score. 4/5.** Window-mean SAE training is a hidden handicap for 1-step models; fixing it changes fit, dead rate and
+  causal yield, while cross-model comparison stays defined.
+
 ---
 
 ## G. Method results — confirmed negatives (what does not work, and why)
@@ -1721,6 +1748,13 @@ See SH-20. **4/5.**
 - **Evidence.** Descriptive / geometric, exploratory (dev), pre-registered criteria (ROADMAP §44–44.4). **Status:**
   confirmed on a fresh set; the fix is in the library as `alignment.window_rep: concat`, the default
   since ROADMAP §44.6 (recorded runs pin `mean`).
+- **Addendum (ROADMAP §45.1, 2026-10-16): the pipeline on the full v3 dev run.** Re-extraction reproduces all 21
+  recorded MEAN peaks exactly (max |Δ| 0.0). On the same 512 series, CONCAT vs MEAN peak CKA: TimesFM vs Chronos-2
+  0.7119318842887878 vs 0.4411318302154541, vs Chronos-T5-Base 0.6248822212219238 vs 0.31856971979141235, vs
+  Chronos-Bolt 0.6245514154434204 vs 0.3722766041755676, vs Sundial 0.6043637990951538 vs 0.470203697681427, vs Timer
+  0.37477120757102966 vs 0.37477126717567444. Spearman of 21 peaks 0.764935064935065; TimesFM/Chronos-2 7th vs 13th.
+  The L1 CONCAT null is 5 permutations (mean/min/max), weaker than §44.5's 40. Reproduce:
+  `configs/panel7_v3_concat.yaml` (extract,l1), `run_v3_concat_compare.py`.
 - **Reproduce.** `tsfm_lens/run_pooling_check.py` (pilot/main/confirm JSONs in `runs/pooling_check/`),
   `tsfm_lens/run_concat_check.py` (`runs/concat_check/`), `analysis/window_concat.py`.
 - **Ref.** ROADMAP §44.2, §44.3a, §44.5.
