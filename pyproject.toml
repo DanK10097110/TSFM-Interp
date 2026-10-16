@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tsfm-benchmark"
-version = "1.0.0"
+version = "1.1.0"
 description = "TSFM benchmark generation and validation pipeline"
 readme = "tsfm_benchmark/README.md"
 license = {text = "MIT"}

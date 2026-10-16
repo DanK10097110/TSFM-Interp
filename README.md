@@ -242,8 +242,8 @@ See [`CITATION.cff`](CITATION.cff). In brief:
   author  = {Kushnir, Daniel},
   title   = {TSFM-Lens: comparative mechanistic interpretability for
              time-series foundation models},
-  version = {1.0.0},
-  doi     = {10.5281/zenodo.23267463},
+  version = {1.1.0},
+  doi     = {10.5281/zenodo.23267462},
   url     = {https://github.com/DanK10097110/TSFM-Interp}
 }
 ```

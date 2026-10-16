@@ -8,6 +8,48 @@ is still evolving.
 
 ## [Unreleased]
 
+## [1.1.0] - unreleased
+
+The version the JMLR paper describes. Every run behind its numbers reproduces from
+its config, since those configs pin the legacy window mean.
+
+### Changed
+
+- **Window-level CKA concatenates a window's tokens by default.**
+  - `alignment.window_rep` now defaults to `concat`: a window is its tokens in
+    time order, and CKA is computed through summed per-position Gram matrices.
+  - The old overlap-weighted mean understated CKA between one-token-per-window
+    and fine-token models by up to 0.33 (FINDINGS MN-38).
+  - Pin `alignment.window_rep: mean` to reproduce runs made before 1.1.0. Under
+    the new default, such runs are reported stale rather than relabelled.
+  - Extraction writes a position-resolved `fine/` store group only for the series
+    L1 reads (`alignment.concat_max_rows`, default 7680 rows), and only when L1
+    compares a model pair.
+
+### Added
+
+- **Mean ablation in the SAE ablation battery.** An API option
+  (`intervention="mean"`, token-level corpus means) with a random-direction null
+  matched to the mean removal, plus a `score_features` restriction.
+- **Opt-in feature selection and testing (ROADMAP §42).**
+  - Gradient-attribution candidate rules (`sae.candidate_rules`:
+    `attribution`, `attribution_mase`, `attribution_horizon_l1`).
+  - A powered per-feature causal test (`sae.ablation_powered`) and chunked
+    forecast preservation.
+  - Forecast completeness (`concepts.completeness`, descriptive).
+- **`predict_differentiable`** for Chronos-2, Chronos-Bolt and `generic_hf`
+  (Timer, Time-MoE), with explicit refusals for sampled heads.
+
+### Fixed
+
+- **CONCAT row sample.** It is now a stratified subsample of L1's rows instead of
+  a family-skewed prefix of them.
+- **Report.** "What held up" and the multiplicity ledger count every
+  `concept_replication` family.
+- **Register.** The atlas-centroid summary records each per-target exclusion, and
+  states a reason when it registers nothing.
+- **Doctor.** Chunked forecast preservation is exempt from the batch-cap preflight.
+
 ## [1.0.0] - 2026-10-07
 
 First tagged release published to PyPI as two packages, `tsfm-benchmark` and
