@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tsfm-lens"
-version = "1.0.0"
+version = "1.1.0"
 description = "Layered, architecture-agnostic interpretability comparison of time-series foundation models"
 readme = "README.md"
 license = {text = "MIT"}

@@ -57,7 +57,7 @@ against matched random nulls, and tests exploratory claims once on a sealed held
 reported number carries an evidence class and a plain-language explanation. The toolkit ships adapters
 for TimesFM, the Chronos family, Sundial, Timer, Time-MoE and Lag-Llama, a zero-code adapter for Hugging Face
 checkpoints, a complete seven-model example run with held-out confirmation and over two thousand tests. It is released under the
-MIT license at \url{\repourl} (archived as \href{https://doi.org/10.5281/zenodo.23267463}{doi:10.5281/zenodo.23267463}).
+MIT license at \url{\repourl} (version 1.1.0, archived as \href{https://doi.org/10.5281/zenodo.23267462}{doi:10.5281/zenodo.23267462}).
 \end{abstract}
 
 \begin{keywords}
@@ -98,8 +98,9 @@ Structured corruptions and single-knob counterfactuals give perturbations with k
 \paragraph{Adapters and alignment.} An adapter exposes loading, prediction, the module and token time spans; its
 capability tier is derived from the methods it implements, and stages needing a higher tier are skipped with the
 reason rendered. A zero-code adapter measures token spans from impulse responses for Hugging Face checkpoints and
-refuses rather than guesses. Tokens are overlap-pooled onto common time windows, verified per layer by an alignment
-gate, so every cross-model statistic compares the same stretch of time.
+refuses rather than guesses. Tokens are mapped onto common time windows, verified per layer by an alignment gate, so every
+cross-model statistic compares the same stretch of time. For window-level similarity a window keeps its tokens in
+time order, because averaging them understates the similarity of fine-token models by up to 0.33 CKA.
 
 \paragraph{Stages.} Nineteen stages produce evidence of increasing strength: behavioral (accuracy, calibration, cost),
 descriptive (depth profiles, lenses), geometric (CKA, stitching gain over an input baseline), causal within-model

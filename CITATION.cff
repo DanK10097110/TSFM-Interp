@@ -7,10 +7,9 @@ authors:
     given-names: Daniel
     email: kushnir.daniel05@gmail.com
     affiliation: Rutgers University
-version: 1.0.0
-date-released: "2026-10-07"
+version: 1.1.0
 license: MIT
-doi: 10.5281/zenodo.23267463
+doi: 10.5281/zenodo.23267462
 identifiers:
   - type: doi
     value: 10.5281/zenodo.23267463
