@@ -39866,3 +39866,73 @@ answer: a fine-token copy of a coarse-token model has CKA 1 under CONCAT and les
   dictionaries learn from 32-token averages); stated there and in Limitations, with token-level training named as
   the unrun alternative. L2 stitching reads `level="window"` (`analysis/l2_stitching.py`), so it is exposed and was
   not re-measured.
+
+## 45. V3 L1 re-measured with CONCAT (added 2026-10-16, user-directed — DESIGN FIXED BEFORE ANY DATA)
+
+**Why.** Every window-level CKA in the paper's Results comes from the mean-pooled full runs (§44.5; MN-38). The
+activation stores were pruned, so this needs a fresh extraction. Only L1 depends on `alignment.window_rep`
+(§44.6): L2 stitching still reads mean window vectors and has no CONCAT path, and the SAE chain does not read
+window vectors across models. So the re-run is extract + l1 (+ report), nothing else.
+
+**Run.** `configs/panel7_v3_concat.yaml` = `panel7_v3.yaml` with `run.name: panel7_v3_concat` and
+`alignment.window_rep: concat` (default `concat_max_rows` 7680, so CONCAT uses 512 of L1's 1,333 rows). Stages
+`extract,l1`, into a new run directory; `runs/panel7_v3_dev` is not touched. Dev corpus only: the v3 private split
+was opened by the v3 confirmation, and a CONCAT peak was never registered, so there is no held-out CONCAT claim.
+
+**Checks, in order.**
+1. **Same data.** L1 with `window_rep: mean` on the new store (a second run directory that reads the same store)
+   must reproduce `runs/panel7_v3_dev/l1/meta.json` peak CKA for all 21 pairs to |Δ| ≤ 1e-3. Otherwise stop and report.
+2. **Like for like.** MEAN peak CKA on the same 512 CONCAT rows, so MEAN-vs-CONCAT differs only in the window rule.
+3. **CONCAT.** Peak CKA, peak layers, shuffled-series null p95, per pair; Spearman of the 21 peaks against MEAN.
+4. **Agreement with §44.5.** §44.5 measured CONCAT on a different 512-series v3 set (VALIDATE). Report each pair's
+   difference; no criterion, sets differ.
+
+## 46. Token-level SAE training — does it improve the SAEs, and are cross-model comparisons still fair? (added 2026-10-16, user-directed — DESIGN AND CRITERIA FIXED BEFORE ANY DATA)
+
+**Question.** SAEs are trained on window-mean vectors (`sae/train.py::load_all_windows`) but applied to tokens by
+every intervention (`sae/response.py::_feature_ablated_replacement`). For a 1-step model they are therefore trained
+on 32-token averages and evaluated off their training distribution. Hypothesis (user's intuition): training each
+SAE on its OWN tokens is better, and cross-model comparison stays fair, because features are only compared through
+series identities (series-level codes) and forecast effects, never in activation space.
+
+**Arms.** W = current recipe (window means). T = same recipe on the model's tokens (postprocessed token states).
+Same TopK k, dict size (the v3 primary's), aux_k, batch size in vectors and optimizer steps (compute matched; T
+sees more distinct vectors). Series-level code under both arms = mean of the feature's activation over every
+token (T) or every window (W) of the series: whole-context averages for every model.
+
+**Models and targets.** Chronos-T5-Base (1 step/token, the extreme), Chronos-Bolt (16 steps, 2 tokens/window),
+TimesFM (32 steps: tokens ARE windows, so W ≡ T; the control). Two v3 targets per model (an early and a late
+admitted target from `runs/panel7_v3_dev/sae`).
+
+**Data.** v3 public_dev. PILOT 128 series, MAIN 512, disjoint, family-stratified, seed 0; train/held-out split by
+series (invariant 2), 80/20. 3 SAE seeds per arm on MAIN.
+
+**Metrics (held-out series).**
+- M1 token-level FVU (the space interventions act in) and window-level FVU.
+- M2 token-level forecast preservation: ΔMASE of the reconstruction patched in at token granularity vs clean.
+- M3 dead and dense feature fractions.
+- M4 within-window shape: R² of within-window slope (target: per-window least-squares slope of the input, and of
+  the activations' first PC) decoded by ridge from window-pooled SAE codes; tests whether T learns shape features.
+- M5 causal yield: library ablation battery (profile-matched random-direction null, same k series per feature) on
+  the 64 most active features per target: number clearing the null, median |effect|/null_p95.
+- M6 comparison: for each feature, top-k series by series-level code; best hypergeometric top-k overlap with any
+  TimesFM feature at a fixed TimesFM target (TimesFM SAE identical across arms); fraction with BH q < 0.05, and the
+  median best overlap. Also ground-truth alignment against the permutation null (`sae/ground_truth.py`).
+
+**Known-answer gates (PILOT, before MAIN).**
+- G1 TimesFM control: the W and T training matrices are identical (assert byte equality), so M1–M6 differ only by
+  seed noise.
+- G2 planted shape: a mock 1-step model whose tokens carry a within-window slope direction that is zero in the
+  window mean. T must recover a feature with |cos| ≥ 0.9 to it, W must not (it never sees it).
+- G3 reach: self-patch of the token reconstruction gives exactly the same forecast twice; a cross-layer patch moves it.
+A failed gate is repaired on PILOT only (fix the driver, re-run the gate), then the recipe is frozen before MAIN.
+
+**Decision rules (MAIN, per model; noise = 2× the pooled seed SD of the arm difference).**
+- D1 "T fits the space it is used in": T's token FVU lower than W's by more than noise, for Chronos-T5-Base.
+- D2 "T preserves the forecast at least as well": T's token |ΔMASE| ≤ W's + noise.
+- D3 "Comparison stays fair": M6 is defined identically for both arms (by construction), and the TimesFM control
+  shows no arm difference beyond noise. A change in M6 for Chronos-T5/Bolt under T is reported as a finding
+  (direction and size), not as a failure.
+- D4 "T learns what W cannot": M4 slope R² under T exceeds W by more than noise for Chronos-T5-Base.
+- Verdict: recommend token training as the default if D1, D2 and D3 hold; report D4 and M5/M6 changes as what
+  token training changes about the features.
