@@ -39936,3 +39936,29 @@ A failed gate is repaired on PILOT only (fix the driver, re-run the gate), then 
 - D4 "T learns what W cannot": M4 slope R² under T exceeds W by more than noise for Chronos-T5-Base.
 - Verdict: recommend token training as the default if D1, D2 and D3 hold; report D4 and M5/M6 changes as what
   token training changes about the features.
+
+### 45.1 Findings — V3 L1 with CONCAT (2026-10-16; commit 6ebe9c0; `tsfm_lens/runs/panel7_v3_concat/`, `concat_compare.json`)
+
+- **Run.** `configs/panel7_v3_concat.yaml`, stages extract,l1, GPU 0: 3767 s to l1/meta.json; store 12G (with the
+  `fine/` group on 512 series). CONCAT L1: 512 series x 15 windows = 7680 rows; recorded MEAN: 1333 series (19995 rows).
+- **Check 1 (same data): PASS.** L1 with `window_rep: mean` on the new store (`configs/panel7_v3_concat_meancheck.yaml`,
+  store symlinked) reproduces all 21 recorded `runs/panel7_v3_dev` peaks exactly: max |Δ| = 0.0, same layer pairs.
+- **Check 2 (like for like).** MEAN on the 512 CONCAT rows is within ~0.016 of MEAN on 1333 rows; Spearman of the two
+  MEAN sets 0.9922077922077923. The CONCAT change is the window rule, not the subsample.
+- **Check 3 (CONCAT vs MEAN-512, peak CKA).** TimesFM vs Chronos-2 0.4411318302154541 -> 0.7119318842887878; vs
+  Chronos-T5-Base 0.31856971979141235 -> 0.6248822212219238; vs Chronos-Bolt 0.3722766041755676 -> 0.6245514154434204;
+  vs Sundial 0.470203697681427 -> 0.6043637990951538; vs Time-MoE 0.39078736305236816 -> 0.4663721024990082; vs Timer
+  0.37477126717567444 -> 0.37477120757102966. Chronos-2 vs Chronos-T5-Base 0.5997453927993774 -> 0.7766579985618591;
+  Timer vs Chronos-T5-Base 0.30487966537475586 -> 0.21059685945510864; Chronos-2 vs Timer 0.42068517208099365 ->
+  0.36189761757850647. Spearman of the 21 peaks CONCAT vs MEAN-512 0.764935064935065 (vs MEAN-1333
+  0.8012987012987013). TimesFM/Chronos-2 rank: 7th CONCAT, 13th MEAN (both row sets). Sundial vs Chronos-Bolt first and
+  Timer vs Chronos-T5-Base last under all three. TimesFM's CONCAT peaks sit at stacked_xf.0 for 4 of 6 pairs.
+- **Check 4 (vs §44.5 VALIDATE, different series).** Differences -0.0320 to +0.0255; the TimesFM- and Chronos-T5-vs-
+  encoder pairs are 0.018-0.032 lower here, Timer/Time-MoE pairs slightly higher. Same ordering at the top and bottom.
+- **Null caveat.** `_shuffled_null_gram` (L1 concat path) uses 5 permutations and stores mean/min/max, not a p95
+  over 40 as the §44.5 driver did. Max over 5 is < 0.08 for 17 pairs; high for Sundial vs Time-MoE (0.5060623729508519
+  against 0.7404359579086304), TimesFM vs Time-MoE (0.18353094109499832) and Timer vs Time-MoE (0.10357446548314532):
+  the null keeps window positions aligned (§44.5). Follow-up (library, not done while §46 imports it): raise the
+  CONCAT null to `stats.n_null`-sized permutations with a p95, matching the mean path.
+- **Reading.** The pipeline itself, on the full v3 dev run, reproduces §44.5: mean pooling understates TimesFM vs the
+  16-step and 1-step encoders by 0.13-0.31 CKA. Paper Results now quote these run values (v3, same 512 series).

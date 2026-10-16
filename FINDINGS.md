@@ -1721,6 +1721,13 @@ See SH-20. **4/5.**
 - **Evidence.** Descriptive / geometric, exploratory (dev), pre-registered criteria (ROADMAP §44–44.4). **Status:**
   confirmed on a fresh set; the fix is in the library as `alignment.window_rep: concat`, the default
   since ROADMAP §44.6 (recorded runs pin `mean`).
+- **Addendum (ROADMAP §45.1, 2026-10-16): the pipeline on the full v3 dev run.** Re-extraction reproduces all 21
+  recorded MEAN peaks exactly (max |Δ| 0.0). On the same 512 series, CONCAT vs MEAN peak CKA: TimesFM vs Chronos-2
+  0.7119318842887878 vs 0.4411318302154541, vs Chronos-T5-Base 0.6248822212219238 vs 0.31856971979141235, vs
+  Chronos-Bolt 0.6245514154434204 vs 0.3722766041755676, vs Sundial 0.6043637990951538 vs 0.470203697681427, vs Timer
+  0.37477120757102966 vs 0.37477126717567444. Spearman of 21 peaks 0.764935064935065; TimesFM/Chronos-2 7th vs 13th.
+  The L1 CONCAT null is 5 permutations (mean/min/max), weaker than §44.5's 40. Reproduce:
+  `configs/panel7_v3_concat.yaml` (extract,l1), `run_v3_concat_compare.py`.
 - **Reproduce.** `tsfm_lens/run_pooling_check.py` (pilot/main/confirm JSONs in `runs/pooling_check/`),
   `tsfm_lens/run_concat_check.py` (`runs/concat_check/`), `analysis/window_concat.py`.
 - **Ref.** ROADMAP §44.2, §44.3a, §44.5.
