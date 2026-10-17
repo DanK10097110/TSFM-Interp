@@ -24,6 +24,13 @@ writing only to a NEW directory (default `runs/ablation_mode_check`):
    feature over every dev series (`token_feature_means`). That is not the mean of
    the persisted series-level features, which are `sae.encode` of a window-pooled
    activation, so the series-level mean is recorded only for comparison.
+   ROADMAP 47.4: `--arms mean,resample,clean` adds the RESAMPLE arm (each feature's
+   token activation replaced by its activation at the same token of a seeded donor
+   series it fires on; `token_feature_traces`) and the CLEAN arm (the decoder
+   contribution subtracted from the clean activation, baseline = unpatched
+   forecast). Each arm's null is matched to its own removal and shares rows, chunks,
+   null seeds and draws with the zero control. Default `--arms mean` is the §43.2
+   run.
 3. `aggregate`: the survival counts, false-creation check, zero/mean effect-vector
    cosines and the survival-by-ratio table, into `ablation_mode_check.json`.
 
@@ -175,13 +182,17 @@ def _top_token_means(adapter, sae, layer, data, device, acts, feats: list, k: in
 
 
 
-def run_worker(run_dir: Path, out_dir: Path, plan: dict, model: str, shard: int, n_shards: int) -> None:
+ARMS = ("mean", "resample", "clean")
+
+
+def run_worker(run_dir: Path, out_dir: Path, plan: dict, model: str, shard: int, n_shards: int,
+               arms: tuple = ("mean",)) -> None:
     from tsfm_lens.config import load_config
     from tsfm_lens.data import load_benchmark
     from tsfm_lens.extraction.store import ActivationStore
     from tsfm_lens.models import ModelHub
     from tsfm_lens.sae.ground_truth import encode_series_level
-    from tsfm_lens.sae.response import token_feature_means
+    from tsfm_lens.sae.response import token_feature_means, token_feature_traces
     from tsfm_lens.sae.train import load_sae_checkpoint
     from tsfm_lens.utils import resolve_device, resolve_dtype, set_seed, setup_logging
 
@@ -205,6 +216,14 @@ def run_worker(run_dir: Path, out_dir: Path, plan: dict, model: str, shard: int,
     np.savez(means_path, **{l.replace(".", "_"): v["means"] for l, v in tm.items()})
     log.info("token means for %s (%d layers, %d series, tokens/series %s) in %.0fs", model, len(tm),
              data.n, tm[mine[0][1]]["tokens_per_series"], time.time() - t0)
+
+    traces = {}
+    if "resample" in arms:
+        want = {l: sorted({f for g in ("clearing", "sample") for f in plan["targets"][_tkey(model, l)][g]})
+                for _, l, _ in mine}
+        t0 = time.time()
+        traces = token_feature_traces(adapter, {l: saes[l] for l in want}, data.contexts(), device, want)
+        log.info("token traces for %s (%d layers) in %.0fs", model, len(want), time.time() - t0)
 
     for _, layer, art in mine:
         key = _tkey(model, layer)
@@ -248,6 +267,20 @@ def run_worker(run_dir: Path, out_dir: Path, plan: dict, model: str, shard: int,
             mean = run_ablation_target(cfg, run_dir, hub, data, store, device, model, layer,
                                        intervention="mean", feature_means=mu, **common)
             record["seconds_mean"] = time.time() - t2
+            extra = {}
+            for arm in [a for a in arms if a != "mean"]:
+                t3 = time.time()
+                kw = ({"feature_traces": traces[layer]} if arm == "resample" else {})
+                res = run_ablation_target(cfg, run_dir, hub, data, store, device, model, layer,
+                                          intervention=arm, **kw, **common)
+                record[f"seconds_{arm}"] = time.time() - t3
+                extra[arm] = res
+                record[f"{arm}_meta"] = {k: res.get(k) for k in
+                                         ("ablation_intervention", "ablation_baseline",
+                                          "clean_identity_max_abs") if k in res}
+                if arm == "resample":
+                    record["resample_meta"]["seed"] = res["ablation_resample"]["seed"]
+                    record["resample_meta"]["n_firing_series"] = res["ablation_resample"]["n_firing_series"]
             mrec = {int(c["feature"]): c for c in mean["candidates"] if c.get("scorable")}
             top_tok = _top_token_means(adapter, sae, layer, data, device, acts, feats, int(art["top_k_series"]))
             per = []
@@ -266,6 +299,9 @@ def run_worker(run_dir: Path, out_dir: Path, plan: dict, model: str, shard: int,
                     "zero": _arm_record(zrec[f], PRIMARY), "mean": _arm_record(mrec[f], PRIMARY),
                     "mean_ablation_null": mean.get("ablation_intervention"),
                 })
+                for arm, res in extra.items():
+                    arec = {int(c["feature"]): c for c in res["candidates"] if c.get("scorable")}
+                    per[-1][arm] = _arm_record(arec[f], PRIMARY) if f in arec else None
             record["features_out"] = per
         save_json(out_path, record)
         log.info("%s: control %s; %d features; %.0fs", key, "reproduced" if ok else "FAILED",
@@ -362,6 +398,8 @@ def aggregate(out_dir: Path, plan: dict) -> dict:
             ratio_tables[rkey]["spearman_ratio_vs_survive_cov"] = (
                 {"rho": float(rho.statistic), "p": float(rho.pvalue)} if rho else None)
 
+    extra_arms = {a: arm_block(rows, a) for a in ARMS if a != "mean" and any(x.get(a) is not None for x in rows)}
+
     ctrl = {"n_features": len(controls), "n_reproduced": sum(1 for c in controls if c["reproduced"]),
             "n_exact": sum(1 for c in controls if c.get("exact")),
             "max_rel_diff_over_all": max((c.get("max_rel_diff", 0.0) for c in controls), default=None),
@@ -370,12 +408,60 @@ def aggregate(out_dir: Path, plan: dict) -> dict:
     secs = [(r.get("seconds_zero", 0.0) + r.get("seconds_mean", 0.0)) for r in recs]
     result = {"plan_n_clearing": plan["n_clearing"], "plan_n_sample": plan["n_sample"],
               "plan_seed": plan["seed"], "control": ctrl, "total": total, "by_model": by_model,
-              "ratio_tables": ratio_tables,
+              "ratio_tables": ratio_tables, **({"extra_arms": extra_arms} if extra_arms else {}),
               "worker_seconds_sum": float(sum(secs)),
               "tokens_per_series_seen": sorted({t for r in recs for t in r["tokens_per_series"]}),
               "features": rows}
     save_json(out_dir / "ablation_mode_check.json", result)
     return result
+
+
+def _parse_arms(text: str) -> tuple:
+    arms = tuple(a for a in text.split(",") if a)
+    bad = [a for a in arms if a not in ARMS]
+    if bad or "mean" not in arms:
+        raise SystemExit(f"--arms must be a subset of {ARMS} containing 'mean', got {text!r}")
+    return arms
+
+
+def arm_block(rows: list, arm: str) -> dict:
+    """ROADMAP 47.4 report for one extra arm against the zero arm, on the clearing
+    set: survivors under cov / iso / both, clearing cells, the zero-vs-arm
+    effect-vector cosine (cov null units; median and IQR), survival split by token
+    mu/top density (< / >= `RATIO_SPLIT`), the survival of the sampled non-clearing
+    features (false creation), and the clearing features lost, by model."""
+    ok = [x for x in rows if x.get(arm) is not None]
+    clr = [x for x in ok if x["group"] == "clearing"]
+    smp = [x for x in ok if x["group"] == "sample"]
+
+    def s(sub, a, null):
+        return sum(1 for x in sub if x[a][null]["n_channels_clearing"] >= 1)
+
+    dens = {}
+    for name, sel in (("lt", [x for x in clr if x["ratio_token"] is not None and x["ratio_token"] < RATIO_SPLIT]),
+                      ("ge", [x for x in clr if x["ratio_token"] is not None and x["ratio_token"] >= RATIO_SPLIT])):
+        dens[name] = {"n": len(sel), "survive_cov": s(sel, arm, "cov"), "survive_iso": s(sel, arm, "iso")}
+    by_model = {}
+    for m in sorted({x["model"] for x in clr}):
+        sub = [x for x in clr if x["model"] == m]
+        by_model[m] = {"n": len(sub), "zero_cov": s(sub, "zero", "cov"), "survive_cov": s(sub, arm, "cov"),
+                       "survive_iso": s(sub, arm, "iso")}
+    return {
+        "arm": arm, "n_clearing_set": len(clr), "n_sample_set": len(smp),
+        "n_clearing_set_unscorable_under_arm": sum(1 for x in rows if x["group"] == "clearing" and x.get(arm) is None),
+        "clearing_set_zero_clears_ge1_cov": s(clr, "zero", "cov"),
+        "clearing_set_arm_clears_ge1_cov": s(clr, arm, "cov"),
+        "clearing_set_arm_clears_ge1_iso": s(clr, arm, "iso"),
+        "clearing_set_arm_clears_ge1_both": sum(
+            1 for x in clr if x[arm]["cov"]["n_channels_clearing"] >= 1 and x[arm]["iso"]["n_channels_clearing"] >= 1),
+        "clearing_set_cells_zero_cov": sum(x["zero"]["cov"]["n_channels_clearing"] for x in clr),
+        "clearing_set_cells_arm_cov": sum(x[arm]["cov"]["n_channels_clearing"] for x in clr),
+        "sample_arm_clears_ge1_cov": s(smp, arm, "cov"),
+        "sample_arm_clears_ge1_iso": s(smp, arm, "iso"),
+        "cosine_zero_vs_arm_cov_null_units": _quant([_cos(_vec(x["zero"], "cov"), _vec(x[arm], "cov")) for x in clr]),
+        "cosine_zero_vs_arm_iso_null_units": _quant([_cos(_vec(x["zero"], "iso"), _vec(x[arm], "iso")) for x in clr]),
+        "survival_by_token_density": dens, "by_model": by_model,
+    }
 
 
 def main() -> None:
@@ -387,6 +473,7 @@ def main() -> None:
     ap.add_argument("--model", default=None)
     ap.add_argument("--shard", type=int, default=0)
     ap.add_argument("--n-shards", type=int, default=1)
+    ap.add_argument("--arms", default="mean", help="comma list from mean,resample,clean (zero always runs)")
     ap.add_argument("--gpus", default="0")
     ap.add_argument("--shards", default="TimesFM=2", help="model=n_shards,... (default 1 each)")
     args = ap.parse_args()
@@ -402,7 +489,7 @@ def main() -> None:
         return
     plan = load_json(plan_path)
     if args.cmd == "worker":
-        run_worker(run_dir, out_dir, plan, args.model, args.shard, args.n_shards)
+        run_worker(run_dir, out_dir, plan, args.model, args.shard, args.n_shards, arms=_parse_arms(args.arms))
     elif args.cmd == "launch":
         shards = {kv.split("=")[0]: int(kv.split("=")[1]) for kv in args.shards.split(",") if kv}
         models = sorted({m for m, _, _ in measured_targets(run_dir)})
@@ -414,7 +501,7 @@ def main() -> None:
             log_path = out_dir / f"worker_{m}_{s}.log"
             procs.append(subprocess.Popen(
                 [sys.executable, __file__, "worker", "--run", str(run_dir), "--out", str(out_dir),
-                 "--model", m, "--shard", str(s), "--n-shards", str(n)],
+                 "--model", m, "--shard", str(s), "--n-shards", str(n), "--arms", args.arms],
                 env=env, stdout=open(log_path, "w"), stderr=subprocess.STDOUT))
         codes = [p.wait() for p in procs]
         print("worker exit codes:", codes)
