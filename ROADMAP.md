@@ -40099,3 +40099,31 @@ against `check_four_model.json`, `items_v2_v3.json`, `patching.json`.
   0.004975124378109453). v3 covariance 4 vs 0.18 (p95 1.0); isotropic 18 vs 2.655 (p95 5.0).
 - **Paper.** Every † number replaced by its v2/v3 value; the † convention and the "earlier four-model run" source note
   removed. FINDINGS MN-15, MN-07, DE-01 carry dated corrections.
+
+### 47.2 Findings — L2 stitching under CONCAT (2026-10-17; `tsfm_lens/run_concat_stitching.py`, commit aca7a1e; `tsfm_lens/runs/concat_stitching/`)
+
+- **Protocol.** L2's protocol copied (series split seed+2, val 0.25, lambdas [0.001, 0.01, 0.1, 1.0], variance-weighted R2,
+  `_baseline_features` baseline, gain = stitch R2 - baseline R2, series bootstrap with probes fixed, 1000 draws) in dual
+  (linear-kernel) form, on the 512 `fine/` rows of `runs/panel7_v3_concat` (384 train / 128 val series). Four cells per
+  direction: MEAN->MEAN (what L2 does), CONCAT->CONCAT, CONCAT->MEAN (source effect), MEAN->CONCAT (target effect). Two
+  layer-pair sets: (i) the recorded L2 best pairs, (ii) the CONCAT L1 peak pairs; 42 directions each.
+- **Gates.** Dual = primal to 1e-6 (float64 fixtures); the MEAN path on L2's own split reproduces the recorded L2 gains
+  (max |Δ| 2.9802322387695312e-08 over 42 pairs). Self-stitch reaches its attainable ceiling in 14/14 cells (CONCAT
+  ceilings 0.94873 Chronos-T5-Base, 0.91163 Time-MoE: 24576/12288 dims from 5760 rows). Series-shuffled targets: the
+  pre-registered `gain <= 0` gate was wrong (window-position structure survives a series shuffle; shuffled R2 up to
+  0.0455); corrected criterion (within 0.01 of the window-index-only R2) passes 24/24.
+- **Results (mean gain over 42 directions).** Set (i): MEAN->MEAN 0.5960491731734092, CONCAT->CONCAT 0.6009014858967708,
+  CONCAT->MEAN 0.6359848766921863, MEAN->CONCAT 0.481627032478815. Set (ii): 0.4980521354254505, 0.5347124554566322,
+  0.5536236378315946, 0.4082043467226021. CONCAT->CONCAT higher than MEAN in 22 (i) / 23 (ii) of 42, CI excluding 0 in
+  each, lower in 16 / 15.
+- **The sign depends on target width.** Targets with 1-2 tokens per window (30 directions): CONCAT - MEAN +0.06907491199175526
+  (i), +0.09747452604410559 (ii). Targets with 12 or 32 tokens (Chronos-T5-Base, Time-MoE; 12 directions):
+  -0.15570418544762224 (i), -0.11537519500112832 (ii), while the source-only effect there is -0.006378346613501377 (i) /
+  -0.010408370874541273 (ii): the drop is the 12288/24576-dim target fit from 5760 rows (lambda at the grid edge in 26-27 of
+  42 CONCAT cells vs 12-13 MEAN). Largest source-side gains are into TimesFM at the peak pairs: Chronos-T5-Base 0.3070 ->
+  0.7879, Sundial 0.4530 -> 0.8249, Chronos-Bolt 0.6059 -> 0.8282, Chronos-2 0.6345 -> 0.8353.
+- **Ranking.** Spearman MEAN vs CONCAT->CONCAT over 21 pairs 0.92987012987013 (i), 0.890909090909091 (ii); CONCAT source
+  with MEAN target 0.9662337662337662 (i), 0.9246753246753248 (ii).
+- **Reading.** As for CKA, mean pooling the SOURCE understates how well a fine-token model's window predicts a coarse-token
+  model's (into TimesFM by up to 0.48 gain). Stitching's pair ranking is largely unchanged. Predicting a 1-step model's
+  full concatenated window is underdetermined at 512 series; the window summary is the well-posed stitching target.

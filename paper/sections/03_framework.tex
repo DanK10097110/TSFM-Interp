@@ -148,8 +148,11 @@ TimesFM to the fine-token models. Concatenation is the tool's default (\texttt{a
 runs reported here use it unless stated.
 
 \paragraph{What the window rule affects.} The window rule matters only where window vectors of two models are compared
-with each other: the similarity measures, namely window-level CKA, RSA and stitching. We re-measured CKA; stitching maps
-the same window vectors and is subject to the same loss, but was not re-measured. The sparse-dictionary results
+with each other: the similarity measures, namely window-level CKA, RSA and stitching. Both were re-measured. For
+stitching, concatenating the source window raises the gain over the input baseline from 0.498 to 0.554 on average over the
+21 peak pairs in both directions, most when TimesFM is predicted (from Chronos-T5-Base 0.307 to 0.788), while the ranking
+of model pairs is kept (Spearman 0.92; \fid{MN-38}). The stitching target stays the window summary, because a 1-step
+model's concatenated window has 24{,}576 coordinates and is underdetermined at the available number of series. The sparse-dictionary results
 (Section~\ref{sec:methods}) do not depend on the rule, for three reasons.
 \begin{itemize}[itemsep=1pt]
   \item \textbf{No cross-model vector comparison.} An SAE is fit to one model's activations, and its features are

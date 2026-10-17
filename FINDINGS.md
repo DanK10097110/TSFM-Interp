@@ -1758,6 +1758,12 @@ See SH-20. **4/5.**
   0.37477120757102966 vs 0.37477126717567444. Spearman of 21 peaks 0.764935064935065; TimesFM/Chronos-2 7th vs 13th.
   The L1 CONCAT null is 5 permutations (mean/min/max), weaker than §44.5's 40. Reproduce:
   `configs/panel7_v3_concat.yaml` (extract,l1), `run_v3_concat_compare.py`.
+- **Addendum (ROADMAP §47.2, 2026-10-17): stitching.** On the same 512 v3 series, with L2's protocol (reproduced to
+  2.98e-08), concatenating the SOURCE window raises stitching gain over the input baseline from 0.4980521354254505 to
+  0.5536236378315946 on average at the 21 CONCAT peak pairs (both directions), most into TimesFM (Chronos-T5-Base ->
+  TimesFM 0.3070 -> 0.7879). Pair ranking is kept (Spearman over 21 pairs 0.9246753246753248; 0.9662337662337662 at the
+  recorded L2 pairs). Concatenated TARGETS of 12- and 32-token models (12288/24576 dims) are underdetermined at 5760
+  training rows (gain -0.11537519500112832 vs MEAN). Reproduce: `tsfm_lens/run_concat_stitching.py` (commit aca7a1e).
 - **Reproduce.** `tsfm_lens/run_pooling_check.py` (pilot/main/confirm JSONs in `runs/pooling_check/`),
   `tsfm_lens/run_concat_check.py` (`runs/concat_check/`), `analysis/window_concat.py`.
 - **Ref.** ROADMAP §44.2, §44.3a, §44.5.
