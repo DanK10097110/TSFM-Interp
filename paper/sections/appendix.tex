@@ -52,10 +52,12 @@ irrelevant to the forecast; the causal definition asks the question that matters
 of 192--6{,}144 atoms are nonzero on any token, so the ablated state lies inside the dictionary's normal range, unlike
 zeroing a dense neuron. The comparison is between two passes through the same reconstruction, so the dictionary's error
 is in both arms. The null removes exactly the feature's per-token amount along another direction, on the same series,
-with the same seed for sampled models, after a reach probe has shown that patching this layer can move the forecast. Mean
-ablation, with the null matched to its removal, keeps 69 of the 91 v3 features that clear the on-manifold null, with a
-median effect-vector cosine of 0.997 to zero ablation (Section~\ref{sec:rq1}). Ablating against the clean activation
-was not run; it differs only through the model's nonlinear response to the reconstruction error.
+with the same seed for sampled models, after a reach probe has shown that patching this layer can move the forecast. Each
+alternative intervention, with the null matched to its removal, keeps most of the 91 v3 features that clear the
+on-manifold null (Section~\ref{sec:rq1}): mean ablation 69, resample ablation 58 of 90 and ablation against the clean
+activation 49, with median effect-vector cosines to zero ablation of 0.997, 0.991 and 0.919. To make this comparison
+possible the v3 dictionaries were retrained from the recorded configuration; training reproduced all 50 dictionaries
+exactly (identical loss histories) and the same 91 features clear.
 
 \paragraph{Distinguishing causal features from chance.} Four checks address this. (i) Calibration on a known answer: on the planted
 forecaster's control layer, which has no planted effect, the per-cell false-positive rate is at most 0.003 while planted
@@ -261,7 +263,7 @@ MP-05 & SAE feature death set by layer geometry (exponent 1.02), not recipe & \S
 MP-06 & Ground-truth alignment of SAE features is real only over a permutation null & \S\ref{sec:casestudy} & 3 \\
 MP-07 & Ablation battery discriminates: 2.47$\times$ empirical chance at 7 models (Timer 1.02$\times$, Bolt 5.70$\times$) & \S\ref{sec:casestudy} & 4 \\
 MP-09 & Dev and private splits exchangeable (v2: energy $p=0.951$, TOST 20/22; v3: $p=0.995$, 22/22) & \S\ref{sec:setup} & 3 \\
-MP-10 & Causal features survive mean ablation (69/91), except many dense ones & \S\ref{sec:rq1} & 3 \\
+MP-10 & Effects survive mean, resample, clean ablation (69, 58, 49 of 91) & \S\ref{sec:rq1} & 3 \\
 MP-11 & Token-level SAE training: Chronos-T5-Base token FVU 0.2835$\to$0.0442, fewer dead features & \S\ref{sec:alignment}, \S\ref{sec:limitations} & 4 \\
 MN-01 & Similarity cannot detect lineage: untrained pair 0.878 $>$ trained related pair 0.734 & \S\ref{sec:casestudy}, T\ref{tab:results} & 5 \\
 MN-07 & Causal fingerprints are no cross-model matching key; effect vectors span ${\sim}5.6$ of 9 dimensions & \S\ref{sec:casestudy} & 4 \\

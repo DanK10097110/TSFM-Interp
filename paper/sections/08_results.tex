@@ -135,15 +135,22 @@ candidates added (Section~\ref{sec:limits}), so its rows are not comparable with
 \label{tab:chance}
 \end{table}
 
-\paragraph{The effects do not depend on ablating to zero.} Zero ablation could move activations off the data manifold.
-We therefore re-ran the 91 v3 features that clear the on-manifold null, setting each feature to its corpus mean
-activation over all tokens instead of to zero, with the null matched to the removal this makes. Rerunning zero ablation
-in the same setup reproduced the stored results exactly. Under mean ablation, 69 of the 91 still clear the
-on-manifold null, and the effect vectors keep their direction (median cosine between the two interventions 0.997).
-Survival depends on how densely a feature fires: 56 of 62 features whose mean is below a tenth of their activation on
-their top series survive, but only 13 of 29 denser ones. For those dense features, mean ablation is a broader
-intervention that also adds the feature on tokens where it is silent. Mean ablation hardly creates effects where zero
-ablation found none: 1 of 91 sampled non-clearing features clears (\fid{MP-10}).
+\paragraph{Effects under on-manifold interventions.} Zero ablation could move activations off the data manifold.
+We therefore re-ran the 91 v3 features that clear the on-manifold null under three further interventions, each with the
+null matched to the removal it makes: setting the feature to its corpus mean activation over all tokens (mean
+ablation); replacing it by its activation at the same token of another series on which it fires (resample ablation);
+and subtracting its decoder contribution from the model's own activation rather than from the dictionary's
+reconstruction (clean ablation), which leaves the dictionary's error in place. Rerunning zero ablation in the same setup
+reproduced the stored results exactly. Of the 91 features, 69 still clear the on-manifold null under mean ablation, 58 of
+90 scorable ones under resample ablation and 49 under clean ablation; 79 clear it under at least one of the three and 37
+under all three. Mean and resample ablation keep the direction of the effect (median cosine to zero ablation 0.997 and
+0.991), clean ablation less so (0.919). Survival depends on how densely a feature fires: of the 62 features whose mean is
+below a tenth of their activation on their top series, 56 survive mean ablation, but only 13 of the 29 denser ones,
+for which mean ablation also adds the feature on tokens where it is silent. The alternative interventions rarely create
+effects where zero ablation found none: of 91 sampled non-clearing features, 1 clears under mean, 2 under resample and
+8 under clean ablation (\fid{MP-10}). Most causal features thus keep an effect under some on-manifold intervention, but
+the set of single features that clear depends on the intervention, which is a further reason to read features as a
+graded continuum rather than as discrete units.
 
 \paragraph{Alignment with generative factors is correlational.} After dead-feature revival, 154 of 10{,}240 TimesFM
 features and 115 of 6{,}144 Chronos-T5-Base features correlate with a ground-truth generative field beyond a permutation

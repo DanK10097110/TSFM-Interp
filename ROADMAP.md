@@ -40173,3 +40173,40 @@ against `check_four_model.json`, `items_v2_v3.json`, `patching.json`.
   0.3325547211668417]. (These are differences at fixed layer pairs, not between peaks.)
 - **Paper.** Results now report window-level CKA with CONCAT on v2 and v3 with the 1000-permutation null and this
   confirmation; the time-alignment limitation keeps only the grid-resolution and window-size points.
+
+### 47.4 Findings — resample and clean-activation ablation on the 91 v3 causal features (2026-10-17; `tsfm_lens/run_ablation_mode_check.py --arms mean,resample,clean`, `run_ablcheck_regen.py`, `run_ablcheck_compare.py`, commits b99c4ff, 02caf5c; `runs/ablation_mode_check_v2/ablation_mode_check.json`, `runs/panel7_v3_ablcheck/repro.json` -> /common/users/djk255/tsfm_runs/)
+
+- **Regeneration (the v3 SAEs had been pruned).** `configs/panel7_v3_ablcheck.yaml` = the recorded
+  `config_resolved.yaml` with the run name changed and `alignment.window_rep: mean` pinned; the 50 SAE targets pinned to
+  the recorded `sae/meta.json` keys (layer_screen alone gives 21; 29 came from a later sweep). Result
+  (`repro.json`): 50/50 targets with identical dict size, held-out fidelity and full `train_mse_history`; battery 967
+  scorable features in both runs, 91 clearing >= 1 cov channel in both, the same 91 feature indices; candidate lists
+  identical on 49/49 measured targets (`Chronos-2/encoder.block.11` skipped/withheld in both). Match is by feature
+  index, justified by the identical training histories (recorded checkpoints are gone, so no decoder cosine).
+- **Gates.** Zero-ablation control 182/182 reproduced, 182 exact, max rel diff 0.0, 0 flags moved; reach probe held on
+  every target; clean-arm identity control `clean_identity_max_abs` 0.0 on every target; 16 mock known-answer tests
+  (`tests/test_resample_clean_ablation.py`).
+- **Mean arm** reproduces §43.2 digit for digit (69/91 cov, 70/91 iso, cells 170 -> 137, cosine median
+  0.9968869277075498, 56/62 and 13/29).
+- **Resample** (90 scorable; TimesFM `stacked_xf.12` feature 3152 has no second firing series): 58/90 still clear cov,
+  69/90 iso, 52/90 both; cells on those 90: 166 -> 118. Zero-vs-resample cosine (cov null units) median
+  0.99078334224017 [q25 0.9623483021805354, q75 0.9974455202119027], min -0.26811179842228755. By density: mu/top < 0.1
+  43/61 cov (49/61 iso); >= 0.1 15/29 (20/29). Sampled non-clearing features newly clearing: 2/91 cov, 19/91 iso
+  (zero: 0 cov by construction, 19 iso).
+- **Clean** (feature's decoder contribution subtracted from the clean activation; baseline the unpatched forecast): 49/91
+  cov, 63/91 iso, 44/91 both; cells 170 -> 113. Cosine median 0.9193719121363682 [0.6717053797281081,
+  0.9769362456402916], min -0.4504240995823513. By density: < 0.1 29/62 cov (42/62 iso); >= 0.1 20/29 (21/29). New clears
+  in the sample: 8/91 cov, 25/91 iso.
+- **Agreement across the three non-zero arms** (cov, computed from `features` in the JSON): 37/91 clear under all three,
+  79/91 under at least one, 12/91 under none (distribution 3:37, 2:23, 1:19, 0:12).
+- **By model** (zero-clear n; cov survivors mean / resample / clean, iso in brackets): Chronos-2 23: 18 (19) / 13 (18) /
+  11 (15); Chronos-Bolt 14: 12 (13) / 10 (13) / 10 (10); Chronos-T5-Base 7: 2 (4) / 4 (4) / 3 (3); Sundial 15: 13 (10) /
+  11 (10) / 7 (11); Time-MoE 3: 0 (1) / 1 (3) / 1 (1); Timer 14: 12 (10) / 10 (9) / 12 (11); TimesFM 15 (resample 14):
+  12 (13) / 9 (12) / 5 (12).
+- **Reading.** Effect direction is preserved by mean and resample (cosine medians 0.997, 0.991) and less by clean
+  (0.919): clean removal leaves the SAE's reconstruction error in place, so it measures the feature inside the true
+  activation rather than inside the reconstruction. The single-feature causal verdict is intervention-dependent: 79/91
+  zero-ablation features keep >= 1 cov channel under some on-manifold intervention but only 37/91 under all three.
+  Resample loses mostly sparse features, clean loses both and creates 8/91 new cov clears (not decomposed into real
+  effect vs a different noise profile; treat as a flag). Paper: the "resample and clean were not run" sentences are
+  replaced by these numbers. No ROADMAP prose deleted.

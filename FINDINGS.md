@@ -1213,7 +1213,7 @@ These instructions are binding for every future session, human or agent.
 
 ---
 
-#### MP-10 · Causal features survive mean ablation when they are sparse; the verdict is intervention-dependent only for dense features
+#### MP-10 · Causal features keep their effect direction under mean and resample ablation; which features clear depends on the intervention (2026-10-17: retitled after resample and clean arms; was "Causal features survive mean ablation when they are sparse; the verdict is intervention-dependent only for dense features")
 - **Claim.** `panel7_v3_dev`, the 91 features clearing >= 1 channel under the on-manifold (cov) null with zero ablation, re-run with the atom set to its token-level corpus mean (null matched to the mean removal, same rows/seeds/draws; zero rerun reproduced 182/182 features exactly):
   - **69/91 still clear** under cov (70/91 iso); clearing cells 170 → 137.
   - Effect direction is preserved: zero-vs-mean cosine median 0.9968869277075498 (IQR 0.9765–0.9998).
@@ -1223,6 +1223,22 @@ These instructions are binding for every future session, human or agent.
 - **Reproduce.** `tsfm_lens/run_ablation_mode_check.py plan|launch|aggregate` → `runs/ablation_mode_check/ablation_mode_check.json`; `feature_ablation_fingerprints(intervention="mean")` (commit 67685d7).
 - **Ref.** ROADMAP §43.2.
 - **Score. 3/5.** Answers the standard "zero ablation is off-manifold" objection for most features.
+- **Addendum (2026-10-17, ROADMAP §47.4): resample and clean-activation ablation.** On a regenerated v3 dev run that
+  reproduces the recorded one bit-exactly (50/50 SAE training histories identical; the same 91 clearing feature indices;
+  zero control 182/182 exact), the same 91 features under (a) resample ablation (activation at the matching token of
+  another firing series; 90 scorable) and (b) subtracting the feature's decoder contribution from the clean activation,
+  each with its own matched null:
+  - Resample: 58/90 clear cov (69/90 iso); cells 166 -> 118; cosine to zero median 0.99078334224017; density split
+    43/61 sparse vs 15/29 dense; 2/91 new clears in the sample.
+  - Clean: 49/91 cov (63/91 iso); cells 170 -> 113; cosine median 0.9193719121363682 (q25 0.6717053797281081); density
+    split 29/62 sparse vs 20/29 dense; 8/91 new clears in the sample (flag, not decomposed).
+  - Across mean, resample and clean: 37/91 clear cov under all three, 79/91 under at least one, 12/91 under none.
+  - Reading: mean and resample keep the effect direction; the clean intervention, which leaves the reconstruction error
+    in place, agrees less. Most zero-ablation features keep an effect under some on-manifold intervention, but which
+    ones survive depends on the intervention. **Status:** measured once (dev, exploratory).
+  - Reproduce: `tsfm_lens/run_ablcheck_regen.py`, `run_ablcheck_compare.py`, `run_ablation_mode_check.py --arms
+    mean,resample,clean` -> `runs/ablation_mode_check_v2/ablation_mode_check.json`, `runs/panel7_v3_ablcheck/repro.json`
+    (commits b99c4ff, 02caf5c).
 
 #### MP-11 · Training a fine-token model's SAE on its own tokens instead of window means fits the intervention space and preserves the forecast far better; comparison stays defined
 - **Claim.** 512 v3 dev series (410 train / 102 held-out), 3 seeds per arm, matched optimizer steps, pre-registered
