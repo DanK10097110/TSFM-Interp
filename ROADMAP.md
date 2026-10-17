@@ -40019,3 +40019,62 @@ A failed gate is repaired on PILOT only (fix the driver, re-run the gate), then 
   the pooled token codes, never by encoding window means (window FVU 0.61 for a T dictionary). Opt-in first per
   doctrine 1; recorded runs keep W. Caveat: MAIN has 6150 W rows for 6144-atom dictionaries (TimesFM xf.0, Bolt), so
   W may be handicapped by scale; the TimesFM control is not.
+
+## 47. Close the paper's one-run limitations (added 2026-10-17, user-directed — DESIGN AND CRITERIA FIXED BEFORE ANY DATA)
+
+**Goal.** The user asked that no limitation remain that one run or one test can remove. Audit of `paper/` (2026-10-17)
+found five; each gets one item. Not run, by decision: a full concept-discovery run on raw real data (multi-day; the
+paper states the measured reasons raw data serve as an external check); token-level SAE training as a library option
+(user decision 2026-10-17: "just don't add it", after §46.1).
+
+**47.1 L1 CONCAT null and CI (library).** `_shuffled_null_gram` uses 5 permutations (mean/min/max) and CONCAT has no
+best-pair CI. Change: `stats.n_null`-style count of series permutations (a series' windows move together) reporting
+value/p95 like the mean path, plus a series cluster bootstrap CI computed on Gram blocks (resample series, index
+K[rows][:, rows]). Known answers: identical representations -> CKA 1 and null p95 well below; independent noise ->
+CKA inside the null; the bootstrap CI of a planted fixture covers the truth. Re-run L1 (only) on the v3 CONCAT store in a
+NEW run directory (store symlinked, as the meancheck did). Then extract,l1 on v2 public_dev in CONCAT (new config,
+new run dir, 512 stratified series as in v3) so the v2 numbers exist under CONCAT too.
+
+**47.2 Stitching under CONCAT.** L2 stitching maps window means. Re-measure on the v3 CONCAT store's `fine/` rows:
+ridge stitching from model A's concatenated window to model B's, in dual (kernel) form so 32x768-dim windows are
+tractable; same CV-by-series and alpha selection as L2; report the gain over the input-feature baseline (invariant 3)
+next to the MEAN gain on the identical rows and layer pairs. Known answers: a model stitched to itself gives gain at
+its ceiling; a series-shuffled target gives gain <= 0.
+
+**47.3 Held-out confirmation of the CONCAT geometry.** Registered now, before any private data exist:
+- Corpus: a fresh v3 private epoch (epoch 2), sealed, sharing no sample hash with any existing split of v2/v3
+  (public_dev, private_epoch1, validation_dev, external_real, v2 splits); 512 family-stratified series; run once.
+- Layer pairs: those selected on dev in `runs/panel7_v3_concat/l1/meta.json` (21 pairs, listed in 47.3a below).
+- H-C1 (21 tests): CONCAT CKA at the dev pair exceeds its shuffled-series null; permutation p with 1000 permutations,
+  p = (1 + #null >= obs)/(1001); Holm over 21 at alpha 0.05.
+- H-C2 (4 tests): for TimesFM vs Chronos-2, Chronos-T5-Base, Chronos-Bolt and Sundial, CONCAT CKA minus MEAN CKA at
+  the same dev layer pair and identical rows is > 0; one-sided series cluster bootstrap (5000), Holm over 4.
+- Report exact values; a failed claim is reported as failed. No re-run.
+
+47.3a dev pairs (layer_a, layer_b, dev CONCAT peak): TimesFM/Chronos-2 stacked_xf.0/encoder.block.3 0.7119;
+TimesFM/Sundial stacked_xf.0/model.layers.0 0.6044; TimesFM/Chronos-Bolt stacked_xf.0/encoder.block.2 0.6246;
+TimesFM/Timer stacked_xf.4/model.layers.2 0.3748; TimesFM/Time-MoE stacked_xf.2/model.layers.5 0.4664;
+TimesFM/Chronos-T5-Base stacked_xf.0/encoder.block.7 0.6249; Chronos-2/Sundial encoder.block.0/model.layers.0 0.9259;
+Chronos-2/Chronos-Bolt encoder.block.0/encoder.block.0 0.9382; Chronos-2/Timer encoder.block.8/model.layers.2 0.3619;
+Chronos-2/Time-MoE encoder.block.7/model.layers.10 0.6206; Chronos-2/Chronos-T5-Base encoder.block.3/encoder.block.7
+0.7767; Sundial/Chronos-Bolt model.layers.0/encoder.block.0 0.9422; Sundial/Timer model.layers.11/model.layers.2
+0.4914; Sundial/Time-MoE model.layers.10/model.layers.6 0.7404; Sundial/Chronos-T5-Base model.layers.0/encoder.block.6
+0.6727; Chronos-Bolt/Timer encoder.block.4/model.layers.1 0.3443; Chronos-Bolt/Time-MoE encoder.block.3/model.layers.10
+0.5369; Chronos-Bolt/Chronos-T5-Base encoder.block.2/encoder.block.6 0.7133; Timer/Time-MoE model.layers.3/model.layers.9
+0.493; Timer/Chronos-T5-Base model.layers.0/encoder.block.4 0.2106; Time-MoE/Chronos-T5-Base
+model.layers.10/encoder.block.7 0.4659.
+
+**47.4 Resample and clean-activation ablation.** Extend §43.2 (`run_ablation_mode_check.py`) to the same 91 v3
+features with (a) resample ablation: the feature's per-token activation replaced by its activation at the matching
+token of a randomly drawn other series where it fires (seeded); (b) clean-activation ablation: subtract the feature's
+decoder contribution from the clean activation instead of removing it from the reconstruction. Each with its null
+matched to its own removal (same rows, seeds, draws). Zero rerun must reproduce §43.2's zero results exactly. Report,
+as §43.2: features still clearing (cov and iso), effect cosine to zero ablation, survival by density.
+
+**47.5 Replace the four-model-run numbers (marked † in the paper).** Re-measure on v2 (primary) and v3 from existing
+artifacts or a minimal re-run: (a) median single-feature effect in context SD vs the forecast change from substituting
+the reconstruction (MN-15: 0.0395 vs 0.139); (b) participation ratio of the effect vectors (MN-07: 2.09); (c) TimesFM
+per-window restoration by depth for the noise corruption (DE-01: 0.068 at layer 0 to 0.412 at layer 16); (d) the
+covariance-null chance multiple quoted from the four-model run (3.06x -> 1.13x) is replaced by the v3 isotropic vs
+covariance comparison; (e) the atlas-threshold shuffle null (19 vs 9.62) by the v2/v3 values. Report exact numbers
+and which run each comes from.
