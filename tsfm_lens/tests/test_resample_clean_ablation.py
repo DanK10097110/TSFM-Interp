@@ -396,3 +396,15 @@ def test_parse_arms_requires_mean_and_known_names():
     for bad in ("resample", "mean,median"):
         with pytest.raises(SystemExit):
             M._parse_arms(bad)
+
+
+def test_ablation_run_forwards_every_intervention_argument():
+    """The driver passes `feature_traces` through `run_ablation_target`; a keyword the wrapper
+    does not accept crashed the first real launch (every worker, after its zero control)."""
+    import inspect
+    from tsfm_lens.sae import ablation_run
+    sig = inspect.signature(ablation_run.run_ablation_target)
+    for k in ("intervention", "feature_means", "score_features", "feature_traces"):
+        assert k in sig.parameters
+    src = inspect.getsource(ablation_run.run_ablation_target)
+    assert "feature_traces" in src.split("feature_ablation_fingerprints(", 1)[1]
