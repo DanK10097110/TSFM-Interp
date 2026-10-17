@@ -184,4 +184,7 @@ def test_l1_concat_end_to_end_matches_materialized_concat_and_default_has_no_fin
     ref = linear_cka(mat(ma, la), mat(mb, lb))
     assert cka[0, 0] == pytest.approx(ref, abs=2e-4)
     assert cka.shape == (len(meta["layers_a"]), len(meta["layers_b"]))
-    assert meta["best_pair"]["ci"] is None and meta["best_pair"]["null_ci"] is not None
+    bp = meta["best_pair"]
+    assert bp["ci"]["resample_unit"] == "series" and bp["ci"]["lo"] <= bp["cka"] <= bp["ci"]["hi"]
+    assert bp["null_ci"]["n_null"] == cfg.stats.concat_n_null and "p95" in bp["null_ci"]
+    assert bp["ci"]["value"] == pytest.approx(bp["cka"], abs=1e-6)

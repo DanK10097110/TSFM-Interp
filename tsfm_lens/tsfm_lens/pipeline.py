@@ -166,7 +166,7 @@ def _stages() -> list:
               lambda c: c.l1.enabled,
               lambda c: (c.run_dir() / "l1" / "meta.json").exists(),
               lambda ctx: run_l1(ctx.cfg, ctx.store, ctx.device),
-              ("l1", "alignment.window_rep", "alignment.concat_max_rows")),
+              ("l1", "alignment.window_rep", "alignment.concat_max_rows", "stats.concat_n_null")),
         Stage("l2", ["extract"],
               lambda c: c.l2.enabled,
               lambda c: (c.run_dir() / "l2" / "stitching.json").exists(),
