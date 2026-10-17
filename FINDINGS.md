@@ -1758,6 +1758,13 @@ See SH-20. **4/5.**
   0.37477120757102966 vs 0.37477126717567444. Spearman of 21 peaks 0.764935064935065; TimesFM/Chronos-2 7th vs 13th.
   The L1 CONCAT null is 5 permutations (mean/min/max), weaker than §44.5's 40. Reproduce:
   `configs/panel7_v3_concat.yaml` (extract,l1), `run_v3_concat_compare.py`.
+- **Addendum (ROADMAP §47.1, 2026-10-17): v2 and a 1000-permutation null.** The CONCAT null now uses 1000
+  whole-series permutations with a p95 and the best pair a series-bootstrap CI; on v3 the peaks are unchanged (max |Δ| 0.0)
+  and every pair has p = 0.000999000999000999. On 512 v2 dev series, CONCAT vs MEAN on the same rows: TimesFM vs Chronos-2
+  0.6353724598884583 vs 0.43068113923072815, vs Chronos-T5-Base 0.507454514503479 vs 0.34261298179626465, vs Chronos-Bolt
+  0.5459014177322388 vs 0.3827388882637024, vs Sundial 0.5461937785148621 vs 0.42134612798690796; Timer vs
+  Chronos-T5-Base falls 0.38444724678993225 -> 0.250899076461792. Reproduce: `configs/panel7_v2_concat.yaml`,
+  `configs/panel7_v2_concat_meancheck.yaml`, `configs/panel7_v3_concat_null.yaml` (commits cb26f52, 5ab8ac4).
 - **Addendum (ROADMAP §47.2, 2026-10-17): stitching.** On the same 512 v3 series, with L2's protocol (reproduced to
   2.98e-08), concatenating the SOURCE window raises stitching gain over the input baseline from 0.4980521354254505 to
   0.5536236378315946 on average at the 21 CONCAT peak pairs (both directions), most into TimesFM (Chronos-T5-Base ->

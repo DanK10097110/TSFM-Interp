@@ -40127,3 +40127,24 @@ against `check_four_model.json`, `items_v2_v3.json`, `patching.json`.
 - **Reading.** As for CKA, mean pooling the SOURCE understates how well a fine-token model's window predicts a coarse-token
   model's (into TimesFM by up to 0.48 gain). Stitching's pair ranking is largely unchanged. Predicting a 1-step model's
   full concatenated window is underdetermined at 512 series; the window summary is the well-posed stitching target.
+
+### 47.1 Findings — CONCAT null and CI in the library; v2 under CONCAT (2026-10-17; commits cb26f52, 5ab8ac4)
+
+- **Library.** `_shuffled_null_gram`: `stats.concat_n_null` (default 1000, omit_at_default, in l1 config_keys) whole-series
+  permutations; keeps value/lo/hi, adds p95, n_null, observed, p_value = (1 + #null >= obs)/(n + 1). New
+  `_best_pair_ci_gram` (series cluster bootstrap on Gram blocks, recentred; min(n_boot, n_boot_heavy), seed+10). 8 new
+  tests; 6 plants each caught (two only after two added tests). Orchestrator re-ran smoke + manifest + window_concat +
+  l1_concat_null: 31 passed. The MEAN path's null (5 permutations) is unchanged so recorded MEAN artifacts reproduce.
+- **v3 re-run (`runs/panel7_v3_concat_null`, store symlinked).** All 21 peaks and full cka_window arrays identical to
+  `runs/panel7_v3_concat` (max |Δ| 0.0). Every pair p = 0.000999000999000999 (1000 permutations). E.g. TimesFM/Chronos-2
+  0.7119318842887878 [0.6827196349915253, 0.7353223539415462], null p95 0.00909831148986754; TimesFM/Chronos-T5-Base
+  0.6248822212219238 [0.5946187348149938, 0.6522651712575313], p95 0.008271024805116515. High nulls: Sundial/Time-MoE p95
+  0.5090668279635469 against 0.7404359579086304; TimesFM/Time-MoE 0.1842313688789987 against 0.4663721024990082.
+- **v2 under CONCAT (`runs/panel7_v2_concat`, 512 stratified v2 dev series, `data.max_series: 512`; store moved to
+  /common/users/djk255/tsfm_runs, symlinked).** MEAN on the same rows (`panel7_v2_concat_meancheck`) is within about 0.03
+  of the recorded 14475-row v2 MEAN peaks. CONCAT vs MEAN-512 peaks: TimesFM/Chronos-2 0.6353724598884583 vs
+  0.43068113923072815; /Chronos-T5-Base 0.507454514503479 vs 0.34261298179626465; /Chronos-Bolt 0.5459014177322388 vs
+  0.3827388882637024; /Sundial 0.5461937785148621 vs 0.42134612798690796; /Timer 0.3575086295604706 vs
+  0.35750865936279297; /Time-MoE 0.4383287727832794 vs 0.3892555236816406. Pairs with Timer fall (Timer/Chronos-T5-Base
+  0.250899076461792 vs 0.38444724678993225; Chronos-Bolt/Timer 0.3754812479019165 vs 0.43287765979766846). Every pair
+  p = 0.000999000999000999. Same pattern as v3 (§45.1): the mean understates TimesFM vs fine-token models by 0.12-0.20 on v2.

@@ -25,8 +25,17 @@ its config, since those configs pin the legacy window mean.
   - Extraction writes a position-resolved `fine/` store group only for the series
     L1 reads (`alignment.concat_max_rows`, default 7680 rows), and only when L1
     compares a model pair.
+  - The concatenated path's shuffled-series null uses `stats.concat_n_null`
+    (default 1000) whole-series permutations and reports `p95`, `n_null` and a
+    permutation `p_value`; the best pair now has a series cluster-bootstrap CI
+    computed on Gram blocks (`best_pair.ci` was empty in this mode).
 
 ### Added
+
+- **Resample and clean-activation ablation.** API options
+  `intervention="resample"` (donor-series activation at the same token) and
+  `intervention="clean"` (decoder contribution removed from the clean
+  activation), each with a random-direction null matched to its removal.
 
 - **Mean ablation in the SAE ablation battery.** An API option
   (`intervention="mean"`, token-level corpus means) with a random-direction null
