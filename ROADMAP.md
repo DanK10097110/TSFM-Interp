@@ -40148,3 +40148,28 @@ against `check_four_model.json`, `items_v2_v3.json`, `patching.json`.
   0.35750865936279297; /Time-MoE 0.4383287727832794 vs 0.3892555236816406. Pairs with Timer fall (Timer/Chronos-T5-Base
   0.250899076461792 vs 0.38444724678993225; Chronos-Bolt/Timer 0.3754812479019165 vs 0.43287765979766846). Every pair
   p = 0.000999000999000999. Same pattern as v3 (§45.1): the mean understates TimesFM vs fine-token models by 0.12-0.20 on v2.
+
+### 47.3 Findings — CONCAT geometry confirmed once on a fresh sealed private epoch (2026-10-17; `tsfm_lens/run_concat_confirm.py`, commits 1df4a78, e1de61b, 78e2d76; `runs/panel7_v3_concat_confirm_e2` -> /common/users/djk255/tsfm_runs/)
+
+- **Corpus.** `benchmark_v3/private_epoch2` minted with the epoch-1 generator config (seed 7000003, epoch 2): 2863 of
+  3025 accepted, global digest cf8e67b2f25b5061b71e19fce784d84e2b7ce2c085bd979c94c37f74f5cd37bc, seal verified, 0 hash
+  overlap with 13 splits of v3/v2/large/medium. 512 stratified series (`concat_rows`), 7680 window rows.
+- **Registry.** Written 12:56 before extraction from the §47.3 text at commit 1c1a7f450b718293ab1a561016dc791749c4350c;
+  hypotheses sha256 cda4f47a0f077606ee2b5d1f7275e2b0e93ae8ac684e604020c2f21e18218873. Deviation: the first extraction
+  aborted on ragged Time-MoE spans (capture restricted to the registered layers); layer 0 was added to the capture for
+  Time-MoE and Chronos-T5-Base (as the dev run probes it) and extraction re-run, no statistic having been read
+  (log `runs/_logs/e2_failed_attempt1/`). Tests and layers unchanged. A dry run on the dev store reproduced all 21 dev
+  CONCAT peaks to >= 8 digits.
+- **H-C1: 21/21 confirmed.** Every p = 0.000999000999000999 (1000 whole-series permutations), Holm
+  0.02097902097902098. E.g. TimesFM/Chronos-2 0.7070513688986635 (null p95 0.009538173081989915); TimesFM/Chronos-T5-Base
+  0.6133688779183337; Sundial/Time-MoE 0.7555690872893863 vs null p95 0.520719253059439 (max 0.5262048452729547);
+  TimesFM/Time-MoE 0.4679549308203093 vs p95 0.19561280227096833; Timer/Chronos-T5-Base 0.21037634738282457 vs
+  0.008492442683123153. Private values within 0.016 of dev at every pair.
+- **H-C2: 4/4 confirmed** (p 0.0001999600079984003, Holm 0.0007998400319936012; 5000 series bootstrap). CONCAT - MEAN at
+  TimesFM stacked_xf.0: Chronos-2 0.7070513688986635 - 0.3855104148387909 = 0.3215409540598726 [0.2924836021859108,
+  0.3470046866292557]; Chronos-T5-Base 0.6133688779183337 - 0.1800631582736969 = 0.4333057196446368 [0.39974414496176236,
+  0.4654026228887416]; Chronos-Bolt 0.624470402775725 - 0.3239116966724396 = 0.3005587061032854 [0.2697235865137904,
+  0.3301399914873482]; Sundial 0.6052055265416506 - 0.3022937774658203 = 0.3029117490758303 [0.27299253553953323,
+  0.3325547211668417]. (These are differences at fixed layer pairs, not between peaks.)
+- **Paper.** Results now report window-level CKA with CONCAT on v2 and v3 with the 1000-permutation null and this
+  confirmation; the time-alignment limitation keeps only the grid-resolution and window-size points.

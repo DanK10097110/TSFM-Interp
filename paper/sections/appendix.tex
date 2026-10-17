@@ -125,7 +125,7 @@ cells are judged by their count against the empirical chance rate. Held-out clai
 \paragraph{Use of CKA.} Given its known problems, CKA is used only against a shuffled-series null at the same layer pair with
 a series-level bootstrap, reported as one of seven pair metrics that are never pooled, and never read as lineage, since an
 untrained pair can score higher than a trained one (\fid{MN-01}). The reported peak is a maximum over layer pairs; its
-held-out replication (0.411) is measured at the pair selected on dev.
+held-out replications (0.707 concatenated on a fresh split, 0.411 window mean) are measured at the pairs selected on dev.
 
 \paragraph{Choice of settings.} Battery settings ($k=8$ rows, 16 null draws) were fixed on the
 four-model run before the seven-model concept stage ran, after larger settings did not recover power (\fid{SH-20}); at the
@@ -281,7 +281,7 @@ MN-32 & Subspace redesign of the agreement test fails its pre-fixed gate; plante
 MN-34 & SAE fidelity does not predict causal clarity ($\rho=-0.326$, v3); 3$\times$ rows raise fidelity 0.749 $\to$ 0.82 & \S\ref{sec:limits}, App.~\ref{app:faq} & 3 \\
 MN-36 & Powered per-feature test (32 series, 64 draws) fails the planted gate (0.6); 8-series p95 rule passes (0.911) & \S\ref{sec:limits} & 4 \\
 MN-37 & Gradient-attribution candidates: no higher causal rate than random under the covariance null (0.085 vs 0.110) & \S\ref{sec:limits} & 4 \\
-MN-38 & Window-mean pooling understates TimesFM-vs-fine-token CKA by up to 0.33; token concatenation is lossless & \S\ref{sec:alignment}, \S\ref{sec:rq2} & 5 \\
+MN-38 & Window-mean pooling understates TimesFM-vs-fine-token CKA by 0.30--0.43 (held-out); concatenation is lossless & \S\ref{sec:alignment}, \S\ref{sec:rq2} & 5 \\
 BM-05 & Counterfactual identity check caught a corruption-replay bug (244/298 $\to$ 0/1113) & \S\ref{sec:architecture} & 2 \\
 BM-06 & 42\% of the dev corpus is weakly predictable real-derived data, driving the flat-forecast share & \S\ref{sec:limitations} & 4 \\
 \end{longtable}

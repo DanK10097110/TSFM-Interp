@@ -43,11 +43,10 @@ architecture, size and training data. Timer's features do not exceed chance, so 
 causal concepts. The analysis is univariate: Chronos-2's cross-series group attention is not measured (\fid{PM-13}), and
 Chronos-T5's decoder and Sundial's flow head are not captured.
 
-\paragraph{Time alignment.} The full runs pool windows by averaging, which understates window-level similarity between
-TimesFM and the fine-token models by up to 0.33 CKA (Section~\ref{sec:alignment}). The concatenated re-measurement covers
-the v3 dev run (512 series, the cap of the Gram-matrix computation), not v2 or the private splits, and its shuffled-series
-null uses only 5 permutations. No window rule recovers resolution finer than Timer's 96-step
-token, and peak layer locations depend on the window size. SAE comparisons do not depend on the window rule, but the reported dictionaries are trained on window
+\paragraph{Time alignment.} A common time grid is no finer than the coarsest token: no window rule recovers
+resolution finer than Timer's 96-step token, and peak layer locations depend on the window size (\fid{SH-23}).
+Concatenated windows, which the similarity results use, are computed on 512 series per corpus, the size at which the
+Gram matrices fit in memory. SAE comparisons do not depend on the window rule, but the reported dictionaries are trained on window
 averages. For Chronos-T5-Base, training on its own tokens fits the space interventions act in far better
 (\fid{MP-11}); the reported SAE results for 1-step models may understate their fidelity and causal yield, and may overstate how many
 top series their features share with TimesFM's.

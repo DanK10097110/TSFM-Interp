@@ -154,20 +154,22 @@ corpora and on raw real windows. The broad effect types recur in every model. At
 organized by model, and agreement of causal effects on the same series is detected only between two Chronos-family
 models.
 
-\paragraph{Geometry is shared above chance but has no single meaning.} Peak CKA, the maximum over all layer pairs, is
-0.342--0.426 between TimesFM and each other model, against shuffled-series nulls of 0.011--0.051. These values use
-window-mean pooling and are lower bounds for the 16-step and 1-step models. We re-extracted the v3 dev run, which
-reproduces its recorded mean-pooled values exactly, and re-ran the L1 stage with concatenated windows on 512 of its
-series. TimesFM's peaks rise from 0.32--0.47 to 0.37--0.71 on the same series: with Chronos-2 from 0.441 to 0.712, with
-Chronos-T5-Base from 0.319 to 0.625, with Chronos-Bolt from 0.372 to 0.625 and with Sundial from 0.470 to 0.604, while
-the pair with Timer is unchanged (0.375; Section~\ref{sec:alignment}). The TimesFM/Chronos-2
-peak replicates on the private split (dev 0.4257; private 0.4109 [0.4014, 0.4266]) and on v3 (dev 0.444; private 0.449
-[0.435, 0.464]), and the band holds across five architectures including Timer and Lag-Llama (\fid{SH-01}). Different
+\paragraph{Geometry is shared above chance but has no single meaning.} With concatenated windows, peak CKA (the
+maximum over all layer pairs) between TimesFM and each other model is 0.358--0.635 on v2 and 0.375--0.712 on v3 (512
+series each), and every one of the 21 model pairs exceeds its shuffled-series null on both corpora ($p=0.001$, 1000
+permutations; null 95th percentiles 0.003--0.51, the highest for pairs with Time-MoE). The layer pairs selected on v3
+dev were registered and tested once on a fresh sealed private split: all 21 pairs exceed their nulls (Holm
+$p=0.021$), with TimesFM/Chronos-2 at 0.707 [0.679, 0.734] against 0.712 on dev. Window-mean pooling understates these
+values, and the registered test confirms it: at the same layers and on the same private series, averaging lowers
+TimesFM's CKA with Chronos-2, Chronos-T5-Base, Chronos-Bolt and Sundial by 0.322, 0.433, 0.301 and 0.303 (each 95\%
+interval above 0.26; Holm $p=0.0008$; \fid{MN-38}). Peaks between other model pairs change less, and pairs with Timer
+mostly fall, because Timer's 96-step token has no within-window order to match. The mean-pooled peak of the full v2 run
+(0.426) likewise replicates on its private split (0.411 [0.401, 0.427]) and on v3 (\fid{SH-01}). Different
 similarity metrics, however, rank the 21 model pairs inconsistently (Kendall's $W=0.25$, $p=0.0095$;
 Figure~\ref{fig:similarity}). TimesFM/Chronos-2 is the most similar pair by error agreement (0.948) but only 15th of 21 by
-CKA, where Sundial/Chronos-Bolt ranks first (0.927). Part of this gap comes from pooling: in the v3 run
-TimesFM/Chronos-2 ranks 13th by mean-pooled CKA but 7th with concatenated windows, while Sundial/Chronos-Bolt stays first
-($\rho=0.76$ between the two rankings on the same series). The report therefore never pools similarity metrics into one score.
+mean-pooled CKA, where Sundial/Chronos-Bolt ranks first (0.927). Part of this gap comes from pooling: with
+concatenated windows TimesFM/Chronos-2 ranks 9th on v2 and 7th on v3, while Sundial/Chronos-Bolt stays first ($\rho=0.82$
+and 0.76 between the two rankings on the same series). The report therefore never pools similarity metrics into one score.
 Two finer-grained measures fail their controls on real activations: an untrained pair scores higher than a trained,
 related pair (\fid{MN-01}), and a measure of unit-level correspondence rises when both bases are rotated (\fid{SH-19}).
 CKA is accordingly read only against shuffled-series nulls and never as evidence of lineage.
@@ -358,7 +360,7 @@ RQ & Result (v2 unless stated) & Evidence class & Status & ID \\
 1 & 442 feature-channel cells clear an isotropic null, 2.47$\times$ empirical chance; Timer 1.02$\times$ & causal within-model & exploratory & MP-07, PM-17 \\
 1 & Against an on-manifold null, features exceed chance only modestly (v3: 91 vs.\ 70.4, 1.29$\times$) & causal within-model & exploratory & CA-12 \\
 1 & 9 families cover 99\% of features but do not beat a shuffle null ($p=0.68$) & descriptive & exploratory & CA-10 \\
-2 & Peak CKA 0.426 (private 0.411) vs.\ null 0.038; window mean, a lower bound (\S\ref{sec:alignment}) & geometric & held-out confirmed (2 corpora) & SH-01 \\
+2 & All 21 pairs above null with concatenated windows; TimesFM/Chronos-2 0.712 dev, 0.707 fresh private; the window mean understates it by 0.30--0.43 & geometric & held-out confirmed & SH-01, MN-38 \\
 2 & 7 similarity metrics agree only weakly ($W=0.25$) & mixed & exploratory & SH-05/06 \\
 2 & Untrained pair more similar than related trained pair & geometric & confirmed negative & MN-01 \\
 2 & Concept transfer on inputs: 20/20 on v2 and v3, 20/20 on raw real windows & correlational & held-out confirmed (2 corpora) & SH-18 \\

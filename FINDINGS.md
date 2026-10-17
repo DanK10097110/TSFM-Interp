@@ -117,7 +117,7 @@ These instructions are binding for every future session, human or agent.
 | MP-05 | SAE feature death is a property of the layer's geometry (alive atoms ∝ effective dim, exponent 1.02) | 5 |
 | MN-21 | Reviving dead SAE features *hurts* causal alignment at 5/5 TimesFM depths | 5 |
 | MN-29 | The battery's legacy null is lenient: known-answer gate fails on 5/5 seeds (FPR 0.17–0.25), passes on 5/5 with a profile-matched null; on v2, causal features 293 → 110 (13.0× → 3.06× empirical chance), per-target concepts 9 → 0, convergent atlas concepts 13 → 0 | 5 |
-| MN-38 | Window-mean pooling hides within-window order and understates TimesFM-vs-fine-token CKA by up to 0.33; concatenating tokens fixes it | 5 |
+| MN-38 | Window-mean pooling hides within-window order and understates TimesFM-vs-fine-token CKA by 0.30–0.43 (held-out confirmed, fresh epoch); concatenating tokens fixes it | 5 |
 
 ---
 
@@ -143,6 +143,10 @@ These instructions are binding for every future session, human or agent.
 - **Evidence.** Geometric (L1). **Status:** exploratory (dev); each result is a single corpus and checkpoint pair.
 - **Reproduce.** `configs/{chronos2_phase4_check,sundial_phase4_check,generic_hf_timer,lag_llama_vs_chronos}.yaml` → `runs/*/l1/meta.json`.
 - **Pooling caveat (2026-10-14, MN-38).** These peaks use window-mean pooling, which understates TimesFM's similarity to 16-step and 1-step models. On 512 v3 dev series with lossless window concatenation, TimesFM's peaks are 0.3866–0.7348 (vs 0.3137–0.4967 under the mean on the same series): Chronos-2 0.7348, Chronos-Bolt 0.6543, Chronos-T5-Base 0.6428, Sundial 0.6363. Above-null sharing holds and is stronger; the levels and pair ranking above are properties of the mean statistic.
+- **Update (2026-10-17, ROADMAP §47.1, §47.3).** With concatenated windows and a 1000-permutation null, all 21 pairs of the
+  7-model panel exceed their nulls on v2 dev and v3 dev (512 series each), and on a fresh sealed v3 private epoch
+  (registered, run once; 21/21, Holm 0.02097902097902098). TimesFM's peaks: v2 0.3575086295604706–0.6353724598884583, v3
+  0.37477120757102966–0.7119318842887878; TimesFM/Chronos-2 private 0.7070513688986635.
 - **Ref.** ROADMAP §9 (~7500–7650), §16 E3(d) (~11160), §34 D2 (~33030). §44.5.
 - **Score. 5/5.** This is the central evidence that TSFMs converge on a common representational geometry, and it generalizes to a model integrated with zero adapter code. Read it with SH-05, SH-06 and MN-01: geometry alone is not evidence of shared *function* or lineage.
 
@@ -1730,7 +1734,7 @@ See SH-20. **4/5.**
 - **Ref.** ROADMAP §42.5.
 - **Score. 4/5.** Closes the "test better features" route with a measurement.
 
-#### MN-38 · Window-mean pooling hides within-window order and understates cross-model similarity by up to 0.33 CKA; concatenating a window's tokens fixes it
+#### MN-38 · Window-mean pooling hides within-window order and understates cross-model similarity by up to 0.33 CKA on dev (0.30–0.43 held-out); concatenating a window's tokens fixes it
 - **Claim.** On v3 dev series (four disjoint sets: PILOT 128, MAIN 512, CONFIRM 512, VALIDATE 512):
   - Averaging a window's tokens discards a large share of token variation (within-window share 0.40-0.76 for the
     16-step and 1-step models; Chronos-T5-Base 0.70-0.76 at every depth) and, with it, within-window ORDER. On
@@ -1748,8 +1752,8 @@ See SH-20. **4/5.**
 - **Reading.** Window-level CKA under mean pooling is biased toward dissimilarity between coarse-token (TimesFM) and
   fine-token models. Shared geometry is stronger than reported, and mostly at early, input-encoding layers. Pair
   rankings by CKA partly reflect tokenization.
-- **Evidence.** Descriptive / geometric, exploratory (dev), pre-registered criteria (ROADMAP §44–44.4). **Status:**
-  confirmed on a fresh set; the fix is in the library as `alignment.window_rep: concat`, the default
+- **Evidence.** Descriptive / geometric; pre-registered criteria (ROADMAP §44–44.4). **Status:** held-out confirmed
+  (ROADMAP §47.3, fresh sealed epoch; before that confirmed on a fresh dev set); the fix is in the library as `alignment.window_rep: concat`, the default
   since ROADMAP §44.6 (recorded runs pin `mean`).
 - **Addendum (ROADMAP §45.1, 2026-10-16): the pipeline on the full v3 dev run.** Re-extraction reproduces all 21
   recorded MEAN peaks exactly (max |Δ| 0.0). On the same 512 series, CONCAT vs MEAN peak CKA: TimesFM vs Chronos-2
@@ -1758,6 +1762,13 @@ See SH-20. **4/5.**
   0.37477120757102966 vs 0.37477126717567444. Spearman of 21 peaks 0.764935064935065; TimesFM/Chronos-2 7th vs 13th.
   The L1 CONCAT null is 5 permutations (mean/min/max), weaker than §44.5's 40. Reproduce:
   `configs/panel7_v3_concat.yaml` (extract,l1), `run_v3_concat_compare.py`.
+- **Addendum (ROADMAP §47.3, 2026-10-17): HELD-OUT CONFIRMED.** Registered before data (commit 1c1a7f4) and tested once on
+  a fresh sealed v3 private epoch (epoch 2, 512 series, 0 hash overlap with 13 splits). H-C1: all 21 pairs' CONCAT CKA at
+  the dev layer pairs exceeds the 1000-permutation shuffled-series null (each p 0.000999000999000999, Holm
+  0.02097902097902098); TimesFM/Chronos-2 0.7070513688986635 (dev 0.7119318842887878). H-C2: averaging lowers TimesFM's CKA
+  at the same layers and rows by 0.3215409540598726 (Chronos-2), 0.4333057196446368 (Chronos-T5-Base), 0.3005587061032854
+  (Chronos-Bolt), 0.3029117490758303 (Sundial), each bootstrap CI above 0.2697, Holm p 0.0007998400319936012. Reproduce:
+  `tsfm_lens/run_concat_confirm.py`, `configs/panel7_v3_concat_confirm_e2.yaml`.
 - **Addendum (ROADMAP §47.1, 2026-10-17): v2 and a 1000-permutation null.** The CONCAT null now uses 1000
   whole-series permutations with a p95 and the best pair a series-bootstrap CI; on v3 the peaks are unchanged (max |Δ| 0.0)
   and every pair has p = 0.000999000999000999. On 512 v2 dev series, CONCAT vs MEAN on the same rows: TimesFM vs Chronos-2

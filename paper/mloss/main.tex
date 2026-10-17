@@ -100,7 +100,7 @@ capability tier is derived from the methods it implements, and stages needing a 
 reason rendered. A zero-code adapter measures token spans from impulse responses for Hugging Face checkpoints and
 refuses rather than guesses. Tokens are mapped onto common time windows, verified per layer by an alignment gate, so every
 cross-model statistic compares the same stretch of time. For window-level similarity a window keeps its tokens in
-time order, because averaging them understates the similarity of fine-token models by up to 0.33 CKA.
+time order, because averaging them understates the similarity of fine-token models by 0.30--0.43 CKA on held-out data.
 
 \paragraph{Stages.} Nineteen stages produce evidence of increasing strength: behavioral (accuracy, calibration, cost),
 descriptive (depth profiles, lenses), geometric (CKA, stitching gain over an input baseline), causal within-model

@@ -142,10 +142,10 @@ validation. All criteria were fixed before each set was used (\fid{MN-38}).
 On a fresh set of 512 series with all captured layers, concatenation raises TimesFM's peak CKA with Chronos-2 from 0.45
 to 0.73, with Chronos-Bolt from 0.39 to 0.65, with Chronos-T5-Base from 0.31 to 0.64 and with Sundial from 0.50 to
 0.64, mostly at TimesFM's first layers. Pairs with Timer fall, by up to 0.10, because the other model's added order has no
-counterpart in Timer's copied token. Across the 21 pairs the two rankings correlate at $\rho=0.80$. The window-level
-CKA values reported from the full runs in Section~\ref{sec:rq2} use the mean and therefore understate the similarity of
-TimesFM to the fine-token models. Concatenation is the tool's default (\texttt{alignment.window\_rep: concat}); the mean remains available, and the
-runs reported here use it unless stated.
+counterpart in Timer's copied token. Across the 21 pairs the two rankings correlate at $\rho=0.80$. Window-level
+similarity in Section~\ref{sec:rq2} is therefore reported with concatenated windows on both corpora, and confirmed on a
+fresh private split. Concatenation is the tool's default (\texttt{alignment.window\_rep: concat}); the mean remains
+available for comparison with earlier runs.
 
 \paragraph{What the window rule affects.} The window rule matters only where window vectors of two models are compared
 with each other: the similarity measures, namely window-level CKA, RSA and stitching. Both were re-measured. For
