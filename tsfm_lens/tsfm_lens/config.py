@@ -284,6 +284,8 @@ class StatsConfig:
     ci: float = 0.95
     alpha: float = 0.05
     min_series: int = 8
+    # ROADMAP 47.1: permutations of the CONCAT-mode L1 shuffled-series null (the MEAN path keeps 5).
+    concat_n_null: int = field(default=1000, metadata={"omit_at_default": True})
 
 
 @dataclass

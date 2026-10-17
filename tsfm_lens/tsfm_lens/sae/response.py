@@ -719,7 +719,7 @@ def feature_response_fingerprints(cfg, adapter, layer: str, sae, data, device,
 # ---------------------------------------------------------------------------
 
 def _feature_ablated_replacement(clean_tokens: torch.Tensor, sae, device,
-                                 f_idx, fill=None) -> torch.Tensor:
+                                 f_idx, fill=None, from_clean: bool = False) -> torch.Tensor:
     """Token-level SAE reconstruction with one atom, or a SET of atoms
     (ROADMAP.md sec 37.8 P5b), zeroed together.
 
@@ -743,13 +743,34 @@ def _feature_ablated_replacement(clean_tokens: torch.Tensor, sae, device,
     the intervention nearer the activation manifold than an exact zero. It
     removes `(z_f(t) - mu_f) w_f` from token `t`, which is NEGATIVE (a
     addition of `mu_f w_f`) on tokens where the atom is silent.
+    
+    `fill` may also be a tensor of one value per token (`[b * t]`, int `f_idx`
+    only): the RESAMPLE ablation, `fill[t] = z_f` of the same token position in a
+    donor series (`resample_donor_rows`, `feature_traces`). It removes
+    `(z_f(t) - fill(t)) w_f`.
+
+    `from_clean=True` (the CLEAN-activation ablation, ROADMAP 47.4b) returns
+    `clean - sum_f z_f(t) w_f` instead of a reconstruction: the atom's decoder
+    contribution is subtracted from the model's own activation, so the
+    reconstruction error stays in the activation and the comparison baseline is the
+    unpatched forecast, not the full reconstruction. Zero fill only.
     """
     b, t, d = clean_tokens.shape
     features = sae.encode(clean_tokens.reshape(-1, d).to(device))
     if not isinstance(f_idx, (int, np.integer)):
         f_idx = sorted(int(i) for i in f_idx)
+    if from_clean:
+        if fill is not None:
+            raise ValueError("from_clean ablation subtracts z_f w_f: it takes no `fill`")
+        idx = [int(f_idx)] if isinstance(f_idx, (int, np.integer)) else f_idx
+        contrib = features[:, idx] @ sae.W_dec.detach()[idx]
+        return (clean_tokens.reshape(-1, d).to(contrib.device) - contrib).reshape(b, t, d).cpu()
     if fill is None:
         features[:, f_idx] = 0.0
+    elif torch.is_tensor(fill):
+        if isinstance(f_idx, list):
+            raise ValueError("a per-token `fill` tensor is for a single atom")
+        features[:, f_idx] = fill.to(device=features.device, dtype=features.dtype)
     elif isinstance(f_idx, list):
         features[:, f_idx] = torch.as_tensor(
             [float(fill[i]) for i in f_idx], dtype=features.dtype, device=features.device)
@@ -764,7 +785,8 @@ ABLATION_NULL_MODES = ("mean_magnitude", "profile_matched", "profile_matched_cov
 
 def _profile_matched_null_replacement(clean_tokens: torch.Tensor, sae, device, f_idx,
                                       code: torch.Tensor,
-                                      direction: str = "decoder", fill=None) -> torch.Tensor:
+                                      direction: str = "decoder", fill=None,
+                                      from_clean: bool = False) -> torch.Tensor:
     """Token-level reconstruction with a RANDOM direction removed, sized to one
     atom's own per-token removal profile.
 
@@ -799,7 +821,12 @@ def _profile_matched_null_replacement(clean_tokens: torch.Tensor, sae, device, f
     sets it to (`_feature_ablated_replacement`). The null is matched to the
     removal that ablation actually makes, `(z_f(t) - fill_f) w_f`, so under mean
     ablation the profile is `|z_f(t) - mu_f| ||w_f||` (non-zero on silent tokens),
-    not the zero-ablation profile.
+    not the zero-ablation profile. A per-token tensor `fill` (resample ablation)
+    gives `|z_f(t) - fill(t)| ||w_f||` the same way.
+
+    `from_clean=True` (clean-activation ablation) removes the same profile from
+    the CLEAN activation rather than from the reconstruction, so the null and the
+    ablation it is matched to both leave the reconstruction error in place.
     """
     b, t, d = clean_tokens.shape
     flat = clean_tokens.reshape(-1, d).to(device)
@@ -821,14 +848,17 @@ def _profile_matched_null_replacement(clean_tokens: torch.Tensor, sae, device, f
             idx = sorted(int(i) for i in f_idx)
             magnitude = (features[:, idx] @ W_dec[idx]).norm(dim=1)
     elif isinstance(f_idx, (int, np.integer)):
-        magnitude = (features[:, f_idx] - float(fill)).abs() * W_dec[f_idx].norm()
+        fill_v = (fill.to(device=features.device, dtype=features.dtype) if torch.is_tensor(fill)
+                  else float(fill))
+        magnitude = (features[:, f_idx] - fill_v).abs() * W_dec[f_idx].norm()
     else:
         idx = sorted(int(i) for i in f_idx)
         mu = torch.as_tensor([float(fill[i]) for i in idx], dtype=features.dtype,
                              device=features.device)
         magnitude = ((features[:, idx] - mu) @ W_dec[idx]).norm(dim=1)
     removal = magnitude[:, None] * u[None, :]
-    return (recon - removal).reshape(b, t, d).cpu()
+    base = flat.to(recon.dtype) if from_clean else recon
+    return (base - removal).reshape(b, t, d).cpu()
 
 
 def _lodo_pseudo_clear_rate(draws: list) -> float | None:
@@ -961,6 +991,47 @@ def token_feature_means(adapter, saes: dict, contexts: np.ndarray, device,
                 "tokens_per_series": sorted(per_series)} for l in layers}
 
 
+def token_feature_traces(adapter, saes: dict, contexts: np.ndarray, device,
+                         features: dict, batch_size: int | None = None) -> dict:
+    """Token-level activation of chosen features on EVERY series, per layer: the
+    donor table of RESAMPLE ablation (`feature_ablation_fingerprints(
+    intervention="resample")`, ROADMAP 47.4a).
+
+    `saes` is `{layer: sae}`, `features` is `{layer: [feature ids]}`. Tokens are
+    captured and encoded exactly as `token_feature_means` does. Returns
+    `{layer: {f: float32 [n_series, tokens_per_series]}}`; every series must have
+    the same token count, or this raises (a donor must have a token at the same
+    position)."""
+    layers = list(saes)
+    bs = int(batch_size or adapter.cfg.batch_size)
+    out = {l: {int(f): [] for f in features[l]} for l in layers}
+    for lo in range(0, len(contexts), bs):
+        clean = capture_raw_tokens(adapter, contexts[lo:lo + bs], layers)
+        for l in layers:
+            b, t, d = clean[l].shape
+            with torch.no_grad():
+                z = saes[l].encode(clean[l].reshape(-1, d).to(device)).reshape(b, t, -1)
+            for f in out[l]:
+                out[l][f].append(z[:, :, f].float().cpu().numpy())
+    return {l: {f: np.concatenate(v, axis=0) for f, v in out[l].items()} for l in layers}
+
+
+def resample_donor_rows(fire_rows: np.ndarray, rows, feature: int, seed: int) -> np.ndarray:
+    """The donor series of each `rows` entry for one feature: a seeded uniform draw
+    from `fire_rows` (the series the feature fires on) other than the row itself.
+    The draw depends only on `(seed, feature, row)`, so the ablation and every null
+    draw of a feature use the same donors and the result does not depend on how
+    the rows were chunked. Raises if a row has no other firing series."""
+    fire_rows = np.asarray(fire_rows, dtype=int)
+    donors = []
+    for r in rows:
+        pool = fire_rows[fire_rows != int(r)]
+        if pool.size == 0:
+            raise ValueError(f"feature {feature}: no other series to resample row {int(r)} from")
+        donors.append(int(np.random.default_rng([int(seed), int(feature), int(r)]).choice(pool)))
+    return np.asarray(donors, dtype=int)
+
+
 def top_firing_rows(activations: np.ndarray, f_idx: int, k: int) -> np.ndarray:
     """The `k` series row indices this atom fires hardest on, strongest first.
 
@@ -1079,7 +1150,8 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
                                   powered_q: float = DEFAULT_Q,
                                   intervention: str = "zero",
                                   feature_means=None,
-                                  score_features=None) -> dict:
+                                  score_features=None,
+                                  feature_traces=None) -> dict:
     """Ablate each candidate on its OWN top-firing series; score the same
     9-channel battery against a ROW-MATCHED random-direction null.
 
@@ -1128,6 +1200,21 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
     (`_profile_matched_null_replacement`); the legacy `mean_magnitude` null's
     size is the chunk mean of the same `|z - mu|`. The artifact then also
     records `ablation_intervention` and `ablation_fill_means` (absent = zero).
+
+    ROADMAP 47.4, two more opt-in interventions, each with every profile-matched
+    null matched to its own removal and the same rows, seeds and null draws:
+    `"resample"` replaces the atom's activation at every token by its activation
+    at the same token position in a donor series drawn (seeded by `(seed, feature,
+    row)`, `resample_donor_rows`) from the series the atom fires on
+    (`feature_traces[f]`, `[n_series, tokens]`, `token_feature_traces`; "fires" =
+    a positive token activation) -- the null removes `|z_f(t) - z_donor(t)| ||w_f||`
+    along a random direction. `"clean"` subtracts `z_f(t) w_f` from the CLEAN
+    activation, so the reconstruction error stays in both arms: the baseline is
+    the UNPATCHED forecast, and the null removes `|z_f(t)| ||w_f||` along a random
+    direction from the clean activation, not the reconstruction. Both require
+    profile-matched nulls (the legacy chunk-uniform null is refused). `clean`
+    also forwards the clean tokens through the patch seam and raises unless that
+    reproduces the unpatched forecast exactly (the identity control).
 
     `score_features` (default `None` = score every candidate): restrict the work
     to these feature ids while keeping the chunk packing and every null
@@ -1241,18 +1328,38 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
             raise ValueError(f"unknown ablation null mode {m!r}: expected "
                              f"one of {ABLATION_NULL_MODES}")
     profile_rngs = {m: np.random.default_rng(seed + 2) for m in modes if m != "mean_magnitude"}
-    if intervention not in ("zero", "mean"):
-        raise ValueError(f"unknown ablation intervention {intervention!r}: expected 'zero' or 'mean'")
+    if intervention not in ("zero", "mean", "resample", "clean"):
+        raise ValueError(f"unknown ablation intervention {intervention!r}: expected "
+                         "'zero', 'mean', 'resample' or 'clean'")
+    if intervention in ("resample", "clean") and "mean_magnitude" in modes:
+        raise ValueError(f"intervention={intervention!r} needs profile-matched nulls: the "
+                         "chunk-uniform `mean_magnitude` null is not matched to its removal")
+    score_set = None if score_features is None else {int(f) for f in score_features}
     fill = None
+    fire_rows = {}
     if intervention == "mean":
         if feature_means is None:
             raise ValueError("intervention='mean' needs `feature_means` (token_feature_means)")
         fill = np.asarray(feature_means, dtype=np.float64)
         if fill.shape != (dict_size,):
             raise ValueError(f"`feature_means` must be [dict_size={dict_size}], got {fill.shape}")
-    score_set = None if score_features is None else {int(f) for f in score_features}
-
+    elif intervention == "resample":
+        if feature_traces is None:
+            raise ValueError("intervention='resample' needs `feature_traces` (token_feature_traces)")
+        for f in order:
+            if score_set is not None and f not in score_set:
+                continue
+            tr = feature_traces.get(f)
+            if tr is None:
+                raise ValueError(f"`feature_traces` has no entry for candidate {f}")
+            if tr.ndim != 2 or tr.shape[0] != data.n:
+                raise ValueError(f"`feature_traces[{f}]` must be [n_series={data.n}, tokens], "
+                                 f"got {tr.shape}")
+            fire_rows[f] = np.flatnonzero(np.asarray(tr).max(axis=1) > 0)
+    resample_seed = int(seed) + 3
+    clean_identity = []
     results, n_series_used = [], set()
+    no_donor, donor_log = set(), {}
     powered_blocks = {m: [] for m in modes}
     n_clearing = {m: 0 for m in modes}
     n_shape_clearing = {m: 0 for m in modes}
@@ -1270,10 +1377,23 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
                 torch.manual_seed(seed)
                 return adapter.predict(contexts, cfg.data.horizon, cfg.l0.quantiles)
 
-        rec_full = _forward(full_recon)
-        baseline_fc, baseline_q = rec_full["point"], rec_full.get("quantiles")
         torch.manual_seed(seed)
-        unpatched_fc = adapter.predict(contexts, cfg.data.horizon, cfg.l0.quantiles)["point"]
+        rec_unpatched = adapter.predict(contexts, cfg.data.horizon, cfg.l0.quantiles)
+        unpatched_fc = rec_unpatched["point"]
+        if intervention == "clean":
+            rec_identity = _forward(clean_tokens.cpu())
+            diff = float(np.max(np.abs(np.asarray(rec_identity["point"], dtype=np.float64)
+                                       - np.asarray(unpatched_fc, dtype=np.float64))))
+            clean_identity.append(diff)
+            if diff != 0.0:
+                raise RuntimeError(
+                    f"clean ablation: patching the clean tokens back changed the forecast by {diff}; "
+                    "the clean cache does not match predict()'s precision, so every effect would "
+                    "absorb that mismatch")
+            baseline_fc, baseline_q = unpatched_fc, rec_unpatched.get("quantiles")
+        else:
+            rec_full = _forward(full_recon)
+            baseline_fc, baseline_q = rec_full["point"], rec_full.get("quantiles")
 
         def _stats(rec, remove_level=False):
             return battery_statistics(rec["point"], baseline_fc, targets, contexts,
@@ -1285,12 +1405,13 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
         # sized to the mean per-token activation these ablations actually
         # remove -- so "this feature matters" means "more than removing that
         # much of something arbitrary does".
-        with torch.no_grad():
-            enc_all = sae.encode(clean_tokens.reshape(-1, d_in).to(device))
-            removed = [float((enc_all[:, f] - (0.0 if fill is None else float(fill[f]))).abs()
-                             .mean().cpu()) for f in chunk_feats]
-        nonzero = [m for m in removed if m > 0]
-        null_magnitude = -float(np.mean(nonzero) if nonzero else 1.0)
+        if "mean_magnitude" in modes:
+            with torch.no_grad():
+                enc_all = sae.encode(clean_tokens.reshape(-1, d_in).to(device))
+                removed = [float((enc_all[:, f] - (0.0 if fill is None else float(fill[f]))).abs()
+                                 .mean().cpu()) for f in chunk_feats]
+            nonzero = [m for m in removed if m > 0]
+            null_magnitude = -float(np.mean(nonzero) if nonzero else 1.0)
 
         null_rows: dict = {ch: [] for ch in CHANNELS}
         null_signed: dict = {ch: [] for ch in CHANNELS}
@@ -1332,6 +1453,28 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
                 continue
             rows_f = [int(r) for r in per_candidate_rows[f_idx] if int(r) in row_pos]
             idx = np.array([row_pos[r] for r in rows_f], dtype=int)
+            if intervention == "resample":
+                tr = np.asarray(feature_traces[f_idx])
+                if tr.shape[1] != clean_tokens.shape[1]:
+                    raise ValueError(f"feature {f_idx}: trace has {tr.shape[1]} tokens per series, "
+                                     f"the captured chunk has {clean_tokens.shape[1]}")
+                try:
+                    donors = resample_donor_rows(fire_rows[f_idx], rows, f_idx, resample_seed)
+                except ValueError:
+                    no_donor.add(int(f_idx))
+                    for mode in modes:
+                        for _ in range(n_null_directions):
+                            profile_rngs[mode].normal(
+                                size=(clean_tokens.shape[0] * clean_tokens.shape[1])
+                                if mode == "profile_matched_cov" else dict_size)
+                    continue
+                fill_f = torch.as_tensor(tr[donors].reshape(-1), dtype=torch.float32)
+                donor_log.setdefault(int(f_idx), {}).update(
+                    {int(r): int(dn) for r, dn in zip(rows, donors)})
+            elif fill is not None:
+                fill_f = float(fill[int(f_idx)])
+            else:
+                fill_f = None
             bad_forecast = np.zeros(idx.size, dtype=bool)
             nulls = {}
             for mode in modes:
@@ -1350,7 +1493,8 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
                         clean_tokens, sae, device, int(f_idx),
                         torch.as_tensor(code, dtype=torch.float32),
                         direction="covariance" if cov else "decoder",
-                        **({} if fill is None else {"fill": float(fill[int(f_idx)])})))
+                        **({} if fill_f is None else {"fill": fill_f}),
+                        **({"from_clean": True} if intervention == "clean" else {})))
                     stats = _stats(rec_null)
                     stats_shape = _stats(rec_null, remove_level=True)
                     for ch in CHANNELS:
@@ -1364,7 +1508,8 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
                 nulls[mode] = (pm_rows, pm_signed, pm_rows_shape)
             rec = _forward(_feature_ablated_replacement(
                 clean_tokens, sae, device, f_idx,
-                **({} if fill is None else {"fill": float(fill[int(f_idx)])})))
+                **({} if fill_f is None else {"fill": fill_f}),
+                **({"from_clean": True} if intervention == "clean" else {})))
             stats = _stats(rec)
             stats_shape = _stats(rec, remove_level=True)
             bad_forecast = ~(np.isfinite(np.asarray(rec["point"], dtype=np.float64)[idx]).all(axis=-1)
@@ -1548,6 +1693,9 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
             why = ("this atom fires on no series, so there is no regime to ablate it in"
                    if score_set is None or int(f_idx) in score_set else
                    "not in `score_features`: skipped by request")
+            if int(f_idx) in no_donor:
+                why = ("resample ablation needs a second series this atom fires on, "
+                       "and there is none")
             results.append({"feature": f_idx, "rules": rules[f_idx], "n_top_series": 0,
                             "n_rows_scored": 0, "scorable": False,
                             "reason": why,
@@ -1591,7 +1739,16 @@ def feature_ablation_fingerprints(cfg, adapter, layer: str, sae, data, device,
         **({"ablation_null": null_mode} if null_mode != "mean_magnitude" else {}),
         **({"ablation_intervention": "mean",
             "ablation_fill_means": {str(f): float(fill[f]) for f in order}}
-           if fill is not None else {}),
+           if fill is not None and intervention == "mean" else {}),
+        **({"ablation_intervention": intervention,
+            "ablation_resample": {"seed": resample_seed,
+                                  "n_firing_series": {str(f): int(len(fire_rows[f])) for f in order if f in fire_rows},
+                                  "donors": {str(f): {str(r): dn for r, dn in v.items()}
+                                             for f, v in donor_log.items()}}}
+           if intervention == "resample" else {}),
+        **({"ablation_intervention": "clean", "ablation_baseline": "unpatched",
+            "clean_identity_max_abs": float(max(clean_identity)) if clean_identity else None}
+           if intervention == "clean" else {}),
         **chance_block,
         **({"ablation_nulls": modes, "by_null_summary": by_null_summary}
            if len(modes) > 1 else {}),

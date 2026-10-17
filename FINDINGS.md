@@ -117,7 +117,7 @@ These instructions are binding for every future session, human or agent.
 | MP-05 | SAE feature death is a property of the layer's geometry (alive atoms ∝ effective dim, exponent 1.02) | 5 |
 | MN-21 | Reviving dead SAE features *hurts* causal alignment at 5/5 TimesFM depths | 5 |
 | MN-29 | The battery's legacy null is lenient: known-answer gate fails on 5/5 seeds (FPR 0.17–0.25), passes on 5/5 with a profile-matched null; on v2, causal features 293 → 110 (13.0× → 3.06× empirical chance), per-target concepts 9 → 0, convergent atlas concepts 13 → 0 | 5 |
-| MN-38 | Window-mean pooling hides within-window order and understates TimesFM-vs-fine-token CKA by up to 0.33; concatenating tokens fixes it | 5 |
+| MN-38 | Window-mean pooling hides within-window order and understates TimesFM-vs-fine-token CKA by 0.30–0.43 (held-out confirmed, fresh epoch); concatenating tokens fixes it | 5 |
 
 ---
 
@@ -143,6 +143,10 @@ These instructions are binding for every future session, human or agent.
 - **Evidence.** Geometric (L1). **Status:** exploratory (dev); each result is a single corpus and checkpoint pair.
 - **Reproduce.** `configs/{chronos2_phase4_check,sundial_phase4_check,generic_hf_timer,lag_llama_vs_chronos}.yaml` → `runs/*/l1/meta.json`.
 - **Pooling caveat (2026-10-14, MN-38).** These peaks use window-mean pooling, which understates TimesFM's similarity to 16-step and 1-step models. On 512 v3 dev series with lossless window concatenation, TimesFM's peaks are 0.3866–0.7348 (vs 0.3137–0.4967 under the mean on the same series): Chronos-2 0.7348, Chronos-Bolt 0.6543, Chronos-T5-Base 0.6428, Sundial 0.6363. Above-null sharing holds and is stronger; the levels and pair ranking above are properties of the mean statistic.
+- **Update (2026-10-17, ROADMAP §47.1, §47.3).** With concatenated windows and a 1000-permutation null, all 21 pairs of the
+  7-model panel exceed their nulls on v2 dev and v3 dev (512 series each), and on a fresh sealed v3 private epoch
+  (registered, run once; 21/21, Holm 0.02097902097902098). TimesFM's peaks: v2 0.3575086295604706–0.6353724598884583, v3
+  0.37477120757102966–0.7119318842887878; TimesFM/Chronos-2 private 0.7070513688986635.
 - **Ref.** ROADMAP §9 (~7500–7650), §16 E3(d) (~11160), §34 D2 (~33030). §44.5.
 - **Score. 5/5.** This is the central evidence that TSFMs converge on a common representational geometry, and it generalizes to a model integrated with zero adapter code. Read it with SH-05, SH-06 and MN-01: geometry alone is not evidence of shared *function* or lineage.
 
@@ -705,6 +709,7 @@ These instructions are binding for every future session, human or agent.
   - For `noise`, window 15 climbs 0.068→0.223→0.286→0.370→0.412 from layer
     0 to 16, while window 0 falls 0.091→0.009.
   - Chronos-T5 shows the same late-window concentration.
+- **Correction (2026-10-17, ROADMAP §47.5).** `runs/medium_run` no longer exists, so 0.068->0.412 cannot be reproduced. Re-measured on v2 dev, TimesFM only, 320 family-stratified series (pipeline path verified: the n=16 re-run reproduces `panel7_v2_dev/l3/patching.npz` with max |Δ| 0.0): noise, window 14 of 15 (just before the horizon), layers 0/4/8/12/16: 0.4267186224460602, 0.5525148510932922, 0.6117260456085205, 0.5992766618728638, 0.6312912702560425; window 0: -0.19078321754932404 -> 6.814002699684352e-05. Concentration in the last window and its growth with depth hold (peak at layer 8 then flat); the levels are higher than the medium run's. Reproduce: `run_dagger_remeasure.py patching` -> `runs/dagger_remeasure/patching.json` (commit e8f4012).
 - **Evidence.** Causal within-model (L3 patching). **Status:** exploratory (n≈300).
 - **Reproduce.** `runs/medium_run/l3/patching.npz` (`restoration_windows_TimesFM`).
 - **Ref.** ROADMAP §5.5 (~1907–1939).
@@ -1199,6 +1204,7 @@ These instructions are binding for every future session, human or agent.
     inconclusive), 5 near-duplicates out of 933,155, and Cramér's V ≤ 0.092.
   - Fresh epochs pass the same checks. Epoch 1: energy p 0.908046, 5/927365
     near-duplicates. Epoch 2: energy p 0.922539, 5/929295.
+- **V2 exchangeability (benchmark_large_v2 public_dev vs private_epoch3, the 7-model confirmation split; `benchmark_large_v2/private_epoch3/cross_split.json`, ROADMAP ~39267):** energy p 0.951024, TOST 20/22, 6 cross-split near-duplicates of 937,015; dev effective dimension 5.367, private 5.57. (Added 2026-10-17: the paper quotes these.)
 - **V3 exchangeability (computed 2026-10-12, after the confirm look, model-free; `benchmark_v3/cross_split_epoch1/cross_split.json`): dev 2876 vs private epoch 1 2868 sealed series (confirm draws 1024 of them via `confirm.max_series`); energy distance p 0.994503 (2000 permutations); TOST 22/22 catch22 features equivalent at 0.2 sd (Holm); tier composition p 0.971975; 9 cross-split DTW near-duplicate pairs of 8,248,368 (threshold 0.97); centroid distance 0.0705.
 - **Evidence.** Held-out validation. **Status:** confirmed.
 - **Reproduce.** `benchmark_validation/cross_split.py`; `run_validation.py --compare-splits`.
@@ -1207,7 +1213,7 @@ These instructions are binding for every future session, human or agent.
 
 ---
 
-#### MP-10 · Causal features survive mean ablation when they are sparse; the verdict is intervention-dependent only for dense features
+#### MP-10 · Causal features keep their effect direction under mean and resample ablation; which features clear depends on the intervention (2026-10-17: retitled after resample and clean arms; was "Causal features survive mean ablation when they are sparse; the verdict is intervention-dependent only for dense features")
 - **Claim.** `panel7_v3_dev`, the 91 features clearing >= 1 channel under the on-manifold (cov) null with zero ablation, re-run with the atom set to its token-level corpus mean (null matched to the mean removal, same rows/seeds/draws; zero rerun reproduced 182/182 features exactly):
   - **69/91 still clear** under cov (70/91 iso); clearing cells 170 → 137.
   - Effect direction is preserved: zero-vs-mean cosine median 0.9968869277075498 (IQR 0.9765–0.9998).
@@ -1217,6 +1223,22 @@ These instructions are binding for every future session, human or agent.
 - **Reproduce.** `tsfm_lens/run_ablation_mode_check.py plan|launch|aggregate` → `runs/ablation_mode_check/ablation_mode_check.json`; `feature_ablation_fingerprints(intervention="mean")` (commit 67685d7).
 - **Ref.** ROADMAP §43.2.
 - **Score. 3/5.** Answers the standard "zero ablation is off-manifold" objection for most features.
+- **Addendum (2026-10-17, ROADMAP §47.4): resample and clean-activation ablation.** On a regenerated v3 dev run that
+  reproduces the recorded one bit-exactly (50/50 SAE training histories identical; the same 91 clearing feature indices;
+  zero control 182/182 exact), the same 91 features under (a) resample ablation (activation at the matching token of
+  another firing series; 90 scorable) and (b) subtracting the feature's decoder contribution from the clean activation,
+  each with its own matched null:
+  - Resample: 58/90 clear cov (69/90 iso); cells 166 -> 118; cosine to zero median 0.99078334224017; density split
+    43/61 sparse vs 15/29 dense; 2/91 new clears in the sample.
+  - Clean: 49/91 cov (63/91 iso); cells 170 -> 113; cosine median 0.9193719121363682 (q25 0.6717053797281081); density
+    split 29/62 sparse vs 20/29 dense; 8/91 new clears in the sample (flag, not decomposed).
+  - Across mean, resample and clean: 37/91 clear cov under all three, 79/91 under at least one, 12/91 under none.
+  - Reading: mean and resample keep the effect direction; the clean intervention, which leaves the reconstruction error
+    in place, agrees less. Most zero-ablation features keep an effect under some on-manifold intervention, but which
+    ones survive depends on the intervention. **Status:** measured once (dev, exploratory).
+  - Reproduce: `tsfm_lens/run_ablcheck_regen.py`, `run_ablcheck_compare.py`, `run_ablation_mode_check.py --arms
+    mean,resample,clean` -> `runs/ablation_mode_check_v2/ablation_mode_check.json`, `runs/panel7_v3_ablcheck/repro.json`
+    (commits b99c4ff, 02caf5c).
 
 #### MP-11 · Training a fine-token model's SAE on its own tokens instead of window means fits the intervention space and preserves the forecast far better; comparison stays defined
 - **Claim.** 512 v3 dev series (410 train / 102 held-out), 3 seeds per arm, matched optimizer steps, pre-registered
@@ -1331,13 +1353,14 @@ See SH-10 and SH-11. **5/5.**
 - **Ref.** ROADMAP §26 C, §28.4–§28.18 (~24025–25073), §32.7c–d; CLAUDE_FULL §11.53.
 - **Score. 5/5.** Transferable to any "LLM explains this feature" pipeline. For the "nothing was measured" state, use an allowlist, or skip generation.
 
-#### MN-07 · Causal fingerprints are nearly one-dimensional, so they cannot be a cross-model matching key
+#### MN-07 · Causal fingerprints cannot be a cross-model matching key (low-dimensional on the four-model run; ~5–6 of 9 dimensions on the seven-model runs)
 - **Claim.**
   - The 9-channel ablation fingerprint has participation-ratio dimension
     2.09. The 64-step delta curve has dimension 1.04, with PC1 at 98.3%.
   - The mutual-nearest-neighbour match rate (37.6%) sits inside its null
     p95 (50.0%).
   - The full curve does worse: 15.3% vs 13.1% null at cosine 0.99.
+- **Correction (2026-10-17, ROADMAP §47.5).** PR 2.09 reproduces exactly on the four-model run (2.0915412316960187, 201 features) but does not carry over. v3: 5.575534873891118 (covariance null, 91 features; PC1 share 0.2828) and 5.996530057329665 (isotropic, 238 features). v2: 1.0508376999675946, driven by one entry of 269.8 (null p95 near 0; PC1 0.9754); with unit-normalized rows (the geometry the atlas clusters) v2 is 6.383117072160696. The 9-channel fingerprint is therefore about 5-6 dimensional on the seven-model runs, not nearly one-dimensional; the closed negative (fingerprints as a cross-model matching key) rests on the match-rate test, not on this PR. Reproduce: `runs/dagger_remeasure/items_v2_v3.json` (commit e8f4012).
 - **Evidence.** Causal fingerprints, compared cross-model. **Status:** negative (closed). Input-space transfer (SH-14) replaced it. CA-07 shows that the *per-item* effects are not only a level shift.
 - **Reproduce.** Measured on `runs/full_report_run_4model/sae/*_ablation.json`.
 - **Ref.** ROADMAP §30.2 (~25645–25701).
@@ -1411,12 +1434,13 @@ See SH-20. **4/5.**
 - **Ref.** ROADMAP §32.7b (~28480–28675).
 - **Score. 4/5.** Detecting features by activation alone is not evidence that they matter: most high-activation features do nothing causally.
 
-#### MN-15 · The SAE's own reconstruction error moves the forecast ~3.5× more than removing a feature
+#### MN-15 · The SAE's own reconstruction error moves the forecast 1.7–3.5× more than removing a feature
 - **Claim.**
   - Median reconstruction cost is 0.139 context sd, against a median feature
     effect of 0.0395.
   - 23.0% of panels have a feature effect below 1/10 of the reconstruction
     cost.
+- **Correction (2026-10-17, ROADMAP §47.5).** The 3.5× is a four-model, lenient-null number. Same definition (max over horizon, all panels, no clearing gate; four-model reproduces exactly, 0.03947468804168946 vs 0.13896064178421366) on the seven-model runs: v2 effect median 0.09650917675554359 vs reconstruction 0.21386207843123203 (ratio 2.2159766109386854, 2801 panels; 0.13423777222420563 of panels below a tenth); v3 0.15631556301374533 vs 0.2604575236137563 (ratio 1.6662289959628231, 2722 panels). The direction holds; the factor is 1.7-2.2 on the current runs. Reproduce: `tsfm_lens/run_dagger_remeasure.py json-items` -> `runs/dagger_remeasure/items_v2_v3.json` (commit e8f4012).
 - **Evidence.** Causal within-model. **Status:** confirmed on run.
 - **Reproduce.** `unpatched` array in `runs/full_report_run_4model/sae/*_ablation.json`.
 - **Ref.** ROADMAP §32.7b I4 (~28590–28645).
@@ -1727,7 +1751,7 @@ See SH-20. **4/5.**
 - **Ref.** ROADMAP §42.5.
 - **Score. 4/5.** Closes the "test better features" route with a measurement.
 
-#### MN-38 · Window-mean pooling hides within-window order and understates cross-model similarity by up to 0.33 CKA; concatenating a window's tokens fixes it
+#### MN-38 · Window-mean pooling hides within-window order and understates cross-model similarity by up to 0.33 CKA on dev (0.30–0.43 held-out); concatenating a window's tokens fixes it
 - **Claim.** On v3 dev series (four disjoint sets: PILOT 128, MAIN 512, CONFIRM 512, VALIDATE 512):
   - Averaging a window's tokens discards a large share of token variation (within-window share 0.40-0.76 for the
     16-step and 1-step models; Chronos-T5-Base 0.70-0.76 at every depth) and, with it, within-window ORDER. On
@@ -1745,8 +1769,8 @@ See SH-20. **4/5.**
 - **Reading.** Window-level CKA under mean pooling is biased toward dissimilarity between coarse-token (TimesFM) and
   fine-token models. Shared geometry is stronger than reported, and mostly at early, input-encoding layers. Pair
   rankings by CKA partly reflect tokenization.
-- **Evidence.** Descriptive / geometric, exploratory (dev), pre-registered criteria (ROADMAP §44–44.4). **Status:**
-  confirmed on a fresh set; the fix is in the library as `alignment.window_rep: concat`, the default
+- **Evidence.** Descriptive / geometric; pre-registered criteria (ROADMAP §44–44.4). **Status:** held-out confirmed
+  (ROADMAP §47.3, fresh sealed epoch; before that confirmed on a fresh dev set); the fix is in the library as `alignment.window_rep: concat`, the default
   since ROADMAP §44.6 (recorded runs pin `mean`).
 - **Addendum (ROADMAP §45.1, 2026-10-16): the pipeline on the full v3 dev run.** Re-extraction reproduces all 21
   recorded MEAN peaks exactly (max |Δ| 0.0). On the same 512 series, CONCAT vs MEAN peak CKA: TimesFM vs Chronos-2
@@ -1755,6 +1779,26 @@ See SH-20. **4/5.**
   0.37477120757102966 vs 0.37477126717567444. Spearman of 21 peaks 0.764935064935065; TimesFM/Chronos-2 7th vs 13th.
   The L1 CONCAT null is 5 permutations (mean/min/max), weaker than §44.5's 40. Reproduce:
   `configs/panel7_v3_concat.yaml` (extract,l1), `run_v3_concat_compare.py`.
+- **Addendum (ROADMAP §47.3, 2026-10-17): HELD-OUT CONFIRMED.** Registered before data (commit 1c1a7f4) and tested once on
+  a fresh sealed v3 private epoch (epoch 2, 512 series, 0 hash overlap with 13 splits). H-C1: all 21 pairs' CONCAT CKA at
+  the dev layer pairs exceeds the 1000-permutation shuffled-series null (each p 0.000999000999000999, Holm
+  0.02097902097902098); TimesFM/Chronos-2 0.7070513688986635 (dev 0.7119318842887878). H-C2: averaging lowers TimesFM's CKA
+  at the same layers and rows by 0.3215409540598726 (Chronos-2), 0.4333057196446368 (Chronos-T5-Base), 0.3005587061032854
+  (Chronos-Bolt), 0.3029117490758303 (Sundial), each bootstrap CI above 0.2697, Holm p 0.0007998400319936012. Reproduce:
+  `tsfm_lens/run_concat_confirm.py`, `configs/panel7_v3_concat_confirm_e2.yaml`.
+- **Addendum (ROADMAP §47.1, 2026-10-17): v2 and a 1000-permutation null.** The CONCAT null now uses 1000
+  whole-series permutations with a p95 and the best pair a series-bootstrap CI; on v3 the peaks are unchanged (max |Δ| 0.0)
+  and every pair has p = 0.000999000999000999. On 512 v2 dev series, CONCAT vs MEAN on the same rows: TimesFM vs Chronos-2
+  0.6353724598884583 vs 0.43068113923072815, vs Chronos-T5-Base 0.507454514503479 vs 0.34261298179626465, vs Chronos-Bolt
+  0.5459014177322388 vs 0.3827388882637024, vs Sundial 0.5461937785148621 vs 0.42134612798690796; Timer vs
+  Chronos-T5-Base falls 0.38444724678993225 -> 0.250899076461792. Reproduce: `configs/panel7_v2_concat.yaml`,
+  `configs/panel7_v2_concat_meancheck.yaml`, `configs/panel7_v3_concat_null.yaml` (commits cb26f52, 5ab8ac4).
+- **Addendum (ROADMAP §47.2, 2026-10-17): stitching.** On the same 512 v3 series, with L2's protocol (reproduced to
+  2.98e-08), concatenating the SOURCE window raises stitching gain over the input baseline from 0.4980521354254505 to
+  0.5536236378315946 on average at the 21 CONCAT peak pairs (both directions), most into TimesFM (Chronos-T5-Base ->
+  TimesFM 0.3070 -> 0.7879). Pair ranking is kept (Spearman over 21 pairs 0.9246753246753248; 0.9662337662337662 at the
+  recorded L2 pairs). Concatenated TARGETS of 12- and 32-token models (12288/24576 dims) are underdetermined at 5760
+  training rows (gain -0.11537519500112832 vs MEAN). Reproduce: `tsfm_lens/run_concat_stitching.py` (commit aca7a1e).
 - **Reproduce.** `tsfm_lens/run_pooling_check.py` (pilot/main/confirm JSONs in `runs/pooling_check/`),
   `tsfm_lens/run_concat_check.py` (`runs/concat_check/`), `analysis/window_concat.py`.
 - **Ref.** ROADMAP §44.2, §44.3a, §44.5.

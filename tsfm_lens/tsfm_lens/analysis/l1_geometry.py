@@ -212,6 +212,8 @@ def _one_pair(cfg: PipelineConfig, store: ActivationStore, meta, name_a: str, na
 
     best_ci, families_ci, null_ci = None, {}, None
     if cfg.stats.enabled and gram_bank is not None:
+        best_ci = _best_pair_ci_gram(cfg, gram_bank, name_a, name_b, layers_a[best[0]],
+                                     layers_b[best[1]], n_series, n_windows, device)
         null_ci = _shuffled_null_gram(cfg, gram_bank, name_a, name_b, layers_a[best[0]],
                                       layers_b[best[1]], n_series, n_windows, device)
     elif cfg.stats.enabled:
@@ -253,27 +255,66 @@ def _one_pair(cfg: PipelineConfig, store: ActivationStore, meta, name_a: str, na
     if gram_bank is not None:
         record["window_rep"] = "concat"
         record["window_rep_note"] = ("window-level CKA is Gram-sum CKA of time-ordered concatenated "
-                                     "tokens; the best-pair bootstrap CI is not computed in this mode "
-                                     "(best_pair.ci is None), the shuffled null is")
+                                     "tokens; the best-pair CI is a series cluster bootstrap on Gram "
+                                     "blocks and the shuffled-series null permutes whole series "
+                                     "(stats.concat_n_null permutations; p95 and p_value reported)")
     stacked = np.stack(cka_family) if cka_family else np.zeros((0,) + cka_window.shape,
                                                               dtype=np.float32)
     return record, cka_window, stacked
 
 
+def _recenter(k: torch.Tensor) -> torch.Tensor:
+    """H K H for a (sub-sampled or permuted) Gram: the Gram of the re-centered rows."""
+    return k - k.mean(0, keepdim=True) - k.mean(1, keepdim=True) + k.mean()
+
+
+def _series_rows(idx: np.ndarray, n_windows: int, device) -> torch.Tensor:
+    """Row indices of whole series (all `n_windows` windows each, in order) for series ids `idx`."""
+    rows = (np.asarray(idx)[:, None] * n_windows + np.arange(n_windows)[None]).reshape(-1)
+    return torch.from_numpy(rows).to(device)
+
+
 def _shuffled_null_gram(cfg, gram_bank, name_a, name_b, layer_a, layer_b, n_series, n_windows,
                         device) -> dict:
-    """The shuffled-series null of `_shuffled_null_cka` on Gram matrices: a series' windows move together."""
+    """The shuffled-series null of `_shuffled_null_cka` on Gram matrices: a series' windows move together.
+
+    `stats.concat_n_null` permutations (ROADMAP 47.1; the MEAN path keeps its 5 so recorded
+    artifacts reproduce). `value`/`lo`/`hi` keep the MEAN path's meaning (mean/min/max of the
+    null draws); `p95`, `p_value` = (1 + #null >= observed) / (n_null + 1), `n_null` and
+    `observed` are added. The observed value is the peak over layer pairs, so the null at the
+    peak pair is the null for a selected statistic, not a pre-registered pair.
+    """
     ka = gram_bank.get(name_a, layer_a).to(device)
     kb = gram_bank.get(name_b, layer_b).to(device)
+    observed = cka_from_grams(ka, kb)
+    n_null = int(cfg.stats.concat_n_null)
     rng = np.random.default_rng(cfg.run.seed + 13)
-    vals = []
-    for _ in range(5):
-        perm = rng.permutation(n_series)
-        rows = torch.from_numpy((perm[:, None] * n_windows + np.arange(n_windows)[None]).reshape(-1)).to(device)
-        kp = kb[rows][:, rows]
-        kp = kp - kp.mean(0, keepdim=True) - kp.mean(1, keepdim=True) + kp.mean()
-        vals.append(cka_from_grams(ka, kp))
-    return {"value": float(np.mean(vals)), "lo": float(np.min(vals)), "hi": float(np.max(vals))}
+    vals = np.empty(n_null, dtype=np.float64)
+    for i in range(n_null):
+        rows = _series_rows(rng.permutation(n_series), n_windows, device)
+        vals[i] = cka_from_grams(ka, _recenter(kb[rows][:, rows]))
+    return {"value": float(vals.mean()), "lo": float(vals.min()), "hi": float(vals.max()),
+            "p95": float(np.quantile(vals, 0.95)), "n_null": n_null, "observed": observed,
+            "p_value": float((1 + int((vals >= observed).sum())) / (n_null + 1))}
+
+
+def _best_pair_ci_gram(cfg, gram_bank, name_a, name_b, layer_a, layer_b, n_series, n_windows,
+                       device) -> dict:
+    """Cluster bootstrap of CONCAT CKA at the peak pair on Gram blocks, resampling series.
+
+    A drawn series contributes all its windows (`K[rows][:, rows]`, then re-centered, which
+    equals feature-space CKA of the re-sampled, re-centered concatenations). Same resample
+    count and seed convention as `_best_pair_ci`.
+    """
+    ka = gram_bank.get(name_a, layer_a).to(device)
+    kb = gram_bank.get(name_b, layer_b).to(device)
+
+    def stat(idx: np.ndarray) -> float:
+        rows = _series_rows(idx, n_windows, device)
+        return cka_from_grams(_recenter(ka[rows][:, rows]), _recenter(kb[rows][:, rows]))
+
+    return bootstrap_ci(stat, n_series, min(cfg.stats.n_boot, cfg.stats.n_boot_heavy),
+                        cfg.run.seed + 10, cfg.stats.ci)
 
 
 def _best_pair_ci(cfg: PipelineConfig, bank_a: _LayerBank, bank_b: _LayerBank,

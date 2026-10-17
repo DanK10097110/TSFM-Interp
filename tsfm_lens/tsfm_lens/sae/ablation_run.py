@@ -99,7 +99,8 @@ def run_ablation_target(cfg, run_dir: Path, hub, data, store, device, model: str
                         powered_test: bool | None = None,
                         intervention: str = "zero",
                         feature_means: np.ndarray | None = None,
-                        score_features: list | None = None) -> dict:
+                        score_features: list | None = None,
+                        feature_traces: dict | None = None) -> dict:
     """The ablation fingerprint for one target. Returns the artifact dict; a
     target with no checkpoint returns a `skipped` record rather than raising,
     so one missing dictionary does not stop the other targets.
@@ -126,7 +127,8 @@ def run_ablation_target(cfg, run_dir: Path, hub, data, store, device, model: str
       (`sae/powered.py`). `None` reads `sae.ablation_powered`; an explicit value overrides it.
     - `intervention`, `feature_means`, `score_features`: opt-in mean ablation and a restricted
       candidate set (`response.feature_ablation_fingerprints`); the defaults are the legacy zero
-      ablation over every candidate.
+      ablation over every candidate. `intervention` also takes `"resample"` (with `feature_traces`,
+      `response.token_feature_traces`) and `"clean"` (ROADMAP 47.4).
     """
     run_dir = Path(run_dir)
     ckpt_path = checkpoint_path(run_dir, model, layer)
@@ -217,6 +219,7 @@ def run_ablation_target(cfg, run_dir: Path, hub, data, store, device, model: str
         **({"intervention": intervention, "feature_means": feature_means}
            if intervention != "zero" else {}),
         **({"score_features": score_features} if score_features is not None else {}),
+        **({"feature_traces": feature_traces} if feature_traces is not None else {}),
         **({"extra_null_modes": tuple(cfg_extra_null_modes(cfg))}
            if cfg_extra_null_modes(cfg) else {}),
         empirical_chance=bool(empirical_chance or getattr(cfg.sae, "ablation_empirical_chance", False)))
