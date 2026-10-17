@@ -150,3 +150,14 @@ def test_registry_is_written_once(tmp_path):
     (tmp_path / "registry.json").write_text("{}", encoding="utf-8")
     with pytest.raises(FileExistsError):
         rcc.write_registry(tmp_path, tmp_path)
+
+
+def test_bootstrap_resamples_whole_series_not_windows():
+    """Windows of a series are near-copies, so a window-level bootstrap gives a far narrower CI than the series one."""
+    g = torch.Generator().manual_seed(11)
+    s = torch.randn(NS, 6, generator=g).repeat_interleave(NW, 0)
+    a = s + 0.01 * torch.randn(NS * NW, 6, generator=g)
+    b = s * torch.randn(6, generator=g) + 0.5 * torch.randn(NS * NW, 6, generator=g).repeat_interleave(1, 0)
+    r = rcc.concat_minus_mean_bootstrap(_gram(a), _gram(b), a, b, NS, NW, 200, 0)
+    lo, hi = r["concat_ci95"]
+    assert hi - lo > 0.1
