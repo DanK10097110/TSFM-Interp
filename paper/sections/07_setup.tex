@@ -67,7 +67,8 @@ are in \repodir{examples/panel7_v2/run}, and Appendix~\ref{app:repro} gives the 
 \paragraph{How the models behave on this corpus.} Interpretability results are only meaningful if the models do the
 task they were trained for. Table~\ref{tab:character} summarizes their behavior on the v2 dev split. Chronos-2 is the most
 accurate. Five models beat the seasonal-naive forecast on 76.5--84.5\% of series, Timer on 69.5\% and Time-MoE on only
-37.8\%; Time-MoE is less accurate than the naive forecast overall, and its results should be read with this in mind.
+37.8\%; Time-MoE is less accurate than the naive forecast overall, so its internal results describe a model that does not
+forecast these series well.
 The nominal 80\% intervals of Sundial and Chronos-T5-Base cover only 36\% and 44\% of outcomes, and four models propagate
 an injected missing value silently. On the private split, Chronos-2 is more accurate than TimesFM on the registered
 \texttt{mixture} family ($\Delta$MASE 0.209 [0.119, 0.313], $p_{\text{Holm}}=0.0002$, $n=290$) and, with a smaller effect,

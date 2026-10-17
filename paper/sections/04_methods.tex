@@ -19,10 +19,12 @@ pairs are compared per generator family with a paired series bootstrap, Holm-cor
 parameters, FLOPs, latency and the share of a forecast's FLOPs spent in captured blocks, and test what each model's
 input pipeline does before any layer runs (scale equivariance, handling of missing values, quantization).
 
-\paragraph{L1 and L2: geometry.} For aligned, window-pooled and centered activations $A$ and $B$ over the same series,
+\paragraph{L1 and L2: geometry.} For aligned and centered window representations $A$ and $B$ over the same series,
 linear CKA \citep{kornblith2019cka},
 $\mathrm{CKA}(A,B)=\|B^{\top}A\|_F^2/(\|A^{\top}A\|_F\|B^{\top}B\|_F)$, is computed for every layer pair of every
-model pair with a cluster bootstrap and a shuffled-series null. L2 fits ridge maps between layers
+model pair. A window is represented by its tokens concatenated in time order (Section~\ref{sec:alignment}), so CKA is
+computed from the row Gram matrices $K=\sum_p X_pX_p^{\top}$ summed over token positions $p$. Each value carries a
+series-level cluster bootstrap and a null that permutes whole series (1{,}000 permutations). L2 fits ridge maps between layers
 \citep{bansal2021stitching} and reports only the \emph{gain} over a baseline that predicts the target layer from input
 features, since much of any layer is linearly predictable from the input alone. Agreement between activation clusterings
 is measured by adjusted mutual information \citep{vinh2010ami}.

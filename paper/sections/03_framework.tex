@@ -105,7 +105,7 @@ but the vectors still live in each model's own space: widths differ, from 384 in
 no axis of one model corresponds to an axis of another. No analysis therefore compares a vector of one model with a
 vector of another directly. Every cross-model measure compares something defined on the shared rows:
 \begin{itemize}[itemsep=1pt]
-  \item \textbf{Geometry} (CKA and RSA) compares how the rows relate to \emph{one another} within each model. Two models
+  \item \textbf{Geometry} (CKA and representational similarity analysis, RSA) compares how the rows relate to \emph{one another} within each model. Two models
     score high when the series and windows that look similar to one model also look similar to the other. This
     depends on what a window's vector keeps, which we test below.
   \item \textbf{Stitching} fits a linear map from one model's rows to the other's on training series and scores it on
@@ -148,7 +148,8 @@ fresh private split. Concatenation is the tool's default (\texttt{alignment.wind
 available for comparison with earlier runs.
 
 \paragraph{What the window rule affects.} The window rule matters only where window vectors of two models are compared
-with each other: the similarity measures, namely window-level CKA, RSA and stitching. Both were re-measured. For
+with each other: the window-level similarity measures, CKA and stitching; RSA compares whole-series summaries and is unaffected. Both
+window-level measures were re-measured. For
 stitching, concatenating the source window raises the gain over the input baseline from 0.498 to 0.554 on average over the
 21 peak pairs in both directions, most when TimesFM is predicted (from Chronos-T5-Base 0.307 to 0.788), while the ranking
 of model pairs is kept (Spearman 0.92; \fid{MN-38}). The stitching target stays the window summary, because a 1-step
@@ -177,7 +178,7 @@ tokens are windows, the two training sets are identical and no metric changed be
 token training lowered token-level unexplained variance from 0.2835 to 0.0442 (block 3) and from 0.5469 to 0.1173
 (block 11), cut the forecast change of the patched reconstruction from 1.020 to 0.113 MASE at block 11, and reduced
 dead features. Comparison remained defined in the same way, but the token-trained features of Chronos-Bolt shared
-fewer top series with TimesFM's, and within-window slope was not more decodable from their series codes. The reported
+fewer top series with TimesFM's (Chronos-T5-Base's change was within seed noise), and within-window slope was not more decodable from their series codes. The reported
 runs use window training.
 
 Two further costs of the shared grid are not repaired by any window rule. First, the grid is no finer than the

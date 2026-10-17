@@ -24,8 +24,8 @@ forecasting models prevent a direct transfer, and each produces silent errors ra
     tokens to time.
   \item \textbf{There is no ground truth for concepts.} Real series carry no labels for trend, period,
     changepoints or noise process, so a probe that ``finds seasonality'' cannot be checked on them.
-  \item \textbf{Effects are small and easy to fake.} Removing one sparse feature typically moves a forecast by a
-    few hundredths of the context's standard deviation, less than the dictionary's own reconstruction error. At
+  \item \textbf{Effects are small and easy to fake.} Removing one sparse feature typically moves a forecast by
+    about a tenth of the context's standard deviation, less than the dictionary's own reconstruction error. At
     this scale a precision mismatch, an intervention the forecast head never reads, or a null measured on the
     wrong rows each produce a clean, confident and wrong result.
 \end{enumerate}
@@ -65,22 +65,25 @@ report in which every claim states its evidence class.
 \end{enumerate}
 
 \paragraph{Main findings.} We study TimesFM~2.5, Chronos-2, Sundial, Chronos-Bolt, Chronos-T5-Base, Timer and
-Time-MoE, and re-test every registered claim on a second, three times larger corpus.
+Time-MoE, and re-test the registered claims on a second, three times larger corpus.
 \begin{itemize}
   \item \textbf{RQ1.} Sparse-dictionary features whose removal moves the forecast more than a random direction of
     the same size exist in six of the seven models. They act mostly on forecast level and seasonality and form a
     graded continuum rather than discrete units. Against random directions drawn from the layer's own activation
     distribution, however, they exceed chance only 1.29-fold. The effects are not an artifact of ablating to zero:
     most survive mean ablation.
-  \item \textbf{RQ2.} Different architectures \emph{select the same series} for a concept: all registered transfer
-    claims confirm held-out on both corpora and on raw real-world windows. The same broad effect types (raising or
+  \item \textbf{RQ2.} Representational geometry is shared above chance for all 21 model pairs, which a registered
+    test confirms on a fresh sealed split, provided windows concatenate their tokens: averaging them, the common
+    practice, hides 0.30--0.43 of TimesFM's CKA with the fine-token models. Different architectures also \emph{select the
+    same series} for a concept: all registered transfer claims confirm held-out on both corpora and on raw real-world
+    windows. The same broad effect types (raising or
     lowering the level, damping seasonality) recur across models, but fine-grained concepts are organized by model:
     no concept spans more than three of the seven models, which also holds held-out.
   \item \textbf{RQ3.} Activation prominence does not identify causal importance: most prominent features have no
     held-out causal effect. Fewer than half of the registered single-feature causal claims replicate, and neither
     more data, a more powerful test nor gradient-selected candidates improves this.
-  \item \textbf{RQ4.} How TimesFM and Chronos-2 react to corruptions, layer by layer, replicates held-out for most
-    corruptions; absolute depth locations are comparable only after accounting for how much of each model's compute
+  \item \textbf{RQ4.} How TimesFM and Chronos-2 react to corruptions, layer by layer, replicates held-out for 6 of 9
+    corruptions on v2 and 4 of 9 on v3 (8 of 9 keep their sign), with level shift flipping sign on both; absolute depth locations are comparable only after accounting for how much of each model's compute
     is captured.
 \end{itemize}
 Table~\ref{tab:results} lists every headline result with its evidence class and status.

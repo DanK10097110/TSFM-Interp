@@ -3,7 +3,9 @@
 
 \paragraph{Shared inputs, model-specific mechanisms.} The most robust cross-model result is about inputs: models with
 different tokenizations, depths and training objectives single out the same series for a concept, on two corpora and on
-raw real windows. Whole-layer geometry is also shared above chance. Yet at the grain of individual causal effects,
+raw real windows. Whole-layer geometry is shared as well: all 21 model pairs exceed shuffled-series nulls on both
+corpora and on a fresh sealed split, most strongly at early, input-encoding layers, once windows are compared without
+averaging away their internal order. Yet at the grain of individual causal effects,
 concepts are organized by model, and agreement on the same series is detected only between two closely related Chronos
 models. One consistent reading is that the panel converges on \emph{what} in a series matters (its level, its
 seasonality) while implementing the response differently. This is a weaker form of convergence than the representational
@@ -29,8 +31,8 @@ concept, so its silence carries no information. Exploratory pipelines with thous
 benefit from the same register-then-confirm discipline used here, which in our study confirmed between half and two thirds
 of the registered claims (43 of 82 and 41 of 63).
 
-\paragraph{Practical use.} The internal features add information about forecast failure only for the two weakest
-models, where the output-only baseline is weakest, and do not improve model selection. For practitioners, the more
+\paragraph{Practical use.} The internal features add information about forecast failure only for the two least
+accurate models, whose forecasts fail most often, and do not improve model selection. For practitioners, the more
 immediate value of the system is diagnostic: behavioral checks such as calibration and missing-value handling, and the
 documented failures of instruments that would otherwise produce confident, wrong results.
 
@@ -39,17 +41,16 @@ documented failures of instruments that would otherwise produce confident, wrong
 
 \paragraph{Models.} The study covers seven transformer models with contiguous tokens; models whose tokens read
 disjoint lags, such as Lag-Llama, receive reduced scope. With seven models, contrasts between models are confounded with
-architecture, size and training data. Timer's features do not exceed chance, so its results are uninformative about
-causal concepts. The analysis is univariate: Chronos-2's cross-series group attention is not measured (\fid{PM-13}), and
+architecture, size and training data. Timer's features do not exceed chance, so its results carry no evidence about causal
+concepts. The analysis is univariate: Chronos-2's cross-series group attention is not measured (\fid{PM-13}), and
 Chronos-T5's decoder and Sundial's flow head are not captured.
 
 \paragraph{Time alignment.} A common time grid is no finer than the coarsest token: no window rule recovers
 resolution finer than Timer's 96-step token, and peak layer locations depend on the window size (\fid{SH-23}).
 Concatenated windows, which the similarity results use, are computed on 512 series per corpus, the size at which the
-Gram matrices fit in memory. SAE comparisons do not depend on the window rule, but the reported dictionaries are trained on window
-averages. For Chronos-T5-Base, training on its own tokens fits the space interventions act in far better
-(\fid{MP-11}); the reported SAE results for 1-step models may understate their fidelity and causal yield, and may overstate how many
-top series their features share with TimesFM's.
+Gram matrices fit in memory. SAE comparisons do not depend on the window rule. Dictionaries are trained on window averages, which is conservative
+for 1-step models: trained on its own tokens, Chronos-T5-Base's dictionary explains token variance far better and yields
+more causal features, while the top series it shares with TimesFM's dictionary change within seed noise (\fid{MP-11}).
 
 \paragraph{Ground truth and external validity.} Ground truth is exact only for the synthetic tier and encodes the
 generators' assumptions; 12 of 33 concept parts are dominated by one real-derived generator, and overlap with the models'
@@ -63,7 +64,8 @@ as a discovery corpus: concepts are discovered where ground truth exists, and th
 on 800 raw real windows held out from every dev stage (20 of 20).
 
 \paragraph{Scope of the confirmation.} Held-out confirmation covers accuracy, geometry, perturbation agreement, transfer,
-single-feature causal effects, atlas structure and failure prediction, on two corpora with one private split each. The
+single-feature causal effects, atlas structure and failure prediction, on two corpora with one private split each, and the registered window-geometry claims were tested on a second sealed
+v3 split. The
 20 confirmed v2 transfers derive from two source concepts and the v3 transfers from three source models, so the transfer
 result rests on a small number of concepts. Registered claims are selected from larger dev pools; this is legitimate
 because the private split referees them, but it means that unregistered dev results remain exploratory.
@@ -88,10 +90,11 @@ Interpreting TSFMs is harder than it looks: tokens mean different things in diff
 annotated ground truth, and causal effects are small enough that measurement artifacts dominate unless they are
 controlled. \tool{} addresses these problems with a controlled benchmark, measured time alignment, null- and reach-gated
 causal concepts validated on a planted forecaster, and a register-then-confirm protocol, behind one command and a report
-written for newcomers. Across seven TSFMs and two corpora, different architectures select the same inputs for a concept,
-while their causal machinery is organized by model; causal features act mainly on level and seasonality but are only
+written for newcomers. Across seven TSFMs and two corpora, different architectures share above-null representational geometry, a
+similarity that the common window average had hidden, and select the same inputs for a concept, while their causal
+machinery is organized by model; causal features act mainly on level and seasonality but are only
 weakly specific against on-manifold directions; activation prominence does not reveal causal importance; and
-depth-resolved reaction profiles largely replicate. Each conclusion is stated with its evidence class, and each held-out
+depth-resolved reaction profiles replicate for most corruptions on the primary corpus and about half on the second. Each conclusion is stated with its evidence class, and each held-out
 claim was registered before the private data were opened.
 
 \paragraph{Availability.} Code (MIT license), configurations, the example run and the findings ledger are at

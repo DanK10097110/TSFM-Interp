@@ -31,8 +31,8 @@ confirm).
 
 \paragraph{Statistical power and data sufficiency.} Sufficiency depends on the claim, and each claim's power is stated. Not power-limited: the 20
 transfer claims all reach the Holm floor (AUC 0.919--0.970 against null 95th percentiles of 0.70--0.75); the accuracy
-claim's minimum detectable $\Delta$MASE is 0.133 against an observed 0.209; the CKA interval is $[0.401, 0.427]$ against a
-null of 0.038. Power-limited: single-feature causal claims (each feature is tested on its 8 strongest-firing series, and
+claim's minimum detectable $\Delta$MASE is 0.133 against an observed 0.209; the held-out concatenated CKA of TimesFM and Chronos-2 is 0.707 $[0.679, 0.734]$
+against a null 95th percentile of 0.010. Power-limited: single-feature causal claims (each feature is tested on its 8 strongest-firing series, and
 19 of the 21 that did not confirm never reached the dev $p$ floor), per-target concepts (178 of 672 candidates never fire
 on any series, so more rows do not help; \fid{SH-20}), and the shared-input agreement rung, which more shared series do
 not rescue (\fid{MN-30}). More data was then tested directly. A three times larger corpus (v3, 2{,}876 dev series)
@@ -127,8 +127,8 @@ a series-level bootstrap, reported as one of seven pair metrics that are never p
 untrained pair can score higher than a trained one (\fid{MN-01}). The reported peak is a maximum over layer pairs; its
 held-out replications (0.707 concatenated on a fresh split, 0.411 window mean) are measured at the pairs selected on dev.
 
-\paragraph{Choice of settings.} Battery settings ($k=8$ rows, 16 null draws) were fixed on the
-four-model run before the seven-model concept stage ran, after larger settings did not recover power (\fid{SH-20}); at the
+\paragraph{Choice of settings.} Battery settings ($k=8$ rows, 16 null draws) were fixed on a
+four-model development run before the seven-model concept stage ran, after larger settings did not recover power (\fid{SH-20}); at the
 atlas threshold of 0.9 the v2 atlas has 11 concepts against a shuffle-null mean of 3.38 (95th percentile 5.05,
 $p=0.005$); family silhouettes
 are flat (0.25--0.32) across cuts from 6 to 16, which is why families are reported as a reading vocabulary.
@@ -224,12 +224,12 @@ ID & Claim (abridged) & In paper$^{*}$ & Score \\
 \endhead
 \bottomrule
 \endfoot
-SH-01 & Peak CKA 0.38--0.47 above shuffled-series nulls (0.02--0.16) across five architectures & \S\ref{sec:casestudy}, T\ref{tab:results} & 5 \\
+SH-01 & All 21 model pairs above shuffled-series nulls with concatenated windows on v2 and v3 dev and on a fresh sealed split (21/21) & \S\ref{sec:casestudy}, T\ref{tab:results} & 5 \\
 SH-05 & CKA and clustering AMI rank model pairs differently on three panels & T\ref{tab:results} & 5 \\
 SH-06 & Pair similarity splits into a geometric camp and a behavioral/causal camp; 7 metrics never pooled & T\ref{tab:results} & 5 \\
 SH-10 & Joint crosscoder loses to independent SAEs matched post hoc (0.2787 vs 0.3204, $p=0.002$) & App.~\ref{app:faq} & 4 \\
 SH-16 & No atlas concept spans the panel (at most 3 of 7 models; held out) & \S\ref{sec:casestudy}, T\ref{tab:results} & 5 \\
-SH-18 & Registered concept-transfer claims confirmed on private data: 19/20, 20/20 frozen, 20/20 on v2, 20/20 on the 7-model epoch 3, 20/20 on v3 and on 800 raw real windows & \S\ref{sec:casestudy}, T\ref{tab:results} & 5 \\
+SH-18 & Registered concept-transfer claims confirmed on private data: 19/20, 20/20 frozen, 20/20 on v2 epoch 0 (four models), 20/20 on v2 epoch 3 (seven models), 20/20 on v3 and on 800 raw real windows & \S\ref{sec:casestudy}, T\ref{tab:results} & 5 \\
 SH-19 & Unit-level correspondence fails rotation controls (0.148 $\to$ 0.331); participation ratio as low as 1.54 & \S\ref{sec:casestudy} & 5 \\
 SH-20 & Per-target concepts mostly non-modular: 50 of 56 targets at 7 models & \S\ref{sec:methods}, \S\ref{sec:casestudy} & 4 \\
 SH-23 & Transfer and peak CKA barely change at windows 64 and 96; peak layer pair stable for 9 of 21 pairs & \S\ref{sec:v3}, App.~\ref{app:faq} & 3 \\
@@ -245,7 +245,7 @@ D-42C & Five attribution-ranked atoms carry a median 0.74 share of expressible f
 DE-01 & Whole-layer patching hides a depth-intensifying recency effect in the last pre-horizon window & \S\ref{sec:casestudy} & 4 \\
 DE-03 & Chronos-2 skip lens was a silent no-op (identical MASE at 12 layers); corrected reach 0.737 $\to$ 0.000 & \S\ref{sec:methods}, \S\ref{sec:casestudy} & 5 \\
 DE-04 & Chronos-T5 encoder ends at depth 0.478 on a whole-stack axis; 50\% comparable overlap with TimesFM & \S\ref{sec:methods}, \S\ref{sec:casestudy} & 5 \\
-DE-05 & Captured share of forecast FLOPs: 13.9\% (Chronos-T5-Base) to 99.8\% (Timer) at 7 models (14.35\% to 97.5\% on four) & \S\ref{sec:setup}, \S\ref{sec:rq4}, T\ref{tab:results} & 5 \\
+DE-05 & Captured share of forecast FLOPs: 13.9\% (Chronos-T5-Base) to 99.8\% (Timer) at 7 models & \S\ref{sec:setup}, \S\ref{sec:rq4}, T\ref{tab:results} & 5 \\
 DE-08 & Layer selection depends almost entirely on the selector (0/3 robust layers) & \S\ref{sec:casestudy} & 4 \\
 PM-05 & Chronos-2 most accurate and best observed; winners vary by family; held-out on v2 and on 7-model epoch 3 & T\ref{tab:results} & 4 \\
 PM-07 & Models differ ${\sim}5.4\times$ in reversion to the mean; flat forecasts driven by weakly predictable data & \S\ref{sec:related} & 4 \\
@@ -260,7 +260,7 @@ MP-04 & Single-seed SAE gold ranking flips a bake-off verdict; 3 seeds fix it & 
 MP-05 & SAE feature death set by layer geometry (exponent 1.02), not recipe & \S\ref{sec:limitations} & 5 \\
 MP-06 & Ground-truth alignment of SAE features is real only over a permutation null & \S\ref{sec:casestudy} & 3 \\
 MP-07 & Ablation battery discriminates: 2.47$\times$ empirical chance at 7 models (Timer 1.02$\times$, Bolt 5.70$\times$) & \S\ref{sec:casestudy} & 4 \\
-MP-09 & Dev and private splits exchangeable (energy $p=0.51$; TOST 21/22) & \S\ref{sec:setup} & 3 \\
+MP-09 & Dev and private splits exchangeable (v2: energy $p=0.951$, TOST 20/22; v3: $p=0.995$, 22/22) & \S\ref{sec:setup} & 3 \\
 MP-10 & Causal features survive mean ablation (69/91), except many dense ones & \S\ref{sec:rq1} & 3 \\
 MP-11 & Token-level SAE training: Chronos-T5-Base token FVU 0.2835$\to$0.0442, fewer dead features & \S\ref{sec:alignment}, \S\ref{sec:limitations} & 4 \\
 MN-01 & Similarity cannot detect lineage: untrained pair 0.878 $>$ trained related pair 0.734 & \S\ref{sec:casestudy}, T\ref{tab:results} & 5 \\

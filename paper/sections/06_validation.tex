@@ -13,9 +13,10 @@ directions with a weak effect. A control layer placed after the planted block ha
 cross-model tests there is a pair of architectures (widths 64 and 96, depths 5 and 7, rotated residual bases) that share
 planted concepts, plus a twin with the opposite effect.
 
-\paragraph{Protocol.} A scorer reads only the planted manifest and the run's artifacts. The pass criterion was fixed
-before any data were seen: a per-cell false-positive rate of at most 0.10 on the control layer and a sensitivity of at
-least 0.5, on five construction seeds. Seed 0 was used to tune the attribution rule and seeds 1--4 were held out. The
+\paragraph{Protocol.} A scorer reads only the planted manifest and the run's artifacts. The pass criteria were fixed
+before any data were seen and are listed per instrument in Table~\ref{tab:knownanswer}: for the nulls, a per-cell
+false-positive rate of at most 0.10 on the control layer and a sensitivity of at least 0.5; for designs proposed as
+replacements of a working instrument, a sensitivity of at least 0.8. Each is evaluated on five construction seeds. Seed 0 was used to tune the attribution rule and seeds 1--4 were held out. The
 criterion is evaluated at one effect size (dose 1).
 
 \begin{table}[tb]
@@ -47,8 +48,8 @@ shape the rest of the paper.
 First, the test has teeth. The profile-matched null passes on all five seeds, while a simpler null that removes one
 uniform, batch-averaged amount fails on every seed, because a strong or dense atom clears it on size alone. On seed 0 the
 profile-matched null also keeps every sub-null decoy from clearing, raises the adjusted Rand index of the atlas against
-the planted concepts from 0.336 to 0.469, and raises sharing-class accuracy from 0.364 to 0.714. Re-scoring the earlier
-four-model run under the profile-matched null reduced its causal features from 293 to 110 (\fid{MN-29}). The
+the planted concepts from 0.336 to 0.469, and raises sharing-class accuracy from 0.364 to 0.714. Re-scoring a four-model
+development run under the profile-matched null reduced its causal features from 293 to 110 (\fid{MN-29}). The
 profile-matched null may be conservative in the planted world, since a random direction overlaps the planted span more
 than a decoy does.
 

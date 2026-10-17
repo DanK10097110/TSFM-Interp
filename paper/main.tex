@@ -73,12 +73,15 @@ small enough that uncontrolled measurements yield confident false positives. We 
 that compares TSFMs on a measured common time axis, validates its instruments on a benchmark with known generative
 components and on a forecaster with planted concepts, defines concepts by their effect on the forecast relative to
 matched random interventions, and tests exploratory claims once on a sealed held-out split. We apply it to seven TSFMs
-and confirm the results on two independent corpora. Different architectures select the same input series for a
-concept: all registered transfer claims confirm on both private splits and on 800 raw real-world windows. Causal
+and confirm the results on two independent corpora. Once each model's tokens are concatenated in time order, all 21
+model pairs share representational geometry above a shuffled-series null, confirmed on a fresh sealed split; the usual
+window average understates TimesFM's similarity to four fine-token models by 0.30--0.43 CKA. Different architectures
+also select the same input series for a concept: all registered transfer claims confirm on both private splits and on
+800 raw real-world windows. Causal
 features act mainly on forecast level and seasonality, but fine-grained concepts are organized by model, and no concept
 spans more than three of the seven models. Activation prominence is a poor guide to causal importance, since 83.5\% of
 prominent features have no held-out effect, and fewer than half of single-feature causal claims replicate. Against
-random directions drawn from the activation distribution, single features are only weakly specific (1.29 times chance), and neither
+random directions drawn from the activation distribution, single features are only weakly specific (1.29 times chance on the larger corpus), and neither
 more data, a more powerful test nor gradient-selected candidates changes this. Every claim is reported with its
 evidence class and a reproduction pointer.
 \end{abstract}

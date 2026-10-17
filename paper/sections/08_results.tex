@@ -10,7 +10,7 @@ Table~\ref{tab:results} at the end lists every headline result with its evidence
 \label{sec:heldout}
 \label{sec:v3}
 
-Table~\ref{tab:v3} gives the outcome of the two one-shot confirmations. On v2, 43 of 82 replicable claims confirm, 33 do
+Table~\ref{tab:v3} gives the outcome of the one-shot confirmations. On v2, 43 of 82 replicable claims confirm, 33 do
 not and 6 cannot be tested; on v3, 41 of 63 confirm and 3 cannot be tested. The pattern is the same on both corpora:
 claims about accuracy, geometry, shared inputs, the structure of the concept atlas and failure prediction replicate,
 fewer than half of the single-feature causal claims do, and no claim that two models share a causal effect
@@ -29,16 +29,21 @@ Peak-CKA pair & 1/1 & 1/1 & \ref{sec:rq2} \\
 Concept transfer (shared inputs) & 20/20 & 20/20 & \ref{sec:rq2} \\
 \quad same claims on 800 raw real windows & -- & 20/20 & \ref{sec:rq2} \\
 Atlas structure & 2/2 & 2/2 & \ref{sec:rq2}, \ref{sec:rq3} \\
+Single-model atlas concept & 1/1 & -- & \ref{sec:rq2} \\
 Cross-model causal (atlas concepts; agreement) & 0/3; 0/6 & none registrable & \ref{sec:rq2} \\
 Single-feature causal effect & 10/31 & 11/24 & \ref{sec:rq3} \\
 Perturbation-profile agreement & 6/9 & 4/9 & \ref{sec:rq4} \\
 Failure prediction from internals & 2/2 & 2/3 & \ref{sec:practical} \\
 \midrule
 Confirmed / replicable (not testable) & 43/82 (6) & 41/63 (3) & \\
+\midrule
+Window geometry, second sealed v3 split: & & & \\
+\quad 21 pairs above null; mean understates 4 pairs & -- & 21/21; 4/4 & \ref{sec:rq2} \\
 \bottomrule
 \end{tabular}
 \caption{Held-out confirmation on two independent corpora. Each cell is confirmed / tested; each claim type is one Holm
-family. The external raw-window set is not counted in the totals. Sources: \texttt{confirm/confirmation.json} of the
+family. The external raw-window set and the second v3 split (2{,}863 series, of which 512 are used) are not counted
+in the totals. Sources: \texttt{confirm/confirmation.json} of the
 v2 and v3 runs (\fid{CA-11}, \fid{CA-12}).}
 \label{tab:v3}
 \end{table}
@@ -106,7 +111,7 @@ We therefore score each null draw as a pseudo-feature on all channels at once, l
 threshold. The expected counts are then 67.0 under the isotropic null and 70.4 under the covariance-matched null, so
 features exceed chance 3.55-fold against isotropic directions but only 1.29-fold against on-manifold ones
 (Poisson-binomial $p=0.0045$; Table~\ref{tab:chance}). Treating the channels as independent would put the
-on-manifold expectation at 111.2, above the observed count, which overstates chance. Even so, 11 of the 24 registered single-feature claims
+on-manifold expectation at 111.2, above the observed count, which overstates chance. Despite the modest excess, 11 of the 24 registered single-feature claims
 replicate on new series (Section~\ref{sec:rq3}). The effects clearly exceed isotropic random directions but only
 modestly exceed typical on-manifold directions, a distinction we return to in Section~\ref{sec:limits}.
 
@@ -125,8 +130,8 @@ v3$^{+}$ & covariance-matched & 1{,}118 & 112 & 80.3 & 1.40 ($9\times10^{-5}$) \
 \end{tabular}
 \caption{Features clearing at least one of nine channels against the chance count when channel dependence is kept
 (each null draw scored as a pseudo-feature on all channels, leave-one-draw-out). $p$ is the Poisson-binomial upper tail
-over the per-feature chance rates. v3$^{+}$ adds gradient-nominated candidates on 38 targets
-(Section~\ref{sec:limits}).}
+over the per-feature chance rates. v3$^{+}$ is a separate scoring of the 38 differentiable v3 targets with gradient-nominated
+candidates added (Section~\ref{sec:limits}), so its rows are not comparable with the 50-target v3 rows.}
 \label{tab:chance}
 \end{table}
 
@@ -149,8 +154,9 @@ moving the corresponding generator parameter does not change a matched feature's
 \subsection{RQ2: Are concepts shared across architectures?}
 \label{sec:rq2}
 
-\textbf{Answer.} Different architectures select the same series for a concept, and this replicates held-out on both
-corpora and on raw real windows. The broad effect types recur in every model. At a fine grain, however, concepts are
+\textbf{Answer.} Whole-layer geometry is shared above chance by all 21 model pairs, held-out, once windows are
+compared without averaging. Different architectures select the same series for a concept, and this replicates held-out
+on both corpora and on raw real windows. The broad effect types recur in every model. At a fine grain, however, concepts are
 organized by model, and agreement of causal effects on the same series is detected only between two Chronos-family
 models.
 
@@ -165,9 +171,9 @@ TimesFM's CKA with Chronos-2, Chronos-T5-Base, Chronos-Bolt and Sundial by 0.322
 interval above 0.26; Holm $p=0.0008$; \fid{MN-38}). Peaks between other model pairs change less, and pairs with Timer
 mostly fall, because Timer's 96-step token has no within-window order to match. The mean-pooled peak of the full v2 run
 (0.426) likewise replicates on its private split (0.411 [0.401, 0.427]) and on v3 (\fid{SH-01}). Different
-similarity metrics, however, rank the 21 model pairs inconsistently (Kendall's $W=0.25$, $p=0.0095$;
-Figure~\ref{fig:similarity}). TimesFM/Chronos-2 is the most similar pair by error agreement (0.948) but only 15th of 21 by
-mean-pooled CKA, where Sundial/Chronos-Bolt ranks first (0.927). Part of this gap comes from pooling: with
+similarity metrics, however, rank the 21 model pairs inconsistently (Kendall's $W=0.25$, $p=0.0095$, over the seven metrics of the full v2 run,
+whose CKA is mean-pooled; Figure~\ref{fig:similarity}). TimesFM/Chronos-2 is the most similar pair by error agreement
+(0.948) but only 15th of 21 by mean-pooled CKA, where Sundial/Chronos-Bolt ranks first (0.927). Part of this gap comes from pooling: with
 concatenated windows TimesFM/Chronos-2 ranks 9th on v2 and 7th on v3, while Sundial/Chronos-Bolt stays first ($\rho=0.82$
 and 0.76 between the two rankings on the same series). The report therefore never pools similarity metrics into one score.
 Two finer-grained measures fail their controls on real activations: an untrained pair scores higher than a trained,
@@ -199,8 +205,8 @@ also insensitive to the alignment window: re-pooled at 64 and 96 steps, the v3 r
 \paragraph{The broad effect types recur in every model.} The three largest families, level raisers, level lowerers and
 seasonality dampeners, each have causal members in all seven models, and volatility dampeners in six
 (Figure~\ref{fig:families}b). Membership reflects each feature's own measured effect, so it does not depend on whether
-the family partition beats its shuffle null. The observation is descriptive and exploratory, and Timer's members should be
-read in light of its chance-level clear rate.
+the family partition beats its shuffle null. The observation is descriptive and exploratory; Timer's members come from a model whose clear rate is at
+chance.
 
 \paragraph{Fine-grained concepts are organized by model.} Of the 11 atlas concepts, 9 have causal members from at least
 two models, but none spans more than 3 of the 7 models. The clusters are also \emph{purer} by model than random
@@ -300,8 +306,9 @@ not act more specifically than a typical on-manifold direction of the same size.
 \subsection{RQ4: Where in depth, and how comparable is depth?}
 \label{sec:rq4}
 
-\textbf{Answer.} The way TimesFM and Chronos-2 react to corruptions across depth largely replicates held-out, with one
-corruption unstable across corpora. Absolute depth locations are comparable only after accounting for captured compute
+\textbf{Answer.} The way TimesFM and Chronos-2 react to corruptions across depth replicates held-out for 6 of 9
+corruptions on v2 and 4 of 9 on v3, with 8 of 9 keeping their sign; one corruption, level shift, is unstable across
+corpora. Absolute depth locations are comparable only after accounting for captured compute
 and the depth convention.
 
 \paragraph{Depth-resolved reaction profiles replicate.} For TimesFM and Chronos-2, the rank correlation between their
@@ -346,7 +353,7 @@ Chronos-T5-Base claim does not.
 Internals do not help choose a model. Routing each series to the model with the lowest predicted MASE gives a mean MASE of
 1.948 [1.814, 2.070] with the baseline features and 1.964 [1.837, 2.093] with internals added (difference $-0.016$
 [$-0.044$, 0.010], $p=0.258$), and both are worse than always using Chronos-2 (1.856; $p=0.001$; oracle 1.523). Internals
-add information exactly where the free baseline is weakest.
+add information only for the two least accurate models, whose forecasts fail most often.
 
 \begin{table}[tb]
 \centering
