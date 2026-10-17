@@ -705,6 +705,7 @@ These instructions are binding for every future session, human or agent.
   - For `noise`, window 15 climbs 0.068→0.223→0.286→0.370→0.412 from layer
     0 to 16, while window 0 falls 0.091→0.009.
   - Chronos-T5 shows the same late-window concentration.
+- **Correction (2026-10-17, ROADMAP §47.5).** `runs/medium_run` no longer exists, so 0.068->0.412 cannot be reproduced. Re-measured on v2 dev, TimesFM only, 320 family-stratified series (pipeline path verified: the n=16 re-run reproduces `panel7_v2_dev/l3/patching.npz` with max |Δ| 0.0): noise, window 14 of 15 (just before the horizon), layers 0/4/8/12/16: 0.4267186224460602, 0.5525148510932922, 0.6117260456085205, 0.5992766618728638, 0.6312912702560425; window 0: -0.19078321754932404 -> 6.814002699684352e-05. Concentration in the last window and its growth with depth hold (peak at layer 8 then flat); the levels are higher than the medium run's. Reproduce: `run_dagger_remeasure.py patching` -> `runs/dagger_remeasure/patching.json` (commit e8f4012).
 - **Evidence.** Causal within-model (L3 patching). **Status:** exploratory (n≈300).
 - **Reproduce.** `runs/medium_run/l3/patching.npz` (`restoration_windows_TimesFM`).
 - **Ref.** ROADMAP §5.5 (~1907–1939).
@@ -1331,13 +1332,14 @@ See SH-10 and SH-11. **5/5.**
 - **Ref.** ROADMAP §26 C, §28.4–§28.18 (~24025–25073), §32.7c–d; CLAUDE_FULL §11.53.
 - **Score. 5/5.** Transferable to any "LLM explains this feature" pipeline. For the "nothing was measured" state, use an allowlist, or skip generation.
 
-#### MN-07 · Causal fingerprints are nearly one-dimensional, so they cannot be a cross-model matching key
+#### MN-07 · Causal fingerprints cannot be a cross-model matching key (low-dimensional on the four-model run; ~5–6 of 9 dimensions on the seven-model runs)
 - **Claim.**
   - The 9-channel ablation fingerprint has participation-ratio dimension
     2.09. The 64-step delta curve has dimension 1.04, with PC1 at 98.3%.
   - The mutual-nearest-neighbour match rate (37.6%) sits inside its null
     p95 (50.0%).
   - The full curve does worse: 15.3% vs 13.1% null at cosine 0.99.
+- **Correction (2026-10-17, ROADMAP §47.5).** PR 2.09 reproduces exactly on the four-model run (2.0915412316960187, 201 features) but does not carry over. v3: 5.575534873891118 (covariance null, 91 features; PC1 share 0.2828) and 5.996530057329665 (isotropic, 238 features). v2: 1.0508376999675946, driven by one entry of 269.8 (null p95 near 0; PC1 0.9754); with unit-normalized rows (the geometry the atlas clusters) v2 is 6.383117072160696. The 9-channel fingerprint is therefore about 5-6 dimensional on the seven-model runs, not nearly one-dimensional; the closed negative (fingerprints as a cross-model matching key) rests on the match-rate test, not on this PR. Reproduce: `runs/dagger_remeasure/items_v2_v3.json` (commit e8f4012).
 - **Evidence.** Causal fingerprints, compared cross-model. **Status:** negative (closed). Input-space transfer (SH-14) replaced it. CA-07 shows that the *per-item* effects are not only a level shift.
 - **Reproduce.** Measured on `runs/full_report_run_4model/sae/*_ablation.json`.
 - **Ref.** ROADMAP §30.2 (~25645–25701).
@@ -1411,12 +1413,13 @@ See SH-20. **4/5.**
 - **Ref.** ROADMAP §32.7b (~28480–28675).
 - **Score. 4/5.** Detecting features by activation alone is not evidence that they matter: most high-activation features do nothing causally.
 
-#### MN-15 · The SAE's own reconstruction error moves the forecast ~3.5× more than removing a feature
+#### MN-15 · The SAE's own reconstruction error moves the forecast 1.7–3.5× more than removing a feature
 - **Claim.**
   - Median reconstruction cost is 0.139 context sd, against a median feature
     effect of 0.0395.
   - 23.0% of panels have a feature effect below 1/10 of the reconstruction
     cost.
+- **Correction (2026-10-17, ROADMAP §47.5).** The 3.5× is a four-model, lenient-null number. Same definition (max over horizon, all panels, no clearing gate; four-model reproduces exactly, 0.03947468804168946 vs 0.13896064178421366) on the seven-model runs: v2 effect median 0.09650917675554359 vs reconstruction 0.21386207843123203 (ratio 2.2159766109386854, 2801 panels; 0.13423777222420563 of panels below a tenth); v3 0.15631556301374533 vs 0.2604575236137563 (ratio 1.6662289959628231, 2722 panels). The direction holds; the factor is 1.7-2.2 on the current runs. Reproduce: `tsfm_lens/run_dagger_remeasure.py json-items` -> `runs/dagger_remeasure/items_v2_v3.json` (commit e8f4012).
 - **Evidence.** Causal within-model. **Status:** confirmed on run.
 - **Reproduce.** `unpatched` array in `runs/full_report_run_4model/sae/*_ablation.json`.
 - **Ref.** ROADMAP §32.7b I4 (~28590–28645).

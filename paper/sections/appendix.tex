@@ -65,15 +65,16 @@ expected (2.47 times chance), and 22 of 55 targets are individually significant 
 excess is smaller: 194 of 1{,}022 scorable candidates clear at least one channel against at most 144.95 expected if
 channels were independent. (iii) Held-out replication: 10 registered single-feature claims confirm on new series at the
 attainable $p$ floor after adaptive redraws to 1{,}000 null draws. (iv) Null strictness: a stricter null that draws the
-random direction from the layer's own activation covariance also passes the planted test (sensitivity 0.916), but on the
-earlier four-model run it leaves only 1.13 times chance. Causal effects therefore exceed random directions clearly and
+random direction from the layer's own activation covariance also passes the planted test (sensitivity 0.916). On v3,
+where both nulls were scored on the same features, clearing cells fall from 4.92 times chance under the isotropic null
+(600 against 122.1 expected) to 1.27 times under the covariance-matched null (170 against 133.5). Causal effects therefore exceed random directions clearly and
 typical on-manifold directions only slightly. The v3 run registered every causal claim against the stricter null. There,
 91 of 967 features clear at least one channel against 70.4 expected when channel dependence is kept (1.29 times,
 $p=0.0045$; Table~\ref{tab:chance}), and 11 of 24 registered claims replicate on new series (\fid{CA-12}). The stricter null leaves few causal features, and about half of the registered ones replicate.
 
-\paragraph{Effect sizes.} Effects are small relative to the forecast and to the dictionary's own error. On the earlier
-four-model run the median single-feature effect was 0.0395 context standard deviations, 3.5 times below the change from
-substituting the reconstruction (\fid{MN-15}); among the cells that clear in the seven-model run, the median effect is
+\paragraph{Effect sizes.} Effects are small relative to the forecast and to the dictionary's own error. The median
+single-feature effect is 0.097 context standard deviations, 2.2 times below the change from substituting the
+reconstruction (v3: 1.7 times; \fid{MN-15}); among the cells that clear in the seven-model run, the median effect is
 1.24 times the null's 95th percentile. The paper therefore makes no claim that single features explain forecasts; it
 claims that specific, replicable directions exist and characterizes what they do.
 
@@ -128,8 +129,8 @@ held-out replication (0.411) is measured at the pair selected on dev.
 
 \paragraph{Choice of settings.} Battery settings ($k=8$ rows, 16 null draws) were fixed on the
 four-model run before the seven-model concept stage ran, after larger settings did not recover power (\fid{SH-20}); at the
-atlas threshold of 0.9 the real concept count was about twice its shuffle-null mean on that earlier run (19 against
-9.62); family silhouettes
+atlas threshold of 0.9 the v2 atlas has 11 concepts against a shuffle-null mean of 3.38 (95th percentile 5.05,
+$p=0.005$); family silhouettes
 are flat (0.25--0.32) across cuts from 6 to 16, which is why families are reported as a reading vocabulary.
 
 \paragraph{Generalization to other models.} The pipeline is model-agnostic behind the adapter interface, and two of
@@ -263,9 +264,9 @@ MP-09 & Dev and private splits exchangeable (energy $p=0.51$; TOST 21/22) & \S\r
 MP-10 & Causal features survive mean ablation (69/91), except many dense ones & \S\ref{sec:rq1} & 3 \\
 MP-11 & Token-level SAE training: Chronos-T5-Base token FVU 0.2835$\to$0.0442, fewer dead features & \S\ref{sec:alignment}, \S\ref{sec:limitations} & 4 \\
 MN-01 & Similarity cannot detect lineage: untrained pair 0.878 $>$ trained related pair 0.734 & \S\ref{sec:casestudy}, T\ref{tab:results} & 5 \\
-MN-07 & Causal fingerprints are nearly one-dimensional (PR 2.09) & \S\ref{sec:casestudy} & 4 \\
+MN-07 & Causal fingerprints are no cross-model matching key; effect vectors span ${\sim}5.6$ of 9 dimensions & \S\ref{sec:casestudy} & 4 \\
 MN-14 & 0.835 of 927 prominent SAE features are causally null on private data (dev 0.810; 64.4\% under the legacy null) & \S\ref{sec:casestudy}, T\ref{tab:results} & 4 \\
-MN-15 & SAE reconstruction moves the forecast ${\sim}3.5\times$ more than removing a feature & \S\ref{sec:casestudy}, T\ref{tab:results} & 4 \\
+MN-15 & SAE reconstruction moves the forecast 2.2$\times$ (v3 1.7$\times$) more than removing a feature & \S\ref{sec:casestudy}, T\ref{tab:results} & 4 \\
 MN-17 & Generator-counterfactual concept mediation: 0/98 and 0/151 & \S\ref{sec:casestudy}, T\ref{tab:results} & 5 \\
 MN-18 & Absence of agreement is not disagreement: 109/288 $\to$ 9 & \S\ref{sec:methods} & 4 \\
 MN-19 & ``Same inputs'' must be top-$k$ overlap, not whole-series correlation & \S\ref{sec:methods} & 4 \\

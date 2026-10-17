@@ -77,8 +77,8 @@ the same amount of activation along another direction. Two variants are used.
   \item The \emph{covariance-matched} null (used for the v3 corpus) is identical except for the direction, which is a
     random Gaussian combination of the same rows' centered clean token activations. It is thus a draw from a Gaussian
     with the layer's sample activation covariance and lies in the subspace the model actually uses. It is the stricter
-    of the two: on an earlier four-model run it reduced the clearing cells from 3.06 times the empirical chance rate to
-    1.13 times (Appendix~\ref{app:faq}).
+    of the two: on v3 it reduces the clearing cells from 4.92 times the empirical chance rate to 1.27 times
+    (Appendix~\ref{app:faq}).
 \end{itemize}
 Feature $i$ \emph{clears} channel $c$ if its mean $|\Delta_i^{(c)}|$ exceeds the 95th percentile $q_{95}^{(c)}$ of the
 pooled null, and its effect vector is $v_i^{(c)}=\overline{\Delta_i^{(c)}}/q_{95}^{(c)}$, the signed effect in units of

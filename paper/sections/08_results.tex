@@ -95,8 +95,8 @@ atlas assigns only 35 of the 194 features to its 11 concepts. This is more struc
 produces (null 95th percentile of 5.05 concepts; assigned fraction 0.180 against 0.088; $p=0.005$), but it covers few
 features. Third, the families cover 192 of 194 features but do \emph{not} beat the shuffle null, either in their number
 ($p=0.68$) or in their coverage ($p=0.23$), and the silhouette is 0.25--0.32 for every cut from 6 to 16 families. The
-effect vectors of the earlier four-model run had a participation ratio of only 2.09$^{\dagger}$ (\fid{MN-07}). The
-families are therefore a vocabulary for reading the effects, not discovered units.
+effect vectors are not low-dimensional (participation ratio 5.58 of 9 channels on v3; \fid{MN-07}), so the absence of
+discrete families is not a lack of variation. The families are therefore a vocabulary for reading the effects, not discovered units.
 
 \paragraph{Against on-manifold directions, features stand out only modestly.} The v3 run scored every feature against both
 nulls. Under the isotropic null, 238 of 967 scorable features clear at least one channel. Under the covariance-matched
@@ -257,9 +257,9 @@ private atlas, 0.835 have no causal effect (one-sided lower bound 0.817; dev 0.8
 \fid{MN-14}); on v3 the share is 0.919 of 861. \tool{} therefore ranks features by measured effect rather than by
 activation.
 
-\paragraph{The effects are small.} On the earlier four-model run, the median single-feature effect was 0.0395 context
-standard deviations$^{\dagger}$, 3.5 times smaller than the 0.139 by which substituting the SAE reconstruction moves the
-forecast (\fid{MN-15}). Among the cells that clear in the v2 run, the median effect is 1.24 times the null's 95th
+\paragraph{The effects are small.} The median single-feature effect is 0.097 context standard deviations, 2.2 times
+smaller than the 0.214 by which substituting the SAE reconstruction moves the forecast (v3: 0.156 against 0.260, 1.7
+times; \fid{MN-15}). Among the cells that clear in the v2 run, the median effect is 1.24 times the null's 95th
 percentile.
 
 \paragraph{Attention mass is not causal importance.} The attention mass that a head places on seasonal lags is
@@ -314,8 +314,8 @@ keep their dev sign. Level shift flips sign again (dev $-0.164$; private 0.252),
 not stable across corpora.
 
 \paragraph{Where restoration happens.} In TimesFM, restoration by per-window patching concentrates in the window just
-before the horizon and grows with depth, from 0.068 at layer 0 to 0.412 at layer 16 for the noise corruption on the
-earlier four-model run$^{\dagger}$ (exploratory, $n\approx300$; \fid{DE-01}).
+before the horizon and grows with depth, from 0.427 at layer 0 to 0.612 at layer 8 and 0.631 at layer 16 for the noise
+corruption, while restoration in the first window falls from $-0.191$ to 0.000 (320 v2 series; \fid{DE-01}).
 
 \paragraph{Depth locations need two qualifications.} Captured compute ranges from 13.9\% (Chronos-T5-Base) to 99.8\%
 (Timer) of a forecast's FLOPs (\fid{DE-05}), and Chronos-T5's last encoder block sits at depth 0.478 on the whole-stack
@@ -369,7 +369,7 @@ RQ & Result (v2 unless stated) & Evidence class & Status & ID \\
 2 & Multi-model atlas concepts 0/3; shared-input agreement 0/6 & causal, compared & not confirmed & CA-11 \\
 3 & Single-feature causal effects: 10/31; v3 11/24 & causal within-model & partly confirmed & CA-11/12 \\
 3 & 83.5\% of prominent features causally null (927 held-out; v3 91.9\%) & causal within-model & held-out confirmed & MN-14 \\
-3 & Feature effect 3.5$\times$ below SAE reconstruction cost$^{\dagger}$ & causal within-model & exploratory & MN-15 \\
+3 & Feature effect 2.2$\times$ below SAE reconstruction cost (v3 1.7$\times$) & causal within-model & exploratory & MN-15 \\
 3 & Attention mass uncorrelated with head causality & causal vs.\ descriptive & exploratory & CA-04 \\
 3 & More data, a powered test or attribution candidates do not raise specificity & causal within-model & negative & MN-34/36/37 \\
 4 & Depth-profile agreement 6/9 corruptions; v3 4/9; level shift flips on both & causal within-model & partly confirmed & CA-01 \\
@@ -378,7 +378,6 @@ RQ & Result (v2 unless stated) & Evidence class & Status & ID \\
 -- & Chronos-2 more accurate than TimesFM on \texttt{mixture} (0.209; v3 0.303) & behavioral & held-out confirmed (2 corpora) & PM-05 \\
 \bottomrule
 \end{tabularx}
-\caption{Headline results with evidence class and status. $^{\dagger}$Earlier four-model run under the lenient null;
-an upper bound. Each ID is an entry in \repo{FINDINGS.md} with exact numbers, reproduction command and artifact path.}
+\caption{Headline results with evidence class and status. Each ID is an entry in \repo{FINDINGS.md} with exact numbers, reproduction command and artifact path.}
 \label{tab:results}
 \end{table}

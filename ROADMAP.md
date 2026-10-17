@@ -40078,3 +40078,24 @@ per-window restoration by depth for the noise corruption (DE-01: 0.068 at layer 
 covariance-null chance multiple quoted from the four-model run (3.06x -> 1.13x) is replaced by the v3 isotropic vs
 covariance comparison; (e) the atlas-threshold shuffle null (19 vs 9.62) by the v2/v3 values. Report exact numbers
 and which run each comes from.
+
+### 47.5 Findings — four-model-run numbers re-measured (2026-10-17; `tsfm_lens/run_dagger_remeasure.py`, commit e8f4012; `tsfm_lens/runs/dagger_remeasure/`)
+
+Each definition first reproduced its four-model number from `runs/full_report_run_4model` (a, b, e exactly); (c) and
+the four-model (d) values could not be (source runs gone / rescored copies not on disk). Verified by the orchestrator
+against `check_four_model.json`, `items_v2_v3.json`, `patching.json`.
+- **(a) MN-15.** Four-model 0.03947468804168946 vs 0.13896064178421366 (3.520246737287866). v2: 0.09650917675554359 vs
+  0.21386207843123203 (2.2159766109386854; 2801 panels). v3: 0.15631556301374533 vs 0.2604575236137563
+  (1.6662289959628231; 2722 panels).
+- **(b) MN-07.** Four-model PR 2.0915412316960187. v3 covariance 5.575534873891118 (91 features), isotropic
+  5.996530057329665 (238). v2 1.0508376999675946 from one 269.8 entry (null p95 near 0); unit-row PR 6.383117072160696.
+- **(c) DE-01.** medium_run gone. TimesFM, v2 dev, 320 family-stratified series (n=16 path reproduces the stored v2
+  patching.npz, max |Δ| 0.0): noise, last window, layers 0/4/8/12/16: 0.4267186224460602, 0.5525148510932922,
+  0.6117260456085205, 0.5992766618728638, 0.6312912702560425; window 0 -0.19078321754932404 -> 6.814002699684352e-05.
+  Note: recorded L3 artifacts patch only 16 series (`max_series` 16, clamped to TimesFM batch 32).
+- **(d) chance multiple.** v3 cells: covariance 170/133.5 = 1.2734082397003745; isotropic 600/122.0625 =
+  4.915514592933948 (49 targets). Features: 91/70.4375 = 1.2919254658385093; 238/67.0 = 3.5522388059701493.
+- **(e) atlas null at 0.9.** Four-model 19 vs mean 9.615 (p95 13.0). v2 11 vs 3.38 (p95 5.049999999999983, p
+  0.004975124378109453). v3 covariance 4 vs 0.18 (p95 1.0); isotropic 18 vs 2.655 (p95 5.0).
+- **Paper.** Every † number replaced by its v2/v3 value; the † convention and the "earlier four-model run" source note
+  removed. FINDINGS MN-15, MN-07, DE-01 carry dated corrections.

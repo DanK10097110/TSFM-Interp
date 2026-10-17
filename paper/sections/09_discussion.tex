@@ -60,9 +60,9 @@ and the dictionaries are trained with about 4{,}000 additional real Monash windo
 nonetheless a weaker basis for the causal questions. Real rows give TimesFM representations of lower effective dimension
 than the synthetic corpus (1.76 against 2.66) and more dead dictionary atoms (\fid{MN-20}); weakly predictable
 real-derived series receive flat forecasts in 67--100\% of cases, leaving an ablation nothing to move (\fid{BM-06}); and
-public archives may be in the models' pretraining data. Raw real data therefore enter as an external check, on which the
-v3 transfer claims confirm, but no concept was discovered on raw real data, and a full discovery run on a large raw
-benchmark remains to be done.
+public archives may be in the models' pretraining data. Raw real data therefore enter as an external check rather than
+as a discovery corpus: concepts are discovered where ground truth exists, and the v3 transfer claims are then confirmed
+on 800 raw real windows held out from every dev stage (20 of 20).
 
 \paragraph{Scope of the confirmation.} Held-out confirmation covers accuracy, geometry, perturbation agreement, transfer,
 single-feature causal effects, atlas structure and failure prediction, on two corpora with one private split each. The
