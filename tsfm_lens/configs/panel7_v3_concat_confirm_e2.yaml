@@ -4,7 +4,8 @@
 #   * run.name, data.path (the epoch-2 corpus), confirm/corpus sections switched off (this run is extraction only);
 #   * each model's `layer_regex` restricts capture to the layers of the 21 registered dev pairs (stride 1), so the
 #     store holds only what the registered tests read; everything else (windowing, CONCAT, context/horizon, seeds,
-#     l1.max_rows, alignment) is unchanged, so `concat_rows` selects the same kind of 512-series stratified draw.
+#     l1.max_rows, alignment) is unchanged; layer 0 is also captured for Time-MoE and Chronos-T5-Base because the
+#     alignment gate discovers token spans at a model's shallowest captured layer and Time-MoE's spans are ragged at layer 5 (first attempt aborted, no statistic read), so `concat_rows` selects the same kind of 512-series stratified draw.
 #
 #     python run_concat_confirm.py registry --run runs/panel7_v3_concat_confirm_e2 --corpus ../benchmark_v3/private_epoch2
 #     python run.py --config configs/panel7_v3_concat_confirm_e2.yaml --stages extract
@@ -113,7 +114,7 @@ models:
     adapter: generic_hf
     checkpoint: Maple728/TimeMoE-50M
     batch_size: 16               # same as Sundial and Timer -- binds every cap below
-    layer_regex: '^model\.layers\.(5|6|9|10)$'
+    layer_regex: '^model\.layers\.(0|5|6|9|10)$'
     capture_layer_stride: 1      # 12 decoder blocks, 384 wide, per-timestep tokens
     kwargs:
       auto_class: AutoModelForCausalLM
@@ -126,7 +127,7 @@ models:
     adapter: chronos
     checkpoint: amazon/chronos-t5-base
     batch_size: 24               # base is 2x chronos-t5-small; same as every earlier config
-    layer_regex: '^encoder\.block\.(4|6|7)$'
+    layer_regex: '^encoder\.block\.(0|4|6|7)$'
     capture_layer_stride: 1      # 12 encoder blocks; 1 step per token; sampled decoder
                                  # (not captured). Compared predict() calls are seeded by
                                  # the calling stages, not by a config knob (CLAUDE.md 11.50).
