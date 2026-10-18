@@ -25,6 +25,12 @@
 \usepackage{placeins}
 
 \setlist{itemsep=2pt,topsep=3pt}
+\renewcommand{\topfraction}{0.9}
+\renewcommand{\bottomfraction}{0.8}
+\renewcommand{\textfraction}{0.07}
+\renewcommand{\floatpagefraction}{0.85}
+\setcounter{topnumber}{3}
+\setcounter{totalnumber}{5}
 \setlength{\emergencystretch}{3em}
 
 \definecolor{tfm}{HTML}{2f6f8f}
@@ -66,24 +72,21 @@
 \maketitle
 
 \begin{abstract}%
-Time-series foundation models (TSFMs) are used zero-shot, but the interpretability methods developed for language
-models do not transfer to them directly. Tokens cover different spans of time in different architectures, real series
-offer no ground truth for the concepts a probe might find, and the effects of single internal features on a forecast are
-small enough that uncontrolled measurements yield confident false positives. We present \tool{}, an open-source system
-that compares TSFMs on a measured common time axis, validates its instruments on a benchmark with known generative
-components and on a forecaster with planted concepts, defines concepts by their effect on the forecast relative to
-matched random interventions, and tests exploratory claims once on a sealed held-out split. We apply it to seven TSFMs
-and confirm the results on two independent corpora. Once each model's tokens are concatenated in time order, all 21
-model pairs share representational geometry above a shuffled-series null, confirmed on a fresh sealed split; the usual
-window average understates TimesFM's similarity to four fine-token models by 0.30--0.43 CKA. Different architectures
-also select the same input series for a concept: all registered transfer claims confirm on both private splits and on
-800 raw real-world windows. Causal
-features act mainly on forecast level and seasonality, but fine-grained concepts are organized by model, and no concept
-spans more than three of the seven models. Activation prominence is a poor guide to causal importance, since 83.5\% of
-prominent features have no held-out effect, and fewer than half of single-feature causal claims replicate. Against
-random directions drawn from the activation distribution, single features are only weakly specific (1.29 times chance on the larger corpus), and neither
-more data, a more powerful test nor gradient-selected candidates changes this. Every claim is reported with its
-evidence class and a reproduction pointer.
+Time-series foundation models (TSFMs) are used zero-shot, but interpretability methods from language models do not
+transfer to them directly: tokens cover different spans of time in different architectures, real series offer no
+ground truth for concepts, and single internal features move a forecast so little that uncontrolled measurements yield
+confident false positives. We present \tool{}, an open-source system that compares TSFMs on a measured common time
+axis, validates its instruments on a benchmark with known generative components and on a forecaster with planted
+concepts, defines concepts by their effect on the forecast relative to matched random interventions, and tests
+exploratory claims once on a sealed held-out split. Applied to seven TSFMs and confirmed on two independent corpora, it
+finds that all 21 model pairs share representational geometry above a shuffled-series null once each model's tokens are
+concatenated in time order; the usual window average understates TimesFM's similarity to four fine-token models by
+0.30--0.43 CKA on held-out data. Different architectures also select the same input series for a concept: all
+registered transfer claims confirm on both private splits and on 800 raw real-world windows. Causal features act mainly
+on forecast level and seasonality, but fine-grained concepts are organized by model, and no concept spans more than
+three of the seven models. Activation prominence is a poor guide to causal importance (83.5\% of prominent features
+have no held-out effect), and against random directions drawn from the activation distribution single features are
+only weakly specific (1.29 times chance). Every claim is reported with its evidence class and a reproduction pointer.
 \end{abstract}
 
 \begin{keywords}

@@ -12,8 +12,7 @@ concepts.
 \label{sec:l3}
 
 \paragraph{L0: behavior.} Accuracy is the per-series MASE \citep{hyndman2006mase}, with the seasonal lag taken from
-ground truth and a floor on the naive denominator; without the floor, intermittent series spuriously improve
-(\fid{MN-23}). sMAPE, pinball loss \citep{gneiting2007scoring} and interval calibration are reported alongside. Model
+ground truth and a floor on the naive denominator for intermittent series (\fid{MN-23}). sMAPE, pinball loss \citep{gneiting2007scoring} and interval calibration are reported alongside. Model
 pairs are compared per generator family with a paired series bootstrap, Holm-corrected across all pairs and families
 \citep{holm1979}, and differences are read against each model's repeat-run noise floor. Two further stages measure
 parameters, FLOPs, latency and the share of a forecast's FLOPs spent in captured blocks, and test what each model's
@@ -24,9 +23,9 @@ linear CKA \citep{kornblith2019cka},
 $\mathrm{CKA}(A,B)=\|B^{\top}A\|_F^2/(\|A^{\top}A\|_F\|B^{\top}B\|_F)$, is computed for every layer pair of every
 model pair. A window is represented by its tokens concatenated in time order (Section~\ref{sec:alignment}), so CKA is
 computed from the row Gram matrices $K=\sum_p X_pX_p^{\top}$ summed over token positions $p$. Each value carries a
-series-level cluster bootstrap and a null that permutes whole series (1{,}000 permutations). L2 fits ridge maps between layers
-\citep{bansal2021stitching} and reports only the \emph{gain} over a baseline that predicts the target layer from input
-features, since much of any layer is linearly predictable from the input alone. Agreement between activation clusterings
+series-level cluster bootstrap and a null that permutes whole series (1{,}000 permutations). L2 fits ridge maps
+between layers \citep{bansal2021stitching} and reports only the \emph{gain} over a baseline that predicts the target
+layer from input features, since much of any layer is linearly predictable from the input alone. Agreement between activation clusterings
 is measured by adjusted mutual information \citep{vinh2010ami}.
 
 \paragraph{L3: perturbation.} For each corruption $c$, the sensitivity \emph{fingerprint} of a model is the relative
@@ -42,8 +41,7 @@ agreement between two models' fingerprints is correlational.
 A skip lens decodes the forecast from each layer through the model's own head, and a tuned ridge lens
 \citep{belrose2023tuned} fits a readout per layer. The depth axis is the fraction of the \emph{whole} stack, including
 parts that are not captured: Chronos-T5's decoder is not captured, so its last captured encoder block sits at depth
-0.478 (\fid{DE-04}). The lens is withheld for a model whose head reads positions that patching never writes, where it
-would return a flat and meaningless curve (\fid{DE-03}).
+0.478 (\fid{DE-04}). The lens is withheld for a model whose head reads positions that patching never writes (\fid{DE-03}).
 
 \subsection{Causal concepts}
 \label{sec:concepts}
@@ -66,8 +64,9 @@ reconstruction:
 \end{equation}
 where $g_c$ is one of nine forecast \emph{channels}: trend, seasonal strength, spectral centroid, level, dispersion,
 near- and far-horizon shape distance, MASE and flatness. Using the reconstruction as the baseline keeps the SAE's
-reconstruction error in both arms. This matters because that error moves the forecast several times more than a typical
-feature does (Section~\ref{sec:rq3}). The two shape channels are distances and are therefore treated as unsigned.
+reconstruction error, which moves the forecast more than a typical feature does (Section~\ref{sec:rq3}), in both arms.
+For a TopK dictionary zero is a feature's resting value, since at most 32 atoms are nonzero on any token, so the ablated
+state lies in the dictionary's normal range. The two shape channels are distances and are therefore treated as unsigned.
 
 \paragraph{Random-direction nulls.} The null asks whether removing the feature's direction matters more than removing
 the same amount of activation along another direction. Two variants are used.
@@ -80,57 +79,24 @@ the same amount of activation along another direction. Two variants are used.
     random Gaussian combination of the same rows' centered clean token activations. It is thus a draw from a Gaussian
     with the layer's sample activation covariance and lies in the subspace the model actually uses. It is the stricter
     of the two: on v3 it reduces the clearing cells from 4.92 times the empirical chance rate to 1.27 times
-    (Appendix~\ref{app:faq}).
+    (600 against 122.1 expected, then 170 against 133.5).
 \end{itemize}
 Feature $i$ \emph{clears} channel $c$ if its mean $|\Delta_i^{(c)}|$ exceeds the 95th percentile $q_{95}^{(c)}$ of the
 pooled null, and its effect vector is $v_i^{(c)}=\overline{\Delta_i^{(c)}}/q_{95}^{(c)}$, the signed effect in units of
 its own null. Because a mean over rows is compared with a percentile of single rows, the chance rate of clearing is not
 5\%. It is estimated per cell by scoring each null draw against the others (leave-one-draw-out), and ranged from 0.3\% to
-4\% per target in the case study. Matching the removed amount token by token is what lets the null pass the known-answer
-test of Section~\ref{sec:knownanswer}; a simpler null that removes one uniform, batch-averaged amount fails it
-(\fid{MN-29}).
+4\% per target in the case study.
 
 \paragraph{Reach controls.} Before any feature is scored, a \emph{reach probe} requires that patching a layer's own
 activations back into it changes the forecast by exactly $0.0$, and that patching another layer's activations changes it
-by a relative amount above $10^{-3}$. A target that fails either check is withheld with its reason
-(Figure~\ref{fig:battery}).
+by a relative amount above $10^{-3}$. A target that fails either check is withheld with its reason.
 
-\begin{figure}[tb]
-\centering
-\begin{tikzpicture}[
-  box/.style={draw, rounded corners=2pt, align=center, font=\scriptsize, minimum height=9mm, fill=white, text width=21mm},
-  gate/.style={draw, diamond, aspect=2.0, align=center, font=\scriptsize, inner sep=0.5pt, fill=soft, text width=15mm},
-  arr/.style={-{Stealth[length=1.6mm]}, gray!70!black},
-  lab/.style={font=\scriptsize\itshape, text=gray!70!black}]
-  \node[box] (tgt) at (0,0) {target layer $\ell$\\+ trained SAE};
-  \node[gate] (self) at (3.5,0) {self-patch\\$=0.0$?};
-  \node[gate] (cross) at (7.0,0) {cross-patch rel.\\$>10^{-3}$?};
-  \node[box] (rows) at (10.6,0) {feature $i$: its\\top-$k$ firing series};
-  \node[box, fill=bad!8] (wh) at (5.25,1.7) {target withheld,\\reason rendered};
-  \node[box] (abl) at (10.6,-2.2) {forecast with $\hat h_{-i}$\\vs.\ with $\hat h$\\(same seed)};
-  \node[box] (null) at (7.0,-2.2) {row-matched null:\\random direction, the\\feature's own profile};
-  \node[box] (chan) at (3.5,-2.2) {each of 9 channels:\\$|\overline{\Delta}|>q_{95}$ of null?};
-  \node[box, fill=accent!12] (vec) at (0,-2.2) {causal feature\\$v_i=\overline{\Delta}/q_{95}$};
-  \draw[arr] (tgt) -- (self);
-  \draw[arr] (self) -- node[above,lab]{yes} (cross);
-  \draw[arr] (cross) -- node[above,lab]{yes} (rows);
-  \draw[arr] (self.north) |- node[left,lab,pos=0.3]{no} (wh.west);
-  \draw[arr] (cross.north) |- node[right,lab,pos=0.3]{no} (wh.east);
-  \draw[arr] (rows) -- (abl);
-  \draw[arr] (abl) -- (null);
-  \draw[arr] (null) -- (chan);
-  \draw[arr] (chan) -- node[below,lab]{$\ge$1 clears} (vec);
-\end{tikzpicture}
-\caption{The ablation battery. A target is scored only after both reach controls pass; each feature is compared,
-channel by channel, with a random-direction null on exactly its own top-firing series.}
-\label{fig:battery}
-\end{figure}
 
 \paragraph{From features to concepts.} Causal features are grouped at three granularities.
 \begin{itemize}
   \item \emph{Per-target concepts} cluster one layer's effect vectors with $k$-means, choosing $k$ by silhouette
     \citep{rousseeuw1987silhouette} among values whose smallest cluster has at least three members. Without this
-    constraint the best silhouettes are one-outlier splits (\fid{SH-20}). A target with no admissible $k$ is called
+    constraint the best silhouettes are one-outlier splits. A target with no admissible $k$ is called
     \emph{non-modular}.
   \item The \emph{atlas} pools features from all models and layers and cuts a complete-linkage dendrogram at cosine
     0.9, so an atlas concept is a tight, shared causal-effect profile.
@@ -146,16 +112,15 @@ Whether a concept is ``shared'' between two models is two separate questions.
 \paragraph{Same inputs.} \emph{Concept transfer} asks whether some feature in another model separates a concept's
 top-$k$ series from the rest, measured by AUC, against stratum-matched random subsets of series. It is run in both
 directions; a transfer is \emph{reciprocal} if both directions clear, with Benjamini--Hochberg control
-\citep{benjamini1995fdr} per ordered model pair and direction. Input agreement between two concept parts is measured by
-the overlap of their top-$k$ series (hypergeometric test), never by whole-series correlation: two sparse features can
-correlate at $\rho=0.80$ while sharing no top series (\fid{MN-19}).
+\citep{benjamini1995fdr} per ordered model pair and direction. Input agreement between two concept parts is the overlap of
+their top-$k$ series (hypergeometric test), not a whole-series correlation, since two sparse features can correlate at
+$\rho=0.80$ while sharing no top series (\fid{MN-19}).
 
 \paragraph{Same effect on the same inputs.} For every reciprocal transfer, both sides are ablated on the same series set
 $U$. Each side must first clear its own null on $U$. The two sides then agree if their level concordance and shape
 cosine both exceed the floors given by ablating random feature sets matched to each side's activation. A statistic
 below both floors' 5th percentile is called \emph{acts differently}; one that merely fails to exceed the 95th
-percentile is \emph{no specific agreement}. The distinction matters: reading the second case as the first once labeled
-109 of 288 tests as disagreements, against 9 under the correct test (\fid{MN-18}).
+percentile is \emph{no specific agreement}, since failing to beat a floor is not evidence of a difference (\fid{MN-18}).
 
 \paragraph{Evidence ladder and sharing classes.} The report summarizes each atlas concept on a six-rung ladder: R1 same
 forecast effect (atlas membership), R2 same inputs, R3 reproducible across SAE seeds, R4 other dictionaries select the

@@ -3,35 +3,32 @@
 
 Four mechanisms control how often a report with thousands of comparisons is fooled (Table~\ref{tab:claims}).
 
-\paragraph{The series is the resampling unit.} Windows of a series share its trend, noise and scale, so every
-interval and $p$-value resamples whole series \citep{efron1993bootstrap,cameron2008cluster}: paired bootstrap
-for accuracy, cluster bootstrap for CKA, validation-series intervals for stitching, paired cluster bootstrap for
-patching. Splits are by series and stratified, never the first rows of a corpus that is stored grouped by task.
+\paragraph{The series is the resampling unit.} Windows of a series share its trend, noise and scale, so every interval
+and $p$-value resamples whole series \citep{efron1993bootstrap,cameron2008cluster}: paired bootstrap for accuracy, cluster
+bootstrap for CKA, validation-series intervals for stitching, paired cluster bootstrap for patching. Splits are by series
+and stratified.
 
 \paragraph{A multiplicity ledger.} Every test belongs to a named family, corrected by Holm for confirmatory families and
 by Benjamini--Hochberg for discovery-oriented atlas transfers. Resampled $p$-values are floored at $1/n_{\text{boot}}$
-\citep{phipson2010permutation}, so a Holm family of $m$ tests cannot go below $m/n_{\text{boot}}$. The ledger computes
-this minimum for each family and flags families that can never reach significance, a problem that grows quadratically
-with the number of models compared. The seven-model run has 123 families with 4{,}238 comparisons; its strictest
-accuracy family (105 tests over 21 model pairs) has a minimum Holm $p$ of 0.021 at $n_{\text{boot}}=5000$. Two kinds of
-test are judged outside the ledger: the 8{,}705 feature-channel cells of the ablation battery are judged by their count
-against the empirical chance rate, and shared-input agreement tests by their own per-test floors.
+\citep{phipson2010permutation}, so a Holm family of $m$ tests cannot go below $m/n_{\text{boot}}$; the ledger computes
+this minimum per family and flags families that can never reach significance. The seven-model run has 123 families with
+4{,}238 comparisons. The 8{,}705 feature-channel cells of the ablation battery are judged instead by their count against
+the empirical chance rate.
 
 \paragraph{References measured in the run itself.} Every effect is read against a reference measured in the same run:
 repeat-run noise floors, shuffled-series nulls, input-feature baselines, random-direction nulls, activation-matched
-floors or replicate-seed ceilings. Before the private split is opened, \texttt{confirm} also simulates each claim's
-minimum detectable effect, for example a $\Delta$MASE of 0.133 at $n=290$ with 80\% power, so that a non-replication can be
-read as either an absent effect or an underpowered test.
+floors or replicate-seed ceilings. Before the private split is opened, \texttt{confirm} simulates each claim's minimum
+detectable effect, for example a $\Delta$MASE of 0.133 at $n=290$ with 80\% power.
 
-\paragraph{Register, then confirm once.} The \texttt{register} stage freezes hypotheses from dev results together with
-the content hash of each source artifact, and hashes the registry. \texttt{confirm} refuses mismatched hashes, requires
-the private seal to verify, tests each claim once and refuses to overwrite its own artifact; a forced rerun is recorded as
-a \texttt{repeated\_look}. A consumed split is replaced by a fresh epoch, which is checked for sample-hash overlap with
-every earlier split of every corpus version. This is pre-registration \citep{nosek2018preregistration} implemented in
-software, and it guards against adaptive reuse of the holdout \citep{dwork2015reusable,gelman2014garden}. Findings that
-were not registered cannot be confirmed after the fact.
+\paragraph{Register, then confirm once.} The \texttt{register} stage freezes hypotheses from dev results with the content
+hash of each source artifact, and hashes the registry. \texttt{confirm} refuses mismatched hashes, requires the private
+seal to verify, tests each claim once and refuses to overwrite its own artifact; a forced rerun is recorded as a
+\texttt{repeated\_look}. A consumed split is replaced by a fresh epoch, checked for sample-hash overlap with every earlier
+split. This is pre-registration \citep{nosek2018preregistration} implemented in software, guarding against adaptive
+reuse of the holdout \citep{dwork2015reusable,gelman2014garden}. Findings that were not registered cannot be confirmed
+after the fact.
 
-\begin{table}[tb]
+\begin{table}[!tb]
 \centering
 \scriptsize
 \setlength{\tabcolsep}{2.5pt}
@@ -50,7 +47,6 @@ Same inputs & top-$k$ AUC in other model & stratum-matched random subsets & BH p
 Same effect on same inputs & level concordance; shape cosine & activation-matched feature-set floors ($q_{95}$ agree, $q_{05}$ differ) & per test; Holm when registered & \cmark \\
 Concepts are cross-model & atlas centroid cosine and member pairs & column-shuffle and model-label nulls & Holm when registered & \cmark \\
 Internals predict failure & gain in log-MASE Spearman over a free baseline & zero gain & Holm when registered & \cmark \\
-Families are real & number and coverage of families & column-shuffle null & -- & -- \\
 \bottomrule
 \end{tabularx}
 \caption{Every claim type the case study reports, the statistic that tests it, the reference it must

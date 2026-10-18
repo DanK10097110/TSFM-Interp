@@ -3,85 +3,66 @@
 
 \paragraph{Shared inputs, model-specific mechanisms.} The most robust cross-model result is about inputs: models with
 different tokenizations, depths and training objectives single out the same series for a concept, on two corpora and on
-raw real windows. Whole-layer geometry is shared as well: all 21 model pairs exceed shuffled-series nulls on both
-corpora and on a fresh sealed split, most strongly at early, input-encoding layers, once windows are compared without
-averaging away their internal order. Yet at the grain of individual causal effects,
-concepts are organized by model, and agreement on the same series is detected only between two closely related Chronos
-models. One consistent reading is that the panel converges on \emph{what} in a series matters (its level, its
-seasonality) while implementing the response differently. This is a weaker form of convergence than the representational
-convergence argued for in vision and language \citep{li2016convergent,huh2024platonic}, and our instruments locate the
-boundary: input agreement is measurable and replicates, whereas effect agreement across architecture families is below
-what ablation can resolve at these effect sizes (Section~\ref{sec:knownanswer}).
+raw real windows. Whole-layer geometry is shared as well, most strongly at early, input-encoding layers, once windows are
+compared without averaging away their internal order. Yet at the grain of individual causal effects concepts are
+organized by model, and agreement on the same series is detected only between two closely related Chronos models. One
+consistent reading is that the panel converges on \emph{what} in a series matters (its level, its seasonality) while
+implementing the response differently. This is a weaker form of convergence than the representational convergence argued
+for in vision and language \citep{li2016convergent,huh2024platonic}, and our instruments locate the boundary: input
+agreement is measurable and replicates, whereas effect agreement across architecture families is below what ablation can
+resolve at these effect sizes (Section~\ref{sec:knownanswer}).
 
 \paragraph{What the causal evidence supports.} Single SAE features clearly beat isotropic random directions of the same
-size but barely beat directions drawn from the activation distribution. More dictionary data, a more powerful test and
-gradient-selected candidates do not change this (Section~\ref{sec:limits}). We read this as a property of the models at
-this level of description: the forecast-relevant information in a layer is spread over many directions, and removing
-any one typical direction moves the forecast by a comparable amount. Claims that a single feature ``is'' a forecasting
-concept should therefore be stated relative to an on-manifold null, since against an off-manifold null a typical direction
-already looks special; this is the time-series counterpart of the illusions documented for subspace interventions
-\citep{makelov2024illusion}.
+size but only modestly beat directions drawn from the activation distribution, and which features clear depends on the
+intervention. The forecast-relevant information in a layer is spread over many directions, and removing any one typical
+direction moves the forecast by a comparable amount. Claims that a single feature ``is'' a forecasting concept should
+therefore be stated relative to an on-manifold null; against an off-manifold null a typical direction already looks
+special, the time-series counterpart of the illusions documented for subspace interventions \citep{makelov2024illusion}.
 
-\paragraph{Implications for method.} Three lessons generalize beyond this study. First, activation-based selection is
-not a substitute for intervention: most prominent features have no causal effect, and attention mass does not predict
-head importance. Second, nulls must be validated on a known answer before they are trusted; the plausible uniform null
-inflated the count of causal features 2.7-fold (293 against 110) and failed the planted test on every seed. Third, a negative verdict needs a
-test of sensitivity: our agreement rung never produces a false ``same'', but it also rarely detects a planted shared
-concept, so its silence carries no information. Exploratory pipelines with thousands of comparisons \citep{gelman2014garden}
-benefit from the same register-then-confirm discipline used here, which in our study confirmed between half and two thirds
-of the registered claims (43 of 82 and 41 of 63).
-
-\paragraph{Practical use.} The internal features add information about forecast failure only for the two least
-accurate models, whose forecasts fail most often, and do not improve model selection. For practitioners, the more
-immediate value of the system is diagnostic: behavioral checks such as calibration and missing-value handling, and the
-documented failures of instruments that would otherwise produce confident, wrong results.
+\paragraph{Implications for method.} Three lessons generalize. First, activation-based selection is not a substitute for
+intervention: most prominent features have no causal effect, and attention mass does not predict head importance. Second,
+nulls must be validated on a known answer: a plausible uniform null inflated the count of causal features 2.7-fold.
+Third, a negative verdict needs a test of sensitivity: our agreement rung never produces a false ``same'' but rarely
+detects a planted shared concept, so its silence carries no information. Exploratory pipelines with thousands of
+comparisons \citep{gelman2014garden} benefit from the register-then-confirm discipline used here, which confirmed between
+half and two thirds of the registered claims (43 of 82 and 41 of 63). For practitioners, internal features add
+information about forecast failure only for the two least accurate models; the more immediate value of the system is
+diagnostic, from calibration and missing-value checks to instruments that refuse rather than return confident, wrong
+results.
 
 \section{Limitations}
 \label{sec:limitations}
 
-\paragraph{Models.} The study covers seven transformer models with contiguous tokens; models whose tokens read
-disjoint lags, such as Lag-Llama, receive reduced scope. With seven models, contrasts between models are confounded with
-architecture, size and training data. Timer's features do not exceed chance, so its results carry no evidence about causal
-concepts. The analysis is univariate: Chronos-2's cross-series group attention is not measured (\fid{PM-13}), and
-Chronos-T5's decoder and Sundial's flow head are not captured.
-
-\paragraph{Time alignment.} A common time grid is no finer than the coarsest token: no window rule recovers
-resolution finer than Timer's 96-step token, and peak layer locations depend on the window size (\fid{SH-23}).
-Concatenated windows, which the similarity results use, are computed on 512 series per corpus, the size at which the
-Gram matrices fit in memory. SAE comparisons do not depend on the window rule. Dictionaries are trained on window averages, which is conservative
-for 1-step models: trained on its own tokens, Chronos-T5-Base's dictionary explains token variance far better and yields
-more causal features, while the top series it shares with TimesFM's dictionary change within seed noise (\fid{MP-11}).
+\paragraph{Models and alignment.} The study covers seven transformer models with contiguous tokens; models whose tokens
+read disjoint lags, such as Lag-Llama, receive behavioral analysis only. With seven models, contrasts between models are
+confounded with architecture, size and training data, and Timer's features do not exceed chance, so its results carry no
+evidence about causal concepts. The analysis is univariate: Chronos-2's cross-series group attention is not measured
+(\fid{PM-13}), and Chronos-T5's decoder and Sundial's flow head are not captured. A common time grid is no finer than the
+coarsest token, and peak layer locations depend on the window size (\fid{SH-23}). Dictionaries are trained on window
+vectors, which is conservative for 1-step models: trained on its own tokens, Chronos-T5-Base's dictionary explains token
+variance far better and yields more causal features (\fid{MP-11}).
 
 \paragraph{Ground truth and external validity.} Ground truth is exact only for the synthetic tier and encodes the
 generators' assumptions; 12 of 33 concept parts are dominated by one real-derived generator, and overlap with the models'
-pretraining data cannot be verified. Real data are part of the analysis: 410 of the 965 v2 dev series are real-derived,
-and the dictionaries are trained with about 4{,}000 additional real Monash windows per target. Raw real benchmarks are
-nonetheless a weaker basis for the causal questions. Real rows give TimesFM representations of lower effective dimension
-than the synthetic corpus (1.76 against 2.66) and more dead dictionary atoms (\fid{MN-20}); weakly predictable
-real-derived series receive flat forecasts in 67--100\% of cases, leaving an ablation nothing to move (\fid{BM-06}); and
-public archives may be in the models' pretraining data. Raw real data therefore enter as an external check rather than
-as a discovery corpus: concepts are discovered where ground truth exists, and the v3 transfer claims are then confirmed
-on 800 raw real windows held out from every dev stage (20 of 20).
+pretraining data cannot be verified. Raw real benchmarks are a weaker basis for causal questions: real rows give TimesFM
+representations of lower effective dimension (1.76 against 2.66) and more dead dictionary atoms (\fid{MN-20}), and weakly
+predictable real-derived series receive flat forecasts in 67--100\% of cases (\fid{BM-06}; cf.\ \citealp{wan2026collapse}),
+leaving an ablation nothing to move. Real data therefore enter as real-derived series (410 of 965 v2 dev series), as
+dictionary-training rows and as an external check: the v3 transfer claims confirm on 800 raw real windows held out from
+every dev stage.
 
 \paragraph{Scope of the confirmation.} Held-out confirmation covers accuracy, geometry, perturbation agreement, transfer,
-single-feature causal effects, atlas structure and failure prediction, on two corpora with one private split each, and the registered window-geometry claims were tested on a second sealed
-v3 split. The
-20 confirmed v2 transfers derive from two source concepts and the v3 transfers from three source models, so the transfer
-result rests on a small number of concepts. Registered claims are selected from larger dev pools; this is legitimate
-because the private split referees them, but it means that unregistered dev results remain exploratory.
+single-feature causal effects, atlas structure and failure prediction on two corpora. The confirmed v2 transfers derive
+from two source concepts and the v3 transfers from three source models, so the transfer result rests on few concepts.
+Registered claims are selected from larger dev pools, which is legitimate because the private split referees them, but
+unregistered dev results remain exploratory. Per-series agreement of causal effects across architectures is not
+measurable by ablation at these effect sizes, so \tool{} compares effects across models at the level of concept
+profiles.
 
-\paragraph{Effect sharing on the same series.} Per-series agreement of causal effects across architectures is not
-measurable by ablation at the effect sizes these models have. Both the shared-input rung and its subspace redesign fail
-the sensitivity requirement of the known-answer test (Section~\ref{sec:knownanswer}), and \tool{} therefore compares
-effects across models at the level of concept profiles.
-
-\paragraph{Dictionaries, interventions and usability.} Concept results depend on dictionary size, sparsity, revival and
-seed; the system measures this dependence but cannot remove it, and feature death tracks layer geometry (alive atoms
-scale with effective dimension with a log-log exponent of 1.02, $\rho=0.58$ over 45 cells; \fid{MP-05}). Which single
-features clear the null depends on the intervention: of 91 v3 causal features, 37 clear it under mean, resample and
-clean-activation ablation alike (\fid{MP-10}). The controls
-catch only failures for which a known-answer case exists. Readability for newcomers is a design goal; no user study has
-measured comprehension.
+\paragraph{Dictionaries and usability.} Concept results depend on dictionary size, sparsity, revival and seed; the system
+measures this dependence but cannot remove it, and feature death tracks layer geometry (alive atoms scale with effective
+dimension with a log-log exponent of 1.02; \fid{MP-05}). The controls catch only failures for which a known-answer case
+exists. Readability for newcomers is a design goal; no user study has measured comprehension.
 
 \section{Conclusion}
 \label{sec:conclusion}

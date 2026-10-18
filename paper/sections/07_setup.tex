@@ -3,11 +3,10 @@
 
 \paragraph{Models.} We analyze seven TSFMs (Table~\ref{tab:models}): TimesFM~2.5 \citep{das2024timesfm}, Chronos-2
 \citep{ansari2025chronos2}, Sundial \citep{liu2025sundial}, Chronos-Bolt and Chronos-T5-Base \citep{ansari2024chronos},
-Timer \citep{liu2024timer} and Time-MoE \citep{shi2025timemoe}. Timer and Time-MoE are loaded through the zero-code
-adapter. Together the panel covers decoder-only, encoder-only and encoder--decoder stacks, token widths from 1 to 96
-steps, a mixture-of-experts model and deterministic and sampled forecast heads.
+Timer \citep{liu2024timer} and Time-MoE \citep{shi2025timemoe}. The panel covers decoder-only, encoder-only and
+encoder--decoder stacks, token widths from 1 to 96 steps, a mixture of experts, and deterministic and sampled heads.
 
-\begin{table}[tb]
+\begin{table}[!tb]
 \centering
 \footnotesize
 \setlength{\tabcolsep}{4pt}
@@ -36,46 +35,37 @@ Chronos-T5 sizes (8M--709M).}
 \paragraph{Corpora.} All claims are tested on two independently generated corpora, each with its own dev split, sealed
 private split and registry.
 \begin{itemize}
-  \item \textbf{v2} (primary). The dev split has 965 series in five generator families; 410 of them are real-derived,
-    built from Monash weather, ETT \citep{zhou2021informer} and the Chronos electricity and traffic collections. The
-    private split is a sealed epoch of 971 series that shares no sample with any earlier split. Dev and private splits
-    are exchangeable: an energy-distance test gives $p=0.951$, 20 of 22 catch22 features are equivalent by TOST and the
-    other two are inconclusive, and 6 of 937{,}015 cross-split pairs are near-duplicates.
-  \item \textbf{v3} (replication, three times larger). The dev split has 2{,}876 series, 2{,}091 synthetic and 785
-    real-derived from 15 real sources, adding ERCOT load, M4 hourly, solar, taxi, KDD Cup air quality and pedestrian
-    counts to the v2 sources. The private split is 1{,}024 series drawn from a sealed epoch of 2{,}868. An
-    \emph{external} set of 800 raw windows from 12 GIFT-Eval datasets \citep{aksu2024gifteval}, cut without any
-    generator and sharing no sample with either split, re-tests the registered transfer claims and is reported separately
-    from the confirmation verdict. Exchangeability, computed after the confirmation look and without any model, gives
-    energy-distance $p=0.995$ and 22 of 22 features equivalent. A second sealed v3 epoch (2{,}863 series, no sample shared with any
-    earlier split of any corpus) was minted later and opened once, for the registered window-geometry claims
-    (Section~\ref{sec:rq2}).
+  \item \textbf{v2} (primary): 965 dev series in five generator families, 410 of them real-derived (Monash weather, ETT
+    \citep{zhou2021informer}, Chronos electricity and traffic), and a sealed private epoch of 971 series that shares no
+    sample with any earlier split.
+  \item \textbf{v3} (replication): 2{,}876 dev series, 785 of them real-derived from 15 sources (adding ERCOT load, M4
+    hourly, solar, taxi, KDD Cup air quality and pedestrian counts), and 1{,}024 private series drawn from a sealed epoch
+    of 2{,}868. An \emph{external} set of 800 raw windows from 12 GIFT-Eval datasets \citep{aksu2024gifteval}, cut without
+    any generator, re-tests the registered transfer claims. A second sealed epoch (2{,}863 series) was opened once, for
+    the registered window-geometry claims.
 \end{itemize}
-Contexts have 480 steps, a multiple of Timer's 96-step token, the horizon is 64 steps and the alignment window 32 steps.
+Dev and private splits are exchangeable on both corpora (energy-distance $p=0.951$ and $0.995$; 20 and 22 of 22 catch22
+features equivalent by TOST, the rest inconclusive; \fid{MP-09}). Contexts have 480 steps, a multiple of Timer's token,
+the horizon is 64 steps and the window 32 steps.
 
 \paragraph{Protocol.} On v2, SAEs are trained on 56 target layers (TimesFM 10, Chronos-2 9, Sundial 9, Time-MoE 9,
-Chronos-T5-Base 9, Timer 6 and Chronos-Bolt 4), each with three replicate seeds, and causal features are scored against
-the profile-matched null. On v3, SAEs are trained on 50 targets and every causal claim is scored and registered against
-the stricter covariance-matched null; every setting of the v3 run was fixed before its data existed. Bootstrap
-intervals use $n_{\text{boot}}=5000$. The v2 registry holds 128 hypotheses, 82 of them replicable on the private split;
-the v3 registry holds 111, of which 63 are replicable. Each private split was opened once.
+Chronos-T5-Base 9, Timer 6, Chronos-Bolt 4), each with three replicate seeds, and causal features are scored against the
+profile-matched null. On v3, SAEs are trained on 50 targets and every causal claim is scored and registered against the
+covariance-matched null, with every setting fixed before the data existed. Bootstrap intervals use
+$n_{\text{boot}}=5000$. The v2 registry holds 128 hypotheses, 82 replicable on the private split; the v3 registry holds
+111, 63 replicable. Numbers are from the v2 run unless labeled v3; the v2 run took 21.1 hours on one RTX A5000, and its
+artifacts are in \repodir{examples/panel7_v2/run}.
 
-\paragraph{Sources of numbers.} Unless stated otherwise, numbers are from the v2 dev run or its confirmation. Numbers
-from v3 are labeled as such. The v2 run used 21.1 hours of stage time on one RTX A5000 (24~GB); its artifacts
-are in \repodir{examples/panel7_v2/run}, and Appendix~\ref{app:repro} gives the full provenance.
-
-\paragraph{How the models behave on this corpus.} Interpretability results are only meaningful if the models do the
-task they were trained for. Table~\ref{tab:character} summarizes their behavior on the v2 dev split. Chronos-2 is the most
-accurate. Five models beat the seasonal-naive forecast on 76.5--84.5\% of series, Timer on 69.5\% and Time-MoE on only
+\paragraph{How the models behave.} Table~\ref{tab:character} summarizes behavior on the v2 dev split. Chronos-2 is the
+most accurate. Five models beat the seasonal-naive forecast on 76.5--84.5\% of series, Timer on 69.5\% and Time-MoE on only
 37.8\%; Time-MoE is less accurate than the naive forecast overall, so its internal results describe a model that does not
-forecast these series well.
-The nominal 80\% intervals of Sundial and Chronos-T5-Base cover only 36\% and 44\% of outcomes, and four models propagate
+forecast these series well. The nominal 80\% intervals of Sundial and Chronos-T5-Base cover only 36\% and 44\% of outcomes, and four models propagate
 an injected missing value silently. On the private split, Chronos-2 is more accurate than TimesFM on the registered
 \texttt{mixture} family ($\Delta$MASE 0.209 [0.119, 0.313], $p_{\text{Holm}}=0.0002$, $n=290$) and, with a smaller effect,
 overall ($-0.070$ [$-0.129$, $-0.008$], $p=0.025$, $n=971$). On v3 the \texttt{mixture} result replicates (0.303 [0.176,
 0.445], $p_{\text{Holm}}=0.0002$).
 
-\begin{table}[tb]
+\begin{table}[!tb]
 \centering
 \footnotesize
 \setlength{\tabcolsep}{4pt}

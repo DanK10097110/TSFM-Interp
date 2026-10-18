@@ -1,104 +1,77 @@
 \section{Introduction}
 \label{sec:intro}
 
-Pretrained forecasting models are now default components. TimesFM \citep{das2024timesfm}, the Chronos
-family \citep{ansari2024chronos,ansari2025chronos2}, Sundial \citep{liu2025sundial}, Timer
-\citep{liu2024timer}, Moirai \citep{woo2024moirai}, MOMENT \citep{goswami2024moment}, Lag-Llama
-\citep{rasul2023lagllama} and Time-MoE \citep{shi2025timemoe} are released as open checkpoints and used
-zero-shot. Their architectures differ sharply: some are decoder-only stacks over 32-step patches, others are
-encoder--decoders over quantized single steps, encoders with cross-series attention, or decoders with sampled
-flow-matching heads. Leaderboards say which of them is more accurate. They do not say what these models represent,
-whether architectures this different represent the same things, or whether any internal structure we can name
-drives the forecast.
+Pretrained forecasting models such as TimesFM \citep{das2024timesfm}, the Chronos family
+\citep{ansari2024chronos,ansari2025chronos2}, Sundial \citep{liu2025sundial}, Timer \citep{liu2024timer}, Moirai
+\citep{woo2024moirai}, MOMENT \citep{goswami2024moment}, Lag-Llama \citep{rasul2023lagllama} and Time-MoE
+\citep{shi2025timemoe} are released as open checkpoints and used zero-shot. Their architectures differ sharply:
+decoder-only stacks over 32-step patches, encoder--decoders over quantized single steps, encoders with cross-series
+attention, decoders with sampled flow-matching heads. Leaderboards say which is more accurate. They do not say what these
+models represent, whether such different architectures represent the same things, or whether any internal structure we
+can name drives the forecast.
 
-Mechanistic interpretability offers the instruments to ask: probes \citep{alain2017probes,hewitt2019control},
-representational similarity \citep{kornblith2019cka}, activation patching
-\citep{vig2020causal,meng2022rome,zhang2024patching}, lenses \citep{belrose2023tuned} and sparse dictionaries
-\citep{bricken2023monosemanticity,gao2025topk}, packaged in libraries such as TransformerLens
-\citep{nanda2022transformerlens} and pyvene \citep{wu2024pyvene}. Early work applies pieces of this toolkit to single
-TSFMs \citep{wilinski2025exploring,mishra2026dissecting,oublal2026timesae,divo2026zeitgeist}. Three properties of
-forecasting models prevent a direct transfer, and each produces silent errors rather than crashes.
+Mechanistic interpretability offers the instruments: probes \citep{alain2017probes,hewitt2019control},
+representational similarity \citep{kornblith2019cka}, activation patching \citep{vig2020causal,meng2022rome,zhang2024patching},
+lenses \citep{belrose2023tuned} and sparse dictionaries \citep{bricken2023monosemanticity,gao2025topk}, packaged in
+libraries such as TransformerLens \citep{nanda2022transformerlens} and pyvene \citep{wu2024pyvene}. Early work applies
+pieces of this toolkit to single TSFMs \citep{wilinski2025exploring,mishra2026dissecting,oublal2026timesae,divo2026zeitgeist}.
+Three properties of forecasting models prevent a direct transfer, and each produces silent errors rather than crashes.
 \begin{enumerate}[label=(\roman*)]
-  \item \textbf{Tokens are not comparable across models.} One token covers 1 time step in Chronos-T5, 16 in
-    Chronos-2, 32 in TimesFM and 96 in Timer. A cross-model comparison therefore needs a verified mapping from
-    tokens to time.
-  \item \textbf{There is no ground truth for concepts.} Real series carry no labels for trend, period,
-    changepoints or noise process, so a probe that ``finds seasonality'' cannot be checked on them.
-  \item \textbf{Effects are small and easy to fake.} Removing one sparse feature typically moves a forecast by
-    about a tenth of the context's standard deviation, less than the dictionary's own reconstruction error. At
-    this scale a precision mismatch, an intervention the forecast head never reads, or a null measured on the
-    wrong rows each produce a clean, confident and wrong result.
+  \item \textbf{Tokens are not comparable across models.} One token covers 1 time step in Chronos-T5, 16 in Chronos-2,
+    32 in TimesFM and 96 in Timer, so a cross-model comparison needs a verified mapping from tokens to time.
+  \item \textbf{There is no ground truth for concepts.} Real series carry no labels for trend, period, changepoints or
+    noise process, so a probe that ``finds seasonality'' cannot be checked on them.
+  \item \textbf{Effects are small and easy to fake.} Removing one sparse feature typically moves a forecast by about a
+    tenth of the context's standard deviation, less than the dictionary's own reconstruction error. At this scale a
+    precision mismatch, an intervention the forecast head never reads, or a null measured on the wrong rows each produce
+    a clean, confident and wrong result.
 \end{enumerate}
 
-We present \tool{}, a system built around these three problems, and use it to study four research questions:
-\begin{description}[leftmargin=1.2em,font=\normalfont\bfseries,itemsep=1pt]
-  \item[RQ1.] Which forecast-relevant concepts do TSFMs learn?
-  \item[RQ2.] Are these concepts shared across architectures, in the sense of responding to the same inputs,
-    having the same effect, or both?
-  \item[RQ3.] Do the concepts causally affect the forecast, and can their importance be read from activations?
-  \item[RQ4.] Where in depth do these computations happen, and how comparable is depth across architectures?
-\end{description}
-
-The system makes three methodological commitments. It is \emph{controlled}: a synthetic benchmark with exact
-generative ground truth, and a forecaster with planted concepts, give every probe a case with a known answer. It is
-\emph{causal}: a feature counts as a concept only if removing it changes the forecast more than removing a random
-direction of matched size on the same series, and reach controls show that the intervention landed. It is
-\emph{confirmatory}: findings on the development (dev) split are frozen in a hash-pinned registry and tested once on
-a sealed private split. Measured \emph{time alignment} makes architectures comparable, and the output is a single
-report in which every claim states its evidence class.
+We present \tool{}, a system built around these problems, and use it to ask four questions. \textbf{RQ1:} which
+forecast-relevant concepts do TSFMs learn? \textbf{RQ2:} are they shared across architectures, in the sense of
+responding to the same inputs, having the same effect, or both? \textbf{RQ3:} do they causally affect the forecast, and
+can their importance be read from activations? \textbf{RQ4:} where in depth do these computations happen? The system is
+\emph{controlled}: a synthetic benchmark with exact generative ground truth and a forecaster with planted concepts give
+every instrument a case with a known answer. It is \emph{causal}: a feature counts as a concept only if removing it
+changes the forecast more than removing a random direction of matched size on the same series. It is
+\emph{confirmatory}: dev findings are frozen in a hash-pinned registry and tested once on a sealed private split.
 
 \paragraph{Contributions.}
 \begin{enumerate}[label=\textbf{C\arabic*.},leftmargin=2.2em]
-  \item \textbf{A comparative interpretability system} (Section~\ref{sec:architecture}): measured token-to-time
-    alignment, a zero-code adapter path for new checkpoints, and a gated pipeline that turns a list of checkpoints
-    into one self-contained report, together with a benchmark generator with leakage-audited tiers and sealed,
-    bit-exactly regenerable splits.
-  \item \textbf{A causal concept methodology} (Section~\ref{sec:methods}) that defines concepts by their effect on
-    the forecast and separates two notions of sharing that are usually conflated: \emph{same inputs} and \emph{same
-    effect on the same inputs}.
-  \item \textbf{Known-answer validation of the instruments} (Section~\ref{sec:knownanswer}): every null and
-    agreement test is held to a pass criterion fixed in advance on a forecaster with planted concepts and decoys,
-    which rejected two plausible designs.
+  \item \textbf{A comparative interpretability system} (Section~\ref{sec:architecture}) with measured token-to-time
+    alignment, a zero-code adapter path and a gated pipeline that turns a list of checkpoints into one report, together
+    with a benchmark generator with leakage-audited tiers and sealed, bit-exactly regenerable splits.
+  \item \textbf{A causal concept methodology} (Section~\ref{sec:methods}) that defines concepts by their effect on the
+    forecast and separates \emph{same inputs} from \emph{same effect on the same inputs}.
+  \item \textbf{Known-answer validation} (Section~\ref{sec:knownanswer}): every null and agreement test is held to a
+    criterion fixed in advance on a forecaster with planted concepts and decoys.
   \item \textbf{A seven-model study with one-shot confirmation on two corpora} (Sections~\ref{sec:setup}
-    and~\ref{sec:casestudy}), with a statistical protocol of series-level resampling, a multiplicity ledger and
-    registered hypotheses (Section~\ref{sec:statistics}).
+    and~\ref{sec:casestudy}), with series-level resampling, a multiplicity ledger and registered hypotheses
+    (Section~\ref{sec:statistics}).
 \end{enumerate}
 
-\paragraph{Main findings.} We study TimesFM~2.5, Chronos-2, Sundial, Chronos-Bolt, Chronos-T5-Base, Timer and
-Time-MoE, and re-test the registered claims on a second, three times larger corpus.
+\paragraph{Main findings.} We study TimesFM~2.5, Chronos-2, Sundial, Chronos-Bolt, Chronos-T5-Base, Timer and Time-MoE,
+and re-test every registered claim on a second, three times larger corpus.
 \begin{itemize}
-  \item \textbf{RQ1.} Sparse-dictionary features whose removal moves the forecast more than a random direction of
-    the same size exist in six of the seven models. They act mostly on forecast level and seasonality and form a
-    graded continuum rather than discrete units. Against random directions drawn from the layer's own activation
-    distribution, however, they exceed chance only 1.29-fold. Under mean, resample and clean-activation ablation the effects keep
-    their direction, and 79 of 91 features still clear the null under at least one of them.
-  \item \textbf{RQ2.} Representational geometry is shared above chance for all 21 model pairs, which a registered
-    test confirms on a fresh sealed split, provided windows concatenate their tokens: averaging them, the common
-    practice, hides 0.30--0.43 of TimesFM's CKA with the fine-token models. Different architectures also \emph{select the
-    same series} for a concept: all registered transfer claims confirm held-out on both corpora and on raw real-world
-    windows. The same broad effect types (raising or
-    lowering the level, damping seasonality) recur across models, but fine-grained concepts are organized by model:
-    no concept spans more than three of the seven models, which also holds held-out.
-  \item \textbf{RQ3.} Activation prominence does not identify causal importance: most prominent features have no
-    held-out causal effect. Fewer than half of the registered single-feature causal claims replicate, and neither
-    more data, a more powerful test nor gradient-selected candidates improves this.
+  \item \textbf{RQ1.} Sparse-dictionary features whose removal moves the forecast more than a random direction of the
+    same size exist in six of the seven models. They act mostly on level and seasonality and form a graded continuum
+    rather than discrete units. Against random directions drawn from the layer's own activation distribution they
+    exceed chance only 1.29-fold.
+  \item \textbf{RQ2.} All 21 model pairs share geometry above chance, confirmed on a fresh sealed split, provided
+    windows concatenate their tokens; averaging them, the common practice, hides 0.30--0.43 of TimesFM's CKA with the
+    fine-token models. Different architectures \emph{select the same series} for a concept, held-out on both corpora and
+    on raw real windows. Broad effect types recur in every model, but fine-grained concepts are organized by model: none
+    spans more than three of seven.
+  \item \textbf{RQ3.} Most prominent features have no held-out causal effect, and fewer than half of the registered
+    single-feature causal claims replicate.
   \item \textbf{RQ4.} How TimesFM and Chronos-2 react to corruptions, layer by layer, replicates held-out for 6 of 9
-    corruptions on v2 and 4 of 9 on v3 (8 of 9 keep their sign), with level shift flipping sign on both; absolute depth locations are comparable only after accounting for how much of each model's compute
-    is captured.
+    corruptions on v2 and 4 of 9 on v3 (8 of 9 keep their sign).
 \end{itemize}
-Table~\ref{tab:results} lists every headline result with its evidence class and status.
+Table~\ref{tab:results} lists every headline result with its evidence class. Each result is an entry in the public
+findings ledger, \repo{FINDINGS.md}, with exact numbers and a reproduction command; identifiers such as \fid{MN-29}
+refer to its entries and link to it.
 
-\paragraph{Organization.} Section~\ref{sec:related} reviews related work. Section~\ref{sec:architecture} describes the
-system, Section~\ref{sec:methods} the measurements, Section~\ref{sec:statistics} the statistical protocol and
-Section~\ref{sec:knownanswer} the known-answer validation of the causal instruments. Section~\ref{sec:setup} gives the
-experimental setup and Section~\ref{sec:casestudy} the results. Section~\ref{sec:discussion} discusses their implications
-and Section~\ref{sec:limitations} their limitations. The appendices cover implementation and usage
-(Appendix~\ref{sec:usage}), additional validity analyses (Appendix~\ref{app:faq}), statistical details
-(Appendix~\ref{app:stats}), reproducibility (Appendix~\ref{app:repro}) and an index of the public findings ledger
-(Appendix~\ref{app:ledger}). The ledger, \repo{FINDINGS.md}, gives each result with exact numbers, evidence class,
-status and a reproduction command; identifiers such as \fid{MN-29} refer to its entries.
-
-\begin{figure}[tb]
+\begin{figure}[!tb]
 \centering
 \input{figures/overview.tex}
 \caption{System overview. \texttt{tsfm\_benchmark} produces leakage-audited, sealed corpora with exact

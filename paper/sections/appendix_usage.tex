@@ -1,9 +1,8 @@
 \section{Implementation and Usage}
 \label{sec:usage}
 
-\paragraph{Repository layout.} \texttt{tsfm\_benchmark} has one subpackage for generation, audit and sealing and another
-for diversity and exchangeability validation. \texttt{tsfm\_lens} has subpackages for models, extraction, analysis,
-sparse autoencoders and the report, plus the stage orchestrator \texttt{pipeline.py}. The folder
+\paragraph{Repository layout.} \texttt{tsfm\_benchmark} generates, audits, seals and validates corpora;
+\texttt{tsfm\_lens} holds models, extraction, analysis, sparse autoencoders, the report and the stage orchestrator. The folder
 \repodir{examples/panel7_v2} contains the report, configuration and every lightweight artifact of the v2 run, so the
 report and this paper's figures can be regenerated without a GPU.
 
@@ -32,14 +31,6 @@ spent on SAE training and the concept battery.
 a conformance check (\texttt{-{}-check-adapter}, which runs patch-identity and reach checks, the alignment gate, span
 discovery and capability checks) and a guide with a checklist of pitfalls (\repo{tsfm_lens/docs/ADDING_A_MODEL.md}).
 
-\paragraph{Extending the analysis.} New report sections declare the artifacts they require, new claims must use the
-typed \texttt{Finding} record, and new configuration fields declare which stage artifacts they affect, so that the
-fingerprints mark exactly those as stale. New generator options are opt-in, so that sealed corpora still regenerate
-bit-exactly.
-
 \paragraph{The example report.} The seven-model report (\repo{examples/panel7_v2/report.html}) contains 530
 ``What does this mean?'' notes, one for every figure, and 240 typed findings (89 descriptive, 54 behavioral, 49 causal,
 42 linear-translatable, 4 geometric and 2 illustrative). A glossary and a methods appendix are generated from the code.
-The complete analysis of the four-model preset is one command,
-\texttt{python run.py -{}-config configs/examples/large\_4model.yaml}, and smaller presets cover a CPU-only smoke test, a
-single model and a pair.

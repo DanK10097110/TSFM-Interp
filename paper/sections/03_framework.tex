@@ -4,13 +4,12 @@
 
 \tool{} consists of two separately installable packages (Figure~\ref{fig:overview}). \texttt{tsfm\_benchmark}
 generates, audits, seals and validates corpora; \texttt{tsfm\_lens} loads checkpoints through adapters, runs a gated
-pipeline of analysis stages and renders the report. This section describes the parts that make cross-model
-measurements valid; implementation details and usage are in Appendix~\ref{sec:usage}.
+pipeline of analysis stages and renders the report. Usage is described in Appendix~\ref{sec:usage}.
 
 \subsection{Design principles}
 
-Each principle below is enforced in code as a gate, a refusal or a test, so that a measurement that cannot be trusted
-is withheld with a stated reason rather than reported.
+Each principle is enforced in code as a gate, a refusal or a test, so that a measurement that cannot be trusted is
+withheld with a stated reason rather than reported.
 \begin{description}[leftmargin=1.2em,font=\normalfont\bfseries,itemsep=1pt]
 \item[P1. Ground truth by construction.] Every probe is first validated on a case whose answer is known.
 \item[P2. Alignment is measured, not declared.] Token spans are measured from impulse responses, and cross-model
@@ -18,183 +17,91 @@ is withheld with a stated reason rather than reported.
 \item[P3. Causal claims need a null, a reach control and a same-seed baseline.] Every intervention is compared with a
   random intervention of matched size on the same series, and sampled models are seeded identically in compared calls.
 \item[P4. The series is the unit of inference.] All intervals and $p$-values resample whole series.
-\item[P5. Explore, then confirm once.] Dev results are exploratory; registered claims are tested once on a sealed
-  split.
-\item[P6. Every claim is typed, and failures are loud.] Each finding carries an evidence class and a generated caveat,
-  and unsupported analyses are skipped with a rendered reason.
+\item[P5. Explore, then confirm once.] Registered dev claims are tested once on a sealed split.
+\item[P6. Every claim is typed.] Each finding carries an evidence class and a generated caveat, and unsupported
+  analyses are skipped with a rendered reason.
 \end{description}
-The evidence classes are \ev{behavioral} (input--output only), \ev{descriptive}, \ev{illustrative},
-\ev{geometric} (representational similarity), \ev{linear-translatable} (one representation linearly predicts
-another beyond an input baseline), \ev{causal within-model} (an intervention changes the forecast beyond a null) and
-\ev{held-out confirmed} (a registered claim replicated on the sealed split). A \ev{predictive} class marks internals
-that forecast a model's error without being shown to cause it.
+The evidence classes are \ev{behavioral} (input--output only), \ev{descriptive}, \ev{illustrative}, \ev{geometric}
+(representational similarity), \ev{linear-translatable} (one representation linearly predicts another beyond an input
+baseline), \ev{causal within-model} (an intervention changes the forecast beyond a null), \ev{predictive} (internals
+forecast a model's error without being shown to cause it) and \ev{held-out confirmed}.
 
 \subsection{Controlled benchmark generation}
 \label{sec:benchmark}
 \label{sec:layout}
 
 Real data enter the benchmark only as leakage references, for realism calibration and as raw material for explicitly
-labeled generators. Generators come in two tiers. The \emph{synthetic} tier touches no real data and has exact ground
-truth. Its \texttt{parametric} generator is additive (trend, multiple seasonalities, AR noise, changepoints,
-anomalies, random walk, intermittency and heteroskedasticity), and \texttt{random\_parametric} draws a recipe from one
-of eight frozen archetypes. The \emph{real-derived} tier (\texttt{mixture}, \texttt{block\_bootstrap}
-\citep{kunsch1989block} and \texttt{sequential\_par}) inherits its source distribution and has only attributional
-ground truth. Because ``free of leakage'' and ``realistic'' pull in opposite directions, every sample carries its tier
-label and every analysis can be split by tier.
+labeled generators. The \emph{synthetic} tier touches no real data and has exact ground truth: an additive
+\texttt{parametric} generator (trend, multiple seasonalities, AR noise, changepoints, anomalies, random walk,
+intermittency, heteroskedasticity) and \texttt{random\_parametric}, which draws a recipe from one of eight frozen
+archetypes. The \emph{real-derived} tier (\texttt{mixture}, \texttt{block\_bootstrap} \citep{kunsch1989block},
+\texttt{sequential\_par}) inherits its source distribution and has attributional ground truth only. Every sample carries
+its tier label, so every analysis can be split by tier.
 
-Every sample passes a two-stage leakage gate against the Monash archive \citep{godahewa2021monash}, a cheap prefilter
-followed by banded DTW \citep{sakoe1978dtw}, and a cross-split near-duplicate check. Dev and private splits use disjoint
-seed ranges mixed with SHA-256. Every sample is hashed, so that loading a sealed split with verification detects any
-change, and fresh private \emph{epochs} are minted by striding the seed space. A validation package measures redundancy
-by shape matching and diversity in the catch22 feature space \citep{lubba2019catch22}, using the participation-ratio
-dimension \citep{gao2017pr} and nearest-neighbor tails rather than a 2-D embedding. It also tests dev/private
+Every sample passes a two-stage leakage gate against the Monash archive \citep{godahewa2021monash} (a prefilter followed
+by banded DTW; \citealp{sakoe1978dtw}) and a cross-split near-duplicate check. Dev and private splits use disjoint seed
+ranges, every sample is hashed so that loading a sealed split detects any change, and fresh private \emph{epochs} are
+minted by striding the seed space. A validation package measures diversity in catch22 feature space
+\citep{lubba2019catch22} by participation-ratio dimension \citep{gao2017pr} and nearest-neighbor tails, and tests dev/private
 exchangeability with an energy-distance test \citep{szekely2013energy} and per-feature TOST equivalence
-\citep{schuirmann1987tost}.
+\citep{schuirmann1987tost}. Nine structured \emph{corruptions} (noise, detrend, deseasonalize, frequency shift, level
+shift, spike, smooth, warp, dropout) drive the perturbation analysis, and \emph{generator counterfactuals} move one
+generative parameter along a dose ladder with every other random draw held fixed.
 
-Two perturbation families are built in. Nine structured \emph{corruptions} (noise, detrend, deseasonalize, frequency
-shift, level shift, spike, smooth, warp and dropout) drive the perturbation analysis of Section~\ref{sec:l3}.
-\emph{Generator counterfactuals} move one generative parameter along a dose ladder with every random draw held fixed; dose
-1.0 must reproduce the original series bit-exactly, an identity test that caught a real replay bug (\fid{BM-05}).
-
-\subsection{Model adapters and capability tiers}
+\subsection{Model adapters}
 \label{sec:adapters}
 
-A model enters through an adapter that exposes loading, a \texttt{predict} method returning point and quantile
-forecasts in the original scale, the underlying module, input preparation, a forward pass and the time span of each
-token. The adapter's \emph{capability tier} is derived from the methods it implements rather than declared: 0 (black
-box), 1 (observable hidden states with token spans), 2 (steerable, so patching is possible) and 3 (decomposable
-attention). Stages above a model's tier are skipped with the missing method named in the report. A missing capability
-is a fact about the adapter; a measured failure of time localization is a fact about the model, and routes it to
-behavioral analysis only.
-
-New checkpoints can use a zero-code adapter for Hugging Face models, which discovers layers, measures token spans and
-refuses rather than guesses. Its span discovery reproduces the spans of all six hand-written adapters exactly and
-recovers Timer's 96-step tokens from measurement alone (\fid{MP-01}). Two of the seven models studied here use it.
+An adapter exposes loading, a \texttt{predict} method returning point and quantile forecasts in the original scale, the
+underlying module, a forward pass and the time span of each token. Its \emph{capability tier} is derived from the methods
+it implements: 0 (black box), 1 (observable hidden states with token spans), 2 (steerable, so patching is possible) and 3
+(decomposable attention). Stages above a model's tier are skipped with the missing method named in the report, and a
+model whose tokens are measured not to be time-localized is routed to behavioral analysis. A zero-code adapter for
+Hugging Face checkpoints discovers layers and measures token spans; it reproduces the spans of all six hand-written
+adapters exactly and recovers Timer's 96-step tokens from measurement alone (\fid{MP-01}). Two of the seven models
+studied here use it.
 
 \subsection{Time alignment across architectures}
 \label{sec:alignment}
 
-A token index means a different stretch of time in each model. A 480-step context is 480 tokens in Chronos-T5 and Time-MoE, 30 in
-Chronos-2, Sundial and Chronos-Bolt, 15 in TimesFM and 5 in Timer, so ``token 7'' of two models covers different
-inputs. Raw token positions therefore cannot be compared across models. We first measure each token's time span
-$I_j$: an impulse is injected at every time step, and a token's span is the contiguous set of steps it responds to most,
-accepted only if it passes a peak-to-pedestal contrast gate and a contiguity gate (Appendix~\ref{app:faq}). We then
-place every model's tokens on one shared grid of windows $W_w=[wL,(w+1)L)$, with $L=32$ steps by default, by
-overlap-weighted averaging:
+A 480-step context is 480 tokens in Chronos-T5 and Time-MoE, 30 in Chronos-2, Sundial and Chronos-Bolt, 15 in TimesFM
+and 5 in Timer, so raw token positions cannot be compared across models. We first measure each token's time span $I_j$
+by injecting an impulse at every time step; a token's span is the contiguous set of steps it responds to most, accepted
+only if it passes a peak-to-pedestal contrast gate ($\ge4$) and a contiguity gate ($\ge0.95$). We then place every
+model's tokens on one grid of windows $W_w=[wL,(w+1)L)$, $L=32$ steps (Figure~\ref{fig:alignment}). A token shorter
+than a window contributes to it in time order, a token as long as a window maps to it one to one, and a token longer than
+a window (Timer's) is copied to every window it spans, never split. A window's representation is the concatenation of
+its tokens in time order,
 \begin{equation}
-  P_{wj} = \frac{|I_j \cap W_w|}{\sum_{j'} |I_{j'} \cap W_w|}, \qquad \tilde h_w = \sum_j P_{wj}\, h_j .
+  \tilde h_w = \big[\,h_j\,\big]_{I_j\subseteq W_w},
   \label{eq:pooling}
 \end{equation}
-Here $h_j$ is the activation vector of token $j$ in one layer, and $P_{wj}$ is the share of window $w$ that token $j$
-covers. Each window's vector is a weighted average of the tokens that overlap it, in the model's own activation space.
-Three cases cover all seven models (Figure~\ref{fig:alignment}):
-\begin{itemize}[itemsep=1pt]
-  \item \textbf{Tokens shorter than a window are averaged.} The 32 one-step tokens of Chronos-T5 inside a window receive
-    weight $1/32$ each, and the two 16-step tokens of Chronos-2, Sundial and Chronos-Bolt receive $1/2$ each.
-  \item \textbf{Tokens as long as a window map one to one.} Each 32-step TimesFM token becomes one window unchanged.
-  \item \textbf{Tokens longer than a window are copied, not split.} A 96-step Timer token is the only token overlapping
-    each of the three windows it spans, so all three windows receive the token's full vector with weight 1.
-\end{itemize}
-A token that straddles a window boundary contributes to both windows in proportion to its overlap with each. No token
-is ever cut into parts, because an activation vector has no internal time axis to cut along. A window that no token
-covers raises an error rather than becoming a zero row. A series-level vector is the mean of its window vectors.
+which loses nothing. Linear CKA needs only the row Gram matrix, and the Gram matrix of a concatenation is the sum of the
+per-position Gram matrices, $K=\sum_p X_pX_p^{\top}$, so the long vector is never formed. The common alternative,
+averaging a window's tokens, discards within-window order: in the first block of Chronos-T5-Base a window's slope decodes
+with $R^2=0.13$ from the window mean and 0.96 from finer sub-windows, while a TimesFM token keeps it. On held-out data
+the average understates TimesFM's similarity to the fine-token models by 0.30--0.43 CKA (Section~\ref{sec:rq2};
+\fid{MN-38}). Series-level vectors are means over the 15 windows.
 
-\paragraph{What is compared across models.} Pooling aligns the \emph{rows} of two models' activations, not their
-\emph{coordinates}. After pooling, row $(s,w)$ of every model describes the same series $s$ over the same time steps $W_w$,
-but the vectors still live in each model's own space: widths differ, from 384 in Time-MoE to 1{,}280 in TimesFM, and
-no axis of one model corresponds to an axis of another. No analysis therefore compares a vector of one model with a
-vector of another directly. Every cross-model measure compares something defined on the shared rows:
-\begin{itemize}[itemsep=1pt]
-  \item \textbf{Geometry} (CKA and representational similarity analysis, RSA) compares how the rows relate to \emph{one another} within each model. Two models
-    score high when the series and windows that look similar to one model also look similar to the other. This
-    depends on what a window's vector keeps, which we test below.
-  \item \textbf{Stitching} fits a linear map from one model's rows to the other's on training series and scores it on
-    held-out series. It reports only the gain over a map from simple input features.
-  \item \textbf{Concept transfer} compares which \emph{series} a feature fires on, a set of series identities that means
-    the same thing in every model.
-  \item \textbf{Causal effects} are measured on the forecast, which is in the time domain for every model. Interventions
-    act on each model's own tokens, and patching never moves activations between models.
-\end{itemize}
+\paragraph{What is compared across models.} Alignment fixes the \emph{rows} of two models' activations, not their
+coordinates: row $(s,w)$ of every model describes series $s$ over steps $W_w$, but widths range from 384 (Time-MoE) to
+1{,}280 (TimesFM) and no axis of one model corresponds to an axis of another. Every cross-model measure is therefore
+defined on the shared rows. \emph{Geometry} (CKA, and representational similarity analysis, RSA, on series summaries)
+compares how rows relate to one another within each model. \emph{Stitching} fits a linear map from one model's rows to
+the other's and reports only its gain over a map from input features. \emph{Concept transfer} compares which
+\emph{series} a feature fires on, and \emph{causal effects} are measured on the forecast. Patching never moves
+activations between models. Sparse dictionaries are fit to one model at a time and compared only through series
+identities and forecast effects, so their comparison does not depend on the window representation.
 
-\paragraph{Is averaging fair? A test.} Averaging can discard what distinguishes the tokens inside a window, and
-only models with tokens shorter than a window are averaged. We tested this directly on four disjoint sets of
-v3 development series: a 128-series pilot for development, then three sets of 512 for the main run, confirmation and
-validation. All criteria were fixed before each set was used (\fid{MN-38}).
-\begin{itemize}[itemsep=1pt]
-  \item \textbf{Averaging removes within-window order.} At the first captured layer, 40--71\% of token-level
-    variance in the 16-step and 1-step models lies within windows. Deeper layers fall to 14--33\%, except
-    Chronos-T5-Base, which stays at 70--76\% at every depth. Pooled vectors
-    still decode a window's level and spread, but not its slope or shape. In the first block of Chronos-T5-Base the
-    slope decodes with $R^2=0.13$ from the window mean and 0.96 from finer sub-windows. TimesFM's unpooled token keeps
-    this shape.
-  \item \textbf{This biases cross-model geometry.} On identical rows, averaging leaves window-level CKA unchanged
-    (within 0.05, layer ranking $\rho\ge0.9$) for only 10 of 21 model pairs. The input itself shows the mechanism: its
-    CKA with TimesFM's first layer is 0.15 when windows are averaged, 0.43 with four 8-step means and 0.54 with all 32
-    values.
-  \item \textbf{Concatenation is lossless.} The fix is to concatenate a window's tokens in time order instead of
-    averaging them, $\tilde h^{\mathrm{cat}}_w=[h_j]_{I_j\subseteq W_w}$. This has no free weights. Linear CKA needs
-    only the row Gram matrix, and the Gram matrix of a concatenation is the sum of the per-position Gram matrices,
-    so the long vector is never formed. Concatenating 8-step means is not enough for 1-step models: Chronos-T5-Base's
-    peak CKA with TimesFM keeps rising from 0.53 to 0.62 as the sub-windows shrink to single steps. A rule that adds a
-    within-window trend to the mean restores decoding, but its CKA depends on how the two parts are weighted, so it
-    is not used.
-\end{itemize}
-On a fresh set of 512 series with all captured layers, concatenation raises TimesFM's peak CKA with Chronos-2 from 0.45
-to 0.73, with Chronos-Bolt from 0.39 to 0.65, with Chronos-T5-Base from 0.31 to 0.64 and with Sundial from 0.50 to
-0.64, mostly at TimesFM's first layers. Pairs with Timer fall, by up to 0.10, because the other model's added order has no
-counterpart in Timer's copied token. Across the 21 pairs the two rankings correlate at $\rho=0.80$. Window-level
-similarity in Section~\ref{sec:rq2} is therefore reported with concatenated windows on both corpora, and confirmed on a
-fresh private split. Concatenation is the tool's default (\texttt{alignment.window\_rep: concat}); the mean remains
-available for comparison with earlier runs.
+Two limits remain. The grid is no finer than the coarsest token: within a 96-step span Timer has one vector, so an
+alignment check can attribute an impulse to the right window at most one time in three, and hit rates are normalized by
+this attainable ceiling (\fid{MP-02}). And $L=32$ is a convention: re-pooling to 64 and 96 steps leaves concept transfer
+and the size of geometric similarity almost unchanged but moves the peak layer pair for 12 of 21 model pairs
+(\fid{SH-23}), so peak locations are reported as window-dependent. During extraction an \emph{alignment gate} injects an
+impulse into each window and checks, layer by layer, that the matching window responds most, with the amplitude
+calibrated per checkpoint and context length. Deep layers of Sundial, Time-MoE and Timer lose time localization, which
+the report shows next to window-level claims about those layers.
 
-\paragraph{What the window rule affects.} The window rule matters only where window vectors of two models are compared
-with each other: the window-level similarity measures, CKA and stitching; RSA compares whole-series summaries and is unaffected. Both
-window-level measures were re-measured. For
-stitching, concatenating the source window raises the gain over the input baseline from 0.498 to 0.554 on average over the
-21 peak pairs in both directions, most when TimesFM is predicted (from Chronos-T5-Base 0.307 to 0.788), while the ranking
-of model pairs is kept (Spearman 0.92; \fid{MN-38}). The stitching target stays the window summary, because a 1-step
-model's concatenated window has 24{,}576 coordinates and is underdetermined at the available number of series. The sparse-dictionary results
-(Section~\ref{sec:methods}) do not depend on the rule, for three reasons.
-\begin{itemize}[itemsep=1pt]
-  \item \textbf{No cross-model vector comparison.} An SAE is fit to one model's activations, and its features are
-    compared across models only through quantities defined outside activation space: \emph{which series} a feature fires
-    on, and \emph{how the forecast changes} when it is removed. A series is the same series for every model, and a
-    forecast is a time series in every model's output, so neither quantity depends on how a window is summarized.
-  \item \textbf{Series-level codes are symmetric.} The series a feature fires on are ranked by its series-level code, the
-    mean over all 15 windows. This averages the whole context for every model alike, so it carries none of the
-    within-window asymmetry that biases window-level CKA.
-  \item \textbf{Interventions act on tokens.} Ablations encode and decode each token separately, and the forecast is
-    measured on the model's own tokens, never on windows. An SAE is admitted only if its token-level reconstruction
-    preserves the forecast. This check is needed because a window-level check is unreliable for fine-token models
-    (Chronos-T5-Base $\Delta$MASE $+3.8972$ at window level against $+0.2457$ at token level; \fid{MN-16}).
-\end{itemize}
-Pooling does enter one step of the SAE pipeline: dictionaries are trained on window vectors, so a 1-step model's
-dictionary is learned from averages of 32 tokens and cannot represent within-window shape as a separate feature. This
-limits what a fine-token model's dictionary can express, not how dictionaries are compared, and the token-level admission
-check bounds its cost to the forecast. CONCAT cannot replace it, because a concatenated window of a 1-step model is a
-$32\times768$ vector with position-specific coordinates. Training on individual tokens is the alternative, and we
-tested it on 512 v3 series (3 seeds per arm, matched training steps, held-out series; \fid{MP-11}). For TimesFM, whose
-tokens are windows, the two training sets are identical and no metric changed beyond seed noise. For Chronos-T5-Base,
-token training lowered token-level unexplained variance from 0.2835 to 0.0442 (block 3) and from 0.5469 to 0.1173
-(block 11), cut the forecast change of the patched reconstruction from 1.020 to 0.113 MASE at block 11, and reduced
-dead features. Comparison remained defined in the same way, but the token-trained features of Chronos-Bolt shared
-fewer top series with TimesFM's (Chronos-T5-Base's change was within seed noise), and within-window slope was not more decodable from their series codes. The reported
-runs use window training.
-
-Two further costs of the shared grid are not repaired by any window rule. First, the grid is no finer than the
-coarsest token. Within a 96-step span Timer has one vector, so the three windows it covers are identical, and an
-alignment check can attribute an impulse to the right window at most one time in three; alignment hits are therefore
-normalized by this attainable ceiling (\fid{MP-02}). Analyses of lag structure use each model's matched resolution
-instead of the shared grid. Second, $L=32$ is a convention. Re-pooling the stored windows to 64 and 96 steps leaves
-concept transfer and the size of geometric similarity almost unchanged, but moves the location of the peak layer pair
-for 12 of 21 model pairs (\fid{SH-23}), so we report peak locations as window-dependent.
-
-During extraction an \emph{alignment gate} checks the pooling empirically. It injects an impulse into each window and
-checks, layer by layer, that the matching pooled window responds most, with the impulse amplitude calibrated per
-checkpoint and context length. Hits are compared with the attainable ceiling above. Deep layers of some models lose
-time localization, which the report shows and which qualifies window-level claims about those layers.
-
-\begin{figure}[tb]
+\begin{figure}[!tb]
 \centering
 \begin{tikzpicture}[x=0.36mm,y=5.5mm,font=\scriptsize]
   \foreach \row/\name/\w/\col in {3/TimesFM (32)/32/tfm, 2/{Chronos-2, Sundial, Bolt (16)}/16/ctwo, 1/Chronos-T5 (1)/4/gray, 0/Timer (96)/96/sun}{
@@ -213,8 +120,9 @@ time localization, which the report shows and which qualifies window-level claim
   \draw[decorate,decoration={brace,amplitude=3pt,mirror}] (0,-1.15) -- (288,-1.15) node[midway,below=3pt] {time (first 288 context steps)};
 \end{tikzpicture}
 \caption{Time alignment. Tokens cover measured spans of different widths (Chronos-T5's one-step tokens are drawn
-in groups of four). Equation~\eqref{eq:pooling} pools them onto common 32-step windows: shorter tokens are averaged
-within a window, TimesFM's tokens map one to one, and each Timer token is copied to the three windows it spans.}
+in groups of four). Equation~\eqref{eq:pooling} places them on common 32-step windows: shorter tokens are concatenated
+in time order within a window, TimesFM's tokens map one to one, and each Timer token is copied to the three windows it
+spans.}
 \label{fig:alignment}
 \end{figure}
 
@@ -224,12 +132,11 @@ within a window, TimesFM's tokens map one to one, and each Timer token is copied
 
 An analysis is a pipeline of 19 stages that write typed artifacts (Figure~\ref{fig:stages}). Each stage declares the
 configuration keys it depends on, and these are fingerprinted, so a changed setting invalidates exactly the dependent
-cached artifacts. Three gates record their decisions and the report names them as skip reasons: the \emph{tier} gate,
-the \emph{run-shape} gate, which drops comparison stages when only one model is given, and the \emph{routing} gate for
-models that are not time-localized. Every intervention goes through a single patching primitive, which raises an error
-if the model silently splits a batch.
+cached artifacts. Three gates record their decisions, which the report names as skip reasons: the \emph{tier} gate, the
+\emph{run-shape} gate, which drops comparison stages for a single model, and the \emph{routing} gate. Every intervention
+goes through a single patching primitive, which raises an error if the model silently splits a batch.
 
-\begin{figure}[tb]
+\begin{figure}[!tb]
 \centering
 \begin{tikzpicture}[
   node distance=2.2mm and 2.2mm,
@@ -279,21 +186,11 @@ if the model silently splits a batch.
 \label{fig:stages}
 \end{figure}
 
-The deliverable is one self-contained HTML file, designed so that a reader without interpretability training can
-follow it while an expert can audit every number (Figure~\ref{fig:report}). Its sections pose plain questions, such as
-``Is the comparison fair?'' or ``What causally drives the forecast?''. Each stage opens with a card stating its
-question, its method, what good and bad results look like and what it cannot show, and every figure carries a caption
-and an expandable explanation. The summary scorecard is computed from the artifacts by printed rules, with no model
-names hard-coded: each row shows a value, the reference it is compared with (a null, floor, ceiling or baseline) and the
-rule that yields the verdict. Every claim is a typed record with its evidence class, a plain-language sentence and a
-generated caveat. Skipped stages show the gate's reason, failed sections render visibly, and a multiplicity ledger flags
-correction families that cannot reach significance.
+The deliverable is one self-contained HTML file, written so that a reader without interpretability training can follow
+it while an expert can audit every number; the seven-model example report is in \repodir{examples/panel7_v2}. Each stage opens with a card stating its question,
+method, what good and bad results look like and what it cannot show, and every figure carries an expandable explanation.
+The summary scorecard is computed from the artifacts by printed rules with no model names hard-coded: each row shows a
+value, the reference it is compared with (a null, floor, ceiling or baseline) and the rule that yields the verdict. Every
+claim is a typed record with its evidence class and a generated caveat.
 
-\begin{figure}[tb]
-\centering
-\includegraphics[width=0.42\textwidth]{figures/report_l3_crop.png}
-\caption{Excerpt of the generated report (perturbation section of the seven-model example report,
-\repodir{examples/panel7_v2}). The stage card states the question, method, how to read good and bad results and the
-limitation, above the per-model corruption-sensitivity fingerprints.}
-\label{fig:report}
-\end{figure}
+
