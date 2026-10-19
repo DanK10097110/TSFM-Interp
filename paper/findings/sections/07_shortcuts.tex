@@ -1,0 +1,44 @@
+\section{Finding 3: Shortcuts from Language-Model Interpretability Mislead}
+\label{sec:shortcuts}
+
+Several practices that are standard or natural when interpreting language models give wrong answers on TSFMs. Each
+of the following was caught by a control and would otherwise have produced a confident, publishable result.
+
+\paragraph{Averaging tokens hides shared geometry.} Section~\ref{sec:geometry} showed that the window average, the usual
+way to compare models with different token widths, understates TimesFM's held-out similarity to four fine-token models
+by 0.30--0.43 CKA. On mean-pooled representations, TimesFM/Chronos-2 is the 15th most similar of 21 pairs by CKA,
+although it is the most similar pair by error agreement (0.948); with concatenated windows it rises to 9th on v2 and 7th
+on v3. Conclusions about which TSFMs are alike therefore depend on a pooling choice that is usually not reported.
+
+\paragraph{Activation prominence does not identify causal importance.} Ranking dictionary features by how strongly or
+how often they fire, the default entry point of SAE analyses, selects mostly inert features: of the 927 most prominent
+features of the v2 private atlas, 0.835 have no causal effect on the forecast (one-sided lower bound 0.817; dev 0.810;
+$p_{\text{Holm}}=0.0005$; \fid{MN-14}), and on v3 the share is 0.919 of 861. Ranking by measured effect works: zeroing a
+layer's five attribution-ranked atoms produces a median 0.74 share of the forecast change the dictionary can express,
+more than activation-matched random sets of five atoms on 30 of 31 targets (\fid{D-42C}).
+
+\paragraph{Attention mass is not causal importance.} The attention mass a head places on seasonal lags is uncorrelated
+with the seasonal power lost when the head is ablated ($\rho=0.026$ in TimesFM and $-0.118$ in Chronos-T5-Base;
+\fid{CA-04}), extending \citet{jain2019attention} to forecasting. Heads that look periodic are not the heads that carry
+periodicity.
+
+\paragraph{Correlation with a ground-truth factor is not control of it.} With exact generative ground truth, 154 of
+10{,}240 TimesFM features and 115 of 6{,}144 Chronos-T5-Base features correlate with a generative field beyond a
+permutation null, the strongest with intermittency ($\rho=0.881$; \fid{MP-06}). The correspondence is not specific:
+moving the generator parameter along a dose ladder moves the matched feature no more than random features of matched
+activation (0 of 151 registered tests survive correction; \fid{MN-17}). Steering the feature best matched to seasonal amplitude moves the forecast's seasonality in the
+predicted direction in TimesFM and in the opposite direction in Chronos-T5-Base, in two independently trained
+dictionaries each (\fid{CA-05}, exploratory). A feature that ``is'' seasonality by correlation can act against it.
+
+\paragraph{The null decides the count.} Whether a feature is causal is decided against a random intervention, and the
+choice of random intervention changes the answer severalfold. A null that removes a uniform,
+batch-averaged amount rather than each token's own amount inflates the number of causal features 2.7-fold (110 to 293)
+and fails the planted-forecaster test on every seed (Section~\ref{sec:knownanswer}). Between two nulls that both pass,
+directions drawn isotropically and directions drawn from the activation distribution, the excess over chance falls from
+3.55-fold to 1.29-fold (Section~\ref{sec:distributed}).
+
+\paragraph{Similarity metrics do not agree on which models are alike.} Seven pairwise similarity metrics, from geometry
+to error agreement to concept transfer, rank the 21 model pairs inconsistently (Kendall's $W=0.25$, $p=0.0095$;
+\fid{SH-05}, \fid{SH-06}), and geometry does not track lineage: two untrained Chronos-T5 models are more similar (CKA 0.878) than the trained,
+related Chronos-T5-Small and Base (0.734; \fid{MN-01}). A single ``model similarity'' number would hide these disagreements, so we report each metric against
+its own null and never pool them.

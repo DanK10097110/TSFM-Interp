@@ -1,0 +1,26 @@
+\section{Related Work}
+\label{sec:related}
+
+\paragraph{Interpreting TSFMs.} \citet{wilinski2025exploring} study representational redundancy and concept steering in
+TSFMs, and four recent studies train sparse autoencoders (SAEs) on a single TSFM
+\citep{mishra2026dissecting,oublal2026timesae,divo2026zeitgeist,yildirim2026superposition}; \citet{kalnare2025mechts}
+apply patching and SAEs to time-series classifiers, and saliency methods for time-series classifiers are unreliable
+across architectures \citep{ismail2020benchmarking}. These works examine one model at a time and report features on
+the data they were found on. We compare seven architectures on a common time axis, separate agreement on inputs from
+agreement on effects, and test claims on held-out data. Our negative findings on activation prominence and on
+single-feature specificity bear directly on the single-model SAE studies.
+
+\paragraph{Comparing representations.} Representational similarity
+\citep{raghu2017svcca,morcos2018pwcca,kornblith2019cka,kriegeskorte2008rsa} and model stitching
+\citep{lenc2015equivariance,bansal2021stitching} underlie the convergence hypothesis for vision and language networks
+\citep{li2016convergent,huh2024platonic}. We use them only against shuffled-series nulls and report stitching as a gain
+over an input-feature baseline. Crosscoders \citep{lindsey2024crosscoders} learn one dictionary across models; we instead
+compare independently trained dictionaries through the series they select and their effects on the forecast.
+
+\paragraph{Validity of interpretability methods.} Probes need control tasks \citep{hewitt2019control,belinkov2022probing};
+activation patching is sensitive to metric and corruption \citep{zhang2024patching,heimersheim2024patching}; subspace
+interventions can create illusory mechanisms \citep{makelov2024illusion}; attention weights are not explanations
+\citep{jain2019attention}; and SAE features vary across seeds \citep{paulo2025seeds}. Causal abstraction
+\citep{geiger2021causal} formalizes when an intervention supports a mechanistic claim. We address these concerns
+empirically with planted known answers, and borrow pre-registration \citep{nosek2018preregistration} and protection
+against adaptive holdout reuse \citep{dwork2015reusable,gelman2014garden} from empirical science.

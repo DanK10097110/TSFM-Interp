@@ -1,0 +1,130 @@
+\section{How Models Are Compared}
+\label{sec:methods}
+
+\subsection{A common time axis}
+\label{sec:alignment}
+
+A 480-step context is 480 tokens in Chronos-T5 and Time-MoE, 30 in Chronos-2, Sundial and Chronos-Bolt, 15 in TimesFM
+and 5 in Timer, so token positions cannot be compared across models. We measure each token's time span $I_j$ by
+injecting an impulse at every time step and accepting a span only if it passes contrast and contiguity gates (spans of
+all six hand-written adapters are recovered exactly from measurement; \fid{MP-01}). Every model's tokens are then placed
+on one grid of windows $W_w=[wL,(w+1)L)$, $L=32$ steps (Figure~\ref{fig:alignment}), and a window is represented by its
+tokens concatenated in time order,
+\begin{equation}
+  \tilde h_w = \big[\,h_j\,\big]_{I_j\subseteq W_w}.
+  \label{eq:pooling}
+\end{equation}
+A token as long as a window maps to it one to one, and Timer's 96-step token is copied to the three windows it spans.
+Concatenation loses nothing, and linear CKA needs only the Gram matrix $K=\sum_p X_pX_p^{\top}$ summed over token
+positions, so the long vector is never formed. Alignment fixes the \emph{rows} of two models' activations, not their
+coordinates, so every cross-model measure is defined on shared rows: geometry compares how rows relate within each model,
+concept transfer compares which series a feature selects, and causal effects are compared on the forecast. Activations
+are never moved between models. During extraction an alignment gate checks, layer by layer, that an impulse in a window
+is answered most strongly by that window.
+
+\begin{figure}[!tb]
+\centering
+\begin{tikzpicture}[x=0.36mm,y=5.5mm,font=\scriptsize]
+  \foreach \row/\name/\w/\col in {3/TimesFM (32)/32/tfm, 2/{Chronos-2, Sundial, Bolt (16)}/16/ctwo, 1/Chronos-T5 (1)/4/gray, 0/Timer (96)/96/sun}{
+    \node[anchor=east] at (-4,\row) {\name};
+    \pgfmathtruncatemacro{\n}{288/\w-1}
+    \foreach \k in {0,...,\n}{
+      \draw[fill=\col!25, draw=\col!80!black, line width=0.3pt] (\k*\w,\row-0.32) rectangle ({(\k+1)*\w},\row+0.32);
+    }
+  }
+  \foreach \k in {0,...,8}{
+    \draw[thick, accent] (\k*32,-1.0) rectangle ({(\k+1)*32},-0.45);
+    \node[font=\tiny] at (\k*32+16,-0.72) {$W_{\k}$};
+  }
+  \node[anchor=east] at (-4,-0.72) {common windows ($L{=}32$)};
+  \draw[-{Stealth}, accent] (80,-0.3) -- (80,-0.02);
+  \draw[decorate,decoration={brace,amplitude=3pt,mirror}] (0,-1.15) -- (288,-1.15) node[midway,below=3pt] {time (first 288 context steps)};
+\end{tikzpicture}
+\caption{Time alignment. Tokens cover measured spans of different widths (Chronos-T5's one-step tokens are drawn in
+groups of four). Equation~\eqref{eq:pooling} places them on common 32-step windows: shorter tokens are concatenated in
+time order, TimesFM's tokens map one to one, and each Timer token is copied to the three windows it spans.}
+\label{fig:alignment}
+\end{figure}
+
+\subsection{Geometry}
+
+For aligned, centered window representations $A$ and $B$ over the same series, linear CKA \citep{kornblith2019cka},
+$\mathrm{CKA}(A,B)=\|B^{\top}A\|_F^2/(\|A^{\top}A\|_F\|B^{\top}B\|_F)$, is computed for every layer pair of every model
+pair and read against a null that permutes whole series (1{,}000 permutations). Ridge stitching
+\citep{bansal2021stitching} is reported only as its gain over a map from input features, since much of any layer is
+linearly predictable from the input alone.
+
+\subsection{Causal features}
+\label{sec:causal}
+
+\paragraph{Dictionaries and ablation.} Each target layer $\ell$ receives a TopK sparse autoencoder
+\citep{makhzani2013ksparse,gao2025topk}, $z(h)=\operatorname{TopK}(W_e(h-b_d)+b_e)$, $\hat h=W_dz(h)+b_d$, with three
+replicate seeds. Feature $i$ is tested on the $k$ series on which it fires most strongly by comparing the forecast under
+the reconstruction with $z_i=0$, $\hat h_{-i}$, against the forecast under the full reconstruction,
+\begin{equation}
+  \Delta_i^{(c)}(x) = g_c\big(f(x;h^{(\ell)}\!\leftarrow\!\hat h_{-i})\big) - g_c\big(f(x;h^{(\ell)}\!\leftarrow\!\hat h)\big),
+  \label{eq:ablation}
+\end{equation}
+on nine forecast \emph{channels} $g_c$: trend, seasonal strength, spectral centroid, level, dispersion, near- and
+far-horizon shape distance, MASE and flatness. Using the reconstruction in both arms keeps the dictionary's own error
+out of the comparison. Before any feature is scored, a reach probe requires that patching a layer into itself changes
+the forecast by exactly 0.0 and that patching another layer changes it, and sampled models are seeded identically in
+compared calls.
+
+\paragraph{Random-direction nulls.} A feature counts as causal on channel $c$ only if its mean $|\Delta_i^{(c)}|$ exceeds
+the 95th percentile of removing the \emph{same amount} of activation, token by token, along 16 random directions on the
+same series. Two direction distributions are used. The \emph{isotropic} null (v2) draws directions uniformly in the
+dictionary's code space and decodes them. The \emph{covariance-matched} null (v3) draws them from a Gaussian with the
+layer's own activation covariance, so they lie in the subspace the model actually uses. A feature's effect vector
+$v_i^{(c)}$ is its signed mean effect in units of its null's 95th percentile. Because a mean is compared with a
+percentile of single rows, the chance rate of clearing is estimated per cell by scoring each null draw against the
+others.
+
+\paragraph{From features to concepts.} Within a layer, causal features are clustered by effect vector ($k$-means,
+silhouette, at least three members per cluster). Across models, the \emph{atlas} pools all causal features and cuts a
+complete-linkage dendrogram at cosine 0.9, so an atlas concept is a tight causal-effect profile; coarser \emph{families}
+(average linkage at cosine 0.5) serve as a reading vocabulary.
+
+\subsection{Two kinds of sharing}
+\label{sec:sharing}
+
+Whether a concept is shared between two models is two questions. \emph{Same inputs}: concept transfer asks whether some
+feature in another model separates a concept's top-$k$ series from the rest (AUC), against stratum-matched random series
+sets; it is run in both directions with Benjamini--Hochberg control \citep{benjamini1995fdr}. \emph{Same effect on the
+same inputs}: for every reciprocal transfer, both sides are ablated on the same series; each must clear its own null,
+and their level concordance and shape cosine must exceed floors obtained by ablating random feature sets matched to each
+side's activation. A statistic below both floors' 5th percentile means the two \emph{act differently}; merely failing
+to exceed the 95th percentile is not evidence of a difference.
+
+\subsection{Validation on known answers}
+\label{sec:knownanswer}
+
+A null can be wrong without raising any error, so each instrument is first run on a forecaster with planted concepts.
+One block of this forecaster writes known directions into the residual stream on series with a given property, and the
+head applies a known effect on level, trend, seasonality or dispersion. Decoys include input-only directions with no
+effect, sub-null directions with a weak effect and a control layer with none; for cross-model tests, two architectures
+with rotated residual bases share planted concepts. Pass criteria were fixed in advance and evaluated on five
+construction seeds (Table~\ref{tab:knownanswer}). Both nulls used in the study pass. The test can fail a method: a
+plausible null that removes one batch-averaged amount instead of each token's own profile fails on every seed and, on a
+four-model development run, inflates the number of causal features from 110 to 293 (\fid{MN-29}). The
+same-effect test never calls a decoy ``same'' but rarely detects a concept two architectures truly share
+(\fid{MN-30}), so its positive verdicts are trustworthy and its silence is uninformative.
+
+\begin{table}[!tb]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabularx}{\textwidth}{@{}>{\raggedright}p{4.4cm}>{\raggedright}X>{\raggedright}p{3.0cm}c@{}}
+\toprule
+Instrument & Result on the planted forecaster & Pass criterion & Verdict \\
+\midrule
+Isotropic null (v2) & false-positive rate $\le$0.003, sensitivity 0.70--1.00, all 5 seeds & FPR $\le$0.10, sens.\ $\ge$0.5 & pass \\
+Covariance-matched null (v3) & sensitivity 0.916, false positives in 5 of 2{,}948 control cells & FPR $\le$0.10, sens.\ $\ge$0.5 & pass \\
+Batch-averaged null (reference) & false-positive rate 0.168--0.248 on every seed & FPR $\le$0.10, sens.\ $\ge$0.5 & fail \\
+Same effect on same inputs & false ``same'' 0 of 9 decoys; detects a shared one-direction concept in 0.4 of seeds & -- & specific, insensitive \\
+\bottomrule
+\end{tabularx}
+\caption{Known-answer tests of the causal instruments, with criteria fixed before each test (\fid{MN-29},
+\fid{MN-30}).}
+\label{tab:knownanswer}
+\end{table}

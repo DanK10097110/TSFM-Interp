@@ -4,6 +4,10 @@ Two versions: the full JMLR paper (`main.tex`, a 32-page body plus appendices an
 JMLR sets no page limit for regular papers)
 and a short JMLR MLOSS-track software paper (`mloss/main.tex`, under 4 pages excluding references,
 sharing `jmlr2e.sty` and `references.bib`; build it from inside `mloss/` with the same commands).
+A third, findings-first version (`findings/main.tex`, ~15-page body, 20 pages in total) reorganizes the same results
+around three takeaways (shared inputs and geometry; model-specific, distributed mechanisms; interpretability shortcuts
+that mislead on TSFMs) and moves the system description to an appendix. It shares `jmlr2e.sty`, `references.bib` and
+`figures/`; build it from inside `findings/`.
 
 `main.tex` + `sections/*.tex` + `references.bib`, using the official JMLR style
 (`jmlr2e.sty`, from https://github.com/JmlrOrg/jmlr-style-file). Build:

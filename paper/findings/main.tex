@@ -1,0 +1,116 @@
+\documentclass[twoside,11pt]{article}
+
+% Findings-first companion to ../main.tex (the system paper). Shares ../jmlr2e.sty,
+% ../references.bib and ../figures. Build from inside paper/findings/:
+%   pdflatex main && bibtex main && pdflatex main && pdflatex main
+\usepackage[abbrvbib,preprint]{../jmlr2e}
+
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,fit,backgrounds,calc,decorations.pathreplacing}
+\usepackage{lastpage}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{pifont}
+\usepackage{placeins}
+
+\graphicspath{{../figures/}}
+\setlist{itemsep=2pt,topsep=3pt}
+\renewcommand{\topfraction}{0.9}
+\renewcommand{\bottomfraction}{0.8}
+\renewcommand{\textfraction}{0.07}
+\renewcommand{\floatpagefraction}{0.85}
+\setcounter{topnumber}{3}
+\setcounter{totalnumber}{5}
+\setlength{\emergencystretch}{3em}
+
+\definecolor{tfm}{HTML}{2f6f8f}
+\definecolor{ctwo}{HTML}{9b4f7f}
+\definecolor{sun}{HTML}{3d7f5a}
+\definecolor{bolt}{HTML}{8a6a3a}
+\definecolor{timer}{HTML}{d08a2e}
+\definecolor{tmoe}{HTML}{b5473f}
+\definecolor{tt5}{HTML}{6a6fb0}
+\definecolor{accent}{HTML}{c0602a}
+\definecolor{soft}{HTML}{eef2f5}
+
+\newcommand{\repourl}{https://github.com/DanK10097110/TSFM-Interp}
+\newcommand{\repo}[1]{\href{\repourl/blob/main/#1}{\nolinkurl{#1}}}
+\newcommand{\repodir}[1]{\href{\repourl/tree/main/#1}{\nolinkurl{#1}}}
+\newcommand{\fid}[1]{\href{\repourl/blob/main/FINDINGS.md}{\textsf{#1}}}
+\newcommand{\tool}{\textsc{TSFM-Lens}}
+\newcommand{\cmark}{\ding{51}}
+\newcommand{\xmark}{\ding{55}}
+\newcommand{\ev}[1]{\textsc{#1}}
+
+\jmlrheading{}{2026}{1-\pageref{LastPage}}{}{}{}{Daniel Kushnir and Hao Wang}
+\ShortHeadings{What Time-Series Foundation Models Share}{Kushnir and Wang}
+\firstpageno{1}
+
+\begin{document}
+
+\title{Same Inputs, Different Mechanisms:\\ What Seven Time-Series Foundation Models Share}
+
+\author{\name Daniel Kushnir \email kushnir.daniel05@gmail.com \\
+       \name Hao Wang (corresponding author) \email hoguewang@gmail.com \\
+       \addr Rutgers University}
+
+\editor{}
+
+\maketitle
+
+\begin{abstract}%
+Time-series foundation models (TSFMs) differ sharply in architecture: decoder-only stacks over 32-step patches,
+encoder--decoders over quantized single steps, encoders with cross-series attention, decoders with sampled heads. Do they
+learn the same things? We compare seven TSFMs on a common, empirically measured time axis, with every causal instrument
+validated on a forecaster with planted concepts and every registered claim tested once on a sealed held-out split, on
+two independent corpora. Three conclusions emerge. \emph{First, the models agree on what in a series matters.} All 21
+model pairs share representational geometry above a shuffled-series null on fresh data, and features in architecturally
+unrelated models select the same series for a concept: all registered transfer claims confirm on both private splits
+and on 800 raw real-world windows. \emph{Second, they implement the response differently.} Causal features
+act mainly on forecast level and seasonality, and these broad effect types recur in all seven models, but fine-grained
+concepts are organized by model (none spans more than three of seven), forecast-relevant information is spread over many
+directions (single features exceed on-manifold random directions only 1.29-fold), and the same effect on the same series
+is detected only within the Chronos family. \emph{Third, interpretability shortcuts imported from language models mislead
+on TSFMs.} Averaging a window's tokens hides 0.30--0.43 of TimesFM's held-out similarity to fine-token models;
+83.5\% of the most prominent dictionary features have no held-out causal effect; attention mass on seasonal lags does
+not predict which heads carry seasonality; and a plausible null inflates the count of causal features 2.7-fold. Code,
+benchmark and every result with its reproduction command are public.
+\end{abstract}
+
+\begin{keywords}
+  time-series foundation models, mechanistic interpretability, representational similarity, sparse autoencoders,
+  causal intervention
+\end{keywords}
+
+\input{sections/01_introduction}
+\input{sections/02_related}
+\input{sections/03_setup}
+\input{sections/04_methods}
+\input{sections/05_shared}
+\input{sections/06_mechanisms}
+\input{sections/07_shortcuts}
+\input{sections/08_depth}
+\FloatBarrier
+\input{sections/09_discussion}
+
+\acks{Computational resources were provided by the second author's lab at Rutgers University. This work received no
+external funding, and the authors declare no competing interests. Use of AI tools: Claude (Anthropic) wrote most of the
+repository's code and tests, ran the experiments and helped draft and edit the manuscript, under the authors' direction.
+The research questions, ideas and general design choices are the authors', who reviewed the implementation details Claude
+proposed, checked every reported result and take full responsibility for the content.}
+
+\appendix
+\input{sections/appendix}
+
+{\footnotesize\setlength{\bibsep}{0pt}\bibliography{../references}}
+
+\end{document}

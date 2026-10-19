@@ -1,0 +1,108 @@
+\section{The Analysis System}
+\label{app:system}
+
+All analyses are produced by \tool{}, which consists of two separately installable packages. \texttt{tsfm\_benchmark}
+generates, leakage-audits, seals and validates corpora; \texttt{tsfm\_lens} loads checkpoints through adapters, runs a
+gated pipeline of 19 analysis stages and renders one self-contained HTML report (Figure~\ref{fig:overview}). A zero-code
+adapter for Hugging Face checkpoints discovers layers and measures token spans, and loads two of the seven models here
+(Timer and Time-MoE). Stages a model cannot support are skipped with a reason rendered in the report; every intervention
+goes through one patching primitive, which raises if the model silently splits a batch; and the \texttt{confirm} stage
+refuses mismatched registry hashes, requires the private seal to verify and refuses to overwrite its own artifact. The
+system and its design are described in a companion software paper; usage is documented in the repository.
+
+\begin{figure}[!tb]
+\centering
+\input{../figures/overview.tex}
+\caption{System overview. \texttt{tsfm\_benchmark} produces leakage-audited, sealed corpora with exact ground truth;
+\texttt{tsfm\_lens} turns a configuration naming checkpoints into one report. Dev findings are exploratory; the private
+split is opened once, by \texttt{confirm}, for claims registered in advance.}
+\label{fig:overview}
+\end{figure}
+
+\section{Model Behavior}
+\label{app:behavior}
+
+\begin{table}[!tb]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}lccccc@{}}
+\toprule
+Model & median MASE & 80\% coverage & scale resid.\ (s.d.) & missing value & latency (ms) \\
+\midrule
+\textcolor{ctwo}{Chronos-2}    & \textbf{1.2002} & 0.757 & 0.0102 & handled & 23 \\
+\textcolor{tfm}{TimesFM}       & 1.2560 & \textbf{0.779} & $1.6\times10^{-6}$ & propagates & 39 \\
+\textcolor{sun}{Sundial}       & 1.4131 & 0.360 & 0.0310 & propagates & 62 \\
+\textcolor{tt5}{Chronos-T5-Base} & 1.4231 & 0.436 & $2.7\times10^{-7}$ & handled & 975 \\
+\textcolor{bolt}{Chronos-Bolt} & 1.5487 & 0.732 & 0.0101 & handled & 15 \\
+\textcolor{timer}{Timer}       & 1.9306 & -- & 0.0262 & propagates & 5 \\
+\textcolor{tmoe}{Time-MoE}     & 2.8642 & -- & 0.0368 & propagates & 103 \\
+\midrule
+naive / seasonal naive & 2.7593 / 1.9819 & & & & \\
+\bottomrule
+\end{tabular}
+\caption{Behavior on the v2 dev split (965 series). Scale residual: error of $f(c\,x)/c$ against $f(x)$ in context
+standard deviations, $c=0.001$. Missing value: whether an injected NaN is handled or propagates silently. Latency: median
+time to forecast a batch of 8 series. Timer and Time-MoE output point forecasts only.}
+\label{tab:character}
+\end{table}
+
+Table~\ref{tab:character} summarizes behavior on the v2 dev split. Five models beat the seasonal-naive forecast on
+76.5--84.5\% of series, Timer on 69.5\% and Time-MoE on only 37.8\%. The nominal 80\% intervals of Sundial and
+Chronos-T5-Base cover only 36\% and 44\% of outcomes, and four models propagate an injected missing value silently. On
+the private split, Chronos-2 is more accurate than TimesFM overall, with a smaller effect than on \texttt{mixture}
+($-0.070$ [$-0.129$, $-0.008$], $p=0.025$, $n=971$). Sampled models (Sundial, Chronos-T5) are seeded identically in every
+compared pair of calls: unseeded, back-to-back Sundial calls differ by up to 0.50 MASE (\fid{PM-09}).
+
+\section{Statistical Details and Validity}
+\label{app:stats}
+
+\paragraph{Paired series bootstrap.} With per-series differences $d_s=m_{a,s}-m_{b,s}$ and $B=n_{\text{boot}}=5000$
+resampled means $\bar d^*_b$, the interval is the percentile interval and
+$p=\min\!\big(1,\max(\tfrac1B,\,2\min\{\tfrac1B\#(\bar d^*_b\le 0),\tfrac1B\#(\bar d^*_b\ge 0)\})\big)$
+\citep{phipson2010permutation}. Window-level statistics (CKA, fingerprints) resample series with all their windows
+\citep{cameron2008cluster}.
+
+\paragraph{Multiplicity.} Confirmatory families use Holm, $\tilde p_{(i)}=\max_{j\le i}\min(1,(m-j+1)p_{(j)})$
+\citep{holm1979}; with $p\ge 1/B$ the smallest attainable value is $m/B$, which is checked per family. Atlas transfer
+uses Benjamini--Hochberg \citep{benjamini1995fdr}. The v2 run has 123 test families with 4{,}238 comparisons; the
+8{,}705 feature-channel cells of the ablation battery are judged by their count against the empirical chance rate,
+which ranged from 0.3\% to 4\% per target.
+
+\paragraph{Ablation nulls.} For feature $i$ with rows $R_i$ and $J=16$ unit directions $u_j$, the null removes at every
+token $t$ the amount $|z_i(t)|\,\|w_i\|\,u_j$. In the isotropic null $u_j$ is $W_d^{\top}r_j$ normalized, with $r_j$ a
+random unit code; in the covariance-matched null $u_j\propto\sum_t g_{jt}(x_t-\bar x)$ with $g_{jt}\sim\mathcal{N}(0,1)$
+over the chunk's clean token activations $x_t$. Channel $c$ clears if
+$\frac{1}{|R_i|}\sum_{r\in R_i}|\Delta^{(c)}_{i,r}| > q_{0.95}\{|\Delta^{(c)}_{u_j,r}|: j\le J, r\in R_i\}$.
+
+\paragraph{Transfer.} The statistic is $\max_f \mathrm{AUC}(a_f;S)$ over destination features; its null recomputes the
+same maximum on stratum-matched random $k$-sets, so the feature search is inside the null. A registered claim uses
+$\max(p,p_{\text{rev}})$ over the two directions, Holm across claims.
+
+\paragraph{Power.} Before the private result is read, each claim's minimum detectable effect is simulated by shifting
+recentred per-series differences and re-testing with the same bootstrap (for example $\Delta$MASE 0.133 at $n=290$, 80\%
+power, against an observed 0.209). The 20 transfer claims all reach the Holm floor. Single-feature causal claims are
+power-limited: each feature is tested on its 8 strongest-firing series, and 19 of the 21 v2 claims that did not confirm
+had not reached the dev $p$ floor.
+
+\paragraph{Benchmark and dictionaries.} Every v2 sample passed the banded-DTW leakage gate (threshold 0.35; closest
+accepted sample 0.352), and 6 of 937{,}015 dev--private pairs are near-duplicates. Each target has three replicate
+dictionaries, and 9 of 11 atlas concepts are stable across them; held-out fraction of variance explained has medians of
+0.647 (TimesFM) to 0.878 (Chronos-T5-Base), and fidelity does not predict causal clarity across v3 targets ($\rho=-0.326$,
+$n=49$; \fid{MN-34}). Retraining the v3 dictionaries from the recorded configuration reproduced all 50 exactly and the
+same 91 causal features.
+
+\paragraph{Integrity of the confirmation.} The v2 registry (128 hypotheses, sha256 recorded) was frozen before the
+private epoch was generated; the epoch shares no sample hash with any of seven earlier splits, and \texttt{confirm} ran
+once. Registered claims are cuts from larger dev pools (transfer 20 of 1{,}124 candidates, causal 32 of 113), which is
+legitimate because the private split referees them. The v3 registry (111 hypotheses) and the window-geometry claims were
+frozen in the same way before their epochs were extracted.
+
+\section{Reproducibility}
+\label{app:repro}
+
+\repodir{examples/panel7_v2} holds the configuration, the report and every stage's JSON and parquet artifacts plus the
+confirmation; \texttt{paper/figures/make\_figures.py} regenerates all data figures. From \texttt{tsfm\_lens/},
+\texttt{python run.py -{}-config configs/panel7\_v2.yaml} reproduces the run. Environment: Python 3.12.13, numpy 2.1.0,
+PyTorch 2.12.0 (CUDA 12.9), transformers 4.57.6, timesfm 2.0.2, chronos-forecasting 2.3.1, zarr 2.18.7, scikit-learn
+1.7.2. The v2 run took 21.1 hours on one RTX A5000.
