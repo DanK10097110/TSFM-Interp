@@ -1,35 +1,35 @@
 \section{Depth and Practical Value}
 \label{sec:depth}
 
-\paragraph{Where in depth models react replicates.} For each of nine input corruptions, a model's sensitivity
-\emph{fingerprint} is the relative change of its residual stream at each layer; two models are compared by the rank
-correlation of their fingerprints on a shared relative-depth axis (never by moving activations between them). For
+\paragraph{Depth profiles.} For each of nine input corruptions, a model's sensitivity
+fingerprint is the relative change of its residual stream at each layer; two models are compared by the rank
+correlation of their fingerprints on a shared relative-depth axis; activations are never moved between models. For
 TimesFM and Chronos-2 the agreement replicates on the v2 private split for 6 of 9 corruptions (overall $\rho=0.524$
 [0.504, 0.544]; Figure~\ref{fig:heldout}a) and for 4 of 9 on v3, with 8 of 9 keeping their sign. The two models react at
 matching depths to detrending (private $\rho=0.368$) and dropout (0.510), and at opposite depths to noise ($-0.743$),
 spikes ($-0.785$) and warps ($-0.651$). Frequency shift (0.381 against 0.216 on dev) and smoothing ($-0.581$ against
-$-0.418$) miss the registered rule only because they are stronger on private data. Level shift is the one corruption
-whose agreement is unstable, changing sign between dev and private on both corpora (\fid{CA-01}).
+$-0.418$) fail the registered rule because the agreement is stronger on private data than on dev. Only for level shift
+is the agreement unstable; it changes sign between dev and private on both corpora (\fid{CA-01}).
 
-\paragraph{The forecast is assembled in the most recent window.} Patching clean activations window by window into a
-corrupted TimesFM pass shows where the forecast is restored: in the window just before the horizon, increasingly with
+\paragraph{Window-level restoration.} Patching clean activations window by window into a
+corrupted TimesFM pass shows that the forecast is restored mainly in the window just before the horizon, increasingly so with
 depth (from 0.427 of the damage undone at layer 0 to 0.612 at layer 8 and 0.631 at layer 16 for noise), while restoration
-in the first window falls from $-0.191$ to 0.000 (320 series; \fid{DE-01}). Whole-layer patching averages this recency
-effect away.
+in the first window falls from $-0.191$ to 0.000 (320 series; \fid{DE-01}). This recency effect is
+not visible when whole layers are patched.
 
-\paragraph{Depth is comparable only after accounting for what is observed.} The captured blocks account for 13.9\%
+\paragraph{Comparability of depth.} The captured blocks account for 13.9\%
 (Chronos-T5-Base, encoder only) to 99.8\% (Timer) of a forecast's FLOPs (\fid{DE-05}), and on a whole-stack depth axis
-Chronos-T5's last encoder block sits at depth 0.478 (\fid{DE-04}). Which layers look most important also depends almost
-entirely on the selection criterion (\fid{DE-08}). We therefore compare depth \emph{profiles} across models rather than
+Chronos-T5's last encoder block sits at depth 0.478 (\fid{DE-04}). Which layers appear most important also depends
+strongly on the selection criterion (\fid{DE-08}). We therefore compare depth profiles across models rather than
 the locations of single layers.
 
-\paragraph{Internals help predict failure only for weak models.} For each model we predict a series' log MASE from
+\paragraph{Failure prediction.} For each model we predict a series' log MASE from
 free, output-only features (quantile width, forecast flatness, catch22 features of the context;
 \citealp{lubba2019catch22}), add dictionary-family activations, and measure the gain, cross-fitted with a series
 bootstrap. The free baseline is strong (Spearman 0.76--0.85), and for five models the gain's interval includes zero. The
 gain is positive for the two least accurate models, Timer (+0.030 [0.019, 0.043]) and Time-MoE (+0.012 [0.005,
 0.019]), and both confirm on the private split (Timer 0.0446 [0.0292, 0.0605], $p_{\text{Holm}}=0.002$; Time-MoE 0.011
-[0.0032, 0.0194], $p_{\text{Holm}}=0.012$) and again on v3 (\fid{MN-28}). Internals do not help choose a model: routing
+[0.0032, 0.0194], $p_{\text{Holm}}=0.012$) and again on v3 (\fid{MN-28}). Internals do not help in choosing a model. Routing
 each series to the model with the lowest predicted MASE gives 1.964 [1.837, 2.093] with internals against 1.948 [1.814,
-2.070] without, both worse than always using Chronos-2 (1.856). For the accurate models, a model's own output already
-says as much about its likely failure as its internals do.
+2.070] without, both worse than always using Chronos-2 (1.856). For the more accurate models, the
+model's output carries as much information about its errors as its internal features do.

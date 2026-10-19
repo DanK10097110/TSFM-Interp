@@ -1,27 +1,26 @@
 \section{Discussion}
 \label{sec:discussion}
 
-\paragraph{Convergence on inputs, not on mechanisms.} Seven forecasters with different tokenizers, depths and training
-objectives single out the same series for a concept, share whole-layer geometry, and contain features with the same
-broad effects: raising or lowering the forecast's level and damping or amplifying its seasonality. At the grain of
-individual causal effects the convergence stops. Fine concepts are organized by model, the same capability can be one
-head or a five-head circuit, and the same effect on the same series is detected only within one model family. One
-reading consistent with all of this is that the models converge on \emph{what} in a series is predictive, which the
-data dictate, while the \emph{implementation} of the response is left to each architecture. This is a weaker form of
-convergence than the shared representations argued for in vision and language \citep{li2016convergent,huh2024platonic},
-and our instruments locate where it stops: agreement on inputs is measurable and replicates, whereas agreement on effects
-across architecture families is below what single-feature ablation resolves at these effect sizes.
+The seven models differ in tokenization, depth and training objective, yet they select the same series for a concept,
+share whole-layer geometry, and contain features with similar broad effects on the level and seasonality of the forecast.
+The similarity largely ends at the level of individual causal effects. Fine-grained concepts are organized by model, the
+same function can be carried by one head or by a five-head circuit, and the same effect on the same series is detected
+only within one model family. One interpretation is that the models converge on which properties of a series are
+predictive, which is largely determined by the data, while the way the forecast responds to them depends on the
+architecture. This is a weaker form of convergence than that proposed for vision and language models
+\citep{li2016convergent,huh2024platonic}. With the present instruments, agreement on inputs is measurable and replicates,
+whereas agreement on effects across model families lies below the resolution of single-feature ablation at these
+effect sizes.
 
-\paragraph{What this means for interpreting TSFMs.} First, a single dictionary feature in a TSFM is only weakly special
-against directions the model actually uses, so single-feature claims should be stated relative to an on-manifold null,
-and the field's growing body of single-model SAE results
-\citep{mishra2026dissecting,oublal2026timesae,divo2026zeitgeist} should be read with that in mind. Second, which
-features matter must be measured by intervention: activation prominence, attention mass and correlation with a
-generative factor each point at the wrong components. Third, cross-model comparison needs a measured time axis and a
-pooling that keeps within-window order; otherwise similarity is understated by up to 0.43 CKA. Fourth, exploratory
-pipelines with thousands of comparisons \citep{gelman2014garden} benefit from registration and a one-shot held-out test,
-which here confirmed between half and two thirds of the registered claims (43 of 82 and 41 of 63) and sorted the
-claim types cleanly into those that replicate and those that do not.
+The results also have practical consequences for interpreting TSFMs. Single dictionary features are only weakly
+specific relative to directions the model actually uses, so single-feature claims, including those of recent
+single-model SAE studies \citep{mishra2026dissecting,oublal2026timesae,divo2026zeitgeist}, should be evaluated against
+an on-manifold null. Feature importance has to be established by intervention, since activation prominence, attention
+and correlation with a generative factor each identify the wrong components. Cross-model comparisons need a measured
+time axis and a pooling that preserves the order of time steps within a window. Finally, with thousands of exploratory
+comparisons \citep{gelman2014garden}, registration and a single held-out test were essential. They confirmed between
+half and two thirds of the registered claims (43 of 82 and 41 of 63), and the claim types separated consistently into
+those that replicate and those that do not.
 
 \section{Limitations}
 \label{sec:limitations}
@@ -31,13 +30,13 @@ read disjoint lags, such as Lag-Llama, are out of scope. With seven models, diff
 with architecture, size and training data, and Timer's features do not exceed chance, so its results carry no evidence
 about causal concepts. The analysis is univariate (Chronos-2's cross-series attention is not measured; \fid{PM-13}), and
 Chronos-T5's decoder and Sundial's flow head are not captured. The common time grid is no finer than the coarsest token,
-and peak layer locations, unlike the size of similarity, depend on the window size (\fid{SH-23}). Dictionaries are
+and the locations of peak layer pairs, though not the size of the similarity, depend on the window size (\fid{SH-23}). Dictionaries are
 trained on window vectors, which is conservative for one-step models (\fid{MP-11}).
 
 \paragraph{Ground truth and scope.} Ground truth is exact only for the synthetic tier and encodes the generators'
 assumptions, and overlap with the models' pretraining data cannot be verified. Raw real benchmarks are a weaker basis for
 causal questions, because weakly predictable real series receive flat forecasts in 67--100\% of cases (\fid{BM-06};
-cf.\ \citealp{wan2026collapse}), leaving an ablation nothing to move; real data therefore enter as real-derived series
+cf.\ \citealp{wan2026collapse}), leaving an ablation nothing to move. Real data therefore enter as real-derived series
 and as the external test set on which the transfer claims confirm. The confirmed transfers derive from two source
 concepts on v2 and three source models on v3, so the shared-input result rests on few concepts. Concept results depend
 on dictionary size, sparsity and seed; three replicate seeds measure this dependence but cannot remove it.
@@ -45,14 +44,13 @@ on dictionary size, sparsity and seed; three replicate seeds measure this depend
 \section{Conclusion}
 \label{sec:conclusion}
 
-Across seven time-series foundation models and two independent corpora, with every causal instrument validated on a
-planted known answer and every registered claim tested once on sealed data, architectures that look nothing alike agree
-on what in a series matters---they share representational geometry, select the same inputs for a concept and contain
-features that raise or lower the forecast's level and damp its seasonality---but implement the response in
-model-specific, distributed ways. Several habits carried over from language-model interpretability, from averaging
-tokens to trusting prominent features and attention maps, give confidently wrong answers on these models. The
-benchmark, the analysis system and every result with its reproduction command are public, so each conclusion can be
-re-tested on new models as they appear.
+We compared seven time-series foundation models on two independent corpora, using causal instruments validated on
+planted concepts and testing registered claims once on sealed data. Architectures that differ substantially share
+representational geometry, select the same inputs for a concept and contain features that raise or lower the level of
+the forecast or damp its seasonality. Their causal structure, however, is model-specific and distributed. Several
+practices adopted from language-model interpretability, including averaging tokens, ranking features by activation and
+reading attention patterns, give misleading results on these models. The benchmark, the analysis software and the
+reproduction commands for all results are public, so the conclusions can be re-tested on new models.
 
 \paragraph{Availability.} Code (MIT license), configurations, the example run and the findings ledger are at
 \url{\repourl}. Version 1.1.0 is archived at \href{https://doi.org/10.5281/zenodo.23267462}{doi:10.5281/zenodo.23267462},

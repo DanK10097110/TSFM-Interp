@@ -34,9 +34,9 @@ $^{a}$Encoder only; the sampled decoder is not captured (\fid{DE-05}).}
 \end{table}
 
 \paragraph{Benchmarks with ground truth.} Real series offer no ground truth for concepts, so every analysis runs on
-generated corpora in two labeled tiers. The \emph{synthetic} tier touches no real data and records every generative
+generated corpora in two labeled tiers. The synthetic tier touches no real data and records every generative
 component (trend, multiple seasonalities, AR noise, changepoints, anomalies, random walk, intermittency,
-heteroskedasticity). The \emph{real-derived} tier (mixtures, block bootstrap \citep{kunsch1989block}, sequential
+heteroskedasticity). The real-derived tier (mixtures, block bootstrap \citep{kunsch1989block}, sequential
 synthesis) inherits real source distributions and has attributional ground truth only. Every sample passes a leakage gate
 against the Monash archive \citep{godahewa2021monash} by banded DTW \citep{sakoe1978dtw}. Each corpus has a dev split for
 exploration and a sealed private split from a disjoint seed range, hashed so that any change is detected.
@@ -44,19 +44,19 @@ exploration and a sealed private split from a disjoint seed range, hashed so tha
   \item \textbf{v2} (primary): 965 dev series in five generator families, 410 of them real-derived (Monash weather, ETT
     \citep{zhou2021informer}, electricity and traffic), and 971 private series.
   \item \textbf{v3} (replication): 2{,}876 dev series, 785 real-derived from 15 sources, and 1{,}024 private series. An
-    \emph{external} set of 800 raw windows from 12 GIFT-Eval datasets \citep{aksu2024gifteval}, cut without any
+    external set of 800 raw windows from 12 GIFT-Eval datasets \citep{aksu2024gifteval}, cut without any
     generator, re-tests the registered transfer claims, and a second sealed epoch tests the registered geometry claims.
 \end{itemize}
 Dev and private splits are exchangeable on both corpora (energy-distance $p=0.951$ and $0.995$; \fid{MP-09}). Contexts
 have 480 steps and the horizon 64 steps.
 
-\paragraph{Explore, then confirm once.} Everything measured on a dev split is exploratory. Selected dev results are
+\paragraph{Held-out confirmation.} All results on a dev split are treated as exploratory. Selected dev results are
 frozen as hypotheses in a hash-pinned registry (v2: 128 hypotheses, 82 replicable on the private split; v3: 111 and 63)
 before the private split is generated, and each is tested once. Every interval and $p$-value resamples whole series,
 never windows \citep{efron1993bootstrap,cameron2008cluster}; each claim type is a Holm family \citep{holm1979}. On v2, 43
-of 82 replicable claims confirm; on v3, 41 of 63 (Table~\ref{tab:heldout}). The pattern is identical on both corpora and
-organizes the rest of the paper: claims about geometry and shared inputs replicate, single-feature causal claims
-replicate in part, and claims that two models share a causal effect do not.
+of 82 replicable claims confirm; on v3, 41 of 63 (Table~\ref{tab:heldout}). The pattern is the same on both corpora. Claims
+about geometry and shared inputs replicate, single-feature causal claims replicate in part, and claims that two models
+share a causal effect do not. The following sections are organized along these lines.
 
 \begin{table}[!tb]
 \centering

@@ -16,8 +16,8 @@ tokens concatenated in time order,
 \end{equation}
 A token as long as a window maps to it one to one, and Timer's 96-step token is copied to the three windows it spans.
 Concatenation loses nothing, and linear CKA needs only the Gram matrix $K=\sum_p X_pX_p^{\top}$ summed over token
-positions, so the long vector is never formed. Alignment fixes the \emph{rows} of two models' activations, not their
-coordinates, so every cross-model measure is defined on shared rows: geometry compares how rows relate within each model,
+positions, so the long vector is never formed. Alignment fixes the rows of two models' activations, not their
+coordinates, so every cross-model measure is defined on shared rows. Geometry compares how rows relate within each model,
 concept transfer compares which series a feature selects, and causal effects are compared on the forecast. Activations
 are never moved between models. During extraction an alignment gate checks, layer by layer, that an impulse in a window
 is answered most strongly by that window.
@@ -65,50 +65,52 @@ the reconstruction with $z_i=0$, $\hat h_{-i}$, against the forecast under the f
   \Delta_i^{(c)}(x) = g_c\big(f(x;h^{(\ell)}\!\leftarrow\!\hat h_{-i})\big) - g_c\big(f(x;h^{(\ell)}\!\leftarrow\!\hat h)\big),
   \label{eq:ablation}
 \end{equation}
-on nine forecast \emph{channels} $g_c$: trend, seasonal strength, spectral centroid, level, dispersion, near- and
+on nine forecast channels $g_c$: trend, seasonal strength, spectral centroid, level, dispersion, near- and
 far-horizon shape distance, MASE and flatness. Using the reconstruction in both arms keeps the dictionary's own error
 out of the comparison. Before any feature is scored, a reach probe requires that patching a layer into itself changes
 the forecast by exactly 0.0 and that patching another layer changes it, and sampled models are seeded identically in
 compared calls.
 
 \paragraph{Random-direction nulls.} A feature counts as causal on channel $c$ only if its mean $|\Delta_i^{(c)}|$ exceeds
-the 95th percentile of removing the \emph{same amount} of activation, token by token, along 16 random directions on the
-same series. Two direction distributions are used. The \emph{isotropic} null (v2) draws directions uniformly in the
-dictionary's code space and decodes them. The \emph{covariance-matched} null (v3) draws them from a Gaussian with the
+the 95th percentile of removing the same amount of activation, token by token, along 16 random directions on the
+same series. Two direction distributions are used. The isotropic null (v2) draws directions uniformly in the
+dictionary's code space and decodes them. The covariance-matched null (v3) draws them from a Gaussian with the
 layer's own activation covariance, so they lie in the subspace the model actually uses. A feature's effect vector
 $v_i^{(c)}$ is its signed mean effect in units of its null's 95th percentile. Because a mean is compared with a
 percentile of single rows, the chance rate of clearing is estimated per cell by scoring each null draw against the
 others.
 
 \paragraph{From features to concepts.} Within a layer, causal features are clustered by effect vector ($k$-means,
-silhouette, at least three members per cluster). Across models, the \emph{atlas} pools all causal features and cuts a
-complete-linkage dendrogram at cosine 0.9, so an atlas concept is a tight causal-effect profile; coarser \emph{families}
+silhouette, at least three members per cluster). Across models, the atlas pools all causal features and cuts a
+complete-linkage dendrogram at cosine 0.9, so an atlas concept is a tight causal-effect profile; coarser families
 (average linkage at cosine 0.5) serve as a reading vocabulary.
 
 \subsection{Two kinds of sharing}
 \label{sec:sharing}
 
-Whether a concept is shared between two models is two questions. \emph{Same inputs}: concept transfer asks whether some
+We distinguish two senses in which a concept can be shared. For shared inputs, concept transfer asks whether some
 feature in another model separates a concept's top-$k$ series from the rest (AUC), against stratum-matched random series
-sets; it is run in both directions with Benjamini--Hochberg control \citep{benjamini1995fdr}. \emph{Same effect on the
-same inputs}: for every reciprocal transfer, both sides are ablated on the same series; each must clear its own null,
-and their level concordance and shape cosine must exceed floors obtained by ablating random feature sets matched to each
-side's activation. A statistic below both floors' 5th percentile means the two \emph{act differently}; merely failing
-to exceed the 95th percentile is not evidence of a difference.
+sets; it is run in both directions with Benjamini--Hochberg control \citep{benjamini1995fdr}. For the same effect
+on the same inputs, both sides of every reciprocal transfer are ablated on the same series. Each side must clear its own
+null, and their level concordance and shape cosine must exceed floors obtained by ablating random feature sets matched to each
+side's activation. A statistic below both floors' 5th percentile is taken to mean that the two act differently.
+Failing to exceed the 95th percentile is not by itself evidence of a difference.
 
 \subsection{Validation on known answers}
 \label{sec:knownanswer}
 
-A null can be wrong without raising any error, so each instrument is first run on a forecaster with planted concepts.
+Because a misspecified null does not produce an error, each instrument was first run on a forecaster with planted
+concepts.
 One block of this forecaster writes known directions into the residual stream on series with a given property, and the
 head applies a known effect on level, trend, seasonality or dispersion. Decoys include input-only directions with no
 effect, sub-null directions with a weak effect and a control layer with none; for cross-model tests, two architectures
 with rotated residual bases share planted concepts. Pass criteria were fixed in advance and evaluated on five
-construction seeds (Table~\ref{tab:knownanswer}). Both nulls used in the study pass. The test can fail a method: a
+construction seeds (Table~\ref{tab:knownanswer}). Both nulls used in the study pass. The test does reject methods. A
 plausible null that removes one batch-averaged amount instead of each token's own profile fails on every seed and, on a
 four-model development run, inflates the number of causal features from 110 to 293 (\fid{MN-29}). The
 same-effect test never calls a decoy ``same'' but rarely detects a concept two architectures truly share
-(\fid{MN-30}), so its positive verdicts are trustworthy and its silence is uninformative.
+(\fid{MN-30}). Its positive verdicts can therefore be trusted, but the absence of a positive verdict is not
+informative.
 
 \begin{table}[!tb]
 \centering
