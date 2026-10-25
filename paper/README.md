@@ -9,7 +9,7 @@ around three findings (shared inputs and geometry; model-specific, distributed c
 practices that mislead on TSFMs). Its figures are drawn at the 6.0 in text width by `findings/figures/make_figures.py`
 (from `examples/panel7_v2/run`) so that every label prints at 8.5 pt or larger. Build it from inside `findings/`;
 `bash findings/make_archive.sh` writes a self-contained, test-compiled source archive (Overleaf or JMLR upload) to the
-repository root.
+repository root. Its cover letter is `findings/cover_letter.tex` (build with pdflatex).
 
 `main.tex` + `sections/*.tex` + `references.bib`, using the official JMLR style
 (`jmlr2e.sty`, from https://github.com/JmlrOrg/jmlr-style-file). Build:

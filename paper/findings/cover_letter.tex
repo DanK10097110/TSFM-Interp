@@ -1,0 +1,51 @@
+\documentclass[11pt]{letter}
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+
+\setlist{itemsep=1pt,topsep=3pt}
+\signature{Daniel Kushnir and Hao Wang}
+\address{Daniel Kushnir \quad \href{mailto:kushnir.daniel05@gmail.com}{kushnir.daniel05@gmail.com}\\
+Hao Wang (corresponding author) \quad \href{mailto:hoguewang@gmail.com}{hoguewang@gmail.com}\\
+Rutgers University, New Brunswick, NJ, USA}
+\date{October 25, 2026}
+
+\begin{document}
+\begin{letter}{Editors-in-Chief\\
+Journal of Machine Learning Research}
+
+\opening{Dear Editors,}
+
+We submit the manuscript \emph{Same Inputs, Different Mechanisms: What Seven Time-Series Foundation Models Share} for consideration as a regular paper in the Journal of Machine Learning Research.
+
+Time-series foundation models such as TimesFM, the Chronos family and Sundial are now widely used for zero-shot forecasting, yet they are built on very different architectures and tokenizations, and little is known about what they represent internally.
+The manuscript asks whether these models learn similar representations and whether shared structure influences the forecast.
+We compare seven models on a common time axis measured from each model's tokens, validate every causal test on a forecaster with planted concepts, and test pre-registered claims once on held-out data from two independently generated benchmarks.
+The study finds that the models agree on what in a series matters: their representations have similar geometry, features in different architectures respond to the same input series, and in every model the causal features act mainly on the level and seasonality of the forecast.
+The causal mechanisms, however, are largely model-specific and distributed over many directions rather than concentrated in single features.
+The study also shows that several practices adopted from the interpretability of language models, including averaging tokens within a time window, ranking features by activation and reading attention weights, give misleading results for these models.
+
+We believe the paper suits JMLR because its contribution combines an empirical question of broad interest, whether different architectures converge to similar representations, with methodology for answering it reliably: controls validated on known answers, explicit null distributions and a single held-out test of registered claims.
+All code, the benchmark generators and a reproduction command for every reported number are public under the MIT license at \url{https://github.com/DanK10097110/TSFM-Interp} and archived at \href{https://doi.org/10.5281/zenodo.23267462}{doi:10.5281/zenodo.23267462}.
+
+In accordance with the journal's submission requirements, we state the following.
+\begin{enumerate}
+\item \textbf{Prior publication.} The manuscript has not been published and is not under review elsewhere. The software used in the study is publicly archived as cited above. We intend to describe the software separately in a short submission to the JMLR Machine Learning Open Source Software track; that paper will cover the design and availability of the toolkit and will not report the scientific results of this manuscript.
+\item \textbf{Consent of co-authors.} Both authors are aware of this submission and consent to its review by JMLR.
+\item \textbf{Conflicts of interest.} The authors have no competing financial interests, and this work received no external funding. Neither author has recently collaborated with any of the suggested action editors or reviewers.
+\item \textbf{Suggested action editors.} Maya Gupta (University of Washington), Manuel Gomez-Rodriguez (Max Planck Institute for Software Systems), Christian Shelton (University of California, Riverside), Honglak Lee (University of Michigan and Google) and Samy Bengio (Apple).
+\item \textbf{Suggested reviewers.} Jacob Steinhardt (University of California, Berkeley), Mihaela van der Schaar (University of Cambridge), Anna Goldenberg (University of Toronto), Neel Nanda (Google DeepMind) and Yuxuan Liang (Hong Kong University of Science and Technology, Guangzhou).
+\item \textbf{Keywords.} Time-series foundation models; mechanistic interpretability; representational similarity; sparse autoencoders; causal intervention.
+\end{enumerate}
+
+\textbf{Use of AI tools.} Claude (Anthropic) wrote most of the code and tests in the accompanying repository, ran the experiments and assisted in drafting and editing the manuscript under the authors' direction. The research questions and the design of the study are the authors', who reviewed the implementation, checked every reported result and take full responsibility for the content.
+
+Thank you for considering our submission.
+
+\closing{Sincerely,}
+
+\end{letter}
+\end{document}
