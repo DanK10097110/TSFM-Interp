@@ -243,13 +243,132 @@ def fig_geometry(path):
     _save(fig, "geometry.pdf")
 
 
+EXEMPLARS = {
+    "shared": {"concept": 6, "series": "6400924ee89f0b4d",
+               "parts": [("Chronos-2", "encoder.block.9", 3851), ("Chronos-Bolt", "encoder.block.2", 3821)]},
+    "convergent": {"concept": 8,
+                   "parts": [("Chronos-Bolt", "encoder.block.2", 3556, "26866501cb0bbc79"),
+                             ("TimesFM", "stacked_xf.6", 1568, "0455fcd12e1372d6")]},
+}
+
+
+def extract_exemplars(run, out):
+    """Copy the stored ablation forecasts and top-series overlaps of the two example concepts into ``out``.
+
+    The forecasts are those the ablation battery kept for each feature, so nothing is recomputed. Needs the
+    per-layer ablation records of the full run (``tsfm_lens`` run directory, not the published example).
+    """
+    sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "tsfm_lens"))
+    from tsfm_lens.sae import ablation_run
+
+    def forecast(model, layer, feature, series):
+        rec = json.loads(ablation_run.ablation_path(run, model, layer).read_text(encoding="utf-8"))
+        cand = next(c for c in rec["candidates"] if c["feature"] == feature)
+        fc = next(f for f in cand["forecasts"] if f["series_id"] == series)
+        return {"model": model, "layer": layer, "feature": feature, "series_id": series,
+                "context": fc["context"], "target": fc["target"],
+                "with_feature": fc["with_feature"], "without_feature": fc["without_feature"]}
+
+    prof = json.loads((run / "sae" / "concept_profiles.json").read_text(encoding="utf-8"))["concepts"]
+    sh, cv = EXEMPLARS["shared"], EXEMPLARS["convergent"]
+    data = {
+        "shared": {"concept": prof[sh["concept"]]["name"],
+                   "forecasts": [forecast(m, l, f, sh["series"]) for m, l, f in sh["parts"]],
+                   "overlaps": prof[sh["concept"]]["cross_model_pairs"],
+                   "top_k": len(prof[sh["concept"]]["parts"][0]["top_series_ids"])},
+        "convergent": {"concept": prof[cv["concept"]]["name"],
+                       "forecasts": [forecast(m, l, f, s) for m, l, f, s in cv["parts"]],
+                       "overlaps": prof[cv["concept"]]["cross_model_pairs"]},
+    }
+    out.write_text(json.dumps(data), encoding="utf-8")
+
+
+def _exemplar_panel(fig, cell, fc, title, first):
+    """Context tail, outcome and the forecast with and without the feature, with the change below."""
+    sub = cell.subgridspec(2, 1, height_ratios=[2.4, 1.0], hspace=0.08)
+    ax, axd = fig.add_subplot(sub[0]), fig.add_subplot(sub[1])
+    ctx = np.asarray(fc["context"], dtype=float)
+    sd = ctx.std()
+    tail = ctx[-96:]
+    t0 = np.arange(-len(tail), 0)
+    h = np.arange(len(fc["target"]))
+    ax.plot(t0, tail, color="#9e9e9e", lw=0.9)
+    ax.plot(h, fc["target"], color="#cfcfcf", lw=0.9)
+    ax.plot(h, fc["with_feature"], color=INK, lw=1.4)
+    ax.plot(h, fc["without_feature"], color=ACCENT, lw=1.4, ls=(0, (3, 1.5)))
+    ax.axvline(-0.5, color="#bbbbbb", lw=0.6)
+    ax.set_xticks([])
+    ax.set_title(title, loc="left")
+    diff = (np.asarray(fc["without_feature"]) - np.asarray(fc["with_feature"])) / sd
+    axd.axhline(0, color="#bbbbbb", lw=0.6)
+    axd.plot(h, diff, color=ACCENT, lw=1.4)
+    axd.set_xlim(ax.get_xlim())
+    lim = max(0.05, 1.3 * np.abs(diff).max())
+    axd.set_ylim(-lim, lim)
+    if first:
+        axd.set_ylabel("change\n(context SD)", fontsize=8)
+    axd.set_xlabel("time step")
+    return ax
+
+
+def fig_exemplar(path):
+    """One concept with shared inputs and one with the same effect on different inputs, from stored ablations."""
+    d = json.loads(path.read_text(encoding="utf-8"))
+    fig = plt.figure(figsize=(TEXT_WIDTH, 5.6), layout="constrained")
+    gs = fig.add_gridspec(2, 3, width_ratios=[1.0, 1.0, 0.72])
+    sh, cv = d["shared"], d["convergent"]
+    for j, fc in enumerate(sh["forecasts"]):
+        _exemplar_panel(fig, gs[0, j], fc, f"({'ab'[j]}) {_short(fc['model'])}", j == 0)
+    ax = fig.add_subplot(gs[0, 2])
+    models = []
+    for p in sh["overlaps"]:
+        for m in (p["model_a"], p["model_b"]):
+            if m not in models:
+                models.append(m)
+    mat = np.full((len(models), len(models)), np.nan)
+    for p in sh["overlaps"]:
+        i, j = models.index(p["model_a"]), models.index(p["model_b"])
+        mat[i, j] = mat[j, i] = p["top_k_overlap"]
+    ax.imshow(mat, cmap="Blues", vmin=0, vmax=sh["top_k"], aspect="equal")
+    for i in range(len(models)):
+        for j in range(len(models)):
+            if i != j:
+                ax.text(j, i, f"{int(mat[i, j])}", ha="center", va="center",
+                        color="white" if mat[i, j] > sh["top_k"] / 2 else INK)
+    labels = [_short(m).replace("Chronos-", "C-") for m in models]
+    ax.set_xticks(range(len(models)), labels, rotation=45, ha="right", rotation_mode="anchor")
+    ax.set_yticks(range(len(models)), labels)
+    ax.spines[:].set_visible(False)
+    ax.tick_params(length=0)
+    exp = sh["overlaps"][0]["top_k_overlap_expected"]
+    ax.set_title(f"(c) Shared top-{sh['top_k']} series", loc="left")
+    ax.set_xlabel(f"chance: {exp:.2f}")
+    for j, fc in enumerate(cv["forecasts"]):
+        _exemplar_panel(fig, gs[1, j], fc, f"({'de'[j]}) {_short(fc['model'])}", j == 0)
+    axl = fig.add_subplot(gs[1, 2])
+    axl.axis("off")
+    axl.legend(handles=[
+        plt.Line2D([], [], color="#9e9e9e", label="context"),
+        plt.Line2D([], [], color="#cfcfcf", label="outcome"),
+        plt.Line2D([], [], color=INK, lw=1.4, label="forecast"),
+        plt.Line2D([], [], color=ACCENT, lw=1.4, ls=(0, (3, 1.5)), label="feature removed"),
+    ], loc="center left", frameon=False)
+    _save(fig, "exemplar.pdf")
+
+
 def main():
-    """Write heldout.pdf, families.pdf, funnel.pdf and geometry.pdf next to this script."""
+    """Write heldout.pdf, families.pdf, funnel.pdf, geometry.pdf and exemplar.pdf next to this script."""
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--run", type=Path, default=base.DEFAULT_RUN)
     ap.add_argument("--input-control", type=Path, default=OUT / "data" / "input_control.json")
+    ap.add_argument("--exemplars", type=Path, default=OUT / "data" / "exemplars.json")
+    ap.add_argument("--extract-exemplars-from", type=Path, default=None,
+                    help="full tsfm_lens run directory; rewrites --exemplars from its stored ablation records")
     args = ap.parse_args()
+    if args.extract_exemplars_from is not None:
+        extract_exemplars(args.extract_exemplars_from, args.exemplars)
     _style()
+    fig_exemplar(args.exemplars)
     fig_heldout(args.run)
     fig_families(args.run)
     fig_funnel(args.run)

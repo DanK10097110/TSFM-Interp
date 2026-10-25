@@ -434,6 +434,15 @@ The result does not depend on the window size; with windows of 64 or 96 steps, t
 The held-out confirmation concerns the existence of a matching feature rather than its identity, since only 8 of the 20 best-matching held-out features are the features selected during development.
 Because the source concepts lie deep in their models, this agreement is not confined to layers that encode the input.
 The test does not show, however, that the distinction the features draw goes beyond what simple statistics of the input would reveal; it shows that all seven models draw it.
+Figure~\ref{fig:exemplar}a--c shows an example from the atlas.
+Features of Chronos-2, Chronos-Bolt and Sundial with closely matching effects share between 6 and 12 of their 20 most strongly activated series, where 0.41 would be expected by chance, and removing the Chronos-2 or the Chronos-Bolt feature on the same intermittent series raises the forecast level by 0.02 and 0.07 standard deviations of the context.
+
+\begin{figure}[!tb]
+\centering
+\includegraphics[width=\textwidth]{exemplar.pdf}
+\caption{Two atlas concepts in the primary corpus, from forecasts stored by the ablation battery. (a, b) A Chronos-2 feature (encoder block 9) and a Chronos-Bolt feature (encoder block 2) of one concept, removed on the same series; the last 96 context steps and the 64-step horizon are shown, and the lower panels give the change of the forecast in standard deviations of the full 480-step context. (c) Number of shared series among the 20 most strongly activated series of the concept's features in three models. (d, e) Features of Chronos-Bolt (encoder block 2) and TimesFM (layer 6) whose effects match, shown on their own top series; the two features share none of their 20 top series.}
+\label{fig:exemplar}
+\end{figure}
 
 \paragraph{Common effect types.}
 \label{sec:families}
@@ -461,7 +470,7 @@ At the level of individual causal effects we find little sharing.
 \label{sec:bymodel}
 The atlas contains 11 concepts, more than a null distribution obtained by shuffling effect vectors produces ($p=0.005$), but none of them includes features from more than three of the seven models.
 Features are grouped by model more strongly than random assignment would produce, as the atlas contains 9 concepts with members from at least two models, against 10.8 expected under the null ($p=0.025$).
-In five of the 11 concepts, different models produce the same effect on different series.
+In five of the 11 concepts, different models produce the same effect on different series; in the example of Figure~\ref{fig:exemplar}d,e, features of Chronos-Bolt and TimesFM that both raise the forecast level share none of their 20 top series.
 The pattern holds on held-out data, where no concept includes more than three models on the primary corpus or more than two on the replication corpus.
 A comparison at the level of attention heads, made in an earlier study of two of the models, points the same way. Restoring the seasonality of a deseasonalized context requires a single head in TimesFM but a set of five heads with non-additive contributions in Chronos-T5-Base.
 
