@@ -108,26 +108,47 @@ Code, benchmark generators and a reproduction command for every number in the pa
 \section{Related Work}
 \label{sec:related}
 
-\paragraph{Time-series foundation models and their interpretation.}
-Pretrained forecasters differ mainly in how they turn a series into tokens and how they produce a forecast \citep{liang2024foundation}.
-Patches of consecutive steps, introduced by PatchTST \citep{nie2023patchtst}, are used with different lengths by TimesFM, Moirai \citep{woo2024moirai}, MOMENT \citep{goswami2024moment} and Timer; Chronos quantizes single steps and trains a T5 model \citep{raffel2020t5}, Chronos-Bolt and Chronos-2 predict quantiles of many steps at once, Time-MoE routes single steps through a mixture of experts, and Sundial samples from a flow-matching head \citep{lipman2023flow}.
-Most of them normalize each series internally \citep{kim2022revin}, and they are compared by accuracy on collections such as GIFT-Eval \citep{aksu2024gifteval}.
-Explanations of time-series models have mostly attributed predictions to input time steps \citep{tonekaboni2020fit,crabbe2021dynamask,ismail2020benchmarking}, which describes behavior rather than internal representations.
-Mechanistic work on TSFMs is recent and studies one model at a time: \citet{wilinski2025exploring} steer trend and periodicity by adding directions to the residual stream, \citet{mishra2026dissecting} relate sparse-autoencoder features of Chronos to causal effects, \citet{oublal2026timesae} and \citet{divo2026zeitgeist} search for interpretable concepts, and \citet{yildirim2026superposition} examine superposition in forecasting transformers.
-Our results bear on how such studies are read, because single features in our models are only slightly more influential than random directions in the model's activations.
+\paragraph{Time-series foundation models.}
+Pretrained forecasting models differ in how they turn a series into tokens and in how they produce a forecast \citep{liang2024foundation}.
+PatchTST \citep{nie2023patchtst} established patches of consecutive time steps as tokens, an approach taken up, with different patch lengths, by TimesFM \citep{das2024timesfm}, Moirai \citep{woo2024moirai}, MOMENT \citep{goswami2024moment} and Timer \citep{liu2024timer}.
+Chronos \citep{ansari2024chronos} instead scales and quantizes every time step into a vocabulary and trains a T5 encoder--decoder \citep{raffel2020t5} with a cross-entropy loss, Chronos-Bolt and Chronos-2 \citep{ansari2025chronos2} predict several steps and quantiles directly instead of sampling tokens one at a time, Time-MoE \citep{shi2025timemoe} uses a sparse mixture of experts over single steps, Sundial \citep{liu2025sundial} samples forecasts from a flow-matching head \citep{lipman2023flow}, Lag-Llama \citep{rasul2023lagllama} reads lagged values, and TTM \citep{ekambaram2024ttm} shows that small mixer models can be competitive.
+Most of these models normalize each series internally \citep{kim2022revin}, and synthetic series are widely used for pretraining and evaluation \citep{kang2020gratis,dooley2023forecastpfn}.
+These models are compared mainly through accuracy on benchmark collections such as GIFT-Eval \citep{aksu2024gifteval}, and \citet{wan2026collapse} document that they often produce nearly constant forecasts on weakly predictable series.
+The diversity of tokenization is what makes these models an informative test of representational convergence, and it is also the main obstacle to comparing them, which our measured alignment addresses.
 
-\paragraph{Interpretability methods and their pitfalls.}
-We use standard tools: activation patching \citep{vig2020causal,meng2022rome} and sparse autoencoders (SAEs) with TopK activations \citep{bricken2023monosemanticity,cunningham2024sae,gao2025topk}, whose features vary across training seeds \citep{paulo2025seeds} and are often matched by simple baselines \citep{kantamneni2025sparse}.
-Crosscoders \citep{lindsey2024crosscoders} learn one dictionary for several models; we instead compare independently trained dictionaries through the series their features select and the effects they have, which needs no shared coordinates.
-Interpretability methods can produce convincing results that do not reflect the model: saliency maps can ignore the model they explain \citep{adebayo2018sanity}, attention weights are not explanations \citep{jain2019attention}, a direction's apparent meaning can depend on the data used to inspect it \citep{bolukbasi2021illusion}, and subspace interventions can suggest mechanisms the model does not use \citep{makelov2024illusion}.
-We guard against these failures by validating each test on planted concepts, and against selective reporting by pre-registration \citep{nosek2018preregistration} and a single use of held-out data \citep{dwork2015reusable,gelman2014garden}.
+\paragraph{Explaining time-series models.}
+Early work on time-series explanation attributes predictions to individual time steps and variables.
+\citet{tonekaboni2020fit} measure how much each observation shifts the predictive distribution, \citet{crabbe2021dynamask} learn dynamic perturbation masks, and \citet{ismail2020benchmarking} show that common saliency methods identify important time steps poorly and inconsistently across architectures.
+Such attributions describe the input--output behavior of one model and do not reveal its internal representations.
+Mechanistic analyses of time-series transformers are more recent.
+\citet{kalnare2025mechts} apply activation patching and sparse autoencoders (SAEs) to time-series classifiers, and \citet{wilinski2025exploring} show that TSFM layers are often redundant and that concepts such as trend and periodicity can be steered by adding directions to the residual stream.
+Several studies train SAEs on a single TSFM: \citet{mishra2026dissecting} relate SAE features of Chronos to a hierarchy of causal effects, \citet{oublal2026timesae} use sparse decoding to explain black-box time-series models, \citet{divo2026zeitgeist} search TSFM features for interpretable concepts, and \citet{yildirim2026superposition} argue that forecasting transformers need not rely on superposition.
+These studies analyze one model at a time, and their features are interpreted on the data on which they were found.
+We compare seven architectures on a common time axis, separate agreement on inputs from agreement on effects, validate the causal tests on planted concepts and test registered claims on held-out data.
+Our finding that single features are only weakly specific against activation-matched directions bears directly on how single-model SAE results should be read.
 
-\paragraph{Comparing representations.}
-CKA \citep{kornblith2019cka}, SVCCA \citep{raghu2017svcca}, representational similarity analysis \citep{kriegeskorte2008rsa} and model stitching \citep{bansal2021stitching} have been used to argue that networks converge \citep{li2016convergent,huh2024platonic}.
-These measures can disagree with one another and with functional differences between models \citep{ding2021grounding,klabunde2025similarity}, and CKA can be moved substantially by transformations that leave behavior unchanged \citep{davari2023cka}.
-We therefore read every similarity value against a null, report stitching as a gain over an input baseline and never pool different measures.
-Previous comparisons also take for granted that the compared representations refer to the same inputs.
-For models that tokenize time differently this correspondence has to be constructed, and we show that the usual construction changes the conclusions.
+\paragraph{Tools of mechanistic interpretability.}
+Linear probes \citep{alain2017probes} test what a layer encodes, with control tasks needed to separate encoding from probe capacity \citep{hewitt2019control,belinkov2022probing}.
+Activation patching \citep{vig2020causal,meng2022rome} and circuit analysis \citep{olah2020zoom,wang2023ioi} test what a component causes, and their results depend on the choice of metric and corruption \citep{zhang2024patching,heimersheim2024patching}.
+Lenses decode intermediate predictions from each layer \citep{nostalgebraist2020logitlens,belrose2023tuned}.
+Sparse dictionaries are motivated by the observation that networks represent more features than they have dimensions \citep{elhage2022superposition}, and SAEs have been used to extract interpretable features from language models at scale \citep{bricken2023monosemanticity,cunningham2024sae,templeton2024scaling}, with TopK activations \citep{makhzani2013ksparse,gao2025topk} as a common choice.
+SAE features differ across training seeds \citep{paulo2025seeds}, and simple baselines often match SAE features on downstream probing tasks \citep{kantamneni2025sparse}.
+Crosscoders \citep{lindsey2024crosscoders} learn a single dictionary for several models or layers.
+Libraries such as TransformerLens \citep{nanda2022transformerlens}, nnsight \citep{fiottokaufman2025nnsight}, pyvene \citep{wu2024pyvene}, SAELens \citep{bloom2024saelens} and Captum \citep{kokhlikyan2020captum} provide these primitives for single models.
+We use the same primitives but compare independently trained dictionaries through the series their features select and through the features' effects on the forecast, which does not require a shared dictionary or shared coordinates.
+
+\paragraph{Comparing representations across networks.}
+Representational similarity measures such as SVCCA \citep{raghu2017svcca}, PWCCA \citep{morcos2018pwcca}, CKA \citep{kornblith2019cka} and representational similarity analysis \citep{kriegeskorte2008rsa}, together with model stitching \citep{lenc2015equivariance,bansal2021stitching}, have been used to argue that networks trained on similar data converge to similar representations \citep{li2016convergent,huh2024platonic}; \citet{klabunde2025similarity} survey these measures.
+The measures can disagree with one another and with functional differences between models \citep{ding2021grounding}, and CKA in particular can be changed substantially by transformations that leave a model's behavior intact \citep{davari2023cka}.
+We therefore read every similarity value against a null that permutes whole series, report stitching only as a gain over an input baseline, and do not combine different measures into a single score.
+Prior comparisons assume that the compared representations are indexed by the same inputs; for TSFMs with different tokenizations this has to be established first, and we show that the usual way of doing so changes the conclusions.
+
+\paragraph{Validity and research practice.}
+Interpretability methods can produce convincing results that do not reflect the model.
+Saliency maps can be insensitive to the model they explain \citep{adebayo2018sanity}, attention weights are not explanations \citep{jain2019attention}, a direction's apparent meaning can depend on the data used to inspect it \citep{bolukbasi2021illusion}, and subspace interventions can suggest mechanisms that the model does not use \citep{makelov2024illusion}.
+Causal abstraction \citep{geiger2021causal} formalizes when an intervention supports a mechanistic claim.
+We address these concerns empirically by validating every test on a forecaster with planted concepts and decoys.
+From empirical science we adopt pre-registration \citep{nosek2018preregistration}, a single use of the held-out data \citep{dwork2015reusable}, awareness of analytic flexibility \citep{gelman2014garden,simonsohn2020specification} and leakage auditing \citep{kapoor2023leakage}.
 
 \section{Experimental Setup}
 \label{sec:setup}
@@ -163,7 +184,7 @@ Model & Architecture & Token & Head & Params & MASE \\
 Because real series carry no ground truth for the properties we study, all analyses use generated corpora.
 Synthetic series are sums of known components (trend, seasonalities, autoregressive noise, changepoints, anomalies, random walks, intermittency, heteroskedasticity) and use no real data.
 Real-derived series are made from real data by mixing, block bootstrapping \citep{kunsch1989block} or sequential synthesis; they are more realistic but have no exact ground truth.
-Every series passes a leakage check against the Monash archive \citep{godahewa2021monash}.
+Every series passes a leakage check against the Monash archive \citep{godahewa2021monash} based on dynamic time warping \citep{sakoe1978dtw}.
 The primary corpus has 965 development series (410 real-derived) and a held-out split of 971.
 The independently generated replication corpus has 2{,}876 development series (785 real-derived, from 15 sources) and a held-out split of 1{,}024; a second held-out split of it was used for the geometry claims.
 In addition, 800 raw windows from 12 GIFT-Eval datasets serve as a real-world test set.
@@ -174,7 +195,7 @@ Contexts have 480 steps and the horizon is 64 steps.
 Everything computed on the development splits is exploratory.
 Selected results were written down as hypotheses, and the registry was hashed before the corresponding held-out split was generated; each hypothesis was then tested once.
 Of 128 registered hypotheses for the primary corpus and 111 for the replication corpus, 82 and 63 could be tested.
-Confidence intervals and $p$-values resample whole series, never windows \citep{efron1993bootstrap}, and each type of claim is one Holm family \citep{holm1979}.
+Confidence intervals and $p$-values resample whole series, never windows \citep{efron1993bootstrap,cameron2008cluster}, and each type of claim is one Holm family \citep{holm1979}.
 A few results come from an earlier two-model study made with the same software; we mark them where they appear.
 
 \section{Methods}
