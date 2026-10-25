@@ -1,8 +1,5 @@
 \documentclass[twoside,11pt]{article}
 
-% Findings-first companion to ../main.tex (the system paper). Shares ../jmlr2e.sty,
-% ../references.bib and ../figures. Build from inside paper/findings/:
-%   pdflatex main && bibtex main && pdflatex main && pdflatex main
 \usepackage[abbrvbib,preprint]{../jmlr2e}
 
 \usepackage[T1]{fontenc}
@@ -15,14 +12,12 @@
 \usepackage{xcolor}
 \usepackage{enumitem}
 \usepackage{tikz}
-\usetikzlibrary{arrows.meta,positioning,fit,backgrounds,calc,decorations.pathreplacing}
 \usepackage{lastpage}
 \usepackage{caption}
-\usepackage{subcaption}
-\usepackage{pifont}
 \usepackage{placeins}
 
-\graphicspath{{../figures/}}
+\hypersetup{hidelinks}
+\graphicspath{{figures/}}
 \setlist{itemsep=2pt,topsep=3pt}
 \renewcommand{\topfraction}{0.9}
 \renewcommand{\bottomfraction}{0.8}
@@ -40,16 +35,8 @@
 \definecolor{tmoe}{HTML}{b5473f}
 \definecolor{tt5}{HTML}{6a6fb0}
 \definecolor{accent}{HTML}{c0602a}
-\definecolor{soft}{HTML}{eef2f5}
 
 \newcommand{\repourl}{https://github.com/DanK10097110/TSFM-Interp}
-\newcommand{\repo}[1]{\href{\repourl/blob/main/#1}{\nolinkurl{#1}}}
-\newcommand{\repodir}[1]{\href{\repourl/tree/main/#1}{\nolinkurl{#1}}}
-\newcommand{\fid}[1]{\href{\repourl/blob/main/FINDINGS.md}{\textsf{#1}}}
-\newcommand{\tool}{\textsc{TSFM-Lens}}
-\newcommand{\cmark}{\ding{51}}
-\newcommand{\xmark}{\ding{55}}
-\newcommand{\ev}[1]{\textsc{#1}}
 
 \jmlrheading{}{2026}{1-\pageref{LastPage}}{}{}{}{Daniel Kushnir and Hao Wang}
 \ShortHeadings{What Time-Series Foundation Models Share}{Kushnir and Wang}
@@ -60,57 +47,630 @@
 \title{Same Inputs, Different Mechanisms:\\ What Seven Time-Series Foundation Models Share}
 
 \author{\name Daniel Kushnir \email kushnir.daniel05@gmail.com \\
-       \name Hao Wang (corresponding author) \email hoguewang@gmail.com \\
-       \addr Rutgers University}
+\addr Rutgers University \\
+New Brunswick, NJ, USA
+\AND
+\name Hao Wang (corresponding author) \email hoguewang@gmail.com \\
+\addr Rutgers University \\
+New Brunswick, NJ, USA}
 
 \editor{}
 
 \maketitle
 
-\begin{abstract}%
-Time-series foundation models (TSFMs) are built on very different architectures, from decoder-only stacks over 32-step
-patches to encoder--decoders over quantized single time steps, yet little is known about whether they learn similar
-internal representations. We compare seven TSFMs on a common time axis measured from each model's token spans. The causal
-instruments are validated on a forecaster with planted concepts, and registered claims are tested once on sealed
-held-out splits of two independently generated corpora. All 21 model pairs share representational geometry above a
-shuffled-series null on held-out data, and features in unrelated architectures respond to the same input series. All 20
-registered concept-transfer claims confirm on both corpora and on 800 raw real-world windows. The causal structure,
-by contrast, is largely model-specific. Causal features act mainly on the level and seasonality of the forecast, and
-features that raise level, lower level or damp seasonality occur in all seven models, but no fine-grained concept spans
-more than three of them, and the same effect on the same series is detected only between two Chronos models. Single
-features are also weakly specific, exceeding random directions drawn from the activation distribution only 1.29-fold.
-Several practices common in language-model interpretability give misleading results on these models. Averaging the
-tokens within a time window understates TimesFM's held-out CKA with fine-token models by 0.30--0.43, 83.5\% of the most
-prominent dictionary features have no held-out causal effect, attention to seasonal lags does not predict which heads
-carry seasonality, and a plausible ablation null inflates the number of causal features 2.7-fold. Code, benchmarks and
-reproduction commands for every result are public.
+\begin{abstract}
+Time-series foundation models (TSFMs) such as TimesFM, the Chronos family and Sundial differ widely in architecture and tokenization, and it is not known whether they learn similar internal representations.
+We compare seven TSFMs with representational similarity, sparse dictionaries and causal ablation on a common time axis measured from each model's tokens.
+Because the effect of a single internal feature on a forecast is small, we validate each causal test on a forecaster with planted concepts, and we test pre-registered claims once on held-out data from two independently generated benchmarks.
+The models agree on what in a series matters.
+Their representations have similar geometry, features in different architectures respond to the same input series, and in every model the causal features act mainly on the level and seasonality of the forecast.
+How these properties are processed is largely model-specific, since fine-grained causal concepts rarely extend beyond a few models, and forecast-relevant information is spread across many directions rather than concentrated in single features.
+We also find that several common interpretability practices, including averaging tokens within a time window, ranking features by activation and reading attention weights, give misleading results for TSFMs.
 \end{abstract}
 
 \begin{keywords}
-  time-series foundation models, mechanistic interpretability, representational similarity, sparse autoencoders,
-  causal intervention
+time-series foundation models, mechanistic interpretability, representational similarity, sparse autoencoders, causal intervention
 \end{keywords}
 
-\input{sections/01_introduction}
-\input{sections/02_related}
-\input{sections/03_setup}
-\input{sections/04_methods}
-\input{sections/05_shared}
-\input{sections/06_mechanisms}
-\input{sections/07_shortcuts}
-\input{sections/08_depth}
-\FloatBarrier
-\input{sections/09_discussion}
+\section{Introduction}
+\label{sec:intro}
 
-\acks{Computational resources were provided by the second author's lab at Rutgers University. This work received no
-external funding, and the authors declare no competing interests. Use of AI tools: Claude (Anthropic) wrote most of the
-repository's code and tests, ran the experiments and helped draft and edit the manuscript, under the authors' direction.
-The research questions, ideas and general design choices are the authors', who reviewed the implementation details Claude
-proposed, checked every reported result and take full responsibility for the content.}
+Pretrained forecasting models such as TimesFM \citep{das2024timesfm}, the Chronos family \citep{ansari2024chronos,ansari2025chronos2}, Sundial \citep{liu2025sundial}, Timer \citep{liu2024timer} and Time-MoE \citep{shi2025timemoe} are released as open checkpoints and used zero-shot.
+They are built in very different ways.
+TimesFM is a decoder that reads 32-step patches, Chronos-T5 quantizes each time step into a vocabulary and uses an encoder--decoder, Chronos-2 is an encoder with attention across series, Sundial samples its forecast from a flow-matching head, and Timer reads 96-step tokens.
+Benchmarks compare these models by accuracy, but they say little about what the models represent.
+For vision and language models it has been argued that networks trained on similar data converge to similar representations \citep{li2016convergent,huh2024platonic}.
+Whether this holds for forecasting models with such different inductive biases, and whether any shared structure influences the forecast, has not been studied.
+
+We address this question for seven TSFMs.
+Three properties of forecasting models complicate the use of standard interpretability methods \citep{kornblith2019cka,meng2022rome,bricken2023monosemanticity}.
+First, a token covers between 1 and 96 time steps depending on the model, so activations of different models cannot be compared position by position.
+Second, real time series have no labels for trend, seasonality or noise, so a feature that appears to encode seasonality cannot be checked against ground truth.
+Third, removing a single internal feature typically changes a forecast by about a tenth of the context's standard deviation, which is small enough that an unsuitable null distribution produces spurious effects.
+We place all models on a common time axis derived from measured token spans, use generated benchmarks with known generative components, validate each causal test on a forecaster with planted concepts, and test registered claims once on held-out data from two independently generated corpora.
+
+Our findings fall into three groups.
+The first is that the models share a substantial part of their structure.
+Their layer representations have similar geometry, and when a feature in one model responds to a particular set of series, the other models contain features that respond to the same series.
+These results replicate on held-out data from both corpora and, for the latter, on raw real-world series.
+The causal features of all seven models act mainly on the level and seasonality of the forecast.
+The second is that the mechanisms are largely model-specific.
+Groups of features with matching causal effects rarely include more than a few models, the same function can be carried by a single attention head in one model and by several interacting heads in another, and single features are only modestly more influential than random directions drawn from the model's own activations.
+The third is that several practices adopted from language-model interpretability give misleading results on TSFMs.
+Averaging the tokens within a time window hides much of the similarity between models with different token widths, the most strongly activated dictionary features are mostly without causal effect, and attention weights do not indicate which heads matter.
+
+Section~\ref{sec:related} reviews related work.
+Section~\ref{sec:setup} describes the models, benchmarks and confirmation protocol, and Section~\ref{sec:methods} the measurements.
+Section~\ref{sec:results} presents the results, and Section~\ref{sec:discussion} discusses their implications and limitations.
+Code, benchmark generators and a ledger with exact numbers and a reproduction command for every result are publicly available.\footnote{\url{\repourl}. Appendix~\ref{app:ledger} maps each result in this paper to its ledger entry.}
+
+\section{Related Work}
+\label{sec:related}
+
+\paragraph{Interpretability of time-series models.}
+Saliency methods for time-series classifiers are unreliable across architectures \citep{ismail2020benchmarking}, and \citet{kalnare2025mechts} apply activation patching and sparse autoencoders (SAEs) to time-series classifiers.
+For TSFMs, \citet{wilinski2025exploring} study representational redundancy and concept steering, and several recent studies train SAEs on a single TSFM \citep{mishra2026dissecting,oublal2026timesae,divo2026zeitgeist,yildirim2026superposition}.
+These studies analyze one model at a time and report features on the data on which they were found.
+We compare seven architectures, distinguish agreement on inputs from agreement on effects, and test claims on held-out data.
+
+\paragraph{Comparing representations.}
+Representational similarity measures \citep{raghu2017svcca,morcos2018pwcca,kornblith2019cka,kriegeskorte2008rsa} and model stitching \citep{lenc2015equivariance,bansal2021stitching} underlie the hypothesis that networks converge to similar representations \citep{li2016convergent,huh2024platonic}.
+Crosscoders \citep{lindsey2024crosscoders} learn a single dictionary shared by several models.
+We instead compare independently trained dictionaries through the inputs that activate their features and through the effects of the features on the forecast.
+
+\paragraph{Validity of interpretability methods.}
+Probes require control tasks \citep{hewitt2019control,belinkov2022probing}, activation patching is sensitive to the choice of metric and corruption \citep{zhang2024patching,heimersheim2024patching}, subspace interventions can suggest mechanisms that do not exist \citep{makelov2024illusion}, attention weights are not explanations \citep{jain2019attention}, and SAE features vary across training seeds \citep{paulo2025seeds}.
+Causal abstraction \citep{geiger2021causal} formalizes when an intervention supports a mechanistic claim.
+We address these concerns empirically with planted known answers, and we adopt pre-registration \citep{nosek2018preregistration} and a single use of the held-out data \citep{dwork2015reusable,gelman2014garden} from empirical science.
+
+\section{Experimental Setup}
+\label{sec:setup}
+
+\subsection{Models}
+\label{sec:models}
+
+We analyze seven TSFMs (Table~\ref{tab:models}) that include decoder-only, encoder-only and encoder--decoder architectures, token widths from 1 to 96 time steps, a mixture-of-experts model, and deterministic and sampled output heads.
+Chronos-2 is the most accurate model on our benchmarks, and Time-MoE is less accurate than the naive forecast, so its internal structure describes a model that does not forecast these series well.
+Further behavioral measurements are given in Appendix~\ref{app:behavior}.
+
+\begin{table}[!tb]
+\centering
+\small
+\setlength{\tabcolsep}{3.5pt}
+\begin{tabular}{@{}llcccr@{}}
+\toprule
+Model & Architecture & Token & Head & Params & MASE \\
+\midrule
+\textcolor{tfm}{TimesFM 2.5} & decoder-only & 32 & deterministic & 231M & 1.256 \\
+\textcolor{ctwo}{Chronos-2} & encoder, cross-series attn. & 16 & deterministic & 119M & 1.200 \\
+\textcolor{sun}{Sundial} & decoder, flow-matching head & 16 & sampled & 128M & 1.413 \\
+\textcolor{bolt}{Chronos-Bolt} & encoder, patch head & 16 & deterministic & 48M & 1.549 \\
+\textcolor{tt5}{Chronos-T5-Base} & encoder--decoder & 1 & sampled & 201M & 1.423 \\
+\textcolor{timer}{Timer} & decoder-only & 96 & deterministic & 84M & 1.931 \\
+\textcolor{tmoe}{Time-MoE} & decoder-only, mixture of experts & 1 & deterministic & 113M & 2.864 \\
+\bottomrule
+\end{tabular}
+\caption{The seven models. Token is the number of time steps per token. MASE is the median over the development split of the primary corpus (965 series), on which the seasonal-naive forecast has a median MASE of 1.982. Checkpoint names are listed in Appendix~\ref{app:details}.}
+\label{tab:models}
+\end{table}
+
+\subsection{Benchmarks}
+\label{sec:benchmarks}
+
+Real series carry no ground truth for the properties we study, so all analyses use generated corpora with two kinds of series.
+Synthetic series are composed of known components (trend, seasonalities, autoregressive noise, changepoints, anomalies, random walks, intermittency and heteroskedasticity) and use no real data.
+Real-derived series are produced from real data by mixing, block bootstrapping \citep{kunsch1989block} or sequential synthesis, and inherit realistic structure at the cost of exact ground truth.
+Every series passes a leakage check against the Monash archive \citep{godahewa2021monash} based on dynamic time warping \citep{sakoe1978dtw}.
+
+We use two independently generated corpora.
+The primary corpus has 965 development series, 410 of them real-derived, and a held-out split of 971 series.
+The replication corpus has 2{,}876 development series, 785 of them real-derived from 15 sources, and a held-out split of 1{,}024 series.
+In addition, 800 raw windows from 12 GIFT-Eval datasets \citep{aksu2024gifteval}, taken without any generator, serve as a real-world test set, and a second held-out split of the replication corpus is used for the geometry claims.
+Development and held-out splits are drawn from disjoint seed ranges, and statistical tests do not detect a difference between their distributions on either corpus.
+Contexts have 480 time steps and the forecast horizon is 64 steps.
+
+\subsection{Exploration and Confirmation}
+\label{sec:confirmation}
+
+All analyses on the development splits are exploratory.
+Selected results were stated as hypotheses and recorded in a registry with a cryptographic hash before the corresponding held-out split was generated, and each hypothesis was tested once.
+The registries contain 128 hypotheses for the primary corpus and 111 for the replication corpus, of which 82 and 63 could be tested on held-out data.
+All confidence intervals and $p$-values resample whole series rather than windows \citep{efron1993bootstrap,cameron2008cluster}, and each type of claim is corrected for multiple testing with the Holm procedure \citep{holm1979}.
+A few analyses come from earlier, smaller studies made with the same software; we identify them where they appear and treat them as exploratory.
+
+\section{Methods}
+\label{sec:methods}
+
+\subsection{A Common Time Axis}
+\label{sec:alignment}
+
+A context of 480 steps is represented by 480 tokens in Chronos-T5 and Time-MoE, 30 in Chronos-2, Sundial and Chronos-Bolt, 15 in TimesFM and 5 in Timer.
+We determine the time span of each token by injecting an impulse at every time step and recording which tokens respond, and we accept a span only if the response is strong and contiguous.
+For every model with a hand-written adapter, this procedure recovers the token spans exactly.
+We then divide the context into windows of $L=32$ steps and represent each window by the concatenation, in time order, of the tokens that fall inside it (Figure~\ref{fig:alignment}),
+\begin{equation}
+\tilde h_w = \big[\,h_j\,\big]_{I_j\subseteq W_w}, \qquad W_w=[wL,(w+1)L),
+\label{eq:pooling}
+\end{equation}
+where $I_j$ is the span of token $j$.
+A TimesFM token corresponds to exactly one window, and a Timer token, which spans three windows, is assigned to each of them.
+Concatenation retains all information in the tokens.
+Since linear centered kernel alignment (CKA) depends only on the Gram matrix, and the Gram matrix of a concatenation is the sum $K=\sum_p X_pX_p^{\top}$ over token positions $p$, the concatenated vectors never need to be formed.
+After alignment, the rows of two models' activation matrices refer to the same series and time window, but their coordinates remain unrelated.
+All cross-model comparisons are made through these shared rows, and activations are never transferred between models.
+
+\begin{figure}[!tb]
+\centering
+\begin{tikzpicture}[x=0.33mm,y=6.5mm,font=\small]
+\foreach \row/\name/\w/\col in {3/TimesFM (32)/32/tfm, 2/{Chronos-2, Sundial, Bolt (16)}/16/ctwo, 1/Chronos-T5 (1)/4/gray, 0/Timer (96)/96/sun}{
+\node[anchor=east] at (-4,\row) {\name};
+\pgfmathtruncatemacro{\n}{288/\w-1}
+\foreach \k in {0,...,\n}{
+\draw[fill=\col!25, draw=\col!80!black, line width=0.3pt] (\k*\w,\row-0.32) rectangle ({(\k+1)*\w},\row+0.32);
+}
+}
+\foreach \k in {0,...,8}{
+\draw[thick, accent] (\k*32,-1.3) rectangle ({(\k+1)*32},-0.7);
+\node[font=\footnotesize] at (\k*32+16,-1.0) {$W_{\k}$};
+}
+\node[anchor=east] at (-4,-1.0) {windows ($L=32$)};
+\node[below] at (144,-1.4) {time step (first 288 steps of the context)};
+\end{tikzpicture}
+\caption{Alignment of tokens to a common time axis. Each row shows the measured token spans of one model, with the number of time steps per token in parentheses; Chronos-T5's single-step tokens are drawn in groups of four. Tokens are assigned to 32-step windows as in Equation~\eqref{eq:pooling}.}
+\label{fig:alignment}
+\end{figure}
+
+\subsection{Representational Geometry}
+\label{sec:geometry-method}
+
+For aligned and centered window representations $A$ and $B$ of the same series, we compute linear CKA \citep{kornblith2019cka},
+\begin{equation}
+\mathrm{CKA}(A,B)=\frac{\|B^{\top}A\|_F^2}{\|A^{\top}A\|_F\,\|B^{\top}B\|_F},
+\end{equation}
+for every pair of layers of every pair of models, and compare it with a null distribution obtained by permuting series (1{,}000 permutations).
+We also fit linear ridge maps between layers \citep{bansal2021stitching} and report their gain in explained variance over a map from input features, since much of a layer can be predicted linearly from the input alone.
+
+\subsection{Dictionary Features and Their Causal Effects}
+\label{sec:causal}
+
+For each analyzed layer we train a TopK sparse autoencoder \citep{makhzani2013ksparse,gao2025topk},
+\begin{equation}
+z(h)=\operatorname{TopK}\big(W_e(h-b_d)+b_e\big), \qquad \hat h=W_d\,z(h)+b_d ,
+\end{equation}
+with three random seeds; the layers are selected automatically for each model (Appendix~\ref{app:details}).
+To measure the effect of feature $i$, we take the 8 series on which it is most active, run the model with the layer replaced by the reconstruction in which $z_i$ is set to zero, and compare the forecast with the forecast obtained from the full reconstruction,
+\begin{equation}
+\Delta_i^{(c)}(x) = g_c\big(f(x;\,h\leftarrow\hat h_{-i})\big) - g_c\big(f(x;\,h\leftarrow\hat h)\big).
+\label{eq:ablation}
+\end{equation}
+Here $f$ is the forecasting model and $g_c$ summarizes one of nine properties of the forecast: trend, seasonal strength, spectral centroid, level, dispersion, near- and far-horizon shape, MASE and flatness.
+Because both forecasts use the reconstruction, the reconstruction error of the dictionary does not enter the comparison.
+Before any feature is scored, we verify that replacing a layer with its own activations leaves the forecast unchanged and that replacing it with another layer's activations does change the forecast.
+Models with sampled heads are run with identical random seeds in all compared calls.
+
+To decide whether an effect is larger than expected, we remove the same amount of activation, at every token, along 16 random directions on the same series.
+A feature is called causal for property $c$ if its mean absolute effect exceeds the 95th percentile of these random effects.
+The random directions are drawn in one of two ways.
+In the primary corpus they are drawn uniformly in the dictionary's code space and decoded (the isotropic null).
+In the replication corpus they are drawn from a Gaussian with the covariance of the layer's own activations, so that they lie in the subspace the model actually uses (the activation-matched null).
+Because the mean effect over several series is compared with a percentile of single-series effects, the rate at which a random direction would be called causal is not 5\%; we estimate it empirically by scoring each random direction against the others.
+
+\subsection{Concepts and Two Kinds of Sharing}
+\label{sec:sharing}
+
+We use the term concept for a causal feature together with the set of series on which it is most active.
+Two models can share a concept in two different senses.
+
+The first is shared inputs.
+For a concept of one model, we ask whether some feature of another model separates the concept's series from all other series, measured by the area under the ROC curve (AUC).
+The null distribution repeats the same search over all features of the second model for random sets of series that match the concept's series in generator family.
+We call a transfer reciprocal if it holds in both directions, and control the false discovery rate within each ordered model pair \citep{benjamini1995fdr}.
+
+The second is the same effect on the same inputs.
+For every reciprocal transfer, we ablate the features of both models on the same series.
+Each feature must first be causal on these series.
+The two effects agree if the concordance of their effects on the level of the forecast and the cosine similarity of their effects on its shape both exceed values obtained by ablating random sets of features with matched activation.
+We conclude that the features act differently only if both statistics fall below the 5th percentile of these reference values, since failing to exceed the 95th percentile is not by itself evidence of a difference.
+
+To compare effects across many features, we describe each causal feature by its vector of effects on the nine properties, expressed in units of the corresponding null percentile.
+The atlas groups these vectors from all models by complete-linkage clustering at a cosine similarity of 0.9, so that a concept in the atlas is a set of features with closely matching effects.
+A coarser grouping into effect families (average linkage at cosine similarity 0.5) is used to summarize the types of effect.
+
+\subsection{Validation on a Forecaster With Planted Concepts}
+\label{sec:knownanswer}
+
+A poorly chosen null distribution does not produce an error message, only wrong results.
+We therefore apply every test first to a synthetic forecaster whose concepts are known.
+One block of this forecaster writes fixed directions into its residual stream on series with a given property, and its output head applies a known effect on level, trend, seasonality or dispersion.
+The forecaster also contains decoys: directions that respond to inputs but have no effect, directions with an effect too weak to be detected, and a layer without any planted effect.
+For the cross-model tests, two such forecasters with different widths, depths and residual bases share some planted concepts.
+Pass criteria were fixed before the tests were run (Table~\ref{tab:knownanswer}).
+
+Both nulls used in this study pass.
+The validation is also able to reject a method. A null that removes a single amount of activation averaged over the batch, rather than the amount removed by the feature at each token, fails on every forecaster.
+The same-effect test never declares two decoys to share an effect, but it rarely detects a concept that two forecasters truly share.
+Its positive results can be trusted, whereas the absence of a positive result carries little information.
+
+\begin{table}[!tb]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{3.6cm}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}p{2.5cm}l@{}}
+\toprule
+Test & Result on the planted forecasters & Criterion & Verdict \\
+\midrule
+Isotropic null & false-positive rate at most 0.003, sensitivity 0.70--1.00 & FPR $\le 0.10$, sensitivity $\ge 0.5$ & pass \\
+Activation-matched null & sensitivity 0.916, false positives in 5 of 2{,}948 control cells & FPR $\le 0.10$, sensitivity $\ge 0.5$ & pass \\
+Batch-averaged null & false-positive rate 0.168--0.248 & FPR $\le 0.10$, sensitivity $\ge 0.5$ & fail \\
+Same-effect test & no false agreement among 9 decoys; detects a shared single-direction concept for 2 of 5 forecasters & -- & specific, insensitive \\
+\bottomrule
+\end{tabularx}
+\caption{Results of the causal tests on forecasters with planted concepts. Criteria were fixed in advance. The isotropic and batch-averaged nulls and the same-effect test were evaluated on five independently constructed forecasters.}
+\label{tab:knownanswer}
+\end{table}
+
+\section{Results}
+\label{sec:results}
+
+\subsection{Overview of the Held-Out Confirmation}
+\label{sec:heldout}
+
+Table~\ref{tab:heldout} and Figure~\ref{fig:heldout} summarize the held-out tests.
+On the primary corpus, 43 of 82 testable claims were confirmed, and on the replication corpus 41 of 63.
+The pattern is the same on both corpora.
+Claims about representational geometry and shared inputs were confirmed, claims about the effects of single features were confirmed in part, and none of the claims that two models share a causal effect was confirmed.
+The following sections discuss these groups in turn.
+
+\begin{table}[!tb]
+\centering
+\small
+\begin{tabular}{@{}lccc@{}}
+\toprule
+Type of registered claim & Primary & Replication & Section \\
+\midrule
+Accuracy (Chronos-2 better than TimesFM on mixtures) & 1/1 & 1/1 & \ref{sec:models} \\
+Peak CKA of TimesFM and Chronos-2 & 1/1 & 1/1 & \ref{sec:geometry} \\
+Concept transfer & 20/20 & 20/20 & \ref{sec:inputs} \\
+\quad the same claims on 800 raw real-world windows & -- & 20/20 & \ref{sec:inputs} \\
+Atlas structure & 2/2 & 2/2 & \ref{sec:bymodel} \\
+Single-model atlas concept & 1/1 & -- & \ref{sec:bymodel} \\
+Shared causal effect (atlas concepts; same-effect test) & 0/3; 0/6 & not registered & \ref{sec:sameeffect} \\
+Single-feature causal effect & 10/31 & 11/24 & \ref{sec:specificity} \\
+Agreement of depth profiles & 6/9 & 4/9 & \ref{sec:depth} \\
+Failure prediction from internal features & 2/2 & 2/3 & \ref{sec:depth} \\
+\midrule
+Total & 43/82 & 41/63 & \\
+\midrule
+Geometry, second held-out split: 21 pairs above null; & -- & 21/21; 4/4 & \ref{sec:geometry} \\
+\quad window average understates CKA & & & \\
+\bottomrule
+\end{tabular}
+\caption{Held-out confirmation of registered claims. Each cell gives the number of confirmed claims and the number of tested claims; each claim type is one Holm family. Claims that could not be tested (6 on the primary corpus, 3 on the replication corpus) are not counted. The real-world windows and the second held-out split are not included in the totals.}
+\label{tab:heldout}
+\end{table}
+
+\begin{figure}[!tb]
+\centering
+\includegraphics[width=\textwidth]{heldout.pdf}
+\caption{Held-out tests on the primary corpus (971 series). (a) Rank correlation between the depth profiles of TimesFM and Chronos-2 for nine input corruptions. Red marks a corruption whose development estimate lies outside the held-out interval. (b) The 20 registered concept-transfer claims; the vertical bar marks the 95th percentile of the null distribution. (c) Registered claims by type.}
+\label{fig:heldout}
+\end{figure}
+
+\subsection{Shared Structure}
+\label{sec:shared}
+
+\paragraph{Representational geometry.}
+\label{sec:geometry}
+All 21 model pairs have layer pairs whose CKA exceeds the permutation null on both corpora.
+The highest CKA between TimesFM and another model ranges from 0.36 to 0.64 on the primary corpus and from 0.38 to 0.71 on the replication corpus.
+The layer pairs selected on the development data of the replication corpus were registered and tested on a new held-out split, where all 21 again exceed their nulls; for TimesFM and Chronos-2 the CKA is 0.707 (95\% interval 0.679 to 0.734), compared with 0.712 on the development data.
+Linear maps between models give the same picture, with a mean gain over the input baseline of 0.55 at the 21 best layer pairs.
+Models with different tokenizers, depths and training objectives thus organize series in measurably similar ways, in line with the convergence reported for vision and language models \citep{huh2024platonic}.
+
+Much of this similarity is lost when windows are represented by the average of their tokens, the usual approach when token widths differ.
+Averaging lowers the held-out CKA of TimesFM with Chronos-2, Chronos-T5-Base, Chronos-Bolt and Sundial by between 0.30 and 0.43, and this reduction was confirmed for all four pairs on the second held-out split.
+The reason is that models with short tokens encode the order of time steps within a window, which a model with long tokens represents inside a single token and which averaging removes.
+In the first block of Chronos-T5-Base, for example, the slope of a window can be decoded from the window average with $R^2=0.13$ but from finer sub-windows with $R^2=0.96$.
+Pairs involving Timer change little, because a 96-step token has no internal order to match.
+
+\paragraph{Shared inputs.}
+\label{sec:inputs}
+Geometry compares entire layers, whereas concept transfer asks whether individual features respond to the same series.
+On the development split of the primary corpus, 1{,}296 of 1{,}584 transfer tests are reciprocal after correction.
+We registered 20 transfer claims from two concepts, one in TimesFM and one in Sundial, with destination features in all seven models.
+All 20 were confirmed on the held-out split, with AUCs between 0.92 and 0.97 against null 95th percentiles between 0.70 and 0.75 (Figure~\ref{fig:heldout}b).
+On the replication corpus, a new set of 20 claims from concepts in Sundial, Chronos-2 and Time-MoE was confirmed in full on the held-out split and again on the 800 raw real-world windows, with AUCs between 0.76 and 0.99.
+The result does not depend on the window size; with windows of 64 or 96 steps, the fraction of reciprocal transfers changes from 0.83 to 0.80.
+The held-out confirmation concerns the existence of a matching feature rather than its identity, since only 8 of the 20 best-matching held-out features are the features selected during development.
+
+\paragraph{Common effect types.}
+\label{sec:families}
+The causal features of all seven models fall into a small number of effect types (Figure~\ref{fig:families}).
+Nine effect families cover 192 of the 194 causal features of the primary corpus.
+The two largest change the level of the forecast, raising it (45 features) or lowering it (44 features), and the next two dampen (25) or amplify (19) its seasonality.
+Features that raise the level, lower the level or dampen seasonality occur in all seven models.
+Because family membership is determined by each feature's own measured effect, this result does not depend on where the family boundaries are drawn.
+Together with the transfer results, it suggests that the models respond to the same properties of a series, mainly its level and seasonality, and adjust the forecast in the same directions.
+
+\begin{figure}[!tb]
+\centering
+\includegraphics[width=\textwidth]{families.pdf}
+\caption{Effect families of the causal features in the primary corpus. (a) Mean effect of each family on each forecast property, in units of the null 95th percentile; red indicates an increase and blue a decrease. Outlined cells exceed the null. The two shape properties are distances and are shown without sign in gray. (b) Share of each family's members contributed by each model.}
+\label{fig:families}
+\end{figure}
+
+\subsection{Model-Specific Causal Structure}
+\label{sec:mechanisms}
+
+Shared inputs and similar broad effects do not imply that the models share mechanisms.
+At the level of individual causal effects we find little sharing.
+
+\paragraph{Concepts are organized by model.}
+\label{sec:bymodel}
+The atlas contains 11 concepts, more than a null distribution obtained by shuffling effect vectors produces ($p=0.005$), but none of them includes features from more than three of the seven models.
+Features are grouped by model more strongly than random assignment would produce, as the atlas contains 9 concepts with members from at least two models, against 10.8 expected under the null ($p=0.025$).
+In five of the 11 concepts, different models produce the same effect on different series.
+The pattern holds on held-out data, where no concept includes more than three models on the primary corpus or more than two on the replication corpus.
+A comparison at the level of attention heads, made in an earlier study of two of the models, points the same way. Restoring the seasonality of a deseasonalized context requires a single head in TimesFM but a set of five heads with non-additive contributions in Chronos-T5-Base.
+
+\paragraph{Agreement of causal effects.}
+\label{sec:sameeffect}
+The same-effect test was applied to 1{,}290 reciprocal transfers (Figure~\ref{fig:funnel}).
+In 216 tests both features were causal on the shared series and the test could be scored.
+Of these, 7 show the same effect, 54 agree only in level or only in shape, 133 show no specific agreement and 22 show different effects.
+All 7 cases of agreement involve Chronos-2 and Chronos-Bolt, two models of the same family.
+Since the test produced no false agreement on the planted forecasters, we consider these cases reliable.
+Because the test is insensitive, the lack of agreement between other models does not by itself show that their effects differ, although the 22 cases of different effects show that they sometimes do.
+No registered claim of a shared causal effect was confirmed on held-out data.
+
+\begin{figure}[!tb]
+\centering
+\includegraphics[width=\textwidth]{funnel.pdf}
+\caption{(a) Number of candidate concepts at successive levels of evidence in the primary corpus. (b) Outcomes of the same-effect test for 1{,}290 reciprocal transfers. A test is not scorable when one of the two features has no causal effect on the shared series.}
+\label{fig:funnel}
+\end{figure}
+
+\paragraph{Specificity of single features.}
+\label{sec:specificity}
+In the primary corpus, 442 combinations of feature and forecast property exceed the isotropic null, where 178.75 are expected by chance.
+The excess ranges from 1.64-fold in Chronos-T5-Base to 5.70-fold in Chronos-Bolt.
+Timer is the exception. Its layers influence the forecast, but its features exceed the null no more often than chance.
+Of 31 testable single-feature claims, 10 were confirmed on held-out data, and on the replication corpus 11 of 24.
+
+The replication corpus allows a stricter comparison, because there every feature was scored against both nulls.
+Against isotropic directions, features exceed the null 3.55 times as often as expected by chance; against activation-matched directions, only 1.29 times as often.
+Removing a typical direction from the model's own activation distribution thus changes the forecast nearly as much as removing a dictionary feature.
+The effects are also small in absolute terms.
+The median effect of a single feature is 0.097 standard deviations of the context, less than half of the change caused by replacing the layer with its reconstruction.
+
+Most of these effects are robust to the choice of intervention.
+We re-tested the 91 features of the replication corpus that exceed the activation-matched null with three alternative interventions: replacing the feature by its mean activation, replacing it by its activation on another series, and subtracting it from the model's original activations instead of the reconstruction.
+Of the 91 features, 79 remain causal under at least one of these interventions and 37 under all three, and the direction of the effect is preserved under the first two (median cosine similarity 0.997 and 0.991).
+Which features pass the test, however, depends on the intervention.
+
+Finally, the effects do not form discrete groups.
+Within 50 of 56 layers, the effect vectors cannot be clustered into groups of at least three features, and the effect families do not outnumber those found in shuffled data ($p=0.68$).
+The effect vectors are not low-dimensional (participation ratio 5.58 of 9 on the replication corpus), so the lack of clusters does not reflect a lack of variation.
+Together with the comparison against activation-matched directions, this indicates that information relevant to the forecast is distributed over many directions and varies continuously.
+This differs from the discrete, interpretable units sought in language models \citep{bricken2023monosemanticity}.
+
+\subsection{Interpretability Practices That Mislead}
+\label{sec:shortcuts}
+
+Several practices that are standard in the interpretability of language models give misleading results for TSFMs.
+
+\paragraph{Averaging tokens within a window.}
+As shown in Section~\ref{sec:geometry}, averaging understates the similarity between TimesFM and models with short tokens by 0.30 to 0.43 CKA.
+It also changes which models appear similar.
+With averaged representations, TimesFM and Chronos-2 rank 15th of 21 pairs by CKA, although they are the most similar pair by agreement of their forecast errors; with concatenated windows they rank 9th on the primary and 7th on the replication corpus.
+Conclusions about which TSFMs are similar thus depend on a choice that is rarely reported.
+
+\paragraph{Ranking features by activation.}
+Analyses of sparse dictionaries usually start from the features that are most frequently or most strongly active.
+In TSFMs these features are mostly without effect.
+Of the 927 most prominent features in the held-out data of the primary corpus, 83.5\% have no causal effect on the forecast (one-sided 95\% lower bound 81.7\%), and on the replication corpus the share is 91.9\%.
+Ranking by estimated effect works considerably better. On the development data of the replication corpus, setting to zero the five features ranked highest by a gradient-based attribution produces a median of 74\% of the change in the forecast that the dictionary can express, more than random sets of five features with matched activation on 30 of 31 layers.
+
+\paragraph{Reading attention weights.}
+In an earlier study of TimesFM and Chronos-T5-Base, the attention that a head pays to seasonal lags was uncorrelated with the loss of seasonality when the head was removed (Spearman correlation 0.026 and $-0.118$), extending the observation of \citet{jain2019attention} to forecasting models.
+
+\paragraph{Correlating features with generative factors.}
+Because the synthetic series have known components, features can be matched to generative factors.
+In the same earlier study, 154 of 10{,}240 TimesFM features and 115 of 6{,}144 Chronos-T5-Base features were correlated with a generative factor beyond a permutation null, most strongly with intermittency (Spearman correlation 0.881).
+The correspondence is not specific, however.
+In a separate registered test on 13 layers, varying a generative factor in a controlled way changed the matched feature no more than random features with matched activation, and none of 151 tests remained significant after correction.
+
+\paragraph{Choosing the null distribution.}
+Whether a feature is considered causal depends on the random intervention it is compared with.
+In a development run of four models, the batch-averaged null of Section~\ref{sec:knownanswer} increased the number of causal features from 110 to 293.
+Between the two nulls that pass validation, the excess over chance falls from 3.55-fold to 1.29-fold.
+Similarity measures are also inconsistent. Seven measures of pairwise similarity, including geometry, agreement of errors and concept transfer, rank the 21 model pairs differently (Kendall's $W=0.25$).
+For this reason we report each measure against its own null and do not combine them into a single score.
+
+\subsection{Depth and Failure Prediction}
+\label{sec:depth}
+
+\paragraph{Depth profiles.}
+For each of nine input corruptions we measure, at every layer, the relative change of the residual stream, and compare two models by the rank correlation of these profiles on a common relative-depth axis.
+For TimesFM and Chronos-2 the comparison was confirmed on held-out data for 6 of 9 corruptions on the primary corpus (overall Spearman correlation 0.524) and for 4 of 9 on the replication corpus, and on the replication corpus 8 of 9 correlations keep the sign of their development estimate.
+The two models react at similar depths to detrending and dropout, and at opposite depths to noise, spikes and warping.
+For two further corruptions the held-out agreement was stronger than on the development data, which the registered criterion counts as a failure.
+Only for level shifts does the sign of the agreement change between development and held-out data.
+
+\paragraph{Where the forecast is restored.}
+When clean activations are patched window by window into a corrupted TimesFM forward pass, the forecast is restored mainly by the window just before the horizon, and increasingly so with depth: for noise, this window restores 0.43 of the damage at the first layer and 0.63 at layer 16.
+This effect is not visible when entire layers are patched.
+Comparisons of depth across models require care, because the captured layers account for between 13.9\% (Chronos-T5-Base, whose decoder is not captured) and 99.8\% (Timer) of a forecast's computation, and the layers that appear most important depend strongly on how they are selected.
+We therefore compare depth profiles rather than the positions of individual layers.
+
+\paragraph{Failure prediction.}
+For each model we predict the log MASE of a series from features available without access to the model's internals (forecast interval width, forecast flatness and catch22 features of the context; \citealp{lubba2019catch22}), add activations of the dictionary features, and measure the improvement.
+The baseline is already strong (Spearman correlation 0.76 to 0.85), and for five models the improvement is not significant.
+For the two least accurate models, Timer and Time-MoE, internal features add a small improvement that was confirmed on the held-out splits of both corpora.
+Internal features also do not help to choose a model for each series, since routing each series to the model with the lowest predicted error is worse than always using Chronos-2, with or without internal features.
+
+\section{Discussion}
+\label{sec:discussion}
+
+The seven models differ in tokenization, depth and training objective, yet their representations have similar geometry, they respond to the same series, and their causal features have similar broad effects on the level and seasonality of the forecast.
+The similarity largely ends at the level of individual causal effects.
+Fine-grained concepts are organized by model, the same function can be carried by one attention head or by several, and the same effect on the same series is detected only within one model family.
+One interpretation is that the models agree on which properties of a series are predictive, which is largely determined by the data, while the way the forecast responds to these properties depends on the architecture.
+This is a weaker form of convergence than that proposed for vision and language models \citep{li2016convergent,huh2024platonic}.
+With current methods, agreement on inputs can be measured and replicates, whereas agreement on effects across model families lies below the resolution of single-feature ablation at the effect sizes we observe.
+
+The results have several practical implications.
+Single dictionary features are only weakly specific relative to directions the model actually uses, so claims about individual features, including those in recent single-model studies \citep{mishra2026dissecting,oublal2026timesae,divo2026zeitgeist}, should be tested against an activation-matched null.
+The importance of a feature should be established by intervention, because activation strength, attention weights and correlation with a generative factor each point to the wrong components.
+Comparisons across models require a measured time axis and a representation that preserves the order of time steps within a window.
+Finally, with thousands of exploratory comparisons \citep{gelman2014garden}, registration and a single held-out test were essential. They confirmed between half and two thirds of the registered claims and separated the types of claims that replicate from those that do not.
+
+\subsection{Limitations}
+\label{sec:limitations}
+
+The study covers seven transformer models whose tokens cover contiguous time intervals; models whose tokens read non-contiguous lags, such as Lag-Llama \citep{rasul2023lagllama}, are not included.
+With seven models, differences between models are confounded with architecture, size and training data, and since Timer's features do not exceed the null, its results carry no information about causal concepts.
+The analysis is univariate, so the cross-series attention of Chronos-2 is not studied, and the decoder of Chronos-T5 and the flow-matching head of Sundial are not captured.
+The common time grid can be no finer than the longest token, and the location of the most similar layer pairs, though not the magnitude of their similarity, depends on the window size.
+
+Exact ground truth exists only for the synthetic series and reflects the assumptions of the generators, and overlap with the models' pretraining data cannot be ruled out.
+Raw real-world benchmarks are less suitable for causal analysis, because weakly predictable real series often receive nearly constant forecasts \citep[cf.][]{wan2026collapse}, which leaves an ablation nothing to change; real data therefore enter our study through real-derived series and the external test set.
+The confirmed transfers derive from two concepts in the primary corpus and three models in the replication corpus, so the shared-input result rests on a small number of concepts.
+Finally, results about concepts depend on the size, sparsity and training seed of the dictionaries, a dependence that our replicate seeds measure but cannot remove.
+
+\section{Conclusion}
+\label{sec:conclusion}
+
+We compared seven time-series foundation models on two independently generated benchmarks, using causal tests validated on planted concepts and testing registered claims once on held-out data.
+Architectures that differ substantially have similar representational geometry, respond to the same inputs and contain features that raise or lower the level of the forecast or dampen its seasonality.
+Their causal structure, however, is model-specific and distributed.
+Several practices adopted from the interpretability of language models, including averaging tokens, ranking features by activation and reading attention weights, give misleading results for these models.
+Because the benchmarks, the analysis software and the reproduction commands are public, these conclusions can be tested on new models as they appear.
+
+\acks{Computational resources were provided by the second author's laboratory at Rutgers University.
+This work received no external funding, and the authors declare no competing interests.
+Claude (Anthropic) wrote most of the code and tests in the accompanying repository, ran the experiments and assisted in drafting and editing the manuscript under the authors' direction.
+The research questions and the design of the study are the authors', who reviewed the implementation, checked every reported result and take full responsibility for the content.}
 
 \appendix
-\input{sections/appendix}
 
-{\footnotesize\setlength{\bibsep}{0pt}\bibliography{../references}}
+\section{Experimental Details}
+\label{app:details}
+
+\paragraph{Checkpoints.}
+The models are loaded from the following Hugging Face checkpoints.
+\begin{center}
+\small
+\begin{tabular}{@{}ll@{\hspace{2.5em}}ll@{}}
+TimesFM 2.5 & \texttt{google/timesfm-2.5-200m} & Chronos-T5-Base & \texttt{amazon/chronos-t5-base} \\
+Chronos-2 & \texttt{amazon/chronos-2} & Timer & \texttt{thuml/timer-base-84m} \\
+Sundial & \texttt{thuml/sundial-base-128m} & Time-MoE & \texttt{Maple728/TimeMoE-50M} \\
+Chronos-Bolt & \texttt{amazon/chronos-bolt-small} & & \\
+\end{tabular}
+\end{center}
+
+\paragraph{Layers and dictionaries.}
+For each model, the layers to analyze are chosen by a screening step that locates where the residual-stream representation changes most and where its trajectory across layers bends; this selects 56 layers in the primary corpus (TimesFM 10, Chronos-2 9, Sundial 9, Time-MoE 9, Chronos-T5-Base 9, Timer 6, Chronos-Bolt 4) and 50 in the replication corpus.
+Each dictionary keeps the $k=32$ largest activations per token.
+Its size is chosen from 192 to 6{,}144 as the largest size at which at most 30\% of the features are inactive, and inactive features are revived with an auxiliary loss \citep{gao2025topk}.
+Each dictionary is trained for at least 720 steps with three seeds; in the primary corpus 9 of the 11 atlas concepts are found with all three seeds.
+Held-out fraction of variance explained has medians between 0.647 (TimesFM) and 0.878 (Chronos-T5-Base), and reconstruction fidelity does not predict how clearly a layer's features act on the forecast (Spearman correlation $-0.326$ across 49 layers).
+Retraining all 50 dictionaries of the replication corpus from the recorded configuration reproduced them exactly, including the same 91 causal features.
+
+\paragraph{Statistics.}
+Bootstrap intervals use 5{,}000 resamples of series.
+For a paired comparison with per-series differences $d_s$ and resampled means $\bar d^*_b$, $b=1,\dots,B$, the $p$-value is
+\begin{equation}
+p=\min\Big(1,\ \max\big(\tfrac1B,\ 2\min\{\tfrac1B\#(\bar d^*_b\le 0),\ \tfrac1B\#(\bar d^*_b\ge 0)\}\big)\Big),
+\end{equation}
+floored at $1/B$ \citep{phipson2010permutation}, so a Holm family of $m$ tests cannot reach a $p$-value below $m/B$; this bound is checked for every family.
+For the transfer test, the statistic is the largest AUC over all destination features, and the null recomputes the same maximum for random sets of series, so that the search over features is part of the null.
+A registered transfer claim uses the larger $p$-value of its two directions.
+Before a held-out result is read, the minimum detectable effect of each claim is estimated by simulation at a power of 0.8; for the accuracy claim it is a difference in MASE of 0.133, against an observed 0.209.
+Single-feature claims have low power, because each feature is tested on only 8 series; 19 of the 21 such claims that were not confirmed had not reached the smallest attainable $p$-value on the development data.
+
+\paragraph{Integrity of the held-out tests.}
+Each registry was frozen, and its hash recorded, before the held-out split it refers to was generated.
+The held-out split of the primary corpus shares no series with any of seven earlier splits, and each held-out test was run once.
+Registered claims were selected from larger pools of development results (for example, 20 of 1{,}124 transfer candidates and 32 of 113 single-feature candidates); this selection is legitimate because the held-out data decide each claim.
+
+\paragraph{Compute and software.}
+The full analysis of the primary corpus took 21.1 hours on one NVIDIA RTX A5000 GPU.
+The software is written in Python with PyTorch, and all runs record their environment.
+The analysis system consists of two packages, one that generates, audits and seals benchmarks and one that loads models through adapters, runs the analyses and writes a report; two of the seven models were loaded with a generic adapter for Hugging Face checkpoints that determines token spans by measurement.
+
+\section{Model Behavior}
+\label{app:behavior}
+
+Table~\ref{tab:character} summarizes the behavior of the models on the development split of the primary corpus.
+Five models outperform the seasonal-naive forecast on 76.5\% to 84.5\% of series, Timer on 69.5\% and Time-MoE on 37.8\%.
+The nominal 80\% prediction intervals of Sundial and Chronos-T5-Base contain only 36\% and 44\% of the outcomes, and four models propagate a missing value in the context to the forecast.
+On held-out data, Chronos-2 is more accurate than TimesFM on mixture series (difference in MASE 0.209, 95\% interval 0.119 to 0.313, $n=290$), and the difference was confirmed on the replication corpus.
+
+\begin{table}[!tb]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}lccccc@{}}
+\toprule
+Model & Median MASE & 80\% coverage & Scale error & Missing value & Latency (ms) \\
+\midrule
+\textcolor{ctwo}{Chronos-2} & 1.200 & 0.757 & 0.0102 & handled & 23 \\
+\textcolor{tfm}{TimesFM} & 1.256 & 0.779 & $1.6\times10^{-6}$ & propagated & 39 \\
+\textcolor{sun}{Sundial} & 1.413 & 0.360 & 0.0310 & propagated & 62 \\
+\textcolor{tt5}{Chronos-T5-Base} & 1.423 & 0.436 & $2.7\times10^{-7}$ & handled & 975 \\
+\textcolor{bolt}{Chronos-Bolt} & 1.549 & 0.732 & 0.0101 & handled & 15 \\
+\textcolor{timer}{Timer} & 1.931 & -- & 0.0262 & propagated & 5 \\
+\textcolor{tmoe}{Time-MoE} & 2.864 & -- & 0.0368 & propagated & 103 \\
+\midrule
+Naive / seasonal naive & 2.759 / 1.982 & & & & \\
+\bottomrule
+\end{tabular}
+\caption{Behavior on the development split of the primary corpus (965 series). Scale error is the difference between $f(cx)/c$ and $f(x)$ for $c=0.001$, in standard deviations of the context. Missing value indicates whether a missing value in the context is handled or propagated to the forecast. Latency is the median time to forecast a batch of 8 series. Timer and Time-MoE produce point forecasts only.}
+\label{tab:character}
+\end{table}
+
+\section{Results Ledger}
+\label{app:ledger}
+
+The repository contains a ledger (\texttt{FINDINGS.md}) with the exact values, evidence type, data and reproduction command for every result.
+Table~\ref{tab:ledger} lists the entries that correspond to the results in this paper.
+
+\begin{table}[!tb]
+\centering
+\small
+\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}Xl@{}}
+\toprule
+Result & Ledger entries \\
+\midrule
+Token spans measured from impulse responses & MP-01 \\
+Exchangeability of development and held-out splits & MP-09 \\
+Validation of nulls and of the same-effect test on planted forecasters & MN-29, MN-30 \\
+Shared geometry; effect of averaging tokens & SH-01, MN-38 \\
+Concept transfer, held out and on real-world windows; dependence on window size & SH-18, SH-23 \\
+Effect families & CA-10 \\
+Organization of concepts by model & SH-16, SH-22 \\
+Seasonality heads in TimesFM and Chronos-T5-Base & CA-03 \\
+Held-out confirmation of causal claims & CA-11, CA-12 \\
+Causal features and their chance rate; Timer & MP-07, PM-17 \\
+Effect sizes; dimension of effect vectors & MN-15, MN-07 \\
+Alternative interventions & MP-10 \\
+Prominent features without effect; ranking by effect & MN-14, D-42C \\
+Attention and causal importance & CA-04 \\
+Generative factors & MP-06, MN-17 \\
+Disagreement between similarity metrics & SH-05, SH-06 \\
+Depth profiles; window-level restoration; captured computation; layer selection & CA-01, DE-01, DE-05, DE-08 \\
+Failure prediction & MN-28 \\
+Accuracy and calibration; seeding of sampled models & PM-05, PM-06, PM-09 \\
+Dictionary fidelity & MN-34 \\
+\bottomrule
+\end{tabularx}
+\caption{Correspondence between the results in this paper and the entries of the results ledger.}
+\label{tab:ledger}
+\end{table}
+
+\FloatBarrier
+
+{\small\setlength{\bibsep}{2pt}\bibliography{../references}}
 
 \end{document}
