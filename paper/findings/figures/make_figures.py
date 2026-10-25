@@ -54,12 +54,10 @@ def _save(fig, name):
 
 
 def fig_heldout(run):
-    """Development estimate against the held-out interval for each replicated claim type."""
+    """Development estimate against the held-out interval for the depth-profile and transfer claims."""
     conf = base._load(run, "confirm/confirmation.json")
-    fig = plt.figure(figsize=(TEXT_WIDTH, 5.4), layout="constrained")
-    gs = fig.add_gridspec(2, 2, height_ratios=[1.15, 1.0], width_ratios=[1.0, 1.0])
+    fig, (ax, ax2) = plt.subplots(1, 2, figsize=(TEXT_WIDTH, 3.1), layout="constrained")
 
-    ax = fig.add_subplot(gs[0, 0])
     tests = conf["l3_replication"]["tests"]
     y = np.arange(len(tests))[::-1]
     for yi, t in zip(y, tests):
@@ -74,51 +72,24 @@ def fig_heldout(run):
     n_rep = sum(t["replicates"] for t in tests)
     ax.set_title(f"(a) Depth profiles ({n_rep} of {len(tests)})", loc="left")
 
-    ax = fig.add_subplot(gs[0, 1])
     tr = conf["concept_replication"]["transfer"]["tests"]
     order = np.argsort([t["private_auc"] for t in tr])
     for i, j in enumerate(order):
         t = tr[j]
-        ax.plot([t["private_null_p95"], t["private_auc"]], [i, i], color="#dddddd", lw=1.2)
-        ax.plot(t["private_null_p95"], i, "|", color="#888888", ms=7, mew=1.2)
-        ax.plot(t["private_auc"], i, "o", color=INK, ms=3.5)
-        ax.plot(t["dev_auc"], i, "x", color=ACCENT, ms=5, mew=1.2)
-    ax.set_yticks([])
-    ax.set_xlim(0.5, 1.005)
-    ax.set_xlabel("AUC")
+        ax2.plot([t["private_null_p95"], t["private_auc"]], [i, i], color="#dddddd", lw=1.2)
+        ax2.plot(t["private_null_p95"], i, "|", color="#888888", ms=7, mew=1.2)
+        ax2.plot(t["private_auc"], i, "o", color=INK, ms=3.5)
+        ax2.plot(t["dev_auc"], i, "x", color=ACCENT, ms=5, mew=1.2)
+    ax2.set_yticks([])
+    ax2.set_xlim(0.5, 1.005)
+    ax2.set_xlabel("AUC")
     n_conf = sum(bool(t["confirmed"]) for t in tr)
-    ax.set_title(f"(b) Concept transfer ({n_conf} of {len(tr)})", loc="left")
-
-    axd = fig.add_subplot(gs[1, :])
-    cr = conf["concept_replication"]
-    fams = [(lab, cr[key]) for lab, key in (
-        ("single-feature causal effect", "causal"),
-        ("atlas concept", "atlas"),
-        ("same effect on same inputs", "agreement"),
-        ("concept transfer", "transfer"),
-        ("atlas structure", "structure"),
-        ("failure prediction", "reliability_u1"),
-    ) if isinstance(cr.get(key), dict) and "n_confirmed" in cr[key]]
-    y = np.arange(len(fams))[::-1]
-    for yi, (_, f) in zip(y, fams):
-        n_ok = f["n_confirmed"]
-        n_bad = f["n_tested"] - f["n_confirmed"]
-        n_nt = f.get("n_not_testable", f["n_registered"] - f["n_tested"])
-        axd.barh(yi, n_ok, color=OK, height=0.65)
-        axd.barh(yi, n_bad, left=n_ok, color=BAD, height=0.65)
-        axd.barh(yi, n_nt, left=n_ok + n_bad, color="#d9d9d9", height=0.65, hatch="///", ec="#999999", lw=0.3)
-        axd.text(n_ok + n_bad + n_nt + 0.6, yi, f"{n_ok} of {f['n_tested']}", va="center")
-    axd.set_yticks(y, [f[0] for f in fams])
-    axd.set_xlim(0, max(f["n_registered"] for _, f in fams) * 1.2)
-    axd.set_xlabel("registered claims")
-    axd.set_title("(c) Registered claims by type", loc="left")
+    ax2.set_title(f"(b) Concept transfer ({n_conf} of {len(tr)})", loc="left")
     fig.legend(handles=[
-        plt.Line2D([], [], marker="x", ls="", color=ACCENT, label="development estimate"),
-        plt.Line2D([], [], marker="o", ls="-", color=INK, label="held-out estimate and 95% interval"),
-        plt.Rectangle((0, 0), 1, 1, color=OK, label="confirmed"),
-        plt.Rectangle((0, 0), 1, 1, color=BAD, label="not confirmed"),
-        plt.Rectangle((0, 0), 1, 1, fc="#d9d9d9", ec="#999999", hatch="///", label="not testable"),
-    ], loc="outside lower center", ncol=3, frameon=False)
+        plt.Line2D([], [], marker="x", ls="", color=ACCENT, label="development"),
+        plt.Line2D([], [], marker="o", ls="-", color=INK, label="held-out, 95% interval"),
+        plt.Line2D([], [], marker="|", ls="", color="#888888", mew=1.2, ms=7, label="null, 95th pct."),
+    ], loc="outside lower center", ncol=3, frameon=False, columnspacing=1.2)
     _save(fig, "heldout.pdf")
 
 
@@ -163,41 +134,6 @@ def fig_families(run):
     fig.legend(handles=ax2.get_legend_handles_labels()[0], loc="outside lower center", ncol=4, frameon=False,
                handlelength=1.0, columnspacing=1.0)
     _save(fig, "families.pdf")
-
-
-def fig_funnel(run):
-    """Concept candidates at each level of evidence, and verdicts of the same-effect test."""
-    st = base._load(run, "sae/concept_stage.json")
-    at, sb, pr, sia = st["atlas"], st["stability"], st["profiles"], st["shared_input_agreement"]
-    fig, (ax, ax2) = plt.subplots(2, 1, figsize=(TEXT_WIDTH, 4.3), layout="constrained")
-    stages = [
-        ("causal features", at["n_features"]),
-        ("assigned to a cross-model concept", at["n_assigned"]),
-        ("cross-model concepts", at["n_concepts"]),
-        ("stable across dictionary seeds", sb["n_stable"]),
-        ("members from two or more models", at["n_multi_model"]),
-        ("same effect and same inputs",
-         sum(v for k, v in pr["sharing_class_counts"].items() if k.startswith(("shared", "partially")))),
-    ]
-    y = np.arange(len(stages))[::-1]
-    ax.barh(y, [s[1] for s in stages], color="#5a7d9a", height=0.65)
-    for yi, s in zip(y, stages):
-        ax.text(s[1] + 3, yi, str(s[1]), va="center")
-    ax.set_yticks(y, [s[0] for s in stages])
-    ax.set_xlim(0, at["n_features"] * 1.12)
-    ax.set_title("(a) Concept candidates", loc="left")
-    vc = sia["verdict_counts"]
-    keys = ["same causal effect", "level only", "shape only", "no specific agreement", "acts differently", "not scorable"]
-    cols = [OK, "#7cb342", "#aed581", "#bdbdbd", BAD, "#eeeeee"]
-    yy = np.arange(len(keys))[::-1]
-    ax2.barh(yy, [vc[k] for k in keys], color=cols, ec="#999999", lw=0.4, height=0.65)
-    for yi, k in zip(yy, keys):
-        ax2.text(vc[k] + 8, yi, str(vc[k]), va="center")
-    ax2.set_yticks(yy, keys)
-    ax2.set_xlim(0, max(vc.values()) * 1.12)
-    ax2.set_xlabel("tests")
-    ax2.set_title(f"(b) Same-effect test on shared inputs ({sia['n_tests']:,} tests)", loc="left")
-    _save(fig, "funnel.pdf")
 
 
 def _short(model):
@@ -357,7 +293,7 @@ def fig_exemplar(path):
 
 
 def main():
-    """Write heldout.pdf, families.pdf, funnel.pdf, geometry.pdf and exemplar.pdf next to this script."""
+    """Write heldout.pdf, families.pdf, geometry.pdf and exemplar.pdf next to this script."""
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--run", type=Path, default=base.DEFAULT_RUN)
     ap.add_argument("--input-control", type=Path, default=OUT / "data" / "input_control.json")
@@ -371,7 +307,6 @@ def main():
     fig_exemplar(args.exemplars)
     fig_heldout(args.run)
     fig_families(args.run)
-    fig_funnel(args.run)
     fig_geometry(args.input_control)
 
 
