@@ -1,0 +1,1171 @@
+{
+ "n_series": 512,
+ "n_windows": 15,
+ "n_folds": 5,
+ "ridge": 0.001,
+ "known_answer": {
+  "max_abs_delta": 2.618150207744918e-08,
+  "pairs": [
+   {
+    "pair": "TimesFM vs Chronos-2",
+    "recorded": 0.7119318842887878,
+    "recomputed": 0.7119319005414653,
+    "abs_delta": 1.6252677426109585e-08
+   },
+   {
+    "pair": "TimesFM vs Sundial",
+    "recorded": 0.6043637990951538,
+    "recomputed": 0.6043638022122308,
+    "abs_delta": 3.1170770409261195e-09
+   },
+   {
+    "pair": "TimesFM vs Chronos-Bolt",
+    "recorded": 0.6245514154434204,
+    "recomputed": 0.6245514193191961,
+    "abs_delta": 3.875775700379336e-09
+   },
+   {
+    "pair": "TimesFM vs Timer",
+    "recorded": 0.37477120757102966,
+    "recomputed": 0.3747712202944223,
+    "abs_delta": 1.2723392617264295e-08
+   },
+   {
+    "pair": "TimesFM vs Time-MoE",
+    "recorded": 0.4663721024990082,
+    "recomputed": 0.4663721065670408,
+    "abs_delta": 4.0680326329756156e-09
+   },
+   {
+    "pair": "TimesFM vs Chronos-T5-Base",
+    "recorded": 0.6248822212219238,
+    "recomputed": 0.6248822003629284,
+    "abs_delta": 2.085899541981462e-08
+   },
+   {
+    "pair": "Chronos-2 vs Sundial",
+    "recorded": 0.9259158968925476,
+    "recomputed": 0.9259158946264038,
+    "abs_delta": 2.2661438281446067e-09
+   },
+   {
+    "pair": "Chronos-2 vs Chronos-Bolt",
+    "recorded": 0.9381798505783081,
+    "recomputed": 0.9381798476299035,
+    "abs_delta": 2.948404631553103e-09
+   },
+   {
+    "pair": "Chronos-2 vs Timer",
+    "recorded": 0.36189761757850647,
+    "recomputed": 0.3618976209809711,
+    "abs_delta": 3.402464643365022e-09
+   },
+   {
+    "pair": "Chronos-2 vs Time-MoE",
+    "recorded": 0.6206148266792297,
+    "recomputed": 0.6206148514354821,
+    "abs_delta": 2.4756252381408217e-08
+   },
+   {
+    "pair": "Chronos-2 vs Chronos-T5-Base",
+    "recorded": 0.7766579985618591,
+    "recomputed": 0.7766580247433612,
+    "abs_delta": 2.618150207744918e-08
+   },
+   {
+    "pair": "Sundial vs Chronos-Bolt",
+    "recorded": 0.9421897530555725,
+    "recomputed": 0.9421897605161442,
+    "abs_delta": 7.460571715967035e-09
+   },
+   {
+    "pair": "Sundial vs Timer",
+    "recorded": 0.49143216013908386,
+    "recomputed": 0.4914321614688879,
+    "abs_delta": 1.3298040446585446e-09
+   },
+   {
+    "pair": "Sundial vs Time-MoE",
+    "recorded": 0.7404359579086304,
+    "recomputed": 0.7404359783842326,
+    "abs_delta": 2.0475602213743116e-08
+   },
+   {
+    "pair": "Sundial vs Chronos-T5-Base",
+    "recorded": 0.6727485656738281,
+    "recomputed": 0.6727485504300249,
+    "abs_delta": 1.5243803219711083e-08
+   },
+   {
+    "pair": "Chronos-Bolt vs Timer",
+    "recorded": 0.3442535102367401,
+    "recomputed": 0.34425352359576233,
+    "abs_delta": 1.3359022221770545e-08
+   },
+   {
+    "pair": "Chronos-Bolt vs Time-MoE",
+    "recorded": 0.5369100570678711,
+    "recomputed": 0.5369100434805995,
+    "abs_delta": 1.3587271641135601e-08
+   },
+   {
+    "pair": "Chronos-Bolt vs Chronos-T5-Base",
+    "recorded": 0.7132598757743835,
+    "recomputed": 0.7132598973294177,
+    "abs_delta": 2.1555034201981016e-08
+   },
+   {
+    "pair": "Timer vs Time-MoE",
+    "recorded": 0.4929508864879608,
+    "recomputed": 0.4929508792134776,
+    "abs_delta": 7.274483238006724e-09
+   },
+   {
+    "pair": "Timer vs Chronos-T5-Base",
+    "recorded": 0.21059685945510864,
+    "recomputed": 0.2105968537329182,
+    "abs_delta": 5.7221904437021465e-09
+   },
+   {
+    "pair": "Time-MoE vs Chronos-T5-Base",
+    "recorded": 0.4659369885921478,
+    "recomputed": 0.4659369873552745,
+    "abs_delta": 1.236873325982657e-09
+   }
+  ]
+ },
+ "pairs": [
+  {
+   "pair": "TimesFM vs Chronos-2",
+   "model_a": "TimesFM",
+   "model_b": "Chronos-2",
+   "layer_a": "stacked_xf.0",
+   "layer_b": "encoder.block.3",
+   "cka": 0.7119319005414653,
+   "recorded_concat_peak": 0.7119318842887878,
+   "raw": {
+    "cka_input_a": 0.0041029066231991086,
+    "cka_input_b": 0.004596099520051919,
+    "residual_cka": 0.7200364476511152,
+    "residual_null_p95": 0.008824453718510207,
+    "residual_null_mean": 0.008363786138292846,
+    "residual_null_max": 0.019075512679209913,
+    "residual_p_value": 0.004975124378109453,
+    "n_null": 200,
+    "residual_above_p95": true
+   },
+   "zscore": {
+    "cka_input_a": 0.530952183400497,
+    "cka_input_b": 0.8329977363337909,
+    "residual_cka": 0.3463902538665664,
+    "residual_null_p95": 0.06361704429904723,
+    "residual_null_mean": 0.06168585487785325,
+    "residual_null_max": 0.06460483549125465,
+    "residual_p_value": 0.004975124378109453,
+    "n_null": 200,
+    "residual_above_p95": true
+   }
+  },
+  {
+   "pair": "TimesFM vs Sundial",
+   "model_a": "TimesFM",
+   "model_b": "Sundial",
+   "layer_a": "stacked_xf.0",
+   "layer_b": "model.layers.0",
+   "cka": 0.6043638022122308,
+   "recorded_concat_peak": 0.6043637990951538,
+   "raw": {
+    "cka_input_a": 0.0041029066231991086,
+    "cka_input_b": 0.0027979353632974,
+    "residual_cka": 0.6101283451969906,
+    "residual_null_p95": 0.003973233648848544,
+    "residual_null_mean": 0.003444494541114281,
+    "residual_null_max": 0.009203947415661676,
+    "residual_p_value": 0.004975124378109453,
+    "n_null": 200,
+    "residual_above_p95": true
+   },
+   "zscore": {
+    "cka_input_a": 0.530952183400497,
+    "cka_input_b": 0.8399494732081004,
+    "residual_cka": 0.31078564256354235,
+    "residual_null_p95": 0.021157542951648393,
+    "residual_null_mean": 0.01848924148714109,
+    "residual_null_max": 0.023104040622337344,
+    "residual_p_value": 0.004975124378109453,
+    "n_null": 200,
+    "residual_above_p95": true
+   }
+  },
+  {
+   "pair": "TimesFM vs Chronos-Bolt",
+   "model_a": "TimesFM",
+   "model_b": "Chronos-Bolt",
+   "layer_a": "stacked_xf.0",
+   "layer_b": "encoder.block.2",
+   "cka": 0.6245514193191961,
+   "recorded_concat_peak": 0.6245514154434204,
+   "raw": {
+    "cka_input_a": 0.0041029066231991086,
+    "cka_input_b": 0.0037847441010136654,
+    "residual_cka": 0.6294065138292243,
+    "residual_null_p95": 0.005701231064885065,
+    "residual_null_mean": 0.005192601075699441,
+    "residual_null_max": 0.012256851404002992,
+    "residual_p_value": 0.004975124378109453,
+    "n_null": 200,
+    "residual_above_p95": true
+   },
+   "zscore": {
+    "cka_input_a": 0.530952183400497,
+    "cka_input_b": 0.877609041412818,
+    "residual_cka": 0.394274862298697,
+    "residual_null_p95": 0.03027540582866475,
+    "residual_null_mean": 0.027841175222165768,
+    "residual_null_max": 0.03372277722812281,
+    "residual_p_value": 0.004975124378109453,
+    "n_null": 200,
+    "residual_above_p95": true
+   }
+  },
+  {
+   "pair": "TimesFM vs Timer",
+   "model_a": "TimesFM",
+   "model_b": "Timer",
+   "layer_a": "stacked_xf.4",
+   "layer_b": "model.layers.2",
+   "cka": 0.3747712202944223,
+   "recorded_concat_peak": 0.37477120757102966,
+   "raw": {
+    "cka_input_a": 0.015324157357273157,
+    "cka_input_b": 0.009493684051823667,
+    "residual_cka": 0.37564512831984925,
+    "residual_null_p95": 0.053229847181899596,
+    "residual_null_mean": 0.05139728669607864,
+    "residual_null_max": 0.05675223677516201,
+    "residual_p_value": 0.004975124378109453,
+    "n_null": 200,
+    "residual_above_p95": true
+   },
+   "zscore": {
+    "cka_input_a": 0.33176104161758235,
+    "cka_input_b": 0.15970481232527484,
+    "residual_cka": 0.40615618644119234,
+    "residual_null_p95": 0.06580811885063807,
+    "residual_null_mean": 0.06347939035916772,
+    "residual_null_max": 0.06902282127060452,
+    "residual_p_value": 0.004975124378109453,
+    "n_null": 200,
+    "residual_above_p95": true
+   }
+  },
+  {
+   "pair": "TimesFM vs Time-MoE",
+   "model_a": "TimesFM",
+   "model_b": "Time-MoE",
+   "layer_a": "stacked_xf.2",
+   "layer_b": "model.layers.5",
+   "cka": 0.4663721065670408,
+   "recorded_concat_peak": 0.4663721024990082,
+   "raw": {
+    "cka_input_a": 0.009485978762841261,
+    "cka_input_b": 0.015732261346431655,
+    "residual_cka": 0.4801678139069057,
+    "residual_null_p95": 0.17014615363857358,
+    "residual_null_mean": 0.16529535579202995,
+    "residual_null_max": 0.19501143343413818,
+    "residual_p_value": 0.004975124378109453,
+    "n_null": 200,
+    "residual_above_p95": true
+   },
+   "zscore": {
+    "cka_input_a": 0.43766186372548976,
+    "cka_input_b": 0.2713460659338284,
+    "residual_cka": 0.4706070108241442,
+    "residual_null_p95": 0.27829143696470915,
+    "residual_null_mean": 0.2705538937859546,
+    "residual_null_max": 0.2846528475085,
+    "residual_p_value": 0.004975124378109453,
+    "n_null": 200,
+    "residual_above_p95": true
+   }
+  },
+  {
+   "pair": "TimesFM vs Chronos-T5-Base",
+   "model_a": "TimesFM",
+   "model_b": "Chronos-T5-Base",
+   "layer_a": "stacked_xf.0",
+   "layer_b": "encoder.block.7",
+   "cka": 0.6248822003629284,
+   "recorded_concat_peak": 0.6248822212219238,
+   "raw": {
+    "cka_input_a": 0.0041029066231991086,
+    "cka_input_b": 0.014577805284848002,
+    "residual_cka": 0.6315335375543459,
+    "residual_null_p95": 0.008251633599849805,
+    "residual_null_mean": 0.00769496642676403,
+    "residual_null_max": 0.020004036767552625,
+    "residual_p_value": 0.004975124378109453,
+    "n_null": 200,
+    "residual_above_p95": true
+   },
+   "zscore": {
+    "cka_input_a": 0.530952183400497,
+    "cka_input_b": 0.6406967613630328,
+    "residual_cka": 0.24779176696103494,
+    "residual_null_p95": 0.03199442259210545,
+    "residual_null_mean": 0.029443217313085173,
+    "residual_null_max": 0.033459939053485835,
+    "residual_p_value": 0.004975124378109453,
+    "n_null": 200,
+    "residual_above_p95": true
+   }
+  },
+  {
+   "pair": "Chronos-2 vs Sundial",
+   "model_a": "Chronos-2",
+   "model_b": "Sundial",
+   "layer_a": "encoder.block.0",
+   "layer_b": "model.layers.0",
+   "cka": 0.9259158946264038,
+   "recorded_concat_peak": 0.9259158968925476,
+   "raw": {
+    "cka_input_a": 0.0029702275048683123,
+    "cka_input_b": 0.0027979353632974,
+    "residual_cka": 0.9249728612719896,
+    "residual_null_p95": 0.003118663633713152,
+    "residual_null_mean": 0.0024149742640102454,
+    "residual_null_max": 0.006338154599740281,
+    "residual_p_value": 0.004975124378109453,
+    "n_null": 200,
+    "residual_above_p95": true
+   },
+   "zscore": {
+    "cka_input_a": 0.8940507071725612,
+    "cka_input_b": 0.8399494732081004,
+    "residual_cka": 0.8196844306110395,
+    "residual_null_p95": 0.012394425742488483,
+    "residual_null_mean": 0.010946185081242349,
+    "residual_null_max": 0.01446623648304128,
+    "residual_p_value": 0.004975124378109453,
+    "n_null": 200,
+    "residual_above_p95": true
+   }
+  },
+  {
+   "pair": "Chronos-2 vs Chronos-Bolt",
+   "model_a": "Chronos-2",
+   "model_b": "Chronos-Bolt",
+   "layer_a": "encoder.block.0",
+   "layer_b": "encoder.block.0",
+   "cka": 0.9381798476299035,
+   "recorded_concat_peak": 0.9381798505783081,
+   "raw": {
+    "cka_input_a": 0.0029702275048683123,
+    "cka_input_b": 0.0026536311938298225,
+    "residual_cka": 0.9368435003893321,
+    "residual_null_p95": 0.0025562729944677287,
+    "residual_null_mean": 0.0019512335074620907,
+    "residual_null_max": 0.005845807534799158,
+    "residual_p_value": 0.004975124378109453,
+    "n_null": 200,
+    "residual_above_p95": true
+   },
+   "zscore": {
+    "cka_input_a": 0.8940507071725612,
+    "cka_input_b": 0.9129582551822013,
+    "residual_cka": 0.6962037374350664,
+    "residual_null_p95": 0.007485289331046731,
+    "residual_null_mean": 0.005692309485347975,
+    "residual_null_max": 0.0098432055899805,
+    "residual_p_value": 0.004975124378109453,
+    "n_null": 200,
+    "residual_above_p95": true
+   }
+  },
+  {
+   "pair": "Chronos-2 vs Timer",
+   "model_a": "Chronos-2",
+   "model_b": "Timer",
+   "layer_a": "encoder.block.8",
+   "layer_b": "model.layers.2",
+   "cka": 0.3618976209809711,
+   "recorded_concat_peak": 0.36189761757850647,
+   "raw": {
+    "cka_input_a": 0.01071061142526571,
+    "cka_input_b": 0.009493684051823667,
+    "residual_cka": 0.3662140728349197,
+    "residual_null_p95": 0.07298861469171246,
+    "residual_null_mean": 0.07119342256006393,
+    "residual_null_max": 0.07966394524168986,
+    "residual_p_value": 0.004975124378109453,
+    "n_null": 200,
+    "residual_above_p95": true
+   },
+   "zscore": {
+    "cka_input_a": 0.551033760386917,
+    "cka_input_b": 0.15970481232527484,
+    "residual_cka": 0.40176335628939247,
+    "residual_null_p95": 0.10018974510528801,
+    "residual_null_mean": 0.09780032876961715,
+    "residual_null_max": 0.1017914102784816,
+    "residual_p_value": 0.004975124378109453,
+    "n_null": 200,
+    "residual_above_p95": true
+   }
+  },
+  {
+   "pair": "Chronos-2 vs Time-MoE",
+   "model_a": "Chronos-2",
+   "model_b": "Time-MoE",
+   "layer_a": "encoder.block.7",
+   "layer_b": "model.layers.10",
+   "cka": 0.6206148514354821,
+   "recorded_concat_peak": 0.6206148266792297,
+   "raw": {
+    "cka_input_a": 0.009617377498909216,
+    "cka_input_b": 0.012199191569440623,
+    "residual_cka": 0.6250496364927587,
+    "residual_null_p95": 0.0682662638098093,
+    "residual_null_mean": 0.06707368011730977,
+    "residual_null_max": 0.07869528816876559,
+    "residual_p_value": 0.004975124378109453,
+    "n_null": 200,
+    "residual_above_p95": true
+   },
+   "zscore": {
+    "cka_input_a": 0.6448065402878813,
+    "cka_input_b": 0.43576595800272633,
+    "residual_cka": 0.48942943307367665,
+    "residual_null_p95": 0.11467500949037565,
+    "residual_null_mean": 0.11241380878713252,
+    "residual_null_max": 0.11616094545773759,
+    "residual_p_value": 0.004975124378109453,
+    "n_null": 200,
+    "residual_above_p95": true
+   }
+  },
+  {
+   "pair": "Chronos-2 vs Chronos-T5-Base",
+   "model_a": "Chronos-2",
+   "model_b": "Chronos-T5-Base",
+   "layer_a": "encoder.block.3",
+   "layer_b": "encoder.block.7",
+   "cka": 0.7766580247433612,
+   "recorded_concat_peak": 0.7766579985618591,
+   "raw": {
+    "cka_input_a": 0.004596099520051919,
+    "cka_input_b": 0.014577805284848002,
+    "residual_cka": 0.7819416615429265,
+    "residual_null_p95": 0.018105905465546655,
+    "residual_null_mean": 0.01760469524072706,
+    "residual_null_max": 0.027960631079670527,
+    "residual_p_value": 0.004975124378109453,
+    "n_null": 200,
+    "residual_above_p95": true
+   },
+   "zscore": {
+    "cka_input_a": 0.8329977363337909,
+    "cka_input_b": 0.6406967613630328,
+    "residual_cka": 0.39933235386171145,
+    "residual_null_p95": 0.09137191965056739,
+    "residual_null_mean": 0.08991902062592796,
+    "residual_null_max": 0.0935360399457621,
+    "residual_p_value": 0.004975124378109453,
+    "n_null": 200,
+    "residual_above_p95": true
+   }
+  },
+  {
+   "pair": "Sundial vs Chronos-Bolt",
+   "model_a": "Sundial",
+   "model_b": "Chronos-Bolt",
+   "layer_a": "model.layers.0",
+   "layer_b": "encoder.block.0",
+   "cka": 0.9421897605161442,
+   "recorded_concat_peak": 0.9421897530555725,
+   "raw": {
+    "cka_input_a": 0.0027979353632974,
+    "cka_input_b": 0.0026536311938298225,
+    "residual_cka": 0.9426434048325945,
+    "residual_null_p95": 0.0026740159897940133,
+    "residual_null_mean": 0.0018564078252177488,
+    "residual_null_max": 0.004445500065200041,
+    "residual_p_value": 0.004975124378109453,
+    "n_null": 200,
+    "residual_above_p95": true
+   },
+   "zscore": {
+    "cka_input_a": 0.8399494732081004,
+    "cka_input_b": 0.9129582551822013,
+    "residual_cka": 0.8135293803387548,
+    "residual_null_p95": 0.007532944826488722,
+    "residual_null_mean": 0.004988664878708372,
+    "residual_null_max": 0.012123131232484268,
+    "residual_p_value": 0.004975124378109453,
+    "n_null": 200,
+    "residual_above_p95": true
+   }
+  },
+  {
+   "pair": "Sundial vs Timer",
+   "model_a": "Sundial",
+   "model_b": "Timer",
+   "layer_a": "model.layers.11",
+   "layer_b": "model.layers.2",
+   "cka": 0.4914321614688879,
+   "recorded_concat_peak": 0.49143216013908386,
+   "raw": {
+    "cka_input_a": 0.02141634084259864,
+    "cka_input_b": 0.009493684051823667,
+    "residual_cka": 0.4955883501580515,
+    "residual_null_p95": 0.04769102663307536,
+    "residual_null_mean": 0.045284362086644506,
+    "residual_null_max": 0.05121258010200547,
+    "residual_p_value": 0.004975124378109453,
+    "n_null": 200,
+    "residual_above_p95": true
+   },
+   "zscore": {
+    "cka_input_a": 0.17330940195515476,
+    "cka_input_b": 0.15970481232527484,
+    "residual_cka": 0.496003329367993,
+    "residual_null_p95": 0.053218346246006694,
+    "residual_null_mean": 0.05044176263928723,
+    "residual_null_max": 0.05631264374918107,
+    "residual_p_value": 0.004975124378109453,
+    "n_null": 200,
+    "residual_above_p95": true
+   }
+  },
+  {
+   "pair": "Sundial vs Time-MoE",
+   "model_a": "Sundial",
+   "model_b": "Time-MoE",
+   "layer_a": "model.layers.10",
+   "layer_b": "model.layers.6",
+   "cka": 0.7404359783842326,
+   "recorded_concat_peak": 0.7404359579086304,
+   "raw": {
+    "cka_input_a": 0.008921917601650486,
+    "cka_input_b": 0.012923473192395108,
+    "residual_cka": 0.7400982085754977,
+    "residual_null_p95": 0.47441990619955815,
+    "residual_null_mean": 0.4698378572570698,
+    "residual_null_max": 0.5044363007720589,
+    "residual_p_value": 0.004975124378109453,
+    "n_null": 200,
+    "residual_above_p95": true
+   },
+   "zscore": {
+    "cka_input_a": 0.1901086632647538,
+    "cka_input_b": 0.19962133095704043,
+    "residual_cka": 0.7412956955999553,
+    "residual_null_p95": 0.5256258295598063,
+    "residual_null_mean": 0.5205473535588296,
+    "residual_null_max": 0.5284411692467487,
+    "residual_p_value": 0.004975124378109453,
+    "n_null": 200,
+    "residual_above_p95": true
+   }
+  },
+  {
+   "pair": "Sundial vs Chronos-T5-Base",
+   "model_a": "Sundial",
+   "model_b": "Chronos-T5-Base",
+   "layer_a": "model.layers.0",
+   "layer_b": "encoder.block.6",
+   "cka": 0.6727485504300249,
+   "recorded_concat_peak": 0.6727485656738281,
+   "raw": {
+    "cka_input_a": 0.0027979353632974,
+    "cka_input_b": 0.016447567433591253,
+    "residual_cka": 0.6771633325611585,
+    "residual_null_p95": 0.005270961286794519,
+    "residual_null_mean": 0.004765433845049975,
+    "residual_null_max": 0.010784852092344763,
+    "residual_p_value": 0.004975124378109453,
+    "n_null": 200,
+    "residual_above_p95": true
+   },
+   "zscore": {
+    "cka_input_a": 0.8399494732081004,
+    "cka_input_b": 0.672651261027361,
+    "residual_cka": 0.25130353271172334,
+    "residual_null_p95": 0.016028707795753553,
+    "residual_null_mean": 0.013697885466756956,
+    "residual_null_max": 0.019284990893476957,
+    "residual_p_value": 0.004975124378109453,
+    "n_null": 200,
+    "residual_above_p95": true
+   }
+  },
+  {
+   "pair": "Chronos-Bolt vs Timer",
+   "model_a": "Chronos-Bolt",
+   "model_b": "Timer",
+   "layer_a": "encoder.block.4",
+   "layer_b": "model.layers.1",
+   "cka": 0.34425352359576233,
+   "recorded_concat_peak": 0.3442535102367401,
+   "raw": {
+    "cka_input_a": 0.005624492705894109,
+    "cka_input_b": 0.00763979133106515,
+    "residual_cka": 0.3434404892459626,
+    "residual_null_p95": 0.028652557102593724,
+    "residual_null_mean": 0.02762225247518549,
+    "residual_null_max": 0.03176967250297036,
+    "residual_p_value": 0.004975124378109453,
+    "n_null": 200,
+    "residual_above_p95": true
+   },
+   "zscore": {
+    "cka_input_a": 0.7330445247231632,
+    "cka_input_b": 0.23017382864465855,
+    "residual_cka": 0.3294512752936166,
+    "residual_null_p95": 0.04932537818791205,
+    "residual_null_mean": 0.047942598067607776,
+    "residual_null_max": 0.05069109123320742,
+    "residual_p_value": 0.004975124378109453,
+    "n_null": 200,
+    "residual_above_p95": true
+   }
+  },
+  {
+   "pair": "Chronos-Bolt vs Time-MoE",
+   "model_a": "Chronos-Bolt",
+   "model_b": "Time-MoE",
+   "layer_a": "encoder.block.3",
+   "layer_b": "model.layers.10",
+   "cka": 0.5369100434805995,
+   "recorded_concat_peak": 0.5369100570678711,
+   "raw": {
+    "cka_input_a": 0.004266441706462244,
+    "cka_input_b": 0.012199191569440623,
+    "residual_cka": 0.5411675952342191,
+    "residual_null_p95": 0.03042968844120142,
+    "residual_null_mean": 0.02942622141555215,
+    "residual_null_max": 0.03564598419869524,
+    "residual_p_value": 0.004975124378109453,
+    "n_null": 200,
+    "residual_above_p95": true
+   },
+   "zscore": {
+    "cka_input_a": 0.8375461149086535,
+    "cka_input_b": 0.43576595800272633,
+    "residual_cka": 0.3465295612836714,
+    "residual_null_p95": 0.06847665489118479,
+    "residual_null_mean": 0.06607384184705822,
+    "residual_null_max": 0.06989849235102331,
+    "residual_p_value": 0.004975124378109453,
+    "n_null": 200,
+    "residual_above_p95": true
+   }
+  },
+  {
+   "pair": "Chronos-Bolt vs Chronos-T5-Base",
+   "model_a": "Chronos-Bolt",
+   "model_b": "Chronos-T5-Base",
+   "layer_a": "encoder.block.2",
+   "layer_b": "encoder.block.6",
+   "cka": 0.7132598973294177,
+   "recorded_concat_peak": 0.7132598757743835,
+   "raw": {
+    "cka_input_a": 0.0037847441010136654,
+    "cka_input_b": 0.016447567433591253,
+    "residual_cka": 0.7180756906119572,
+    "residual_null_p95": 0.010601664092581533,
+    "residual_null_mean": 0.01000455539816908,
+    "residual_null_max": 0.017374641052095297,
+    "residual_p_value": 0.004975124378109453,
+    "n_null": 200,
+    "residual_above_p95": true
+   },
+   "zscore": {
+    "cka_input_a": 0.877609041412818,
+    "cka_input_b": 0.672651261027361,
+    "residual_cka": 0.29084977480579727,
+    "residual_null_p95": 0.040793628894671294,
+    "residual_null_mean": 0.03840781418101156,
+    "residual_null_max": 0.04515495281475597,
+    "residual_p_value": 0.004975124378109453,
+    "n_null": 200,
+    "residual_above_p95": true
+   }
+  },
+  {
+   "pair": "Timer vs Time-MoE",
+   "model_a": "Timer",
+   "model_b": "Time-MoE",
+   "layer_a": "model.layers.3",
+   "layer_b": "model.layers.9",
+   "cka": 0.4929508792134776,
+   "recorded_concat_peak": 0.4929508864879608,
+   "raw": {
+    "cka_input_a": 0.009611883960893111,
+    "cka_input_b": 0.014711320517982844,
+    "residual_cka": 0.49120742378841575,
+    "residual_null_p95": 0.1035944432132271,
+    "residual_null_mean": 0.10012392045146212,
+    "residual_null_max": 0.10594880783780612,
+    "residual_p_value": 0.004975124378109453,
+    "n_null": 200,
+    "residual_above_p95": true
+   },
+   "zscore": {
+    "cka_input_a": 0.09415656546937681,
+    "cka_input_b": 0.3213900178322443,
+    "residual_cka": 0.5117936171537106,
+    "residual_null_p95": 0.11541692370744631,
+    "residual_null_mean": 0.11150246349578298,
+    "residual_null_max": 0.11702197403114238,
+    "residual_p_value": 0.004975124378109453,
+    "n_null": 200,
+    "residual_above_p95": true
+   }
+  },
+  {
+   "pair": "Timer vs Chronos-T5-Base",
+   "model_a": "Timer",
+   "model_b": "Chronos-T5-Base",
+   "layer_a": "model.layers.0",
+   "layer_b": "encoder.block.4",
+   "cka": 0.2105968537329182,
+   "recorded_concat_peak": 0.21059685945510864,
+   "raw": {
+    "cka_input_a": 0.0059777680908653,
+    "cka_input_b": 0.017313249429007856,
+    "residual_cka": 0.21576458725466696,
+    "residual_null_p95": 0.008922515212423548,
+    "residual_null_mean": 0.007974820113341758,
+    "residual_null_max": 0.012422436229406489,
+    "residual_p_value": 0.004975124378109453,
+    "n_null": 200,
+    "residual_above_p95": true
+   },
+   "zscore": {
+    "cka_input_a": 0.2678299456056194,
+    "cka_input_b": 0.6802124396482816,
+    "residual_cka": 0.09517507196642126,
+    "residual_null_p95": 0.015085678334167189,
+    "residual_null_mean": 0.013367603133717418,
+    "residual_null_max": 0.017977131709276544,
+    "residual_p_value": 0.004975124378109453,
+    "n_null": 200,
+    "residual_above_p95": true
+   }
+  },
+  {
+   "pair": "Time-MoE vs Chronos-T5-Base",
+   "model_a": "Time-MoE",
+   "model_b": "Chronos-T5-Base",
+   "layer_a": "model.layers.10",
+   "layer_b": "encoder.block.7",
+   "cka": 0.4659369873552745,
+   "recorded_concat_peak": 0.4659369885921478,
+   "raw": {
+    "cka_input_a": 0.012199191569440623,
+    "cka_input_b": 0.014577805284848002,
+    "residual_cka": 0.47570765143016525,
+    "residual_null_p95": 0.027119580970191622,
+    "residual_null_mean": 0.02592133913874715,
+    "residual_null_max": 0.034903874101570614,
+    "residual_p_value": 0.004975124378109453,
+    "n_null": 200,
+    "residual_above_p95": true
+   },
+   "zscore": {
+    "cka_input_a": 0.43576595800272633,
+    "cka_input_b": 0.6406967613630328,
+    "residual_cka": 0.2576638447849131,
+    "residual_null_p95": 0.05625641807451005,
+    "residual_null_mean": 0.05371393572540983,
+    "residual_null_max": 0.057763777988813575,
+    "residual_p_value": 0.004975124378109453,
+    "n_null": 200,
+    "residual_above_p95": true
+   }
+  }
+ ],
+ "depth_profile": {
+  "TimesFM": [
+   {
+    "layer": "stacked_xf.0",
+    "cka_input_raw": 0.0041029066231991086,
+    "cka_input_zscore": 0.530952183400497
+   },
+   {
+    "layer": "stacked_xf.2",
+    "cka_input_raw": 0.009485978762841261,
+    "cka_input_zscore": 0.43766186372548976
+   },
+   {
+    "layer": "stacked_xf.4",
+    "cka_input_raw": 0.015324157357273157,
+    "cka_input_zscore": 0.33176104161758235
+   },
+   {
+    "layer": "stacked_xf.6",
+    "cka_input_raw": 0.015918783741444863,
+    "cka_input_zscore": 0.25395496770507314
+   },
+   {
+    "layer": "stacked_xf.8",
+    "cka_input_raw": 0.015163042987194954,
+    "cka_input_zscore": 0.1884377101264477
+   },
+   {
+    "layer": "stacked_xf.10",
+    "cka_input_raw": 0.014246427122514015,
+    "cka_input_zscore": 0.16842893851333826
+   },
+   {
+    "layer": "stacked_xf.12",
+    "cka_input_raw": 0.011577534119173541,
+    "cka_input_zscore": 0.1430808839438274
+   },
+   {
+    "layer": "stacked_xf.14",
+    "cka_input_raw": 0.010303331081549077,
+    "cka_input_zscore": 0.11962055886649454
+   },
+   {
+    "layer": "stacked_xf.16",
+    "cka_input_raw": 0.006809018196694313,
+    "cka_input_zscore": 0.08337585663391829
+   },
+   {
+    "layer": "stacked_xf.18",
+    "cka_input_raw": 0.003515765151356447,
+    "cka_input_zscore": 0.0510708025603258
+   }
+  ],
+  "Chronos-2": [
+   {
+    "layer": "encoder.block.0",
+    "cka_input_raw": 0.0029702275048683123,
+    "cka_input_zscore": 0.8940507071725612
+   },
+   {
+    "layer": "encoder.block.1",
+    "cka_input_raw": 0.003453000479155662,
+    "cka_input_zscore": 0.8733990938728574
+   },
+   {
+    "layer": "encoder.block.2",
+    "cka_input_raw": 0.003844432889918588,
+    "cka_input_zscore": 0.8593175769453861
+   },
+   {
+    "layer": "encoder.block.3",
+    "cka_input_raw": 0.004596099520051919,
+    "cka_input_zscore": 0.8329977363337909
+   },
+   {
+    "layer": "encoder.block.4",
+    "cka_input_raw": 0.0057021627476052435,
+    "cka_input_zscore": 0.8025062477707756
+   },
+   {
+    "layer": "encoder.block.5",
+    "cka_input_raw": 0.006492037335441345,
+    "cka_input_zscore": 0.7681366799946123
+   },
+   {
+    "layer": "encoder.block.6",
+    "cka_input_raw": 0.007398696441877464,
+    "cka_input_zscore": 0.7467681049540061
+   },
+   {
+    "layer": "encoder.block.7",
+    "cka_input_raw": 0.009617377498909216,
+    "cka_input_zscore": 0.6448065402878813
+   },
+   {
+    "layer": "encoder.block.8",
+    "cka_input_raw": 0.01071061142526571,
+    "cka_input_zscore": 0.551033760386917
+   },
+   {
+    "layer": "encoder.block.9",
+    "cka_input_raw": 0.01204224492177774,
+    "cka_input_zscore": 0.4285548646350948
+   },
+   {
+    "layer": "encoder.block.10",
+    "cka_input_raw": 0.012791750100449216,
+    "cka_input_zscore": 0.35312079274518915
+   },
+   {
+    "layer": "encoder.block.11",
+    "cka_input_raw": 0.00805121928646542,
+    "cka_input_zscore": 0.24294942821380175
+   }
+  ],
+  "Sundial": [
+   {
+    "layer": "model.layers.0",
+    "cka_input_raw": 0.0027979353632974,
+    "cka_input_zscore": 0.8399494732081004
+   },
+   {
+    "layer": "model.layers.1",
+    "cka_input_raw": 0.004191637471436191,
+    "cka_input_zscore": 0.8014359526666144
+   },
+   {
+    "layer": "model.layers.2",
+    "cka_input_raw": 0.005284404323031647,
+    "cka_input_zscore": 0.5662293135179451
+   },
+   {
+    "layer": "model.layers.3",
+    "cka_input_raw": 0.005215966956499694,
+    "cka_input_zscore": 0.36391621371460037
+   },
+   {
+    "layer": "model.layers.4",
+    "cka_input_raw": 0.0018952091537890832,
+    "cka_input_zscore": 0.10940758462266702
+   },
+   {
+    "layer": "model.layers.5",
+    "cka_input_raw": 0.0018880709027899688,
+    "cka_input_zscore": 0.10070180738170355
+   },
+   {
+    "layer": "model.layers.6",
+    "cka_input_raw": 0.002179487854639836,
+    "cka_input_zscore": 0.0990220132444831
+   },
+   {
+    "layer": "model.layers.7",
+    "cka_input_raw": 0.002746440842058365,
+    "cka_input_zscore": 0.1047726517874286
+   },
+   {
+    "layer": "model.layers.8",
+    "cka_input_raw": 0.0035614938228474124,
+    "cka_input_zscore": 0.1188041556643311
+   },
+   {
+    "layer": "model.layers.9",
+    "cka_input_raw": 0.004775772877386599,
+    "cka_input_zscore": 0.1320725342316545
+   },
+   {
+    "layer": "model.layers.10",
+    "cka_input_raw": 0.008921917601650486,
+    "cka_input_zscore": 0.1901086632647538
+   },
+   {
+    "layer": "model.layers.11",
+    "cka_input_raw": 0.02141634084259864,
+    "cka_input_zscore": 0.17330940195515476
+   }
+  ],
+  "Chronos-Bolt": [
+   {
+    "layer": "encoder.block.0",
+    "cka_input_raw": 0.0026536311938298225,
+    "cka_input_zscore": 0.9129582551822013
+   },
+   {
+    "layer": "encoder.block.1",
+    "cka_input_raw": 0.0036294973468369083,
+    "cka_input_zscore": 0.8983280905648233
+   },
+   {
+    "layer": "encoder.block.2",
+    "cka_input_raw": 0.0037847441010136654,
+    "cka_input_zscore": 0.877609041412818
+   },
+   {
+    "layer": "encoder.block.3",
+    "cka_input_raw": 0.004266441706462244,
+    "cka_input_zscore": 0.8375461149086535
+   },
+   {
+    "layer": "encoder.block.4",
+    "cka_input_raw": 0.005624492705894109,
+    "cka_input_zscore": 0.7330445247231632
+   },
+   {
+    "layer": "encoder.block.5",
+    "cka_input_raw": 0.006918820274396565,
+    "cka_input_zscore": 0.49593585601747564
+   }
+  ],
+  "Timer": [
+   {
+    "layer": "model.layers.0",
+    "cka_input_raw": 0.0059777680908653,
+    "cka_input_zscore": 0.2678299456056194
+   },
+   {
+    "layer": "model.layers.1",
+    "cka_input_raw": 0.00763979133106515,
+    "cka_input_zscore": 0.23017382864465855
+   },
+   {
+    "layer": "model.layers.2",
+    "cka_input_raw": 0.009493684051823667,
+    "cka_input_zscore": 0.15970481232527484
+   },
+   {
+    "layer": "model.layers.3",
+    "cka_input_raw": 0.009611883960893111,
+    "cka_input_zscore": 0.09415656546937681
+   },
+   {
+    "layer": "model.layers.4",
+    "cka_input_raw": 0.00927714923172171,
+    "cka_input_zscore": 0.10837414774142586
+   },
+   {
+    "layer": "model.layers.5",
+    "cka_input_raw": 0.009051471684569533,
+    "cka_input_zscore": 0.15014085329475788
+   },
+   {
+    "layer": "model.layers.6",
+    "cka_input_raw": 0.007503696394553466,
+    "cka_input_zscore": 0.17393364231100022
+   },
+   {
+    "layer": "model.layers.7",
+    "cka_input_raw": 0.002837952556727801,
+    "cka_input_zscore": 0.14103252378720932
+   }
+  ],
+  "Time-MoE": [
+   {
+    "layer": "model.layers.0",
+    "cka_input_raw": 0.001196750402438661,
+    "cka_input_zscore": 0.11768800649225546
+   },
+   {
+    "layer": "model.layers.1",
+    "cka_input_raw": 0.0021778877443194523,
+    "cka_input_zscore": 0.3220043123857704
+   },
+   {
+    "layer": "model.layers.2",
+    "cka_input_raw": 0.005476586192086775,
+    "cka_input_zscore": 0.3364983407501806
+   },
+   {
+    "layer": "model.layers.3",
+    "cka_input_raw": 0.008990719810443233,
+    "cka_input_zscore": 0.3302909404399356
+   },
+   {
+    "layer": "model.layers.4",
+    "cka_input_raw": 0.010978263480017913,
+    "cka_input_zscore": 0.2838714226173737
+   },
+   {
+    "layer": "model.layers.5",
+    "cka_input_raw": 0.015732261346431655,
+    "cka_input_zscore": 0.2713460659338284
+   },
+   {
+    "layer": "model.layers.6",
+    "cka_input_raw": 0.012923473192395108,
+    "cka_input_zscore": 0.19962133095704043
+   },
+   {
+    "layer": "model.layers.7",
+    "cka_input_raw": 0.011514313500991618,
+    "cka_input_zscore": 0.18771815968402078
+   },
+   {
+    "layer": "model.layers.8",
+    "cka_input_raw": 0.012449599944572544,
+    "cka_input_zscore": 0.20280040841411742
+   },
+   {
+    "layer": "model.layers.9",
+    "cka_input_raw": 0.014711320517982844,
+    "cka_input_zscore": 0.3213900178322443
+   },
+   {
+    "layer": "model.layers.10",
+    "cka_input_raw": 0.012199191569440623,
+    "cka_input_zscore": 0.43576595800272633
+   },
+   {
+    "layer": "model.layers.11",
+    "cka_input_raw": 0.00029050714732721376,
+    "cka_input_zscore": 0.07676594984480999
+   }
+  ],
+  "Chronos-T5-Base": [
+   {
+    "layer": "encoder.block.0",
+    "cka_input_raw": 0.02451512857066233,
+    "cka_input_zscore": 0.42878176455547096
+   },
+   {
+    "layer": "encoder.block.1",
+    "cka_input_raw": 0.021646883153766314,
+    "cka_input_zscore": 0.5295411737908318
+   },
+   {
+    "layer": "encoder.block.2",
+    "cka_input_raw": 0.01770920342034674,
+    "cka_input_zscore": 0.6364482082006077
+   },
+   {
+    "layer": "encoder.block.3",
+    "cka_input_raw": 0.017557664281424922,
+    "cka_input_zscore": 0.6742497729516892
+   },
+   {
+    "layer": "encoder.block.4",
+    "cka_input_raw": 0.017313249429007856,
+    "cka_input_zscore": 0.6802124396482816
+   },
+   {
+    "layer": "encoder.block.5",
+    "cka_input_raw": 0.0170345915084354,
+    "cka_input_zscore": 0.686498598695132
+   },
+   {
+    "layer": "encoder.block.6",
+    "cka_input_raw": 0.016447567433591253,
+    "cka_input_zscore": 0.672651261027361
+   },
+   {
+    "layer": "encoder.block.7",
+    "cka_input_raw": 0.014577805284848002,
+    "cka_input_zscore": 0.6406967613630328
+   },
+   {
+    "layer": "encoder.block.8",
+    "cka_input_raw": 0.011773150755450481,
+    "cka_input_zscore": 0.5528774401313046
+   },
+   {
+    "layer": "encoder.block.9",
+    "cka_input_raw": 0.009573738909857453,
+    "cka_input_zscore": 0.4898184788657784
+   },
+   {
+    "layer": "encoder.block.10",
+    "cka_input_raw": 0.008136521354801276,
+    "cka_input_zscore": 0.4312829915426588
+   },
+   {
+    "layer": "encoder.block.11",
+    "cka_input_raw": 0.0077672308992680445,
+    "cka_input_zscore": 0.30075353220317047
+   }
+  ]
+ },
+ "n_above_p95": {
+  "raw": 21,
+  "zscore": 21
+ },
+ "wall_s": 308.7839660644531
+}

@@ -101,6 +101,7 @@ These instructions are binding for every future session, human or agent.
 | SH-18 | Held-out: 19/20 searched and **20/20 frozen-feature** concept-transfer claims confirm on fresh sealed private epochs; **20/20 again at 7 models on a fourth private draw, and on V3 private + 800 raw real windows (20/20 each)** | 5 |
 | CA-11 | Held-out (K2, 7 models): 10/31 single-feature causal claims confirm; **0** cross-model causal claims do (atlas 0/3 multi-model, L5 0/6); models share what they select, not demonstrably what they do | 5 |
 | SH-19 | Unit-level correspondence (CCM) NO-GO: low-rank TSFM representations defeat the rotation control | 5 |
+| SH-24 | Input control for CONCAT geometry (v3 dev): residualizing each layer on its window's 32 z-scored input values keeps **all 21 pairs above a residual null**, but median peak CKA falls 0.6206 → 0.3993; the 0.93–0.94 Chronos-2/Sundial/Bolt peaks are first-layer input encoding in part | 5 |
 | CA-06 | Measured on shared series with matched floors, cross-model causal "disagreement" shrinks from 18/19 to 12/288 (12 of 89 scorable) | 4 |
 | CA-03 | Seasonality circuit: TimesFM uses 1 head, Chronos-T5-Base a non-additive 5-head circuit | 5 |
 | DE-03 | Chronos-2's skip lens is a silent no-op (the head reads only forecast placeholders), so the flat curve means nothing | 5 |
@@ -256,6 +257,19 @@ These instructions are binding for every future session, human or agent.
 - **Reproduce.** `runs/full_report_run_large/sae/meta.json`.
 - **Ref.** ROADMAP §26 D1 (~22488–22499), §26 E (~23086–23098).
 - **Score. 3/5.** A per-model "what the features track" profile; correlational only.
+
+#### SH-24 · Shared geometry survives an input control, but the early-layer peaks are partly shared input encoding
+- **Claim.** On the v3 CONCAT rows (`runs/panel7_v3_concat`, 512 series × 15 windows, recorded CONCAT peak layer pair per model pair; known-answer reproduction of all 21 `concat_peak` values, max |Δ| 2.618150207744918e-08):
+  - **Input CKA by depth** (input = the window's 32 values z-scored by the 480-step context mean/std, CONCAT of 32 scalar positions): TimesFM 0.531 at `stacked_xf.0` falling to 0.051 at `stacked_xf.18`; Chronos-2 0.894 (block 0) → 0.243 (block 11); Sundial 0.840 (layer 0), minimum 0.099 (layer 6); Chronos-Bolt 0.913 (block 0), minimum 0.496 (block 5); Timer 0.268 (layer 0), minimum 0.094; Time-MoE 0.118 (layer 0), maximum 0.436 (layer 10); Chronos-T5-Base 0.429 (block 0), maximum 0.686 (block 5).
+  - **Input-residualized CKA** (per-position ridge on the 32 input values, 5-fold cross-fitted by series, λ = 1e-3·n_train; null = 200 whole-series permutations): **21/21 pairs above the residual null p95** (p 0.004975124378109453 each, the floor). Median peak CKA 0.6206148514354821 → 0.39933235386171145 (median retained fraction 0.7420791857700478; residual range 0.09517507196642126–0.8196844306110395).
+  - Pairs with Chronos-T5-Base or with TimesFM's first layer retain 0.374–0.631 of their CKA (e.g. TimesFM/Chronos-2 0.7119319005414653 → 0.3463902538665664; Sundial/Chronos-T5-Base 0.6727 → 0.2513). The first-layer Chronos-2/Sundial/Chronos-Bolt peaks (0.9259–0.9422; input CKA of both ends 0.84–0.91) fall to 0.6962–0.8197. Seven pairs, all with Timer or Time-MoE, retain ≥ 0.957 (Sundial/Time-MoE 0.7404 → 0.7413).
+  - Raw (unnormalized) input is not an informative control: CKA(raw input, layer) ≤ 0.025 everywhere because a few high-variance series dominate the Gram.
+- **Reading.** Cross-model geometric similarity is not only a re-encoding of the input, but its size is: the headline 0.93–0.94 peaks sit at first layers and are partly shared input encoding. The control is linear and uses only the window's own values, so residual CKA is an upper bound on input-free sharing. The peaks were selected with the input present (selected-peak null, as in L1).
+- **Models / layers.** All 7; the recorded v3 CONCAT peak layer pair per pair.
+- **Evidence.** Geometric (L1), exploratory (dev). **Status:** exploratory.
+- **Reproduce.** `tsfm_lens/run_input_control_cka.py --config configs/panel7_v3_concat.yaml` (commit ed33275) → `/common/users/djk255/tsfm_runs/input_control_cka/input_control.json` (copy in `paper/findings/figures/data/`).
+- **Ref.** ROADMAP §47.6.
+- **Score. 5/5.** Answers the first question a reviewer asks of any cross-model CKA claim, and corrects the size of the headline geometry result.
 
 ### B.2 Features, dictionaries and concepts
 

@@ -19,14 +19,14 @@ Journal of Machine Learning Research}
 
 \opening{Dear Editors,}
 
-We submit the manuscript \emph{Same Inputs, Different Mechanisms: What Seven Time-Series Foundation Models Share} for consideration as a regular paper in the Journal of Machine Learning Research.
+We submit the manuscript \emph{Shared Inputs, Model-Specific Effects: Inside Seven Time-Series Foundation Models} for consideration as a regular paper in the Journal of Machine Learning Research.
 
 Time-series foundation models such as TimesFM, the Chronos family and Sundial are now widely used for zero-shot forecasting, yet they are built on very different architectures and tokenizations, and little is known about what they represent internally.
 The manuscript asks whether these models learn similar representations and whether shared structure influences the forecast.
 We compare seven models on a common time axis measured from each model's tokens, validate every causal test on a forecaster with planted concepts, and test pre-registered claims once on held-out data from two independently generated benchmarks.
-The study finds that the models agree on what in a series matters: their representations have similar geometry, features in different architectures respond to the same input series, and in every model the causal features act mainly on the level and seasonality of the forecast.
-The causal mechanisms, however, are largely model-specific and distributed over many directions rather than concentrated in single features.
-The study also shows that several practices adopted from the interpretability of language models, including averaging tokens within a time window, ranking features by activation and reading attention weights, give misleading results for these models.
+The models agree on which series matter: features in different architectures select the same series, the causal features of every model act mainly on the level and seasonality of the forecast, and the representations remain more similar than chance after the input is accounted for.
+Agreement on how features change the forecast, by contrast, is found only within one model family, and single features are barely more influential than random directions in the model's own activations.
+We discuss openly whether this reflects different mechanisms or the limited resolution of single-feature interventions, and we report which kinds of claims replicated on held-out data and which did not.
 
 We believe the paper suits JMLR because its contribution combines an empirical question of broad interest, whether different architectures converge to similar representations, with methodology for answering it reliably: controls validated on known answers, explicit null distributions and a single held-out test of registered claims.
 All code, the benchmark generators and a reproduction command for every reported number are public under the MIT license at \url{https://github.com/DanK10097110/TSFM-Interp} and archived at \href{https://doi.org/10.5281/zenodo.23267462}{doi:10.5281/zenodo.23267462}.

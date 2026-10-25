@@ -39,12 +39,12 @@
 \newcommand{\repourl}{https://github.com/DanK10097110/TSFM-Interp}
 
 \jmlrheading{}{2026}{1-\pageref{LastPage}}{}{}{}{Daniel Kushnir and Hao Wang}
-\ShortHeadings{What Time-Series Foundation Models Share}{Kushnir and Wang}
+\ShortHeadings{Comparing Time-Series Foundation Models}{Kushnir and Wang}
 \firstpageno{1}
 
 \begin{document}
 
-\title{Same Inputs, Different Mechanisms:\\ What Seven Time-Series Foundation Models Share}
+\title{Shared Inputs, Model-Specific Effects:\\ Inside Seven Time-Series Foundation Models}
 
 \author{\name Daniel Kushnir \email kushnir.daniel05@gmail.com \\
 \addr Rutgers University \\
@@ -59,13 +59,15 @@ New Brunswick, NJ, USA}
 \maketitle
 
 \begin{abstract}
-Time-series foundation models (TSFMs) such as TimesFM, the Chronos family and Sundial differ widely in architecture and tokenization, and it is not known whether they learn similar internal representations.
-We compare seven TSFMs with representational similarity, sparse dictionaries and causal ablation on a common time axis measured from each model's tokens.
-Because the effect of a single internal feature on a forecast is small, we validate each causal test on a forecaster with planted concepts, and we test pre-registered claims once on held-out data from two independently generated benchmarks.
-The models agree on what in a series matters.
-Their representations have similar geometry, features in different architectures respond to the same input series, and in every model the causal features act mainly on the level and seasonality of the forecast.
-How these properties are processed is largely model-specific, since fine-grained causal concepts rarely extend beyond a few models, and forecast-relevant information is spread across many directions rather than concentrated in single features.
-We also find that several common interpretability practices, including averaging tokens within a time window, ranking features by activation and reading attention weights, give misleading results for TSFMs.
+Time-series foundation models (TSFMs) differ in architecture and tokenization, and it is not known whether they learn similar internal representations.
+We compare seven TSFMs on a measured common time axis with representational similarity, sparse dictionaries and causal ablation.
+Every causal test is first validated on a forecaster with planted concepts, and pre-registered claims are tested once on held-out data from two independently generated benchmarks.
+The models agree on which series matter.
+When a feature of one model selects a set of series, every other model has a feature that selects the same set, and the causal features of all models act mainly on the level and seasonality of the forecast.
+Their representations remain more similar than chance after the input is accounted for, though the strongest similarities lie in input-encoding early layers.
+Agreement on how features change the forecast is rare: matching effects appear only within one model family, and single features are barely more influential than random directions in the model's own activations.
+Claims about shared inputs replicated on held-out data without exception; claims about shared effects did not.
+We also show that averaging the tokens in a time window, a common alignment step, changes which models appear similar.
 \end{abstract}
 
 \begin{keywords}
@@ -89,15 +91,22 @@ Second, real time series have no labels for trend, seasonality or noise, so a fe
 Third, removing a single internal feature typically changes a forecast by about a tenth of the context's standard deviation, which is small enough that an unsuitable null distribution produces spurious effects.
 We place all models on a common time axis derived from measured token spans, use generated benchmarks with known generative components, validate each causal test on a forecaster with planted concepts, and test registered claims once on held-out data from two independently generated corpora.
 
-Our findings fall into three groups.
-The first is that the models share a substantial part of their structure.
-Their layer representations have similar geometry, and when a feature in one model responds to a particular set of series, the other models contain features that respond to the same series.
-These results replicate on held-out data from both corpora and, for the latter, on raw real-world series.
-The causal features of all seven models act mainly on the level and seasonality of the forecast.
-The second is that the mechanisms are largely model-specific.
-Groups of features with matching causal effects rarely include more than a few models, the same function can be carried by a single attention head in one model and by several interacting heads in another, and single features are only modestly more influential than random directions drawn from the model's own activations.
-The third is that several practices adopted from language-model interpretability give misleading results on TSFMs.
-Averaging the tokens within a time window hides much of the similarity between models with different token widths, the most strongly activated dictionary features are mostly without causal effect, and attention weights do not indicate which heads matter.
+The picture that emerges depends on the level at which the models are compared.
+At the level of inputs, they agree to a striking degree.
+When a feature in one model responds selectively to a set of series, each of the other six models contains a feature that singles out the same set, and every registered claim of this kind held on held-out data from both corpora and on raw real-world series.
+The causal features of all seven models also fall into a few common types, most of which raise or lower the level of the forecast or strengthen or weaken its seasonality.
+At the level of effects, agreement is rare.
+Features with the same effect on the same series were found only between Chronos-2 and Chronos-Bolt, which come from the same model family, and none of the registered claims of a shared effect held on held-out data.
+The effects are also weak and diffuse: a dictionary feature changes the forecast only slightly more than a random direction drawn from the model's own activations, and the effects vary continuously rather than forming discrete groups.
+Representational geometry lies between these two levels.
+Every pair of models is more similar than chance, and remains so after what can be predicted from the input is removed, but the highest values are found in the first layers and partly reflect a common encoding of the input.
+
+Besides these findings, the paper makes three contributions of a methodological kind.
+The first is a procedure for comparing models whose tokens cover different time spans, together with the observation that the usual alternative, averaging the tokens in a window, changes which models appear similar.
+The second is a validation of every causal test on forecasters with planted concepts; it rejected one plausible null distribution and showed that the test for shared effects is specific but insensitive, which determines how its negative results can be read.
+The third is a registered held-out evaluation on two independently generated corpora, which shows which kinds of interpretability claims about TSFMs replicate.
+Claims about inputs replicated in full, claims about the effect of single features in roughly a third to a half of cases, and claims about effects shared between models not at all.
+Along the way we find that two habits carried over from the interpretability of language models, ranking dictionary features by activation and reading attention weights, point to the wrong components in these models.
 
 Section~\ref{sec:related} reviews related work.
 Section~\ref{sec:setup} describes the models, benchmarks and confirmation protocol, and Section~\ref{sec:methods} the measurements.
@@ -391,7 +400,22 @@ All 21 model pairs have layer pairs whose CKA exceeds the permutation null on bo
 The highest CKA between TimesFM and another model ranges from 0.36 to 0.64 on the primary corpus and from 0.38 to 0.71 on the replication corpus.
 The layer pairs selected on the development data of the replication corpus were registered and tested on a new held-out split, where all 21 again exceed their nulls; for TimesFM and Chronos-2 the CKA is 0.707 (95\% interval 0.679 to 0.734), compared with 0.712 on the development data.
 Linear maps between models give the same picture, with a mean gain over the input baseline of 0.55 at the 21 best layer pairs.
-Models with different tokenizers, depths and training objectives thus organize series in measurably similar ways, in line with the convergence reported for vision and language models \citep{huh2024platonic}.
+
+These values need to be read with the input in mind.
+For most pairs the most similar layers are the first ones, and first layers largely re-encode the series they are given (Figure~\ref{fig:geometry}b).
+The three models with 16-step tokens reach CKA of 0.93 to 0.94 with one another at their first layers, where each also has CKA between 0.84 and 0.91 with the input window itself, normalized per series.
+To separate shared processing from shared input, we regressed every layer on the 32 input values of its window, cross-fitted over series, and recomputed CKA on the residuals (development split of the replication corpus, 512 series).
+All 21 pairs remain above a permutation null of the residuals, but the median peak CKA falls from 0.62 to 0.40 (Figure~\ref{fig:geometry}a).
+Pairs that involve Chronos-T5-Base or the first layer of TimesFM retain between 37\% and 63\% of their similarity, whereas seven pairs, all of them involving Timer or Time-MoE, retain at least 96\%.
+Because the regression removes only linear information from the window itself, the residual values are an upper bound on similarity beyond the input.
+The models thus organize series in measurably similar ways beyond what their inputs impose, in line with the convergence reported for vision and language models \citep{huh2024platonic}, but the largest values of CKA in part reflect a common encoding of the input.
+
+\begin{figure}[!tb]
+\centering
+\includegraphics[width=\textwidth]{geometry.pdf}
+\caption{Representational geometry and the input. (a) Highest CKA between layers of each model pair, as measured and after removing from both layers what can be predicted linearly from the input window; the bar marks the 95th percentile of a permutation null for the residuals. (b) CKA between each captured layer and the input window, normalized per series, against relative depth. Development split of the replication corpus, 512 series.}
+\label{fig:geometry}
+\end{figure}
 
 Much of this similarity is lost when windows are represented by the average of their tokens, the usual approach when token widths differ.
 Averaging lowers the held-out CKA of TimesFM with Chronos-2, Chronos-T5-Base, Chronos-Bolt and Sundial by between 0.30 and 0.43, and this reduction was confirmed for all four pairs on the second held-out split.
@@ -403,11 +427,13 @@ Pairs involving Timer change little, because a 96-step token has no internal ord
 \label{sec:inputs}
 Geometry compares entire layers, whereas concept transfer asks whether individual features respond to the same series.
 On the development split of the primary corpus, 1{,}296 of 1{,}584 transfer tests are reciprocal after correction.
-We registered 20 transfer claims from two concepts, one in TimesFM and one in Sundial, with destination features in all seven models.
+We registered 20 transfer claims from two concepts, one in the 19th of TimesFM's 20 layers and one in the 7th of Sundial's 12 layers, with destination features in all seven models.
 All 20 were confirmed on the held-out split, with AUCs between 0.92 and 0.97 against null 95th percentiles between 0.70 and 0.75 (Figure~\ref{fig:heldout}b).
 On the replication corpus, a new set of 20 claims from concepts in Sundial, Chronos-2 and Time-MoE was confirmed in full on the held-out split and again on the 800 raw real-world windows, with AUCs between 0.76 and 0.99.
 The result does not depend on the window size; with windows of 64 or 96 steps, the fraction of reciprocal transfers changes from 0.83 to 0.80.
 The held-out confirmation concerns the existence of a matching feature rather than its identity, since only 8 of the 20 best-matching held-out features are the features selected during development.
+Because the source concepts lie deep in their models, this agreement is not confined to layers that encode the input.
+The test does not show, however, that the distinction the features draw goes beyond what simple statistics of the input would reveal; it shows that all seven models draw it.
 
 \paragraph{Common effect types.}
 \label{sec:families}
@@ -477,7 +503,7 @@ Which features pass the test, however, depends on the intervention.
 Finally, the effects do not form discrete groups.
 Within 50 of 56 layers, the effect vectors cannot be clustered into groups of at least three features, and the effect families do not outnumber those found in shuffled data ($p=0.68$).
 The effect vectors are not low-dimensional (participation ratio 5.58 of 9 on the replication corpus), so the lack of clusters does not reflect a lack of variation.
-Together with the comparison against activation-matched directions, this indicates that information relevant to the forecast is distributed over many directions and varies continuously.
+Combined with the weak specificity of single features, this indicates that information relevant to the forecast is distributed over many directions and varies continuously.
 This differs from the discrete, interpretable units sought in language models \citep{bricken2023monosemanticity}.
 
 \subsection{Interpretability Practices That Mislead}
@@ -497,12 +523,10 @@ In TSFMs these features are mostly without effect.
 Of the 927 most prominent features in the held-out data of the primary corpus, 83.5\% have no causal effect on the forecast (one-sided 95\% lower bound 81.7\%), and on the replication corpus the share is 91.9\%.
 Ranking by estimated effect works considerably better. On the development data of the replication corpus, setting to zero the five features ranked highest by a gradient-based attribution produces a median of 74\% of the change in the forecast that the dictionary can express, more than random sets of five features with matched activation on 30 of 31 layers.
 
-\paragraph{Reading attention weights.}
-In an earlier study of TimesFM and Chronos-T5-Base, the attention that a head pays to seasonal lags was uncorrelated with the loss of seasonality when the head was removed (Spearman correlation 0.026 and $-0.118$), extending the observation of \citet{jain2019attention} to forecasting models.
-
-\paragraph{Correlating features with generative factors.}
-Because the synthetic series have known components, features can be matched to generative factors.
-In the same earlier study, 154 of 10{,}240 TimesFM features and 115 of 6{,}144 Chronos-T5-Base features were correlated with a generative factor beyond a permutation null, most strongly with intermittency (Spearman correlation 0.881).
+\paragraph{Attention weights and generative factors.}
+Two further observations come from an earlier study of TimesFM and Chronos-T5-Base and are exploratory.
+The attention that a head pays to seasonal lags was uncorrelated with the loss of seasonality when the head was removed (Spearman correlation 0.026 and $-0.118$), which extends the observation of \citet{jain2019attention} to forecasting models.
+And because the synthetic series have known components, features could be matched to generative factors: 154 of 10{,}240 TimesFM features and 115 of 6{,}144 Chronos-T5-Base features correlated with a factor beyond a permutation null, most strongly with intermittency (Spearman correlation 0.881).
 The correspondence is not specific, however.
 In a separate registered test on 13 layers, varying a generative factor in a controlled way changed the matched feature no more than random features with matched activation, and none of 151 tests remained significant after correction.
 
@@ -538,18 +562,29 @@ Internal features also do not help to choose a model for each series, since rout
 \section{Discussion}
 \label{sec:discussion}
 
-The seven models differ in tokenization, depth and training objective, yet their representations have similar geometry, they respond to the same series, and their causal features have similar broad effects on the level and seasonality of the forecast.
-The similarity largely ends at the level of individual causal effects.
-Fine-grained concepts are organized by model, the same function can be carried by one attention head or by several, and the same effect on the same series is detected only within one model family.
-One interpretation is that the models agree on which properties of a series are predictive, which is largely determined by the data, while the way the forecast responds to these properties depends on the architecture.
-This is a weaker form of convergence than that proposed for vision and language models \citep{li2016convergent,huh2024platonic}.
-With current methods, agreement on inputs can be measured and replicates, whereas agreement on effects across model families lies below the resolution of single-feature ablation at the effect sizes we observe.
+\paragraph{Why inputs agree and effects do not.}
+A simple account fits most of what we observe.
+Which properties of a series matter for its forecast (its level, the strength of its seasonality, whether it is intermittent) is a fact about the data, and any competent forecaster has to detect them.
+How that detection is turned into a forecast depends on choices that differ between the models: how the series is normalized, how many steps a token covers, and whether the output is a quantile head, a patch decoder or a sampler.
+On this account the models should agree on which series a feature selects and on the broad direction of its effect, and should differ in the detailed effect, which is the pattern we find.
+It is a weaker form of convergence than the one proposed for vision and language models \citep{li2016convergent,huh2024platonic}, and it is consistent with the observation that the only pair with matching effects, Chronos-2 and Chronos-Bolt, shares both training lineage and output design.
 
-The results have several practical implications.
-Single dictionary features are only weakly specific relative to directions the model actually uses, so claims about individual features, including those in recent single-model studies \citep{mishra2026dissecting,oublal2026timesae,divo2026zeitgeist}, should be tested against an activation-matched null.
-The importance of a feature should be established by intervention, because activation strength, attention weights and correlation with a generative factor each point to the wrong components.
-Comparisons across models require a measured time axis and a representation that preserves the order of time steps within a window.
-Finally, with thousands of exploratory comparisons \citep{gelman2014garden}, registration and a single held-out test were essential. They confirmed between half and two thirds of the registered claims and separated the types of claims that replicate from those that do not.
+\paragraph{How strong is the evidence for model-specific mechanisms?}
+The evidence for shared inputs is direct; the evidence for different mechanisms is weaker, and we want to be explicit about why.
+Three observations point to model-specific effects: the atlas groups features by model more than chance would, 22 of the 216 scorable same-effect tests fall below the lower tail of the reference distribution, and in an earlier two-model study the same seasonal function was carried by one head in TimesFM and by five interacting heads in Chronos-T5-Base.
+Against this, the same-effect test detected a truly shared concept in only two of five planted forecasters, and 1{,}074 of the 1{,}290 tests could not be scored because one of the two features had no detectable effect on the shared series.
+A second consideration follows from the specificity results.
+If forecast-relevant information is spread over many directions, removing one dictionary feature removes an arbitrary part of a larger mechanism, and two models that compute the same function could still disagree feature by feature.
+The safer statement is therefore that we find no evidence of shared mechanisms across model families at the resolution of single features, and some evidence against it.
+Interventions on learned subspaces \citep{geiger2021causal,makelov2024illusion}, dictionaries trained jointly on several models \citep{lindsey2024crosscoders}, or stronger interventions would test the question at a coarser resolution, and could overturn this conclusion.
+
+\paragraph{Implications for practice.}
+For single-model studies of TSFMs \citep{mishra2026dissecting,oublal2026timesae,divo2026zeitgeist}, the main implication is that a feature's effect should be compared with random directions drawn from the model's own activations; against isotropic directions most features look important, and against activation-matched ones few do.
+The importance of a feature should be established by intervention, since activation strength, attention weights and correlation with a generative factor each pointed to the wrong components here.
+Comparisons across models need a measured time axis and a window representation that preserves the order of time steps.
+Finally, the held-out tests changed our conclusions in ways that the development data could not have.
+Between a third and a half of the registered claims did not replicate, and the failures were concentrated in the claims that would have been most interesting, those about shared effects, individual features and depth.
+With thousands of exploratory comparisons \citep{gelman2014garden}, we doubt that this kind of study can be done reliably without registration.
 
 \subsection{Limitations}
 \label{sec:limitations}
@@ -567,11 +602,10 @@ Finally, results about concepts depend on the size, sparsity and training seed o
 \section{Conclusion}
 \label{sec:conclusion}
 
-We compared seven time-series foundation models on two independently generated benchmarks, using causal tests validated on planted concepts and testing registered claims once on held-out data.
-Architectures that differ substantially have similar representational geometry, respond to the same inputs and contain features that raise or lower the level of the forecast or dampen its seasonality.
-Their causal structure, however, is model-specific and distributed.
-Several practices adopted from the interpretability of language models, including averaging tokens, ranking features by activation and reading attention weights, give misleading results for these models.
-Because the benchmarks, the analysis software and the reproduction commands are public, these conclusions can be tested on new models as they appear.
+Time-series foundation models built in very different ways pick out the same series and push their forecasts in broadly the same directions, but we could not find a mechanism that two model families share.
+Whether that reflects genuinely different solutions or the limited resolution of single-feature interventions is, in our view, the main open question this study leaves.
+Answering it will require interventions on subspaces or jointly trained dictionaries, applied to more models than the seven studied here.
+The benchmarks, the analysis software and a reproduction command for every number are public, so that the comparison can be extended as new models appear.
 
 \acks{Computational resources were provided by the second author's laboratory at Rutgers University.
 This work received no external funding, and the authors declare no competing interests.

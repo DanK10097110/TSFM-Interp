@@ -40210,3 +40210,14 @@ against `check_four_model.json`, `items_v2_v3.json`, `patching.json`.
   Resample loses mostly sparse features, clean loses both and creates 8/91 new cov clears (not decomposed into real
   effect vs a different noise profile; treat as a flag). Paper: the "resample and clean were not run" sentences are
   replaced by these numbers. No ROADMAP prose deleted.
+
+### 47.6 Findings — input control for CONCAT geometry (2026-10-25; `tsfm_lens/run_input_control_cka.py`, commit ed33275; `/common/users/djk255/tsfm_runs/input_control_cka/input_control.json`)
+
+Motivation: a reviewer reading the findings paper would ask whether the shared geometry (all 21 pairs above null; peaks mostly at the first captured layers) only reflects that early layers re-encode the input. Exploratory, dev rows of `runs/panel7_v3_concat` (512 series × 15 windows), recorded CONCAT peak layer pair per model pair.
+
+- Known answer: all 21 recorded `concat_peak` values recomputed from the store, max |Δ| 2.618150207744918e-08.
+- Input = the window's 32 context values, z-scored per series over the 480-step context, as a CONCAT of 32 scalar positions. Raw (unnormalized) values give CKA(input, layer) ≤ 0.025 everywhere and are not an informative control.
+- CKA(z-scored input, layer) is highest at the first layer for TimesFM (0.531), Chronos-2 (0.894), Sundial (0.840), Chronos-Bolt (0.913) and Timer (0.268), and falls with depth (TimesFM 0.051 at `stacked_xf.18`). Time-MoE peaks at layer 10 (0.436), Chronos-T5-Base at block 5 (0.686).
+- Residualizing each layer on the input window (per-position ridge, 5-fold cross-fitted by series, λ = 1e-3·n_train) and recomputing CKA: 21/21 pairs above a 200-permutation whole-series null p95 (each p = 0.004975124378109453, the floor). Median peak CKA 0.6206148514354821 → 0.39933235386171145; median retained fraction 0.7420791857700478; pairs with Chronos-T5-Base or TimesFM `stacked_xf.0` retain 0.374–0.631; Chronos-2/Sundial/Chronos-Bolt first-layer peaks 0.9259–0.9422 → 0.6962–0.8197; seven Timer/Time-MoE pairs retain ≥ 0.957 (Sundial/Time-MoE 0.7404 → 0.7413).
+- Reading: shared geometry is not only shared input, but the headline peak values are partly input encoding. The control is linear and window-local, so residual CKA is an upper bound on input-free sharing.
+- FINDINGS SH-24. Paper (findings version) §5.2 and its new geometry figure report both numbers.

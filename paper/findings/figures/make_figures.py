@@ -3,10 +3,12 @@
 The figures are drawn at the paper's text width (6.0 in) so that LaTeX includes them
 at scale 1, which keeps every label at its stated point size in print. Data loading,
 model colors and channel labels are shared with ``paper/figures/make_figures.py``;
-the labels here use the terminology of the findings paper.
+the labels here use the terminology of the findings paper. The geometry figure reads
+``data/input_control.json``, the output of ``tsfm_lens/run_input_control_cka.py``.
 """
 
 import argparse
+import json
 import sys
 from pathlib import Path
 
@@ -198,15 +200,60 @@ def fig_funnel(run):
     _save(fig, "funnel.pdf")
 
 
+def _short(model):
+    """Model name without the size suffix, for pair labels."""
+    return model.replace("-Base", "")
+
+
+def fig_geometry(path):
+    """Peak CKA of each model pair before and after removing the input, and input CKA by depth."""
+    d = json.loads(path.read_text(encoding="utf-8"))
+    pairs = sorted(d["pairs"], key=lambda p: p["cka"])
+    fig, (ax, ax2) = plt.subplots(1, 2, figsize=(TEXT_WIDTH, 5.0), layout="constrained",
+                                  gridspec_kw={"width_ratios": [1.35, 1.0]})
+    for i, p in enumerate(pairs):
+        z = p["zscore"]
+        ax.plot([z["residual_cka"], p["cka"]], [i, i], color="#cccccc", lw=1.2, zorder=1)
+        ax.plot(p["cka"], i, "o", mfc="white", mec=INK, ms=4.5, zorder=2)
+        ax.plot(z["residual_cka"], i, "o", color=ACCENT, ms=4.5, zorder=3)
+        ax.plot(z["residual_null_p95"], i, "|", color="#888888", ms=7, mew=1.2, zorder=2)
+    ax.set_yticks(range(len(pairs)), [f"{_short(p['model_a'])} / {_short(p['model_b'])}" for p in pairs],
+                  fontsize=8)
+    ax.set_xlim(0, 1)
+    ax.set_xlabel("CKA")
+    ax.set_title("(a) Peak CKA of each model pair", loc="left")
+    marks = [
+        plt.Line2D([], [], marker="o", ls="", mfc="white", mec=INK, label="as measured"),
+        plt.Line2D([], [], marker="o", ls="", color=ACCENT, label="input removed"),
+        plt.Line2D([], [], marker="|", ls="", color="#888888", mew=1.2, ms=7, label="null, 95th percentile"),
+    ]
+
+    models = base._models_in(set(d["depth_profile"]))
+    for m in models:
+        prof = d["depth_profile"][m]
+        idx = np.array([int(r["layer"].rsplit(".", 1)[1]) for r in prof])
+        ax2.plot(idx / idx.max(), [r["cka_input_zscore"] for r in prof], "-o", ms=2.5, lw=1.3,
+                 color=base._color(m, models), label=_short(m))
+    ax2.set_ylim(0, 1)
+    ax2.set_xlabel("relative depth")
+    ax2.set_ylabel("CKA with the input")
+    ax2.set_title("(b) Similarity to the input", loc="left")
+    fig.legend(handles=marks + ax2.get_legend_handles_labels()[0], loc="outside lower center", ncol=4,
+               frameon=False, handlelength=1.2, columnspacing=1.0, handletextpad=0.4)
+    _save(fig, "geometry.pdf")
+
+
 def main():
-    """Write heldout.pdf, families.pdf and funnel.pdf next to this script."""
+    """Write heldout.pdf, families.pdf, funnel.pdf and geometry.pdf next to this script."""
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--run", type=Path, default=base.DEFAULT_RUN)
+    ap.add_argument("--input-control", type=Path, default=OUT / "data" / "input_control.json")
     args = ap.parse_args()
     _style()
     fig_heldout(args.run)
     fig_families(args.run)
     fig_funnel(args.run)
+    fig_geometry(args.input_control)
 
 
 if __name__ == "__main__":

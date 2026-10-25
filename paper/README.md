@@ -4,10 +4,11 @@ Two versions: the full JMLR paper (`main.tex`, a 32-page body plus appendices an
 JMLR sets no page limit for regular papers)
 and a short JMLR MLOSS-track software paper (`mloss/main.tex`, under 4 pages excluding references,
 sharing `jmlr2e.sty` and `references.bib`; build it from inside `mloss/` with the same commands).
-A third, findings-first version (`findings/main.tex`, a single .tex file, 21 pages in total) reorganizes the same results
-around three findings (shared inputs and geometry; model-specific, distributed causal structure; interpretability
-practices that mislead on TSFMs). Its figures are drawn at the 6.0 in text width by `findings/figures/make_figures.py`
-(from `examples/panel7_v2/run`) so that every label prints at 8.5 pt or larger. Build it from inside `findings/`;
+A third, findings-first version (`findings/main.tex`, a single .tex file, 26 pages in total) reorganizes the same results
+by level of comparison (agreement on inputs, rare agreement on effects, geometry in between, with an input control).
+Its figures are drawn at the 6.0 in text width by `findings/figures/make_figures.py` (from `examples/panel7_v2/run`, and
+`findings/figures/data/input_control.json`, the output of `tsfm_lens/run_input_control_cka.py`, for the geometry figure)
+so that every label prints at 8 pt or larger. Build it from inside `findings/`;
 `bash findings/make_archive.sh` writes a self-contained, test-compiled source archive (Overleaf or JMLR upload) to the
 repository root. Its cover letter is `findings/cover_letter.tex` (build with pdflatex).
 
