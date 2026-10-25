@@ -59,15 +59,14 @@ New Brunswick, NJ, USA}
 \maketitle
 
 \begin{abstract}
-Time-series foundation models (TSFMs) are built in very different ways, and whether they learn similar representations is unknown.
-We compare seven TSFMs on a common time axis measured from their tokens, using representational similarity, sparse dictionaries and causal ablation.
-Each causal test is validated on a forecaster with planted concepts, and pre-registered claims are tested once on held-out data from two independent benchmarks.
-The models agree on which series matter.
-When a feature in one model responds selectively to a set of series, every other model has a feature that responds to the same set, and in every model the causal features act mainly on the forecast's level and seasonality.
-Their representations are more similar than chance even after removing the input, though the strongest similarity lies in early layers that mostly encode it.
-The models rarely agree on how a feature changes the forecast: matching effects appear only within one model family, and single features are barely more influential than random directions in the model's activations.
-All held-out claims about shared inputs held, and none about shared effects did.
-We also show that averaging the tokens in a time window, a common alignment step, changes which models appear similar.
+Time-series foundation models (TSFMs) differ widely in architecture and tokenization, and whether they learn similar representations is unknown.
+We compare seven TSFMs on a measured common time axis, using representational similarity, sparse dictionaries and causal ablation; causal tests are validated on a forecaster with planted concepts, and pre-registered claims are tested once on held-out data from two independent benchmarks.
+The models largely agree on which series are distinctive.
+When a feature of one model responds selectively to a set of series, each other model has a feature responding to the same set, and in all models the features that influence the forecast act mainly on its level and seasonality.
+Representations remain more similar than chance after regressing out the input, although the highest similarities occur in early layers that largely encode the input.
+Agreement on how individual features change the forecast is much rarer and was found only within one model family, and single features are only slightly more influential than random directions in activation space.
+On held-out data, all claims about shared inputs were confirmed and none about shared effects.
+We also show that averaging tokens within a time window, a common alignment step, changes which models appear similar.
 \end{abstract}
 
 \begin{keywords}
@@ -79,30 +78,27 @@ time-series foundation models, mechanistic interpretability, representational si
 
 Forecasting models pretrained on large collections of time series, such as TimesFM \citep{das2024timesfm}, the Chronos family \citep{ansari2024chronos,ansari2025chronos2}, Sundial \citep{liu2025sundial}, Timer \citep{liu2024timer} and Time-MoE \citep{shi2025timemoe}, are now used zero-shot in place of models fitted to each dataset.
 They are built in very different ways.
-TimesFM is a decoder that reads 32-step patches; Chronos-T5 turns every time step into a token and uses an encoder--decoder; Chronos-2 is an encoder; Sundial samples its forecast from a flow-matching head; Timer reads 96-step tokens.
-Benchmarks rank these models by accuracy but do not tell us what they compute.
-For vision and language models it has been argued that networks trained on similar data converge to similar representations \citep{li2016convergent,huh2024platonic}.
-We ask whether the same is true of TSFMs, and whether what they share affects the forecast.
+TimesFM is a decoder that reads 32-step patches, Chronos-T5 turns every time step into a token and uses an encoder--decoder, Chronos-2 is an encoder, Sundial samples its forecast from a flow-matching head, and Timer reads 96-step tokens.
+Benchmarks rank these models by accuracy but do not show what they compute.
+For vision and language models it has been argued that networks trained on similar data converge to similar representations \citep{li2016convergent,huh2024platonic}, and we ask whether the same holds for TSFMs and whether what they share influences the forecast.
 
-Three practical problems stand in the way.
-Tokens of different models cover different stretches of time, from one step to 96, so activations cannot be compared position by position.
-Real series carry no labels for properties such as trend or seasonality, so a feature that seems to track seasonality cannot be checked.
-And removing one internal feature typically changes a forecast by about a tenth of the context's standard deviation, which is small enough for a poorly chosen baseline to produce spurious effects.
-We therefore measure the time span of each model's tokens and compare all models on a common grid of 32-step windows, use generated benchmarks whose components are known, validate every causal test on a synthetic forecaster with planted concepts, and test pre-registered claims once on held-out data from two independently generated corpora.
+Comparing the internals of these models raises three practical problems.
+Because the tokens of different models cover between one and 96 time steps, their activations cannot be compared position by position.
+Because real series carry no labels for properties such as trend or seasonality, a feature that appears to track seasonality cannot be checked against ground truth.
+And because removing a single internal feature typically changes the forecast by only about a tenth of the context's standard deviation, a poorly chosen baseline easily produces spurious effects.
+We address these problems by measuring the time span of each model's tokens and comparing all models on a common grid of 32-step windows, by using generated benchmarks whose components are known, by validating every causal test on a synthetic forecaster with planted concepts, and by testing pre-registered claims once on held-out data from two independently generated corpora.
 
-The answer depends on what is compared.
-The models agree on inputs.
-If a feature in one model responds selectively to a set of series, every other model has a feature that picks out the same set; all 40 registered claims of this kind held on held-out data, and the 20 from the second corpus held again on raw real-world series.
-The features that affect the forecast also have similar broad effects in every model, most of them raising or lowering its level or strengthening or weakening its seasonality.
-The models rarely agree on effects.
-Features with the same effect on the same series were found only between Chronos-2 and Chronos-Bolt, two models of the same family, and no registered claim of a shared effect held.
-The effects are also weak and diffuse: a dictionary feature changes the forecast only a little more than a random direction drawn from the model's own activations, and effects vary continuously instead of falling into groups.
-Representational geometry lies in between.
-Every pair of models is more similar than chance, also after removing what the input predicts, but the strongest similarity is in the first layers and partly reflects a common encoding of the input.
+Our main finding is that the models agree much more on inputs than on effects.
+If a feature in one model responds selectively to a set of series, each of the other models has a feature that picks out the same set; all 40 registered claims of this kind were confirmed on held-out data, and the 20 from the second corpus were confirmed again on raw real-world series.
+The features that influence the forecast also have similar broad effects across models, most of them raising or lowering its level or strengthening or weakening its seasonality.
+Features with the same effect on the same series, on the other hand, were found only between Chronos-2 and Chronos-Bolt, which belong to the same model family, and none of the registered claims of a shared effect was confirmed.
+The effects of single features are moreover weak, being only slightly larger than those of random directions drawn from the model's own activations, and they vary continuously rather than falling into distinct groups.
+Representational geometry gives an intermediate picture, since every pair of models is more similar than chance, also after the input is regressed out, but the highest similarities occur in the first layers and partly reflect a common encoding of the input.
 
-Two further results concern method.
-Claims of different kinds replicated at very different rates: those about shared inputs all held, about a third to a half of those about single features held, and none about shared effects did.
-And two habits carried over from language models gave misleading answers: averaging the tokens in a window, which hides much of the similarity between models with different token widths, and ranking dictionary features by activation, which mostly selects features without effect.
+Some of the results concern method rather than the models.
+Claims of different kinds replicated at very different rates, and in particular claims about single features were confirmed in only about a third to a half of cases.
+Two practices carried over from language models also gave misleading answers.
+Averaging the tokens in a window hides much of the similarity between models with different token widths, and ranking dictionary features by activation mostly selects features that have no effect on the forecast.
 Code, benchmark generators and a reproduction command for every number in the paper are public.\footnote{\url{\repourl}. Appendix~\ref{app:ledger} maps each result to its entry in the repository's results ledger.}
 
 \section{Related Work}
@@ -114,7 +110,7 @@ PatchTST \citep{nie2023patchtst} established patches of consecutive time steps a
 Chronos \citep{ansari2024chronos} instead scales and quantizes every time step into a vocabulary and trains a T5 encoder--decoder \citep{raffel2020t5} with a cross-entropy loss, Chronos-Bolt and Chronos-2 \citep{ansari2025chronos2} predict several steps and quantiles directly instead of sampling tokens one at a time, Time-MoE \citep{shi2025timemoe} uses a sparse mixture of experts over single steps, Sundial \citep{liu2025sundial} samples forecasts from a flow-matching head \citep{lipman2023flow}, Lag-Llama \citep{rasul2023lagllama} reads lagged values, and TTM \citep{ekambaram2024ttm} shows that small mixer models can be competitive.
 Most of these models normalize each series internally \citep{kim2022revin}, and synthetic series are widely used for pretraining and evaluation \citep{kang2020gratis,dooley2023forecastpfn}.
 These models are compared mainly through accuracy on benchmark collections such as GIFT-Eval \citep{aksu2024gifteval}, and \citet{wan2026collapse} document that they often produce nearly constant forecasts on weakly predictable series.
-The diversity of tokenization is what makes these models an informative test of representational convergence, and it is also the main obstacle to comparing them, which our measured alignment addresses.
+Their different tokenizations make these models an informative test of representational convergence, but also make them difficult to compare, which is the problem our measured alignment addresses.
 
 \paragraph{Explaining time-series models.}
 Early work on time-series explanation attributes predictions to individual time steps and variables.
@@ -269,19 +265,17 @@ Here $f$ is the forecasting model and $g_c$ measures one of nine properties of t
 Both runs use the reconstruction, so the dictionary's reconstruction error cancels.
 Before any feature is scored we check that patching a layer with its own activations leaves the forecast unchanged and that patching it with another layer's activations does not, and models with sampled heads are run with the same random seed in every compared call.
 
-Whether an effect is large has to be judged against a baseline.
-We remove the same amount of activation, at every token, along 16 random directions on the same series, and call a feature causal for property $c$ if its mean absolute effect exceeds the 95th percentile of these random effects.
+To judge whether an effect is large, we remove the same amount of activation, at every token, along 16 random directions on the same series, and call a feature causal for property $c$ if its mean absolute effect exceeds the 95th percentile of these random effects.
 In the primary corpus the random directions are drawn uniformly in the dictionary's code space (the isotropic null).
 In the replication corpus they are drawn from a Gaussian with the covariance of the layer's activations (the activation-matched null), so that they point in directions the model actually uses.
-Because a mean over several series is compared with a percentile of single-series effects, a random direction is called causal more or less often than 5\% of the time; we measure this chance rate by scoring each random direction against the others.
+Since a mean over several series is compared with a percentile of single-series effects, the rate at which a random direction would be called causal differs from 5\%, and we estimate this chance rate by scoring each random direction against the others.
 
 \subsection{Concepts and Two Kinds of Sharing}
 \label{sec:sharing}
 
-By a concept we mean a causal feature together with the set of series on which it is most active.
-Two models can share a concept in two senses.
+By a concept we mean a causal feature together with the set of series on which it is most active, and we distinguish two senses in which models can share one.
 
-They share inputs if some feature of the second model separates the concept's series from the remaining series.
+Two models share inputs if some feature of the second model separates the concept's series from the remaining series.
 We measure this by the area under the ROC curve (AUC) of the best such feature, which is 0.5 for a feature unrelated to the concept and 1 for a perfect separation.
 Because the best of thousands of features will separate almost any set of series to some degree, the null repeats the same search for random sets of series matched in generator family.
 A transfer is reciprocal if it holds in both directions; the false discovery rate is controlled within each ordered model pair \citep{benjamini1995fdr}.
@@ -298,15 +292,13 @@ A coarser clustering into effect families (average linkage at 0.5) summarizes th
 \subsection{Validation on Forecasters With Planted Concepts}
 \label{sec:knownanswer}
 
-A poorly chosen null does not raise an error; it produces wrong results that look like any others.
-We therefore run every test first on a synthetic forecaster whose concepts are known.
+Because a poorly chosen null produces wrong results without any sign of failure, we run every test first on a synthetic forecaster whose concepts are known.
 One block of the forecaster writes fixed directions into its residual stream on series with a given property, and its output head turns them into a known change of level, trend, seasonality or dispersion.
 It also contains decoys: directions that respond to inputs but have no effect, effects too weak to detect, and a layer with no planted effect.
 For the cross-model tests, two such forecasters of different width, depth and basis share some planted concepts.
 Pass criteria were fixed in advance (Table~\ref{tab:knownanswer}).
-Both nulls used in the study pass.
-A plausible alternative, which removes a single batch-averaged amount of activation instead of the amount the feature removes at each token, fails on every forecaster.
-The same-effect test never declared two decoys to share an effect but found a truly shared concept in only two of five forecasters, so its positive results can be trusted and its negative results say little.
+Both nulls used in the study pass, whereas a plausible alternative that removes a single batch-averaged amount of activation, instead of the amount the feature removes at each token, fails on every forecaster.
+The same-effect test never declared two decoys to share an effect but detected a truly shared concept in only two of five forecasters, so that a positive result of this test is reliable while a negative result carries little information.
 
 \begin{table}[!tb]
 \centering
@@ -333,9 +325,7 @@ Same-effect test & no false agreement among 9 decoys; detects a shared concept i
 \label{sec:heldout}
 
 Of the testable registered claims, 43 of 82 held on the primary corpus and 41 of 63 on the replication corpus (Table~\ref{tab:heldout}).
-The pattern is the same on both.
-Claims about geometry and shared inputs held, claims about the effects of single features held in part, and no claim that two models share an effect held.
-The rest of this section follows that order.
+On both corpora, claims about geometry and shared inputs were confirmed, claims about the effects of single features were confirmed in part, and none of the claims that two models share an effect was confirmed; the following subsections take these up in turn.
 
 \begin{table}[!tb]
 \centering
@@ -381,8 +371,7 @@ Every one of the 21 model pairs has layers whose CKA exceeds the permutation nul
 On the replication corpus the best layer pair of each model pair was registered and tested on a new held-out split, where all 21 again exceeded their nulls; for TimesFM and Chronos-2 the held-out CKA is 0.707 (95\% interval 0.679 to 0.734) against 0.712 in development.
 Ridge maps between the best layer pairs explain on average 0.55 more variance than a map from input features.
 
-The obvious objection is that two models may look alike simply because both encode the same input.
-For most pairs the most similar layers are indeed the first ones, which closely track the input (Figure~\ref{fig:geometry}b).
+Two models may of course appear similar simply because both encode the same input, and for most pairs the most similar layers are indeed the first ones, which closely track the input (Figure~\ref{fig:geometry}b).
 The three models with 16-step tokens reach CKA of 0.93 to 0.94 with one another in their first layers, and each of those layers has CKA between 0.84 and 0.91 with the input window itself.
 To remove the input, we regressed every layer on the 32 values of its window, cross-fitted over series, and recomputed CKA on the residuals (development split of the replication corpus, 512 series).
 All 21 pairs stay above a permutation null of the residuals, but the median CKA of the best layer pair falls from 0.62 to 0.40 (Figure~\ref{fig:geometry}a).
@@ -397,11 +386,10 @@ The models do arrange series similarly beyond what the input dictates, in line w
 \label{fig:geometry}
 \end{figure}
 
-The choice of window representation matters as much as the input.
-If a window is represented by the average of its tokens, the usual choice when token widths differ, the held-out CKA of TimesFM with Chronos-2, Chronos-T5-Base, Chronos-Bolt and Sundial falls by 0.30 to 0.43; this reduction was confirmed for all four pairs on the second held-out split.
+The way windows are represented matters as well. If a window is represented by the average of its tokens, the usual choice when token widths differ, the held-out CKA of TimesFM with Chronos-2, Chronos-T5-Base, Chronos-Bolt and Sundial falls by 0.30 to 0.43; this reduction was confirmed for all four pairs on the second held-out split.
 Models with short tokens encode the order of steps within a window across several tokens, and averaging erases that order.
 In the first block of Chronos-T5-Base, for instance, the slope of a window can be read from the window average with $R^2=0.13$ but from finer sub-windows with $R^2=0.96$.
-Averaging also reorders the pairs: TimesFM and Chronos-2, the most similar pair by agreement of their forecast errors, rank 15th of 21 by CKA with averaged windows and 9th (primary) or 7th (replication) with concatenated ones.
+Averaging also changes the ranking of the pairs, so that TimesFM and Chronos-2, the most similar pair by agreement of their forecast errors, rank 15th of 21 by CKA with averaged windows and 9th (primary) or 7th (replication) with concatenated ones.
 Pairs involving Timer barely change, since a 96-step token has no internal order to lose.
 
 \paragraph{Inputs.}
@@ -411,13 +399,12 @@ On the development split of the primary corpus, 1{,}296 of 1{,}584 transfer test
 We registered 20 transfer claims from two concepts, one in layer 19 of TimesFM's 20 layers and one in layer 7 of Sundial's 12, with destination features in all seven models.
 All 20 held on the held-out split, with AUCs of 0.92 to 0.97 against null 95th percentiles of 0.70 to 0.75 (Figure~\ref{fig:heldout}b).
 On the replication corpus, 20 new claims from concepts in Sundial, Chronos-2 and Time-MoE held both on the held-out split and on the 800 raw real-world windows, with AUCs of 0.76 to 0.99.
-The claims concern the existence of a matching feature rather than its identity: only 8 of the 20 best held-out matches are the features chosen in development.
+The claims concern the existence of a matching feature rather than its identity, since only 8 of the 20 best held-out matches are the features chosen in development.
 The fraction of reciprocal transfers barely depends on the window length (0.83 at 32 steps, 0.80 at 64 or 96).
-Because the source concepts sit deep in their models, this agreement is not limited to input-encoding layers.
-It shows that all seven models draw the same distinctions between series; it does not show that those distinctions are more than simple statistics of the input would give.
+Since the source concepts lie deep in their models, this agreement is not limited to layers that encode the input.
+The test shows that all seven models draw the same distinctions between series, but not that these distinctions go beyond what simple statistics of the input would provide.
 
-Figure~\ref{fig:exemplar}a--c gives an example.
-Features of Chronos-2, Chronos-Bolt and Sundial with closely matching effects share 6 to 12 of their 20 most active series, where 0.41 would be expected by chance.
+In the example of Figure~\ref{fig:exemplar}a--c, features of Chronos-2, Chronos-Bolt and Sundial with closely matching effects share 6 to 12 of their 20 most active series, where 0.41 would be expected by chance.
 Removing the Chronos-2 or the Chronos-Bolt feature on the same intermittent series raises the forecast level, by 0.02 and 0.07 standard deviations of the context.
 
 \begin{figure}[!tb]
@@ -433,7 +420,7 @@ The causal features of all seven models fall into a few kinds of effect (Figure~
 Nine effect families cover 192 of the 194 causal features of the primary corpus.
 The two largest raise (45 features) or lower (44) the level of the forecast, and the next two dampen (25) or amplify (19) its seasonality.
 Features that raise the level, lower it or dampen seasonality occur in every model.
-So the models not only attend to the same series but also push their forecasts in the same few directions, mostly level and seasonality.
+The models therefore respond to the same series and also adjust their forecasts in a small number of common directions, mostly in level and seasonality.
 
 \begin{figure}[!tb]
 \centering
@@ -448,37 +435,34 @@ So the models not only attend to the same series but also push their forecasts i
 \paragraph{Concepts are organized by model.}
 \label{sec:bymodel}
 The atlas contains 11 concepts, more than shuffled effect vectors produce ($p=0.005$), but none contains features from more than three models.
-Features group by model more than chance predicts: 9 concepts have members from two or more models, against 10.8 expected under the null ($p=0.025$).
+Features are grouped by model more than chance predicts, with 9 concepts have members from two or more models, against 10.8 expected under the null ($p=0.025$).
 In five concepts, different models produce the same effect on different series, as in Figure~\ref{fig:exemplar}d,e, where features of Chronos-Bolt and TimesFM that both raise the forecast level share none of their top series.
 On held-out data, no concept contains more than three models on the primary corpus or more than two on the replication corpus.
 
 \paragraph{Same effect on the same series.}
 \label{sec:sameeffect}
 We applied the same-effect test to the 1{,}290 reciprocal transfers of the primary corpus.
-Only 216 could be scored; in the rest, at least one of the two features had no detectable effect on the shared series.
+Only 216 of these could be scored, because in the others at least one of the two features had no detectable effect on the shared series.
 Of the 216, 7 show the same effect, 54 agree in level or in shape only, 133 show no specific agreement and 22 act differently.
 All 7 agreements are between Chronos-2 and Chronos-Bolt.
-Since the test made no false agreement on the planted forecasters, we take these 7 as real.
-Since it is also insensitive, the absence of agreement elsewhere does not by itself show that effects differ, although the 22 cases show that they sometimes do.
+As the test produced no false agreement on the planted forecasters, we regard these 7 cases as genuine; as it is also insensitive, the lack of agreement between other models does not by itself show that their effects differ, although the 22 cases of different effects show that they sometimes do.
 None of the registered claims of a shared effect held.
 
 \paragraph{Single features are weak and not specific.}
 \label{sec:specificity}
 Against the isotropic null, 442 combinations of feature and forecast property in the primary corpus are causal, where 178.75 would be expected by chance; the excess ranges from 1.64-fold in Chronos-T5-Base to 5.70-fold in Chronos-Bolt.
-Timer is the exception: its layers influence the forecast, but its features are causal no more often than chance.
+Timer is an exception, as its layers influence the forecast but its features are causal no more often than chance.
 On the replication corpus, where every feature was scored against both nulls, the excess is 3.55-fold against isotropic directions but only 1.29-fold against activation-matched directions.
-In other words, removing a typical direction from the model's own activations changes the forecast nearly as much as removing a dictionary feature.
-The effects are also small: the median feature moves the forecast by 0.097 standard deviations of the context, less than half the change caused by replacing the layer with its reconstruction.
+Removing a typical direction from the model's own activations changes the forecast nearly as much as removing a dictionary feature.
+The effects are also small in absolute terms, as the median feature moves the forecast by 0.097 standard deviations of the context, less than half the change caused by replacing the layer with its reconstruction.
 Of the single-feature claims, 10 of 31 held on the primary corpus and 11 of 24 on the replication corpus.
 
 The effects that do exceed the stricter null are largely robust to how the feature is removed.
 We re-tested the 91 such features with three other interventions (setting the feature to its mean, to its value on another series, or subtracting it from the original activations rather than the reconstruction); 79 stay causal under at least one and 37 under all three, and the direction of the effect is preserved under the first two (median cosine 0.997 and 0.991).
 Which features pass, however, depends on the intervention.
 
-Nor do the effects form discrete groups.
-In 50 of 56 layers the effect vectors cannot be clustered into groups of at least three features, and there are no more effect families than in shuffled data ($p=0.68$).
-This is not because the effects are all alike: the effect vectors have a participation ratio of 5.58 out of 9.
-With the weak specificity of single features, this suggests that what matters for the forecast is spread over many directions and varies continuously, unlike the discrete units sought in language models \citep{bricken2023monosemanticity}.
+Nor do the effects form discrete groups. In 50 of 56 layers the effect vectors cannot be clustered into groups of at least three features, and there are no more effect families than in shuffled data ($p=0.68$).
+This is not because the effects are all alike, since the effect vectors have a participation ratio of 5.58 out of 9. Taken with the weak specificity of single features, the absence of clusters suggests that what matters for the forecast is spread over many directions and varies continuously, unlike the discrete units sought in language models \citep{bricken2023monosemanticity}.
 
 \subsection{Practices That Mislead}
 \label{sec:shortcuts}
@@ -487,14 +471,12 @@ Besides averaging tokens (Section~\ref{sec:geometry}), three practices common in
 
 \paragraph{Ranking features by activation.}
 Most SAE analyses start from the features that are most often or most strongly active.
-In TSFMs these are mostly without effect: of the 927 most prominent features in the held-out data of the primary corpus, 83.5\% have no causal effect (one-sided 95\% lower bound 81.7\%), and on the replication corpus 91.9\%.
-Ranking by estimated effect works much better.
-Zeroing the five features ranked highest by a gradient-based attribution produces a median of 74\% of the change in the forecast that the dictionary can express, more than random sets of five activation-matched features in 30 of 31 layers (development data of the replication corpus).
+In TSFMs these features mostly have no effect. Of the 927 most prominent features in the held-out data of the primary corpus, 83.5\% have no causal effect (one-sided 95\% lower bound 81.7\%), and on the replication corpus 91.9\%.
+Ranking by estimated effect works much better, as zeroing the five features ranked highest by a gradient-based attribution produces a median of 74\% of the change in the forecast that the dictionary can express, more than random sets of five activation-matched features in 30 of 31 layers (development data of the replication corpus).
 
 \paragraph{Choosing the null.}
-Whether a feature counts as causal depends on what it is compared with.
-In a four-model development run, the batch-averaged null that failed validation raised the number of causal features from 110 to 293, and even between the two valid nulls the excess over chance differs by almost a factor of three.
-Measures of model similarity disagree in a similar way: seven of them, including geometry, agreement of errors and concept transfer, rank the 21 model pairs differently (Kendall's $W=0.25$), which is why we report each against its own null and do not combine them.
+Whether a feature counts as causal depends on the baseline. In a four-model development run, the batch-averaged null that failed validation raised the number of causal features from 110 to 293, and even between the two valid nulls the excess over chance differs by almost a factor of three.
+Measures of model similarity are similarly inconsistent, since seven of them, including geometry, agreement of errors and concept transfer, rank the 21 model pairs differently (Kendall's $W=0.25$), which is why we report each against its own null and do not combine them.
 
 \paragraph{Attention weights and generative factors.}
 In the earlier two-model study, the attention a head paid to seasonal lags was unrelated to the seasonality lost when the head was removed (Spearman correlation 0.026 in TimesFM and $-0.118$ in Chronos-T5-Base), as \citet{jain2019attention} found for language models.
@@ -508,36 +490,31 @@ The comparison held for 6 of 9 corruptions on the primary corpus (Figure~\ref{fi
 The models react at similar depths to detrending and dropout and at opposite depths to noise, spikes and warping.
 Depth comparisons need care, because the captured layers account for between 13.9\% (Chronos-T5-Base, whose decoder is not captured) and 99.8\% (Timer) of a forecast's computation; we therefore compare profiles rather than the positions of single layers.
 
-Internal features say little about when a model will fail.
-Predicting a series' log MASE from what is visible without internals (interval width, forecast flatness and catch22 features of the context; \citealp{lubba2019catch22}) already gives Spearman correlations of 0.76 to 0.85, and adding dictionary features helps significantly only for the two least accurate models, Timer and Time-MoE, where the small gain held on both held-out splits.
+Internal features also say little about when a model will fail. Predicting a series' log MASE from what is visible without internals (interval width, forecast flatness and catch22 features of the context; \citealp{lubba2019catch22}) already gives Spearman correlations of 0.76 to 0.85, and adding dictionary features helps significantly only for the two least accurate models, Timer and Time-MoE, where the small gain held on both held-out splits.
 Routing each series to the model with the lowest predicted error is worse than always using Chronos-2, with or without internal features.
 
 \section{Discussion}
 \label{sec:discussion}
 
 \paragraph{Why inputs agree and effects do not.}
-A simple account fits most of what we see.
-Which properties of a series matter for its forecast, such as its level, the strength of its seasonality or whether it is intermittent, is a fact about the data, and any competent forecaster has to detect them.
-How a model turns that detection into a forecast depends on choices that differ between models: how the series is normalized, how many steps a token covers, and whether the output comes from a quantile head, a patch decoder or a sampler.
-On this account the models should agree on which series a feature selects and on the rough direction of its effect, and differ in the details of the effect.
-That is the pattern we find, and the one pair with matching effects, Chronos-2 and Chronos-Bolt, shares both training lineage and output design.
-It is a weaker form of convergence than the one proposed for vision and language models \citep{li2016convergent,huh2024platonic}.
+A simple account is consistent with most of these results. Which properties of a series matter for its forecast, such as its level, the strength of its seasonality or whether it is intermittent, is a fact about the data, and any competent forecaster has to detect them.
+How a model turns that detection into a forecast, however, depends on design choices that differ between models, such as how the series is normalized, how many steps a token covers, and whether the output comes from a quantile head, a patch decoder or a sampler.
+On this account the models should agree on which series a feature selects and on the rough direction of its effect but differ in the details of the effect, which is the pattern we observe; moreover, the one pair with matching effects, Chronos-2 and Chronos-Bolt, shares both training lineage and output design.
+This is a weaker form of convergence than the one proposed for vision and language models \citep{li2016convergent,huh2024platonic}.
 
 \paragraph{How strong is the case for different mechanisms?}
-The evidence for shared inputs is direct; the evidence for different mechanisms is weaker.
-For it: the atlas groups features by model more than chance would, 22 of the 216 scorable same-effect tests show different effects, and in the earlier two-model study the same seasonal function was carried by one attention head in TimesFM and by five interacting heads in Chronos-T5-Base.
-Against it: the same-effect test found a truly shared concept in only two of five planted forecasters, and 1{,}074 of 1{,}290 tests could not be scored.
-There is also a structural reason for caution.
-If forecast-relevant information is spread over many directions, removing one feature removes an arbitrary part of a larger mechanism, and two models computing the same function could still disagree feature by feature.
-The defensible conclusion is that we find no shared mechanism across model families at the resolution of single features, and some evidence against one.
+The evidence for shared inputs is direct, whereas the evidence for different mechanisms is weaker. In favor of different mechanisms, the atlas groups features by model more than chance would, 22 of the 216 scorable same-effect tests show different effects, and in the earlier two-model study the same seasonal function was carried by one attention head in TimesFM and by five interacting heads in Chronos-T5-Base.
+On the other hand, the same-effect test found a truly shared concept in only two of five planted forecasters, and 1{,}074 of 1{,}290 tests could not be scored.
+A further reason for caution is that if forecast-relevant information is spread over many directions, removing one feature removes an arbitrary part of a larger mechanism, and two models computing the same function could still disagree feature by feature.
+We therefore conclude only that we find no shared mechanism across model families at the resolution of single features, and some evidence against one.
 Interventions on learned subspaces \citep{geiger2021causal}, dictionaries trained jointly on several models \citep{lindsey2024crosscoders} or stronger interventions could test the question at a coarser resolution and might change the answer.
 
 \paragraph{Implications for practice.}
-Studies of single TSFMs \citep{mishra2026dissecting,oublal2026timesae,divo2026zeitgeist} should compare a feature's effect with random directions drawn from the model's own activations: against isotropic directions most features look important, against activation-matched ones few do.
+For studies of single TSFMs \citep{mishra2026dissecting,oublal2026timesae,divo2026zeitgeist}, our results suggest comparing a feature's effect with random directions drawn from the model's own activations, since against isotropic directions most features appear important and against activation-matched directions few do.
 The importance of a feature should be established by intervention, because activation strength, attention weights and correlation with a generative factor all pointed to the wrong components here.
 Comparisons across models need a measured time axis and a window representation that keeps the order of time steps.
 Finally, between a third and a half of our registered claims failed on held-out data, and the failures were concentrated in the claims that would have been most interesting, about shared effects, single features and depth.
-We do not think a study of this kind can be done reliably without registration and a single held-out test \citep{gelman2014garden}.
+Given the number of exploratory comparisons involved \citep{gelman2014garden}, we doubt that a study of this kind can be done reliably without registration and a single held-out test.
 
 \paragraph{Limitations.}
 \label{sec:limitations}
