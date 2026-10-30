@@ -110,7 +110,7 @@ conda activate tsfmPy
 # machine use "pytorch=2.12.0=cpu*" (what CI's "pinned" job installs).
 conda install -c conda-forge --strict-channel-priority nomkl numpy=2.1.0 scipy \
     scikit-learn=1.7.2 pandas=2.3.3 pyyaml jinja2 tqdm zarr=2.18.7 plotly=5.24.1 \
-    pycatch22 umap-learn dtaidistance datasets=2.19.2 sdv=1.14.0 \
+    pycatch22 umap-learn dtaidistance datasets=2.19.2 sdv=1.14.0 rdt=1.21.0 \
     "pytorch=2.12.0=cuda129*" -y
 
 # tsbootstrap is not on conda-forge (PyPI only, as in cudaPy)
@@ -176,6 +176,7 @@ pin harder.
 | `safetensors` | 0.8.0 | pip (pypi) | Transitive (checkpoint loading). |
 | `accelerate` | 1.14.0 | pip (pypi) | Transitive (model library dependency). |
 | `ctgan` | 0.12.1 | conda-forge | Transitive via `sdv`. |
+| `rdt` | 1.21.0 | conda-forge | Transitive via `sdv`, pinned explicitly since 2026-10-30: conda-forge's `sdv` 1.14.0 accepts any `rdt>=1.12`, and rdt 2.0.0 (2026-10) no longer registers the `'text'` default transformer that sdv 1.14's data processor deletes, so `sequential_par` fails with `KeyError: 'text'`. |
 | `deepecho` | 0.8.1 | conda-forge | Transitive via `sdv`; the actual RNN backend `sequential_par` trains (`CLAUDE.md` §11.14 — per-timestep training cost is why `max_train_length` truncation exists). |
 | `tqdm` | 4.68.3 | conda-forge | Progress bars across both packages. |
 

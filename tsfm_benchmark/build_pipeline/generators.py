@@ -520,6 +520,12 @@ def sequential_par(
     the audit.
 
     Verified 2026-08-03 against sdv 1.14.0's ``sdv.sequential.PARSynthesizer``.
+    Metadata is built with ``sdv.metadata.Metadata`` where it exists and with
+    ``SingleTableMetadata`` on older sdv (1.14 has only the latter; sdv 2.0
+    removed it, which broke CI on 2026-10-09); sdv 2.x also takes a
+    ``{table: DataFrame}`` dict in ``fit`` and samples via ``sample_sequences``.
+    sdv 1.14 itself also needs ``rdt<2``: its data processor deletes the
+    ``'text'`` default transformer that rdt 2.0 no longer registers.
     Two things worth recording so the next session doesn't have to rediscover
     them: (1) declaring an explicit ``sequence_index`` column (e.g. a plain
     integer timestep) makes ``auto_assign_transformers`` crash with
@@ -564,7 +570,6 @@ def sequential_par(
     """
     try:
         import pandas as pd
-        from sdv.metadata import SingleTableMetadata
         from sdv.sequential import PARSynthesizer
     except ImportError as exc:
         raise ImportError("install sdv and pandas to use sequential_par") from exc
@@ -590,10 +595,20 @@ def sequential_par(
     ]
     df = pd.DataFrame(rows)
 
-    metadata = SingleTableMetadata()
-    metadata.detect_from_dataframe(df)
-    metadata.update_column(column_name="sequence_id", sdtype="id")
-    metadata.set_sequence_key("sequence_id")
+    try:
+        from sdv.metadata import Metadata
+    except ImportError:
+        from sdv.metadata import SingleTableMetadata
+        metadata = SingleTableMetadata()
+        metadata.detect_from_dataframe(df)
+        metadata.update_column(column_name="sequence_id", sdtype="id")
+        metadata.set_sequence_key("sequence_id")
+        fit_data = df
+    else:
+        metadata = Metadata.detect_from_dataframes({"series": df})
+        metadata.update_column(column_name="sequence_id", sdtype="id", table_name="series")
+        metadata.set_sequence_key(column_name="sequence_id", table_name="series")
+        fit_data = {"series": df}
 
     np.random.seed(seed)
     try:
@@ -603,8 +618,11 @@ def sequential_par(
         pass
 
     synth = PARSynthesizer(metadata, epochs=epochs, cuda=cuda, verbose=False)
-    synth.fit(df)
-    sampled = synth.sample(num_sequences=1, sequence_length=length)
+    synth.fit(fit_data)
+    if hasattr(synth, "sample_sequences"):
+        sampled = synth.sample_sequences(num_sequences=1, sequence_length=length)["series"]
+    else:
+        sampled = synth.sample(num_sequences=1, sequence_length=length)
     values = sampled["value"].to_numpy(dtype=float)
 
     gt = GroundTruth(notes="real-derived; PAR-synthesized from a real cohort; not leakage-safe")
