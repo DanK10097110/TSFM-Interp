@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Canonical in-memory representation for every series in the benchmark.
 
 Every sample carries three things that travel together for its whole life:

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """ROADMAP.md sec 42, decision 1: the attribution-ranked candidate rule.
 
 The fixture is a linear model with a known answer. Four tokens of width four go

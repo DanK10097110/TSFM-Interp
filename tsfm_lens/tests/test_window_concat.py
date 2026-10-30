@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """CONCAT window representation and `alignment.window_rep` (ROADMAP.md sec 44.4, E3; default since 44.6)."""
 
 from __future__ import annotations

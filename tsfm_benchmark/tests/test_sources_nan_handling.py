@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 from pathlib import Path
 import sys
 

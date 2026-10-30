@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """`derived.sae_health` -- the SAE section's dictionary-health table.
 
 Added 2026-09-03. The table replaces eleven run-on `·`-separated per-target

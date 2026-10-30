@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Progressive disclosure in the report (ROADMAP.md sec 21 J4 / H10).
 
 A three-position control -- Headline / Standard / Methods -- lets a reader

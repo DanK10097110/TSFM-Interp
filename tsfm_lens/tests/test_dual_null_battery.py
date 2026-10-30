@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """The dual-null battery (ROADMAP.md sec 41.1): both nulls in one pass.
 
 Known answers: the `wired` fixture of `test_profile_matched_null.py` (a linear

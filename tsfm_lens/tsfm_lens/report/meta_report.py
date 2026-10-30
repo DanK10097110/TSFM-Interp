@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Cross-run aggregation (ROADMAP.md Phase 1 §5.5).
 
 A single run's `report.html` answers "what do these two models look like on

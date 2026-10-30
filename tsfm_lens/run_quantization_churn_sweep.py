@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """ROADMAP.md §7 follow-up: test the "continuous embedding vs. quantization"
 hypothesis behind `run_noise_snr_sweep.py`'s noise-SNR x depth sign flip.
 

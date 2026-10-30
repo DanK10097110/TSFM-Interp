@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Add `separated` structural/provenance matches to an already-finished run's SAE artifacts.
 
 ROADMAP.md sec 26 A2. `sae/ground_truth.py::ground_truth_alignment` now records

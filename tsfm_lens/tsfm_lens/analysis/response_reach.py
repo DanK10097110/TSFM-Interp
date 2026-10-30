@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """The reach gate for any per-feature SAE causal battery (ROADMAP.md §25.4,
 §25.9 Stage 2, `CLAUDE.md` §11.42).
 

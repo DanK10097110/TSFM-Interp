@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """CLI for the cross-run aggregator (ROADMAP.md Phase 1 §5.5).
 
 Reads N existing run directories' artifacts (nothing is re-run) and writes

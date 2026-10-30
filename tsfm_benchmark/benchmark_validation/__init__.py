@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Validation helpers for benchmark analysis and reporting."""
 
 from .cross_split import (

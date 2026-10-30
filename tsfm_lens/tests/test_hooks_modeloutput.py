@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Regression test for the hooks.py bug found and fixed while adding the
 Chronos-2 adapter (ROADMAP.md §9's Phase-4 "any exception outside the new
 adapter file is a bug in the abstraction" finding).

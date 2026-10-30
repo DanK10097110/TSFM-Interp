@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Lossless window representation (CONCAT) and its CKA through Gram sums (ROADMAP.md sec 44.4).
 
 Why this module exists. The pipeline's window vector is the overlap-weighted MEAN of a window's

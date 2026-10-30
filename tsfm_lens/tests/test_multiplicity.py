@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Multiplicity across model pairs and across correction families (§18 F8).
 
 Two properties are load-bearing here and neither is obvious from reading the

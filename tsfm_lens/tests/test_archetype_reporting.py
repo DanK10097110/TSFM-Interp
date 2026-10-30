@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Regression tests for archetype/generator granularity in L0 reporting
 (`ROADMAP.md` sec 15 A9): `random_parametric`'s sampled archetype is recorded
 in sample provenance but previously collapsed into one `family` label for

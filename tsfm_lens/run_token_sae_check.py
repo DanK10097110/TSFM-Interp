@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Token-level SAE training versus window-mean training, ROADMAP.md sec 46.
 
 Standalone dev study driver. The SAEs of every recorded run are trained on window means

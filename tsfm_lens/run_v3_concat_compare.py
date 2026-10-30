@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """V3 L1 re-measured with CONCAT: like-for-like MEAN peaks and the comparison table, ROADMAP.md sec 45.
 
 Standalone dev study driver. `run.py --config configs/panel7_v3_concat.yaml --stages extract,l1` gives the

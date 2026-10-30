@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Re-run ONLY the ablation battery of a finished run under a chosen null, into a scratch directory.
 
 The concepts stage chains the battery with clustering, the atlas, transfer and the

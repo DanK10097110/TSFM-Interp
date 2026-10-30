@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Tests for `sae/describe.py`'s fabrication guard (ROADMAP.md sec 25, the
 grounded-narrator presentation layer).
 

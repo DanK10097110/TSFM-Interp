@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Tests for the Lens stage's horizon-resolved crystallization depth
 (`ROADMAP.md` sec 16 E12), on synthetic data with a known-correct planted
 answer -- independent of any adapter/forward pass, since

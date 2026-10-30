@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Tests for `report/sae_concept_map.py` (ROADMAP.md sec 32.14, Item M).
 
 Synthetic with planted answers throughout (sec 2.4) -- a fixture read off a

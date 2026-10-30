@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """CLI for `analysis/spec_curve.py` (`ROADMAP.md` sec 34 item A2).
 
 Sweeps every applicable analysis knob against one already-completed run

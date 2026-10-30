@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """ROADMAP.md sec 37.15 q6 (option b) -- the cross-model concept ATLAS.
 
 `sae_concept_map.py` (its own docstring, above this file) plots each

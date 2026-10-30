@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Dual-form ridge, gain and bootstrap helpers of the CONCAT stitching driver (ROADMAP.md sec 47.2).
 
 Planted known answers: dual ridge equals L2's primal ridge; a target that depends on within-window

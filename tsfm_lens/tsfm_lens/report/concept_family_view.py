@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """ROADMAP.md sec 37 R2 -- the family-centric redesign of the "Concepts"
 report section (user complaint, verbatim: "the concept atlas is a bit messy
 and hard to look at ... it should be ... more interpretable and general

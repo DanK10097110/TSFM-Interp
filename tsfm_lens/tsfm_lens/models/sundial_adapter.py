@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Adapter for Sundial (Tsinghua THUML; decoder-only transformer over input
 patches with a flow-matching probabilistic head, "TimeFlow Loss").
 

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Run shape -- solo / pair / panel as first-class run shapes (`ROADMAP.md` sec 24.3).
 
 This gate has the same failure mode as the capability-tier gate it is built

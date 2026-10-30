@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """L1 — representational geometry.
 
 Linear CKA between every selected layer pair, computed in feature space on

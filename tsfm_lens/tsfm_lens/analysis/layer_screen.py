@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Phase 2a-v2 (ROADMAP.md §6.1.1): architecture-agnostic, all-layers-fair layer screening.
 
 Three candidate selectors, all operating purely on one model's own stored

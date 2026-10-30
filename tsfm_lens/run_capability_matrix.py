@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """CLI for the auto-generated model-adapter capability matrix (ROADMAP.md §10).
 
 Never loads a checkpoint itself: "declared" columns come from static class

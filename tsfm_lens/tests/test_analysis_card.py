@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """One-page analysis card tests (ROADMAP.md sec 16 H9).
 
 Runnable directly (`python tests/test_analysis_card.py`) or via pytest.

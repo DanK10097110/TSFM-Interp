@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """The planted forecaster's analytic invariants (ROADMAP.md sec 38.1.2, K1).
 
 `mock_planted` carries the ground truth for the whole known-answer study, so

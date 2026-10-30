@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Regression tests for `utils.sample_rows` (`ROADMAP.md` sec 15 A4).
 
 Locks in the exact scenario the audit item describes: a corpus written

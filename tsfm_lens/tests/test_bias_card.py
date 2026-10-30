@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Per-model bias-card tests (ROADMAP.md §7 Phase 3, bullet 5).
 
 Runnable directly (`python tests/test_bias_card.py`) or via pytest. Uses

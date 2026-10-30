@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """ROADMAP.md sec 30.10 Stage 5 -- misfit detection, folded into the concept
 card section (sec 30.4.3). A MEMBER is a misfit when its own ablation
 fingerprint sits far from the concept it was clustered into; the report's

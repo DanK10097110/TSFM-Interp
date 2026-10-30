@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Adapter for Chronos-2 (encoder-only, patch-based, with a second
 "group" attention axis for cross-series in-context learning).
 

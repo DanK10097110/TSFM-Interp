@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Clears-vs-chance is read against the empirical expectation, in the log and the report.
 
 `chance_expected_cells` is the nominal `0.05 x cells`; `empirical_chance` is the

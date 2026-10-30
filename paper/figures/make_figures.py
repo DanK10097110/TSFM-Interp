@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Regenerate every data figure in the paper from the published example run.
 
 The paper's quantitative figures are not drawn by hand: each one is a pure

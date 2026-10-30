@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Regenerate the data figures of the findings paper from the published seven-model run.
 
 The figures are drawn at the paper's text width (6.0 in) so that LaTeX includes them

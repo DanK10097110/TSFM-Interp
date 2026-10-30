@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """The two-sided control that distinguishes "no effect" from "no reach".
 
 `CLAUDE.md` sec 11.42: Chronos-2's forecast head reads

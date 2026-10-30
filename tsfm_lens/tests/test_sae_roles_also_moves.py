@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """The roles table's "also moves" column (ROADMAP.md sec 28.18).
 
 The deterministic roles table named ONE channel per role -- the argmax --

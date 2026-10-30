@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Known-answer study of the subspace agreement test (ROADMAP.md sec 40 step 3, sec 41 V3-C).
 
 Scores `sae/subspace_agreement.py` on the planted architecture pair of

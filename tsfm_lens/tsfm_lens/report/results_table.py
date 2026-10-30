@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Long-format, machine-readable results export (`ROADMAP.md` sec 34.2 Item A4).
 
 A researcher who wants to meta-analyse, re-plot, or check arithmetic must

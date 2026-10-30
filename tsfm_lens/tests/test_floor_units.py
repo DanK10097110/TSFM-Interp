@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Every ΔMASE rendered in its own model's repeat-run noise-floor units.
 
 `tests/test_noise_floor.py` covers *measuring* the floor (ROADMAP.md §15 A13).

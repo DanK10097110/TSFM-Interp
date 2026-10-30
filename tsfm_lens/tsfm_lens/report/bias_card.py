@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """ROADMAP.md §7 Phase 3, bullet 5: the per-model "bias card."
 
 Consolidates the controlled parameter sweeps (`analysis/parameter_sweep.py`

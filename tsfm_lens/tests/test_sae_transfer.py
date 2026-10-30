@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Tests for `sae/transfer.py` (ROADMAP.md sec 30, sec 30.10 stage 3):
 cross-model SAE CONCEPT transfer -- does model B group the same series a
 concept in model A fires hardest on?

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Quantization-churn probe tests (ROADMAP.md §7 follow-up to the noise-SNR
 x depth sign-flip finding).
 

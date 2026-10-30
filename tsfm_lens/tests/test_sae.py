@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Baseline TopK SAE unit tests (ROADMAP.md Phase 2b item 4, §6.2).
 
 Runnable directly (`python tests/test_sae.py`) or via pytest. Covers the

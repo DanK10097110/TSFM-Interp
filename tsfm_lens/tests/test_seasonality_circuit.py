@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """ROADMAP.md sec 20 H8: `analysis/seasonality_circuit.py`.
 
 Stage 0's `seasonal_power`/`restoration` primitives are tested against

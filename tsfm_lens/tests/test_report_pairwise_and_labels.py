@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """All-pairs L1 rendering, global label legibility, and the naive-forecast guard.
 
 Three user-review findings from 2026-09-04, each grounded in a measured

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Mint a private split for a corpus whose private split was deliberately not built (ROADMAP sec 41).
 
 Run this only after the hypotheses are registered; a private split that anything has looked at

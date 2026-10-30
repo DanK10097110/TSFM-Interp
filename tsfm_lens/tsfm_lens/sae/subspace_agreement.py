@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """ROADMAP.md sec 40 / sec 41 V3-C -- the subspace agreement test: an ESTIMATE of how similar two
 models' causal effects of one concept are, on the same series, with a confidence interval.
 

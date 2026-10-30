@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Why is the production SAE dictionary ~95% dead? (ROADMAP.md sec 23.2 A1.)
 
 The recorded condition is stark: `runs/medium_run_chronos_base`'s two pinned

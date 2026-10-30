@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Statistical power and the minimum detectable effect for L0's paired tests.
 
 `ROADMAP.md` sec 34 item A1: `l0/summary.json` reports, per family, whether a

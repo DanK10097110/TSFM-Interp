@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """CLI for `analysis/agreement.py` (`ROADMAP.md` sec 20 H4).
 
 Scores the practitioner-facing question -- "if two models disagree on a

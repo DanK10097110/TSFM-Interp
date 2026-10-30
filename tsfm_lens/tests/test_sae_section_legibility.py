@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """The SAE section's legibility rework (user review, 2026-09-11).
 
 Four complaints, each grounded in a measurement on `runs/full_report_run_4model`

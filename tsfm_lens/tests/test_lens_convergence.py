@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Tests for the per-series lens convergence depth (`ROADMAP.md` sec 38.4, K4).
 
 `convergence_depths` is a pure reduction, tested on planted forecasts whose

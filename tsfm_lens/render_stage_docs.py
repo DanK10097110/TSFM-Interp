@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Regenerate README.md's "What each stage tells you" section from `stage_docs.py`.
 
 `ROADMAP.md` sec 21 J2's whole point is that the report and the docs cannot

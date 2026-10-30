@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """ROADMAP.md sec 42 decision 4 and the opt-in knobs of task B.
 
 `sae.forecast_preservation_chunked` lets `forecast_preservation_max_series` exceed the model's batch

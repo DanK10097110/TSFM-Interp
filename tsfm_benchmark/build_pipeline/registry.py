@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Minimal name-to-factory registry shared by every plugin category.
 
 Generators, corruptions, and sources all register themselves here so the

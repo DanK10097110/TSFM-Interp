@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """L2 ridge stitching under the CONCAT window representation, ROADMAP.md sec 47.2.
 
 Standalone dev study driver. L2 (`tsfm_lens/analysis/l2_stitching.py`) maps one model's window MEAN onto

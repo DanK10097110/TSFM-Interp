@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """`stage_docs.py` completeness and report wiring (`ROADMAP.md` sec 21 J2).
 
 `CLAUDE.md` sec 2.5's "degrade loudly, never silently" applies to

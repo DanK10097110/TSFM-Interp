@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """ROADMAP.md §6.2.1 Stage 1b: the known-answer validation ladder.
 
 Stage 1a's `score_variant` produces eight numbers for any crosscoder. This

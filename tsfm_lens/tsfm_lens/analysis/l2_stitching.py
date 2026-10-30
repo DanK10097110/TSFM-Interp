@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """L2 — cross-model stitching probes.
 
 For strided layer pairs and both directions, a closed-form ridge regression

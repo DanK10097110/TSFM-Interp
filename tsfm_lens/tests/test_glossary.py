@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Tests for `ROADMAP.md` sec 21 J3's glossary.
 
 The value of a glossary is entirely in it being *complete, non-drifting and

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Input control for the cross-model CONCAT CKA of the v3 panel (reviewer question: do peaks only reflect raw input?).
 
 Standalone dev study driver. The v3 CONCAT CKA peaks sit mostly at the first captured layers, where a model's

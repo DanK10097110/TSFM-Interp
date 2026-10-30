@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Adapter capability tiers (`ROADMAP.md` sec 19 G1).
 
 The gate these cover is unusual in one way worth stating: it decides what a

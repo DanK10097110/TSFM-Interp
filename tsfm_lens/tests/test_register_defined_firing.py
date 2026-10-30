@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """ROADMAP.md sec 38.3.4: the L5 defined-firing rule at K2 registration and
 confirmation (`confirm.register_requires_defined_firing`).
 

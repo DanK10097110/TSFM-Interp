@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """The power reading of a K2 causal-concept claim (`confirm.causal_claim_reading`).
 
 The causal test is adaptive: only a claim at the p floor is redrawn from

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Build pipeline package exports."""
 
 from . import corruptions, generators, sources  # noqa: F401

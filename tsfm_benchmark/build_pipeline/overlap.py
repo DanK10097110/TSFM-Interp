@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Sample-hash overlap between sealed splits, across corpus versions.
 
 Epoch seeds depend only on (seed, epoch), and two corpus versions that share a task spec

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """SAE dictionary admission: the held-out split, the three-bar gate, and
 layer substitution (ROADMAP.md sec 28.19, user-requested 2026-09-11).
 

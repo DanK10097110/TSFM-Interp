@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """L0's MDE wiring (`ROADMAP.md` §34 item A1) -- `power.py` in isolation is
 covered by `test_power.py`; this file covers the seam that actually matters
 for a reader of `l0/summary.json`: that `_summarize` attaches a real MDE to

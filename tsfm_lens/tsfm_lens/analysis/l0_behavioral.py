@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """L0 — behavioral profiling.
 
 Answers the purely behavioral questions ("is one model better on

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Tests for L0's horizon-resolved MASE/pinball reduction (`ROADMAP.md` sec
 16 E12), on synthetic data with a known-correct planted answer -- an error
 that grows linearly with horizon step by construction.

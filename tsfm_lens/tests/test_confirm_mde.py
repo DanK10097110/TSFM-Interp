@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """`confirm`'s pre-registered power check (`ROADMAP.md` §34 item A1.3).
 
 `_test_registered_hypotheses` must record, for every registered claim, the

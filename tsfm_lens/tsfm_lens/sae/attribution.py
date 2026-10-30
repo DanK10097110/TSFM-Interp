@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Attribution-ranked candidate rule for the SAE ablation battery (ROADMAP.md sec 42, decision 1).
 
 Why this module exists. The battery's candidate rules (ground-truth

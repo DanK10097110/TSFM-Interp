@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Tests for `report/derived.py::concept_verdicts` and
 `report/model_comparison.py` (ROADMAP.md sec 37, cmp-C spec).
 

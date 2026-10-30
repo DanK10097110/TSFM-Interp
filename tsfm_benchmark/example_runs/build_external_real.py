@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Build and seal the ``external_real`` split from raw GIFT-Eval windows (ROADMAP sec 41, V3-A).
 
 Reads the ``external_real:`` section of a corpus config (see ``configs/benchmark_v3.yaml``),

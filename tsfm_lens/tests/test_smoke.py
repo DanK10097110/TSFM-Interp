@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """End-to-end smoke test: every stage on mock models and generated data.
 
 Runnable directly (`python tests/test_smoke.py`) or via pytest. Passing

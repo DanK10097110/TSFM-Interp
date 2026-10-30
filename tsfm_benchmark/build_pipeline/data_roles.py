@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """The corpus data-roles card (ROADMAP sec 41, V3-A): what each kind of series is for.
 
 A reader of a result needs to know, per series, whether it carries ground truth (synthetic),

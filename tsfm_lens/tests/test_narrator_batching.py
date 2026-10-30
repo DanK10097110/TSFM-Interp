@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """`sae/describe.py::_generate`'s batching and out-of-memory backoff (sec 28).
 
 No GPU and no weights: `_generate_one` is the seam, so a stub standing in for

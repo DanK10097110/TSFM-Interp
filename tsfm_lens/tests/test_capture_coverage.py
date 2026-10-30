@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Computational coverage: how much of a model a run actually observed.
 
 `report/coverage.json` has always been *section* coverage -- which report

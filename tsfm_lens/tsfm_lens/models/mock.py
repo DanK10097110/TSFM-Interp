@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Mock adapters: two deliberately different toy architectures.
 
 They make the full pipeline runnable end-to-end with no downloads, no GPU,

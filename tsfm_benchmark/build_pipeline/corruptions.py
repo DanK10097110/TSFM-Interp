@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Corruption transforms applied after generation.
 
 Every corruption appends a ``ProvenanceStep`` so the exact perturbation is

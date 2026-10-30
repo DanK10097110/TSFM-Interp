@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """ROADMAP.md §6.1.1-E: the bake-off that decides between §6.1.1's candidate selectors.
 
 None of `layer_screen.py`'s three ideas is adopted on intuition (`CLAUDE.md`

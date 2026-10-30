@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Phase 2c (ROADMAP.md §6.3): can L1 CKA / L2's stitching-gain-over-baseline
 distinguish a model pair with **documented shared pretraining lineage**
 (e.g. two sizes of the same released family) from an **independently-

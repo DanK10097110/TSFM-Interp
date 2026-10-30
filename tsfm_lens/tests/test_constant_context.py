@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Constant-context probe in the `frontend` stage, its report row, the
 `--doctor` warning, the fingerprint rule, and the L0/lens guards against
 non-finite forecasts (`ROADMAP.md` sec 38.3).

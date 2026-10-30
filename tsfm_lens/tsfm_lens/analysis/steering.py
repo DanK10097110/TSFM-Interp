@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Directional-response metrics for feature steering (ROADMAP.md sec 16 E14).
 
 `sae/eval.py::feature_ablation_effects` already answers "does zeroing this

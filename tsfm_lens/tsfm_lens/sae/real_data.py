@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Optional real-world activation pool for SAE training (user request,
 2026-08-05): the sealed benchmark corpus a run was built from is a few
 hundred series -- SAEs benefit from much more data than that to avoid the

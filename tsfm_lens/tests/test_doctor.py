@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Preflight-doctor unit tests (ROADMAP.md sec 16 E2).
 
 Static checks are exercised directly against synthetic configs -- no

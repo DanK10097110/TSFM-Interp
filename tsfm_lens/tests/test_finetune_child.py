@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Tests for `experiments/finetune_child.py` (`ROADMAP.md` sec 23.3 D2 / sec
 6.3.1 Option E): building a genuine known-lineage pair for provenance
 detection.

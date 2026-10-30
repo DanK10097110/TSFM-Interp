@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """A home for contributed adapters (`ROADMAP.md` sec 34.6 Item E1).
 
 Drop one file in this directory and edit nothing else. This module scans its

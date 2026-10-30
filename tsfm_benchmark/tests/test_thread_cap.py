@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Regression tests for tests/conftest.py's BLAS/OpenMP thread cap.
 
 Compact by design: the full battery lives beside the tsfm_lens copy of the same

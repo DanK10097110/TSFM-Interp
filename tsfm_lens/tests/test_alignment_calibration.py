@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Tests for the impulse-alignment probe's self-calibrating amplitude
 (ROADMAP.md sec 15 A20).
 

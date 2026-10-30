@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Dual-null headline counts, feature-level chance and restricted-result rows
 (ROADMAP.md sec 41.1), read from a run's finished artifacts.
 

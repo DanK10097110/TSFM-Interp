@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """One-command adapter checklist (`ROADMAP.md` sec 34.6 Item E4).
 
 `--check-alignment`/`--discover-layers`/`--discover-spans`/`--probe-adapter`

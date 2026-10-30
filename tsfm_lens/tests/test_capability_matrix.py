@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Capability-matrix generator tests (ROADMAP.md §10's "auto-generate the
 capability matrix from the registry" checklist item).
 

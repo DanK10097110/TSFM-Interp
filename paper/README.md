@@ -3,7 +3,9 @@
 Two versions: the full JMLR paper (`main.tex`, a 32-page body plus appendices and references, 43 pages in total;
 JMLR sets no page limit for regular papers)
 and a short JMLR MLOSS-track software paper (`mloss/main.tex`, under 4 pages excluding references,
-sharing `jmlr2e.sty` and `references.bib`; build it from inside `mloss/` with the same commands).
+sharing `jmlr2e.sty` and `references.bib`; build it from inside `mloss/` with the same commands;
+all its sections and the architecture figure are inline in `mloss/main.tex`, its cover letter is `mloss/cover_letter.tex`,
+and `bash mloss/make_archive.sh` writes a test-compiled Overleaf/JMLR source archive, `mloss_paper_source.zip`, to the repository root).
 A third, findings-first version (`findings/main.tex`, a single .tex file, 24 pages in total) reorganizes the same results
 by level of comparison (agreement on inputs, rare agreement on effects, geometry in between, with an input control).
 Its figures are drawn at the 6.0 in text width by `findings/figures/make_figures.py` (from `examples/panel7_v2/run`, and

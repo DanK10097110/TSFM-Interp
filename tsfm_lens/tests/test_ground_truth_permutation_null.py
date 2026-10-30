@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Tests for `sae/ground_truth.py::permutation_null_alignment` (ROADMAP.md
 sec 16 E9): `best_ground_truth_matches` picks each feature's *best* of many
 candidate ground-truth fields, which inflates `mean_abs_rho_matched` above

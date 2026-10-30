@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Typed pipeline configuration with YAML loading and reasonable defaults.
 
 Every analysis stage carries an `enabled` flag so users can compose exactly

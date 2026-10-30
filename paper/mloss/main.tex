@@ -1,7 +1,9 @@
 \documentclass[twoside,11pt]{article}
 
 % JMLR Machine Learning Open Source Software (MLOSS) track: at most four pages
-% excluding references. Style file shared with the full paper (../jmlr2e.sty).
+% excluding references. Every section and the architecture figure are in this
+% file; jmlr2e.sty and references.bib are shared with the full paper one level up,
+% and bash make_archive.sh writes a self-contained Overleaf/JMLR source archive.
 \usepackage[abbrvbib,preprint]{../jmlr2e}
 
 \usepackage[T1]{fontenc}
@@ -29,7 +31,7 @@
 \definecolor{ctwo}{HTML}{9b4f7f}
 \definecolor{sun}{HTML}{3d7f5a}
 
-\newcommand{\repourl}{https://github.com/DanK10097110/TSFM-Interp}
+\newcommand{\repourl}{https://github.com/Wang-ML-Lab/TSFM-Lens}
 \newcommand{\tool}{\textsc{TSFM-Lens}}
 
 \jmlrheading{}{2026}{1-\pageref{LastPage}}{}{}{}{Daniel Kushnir and Hao Wang}
@@ -40,9 +42,9 @@
 
 \title{\tool: Controlled, Causal and Confirmatory\\ Interpretability of Time-Series Foundation Models}
 
-\author{\name Daniel Kushnir \email kushnir.daniel05@gmail.com \\
-       \name Hao Wang (corresponding author) \email hoguewang@gmail.com \\
-       \addr Rutgers University}
+\author{\name Daniel Kushnir (corresponding author) \email kushnir.daniel05@gmail.com \\
+       \name Hao Wang \email hoguewang@gmail.com \\
+       \addr Rutgers University, New Brunswick, NJ, USA}
 
 \editor{}
 
@@ -83,7 +85,36 @@ report; the benchmark can be used on its own.
 
 \begin{figure}[t]
 \centering
-\input{../figures/overview.tex}
+\begin{tikzpicture}[
+  node distance=2.2mm and 6mm,
+  box/.style={draw, rounded corners=2pt, align=center, font=\footnotesize, minimum height=6.5mm, fill=white},
+  pkg/.style={draw=gray!60, dashed, rounded corners=4pt, inner sep=5pt},
+  arr/.style={-{Stealth[length=2mm]}, thick, gray!70!black}]
+  \node[box] (gen) {Generators\\{\scriptsize synthetic + real-derived tiers}};
+  \node[box, below=of gen] (aud) {Leakage audit\\{\scriptsize banded DTW vs.\ references}};
+  \node[box, below=of aud] (seal) {Seal \& split\\{\scriptsize SHA-256 digests, epochs}};
+  \node[box, below=of seal] (val) {Validation\\{\scriptsize catch22 diversity, exchangeability}};
+  \draw[arr] (gen) -- (aud); \draw[arr] (aud) -- (seal); \draw[arr] (seal) -- (val);
+  \begin{scope}[on background layer]
+    \node[pkg, fit=(gen)(val), label={[font=\small\bfseries]below:\texttt{tsfm\_benchmark}}] {};
+  \end{scope}
+  \node[box, right=10mm of aud, fill=soft] (dev) {Dev split\\{\scriptsize ground-truth labels}};
+  \node[box, below=of dev, fill=soft] (priv) {Private split\\{\scriptsize sealed, used once}};
+  \draw[arr] (seal.east) -- ++(3mm,0) |- (dev.west);
+  \draw[arr] (seal.east) -- ++(3mm,0) |- (priv.west);
+  \node[box, right=12mm of dev, yshift=12mm, text width=45mm] (ad) {Adapters, derived capability tiers\\{\scriptsize measured token$\to$time spans, alignment gate}};
+  \node[box, below=of ad, text width=45mm] (st) {19 fingerprinted stages\\{\scriptsize behavior $\to$ geometry $\to$ causal patching $\to$ SAE concepts}};
+  \node[box, below=of st, text width=45mm] (reg) {Register (hash-pinned) $\to$ confirm once};
+  \node[box, below=of reg, text width=45mm, fill=accent!12] (rep) {Self-contained HTML report\\{\scriptsize typed findings, derived scorecard, explainers}};
+  \draw[arr] (ad) -- (st); \draw[arr] (st) -- (reg); \draw[arr] (reg) -- (rep);
+  \begin{scope}[on background layer]
+    \node[pkg, fit=(ad)(rep), label={[font=\small\bfseries]below:\texttt{tsfm\_lens}}] (lens) {};
+  \end{scope}
+  \draw[arr] (dev.east) -- (st.west);
+  \draw[arr] (priv.east) -- (reg.west);
+  \node[box, above=6mm of lens.north, fill=soft] (ck) {Checkpoints + one YAML config};
+  \draw[arr] (ck) -- (lens.north);
+\end{tikzpicture}
 \caption{Architecture of \tool{}. The benchmark package produces leakage-audited, sealed corpora with exact
 ground truth. The analysis package loads each checkpoint through an adapter, runs a gated stage pipeline on
 the dev split, confirms registered claims once on the private split and renders one report.}
@@ -161,10 +192,19 @@ per-stage artifacts and one-shot held-out confirmation (including 20 of 20 regis
 and again on a second, three times larger corpus and on 800 raw real windows), and a ledger of
 every finding with its reproduction command. The code is MIT-licensed; over 2{,}800 tests
 run in continuous integration against pinned and, weekly, latest dependencies, and each load-bearing assertion must
-be shown to fail against a planted regression. Code: \url{\repourl}.
+be shown to fail against a planted regression.
+
+\paragraph{Platforms, documentation and community.} \tool{} is pure Python ($\geq$3.10, tested on 3.10--3.12) and
+depends only on open-source libraries (PyTorch, NumPy, SciPy, scikit-learn, zarr, Plotly); it runs on Linux, where continuous
+integration runs, on CPU for the mock models and on a GPU for real checkpoints, and every exact version pin is documented with its reason.
+Documentation comprises a quickstart (also as a Colab notebook), two tutorial notebooks, a worked example, per-package
+READMEs whose stage reference and glossary are generated from the code, a guide and template for adding
+a model adapter, and the shipped example reports, in which every figure explains how to read it. Contributors are guided by a
+contributing guide, issue templates (including one for new adapters), a changelog and an archived DOI for each release; every source file carries
+an SPDX license header. The project is developed in the open on GitHub, where issues and pull requests are welcome. Code: \url{\repourl}.
 
 \acks{Computational resources were provided by the second author's lab at Rutgers University. This work received no external funding, and the authors
-declare no competing interests. Use of AI tools: Claude (Anthropic) wrote most of the repository's code and tests, ran the experiments and helped draft and edit the manuscript, under the authors' direction. The research questions, ideas and general design choices are the authors', who reviewed the implementation details Claude proposed, checked every reported result and take full responsibility for the content.}
+declare no competing interests. Use of AI tools: the authors conceived the research questions, designed the toolkit and its methodology, directed its implementation, reviewed the code and checked every reported result. Claude (Anthropic) served as an AI coding and writing assistant throughout: it generated much of the code and tests, ran experiments and helped draft and edit the manuscript. The authors take full responsibility for the content.}
 
 {\setlength{\bibsep}{0pt}\bibliography{../references}}
 

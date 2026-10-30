@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Run the validation report pipeline on a benchmark.
 
 Validates a sealed corpus directory produced by the generation pipeline

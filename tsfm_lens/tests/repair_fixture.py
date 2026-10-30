@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Shared fixture for the forecast-repair tests (ROADMAP.md sec 39, R0).
 
 A planted forecaster (`mock_planted`, vocabulary `repair`) on the smoke corpus, and an

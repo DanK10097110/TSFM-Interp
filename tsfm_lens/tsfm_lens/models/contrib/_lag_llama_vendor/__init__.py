@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Vendored Lag-Llama model source (Apache-2.0), not a contrib adapter itself.
 
 `models/contrib/__init__.py::discover_contrib_adapters` only globs the

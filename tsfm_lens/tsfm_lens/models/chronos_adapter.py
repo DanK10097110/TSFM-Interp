@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Adapter for Amazon Chronos (T5 encoder-decoder over quantized per-step tokens).
 
 Representations are captured from the encoder blocks over the context: that

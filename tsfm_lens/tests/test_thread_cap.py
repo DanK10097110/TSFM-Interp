@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Regression tests for tests/conftest.py's BLAS/OpenMP thread cap.
 
 The cap exists because this suite was measured taking 18 of 32 cores at nice 0 on

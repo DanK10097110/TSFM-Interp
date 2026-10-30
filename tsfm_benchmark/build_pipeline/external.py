@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """The ``external_real`` slice: raw GIFT-Eval windows with no generator (ROADMAP sec 41, V3-A).
 
 Every other sample in this benchmark is either generated (``synthetic``) or generated *from*

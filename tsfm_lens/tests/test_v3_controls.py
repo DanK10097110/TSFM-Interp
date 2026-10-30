@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """ROADMAP.md sec 41.1 V3 controls: transfer negative controls, window sensitivity,
 per-data-role breakdown. Planted known answers with a decoy for each, plus one
 mock-pipeline integration (twin run -> concepts stage -> report).

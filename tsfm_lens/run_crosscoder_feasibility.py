@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """§13's prerequisite small-scale test for ROADMAP.md §6.2 item 1 (the
 flagship crosscoder candidate): "is a joint crosscoder actually
 trainable/stable across two architecturally distinct models at a shared

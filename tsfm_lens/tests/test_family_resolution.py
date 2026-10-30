@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Regression tests for `data.py`'s family_key resolution guard and the
 single-family degrade path (`ROADMAP.md` sec 15 A6).
 """

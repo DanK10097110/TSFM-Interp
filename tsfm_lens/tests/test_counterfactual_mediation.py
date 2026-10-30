@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """ROADMAP.md sec 37.9 P6a -- measurement-side input response tests.
 
 Mirrors `test_shared_input_agreement.py`'s style: a stub adapter/SAE pair

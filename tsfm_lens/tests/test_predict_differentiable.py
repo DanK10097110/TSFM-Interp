@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """`ModelAdapter.predict_differentiable` on the generic_hf adapter and the sampled-head adapters (ROADMAP.md sec 42.1).
 
 Planted answers, no checkpoint needed:

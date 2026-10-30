@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """`run.py --list-configs` (the config-sprawl entry point).
 
 Forty-six flat YAML files with no index is a real cost for someone who did not

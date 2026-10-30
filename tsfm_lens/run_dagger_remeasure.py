@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Re-measure the paper's four-model-run numbers (marked with a dagger) on the 7-model v2 and v3 runs, ROADMAP.md sec 47.5.
 
 Standalone dev study driver. Every number is re-derived with the definition that reproduces the recorded four-model

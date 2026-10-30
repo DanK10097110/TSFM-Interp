@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """`sae.targets: auto` must resolve to layers this run ACTUALLY extracted.
 
 `layer_screen` and `extract` do not see the same set of layers, and that is by

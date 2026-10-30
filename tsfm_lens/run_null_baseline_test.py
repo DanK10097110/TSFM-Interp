@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """CLI for ROADMAP.md sec 16 E9 / sec 13's open question: does a real
 cross-model run's L1 peak CKA / L2 best stitching gain actually exceed a
 real-vs-random-init null run's own version of the same statistic, or does

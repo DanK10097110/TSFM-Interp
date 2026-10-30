@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """L0 companion -- probabilistic-forecast calibration diagnostics (ROADMAP.md
 sec 16 E10).
 

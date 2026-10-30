@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Generator-side input counterfactuals for `random_parametric` series.
 
 Every `random_parametric` sample records the exact recipe that produced it

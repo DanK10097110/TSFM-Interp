@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Candidate definitions of "how deep is this layer" (ROADMAP.md sec 18 F1).
 
 Every cross-model figure in this repo that interpolates two models onto a

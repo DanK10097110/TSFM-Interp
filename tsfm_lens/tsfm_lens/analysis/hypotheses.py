@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Hypothesis registry — the pre-registration seam `confirm` tests against
 (`ROADMAP.md` sec 15 A15).
 

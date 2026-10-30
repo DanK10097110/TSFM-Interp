@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Tests for `sae/role_matching.py` (ROADMAP.md sec 25.6 / sec 25.9 Stage 4,
 Component C): cross-model role correspondence.
 

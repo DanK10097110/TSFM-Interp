@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Error-preserving feature edits and their held-out scoring (ROADMAP.md sec 39, R0).
 
 Why this module exists. The forecast-repair study (sec 39) asks whether editing named SAE

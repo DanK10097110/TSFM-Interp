@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """`_load_l3_patching_secondary_gold` (ROADMAP.md §6.1.1's still-open
 "does `work_bend` survive the per-window-patching secondary gold" item).
 

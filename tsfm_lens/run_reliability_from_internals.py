@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """CLI for `analysis/reliability_from_internals.py` (`ROADMAP.md` sec 38.4, K4).
 
 Scores U1 (does looking inside predict failure beyond the free baseline?)

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """L5 known-answer study driver (ROADMAP.md sec 38.3.5).
 
 For each construction seed, trains an SAE on each member of a pair of DIFFERENT

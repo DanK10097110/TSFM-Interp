@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Ground-truth feature-alignment score (ROADMAP.md §2.1, §6.2, §6.3).
 
 This repo's distinctive advantage over most SAE interpretability work: every

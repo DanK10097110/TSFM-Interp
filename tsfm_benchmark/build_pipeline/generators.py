@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Series generators.
 
 Two leakage tiers live here. The parametric generator is the leakage-safe

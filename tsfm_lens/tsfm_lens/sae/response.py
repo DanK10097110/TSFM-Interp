@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Component A -- the response fingerprint (ROADMAP.md §25.4, §25.9 Stage 2).
 
 Stop naming an SAE feature by what it correlates with; name it by what it

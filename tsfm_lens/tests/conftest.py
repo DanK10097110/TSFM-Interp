@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Thread-count caps for this suite (CLAUDE.md sec 9's measured finding).
 
 numpy, OpenBLAS, MKL and torch each default to one thread per core and none of

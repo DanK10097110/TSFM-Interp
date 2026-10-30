@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """ROADMAP.md sec 21 J6: the failure-mode gallery -- five real, frozen,
 hand-written cases of an analysis in this report looking wrong before it
 was diagnosed. Not derived from any live artifact (these are historical

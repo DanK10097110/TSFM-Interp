@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """`Finding.caveat` is generated, not authored (`ROADMAP.md` sec 21 J1).
 
 The whole point of J1's three-register claim contract is that `caveat` is a

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Opt-in MEAN ablation of the SAE ablation battery (`intervention="mean"`).
 
 Zero ablation sets an atom's token-level activation to 0; mean ablation sets it

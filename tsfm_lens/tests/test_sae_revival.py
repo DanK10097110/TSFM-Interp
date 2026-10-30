@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """The production `sae` stage's dead-dictionary fix (ROADMAP.md sec 23.2 A1).
 
 A1's own measurement (run_sae_capacity_sweep.py, run_sae_corpus_diversity_

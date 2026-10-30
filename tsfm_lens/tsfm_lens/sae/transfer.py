@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """ROADMAP.md sec 30.4.2 -- cross-model SAE CONCEPT transfer, stage 3 of sec
 30.10's five-stage build. Answers: take a concept in model A, take the series
 it fires hardest on, and ask whether model B groups those same series too.

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Report panel for forecast completeness (ROADMAP.md sec 42 task C): how much of
 the forecast change the top-N ranked SAE features carry, against the SAE's error
 term and against activation-matched random feature sets (`sae/completeness.json`).

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """NaN/missing-timestep handling probe unit tests (ROADMAP.md sec 16 E17).
 
 Synthetic, planted-answer only -- constructs the four possible per-adapter

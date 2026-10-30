@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """A blank cell must say why it is blank, never render as `NaN`.
 
 `df.to_html` writes a missing float as the literal string `NaN`, which reads

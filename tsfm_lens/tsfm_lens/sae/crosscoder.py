@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Crosscoder: a dictionary trained jointly across N sources (ROADMAP.md §6.2 item 1).
 
 This is the small-scale feasibility test §13 names as a prerequisite before

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """`confirm` records the corpus it consumed (`ROADMAP.md` §34 item B5).
 
 `confirmation.json` used to name no particular corpus at all -- no digest,

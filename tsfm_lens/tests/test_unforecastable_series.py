@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """A future the context cannot anticipate, and how the report says so.
 
 The measurement (`analysis/l3_perturbation.py::future_excursion`) and its one

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Adapter for Chronos-Bolt (T5 encoder over input patches, direct quantile head).
 
 Bolt patches the context (default 16-step non-overlapping patches read from

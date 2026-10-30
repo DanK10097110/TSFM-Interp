@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """L3 — perturbation and causal analysis.
 
 A battery of parameterized input corruptions (each targeting one structural

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """ROADMAP.md sec 27: the two causal columns in the SAE feature table.
 
 `report/sae_features.py`'s own module docstring has said since it was

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """ROADMAP.md §7 Phase 3, bullet 4: verbose-mode case studies for a
 controlled parameter sweep (`run_parameter_sweep.py`).
 

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """The feature x channel heatmap's cells are in NULL UNITS, not raw channel
 units (ROADMAP.md sec 28.19, user-requested 2026-09-11).
 

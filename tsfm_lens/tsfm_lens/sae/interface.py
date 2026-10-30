@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """SAE phase: the contract and its seams (ROADMAP.md §6.2).
 
 The intended workflow once SAEs are trained: encode stored activations into

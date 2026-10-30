@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Regression tests for the MASE scale-term degeneracy fix (`ROADMAP.md` sec
 15 A11): a `seasonal_naive` scale option, a reliability guard that excludes
 series with a too-small MASE denominator from aggregates instead of letting

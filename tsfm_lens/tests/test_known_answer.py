@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """The known-answer scorer (ROADMAP.md sec 38.1.4-38.1.5, K1).
 
 Fixtures plant a KNOWN answer, and each load-bearing test includes the

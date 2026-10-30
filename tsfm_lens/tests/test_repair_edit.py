@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Error-preserving feature edits, held out (ROADMAP.md sec 39, R0): `analysis/repair_edit.py`.
 
 Every assertion has an answer known in advance from the planted forecaster

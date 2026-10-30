@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Tests for `models/adapter_check.py` (`ROADMAP.md` sec 34.6 Item E4).
 
 T-E4.1: a deliberately-broken adapter's checklist names the actual defect in

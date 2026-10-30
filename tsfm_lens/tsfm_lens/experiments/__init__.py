@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """One-off research scripts that are not pipeline stages.
 
 `finetune_child.py` is the first entry (`ROADMAP.md` sec 23.3 D2 / sec

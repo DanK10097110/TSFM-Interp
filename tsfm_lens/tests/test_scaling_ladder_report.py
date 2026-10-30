@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Scaling-ladder HTML report (ROADMAP.md sec 20 H1's report section) -- synthetic,
 planted-answer fixtures, exactly the same `_write_rung` shape as
 `test_scaling_ladder.py` so the reducer's real output (not a hand-built dict)

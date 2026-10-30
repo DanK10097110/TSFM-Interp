@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Parameter/FLOPs/latency accounting (ROADMAP.md sec 18 F2).
 
 Everything here runs against a tiny synthetic stack on CPU rather than a real

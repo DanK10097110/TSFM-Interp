@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """L0's no-skill reference row (`ROADMAP.md` §34 item A3).
 
 Covers T-A3.1 (pseudo-models never widen the comparison set), T-A3.2 (the

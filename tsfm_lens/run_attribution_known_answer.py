@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Known-answer gate for the attribution candidate rule (ROADMAP.md sec 42, decision 5a).
 
 On the K1 planted pair (`mock_planted`, `configs/attribution_known_answer.yaml`)

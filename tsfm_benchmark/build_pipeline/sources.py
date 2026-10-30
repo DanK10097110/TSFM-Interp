@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Adapters that load real corpora into the canonical form.
 
 Real data is used here only as (1) calibration targets for the realism report

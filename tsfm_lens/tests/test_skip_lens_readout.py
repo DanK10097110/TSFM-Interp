@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """A skip lens is only meaningful if the forecast head reads what patching writes.
 
 Chronos-2 slices `hidden_states[:, -num_output_patches:]` into its forecast

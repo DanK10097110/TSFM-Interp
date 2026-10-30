@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Regression tests for the repeat-run MASE noise floor (`ROADMAP.md` sec 15
 A13): every ΔMASE elsewhere in the repo (head/MLP ablation, SAE forecast-
 preservation, L3 restoration) implicitly compares against zero rather than

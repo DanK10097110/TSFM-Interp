@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Assembly layer.
 
 Turns a declarative config into a benchmark while enforcing the invariants that

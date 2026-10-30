@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """ROADMAP.md sec 37.9 P6a -- generator-side input counterfactuals, measured:
 does an atlas concept's causal-feature score actually RESPOND to the
 structural property its generator controls, rather than merely correlating

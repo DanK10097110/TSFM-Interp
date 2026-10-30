@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """`Evidence.exemplar_profile` -- the evidence that tells near-identical features apart.
 
 ROADMAP.md sec 26 C, 2026-09-04, from a user review: "it is not clear what

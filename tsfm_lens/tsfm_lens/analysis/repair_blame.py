@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Causal per-feature MASE blame (ROADMAP.md sec 39, R0).
 
 Why this module exists. "Which internal features cause this model's forecast errors?" has a

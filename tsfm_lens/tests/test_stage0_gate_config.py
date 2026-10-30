@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """The committed config that clears Stage 0 (ROADMAP.md §6.2.1 finding (17)).
 
 `test_stage0_winner_config.py` pins the same two properties for the k sweep's

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """ROADMAP.md sec 37.10 P7: registering `concept_transfer` claims from dev
 concept-atlas artifacts and replicating them once on a fresh private epoch.
 

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Core functions of the pooling-check driver (ROADMAP.md sec 44): within-window share, fine
 concatenation, grid validity, window targets, series-split ridge and CKA, each with a planted
 known answer and a decoy that a plausible bug would also satisfy."""

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """ROADMAP.md sec 37 P2 -- seed stability of atlas concepts, and the
 within-model transfer ceiling.
 

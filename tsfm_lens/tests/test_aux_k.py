@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """AuxK dead-atom revival tests (ROADMAP.md §6.2.1 Stage 0, hypothesis H4).
 
 The mechanism under test is `sae/models.py::auxiliary_dead_loss` and its two

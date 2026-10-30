@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """A role's evidence must not claim what the role's own numbers refuse.
 
 `sae/roles.py` records two facts about every role that read, printed side

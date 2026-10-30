@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Compare and contrast one run's models through their SAE roles (sec 28).
 
 `run_sae_describe.py` narrates ONE feature or ONE role at a time, which is

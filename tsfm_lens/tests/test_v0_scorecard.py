@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """V0 on the crosscoder scorecard (ROADMAP.md §6.2.1 Stage 1c, clause 2).
 
 Stage 1c's rule turns on beating V0 -- the incumbent, two independently

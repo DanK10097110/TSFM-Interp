@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """ROADMAP.md sec 37.8 P5b -- cross-model causal agreement on shared inputs.
 
 Mirrors `tests/test_sae_ablation_fingerprint.py`'s style (a stub adapter/SAE

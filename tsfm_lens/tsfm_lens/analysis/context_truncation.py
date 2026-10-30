@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Context-truncation-from-the-back probe (`ROADMAP.md` sec 16 E17).
 
 Distinct from two already-built, superficially similar diagnostics:

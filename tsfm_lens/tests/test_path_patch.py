@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """ROADMAP.md sec 20 H8 Stage 3 / E18: `hooks.path_patch_delta`, the two-
 forward path-patching primitive.
 

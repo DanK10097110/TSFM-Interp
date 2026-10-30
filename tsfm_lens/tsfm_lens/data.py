@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Benchmark loading and the context/target split every stage consumes.
 
 Primary source is a sealed corpus produced by the companion `tsfm_benchmark`

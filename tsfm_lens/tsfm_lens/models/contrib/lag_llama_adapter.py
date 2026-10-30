@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Adapter for Lag-Llama (decoder-only transformer over disjoint lag features).
 
 `ROADMAP.md` Item D2: this checkpoint was picked specifically because its

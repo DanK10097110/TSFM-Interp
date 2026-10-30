@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Is the ~95% dead SAE dictionary a symptom of an under-diverse corpus?
 (ROADMAP.md sec 23.2 A1.)
 

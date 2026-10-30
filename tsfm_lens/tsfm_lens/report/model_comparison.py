@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """ROADMAP.md sec 37 Spec C -- the "Model comparison" report section: what is
 shared across every model in this run, what is unique to each and why, and
 how similar any two models are across the metrics this pipeline already

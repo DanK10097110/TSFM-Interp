@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Does window pooling flatten fine-token models? (ROADMAP.md sec 44; criteria fixed before any data.)
 
 Standalone dev study driver. Re-captures token-level residual states of the

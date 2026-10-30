@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Report shared sample hashes between one sealed split and every other sealed split under a root.
 
     PYTHONPATH=. python3 tsfm_benchmark/example_runs/check_split_overlap.py \

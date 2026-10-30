@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """The ablation-battery driver, shared by `run_sae_ablation.py` and the
 `concepts` pipeline stage (ROADMAP.md sec 37.4 P1).
 

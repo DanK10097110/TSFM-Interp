@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """The L5 planted pair: two different architectures, one planted vocabulary
 (ROADMAP.md sec 38.3.5).
 

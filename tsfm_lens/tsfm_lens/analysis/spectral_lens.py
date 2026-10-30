@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Spectral lens (ROADMAP.md sec 16 E13): a frequency-domain companion to
 the time-domain skip lens's crystallization-depth number.
 

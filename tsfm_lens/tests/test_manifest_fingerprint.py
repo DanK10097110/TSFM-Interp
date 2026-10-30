@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Regression test for config-fingerprinted stage skipping (`ROADMAP.md` sec 15 A3).
 
 Locks in that editing a config a stage actually depends on and rerunning

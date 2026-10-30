@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Cross-model SAE feature matching unit tests (ROADMAP.md sec 16 E16).
 
 Synthetic, planted-answer only -- no real checkpoint or extraction I/O

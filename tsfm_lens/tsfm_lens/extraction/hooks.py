@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Forward hooks for capture and intervention.
 
 `ActivationCatcher` records layer outputs and `InputCatcher` records module

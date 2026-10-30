@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Phase 2a (ROADMAP.md §6.1): does a layer's effective dimensionality
 predict how interpretable/controllable that layer is?
 

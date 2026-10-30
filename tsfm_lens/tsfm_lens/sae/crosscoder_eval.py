@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """The fixed crosscoder scorecard and its known-answer validation ladder
 (ROADMAP.md §6.2.1 Stage 1).
 

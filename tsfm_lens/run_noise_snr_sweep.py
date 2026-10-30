@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """ROADMAP.md §7 (Phase 3), bullet 2: characterize the additive-noise
 depth-sensitivity anti-correlation (ρ≈-0.90 at a single SNR=6dB, carried
 forward from earlier findings) across a *range* of corruption strengths,

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """E3(c)'s routing half: a model with no token->time map runs L0 only.
 
 The refusal itself (measuring an impulse response and finding it diffuse)

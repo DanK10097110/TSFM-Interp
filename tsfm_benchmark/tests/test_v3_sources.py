@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """V3-A source options and split-overlap check (ROADMAP sec 41).
 
 ``windows_per_row`` / ``finite_windows`` on ``kind: chronos_datasets`` serve subsets with few, very

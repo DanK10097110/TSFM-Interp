@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """catch22 feature extraction.
 
 Passes every sequence through the catch22 set of 22 canonical, low-redundancy

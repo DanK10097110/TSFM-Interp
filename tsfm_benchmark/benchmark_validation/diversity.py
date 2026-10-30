@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Quantitative diversity metrics, computed in the catch22 feature space.
 
 These are the numbers that make this a test rather than a picture. They are

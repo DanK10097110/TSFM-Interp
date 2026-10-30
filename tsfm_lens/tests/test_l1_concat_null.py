@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """CONCAT L1 shuffled-series null and Gram-block series bootstrap CI (ROADMAP.md sec 47.1)."""
 
 from __future__ import annotations

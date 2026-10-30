@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """F5: a cross-model attention-lag claim must not be a claim about patch size.
 
 `ROADMAP.md` sec 18 F5. Representation comparison already pools everything to

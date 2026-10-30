@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """NaN / missing-timestep handling probe (`ROADMAP.md` sec 16 E17).
 
 Does an adapter's `predict()` have any real missing-value handling path, or

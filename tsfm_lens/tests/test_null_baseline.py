@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Tests for the real-vs-untrained-null bootstrap significance test
 (ROADMAP.md sec 16 E9 / sec 13's open question), `analysis/null_baseline.py`.
 

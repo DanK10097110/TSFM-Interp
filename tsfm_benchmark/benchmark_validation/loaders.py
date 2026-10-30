@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Bring a benchmark into the validator in a single canonical form.
 
 The validator is deliberately decoupled from the generation pipeline: it accepts

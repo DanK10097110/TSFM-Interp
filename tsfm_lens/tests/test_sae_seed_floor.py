@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """The SAE stage's own seed-to-seed noise floor (ROADMAP.md §13).
 
 `sae.n_seeds > 1` retrains each target against the identical frozen

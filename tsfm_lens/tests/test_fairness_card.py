@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """The fairness card report section (ROADMAP.md sec 18 F9): every measured
 asymmetry between the two models in a run, rendered before any result
 section and emitted as `fairness/card.json`.

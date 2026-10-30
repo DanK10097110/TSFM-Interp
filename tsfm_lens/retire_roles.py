@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """ROADMAP.md sec 30, Stage 4/5 (2026-09-11) -- the ONE irreversible step of
 the roles-to-concepts supersession: rename `<run>/sae/roles.json` to
 `<run>/sae/roles_injection.json`, carrying `superseded_by`/

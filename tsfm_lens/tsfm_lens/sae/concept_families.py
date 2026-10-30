@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """ROADMAP.md sec 37 (concept FAMILIES) -- a general, human-readable layer
 above `sae/concept_atlas.py`'s tight concepts.
 

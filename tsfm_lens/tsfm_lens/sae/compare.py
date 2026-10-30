@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Cross-model comparison of SAE roles: the measured reduction, and a
 guarded narration of it.
 

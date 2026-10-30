@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """ROADMAP.md sec 25.9 Stage 3 (Component B(b)): cluster a target's Stage 2
 probed candidate features into named ROLES and write `sae/roles.json`.
 

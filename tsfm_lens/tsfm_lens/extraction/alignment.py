@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Cross-architecture time alignment.
 
 Both models' token representations are pooled onto a shared grid of

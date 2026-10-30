@@ -1,11 +1,11 @@
 # TSFM-Lens
 
-[![CI](https://github.com/DanK10097110/TSFM-Interp/actions/workflows/ci.yml/badge.svg)](https://github.com/DanK10097110/TSFM-Interp/actions/workflows/ci.yml)
+[![CI](https://github.com/Wang-ML-Lab/TSFM-Lens/actions/workflows/ci.yml/badge.svg)](https://github.com/Wang-ML-Lab/TSFM-Lens/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/tsfm-lens.svg)](https://pypi.org/project/tsfm-lens/)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23267462.svg)](https://doi.org/10.5281/zenodo.23267462)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Example report](https://img.shields.io/badge/example-live%20report-c0602a)](https://dank10097110.github.io/TSFM-Interp/)
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DanK10097110/TSFM-Interp/blob/main/examples/quickstart.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Wang-ML-Lab/TSFM-Lens/blob/main/examples/quickstart.ipynb)
 
 **TSFM-Lens** is a mechanistic-interpretability toolkit for time-series
 foundation models (TSFMs). It compares architecturally different models —
@@ -20,7 +20,7 @@ bootstrap statistics, and a one-shot confirmation on a sealed held-out
 corpus, not a single-model microscope.
 
 **Try it:** [live example report](https://dank10097110.github.io/TSFM-Interp/) (seven models, with its held-out
-confirmation) · [Colab quickstart](https://colab.research.google.com/github/DanK10097110/TSFM-Interp/blob/main/examples/quickstart.ipynb)
+confirmation) · [Colab quickstart](https://colab.research.google.com/github/Wang-ML-Lab/TSFM-Lens/blob/main/examples/quickstart.ipynb)
 (two real models, about 25 minutes on one GPU) · [`docs/QUICKSTART.md`](docs/QUICKSTART.md)
 
 **What it found on seven TSFMs** (TimesFM, Chronos-2, Sundial, Chronos-Bolt, Chronos-T5, Timer, Time-MoE). Every
@@ -239,12 +239,12 @@ See [`CITATION.cff`](CITATION.cff). In brief:
 
 ```bibtex
 @software{tsfmlens,
-  author  = {Kushnir, Daniel},
-  title   = {TSFM-Lens: comparative mechanistic interpretability for
+  author  = {Kushnir, Daniel and Wang, Hao},
+  title   = {TSFM-Lens: Interpretability for
              time-series foundation models},
   version = {1.1.0},
   doi     = {10.5281/zenodo.23267462},
-  url     = {https://github.com/DanK10097110/TSFM-Interp}
+  url     = {https://github.com/Wang-ML-Lab/TSFM-Lens}
 }
 ```
 

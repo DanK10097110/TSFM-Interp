@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """The pure pieces of `run_family_presence_known_answer.py`: the answer-key family cut, the
 biased-null decoy and the pair status. Planted answers with the confusable cases on purpose:
 a decoy concept whose atom must not enter any centroid, a signature no atom recovered, and a

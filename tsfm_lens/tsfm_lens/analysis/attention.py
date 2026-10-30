@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Attention analysis with a time-series twist, plus head-level causality.
 
 Three measurements, each degrading gracefully per model when an adapter

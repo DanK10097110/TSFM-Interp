@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Shared plain-language title machinery for causal-ablation profiles, used
 by both `sae/concepts.py` (tight per-target concepts' `plain_name`) and
 `sae/concept_families.py` (cross-model families' `title`).

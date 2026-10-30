@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Tests for L0's calibration diagnostics (`ROADMAP.md` sec 16 E10), all on
 synthetic data with a known-correct planted answer -- a well-calibrated
 quantile forecaster, a deliberately overconfident one, and a hand-built

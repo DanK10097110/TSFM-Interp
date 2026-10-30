@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """ROADMAP.md sec 42 decision 5b: the known-answer scorer of the powered test.
 
 The planted answer is an artifact whose real planted atoms carry `powered.causal` and whose

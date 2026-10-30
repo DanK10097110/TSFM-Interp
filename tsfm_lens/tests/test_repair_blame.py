@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Causal per-feature MASE blame (ROADMAP.md sec 39, R0): `analysis/repair_blame.py`.
 
 Planted answers (`tests/repair_fixture.py`): the harmful atom's ablation lowers MASE, the

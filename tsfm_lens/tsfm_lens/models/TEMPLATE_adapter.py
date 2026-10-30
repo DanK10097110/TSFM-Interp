@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 r"""Copy-paste skeleton for a new `ModelAdapter` (`ROADMAP.md` sec 34.6 Item E1.3).
 
 **How to use this file.** Copy it into `models/contrib/<your_name>_adapter.py`,

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Adapter for Google TimesFM 2.5 (decoder-only transformer over input patches).
 
 Capture calls the library's own `model.decode` path (the eager method behind

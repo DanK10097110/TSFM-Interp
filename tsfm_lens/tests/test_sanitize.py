@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """The render-boundary stripper for internal planning-document citations.
 
 The load-bearing tests here are the NEGATIVES. Deleting a citation is easy;

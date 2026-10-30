@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Parameter, compute, latency and memory accounting (ROADMAP.md sec 18 F2).
 
 Every quality comparison this repo makes is size-confounded, and until this

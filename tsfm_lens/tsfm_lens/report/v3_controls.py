@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Report section for the V3 controls (ROADMAP.md sec 41.1): the transfer negative
 controls (`sae/control_transfer.json`), window sensitivity
 (`sae/window_sensitivity.json`) and the per-data-role breakdown

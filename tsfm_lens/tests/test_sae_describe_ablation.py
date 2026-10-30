@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """ROADMAP.md sec 27: the ablation battery in the narrator's evidence packet.
 
 sec 11.51's lesson is that every vocabulary a generator is licensed to use is

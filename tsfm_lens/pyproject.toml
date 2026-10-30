@@ -41,10 +41,10 @@ chronos = ["chronos-forecasting>=1.2"]
 timesfm = ["timesfm>=2.0"]
 
 [project.urls]
-Homepage = "https://github.com/DanK10097110/TSFM-Interp"
-Repository = "https://github.com/DanK10097110/TSFM-Interp"
+Homepage = "https://github.com/Wang-ML-Lab/TSFM-Lens"
+Repository = "https://github.com/Wang-ML-Lab/TSFM-Lens"
 Documentation = "https://dank10097110.github.io/TSFM-Interp/"
-Changelog = "https://github.com/DanK10097110/TSFM-Interp/blob/main/CHANGELOG.md"
+Changelog = "https://github.com/Wang-ML-Lab/TSFM-Lens/blob/main/CHANGELOG.md"
 
 [project.scripts]
 tsfm-lens = "tsfm_lens.run:main"

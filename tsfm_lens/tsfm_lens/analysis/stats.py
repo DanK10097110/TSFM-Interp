@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Shared statistical machinery for every stage.
 
 The resampling unit is always the series. Windows within a series are

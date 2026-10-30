@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """ROADMAP.md sec 30.8 / sec 32.13b, Item L: `sae/misfits.py::misfit_rows`.
 
 All synthetic, with hand-picked cosine values so each test's expected

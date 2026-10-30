@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Dev<->private cross-split validation (ROADMAP.md sec 34, Items B2 and B3).
 
 **B2.1's peeking resolution (must be read before anything else in this

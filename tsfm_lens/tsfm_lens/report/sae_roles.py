@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Pure selection/table-building for the SAE roles display (ROADMAP.md sec
 25.7, Component B(b)'s report half). No HTML, no plotly -- mirrors
 `report/sae_exemplars.py`'s split between pure selection logic (unit-tested

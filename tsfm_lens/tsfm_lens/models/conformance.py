@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Lightweight `ModelAdapter` conformance checks (ROADMAP.md §10, Phase 5 CI item).
 
 Automates the per-model checklist Phase 4 already writes out by hand

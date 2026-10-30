@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Final stage: one self-contained interactive HTML report.
 
 The report is assembled from whatever artifacts exist, so it composes with

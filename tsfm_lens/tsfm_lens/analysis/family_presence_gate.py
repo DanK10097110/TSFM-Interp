@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """The pre-fixed known-answer gate of the universal-family presence claim (ROADMAP.md sec 40,
 sec 41 V3-B).
 

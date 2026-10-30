@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """ROADMAP.md sec 30.4 -- rendering for CONCEPTS (ablation-space feature
 clustering), the replacement for "roles" (injection-space clustering,
 `sae_roles.py`) throughout the report. sec 30.1 measured concepts

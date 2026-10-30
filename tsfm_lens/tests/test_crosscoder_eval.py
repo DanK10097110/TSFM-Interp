@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """The Stage 1 scorecard and the two ladder rungs whose answer is known in
 advance (ROADMAP.md §6.2.1 Stage 1a/1b).
 

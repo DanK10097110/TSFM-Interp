@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Specification curve over the analysis knobs (`ROADMAP.md` §34 item A2).
 
 Every analysis knob in this repo is individually defended, and the defences

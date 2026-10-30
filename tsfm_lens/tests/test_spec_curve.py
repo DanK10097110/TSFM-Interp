@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Specification-curve sweep tests (`ROADMAP.md` sec 34 item A2).
 
 Everything here is synthetic with a planted, known-correct answer, per this

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Adapter registry and the lazy-loading ModelHub.
 
 Register a new model by adding one entry to ADAPTERS; everything downstream

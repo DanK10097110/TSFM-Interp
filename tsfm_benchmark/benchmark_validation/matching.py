@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Algorithmic sequence matching for redundancy detection.
 
 Two sequences are compared after being put on equal footing: z-normalised and

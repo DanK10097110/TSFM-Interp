@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Measure candidate ``chronos_datasets`` subsets as real-derived sources (ROADMAP sec 41, V3-A).
 
 For each subset, load a seeded row sample through ``sources._load_chronos_datasets_config`` (the

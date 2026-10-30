@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Scale-equivariance probe (`ROADMAP.md` sec 16 E17).
 
 A forecaster whose internal normalization genuinely removes scale (TimesFM's

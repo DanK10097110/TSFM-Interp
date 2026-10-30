@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Tests for the untrained-weights null baseline (ROADMAP.md sec 16 E9):
 `ModelConfig.random_init` + `models/base.py::random_init_like`.
 

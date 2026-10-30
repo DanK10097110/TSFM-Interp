@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Regression tests for the hypothesis registry (`ROADMAP.md` sec 15 A15):
 `confirm`'s pre-registration discipline (`CLAUDE.md` §6.7) was previously
 enforced by convention alone. `hypotheses.json` pins exactly which dev

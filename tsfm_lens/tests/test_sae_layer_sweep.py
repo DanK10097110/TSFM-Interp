@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Tests for the SAE layer sweep (ROADMAP.md §6.1's "feed the SAE evaluation
 results back into the layer-selection correlation study" item),
 `sae/layer_sweep.py`.

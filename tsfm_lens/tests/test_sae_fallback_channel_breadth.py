@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """The deterministic sentence names every channel it can, with directions
 (ROADMAP.md sec 28.18).
 

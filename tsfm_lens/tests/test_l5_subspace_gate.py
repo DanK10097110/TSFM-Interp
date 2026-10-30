@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """The pre-fixed gate of the subspace agreement test (`analysis/l5_subspace_gate.py`).
 
 The thresholds were committed before any subspace-agreement number existed, so the first test

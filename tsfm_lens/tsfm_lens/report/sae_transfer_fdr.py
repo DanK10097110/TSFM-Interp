@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """ROADMAP.md sec 37 P3 -- rendering for the FDR-controlled halves of
 `sae/transfer.py`: the per-target transfer test's `p`/`p_bh`/`reciprocal_fdr`
 keys (additive to `sae/transfer.json`, item 4) and the new, atlas-level

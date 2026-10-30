@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Tests for ROADMAP.md sec 34 Items B2 (cross-split validation) and B3
 (dev<->private distributional equivalence), `benchmark_validation/cross_split.py`
 plus `report.py`'s private-split redaction.

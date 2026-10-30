@@ -7,6 +7,9 @@ authors:
     given-names: Daniel
     email: kushnir.daniel05@gmail.com
     affiliation: Rutgers University
+  - family-names: Wang
+    given-names: Hao
+    affiliation: Rutgers University
 version: 1.1.0
 license: MIT
 doi: 10.5281/zenodo.23267462
@@ -17,7 +20,7 @@ identifiers:
   - type: doi
     value: 10.5281/zenodo.23267462
     description: "All versions (resolves to the latest)"
-repository-code: "https://github.com/DanK10097110/TSFM-Interp"
+repository-code: "https://github.com/Wang-ML-Lab/TSFM-Lens"
 keywords:
   - interpretability
   - mechanistic-interpretability

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Automated preflight checks (`ROADMAP.md` sec 16 E2).
 
 Every trap in `CLAUDE.md` sec 11 that cost a session instead of a build --

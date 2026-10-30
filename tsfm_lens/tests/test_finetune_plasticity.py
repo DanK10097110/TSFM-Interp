@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Tests for `analysis/finetune_plasticity.py` (ROADMAP.md sec 22.5 H6).
 
 Uses a tiny, fully offline `T5Config` (no network, no GPU) -- the same

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """NaN/inf handling in SAE training (the 7-model dev run's Timer crash).
 
 The failure: Timer's input normalization returns NaN for a constant real

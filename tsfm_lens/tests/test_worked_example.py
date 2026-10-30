@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Tests for `ROADMAP.md` sec 21 J3's worked example (`docs/worked_example.md`).
 
 The document's whole value is that it quotes a *real* run's artifacts rather

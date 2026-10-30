@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """ROADMAP.md sec 21 J6: the failure-mode gallery.
 
 A short, permanent, always-rendered report section showing what each

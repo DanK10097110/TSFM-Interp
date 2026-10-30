@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Attribution top-N versus the candidates a finished battery actually tested (ROADMAP.md sec 42).
 
 Read-only on the run: it loads a run's resolved config, SAE checkpoints and

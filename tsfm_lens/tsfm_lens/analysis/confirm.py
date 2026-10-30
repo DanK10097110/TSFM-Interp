@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Confirmation on a held-out private benchmark — the pipeline's gold standard.
 
 Everything upstream (L0-L4) is exploratory analysis on the development

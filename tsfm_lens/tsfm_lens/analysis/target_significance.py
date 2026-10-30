@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Per-target significance of the ablation battery's clears (`ROADMAP.md`
 sec 38.3.4, decision of 2026-10-01).
 

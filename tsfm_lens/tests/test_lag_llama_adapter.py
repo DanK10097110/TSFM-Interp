@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Adapter-specific tests for `models/contrib/lag_llama_adapter.py`
 (ROADMAP.md Item D2).
 

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """The opt-in `repair` vocabulary of `mock_planted` (ROADMAP.md sec 39, R0).
 
 Its own properties, with no SAE: the answer key (signs of the effect on MASE), the decoy

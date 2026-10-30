@@ -9,7 +9,7 @@ Colab version is in [`examples/quickstart.ipynb`](../examples/quickstart.ipynb).
 ## 1. Install
 
 ```bash
-git clone https://github.com/DanK10097110/TSFM-Interp.git
+git clone https://github.com/Wang-ML-Lab/TSFM-Lens.git
 cd TSFM-Interp
 pip install -e .                 # tsfm_benchmark (corpus builder)
 pip install -e tsfm_lens         # tsfm_lens (the analysis pipeline)

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """`run.py --new-adapter NAME --checkpoint ID` (`ROADMAP.md` sec 34.6 Item E3).
 
 Scaffolds a copy-paste-ready contrib adapter (by substitution over

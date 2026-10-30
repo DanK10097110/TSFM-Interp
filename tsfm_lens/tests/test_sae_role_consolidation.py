@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """The consolidated per-model SAE role views (user request, 2026-09-09).
 
 The section used to render one roles table and one feature x channel heatmap

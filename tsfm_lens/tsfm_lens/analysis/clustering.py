@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Activation clustering with approximate "what does this activate for" labels.
 
 Series-level embeddings at a chosen layer (by default, each model's side of

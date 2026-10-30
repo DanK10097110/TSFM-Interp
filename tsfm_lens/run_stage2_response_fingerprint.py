@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """ROADMAP.md §25.9 Stage 2 (Component A only): the response fingerprint --
 does steering an individual SAE feature by +-k*sigma move the forecast more
 than an arbitrary random direction of the same magnitude does?

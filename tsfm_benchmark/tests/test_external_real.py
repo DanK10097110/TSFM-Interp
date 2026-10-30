@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """The ``external_real`` GIFT-Eval slice (ROADMAP sec 41, V3-A), on a tiny mocked dataset.
 
 No network: ``build_external_samples`` takes an ``opener`` that returns plain lists of rows shaped

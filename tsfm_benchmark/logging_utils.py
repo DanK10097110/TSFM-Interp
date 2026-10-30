@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Shared logging setup for the example run scripts.
 
 Every entry point (``run_validation.py``, ``run_full.py``, ...) wants the same

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Single source of truth for "what does each pipeline stage tell you?"
 
 `ROADMAP.md` sec 21 J2: every stage answers a specific question, by a

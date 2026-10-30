@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Cross-model matching of independently-trained SAE dictionaries (ROADMAP.md sec 16 E16).
 
 Complements the crosscoder (sec 6.2 item 1)'s joint-training answer to

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Standalone HTML report for the model-family scaling ladder (ROADMAP.md sec 20 H1).
 
 `analysis/scaling_ladder.py::run_scaling_ladder` reduces N already-built run

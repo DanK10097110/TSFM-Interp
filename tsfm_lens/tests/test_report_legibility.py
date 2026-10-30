@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """The report's two-register legibility contract (user request, 2026-08-20).
 
 Every figure must answer "what am I looking at" **without the reader clicking

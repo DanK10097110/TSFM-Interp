@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Regression tests for the L3 corruption-battery calibration option
 (`ROADMAP.md` sec 15 A12): `l3.calibrate: none|input_energy`, a pure-numpy
 per-corruption energy solve, and the always-on footprint reporting that

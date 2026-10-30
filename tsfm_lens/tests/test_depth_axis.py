@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Tests for the shared depth axis (ROADMAP.md sec 18 F1).
 
 Three things are worth pinning, and only the first is about arithmetic. The

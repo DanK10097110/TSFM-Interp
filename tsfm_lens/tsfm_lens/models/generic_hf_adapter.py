@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """A zero-code attempt at any Hugging Face checkpoint (ROADMAP.md sec 16 E3(b)).
 
 Every other adapter in this package is a hand-written statement of four

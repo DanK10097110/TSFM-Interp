@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """The corpus card (ROADMAP.md sec 34 item C1): what the benchmark actually
 is, rendered before any model result.
 

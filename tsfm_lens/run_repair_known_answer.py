@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Forecast-repair known-answer driver, phase R0 (ROADMAP.md sec 39.3).
 
 For each construction seed: build the planted forecaster (`mock_planted`, vocabulary

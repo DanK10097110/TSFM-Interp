@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Scaling-ladder reducer (ROADMAP.md sec 20 H1) -- synthetic, planted answers.
 
 The five real rungs are GPU work; everything statistical about the ladder is

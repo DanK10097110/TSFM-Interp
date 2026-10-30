@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Regenerate the SAE targets and ablation battery of a pruned run, sharded over GPUs (ROADMAP 47.4).
 
 `panel7_v3_dev` lost its activation store and every SAE checkpoint to pruning, so the §47.4 arms

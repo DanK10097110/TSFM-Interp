@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """`share.py`: prune and bundle a run directory, and the pruned-run pipeline guard.
 
 The fixture is a fake run directory with a planted, known answer and decoys:

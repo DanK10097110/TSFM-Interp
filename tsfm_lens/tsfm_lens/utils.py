@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Shared utilities for seeding, device handling, and small artifact IO."""
 
 from __future__ import annotations

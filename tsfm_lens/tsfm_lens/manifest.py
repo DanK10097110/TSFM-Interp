@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Run manifest: per-stage config fingerprints (`ROADMAP.md` sec 15 A3).
 
 Stage skipping in `pipeline.py` used to be a bare artifact-existence check --

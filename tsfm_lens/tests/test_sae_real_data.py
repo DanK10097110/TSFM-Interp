@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """SAE real-data augmentation tests (ROADMAP.md §6.2 follow-up, user request
 2026-08-05: pull additional SAE training data from an established HF
 dataset rather than being limited to one run's own small benchmark).

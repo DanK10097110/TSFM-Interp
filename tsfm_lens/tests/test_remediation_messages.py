@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Error messages that name a CLI flag are claims about the CLI.
 
 Three separate guards in this repo told the reader to "rerun with `--force

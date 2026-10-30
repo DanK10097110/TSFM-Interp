@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Per-model internals profile: what is in each model, layer by layer.
 
 Three depth curves per model, all computed from the extraction store:

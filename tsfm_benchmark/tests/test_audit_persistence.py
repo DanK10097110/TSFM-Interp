@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Tests for persisting the leakage/near-duplicate/realism verdict into the
 sealed manifest (ROADMAP.md sec 34 item B1).
 

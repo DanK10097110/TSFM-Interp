@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Horizon scaling sweep tests (ROADMAP.md sec 16 E20a).
 
 Runnable directly (`python tests/test_horizon_scaling.py`) or via pytest.

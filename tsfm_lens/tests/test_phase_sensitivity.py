@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Phase-sensitivity probe unit tests (ROADMAP.md sec 16 E17).
 
 Synthetic, planted-answer only -- no real checkpoint or `adapter.predict()`

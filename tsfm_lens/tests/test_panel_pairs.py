@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Panel runs measure EVERY pair, not the first two (`ROADMAP.md` sec 24.3 sub-item 3).
 
 `tests/test_run_shape.py` covers the *gate* -- which stages a run shape drops.

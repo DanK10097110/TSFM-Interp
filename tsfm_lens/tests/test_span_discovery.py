@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Tests for `ROADMAP.md` sec 16 E3's empirical token->time span discovery.
 
 The mocks are the right test surface here for a reason that does not hold for

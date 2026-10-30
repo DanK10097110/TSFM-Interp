@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Tests for ROADMAP.md sec 37 Spec A: per-concept profiles
 (`sae/concept_profiles.py`) for the cross-model SAE concept atlas.
 

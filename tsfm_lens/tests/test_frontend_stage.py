@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Input front-end diagnostics wired up as a real pipeline stage and report
 section (`ROADMAP.md` sec 16 E17).
 

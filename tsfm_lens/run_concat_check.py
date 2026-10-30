@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """CONCAT window representation: convergence (E1) and all-layer re-measurement (E2), ROADMAP.md sec 44.4.
 
 Standalone dev study driver; builds on `run_pooling_check.py` (series sets, token capture) and the

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """ROADMAP.md sec 16 E13: spectral lens.
 
 The time-domain skip lens (`analysis/lens.py`, wired into `pipeline.py`'s

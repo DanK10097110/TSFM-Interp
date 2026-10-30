@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Build and narrow the ROADMAP.md sec 42 step 6 run directory from `panel7_v3_dev`.
 
 `build` makes `runs/<dst>` from a finished run WITHOUT copying its bulk or its conclusions:

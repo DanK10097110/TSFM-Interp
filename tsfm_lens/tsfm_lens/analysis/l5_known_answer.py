@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Scorer and unit builder for the L5 known-answer study (ROADMAP.md sec 38.3.5).
 
 Why this module exists. FINDINGS SH-22 reports that the shared-input causal

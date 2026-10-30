@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Fine-tuning plasticity: which blocks move, and does that match where the
 interpretability metrics say the task-relevant structure lives (ROADMAP.md
 sec 22.5 H6).

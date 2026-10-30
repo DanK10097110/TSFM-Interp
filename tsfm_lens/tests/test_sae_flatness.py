@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """ROADMAP.md sec 32.7 Item H — record it, render it, control it.
 
 Synthetic with planted answers (CLAUDE.md sec 2.4): a real run's own numbers

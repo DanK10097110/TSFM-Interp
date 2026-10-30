@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """ROADMAP.md sec 21 J5: the advanced methods appendix.
 
 One always-rendered report appendix stating, per estimator, the exact form,

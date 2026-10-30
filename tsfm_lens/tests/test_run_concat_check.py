@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Helpers of the E1/E2 driver (ROADMAP.md sec 44.4): sub-window block means, Gram packing, null shape."""
 
 from __future__ import annotations

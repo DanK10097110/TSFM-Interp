@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Per-sample data roles (ROADMAP sec 41, V3-A): derivation, opt-in byte-identity, sealing, the card.
 
 The load-bearing properties: a role is derived from tier AND checked against the generator (a

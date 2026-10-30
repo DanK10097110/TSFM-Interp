@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """ROADMAP.md sec 42 step 6 (revised in 42.4): the horizon-L1 candidate rule, the completeness
 ranking, admission re-evaluation without retraining, and the narrowed target set.
 

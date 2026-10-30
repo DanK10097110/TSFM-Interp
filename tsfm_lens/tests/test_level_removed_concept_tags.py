@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """ROADMAP.md sec 37.7 P4, item 3/4: concept-level `level carrier` /
 `shape-causal` / `no measured effect` tags, and their wiring into the atlas's
 name composer (`sae/concept_atlas.py::_tag_causal_effect`, `_name_concepts`,

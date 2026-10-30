@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Re-measurement driver for the paper's four-model numbers (ROADMAP.md sec 47.5): planted known answers with decoys."""
 
 from __future__ import annotations

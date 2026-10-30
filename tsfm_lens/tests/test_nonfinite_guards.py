@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Silent-NaN gaps closed after the L0 / skip-lens guards (FINDINGS PM-16).
 
 Planted answers. A constant depth profile has no rank order, so its Spearman

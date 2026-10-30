@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Scoring the forecast-repair known answer against the planted answer key (ROADMAP.md sec 39, R0).
 
 Why this module exists. `models/mock_planted.py` (vocabulary `repair`) writes four concepts

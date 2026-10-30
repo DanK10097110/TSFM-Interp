@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """ROADMAP.md sec 16 E20a: horizon scaling sweep.
 
 Cheap companion to E20b (context-length sweep, deliberately deferred as

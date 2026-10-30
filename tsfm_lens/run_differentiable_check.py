@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Known-answer check of `ModelAdapter.predict_differentiable` on real checkpoints (ROADMAP.md sec 42.1).
 
 Read-only on the run. For each model it asks two questions whose answers are known:

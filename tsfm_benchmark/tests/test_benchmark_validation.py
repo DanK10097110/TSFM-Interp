@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Exercise benchmark_validation against real BenchmarkBuilder output.
 
 Every record here comes from an actual sealed corpus produced by the

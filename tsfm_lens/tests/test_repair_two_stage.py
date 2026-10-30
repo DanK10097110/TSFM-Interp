@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """The two-stage blame family (ROADMAP.md sec 39.7, R0b): `analysis/repair_blame.two_stage_blame`.
 
 Stage 1 screens every scorable feature on half A of the pool by `|z|`; stage 2 re-blames the top

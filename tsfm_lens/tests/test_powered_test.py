@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """ROADMAP.md sec 42 task B: the powered per-feature causal test (`sae/powered.py`) and its
 wiring (`feature_ablation_fingerprints(powered_test=True)`, `sae.causal_verdict`).
 

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Forecast COMPLETENESS (ROADMAP.md sec 42 task C): how much of the forecast
 change is carried by a small set of SAE features, and how much by the SAE's
 error term.

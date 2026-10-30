@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Regression tests for activation-store finiteness guards (`ROADMAP.md`
 sec 15 A19): a single inf/NaN layer should be caught loudly at write time
 (partial) or refused outright (wholly non-finite), and `store.load` must

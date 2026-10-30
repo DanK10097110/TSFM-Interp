@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """CLI for the one-page analysis card (ROADMAP.md sec 16 H9).
 
 Reads one existing run directory's artifacts (nothing is re-run, no model or

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Project the catch22 feature space to 3D for visual inspection.
 
 UMAP is the primary projector. The fallback (PCA, or t-SNE for a more clustered

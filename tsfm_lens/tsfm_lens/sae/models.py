@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """TopK sparse autoencoder: the Phase 2b baseline control (ROADMAP.md §6.2 item 4).
 
 Every richer SAE variant proposed for this repo (crosscoders, frequency-aware

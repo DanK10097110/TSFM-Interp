@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """ROADMAP.md sec 38.4 (K4) + sec 38.2 (K2): the registrable, confirmable U1
 claim type ("do a model's internals predict its per-series error beyond the
 free baseline?").

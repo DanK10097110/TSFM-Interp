@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Known-answer gate of the powered per-feature test (ROADMAP.md sec 42 decision 5b).
 
 For each construction seed (seed 0 is the tuning seed, seeds 1-4 are held out and are the

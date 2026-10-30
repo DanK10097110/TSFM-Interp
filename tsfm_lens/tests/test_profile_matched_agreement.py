@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """The profile-matched null at the shared-input agreement step (K1 round 4).
 
 `own_effect_null` sizes its random-direction null to `-mean(nonzero |z|)` of the

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """`sae.ablation_null` now defaults to `profile_matched`; the fingerprint stays honest.
 
 The field is `omit_at_value="mean_magnitude"`: the key is omitted at the LEGACY

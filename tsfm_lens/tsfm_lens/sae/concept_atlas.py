@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """ROADMAP.md sec 37.15 q6 decision (option b) -- a cross-model CONCEPT ATLAS.
 
 `sae/concepts.py::run_concepts` clusters each SAE target's own causal

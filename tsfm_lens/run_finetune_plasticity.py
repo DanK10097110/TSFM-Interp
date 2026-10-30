@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """CLI for `analysis/finetune_plasticity.py` (`ROADMAP.md` sec 22.5 H6).
 
 Reads a parent checkpoint plus one or more already-fine-tuned children (a

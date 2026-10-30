@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Tests for `ROADMAP.md` sec 16 E3(b)'s zero-code `GenericHFAdapter`.
 
 Every seam this adapter has is a *probe* -- it guesses which forward kwarg

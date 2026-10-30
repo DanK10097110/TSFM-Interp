@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """CLI for the Chronos-T5 scaling ladder (ROADMAP.md sec 20 H1).
 
 Two modes, because a ladder is two jobs with a long gap between them:

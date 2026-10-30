@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """The ablation battery records and renders the rows each feature was really scored on.
 
 `top_k_series` is a request. A feature that fires on fewer series gets fewer rows

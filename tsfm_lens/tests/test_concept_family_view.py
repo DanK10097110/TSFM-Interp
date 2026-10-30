@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Tests for `report/concept_family_view.py` (ROADMAP.md sec 37 R2: the
 family-centric redesign of the "Concepts" report section) and the
 associated moves in `report/report.py` / `report/model_comparison.py`.

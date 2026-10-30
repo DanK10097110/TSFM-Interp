@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """``kind: chronos_datasets`` (ROADMAP D1): a second real source for the
 real-derived tier, `build_pipeline/sources.py::_load_chronos_datasets_config`.
 

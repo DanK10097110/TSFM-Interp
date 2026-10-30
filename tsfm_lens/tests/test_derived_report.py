@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Tests for `report/derived.py` -- the artifact-to-table reductions that
 replaced the report's authored conclusions.
 

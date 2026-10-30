@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Generate per-feature/per-role/per-concept descriptions for one run
 (ROADMAP.md sec 26 C; deterministic-only since sec 32.7d PRUNE, 2026-09-15).
 

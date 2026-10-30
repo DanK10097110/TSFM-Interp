@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Materialising and sealing corpora to disk.
 
 The public dev split is meant to be released. The private test split is a

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """V3-B known-answer validation of the family-presence claim (ROADMAP.md sec 41).
 
 Runs `extract, sae, concepts` on the `mock_planted` pair at the K1 scale (the gate in

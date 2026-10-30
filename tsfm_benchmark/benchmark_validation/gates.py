@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Diversity/redundancy pass-fail gates on a `validation_report.json` (ROADMAP.md
 sec 16 E23 / `CLAUDE.md` sec 13 item 4).
 

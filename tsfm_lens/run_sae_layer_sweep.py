@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """CLI for ROADMAP.md §6.1's still-open item: "feed the SAE evaluation
 results back into §6.1's layer-selection correlation study."
 

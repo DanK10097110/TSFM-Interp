@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Render the validation results as a set of standalone interactive plots.
 
 Each function here answers a different question about the benchmark and

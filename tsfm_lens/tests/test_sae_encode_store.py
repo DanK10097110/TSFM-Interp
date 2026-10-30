@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """The encode-store seam (ROADMAP.md sec 6.2.1 Stage 3d): persisting a
 trained baseline SAE's encoded features back into the store under
 `sae`/`sae_pooled/{model}/{layer}`, and reading them back via

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Plain-English definitions for every term the SAE section renders.
 
 ROADMAP.md sec 26 B1. The SAE section's axes and tables are labelled with the

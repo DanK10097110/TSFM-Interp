@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """The committed Stage 0 winner config (ROADMAP.md §6.2.1's fourth exit criterion).
 
 Stage 0's exit criteria require the winning configuration to live in a config

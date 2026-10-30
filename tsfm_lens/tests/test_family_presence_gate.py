@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """The pre-fixed gate of the family-presence claim (`analysis/family_presence_gate.py`).
 
 The thresholds were committed before any number of the redesigned validation existed, so the

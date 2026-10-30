@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Component C -- cross-model role correspondence (ROADMAP.md sec 25.6,
 sec 25.9 Stage 4).
 

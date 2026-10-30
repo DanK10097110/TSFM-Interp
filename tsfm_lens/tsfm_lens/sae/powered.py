@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """The powered per-feature causal test of the ablation battery (ROADMAP.md sec 42 task B).
 
 Why it exists. The legacy battery rule (`response._score_channel_against_null`) asks

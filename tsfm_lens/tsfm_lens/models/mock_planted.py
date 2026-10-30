@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """The planted forecaster: a mock whose internal concepts are known in advance.
 
 Why this module exists (`ROADMAP.md` sec 38.1, K1). Every other mock is a

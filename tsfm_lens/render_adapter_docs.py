@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Regenerate `tsfm_lens/ADAPTERS.md` from `tsfm_lens/adapter_docs.py`.
 
 Unlike `render_stage_docs.py`/`render_glossary.py`, this writes a whole

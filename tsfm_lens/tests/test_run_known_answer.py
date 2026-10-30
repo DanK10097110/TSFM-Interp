@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """The known-answer driver and config (ROADMAP.md sec 38.1.3, K1): the cell
 configuration it builds, the invariants the config must keep (no absolute paths,
 a dose that moves the stage fingerprints), and the per-dose aggregate's gate."""

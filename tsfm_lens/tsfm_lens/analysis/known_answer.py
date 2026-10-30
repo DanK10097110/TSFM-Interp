@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Scorer for the known-answer study (ROADMAP.md sec 38.1.4, K1).
 
 Why this module exists. `models/mock_planted.py` builds forecasters whose

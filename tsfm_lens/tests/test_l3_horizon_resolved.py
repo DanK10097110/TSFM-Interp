@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Tests for L3's horizon-resolved patching restoration (`ROADMAP.md` sec 16
 E12), on synthetic data with a known-correct planted answer -- independent
 of any adapter/forward pass, since the formula itself is a pure reduction

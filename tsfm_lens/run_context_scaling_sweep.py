@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """ROADMAP.md sec 16 E20: context-length scaling sweep.
 
 Reuses an already-extracted run's model configs (checkpoints, device,

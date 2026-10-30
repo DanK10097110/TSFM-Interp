@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """ROADMAP.md sec 32.14, Item M -- a map of the concept space.
 
 `CLAUDE.md` sec 5's load-bearing rule ("diversity is measured in the catch22

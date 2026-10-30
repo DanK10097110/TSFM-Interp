@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Known-answer scoring of the powered per-feature test (ROADMAP.md sec 42 decision 5b).
 
 Why a second scorer. `analysis/known_answer.py` scores the legacy p95-count rule from the

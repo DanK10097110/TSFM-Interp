@@ -1,0 +1,77 @@
+\documentclass[11pt]{letter}
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+
+\setlist{itemsep=1pt,topsep=3pt}
+\signature{Daniel Kushnir and Hao Wang}
+\address{Daniel Kushnir (corresponding author) \quad \href{mailto:kushnir.daniel05@gmail.com}{kushnir.daniel05@gmail.com}\\
+Hao Wang \quad \href{mailto:hoguewang@gmail.com}{hoguewang@gmail.com}\\
+Rutgers University, New Brunswick, NJ, USA}
+\date{October 30, 2026}
+
+\begin{document}
+\begin{letter}{Editors, Machine Learning Open Source Software Section\\
+Journal of Machine Learning Research}
+
+\opening{Dear Editors,}
+
+We submit the manuscript \emph{TSFM-Lens: Controlled, Causal and Confirmatory Interpretability of Time-Series
+Foundation Models} for consideration in the \textbf{machine learning open source software section} of the Journal of
+Machine Learning Research.
+
+Time-series foundation models such as TimesFM, the Chronos family and Sundial are widely used for zero-shot
+forecasting, but the interpretability libraries built for language models do not transfer to them directly. Tokens
+span between 1 and 96 time steps depending on the architecture, so positions cannot be compared across models; real
+series carry no labels that could validate a probe; and the causal effects of internal features are small enough that
+uncontrolled measurements produce confident false positives. TSFM-Lens is a Python toolkit built around these three
+problems. Given a list of checkpoints and one configuration file, it measures a common time axis across architectures,
+validates its probes on a leakage-audited synthetic benchmark with exact generative ground truth, tests sparse-autoencoder
+concepts against matched random-direction nulls with reach controls, confirms registered claims once on a sealed held-out
+split, and writes a single self-contained HTML report in which every claim states its evidence class. To our knowledge no
+existing library provides these components for time-series models; the manuscript compares it with TransformerLens,
+nnsight, pyvene, SAELens, Captum and recent sparse-autoencoder studies of individual forecasting models.
+
+The information requested for submissions to this section is as follows.
+\begin{enumerate}
+\item \textbf{License.} The software is released under the MIT license. The license is stated in the \texttt{LICENSE}
+file and in the package metadata, and every source file carries an SPDX license identifier. All dependencies (PyTorch,
+NumPy, SciPy, scikit-learn, zarr, Plotly and others) are open source.
+\item \textbf{Project web address.} \url{https://github.com/Wang-ML-Lab/TSFM-Lens}. Both packages are installable from
+PyPI (\texttt{tsfm-lens} and \texttt{tsfm-benchmark}), and each release is archived on Zenodo
+(\href{https://doi.org/10.5281/zenodo.23267462}{doi:10.5281/zenodo.23267462}).
+\item \textbf{Version to be reviewed.} Version 1.1.0.
+\item \textbf{User community.} The project is young and its community is small but active. The repository is public
+under the Wang ML Lab organization at Rutgers, has 2 stars on GitHub, and several researchers use the toolkit in their
+own work. The PyPI package \texttt{tsfm-lens} has been downloaded 128 times since its first release on October~9, 2026
+(pypistats.org, excluding mirrors). The issue tracker is open, and the repository provides a contributing guide, issue
+templates (including one for requesting a new model adapter) and a pull-request template.
+\item \textbf{Quality and documentation.} The repository contains over 2{,}800 tests, which run in continuous
+integration on Linux against pinned dependencies on every push and against the latest releases of the load-bearing
+dependencies weekly; contributors are asked to show that each load-bearing assertion fails against a planted regression.
+Documentation includes a quickstart (also as a Colab notebook), tutorial notebooks, a worked example, a guide and template
+for adding a model, generated stage and glossary references, a changelog, and a complete seven-model example run with its
+report and held-out confirmation.
+\item \textbf{Prior publication.} The software has not been the subject of a peer-reviewed publication, and this
+manuscript is not under review elsewhere. The scientific results obtained with the toolkit are reported in a separate
+manuscript submitted to JMLR as a regular paper; that manuscript does not describe the software's design, and the
+present submission does not report its scientific results.
+\item \textbf{Consent of co-authors and conflicts of interest.} Both authors are aware of this submission and consent
+to its review by JMLR. The authors have no competing interests, and the work received no external funding.
+\end{enumerate}
+
+\textbf{Use of AI tools.} The authors conceived the research questions, designed the software and its methodology,
+directed its implementation, reviewed the code and checked every reported result. Claude (Anthropic) served as an AI
+coding and writing assistant throughout: it generated much of the code and tests, ran experiments and helped draft and
+edit the manuscript. The authors take full responsibility for the content.
+
+Please direct correspondence to Daniel Kushnir at \href{mailto:kushnir.daniel05@gmail.com}{kushnir.daniel05@gmail.com}.
+Thank you for considering our submission.
+
+\closing{Sincerely,}
+
+\end{letter}
+\end{document}

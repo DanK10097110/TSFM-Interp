@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Tests for the generator-side input counterfactuals (ROADMAP.md §37.9 P6a).
 
 Touches no existing generator: every test drives `random_parametric` and

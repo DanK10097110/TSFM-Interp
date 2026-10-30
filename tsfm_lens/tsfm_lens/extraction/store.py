@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Chunked on-disk store for aligned activations and forecasts.
 
 Layout (zarr group):

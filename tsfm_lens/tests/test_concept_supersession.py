@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """ROADMAP.md sec 30, Stage 4/5 (2026-09-11) -- the IRREVERSIBLE rename of
 `sae/roles.json` to `sae/roles_injection.json`
 (`tsfm_lens/sae/concepts.py::supersede_roles_artifact`), tested here against

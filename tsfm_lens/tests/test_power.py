@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Tests for `analysis/power.py` (`ROADMAP.md` §34 item A1).
 
 The module's whole job is to say, for a family that found "no difference",

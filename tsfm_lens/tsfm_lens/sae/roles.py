@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Component B(b) -- group probed features into named ROLES (ROADMAP.md
 sec 25.5(b), sec 25.9 Stage 3).
 

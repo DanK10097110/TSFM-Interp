@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Stage orchestration.
 
 Stages form a short DAG (everything depends on extraction; the report reads

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """`run_sae_describe.py` -- the caller `sae/describe.py` did not have (sec 26 C).
 
 The narrator was complete, tested library code that nothing invoked:

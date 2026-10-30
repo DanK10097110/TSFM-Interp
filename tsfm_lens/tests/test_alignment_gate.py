@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Regression test for the alignment gate (`ROADMAP.md` sec 15 A2).
 
 Locks in that `run_alignment_gate` actually enforces invariant 7 -- a broken

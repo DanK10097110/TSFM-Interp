@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Window-size sensitivity of L1 peak CKA and of atlas transfer (ROADMAP.md sec 41.1).
 
 Every cross-model number in this pipeline lives on 32-step windows

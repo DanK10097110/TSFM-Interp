@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """CLI for ROADMAP.md §6.3 (Phase 2c): does L1 peak CKA / L2 best stitching
 gain-over-baseline distinguish a documented-shared-lineage model pair
 ("positive") from an independently-trained pair ("negative")?

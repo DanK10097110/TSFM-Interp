@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """`derived.sae_causal_repertoire`/`sae_causal_agreement` + their report block.
 
 Synthetic with planted answers (sec 28). A fixture read off a real run would

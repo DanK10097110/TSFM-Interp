@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """ROADMAP.md sec 27: the causal second opinion on a cross-model feature match.
 
 The three signals `sae/matching.py` already had all ask "do these two

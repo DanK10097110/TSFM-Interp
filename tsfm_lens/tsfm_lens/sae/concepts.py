@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """ROADMAP.md sec 30 -- re-cluster SAE features on their ABLATION fingerprint
 (sec 27, `sae/response.py::feature_ablation_fingerprints`) instead of the
 INJECTION fingerprint `sae/roles.py` clusters on (sec 25.23,

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """The profile-matched ablation null (`sae.ablation_null: profile_matched`, K1 round 3).
 
 The legacy battery null removes ONE uniform amount everywhere (the chunk's mean

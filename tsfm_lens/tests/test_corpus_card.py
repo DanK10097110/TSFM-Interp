@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Tests for the corpus card stage and report section (ROADMAP.md sec 34
 items C1/C2): T-C1.1 through T-C1.5, T-C2.1 through T-C2.6.
 

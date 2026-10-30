@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Every identifier the SAE section renders has a definition (ROADMAP.md sec 26 B1).
 
 The load-bearing tests here are the two COVERAGE ones: they key off the real

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Compact per-feature rendering for the SAE section: one row per feature, with pictures.
 
 ROADMAP.md sec 26 B2/B3. What this replaces, and why:

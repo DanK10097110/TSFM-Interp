@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Assemble the validation report.
 
 Collects the matching, feature, and diversity results into one JSON-serialisable

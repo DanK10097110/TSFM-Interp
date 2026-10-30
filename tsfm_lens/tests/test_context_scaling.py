@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Context-length scaling sweep tests (ROADMAP.md sec 16 E20).
 
 Runnable directly (`python tests/test_context_scaling.py`) or via pytest.

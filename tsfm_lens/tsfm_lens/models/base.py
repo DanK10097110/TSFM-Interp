@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """The architecture-agnostic model contract.
 
 Every model enters the pipeline through a `ModelAdapter`, which owns four

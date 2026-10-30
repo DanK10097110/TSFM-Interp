@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Tests for `analysis/internals.py::_family_probe_permutation_null`
 (ROADMAP.md sec 16 E9's remaining scope): the majority-class `chance` line
 already reported for family-probe decodability is a weak, unconditional

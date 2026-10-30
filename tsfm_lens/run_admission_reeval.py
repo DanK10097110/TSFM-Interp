@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Recompute dictionary admission for already-trained SAEs under a new gate (ROADMAP.md sec 42 step 6).
 
 The `sae` stage decides admission at training time with the config it trained under. This driver

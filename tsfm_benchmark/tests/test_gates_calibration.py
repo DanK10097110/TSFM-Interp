@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Tests for the recalibrated diversity gates (ROADMAP.md sec 34 Item B4).
 
 Two things this file must pin down that `test_diversity_gates.py` (the

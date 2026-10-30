@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Sweep case-study tests (ROADMAP.md §7 Phase 3, bullet 4).
 
 Runnable directly (`python tests/test_sweep_case_studies.py`) or via pytest.

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Regression test for a real, confirmed bug found while building ROADMAP.md
 sec 25.9 Stage 4 (Component C): `run_sae_roles.py --model X --layer Y`
 (single-target mode) used to build a fresh `out = {}` dict and write it

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """The SAE section's two new figures, and the reduction behind the heatmap.
 
 Added 2026-09-03 on a user instruction ("good graphs in final report"). The

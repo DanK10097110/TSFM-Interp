@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Layer-screening selector + bake-off tests (ROADMAP.md §6.1.1, §6.1.1-E).
 
 Runnable directly (`python tests/test_layer_screen.py`) or via pytest.

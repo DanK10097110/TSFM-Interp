@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Stage 0's alive-atom floor, after it stopped being a global constant.
 
 ROADMAP.md §6.2.1's DECISION (2026-08-12) replaced `MIN_ALIVE = 500` with a

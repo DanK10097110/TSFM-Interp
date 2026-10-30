@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Negative-control destinations for concept transfer (ROADMAP.md sec 41.1).
 
 Atlas transfer (`sae/transfer.py::run_atlas_transfer`) asks whether a destination

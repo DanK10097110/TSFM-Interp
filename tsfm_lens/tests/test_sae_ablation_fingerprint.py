@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """ROADMAP.md sec 27: the feature-ABLATION fingerprint -- what each SAE
 feature causally does on the series it actually fires on.
 

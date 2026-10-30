@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Does the SAE causal battery survive MEAN ablation? (dev study; reviewer question)
 
 The paper's ablation battery sets a feature to 0 in the token-level SAE

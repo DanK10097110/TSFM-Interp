@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Tests for `sae/ground_truth.py`'s structural/provenance separation
 (ROADMAP.md §25.5(a) / §25.9 Stage 1): a feature's apparent correlation with
 a structural ground-truth field can really be a provenance detector in

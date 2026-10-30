@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """ROADMAP.md §25.9 Stage 2 (Component A only): the response-fingerprint
 battery, its random-direction null, candidate selection, and the mandatory
 reach gate that precedes all of it.

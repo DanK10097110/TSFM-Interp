@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Core functions of the token-level SAE check (ROADMAP.md sec 46): step matching, window slopes, the
 held-out ridge, the top-k overlap test, the M5 summary, the decision rules and the G2 planted-slope gate,
 each with a planted known answer and a decoy that a plausible bug would also satisfy."""

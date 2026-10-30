@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Per-feature exemplar panel for the SAE report section (ROADMAP.md §6.2's
 "verbose-mode reporting" checklist item).
 

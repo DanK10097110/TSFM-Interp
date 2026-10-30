@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Regenerate README.md's "Glossary" section from `glossary.py`.
 
 The exact counterpart of `render_stage_docs.py`, for `ROADMAP.md` sec 21 J3's

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Build a genuine known-lineage pair for provenance detection (`ROADMAP.md`
 sec 6.3.1 Option E, minimally scoped by sec 23.3 D2).
 

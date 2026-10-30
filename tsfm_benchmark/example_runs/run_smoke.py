@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """End-to-end smoke test for the leakage-safe synthetic path.
 
 Exercises the DTW leakage gate, the held-out private corpus (seal + verified

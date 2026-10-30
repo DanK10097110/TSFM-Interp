@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Plain-language sentences whose clauses must agree with their own numbers.
 
 Each helper was split out of a report section after the rendered

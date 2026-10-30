@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Sparkline rendering for the SAE feature table (ROADMAP.md sec 26 B3).
 
 The load-bearing test here is the spike-preservation one. Everything else in

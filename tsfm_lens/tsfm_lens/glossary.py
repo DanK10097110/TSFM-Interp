@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Single source of truth for the recurring vocabulary this repo's output uses.
 
 `ROADMAP.md` sec 21 J3, the companion to sec 21 J2's `stage_docs.py`. J2

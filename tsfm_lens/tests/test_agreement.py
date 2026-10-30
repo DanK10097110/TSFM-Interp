@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Tests for `ROADMAP.md` sec 20 H4, cross-model agreement as a reliability signal.
 
 All synthetic with planted answers, for the reason `CLAUDE.md` sec 2.4 keeps

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Extraction stage: one pass per model over the benchmark, writing
 time-aligned activations for every capture layer to the shared store.
 

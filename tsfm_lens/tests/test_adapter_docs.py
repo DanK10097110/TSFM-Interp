@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Tests for `adapter_docs.py`/`render_adapter_docs.py` (`ROADMAP.md` sec 34.6 Item E2).
 
 Everything here reads the real, live registry (`tsfm_lens.models.ADAPTERS`)

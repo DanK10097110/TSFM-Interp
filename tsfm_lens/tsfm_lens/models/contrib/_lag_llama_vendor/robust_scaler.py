@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 # Copyright 2024 Arjun Ashok
 #
 # Licensed under the Apache License, Version 2.0 (the "License");

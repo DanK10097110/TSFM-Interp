@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """K1 known-answer study driver (ROADMAP.md sec 38.1).
 
 Runs the pipeline stages `extract, sae, concepts` on the `mock_planted` pair for

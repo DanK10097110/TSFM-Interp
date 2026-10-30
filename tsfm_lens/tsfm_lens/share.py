@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Sharing and disk reclamation for a finished run directory.
 
 Why this module exists: a real 7-model run directory is ~7.3 GB, but what a

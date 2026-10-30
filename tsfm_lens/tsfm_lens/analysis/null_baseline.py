@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Real-vs-untrained-weights-null significance test (ROADMAP.md sec 16 E9 /
 sec 13's open question "Can this repo's central claims survive an
 untrained-weights null?").

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """ROADMAP.md sec 16 E20: context-length scaling sweeps.
 
 Reuses `analysis/parameter_sweep.py`'s machinery, but sweeps the *config*

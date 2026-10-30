@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Controlled parameter-sweep tests (ROADMAP.md §7 Phase 3, bullet 1).
 
 Runnable directly (`python tests/test_parameter_sweep.py`) or via pytest.

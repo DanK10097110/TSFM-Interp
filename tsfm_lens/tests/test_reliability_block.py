@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """L0's "reliability from own quantile width" report block (`ROADMAP.md` sec
 23.4 E1): wires sec 20 H4's winning baseline -- a model's own quantile width
 predicts its error better than cross-model disagreement does, in 10 of 11

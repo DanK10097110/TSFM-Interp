@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """ROADMAP.md sec 37.7, P4: the level-removed causal battery.
 
 `battery_statistics` gains `remove_level`, `sae/response.py` gains

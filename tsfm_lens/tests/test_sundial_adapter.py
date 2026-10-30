@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Mechanism tests for `models/sundial_adapter.py` (ROADMAP.md §9, Phase 4;
 spec S1 / ROADMAP §32.7's revin fix).
 

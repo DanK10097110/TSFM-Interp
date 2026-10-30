@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """SAE training loop and pipeline-stage runner (ROADMAP.md §6.2).
 
 Reads window-level activations straight from the run's existing zarr store

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """CLI for ROADMAP.md §6.1.1-E: the layer-screening bake-off.
 
 Loads an existing tsfm_lens run (it must have been extracted with

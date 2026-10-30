@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """ROADMAP.md sec 42 task C: forecast completeness of a finished run's SAE targets,
 standalone and READ-ONLY on the run.
 

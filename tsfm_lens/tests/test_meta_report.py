@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Cross-run aggregator tests (ROADMAP.md Phase 1 §5.5).
 
 Runnable directly (`python tests/test_meta_report.py`) or via pytest.

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Source pools can be required to carry series long enough to be usable.
 
 `build_pipeline/sources.py::_filter_min_length`. This exists because a smoke

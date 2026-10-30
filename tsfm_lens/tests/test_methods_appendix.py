@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """ROADMAP.md sec 21 J5: the advanced methods appendix. Most entries are
 pulled verbatim from each estimator's own module docstring so the appendix
 cannot drift from the code (`build_methods_appendix` raises rather than

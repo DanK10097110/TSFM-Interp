@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """End-to-end test of the encode-store seam through the actual `sae` pipeline
 stage (ROADMAP.md sec 6.2.1 Stage 3d): `sae.persist_features: true` should
 train targets on both mock models, write their encoded features into the

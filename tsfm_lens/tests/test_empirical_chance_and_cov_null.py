@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """The leave-one-draw-out empirical chance rate and the `profile_matched_cov` null (K1 round 5).
 
 `chance_expected_cells = 0.05 x cells` assumes a cell clears at 5% under

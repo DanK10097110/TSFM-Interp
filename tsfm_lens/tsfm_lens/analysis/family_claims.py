@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """ROADMAP.md sec 41 (V3-B) -- the statistics of the three opt-in claim types.
 
 `analysis/hypotheses.py` freezes the claims from dev artifacts and

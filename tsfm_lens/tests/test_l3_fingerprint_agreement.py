@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Tests for L3's cross-model fingerprint agreement on the shared depth axis
 (ROADMAP.md sec 18 F1's remaining wiring).
 

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """The dual-null battery through the real `concepts` stage on mock models
 (ROADMAP.md sec 41.1), and the restricted-result / feature-chance reporting.
 

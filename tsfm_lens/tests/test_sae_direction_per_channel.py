@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """A direction word must be licensed by the channel it governs, not by any
 channel in the packet (ROADMAP.md sec 28.18).
 

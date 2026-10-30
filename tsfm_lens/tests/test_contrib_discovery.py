@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Tests for `ROADMAP.md` sec 34.6 Item E1: a home for contributed adapters.
 
 Mutates the real, shared `tsfm_lens.models.CONTRIB_REGISTRY` / `discovery_errors`

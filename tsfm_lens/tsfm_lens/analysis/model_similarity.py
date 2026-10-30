@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Pairwise model similarity across every existing comparison metric, plus a
 consensus-and-contrasts reduction over them (ROADMAP.md sec 37, cmp-B spec).
 

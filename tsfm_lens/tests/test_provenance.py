@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Regression tests for run provenance and the activation store's schema
 version guard (`ROADMAP.md` sec 15 A7).
 """

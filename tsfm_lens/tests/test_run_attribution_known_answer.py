@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """The pre-fixed gate arithmetic of `run_attribution_known_answer.py` (ROADMAP.md sec 42, 5a).
 
 Pure reductions over per-seed rows: seed 0 is the tuning seed and must never

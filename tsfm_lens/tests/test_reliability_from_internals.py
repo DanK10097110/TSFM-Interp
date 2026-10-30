@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Tests for `analysis/reliability_from_internals.py` (`ROADMAP.md` sec 38.4, K4).
 
 Planted fixture: two models whose log MASE depends on a shared baseline

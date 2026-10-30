@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Feature-level chance test of a finished ablation battery, read from its artifacts.
 
 A feature is scored on nine forecast channels, so "N features clear at least one

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Reproducibility record of a regenerated SAE + ablation battery against the recorded run (ROADMAP 47.4).
 
 Per target: dictionary size, held-out reconstruction fidelity, the training-loss history, the candidate list,

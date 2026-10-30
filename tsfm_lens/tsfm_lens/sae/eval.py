@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """SAE evaluation harness (ROADMAP.md §6.2): reconstruction fidelity,
 dead-feature rate, forecast-preservation under reconstruction, and
 feature-level ablation -- the causal test §7 bullet 3 / §16 E15's second

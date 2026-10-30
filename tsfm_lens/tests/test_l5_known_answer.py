@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """The L5 known-answer study's instruments (ROADMAP.md sec 38.3.5).
 
 Every fixture plants a known answer and includes the confusable case on purpose:

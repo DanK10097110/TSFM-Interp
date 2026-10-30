@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Per-data-role breakdown of the headline numbers (ROADMAP.md sec 41.1).
 
 The corpus mixes `synthetic` series (generator parameters, exact ground truth) with

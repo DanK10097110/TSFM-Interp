@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """One-page, citable analysis card per run (`ROADMAP.md` §16 H9).
 
 This is what someone attaches to a paper or a decision memo: identity and

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Leakage and realism auditing.
 
 This module is what lets the benchmark *claim* anything about leakage rather

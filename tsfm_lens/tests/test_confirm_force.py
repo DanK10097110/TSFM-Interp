@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """The `confirm` stage's consumable guard, and the escape hatch it names.
 
 `confirm` refuses to overwrite an existing confirmation because the private

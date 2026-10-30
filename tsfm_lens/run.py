@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Thin CLI shim -- the real implementation is `tsfm_lens.run` (ROADMAP.md
 E7a), so it can be installed as the `tsfm-lens` console script
 (`[project.scripts]` in `pyproject.toml`). Kept here, at the documented

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Regression tests for `sae/ground_truth.py`'s archetype/tier/generator
 dummy encoding (`ROADMAP.md` sec 15 A10): real-derived series (no archetype
 concept) must not be silently scored as a valid negative example for every

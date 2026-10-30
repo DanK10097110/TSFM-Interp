@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Config-driven build of the leakage-safe synthetic benchmark.
 
 Reads a YAML config of task specs, optionally loads a real reference corpus for

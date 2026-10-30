@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """`capture_raw_tokens`' autocast policy (`CLAUDE.md` sec 11.49).
 
 A clean token cache is only a *clean* cache with respect to the numerical

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Tests for ROADMAP.md sec 32.5 Item D: `sae/concepts.py::cluster_concepts`'s
 `k="auto"` path sweeping `k` instead of deriving it from a single ratio, and
 gating admissibility (a cluster's smallest member count) BEFORE comparing

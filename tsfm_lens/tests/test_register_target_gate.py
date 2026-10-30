@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """ROADMAP.md sec 38.3.4: the per-target significance gate on K2 registration
 (`confirm.register_requires_target_significance`).
 

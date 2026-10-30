@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """The seasonality circuit (ROADMAP.md sec 20 H8) — Stage 0 primitives.
 
 A minimal-sufficient-set search over attention heads needs a metric that

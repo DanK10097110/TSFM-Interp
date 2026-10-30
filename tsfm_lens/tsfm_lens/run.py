@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """CLI for tsfm_lens (ROADMAP.md E7a's `tsfm-lens` console script target).
 
 Examples:

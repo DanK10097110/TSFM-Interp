@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """ROADMAP.md sec 37 P3: p-values, adaptive redraw,
 per-pair-per-leg Benjamini-Hochberg FDR control for `sae/transfer.py`'s
 cross-model transfer tests, and their extension to the pooled concept ATLAS

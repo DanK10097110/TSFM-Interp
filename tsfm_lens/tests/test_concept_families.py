@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Tests for `sae/concept_families.py` (ROADMAP.md sec 37, concept families).
 
 Synthetic with planted answers throughout (CLAUDE.md sec 2.4/sec 9). Every

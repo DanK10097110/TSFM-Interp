@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Known-answer tests for run_concat_confirm.py (ROADMAP.md sec 47.3): planted truths and a decoy per test."""
 
 import json

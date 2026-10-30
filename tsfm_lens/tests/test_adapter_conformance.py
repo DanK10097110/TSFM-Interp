@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Adapter-conformance test (ROADMAP.md §10, Phase 5's "lightweight
 adapter-conformance test" CI item).
 

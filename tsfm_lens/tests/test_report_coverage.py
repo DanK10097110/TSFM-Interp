@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Regression tests for the report's per-section coverage tracking (`ROADMAP.md`
 sec 15 A5): a section builder that raises must be named in the rendered HTML
 and in `report/coverage.json`, and must fail the run unless the caller opts

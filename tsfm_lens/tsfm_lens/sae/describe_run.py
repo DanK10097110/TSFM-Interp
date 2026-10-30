@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Deterministic per-feature/per-role/per-concept descriptions for one run
 -- the body of `run_sae_describe.py`, moved here so the `concepts` pipeline
 stage (ROADMAP.md sec 37.4 P1) and the script call one function and cannot

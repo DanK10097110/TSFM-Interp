@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """ROADMAP.md sec 38.2 (K2): registering and confirming the causal-concept
 claims (`concept_causal`, `concept_atlas`, `shared_input_agreement`,
 `concept_structure`).

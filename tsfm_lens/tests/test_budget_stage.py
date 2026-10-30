@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """The cost accounting wired up as a pipeline stage and a report section.
 
 `tests/test_model_budget.py` covers the measurement itself against a synthetic

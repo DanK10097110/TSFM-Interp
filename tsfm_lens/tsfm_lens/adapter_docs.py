@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Derived `ADAPTERS.md` (`ROADMAP.md` sec 34.6 Item E2).
 
 Everything below is derived from the running registry -- `models.ADAPTERS`,

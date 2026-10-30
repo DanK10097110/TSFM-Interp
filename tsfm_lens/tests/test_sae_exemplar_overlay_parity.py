@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """The two series columns of the feature table must examine the same series.
 
 The correlational column ("Top-activating series") drew a hardcoded 4

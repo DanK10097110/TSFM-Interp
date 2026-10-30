@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """`data._sample_to_row` carries a sample's data `role` through (ROADMAP sec 41, V3-A).
 
 Opt-in: a sample without a role (any corpus built before roles existed) yields a row with no `role`

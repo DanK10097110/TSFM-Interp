@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """CLI for `analysis/error_fingerprint.py` (`ROADMAP.md` sec 6.3.1 Option C).
 
 Reads already-completed run directories and correlates their models'

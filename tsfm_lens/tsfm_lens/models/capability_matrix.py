@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Auto-generated `ModelAdapter` capability matrix (ROADMAP.md §10, Phase 5's
 "auto-generated model-zoo capability matrix" + "auto-generate the capability
 matrix from the registry" checklist items).

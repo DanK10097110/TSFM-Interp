@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Idiosyncratic-error fingerprinting (`ROADMAP.md` sec 6.3.1, Option C).
 
 The provenance question this reopens -- "were these two checkpoints trained

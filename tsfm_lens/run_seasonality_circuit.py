@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """CLI for ROADMAP.md sec 20 H8 Stage 3 / E18: path-patch decomposition
 inside an already-found minimal sufficient set.
 

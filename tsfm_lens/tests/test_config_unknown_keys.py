@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Unknown config keys raise instead of being silently dropped
 (ROADMAP.md sec 15 A21).
 

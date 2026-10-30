@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Tests for `run_probe_sweep.py` (`ROADMAP.md` sec 34.5 Item D1).
 
 Per sec 34.8's own scope for this item ("the probe sweep gets a test only

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Tests for the Phase 2c lineage-detection significance test
 (ROADMAP.md §6.3), `analysis/distillation_detection.py`.
 

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Guard and reduction tests for `sae/compare.py` (sec 28).
 
 Synthetic throughout, with planted answers: every fact these assert is one

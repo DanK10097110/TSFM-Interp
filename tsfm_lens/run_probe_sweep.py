@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """D1's regenerable driver (`ROADMAP.md` sec 34.5 Item D1.2).
 
 Answers "can this repo analyse model X" for a fixed list of candidate TSFM

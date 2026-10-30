@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Tests for `analysis/stats.py`'s `resample_unit` field (ROADMAP.md sec 16
 E11's remaining scope): every cluster-bootstrap helper now names what one
 resampled index actually is, so a reader of an artifact -- not just the code

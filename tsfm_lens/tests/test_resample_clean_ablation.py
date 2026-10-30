@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Opt-in RESAMPLE and CLEAN-activation ablation of the SAE battery (ROADMAP 47.4).
 
 Resample replaces an atom's per-token activation by its activation at the same

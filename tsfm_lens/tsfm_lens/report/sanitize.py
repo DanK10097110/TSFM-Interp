@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Remove internal planning-document citations from anything a reader sees.
 
 This repo's source deliberately carries heavy provenance: notes, findings and

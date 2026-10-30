@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Quantization-churn probe: is a noise corruption's effect on a token-based
 model driven by discrete re-tokenization (a quantization instability), not
 just "more input perturbation"?

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Wall-clock of the ablation battery per feature at two designs on ONE real target (ROADMAP.md
 sec 42 decision 2), read-only from an existing run.
 

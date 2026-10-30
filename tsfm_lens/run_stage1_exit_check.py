@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """ROADMAP.md §25.9 Stage 1 exit criterion, re-derived offline against an
 existing run's artifacts -- no forward pass through either TSFM, no
 retraining. For each SAE target already checkpointed under

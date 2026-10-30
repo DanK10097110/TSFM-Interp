@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Tests for `scaffold_adapter.py` / `run.py --new-adapter` (`ROADMAP.md` sec
 34.6 Item E3).
 

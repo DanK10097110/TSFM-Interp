@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """ROADMAP.md §7 Phase 3, bullet 5: build the per-model "bias card."
 
 Reads the controlled-parameter-sweep JSONs `run_parameter_sweep.py` already

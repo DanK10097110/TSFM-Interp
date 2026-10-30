@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Tests for `sae/concepts.py` (ROADMAP.md sec 30, sec 30.10 stages 1-2): the
 gate-tested re-clustering of ablation-battery candidates (sec 27,
 `sae/response.py::feature_ablation_fingerprints`) into concepts, holding the

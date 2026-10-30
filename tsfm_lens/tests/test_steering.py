@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Feature-steering directional metrics unit tests (ROADMAP.md sec 16 E14).
 
 Synthetic, planted-answer only -- no real checkpoint or `adapter.predict()`

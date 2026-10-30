@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Known-answer tests for the pure helpers of run_v3_concat_compare.py (ROADMAP.md sec 45)."""
 
 import sys

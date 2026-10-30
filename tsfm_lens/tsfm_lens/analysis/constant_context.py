@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Constant-context probe (`frontend` stage; `ROADMAP.md` sec 38.3).
 
 A constant (zero-variance) context is the degenerate input every per-series

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Patch-boundary phase-sensitivity probe (ROADMAP.md sec 16 E17).
 
 Direct test of the period=32 aliasing hypothesis `CLAUDE.md` sec 12 bullet 5

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Exemplar case studies: a handful of concrete series told end to end.
 
 Aggregate statistics answer "which model is better on this family"; exemplars

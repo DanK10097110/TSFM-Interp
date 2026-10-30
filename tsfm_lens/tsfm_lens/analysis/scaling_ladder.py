@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Model-family scaling ladder (ROADMAP.md sec 20 H1).
 
 Chronos-T5 ships as tiny -> mini -> small -> base -> large: five checkpoints

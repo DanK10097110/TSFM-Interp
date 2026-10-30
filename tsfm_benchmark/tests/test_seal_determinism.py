@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Regression tests for the sealed-corpus determinism contract
 (`ROADMAP.md` sec 15 A8, fix item 5): a manifest should state which of its
 samples' generators are bit-exact reproducible from their seed and which

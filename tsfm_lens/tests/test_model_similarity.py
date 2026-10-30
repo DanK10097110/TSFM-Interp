@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Tests for `analysis/model_similarity.py` (ROADMAP.md sec 37, cmp-B spec).
 
 Synthetic throughout, with a planted, known answer per test and (where the

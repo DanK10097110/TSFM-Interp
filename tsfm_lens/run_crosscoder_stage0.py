@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """ROADMAP.md §6.2.1 Stage 0: the blocking dead-feature gate.
 
 The feasibility run (§6.2's Findings, 2026-08-05) left a dictionary that was

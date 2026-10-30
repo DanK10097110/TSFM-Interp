@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """One-shot held-out confirmation of the registered CONCAT geometry claims (ROADMAP.md sec 47.3).
 
 Why this exists. Sec 45 re-measured the v3 dev run's window-level CKA with the lossless CONCAT window

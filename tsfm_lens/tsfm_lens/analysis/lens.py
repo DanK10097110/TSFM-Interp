@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Forecast lens — the logit-lens analog for forecasting models.
 
 Answers "where in depth does each model's forecast crystallize?", the

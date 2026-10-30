@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """ROADMAP.md sec 42 task C: forecast completeness (`sae/completeness.py`).
 
 Every fixture plants a known answer. The SAE is exactly linear: `W_dec` is the

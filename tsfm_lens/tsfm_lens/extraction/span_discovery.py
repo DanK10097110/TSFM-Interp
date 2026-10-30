@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Measure a model's token->time map instead of trusting the adapter's declaration.
 
 `ROADMAP.md` sec 16 E3. `ModelAdapter.token_time_spans()` is the single thing

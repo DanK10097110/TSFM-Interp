@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """`kind="concept"` -- ROADMAP.md sec 32.2 Item A: porting the narrator from
 roles to concepts.
 

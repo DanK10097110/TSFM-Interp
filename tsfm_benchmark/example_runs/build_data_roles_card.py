@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Write the corpus data-roles card (data_roles.json + data_roles.md) from sealed splits.
 
     PYTHONPATH=. python3 tsfm_benchmark/example_runs/build_data_roles_card.py \

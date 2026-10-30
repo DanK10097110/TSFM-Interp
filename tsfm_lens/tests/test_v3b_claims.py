@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """ROADMAP.md sec 41 (V3-B): the three opt-in claim types -- per-model effect-family
 presence, centroid-level atlas agreement, and the external_real replication leg --
 plus their null-mode awareness (sec 41.1).

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Grounded narrator -- turn a measured SAE feature/role record into one
 readable English sentence, with a hard guard against fabrication.
 

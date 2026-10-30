@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """tsfm_lens: layered, architecture-agnostic comparison of time-series foundation models."""
 
 __version__ = "0.1.0"

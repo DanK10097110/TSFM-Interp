@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Regression tests for silent sample-cap tracking (`ROADMAP.md` sec 15
 A16): several stages must fit one forward pass, so they clamp a configured
 sample-size request to `adapter.cfg.batch_size` -- previously with no

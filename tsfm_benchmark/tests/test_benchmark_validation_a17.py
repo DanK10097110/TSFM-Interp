@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Regression tests for `ROADMAP.md` sec 15 A17: `benchmark_validation`'s
 per-group diversity metrics gain a bootstrap CI and an explicit
 insufficient-n sentinel instead of silent omission; the O(n^2) matcher

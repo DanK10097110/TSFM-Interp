@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """The K2 concept-claim ledger in `confirm` must tolerate the `reliability_u1`
 family that `claim_family_budget` reports when U1 claims are registered.
 

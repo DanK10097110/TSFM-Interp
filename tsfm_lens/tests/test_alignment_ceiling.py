@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """The diagonal-hit gate's own arithmetic ceiling (`CLAUDE.md` sec 11.35).
 
 `run_alignment_gate` asks whether perturbing window *w* moves aligned window

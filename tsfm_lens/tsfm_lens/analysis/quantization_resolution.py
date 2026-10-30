@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Quantization resolution / dynamic-range probe (`ROADMAP.md` sec 16 E17).
 
 `CLAUDE.md` sec 11.16/sec 15 A20 diagnosed a mechanism -- Chronos-T5's

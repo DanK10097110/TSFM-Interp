@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Tests for `sae/roles.py` (ROADMAP.md sec 25.5(b) / sec 25.9 Stage 3,
 Component B(b)): clustering probed features into named roles, with the
 naming DERIVED per sec 25.5(b)'s three rules rather than authored.

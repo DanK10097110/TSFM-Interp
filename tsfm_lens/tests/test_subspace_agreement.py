@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """The subspace agreement test (`sae/subspace_agreement.py`, ROADMAP.md sec 40 / 41 V3-C).
 
 Every fixture plants a known answer and keeps the confusable case on purpose:

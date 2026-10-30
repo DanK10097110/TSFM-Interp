@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """`l3/patching.json`'s `rel_depth`/`depth_axis` must describe the PATCHED
 layer subset, not the full sensitivity layer list (ROADMAP.md sec 18 F1's
 real-checkpoint acceptance test, run against `configs/medium_run_chronos_

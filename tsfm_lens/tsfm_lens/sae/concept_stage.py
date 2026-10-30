@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """The `concepts` pipeline stage (ROADMAP.md sec 37.4 P1): one entry point for
 "what concepts does each model's dictionary hold, and does another model
 group the same series".

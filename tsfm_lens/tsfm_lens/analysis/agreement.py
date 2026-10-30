@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Cross-model forecast agreement as a reliability signal (`ROADMAP.md` sec 20 H4).
 
 Every other stage in this repo asks what the comparison *reveals* about the

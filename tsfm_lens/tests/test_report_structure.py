@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Tests for the report's structure (report structure spec R1, CLAUDE.md sec
 6.7): the hyperlinked Contents table of contents, the Part-grouped section
 order, and the "At a glance" slot's position relative to the numbered Parts.

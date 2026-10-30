@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """ROADMAP.md sec 42 decision 5b: the pooling and gating of `run_powered_known_answer.py`.
 
 The load-bearing property is that the gate is read on the HELD-OUT seeds only: the tuning seed

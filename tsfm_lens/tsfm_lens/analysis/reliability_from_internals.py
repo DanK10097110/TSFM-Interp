@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Does looking inside a model tell you when to distrust its forecast? (ROADMAP §38.4, K4)
 
 Practitioner question behind U1 and U2. `analysis/agreement.py` (§20 H4)

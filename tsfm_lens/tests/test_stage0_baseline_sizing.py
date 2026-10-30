@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Per-model baseline dictionary sizing (ROADMAP.md §6.2.1's 2026-08-13 DECISION).
 
 Stage 0's exit criteria require the crosscoder *and* both per-model `TopKSAE`

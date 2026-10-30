@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Report-integration test for `report/sae_roles.py`'s pure table builder
 `roles_summary_table` (ROADMAP.md sec 25.7, Component B(b)).
 

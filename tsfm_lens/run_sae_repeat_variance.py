@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """CLI for ROADMAP.md sec 13's repeat-run-variance question: how large is the
 seed-to-seed spread of a single SAE target's forecast-preservation ΔMASE (and
 of its fidelity / dead-feature rate), and does that spread invalidate any

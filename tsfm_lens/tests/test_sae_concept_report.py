@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Report-integration tests for `report/sae_concepts.py::sae_concepts_block`
 (ROADMAP.md sec 30.4, Stage 4, 2026-09-11).
 

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """ROADMAP.md sec 37.8 P5b -- cross-model causal agreement, measured on the
 SAME series, with a floor every model can have.
 

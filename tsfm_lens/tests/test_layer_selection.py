@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Layer-selection correlation study tests (ROADMAP.md Phase 2a, §6.1).
 
 Runnable directly (`python tests/test_layer_selection.py`) or via pytest.

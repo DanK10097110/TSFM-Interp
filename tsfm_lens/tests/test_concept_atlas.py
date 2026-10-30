@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Tests for `sae/concept_atlas.py` (ROADMAP.md sec 37.15 q6, option b) and its
 report renderer `report/sae_concept_atlas.py`.
 

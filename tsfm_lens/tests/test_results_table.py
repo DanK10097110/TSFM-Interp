@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Tests for `report/results_table.py` (`ROADMAP.md` §34 item A4).
 
 The module's whole contract is "pure reduction, never fabricate a value it

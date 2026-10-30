@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Report prose must not name architectures that are not in the run.
 
 `ROADMAP.md` §24 made the report's *conclusions* derived rather than authored.

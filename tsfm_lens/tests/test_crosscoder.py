@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """Crosscoder feasibility tests (ROADMAP.md §6.2 item 1, §13's prerequisite
 small-scale test): does joint training across two sources work at all, and
 does the shared/specific decomposition recover a known-planted answer.

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Dan Kushnir. See LICENSE.
 """The seasonality-circuit report section (ROADMAP.md sec 20 H8 Stage 4):
 renders whatever Stage 1/2/3 artifacts a run directory happens to hold under
 `seasonality_circuit/`. Not a pipeline stage -- `run_seasonality_circuit.py`
