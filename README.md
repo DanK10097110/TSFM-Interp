@@ -23,6 +23,15 @@ corpus, not a single-model microscope.
 confirmation) · [Colab quickstart](https://colab.research.google.com/github/DanK10097110/TSFM-Interp/blob/main/examples/quickstart.ipynb)
 (two real models, about 25 minutes on one GPU) · [`docs/QUICKSTART.md`](docs/QUICKSTART.md)
 
+### Find your starting point
+
+| To… | Start here |
+| --- | --- |
+| Run the interpretability toolkit | [Quickstart](docs/QUICKSTART.md) and [example run configs](tsfm_lens/configs/examples/) |
+| Steer forecasts and verify their response | [Steering guide](tsfm_lens/docs/steering.md) and [runnable example](tsfm_lens/configs/examples/steering.yaml) |
+| Build a benchmark corpus | [Benchmark toolkit](tsfm_benchmark/) |
+| Extend the toolkit to another model | [Adapter guide](tsfm_lens/docs/ADDING_A_MODEL.md) |
+
 **What it found on seven TSFMs** (TimesFM, Chronos-2, Sundial, Chronos-Bolt, Chronos-T5, Timer, Time-MoE). Every
 claim below was registered on a development corpus and tested once on a fresh sealed private corpus (971 series; then
 again on a second, three times larger corpus with 1,024 private series):

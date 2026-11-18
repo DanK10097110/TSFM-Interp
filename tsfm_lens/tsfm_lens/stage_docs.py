@@ -109,6 +109,11 @@ STAGE_DOCS: dict = {
                       "only tells you the price of a forward pass, never whether that "
                       "price bought anything mechanistically interesting — that's what "
                       "every later stage is for.")),
+    "steering": StageDoc(
+        question="How closely does the model follow each requested forecast change?",
+        how="Select an intervention on calibration and validation contexts, then measure and replay it on separate evaluation contexts.",
+        good_bad="The separate steering report counts nonzero targets reached within 10% relative error with matching replay.",
+        cannot_tell="Agreement with a requested target does not establish predictive accuracy on future observations."),
     "frontend": StageDoc(
         question=("What does each model do to its input BEFORE any layer runs -- how "
                    "coarsely does it quantize the series, does scaling the input scale "

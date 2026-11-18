@@ -138,8 +138,12 @@ def run_provenance(cfg=None, corpus_digest: Optional[str] = None) -> dict:
                   "hf_revision": _hf_revision(m.checkpoint) if m.checkpoint else None}
                  for m in cfg.models]
         from .manifest import _stable_json
+        resolved = dataclasses.asdict(cfg)
+        # Preserve provenance checks for frozen runs that predate optional steering.
+        if not cfg.steering.enabled and not cfg.steering.requests:
+            resolved.pop("steering")
         config_hash = hashlib.sha256(
-            _stable_json(dataclasses.asdict(cfg)).encode("utf-8")).hexdigest()[:16]
+            _stable_json(resolved).encode("utf-8")).hexdigest()[:16]
 
     from . import __version__ as _tsfm_lens_version
     return {

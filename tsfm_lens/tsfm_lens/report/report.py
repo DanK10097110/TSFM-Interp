@@ -993,6 +993,8 @@ def _config_text(run_dir: Path) -> str:
     if not p.exists():
         return ""
     text = p.read_text(encoding="utf-8")
+    # The independent steering report documents its own top-level YAML block.
+    text = re.sub(r"(?ms)^steering:\n.*?(?=^[a-zA-Z_]\w*:|\Z)", "", text)
     # `run.device` (cuda/cpu) is the one config line that discloses hardware
     # type rather than an experiment setting -- redact it without touching
     # the rest of the dump, which is genuinely useful for reproducing the run.
@@ -1008,7 +1010,7 @@ def _run_duration_text(manifest: dict) -> str:
     not compute time.
     """
     stages = manifest.get("stages") or {}
-    total = sum(s.get("wall_clock_seconds", 0) for s in stages.values())
+    total = sum(s.get("wall_clock_seconds", 0) for name, s in stages.items() if name != "steering")
     if total <= 0:
         return ""
     if total < 60:

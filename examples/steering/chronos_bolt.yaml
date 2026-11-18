@@ -1,0 +1,13 @@
+# Chronos-Bolt verification on seeded smoke contexts. Requires the Bolt checkpoint.
+run: {name: steering_bolt_check, device: cpu, dtype: float32, seed: 0}
+data: {source: smoke, context_len: 128, horizon: 16}
+models:
+  - {name: bolt, adapter: chronos_bolt, checkpoint: amazon/chronos-bolt-small, batch_size: 128}
+steering:
+  enabled: true
+  max_series: 4
+  quantiles: [0.1, 0.5, 0.9]
+  requests:
+    - {kind: level, strength: 0.2}
+    - {kind: level, strength: -0.2}
+    - {kind: context_ignore, strength: 1.0, context_window: recent}

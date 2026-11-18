@@ -17,6 +17,35 @@ import yaml
 
 
 @dataclass
+class SteeringConfig:
+    enabled: bool = False
+    requests: list[dict] = field(default_factory=list)
+    max_series: int = 8
+    quantiles: list = field(default_factory=lambda: [0.5])
+
+    def validate(self, data):
+        from .steering import SteeringRequest
+        from .steering.requests import window_mask
+
+        if not isinstance(self.requests, list) or not self.requests:
+            raise ValueError("steering.requests must contain at least one request")
+        if type(self.max_series) is not int or self.max_series < 1:
+            raise ValueError("steering.max_series must be a positive integer")
+        levels = self.quantiles
+        if (not isinstance(levels, list) or 0.5 not in levels
+                or any(not 0 < q < 1 for q in levels) or levels != sorted(set(levels))):
+            raise ValueError("steering.quantiles must be increasing and include 0.5")
+        for item in self.requests:
+            request = SteeringRequest(**item)
+            window_mask(request.forecast_window, data.horizon)
+            window_mask(request.context_window, data.context_len, context=True)
+            if request.kind in ("asymmetry", "uncertainty") and len(levels) < 3:
+                raise ValueError("spread requests require at least three steering.quantiles")
+            if request.kind == "quantile" and request.quantile not in levels:
+                raise ValueError("requested quantile is missing from steering.quantiles")
+
+
+@dataclass
 class ModelConfig:
     name: str = "model"
     adapter: str = "mock_patch"
@@ -1353,6 +1382,7 @@ class PipelineConfig:
     budget: BudgetConfig = field(default_factory=BudgetConfig)
     frontend: FrontendConfig = field(default_factory=FrontendConfig)
     sae: SAEConfig = field(default_factory=SAEConfig)
+    steering: SteeringConfig = field(default_factory=SteeringConfig)
     report: ReportConfig = field(default_factory=ReportConfig)
     corpus: CorpusConfig = field(default_factory=CorpusConfig)
     concepts: ConceptsConfig = field(default_factory=ConceptsConfig)
@@ -1410,6 +1440,10 @@ class PipelineConfig:
 
     def validate(self) -> None:
         """Fail fast on structurally invalid configurations."""
+        if type(self.steering.enabled) is not bool:
+            raise ValueError("steering.enabled must be true or false")
+        if self.steering.enabled or self.steering.requests:
+            self.steering.validate(self.data)
         if self.data.context_len % self.alignment.window != 0:
             raise ValueError("data.context_len must be a multiple of alignment.window")
         if self.alignment.window_rep not in ("mean", "concat"):
@@ -1522,7 +1556,7 @@ _NESTED = {
     "extraction": ExtractionConfig, "l0": L0Config, "l1": L1Config, "l2": L2Config,
     "clustering": ClusteringConfig, "layer_screen": LayerScreenConfig,
     "budget": BudgetConfig, "frontend": FrontendConfig,
-    "sae": SAEConfig, "report": ReportConfig,
+    "steering": SteeringConfig, "sae": SAEConfig, "report": ReportConfig,
     "stats": StatsConfig, "internals": InternalsConfig, "confirm": ConfirmConfig,
     "lens": LensConfig, "attention": AttentionConfig, "exemplars": ExemplarsConfig,
     "corpus": CorpusConfig, "concepts": ConceptsConfig,

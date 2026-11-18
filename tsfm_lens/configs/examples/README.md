@@ -20,6 +20,7 @@ python run.py --config configs/examples/<name>.yaml --doctor
 | Config | Demonstrates | Models | Shape |
 |---|---|---|---|
 | `smoke_mock.yaml` | The fastest possible complete run (mock architectures, CPU, <1 min) | 2 mock | pair |
+| [steering.yaml](steering.yaml) | Held-out steering comparisons with replay and a standalone report | 1 mock | solo |
 | `short_1model.yaml` | One real, deterministic model; the run-shape gate dropping comparison stages | Chronos-Bolt | solo |
 | `medium_2model.yaml` | A real pair with the full SAE + concept-atlas chain at modest scale | TimesFM, Chronos-2 | pair |
 | `large_4model.yaml` | The flagship concept-atlas run: 4 models, confirm on a sealed private split | TimesFM, Chronos-2, Sundial, Chronos-Bolt | panel |
@@ -28,7 +29,7 @@ python run.py --config configs/examples/<name>.yaml --doctor
 | `chronos_t5_solo.yaml` | An encoder-decoder architecture (only the encoder captured), solo shape | Chronos-T5 | solo |
 | `generic_hf_timer.yaml` | The zero-code `generic_hf` adapter path — no adapter file at all | Timer (generic_hf) + Chronos-T5-Small | pair |
 
-Every config beyond `smoke_mock.yaml` needs a real, sealed benchmark corpus
+Every config beyond `smoke_mock.yaml` and `steering.yaml` needs a real, sealed benchmark corpus
 (see [`../../../tsfm_benchmark/README.md`](../../../tsfm_benchmark/README.md))
 and a real checkpoint download; `data.path` in each is a placeholder
 matching the convention used throughout this repo's configs

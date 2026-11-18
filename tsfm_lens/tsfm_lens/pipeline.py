@@ -102,6 +102,12 @@ _EXTRACT_KEYS = ("data", "alignment", "extraction",
                  "models[*].kwargs", "run.seed", "run.dtype")
 
 
+def _run_steering(ctx):
+    from .steering.report import run_steering_report
+
+    run_steering_report(ctx.cfg, ctx.hub, ctx.data)
+
+
 def _stages() -> list:
     """The canonical stage sequence."""
     return [
@@ -247,6 +253,14 @@ def _stages() -> list:
               lambda c: False,
               lambda ctx: run_report(ctx.cfg),
               ("report",)),
+        Stage("steering", [],
+              lambda c: c.steering.enabled,
+              lambda c: (c.run_dir() / "steering" / "report.html").is_file(),
+              _run_steering,
+              ("steering", "data", "run.seed", "run.device", "run.dtype",
+               "models[*].adapter", "models[*].checkpoint", "models[*].kwargs",
+               "models[*].random_init", "models[*].batch_size", "models[*].layer_regex",
+               "models[*].capture_layer_stride")),
     ]
 
 
@@ -255,7 +269,7 @@ def _stages() -> list:
 # `l0` is here despite declaring an `extract` dependency in the DAG: it reads
 # no activations (it only *writes* its predictions into the store), so the
 # dependency exists to order a full run, not because L0 needs a capture.
-_L0_ONLY_STAGES = ("l0", "budget", "frontend", "report", "corpus")
+_L0_ONLY_STAGES = ("l0", "budget", "frontend", "report", "corpus", "steering")
 
 # The tier each stage needs from EVERY configured model (`ROADMAP.md` sec 19
 # G1). Tier 0 is forecasts only; 1 adds readable activations; 2 adds
@@ -272,6 +286,7 @@ _L0_ONLY_STAGES = ("l0", "budget", "frontend", "report", "corpus")
 # A run is narrowed to the MINIMUM tier across its models, because every
 # stage above tier 0 is either cross-model or feeds one that is.
 _STAGE_MIN_TIER = {
+    "steering": 0,
     "l0": 0, "budget": 0, "frontend": 0, "report": 0, "register": 0, "confirm": 0,
     "corpus": 0,
     "extract": 1, "layer_screen": 1, "internals": 1, "l1": 1, "l2": 1,
@@ -562,7 +577,8 @@ def run_pipeline(cfg: PipelineConfig, stages: Optional[list] = None,
     renders_everything = any(s_.name == "report" for s_ in all_stages
                              if s_.name in selected)
     for stage in all_stages:
-        if stage.name not in selected and not (renders_everything and stage.done(cfg)):
+        read_by_report = renders_everything and stage.name != "steering" and stage.done(cfg)
+        if stage.name not in selected and not read_by_report:
             continue
         will_skip = stage.done(cfg) and stage.name not in force and "all" not in force
         if not will_skip:

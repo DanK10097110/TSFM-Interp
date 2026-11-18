@@ -9,6 +9,7 @@ zarr>=2.16,<3          # v2 API; v3 changed the group/dataset interface
 PyYAML>=6.0
 jinja2>=3.1
 plotly>=5.18
+matplotlib>=3.6
 tqdm>=4.66
 
 # Optional: nicer 2-D cluster embeddings (PCA fallback is automatic)

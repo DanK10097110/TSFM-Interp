@@ -1,0 +1,12 @@
+# CPU example. Run from tsfm_lens with --stages steering for just the comparison.
+run: {name: steering_example, device: cpu, dtype: float32, seed: 0}
+data: {source: smoke, context_len: 128, horizon: 16}
+models:
+  - {name: patchy, adapter: mock_patch, batch_size: 128}
+steering:
+  enabled: true
+  max_series: 8
+  quantiles: [0.1, 0.5, 0.9]
+  requests:
+    - {kind: level, strength: 0.2}
+    - {kind: context_ignore, strength: 1.0, context_window: recent}
